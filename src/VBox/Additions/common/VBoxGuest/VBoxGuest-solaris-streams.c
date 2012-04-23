@@ -548,16 +548,19 @@ static const Ms_screen_resolution g_TestResolution = { 640, 480 };
 # define PMSIOSRES (&g_TestResolution)
 # define CBMSIOSRES (sizeof(g_TestResolution))
 
-static inline void testSetResolution(RTTEST hTest, queue_t *pWriteQueue,
+static inline bool testSetResolution(RTTEST hTest, queue_t *pWriteQueue,
                                      struct msgb *pMBlk)
 {
     PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
-    RTTEST_CHECK_MSG(hTest,    pState->cMaxScreenX
-                            == g_TestResolution.width - 1,
-                     (hTest, "pState->cMaxScreenX=%d\n", pState->cMaxScreenX));
-    RTTEST_CHECK_MSG(hTest,    pState->cMaxScreenY
-                            == g_TestResolution.height - 1,
-                     (hTest, "pState->cMaxScreenY=%d\n", pState->cMaxScreenY));
+    RTTEST_CHECK_MSG_RET(hTest,    pState->cMaxScreenX
+                               == g_TestResolution.width - 1,
+                         (hTest, "pState->cMaxScreenX=%d\n",
+                          pState->cMaxScreenX), false);
+    RTTEST_CHECK_MSG_RET(hTest,    pState->cMaxScreenY
+                               == g_TestResolution.height - 1,
+                         (hTest, "pState->cMaxScreenY=%d\n",
+                          pState->cMaxScreenY), false);
+    return true;
 }
 
 /** Data table for testWPut. */
@@ -570,7 +573,7 @@ static struct
     const void *pvDataOut;
     size_t cbDataOut;
     int rcExp;
-    void (*pfnExtra)(RTTEST hTest, queue_t *pWriteQueue, struct msgb *pMBlk);
+    bool (*pfnExtra)(RTTEST hTest, queue_t *pWriteQueue, struct msgb *pMBlk);
     bool fCanTransparent;
 } g_asTestWPut[] =
 {
@@ -598,6 +601,7 @@ static struct
 /* Helpers for testWPut. */
 static void testWPutStreams(RTTEST hTest, unsigned i);
 static void testWPutTransparent(RTTEST hTest, unsigned i);
+static void testWPutIOCDataIn(RTTEST hTest, unsigned i);
 
 /** Test WPut's handling of different IOCtls, which is bulk of the logic in
  * this file. */
@@ -608,11 +612,18 @@ static void testWPut(RTTEST hTest)
     RTTestSub(hTest, "Testing vbgr0WPut");
     for (i = 0; i < RT_ELEMENTS(g_asTestWPut); ++i)
     {
+        AssertReturnVoid(g_asTestWPut[i].cbDataIn <= g_asTestWPut[i].cbData);
+        AssertReturnVoid(g_asTestWPut[i].cbDataOut <= g_asTestWPut[i].cbData);
         testWPutStreams(hTest, i);
         if (g_asTestWPut[i].fCanTransparent)
             testWPutTransparent(hTest, i);
+        if (g_asTestWPut[i].fCanTransparent && g_asTestWPut[i].cbDataIn)
+            testWPutIOCDataIn(hTest, i);
     }
 }
+
+
+#define MSG_DATA_SIZE 1024
 
 /** Simulate sending a streams IOCtl to WPut with the parameters from table
  * line @a i. */
@@ -620,56 +631,52 @@ void testWPutStreams(RTTEST hTest, unsigned i)
 {
     queue_t aQueues[2];
     dev_t device = 0;
-    struct msgb MBlk, MBlkCont;
-    struct datab DBlk;
-    struct iocblk IOCBlk;
+    struct msgb *pMBlk = allocb(sizeof(struct iocblk), BPRI_MED);
+    struct msgb *pMBlkCont = allocb(MSG_DATA_SIZE, BPRI_MED);
+    struct iocblk *pIOCBlk = pMBlk ? (struct iocblk *)pMBlk->b_rptr : NULL;
     int rc, cFormat = 0;
-    unsigned char acData[1024];
 
+    AssertReturnVoid(pMBlk);
+    AssertReturnVoidStmt(pMBlkCont, freemsg(pMBlk));
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
     rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
     RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
     RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
                             == WR(&aQueues[0]), (hTest, "i=%u\n", i));
-    RT_ZERO(MBlk);
-    RT_ZERO(DBlk);
-    RT_ZERO(IOCBlk);
-    RT_ZERO(MBlkCont);
-    RT_ZERO(acData);
-    DBlk.db_type = M_IOCTL;
-    IOCBlk.ioc_cmd = g_asTestWPut[i].iIOCCmd;
-    IOCBlk.ioc_count = g_asTestWPut[i].cbData;
-    AssertReturnVoid(g_asTestWPut[i].cbData <= sizeof(acData));
-    AssertReturnVoid(g_asTestWPut[i].cbDataIn <= g_asTestWPut[i].cbData);
-    AssertReturnVoid(g_asTestWPut[i].cbDataOut <= g_asTestWPut[i].cbData);
-    memcpy(acData, g_asTestWPut[i].pvDataIn, g_asTestWPut[i].cbDataIn);
-    MBlkCont.b_rptr = acData;
-    MBlkCont.b_wptr = acData + g_asTestWPut[i].cbData;
-    MBlk.b_cont = &MBlkCont;
-    MBlk.b_rptr = (unsigned char *)&IOCBlk;
-    MBlk.b_wptr = (unsigned char *)&IOCBlk + sizeof(IOCBlk);
-    MBlk.b_datap = &DBlk;
-    rc = vbgr0SolWPut(WR(&aQueues[0]), &MBlk);
-    RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_error == g_asTestWPut[i].rcExp,
+    pMBlk->b_datap->db_type = M_IOCTL;
+    pIOCBlk->ioc_cmd = g_asTestWPut[i].iIOCCmd;
+    pIOCBlk->ioc_count = g_asTestWPut[i].cbData;
+    AssertReturnVoid(g_asTestWPut[i].cbData <= MSG_DATA_SIZE);
+    memcpy(pMBlkCont->b_rptr, g_asTestWPut[i].pvDataIn,
+           g_asTestWPut[i].cbDataIn);
+    pMBlk->b_cont = pMBlkCont;
+    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    RTTEST_CHECK_MSG(hTest, pIOCBlk->ioc_error == g_asTestWPut[i].rcExp,
                      (hTest, "i=%u, IOCBlk.ioc_error=%d\n", i,
-                      IOCBlk.ioc_error));
-    RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_count == g_asTestWPut[i].cbDataOut,
-                     (hTest, "i=%u, ioc_count=%u\n", i, IOCBlk.ioc_count));
-    RTTEST_CHECK_MSG(hTest, !memcmp(acData, g_asTestWPut[i].pvDataOut,
+                      pIOCBlk->ioc_error));
+    RTTEST_CHECK_MSG(hTest, pIOCBlk->ioc_count == g_asTestWPut[i].cbDataOut,
+                     (hTest, "i=%u, ioc_count=%u\n", i, pIOCBlk->ioc_count));
+    RTTEST_CHECK_MSG(hTest, !memcmp(pMBlkCont->b_rptr,
+                                    g_asTestWPut[i].pvDataOut,
                                     g_asTestWPut[i].cbDataOut),
                      (hTest, "i=%u\n", i));
     /* Hack to ensure that miocpullup() gets called when needed. */
     if (g_asTestWPut[i].cbData > 0)
-        RTTEST_CHECK_MSG(hTest, MBlk.b_flag == 1, (hTest, "i=%u\n", i));
+        RTTEST_CHECK_MSG(hTest, pMBlk->b_flag == 1, (hTest, "i=%u\n", i));
     if (!g_asTestWPut[i].rcExp)
-        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first = &MBlk,
+        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first == pMBlk,
                          (hTest, "i=%u\n", i));
     if (g_asTestWPut[i].pfnExtra)
-        g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), &MBlk);
+        if (!g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), pMBlk))
+            RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Called from %s.\n",
+                         __PRETTY_FUNCTION__);
     vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    freemsg(pMBlk);
 }
 
+
+#define USER_ADDRESS 0xfeedbacc
 
 /** Simulate sending a transparent IOCtl to WPut with the parameters from table
  * line @a i. */
@@ -677,80 +684,140 @@ void testWPutTransparent(RTTEST hTest, unsigned i)
 {
     queue_t aQueues[2];
     dev_t device = 0;
-    struct msgb MBlk, MBlkCont;
-    struct datab DBlk;
-    struct iocblk IOCBlk;
-    struct copyreq *pCopyReq = (struct copyreq *)&IOCBlk;
+    struct msgb *pMBlk = allocb(sizeof(struct iocblk), BPRI_MED);
+    struct msgb *pMBlkCont = allocb(sizeof(void *), BPRI_MED);
+    struct iocblk *pIOCBlk = pMBlk ? (struct iocblk *)pMBlk->b_rptr : NULL;
+    struct copyreq *pCopyReq;
     int rc, cFormat = 0;
-    unsigned char acData[1024];
 
-    if (g_asTestWPut[i].cbDataIn == 0 && g_asTestWPut[i].cbDataOut != 0)
-        return;  /* This case will be handled once the current ones work. */
+    /* if (g_asTestWPut[i].cbDataIn == 0 && g_asTestWPut[i].cbDataOut != 0)
+        return; */  /* This case will be handled once the current ones work. */
+    AssertReturnVoid(pMBlk);
+    AssertReturnVoidStmt(pMBlkCont, freemsg(pMBlk));
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
     rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
     RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
     RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
                             == WR(&aQueues[0]), (hTest, "i=%u\n", i));
-    RT_ZERO(MBlk);
-    RT_ZERO(DBlk);
-    RT_ZERO(IOCBlk);
-    RT_ZERO(MBlkCont);
-    RT_ZERO(acData);
-    DBlk.db_type = M_IOCTL;
-    IOCBlk.ioc_cmd = g_asTestWPut[i].iIOCCmd;
-    IOCBlk.ioc_count = TRANSPARENT;
-    AssertReturnVoid(g_asTestWPut[i].cbData <= sizeof(acData));
-    AssertReturnVoid(g_asTestWPut[i].cbDataIn <= g_asTestWPut[i].cbData);
-    AssertReturnVoid(g_asTestWPut[i].cbDataOut <= g_asTestWPut[i].cbData);
-    memcpy(acData, g_asTestWPut[i].pvDataIn, g_asTestWPut[i].cbDataIn);
-    MBlkCont.b_rptr = acData;
-    MBlkCont.b_wptr = acData + g_asTestWPut[i].cbData;
-    MBlk.b_cont = &MBlkCont;
-    MBlk.b_rptr = (unsigned char *)&IOCBlk;
-    MBlk.b_wptr = (unsigned char *)&IOCBlk + sizeof(IOCBlk);
-    MBlk.b_datap = &DBlk;
-    rc = vbgr0SolWPut(WR(&aQueues[0]), &MBlk);
+    pMBlk->b_datap->db_type = M_IOCTL;
+    pIOCBlk->ioc_cmd = g_asTestWPut[i].iIOCCmd;
+    pIOCBlk->ioc_count = TRANSPARENT;
+    *(void **)pMBlkCont->b_rptr = (void *)USER_ADDRESS;
+    pMBlk->b_cont = pMBlkCont;
+    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    pCopyReq = (struct copyreq *)pMBlk->b_rptr;
     RTTEST_CHECK_MSG(hTest, (   (   g_asTestWPut[i].cbDataIn
-                                 && (MBlk.b_datap->db_type == M_COPYIN))
+                                 && (pMBlk->b_datap->db_type == M_COPYIN))
                              || (   g_asTestWPut[i].cbDataOut
-                                 && (MBlk.b_datap->db_type == M_COPYOUT))
+                                 && (pMBlk->b_datap->db_type == M_COPYOUT))
                              || (   (g_asTestWPut[i].rcExp == 0)
-                                 && MBlk.b_datap->db_type == M_IOCACK)
-                             || (MBlk.b_datap->db_type == M_IOCNAK)),
+                                 && pMBlk->b_datap->db_type == M_IOCACK)
+                             || (pMBlk->b_datap->db_type == M_IOCNAK)),
                      (hTest, "i=%u, db_type=%u\n", i,
-                      (unsigned) MBlk.b_datap->db_type));
+                      (unsigned) pMBlk->b_datap->db_type));
     /* Our TRANSPARENT IOCtls can only return non-zero if they have no payload.
      * Others should either return zero or be non-TRANSPARENT only. */
-    if (MBlk.b_datap->db_type == M_IOCNAK)
-        RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_error == g_asTestWPut[i].rcExp,
+    if (pMBlk->b_datap->db_type == M_IOCNAK)
+        RTTEST_CHECK_MSG(hTest, pIOCBlk->ioc_error == g_asTestWPut[i].rcExp,
                          (hTest, "i=%u, IOCBlk.ioc_error=%d\n", i,
-                          IOCBlk.ioc_error));
+                          pIOCBlk->ioc_error));
     if (g_asTestWPut[i].cbData)
     {
-        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_addr == acData,
+        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_addr == (char *)USER_ADDRESS,
                          (hTest, "i=%u, cq_addr=%p\n", i, pCopyReq->cq_addr));
-        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_size == g_asTestWPut[i].cbData,
+        RTTEST_CHECK_MSG(   hTest, pCopyReq->cq_size
+                         ==   g_asTestWPut[i].cbDataIn
+                            ? g_asTestWPut[i].cbDataIn
+                            : g_asTestWPut[i].cbDataOut,
                          (hTest, "i=%u, cq_size=%llu\n", i,
                           (unsigned long long)pCopyReq->cq_size));
     }
     /* Implementation detail - check that the private pointer is correctly
      * set to the user address *for two direction IOCtls* or NULL otherwise. */
     if (g_asTestWPut[i].cbDataIn && g_asTestWPut[i].cbDataOut)
-        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_private == acData,
+        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_private == (mblk_t *)USER_ADDRESS,
                          (hTest, "i=%u, cq_private=%p\n", i,
                           pCopyReq->cq_private));
-    else if (   (MBlk.b_datap->db_type == M_COPYIN)
-             || (MBlk.b_datap->db_type == M_COPYOUT))
+    else if (   (pMBlk->b_datap->db_type == M_COPYIN)
+             || (pMBlk->b_datap->db_type == M_COPYOUT))
         RTTEST_CHECK_MSG(hTest, !pCopyReq->cq_private,
                          (hTest, "i=%u, cq_private=%p\n", i,
                           pCopyReq->cq_private));
     if (!g_asTestWPut[i].rcExp)
-        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first = &MBlk,
+        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first == pMBlk,
                          (hTest, "i=%u\n", i));
     if (g_asTestWPut[i].pfnExtra && !g_asTestWPut[i].cbData)
-        g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), &MBlk);
+        if (!g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), pMBlk))
+            RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Called from %s.\n",
+                         __PRETTY_FUNCTION__);
     vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    freemsg(pMBlk);
+}
+
+
+/** Simulate sending follow-on IOCData messages to a transparent IOCtl to WPut
+ * with the parameters from table line @a i. */
+void testWPutIOCDataIn(RTTEST hTest, unsigned i)
+{
+    queue_t aQueues[2];
+    dev_t device = 0;
+    struct msgb *pMBlk = allocb(sizeof(struct copyresp), BPRI_MED);
+    struct msgb *pMBlkCont = allocb(MSG_DATA_SIZE, BPRI_MED);
+    struct copyresp *pCopyResp = pMBlk ? (struct copyresp *)pMBlk->b_rptr
+                                       : NULL;
+    void *pvData = pMBlkCont ? pMBlkCont->b_rptr : NULL;
+    struct copyreq *pCopyReq;
+    int rc, cFormat = 0;
+
+    AssertReturnVoid(pMBlk);
+    AssertReturnVoidStmt(pMBlkCont, freemsg(pMBlk));
+    AssertReturnVoid(g_asTestWPut[i].cbDataIn);
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%s: i=%u\n", __PRETTY_FUNCTION__,
+                 i);
+    RT_ZERO(aQueues);
+    doInitQueues(&aQueues[0]);
+    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
+    RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
+                            == WR(&aQueues[0]), (hTest, "i=%u\n", i));
+    pMBlk->b_datap->db_type = M_IOCDATA;
+    pCopyResp->cp_cmd = g_asTestWPut[i].iIOCCmd;
+    AssertReturnVoid(g_asTestWPut[i].cbData <= MSG_DATA_SIZE);
+    memcpy(pMBlkCont->b_rptr, g_asTestWPut[i].pvDataIn, g_asTestWPut[i].cbDataIn);
+    pMBlk->b_cont = pMBlkCont;
+    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    pCopyReq = (struct copyreq *)pMBlk->b_rptr;
+    RTTEST_CHECK_MSG(hTest, (   (   g_asTestWPut[i].cbDataOut
+                                 && (pMBlk->b_datap->db_type == M_COPYOUT))
+                             || (   (g_asTestWPut[i].rcExp == 0)
+                                 && pMBlk->b_datap->db_type == M_IOCACK)
+                             || (pMBlk->b_datap->db_type == M_IOCNAK)),
+                     (hTest, "i=%u, db_type=%u\n", i,
+                      (unsigned) pMBlk->b_datap->db_type));
+    if (g_asTestWPut[i].cbDataOut)
+    {
+        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_addr == (char *)pvData,
+                         (hTest, "i=%u, cq_addr=%p\n", i, pCopyReq->cq_addr));
+        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_size == g_asTestWPut[i].cbData,
+                         (hTest, "i=%u, cq_size=%llu\n", i,
+                          (unsigned long long)pCopyReq->cq_size));
+        RTTEST_CHECK_MSG(hTest, !memcmp(pvData, g_asTestWPut[i].pvDataOut,
+                                        g_asTestWPut[i].cbDataOut),
+                         (hTest, "i=%u\n", i));
+    }
+    RTTEST_CHECK_MSG(hTest, !pCopyReq->cq_private,
+                     (hTest, "i=%u, cq_private=%p\n", i,
+                      pCopyReq->cq_private));
+    if (!g_asTestWPut[i].rcExp)
+        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first == pMBlk,
+                         (hTest, "i=%u\n", i));
+    if (g_asTestWPut[i].pfnExtra && !g_asTestWPut[i].cbDataOut)
+        if (!g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), pMBlk))
+            RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Called from %s.\n",
+                         __PRETTY_FUNCTION__);
+    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    freemsg(pMBlk);
 }
 #endif
 
@@ -950,8 +1017,6 @@ static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
         void *pvData = NULL;
         int err;
 
-        if (cbData < cbTransparent)
-            return EINVAL;
         if (!pMBlk->b_cont)
             return EINVAL;
         if (enmDirection == BOTH && !pCopyResp->cp_private)
@@ -1000,7 +1065,7 @@ int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
 	}
 	else if (enmDirection == OUT)
     {
-        mblk_t *pMBlkOut = allocb(cbOut, BPRI_MED);
+        mblk_t *pMBlkOut = allocb(cbTransparent, BPRI_MED);
         void *pvData;
 
         if (!pMBlkOut)
@@ -1566,7 +1631,7 @@ void vbgr0SolVUIDPutAbsEvent(PVBGR0STATE pState, ushort_t cEvent,
                               int cValue)
 {
     queue_t *pReadQueue = RD(pState->pWriteQueue);
-    mblk_t *pMBlk = allocb(sizeof(Firm_event, BPRI_HI));
+    mblk_t *pMBlk = allocb(sizeof(Firm_event), BPRI_HI);
     Firm_event *pEvent;
     AssertReturnVoid(cEvent == LOC_X_ABSOLUTE || cEvent == LOC_Y_ABSOLUTE);
     if (!pMBlk)

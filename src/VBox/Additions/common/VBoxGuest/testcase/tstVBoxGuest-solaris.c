@@ -19,6 +19,7 @@
 ******************************************************************************/
 
 #include "solaris.h"
+#include <iprt/alloc.h>
 
 /******************************************************************************
 *   Helper functions                                                          *
@@ -74,7 +75,7 @@ void mcopyin(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser)
     pMBlk->b_wptr = pMBlk->b_rptr + sizeof(*pCopyReq);
     pCopyReq->cq_private = pvState;
     pCopyReq->cq_size = cbData;
-    pCopyReq->cq_addr = pvUser ? pvUser : pMBlk->b_cont->b_rptr;
+    pCopyReq->cq_addr = pvUser ? pvUser : *(void **)pMBlk->b_cont->b_rptr;
     if (pMBlk->b_cont)
     {
         freemsg(pMBlk->b_cont);
@@ -96,7 +97,7 @@ void mcopyout(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser,
     pMBlk->b_wptr = pMBlk->b_rptr + sizeof(*pCopyReq);
     pCopyReq->cq_private = pvState;
     pCopyReq->cq_size = cbData;
-    pCopyReq->cq_addr = pvUser ? pvUser : pMBlk->b_cont->b_rptr;
+    pCopyReq->cq_addr = pvUser ? pvUser : *(void **)pMBlk->b_cont->b_rptr;
     if (pMBlkData)
     {
         if (pMBlk->b_cont)
@@ -111,4 +112,38 @@ void mcopyout(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser,
 void qreply(queue_t *pQueue, mblk_t *pMBlk)
 {
     OTHERQ(pQueue)->q_first = pMBlk;
+}
+
+/** @todo reference counting */
+mblk_t *allocb(size_t cb, uint_t cPrio)
+{
+    unsigned char *pch = RTMemAllocZ(cb);
+    struct msgb *pMBlk = (struct msgb *)RTMemAllocZ(sizeof(struct msgb));
+    struct datab *pDBlk = (struct datab *)RTMemAllocZ(sizeof(struct datab));
+    if (!pch || !pMBlk || !pDBlk)
+    {
+        RTMemFree(pch);
+        RTMemFree(pMBlk);
+        RTMemFree(pDBlk);
+        return NULL;
+    }
+    NOREF(cPrio);
+    pMBlk->b_rptr = pch;
+    pMBlk->b_wptr = pMBlk->b_rptr + cb;
+    pMBlk->b_datap = pDBlk;
+    pDBlk->db_base = pMBlk->b_rptr;
+    pDBlk->db_lim = pMBlk->b_wptr;
+    pDBlk->db_type = M_DATA;
+    return pMBlk;
+}
+
+/** @todo reference counting */
+void freemsg(mblk_t *pMBlk)
+{
+    if (!pMBlk)
+        return;
+    RTMemFree(pMBlk->b_rptr);
+    RTMemFree(pMBlk->b_datap);
+    freemsg(pMBlk->b_cont);
+    RTMemFree(pMBlk);
 }

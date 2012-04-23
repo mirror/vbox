@@ -39,6 +39,7 @@
 
 #define MOD_NOAUTOUNLOAD        0x1
 
+#define M_DATA          0x00
 #define M_BREAK         0x08
 #define M_PASSFP        0x09
 #define M_EVENT         0x0a
@@ -68,6 +69,10 @@
 #define M_PCEVENT       0x91
 #define M_UNHANGUP      0x92
 #define M_CMD           0x93
+
+#define BPRI_LO         1
+#define BPRI_MED        2
+#define BPRI_HI         3
 
 #define FLUSHALL        1
 #define FLUSHDATA       0
@@ -228,9 +233,13 @@ struct iocblk
     cred_t      *ioc_cr;
     uint_t      ioc_id;
     uint_t      ioc_flag;
-    uint_t      ioc_count;
+    size_t      ioc_count;
     int         ioc_rval;
     int         ioc_error;
+#if defined(RT_ARCH_AMD64)  /* Actually this should be LP64. */
+    int         dummy;  /* For simplicity, to ensure the structure size matches
+                           struct copyreq. */
+#endif
 };
 
 struct copyreq
@@ -310,7 +319,6 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 /* Simple API stubs */
 
 #define cmn_err(...) do {} while(0)
-#define allocb(...) NULL
 #define mod_remove(...) 0
 #define mod_info(...) 0
 #define RTR0Init(...) VINF_SUCCESS
@@ -331,7 +339,6 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define qprocson(...) do {} while(0)
 #define qprocsoff(...) do {} while(0)
 #define flushq(...) do {} while(0)
-#define freemsg(...) do {} while(0)
 #define putnext(...) do {} while(0)
 #define ddi_get_instance(...) 0
 #define pci_config_setup(...) DDI_SUCCESS
@@ -374,6 +381,8 @@ extern void mcopyin(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser);
 extern void mcopyout(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser,
                      mblk_t *pMBlkData);
 extern void qreply(queue_t *pQueue, mblk_t *pMBlk);
+extern mblk_t *allocb(size_t cb, uint_t cPrio);
+extern void freemsg(mblk_t *pMsg);
 
 /* API stubs with simple logic */
 
