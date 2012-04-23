@@ -64,6 +64,8 @@ uncompress_files()
     uncompress_file "$1" "vboxvideo_drv_18.so"
     uncompress_file "$1" "vboxvideo_drv_19.so"
     uncompress_file "$1" "vboxvideo_drv_110.so"
+    uncompress_file "$1" "vboxvideo_drv_111.so"
+    uncompress_file "$1" "vboxvideo_drv_112.so"
     uncompress_file "$1" "vboxvideo_drv_70.so"
     uncompress_file "$1" "vboxvideo_drv_71.so"
 
@@ -76,6 +78,8 @@ uncompress_files()
     uncompress_file "$1" "vboxmouse_drv_18.so"
     uncompress_file "$1" "vboxmouse_drv_19.so"
     uncompress_file "$1" "vboxmouse_drv_110.so"
+    uncompress_file "$1" "vboxmouse_drv_111.so"
+    uncompress_file "$1" "vboxmouse_drv_112.so"
     uncompress_file "$1" "vboxmouse_drv_70.so"
     uncompress_file "$1" "vboxmouse_drv_71.so"
 }
@@ -187,6 +191,14 @@ if test ! -z "$xorgbin"; then
         1.10.*)
             vboxmouse_src="vboxmouse_drv_110.so"
             vboxvideo_src="vboxvideo_drv_110.so"
+            ;;
+        1.11.*)
+            vboxmouse_src="vboxmouse_drv_111.so"
+            vboxvideo_src="vboxvideo_drv_111.so"
+            ;;
+        1.12.*)
+            vboxmouse_src="vboxmouse_drv_112.so"
+            vboxvideo_src="vboxvideo_drv_112.so"
             ;;
         7.1.* | *7.2.* )
             vboxmouse_src="vboxmouse_drv_71.so"

@@ -185,6 +185,8 @@ SOLARIS_ADD_XORG_DRIVERS = \
 	vboxmouse_drv_18.so \
 	vboxmouse_drv_19.so \
 	vboxmouse_drv_110.so \
+	vboxmouse_drv_111.so \
+	vboxmouse_drv_112.so \
 	vboxmouse_drv_70.so \
 	vboxmouse_drv_71.so \
 	vboxvideo_drv_13.so \
@@ -195,6 +197,8 @@ SOLARIS_ADD_XORG_DRIVERS = \
 	vboxvideo_drv_18.so \
 	vboxvideo_drv_19.so \
 	vboxvideo_drv_110.so \
+	vboxvideo_drv_111.so \
+	vboxvideo_drv_112.so \
 	vboxvideo_drv_70.so \
 	vboxvideo_drv_71.so
 

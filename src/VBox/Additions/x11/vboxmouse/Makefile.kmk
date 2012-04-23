@@ -235,6 +235,38 @@ vboxmouse_drv_110_INCS := \
 vboxmouse_drv_110_SOURCES = \
 	vboxmouse.c
 
+DLLS += vboxmouse_drv_111
+vboxmouse_drv_111_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_111_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
+## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
+vboxmouse_drv_111_INCS := \
+	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
+	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
+	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.11.0 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
+	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
+	$(PATH_SUB_CURRENT)
+vboxmouse_drv_111_SOURCES = \
+	vboxmouse.c
+
+DLLS += vboxmouse_drv_112
+vboxmouse_drv_112_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_112_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
+## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
+vboxmouse_drv_112_INCS := \
+	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
+	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
+	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.12.0 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
+	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
+	$(PATH_SUB_CURRENT)
+vboxmouse_drv_112_SOURCES = \
+	vboxmouse.c
+
 endif # neq ($(KBUILD_TARGET),linux)
 
 # Check the undefined symbols in the X.Org modules against lists of allowed
@@ -336,6 +368,22 @@ $$(vboxmouse_drv_110_0_OUTDIR)/tstvboxmouse110.run: $$(vboxmouse_drv_110_1_STAGE
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(vboxmouse_drv_110_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+     TESTING += $(vboxmouse_drv_111_0_OUTDIR)/tstvboxmouse111.run
+     OTHERS += $(vboxmouse_drv_111_0_OUTDIR)/tstvboxmouse111.run
+$$(vboxmouse_drv_111_0_OUTDIR)/tstvboxmouse111.run: $$(vboxmouse_drv_111_1_STAGE_TARGET)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
+	    $(vboxmouse_drv_111_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+     TESTING += $(vboxmouse_drv_112_0_OUTDIR)/tstvboxmouse112.run
+     OTHERS += $(vboxmouse_drv_112_0_OUTDIR)/tstvboxmouse112.run
+$$(vboxmouse_drv_112_0_OUTDIR)/tstvboxmouse112.run: $$(vboxmouse_drv_112_1_STAGE_TARGET)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
+	    $(vboxmouse_drv_112_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
 endif # neq ($(KBUILD_TARGET),linux)
