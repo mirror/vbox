@@ -36,9 +36,9 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/settings.h>
-#include <VBox/version.h>
 
 #include <package-generated.h>
+#include <version-generated.h>
 
 #include <algorithm>
 #include <set>
@@ -348,7 +348,7 @@ HRESULT VirtualBox::init()
     LogFlowThisFuncEnter();
 
     if (sVersion.isEmpty())
-        sVersion = VBOX_VERSION_STRING;
+        sVersion = RTBldCfgVersion();
     sRevision = RTBldCfgRevision();
     if (sPackageType.isEmpty())
         sPackageType = VBOX_PACKAGE_STRING;
