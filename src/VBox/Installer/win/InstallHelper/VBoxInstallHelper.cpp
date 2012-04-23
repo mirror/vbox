@@ -942,11 +942,11 @@ UINT __stdcall RemoveHostOnlyInterfaces(MSIHANDLE hModule)
         hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, NETADP_ID, L"Net", 0/* could be SUOI_FORCEDELETE */);
         if (FAILED(hr))
         {
-            logStringW(hModule, L"RemoveHostOnlyInterfaces: NetAdp uninstalled successfully, but failed to remove infs\n");
+            logStringW(hModule, L"RemoveHostOnlyInterfaces: NetAdp uninstalled successfully, but failed to remove infs");
         }
     }
     else
-        logStringW(hModule, L"RemoveHostOnlyInterfaces: NetAdp uninstall failed, hr = 0x%x\n", hr);
+        logStringW(hModule, L"RemoveHostOnlyInterfaces: NetAdp uninstall failed, hr = 0x%x", hr);
 
     /* Restore original setup mode. */
     if (bSetupModeInteractive)
@@ -964,7 +964,7 @@ UINT __stdcall StopHostOnlyInterfaces(MSIHANDLE hModule)
 #ifdef VBOX_WITH_NETFLT
     netCfgLoggerEnable(hModule);
 
-    logStringW(hModule, L"StopHostOnlyInterfaces: Stopping all host-only Interfaces");
+    logStringW(hModule, L"StopHostOnlyInterfaces: Stopping all host-only interfaces");
 
     BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
 
@@ -973,12 +973,10 @@ UINT __stdcall StopHostOnlyInterfaces(MSIHANDLE hModule)
     {
         hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, NETADP_ID, L"Net", 0/* could be SUOI_FORCEDELETE */);
         if (FAILED(hr))
-        {
-            logStringW(hModule, L"RemoveHostOnlyInterfaces: VBoxDrvCfgInfUninstallAllSetupDi failed hr = 0x%x\n", hr);
-        }
+            logStringW(hModule, L"StopHostOnlyInterfaces: VBoxDrvCfgInfUninstallAllSetupDi failed, hr = 0x%x", hr);
     }
     else
-        logStringW(hModule, L"RemoveHostOnlyInterfaces: NetAdp uninstall failed, hr = 0x%x\n", hr);
+        logStringW(hModule, L"StopHostOnlyInterfaces: Disabling host interfaces failed, hr = 0x%x", hr);
 
     /* Restore original setup mode. */
     if (bSetupModeInteractive)
@@ -996,7 +994,7 @@ UINT __stdcall UpdateHostOnlyInterfaces(MSIHANDLE hModule)
 #ifdef VBOX_WITH_NETFLT
     netCfgLoggerEnable(hModule);
 
-    logStringW(hModule, L"UpdateHostOnlyInterfaces: Updating all host-only Interfaces");
+    logStringW(hModule, L"UpdateHostOnlyInterfaces: Updating all host-only interfaces");
 
     BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
 
@@ -1022,20 +1020,33 @@ UINT __stdcall UpdateHostOnlyInterfaces(MSIHANDLE hModule)
 
             logStringW(hModule, L"UpdateHostOnlyInterfaces: Resulting INF path = %s", pwszInfPath);
 
-            BOOL fRebootRequired = FALSE;
-            HRESULT hr = VBoxNetCfgWinUpdateHostOnlyNetworkInterface(pwszInfPath, &fRebootRequired);
-            if (SUCCEEDED(hr))
+            DWORD attrFile = GetFileAttributesW(pwszInfPath);
+            if (attrFile == INVALID_FILE_ATTRIBUTES)
             {
-                if (fRebootRequired)
-                {
-                    logStringW(hModule, L"Reboot required, setting REBOOT property to Force");
-                    HRESULT hr2 = MsiSetPropertyW(hModule, L"REBOOT", L"Force");
-                    if (hr2 != ERROR_SUCCESS)
-                        logStringW(hModule, L"Failed to set REBOOT property, error = 0x%x", hr2);
-                }
+                DWORD dwErr = GetLastError();
+                logStringW(hModule, L"UpdateHostOnlyInterfaces: File \"%s\" not found, dwErr=%ld",
+                           pwszInfPath, dwErr);
             }
             else
-                logStringW(hModule, L"UpdateHostOnlyInterfaces: VBoxNetCfgWinUpdateHostOnlyNetworkInterface failed, hr = 0x%x", hr);
+            {
+                logStringW(hModule, L"UpdateHostOnlyInterfaces: File \"%s\" exists",
+                           pwszInfPath);
+
+                BOOL fRebootRequired = FALSE;
+                HRESULT hr = VBoxNetCfgWinUpdateHostOnlyNetworkInterface(pwszInfPath, &fRebootRequired);
+                if (SUCCEEDED(hr))
+                {
+                    if (fRebootRequired)
+                    {
+                        logStringW(hModule, L"UpdateHostOnlyInterfaces: Reboot required, setting REBOOT property to force");
+                        HRESULT hr2 = MsiSetPropertyW(hModule, L"REBOOT", L"Force");
+                        if (hr2 != ERROR_SUCCESS)
+                            logStringW(hModule, L"UpdateHostOnlyInterfaces: Failed to set REBOOT property, error = 0x%x", hr2);
+                    }
+                }
+                else
+                    logStringW(hModule, L"UpdateHostOnlyInterfaces: VBoxNetCfgWinUpdateHostOnlyNetworkInterface failed, hr = 0x%x", hr);
+            }
         }
         else
             logStringW(hModule, L"UpdateHostOnlyInterfaces: NetAdpDir property value is empty");
