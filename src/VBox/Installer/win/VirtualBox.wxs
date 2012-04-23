@@ -58,7 +58,9 @@
 
     <!-- Note: GUIDs in WiX *must* be uppercase! -->
     <!-- Always include an upgrade ID or otherwise upgrade installation will not be possible. When doing
-         a major upgrade (more than just fixing a few files) change the product GUID. -->
+         a major upgrade (more than just fixing a few files) change the product GUID. We always do a major
+         upgrade even for minor VBox updates. For that only change the product ID and the product version.
+         The upgrade code *never* must be changed! -->
 
     <!-- Update / Upgrade policies:
          Update Type    Package Code    Product Version     Product Code    Upgrade Code
@@ -77,7 +79,6 @@
              Version="$(var.Property_Version)"
              Manufacturer="$(env.VBOX_VENDOR)">
 
-        <!-- Package GUIDs must be different for each package. The "???" directs WiX to create one. -->
         <Package Id="*" Keywords="Installer"
                  Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) installation package"
                  Comments="$(env.VBOX_PRODUCT) installation package"
@@ -685,7 +686,7 @@
         <Feature Id="VBoxApplication" Title="VirtualBox Application" Level="1"
                  Description="!(loc.VB_App)"
                  ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
-                 Absent="disallow">
+                 Absent="disallow" AllowAdvertise="no" >
 
             <ComponentRef Id="cp_StartMenuVBox" />
             <ComponentRef Id="cp_DesktopShortcut" />
@@ -716,7 +717,8 @@
 
             <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
                      Description="!(loc.VB_USBDriver)"
-                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
+                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
+                     Absent="allow" AllowAdvertise="no" >
                 <ComponentRef Id="cp_USBFilterDriver" />
                 <ComponentRef Id="cp_USBDeviceDriver" />
             </Feature>
@@ -724,24 +726,28 @@
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <Feature Id="VBoxNetwork" Title="VirtualBox Networking" Level="1"
                      Description="!(loc.VB_Network)"
-                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                 <Feature Id="VBoxNetworkFlt" Title="VirtualBox Bridged Networking" Level="1"
-                          Description="!(loc.VB_NetFltDriver)"
-                          ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                     <ComponentRef Id="cp_NetFltDriver" />
-                 </Feature>
-                 <Feature Id="VBoxNetworkAdp" Title="VirtualBox Host-Only Networking" Level="1"
-                          Description="!(loc.VB_NetAdpDriver)"
-                          ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                     <ComponentRef Id="cp_NetAdpDriver" />
-                 </Feature>
+                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
+                     Absent="allow" AllowAdvertise="no" >
+                <Feature Id="VBoxNetworkFlt" Title="VirtualBox Bridged Networking" Level="1"
+                         Description="!(loc.VB_NetFltDriver)"
+                         ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
+                         Absent="allow" AllowAdvertise="no" >
+                    <ComponentRef Id="cp_NetFltDriver" />
+                </Feature>
+                <Feature Id="VBoxNetworkAdp" Title="VirtualBox Host-Only Networking" Level="1"
+                         Description="!(loc.VB_NetAdpDriver)"
+                         ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
+                         Absent="allow" AllowAdvertise="no" >
+                    <ComponentRef Id="cp_NetAdpDriver" />
+                </Feature>
             </Feature>
 <?endif?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
             <Feature Id="VBoxPython" Title="VirtualBox Python 2.x Support" Level="1"
                     Description="!(loc.VB_Python)"
-                    ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
+                    ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
+                    Absent="allow" AllowAdvertise="no" >
                 <ComponentRef Id="cp_VBoxPythonBinding" />
             </Feature>
 <?endif?>
@@ -753,10 +759,45 @@
 
         <InstallExecuteSequence>
 
+            <!--
+                To debug the action sequences, do: "msiexec /i <VBox.msi> /lar <Logfile>"
+
+                InstallUISequence (client side) is:
+                    AppSearch
+                    LaunchConditions
+                    ValidateProductID
+                    CostInitialize
+                    FileCost
+                    CostFinalize
+                    ExecuteAction -> will pass control over to "InstallExecuteSequence"
+
+                The first six actions above will be repeated but skipped on the server
+                side if already run on the client side.
+
+                InstallExecuteSequence (server side) is:
+                    <First six action from InstallUISequence>
+                    .
+                    InstallInitialize
+                    .
+                    InstallFinalize
+
+                The actions between InstallInitialize and InstallFinalize will be gone through twice:
+                - The first time the installer creates an installation script containing all actions in the right
+                  sequence which need to get executed in a batch later. At this point the launch conditions for
+                  custom actions must be met already!
+                - The second time the generated installation script will be run as-is.
+
+                Also, the InstallUISequence and InstallExecuteSequence tables run in different sessions which
+                need public properties (that is, UPPERCASE properties).
+            -->
+
             <!-- AppSearch must be done before "RemoveExistingProducts" and before "FindRelatedProducts". -->
             <AppSearch Sequence="1"></AppSearch>
             <LaunchConditions After="AppSearch" />
-            <RemoveExistingProducts After="InstallValidate"><![CDATA[NEWERVERSIONDETECTED OR PREVIOUSVERSIONSINSTALLED]]></RemoveExistingProducts>
+
+            <!-- First install the new version and then remove the old version. This is more efficient. -->
+            <InstallExecute Before="RemoveExistingProducts" />
+            <RemoveExistingProducts Before="InstallFinalize" />
 
             <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
             <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
@@ -764,15 +805,15 @@
             <Custom Action="ca_UninstallTAPInstances" Before="InstallFiles" >1</Custom>
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <!-- Create host-only interfaces on first-time install. -->
-            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT UPGRADINGPRODUCTCODE)]]></Custom>
-            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT UPGRADINGPRODUCTCODE)]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED)]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED)]]></Custom>
             <!-- Don't remove the host-only interfaces on update, only on uninstall. -->
             <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
             <!-- First stop the existing host-only interfaces on updat ... -->
-            <Custom Action="ca_StopHostOnlyInterfaces" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[&VBoxNetworkAdp=3 AND (UPGRADINGPRODUCTCODE)]]></Custom>
+            <Custom Action="ca_StopHostOnlyInterfaces" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[UPGRADINGPRODUCTCODE]]></Custom>
             <!-- ... then do the actual driver update. -->
-            <Custom Action="ca_UpdateHostOnlyInterfacesArgs" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[&VBoxNetworkAdp=3 AND (UPGRADINGPRODUCTCODE)]]></Custom>
-            <Custom Action="ca_UpdateHostOnlyInterfaces" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3 AND (UPGRADINGPRODUCTCODE)]]></Custom>
+            <Custom Action="ca_UpdateHostOnlyInterfacesArgs" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[Installed AND UPGRADINGPRODUCTCODE]]></Custom>
+            <Custom Action="ca_UpdateHostOnlyInterfaces" Before="InstallFiles" ><![CDATA[Installed AND UPGRADINGPRODUCTCODE]]></Custom>
 
             <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
             <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
