@@ -94,10 +94,10 @@
 /*
  * E1K_TXD_CACHE_SIZE specifies the maximum number of TX descriptors stored
  * in the state structure. It limits the amount of descriptors loaded in one
- * batch read. For example, Windows XP guest uses about 5 descriptors per
+ * batch read. For example, Windows XP guest may use up to 20 descriptors per
  * TSE packet.
  */
-#define E1K_TXD_CACHE_SIZE 18u
+#define E1K_TXD_CACHE_SIZE 32u
 #endif /* E1K_WITH_TXD_CACHE */
 
 #include <iprt/crc.h>
