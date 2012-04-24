@@ -94,7 +94,7 @@ endif
 qtstdc6  := /home/vbox/Qt-4.7.4-stdc++6-$(arch)
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
-	     $(if $(filter _Ubuntu_hardy,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
+	     $(if $(filter _Ubuntu_hardy _Debian_lenny,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
