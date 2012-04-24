@@ -154,6 +154,8 @@ $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_
 		$@ \
 		$(VBOX_PATH_PACK_TMP)/DiskImage/
 	sudo mv $(VBOX_PATH_PACK_TMP)/DiskImage.tmp $(VBOX_PATH_PACK_TMP)/DiskImage
+	@# Remove .dmg packages from old depend builds
+	$(QUIET)$(RM) -f $(wildcard $(VBOX_PATH_DIST)/VirtualBox-*-r*.dmg)
 	@# Populate the image with uninstaller, readme, picture, and .VolumeIcon.icns. (TODO)
 	$(INSTALL) $(VBOX_PATH_DI_SRC)/DiskImage/VirtualBox_Uninstall.tool  $(VBOX_PATH_PACK_TMP)/DiskImage/
 ifeq (1,1)
