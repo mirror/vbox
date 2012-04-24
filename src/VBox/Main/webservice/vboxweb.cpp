@@ -142,9 +142,7 @@ uint32_t                g_uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
 uint64_t                g_uHistoryFileSize = 100 * _1M; // max 100MB per file
 bool                    g_fVerbose = false;             // be verbose
 
-#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 bool                    g_fDaemonize = false;           // run in background.
-#endif
 
 const WSDLT_ID          g_EmptyWSDLID;                  // for NULL MORs
 
