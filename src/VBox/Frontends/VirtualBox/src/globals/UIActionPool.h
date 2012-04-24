@@ -38,6 +38,9 @@ enum UIActionType
 /* Action keys: */
 enum UIActionIndex
 {
+    /* Various dialog actions: */
+    UIActionIndex_Simple_LogDialog,
+
     /* 'Help' menu actions: */
     UIActionIndex_Menu_Help,
     UIActionIndex_Simple_Help,

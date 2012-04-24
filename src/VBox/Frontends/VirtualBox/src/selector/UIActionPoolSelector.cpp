@@ -436,30 +436,6 @@ protected:
     }
 };
 
-class UISimpleActionLogDialog : public UISimpleAction
-{
-    Q_OBJECT;
-
-public:
-
-    UISimpleActionLogDialog(QObject *pParent)
-        : UISimpleAction(pParent, QSize(32, 32), QSize(16, 16),
-                         ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
-                         ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png")
-    {
-        retranslateUi();
-    }
-
-protected:
-
-    void retranslateUi()
-    {
-        setText(QApplication::translate("UIActionPool", "Show &Log..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machine"));
-        setShortcut(gSS->keySequence(UISelectorShortcuts::ShowVMLogShortcut));
-    }
-};
-
 class UISimpleActionShowInFileManager : public UISimpleAction
 {
     Q_OBJECT;
@@ -653,7 +629,6 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Toggle_Machine_PauseAndResume] = new UIToggleActionPauseAndResume(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Reset] = new UISimpleActionReset(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Refresh] = new UISimpleActionRefresh(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_LogDialog] = new UISimpleActionLogDialog(this);
     m_pool[UIActionIndexSelector_Simple_Machine_ShowInFileManager] = new UISimpleActionShowInFileManager(this);
     m_pool[UIActionIndexSelector_Simple_Machine_CreateShortcut] = new UISimpleActionCreateShortcut(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Sort] = new UISimpleActionSort(this);

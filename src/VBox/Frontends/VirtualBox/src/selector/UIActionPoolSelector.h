@@ -45,7 +45,6 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Toggle_Machine_PauseAndResume,
     UIActionIndexSelector_Simple_Machine_Reset,
     UIActionIndexSelector_Simple_Machine_Refresh,
-    UIActionIndexSelector_Simple_Machine_LogDialog,
     UIActionIndexSelector_Simple_Machine_ShowInFileManager,
     UIActionIndexSelector_Simple_Machine_CreateShortcut,
     UIActionIndexSelector_Simple_Machine_Sort,

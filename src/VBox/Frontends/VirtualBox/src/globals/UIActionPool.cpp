@@ -200,6 +200,37 @@ UIMenuAction::UIMenuAction(QObject *pParent, const QIcon &icon)
     setMenu(new UIMenuInterface);
 }
 
+class UISimpleActionLogDialog : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    UISimpleActionLogDialog(QObject *pParent)
+        : UISimpleAction(pParent, QSize(32, 32), QSize(16, 16),
+                         ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
+                         ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png")
+    {
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Selector:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::ShowVMLogShortcut));
+                break;
+            case UIActionPoolType_Runtime:
+                break;
+        }
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(QApplication::translate("UIActionPool", "Show &Log..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machine"));
+    }
+};
+
 class MenuHelpAction : public UIMenuAction
 {
     Q_OBJECT;
@@ -509,6 +540,8 @@ bool UIActionPool::processHotKey(const QKeySequence &key)
 
 void UIActionPool::createActions()
 {
+    /* Various dialog actions: */
+    m_pool[UIActionIndex_Simple_LogDialog] = new UISimpleActionLogDialog(this);
     /* 'Help' actions: */
     m_pool[UIActionIndex_Simple_Help] = new ShowHelpAction(this);
     m_pool[UIActionIndex_Simple_Web] = new ShowWebAction(this);
