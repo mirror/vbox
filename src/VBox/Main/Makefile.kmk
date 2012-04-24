@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2004-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -102,9 +102,9 @@ endif
 if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" != "win"
  OTHERS         += $(VBOX_IDL_FILE.XPCOM) $(VBOX_IDL_TYPELIB.XPCOM) $(VBOX_IDL_HEADER.XPCOM)
  OTHER_CLEAN    += \
-    $(VBOX_IDL_FILE.XPCOM) \
-    $(VBOX_IDL_HEADER.XPCOM) \
-    $(VBOX_IDL_TYPELIB.XPCOM)
+	$(VBOX_IDL_FILE.XPCOM) \
+	$(VBOX_IDL_HEADER.XPCOM) \
+	$(VBOX_IDL_TYPELIB.XPCOM)
 
  VBOX_MAIN_PREREQS += $(VBOX_IDL_TYPELIB.XPCOM) $(VBOX_IDL_HEADER.XPCOM)
  BLDDIRS += \
@@ -174,9 +174,9 @@ VBox-python-glue_INST = $(INST_SDK)installer/vboxapi/
 VBox-python-glue_MODE = a+r,u+w
 VBox-python-glue_SOURCES = \
 	glue/vboxapi.py=>__init__.py \
-        $(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
+	$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
 VBox-python-glue_CLEAN = \
-        $(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
+	$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
 
 $$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py:  \
 		$(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl \
@@ -274,8 +274,8 @@ VBoxSVC_LIBS.solaris = \
 	nsl \
 	devinfo \
 	socket \
-        $(LIB_VMM)
-        
+	$(LIB_VMM)
+
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
 	$(VBOX_XML_SCHEMADEFS_H) \
@@ -309,7 +309,6 @@ VBoxSVC_SOURCES = \
 	src-server/HostImpl.cpp \
 	src-server/HostNetworkInterfaceImpl.cpp \
 	src-server/HostPower.cpp \
-	src-server/Logging.cpp \
 	src-server/MachineImpl.cpp \
 	src-server/MachineImplCloneVM.cpp \
 	src-server/Matching.cpp \
@@ -344,7 +343,7 @@ VBoxSVC_SOURCES.win = \
 	src-server/win/svchlp.cpp \
 	src-server/win/HostPowerWin.cpp \
 	src-server/win/VBoxSVC.rc \
-        src-server/win/VBoxComEvents.cpp
+	src-server/win/VBoxComEvents.cpp
 
 VBoxSVC_SOURCES.linux = \
 	src-server/linux/HostHardwareLinux.cpp
@@ -355,10 +354,6 @@ VBoxSVC_SOURCES.solaris = \
 
 VBoxSVC_SOURCES.freebsd = \
 	src-server/freebsd/HostHardwareFreeBSD.cpp
-
-src-server/Logging.cpp_DEFS = \
-	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
-	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
 
 
 ifdef VBOX_WITH_USB
@@ -578,11 +573,11 @@ VBoxC_LIBS += \
 
 ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += \
- 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
- 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
- 	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
- 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
 
 ifdef VBOX_WITH_CROGL
@@ -687,7 +682,6 @@ $$(VBoxC_0_OUTDIR)/VBoxC.def: $(MAKEFILE_CURRENT)
 endif
 
 src-client/ConsoleImpl.cpp_DEFS = \
-	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
 	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
 
 
@@ -725,6 +719,9 @@ else # !win
 	glue/xpcom/helpers.cpp
 endif # !win
 
+glue/com.cpp_DEFS = \
+	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
+
 
 #
 # The VBoxExtPackHelperApp.
@@ -738,7 +735,7 @@ ifdef VBOX_WITH_EXTPACK
 	src-helper-apps/VBoxExtPackHelperApp.cpp \
 	src-all/ExtPackUtil.cpp
  VBoxExtPackHelperApp_LIBS = \
-        $(LIB_RUNTIME)
+	$(LIB_RUNTIME)
 endif # VBOX_WITH_EXTPACK
 
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2004-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,7 +35,6 @@
 #include "Logging.h"
 
 #include <VBox/param.h>
-#include <VBox/version.h>
 
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
@@ -891,7 +890,15 @@ int main(int argc, char **argv)
         if (RT_SUCCESS(vrc))
             pszLogFile = RTStrDup(szLogFile);
     }
-    VBoxSVCLogRelCreate(pszLogFile, cHistory, uHistoryFileTime, uHistoryFileSize);
+    char szError[RTPATH_MAX + 128];
+    vrc = com::VBoxLogRelCreate("XPCOM Server", pszLogFile,
+                                RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
+                                "all", "VBOXSVC_RELEASE_LOG",
+                                RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
+                                cHistory, uHistoryFileTime, uHistoryFileSize,
+                                szError, sizeof(szError));
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, vrc);
 
     daemon_pipe_wr = PR_GetInheritedFD(VBOXSVC_STARTUP_PIPE_NAME);
     RTEnvUnset("NSPR_INHERIT_FDS");
@@ -1000,7 +1007,7 @@ int main(int argc, char **argv)
             for (int i = iSize; i > 0; i--)
                 putchar('*');
             RTPrintf("\n%s\n", szBuf);
-            RTPrintf("(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
+            RTPrintf("(C) 2004-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                      "All rights reserved.\n");
 #ifdef DEBUG
             RTPrintf("Debug version.\n");
