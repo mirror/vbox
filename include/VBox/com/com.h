@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,7 +77,31 @@ void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName);
  *                  terminating null character, in bytes.
  *  @return         VBox status code.
  */
-int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen);
+int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen);
+
+/**
+ *  Creates a release log file, used both in VBoxSVC and in API clients.
+ *
+ *  @param pcszEntity       Human readable name of the program.
+ *  @param pcszLogFile      Name of the release log file.
+ *  @param fFlags           Logger instance flags.
+ *  @param pcszGroupSettings Group logging settings.
+ *  @param pcszEnvVarBase   Base environment variable name for the logger.
+ *  @param fDestFlags       Logger destination flags.
+ *  @param cMaxEntriesPerGroup Limit for log entries per group. UINT32_MAX for no limit.
+ *  @param cHistory         Number of old log files to keep.
+ *  @param uHistoryFileTime Maximum amount of time to put in a log file.
+ *  @param uHistoryFileSize Maximum size of a log file before rotating.
+ *  @param pszError         In case of creation failure: buffer for error message.
+ *  @param cbError          Size of error message buffer.
+ *  @return         VBox status code.
+ */
+int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
+                     uint32_t fFlags, const char *pcszGroupSettings,
+                     const char *pcszEnvVarBase, uint32_t fDestFlags,
+                     uint32_t cMaxEntriesPerGroup, uint32_t cHistory,
+                     uint32_t uHistoryFileTime, uint64_t uHistoryFileSize,
+                     char *pszError, size_t cbError);
 
 } /* namespace com */
 

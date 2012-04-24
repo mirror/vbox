@@ -783,74 +783,6 @@ void serviceLog(const char *pszFormat, ...)
     RTStrFree(psz);
 }
 
-static void logHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
-{
-    /* Some introductory information. */
-    static RTTIMESPEC s_TimeSpec;
-    char szTmp[256];
-    if (enmPhase == RTLOGPHASE_BEGIN)
-        RTTimeNow(&s_TimeSpec);
-    RTTimeSpecToString(&s_TimeSpec, szTmp, sizeof(szTmp));
-
-    switch (enmPhase)
-    {
-        case RTLOGPHASE_BEGIN:
-        {
-            pfnLog(pLoggerRelease,
-                   "VirtualBox Watchdog %s r%u %s (%s %s) release log\n"
-#ifdef VBOX_BLEEDING_EDGE
-                   "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
-#endif
-                   "Log opened %s\n",
-                   VBOX_VERSION_STRING, RTBldCfgRevision(), VBOX_BUILD_TARGET,
-                   __DATE__, __TIME__, szTmp);
-
-            int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                pfnLog(pLoggerRelease, "OS Product: %s\n", szTmp);
-            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                pfnLog(pLoggerRelease, "OS Release: %s\n", szTmp);
-            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                pfnLog(pLoggerRelease, "OS Version: %s\n", szTmp);
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                pfnLog(pLoggerRelease, "OS Service Pack: %s\n", szTmp);
-
-            /* the package type is interesting for Linux distributions */
-            char szExecName[RTPATH_MAX];
-            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
-            pfnLog(pLoggerRelease,
-                   "Executable: %s\n"
-                   "Process ID: %u\n"
-                   "Package type: %s"
-#ifdef VBOX_OSE
-                   " (OSE)"
-#endif
-                   "\n",
-                   pszExecName ? pszExecName : "unknown",
-                   RTProcSelf(),
-                   VBOX_PACKAGE_STRING);
-            break;
-        }
-
-        case RTLOGPHASE_PREROTATE:
-            pfnLog(pLoggerRelease, "Log rotated - Log started %s\n", szTmp);
-            break;
-
-        case RTLOGPHASE_POSTROTATE:
-            pfnLog(pLoggerRelease, "Log continuation - Log started %s\n", szTmp);
-            break;
-
-        case RTLOGPHASE_END:
-            pfnLog(pLoggerRelease, "End of log file - Log started %s\n", szTmp);
-            break;
-
-        default:
-            /* nothing */;
-    }
-}
-
 static void displayHeader()
 {
     RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Watchdog " VBOX_VERSION_STRING "\n"
@@ -1111,27 +1043,15 @@ int main(int argc, char *argv[])
     /** @todo Add "--quiet/-q" option to not show the header. */
     displayHeader();
 
-    /* create release logger */
-    PRTLOGGER pLoggerRelease;
-    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    fFlags |= RTLOGFLAGS_USECRLF;
-#endif
-    char szError[RTPATH_MAX + 128] = "";
-    rc = RTLogCreateEx(&pLoggerRelease, fFlags, "all",
-                       "VBOXBALLOONCTRL_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT,
-                       logHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
-                       szError, sizeof(szError), pszLogFile);
-    if (RT_SUCCESS(rc))
-    {
-        /* register this logger as the release logger */
-        RTLogRelSetDefaultInstance(pLoggerRelease);
-
-        /* Explicitly flush the log in case of VBOXWEBSRV_RELEASE_LOG=buffered. */
-        RTLogFlush(pLoggerRelease);
-    }
-    else
+    /* create release logger, to stdout */
+    char szError[RTPATH_MAX + 128];
+    rc = com::VBoxLogRelCreate("Watchdog", g_fDaemonize ? NULL : pszLogFile,
+                               RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
+                               "all", "VBOXBALLOONCTRL_RELEASE_LOG",
+                               RTLOGDEST_STDOUT, UINT32_MAX /* cMaxEntriesPerGroup */,
+                               g_cHistory, g_uHistoryFileTime, g_uHistoryFileSize,
+                               szError, sizeof(szError));
+    if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, rc);
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -1140,39 +1060,30 @@ int main(int argc, char *argv[])
         /* prepare release logging */
         char szLogFile[RTPATH_MAX];
 
-        rc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
-        if (RT_FAILURE(rc))
-             return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not get base directory for logging: %Rrc", rc);
-        rc = RTPathAppend(szLogFile, sizeof(szLogFile), "vboxballoonctrl.log");
-        if (RT_FAILURE(rc))
-             return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not construct logging path: %Rrc", rc);
+        if (!pszLogFile || !*pszLogFile)
+        {
+            rc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+            if (RT_FAILURE(rc))
+                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not get base directory for logging: %Rrc", rc);
+            rc = RTPathAppend(szLogFile, sizeof(szLogFile), "vboxballoonctrl.log");
+            if (RT_FAILURE(rc))
+                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not construct logging path: %Rrc", rc);
+            pszLogFile = szLogFile;
+        }
 
         rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, pszPidFile);
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
 
-        /* create release logger */
-        PRTLOGGER pLoggerReleaseFile;
-        static const char * const s_apszGroupsFile[] = VBOX_LOGGROUP_NAMES;
-        RTUINT fFlagsFile = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        fFlagsFile |= RTLOGFLAGS_USECRLF;
-#endif
-        char szErrorFile[RTPATH_MAX + 128] = "";
-        int vrc = RTLogCreateEx(&pLoggerReleaseFile, fFlagsFile, "all",
-                                "VBOXBALLOONCTRL_RELEASE_LOG", RT_ELEMENTS(s_apszGroupsFile), s_apszGroupsFile, RTLOGDEST_FILE,
-                                logHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
-                                szErrorFile, sizeof(szErrorFile), szLogFile);
-        if (RT_SUCCESS(vrc))
-        {
-            /* register this logger as the release logger */
-            RTLogRelSetDefaultInstance(pLoggerReleaseFile);
-
-            /* Explicitly flush the log in case of VBOXBALLOONCTRL_RELEASE_LOG=buffered. */
-            RTLogFlush(pLoggerReleaseFile);
-        }
-        else
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szErrorFile, vrc);
+        /* create release logger, to file */
+        rc = com::VBoxLogRelCreate("Watchdog", pszLogFile,
+                                   RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
+                                   "all", "VBOXBALLOONCTRL_RELEASE_LOG",
+                                   RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
+                                   g_cHistory, g_uHistoryFileTime, g_uHistoryFileSize,
+                                   szError, sizeof(szError));
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, rc);
     }
 #endif
 

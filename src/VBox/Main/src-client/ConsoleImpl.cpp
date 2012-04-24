@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,7 +62,6 @@
 #include "ProgressCombinedImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
-#include "package-generated.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
@@ -104,7 +103,6 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/vusb.h>
-#include <VBox/version.h>
 
 #include <VBox/VMMDev.h>
 
@@ -6066,7 +6064,8 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
 
     Bstr logFolder;
     hrc = aMachine->COMGETTER(LogFolder)(logFolder.asOutParam());
-    if (FAILED(hrc)) return hrc;
+    if (FAILED(hrc))
+        return hrc;
 
     Utf8Str logDir = logFolder;
 
@@ -6115,90 +6114,17 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         }
     }
 
-    static const char * const   s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    char                        szError[RTPATH_MAX + 128] = "";
-    PRTLOGGER                   pReleaseLogger;
-    uint32_t                    fFlags = RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    fFlags |= RTLOGFLAGS_USECRLF;
-#endif
-    int vrc = RTLogCreateEx(&pReleaseLogger, fFlags, "all all.restrict default.unrestricted",
-                            "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE,
-                            NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
-                            szError, sizeof(szError), logFile.c_str());
-    if (RT_SUCCESS(vrc))
-    {
-        RTLogSetGroupLimit(pReleaseLogger, 32768);
-        bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
-
-        /* some introductory information */
-        RTTIMESPEC timeSpec;
-        char szTmp[256];
-        RTTimeSpecToString(RTTimeNow(&timeSpec), szTmp, sizeof(szTmp));
-        RTLogRelLogger(pReleaseLogger, 0, ~0U,
-                       "VirtualBox %s r%u %s (%s %s) release log\n"
-#ifdef VBOX_BLEEDING_EDGE
-                       "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
-#endif
-                       "Log opened %s\n",
-                       VBOX_VERSION_STRING, RTBldCfgRevision(), VBOX_BUILD_TARGET,
-                       __DATE__, __TIME__, szTmp);
-
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
-        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Product: %s\n", szTmp);
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
-        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Release: %s\n", szTmp);
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
-        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Version: %s\n", szTmp);
-        vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
-        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Service Pack: %s\n", szTmp);
-        vrc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME, szTmp, sizeof(szTmp));
-        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(pReleaseLogger, 0, ~0U, "DMI Product Name: %s\n", szTmp);
-        vrc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_VERSION, szTmp, sizeof(szTmp));
-        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(pReleaseLogger, 0, ~0U, "DMI Product Version: %s\n", szTmp);
-
-        ComPtr<IHost> pHost;
-        pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
-        ULONG cMbHostRam = 0;
-        ULONG cMbHostRamAvail = 0;
-        pHost->COMGETTER(MemorySize)(&cMbHostRam);
-        pHost->COMGETTER(MemoryAvailable)(&cMbHostRamAvail);
-        RTLogRelLogger(pReleaseLogger, 0, ~0U, "Host RAM: %uMB RAM, available: %uMB\n",
-                       cMbHostRam, cMbHostRamAvail);
-
-        /* the package type is interesting for Linux distributions */
-        char szExecName[RTPATH_MAX];
-        char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
-        RTLogRelLogger(pReleaseLogger, 0, ~0U,
-                       "Executable: %s\n"
-                       "Process ID: %u\n"
-                       "Package type: %s"
-#ifdef VBOX_OSE
-                       " (OSE)"
-#endif
-                       "\n",
-                       pszExecName ? pszExecName : "unknown",
-                       RTProcSelf(),
-                       VBOX_PACKAGE_STRING);
-
-        /* register this logger as the release logger */
-        RTLogRelSetDefaultInstance(pReleaseLogger);
-        hrc = S_OK;
-
-        /* Restore the buffering setting and xplicitly flush the log. */
-        RTLogRelSetBuffering(fOldBuffered);
-        RTLogFlush(pReleaseLogger);
-    }
-    else
-        hrc = setError(E_FAIL,
-            tr("Failed to open release log (%s, %Rrc)"),
-            szError, vrc);
+    char szError[RTPATH_MAX + 128];
+    int vrc = com::VBoxLogRelCreate("VM", logFile.c_str(),
+                                    RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS,
+                                    "all all.restrict default.unrestricted",
+                                    "VBOX_RELEASE_LOG", RTLOGDEST_FILE,
+                                    32768 /* cMaxEntriesPerGroup */,
+                                    0 /* cHistory */, 0 /* uHistoryFileTime */,
+                                    0 /* uHistoryFileSize */, szError, sizeof(szError));
+    if (RT_FAILURE(vrc))
+        hrc = setError(E_FAIL, tr("Failed to open release log (%s, %Rrc)"),
+                       szError, vrc);
 
     /* If we've made any directory changes, flush the directory to increase
        the likelihood that the log file will be usable after a system panic.
@@ -8570,7 +8496,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
      * exact build was used to produce the core. */
     static char saBuildID[40];
     RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
-                "BU", "IL", "DI", "D", VBOX_VERSION_STRING, RTBldCfgRevision(), "BU", "IL", "DI", "D");
+                "BU", "IL", "DI", "D", RTBldCfgVersion(), RTBldCfgRevision(), "BU", "IL", "DI", "D");
 
     ComObjPtr<Console> pConsole = task->mConsole;
 

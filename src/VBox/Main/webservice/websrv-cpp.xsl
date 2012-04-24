@@ -11,7 +11,7 @@
         See webservice/Makefile.kmk for an overview of all the things
         generated for the webservice.
 
-     Copyright (C) 2006-2010 Oracle Corporation
+     Copyright (C) 2007-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -67,7 +67,6 @@
 #include <VBox/com/errorprint.h>
 #include <VBox/com/EventQueue.h>
 #include <VBox/VBoxAuth.h>
-#include <VBox/version.h>
 
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
