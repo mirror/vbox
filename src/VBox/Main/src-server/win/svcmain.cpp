@@ -37,6 +37,7 @@
 #include <iprt/uni.h>
 #include <iprt/path.h>
 #include <iprt/getopt.h>
+#include <iprt/message.h>
 
 #include <atlbase.h>
 #include <atlcom.h>
@@ -335,6 +336,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
             if (RT_SUCCESS(vrc))
                 pszLogFile = RTStrDup(szLogFile);
         }
+        char szError[RTPATH_MAX + 128];
         vrc = com::VBoxLogRelCreate("COM Server", pszLogFile,
                                     RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
                                     "all", "VBOXSVC_RELEASE_LOG",
