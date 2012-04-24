@@ -45,6 +45,7 @@ public:
     };
 
     UISettingsDialogGlobal(QWidget *pParent);
+    ~UISettingsDialogGlobal();
 
 protected:
 
@@ -85,6 +86,7 @@ public:
 
     UISettingsDialogMachine(QWidget *pParent, const QString &strMachineId,
                             const QString &strCategory, const QString &strControl);
+    ~UISettingsDialogMachine();
 
 protected:
 
