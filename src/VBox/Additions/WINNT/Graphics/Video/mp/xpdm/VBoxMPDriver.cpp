@@ -19,6 +19,7 @@
 #include "VBoxMPInternal.h"
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/VBoxVideo.h>
 #include "common/VBoxMPHGSMI.h"
 #include "common/VBoxMPCommon.h"
 #include "VBoxDisplay.h"
@@ -400,9 +401,28 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
         {
             STARTIO_IN(ULONG, pAttach);
 
+            LOGF(("IOCTL_VIDEO_SWITCH_DUALVIEW: [%d] attach = %d", pExt->iDevice, *pAttach));
+
             if (pExt->iDevice>0)
             {
                 pExt->u.secondary.bEnabled = (BOOLEAN)(*pAttach);
+
+                /* Inform the host.
+                 * Currently only about secondary devices, because the driver does not support
+                 * disconnecting the primary display (it does not allow to change the primary display).
+                 */
+                if (!pExt->u.secondary.bEnabled)
+                {
+                    PVBOXMP_COMMON pCommon = VBoxCommonFromDeviceExt(pExt);
+                    if (pCommon->bHGSMI)
+                    {
+                        VBoxHGSMIProcessDisplayInfo(&pCommon->guestCtx, pExt->iDevice,
+                                                    /* cOriginX = */ 0, /* cOriginY = */ 0,
+                                                    /* offStart = */ 0, /* cbPitch = */ 0,
+                                                    /* cWidth = */ 0, /* cHeight = */ 0, /* cBPP = */ 0,
+                                                    VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_DISABLED);
+                    }
+                }
             }
 
             bResult = TRUE;
@@ -414,6 +434,8 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
         {
             STARTIO_IN(ULONG, pChildIndex);
             STARTIO_OUT(ULONG, pChildState);
+
+            LOGF(("IOCTL_VIDEO_GET_CHILD_STATE: [%d] idx = %d", pExt->iDevice, *pChildIndex));
 
             if (*pChildIndex>0 && *pChildIndex<=(ULONG)VBoxCommonFromDeviceExt(pExt)->cDisplays)
             {
