@@ -3417,5 +3417,20 @@ Value: 2006.01.01</screen>
           install or uninstall command failed.</para>
         </listitem>
       </itemizedlist></para>
+    <para>The following commands show examples how to list extension packs and
+    remove one:<screen>
+$ VBoxManage list extpacks
+Extension Packs: 1
+Pack no. 0:   Oracle VM VirtualBox Extension Pack
+Version:      4.1.12
+Revision:     77218
+Edition:
+Description:  USB 2.0 Host Controller, VirtualBox RDP, PXE ROM with E1000 support.
+VRDE Module:  VBoxVRDP
+Usable:       true
+Why unusable:
+$ VBoxManage extpack uninstall "Oracle VM VirtualBox Extension Pack"
+0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+Successfully uninstalled "Oracle VM VirtualBox Extension Pack".</screen></para>
   </sect1>
 </chapter>
