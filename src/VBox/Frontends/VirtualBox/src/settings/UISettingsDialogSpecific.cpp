@@ -73,6 +73,17 @@ class UISettingsSerializer : public QThread
 {
     Q_OBJECT;
 
+signals:
+
+    /* Signal to notify main GUI thread about process has been started: */
+    void sigNotifyAboutProcessStarted();
+
+    /* Signal to notify main GUI thread about some page was processed: */
+    void sigNotifyAboutPageProcessed(int iPageId);
+
+    /* Signal to notify main GUI thread about all pages were processed: */
+    void sigNotifyAboutPagesProcessed();
+
 public:
 
     /* Settings serializer instance: */
@@ -83,11 +94,13 @@ public:
         : QThread(pParent)
         , m_direction(direction)
         , m_data(data)
-        , m_fConditionDone(false)
-        , m_fAllowToDestroySerializer(false)
-        , m_iPageIdWeAreWaitingFor(-1)
+        , m_fSavingComplete(m_direction == UISettingsSerializeDirection_Load)
+        , m_fAllowToDestroySerializer(m_direction == UISettingsSerializeDirection_Load)
         , m_iIdOfHighPriorityPage(-1)
     {
+        /* Set instance: */
+        m_pInstance = this;
+
         /* Connecting this signals: */
         connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
         connect(this, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltHandleProcessedPages()), Qt::QueuedConnection);
@@ -95,22 +108,19 @@ public:
         /* Connecting parent signals: */
         connect(this, SIGNAL(sigNotifyAboutProcessStarted()), parent(), SLOT(sltHandleProcessStarted()), Qt::QueuedConnection);
         connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), parent(), SLOT(sltHandlePageProcessed()), Qt::QueuedConnection);
-
-        /* Set instance: */
-        m_pInstance = this;
     }
 
     /* Settings serializer destructor: */
     ~UISettingsSerializer()
     {
-        /* Reset instance: */
-        m_pInstance = 0;
-
         /* If serializer is being destructed by it's parent,
          * thread could still be running, we have to wait
          * for it to be finished! */
         if (isRunning())
             wait();
+
+        /* Clear instance: */
+        m_pInstance = 0;
     }
 
     /* Set pages list: */
@@ -121,20 +131,6 @@ public:
             UISettingsPage *pPage = pageList[iPageIndex];
             m_pages.insert(pPage->id(), pPage);
         }
-    }
-
-    /* Blocks calling thread until requested page will be processed: */
-    void waitForPageToBeProcessed(int iPageId)
-    {
-        m_iPageIdWeAreWaitingFor = iPageId;
-        blockGUIthread();
-    }
-
-    /* Blocks calling thread until all pages will be processed: */
-    void waitForPagesToBeProcessed()
-    {
-        m_iPageIdWeAreWaitingFor = -1;
-        blockGUIthread();
     }
 
     /* Raise priority of page: */
@@ -156,23 +152,13 @@ public:
     /* Return current m_data content: */
     QVariant& data() { return m_data; }
 
-signals:
-
-    /* Signal to notify main GUI thread about process has been started: */
-    void sigNotifyAboutProcessStarted();
-
-    /* Signal to notify main GUI thread about some page was processed: */
-    void sigNotifyAboutPageProcessed(int iPageId);
-
-    /* Signal to notify main GUI thread about all pages were processed: */
-    void sigNotifyAboutPagesProcessed();
-
 public slots:
 
     void start(Priority priority = InheritPriority)
     {
-        /* Notify listeners a bout we are starting: */
+        /* Notify listeners about we are starting: */
         emit sigNotifyAboutProcessStarted();
+
         /* If serializer saves settings: */
         if (m_direction == UISettingsSerializeDirection_Save)
         {
@@ -180,8 +166,28 @@ public slots:
             for (int iPageIndex = 0; iPageIndex < m_pages.values().size(); ++iPageIndex)
                 m_pages.values()[iPageIndex]->putToCache();
         }
-        /* Start async thread: */
+
+        /* Start async serializing thread: */
         QThread::start(priority);
+
+        /* If serializer saves settings: */
+        if (m_direction == UISettingsSerializeDirection_Save)
+        {
+            /* We should block calling thread until all pages will be saved: */
+            while (!m_fSavingComplete)
+            {
+                /* Lock mutex initially: */
+                m_mutex.lock();
+                /* Perform idle-processing every 100ms,
+                 * and waiting for direct wake up signal: */
+                m_condition.wait(&m_mutex, 100);
+                /* Process queued signals posted to GUI thread: */
+                qApp->processEvents();
+                /* Unlock mutex finally: */
+                m_mutex.unlock();
+            }
+            m_fAllowToDestroySerializer = true;
+        }
     }
 
 protected slots:
@@ -196,18 +202,18 @@ protected slots:
             if (m_pages.contains(iPageId))
                 m_pages[iPageId]->getFromCache();
         }
-        /* If thats the page we are waiting for,
-         * we should flag GUI thread to unlock itself: */
-        if (iPageId == m_iPageIdWeAreWaitingFor && !m_fConditionDone)
-            m_fConditionDone = true;
     }
 
-    /* Slot to handle the fact of some page was processed: */
+    /* Slot to handle the fact of all pages were processed: */
     void sltHandleProcessedPages()
     {
-        /* We should flag GUI thread to unlock itself: */
-        if (!m_fConditionDone)
-            m_fConditionDone = true;
+        /* If serializer saves settings: */
+        if (m_direction == UISettingsSerializeDirection_Save)
+        {
+            /* We should flag GUI thread to unlock itself: */
+            if (!m_fSavingComplete)
+                m_fSavingComplete = true;
+        }
     }
 
     /* Slot to destroy serializer: */
@@ -222,25 +228,6 @@ protected slots:
     }
 
 protected:
-
-    /* GUI thread locker: */
-    void blockGUIthread()
-    {
-        m_fConditionDone = false;
-        while (!m_fConditionDone)
-        {
-            /* Lock mutex initially: */
-            m_mutex.lock();
-            /* Perform idle-processing every 100ms,
-             * and waiting for direct wake up signal: */
-            m_condition.wait(&m_mutex, 100);
-            /* Process queued signals posted to GUI thread: */
-            qApp->processEvents();
-            /* Unlock mutex finally: */
-            m_mutex.unlock();
-        }
-        m_fAllowToDestroySerializer = true;
-    }
 
     /* Settings processor: */
     void run()
@@ -274,18 +261,17 @@ protected:
             pages.remove(pPage->id());
             /* Notify listeners about page was processed: */
             emit sigNotifyAboutPageProcessed(pPage->id());
-            /* Try to wake up GUI thread, but
-             * it can be busy idle-processing for loaded pages: */
-            if (!m_fConditionDone)
+            /* If serializer saves settings => wake up GUI thread: */
+            if (m_direction == UISettingsSerializeDirection_Save)
                 m_condition.wakeAll();
+            /* Break further processing if page had failed: */
             if (pPage->failed())
                 break;
         }
         /* Notify listeners about all pages were processed: */
         emit sigNotifyAboutPagesProcessed();
-        /* Try to wake up GUI thread, but
-         * it can be busy idle-processing loaded pages: */
-        if (!m_fConditionDone)
+        /* If serializer saves settings => wake up GUI thread: */
+        if (m_direction == UISettingsSerializeDirection_Save)
             m_condition.wakeAll();
     }
 
@@ -293,9 +279,8 @@ protected:
     UISettingsSerializeDirection m_direction;
     QVariant m_data;
     UISettingsPageMap m_pages;
-    bool m_fConditionDone;
+    bool m_fSavingComplete;
     bool m_fAllowToDestroySerializer;
-    int m_iPageIdWeAreWaitingFor;
     int m_iIdOfHighPriorityPage;
     QMutex m_mutex;
     QWaitCondition m_condition;
@@ -422,6 +407,13 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
     m_pSelector->selectById(0);
 }
 
+UISettingsDialogGlobal::~UISettingsDialogGlobal()
+{
+    /* Delete serializer early if exists: */
+    if (UISettingsSerializer::instance())
+        delete UISettingsSerializer::instance();
+}
+
 void UISettingsDialogGlobal::loadData()
 {
     /* Call for base-class: */
@@ -438,8 +430,6 @@ void UISettingsDialogGlobal::loadData()
     pGlobalSettingsLoader->setPageList(m_pSelector->settingPages());
     /* Start loader: */
     pGlobalSettingsLoader->start();
-    /* Wait for just one (first) page to be loaded: */
-    pGlobalSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
 void UISettingsDialogGlobal::saveData()
@@ -460,8 +450,6 @@ void UISettingsDialogGlobal::saveData()
     pGlobalSettingsSaver->setPageList(m_pSelector->settingPages());
     /* Start saver: */
     pGlobalSettingsSaver->start();
-    /* Wait for all pages to be saved: */
-    pGlobalSettingsSaver->waitForPagesToBeProcessed();
 
     /* Get updated properties & settings: */
     CSystemProperties newProperties = pGlobalSettingsSaver->data().value<UISettingsDataGlobal>().m_properties;
@@ -736,6 +724,13 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
         m_pSelector->selectById(0);
 }
 
+UISettingsDialogMachine::~UISettingsDialogMachine()
+{
+    /* Delete serializer early if exists: */
+    if (UISettingsSerializer::instance())
+        delete UISettingsSerializer::instance();
+}
+
 void UISettingsDialogMachine::loadData()
 {
     /* Check that session is NOT created: */
@@ -773,8 +768,6 @@ void UISettingsDialogMachine::loadData()
     pMachineSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
     /* Start page loader: */
     pMachineSettingsLoader->start();
-    /* Wait for just one (required) page to be loaded: */
-    pMachineSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
 void UISettingsDialogMachine::saveData()
@@ -811,8 +804,6 @@ void UISettingsDialogMachine::saveData()
     pMachineSettingsSaver->setPageList(m_pSelector->settingPages());
     /* Start saver: */
     pMachineSettingsSaver->start();
-    /* Wait for all pages to be saved: */
-    pMachineSettingsSaver->waitForPagesToBeProcessed();
 
     /* Get updated machine: */
     m_machine = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_machine;
