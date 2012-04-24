@@ -689,7 +689,7 @@ void UISelectorWindow::sltShowLogDialog()
         UIVMItem *pItem = items[i];
 
         /* Check if log could be show for the current item: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_LogDialog, pItem, items))
+        if (!isActionEnabled(UIActionIndex_Simple_LogDialog, pItem, items))
             continue;
 
         /* Show VM Log Viewer: */
@@ -840,7 +840,7 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
     m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, pItem, items));
     m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, pItem, items));
     m_pRefreshAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Refresh, pItem, items));
-    m_pLogDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_LogDialog, pItem, items));
+    m_pLogDialogAction->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, pItem, items));
     m_pShowInFileManagerAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, pItem, items));
     m_pCreateShortcutAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, pItem, items));
     m_pSortAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Sort, pItem, items));
@@ -1415,7 +1415,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addSeparator();
     m_pRefreshAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Refresh);
     pMenu->addAction(m_pRefreshAction);
-    m_pLogDialogAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_LogDialog);
+    m_pLogDialogAction = gActionPool->action(UIActionIndex_Simple_LogDialog);
     pMenu->addAction(m_pLogDialogAction);
     pMenu->addSeparator();
     m_pShowInFileManagerAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_ShowInFileManager);
@@ -1905,7 +1905,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, UIVMItem *pItem, const 
                 /* Check if item present and NOT accessible: */
                 return pItem && !pItem->accessible();
             }
-            case UIActionIndexSelector_Simple_Machine_LogDialog:
+            case UIActionIndex_Simple_LogDialog:
             case UIActionIndexSelector_Simple_Machine_ShowInFileManager:
             case UIActionIndexSelector_Simple_Machine_Sort:
             {

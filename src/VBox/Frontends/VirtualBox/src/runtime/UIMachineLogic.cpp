@@ -39,6 +39,7 @@
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMInformationDlg.h"
 #include "UISettingsDialogSpecific.h"
+#include "UIVMLogViewer.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataEventHandler.h"
@@ -380,6 +381,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltShowDebugCommandLine()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_Logging), SIGNAL(toggled(bool)),
             this, SLOT(sltLoggingToggled(bool)));
+    connect(gActionPool->action(UIActionIndex_Simple_LogDialog), SIGNAL(triggered()),
+            this, SLOT(sltShowLogDialog()));
 #endif
 }
 
@@ -1569,6 +1572,12 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
         if (console.isOk())
             cdebugger.SetLogEnabled(fState);
     }
+}
+
+void UIMachineLogic::sltShowLogDialog()
+{
+    /* Show VM Log Viewer: */
+    UIVMLogViewer::showLogViewerFor(mainMachineWindow()->machineWindow(), session().GetMachine());
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */

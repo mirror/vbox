@@ -177,6 +177,7 @@ private slots:
     void sltShowDebugStatistics();
     void sltShowDebugCommandLine();
     void sltLoggingToggled(bool);
+    void sltShowLogDialog();
 #endif
 
 #ifdef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */
