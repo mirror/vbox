@@ -81,6 +81,10 @@
  */
 //#define E1K_WITH_MSI
 /*
+ * E1K_WITH_TX_CS protects e1kXmitPending with a critical section.
+ */
+#define E1K_WITH_TX_CS 1
+/*
  * E1K_WITH_TXD_CACHE causes E1000 to fetch multiple TX descriptors in a
  * single physical memory read (or two if it wraps around the end of TX
  * descriptor ring). It is required for proper functioning of bandwidth
@@ -1009,7 +1013,9 @@ struct E1kState_st
 #endif
     PDMCRITSECT cs;                  /**< Critical section - what is it protecting? */
     PDMCRITSECT csRx;                                     /**< RX Critical section. */
-//    PDMCRITSECT csTx;                                     /**< TX Critical section. */
+#ifdef E1K_WITH_TX_CS
+    PDMCRITSECT csTx;                                     /**< TX Critical section. */
+#endif /* E1K_WITH_TX_CS */
     /** Base address of memory-mapped registers. */
     RTGCPHYS    addrMMReg;
     /** MAC address obtained from the configuration. */
@@ -1487,10 +1493,13 @@ DECLINLINE(void) e1kCancelTimer(E1KSTATE *pState, PTMTIMER pTimer)
 #define e1kCsRxEnter(ps, rc) PDMCritSectEnter(&ps->csRx, rc)
 #define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
 
+#ifndef E1K_WITH_TX_CS
 #define e1kCsTxEnter(ps, rc) VINF_SUCCESS
 #define e1kCsTxLeave(ps) do { } while (0)
-//# define e1kCsTxEnter(ps, rc) PDMCritSectEnter(&ps->csTx, rc)
-//# define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
+#else /* E1K_WITH_TX_CS */
+# define e1kCsTxEnter(ps, rc) PDMCritSectEnter(&ps->csTx, rc)
+# define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
+#endif /* E1K_WITH_TX_CS */
 
 #ifdef IN_RING3
 
@@ -3223,31 +3232,35 @@ DECLINLINE(void) e1kLoadDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
  */
 DECLINLINE(unsigned) e1kTxDLoadMore(E1KSTATE* pState)
 {
-    unsigned nDescsAvailable = e1kGetTxLen(pState);
-    unsigned nDescsToFetch = RT_MIN(nDescsAvailable, E1K_TXD_CACHE_SIZE - pState->nTxDFetched);
-    /*
-     * It is safe to use TDLEN and TDH in the following expression since TDLEN
-     * is set during init and never changes after that, and TDH is advanced in
-     * the loop we are being called from.
-     */
-    unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, TDLEN / sizeof(E1KTXDESC) - TDH);
+    /* We've already loaded pState->nTxDFetched descriptors past TDH. */
+    unsigned nDescsAvailable    = e1kGetTxLen(pState) - pState->nTxDFetched;
+    unsigned nDescsToFetch      = RT_MIN(nDescsAvailable, E1K_TXD_CACHE_SIZE - pState->nTxDFetched);
+    unsigned nDescsTotal        = TDLEN / sizeof(E1KTXDESC);
+    unsigned nFirstNotLoaded    = (TDH + pState->nTxDFetched) % nDescsTotal;
+    unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, nDescsTotal - nFirstNotLoaded);
+    E1kLog3(("%s e1kTxDLoadMore: nDescsAvailable=%u nDescsToFetch=%u "
+             "nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
+             INSTANCE(pState), nDescsAvailable, nDescsToFetch, nDescsTotal,
+             nFirstNotLoaded, nDescsInSingleRead));
     if (nDescsToFetch == 0)
         return 0;
     E1KTXDESC* pFirstEmptyDesc = &pState->aTxDescriptors[pState->nTxDFetched];
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
-                      ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(E1KTXDESC),
+                      ((uint64_t)TDBAH << 32) + TDBAL + nFirstNotLoaded * sizeof(E1KTXDESC),
                       pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KTXDESC));
-    E1kLog3(("%s Fetched %u TX descriptors at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
-             INSTANCE(pState), nDescsInSingleRead, TDBAH, TDBAL + TDH * sizeof(E1KTXDESC), TDLEN, TDH, TDT));
+    E1kLog3(("%s Fetched %u TX descriptors at %08x%08x(0x%x), TDLEN=%08x, TDH=%08x, TDT=%08x\n",
+             INSTANCE(pState), nDescsInSingleRead,
+             TDBAH, TDBAL + TDH * sizeof(E1KTXDESC),
+             nFirstNotLoaded, TDLEN, TDH, TDT));
     if (nDescsToFetch > nDescsInSingleRead)
     {
         PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
                           ((uint64_t)TDBAH << 32) + TDBAL,
                           pFirstEmptyDesc + nDescsInSingleRead,
                           (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KTXDESC));
-        E1kLog3(("%s Fetched %u TX descriptors at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
+        E1kLog3(("%s Fetched %u TX descriptors at %08x%08x\n",
                  INSTANCE(pState), nDescsToFetch - nDescsInSingleRead,
-                 TDBAH, TDBAL, TDLEN, TDH, TDT));
+                 TDBAH, TDBAL));
     }
     pState->nTxDFetched += nDescsToFetch;
     return nDescsToFetch;
@@ -4512,6 +4525,9 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
 
+    /* Check if transmitter is enabled. */
+    if (!(TCTL & TCTL_EN))
+        return VINF_SUCCESS;
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
      */
@@ -4522,7 +4538,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
         if (RT_FAILURE(rc))
             return rc;
     }
-    //rc = e1kCsTxEnter(pState, VERR_SEM_BUSY);
+    rc = e1kCsTxEnter(pState, VERR_SEM_BUSY);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         /*
@@ -4555,7 +4571,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 
         /// @todo: uncomment: pState->uStatIntTXQE++;
         /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
-        //e1kCsTxLeave(pState);
+        e1kCsTxLeave(pState);
     }
 
     /*
@@ -4584,6 +4600,9 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
 
+    /* Check if transmitter is enabled. */
+    if (!(TCTL & TCTL_EN))
+        return VINF_SUCCESS;
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
      */
@@ -4599,66 +4618,95 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
      * Process all pending descriptors.
      * Note! Do not process descriptors in locked state
      */
-    STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatTransmit), a);
-    while (!pState->fLocked && e1kTxDLazyLoad(pState))
+    rc = e1kCsTxEnter(pState, VERR_SEM_BUSY);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        while (e1kLocateTxPacket(pState))
+        STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatTransmit), a);
+        /*
+         * fIncomplete is set whenever we try to fetch additional descriptors
+         * for an incomplete packet. If fail to locate a complete packet on
+         * the next iteration we need to reset the cache or we risk to get
+         * stuck in this loop forever.
+         */
+        bool fIncomplete = false;
+        while (!pState->fLocked && e1kTxDLazyLoad(pState))
         {
-            /* Found a complete packet, allocate it. */
-            rc = e1kXmitAllocBuf(pState, pState->fGSO);
-            /* If we're out of bandwidth we'll come back later. */
-            if (RT_FAILURE(rc))
+            while (e1kLocateTxPacket(pState))
+            {
+                fIncomplete = false;
+                /* Found a complete packet, allocate it. */
+                rc = e1kXmitAllocBuf(pState, pState->fGSO);
+                /* If we're out of bandwidth we'll come back later. */
+                if (RT_FAILURE(rc))
+                    goto out;
+                /* Copy the packet to allocated buffer and send it. */
+                rc = e1kXmitPacket(pState, fOnWorkerThread);
+                /* If we're out of bandwidth we'll come back later. */
+                if (RT_FAILURE(rc))
+                    goto out;
+            }
+            uint8_t u8Remain = pState->nTxDFetched - pState->iTxDCurrent;
+            if (RT_UNLIKELY(fIncomplete))
+            {
+                /*
+                 * The descriptor cache is full, but we were unable to find
+                 * a complete packet in it. Drop the cache and hope that
+                 * the guest driver can recover from network card error.
+                 */
+                LogRel(("%s No complete packets in%s TxD cache! "
+                      "Fetched=%d, current=%d, TX len=%d.\n",
+                      INSTANCE(pState),
+                      u8Remain == E1K_TXD_CACHE_SIZE ? " full" : "",
+                      pState->nTxDFetched, pState->iTxDCurrent,
+                      e1kGetTxLen(pState)));
+                Log4(("%s No complete packets in%s TxD cache! "
+                      "Fetched=%d, current=%d, TX len=%d. Dump follows:\n",
+                      INSTANCE(pState),
+                      u8Remain == E1K_TXD_CACHE_SIZE ? " full" : "",
+                      pState->nTxDFetched, pState->iTxDCurrent,
+                      e1kGetTxLen(pState)));
+                e1kDumpTxDCache(pState);
+                pState->iTxDCurrent = pState->nTxDFetched = 0;
+                rc = VERR_NET_IO_ERROR;
                 goto out;
-            /* Copy the packet to allocated buffer and send it. */
-            rc = e1kXmitPacket(pState, fOnWorkerThread);
-            /* If we're out of bandwidth we'll come back later. */
-            if (RT_FAILURE(rc))
-                goto out;
+            }
+            if (u8Remain > 0)
+            {
+                Log4(("%s Incomplete packet at %d. Already fetched %d, "
+                      "%d more are available\n",
+                      INSTANCE(pState), pState->iTxDCurrent, u8Remain,
+                      e1kGetTxLen(pState) - u8Remain));
+                      
+                /*
+                 * A packet was partially fetched. Move incomplete packet to
+                 * the beginning of cache buffer, then load more descriptors.
+                 */
+                memmove(pState->aTxDescriptors,
+                        &pState->aTxDescriptors[pState->iTxDCurrent],
+                        u8Remain * sizeof(E1KTXDESC));
+                pState->nTxDFetched = u8Remain;
+                e1kTxDLoadMore(pState);
+                fIncomplete = true;
+            }
+            else
+                pState->nTxDFetched = 0;
+            pState->iTxDCurrent = 0;
         }
-        uint8_t u8Remain = pState->nTxDFetched - pState->iTxDCurrent;
-        if (RT_UNLIKELY(u8Remain == E1K_TXD_CACHE_SIZE))
+        if (!pState->fLocked && GET_BITS(TXDCTL, LWTHRESH) == 0)
         {
-            /*
-             * The descriptor cache is full, but we were unable to find
-             * a complete packet in it. Drop the cache and hope that
-             * the guest driver can recover from network card error.
-             */
-            Log4(("%s No complete packets in full TxD cache! "
-                  "Fetched=%d, TX len=%d. Dump follows:\n",
-                  INSTANCE(pState), pState->nTxDFetched, e1kGetTxLen(pState)));
-            e1kDumpTxDCache(pState);
-            pState->nTxDFetched = 0;
-            rc = VERR_NET_IO_ERROR;
-            goto out;
+            E1kLog2(("%s Out of transmit descriptors, raise ICR.TXD_LOW\n",
+                     INSTANCE(pState)));
+            e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXD_LOW);
         }
-        if (u8Remain > 0)
-        {
-            /*
-             * A packet was partially fetched. Move incomplete packet to
-             * the beginning of cache buffer, then load more descriptors.
-             */
-            memmove(pState->aTxDescriptors,
-                    &pState->aTxDescriptors[pState->iTxDCurrent],
-                    u8Remain * sizeof(E1KTXDESC));
-            pState->nTxDFetched = u8Remain;
-            e1kTxDLoadMore(pState);
-        }
-        else
-            pState->nTxDFetched = 0;
-        pState->iTxDCurrent = 0;
-    }
-    if (!pState->fLocked && GET_BITS(TXDCTL, LWTHRESH) == 0)
-    {
-        E1kLog2(("%s Out of transmit descriptors, raise ICR.TXD_LOW\n",
-                 INSTANCE(pState)));
-        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXD_LOW);
-    }
-
 out:
-    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
+        STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
 
-    /// @todo: uncomment: pState->uStatIntTXQE++;
-    /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
+        /// @todo: uncomment: pState->uStatIntTXQE++;
+        /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
+
+        e1kCsTxLeave(pState);
+    }
+
 
     /*
      * Release the lock.
@@ -4726,10 +4774,7 @@ static DECLCALLBACK(bool) e1kCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITE
  */
 static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
-    int rc = e1kCsTxEnter(pState, VINF_IOM_R3_MMIO_WRITE);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
-    rc = e1kRegWriteDefault(pState, offset, index, value);
+    int rc = e1kRegWriteDefault(pState, offset, index, value);
 
     /* All descriptors starting with head and not including tail belong to us. */
     /* Process them. */
@@ -4742,7 +4787,6 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
         E1kLogRel(("E1000: TDT write: %d descriptors to process\n", e1kGetTxLen(pState)));
         E1kLog(("%s e1kRegWriteTDT: %d descriptors to process\n",
                  INSTANCE(pState), e1kGetTxLen(pState)));
-        e1kCsTxLeave(pState);
 
         /* Transmit pending packets if possible, defer it if we cannot do it
            in the current context. */
@@ -4759,11 +4803,11 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
             rc = e1kXmitPending(pState, false /*fOnWorkerThread*/);
             if (rc == VERR_TRY_AGAIN)
                 rc = VINF_SUCCESS;
+            else if (rc == VERR_SEM_BUSY)
+                rc = VINF_IOM_R3_IOPORT_WRITE;
             AssertRC(rc);
         }
     }
-    else
-        e1kCsTxLeave(pState);
 
     return rc;
 }
@@ -6297,10 +6341,15 @@ static DECLCALLBACK(void) e1kReset(PPDMDEVINS pDevIns)
     pState->fLocked      = false;
     pState->u64AckedAt   = 0;
 #ifdef E1K_WITH_TXD_CACHE
-    pState->nTxDFetched  = 0;
-    pState->iTxDCurrent  = 0;
-    pState->fGSO         = false;
-    pState->cbTxAlloc    = 0;
+    int rc = e1kCsTxEnter(pState, VERR_SEM_BUSY);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
+        pState->nTxDFetched  = 0;
+        pState->iTxDCurrent  = 0;
+        pState->fGSO         = false;
+        pState->cbTxAlloc    = 0;
+        e1kCsTxLeave(pState);
+    }
 #endif /* E1K_WITH_TXD_CACHE */
     e1kHardReset(pState);
 }
@@ -6374,8 +6423,10 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
             RTSemEventDestroy(pState->hEventMoreRxDescAvail);
             pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
         }
+#ifdef E1K_WITH_TX_CS
+        PDMR3CritSectDelete(&pState->csTx);
+#endif /* E1K_WITH_TX_CS */
         PDMR3CritSectDelete(&pState->csRx);
-        //PDMR3CritSectDelete(&pState->csTx);
         PDMR3CritSectDelete(&pState->cs);
     }
     return VINF_SUCCESS;
@@ -6720,6 +6771,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpCritSectInit(pDevIns, &pState->csRx, RT_SRC_POS, "%sRX", pState->szInstance);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef E1K_WITH_TX_CS
+    rc = PDMDevHlpCritSectInit(pDevIns, &pState->csTx, RT_SRC_POS, "%sTX", pState->szInstance);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif /* E1K_WITH_TX_CS */
 
     /* Set PCI config registers */
     e1kConfigurePCI(pState->pciDevice, pState->eChip);
