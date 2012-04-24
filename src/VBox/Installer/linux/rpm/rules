@@ -135,7 +135,7 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(filter rhel5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
 	     $(if $(filter sles10.1 turbolinux11,$(rpmrel)),--disable-pulse,) \
 	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5,$(rpmrel)),--enable-pulse,) \
-	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 mdv2010.0-amd64 sles10.1 sles11.0 turbolinux11,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.7.4-stdc++6-$(arch)) \
+	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 mdv2010.0 sles10.1 sles11.0 turbolinux11,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.7.4-stdc++6-$(arch)) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
