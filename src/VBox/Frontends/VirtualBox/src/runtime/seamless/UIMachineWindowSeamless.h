@@ -47,6 +47,7 @@ private slots:
 
     /* Console callback handlers: */
     void sltMachineStateChanged();
+    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
     /* Popup main menu: */
     void sltPopupMainMenu();
@@ -97,7 +98,7 @@ private:
     void updateAppearanceOf(int iElement);
 
     /* Other members: */
-    void showSeamless();
+    void showInNecessaryMode();
     void setMask(const QRegion &region);
 
     /* Private variables: */

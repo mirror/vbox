@@ -137,6 +137,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
             this, SIGNAL(sigCPUExecutionCapChange()));
 
+    connect(gConsoleEvents, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+            this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+
     /* Prepare framebuffers: */
     prepareFramebuffers();
 

@@ -26,7 +26,6 @@
 /* Local includes */
 #include "QIWithRetranslateUI.h"
 #include "UIMachineWindow.h"
-#include "COMDefs.h"
 #include "UINetworkDefs.h"
 
 /* Local forwards */
@@ -54,6 +53,7 @@ private slots:
     void sltNetworkAdapterChange();
     void sltSharedFolderChange();
     void sltCPUExecutionCapChange();
+    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
     /* LED connections: */
     void sltUpdateIndicators();
@@ -103,7 +103,7 @@ private:
     //void cleanupConsoleConnections() {}
 
     /* Other members: */
-    void showSimple();
+    void showInNecessaryMode();
     bool isMaximizedChecked();
     void updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType);
 

@@ -50,6 +50,7 @@ signals:
     void sigShowWindow();
 #endif /* RT_OS_DARWIN */
     void sigCPUExecutionCapChange();
+    void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
 private slots:
     void sltCanShowWindow(bool &fVeto, QString &strReason);

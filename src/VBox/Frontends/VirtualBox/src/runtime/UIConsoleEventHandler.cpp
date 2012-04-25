@@ -79,7 +79,8 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
         << KVBoxEventType_OnShowWindow
-        << KVBoxEventType_OnCPUExecutionCapChanged;
+        << KVBoxEventType_OnCPUExecutionCapChanged
+        << KVBoxEventType_OnGuestMonitorChanged;
 
     const CConsole &console = m_pSession->session().GetConsole();
     console.GetEventSource().RegisterListener(m_mainEventListener, events, TRUE);
@@ -147,6 +148,10 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
 
     connect(pListener->getWrapped(), SIGNAL(sigCPUExecutionCapChange()),
             this, SIGNAL(sigCPUExecutionCapChange()),
+            Qt::QueuedConnection);
+
+    connect(pListener->getWrapped(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+            this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             Qt::QueuedConnection);
 }
 

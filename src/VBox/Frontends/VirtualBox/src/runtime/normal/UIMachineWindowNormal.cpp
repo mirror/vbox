@@ -103,8 +103,8 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulon
     }
 #endif /* Q_WS_MAC */
 
-    /* Show window: */
-    showSimple();
+    /* Show normal window: */
+    showInNecessaryMode();
 }
 
 UIMachineWindowNormal::~UIMachineWindowNormal()
@@ -162,6 +162,11 @@ void UIMachineWindowNormal::sltSharedFolderChange()
 void UIMachineWindowNormal::sltCPUExecutionCapChange()
 {
     updateAppearanceOf(UIVisualElement_VirtualizationStuff);
+}
+
+void UIMachineWindowNormal::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
+{
+    UIMachineWindow::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
 void UIMachineWindowNormal::sltTryClose()
@@ -369,7 +374,6 @@ void UIMachineWindowNormal::prepareConsoleConnections()
     /* CPU execution cap change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
             this, SLOT(sltCPUExecutionCapChange()));
-
 }
 
 void UIMachineWindowNormal::prepareMenu()
@@ -671,10 +675,14 @@ void UIMachineWindowNormal::cleanupStatusBar()
     m_pIdleTimer->disconnect(SIGNAL(timeout()), this, SLOT(sltUpdateIndicators()));
 }
 
-void UIMachineWindowNormal::showSimple()
+void UIMachineWindowNormal::showInNecessaryMode()
 {
-    /* Just show window: */
-    show();
+    /* Make sure we really have to show window: */
+    BOOL fEnabled = true;
+    ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
+    session().GetMachine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+    if (fEnabled)
+        show();
 }
 
 bool UIMachineWindowNormal::isMaximizedChecked()
