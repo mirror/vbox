@@ -48,6 +48,9 @@ typedef struct {
     GLenum                  drawbuffer[1];
 #ifdef IN_GUEST
     GLenum                  status;
+#else
+    /* bitfield representing the object usage. 1 means the object is used by the context with the given bitid */
+    CRbitvalue             ctxUsage[CR_MAX_BITARRAY];
 #endif
 } CRFramebufferObject;
 
@@ -56,6 +59,10 @@ typedef struct {
     GLsizei  width, height;
     GLenum   internalformat;
     GLuint   redBits, greenBits, blueBits, alphaBits, depthBits, stencilBits;
+#ifndef IN_GUEST
+    /* bitfield representing the object usage. 1 means the object is used by the context with the given bitid */
+    CRbitvalue             ctxUsage[CR_MAX_BITARRAY];
+#endif
 } CRRenderbufferObject;
 
 typedef struct {

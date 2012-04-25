@@ -22,6 +22,9 @@ static CRBufferObject *AllocBufferObject(GLuint name)
         b->usage = GL_STATIC_DRAW_ARB;
         b->access = GL_READ_WRITE_ARB;
         b->bResyncOnRead = GL_FALSE;
+#ifndef IN_GUEST
+        CR_STATE_SHAREDOBJ_USAGE_INIT(b);
+#endif
     }
     return b;
 }
@@ -188,6 +191,10 @@ crStateBindBufferARB (GLenum target, GLuint buffer)
             }
             crHashtableAdd( g->shared->buffersTable, buffer, newObj );
         }
+
+#ifndef IN_GUEST
+        CR_STATE_SHAREDOBJ_USAGE_SET(newObj, g);
+#endif
     }
 
     newObj->refCount++;

@@ -96,6 +96,10 @@ typedef struct {
     CRbitvalue             dirty[CR_MAX_BITARRAY];
     CRbitvalue             imageBit[CR_MAX_BITARRAY];
     CRbitvalue             paramsBit[CR_MAX_TEXTURE_UNITS][CR_MAX_BITARRAY];
+#ifndef IN_GUEST
+    /* bitfield representing the object usage. 1 means the object is used by the context with the given bitid */
+    CRbitvalue             ctxUsage[CR_MAX_BITARRAY];
+#endif
 } CRTextureObj;
 
 typedef struct {
