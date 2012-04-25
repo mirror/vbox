@@ -144,6 +144,8 @@ typedef struct RTDBGKRNLINFOINT
     uint32_t            cSyms;
     /** The file offset of the symbol table. */
     uint32_t            offSyms;
+    /** Offset between link address and actual load address. */
+    uintptr_t           offLoad;
     /** @} */
 
     /** @name Used during loading.
@@ -358,7 +360,6 @@ static void rtR0DbgKrnlDarwinLoadDone(RTDBGKRNLINFOINT *pThis)
 /**
  * Looks up a kernel symbol.
  *
- *
  * @returns The symbol address on success, 0 on failure.
  * @param   pThis               The internal scratch data.
  * @param   pszSymbol           The symbol to resolve.  Automatically prefixed
@@ -379,7 +380,7 @@ static uintptr_t rtR0DbgKrnlDarwinLookup(RTDBGKRNLINFOINT *pThis, const char *ps
         const char *pszTabName= &pThis->pachStrTab[(uint32_t)pSym->n_un.n_strx];
         if (   *pszTabName == '_'
             && strcmp(pszTabName + 1, pszSymbol) == 0)
-            return pSym->n_value;
+            return pSym->n_value + pThis->offLoad;
     }
 #else
     /** @todo binary search. */
@@ -523,6 +524,8 @@ static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis)
         KNOWN_ENTRY(vm_region),
         KNOWN_ENTRY(vm_map_wire),
         KNOWN_ENTRY(PE_kputc),
+        KNOWN_ENTRY(kernel_map),
+        KNOWN_ENTRY(kernel_pmap),
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_aStandardCandles); i++)
@@ -1036,7 +1039,17 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
     if (RT_SUCCESS(rc))
         rc = rtR0DbgKrnlDarwinLoadSymTab(pThis);
     if (RT_SUCCESS(rc))
+    {
+#ifdef IN_RING0
+        /*
+         * Determine the load displacement (10.8 kernels are PIE).
+         */
+        uintptr_t uLinkAddr = rtR0DbgKrnlDarwinLookup(pThis, "kernel_map");
+        if (uLinkAddr != 0)
+            pThis->offLoad = (uintptr_t)&kernel_map - uLinkAddr;
+#endif
         rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis);
+    }
 
     rtR0DbgKrnlDarwinLoadDone(pThis);
     if (RT_SUCCESS(rc))
