@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,11 +31,35 @@
 #include "the-darwin-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/mem.h>
+#include <iprt/memobj.h>
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * Extended header used for headers marked with RTMEMHDR_FLAG_EXEC.
+ *
+ * This is used with allocating executable memory, for things like generated
+ * code and loaded modules.
+ */
+typedef struct RTMEMDARWINHDREX
+{
+    /** The associated memory object. */
+    RTR0MEMOBJ          hMemObj;
+    /** Alignment padding. */
+    uint8_t             abPadding[ARCH_BITS == 32 ? 12 : 8];
+    /** The header we present to the generic API. */
+    RTMEMHDR            Hdr;
+} RTMEMDARWINHDREX;
+AssertCompileSize(RTMEMDARWINHDREX, 32);
+/** Pointer to an extended memory header. */
+typedef RTMEMDARWINHDREX *PRTMEMDARWINHDREX;
 
 
 /**
@@ -46,11 +70,26 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     if (RT_UNLIKELY(fFlags & RTMEMHDR_FLAG_ANY_CTX))
         return VERR_NOT_SUPPORTED;
 
-    PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
-    if (RT_UNLIKELY(!pHdr))
+    PRTMEMHDR pHdr;
+    if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
-        printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
-        return VERR_NO_MEMORY;
+        RTR0MEMOBJ hMemObj;
+        int rc = RTR0MemObjAllocPage(&hMemObj, cb + sizeof(RTMEMDARWINHDREX), true /*fExecutable*/);
+        if (RT_FAILURE(rc))
+            return rc;
+        PRTMEMDARWINHDREX pExHdr = (PRTMEMDARWINHDREX)RTR0MemObjAddress(hMemObj);
+        pExHdr->hMemObj = hMemObj;
+        pHdr = &pExHdr->Hdr;
+    }
+    else
+    {
+
+        pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
+        if (RT_UNLIKELY(!pHdr))
+        {
+            printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
+            return VERR_NO_MEMORY;
+        }
     }
 
     pHdr->u32Magic  = RTMEMHDR_MAGIC;
@@ -68,7 +107,14 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
-    IOFree(pHdr, pHdr->cb + sizeof(*pHdr));
+    if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
+    {
+        PRTMEMDARWINHDREX pExHdr = RT_FROM_MEMBER(pHdr, RTMEMDARWINHDREX, Hdr);
+        int rc = RTR0MemObjFree(pExHdr->hMemObj, false /*fFreeMappings*/);
+        AssertRC(rc);
+    }
+    else
+        IOFree(pHdr, pHdr->cb + sizeof(*pHdr));
 }
 
 
