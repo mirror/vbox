@@ -115,6 +115,10 @@ typedef struct _CRSharedState {
     GLboolean   bFBOResyncNeeded;
 } CRSharedState;
 
+#define CR_STATE_SHAREDOBJ_USAGE_INIT(_pObj) (CLEARBITS((_pObj)->ctxUsage))
+#define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) (SETBIT((_pObj)->ctxUsage, (_pCtx)->id))
+#define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) (CLEARBIT((_pObj)->ctxUsage, (_pCtx)->id))
+#define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (HASBITS((_pObj)->ctxUsage))
 
 /**
  * Chromium version of the state variables in OpenGL
@@ -230,7 +234,7 @@ DECLEXPORT(int32_t) crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM);
 typedef DECLCALLBACK(CRContext*) FNCRSTATE_CONTEXT_GET(void*);
 typedef FNCRSTATE_CONTEXT_GET *PFNCRSTATE_CONTEXT_GET;
 DECLEXPORT(int32_t) crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM);
-DECLEXPORT(void)    crStateFreeShared(CRSharedState *s);
+DECLEXPORT(void)    crStateFreeShared(CRContext *pContext, CRSharedState *s);
 #endif
 
 

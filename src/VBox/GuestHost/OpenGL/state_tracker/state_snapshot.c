@@ -1497,7 +1497,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
         {
             CRASSERT(pContext->shared->refCount==1);
             bLoadShared = GL_FALSE;
-            crStateFreeShared(pContext->shared);
+            crStateFreeShared(pContext, pContext->shared);
             pContext->shared = NULL;
             pTmpContext->shared->refCount++;
         }

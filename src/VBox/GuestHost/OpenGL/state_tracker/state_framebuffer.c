@@ -97,7 +97,14 @@ crStateBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
             fbo->renderbuffer->hwid = renderbuffer;
             fbo->renderbuffer->internalformat = GL_RGBA;
             crHashtableAdd(g->shared->rbTable, renderbuffer, fbo->renderbuffer);
+#ifndef IN_GUEST
+        CR_STATE_SHAREDOBJ_USAGE_INIT(fbo->renderbuffer);
+#endif
         }
+#ifndef IN_GUEST
+        CR_STATE_SHAREDOBJ_USAGE_SET(fbo->renderbuffer, g);
+#endif
+
     }
     else fbo->renderbuffer = NULL;
 }
@@ -294,7 +301,14 @@ crStateBindFramebufferEXT(GLenum target, GLuint framebuffer)
             pFBO->hwid = framebuffer;
             crStateInitFrameBuffer(pFBO);
             crHashtableAdd(g->shared->fbTable, framebuffer, pFBO);
+#ifndef IN_GUEST
+            CR_STATE_SHAREDOBJ_USAGE_INIT(pFBO);
+#endif
         }
+
+#ifndef IN_GUEST
+        CR_STATE_SHAREDOBJ_USAGE_SET(pFBO, g);
+#endif
     }
 
     /* @todo: http://www.opengl.org/registry/specs/ARB/framebuffer_object.txt 
@@ -457,6 +471,10 @@ crStateFramebufferTexture1DEXT(GLenum target, GLenum attachment, GLenum textarge
 
     CRSTATE_FBO_CHECKERR(textarget!=GL_TEXTURE_1D, GL_INVALID_OPERATION, "textarget");
 
+#ifndef IN_GUEST
+    CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
+#endif
+
     crStateInitFBOAttachmentPoint(ap);
     ap->type = GL_TEXTURE;
     ap->name = texture;
@@ -482,6 +500,10 @@ crStateFramebufferTexture2DEXT(GLenum target, GLenum attachment, GLenum textarge
     }
 
     CRSTATE_FBO_CHECKERR(GL_TEXTURE_1D==textarget || GL_TEXTURE_3D==textarget, GL_INVALID_OPERATION, "textarget");
+
+#ifndef IN_GUEST
+    CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
+#endif
 
     crStateInitFBOAttachmentPoint(ap);
     ap->type = GL_TEXTURE;
@@ -513,6 +535,10 @@ crStateFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarge
 
     CRSTATE_FBO_CHECKERR(zoffset>(g->limits.max3DTextureSize-1), GL_INVALID_VALUE, "zoffset too big");
     CRSTATE_FBO_CHECKERR(textarget!=GL_TEXTURE_3D, GL_INVALID_OPERATION, "textarget");
+
+#ifndef IN_GUEST
+    CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
+#endif
 
     crStateInitFBOAttachmentPoint(ap);
     ap->type = GL_TEXTURE;
