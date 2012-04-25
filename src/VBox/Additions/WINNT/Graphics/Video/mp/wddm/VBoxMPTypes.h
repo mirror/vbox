@@ -149,12 +149,8 @@ typedef struct VBOXWDDM_ALLOCATION
 #if 0
     AVLPVNODECORE ShRcTreeEntry;
 #endif
-    VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
-    union
-    {
-        PKEVENT pSynchEvent;
-        PRKSEMAPHORE pSynchSemaphore;
-    };
+    VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType;
+    PKEVENT pSynchEvent;
 } VBOXWDDM_ALLOCATION, *PVBOXWDDM_ALLOCATION;
 
 typedef struct VBOXWDDM_RESOURCE

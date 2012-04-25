@@ -34,7 +34,7 @@
 #include <VBox/VBoxGuest2.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 12
+#define VBOXVIDEOIF_VERSION 13
 
 #define VBOXWDDM_NODE_ID_SYSTEM           0
 #define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
@@ -112,7 +112,7 @@ typedef struct VBOXWDDM_ALLOCINFO
         {
             uint32_t cbBuffer;
             uint64_t hSynch;
-            VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
+            VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType;
         };
     };
 } VBOXWDDM_ALLOCINFO, *PVBOXWDDM_ALLOCINFO;
@@ -179,7 +179,7 @@ typedef struct VBOXWDDM_DMA_PRIVATEDATA_BASEHDR
 
 typedef struct VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO
 {
-    VBOXUHGSMI_BUFFER_SUBMIT_FLAGS fSubFlags;
+    uint32_t bDoNotSignalCompletion;
     uint32_t offData;
     uint32_t cbData;
 } VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO, *PVBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO;
@@ -437,7 +437,7 @@ typedef struct VBOXVIDEOCM_UM_ALLOC
     uint32_t cbData;
     uint64_t pvData;
     uint64_t hSynch;
-    VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
+    VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType;
 } VBOXVIDEOCM_UM_ALLOC, *PVBOXVIDEOCM_UM_ALLOC;
 
 typedef struct VBOXDISPIFESCAPE_UHGSMI_ALLOCATE

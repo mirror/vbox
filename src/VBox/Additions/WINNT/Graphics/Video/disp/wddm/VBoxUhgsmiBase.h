@@ -57,6 +57,7 @@ typedef struct VBOXUHGSMI_PRIVATE_BASE
 typedef struct VBOXUHGSMI_BUFFER_PRIVATE_BASE
 {
     VBOXUHGSMI_BUFFER Base;
+    HANDLE hSynch;
     D3DKMT_HANDLE hAllocation;
 } VBOXUHGSMI_BUFFER_PRIVATE_BASE, *PVBOXUHGSMI_BUFFER_PRIVATE_BASE;
 
@@ -118,60 +119,26 @@ DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock
     return VINF_SUCCESS;
 }
 
-DECLINLINE(int) vboxUhgsmiBaseEventChkCreate(VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType, HVBOXUHGSMI_SYNCHOBJECT *phSynch, bool *pbSynchCreated)
+DECLINLINE(int) vboxUhgsmiBaseEventChkCreate(VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, HANDLE *phSynch)
 {
-    bool bSynchCreated = false;
+    *phSynch = NULL;
 
-    switch (enmSynchType)
+    if (fUhgsmiType.fCommand)
     {
-        case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
-            if (!*phSynch)
-            {
-                *phSynch = CreateEvent(
+        *phSynch = CreateEvent(
                   NULL, /* LPSECURITY_ATTRIBUTES lpEventAttributes */
                   FALSE, /* BOOL bManualReset */
                   FALSE, /* BOOL bInitialState */
                   NULL /* LPCTSTR lpName */
-                );
-                Assert(*phSynch);
-                if (!*phSynch)
-                {
-                    DWORD winEr = GetLastError();
-                    /* todo: translate winer */
-                    return VERR_GENERAL_FAILURE;
-                }
-                bSynchCreated = true;
-            }
-            break;
-        case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
-            if (!*phSynch)
-            {
-                *phSynch = CreateSemaphore(
-                  NULL, /* LPSECURITY_ATTRIBUTES lpSemaphoreAttributes */
-                  0, /* LONG lInitialCount */
-                  (LONG)((~0UL) >> 1), /* LONG lMaximumCount */
-                  NULL /* LPCTSTR lpName */
-                );
-                Assert(*phSynch);
-                if (!*phSynch)
-                {
-                    DWORD winEr = GetLastError();
-                    /* todo: translate winer */
-                    return VERR_GENERAL_FAILURE;
-                }
-                bSynchCreated = true;
-            }
-            break;
-        case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
-            Assert(!*phSynch);
-            if (*phSynch)
-                return VERR_INVALID_PARAMETER;
-            break;
-        default:
-            Assert(0);
-            return VERR_INVALID_PARAMETER;
+            );
+        Assert(*phSynch);
+        if (!*phSynch)
+        {
+            DWORD winEr = GetLastError();
+            /* todo: translate winer */
+            return VERR_GENERAL_FAILURE;
+        }
     }
-    *pbSynchCreated = bSynchCreated;
     return VINF_SUCCESS;
 }
 
@@ -210,7 +177,7 @@ DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32
         pAllocationList->Value = 0;
         pAllocationList->WriteOperation = !pBufInfo->fFlags.bHostReadOnly;
         pAllocationList->DoNotRetireInstance = pBufInfo->fFlags.bDoNotRetire;
-        pBufSubmInfo->fSubFlags = pBufInfo->fFlags;
+        pBufSubmInfo->bDoNotSignalCompletion = 0;
         if (pBufInfo->fFlags.bEntireBuffer)
         {
             pBufSubmInfo->offData = 0;

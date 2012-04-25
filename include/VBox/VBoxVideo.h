@@ -1373,8 +1373,8 @@ typedef struct VBOXVDMACMD_CHROMIUM_BUFFER
 {
     VBOXVIDEOOFFSET offBuffer;
     uint32_t cbBuffer;
-    uint32_t u32GuesData;
-    uint64_t u64GuesData;
+    uint32_t u32GuestData;
+    uint64_t u64GuestData;
 } VBOXVDMACMD_CHROMIUM_BUFFER, *PVBOXVDMACMD_CHROMIUM_BUFFER;
 
 typedef struct VBOXVDMACMD_CHROMIUM_CMD

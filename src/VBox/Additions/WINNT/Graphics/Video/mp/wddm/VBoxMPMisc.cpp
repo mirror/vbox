@@ -948,12 +948,8 @@ typedef struct VBOXVIDEOCM_ALLOC_REF
     PVBOXVIDEOCM_ALLOC_CONTEXT pContext;
     VBOXWDDM_HANDLE hSessionHandle;
     PVBOXVIDEOCM_ALLOC pAlloc;
-    union
-    {
-        PKEVENT pSynchEvent;
-        PRKSEMAPHORE pSynchSemaphore;
-    };
-    VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
+    PKEVENT pSynchEvent;
+    VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType;
     volatile uint32_t cRefs;
     MDL Mdl;
 } VBOXVIDEOCM_ALLOC_REF, *PVBOXVIDEOCM_ALLOC_REF;
@@ -1037,38 +1033,15 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
 {
     PVBOXVIDEOCM_ALLOC_MGR pMgr = pContext->pMgr;
     NTSTATUS Status = STATUS_SUCCESS;
+    PKEVENT pSynchEvent = NULL;
 
-    union
+    if (pUmAlloc->hSynch)
     {
-        PKEVENT pSynchEvent;
-        PRKSEMAPHORE pSynchSemaphore;
-    };
-
-    switch (pUmAlloc->enmSynchType)
-    {
-        case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
-            Status = ObReferenceObjectByHandle((HANDLE)pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
-                    (PVOID*)&pSynchEvent,
-                    NULL);
-            Assert(Status == STATUS_SUCCESS);
-            Assert(pSynchEvent);
-            break;
-        case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
-            Status = ObReferenceObjectByHandle((HANDLE)pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
-                    (PVOID*)&pSynchSemaphore,
-                    NULL);
-            Assert(Status == STATUS_SUCCESS);
-            Assert(pSynchSemaphore);
-            break;
-        case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
-            pSynchEvent = NULL;
-            Status = STATUS_SUCCESS;
-            break;
-        default:
-            LOGREL(("ERROR: invalid synch info type(%d)", pUmAlloc->enmSynchType));
-            AssertBreakpoint();
-            Status = STATUS_INVALID_PARAMETER;
-            break;
+        Status = ObReferenceObjectByHandle((HANDLE)pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
+                (PVOID*)&pSynchEvent,
+                NULL);
+        Assert(Status == STATUS_SUCCESS);
+        Assert(pSynchEvent);
     }
 
     if (Status == STATUS_SUCCESS)
@@ -1101,7 +1074,7 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
                 {
                     pAllocRef->pContext = pContext;
                     pAllocRef->pAlloc = pAlloc;
-                    pAllocRef->enmSynchType = pUmAlloc->enmSynchType;
+                    pAllocRef->fUhgsmiType = pUmAlloc->fUhgsmiType;
                     pAllocRef->pSynchEvent = pSynchEvent;
                     ExAcquireFastMutex(&pContext->Mutex);
                     pAllocRef->hSessionHandle = vboxWddmHTablePut(&pContext->AllocTable, pAllocRef);
@@ -1132,9 +1105,7 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
         }
 
         if (pSynchEvent)
-        {
             ObDereferenceObject(pSynchEvent);
-        }
     }
     else
     {
@@ -1159,9 +1130,7 @@ NTSTATUS vboxVideoAMgrCtxAllocUnmap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDIS
         MmUnlockPages(&pAllocRef->Mdl);
         *ppAlloc = pAllocRef->pAlloc;
         if (pAllocRef->pSynchEvent)
-        {
             ObDereferenceObject(pAllocRef->pSynchEvent);
-        }
         vboxWddmMemFree(pAllocRef);
     }
     else
@@ -1243,26 +1212,12 @@ static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PVBOXMP_DEVEXT pDev
     for (UINT i = 0; i < cBufs; ++i)
     {
         VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[i];
-        PVBOXVIDEOCM_ALLOC_REF pRef = (PVBOXVIDEOCM_ALLOC_REF)pBufCmd->u64GuesData;
-        if (!pBufCmd->u32GuesData)
+        PVBOXVIDEOCM_ALLOC_REF pRef = (PVBOXVIDEOCM_ALLOC_REF)pBufCmd->u64GuestData;
+        if (!pBufCmd->u32GuestData)
         {
             /* signal completion */
-            switch (pRef->enmSynchType)
-            {
-                case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
-                    KeSetEvent(pRef->pSynchEvent, 3, FALSE);
-                    break;
-                case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
-                    KeReleaseSemaphore(pRef->pSynchSemaphore,
-                        3,
-                        1,
-                        FALSE);
-                    break;
-                case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
-                    break;
-                default:
-                    Assert(0);
-            }
+            if (pRef->pSynchEvent)
+                KeSetEvent(pRef->pSynchEvent, 3, FALSE);
         }
 
         vboxVideoAMgrCtxAllocRefRelease(pRef);
@@ -1309,8 +1264,8 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
 #endif
                 pBufCmd->offBuffer = pRef->pAlloc->offData + pBufInfo->Info.offData;
                 pBufCmd->cbBuffer = pBufInfo->Info.cbData;
-                pBufCmd->u32GuesData = pBufInfo->Info.fSubFlags.bDoNotSignalCompletion;
-                pBufCmd->u64GuesData = (uint64_t)pRef;
+                pBufCmd->u32GuestData = pBufInfo->Info.bDoNotSignalCompletion;
+                pBufCmd->u64GuestData = (uint64_t)pRef;
             }
             else
             {

@@ -5716,6 +5716,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
         }
     }
 
+    VBOXVDBG_BREAK_SHARED(pRc);
+
     if (hr == S_OK)
         pResource->hResource = pRc;
     else
