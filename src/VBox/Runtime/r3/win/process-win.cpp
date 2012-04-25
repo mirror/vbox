@@ -297,7 +297,7 @@ static int rtProcWinMapErrorCodes(DWORD dwError)
             break;
 
         case ERROR_FILE_CORRUPT:
-            rc = VERR_INVALID_EXE_SIGNATURE;
+            rc = VERR_BAD_EXE_FORMAT;
             break;
 
         default:
