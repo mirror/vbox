@@ -38,6 +38,7 @@ typedef struct VBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC
     VBOXUHGSMI_BUFFER Base;
     PVBOXUHGSMI_PRIVATE_KMT pHgsmi;
     VBOXVIDEOCM_UM_ALLOC Alloc;
+    HANDLE hSynch;
 } VBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC, *PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC;
 
 #define VBOXUHGSMIKMT_GET_BUFFER(_p) VBOXUHGSMIKMT_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_KMT)
@@ -55,10 +56,8 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
     NTSTATUS Status = pBuffer->pHgsmi->Callbacks.pfnD3DKMTDestroyAllocation(&DdiDealloc);
     if (NT_SUCCESS(Status))
     {
-        if (pBuffer->BasePrivate.Base.bSynchCreated)
-        {
-            CloseHandle(pBuffer->BasePrivate.Base.hSynch);
-        }
+        if (pBuffer->BasePrivate.hSynch)
+            CloseHandle(pBuffer->BasePrivate.hSynch);
         RTMemFree(pBuffer);
         return VINF_SUCCESS;
     }
@@ -122,15 +121,13 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferUnlock(PVBOXUHGSMI_BUFFER pBuf)
     return VERR_GENERAL_FAILURE;
 }
 
-DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
-        VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType, HVBOXUHGSMI_SYNCHOBJECT hSynch,
-        PVBOXUHGSMI_BUFFER* ppBuf)
+DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, PVBOXUHGSMI_BUFFER* ppBuf)
 {
-    bool bSynchCreated = false;
+    HANDLE hSynch = NULL;
     if (!cbBuf)
         return VERR_INVALID_PARAMETER;
 
-    int rc = vboxUhgsmiBaseEventChkCreate(enmSynchType, &hSynch, &bSynchCreated);
+    int rc = vboxUhgsmiBaseEventChkCreate(fUhgsmiType, &hSynch);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         return rc;
@@ -160,7 +157,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
         Buf.AllocInfo.enmType = VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER;
         Buf.AllocInfo.cbBuffer = cbBuf;
         Buf.AllocInfo.hSynch = (uint64_t)hSynch;
-        Buf.AllocInfo.enmSynchType = enmSynchType;
+        Buf.AllocInfo.fUhgsmiType = fUhgsmiType;
 
         NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTCreateAllocation(&Buf.DdiAlloc);
         if (NT_SUCCESS(Status))
@@ -173,10 +170,8 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
 //            pBuf->Base.pfnAdjustValidDataRange = vboxUhgsmiKmtBufferAdjustValidDataRange;
             pBuf->BasePrivate.Base.pfnDestroy = vboxUhgsmiKmtBufferDestroy;
 
-            pBuf->BasePrivate.Base.hSynch = hSynch;
-            pBuf->BasePrivate.Base.enmSynchType = enmSynchType;
+            pBuf->BasePrivate.Base.fType = fUhgsmiType;
             pBuf->BasePrivate.Base.cbBuffer = cbBuf;
-            pBuf->BasePrivate.Base.bSynchCreated = bSynchCreated;
 
             pBuf->pHgsmi = pPrivate;
             pBuf->BasePrivate.hAllocation = Buf.DdiAllocInfo.hAllocation;
@@ -196,13 +191,13 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
     else
         rc = VERR_NO_MEMORY;
 
-    if (bSynchCreated)
+    if (hSynch)
         CloseHandle(hSynch);
 
     return rc;
 }
 
-DECLCALLBACK(int) vboxUhgsmiKmtBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers)
+DECLCALLBACK(int) vboxUhgsmiKmtBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers)
 {
     PVBOXUHGSMI_PRIVATE_KMT pHg = VBOXUHGSMIKMT_GET(pHgsmi);
     UINT cbDmaCmd = pHg->Context.CommandBufferSize;
@@ -274,10 +269,8 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
     NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTEscape(&DdiEscape);
     if (NT_SUCCESS(Status))
     {
-        if (pBuffer->Base.bSynchCreated)
-        {
-            CloseHandle(pBuffer->Base.hSynch);
-        }
+        if (pBuffer->hSynch)
+            CloseHandle(pBuffer->hSynch);
         RTMemFree(pBuffer);
         return VINF_SUCCESS;
     }
@@ -289,15 +282,13 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
     return VERR_GENERAL_FAILURE;
 }
 
-DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
-        VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType, HVBOXUHGSMI_SYNCHOBJECT hSynch,
-        PVBOXUHGSMI_BUFFER* ppBuf)
+DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, PVBOXUHGSMI_BUFFER* ppBuf)
 {
-    bool bSynchCreated = false;
+    HANDLE hSynch = NULL;
     if (!cbBuf)
         return VERR_INVALID_PARAMETER;
 
-    int rc = vboxUhgsmiBaseEventChkCreate(enmSynchType, &hSynch, &bSynchCreated);
+    int rc = vboxUhgsmiBaseEventChkCreate(fUhgsmiType, &hSynch);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         return rc;
@@ -329,7 +320,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBu
         Buf.AllocInfo.EscapeHdr.escapeCode = VBOXESC_UHGSMI_ALLOCATE;
         Buf.AllocInfo.Alloc.cbData = cbBuf;
         Buf.AllocInfo.Alloc.hSynch = (uint64_t)hSynch;
-        Buf.AllocInfo.Alloc.enmSynchType = enmSynchType;
+        Buf.AllocInfo.Alloc.fUhgsmiType = fUhgsmiType;
 
         NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTEscape(&Buf.DdiEscape);
         if (NT_SUCCESS(Status))
@@ -339,13 +330,12 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBu
             pBuf->pHgsmi = pPrivate;
             pBuf->Base.pfnLock = vboxUhgsmiKmtEscBufferLock;
             pBuf->Base.pfnUnlock = vboxUhgsmiKmtEscBufferUnlock;
-//            pBuf->Base.pfnAdjustValidDataRange = vboxUhgsmiKmtBufferAdjustValidDataRange;
             pBuf->Base.pfnDestroy = vboxUhgsmiKmtEscBufferDestroy;
 
-            pBuf->Base.hSynch = hSynch;
-            pBuf->Base.enmSynchType = enmSynchType;
+            pBuf->Base.fType = fUhgsmiType;
             pBuf->Base.cbBuffer = Buf.AllocInfo.Alloc.cbData;
-            pBuf->Base.bSynchCreated = bSynchCreated;
+
+            pBuf->hSynch = hSynch;
 
             *ppBuf = &pBuf->Base;
 
@@ -362,13 +352,13 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBu
     else
         rc = VERR_NO_MEMORY;
 
-    if (bSynchCreated)
+    if (hSynch)
         CloseHandle(hSynch);
 
     return rc;
 }
 
-DECLCALLBACK(int) vboxUhgsmiKmtEscBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers)
+DECLCALLBACK(int) vboxUhgsmiKmtEscBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers)
 {
     /* we no chromium will not submit more than three buffers actually,
      * for simplicity allocate it statically on the stack  */
@@ -378,13 +368,18 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUH
         VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE aBufInfos[3];
     } Buf;
 
-    if (cBuffers > RT_ELEMENTS(Buf.aBufInfos) + 1)
+    if (!cBuffers || cBuffers > RT_ELEMENTS(Buf.aBufInfos) + 1)
     {
-        Assert(0);
+        WARN(("invalid cBuffers!"));
         return VERR_INVALID_PARAMETER;
     }
 
-
+    HANDLE hSynch = VBOXUHGSMIKMTESC_GET_BUFFER(aBuffers[0].pBuf)->hSynch;
+    if (!hSynch)
+    {
+        WARN(("the fist buffer is not command!"));
+        return VERR_INVALID_PARAMETER;
+    }
     PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pHgsmi);
     D3DKMT_ESCAPE DdiEscape = {0};
 
@@ -404,7 +399,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUH
         PVBOXUHGSMI_BUFFER_SUBMIT pBufInfo = &aBuffers[i];
         PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC pBuf = VBOXUHGSMIKMTESC_GET_BUFFER(pBufInfo->pBuf);
         pSubmInfo->hAlloc = pBuf->Alloc.hAlloc;
-        pSubmInfo->Info.fSubFlags = pBufInfo->fFlags;
+        pSubmInfo->Info.bDoNotSignalCompletion = 0;
         if (pBufInfo->fFlags.bEntireBuffer)
         {
             pSubmInfo->Info.offData = 0;
@@ -420,7 +415,11 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUH
     NTSTATUS Status = pPrivate->Callbacks.pfnD3DKMTEscape(&DdiEscape);
     if (NT_SUCCESS(Status))
     {
-        return VINF_SUCCESS;
+        DWORD dwResult = WaitForSingleObject(hSynch, INFINITE);
+        if (dwResult == WAIT_OBJECT_0)
+            return VINF_SUCCESS;
+        WARN(("wait failed, (0x%x)", dwResult));
+        return VERR_GENERAL_FAILURE;
     }
     else
     {
@@ -569,7 +568,7 @@ static DECLCALLBACK(int) vboxCrHhgsmiKmtEscCtlConGetClientID(struct VBOXUHGSMI_P
 HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t crVersionMajor, uint32_t crVersionMinor, BOOL bD3D)
 {
     pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtBufferCreate;
-    pHgsmi->BasePrivate.Base.pfnBufferSubmitAsynch = vboxUhgsmiKmtBufferSubmitAsynch;
+    pHgsmi->BasePrivate.Base.pfnBufferSubmit = vboxUhgsmiKmtBufferSubmit;
     pHgsmi->BasePrivate.pfnCtlConCall = vboxCrHhgsmiKmtEscCtlConCall;
     pHgsmi->BasePrivate.pfnCtlConGetClientID = vboxCrHhgsmiKmtEscCtlConGetClientID;
 #ifdef VBOX_CRHGSMI_WITH_D3DDEV
@@ -581,7 +580,7 @@ HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t crVersionMa
 HRESULT vboxUhgsmiKmtEscCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t crVersionMajor, uint32_t crVersionMinor, BOOL bD3D)
 {
     pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtEscBufferCreate;
-    pHgsmi->BasePrivate.Base.pfnBufferSubmitAsynch = vboxUhgsmiKmtEscBufferSubmitAsynch;
+    pHgsmi->BasePrivate.Base.pfnBufferSubmit = vboxUhgsmiKmtEscBufferSubmit;
     pHgsmi->BasePrivate.pfnCtlConCall = vboxCrHhgsmiKmtEscCtlConCall;
     pHgsmi->BasePrivate.pfnCtlConGetClientID = vboxCrHhgsmiKmtEscCtlConGetClientID;
 #ifdef VBOX_CRHGSMI_WITH_D3DDEV

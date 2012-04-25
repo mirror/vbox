@@ -246,18 +246,15 @@ typedef struct CRVBOXHGCMBUFFER {
 static int _crVBoxHGSMIClientInit(PCRVBOXHGSMI_CLIENT pClient, PVBOXUHGSMI pHgsmi)
 {
     int rc;
+    VBOXUHGSMI_BUFFER_TYPE_FLAGS Flags = {0};
     pClient->pHgsmi = pHgsmi;
-    rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1),
-                            VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
-                            NULL,
-                            &pClient->pCmdBuffer);
+    Flags.fCommand = 1;
+    rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1), Flags, &pClient->pCmdBuffer);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
-        rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1),
-                                        VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
-                                        NULL,
-                                        &pClient->pHGBuffer);
+        Flags.Value = 0;
+        rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1), Flags, &pClient->pHGBuffer);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
@@ -372,12 +369,11 @@ static PVBOXUHGSMI_BUFFER _crVBoxHGSMIBufAlloc(PCRVBOXHGSMI_CLIENT pClient, uint
 
     if (!buf)
     {
+        VBOXUHGSMI_BUFFER_TYPE_FLAGS Flags = {0};
         crDebug("Buffer pool %p was empty; allocating new %d byte buffer.",
                         (void *) pClient->bufpool,
                         cbSize);
-        rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, cbSize,
-                                VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE, NULL,
-                                &buf);
+        rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, cbSize, Flags, &buf);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             crWarning("Failed to Create a buffer of size(%d), rc(%d)\n", cbSize, rc);
@@ -527,18 +523,6 @@ DECLINLINE(void) _crVBoxHGSMIFillCmd(VBOXUHGSMI_BUFFER_SUBMIT *pSubm, PCRVBOXHGS
 //                                                       * in case we want completion,
 //                                                       * we will block in _crVBoxHGSMICmdBufferGetRc (when locking the buffer)
 //                                                       * which is needed for getting the result */
-}
-
-#ifdef RT_OS_WINDOWS
-#define CRVBOXHGSMI_BUF_WAIT(_pBub) WaitForSingleObject((_pBub)->hSynch, INFINITE);
-#else
-# error "Port Me!!"
-#endif
-
-DECLINLINE(void) _crVBoxHGSMIWaitCmd(PCRVBOXHGSMI_CLIENT pClient)
-{
-    int rc = CRVBOXHGSMI_BUF_WAIT(pClient->pCmdBuffer);
-    CRASSERT(rc == 0);
 }
 #endif
 
@@ -1844,15 +1828,13 @@ static void _crVBoxHGSMIPollHost(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
     aSubmit[1].fFlags.Value = 0;
     aSubmit[1].fFlags.bHostWriteOnly = 1;
 
-    rc = pClient->pHgsmi->pfnBufferSubmitAsynch(pClient->pHgsmi, aSubmit, 2);
+    rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
-        crError("pfnBufferSubmitAsynch failed with %d \n", rc);
+        crError("pfnBufferSubmit failed with %d \n", rc);
         return;
     }
-
-    _crVBoxHGSMIWaitCmd(pClient);
 
     parms = (CRVBOXHGSMIREAD *)_crVBoxHGSMICmdBufferLockRo(pClient, sizeof (*parms));
     CRASSERT(parms);
@@ -1978,15 +1960,13 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
         aSubmit[2].cbData = pRecvBuffer->cbBuffer;
         aSubmit[2].fFlags.Value = 0;
 
-        rc = pClient->pHgsmi->pfnBufferSubmitAsynch(pClient->pHgsmi, aSubmit, 3);
+        rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 3);
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
-            crError("pfnBufferSubmitAsynch failed with %d \n", rc);
+            crError("pfnBufferSubmit failed with %d \n", rc);
             break;
         }
-
-        _crVBoxHGSMIWaitCmd(pClient);
 
         parms = (CRVBOXHGSMIWRITEREAD *)_crVBoxHGSMICmdBufferLockRo(pClient, sizeof (*parms));
         CRASSERT(parms);
@@ -2014,13 +1994,13 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
             }
             else if (VERR_BUFFER_OVERFLOW == rc)
             {
+                VBOXUHGSMI_BUFFER_TYPE_FLAGS Flags = {0};
                 PVBOXUHGSMI_BUFFER pOldBuf = pClient->pHGBuffer;
                 CRASSERT(!pClient->pvHGBuffer);
                 CRASSERT(cbWriteback>pClient->pHGBuffer->cbBuffer);
                 crDebug("Reallocating host buffer from %d to %d bytes", conn->cbHostBufferAllocated, cbWriteback);
 
-                rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(cbWriteback),
-                                VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE, NULL, &pClient->pHGBuffer);
+                rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(cbWriteback), Flags, &pClient->pHGBuffer);
                 AssertRC(rc);
                 if (RT_SUCCESS(rc))
                 {
@@ -2089,22 +2069,16 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         aSubmit[1].fFlags.Value = 0;
         aSubmit[1].fFlags.bHostReadOnly = 1;
 
-        rc = pClient->pHgsmi->pfnBufferSubmitAsynch(pClient->pHgsmi, aSubmit, 2);
+        rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            _crVBoxHGSMIWaitCmd(pClient);
-                /* @todo: do we need to wait for completion actually?
-                 * NOTE: in case we do not need completion,
-                 * we MUST specify bDoNotSignalCompletion flag for the command buffer */
-//                CRVBOXHGSMI_BUF_WAIT(pClient->pCmdBuffer);
-
             callRes = _crVBoxHGSMICmdBufferGetRc(pClient);
         }
         else
         {
             /* we can not recover at this point, report error & exit */
-            crError("pfnBufferSubmitAsynch failed with %d \n", rc);
+            crError("pfnBufferSubmit failed with %d \n", rc);
         }
     }
     else
@@ -2128,16 +2102,10 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         aSubmit[1].fFlags.Value = 0;
         aSubmit[1].fFlags.bHostReadOnly = 1;
 
-        rc = pClient->pHgsmi->pfnBufferSubmitAsynch(pClient->pHgsmi, aSubmit, 2);
+        rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            _crVBoxHGSMIWaitCmd(pClient);
-                /* @todo: do we need to wait for completion actually?
-                 * NOTE: in case we do not need completion,
-                 * we MUST specify bDoNotSignalCompletion flag for the command buffer */
-//                CRVBOXHGSMI_BUF_WAIT(pClient->pCmdBuffer);
-
             callRes = _crVBoxHGSMICmdBufferGetRc(pClient);
         }
         else

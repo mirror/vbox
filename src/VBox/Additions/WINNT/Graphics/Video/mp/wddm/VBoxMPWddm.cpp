@@ -1961,9 +1961,7 @@ VOID vboxWddmAllocationCleanup(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAll
         case VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER:
         {
             if (pAllocation->pSynchEvent)
-            {
                 ObDereferenceObject(pAllocation->pSynchEvent);
-            }
             break;
         }
         default:
@@ -2150,34 +2148,17 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                 case VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER:
                 {
                     pAllocationInfo->Size = pAllocInfo->cbBuffer;
-                    pAllocation->enmSynchType = pAllocInfo->enmSynchType;
+                    pAllocation->fUhgsmiType = pAllocInfo->fUhgsmiType;
                     pAllocation->SurfDesc.cbSize = pAllocInfo->cbBuffer;
                     pAllocationInfo->Flags.CpuVisible = 1;
 //                    pAllocationInfo->Flags.SynchronousPaging = 1;
                     pAllocationInfo->AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_MAXIMUM;
-                    switch (pAllocInfo->enmSynchType)
+                    if (pAllocInfo->hSynch)
                     {
-                        case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
-                            Status = ObReferenceObjectByHandle((HANDLE)pAllocInfo->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
-                                    (PVOID*)&pAllocation->pSynchEvent,
-                                    NULL);
-                            Assert(Status == STATUS_SUCCESS);
-                            break;
-                        case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
-                            Status = ObReferenceObjectByHandle((HANDLE)pAllocInfo->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
-                                    (PVOID*)&pAllocation->pSynchSemaphore,
-                                    NULL);
-                            Assert(Status == STATUS_SUCCESS);
-                            break;
-                        case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
-                            pAllocation->pSynchEvent = NULL;
-                            Status = STATUS_SUCCESS;
-                            break;
-                        default:
-                            LOGREL(("ERROR: invalid synch info type(%d)", pAllocInfo->enmSynchType));
-                            AssertBreakpoint();
-                            Status = STATUS_INVALID_PARAMETER;
-                            break;
+                        Status = ObReferenceObjectByHandle((HANDLE)pAllocInfo->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
+                                (PVOID*)&pAllocation->pSynchEvent,
+                                NULL);
+                        Assert(Status == STATUS_SUCCESS);
                     }
                     break;
                 }
@@ -2762,26 +2743,12 @@ DECLCALLBACK(VOID) vboxWddmDmaCompleteChromiumCmd(PVBOXMP_DEVEXT pDevExt, PVBOXV
     for (UINT i = 0; i < cBufs; ++i)
     {
         VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[i];
-        if (!pBufCmd->u32GuesData)
+        if (!pBufCmd->u32GuestData)
         {
             /* signal completion */
-            PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pBufCmd->u64GuesData;
-            switch (pAlloc->enmSynchType)
-            {
-                case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
-                    KeSetEvent(pAlloc->pSynchEvent, 3, FALSE);
-                    break;
-                case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
-                    KeReleaseSemaphore(pAlloc->pSynchSemaphore,
-                        3,
-                        1,
-                        FALSE);
-                    break;
-                case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
-                    break;
-                default:
-                    Assert(0);
-            }
+            PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pBufCmd->u64GuestData;
+            if (pAlloc->pSynchEvent)
+                KeSetEvent(pAlloc->pSynchEvent, 3, FALSE);
         }
     }
 
@@ -3034,8 +3001,8 @@ DxgkDdiSubmitCommand(
 
                 pBufCmd->offBuffer = pBufInfo->Alloc.offAlloc;
                 pBufCmd->cbBuffer = pBufInfo->cbData;
-                pBufCmd->u32GuesData = pBufInfo->bDoNotSignalCompletion;
-                pBufCmd->u64GuesData = (uint64_t)pBufInfo->Alloc.pAlloc;
+                pBufCmd->u32GuestData = pBufInfo->bDoNotSignalCompletion;
+                pBufCmd->u64GuestData = (uint64_t)pBufInfo->Alloc.pAlloc;
             }
 
             PVBOXVDMADDI_CMD pDdiCmd = VBOXVDMADDI_CMD_FROM_BUF_DR(pDr);
@@ -5135,7 +5102,7 @@ DxgkDdiRender(
                 vboxWddmPopulateDmaAllocInfoWithOffset(&pSubmInfo->Alloc, pAlloc, pAllocationList, pSubmUmInfo->offData);
 
                 pSubmInfo->cbData = pSubmUmInfo->cbData;
-                pSubmInfo->bDoNotSignalCompletion = pSubmUmInfo->fSubFlags.bDoNotSignalCompletion;
+                pSubmInfo->bDoNotSignalCompletion = pSubmUmInfo->bDoNotSignalCompletion;
 
                 pPLL->AllocationIndex = i;
                 pPLL->PatchOffset = RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD, aBufInfos[i].Alloc);
