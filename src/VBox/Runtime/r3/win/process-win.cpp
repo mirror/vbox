@@ -296,6 +296,10 @@ static int rtProcWinMapErrorCodes(DWORD dwError)
             rc = VERR_AUTHENTICATION_FAILURE;
             break;
 
+        case ERROR_FILE_CORRUPT:
+            rc = VERR_INVALID_EXE_SIGNATURE;
+            break;
+
         default:
             /* Could trigger a debug assertion! */
             rc = RTErrConvertFromWin32(dwError);
