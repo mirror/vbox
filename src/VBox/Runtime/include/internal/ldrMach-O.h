@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -247,7 +247,14 @@ typedef struct mach_header_64
 #define MH_WEAK_DEFINES             UINT32_C(0x00008000)
 #define MH_BINDS_TO_WEAK            UINT32_C(0x00010000)
 #define MH_ALLOW_STACK_EXECUTION    UINT32_C(0x00020000)
-#define MH_VALID_FLAGS              UINT32_C(0x0003ffff)
+#define MH_ROOT_SAFE                UINT32_C(0x00040000)
+#define MH_SETUID_SAFE              UINT32_C(0x00080000)
+#define MH_NO_REEXPORTED_DYLIBS     UINT32_C(0x00100000)
+#define MH_PIE                      UINT32_C(0x00200000)
+#define MH_DEAD_STRIPPABLE_DYLIB    UINT32_C(0x00400000)
+#define MH_HAS_TLV_DESCRIPTORS      UINT32_C(0x00800000)
+#define MH_NO_HEAP_EXECUTION        UINT32_C(0x01000000)
+#define MH_VALID_FLAGS              UINT32_C(0x02ffffff)
 
 
 typedef struct load_command
@@ -281,10 +288,27 @@ typedef struct load_command
 #define LC_SUB_LIBRARY              UINT32_C(0x15)
 #define LC_TWOLEVEL_HINTS           UINT32_C(0x16)
 #define LC_PREBIND_CKSUM            UINT32_C(0x17)
-#define LC_LOAD_WEAK_DYLIB (        UINT32_C(0x18) | LC_REQ_DYLD)
+#define LC_LOAD_WEAK_DYLIB         (UINT32_C(0x18) | LC_REQ_DYLD)
 #define LC_SEGMENT_64               UINT32_C(0x19)
 #define LC_ROUTINES_64              UINT32_C(0x1a)
 #define LC_UUID                     UINT32_C(0x1b)
+#define LC_RPATH                   (UINT32_C(0x1c) | LC_REQ_DYLD)
+#define LC_CODE_SIGNATURE           UINT32_C(0x1d)
+#define LC_SEGMENT_SPLIT_INFO       UINT32_C(0x1e)
+#define LC_REEXPORT_DYLIB          (UINT32_C(0x1f) | LC_REQ_DYLD)
+#define LC_LAZY_LOAD_DYLIB          UINT32_C(0x20)
+#define LC_ENCRYPTION_INFO          UINT32_C(0x21)
+#define LC_DYLD_INFO                UINT32_C(0x22)
+#define LC_DYLD_INFO_ONLY          (UINT32_C(0x22) | LC_REQ_DYLD)
+#define LC_LOAD_UPWARD_DYLIB       (UINT32_C(0x23) | LC_REQ_DYLD)
+#define LC_VERSION_MIN_MACOSX       UINT32_C(0x24)
+#define LC_VERSION_MIN_IPHONEOS     UINT32_C(0x25)
+#define LC_FUNCTION_STARTS          UINT32_C(0x26)
+#define LC_DYLD_ENVIRONMENT         UINT32_C(0x27)
+#define LC_MAIN                    (UINT32_C(0x28) | LC_REQ_DYLD)
+#define LC_DATA_IN_CODE             UINT32_C(0x29)
+#define LC_SOURCE_VERSION           UINT32_C(0x2a)
+#define LC_DYLIB_CODE_SIGN_DRS      UINT32_C(0x2b)
 
 
 typedef struct lc_str

@@ -589,7 +589,7 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis)
             RETURN_VERR_BAD_EXE_FORMAT;
         const char *pszSym = &pThis->pachStrTab[(uint32_t)pSym->n_un.n_strx];
 #ifdef IN_RING3
-        RTAssertMsg2("%05i: %02x:%08x %02x %04x %s\n", iSym, pSym->n_sect, pSym->n_value, pSym->n_type, pSym->n_desc, pszSym);
+        RTAssertMsg2("%05i: %02x:%08llx %02x %04x %s\n", iSym, pSym->n_sect, (uint64_t)pSym->n_value, pSym->n_type, pSym->n_desc, pszSym);
 #endif
 
         if (strcmp(pszSym, pszPrev) < 0)
@@ -606,19 +606,19 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis)
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (pSym->n_value < pThis->apSections[pSym->n_sect - 1]->addr)
+                    if (   pSym->n_value < pThis->apSections[pSym->n_sect - 1]->addr
+                        && strcmp(pszSym, "__mh_execute_header"))    /* in 10.8 it's no longer absolute (PIE?). */
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (   pSym->n_value - pThis->apSections[pSym->n_sect - 1]->addr
-                        > pThis->apSections[pSym->n_sect - 1]->size)
+                    if (      pSym->n_value - pThis->apSections[pSym->n_sect - 1]->addr
+                           > pThis->apSections[pSym->n_sect - 1]->size
+                        && strcmp(pszSym, "__mh_execute_header"))    /* see above. */
                         RETURN_VERR_BAD_EXE_FORMAT;
                     break;
 
                 case MACHO_N_ABS:
-#if 0 /* Spec say MACHO_NO_SECT, __mh_execute_header has 1 with 10.7/amd64 */
-                    if (pSym->n_sect != MACHO_NO_SECT)
-#else
-                    if (pSym->n_sect > pThis->cSections)
-#endif
+                    if (   pSym->n_sect != MACHO_NO_SECT
+                        && (   strcmp(pszSym, "__mh_execute_header") /* n_sect=1 in 10.7/amd64 */
+                            || pSym->n_sect > pThis->cSections) )
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
                         RETURN_VERR_BAD_EXE_FORMAT;
@@ -827,6 +827,12 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
 
             case LC_DYSYMTAB:
             case LC_UNIXTHREAD:
+            case LC_CODE_SIGNATURE:
+            case LC_VERSION_MIN_MACOSX:
+            case LC_FUNCTION_STARTS:
+            case LC_MAIN:
+            case LC_DATA_IN_CODE:
+            case LC_SOURCE_VERSION:
                 break;
 
             /* not observed */
@@ -846,6 +852,12 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
             case LC_PREPAGE:
             case LC_TWOLEVEL_HINTS:
             case LC_PREBIND_CKSUM:
+            case LC_SEGMENT_SPLIT_INFO:
+            case LC_ENCRYPTION_INFO:
+                RETURN_VERR_LDR_UNEXPECTED;
+
+            /* no phones here yet */
+            case LC_VERSION_MIN_IPHONEOS:
                 RETURN_VERR_LDR_UNEXPECTED;
 
             /* dylib */
@@ -859,6 +871,14 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
             case LC_SUB_UMBRELLA:
             case LC_SUB_CLIENT:
             case LC_SUB_LIBRARY:
+            case LC_RPATH:
+            case LC_REEXPORT_DYLIB:
+            case LC_LAZY_LOAD_DYLIB:
+            case LC_DYLD_INFO:
+            case LC_DYLD_INFO_ONLY:
+            case LC_LOAD_UPWARD_DYLIB:
+            case LC_DYLD_ENVIRONMENT:
+            case LC_DYLIB_CODE_SIGN_DRS:
                 RETURN_VERR_LDR_UNEXPECTED;
 
             default:

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,9 @@ static void dotest(void)
         "cpu_interrupt",
         "dtrace_register",
         "dtrace_suspend",
+        "kext_alloc",
+        "kext_free",
+        "vm_map_protect"
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_apszSyms); i++)
     {
