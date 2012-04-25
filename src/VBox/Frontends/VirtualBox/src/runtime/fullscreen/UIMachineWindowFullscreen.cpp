@@ -74,23 +74,8 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
 
-    /* Make sure the window is placed on valid screen
-     * before we are show fullscreen window: */
-    sltPlaceOnScreen();
-
     /* Show fullscreen window: */
-    showFullScreen();
-
-    /* Make sure the window is placed on valid screen again
-     * after window is shown & window's decorations applied.
-     * That is required due to X11 Window Geometry Rules. */
-    sltPlaceOnScreen();
-
-#ifdef Q_WS_MAC
-    /* Make sure it is really on the right place (especially on the Mac) */
-    QRect r = QApplication::desktop()->screenGeometry(static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
-    move(r.topLeft());
-#endif /* Q_WS_MAC */
+    showInNecessaryMode();
 }
 
 UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
@@ -128,6 +113,11 @@ void UIMachineWindowFullscreen::sltPlaceOnScreen()
 void UIMachineWindowFullscreen::sltMachineStateChanged()
 {
     UIMachineWindow::sltMachineStateChanged();
+}
+
+void UIMachineWindowFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
+{
+    UIMachineWindow::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
 void UIMachineWindowFullscreen::sltPopupMainMenu()
@@ -289,6 +279,34 @@ void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
         }
         /* Update mini tool-bar text: */
         m_pMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
+    }
+}
+
+void UIMachineWindowFullscreen::showInNecessaryMode()
+{
+    /* Make sure we really have to show window: */
+    BOOL fEnabled = true;
+    ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
+    session().GetMachine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+    if (fEnabled)
+    {
+        /* Make sure the window is placed on valid screen
+         * before we are show fullscreen window: */
+        sltPlaceOnScreen();
+
+        /* Show window fullscreen: */
+        showFullScreen();
+
+        /* Make sure the window is placed on valid screen again
+         * after window is shown & window's decorations applied.
+         * That is required due to X11 Window Geometry Rules. */
+        sltPlaceOnScreen();
+
+#ifdef Q_WS_MAC
+        /* Make sure it is really on the right place (especially on the Mac): */
+        QRect r = QApplication::desktop()->screenGeometry(static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
+        move(r.topLeft());
+#endif /* Q_WS_MAC */
     }
 }
 

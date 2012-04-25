@@ -92,8 +92,8 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
 
-    /* Show window: */
-    showSeamless();
+    /* Show seamless window: */
+    showInNecessaryMode();
 }
 
 UIMachineWindowSeamless::~UIMachineWindowSeamless()
@@ -133,6 +133,11 @@ void UIMachineWindowSeamless::sltPlaceOnScreen()
 void UIMachineWindowSeamless::sltMachineStateChanged()
 {
     UIMachineWindow::sltMachineStateChanged();
+}
+
+void UIMachineWindowSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
+{
+    UIMachineWindow::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
 void UIMachineWindowSeamless::sltPopupMainMenu()
@@ -358,18 +363,27 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 #endif /* Q_WS_MAC */
 }
 
-void UIMachineWindowSeamless::showSeamless()
+void UIMachineWindowSeamless::showInNecessaryMode()
 {
-    /* Show manually maximized window: */
-    sltPlaceOnScreen();
-    show();
+    /* Make sure we really have to show window: */
+    BOOL fEnabled = true;
+    ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
+    session().GetMachine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+    if (fEnabled)
+    {
+        /* Show manually maximized window: */
+        sltPlaceOnScreen();
+
+        /* Show normal window: */
+        show();
 
 #ifdef Q_WS_MAC
-    /* Make sure it is really on the right place (especially on the Mac): */
-    int iScreen = static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
-    QRect r = vboxGlobal().availableGeometry(iScreen);
-    move(r.topLeft());
+        /* Make sure it is really on the right place (especially on the Mac): */
+        int iScreen = static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
+        QRect r = vboxGlobal().availableGeometry(iScreen);
+        move(r.topLeft());
 #endif /* Q_WS_MAC */
+    }
 }
 
 void UIMachineWindowSeamless::setMask(const QRegion &constRegion)

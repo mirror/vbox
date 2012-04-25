@@ -75,6 +75,7 @@ signals:
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
     void sigShowWindow(LONG64 &winId); /* use Qt::DirectConnection */
     void sigCPUExecutionCapChange();
+    void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 };
 
 /* Wrap the IListener interface around our implementation class. */

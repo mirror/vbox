@@ -172,6 +172,7 @@ signals:
     void sigShowWindows();
 #endif /* RT_OS_DARWIN */
     void sigCPUExecutionCapChange();
+    void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
     /* Session signals: */
     void sigMachineStarted();

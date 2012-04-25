@@ -38,6 +38,7 @@ UIMainEventListener::UIMainEventListener()
     qRegisterMetaType<CMediumAttachment>("CMediumAttachment");
     qRegisterMetaType<CUSBDevice>("CUSBDevice");
     qRegisterMetaType<CVirtualBoxErrorInfo>("CVirtualBoxErrorInfo");
+    qRegisterMetaType<KGuestMonitorChangedEventType>("KGuestMonitorChangedEventType");
 }
 
 HRESULT UIMainEventListener::init(QObject * /* pParent */)
@@ -222,6 +223,13 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         case KVBoxEventType_OnCPUExecutionCapChanged:
         {
             emit sigCPUExecutionCapChange();
+            break;
+        }
+        case KVBoxEventType_OnGuestMonitorChanged:
+        {
+            CGuestMonitorChangedEvent es(pEvent);
+            emit sigGuestMonitorChange(es.GetChangeType(), es.GetScreenId(),
+                                       QRect(es.GetOriginX(), es.GetOriginY(), es.GetWidth(), es.GetHeight()));
             break;
         }
         default: break;

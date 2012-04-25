@@ -21,6 +21,7 @@
 
 /* Local includes */
 #include "UIMachineDefs.h"
+#include "COMDefs.h"
 
 /* Global forwards */
 class QWidget;
@@ -96,6 +97,10 @@ protected:
 
     /* Protected slots: */
     virtual void sltMachineStateChanged();
+    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+
+    /* Show routine: */
+    virtual void showInNecessaryMode() = 0;
 
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;

@@ -445,6 +445,10 @@ void UIMachineWindow::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
     QObject::connect(uisession(), SIGNAL(sigMachineStateChange()), machineWindow(), SLOT(sltMachineStateChanged()));
+
+    /* Guest monitor change updater: */
+    QObject::connect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+                     machineWindow(), SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 }
 
 void UIMachineWindow::prepareMachineViewContainer()
@@ -528,5 +532,23 @@ void UIMachineWindow::updateDbgWindows()
 void UIMachineWindow::sltMachineStateChanged()
 {
     updateAppearanceOf(UIVisualElement_WindowCaption);
+}
+
+void UIMachineWindow::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect /* screenGeo */)
+{
+    /* Ignore change events for other screens: */
+    if (uScreenId != m_uScreenId)
+        return;
+
+    /* Ignore KGuestMonitorChangedEventType_NewOrigin change event: */
+    if (changeType == KGuestMonitorChangedEventType_NewOrigin)
+        return;
+
+    /* Process KGuestMonitorChangedEventType_Enabled change event: */
+    if (machineWindow()->isHidden() && changeType == KGuestMonitorChangedEventType_Enabled)
+        showInNecessaryMode();
+    /* Process KGuestMonitorChangedEventType_Disabled change event: */
+    else if (!machineWindow()->isHidden() && changeType == KGuestMonitorChangedEventType_Disabled)
+        machineWindow()->hide();
 }
 

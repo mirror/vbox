@@ -40,6 +40,7 @@ private slots:
 
     /* Console callback handlers: */
     void sltMachineStateChanged();
+    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
     /* Popup main menu: */
     void sltPopupMainMenu();
@@ -75,7 +76,7 @@ private:
     void cleanupMenu();
 
     /* Other members: */
-    void showSimple();
+    void showInNecessaryMode();
     bool isMaximizedChecked();
 
     /* Other members: */
