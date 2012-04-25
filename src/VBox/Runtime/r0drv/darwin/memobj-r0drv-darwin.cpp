@@ -502,9 +502,20 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                             AssertMsgFailed(("enmType=%d\n", enmType));
                     }
 
-                    pMemDarwin->pMemDesc = pMemDesc;
-                    *ppMem = &pMemDarwin->Core;
-                    return VINF_SUCCESS;
+#if 1 /* Experimental code. */
+                    if (fExecutable)
+                        rc = rtR0MemObjNativeProtect(&pMemDarwin->Core, 0, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
+                    else
+#endif
+                        rc = VINF_SUCCESS;
+                    if (RT_SUCCESS(rc))
+                    {
+                        pMemDarwin->pMemDesc = pMemDesc;
+                        *ppMem = &pMemDarwin->Core;
+                        return VINF_SUCCESS;
+                    }
+
+                    rtR0MemObjDelete(&pMemDarwin->Core);
                 }
 
                 if (enmType == RTR0MEMOBJTYPE_PHYS_NC)
