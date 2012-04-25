@@ -3699,7 +3699,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="b0ce140d-02b6-469a-80f5-412ef8e1318e"
+    uuid="e7c78fee-f20d-4b4f-ac28-37af30d79ddf"
     wsmap="managed"
     >
     <desc>
@@ -6050,13 +6050,23 @@
       </param>
     </method>
 
-    <method name="querySavedGuestSize" const="yes">
+    <method name="querySavedGuestScreenInfo" const="yes">
       <desc>
         Returns the guest dimensions from the saved state.
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
         <desc>
           Saved guest screen to query info from.
+        </desc>
+      </param>
+      <param name="originX" type="unsigned long" dir="out">
+        <desc>
+          The X position of the guest monitor top left corner.
+        </desc>
+      </param>
+      <param name="originY" type="unsigned long" dir="out">
+        <desc>
+          The Y position of the guest monitor top left corner.
         </desc>
       </param>
       <param name="width" type="unsigned long" dir="out">
@@ -6067,6 +6077,11 @@
       <param name="height" type="unsigned long" dir="out">
         <desc>
           Guest height at the time of the saved state was taken.
+        </desc>
+      </param>
+      <param name="enabled" type="boolean" dir="out">
+        <desc>
+          Whether the monitor is enabled in the guest.
         </desc>
       </param>
     </method>
