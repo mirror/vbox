@@ -101,8 +101,9 @@ void UIMachineViewScale::takePauseShotSnapshot()
     QVector<BYTE> screenData = machine.ReadSavedScreenshotPNGToArray(0, width, height);
     if (screenData.size() != 0)
     {
-        ULONG guestWidth = 0, guestHeight = 0;
-        machine.QuerySavedGuestSize(0, guestWidth, guestHeight);
+        ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
+        BOOL fEnabled = true;
+        machine.QuerySavedGuestScreenInfo(0, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
         QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestWidth > 0 ? QSize(guestWidth, guestHeight) : guestSizeHint());
         m_pPauseImage = new QImage(shot);
         scalePauseShot();

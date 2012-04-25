@@ -20,6 +20,7 @@
 #include <iprt/log.h>
 #include <VBox/err.h>
 #include <VBox/vmm/ssm.h>
+#include <VBox/VBoxVideo.h>
 
 int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
 {
@@ -140,7 +141,9 @@ void freeSavedDisplayScreenshot(uint8_t *pu8Data)
     RTMemFree(pu8Data);
 }
 
-int readSavedGuestSize(const Utf8Str &strStateFilePath, uint32_t u32ScreenId, uint32_t *pu32Width, uint32_t *pu32Height)
+int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32ScreenId,
+                             uint32_t *pu32OriginX, uint32_t *pu32OriginY,
+                             uint32_t *pu32Width, uint32_t *pu32Height, uint16_t *pu16Flags)
 {
     LogFlowFunc(("u32ScreenId = %d [%s]\n", u32ScreenId, strStateFilePath.c_str()));
 
@@ -151,9 +154,6 @@ int readSavedGuestSize(const Utf8Str &strStateFilePath, uint32_t u32ScreenId, ui
         return VERR_NOT_SUPPORTED;
     }
 
-    uint32_t u32Width = 0;
-    uint32_t u32Height = 0;
-
     PSSMHANDLE pSSM;
     int vrc = SSMR3Open(strStateFilePath.c_str(), 0 /*fFlags*/, &pSSM);
     if (RT_SUCCESS(vrc))
@@ -162,31 +162,49 @@ int readSavedGuestSize(const Utf8Str &strStateFilePath, uint32_t u32ScreenId, ui
         vrc = SSMR3Seek(pSSM, "DisplayData", 0 /*iInstance*/, &uVersion);
         if (RT_SUCCESS(vrc))
         {
-            /* Only the second version is supported. */
             if (   uVersion == sSSMDisplayVer2
                 || uVersion == sSSMDisplayVer3)
             {
                 uint32_t cMonitors;
                 SSMR3GetU32(pSSM, &cMonitors);
                 if (u32ScreenId > cMonitors)
-                    vrc = -2;
+                {
+                    vrc = VERR_INVALID_PARAMETER;
+                }
                 else
                 {
-                    /* Skip all previous monitors and the first 3 entries. */
-                    SSMR3Skip(pSSM, u32ScreenId * 5 * sizeof(uint32_t) + 3 * sizeof(uint32_t));
-                    SSMR3GetU32(pSSM, &u32Width);
-                    SSMR3GetU32(pSSM, &u32Height);
+                    if (uVersion == sSSMDisplayVer2)
+                    {
+                        /* Skip all previous monitors, each 5 uint32_t, and the first 3 uint32_t entries. */
+                        SSMR3Skip(pSSM, u32ScreenId * 5 * sizeof(uint32_t) + 3 * sizeof(uint32_t));
+                        SSMR3GetU32(pSSM, pu32Width);
+                        SSMR3GetU32(pSSM, pu32Height);
+                        *pu32OriginX = 0;
+                        *pu32OriginY = 0;
+                        *pu16Flags = VBVA_SCREEN_F_ACTIVE;
+                    }
+                    else
+                    {
+                        Assert(uVersion == sSSMDisplayVer3);
+                        /* Skip all previous monitors, each 8 uint32_t, and the first 3 uint32_t entries. */
+                        SSMR3Skip(pSSM, u32ScreenId * 8 * sizeof(uint32_t) + 3 * sizeof(uint32_t));
+                        SSMR3GetU32(pSSM, pu32Width);
+                        SSMR3GetU32(pSSM, pu32Height);
+                        SSMR3GetU32(pSSM, pu32OriginX);
+                        SSMR3GetU32(pSSM, pu32OriginY);
+                        uint32_t u32Flags = 0;
+                        SSMR3GetU32(pSSM, &u32Flags);
+                        *pu16Flags = (uint16_t)u32Flags;
+                    }
                 }
+            }
+            else
+            {
+                vrc = VERR_NOT_SUPPORTED;
             }
         }
 
         SSMR3Close(pSSM);
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        *pu32Width = u32Width;
-        *pu32Height = u32Height;
     }
 
     LogFlowFunc(("vrc %Rrc\n", vrc));

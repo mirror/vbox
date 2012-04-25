@@ -23,7 +23,9 @@ using namespace com;
 #define sSSMDisplayVer2 0x00010002
 #define sSSMDisplayVer3 0x00010003
 
-int readSavedGuestSize(const Utf8Str &strStateFilePath, uint32_t u32ScreenId, uint32_t *pu32Width, uint32_t *pu32Height);
+int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32ScreenId,
+                             uint32_t *pu32OriginX, uint32_t *pu32OriginY,
+                             uint32_t *pu32Width, uint32_t *pu32Height, uint16_t *pu16Flags);
 
 int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
 void freeSavedDisplayScreenshot(uint8_t *pu8Data);

@@ -5815,24 +5815,39 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     return S_OK;
 }
 
-STDMETHODIMP Machine::QuerySavedGuestSize(ULONG uScreenId, ULONG *puWidth, ULONG *puHeight)
+STDMETHODIMP Machine::QuerySavedGuestScreenInfo(ULONG uScreenId,
+                                                ULONG *puOriginX,
+                                                ULONG *puOriginY,
+                                                ULONG *puWidth,
+                                                ULONG *puHeight,
+                                                BOOL *pfEnabled)
 {
     LogFlowThisFunc(("\n"));
 
+    CheckComArgNotNull(puOriginX);
+    CheckComArgNotNull(puOriginY);
     CheckComArgNotNull(puWidth);
     CheckComArgNotNull(puHeight);
+    CheckComArgNotNull(pfEnabled);
 
+    uint32_t u32OriginX= 0;
+    uint32_t u32OriginY= 0;
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
+    uint16_t u16Flags = 0;
 
-    int vrc = readSavedGuestSize(mSSData->strStateFilePath, uScreenId, &u32Width, &u32Height);
+    int vrc = readSavedGuestScreenInfo(mSSData->strStateFilePath, uScreenId,
+                                       &u32OriginX, &u32OriginY, &u32Width, &u32Height, &u16Flags);
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
                         tr("Saved guest size is not available (%Rrc)"),
                         vrc);
 
+    *puOriginX = u32OriginX;
+    *puOriginY = u32OriginY;
     *puWidth = u32Width;
     *puHeight = u32Height;
+    *pfEnabled = (u16Flags & VBVA_SCREEN_F_DISABLED) == 0;
 
     return S_OK;
 }
