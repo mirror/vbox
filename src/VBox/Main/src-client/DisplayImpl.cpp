@@ -398,6 +398,7 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
             that->maFramebuffers[i].xOrigin = xOrigin;
             that->maFramebuffers[i].yOrigin = yOrigin;
             that->maFramebuffers[i].flags = (uint16_t)flags;
+            that->maFramebuffers[i].fDisabled = (that->maFramebuffers[i].flags & VBVA_SCREEN_F_DISABLED) != 0;
         }
     }
 
