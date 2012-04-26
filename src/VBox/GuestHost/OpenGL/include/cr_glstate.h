@@ -53,6 +53,12 @@ typedef struct CRContext CRContext;
 
 #ifndef IN_GUEST
 # include <VBox/vmm/ssm.h>
+# include <iprt/asm.h>
+
+# define CR_STATE_SHAREDOBJ_USAGE_INIT(_pObj) (crMemset((_pObj)->ctxUsage, 0, sizeof ((_pObj)->ctxUsage)))
+# define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) (ASMBitSet((_pObj)->ctxUsage, (_pCtx)->id))
+# define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) (ASMBitClear((_pObj)->ctxUsage, (_pCtx)->id))
+# define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (ASMBitFirstSet((_pObj)->ctxUsage, sizeof ((_pObj)->ctxUsage)<<3) >= 0)
 #endif
 
 #define CR_MAX_EXTENTS 256
@@ -114,11 +120,6 @@ typedef struct _CRSharedState {
     GLboolean   bVBOResyncNeeded;
     GLboolean   bFBOResyncNeeded;
 } CRSharedState;
-
-#define CR_STATE_SHAREDOBJ_USAGE_INIT(_pObj) (CLEARBITS((_pObj)->ctxUsage))
-#define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) (SETBIT((_pObj)->ctxUsage, (_pCtx)->id))
-#define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) (CLEARBIT((_pObj)->ctxUsage, (_pCtx)->id))
-#define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (HASBITS((_pObj)->ctxUsage))
 
 /**
  * Chromium version of the state variables in OpenGL
