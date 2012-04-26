@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,10 +49,11 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 
 public:
 
-    /* Factory function to create required logic sub-child: */
+    /* Factory functions to create/destroy required logic sub-child: */
     static UIMachineLogic* create(QObject *pParent,
                                   UISession *pSession,
                                   UIVisualStateType visualStateType);
+    static void destroy(UIMachineLogic *pWhichLogic);
 
     /* Check if this mode is available: */
     virtual bool checkAvailability();
