@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,21 +19,21 @@
 #ifndef __UIMachineLogicNormal_h__
 #define __UIMachineLogicNormal_h__
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineLogic.h"
 
+/* Normal machine logic implementation: */
 class UIMachineLogicNormal : public UIMachineLogic
 {
     Q_OBJECT;
 
 protected:
 
-    /* Normal machine logic constructor/destructor: */
-    UIMachineLogicNormal(QObject *pParent,
-                         UISession *pSession);
-    virtual ~UIMachineLogicNormal();
+    /* Constructor: */
+    UIMachineLogicNormal(QObject *pParent, UISession *pSession);
 
-    void initialize();
+    /* Check if this logic is available: */
+    bool checkAvailability();
 
 private slots:
 
@@ -49,7 +49,7 @@ private:
     void prepareMachineWindows();
 
     /* Cleanup helpers: */
-    void cleanupMachineWindow();
+    void cleanupMachineWindows();
     //void cleanupActionConnections() {}
 
     /* Friend classes: */

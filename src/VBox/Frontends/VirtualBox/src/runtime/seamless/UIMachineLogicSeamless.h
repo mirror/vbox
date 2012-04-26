@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,25 +19,25 @@
 #ifndef __UIMachineLogicSeamless_h__
 #define __UIMachineLogicSeamless_h__
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineLogic.h"
 
-/* Local forwards */
+/* Forward declarations: */
 class UIMultiScreenLayout;
 
+/* Seamless machine logic implementation: */
 class UIMachineLogicSeamless : public UIMachineLogic
 {
     Q_OBJECT;
 
 protected:
 
-    /* Seamless machine logic constructor/destructor: */
-    UIMachineLogicSeamless(QObject *pParent,
-                           UISession *pSession);
+    /* Constructor/destructor: */
+    UIMachineLogicSeamless(QObject *pParent, UISession *pSession);
     virtual ~UIMachineLogicSeamless();
 
+    /* Check if this logic is available: */
     bool checkAvailability();
-    void initialize();
 
     int hostScreenForGuestScreen(int screenId) const;
 

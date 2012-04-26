@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,14 +17,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Global includes: */
 #include <QMenu>
 
-/* Local includes */
+/* Local includes: */
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicNormal.h"
@@ -32,7 +31,6 @@
 #include "UIDownloaderAdditions.h"
 #include "UIDownloaderUserManual.h"
 #include "UIDownloaderExtensionPack.h"
-
 #ifdef Q_WS_MAC
 #include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
@@ -42,61 +40,10 @@ UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession
 {
 }
 
-UIMachineLogicNormal::~UIMachineLogicNormal()
+bool UIMachineLogicNormal::checkAvailability()
 {
-#ifdef Q_WS_MAC
-    /* Cleanup the dock stuff before the machine window(s): */
-    cleanupDock();
-#endif /* Q_WS_MAC */
-
-    /* Cleanup machine window(s): */
-    cleanupMachineWindow();
-
-    /* Cleanup handlers: */
-    cleanupHandlers();
-}
-
-void UIMachineLogicNormal::initialize()
-{
-    /* Prepare required features: */
-    prepareRequiredFeatures();
-
-    /* Prepare session connections: */
-    prepareSessionConnections();
-
-    /* Prepare action groups:
-     * Note: This has to be done before prepareActionConnections
-     * cause here actions/menus are recreated. */
-    prepareActionGroups();
-
-    /* Prepare action connections: */
-    prepareActionConnections();
-
-    /* Prepare handlers: */
-    prepareHandlers();
-
-    /* Prepare normal machine window: */
-    prepareMachineWindows();
-
-#ifdef Q_WS_MAC
-    /* Prepare dock: */
-    prepareDock();
-#endif /* Q_WS_MAC */
-
-    /* Power up machine: */
-    uisession()->powerUp();
-
-    /* Initialization: */
-    sltMachineStateChanged();
-    sltAdditionsStateChanged();
-    sltMouseCapabilityChanged();
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    prepareDebugger();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-
-    /* Retranslate logic part: */
-    retranslateUi();
+    /* Normal mode is always available: */
+    return true;
 }
 
 void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
@@ -162,7 +109,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
     setMachineWindowsCreated(true);
 }
 
-void UIMachineLogicNormal::cleanupMachineWindow()
+void UIMachineLogicNormal::cleanupMachineWindows()
 {
     /* Do not cleanup machine window(s) if not present: */
     if (!isMachineWindowsCreated())

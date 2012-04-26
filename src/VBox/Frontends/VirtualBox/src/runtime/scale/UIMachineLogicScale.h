@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,22 +19,21 @@
 #ifndef __UIMachineLogicScale_h__
 #define __UIMachineLogicScale_h__
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineLogic.h"
 
+/* Scale machine logic implementation: */
 class UIMachineLogicScale : public UIMachineLogic
 {
     Q_OBJECT;
 
 protected:
 
-    /* Scale machine logic constructor/destructor: */
-    UIMachineLogicScale(QObject *pParent,
-                        UISession *pSession);
-    virtual ~UIMachineLogicScale();
+    /* Constructor: */
+    UIMachineLogicScale(QObject *pParent, UISession *pSession);
 
+    /* Check if this logic is available: */
     bool checkAvailability();
-    void initialize();
 
 private:
 
@@ -43,7 +42,7 @@ private:
     void prepareMachineWindows();
 
     /* Cleanup helpers: */
-    void cleanupMachineWindow();
+    void cleanupMachineWindows();
     void cleanupActionGroups();
 
     /* Friend classes: */

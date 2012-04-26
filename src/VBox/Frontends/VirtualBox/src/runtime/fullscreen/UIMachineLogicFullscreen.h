@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,25 +19,28 @@
 #ifndef __UIMachineLogicFullscreen_h__
 #define __UIMachineLogicFullscreen_h__
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineLogic.h"
 
-/* Local forwards */
+/* Forward declarations: */
 class UIMultiScreenLayout;
 
+/* Fullscreen machine logic implementation: */
 class UIMachineLogicFullscreen : public UIMachineLogic
 {
     Q_OBJECT;
 
 protected:
 
-    /* Fullscreen machine logic constructor/destructor: */
-    UIMachineLogicFullscreen(QObject *pParent,
-                             UISession *pSession);
+    /* Constructor/destructor: */
+    UIMachineLogicFullscreen(QObject *pParent, UISession *pSession);
     virtual ~UIMachineLogicFullscreen();
 
+    /* Check if this logic is available: */
     bool checkAvailability();
-    void initialize();
+
+    /* Prepare logic: */
+    void prepare();
 
     int hostScreenForGuestScreen(int screenId) const;
 
@@ -51,11 +54,11 @@ private slots:
 private:
 
     /* Prepare helpers: */
-#ifdef Q_WS_MAC
-    void prepareCommonConnections();
-#endif /* Q_WS_MAC */
     void prepareActionGroups();
     void prepareMachineWindows();
+#ifdef Q_WS_MAC
+    void prepareFullscreenConnections();
+#endif /* Q_WS_MAC */
 
     /* Cleanup helpers: */
     void cleanupMachineWindows();

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,20 +17,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Global includes: */
 #include <QDesktopWidget>
 
-/* Local includes */
+/* Local includes: */
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMultiScreenLayout.h"
-
 #ifdef Q_WS_MAC
 # include "UIExtraDataEventHandler.h"
 # include "VBoxUtils.h"
@@ -40,67 +38,47 @@
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
 {
+    /* Create multiscreen layout: */
     m_pScreenLayout = new UIMultiScreenLayout(this);
 }
 
 UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 {
-#ifdef Q_WS_MAC
-    /* Cleanup the dock stuff before the machine window(s): */
-    cleanupDock();
-#endif /* Q_WS_MAC */
-
-    /* Cleanup machine window(s): */
-    cleanupMachineWindows();
-
-    /* Cleanup handlers: */
-    cleanupHandlers();
-
-    /* Cleanup action related stuff */
-    cleanupActionGroups();
-
+    /* Delete multiscreen layout: */
     delete m_pScreenLayout;
 }
 
 bool UIMachineLogicFullscreen::checkAvailability()
 {
-    /* Base class availability: */
-    if (!UIMachineLogic::checkAvailability())
-        return false;
-
     /* Temporary get a machine object: */
     const CMachine &machine = uisession()->session().GetMachine();
 
+    /* Check that there are enough physical screens are connected: */
     int cHostScreens = m_pScreenLayout->hostScreenCount();
     int cGuestScreens = m_pScreenLayout->guestScreenCount();
-    /* Check that there are enough physical screens are connected: */
     if (cHostScreens < cGuestScreens)
     {
         msgCenter().cannotEnterFullscreenMode();
         return false;
     }
 
-    // TODO_NEW_CORE: this is how it looked in the old version
-    // bool VBoxConsoleView::isAutoresizeGuestActive() { return mGuestSupportsGraphics && mAutoresizeGuest; }
-//    if (uisession()->session().GetConsole().isAutoresizeGuestActive())
+    /* Check if there is enough physical memory to enter fullscreen: */
     if (uisession()->isGuestAdditionsActive())
     {
-        quint64 availBits = machine.GetVRAMSize() /* VRAM */
-                            * _1M /* MiB to bytes */
-                            * 8; /* to bits */
+        quint64 availBits = machine.GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)
         {
             int result = msgCenter().cannotEnterFullscreenMode(0, 0, 0,
-                                                                 (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+                                                               (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             if (result == QIMessageBox::Cancel)
                 return false;
         }
     }
 
-    /* Take the toggle hot key from the menu item. Since
-     * VBoxGlobal::extractKeyFromActionText gets exactly the
-     * linked key without the 'Host+' part we are adding it here. */
+    /* Take the toggle hot key from the menu item.
+     * Since VBoxGlobal::extractKeyFromActionText gets exactly
+     * the linked key without the 'Host+' part we are adding it here. */
     QString hotKey = QString("Host+%1")
         .arg(VBoxGlobal::extractKeyFromActionText(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen)->text()));
     Assert(!hotKey.isEmpty());
@@ -112,52 +90,15 @@ bool UIMachineLogicFullscreen::checkAvailability()
     return true;
 }
 
-void UIMachineLogicFullscreen::initialize()
+void UIMachineLogicFullscreen::prepare()
 {
-    /* Prepare required features: */
-    prepareRequiredFeatures();
+    /* Call to base-class: */
+    UIMachineLogic::prepare();
 
 #ifdef Q_WS_MAC
-    /* Prepare common connections: */
-    prepareCommonConnections();
+    /* Prepare fullscreen connections: */
+    prepareFullscreenConnections();
 #endif /* Q_WS_MAC */
-
-    /* Prepare console connections: */
-    prepareSessionConnections();
-
-    /* Prepare action groups:
-     * Note: This has to be done before prepareActionConnections
-     * cause here actions/menus are recreated. */
-    prepareActionGroups();
-
-    /* Prepare action connections: */
-    prepareActionConnections();
-
-    /* Prepare handlers: */
-    prepareHandlers();
-
-    /* Prepare machine window: */
-    prepareMachineWindows();
-
-#ifdef Q_WS_MAC
-    /* Prepare dock: */
-    prepareDock();
-#endif /* Q_WS_MAC */
-
-    /* Power up machine: */
-    uisession()->powerUp();
-
-    /* Initialization: */
-    sltMachineStateChanged();
-    sltAdditionsStateChanged();
-    sltMouseCapabilityChanged();
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    prepareDebugger();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-
-    /* Retranslate logic part: */
-    retranslateUi();
 }
 
 int UIMachineLogicFullscreen::hostScreenForGuestScreen(int screenId) const
@@ -166,9 +107,9 @@ int UIMachineLogicFullscreen::hostScreenForGuestScreen(int screenId) const
 }
 
 #ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::prepareCommonConnections()
+void UIMachineLogicFullscreen::prepareFullscreenConnections()
 {
-    /* Presentation mode connection */
+    /* Presentation mode connection: */
     connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
             this, SLOT(sltChangePresentationMode(bool)));
 }
@@ -176,7 +117,7 @@ void UIMachineLogicFullscreen::prepareCommonConnections()
 
 void UIMachineLogicFullscreen::prepareActionGroups()
 {
-    /* Base class action groups: */
+    /* Call to base-class: */
     UIMachineLogic::prepareActionGroups();
 
     /* Adjust-window action isn't allowed in fullscreen: */
@@ -185,6 +126,7 @@ void UIMachineLogicFullscreen::prepareActionGroups()
     /* Add the view menu: */
     QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
     m_pScreenLayout->initialize(pMenu);
+    pMenu->setVisible(true);
 }
 
 void UIMachineLogicFullscreen::prepareMachineWindows()
@@ -241,6 +183,9 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
 
 void UIMachineLogicFullscreen::cleanupActionGroups()
 {
+    /* Call to base-class: */
+    UIMachineLogic::cleanupActionGroups();
+
     /* Reenable adjust-window action: */
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(true);
 }
