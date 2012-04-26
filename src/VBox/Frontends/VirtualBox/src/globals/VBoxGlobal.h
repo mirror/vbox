@@ -141,14 +141,14 @@ public:
 
     UISelectorWindow &selectorWnd();
 
-    QWidget *vmWindow();
-
-    bool createVirtualMachine(const CSession &session);
+    /* VM stuff: */
+    bool startMachine(const QString &strMachineId);
     UIMachine* virtualMachine();
+    QWidget* vmWindow();
 
-    /* main window handle storage */
-    void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
-    QWidget *mainWindow() const { return mMainWindow; }
+    /* Main application window storage: */
+    void setMainWindow(QWidget *pMainWindow) { mMainWindow = pMainWindow; }
+    QWidget* mainWindow() const { return mMainWindow; }
 
     bool is3DAvailable() const { return m3DAvailable; }
 
@@ -596,8 +596,6 @@ public:
 
     /** Shortcut to openSession (aId, true). */
     CSession openExistingSession(const QString &aId) { return openSession (aId, true); }
-
-    bool startMachine(const QString &strId);
 
     void startEnumeratingMedia();
 

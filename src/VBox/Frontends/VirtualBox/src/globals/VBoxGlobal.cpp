@@ -440,32 +440,34 @@ UISelectorWindow &VBoxGlobal::selectorWnd()
     return *mSelectorWnd;
 }
 
-
-QWidget *VBoxGlobal::vmWindow()
+bool VBoxGlobal::startMachine(const QString &strMachineId)
 {
-    if (isVMConsoleProcess())
-    {
-        if (m_pVirtualMachine)
-            return m_pVirtualMachine->mainWindow();
-    }
-    return NULL;
-}
+    /* Some restrictions: */
+    AssertMsg(mValid, ("VBoxGlobal is invalid"));
+    AssertMsg(!m_pVirtualMachine, ("Machine already started"));
 
-bool VBoxGlobal::createVirtualMachine(const CSession &session)
-{
-    if (!m_pVirtualMachine && !session.isNull())
-    {
-        UIMachine *pVirtualMachine = new UIMachine(&m_pVirtualMachine, session);
-        Assert(pVirtualMachine == m_pVirtualMachine);
-        NOREF(pVirtualMachine);
-        return true;
-    }
-    return false;
+    /* Create session: */
+    CSession session = vboxGlobal().openSession(strMachineId);
+    if (session.isNull())
+        return false;
+
+    /* Start virtual machine: */
+    UIMachine *pVirtualMachine = new UIMachine(&m_pVirtualMachine, session);
+    Assert(pVirtualMachine == m_pVirtualMachine);
+    Q_UNUSED(pVirtualMachine);
+    return true;
 }
 
 UIMachine* VBoxGlobal::virtualMachine()
 {
     return m_pVirtualMachine;
+}
+
+QWidget* VBoxGlobal::vmWindow()
+{
+    if (isVMConsoleProcess() && m_pVirtualMachine)
+        return m_pVirtualMachine->mainWindow();
+    return 0;
 }
 
 #ifdef VBOX_GUI_WITH_PIDFILE
@@ -2262,20 +2264,6 @@ CSession VBoxGlobal::openSession(const QString &aId, bool aExisting /* = false *
     }
 
     return session;
-}
-
-/**
- *  Starts a machine with the given ID.
- */
-bool VBoxGlobal::startMachine(const QString &strId)
-{
-    AssertReturn(mValid, false);
-
-    CSession session = vboxGlobal().openSession(strId);
-    if (session.isNull())
-        return false;
-
-    return createVirtualMachine(session);
 }
 
 /**

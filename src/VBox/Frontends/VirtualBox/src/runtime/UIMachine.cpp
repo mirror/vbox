@@ -381,11 +381,11 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     , m_pSession(0)
     , m_pVisualState(0)
 {
-    /* Storing self: */
+    /* Store self pointer: */
     if (m_ppThis)
         *m_ppThis = this;
 
-    /* Create UISession object: */
+    /* Create UI session: */
     m_pSession = new UISession(this, m_session);
 
     /* Preventing application from closing in case of window(s) closed: */
@@ -405,15 +405,22 @@ UIMachine::~UIMachine()
 {
     /* Save machine settings: */
     saveMachineSettings();
-    /* Erase itself pointer: */
-    *m_ppThis = 0;
-    /* Delete uisession children in backward direction: */
+
+    /* Delete visual state: */
     delete m_pVisualState;
     m_pVisualState = 0;
+
+    /* Delete UI session: */
     delete m_pSession;
     m_pSession = 0;
+
+    /* Free session finally: */
     m_session.UnlockMachine();
     m_session.detach();
+
+    /* Clear self pointer: */
+    *m_ppThis = 0;
+
     /* Quit application: */
     QApplication::quit();
 }
