@@ -64,50 +64,6 @@ static INLINE int CHECKDIRTY( const unsigned int *b, const unsigned int *d )
     return 0;
 }
 
-static INLINE int CHECKBIT( const unsigned int *b, const unsigned int bit )
-{
-    unsigned int node32 = bit >> 5;
-    unsigned int node = bit & 0x1f;
-
-    return !!(b[node32] & (1 < node));
-}
-
-static INLINE void CLEARBIT( unsigned int *b, const unsigned int bit )
-{
-    unsigned int node32 = bit >> 5;
-    unsigned int node = bit & 0x1f;
-
-    b[node32] &=  ~(1 << node);
-}
-
-static INLINE void SETBIT( unsigned int *b, const unsigned int bit )
-{
-    unsigned int node32 = bit >> 5;
-    unsigned int node = bit & 0x1f;
-
-    b[node32] |=  (1 << node);
-}
-
-static INLINE int HASBITS( const unsigned int *b )
-{
-    int j;
-
-    for (j=0;j<CR_MAX_BITARRAY;j++)
-        if (b[j])
-            return 1;
-
-    return 0;
-}
-
-static INLINE void CLEARBITS( unsigned int *b )
-{
-    int j;
-
-    for (j=0;j<CR_MAX_BITARRAY;j++)
-        b[j] = 0;
-}
-
-
 #ifdef __cplusplus
 }
 #endif
