@@ -425,20 +425,25 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      *
      * The kIOMemoryKernelUserShared flag just forces the result to be page aligned.
      */
+#if 1 /** @todo Figure out why this is broken. Is it only on snow leopard? Seen allocating memory for the VM structure, last page corrupted or inaccessible. */
+    size_t const cbFudged = cb + PAGE_SIZE;
+#else
+    size_t const cbFudged = cb;
+#endif
     int rc;
     IOBufferMemoryDescriptor *pMemDesc =
         IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task,
                                                            kIOMemoryKernelUserShared
                                                          | kIODirectionInOut
                                                          | (fContiguous ? kIOMemoryPhysicallyContiguous : 0),
-                                                         cb,
+                                                         cbFudged,
                                                          PhysMask);
     if (pMemDesc)
     {
         IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
         if (IORet == kIOReturnSuccess)
         {
-            void *pv = pMemDesc->getBytesNoCopy(0, cb);
+            void *pv = pMemDesc->getBytesNoCopy(0, cbFudged);
             if (pv)
             {
                 /*
