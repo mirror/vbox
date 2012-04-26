@@ -3891,7 +3891,8 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Allocate memory.
      */
-    pv = RTMemAlloc(RT_OFFSETOF(SUPDRVLDRIMAGE, szName[cchName + 1]));
+    Assert(cchName < sizeof(pImage->szName));
+    pv = RTMemAlloc(sizeof(SUPDRVLDRIMAGE));
     if (!pv)
     {
         supdrvLdrUnlock(pDevExt);
