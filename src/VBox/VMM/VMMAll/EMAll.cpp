@@ -359,8 +359,12 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
     {
         if (PAGE_ADDRESS(InstrGC) == PAGE_ADDRESS(InstrGC + sizeof(State.aOpcode) - 1))
         {
-           if (rc == VERR_PAGE_TABLE_NOT_PRESENT)
-              HWACCMInvalidatePage(pVCpu, InstrGC);
+            /*
+             * If we fail to find the page via the guest's page tables we invalidate the page
+             * in the host TLB (pertaining to the guest in the NestedPaging case). See #6043
+             */
+            if (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
+                HWACCMInvalidatePage(pVCpu, InstrGC);
 
            Log(("emDisCoreOne: read failed with %d\n", rc));
            return rc;
@@ -448,8 +452,12 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
     {
         if (PAGE_ADDRESS(GCPtrInstr) == PAGE_ADDRESS(GCPtrInstr + sizeof(State.aOpcode) - 1))
         {
-           if (rc == VERR_PAGE_TABLE_NOT_PRESENT)
-              HWACCMInvalidatePage(pVCpu, GCPtrInstr);
+            /*
+             * If we fail to find the page via the guest's page tables we invalidate the page
+             * in the host TLB (pertaining to the guest in the NestedPaging case). See #6043
+             */
+            if (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
+                HWACCMInvalidatePage(pVCpu, GCPtrInstr);
 
            Log(("EMInterpretDisasOneEx: read failed with %d\n", rc));
            return rc;

@@ -3495,6 +3495,11 @@ ResumeExecution:
         /* Handle the pagefault trap for the nested shadow table. */
         rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), GCPhys);
         Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, VBOXSTRICTRC_VAL(rc)));
+
+        /*
+         * Note! We probably should handle failure to get the instruction page (VERR_PAGE_NOT_PRESENT,
+         * VERR_PAGE_TABLE_NOT_PRESENT). See #6043.
+         */
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
             Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
@@ -3541,6 +3546,11 @@ ResumeExecution:
         }
 
         rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys, UINT32_MAX);
+
+        /*
+         * Note! We probably should handle failure to get the instruction page (VERR_PAGE_NOT_PRESENT,
+         * VERR_PAGE_TABLE_NOT_PRESENT). See #6043.
+         */
         if (rc == VINF_SUCCESS)
         {
             Log2(("PGMR0Trap0eHandlerNPMisconfig(,,,%RGp) at %RGv -> resume\n", GCPhys, (RTGCPTR)pCtx->rip));
@@ -4433,7 +4443,8 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 
     Log2(("VMXR0InvalidatePage %RGv\n", GCVirt));
 
-    /* Only relevant if we want to use VPID.
+    /* Only relevant if we want to use VPID as otherwise every VMX transition
+     * will flush the TLBs and paging-structure caches.
      * In the nested paging case we still see such calls, but
      * can safely ignore them. (e.g. after cr3 updates)
      */
