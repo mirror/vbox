@@ -59,9 +59,14 @@ public:
     /* Destructor: */
     ~UIVisualState()
     {
-        /* Delete machine logic if exists: */
+        /* Cleanup/delete machine logic if exists: */
         if (m_pMachineLogic)
+        {
+            /* Cleanup the logic object: */
+            m_pMachineLogic->cleanup();
+            /* Destroy the logic object: */
             UIMachineLogic::destroy(m_pMachineLogic);
+        }
     }
 
     /* Visual state type getter: */
@@ -94,7 +99,11 @@ public:
     }
 
     /* Method to change one visual state to another: */
-    virtual void change() = 0;
+    virtual void change()
+    {
+        /* Prepare the logic object: */
+        m_pMachineLogic->prepare();
+    }
 
     /* Method to finish change one visual state to another: */
     virtual void finishChange()
@@ -148,6 +157,9 @@ private:
     /* Method to change previous visual state to this one: */
     void change()
     {
+        /* Call to base-class: */
+        UIVisualState::change();
+
         /* Connect action handlers: */
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
@@ -155,9 +167,6 @@ private:
                 this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToScaleMode()), Qt::QueuedConnection);
-
-        /* Initialize the logic object: */
-        m_pMachineLogic->initialize();
     }
 };
 
@@ -212,6 +221,9 @@ private:
     /* Method to change previous visual state to this one: */
     void change()
     {
+        /* Call to base-class: */
+        UIVisualState::change();
+
         /* Connect action handlers: */
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
@@ -219,9 +231,6 @@ private:
                 this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToScaleMode()), Qt::QueuedConnection);
-
-        /* Initialize the logic object: */
-        m_pMachineLogic->initialize();
     }
 };
 
@@ -276,6 +285,9 @@ private:
     /* Method to change previous visual state to this one: */
     void change()
     {
+        /* Call to base-class: */
+        UIVisualState::change();
+
         /* Connect action handlers: */
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
@@ -283,9 +295,6 @@ private:
                 this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToScaleMode()), Qt::QueuedConnection);
-
-        /* Initialize the logic object: */
-        m_pMachineLogic->initialize();
     }
 };
 
@@ -340,6 +349,9 @@ private:
     /* Method to change previous visual state to this one: */
     void change()
     {
+        /* Call to base-class: */
+        UIVisualState::change();
+
         /* Connect action handlers: */
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
@@ -347,9 +359,6 @@ private:
                 this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
         connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
-
-        /* Initialize the logic object: */
-        m_pMachineLogic->initialize();
     }
 };
 
