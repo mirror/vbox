@@ -820,11 +820,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                          */
                         const uint32_t  cbVM   = RT_UOFFSETOF(VM, aCpus[cCpus]);
                         const uint32_t  cPages = RT_ALIGN_32(cbVM, PAGE_SIZE) >> PAGE_SHIFT;
-#ifdef RT_OS_DARWIN /** @todo Figure out why this is broken. Is it only on snow leopard? */
-                        rc = RTR0MemObjAllocLow(&pGVM->gvmm.s.VMMemObj, (cPages + 1) << PAGE_SHIFT, false /* fExecutable */);
-#else
                         rc = RTR0MemObjAllocLow(&pGVM->gvmm.s.VMMemObj, cPages << PAGE_SHIFT, false /* fExecutable */);
-#endif
                         if (RT_SUCCESS(rc))
                         {
                             PVM pVM = (PVM)RTR0MemObjAddress(pGVM->gvmm.s.VMMemObj); AssertPtr(pVM);
