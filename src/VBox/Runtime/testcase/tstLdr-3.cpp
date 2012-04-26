@@ -38,62 +38,12 @@
 #include <VBox/dis.h>
 
 
-static bool MyDisBlock(PDISCPUSTATE pCpu, RTHCUINTPTR pvCodeBlock, int32_t cbMax, RTUINTPTR off, RTUINTPTR Addr)
-{
-    int32_t i = 0;
-    while (i < cbMax)
-    {
-        char        szOutput[256];
-        uint32_t    cbInstr;
-        if (RT_FAILURE(DISInstr(pCpu, pvCodeBlock + i, off, &cbInstr, szOutput)))
-            return false;
-
-        RTPrintf("%s", szOutput);
-        if (pvCodeBlock + i + off == Addr)
-            RTPrintf("^^^^^^^^\n");
-
-        /* next */
-        i += cbInstr;
-    }
-    return true;
-}
-
-
-
-/**
- * Resolve an external symbol during RTLdrGetBits().
- *
- * @returns iprt status code.
- * @param   hLdrMod         The loader module handle.
- * @param   pszModule       Module name.
- * @param   pszSymbol       Symbol name, NULL if uSymbol should be used.
- * @param   uSymbol         Symbol ordinal, ~0 if pszSymbol should be used.
- * @param   pValue          Where to store the symbol value (address).
- * @param   pvUser          User argument.
- */
-static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
-{
-    RTUINTPTR BaseAddr = *(PCRTUINTPTR)pvUser;
-    *pValue = BaseAddr + UINT32_C(0x604020f0);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Enumeration callback function used by RTLdrEnumSymbols().
- *
- * @returns iprt status code. Failure will stop the enumeration.
- * @param   hLdrMod         The loader module handle.
- * @param   pszSymbol       Symbol name. NULL if ordinal only.
- * @param   uSymbol         Symbol ordinal, ~0 if not used.
- * @param   Value           Symbol value.
- * @param   pvUser          The user argument specified to RTLdrEnumSymbols().
- */
-static DECLCALLBACK(int) testEnumSymbol1(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser)
-{
-    RTPrintf("  %RTptr %s (%d)\n", Value, pszSymbol, uSymbol);
-    return VINF_SUCCESS;
-}
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static RTUINTPTR g_uLoadAddr;
+static RTLDRMOD  g_hLdrMod;
+static void     *g_pvBits;
 
 /**
  * Current nearest symbol.
@@ -162,6 +112,149 @@ static DECLCALLBACK(int) testEnumSymbol2(RTLDRMOD hLdrMod, const char *pszSymbol
     return VINF_SUCCESS;
 }
 
+static int FindNearSymbol(RTUINTPTR uAddr, PTESTNEARSYM pNearSym)
+{
+    RT_ZERO(*pNearSym);
+    pNearSym->Addr = (RTUINTPTR)uAddr;
+    pNearSym->aSyms[1].Value = ~(RTUINTPTR)0;
+    int rc = RTLdrEnumSymbols(g_hLdrMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL, g_pvBits, g_uLoadAddr, testEnumSymbol2, pNearSym);
+    if (RT_FAILURE(rc))
+        RTPrintf("tstLdr-3: Failed to enumerate symbols: %Rra\n", rc);
+    return rc;
+}
+
+static DECLCALLBACK(int) MyGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress,
+                                     char *pszBuf, size_t cchBuf, RTINTPTR *poff,
+                                     void *pvUser)
+{
+    if (   uAddress > RTLdrSize(g_hLdrMod) + g_uLoadAddr
+        || uAddress < g_uLoadAddr)
+        return VERR_SYMBOL_NOT_FOUND;
+
+    TESTNEARSYM NearSym;
+    int rc = FindNearSymbol(uAddress, &NearSym);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    RTStrCopy(pszBuf, cchBuf, NearSym.aSyms[0].szName);
+    *poff = uAddress - NearSym.aSyms[0].Value;
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) MyReadBytes(RTUINTPTR uSrc, uint8_t *pbDst, unsigned cb, void *pvUser)
+{
+    PDISCPUSTATE pCpu = (PDISCPUSTATE)pvUser;
+    memcpy(pbDst, (uint8_t const *)((uintptr_t)uSrc + (uintptr_t)pCpu->apvUserData[0]), cb);
+    return VINF_SUCCESS;
+}
+
+
+static bool MyDisBlock(PDISCPUSTATE pCpu, RTHCUINTPTR pvCodeBlock, int32_t cbMax, RTUINTPTR off,
+                       RTUINTPTR uNearAddr, RTUINTPTR uSearchAddr)
+{
+    int32_t i = 0;
+    while (i < cbMax)
+    {
+        bool        fQuiet    = RTAssertSetQuiet(true);
+        bool        fMayPanic = RTAssertSetMayPanic(false);
+        char        szOutput[256];
+        unsigned    cbInstr;
+        int rc = DISCoreOneEx(uNearAddr + i, pCpu->mode,
+                              MyReadBytes, (uint8_t *)pvCodeBlock - (uintptr_t)uNearAddr,
+                              pCpu, &cbInstr);
+        RTAssertSetMayPanic(fMayPanic);
+        RTAssertSetQuiet(fQuiet);
+        if (RT_FAILURE(rc))
+            return false;
+
+        DISFormatYasmEx(pCpu, szOutput, sizeof(szOutput),
+                        DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_ADDR_LEFT  | DIS_FMT_FLAGS_BYTES_SPACED,
+                        MyGetSymbol, NULL);
+
+        RTPrintf("%s\n", szOutput);
+        if (pvCodeBlock + i + off == uSearchAddr)
+            RTPrintf("^^^^^^^^\n");
+
+        /* next */
+        i += cbInstr;
+    }
+    return true;
+}
+
+
+
+/**
+ * Resolve an external symbol during RTLdrGetBits().
+ *
+ * @returns iprt status code.
+ * @param   hLdrMod         The loader module handle.
+ * @param   pszModule       Module name.
+ * @param   pszSymbol       Symbol name, NULL if uSymbol should be used.
+ * @param   uSymbol         Symbol ordinal, ~0 if pszSymbol should be used.
+ * @param   pValue          Where to store the symbol value (address).
+ * @param   pvUser          User argument.
+ */
+static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
+{
+#if 1
+    RTUINTPTR BaseAddr = *(PCRTUINTPTR)pvUser;
+    *pValue = BaseAddr + UINT32_C(0x604020f0);
+#else
+    *pValue = UINT64_C(0xffffff7f820df000);
+#endif
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Enumeration callback function used by RTLdrEnumSymbols().
+ *
+ * @returns iprt status code. Failure will stop the enumeration.
+ * @param   hLdrMod         The loader module handle.
+ * @param   pszSymbol       Symbol name. NULL if ordinal only.
+ * @param   uSymbol         Symbol ordinal, ~0 if not used.
+ * @param   Value           Symbol value.
+ * @param   pvUser          The user argument specified to RTLdrEnumSymbols().
+ */
+static DECLCALLBACK(int) testEnumSymbol1(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser)
+{
+    RTPrintf("  %RTptr %s (%d)\n", Value, pszSymbol, uSymbol);
+    return VINF_SUCCESS;
+}
+
+
+static int testDisasNear(uint64_t uAddr)
+{
+    TESTNEARSYM NearSym;
+    int rc = FindNearSymbol(uAddr, &NearSym);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    RTPrintf("tstLdr-3: Addr=%RTptr\n"
+             "%RTptr %s (%d) - %RTptr %s (%d)\n",
+             NearSym.Addr,
+             NearSym.aSyms[0].Value, NearSym.aSyms[0].szName, NearSym.aSyms[0].uSymbol,
+             NearSym.aSyms[1].Value, NearSym.aSyms[1].szName, NearSym.aSyms[1].uSymbol);
+    if (NearSym.Addr - NearSym.aSyms[0].Value < 0x10000)
+    {
+        DISCPUSTATE Cpu;
+        memset(&Cpu, 0, sizeof(Cpu));
+#ifdef RT_ARCH_X86 /** @todo select according to the module type. */
+        Cpu.mode = CPUMODE_32BIT;
+#else
+        Cpu.mode = CPUMODE_64BIT;
+#endif
+        uint8_t *pbCode = (uint8_t *)g_pvBits + (NearSym.aSyms[0].Value - g_uLoadAddr);
+        MyDisBlock(&Cpu, (uintptr_t)pbCode,
+                   RT_MAX(NearSym.aSyms[1].Value - NearSym.aSyms[0].Value, 0x20000),
+                   NearSym.aSyms[0].Value - (RTUINTPTR)pbCode,
+                   NearSym.aSyms[0].Value,
+                   NearSym.Addr);
+    }
+
+    return VINF_SUCCESS;
+}
 
 int main(int argc, char **argv)
 {
@@ -177,56 +270,42 @@ int main(int argc, char **argv)
     /*
      * Load the module.
      */
-    RTUINTPTR LoadAddr = (RTUINTPTR)RTStrToUInt64(argv[1]);
-    RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(argv[2], 0, RTLDRARCH_WHATEVER, &hLdrMod);
+    g_uLoadAddr = (RTUINTPTR)RTStrToUInt64(argv[1]);
+    int rc = RTLdrOpen(argv[2], 0, RTLDRARCH_WHATEVER, &g_hLdrMod);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstLdr-3: Failed to open '%s': %Rra\n", argv[2], rc);
         return 1;
     }
 
-    void *pvBits = RTMemAlloc(RTLdrSize(hLdrMod));
-    rc = RTLdrGetBits(hLdrMod, pvBits, LoadAddr, testGetImport, &LoadAddr);
+    g_pvBits = RTMemAlloc(RTLdrSize(g_hLdrMod));
+    rc = RTLdrGetBits(g_hLdrMod, g_pvBits, g_uLoadAddr, testGetImport, &g_uLoadAddr);
     if (RT_SUCCESS(rc))
     {
-        if (argc > 3)
+        if (   argc == 4
+            && argv[3][0] == '*')
         {
+            /*
+             * Wildcard address mode.
+             */
+            uint64_t uWild       = RTStrToUInt64(&argv[3][1]);
+            uint64_t uIncrements = strchr(argv[3], '/') ? RTStrToUInt64(strchr(argv[3], '/') + 1) : 0x1000;
+            if (!uIncrements)
+                uIncrements = 0x1000;
+            uint64_t uMax        = RTLdrSize(g_hLdrMod) + g_uLoadAddr;
+            for (uint64_t uCur = g_uLoadAddr + uWild; uCur < uMax; uCur += uIncrements)
+                testDisasNear(uCur);
+        }
+        else if (argc > 3)
+        {
+            /*
+             * User specified addresses within the module.
+             */
             for (int i = 3; i < argc; i++)
             {
-                TESTNEARSYM NearSym;
-                RT_ZERO(NearSym);
-                NearSym.Addr = (RTUINTPTR)RTStrToUInt64(argv[i]);
-                NearSym.aSyms[1].Value = ~(RTUINTPTR)0;
-                rc = RTLdrEnumSymbols(hLdrMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL, pvBits, LoadAddr, testEnumSymbol2, &NearSym);
-                if (RT_SUCCESS(rc))
-                {
-                    RTPrintf("tstLdr-3: Addr=%RTptr\n"
-                             "%RTptr %s (%d) - %RTptr %s (%d)\n",
-                             NearSym.Addr,
-                             NearSym.aSyms[0].Value, NearSym.aSyms[0].szName, NearSym.aSyms[0].uSymbol,
-                             NearSym.aSyms[1].Value, NearSym.aSyms[1].szName, NearSym.aSyms[1].uSymbol);
-                    if (NearSym.Addr - NearSym.aSyms[0].Value < 0x10000)
-                    {
-                        DISCPUSTATE Cpu;
-                        memset(&Cpu, 0, sizeof(Cpu));
-#ifdef RT_ARCH_X86 /** @todo select according to the module type. */
-                        Cpu.mode = CPUMODE_32BIT;
-#else
-                        Cpu.mode = CPUMODE_64BIT;
-#endif
-                        uint8_t *pbCode = (uint8_t *)pvBits + (NearSym.aSyms[0].Value - LoadAddr);
-                        MyDisBlock(&Cpu, (uintptr_t)pbCode,
-                                   RT_MAX(NearSym.aSyms[1].Value - NearSym.aSyms[0].Value, 0x20000),
-                                   NearSym.aSyms[0].Value - (RTUINTPTR)pbCode,
-                                   NearSym.Addr);
-                    }
-                }
-                else
-                {
-                    RTPrintf("tstLdr-3: Failed to enumerate symbols: %Rra\n", rc);
+                rc = testDisasNear(RTStrToUInt64(argv[i]));
+                if (RT_FAILURE(rc))
                     rcRet++;
-                }
             }
         }
         else
@@ -234,7 +313,7 @@ int main(int argc, char **argv)
             /*
              * Enumerate symbols.
              */
-            rc = RTLdrEnumSymbols(hLdrMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL, pvBits, LoadAddr, testEnumSymbol1, NULL);
+            rc = RTLdrEnumSymbols(g_hLdrMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL, g_pvBits, g_uLoadAddr, testEnumSymbol1, NULL);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstLdr-3: Failed to enumerate symbols: %Rra\n", rc);
@@ -244,11 +323,11 @@ int main(int argc, char **argv)
     }
     else
     {
-        RTPrintf("tstLdr-3: Failed to get bits for '%s' at %RTptr: %Rra\n", argv[2], LoadAddr, rc);
+        RTPrintf("tstLdr-3: Failed to get bits for '%s' at %RTptr: %Rra\n", argv[2], g_uLoadAddr, rc);
         rcRet++;
     }
-    RTMemFree(pvBits);
-    RTLdrClose(hLdrMod);
+    RTMemFree(g_pvBits);
+    RTLdrClose(g_hLdrMod);
 
     /*
      * Test result summary.
