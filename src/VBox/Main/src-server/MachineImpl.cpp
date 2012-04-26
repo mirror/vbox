@@ -5839,9 +5839,20 @@ STDMETHODIMP Machine::QuerySavedGuestScreenInfo(ULONG uScreenId,
     int vrc = readSavedGuestScreenInfo(mSSData->strStateFilePath, uScreenId,
                                        &u32OriginX, &u32OriginY, &u32Width, &u32Height, &u16Flags);
     if (RT_FAILURE(vrc))
+    {
+#ifdef RT_OS_WINDOWS
+        /* HACK: GUI sets *pfEnabled to 'true' and expects it to stay so if the API fails.
+         * This works with XPCOM. But Windows COM sets all output parameters to zero.
+         * So just assign fEnable to TRUE again.
+         * The right fix would be to change GUI API wrappers to make sure that parameters
+         * are changed only if API succeeds.
+         */
+        *pfEnabled = TRUE;
+#endif
         return setError(VBOX_E_IPRT_ERROR,
                         tr("Saved guest size is not available (%Rrc)"),
                         vrc);
+    }
 
     *puOriginX = u32OriginX;
     *puOriginY = u32OriginY;
