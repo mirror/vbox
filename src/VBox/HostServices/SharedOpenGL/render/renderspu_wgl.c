@@ -1397,6 +1397,9 @@ void renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y )
         crDebug("Render SPU: SetWindowPos (%x, %d, %d, %d, %d)", window->hWnd,
                 x, y, window->width, window->height);
     }
+    /* save the new position */
+    window->x = x;
+    window->y = y;
 }
 
 void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint* pRects)
