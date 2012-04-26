@@ -80,6 +80,10 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
         PRTMEMDARWINHDREX pExHdr = (PRTMEMDARWINHDREX)RTR0MemObjAddress(hMemObj);
         pExHdr->hMemObj = hMemObj;
         pHdr = &pExHdr->Hdr;
+#if 1 /*fExecutable isn't currently honored above. */
+        rc = RTR0MemObjProtect(hMemObj, 0, RTR0MemObjSize(hMemObj), RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
+        AssertRC(rc);
+#endif
     }
     else
     {
