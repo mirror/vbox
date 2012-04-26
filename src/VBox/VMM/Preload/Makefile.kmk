@@ -1,0 +1,54 @@
+
+# $Id$
+## @file
+# Sub-Makefile for the headless frontend.
+#
+
+#
+# Copyright (C) 2006-2012 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+
+#
+# Targets.
+#
+ifdef VBOX_WITH_HARDENING
+ PROGRAMS += VBoxVMMPreloadHardened
+ DLLS     += VBoxVMMPreload
+else
+ PROGRAMS += VBoxVMMPreload
+endif
+
+
+#
+# Hardened stub.
+#
+VBoxVMMPreloadHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxVMMPreloadHardened_SOURCES  = VBoxVMMPreloadHardened.cpp
+VBoxVMMPreloadHardened_NAME     = VBoxVMMPreload
+
+
+#
+# The real thing
+#
+VBoxVMMPreload_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBoxR3Dll,VBOXR3EXE)
+VBoxVMMPreload_SOURCES    = VBoxVMMPreload.cpp
+VBoxVMMPreload_LIBS = $(LIB_RUNTIME)
+ifdef VBOX_WITH_HARDENING
+ VBoxVMMPreload_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxVMMPreload.dylib
+endif
+
+
+include $(KBUILD_PATH)/subfooter.kmk
+
