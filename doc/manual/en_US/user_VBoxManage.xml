@@ -2144,18 +2144,24 @@ Virtual system 0:
         </listitem>
 
         <listitem>
-          <para>The <computeroutput>--resize</computeroutput> option allows you
-          to change the capacity of an existing image; this adjusts the
+          <para>The <computeroutput>--resize x</computeroutput> option (where x
+          is the desired new total space in <emphasis role="bold">megabytes</emphasis>)
+          allows you to change the capacity of an existing image; this adjusts the
           <emphasis>logical</emphasis> size of a virtual disk without affecting
           the physical size much.<footnote>
               <para>Image resizing was added with VirtualBox 4.0.</para>
-            </footnote> This currently works only for expanding the capacity of
-          VDI and VHD formats, and only for the dynamically allocated variants.
+            </footnote> This currently works only for VDI and VHD formats, and only
+          for the dynamically allocated variants, and can only be used to expand
+          (not shrink) the capacity.
           For example, if you originally created a 10G disk which is now full,
           you can use the <computeroutput>--resize 15360</computeroutput>
-          command to add 5 GByte more space to the virtual disk without
-          having to create a new image and copy all data from within a virtual
-          machine.</para>
+          command to change the capacity to 15G (15,360MB) without having to create a new
+          image and copy all data from within a virtual machine. Note however that
+          this only changes the drive capacity; you will typically next need to use
+          a partition management tool inside the guest to adjust the main partition
+          to fill the drive.</para><para>The <computeroutput>--resizebyte x</computeroutput>
+          option does almost the same thing, except that x is expressed in bytes
+          instead of megabytes.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
