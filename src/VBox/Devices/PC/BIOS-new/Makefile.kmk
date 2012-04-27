@@ -92,6 +92,14 @@ $$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $$(VBoxPcBios_1_TARGET) $(VBOX_BIN2C) | $$(d
 	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $< $@
 
 
+#
+# MakeDebianBiosAssembly - For distros without OpenWatcom.
+#
+PROGRAMS += MakeDebianBiosAssembly ## TODO this is build program, really. later.
+MakeDebianBiosAssembly_TEMPLATE = VBOXR3EXE
+MakeDebianBiosAssembly_SOURCES = MakeDebianBiosAssembly.cpp
+MakeDebianBiosAssembly_LIBS = $(LIB_RUNTIME)
+
 
 include $(KBUILD_PATH)/subfooter.kmk
 
