@@ -26,6 +26,7 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  SYSMODS += VBoxNetFlt
  VBoxNetFlt_TEMPLATE = VBOXR0DRV
  VBoxNetFlt_INST = $(INST_VBOXNETFLT)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
+ VBoxNetFlt_DEBUG_INST.darwin = $(patsubst %/,%,$(INST_VBOXNETFLT))
  if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
   VBoxNetFlt_INSTTYPE = none
   VBoxNetFlt_DEBUG_INSTTYPE = both
