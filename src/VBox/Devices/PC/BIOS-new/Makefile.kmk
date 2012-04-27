@@ -84,7 +84,6 @@ VBoxPcBios_SOURCES = \
 LIBRARIES += PcBiosBin
 PcBiosBin_TEMPLATE  = VBOXR3
 PcBiosBin_DEFS      = IN_VBOXDD2
-PcBiosBin_INCS      = $(VBOX_PATH_DEVICES_SRC)
 PcBiosBin_SOURCES   = $(PcBiosBin_0_OUTDIR)/PcBiosBin.c
 PcBiosBin_CLEAN     = $(PcBiosBin_0_OUTDIR)/PcBiosBin.c
 
