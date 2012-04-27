@@ -311,16 +311,16 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "dia",        0,       ~0U,       &g_aArgDumpIDT[0],  RT_ELEMENTS(g_aArgDumpIDT),     0,       dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT) including not-present entries." },
     { "dl",         0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT)." },
     { "dla",        0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT) including not-present entries." },
-    { "dpd",        0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the default context." },
-    { "dpda",       0,        1,        &g_aArgDumpPDAddr[0],RT_ELEMENTS(g_aArgDumpPDAddr), 0,       dbgcCmdDumpPageDir, "[addr]",               "Dumps specified page directory." },
-    { "dpdb",       1,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDirBoth, "[addr] [index]",   "Dumps page directory entries of the guest and the hypervisor. " },
-    { "dpdg",       0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the guest." },
-    { "dpdh",       0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the hypervisor. " },
+    { "dpd",        0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDir, "[addr|index]",         "Dumps page directory entries of the default context." },
+    { "dpda",       0,        1,        &g_aArgDumpPDAddr[0],RT_ELEMENTS(g_aArgDumpPDAddr), 0,       dbgcCmdDumpPageDir, "[addr]",               "Dumps memory at given address as a page directory." },
+    { "dpdb",       1,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDirBoth, "[addr|index]",     "Dumps page directory entries of the guest and the hypervisor. " },
+    { "dpdg",       0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDir, "[addr|index]",         "Dumps page directory entries of the guest." },
+    { "dpdh",       0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDir, "[addr|index]",         "Dumps page directory entries of the hypervisor. " },
     { "dph",        0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),      0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Default context." },
     { "dphg",       0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),      0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Guest context." },
     { "dphh",       0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),      0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Hypervisor context." },
     { "dpt",        1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the default context." },
-    { "dpta",       1,        1,        &g_aArgDumpPTAddr[0],RT_ELEMENTS(g_aArgDumpPTAddr), 0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps specified page table." },
+    { "dpta",       1,        1,        &g_aArgDumpPTAddr[0],RT_ELEMENTS(g_aArgDumpPTAddr), 0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps memory at given address as a page table." },
     { "dptb",       1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTableBoth,"<addr>",          "Dumps page table entries of the guest and the hypervisor." },
     { "dptg",       1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the guest." },
     { "dpth",       1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the hypervisor." },
@@ -2596,16 +2596,14 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     }
     else if (paArgs[0].enmType == DBGCVAR_TYPE_NUMBER)
     {
+        /* If it's a number (not an address), it's an index, so convert it to an address. */
         Assert(pCmd->pszCmd[3] != 'a');
         VarDefault = paArgs[0];
-        if (VarDefault.u.u64Number <= 1024)
-        {
-            if (fPAE)
-                return DBGCCmdHlpPrintf(pCmdHlp, "PDE indexing is only implemented for 32-bit paging.\n");
-            if (VarDefault.u.u64Number >= PAGE_SIZE / cbEntry)
-                return DBGCCmdHlpPrintf(pCmdHlp, "PDE index is out of range [0..%d].\n", PAGE_SIZE / cbEntry - 1);
-            VarDefault.u.u64Number <<= X86_PD_SHIFT;
-        }
+        if (fPAE)
+            return DBGCCmdHlpPrintf(pCmdHlp, "PDE indexing is only implemented for 32-bit paging.\n");
+        if (VarDefault.u.u64Number >= PAGE_SIZE / cbEntry)
+            return DBGCCmdHlpPrintf(pCmdHlp, "PDE index is out of range [0..%d].\n", PAGE_SIZE / cbEntry - 1);
+        VarDefault.u.u64Number <<= X86_PD_SHIFT;
         VarDefault.enmType = DBGCVAR_TYPE_GC_FLAT;
         paArgs = &VarDefault;
     }
@@ -2711,7 +2709,6 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             VarPDEAddr.u.u64Number += iEntry * sizeof(X86PDE);
         }
         cEntriesMax = (PAGE_SIZE - iEntry) / cbEntry;
-        iEntry /= cbEntry;
     }
 
     /* adjust cEntries */
@@ -3105,7 +3102,6 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             VarPTEAddr.u.u64Number += iEntry * sizeof(X86PTE);
         }
         cEntriesMax = (PAGE_SIZE - iEntry) / cbEntry;
-        iEntry /= cbEntry;
     }
 
     /* adjust cEntries */
