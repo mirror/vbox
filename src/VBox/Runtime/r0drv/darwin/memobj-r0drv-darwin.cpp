@@ -66,13 +66,14 @@ typedef struct RTR0MEMOBJDARWIN
 
 
 /**
- * HACK ALERT!
+ * Touch the pages to force the kernel to create or write-enable the page table
+ * entries.
  *
- * Touch the pages to force the kernel to create  the page
- * table entries. This is necessary since the kernel gets
- * upset if we take a page fault when preemption is disabled
- * and/or we own a simple lock. It has no problems with us
- * disabling interrupts when taking the traps, weird stuff.
+ * This is necessary since the kernel gets upset if we take a page fault when
+ * preemption is disabled and/or we own a simple lock (same thing).  It has no
+ * problems with us disabling interrupts when taking the traps, weird stuff.
+ *
+ * (This is basically a way of invoking vm_fault on a range of pages.)
  *
  * @param  pv           Pointer to the first page.
  * @param  cb           The number of bytes.
@@ -83,6 +84,32 @@ static void rtR0MemObjDarwinTouchPages(void *pv, size_t cb)
     for (;;)
     {
         ASMAtomicCmpXchgU32(pu32, 0xdeadbeef, 0xdeadbeef);
+        if (cb <= PAGE_SIZE)
+            break;
+        cb -= PAGE_SIZE;
+        pu32 += PAGE_SIZE / sizeof(uint32_t);
+    }
+}
+
+
+/**
+ * Read (sniff) every page in the range to make sure there are some page tables
+ * entries backing it.
+ *
+ * This is just to be sure vm_protect didn't remove stuff without re-adding it
+ * if someone should try write-protect something.
+ *
+ * @param  pv           Pointer to the first page.
+ * @param  cb           The number of bytes.
+ */
+static void rtR0MemObjDarwinSniffPages(void const *pv, size_t cb)
+{
+    uint32_t volatile  *pu32 = (uint32_t volatile *)pv;
+    uint32_t volatile   u32Counter = 0;
+    for (;;)
+    {
+        u32Counter += *pu32;
+
         if (cb <= PAGE_SIZE)
             break;
         cb -= PAGE_SIZE;
@@ -507,14 +534,12 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                             AssertMsgFailed(("enmType=%d\n", enmType));
                     }
 
-#if 0 /* Experimental code. */
+#if 1 /* Experimental code. */
                     if (fExecutable)
                     {
                         rc = rtR0MemObjNativeProtect(&pMemDarwin->Core, 0, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
 # ifdef RT_STRICT
                         /* check that the memory is actually mapped. */
-                        //addr64_t Addr = pMemDesc->getPhysicalSegment64(0, NULL);
-                        //printf("rtR0MemObjNativeAllocWorker: pv=%p %8llx %8llx\n", pv, rtR0MemObjDarwinGetPTE(pv), Addr);
                         RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
                         RTThreadPreemptDisable(&State);
                         rtR0MemObjDarwinTouchPages(pv, cb);
@@ -857,7 +882,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
                         /* HACK ALERT! */
                         rtR0MemObjDarwinTouchPages(pv, cbSub);
                         /** @todo First, the memory should've been mapped by now, and second, it
-                         *        should have the wired attribute in the PTE (bit 9). Neither is
+                         *        should have the wired attribute in the PTE (bit 9). Neither
                          *        seems to be the case. The disabled locking code doesn't make any
                          *        difference, which is extremely odd, and breaks
                          *        rtR0MemObjNativeGetPagePhysAddr (getPhysicalSegment64 -> 64 for the
@@ -966,7 +991,9 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
     if (!pVmMap)
         return VERR_NOT_SUPPORTED;
 
-    /* Convert the protection. */
+    /*
+     * Convert the protection.
+     */
     vm_prot_t fMachProt;
     switch (fProt)
     {
@@ -982,17 +1009,22 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
         case RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC:
             fMachProt = VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE;
             break;
+        case RTMEM_PROT_WRITE:
+            fMachProt = VM_PROT_WRITE | VM_PROT_READ;                   /* never write-only */
+            break;
         case RTMEM_PROT_WRITE | RTMEM_PROT_EXEC:
-            fMachProt = VM_PROT_WRITE | VM_PROT_EXECUTE;
+            fMachProt = VM_PROT_WRITE | VM_PROT_EXECUTE | VM_PROT_READ; /* never write-only or execute-only */
             break;
         case RTMEM_PROT_EXEC:
-            fMachProt = VM_PROT_EXECUTE;
+            fMachProt = VM_PROT_EXECUTE | VM_PROT_READ;                 /* never execute-only */
             break;
         default:
             AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
 
-    /* do the job. */
+    /*
+     * Do the job.
+     */
     vm_offset_t Start = (uintptr_t)pMem->pv + offSub;
     kern_return_t krc = vm_protect(pVmMap,
                                    Start,
@@ -1001,6 +1033,27 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
                                    fMachProt);
     if (krc != KERN_SUCCESS)
         return RTErrConvertFromDarwinKern(krc);
+
+    /*
+     * Touch the pages if they should be writable afterwards and accessible
+     * from code which should never fault. vm_protect() may leave pages
+     * temporarily write protected, possibly due to pmap no-upgrade rules?
+     *
+     * This is the same trick (or HACK ALERT if you like) as applied in
+     * rtR0MemObjNativeMapKernel.
+     */
+    if (   pMem->enmType != RTR0MEMOBJTYPE_MAPPING
+        || pMem->u.Mapping.R0Process == NIL_RTR0PROCESS)
+    {
+        if (fProt & RTMEM_PROT_WRITE)
+            rtR0MemObjDarwinTouchPages((void *)Start, cbSub);
+        /*
+         * Sniff (read) read-only pages too, just to be sure.
+         */
+        else if (fProt & (RTMEM_PROT_READ | RTMEM_PROT_EXEC))
+            rtR0MemObjDarwinSniffPages((void const *)Start, cbSub);
+    }
+
     return VINF_SUCCESS;
 }
 
