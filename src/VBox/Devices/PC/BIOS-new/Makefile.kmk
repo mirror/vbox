@@ -1,0 +1,98 @@
+# $Id$
+## @file
+# Sub-Makefile for the New BIOS ROM.
+#
+
+#
+# Copyright (C) 2012 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# VBoxBios - Template for building the BIOS bits.
+#
+TEMPLATE_VBoxBios = PXE ROM
+TEMPLATE_VBoxBios_TOOL    = OPENWATCOM-16
+TEMPLATE_VBoxBios_LDTOOL  = OPENWATCOM-WL
+TEMPLATE_VBoxBios_ASTOOL  = OPENWATCOM-16
+TEMPLATE_VBoxBios_BLD_TRG = os-agnostic
+TEMPLATE_VBoxBios_BLD_TRG_ARCH = x86
+TEMPLATE_VBoxBios_BINSUFF = .rom
+TEMPLATE_VBoxBios_INCS    = .
+TEMPLATE_VBoxBios_ASFLAGS = -q -0 -wx
+TEMPLATE_VBoxBios_CFLAGS  = -q -0 -wx -zu -s -oas -d1+ -ms
+TEMPLATE_VBoxBios_DEFS    = \
+	VBOX_PC_BIOS \
+	VBOX_LANBOOT_SEG=0xE200 \
+	VBOX_VERSION_STRING=\"0.9\" \
+	VBOX_WITH_SCSI \
+	VBOX_WITH_AHCI
+TEMPLATE_VBoxBios_LDFLAGS = system dos  \
+	debug all \
+	option quiet, nofarcalls, map, verbose, statics, symfile \
+	output raw offset=0xF0000 order \
+	clname DATA segaddr=0xF000 segment _DATA \
+	clname CODE \
+	segment _TEXT segaddr=0xF000 offset=0x1600 \
+	segment BIOS32 segaddr=0xF000 offset=0xDE00 \
+	segment BIOSSEG segaddr=0xF000 offset=0xE000 \
+	library clibs.lib \
+	disable 1014, 1023, 2120
+TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS)
+TEMPLATE_VBoxBios_POST_CMDS = \
+	$(QUIET)$(EXT_MV) -f $(out) $(out).tmp \
+	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
+	&& $(EXT_RM) -f $(out).tmp
+
+
+#
+# VBoxPcBios - The PC BIOS.
+#
+MISCBINS += VBoxPcBios
+VBoxPcBios_TEMPLATE = VBoxBios
+VBoxPcBios_SOURCES = \
+	bios.c \
+	print.c \
+	ata.c \
+	floppy.c \
+	eltorito.c \
+	boot.c \
+	keyboard.c \
+	disk.c \
+	serial.c \
+	system.c \
+	timepci.c \
+	ps2mouse.c \
+	parallel.c \
+	logo.c \
+	scsi.c \
+	ahci.c \
+	pciutil.c \
+	vds.c \
+	pcibio32.asm \
+	orgs.asm
+
+
+#
+# The library containing the PC BIOS image.
+#
+LIBRARIES += PcBiosBin
+PcBiosBin_TEMPLATE  = VBOXR3
+PcBiosBin_DEFS      = IN_VBOXDD2
+PcBiosBin_INCS      = $(VBOX_PATH_DEVICES_SRC)
+PcBiosBin_SOURCES   = $(PcBiosBin_0_OUTDIR)/PcBiosBin.c
+PcBiosBin_CLEAN     = $(PcBiosBin_0_OUTDIR)/PcBiosBin.c
+
+$$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $$(VBoxPcBios_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
+	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $< $@
+
+
+
+include $(KBUILD_PATH)/subfooter.kmk
+

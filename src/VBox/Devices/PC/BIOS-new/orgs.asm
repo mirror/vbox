@@ -130,7 +130,9 @@ public		eoi_both_pics
 public		rtc_post
 
 ;; Additional publics for easier disassembly and debugging
-DEBUG	equ	1
+ifndef DEBUG
+ DEBUG	equ	1
+endif
 ifdef		DEBUG
 
 public		int08_handler
@@ -668,7 +670,7 @@ else
 		xor	al, al
 endif
 		pop	ax
-		ret 
+		ret
 rom_checksum	endp
 
 
@@ -1063,7 +1065,7 @@ no_parport:
 		ret
 
 detect_parport	endp
-		
+
 ; setial port detection: port in dx, index in bx, timeout in cl
 detect_serial	proc	near
 
@@ -1147,7 +1149,7 @@ f1_missing:
 		mov	ds:[48Fh], bl	; store in BDA
 
 		;; TODO: See above. Dumb *and* redundant!
-		mov	al, 0	
+		mov	al, 0
 		mov	ds:[490h], al	; drv0 media state
 		mov	ds:[491h], al	; drv1 media state
 		mov	ds:[492h], al	; drv0 operational state
@@ -1307,7 +1309,7 @@ int17_handler:
 		pop	es
 		pop	ds
 		iret
-		
+
 
 
 ;; Protected mode IDT descriptor
@@ -1612,8 +1614,8 @@ int76_handler	proc
 		pop	ds
 		pop	ax
 		iret
-		
-int76_handler	endp	
+
+int76_handler	endp
 
 ;; --------------------------------------------------------
 ;; 8x8 font (first 128 characters)
