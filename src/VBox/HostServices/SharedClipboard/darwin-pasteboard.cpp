@@ -116,6 +116,11 @@ int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, b
                     Log (("Unicode flavor detected.\n"));
                     *pfFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
                 }
+                else if (UTTypeConformsTo (flavorType, kUTTypeBMP))
+                {
+                    Log (("BMP flavor detected.\n"));
+                    *pfFormats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+                }
             }
             CFRelease (flavorTypeArray);
         }
@@ -207,6 +212,44 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
                 }
                 /* Free the temp string */
                 RTUtf16Free (pwszTmp);
+            }
+        }
+        /* The guest request BITMAP */
+        else if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+        {
+            CFDataRef outData;
+            const void *pTmp = NULL;
+            size_t cbTmpSize;
+            /* Get the data from the pasteboard */
+            if (!(err = PasteboardCopyItemFlavorData (pPasteboard, itemID, kUTTypeBMP, &outData)))
+            {
+                Log (("Clipboard content is BMP\n"));
+                pTmp = CFDataGetBytePtr (outData);
+                cbTmpSize = CFDataGetLength (outData);
+            }
+            if (pTmp)
+            {
+                const void *pDib;
+                size_t cbDibSize;
+                rc = vboxClipboardBmpGetDib (pTmp, cbTmpSize, &pDib, &cbDibSize);
+                if (RT_FAILURE (rc))
+                {
+                    rc = VERR_NOT_SUPPORTED;
+                    Log (("readFromPasteboard: unknown bitmap format. vboxClipboardBmpGetDib returned %Rrc.  Abandoning.\n", rc));
+                    AssertRCReturn (rc, rc);
+                }
+
+                *pcbActual = cbDibSize;
+                /* Return success state */
+                rc = VINF_SUCCESS;
+                /* Do not copy data if the dst buffer is not big enough. */
+                if (*pcbActual <= cb)
+                {
+                    memcpy (pv, pDib, cbDibSize);
+#ifdef SHOW_CLIPBOARD_CONTENT
+                    Log (("readFromPasteboard: clipboard content bitmap %d bytes\n", cbDibSize));
+#endif
+                }
             }
         }
     }
@@ -303,6 +346,32 @@ int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_
         }
 
         RTMemFree (pwszDestText);
+        rc = VINF_SUCCESS;
+    }
+    /* Handle the bitmap */
+    else if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    {
+        /* Create a full BMP from it */
+        void *pBmp;
+        size_t cbBmpSize;
+        CFDataRef bmpData = NULL;
+        /* Item id is 1. Nothing special here. */
+        PasteboardItemID itemId = (PasteboardItemID)1;
+
+        rc = vboxClipboardDibToBmp (pv, cb, &pBmp, &cbBmpSize);
+        if (RT_SUCCESS (rc))
+        {
+            /* Create a CData object which we could pass to the pasteboard */
+            if ((bmpData = CFDataCreate (kCFAllocatorDefault,
+                                          reinterpret_cast<UInt8*> (pBmp), cbBmpSize)))
+            {
+                /* Put the Utf-8 version to the pasteboard */
+                PasteboardPutItemFlavor (pPasteboard, itemId,
+                                         kUTTypeBMP,
+                                         bmpData, 0);
+            }
+            RTMemFree (pBmp);
+        }
         rc = VINF_SUCCESS;
     }
     else

@@ -91,5 +91,72 @@ int vboxClipboardUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest
  */
 int vboxClipboardUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest);
 
+#pragma pack(1)
+/**
+ * Bitmap File Header. Official win32 name is BITMAPFILEHEADER
+ * Always Little Endian.
+ */
+typedef struct BMFILEHEADER
+{
+    uint16_t    u16Type;
+    uint32_t    u32Size;
+    uint16_t    u16Reserved1;
+    uint16_t    u16Reserved2;
+    uint32_t    u32OffBits;
+} BMFILEHEADER;
+/** Pointer to a BMFILEHEADER structure. */
+typedef BMFILEHEADER *PBMFILEHEADER;
+/** BMP file magic number */
+#define BITMAPHEADERMAGIC (RT_H2LE_U16_C(0x4d42))
+
+/**
+ * Bitmap Info Header. Official win32 name is BITMAPINFOHEADER
+ * Always Little Endian.
+ */
+typedef struct BMINFOHEADER
+{
+    uint32_t    u32Size;
+    uint32_t    u32Width;
+    uint32_t    u32Height;
+    uint16_t    u16Planes;
+    uint16_t    u16BitCount;
+    uint32_t    u32Compression;
+    uint32_t    u32SizeImage;
+    uint32_t    u32XBitsPerMeter;
+    uint32_t    u32YBitsPerMeter;
+    uint32_t    u32ClrUsed;
+    uint32_t    u32ClrImportant;
+} BMINFOHEADER;
+/** Pointer to a BMINFOHEADER structure. */
+typedef BMINFOHEADER *PBMINFOHEADER;
+#pragma pack()
+
+/**
+ * Convert CF_DIB data to full BMP data by prepending the BM header.
+ * Allocates with RTMemAlloc.
+ *
+ * @returns VBox status code
+ *
+ * @param   pSrc          DIB data to convert
+ * @param   cbSrc         Size of the DIB data to convert in bytes
+ * @param   ppDest        Where to store the pointer to the buffer for the destination data
+ * @param   pcbDest       Pointer to the size of the buffer for the destination data in bytes
+ */
+int vboxClipboardDibToBmp(const void *pSrc, size_t cbSrc, void **ppDest, size_t *pcbDest);
+
+/**
+ * Get the address and size of CF_DIB data in a full BMP data in the input buffer.
+ * Does not do any allocation.
+ *
+ * @returns VBox status code
+ *
+ * @param   pSrc          BMP data to convert
+ * @param   cbSrc         Size of the BMP data to convert in bytes
+ * @param   ppDest        Where to store the pointer to the destination data
+ * @param   pcbDest       Pointer to the size of the destination data in bytes
+ */
+int vboxClipboardBmpGetDib(const void *pSrc, size_t cbSrc, const void **ppDest, size_t *pcbDest);
+
+
 #endif
 
