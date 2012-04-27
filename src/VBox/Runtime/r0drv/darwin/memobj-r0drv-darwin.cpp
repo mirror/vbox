@@ -507,9 +507,20 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                             AssertMsgFailed(("enmType=%d\n", enmType));
                     }
 
-#if 1 /* Experimental code. */
+#if 0 /* Experimental code. */
                     if (fExecutable)
+                    {
                         rc = rtR0MemObjNativeProtect(&pMemDarwin->Core, 0, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
+# ifdef RT_STRICT
+                        /* check that the memory is actually mapped. */
+                        //addr64_t Addr = pMemDesc->getPhysicalSegment64(0, NULL);
+                        //printf("rtR0MemObjNativeAllocWorker: pv=%p %8llx %8llx\n", pv, rtR0MemObjDarwinGetPTE(pv), Addr);
+                        RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
+                        RTThreadPreemptDisable(&State);
+                        rtR0MemObjDarwinTouchPages(pv, cb);
+                        RTThreadPreemptRestore(&State);
+# endif
+                    }
                     else
 #endif
                         rc = VINF_SUCCESS;
