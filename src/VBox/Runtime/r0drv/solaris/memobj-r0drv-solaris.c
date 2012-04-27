@@ -180,8 +180,6 @@ static page_t *rtR0MemObjSolPageFromCachelist(caddr_t virtAddr, size_t cbPage)
  */
 static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size_t cb)
 {
-    /** @todo We need to satisfy the upper physical address constraint */
-
     /*
      * The page freelist and cachelist both hold pages that are not mapped into any address space.
      * The cachelist is not really free pages but when memory is exhausted they'll be moved to the
@@ -207,30 +205,51 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
                 caddr_t virtAddr = NULL;
                 for (size_t i = 0; i < cPages; i++, virtAddr += PAGESIZE)
                 {
-                    /*
-                     * Get a page from the freelist or cachelist.
-                     */
-                    page_t *pPage = rtR0MemObjSolPageFromFreelist(virtAddr, PAGESIZE);
-                    if (!pPage)
+                    uint32_t cTries = 3;
+                    page_t *pPage   = NULL;
+                    while (cTries > 0)
                     {
-                        pPage = rtR0MemObjSolPageFromCachelist(virtAddr, PAGESIZE);
-                        if (RT_UNLIKELY(!pPage))
+                        /*
+                         * Get a page from the freelist or cachelist & verify if it's within our
+                         * requested range.
+                         */
+                        pPage = rtR0MemObjSolPageFromFreelist(virtAddr, PAGESIZE);
+                        if (!pPage)
                         {
-                            /*
-                             * No more pages found, release was grabbed so far.
-                             */
-                            page_create_putback(cPages - i);
-                            while (--i >= 0)
-                                page_free(ppPages[i], 0 /* don't need page, move to tail of pagelist */);
-                            kmem_free(ppPages, cbPages);
-                            page_unresv(cPages);
-                            return NULL;
+                            pPage = rtR0MemObjSolPageFromCachelist(virtAddr, PAGESIZE);
+                            if (RT_UNLIKELY(!pPage))
+                                break;
                         }
+                        if (uPhysHi != NIL_RTHCPHYS)
+                        {
+                            uint64_t uPhys = rtR0MemObjSolPagePhys(pPage);
+                            if (uPhys > uPhysHi)
+                            {
+                                page_free(pPage, 0 /* don't need page, move to tail of pagelist */);
+                                pPage = NULL;
+                                --cTries;
+                                continue;
+                            }
+                        }
+
+                        PP_CLRFREE(pPage);      /* Page is no longer free */
+                        PP_CLRAGED(pPage);      /* Page is not hashed in */
+                        ppPages[i] = pPage;
+                        break;
                     }
 
-                    PP_CLRFREE(pPage);      /* Page is no longer free */
-                    PP_CLRAGED(pPage);      /* Page is not hashed in */
-                    ppPages[i] = pPage;
+                    if (RT_UNLIKELY(!pPage))
+                    {
+                        /*
+                         * No pages found or found pages didn't meet requirements, release what was grabbed so far.
+                         */
+                        page_create_putback(cPages - i);
+                        while (--i >= 0)
+                            page_free(ppPages[i], 0 /* don't need page, move to tail of pagelist */);
+                        kmem_free(ppPages, cbPages);
+                        page_unresv(cPages);
+                        return NULL;
+                    }
                 }
 
                 /*
@@ -272,7 +291,7 @@ static int rtR0MemObjSolPagesPreMap(page_t **ppPages, size_t cb, uint64_t auPhys
     {
         /*
          * Prepare pages for mapping into kernel/user-space. Downgrade the
-         * exclusive page lock to a shared lock if necessary.
+         * exclusive page lock to a shared lock to prevent page relocation.
          */
         if (page_tryupgrade(ppPages[iPage]) == 1)
             page_downgrade(ppPages[iPage]);
@@ -406,7 +425,7 @@ static int rtR0MemObjSolLargePagePreMap(page_t *pRootPage, size_t cb)
 
     /*
      * We need to downgrade the sub-pages from exclusive to shared locking
-     * because otherweise we cannot <you go figure>.
+     * to prevent page relocation.
      */
     for (pgcnt_t iPage = 0; iPage < cPages; iPage++)
     {
