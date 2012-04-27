@@ -27,7 +27,11 @@ else if defined(VBOX_WITH_PXE_ROM) && !defined(VBOX_WITHOUT_ETHERBOOT)
  include $(PATH_SUB_CURRENT)/PC/Etherboot-src/Makefile.kmk
 endif
 if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
- include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
+ ifdef VBOX_WITH_NEW_BIOS
+  include $(PATH_SUB_CURRENT)/PC/BIOS-new/Makefile.kmk
+ else
+  include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
+ endif
  include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
  ifdef VBOX_WITH_EFI
   include $(PATH_SUB_CURRENT)/EFI/Thunk/Makefile.kmk
