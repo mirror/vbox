@@ -257,13 +257,17 @@ struct VMSaveTask : public VMTask
 {
     VMSaveTask(Console *aConsole,
                const ComPtr<IProgress> &aServerProgress,
-               const Utf8Str &aSavedStateFile)
+               const Utf8Str &aSavedStateFile,
+               MachineState_T aMachineStateBefore)
         : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
                  true /* aUsesVMPtr */),
-          mSavedStateFile(aSavedStateFile)
+          mSavedStateFile(aSavedStateFile),
+          mMachineStateBefore(aMachineStateBefore)
     {}
 
     Utf8Str mSavedStateFile;
+    /* The local machine state we had before. Required if something fails */
+    MachineState_T mMachineStateBefore;
 };
 
 // Handler for global events
@@ -2724,7 +2728,8 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
 
         /* create a task object early to ensure mpVM protection is successful */
         std::auto_ptr<VMSaveTask> task(new VMSaveTask(this, pProgress,
-                                                      stateFilePath));
+                                                      stateFilePath,
+                                                      lastMachineState));
         rc = task->rc();
         /*
          * If we fail here it means a PowerDown() call happened on another
@@ -9395,6 +9400,12 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
         rc = that->powerDown();
         thatLock.acquire();
     }
+
+    /*
+     * If we failed, reset the local machine state.
+     */
+    if (FAILED(rc))
+        that->setMachineStateLocally(task->mMachineStateBefore);
 
     /*
      * Finalize the requested save state procedure. In case of failure it will
