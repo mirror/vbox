@@ -765,18 +765,21 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
 #if 1
     NOREF(pDevExt); NOREF(pImage);
 #else
-    /* Put
+    /*
+     * Try store the image load address in NVRAM so we can retrived it on panic.
+     * Note! This only works if you're root! - Acutally, it doesn't work at all at the moment. FIXME!
+     */
     IORegistryEntry *pEntry = IORegistryEntry::fromPath("/options", gIODTPlane);
     if (pEntry)
     {
         char szVar[80];
-        RTStrPrintf(szVar, sizeof(szVar), "vboximage-%s", pImage->szName);
+        RTStrPrintf(szVar, sizeof(szVar), "vboximage"/*-%s*/, pImage->szName);
         char szValue[48];
         RTStrPrintf(szValue, sizeof(szValue), "%#llx,%#llx", (uint64_t)(uintptr_t)pImage->pvImage,
                     (uint64_t)(uintptr_t)pImage->pvImage + pImage->cbImageBits - 1);
         bool fRc = pEntry->setProperty(szVar, szValue); NOREF(fRc);
         pEntry->release();
-        /*SUPR0Printf("fRc=%d '%s'='%s'\n", fRc, szVar, szValue);*/
+        SUPR0Printf("fRc=%d '%s'='%s'\n", fRc, szVar, szValue);
     }
     /*else
         SUPR0Printf("failed to find /options in gIODTPlane\n");*/
