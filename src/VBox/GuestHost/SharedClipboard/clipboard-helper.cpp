@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <VBox/GuestHost/clipboard-helper.h>
@@ -260,6 +261,65 @@ int vboxClipboardUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest
     }
     pu16Dest[cwDestPos] = 0;
     LogFlowFunc(("set string %ls.  Returning\n", pu16Dest + 1));
+    return VINF_SUCCESS;
+}
+
+int vboxClipboardDibToBmp(const void *pSrc, size_t cbSrc, void **ppDest, size_t *pcbDest)
+{
+    size_t cb = sizeof(BMFILEHEADER) + cbSrc;
+    PBMFILEHEADER pFileHeader;
+    void *dest;
+    size_t pixelOffset;
+
+    PBMINFOHEADER pBitmapInfoHeader = (PBMINFOHEADER)pSrc;
+    if (cbSrc < sizeof(BMINFOHEADER) ||
+        RT_LE2H_U32(pBitmapInfoHeader->u32Size) < sizeof(BMINFOHEADER) ||
+    /** @todo Support all the many versions of the DIB headers. */
+        RT_LE2H_U32(pBitmapInfoHeader->u32Size) != sizeof(BMINFOHEADER))
+    {
+        Log (("vboxClipboardDibToBmp: invalid or unsupported bitmap data.\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+    pixelOffset = sizeof(BMFILEHEADER)
+        + RT_LE2H_U32(pBitmapInfoHeader->u32Size)
+        + RT_LE2H_U32(pBitmapInfoHeader->u32ClrUsed) * sizeof(uint32_t);
+    if (cbSrc < pixelOffset)
+    {
+        Log (("vboxClipboardDibToBmp: invalid bitmap data.\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    dest = RTMemAlloc(cb);
+    if (dest == NULL)
+    {
+        Log (("writeToPasteboard: cannot allocate memory for bitmap.\n"));
+        return VERR_NO_MEMORY;
+    }
+
+    pFileHeader = (PBMFILEHEADER)dest;
+    pFileHeader->u16Type = BITMAPHEADERMAGIC;
+    pFileHeader->u32Size = RT_H2LE_U32(cb);
+    pFileHeader->u16Reserved1 = pFileHeader->u16Reserved2 = 0;
+    pFileHeader->u32OffBits = RT_H2LE_U32(pixelOffset);
+    memcpy((uint8_t *)dest + sizeof(BMFILEHEADER), pSrc, cbSrc);
+    *ppDest = dest;
+    *pcbDest = cb;
+    return VINF_SUCCESS;
+}
+
+int vboxClipboardBmpGetDib(const void *pSrc, size_t cbSrc, const void **pDest, size_t *pcbDest)
+{
+    PBMFILEHEADER pFileHeader = (PBMFILEHEADER)pSrc;
+
+    if (pFileHeader == NULL || cbSrc < sizeof(BMFILEHEADER) ||
+        pFileHeader->u16Type != BITMAPHEADERMAGIC ||
+        RT_LE2H_U32(pFileHeader->u32Size) != cbSrc)
+    {
+        Log (("vboxClipboardBmpGetDib: invalid bitmap data.\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+    *pDest = ((uint8_t *)pSrc) + sizeof(BMFILEHEADER);
+    *pcbDest = cbSrc - sizeof(BMFILEHEADER);
     return VINF_SUCCESS;
 }
 
