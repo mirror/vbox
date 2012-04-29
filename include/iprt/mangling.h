@@ -423,6 +423,7 @@
 # define RTDvmVolumeWrite                               RT_MANGLER(RTDvmVolumeWrite)
 # define RTDvmVolumeSetQueryBlockStatusCallback         RT_MANGLER(RTDvmVolumeSetQueryBlockStatusCallback)
 # define RTDvmVolumeTypeGetDescr                        RT_MANGLER(RTDvmVolumeTypeGetDescr)
+# define RTDvmVolumeCreateVfsFile                       RT_MANGLER(RTDvmVolumeCreateVfsFile)
 # define RTEnvClone                                     RT_MANGLER(RTEnvClone)
 # define RTEnvCreate                                    RT_MANGLER(RTEnvCreate)
 # define RTEnvDestroy                                   RT_MANGLER(RTEnvDestroy)
