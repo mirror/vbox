@@ -307,7 +307,7 @@ RTDECL(uint64_t) RTDvmVolumeGetSize(RTDVMVOLUME hVol);
 /**
  * Gets the name of the volume if supported.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   hVol            The volume handle.
  * @param   ppszVolName     Where to store the name of the volume on success.
  *                          The string must be freed with RTStrFree().
@@ -333,7 +333,7 @@ RTDECL(uint64_t) RTDvmVolumeGetFlags(RTDVMVOLUME hVol);
 /**
  * Reads data from the given volume.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   hVol            The volume handle.
  * @param   off             Where to start reading from - 0 is the beginning of
  *                          the volume.
@@ -345,7 +345,7 @@ RTDECL(int) RTDvmVolumeRead(RTDVMVOLUME hVol, uint64_t off, void *pvBuf, size_t 
 /**
  * Writes data to the given volume.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   hVol            The volume handle.
  * @param   off             Where to start writing to - 0 is the beginning of
  *                          the volume.
@@ -361,6 +361,15 @@ RTDECL(int) RTDvmVolumeWrite(RTDVMVOLUME hVol, uint64_t off, const void *pvBuf, 
  * @param   enmVolType    The volume type.
  */
 RTDECL(const char *) RTDvmVolumeTypeGetDescr(RTDVMVOLTYPE enmVolType);
+
+/**
+ * Creates an VFS file from a volume handle.
+ *
+ * @returns IPRT status code.
+ * @param   hVol            The volume handle.
+ * @param   phVfsFileOut    Where to store the VFS file handle on success.
+ */
+RTDECL(int) RTDvmVolumeCreateVfsFile(RTDVMVOLUME hVol, PRTVFSFILE phVfsFileOut);
 
 RT_C_DECLS_END
 
