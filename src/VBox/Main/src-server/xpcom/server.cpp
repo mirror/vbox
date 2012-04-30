@@ -883,12 +883,16 @@ int main(int argc, char **argv)
 
     if (!pszLogFile)
     {
-        char szLogFile[RTPATH_MAX];
+        char szLogFile[RTPATH_MAX] = "";
         vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+        if (vrc == VERR_ACCESS_DENIED)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open global settings directory '%s'", szLogFile);
         if (RT_SUCCESS(vrc))
             vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
         if (RT_SUCCESS(vrc))
             pszLogFile = RTStrDup(szLogFile);
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to determine release log file (%Rrc)", vrc);
     }
     char szError[RTPATH_MAX + 128];
     vrc = com::VBoxLogRelCreate("XPCOM Server", pszLogFile,

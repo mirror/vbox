@@ -754,6 +754,15 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     HRESULT rc;
 
     rc = com::Initialize();
+#ifdef VBOX_WITH_XPCOM
+    if (rc == NS_ERROR_FILE_ACCESS_DENIED)
+    {
+        char szHome[RTPATH_MAX] = "";
+        com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
+        RTPrintf("Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
+        return 1;
+    }
+#endif
     if (FAILED(rc))
     {
         RTPrintf("VBoxHeadless: ERROR: failed to initialize COM!\n");
