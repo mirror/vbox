@@ -14,6 +14,10 @@
       </listitem>
 
       <listitem>
+        <para>GUI: expert mode for wizards</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: network operations manager</para>
       </listitem>
 
@@ -61,7 +65,11 @@
       <listitem>
         <para>GUI: do not create additional folders when a new machine has a
            separator character in its name (bug 6541#)</para>
-      </listitem>
+       </listitem>
+
+       <listitem>
+         <para>Storage: implemented burning of audio CDs in passthrough mode</para>
+       </listitem>
 
     </itemizedlist>
   </sect1>
