@@ -444,8 +444,6 @@ ifeq ($(KBUILD_TARGET),linux)
  # VBOX_USB_WITH_DBUS = 1
  VBOX_USB_WITH_INOTIFY = 1
 endif
-# Use the new VBI module on Solaris.
-#VBOX_WITH_SOLARIS_VBI = 1
 # Enable performance API.
 VBOX_WITH_RESOURCE_USAGE_API = 1
 # Enable BusLogic SCSI host adapter
