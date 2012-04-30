@@ -173,9 +173,11 @@ int handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "savestate"))
         {
             /* first pause so we don't trigger a live save which needs more time/resources */
+            bool fPaused = false;
             rc = console->Pause();
             if (FAILED(rc))
             {
+                bool fError = true;
                 if (rc == VBOX_E_INVALID_VM_STATE)
                 {
                     /* check if we are already paused */
@@ -183,27 +185,38 @@ int handleControlVM(HandlerArg *a)
                     CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
                     /* the error code was lost by the previous instruction */
                     rc = VBOX_E_INVALID_VM_STATE;
+                    RTPrintf("machineState = %d (%d)\n", machineState, MachineState_Paused);
                     if (machineState != MachineState_Paused)
                     {
                         RTMsgError("Machine in invalid state %d -- %s\n",
                                    machineState, machineStateToName(machineState, false));
                     }
+                    else
+                    {
+                        fError = false;
+                        fPaused = true;
+                    }
                 }
-                break;
+                if (fError)
+                    break;
             }
 
             ComPtr<IProgress> progress;
             CHECK_ERROR(console, SaveState(progress.asOutParam()));
             if (FAILED(rc))
             {
-                console->Resume();
+                if (!fPaused)
+                    console->Resume();
                 break;
             }
 
             rc = showProgress(progress);
             CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state"));
             if (FAILED(rc))
-                console->Resume();
+            {
+                if (!fPaused)
+                    console->Resume();
+            }
         }
         else if (!strcmp(a->argv[1], "acpipowerbutton"))
         {
