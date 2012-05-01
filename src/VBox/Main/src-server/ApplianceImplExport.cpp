@@ -794,7 +794,15 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
         ComPtr<IMedium> pSourceDisk;
 
         Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
+
+#if 0 // Substitute call to FindMedium to OpenMedium
         HRESULT rc = mVirtualBox->FindMedium(bstrSrcFilePath.raw(), DeviceType_HardDisk, pSourceDisk.asOutParam());
+#endif
+	HRESULT rc  = mVirtualBox->OpenMedium(bstrSrcFilePath.raw(),
+                                            DeviceType_HardDisk,
+                                            AccessMode_ReadWrite,
+                                            FALSE /* fForceNewUuid */,
+                                            pSourceDisk.asOutParam());
         if (FAILED(rc)) throw rc;
 
         Bstr uuidSource;

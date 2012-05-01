@@ -1959,37 +1959,6 @@
       </param>
     </method>
 
-    <method name="findMedium">
-      <desc>
-        Returns a medium of the given type that uses the given fully qualified
-        location or UUID to store medium data.
-
-        The given medium must be known to this VirtualBox installation, i.e.
-        it must be previously created by <link to="#createHardDisk"/> or opened
-        by <link to="#openMedium"/>.
-
-        The search is done by comparing the value of the @a location argument to
-        the <link to="IMedium::location"/> and <link to="IMedium::id" />
-        attributes of each known medium.
-
-        On case sensitive file systems, a case sensitive comparison is performed,
-        otherwise the case of symbols in the file path is ignored.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No medium object matching @a location found.
-        </result>
-      </desc>
-      <param name="location" type="wstring" dir="in">
-        <desc>What to search for. This can either be the UUID or the location string of an open medium.</desc>
-      </param>
-      <param name="type" type="DeviceType" dir="in">
-        <desc>Device type (must be HardDisk, DVD or Floppy)</desc>
-      </param>
-      <param name="medium" type="IMedium" dir="return">
-        <desc>Medium object, if found.</desc>
-      </param>
-    </method>
-
     <method name="getGuestOSType">
       <desc>
         Returns an object describing the specified guest OS type.
