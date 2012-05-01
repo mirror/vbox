@@ -625,9 +625,20 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
     /* Check if the file exists or if a file with this path is registered
      * already */
     /** @todo: Maybe too cost-intensive; try to find a lighter way */
-    while (    RTPathExists(tmpName)
-            || mVirtualBox->FindMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, &harddisk) != VBOX_E_OBJECT_NOT_FOUND
-          )
+
+#if 0 // Substitute call to FindMedium to OpenMedium
+     while (    RTPathExists(tmpName)
+             || mVirtualBox->FindMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, &harddisk) != VBOX_E_OBJECT_NOT_FOUND
+           )
+#endif
+
+     while ( RTPathExists(tmpName)
+             || mVirtualBox->OpenMedium(Bstr(tmpName).raw(),
+                                            DeviceType_HardDisk,
+                                            AccessMode_ReadWrite,
+                                            FALSE /* fForceNewUuid */,
+                                            &harddisk) != VBOX_E_OBJECT_NOT_FOUND
+	  )
     {
         RTStrFree(tmpName);
         char *tmpDir = RTStrDup(aName.c_str());
