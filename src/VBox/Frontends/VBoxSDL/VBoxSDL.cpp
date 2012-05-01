@@ -1461,12 +1461,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * assign it. If not, register a new image and assign it to the VM.
          */
         Bstr bstrHdaFile(hdaFile);
-#if 0 // Substitute call to FindMedium to OpenMedium
         pVirtualBox->FindMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
-                                 pMedium.asOutParam());
-#endif
-        pVirtualBox->OpenMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
-                                AccessMode_ReadWrite, FALSE /* fForceNewUuid */,
                                 pMedium.asOutParam());
         if (!pMedium)
         {
@@ -1549,15 +1544,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-#if 0 // Substitute call to FindMedium to OpenMedium
                 rc = pVirtualBox->FindMedium(bstrFdaFile.raw(), DeviceType_Floppy,
                                              pMedium.asOutParam());
-#endif
-                rc = pVirtualBox->OpenMedium(bstrFdaFile.raw(),
-                                            DeviceType_Floppy,
-                                            AccessMode_ReadWrite,
-                                            FALSE /* fForceNewUuid */,
-                                            pMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
@@ -1637,13 +1625,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-#if 0 // Substitute call to FindMedium to OpenMedium
                 rc = pVirtualBox->FindMedium(bstrCdromFile.raw(), DeviceType_DVD,
                                              pMedium.asOutParam());
-#endif
-                rc = pVirtualBox->OpenMedium(bstrCdromFile.raw(), DeviceType_DVD, 
-				             AccessMode_ReadWrite, FALSE /* fForceNewUuid */, 
-					     pMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
