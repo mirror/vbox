@@ -776,7 +776,7 @@ AutoInitSpan::~AutoInitSpan()
     {
         mObj->setState(VirtualBoxBase::InitFailed);
         /* release the lock to prevent nesting when uninit() is called */
-        stateLock.acquire();
+        stateLock.release();
         /* call uninit() to let the object uninit itself after failed init() */
         mObj->uninit();
         /* Note: the object may no longer exist here (for example, it can call
