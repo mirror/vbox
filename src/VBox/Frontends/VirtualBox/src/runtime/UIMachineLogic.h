@@ -19,18 +19,16 @@
 #ifndef __UIMachineLogic_h__
 #define __UIMachineLogic_h__
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineDefs.h"
 #include <QIWithRetranslateUI.h>
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-/* Global forwards */
+/* Forward declarations: */
 class QAction;
 class QActionGroup;
-
-/* Local forwards */
 class CSession;
 class CMachine;
 class CSnapshot;
@@ -69,7 +67,7 @@ public:
     UIKeyboardHandler* keyboardHandler() const { return m_pKeyboardHandler; }
     UIMouseHandler* mouseHandler() const { return m_pMouseHandler; }
     UIMachineWindow* mainMachineWindow() const;
-    UIMachineWindow* defaultMachineWindow() const;
+    UIMachineWindow* activeMachineWindow() const;
 
     /* Maintenance getters/setters: */
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
