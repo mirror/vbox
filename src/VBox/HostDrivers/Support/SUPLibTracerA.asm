@@ -201,7 +201,11 @@ EXPORTEDNAME SUPTracerFireProbe
         call    NAME(suplibTracerFireProbe)
  %else
         mov     xSI, xSP
+  %ifdef PIC
+        call    [rel NAME(suplibTracerFireProbe) wrt ..got]
+  %else
         call    NAME(suplibTracerFireProbe)
+  %endif
  %endif
 
 %elifdef RT_ARCH_X86
