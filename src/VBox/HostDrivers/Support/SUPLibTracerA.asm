@@ -210,7 +210,7 @@ EXPORTEDNAME SUPTracerFireProbe
  %else
         mov     xSI, xSP
   %ifdef RT_ASM_USE_PLT
-        call    [rel NAME(suplibTracerFireProbe) wrt ..plt]
+        call    NAME(suplibTracerFireProbe) wrt ..plt
   %else
         call    NAME(suplibTracerFireProbe)
   %endif
