@@ -1461,7 +1461,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * assign it. If not, register a new image and assign it to the VM.
          */
         Bstr bstrHdaFile(hdaFile);
-        pVirtualBox->FindMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
+        pVirtualBox->OpenMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
+                                AccessMode_ReadWrite, FALSE /* fForceNewUuid */,
                                 pMedium.asOutParam());
         if (!pMedium)
         {
@@ -1544,7 +1545,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = pVirtualBox->FindMedium(bstrFdaFile.raw(), DeviceType_Floppy,
+                rc = pVirtualBox->OpenMedium(bstrFdaFile.raw(),
+                                             DeviceType_Floppy,
+                                             AccessMode_ReadWrite,
+                                             FALSE /* fForceNewUuid */,
                                              pMedium.asOutParam());
                 if (FAILED(rc))
                 {
@@ -1625,8 +1629,11 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = pVirtualBox->FindMedium(bstrCdromFile.raw(), DeviceType_DVD,
-                                             pMedium.asOutParam());
+                rc = pVirtualBox->OpenMedium(bstrCdromFile.raw(),
+                                            DeviceType_DVD,
+                                            AccessMode_ReadWrite,
+                                            FALSE /* fForceNewUuid */,
+                                            pMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
