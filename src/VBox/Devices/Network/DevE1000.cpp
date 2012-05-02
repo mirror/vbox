@@ -942,8 +942,15 @@ struct E1kTcpHeader
 AssertCompileSize(struct E1kTcpHeader, 20);
 
 
+#ifdef E1K_WITH_TXD_CACHE
+/** The current Saved state version. */
+#define E1K_SAVEDSTATE_VERSION          4
+/** Saved state version for VirtualBox 4.2 with VLAN tag fields.  */
+#define E1K_SAVEDSTATE_VERSION_VBOX_42_VTAG  3
+#else /* !E1K_WITH_TXD_CACHE */
 /** The current Saved state version. */
 #define E1K_SAVEDSTATE_VERSION          3
+#endif /* !E1K_WITH_TXD_CACHE */
 /** Saved state version for VirtualBox 4.1 and earlier.
  * These did not include VLAN tag fields.  */
 #define E1K_SAVEDSTATE_VERSION_VBOX_41  2
@@ -6091,6 +6098,9 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     int       rc;
 
     if (    uVersion != E1K_SAVEDSTATE_VERSION
+#ifdef E1K_WITH_TXD_CACHE
+        &&  uVersion != E1K_SAVEDSTATE_VERSION_VBOX_42_VTAG
+#endif /* E1K_WITH_TXD_CACHE */
         &&  uVersion != E1K_SAVEDSTATE_VERSION_VBOX_41
         &&  uVersion != E1K_SAVEDSTATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -6145,21 +6155,23 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             SSMR3GetBool(pSSM, &pState->fVTag);
             rc = SSMR3GetU16(pSSM, &pState->u16VTagTCI);
             AssertRCReturn(rc, rc);
-#ifdef E1K_WITH_TXD_CACHE
-            rc = SSMR3GetU8(pSSM, &pState->nTxDFetched);
-            AssertRCReturn(rc, rc);
-            SSMR3GetMem(pSSM, pState->aTxDescriptors,
-                        pState->nTxDFetched * sizeof(pState->aTxDescriptors[0]));
-#endif /* E1K_WITH_TXD_CACHE */
         }
         else
         {
             pState->fVTag      = false;
             pState->u16VTagTCI = 0;
+        }
 #ifdef E1K_WITH_TXD_CACHE
+        if (uVersion > E1K_SAVEDSTATE_VERSION_VBOX_42_VTAG)
+        {
+            rc = SSMR3GetU8(pSSM, &pState->nTxDFetched);
+            AssertRCReturn(rc, rc);
+            SSMR3GetMem(pSSM, pState->aTxDescriptors,
+                        pState->nTxDFetched * sizeof(pState->aTxDescriptors[0]));
+        }
+        else
             pState->nTxDFetched = 0;
 #endif /* E1K_WITH_TXD_CACHE */
-        }
         /* derived state  */
         e1kSetupGsoCtx(&pState->GsoCtx, &pState->contextTSE);
 
