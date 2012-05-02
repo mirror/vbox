@@ -277,7 +277,7 @@ crServerInit(int argc, char *argv[])
     }
 #endif
 
-    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_USE_MULTIPLE_CONTEXTS" ) != NULL);
+    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
@@ -344,7 +344,7 @@ GLboolean crVBoxServerInit(void)
     }
 #endif
 
-    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_USE_MULTIPLE_CONTEXTS" ) != NULL);
+    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
