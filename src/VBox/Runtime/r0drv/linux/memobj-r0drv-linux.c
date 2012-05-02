@@ -886,8 +886,8 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
     struct task_struct *pTask = rtR0ProcessToLinuxTask(R0Process);
     struct vm_area_struct **papVMAs;
     PRTR0MEMOBJLNX pMemLnx;
-    int rc = VERR_NO_MEMORY;
-    NOREF(fAccess);
+    int             rc      = VERR_NO_MEMORY;
+    int  const      fWrite  = fAccess & RTMEM_PROT_WRITE ? 1 : 0;
 
     /*
      * Check for valid task and size overflows.
@@ -916,8 +916,8 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                             pTask->mm,              /* Whose pages. */
                             R3Ptr,                  /* Where from. */
                             cPages,                 /* How many pages. */
-                            1,                      /* Write to memory. */
-                            0,                      /* force. */
+                            fWrite,                 /* Write to memory. */
+                            fWrite,                 /* force write access. */
                             &pMemLnx->apPages[0],   /* Page array. */
                             papVMAs);               /* vmas */
         if (rc == cPages)
