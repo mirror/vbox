@@ -42,11 +42,16 @@
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
+#include <iprt/param.h>
+#include <iprt/uuid.h>
 
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/** Pointer to a user tracer module registration record. */
+typedef struct SUPDRVTRACERUMOD *PSUPDRVTRACERUMOD;
+
 /**
  * Data for a tracepoint provider.
  */
@@ -54,6 +59,8 @@ typedef struct SUPDRVTPPROVIDER
 {
     /** The entry in the provider list for this image. */
     RTLISTNODE              ListEntry;
+    /** The entry in the per session provider list for this image. */
+    RTLISTNODE              SessionListEntry;
 
     /** The core structure. */
     SUPDRVVDTPROVIDERCORE   Core;
@@ -64,6 +71,9 @@ typedef struct SUPDRVTPPROVIDER
     /** The session this provider is associated with if registered via
      * SUPR0VtgRegisterDrv.  NULL if pImage is set. */
     PSUPDRVSESSION          pSession;
+    /** The user tracepoint module associated with this provider.  NULL if
+     *  pImage is set. */
+    PSUPDRVTRACERUMOD       pUmod;
 
     /** Used to indicate that we've called pfnProviderDeregistered already and it
      * failed because the provider was busy.  Next time we must try
@@ -82,6 +92,71 @@ typedef struct SUPDRVTPPROVIDER
 typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 
 
+/**
+ * User tracer module VTG data copy.
+ */
+typedef struct SUPDRVVTGCOPY
+{
+    /** Magic (SUDPRVVTGCOPY_MAGIC).  */
+    uint32_t    u32Magic;
+    /** Refernece counter (we expect to share a lot of these). */
+    uint32_t    cRefs;
+    /** The size of the  */
+    uint32_t    cbStrTab;
+    /** Image type flags. */
+    uint32_t    fFlags;
+    /** Hash list entry (SUPDRVDEVEXT::aTrackerUmodHash).  */
+    RTLISTNODE  ListEntry;
+    /** The VTG object header.
+     * The rest of the data follows immediately afterwards.  First the object,
+     * then the probe locations and finally the probe location string table. All
+     * pointers are fixed up to point within this data. */
+    VTGOBJHDR   Hdr;
+} SUPDRVVTGCOPY;
+/** Pointer to a VTG object copy. */
+typedef SUPDRVVTGCOPY *PSUPDRVVTGCOPY;
+/** Magic value for SUPDRVVTGCOPY. */
+#define SUDPRVVTGCOPY_MAGIC UINT32_C(0x00080386)
+
+
+/**
+ * User tracer module registration record.
+ */
+typedef struct SUPDRVTRACERUMOD
+{
+    /** Magic (SUPDRVTRACERUMOD_MAGIC).  */
+    uint32_t                u32Magic;
+    /** List entry.  This is anchored in SUPDRVSESSION::UmodList. */
+    RTLISTNODE              ListEntry;
+    /** The address of the ring-3 VTG header. */
+    RTR3PTR                 R3PtrVtgHdr;
+    /** Pointer to the ring-0 copy of the VTG data. */
+    PSUPDRVVTGCOPY          pVtgCopy;
+    /** The memory object that locks down the user memory. */
+    RTR0MEMOBJ              hMemObjLock;
+    /** The memory object that maps the locked memory into kernel space. */
+    RTR0MEMOBJ              hMemObjMap;
+    /** Pointer to the probe enabled-count array within the mapping. */
+    uint32_t               *pacProbeEnabled;
+    /** Pointer to the probe location array within the mapping. */
+    void                   *pvProbeLocs;
+    /** The address of the ring-3 probe locations. */
+    RTR3PTR                 R3PtrProbeLocs;
+    /** The lookup table index. */
+    uint8_t                 iLookupTable;
+    /** The module bit count. */
+    uint8_t                 cBits;
+    /** The size of a probe location record. */
+    uint8_t                 cbProbeLoc;
+    /** The number of probe locations. */
+    uint32_t                cProbeLocs;
+    /** Ring-0 probe location info. */
+    SUPDRVPROBELOC          aProbeLocs[1];
+} SUPDRVTRACERUMOD;
+/** Magic value for SUPDRVVTGCOPY. */
+#define SUPDRVTRACERUMOD_MAGIC UINT32_C(0x00080486)
+
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -98,6 +173,12 @@ typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 *******************************************************************************/
 /** The address of the current probe fire routine for kernel mode. */
 PFNRT       g_pfnSupdrvProbeFireKernel = supdrvTracerProbeFireStub;
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static void supdrvVtgReleaseObjectCopy(PSUPDRVDEVEXT pDevExt, PSUPDRVVTGCOPY pThis);
 
 
 
@@ -135,58 +216,15 @@ static int supdrvVtgValidateString(const char *psz)
 }
 
 
-/**
- * Validates the VTG data.
- *
- * @returns VBox status code.
- * @param   pVtgHdr             The VTG object header of the data to validate.
- * @param   cbVtgObj            The size of the VTG object.
- * @param   pbImage             The image base. For validating the probe
- *                              locations.
- * @param   cbImage             The image size to go with @a pbImage.
- */
-static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t *pbImage, size_t cbImage)
-{
-    uintptr_t   cbTmp;
-    uintptr_t   offTmp;
-    uintptr_t   i;
-    uintptr_t   cProviders;
-    int         rc;
+/** Used by the validation code below. */
+#define MY_CHECK_RET(a_Expr, a_rc) \
+    MY_CHECK_MSG_RET(a_Expr, ("%s: Validation failed on line " RT_XSTR(__LINE__) ": " #a_Expr "\n", __FUNCTION__), a_rc)
 
-    if (!pbImage || !cbImage)
-    {
-        pbImage = NULL;
-        cbImage = 0;
-    }
+/** Used by the validation code below. */
+#define MY_CHECK_MSG_RET(a_Expr, a_PrintfArgs, a_rc) \
+    do { if (RT_UNLIKELY(!(a_Expr))) { SUPR0Printf a_PrintfArgs; return (a_rc); } } while (0)
 
-#define MY_VALIDATE_PTR(p, cb, cMin, cMax, cbUnit, rcBase) \
-    do { \
-        if (   (cb) >= cbVtgObj \
-            || (uintptr_t)(p) - (uintptr_t)pVtgHdr > cbVtgObj - (cb) ) \
-        { \
-            SUPR0Printf("supdrvVtgValidate: " #rcBase "_TOO_PTR - p=%p cb=%#zx pVtgHdr=%p cbVtgHdr=%#zu line=%u %s\n", \
-                        p, (size_t)(cb), pVtgHdr, cbVtgObj, __LINE__, #p); \
-            return rcBase ## _PTR; \
-        } \
-        if ((cb) <  (cMin) * (cbUnit)) \
-        { \
-            SUPR0Printf("supdrvVtgValidate: " #rcBase "_TOO_FEW - cb=%#zx cMin=%#zx cbUnit=%#zx line=%u %s\n", \
-                        (size_t)(cb), (size_t)(cMin), (size_t)cbUnit, __LINE__, #p); \
-            return rcBase ## _TOO_FEW; \
-        } \
-        if ((cb) >= (cMax) * (cbUnit)) \
-        { \
-            SUPR0Printf("supdrvVtgValidate: " #rcBase "_TOO_MUCH - cb=%#zx cMax=%#zx cbUnit=%#zx line=%u %s\n", \
-                        (size_t)(cb), (size_t)(cMax), (size_t)cbUnit, __LINE__, #p); \
-            return rcBase ## _TOO_MUCH; \
-        } \
-        if ((cb) / (cbUnit) * (cbUnit) != (cb)) \
-        { \
-            SUPR0Printf("supdrvVtgValidate: " #rcBase "_NOT_MULTIPLE - cb=%#zx cbUnit=%#zx line=%u %s\n", \
-                        (size_t)(cb), (size_t)cbUnit, __LINE__, #p); \
-            return rcBase ## _NOT_MULTIPLE; \
-        } \
-    } while (0)
+/** Used by the validation code below. */
 #define MY_WITHIN_IMAGE(p, rc) \
     do { \
         if (pbImage) \
@@ -201,11 +239,239 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
         else if (!RT_VALID_PTR(p)) \
             return (rc); \
     } while (0)
-#define MY_VALIDATE_STR(offStrTab) \
+
+
+/**
+ * Validates the VTG object header.
+ *
+ * @returns VBox status code.
+ * @param   pVtgHdr             The header.
+ * @param   uVtgHdrAddr         The address where the header is actually
+ *                              loaded.
+ * @param   cbVtgObj            The alleged size of the header.
+ * @param   pbImage             The image base, if available.
+ * @param   cbImage             The image size, if available.
+ * @param   fUmod               Whether this is a user module.
+ */
+static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const uint8_t *pbImage, size_t cbImage, bool fUmod)
+{
+    struct VTGAREAS
+    {
+        uint32_t off;
+        uint32_t cb;
+    } const        *paAreas;
+    unsigned        cAreas;
+    unsigned        i;
+    uint32_t        cbVtgObj;
+    uint32_t        off;
+
+#define MY_VALIDATE_SIZE(cb, cMin, cMax, cbUnit, rcBase) \
     do { \
-        if ((offStrTab) >= pVtgHdr->cbStrTab) \
+        if ((cb) <  (cMin) * (cbUnit)) \
+        { \
+            SUPR0Printf("supdrvVtgValidateHdr: " #rcBase "_TOO_FEW - cb=%#zx cMin=%#zx cbUnit=%#zx line=%u %s\n", \
+                        (size_t)(cb), (size_t)(cMin), (size_t)cbUnit, __LINE__, #cb); \
+            return rcBase ## _TOO_FEW; \
+        } \
+        if ((cb) >= (cMax) * (cbUnit)) \
+        { \
+            SUPR0Printf("supdrvVtgValidateHdr: " #rcBase "_TOO_MUCH - cb=%#zx cMax=%#zx cbUnit=%#zx line=%u %s\n", \
+                        (size_t)(cb), (size_t)(cMax), (size_t)cbUnit, __LINE__, #cb); \
+            return rcBase ## _TOO_MUCH; \
+        } \
+        if ((cb) / (cbUnit) * (cbUnit) != (cb)) \
+        { \
+            SUPR0Printf("supdrvVtgValidateHdr: " #rcBase "_NOT_MULTIPLE - cb=%#zx cbUnit=%#zx line=%u %s\n", \
+                        (size_t)(cb), (size_t)cbUnit, __LINE__, #cb); \
+            return rcBase ## _NOT_MULTIPLE; \
+        } \
+    } while (0)
+
+#define MY_VALIDATE_OFF(off, cb, cMin, cMax, cbUnit, cbAlign, rcBase) \
+    do { \
+        if (   (cb) >= cbVtgObj \
+            || off > cbVtgObj - (cb) ) \
+        { \
+            SUPR0Printf("supdrvVtgValidateHdr: " #rcBase "_OFF - off=%#x cb=%#x pVtgHdr=%p cbVtgHdr=%#zx line=%u %s\n", \
+                        (off), (cb), pVtgHdr, cbVtgObj, __LINE__, #off); \
+            return rcBase ## _OFF; \
+        } \
+        if (RT_ALIGN(off, cbAlign) != (off)) \
+        { \
+            SUPR0Printf("supdrvVtgValidateHdr: " #rcBase "_OFF - off=%#x align=%#zx line=%u %s\n", \
+                        (off), (size_t)(cbAlign), __LINE__, #off); \
+            return rcBase ## _OFF; \
+        } \
+        MY_VALIDATE_SIZE(cb, cMin, cMax, cbUnit, rcBase); \
+    } while (0)
+
+    /*
+     * Make sure both pbImage and cbImage are NULL/0 if one if of them is.
+     */
+    if (!pbImage || !cbImage)
+    {
+        pbImage = NULL;
+        cbImage = 0;
+        cbVtgObj = pVtgHdr->cbObj;
+    }
+    else
+    {
+        MY_WITHIN_IMAGE(pVtgHdr, VERR_SUPDRV_VTG_BAD_HDR_PTR);
+        cbVtgObj = pVtgHdr->cbObj;
+        MY_WITHIN_IMAGE((uint8_t *)pVtgHdr + cbVtgObj - 1, VERR_SUPDRV_VTG_BAD_HDR_PTR);
+    }
+
+    if (cbVtgObj > _1M)
+    {
+        SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_TRACER_TOO_LARGE - cbVtgObj=%#x\n", cbVtgObj);
+        return VERR_SUPDRV_TRACER_TOO_LARGE;
+    }
+
+    /*
+     * Set the probe location array offset and size members.
+     */
+    if (!pVtgHdr->offProbeLocs)
+    {
+        uint64_t u64Tmp = pVtgHdr->uProbeLocsEnd.u64 - pVtgHdr->uProbeLocs.u64;
+        if (u64Tmp >= UINT32_MAX)
+            return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
+        pVtgHdr->cbProbeLocs  = (uint32_t)u64Tmp;
+
+        u64Tmp = pVtgHdr->uProbeLocs.u64 - uVtgHdrAddr;
+        if ((int64_t)u64Tmp != (int32_t)u64Tmp)
+            return VERR_SUPDRV_VTG_BAD_HDR_PTR;
+        pVtgHdr->offProbeLocs = (int32_t)u64Tmp;
+    }
+
+    /*
+     * The non-area description fields.
+     */
+    if (memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
+        return VERR_SUPDRV_VTG_MAGIC;
+    if (   pVtgHdr->cBits != ARCH_BITS
+        && (   !fUmod
+            || (   pVtgHdr->cBits != 32
+                && pVtgHdr->cBits != 64)) )
+        return VERR_SUPDRV_VTG_BITS;
+    if (   pVtgHdr->au32Reserved1[0]
+        || pVtgHdr->au32Reserved1[1]
+        || pVtgHdr->au32Reserved1[2]
+        || pVtgHdr->au32Reserved1[3])
+        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+    if (RTUuidIsNull(&pVtgHdr->Uuid))
+        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+
+    /*
+     * Check the individual area descriptors.
+     */
+    MY_VALIDATE_OFF(pVtgHdr->offStrTab,          pVtgHdr->cbStrTab,       4,   _1M, sizeof(char),            sizeof(uint8_t),  VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_OFF(pVtgHdr->offArgLists,        pVtgHdr->cbArgLists,     1,  _32K, sizeof(uint32_t),        sizeof(uint32_t), VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_OFF(pVtgHdr->offProbes,          pVtgHdr->cbProbes,       1,  _32K, sizeof(VTGDESCPROBE),    sizeof(uint32_t), VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_OFF(pVtgHdr->offProviders,       pVtgHdr->cbProviders,    1,    16, sizeof(VTGDESCPROVIDER), sizeof(uint32_t), VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_OFF(pVtgHdr->offProbeEnabled,    pVtgHdr->cbProbeEnabled, 1,  _32K, sizeof(uint32_t),        sizeof(uint32_t), VERR_SUPDRV_VTG_BAD_HDR);
+    if (!fUmod)
+    {
+        MY_WITHIN_IMAGE(pVtgHdr->uProbeLocs.p,    VERR_SUPDRV_VTG_BAD_HDR_PTR);
+        MY_WITHIN_IMAGE(pVtgHdr->uProbeLocsEnd.p, VERR_SUPDRV_VTG_BAD_HDR_PTR);
+        MY_VALIDATE_SIZE(                        pVtgHdr->cbProbeLocs,    1, _128K, sizeof(VTGPROBELOC),     VERR_SUPDRV_VTG_BAD_HDR);
+    }
+    else
+    {
+        if (pVtgHdr->cBits == 32)
+            MY_VALIDATE_SIZE(                   pVtgHdr->cbProbeLocs,    1, _8K,   sizeof(VTGPROBELOC32),    VERR_SUPDRV_VTG_BAD_HDR);
+        else
+            MY_VALIDATE_SIZE(                   pVtgHdr->cbProbeLocs,    1, _8K,   sizeof(VTGPROBELOC64),    VERR_SUPDRV_VTG_BAD_HDR);
+        /* Will check later that offProbeLocs are following closely on the
+           enable count array, so no need to validate the offset here. */
+    }
+
+    /*
+     * Some additional consistency checks.
+     */
+    if (   pVtgHdr->uProbeLocsEnd.u64 - pVtgHdr->uProbeLocs.u64 != pVtgHdr->cbProbeLocs
+        || (int64_t)(pVtgHdr->uProbeLocs.u64 - uVtgHdrAddr)     != pVtgHdr->offProbeLocs)
+    {
+        SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_MISC - uProbeLocs=%#llx uProbeLocsEnd=%#llx offProbeLocs=%#llx cbProbeLocs=%#x uVtgHdrAddr=%RTptr\n",
+                    pVtgHdr->uProbeLocs.u64, pVtgHdr->uProbeLocsEnd.u64, pVtgHdr->offProbeLocs, pVtgHdr->cbProbeLocs, uVtgHdrAddr);
+        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+    }
+
+    if (pVtgHdr->cbProbes / sizeof(VTGDESCPROBE) != pVtgHdr->cbProbeEnabled / sizeof(uint32_t))
+    {
+        SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_MISC - cbProbeEnabled=%#zx cbProbes=%#zx\n",
+                    pVtgHdr->cbProbeEnabled, pVtgHdr->cbProbes);
+        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+    }
+
+    /*
+     * Check that there are no overlapping areas.  This is a little bit ugly...
+     */
+    paAreas = (struct VTGAREAS const *)&pVtgHdr->offStrTab;
+    cAreas  = pVtgHdr->offProbeLocs >= 0 ? 6 : 5;
+    off     = sizeof(VTGOBJHDR);
+    for (i = 0; i < cAreas; i++)
+    {
+        if (paAreas[i].off < off)
+        {
+            SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_MISC - overlapping areas %d and %d\n", i, i-1);
+            return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+        }
+        off = paAreas[i].off + paAreas[i].cb;
+    }
+    if (   pVtgHdr->offProbeLocs > 0
+        && (uint32_t)-pVtgHdr->offProbeLocs < pVtgHdr->cbProbeLocs)
+    {
+        SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_MISC - probe locations overlaps the header\n");
+        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+    }
+
+    /*
+     * Check that the object size is correct.
+     */
+    if (pVtgHdr->cbObj != pVtgHdr->offProbeEnabled + pVtgHdr->cbProbeEnabled)
+    {
+        SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_MISC - bad header size %#x, expected %#x\n",
+                    pVtgHdr->cbObj, pVtgHdr->offProbeEnabled + pVtgHdr->cbProbeEnabled);
+        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+    }
+
+
+    return VINF_SUCCESS;
+#undef MY_VALIDATE_OFF
+#undef MY_VALIDATE_SIZE
+}
+
+
+/**
+ * Validates the VTG data.
+ *
+ * @returns VBox status code.
+ * @param   pVtgHdr             The VTG object header of the data to validate.
+ * @param   uVtgHdrAddr         The address where the header is actually
+ *                              loaded.
+ * @param   pbImage             The image base. For validating the probe
+ *                              locations.
+ * @param   cbImage             The image size to go with @a pbImage.
+ * @param   fUmod               Whether this is a user module.
+ */
+static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const uint8_t *pbImage, size_t cbImage, bool fUmod)
+{
+    uintptr_t   offTmp;
+    uintptr_t   i;
+    uintptr_t   cProviders;
+    int         rc;
+
+    if (!pbImage || !cbImage)
+    {
+        pbImage = NULL;
+        cbImage = 0;
+    }
+
+#define MY_VALIDATE_STR(a_offStrTab) \
+    do { \
+        if ((a_offStrTab) >= pVtgHdr->cbStrTab) \
             return VERR_SUPDRV_VTG_STRTAB_OFF; \
-        rc = supdrvVtgValidateString(pVtgHdr->pachStrTab + (offStrTab)); \
+        rc = supdrvVtgValidateString((char *)pVtgHdr + pVtgHdr->offStrTab + (a_offStrTab)); \
         if (rc != VINF_SUCCESS) \
             return rc; \
     } while (0)
@@ -222,53 +488,9 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     /*
      * The header.
      */
-    if (memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
-        return VERR_SUPDRV_VTG_MAGIC;
-    if (pVtgHdr->cBits != ARCH_BITS)
-        return VERR_SUPDRV_VTG_BITS;
-    if (pVtgHdr->u32Reserved0)
-        return VERR_SUPDRV_VTG_BAD_HDR;
-
-    MY_VALIDATE_PTR(pVtgHdr->paProviders,       pVtgHdr->cbProviders,    1,    16, sizeof(VTGDESCPROVIDER), VERR_SUPDRV_VTG_BAD_HDR);
-    MY_VALIDATE_PTR(pVtgHdr->paProbes,          pVtgHdr->cbProbes,       1,  _32K, sizeof(VTGDESCPROBE),    VERR_SUPDRV_VTG_BAD_HDR);
-    MY_VALIDATE_PTR(pVtgHdr->pafProbeEnabled,   pVtgHdr->cbProbeEnabled, 1,  _32K, sizeof(bool),            VERR_SUPDRV_VTG_BAD_HDR);
-    MY_VALIDATE_PTR(pVtgHdr->pachStrTab,        pVtgHdr->cbStrTab,       4,   _1M, sizeof(char),            VERR_SUPDRV_VTG_BAD_HDR);
-    MY_VALIDATE_PTR(pVtgHdr->paArgLists,        pVtgHdr->cbArgLists,     1,  _32K, sizeof(uint32_t),        VERR_SUPDRV_VTG_BAD_HDR);
-
-    MY_WITHIN_IMAGE(pVtgHdr->paProbLocs,    VERR_SUPDRV_VTG_BAD_HDR_PTR);
-    MY_WITHIN_IMAGE(pVtgHdr->paProbLocsEnd, VERR_SUPDRV_VTG_BAD_HDR_PTR);
-    if ((uintptr_t)pVtgHdr->paProbLocs > (uintptr_t)pVtgHdr->paProbLocsEnd)
-    {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_PTR - paProbeLocs=%p > paProbLocsEnd=%p\n",
-                    pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
-        return VERR_SUPDRV_VTG_BAD_HDR_PTR;
-    }
-    cbTmp = (uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs;
-    if (cbTmp < sizeof(VTGPROBELOC))
-    {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n",
-                    cbTmp, pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
-        return VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW;
-    }
-    if (cbTmp >= _128K * sizeof(VTGPROBELOC))
-    {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n",
-                    cbTmp, pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
-        return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
-    }
-    if (cbTmp / sizeof(VTGPROBELOC) * sizeof(VTGPROBELOC) != cbTmp)
-    {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE - cbTmp=%#zx cbUnit=%#zx paProbeLocs=%p paProbLocsEnd=%p\n",
-                    cbTmp, sizeof(VTGPROBELOC), pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
-        return VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE;
-    }
-
-    if (pVtgHdr->cbProbes / sizeof(VTGDESCPROBE) != pVtgHdr->cbProbeEnabled)
-    {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR - cbProbeEnabled=%#zx cbProbes=%#zx\n",
-                    pVtgHdr->cbProbeEnabled, pVtgHdr->cbProbes);
-        return VERR_SUPDRV_VTG_BAD_HDR;
-    }
+    rc = supdrvVtgValidateHdr(pVtgHdr, uVtgHdrAddr, pbImage, cbImage, fUmod);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Validate the providers.
@@ -276,18 +498,18 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     cProviders = i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
     while (i-- > 0)
     {
-        MY_VALIDATE_STR(pVtgHdr->paProviders[i].offName);
-        if (pVtgHdr->paProviders[i].iFirstProbe >= pVtgHdr->cbProbeEnabled)
-            return VERR_SUPDRV_VTG_BAD_PROVIDER;
-        if (pVtgHdr->paProviders[i].iFirstProbe + pVtgHdr->paProviders[i].cProbes > pVtgHdr->cbProbeEnabled)
-            return VERR_SUPDRV_VTG_BAD_PROVIDER;
-        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrSelf);
-        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrModules);
-        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrFunctions);
-        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrNames);
-        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrArguments);
-        if (pVtgHdr->paProviders[i].bReserved)
-            return VERR_SUPDRV_VTG_BAD_PROVIDER;
+        PCVTGDESCPROVIDER pProvider = (PCVTGDESCPROVIDER)((uintptr_t)pVtgHdr + pVtgHdr->offProviders) + i;
+
+        MY_VALIDATE_STR(pProvider->offName);
+        MY_CHECK_RET(pProvider->iFirstProbe < pVtgHdr->cbProbeEnabled / sizeof(uint32_t), VERR_SUPDRV_VTG_BAD_PROVIDER);
+        MY_CHECK_RET((uint32_t)pProvider->iFirstProbe + pProvider->cProbes <= pVtgHdr->cbProbeEnabled / sizeof(uint32_t),
+                     VERR_SUPDRV_VTG_BAD_PROVIDER);
+        MY_VALIDATE_ATTR(pProvider->AttrSelf);
+        MY_VALIDATE_ATTR(pProvider->AttrModules);
+        MY_VALIDATE_ATTR(pProvider->AttrFunctions);
+        MY_VALIDATE_ATTR(pProvider->AttrNames);
+        MY_VALIDATE_ATTR(pProvider->AttrArguments);
+        MY_CHECK_RET(pProvider->bReserved == 0, VERR_SUPDRV_VTG_BAD_PROVIDER);
     }
 
     /*
@@ -296,36 +518,27 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     i = pVtgHdr->cbProbes / sizeof(VTGDESCPROBE);
     while (i-- > 0)
     {
-        PVTGDESCARGLIST pArgList;
-        unsigned        iArg;
-        bool            fHaveLargeArgs;
+        PCVTGDESCPROBE      pProbe    = (PCVTGDESCPROBE)(   (uintptr_t)pVtgHdr + pVtgHdr->offProbes)    + i;
+        PCVTGDESCPROVIDER   pProvider = (PCVTGDESCPROVIDER)((uintptr_t)pVtgHdr + pVtgHdr->offProviders) + pProbe->idxProvider;
+        PCVTGDESCARGLIST    pArgList  = (PCVTGDESCARGLIST)( (uintptr_t)pVtgHdr + pVtgHdr->offArgLists + pProbe->offArgList );
+        unsigned            iArg;
+        bool                fHaveLargeArgs;
 
-        MY_VALIDATE_STR(pVtgHdr->paProbes[i].offName);
-        if (pVtgHdr->paProbes[i].offArgList >= pVtgHdr->cbArgLists)
-            return VERR_SUPDRV_VTG_BAD_PROBE;
-        if (pVtgHdr->paProbes[i].offArgList & 3)
-            return VERR_SUPDRV_VTG_BAD_PROBE;
-        if (pVtgHdr->paProbes[i].idxEnabled != i) /* The lists are parallel. */
-            return VERR_SUPDRV_VTG_BAD_PROBE;
-        if (pVtgHdr->paProbes[i].idxProvider >= cProviders)
-            return VERR_SUPDRV_VTG_BAD_PROBE;
-        if (  i - pVtgHdr->paProviders[pVtgHdr->paProbes[i].idxProvider].iFirstProbe
-            >= pVtgHdr->paProviders[pVtgHdr->paProbes[i].idxProvider].cProbes)
-            return VERR_SUPDRV_VTG_BAD_PROBE;
-        if (pVtgHdr->paProbes[i].u32User)
-            return VERR_SUPDRV_VTG_BAD_PROBE;
-        if (pVtgHdr->paProbes[i].u32User2)
-            return VERR_SUPDRV_VTG_BAD_PROBE;
-        if (   pVtgHdr->paProbes[i].offObjHdr
-            != (intptr_t)pVtgHdr - (intptr_t)&pVtgHdr->paProbes[i])
+
+        MY_VALIDATE_STR(pProbe->offName);
+        MY_CHECK_RET(pProbe->offArgList < pVtgHdr->cbArgLists, VERR_SUPDRV_VTG_BAD_PROBE);
+        MY_CHECK_RET((pProbe->offArgList & 3) == 0, VERR_SUPDRV_VTG_BAD_PROBE);
+        MY_CHECK_RET(pProbe->idxEnabled == i, VERR_SUPDRV_VTG_BAD_PROBE); /* The lists are parallel. */
+        MY_CHECK_RET(pProbe->idxProvider < cProviders, VERR_SUPDRV_VTG_BAD_PROBE);
+        MY_CHECK_RET(i - pProvider->iFirstProbe < pProvider->cProbes, VERR_SUPDRV_VTG_BAD_PROBE);
+        if (pProbe->offObjHdr != (intptr_t)pVtgHdr - (intptr_t)pProbe)
         {
             SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u offObjHdr=%d expected %zd\n",
-                        i, pVtgHdr->paProbes[i].offObjHdr, (intptr_t)pVtgHdr - (intptr_t)&pVtgHdr->paProbes[i]);
+                        i, pProbe->offObjHdr, (intptr_t)pVtgHdr - (intptr_t)pProbe);
             return VERR_SUPDRV_VTG_BAD_PROBE;
         }
 
         /* The referenced argument list. */
-        pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr->paArgLists + pVtgHdr->paProbes[i].offArgList);
         if (pArgList->cArgs > 16)
         {
             SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u cArgs=%u\n", i, pArgList->cArgs);
@@ -382,38 +595,39 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     }
 
     /*
-     * Check that pafProbeEnabled is all zero.
+     * Check that pacProbeEnabled is all zeros.
      */
-    i = pVtgHdr->cbProbeEnabled;
-    while (i-- > 0)
-        if (pVtgHdr->pafProbeEnabled[0])
-            return VERR_SUPDRV_VTG_BAD_PROBE_ENABLED;
+    {
+        uint32_t const *pcProbeEnabled = (uint32_t const *)((uintptr_t)pVtgHdr + pVtgHdr->offProbeEnabled);
+        i = pVtgHdr->cbProbeEnabled / sizeof(uint32_t);
+        while (i-- > 0)
+            MY_CHECK_RET(pcProbeEnabled[0] == 0, VERR_SUPDRV_VTG_BAD_PROBE_ENABLED);
+    }
 
     /*
      * Probe locations.
      */
-    i = pVtgHdr->paProbLocsEnd - pVtgHdr->paProbLocs;
-    while (i-- > 0)
     {
-        if (pVtgHdr->paProbLocs[i].uLine >= _1G)
-            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
-        if (pVtgHdr->paProbLocs[i].fEnabled)
-            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
-        if (pVtgHdr->paProbLocs[i].idProbe != UINT32_MAX)
-            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
-        MY_WITHIN_IMAGE(pVtgHdr->paProbLocs[i].pszFunction, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
-        offTmp = (uintptr_t)pVtgHdr->paProbLocs[i].pbProbe - (uintptr_t)pVtgHdr->paProbes;
-        if (offTmp >= pVtgHdr->cbProbes)
-            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
-        if (offTmp / sizeof(VTGDESCPROBE) * sizeof(VTGDESCPROBE) != offTmp)
-            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
+        PCVTGPROBELOC paProbeLocs = (PCVTGPROBELOC)((intptr_t)pVtgHdr + pVtgHdr->offProbeLocs);
+        i = pVtgHdr->cbProbeLocs / sizeof(VTGPROBELOC);
+        while (i-- > 0)
+        {
+            MY_CHECK_RET(paProbeLocs[i].uLine < _1G, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+            MY_CHECK_RET(paProbeLocs[i].fEnabled == false, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+            MY_CHECK_RET(paProbeLocs[i].idProbe == 0, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+            MY_WITHIN_IMAGE(paProbeLocs[i].pszFunction, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+            offTmp = (uintptr_t)paProbeLocs[i].pbProbe - (uintptr_t)pVtgHdr->offProbes - (uintptr_t)pVtgHdr;
+            MY_CHECK_RET(offTmp < pVtgHdr->cbProbes, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+            MY_CHECK_RET(offTmp / sizeof(VTGDESCPROBE) * sizeof(VTGDESCPROBE) == offTmp, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+        }
     }
 
     return VINF_SUCCESS;
-#undef MY_VALIDATE_STR
-#undef MY_VALIDATE_PTR
-#undef MY_WITHIN_IMAGE
 }
+
+#undef MY_VALIDATE_STR
+#undef MY_VALIDATE_ATTR
+#undef MY_WITHIN_IMAGE
 
 
 /**
@@ -426,7 +640,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
 static const char *supdrvVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
 {
     Assert(offStrTab < pVtgHdr->cbStrTab);
-    return &pVtgHdr->pachStrTab[offStrTab];
+    return (char *)pVtgHdr + pVtgHdr->offStrTab + offStrTab;
 }
 
 
@@ -438,17 +652,22 @@ static const char *supdrvVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
 static void supdrvTracerFreeProvider(PSUPDRVTPPROVIDER pProv)
 {
     LOG_TRACER(("Freeing tracepoint provider '%s' / %p\n", pProv->szName, pProv->Core.TracerData.DTrace.idProvider));
-    pProv->fRegistered = false;
-    pProv->fZombie     = true;
-    pProv->Core.pDesc  = NULL;
-    pProv->Core.pHdr   = NULL;
+    pProv->fRegistered          = false;
+    pProv->fZombie              = true;
+    pProv->Core.pDesc           = NULL;
+    pProv->Core.pHdr            = NULL;
+    pProv->Core.paProbeLocsRO   = NULL;
+    pProv->Core.pvProbeLocsEn   = NULL;
+    pProv->Core.pacProbeEnabled = NULL;
+    pProv->Core.paR0ProbeLocs   = NULL;
+    pProv->Core.paR0Probes      = NULL;
     RT_ZERO(pProv->Core.TracerData);
     RTMemFree(pProv);
 }
 
 
 /**
- * Deregisters a provider.
+ * Unlinks and deregisters a provider.
  *
  * If the provider is still busy, it will be put in the zombie list.
  *
@@ -460,6 +679,15 @@ static void supdrvTracerFreeProvider(PSUPDRVTPPROVIDER pProv)
 static void supdrvTracerDeregisterVtgObj(PSUPDRVDEVEXT pDevExt, PSUPDRVTPPROVIDER pProv)
 {
     int rc;
+
+    RTListNodeRemove(&pProv->ListEntry);
+    if (pProv->pSession)
+    {
+        RTListNodeRemove(&pProv->SessionListEntry);
+        RTListInit(&pProv->SessionListEntry);
+        pProv->pSession->cTpProviders--;
+    }
+
     if (!pProv->fRegistered || !pDevExt->pTracerOps)
         rc = VINF_SUCCESS;
     else
@@ -470,7 +698,17 @@ static void supdrvTracerDeregisterVtgObj(PSUPDRVDEVEXT pDevExt, PSUPDRVTPPROVIDE
         return;
     }
 
-    pProv->fZombie = true;
+    pProv->fZombie              = true;
+    pProv->pImage               = NULL;
+    pProv->pSession             = NULL;
+    pProv->pUmod                = NULL;
+    pProv->Core.pDesc           = NULL;
+    pProv->Core.pHdr            = NULL;
+    pProv->Core.paProbeLocsRO   = NULL;
+    pProv->Core.pvProbeLocsEn   = NULL;
+    pProv->Core.pacProbeEnabled = NULL;
+    pProv->Core.paR0ProbeLocs   = NULL;
+
     RTListAppend(&pDevExt->TracerProviderZombieList, &pProv->ListEntry);
     LOG_TRACER(("Invalidated provider '%s' / %p and put it on the zombie list (rc=%Rrc)\n",
                 pProv->szName, pProv->Core.TracerData.DTrace.idProvider, rc));
@@ -520,7 +758,6 @@ static void supdrvTracerRemoveAllProviders(PSUPDRVDEVEXT pDevExt)
     RTSemFastMutexRequest(pDevExt->mtxTracer);
     RTListForEachSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
     {
-        RTListNodeRemove(&pProv->ListEntry);
         supdrvTracerDeregisterVtgObj(pDevExt, pProv);
     }
     RTSemFastMutexRelease(pDevExt->mtxTracer);
@@ -588,17 +825,19 @@ static void supdrvTracerRemoveAllProviders(PSUPDRVDEVEXT pDevExt)
  * @returns VBox status code.
  * @param   pszName             The driver name.
  * @param   pVtgHdr             The VTG object header.
- * @param   pVtgObj             The size of the VTG object.
  * @param   pImage              The image if applicable.
  * @param   pSession            The session if applicable.
+ * @param   pUmod               The associated user tracepoint module if
+ *                              applicable.
  * @param   pszModName          The module name.
  */
-static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t cbVtgObj, PSUPDRVLDRIMAGE pImage,
-                                      PSUPDRVSESSION pSession, const char *pszModName)
+static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, PSUPDRVLDRIMAGE pImage,
+                                      PSUPDRVSESSION pSession, PSUPDRVTRACERUMOD pUmod, const char *pszModName)
 {
     int                 rc;
     uintptr_t           i;
     PSUPDRVTPPROVIDER   pProv;
+    size_t              cchModName;
 
     /*
      * Validate input.
@@ -608,29 +847,51 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
     AssertPtrNullReturn(pImage, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pszModName, VERR_INVALID_POINTER);
+    cchModName = strlen(pszModName);
 
     if (pImage)
-        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, (const uint8_t *)pImage->pvImage, pImage->cbImageBits);
+        rc = supdrvVtgValidate(pVtgHdr, (uintptr_t)pVtgHdr,
+                               (const uint8_t *)pImage->pvImage, pImage->cbImageBits,
+                               false /*fUmod*/);
     else
-        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, NULL, 0);
+        rc = supdrvVtgValidate(pVtgHdr, (uintptr_t)pVtgHdr, NULL, 0, pUmod != NULL);
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Check that there aren't any obvious duplicates.
+     * (Yes, this isn't race free, but it's good enough for now.)
+     */
     rc = RTSemFastMutexRequest(pDevExt->mtxTracer);
     if (RT_FAILURE(rc))
         return rc;
-    RTListForEach(&pDevExt->TracerProviderList, pProv, SUPDRVTPPROVIDER, ListEntry)
+    if (pImage || pSession->R0Process == NIL_RTPROCESS)
     {
-        if (pProv->Core.pHdr == pVtgHdr)
+        RTListForEach(&pDevExt->TracerProviderList, pProv, SUPDRVTPPROVIDER, ListEntry)
         {
-            rc = VERR_SUPDRV_VTG_ALREADY_REGISTERED;
-            break;
+            if (pProv->Core.pHdr == pVtgHdr)
+            {
+                rc = VERR_SUPDRV_VTG_ALREADY_REGISTERED;
+                break;
+            }
+
+            if (   pProv->pSession == pSession
+                && pProv->pImage   == pImage)
+            {
+                rc = VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION;
+                break;
+            }
         }
-        if (   pProv->pSession == pSession
-            && pProv->pImage   == pImage)
+    }
+    else
+    {
+        RTListForEach(&pSession->TpProviders, pProv, SUPDRVTPPROVIDER, SessionListEntry)
         {
-            rc = VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION;
-            break;
+            if (pProv->Core.pHdr == pVtgHdr)
+            {
+                rc = VERR_SUPDRV_VTG_ALREADY_REGISTERED;
+                break;
+            }
         }
     }
     RTSemFastMutexRelease(pDevExt->mtxTracer);
@@ -643,22 +904,54 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
     i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
     while (i-- > 0)
     {
-        PVTGDESCPROVIDER pDesc   = &pVtgHdr->paProviders[i];
+        PVTGDESCPROVIDER pDesc   = (PVTGDESCPROVIDER)((uintptr_t)pVtgHdr + pVtgHdr->offProviders) + i;
         const char      *pszName = supdrvVtgGetString(pVtgHdr, pDesc->offName);
-        size_t const     cchName = strlen(pszName);
-        pProv = (PSUPDRVTPPROVIDER)RTMemAllocZ(RT_OFFSETOF(SUPDRVTPPROVIDER, szName[cchName + 1]));
+        size_t const     cchName = strlen(pszName) + (pUmod ? 16 : 0);
+
+        pProv = (PSUPDRVTPPROVIDER)RTMemAllocZ(RT_OFFSETOF(SUPDRVTPPROVIDER, szName[cchName + 1 + cchModName + 1]));
         if (pProv)
         {
-            pProv->Core.pDesc       = pDesc;
-            pProv->Core.pHdr        = pVtgHdr;
-            pProv->Core.pszName     = &pProv->szName[0];
-            pProv->Core.pszModName  = pszModName;
-            pProv->pImage           = pImage;
-            pProv->pSession         = pSession;
-            pProv->fZombie          = false;
-            pProv->fRegistered      = true;
-            memcpy(&pProv->szName[0], pszName, cchName + 1);
+            pProv->Core.pszName         = &pProv->szName[0];
+            pProv->Core.pszModName      = &pProv->szName[cchName + 1];
+            pProv->Core.pDesc           = pDesc;
+            pProv->Core.pHdr            = pVtgHdr;
+            pProv->Core.paProbeLocsRO   = (PCVTGPROBELOC )((uintptr_t)pVtgHdr + pVtgHdr->offProbeLocs);
+            if (!pUmod)
+            {
+                pProv->Core.pvProbeLocsEn   = (void     *)((uintptr_t)pVtgHdr + pVtgHdr->offProbeLocs);
+                pProv->Core.pacProbeEnabled = (uint32_t *)((uintptr_t)pVtgHdr + pVtgHdr->offProbeEnabled);
+                pProv->Core.paR0ProbeLocs   = NULL;
+                pProv->Core.paR0Probes      = NULL;
+                pProv->Core.cbProbeLocsEn   = sizeof(VTGPROBELOC);
+                pProv->Core.cBits           = ARCH_BITS;
+                pProv->Core.fUmod           = false;
+            }
+            else
+            {
+                pProv->Core.pvProbeLocsEn   = pUmod->pvProbeLocs;
+                pProv->Core.pacProbeEnabled = pUmod->pacProbeEnabled;
+                pProv->Core.paR0ProbeLocs   = &pUmod->aProbeLocs[0];
+                pProv->Core.paR0Probes      = (PSUPDRVPROBEINFO)&pUmod->aProbeLocs[pUmod->cProbeLocs];
+                pProv->Core.cbProbeLocsEn   = pUmod->cbProbeLoc;
+                pProv->Core.cBits           = pUmod->cBits;
+                pProv->Core.fUmod           = true;
+            }
+            pProv->pImage               = pImage;
+            pProv->pSession             = pSession;
+            pProv->pUmod                = pUmod;
+            pProv->fZombie              = false;
+            pProv->fRegistered          = true;
 
+            if (!pUmod)
+                memcpy(pProv->szName, pszName, cchName + 1);
+            else
+                RTStrPrintf(pProv->szName, cchName + 1, "%s%u", pszName, (uint32_t)pSession->Process);
+            memcpy((void *)pProv->Core.pszModName, pszModName, cchModName + 1);
+
+            /*
+             * Do the actual registration and list manipulations while holding
+             * down the lock.
+             */
             rc = RTSemFastMutexRequest(pDevExt->mtxTracer);
             if (RT_SUCCESS(rc))
             {
@@ -673,6 +966,13 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
                 if (RT_SUCCESS(rc))
                 {
                     RTListAppend(&pDevExt->TracerProviderList, &pProv->ListEntry);
+                    if (pSession)
+                    {
+                        RTListAppend(&pSession->TpProviders, &pProv->SessionListEntry);
+                        pSession->cTpProviders++;
+                    }
+                    else
+                        RTListInit(&pProv->SessionListEntry);
                     RTSemFastMutexRelease(pDevExt->mtxTracer);
                     LOG_TRACER(("Registered tracepoint provider '%s' in '%s' -> %p\n",
                                 pProv->szName, pszModName, pProv->Core.TracerData.DTrace.idProvider));
@@ -682,25 +982,38 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
                     RTSemFastMutexRelease(pDevExt->mtxTracer);
                     LOG_TRACER(("Failed to register tracepoint provider '%s' in '%s' -> %Rrc\n",
                                 pProv->szName, pszModName, rc));
-                    RTMemFree(pProv);
                 }
             }
         }
         else
             rc = VERR_NO_MEMORY;
 
+        /*
+         * In case of failure, we have to undo any providers we already
+         * managed to register.
+         */
         if (RT_FAILURE(rc))
         {
             PSUPDRVTPPROVIDER   pProvNext;
-            supdrvTracerFreeProvider(pProv);
+
+            if (pProv)
+                supdrvTracerFreeProvider(pProv);
 
             RTSemFastMutexRequest(pDevExt->mtxTracer);
-            RTListForEachReverseSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
+            if (pImage)
             {
-                if (pProv->Core.pHdr == pVtgHdr)
+                RTListForEachReverseSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
                 {
-                    RTListNodeRemove(&pProv->ListEntry);
-                    supdrvTracerDeregisterVtgObj(pDevExt, pProv);
+                    if (pProv->Core.pHdr == pVtgHdr)
+                        supdrvTracerDeregisterVtgObj(pDevExt, pProv);
+                }
+            }
+            else
+            {
+                RTListForEachSafe(&pSession->TpProviders, pProv, pProvNext, SUPDRVTPPROVIDER, SessionListEntry)
+                {
+                    if (pProv->Core.pHdr == pVtgHdr)
+                        supdrvTracerDeregisterVtgObj(pDevExt, pProv);
                 }
             }
             RTSemFastMutexRelease(pDevExt->mtxTracer);
@@ -730,7 +1043,7 @@ SUPR0DECL(int) SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHd
     AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_INVALID_PARAMETER);
     LOG_TRACER(("SUPR0TracerRegisterDrv: pSession=%p pVtgHdr=%p pszName=%s\n", pSession, pVtgHdr, pszName));
 
-    rc = supdrvTracerRegisterVtgObj(pSession->pDevExt, pVtgHdr, _1M, NULL /*pImage*/, pSession, pszName);
+    rc = supdrvTracerRegisterVtgObj(pSession->pDevExt, pVtgHdr, NULL /*pImage*/, pSession, NULL /*pUmod*/, pszName);
 
     /*
      * Try unregister zombies while we have a chance.
@@ -761,13 +1074,9 @@ SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession)
      * Search for providers belonging to this driver session.
      */
     RTSemFastMutexRequest(pDevExt->mtxTracer);
-    RTListForEachSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
+    RTListForEachSafe(&pSession->TpProviders, pProv, pProvNext, SUPDRVTPPROVIDER, SessionListEntry)
     {
-        if (pProv->pSession == pSession)
-        {
-            RTListNodeRemove(&pProv->ListEntry);
-            supdrvTracerDeregisterVtgObj(pDevExt, pProv);
-        }
+        supdrvTracerDeregisterVtgObj(pDevExt, pProv);
     }
     RTSemFastMutexRelease(pDevExt->mtxTracer);
 
@@ -792,7 +1101,6 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
 {
     PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
     PSUPDRVDEVEXT   pDevExt;
-    uintptr_t       cbVtgObj;
     int             rc;
 
     LOG_TRACER(("SUPR0TracerRegisterModule: %p\n", pVtgHdr));
@@ -808,17 +1116,12 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
     AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
     AssertReturn(pDevExt->pLdrInitImage  == pImage, VERR_WRONG_ORDER);
     AssertReturn(pDevExt->hLdrInitThread == RTThreadNativeSelf(), VERR_WRONG_ORDER);
+    AssertReturn((uintptr_t)pVtgHdr - (uintptr_t)pImage->pvImage < pImage->cbImageBits, VERR_INVALID_PARAMETER);
 
     /*
-     * Calculate the max VTG object size and hand it over to the common code.
+     * Do the job.
      */
-    cbVtgObj = (uintptr_t)pVtgHdr - (uintptr_t)pImage->pvImage;
-    AssertMsgReturn(cbVtgObj /*off*/ < pImage->cbImageBits,
-                    ("pVtgHdr=%p offVtgObj=%p cbImageBits=%p\n", pVtgHdr, cbVtgObj, pImage->cbImageBits),
-                    VERR_INVALID_PARAMETER);
-    cbVtgObj = pImage->cbImageBits - cbVtgObj;
-
-    rc = supdrvTracerRegisterVtgObj(pDevExt, pVtgHdr, cbVtgObj, pImage, NULL, pImage->szName);
+    rc = supdrvTracerRegisterVtgObj(pDevExt, pVtgHdr, pImage, NULL /*pSession*/, NULL /*pUmod*/, pImage->szName);
     LOG_TRACER(("SUPR0TracerRegisterModule: rc=%d\n", rc));
 
     /*
@@ -1022,6 +1325,16 @@ static void supdrvTracerCommonDeregisterImpl(PSUPDRVDEVEXT pDevExt)
                 LOG_TRACER(("supdrvTracerCommonDeregisterImpl: Waiting on %u opens\n", pDevExt->cTracerOpens));
         }
 
+        /* Tracer calls. */
+        if (pDevExt->cTracerCallers)
+        {
+            cZombies++;
+            if (!(i & 0xf))
+                SUPR0Printf("supdrvTracerCommonDeregisterImpl: Waiting on %u callers\n", pDevExt->cTracerCallers);
+            else
+                LOG_TRACER(("supdrvTracerCommonDeregisterImpl: Waiting on %u callers\n", pDevExt->cTracerCallers));
+        }
+
         /* Done? */
         if (cZombies == 0)
             break;
@@ -1178,10 +1491,7 @@ void VBOXCALL supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
         RTListForEachSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
         {
             if (pProv->pImage == pImage)
-            {
-                RTListNodeRemove(&pProv->ListEntry);
                 supdrvTracerDeregisterVtgObj(pDevExt, pProv);
-            }
         }
 
         RTSemFastMutexRelease(pDevExt->mtxTracer);
@@ -1203,48 +1513,670 @@ void VBOXCALL supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
 void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
     /*
-     * If ring-0 session, make sure it has deregistered VTG objects and the tracer.
+     * Deregister all providers.
      */
-    if (pSession->R0Process == NIL_RTR0PROCESS)
+    SUPDRVTPPROVIDER   *pProvNext;
+    SUPDRVTPPROVIDER   *pProv;
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+    RTListForEachSafe(&pSession->TpProviders, pProv, pProvNext, SUPDRVTPPROVIDER, SessionListEntry)
     {
-        SUPDRVTPPROVIDER *pProvNext;
-        SUPDRVTPPROVIDER *pProv;
-
-        RTSemFastMutexRequest(pDevExt->mtxTracer);
-        RTListForEachSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
-        {
-            if (pProv->pSession == pSession)
-            {
-                RTListNodeRemove(&pProv->ListEntry);
-                supdrvTracerDeregisterVtgObj(pDevExt, pProv);
-            }
-        }
-        RTSemFastMutexRelease(pDevExt->mtxTracer);
-
-        (void)SUPR0TracerDeregisterImpl(NULL, pSession);
+        supdrvTracerDeregisterVtgObj(pDevExt, pProv);
     }
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
 
     /*
      * Clean up instance data the trace may have associated with the session.
      */
     if (pSession->uTracerData)
         supdrvIOCtl_TracerClose(pDevExt, pSession);
+
+    /*
+     * Deregister any tracer implementation.
+     */
+    if (pSession->R0Process == NIL_RTR0PROCESS)
+        (void)SUPR0TracerDeregisterImpl(NULL, pSession);
+
+    if (pSession->R0Process != NIL_RTR0PROCESS)
+    {
+        /*
+         * Free any lingering user modules.  We don't bother holding the lock
+         * here as there shouldn't be anyone messing with the session at this
+         * point.
+         */
+        PSUPDRVTRACERUMOD pUmodNext;
+        PSUPDRVTRACERUMOD pUmod;
+        RTListForEachSafe(&pSession->TpUmods, pUmod, pUmodNext, SUPDRVTRACERUMOD, ListEntry)
+        {
+            RTR0MemObjFree(pUmod->hMemObjMap, false /*fFreeMappings*/);
+            RTR0MemObjFree(pUmod->hMemObjLock, false /*fFreeMappings*/);
+            supdrvVtgReleaseObjectCopy(pDevExt, pUmod->pVtgCopy);
+            RTMemFree(pUmod);
+        }
+    }
 }
 
 
-int  VBOXCALL   supdrvIOCtl_TracerUmodRegister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR pVtgHdr, const char *pszModName, uint32_t fFlags)
+static void supdrvVtgReleaseObjectCopy(PSUPDRVDEVEXT pDevExt, PSUPDRVVTGCOPY pThis)
 {
-    return VERR_NOT_IMPLEMENTED;
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    if (!cRefs)
+    {
+        RTSemFastMutexRequest(pDevExt->mtxTracer);
+        pThis->u32Magic = ~SUDPRVVTGCOPY_MAGIC;
+        RTListNodeRemove(&pThis->ListEntry);
+        RTSemFastMutexRelease(pDevExt->mtxTracer);
+
+        RTMemFree(pThis);
+    }
 }
 
-int  VBOXCALL   supdrvIOCtl_TracerUmodDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR pVtgHdr)
+
+/**
+ * Finds a matching VTG object copy, caller owns the lock already.
+ *
+ * @returns Copy with reference. NULL if not found.
+ * @param   pHashList           The hash list to search.
+ * @param   pHdr                The VTG header (valid).
+ * @param   cbStrTab            The string table size.
+ * @param   fFlags              The user module flags.
+ */
+static PSUPDRVVTGCOPY supdrvVtgFindObjectCopyLocked(PRTLISTANCHOR pHashList, PCVTGOBJHDR pHdr, uint32_t cbStrTab, uint32_t fFlags)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PSUPDRVVTGCOPY  pCur;
+
+    fFlags &= SUP_TRACER_UMOD_FLAGS_TYPE_MASK;
+    RTListForEach(pHashList, pCur, SUPDRVVTGCOPY, ListEntry)
+    {
+#define HDR_EQUALS(member) pCur->Hdr.member == pHdr->member
+        if (   HDR_EQUALS(Uuid.au32[0])
+            && HDR_EQUALS(Uuid.au32[1])
+            && HDR_EQUALS(Uuid.au32[2])
+            && HDR_EQUALS(Uuid.au32[3])
+            && HDR_EQUALS(cbObj)
+            && HDR_EQUALS(cBits)
+            && pCur->cbStrTab == cbStrTab
+            && pCur->fFlags == fFlags
+           )
+        {
+            if (RT_LIKELY(   HDR_EQUALS(offStrTab)
+                          && HDR_EQUALS(cbStrTab)
+                          && HDR_EQUALS(offArgLists)
+                          && HDR_EQUALS(cbArgLists)
+                          && HDR_EQUALS(offProbes)
+                          && HDR_EQUALS(cbProbes)
+                          && HDR_EQUALS(offProviders)
+                          && HDR_EQUALS(cbProviders)
+                          && HDR_EQUALS(offProbeEnabled)
+                          && HDR_EQUALS(cbProbeEnabled)
+                          && HDR_EQUALS(offProbeLocs)
+                          && HDR_EQUALS(cbProbeLocs)
+                         )
+                )
+            {
+                Assert(pCur->cRefs > 0);
+                Assert(pCur->cRefs < _1M);
+                pCur->cRefs++;
+                return pCur;
+            }
+        }
+#undef HDR_EQUALS
+    }
+
+    return NULL;
 }
 
-void  VBOXCALL  supdrvIOCtl_TracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx)
-{
 
+/**
+ * Finds a matching VTG object copy.
+ *
+ * @returns Copy with reference. NULL if not found.
+ * @param   pDevExt             The device extension.
+ * @param   pHdr                The VTG header (valid).
+ * @param   cbStrTab            The string table size.
+ * @param   fFlags              The user module flags.
+ */
+static PSUPDRVVTGCOPY supdrvVtgFindObjectCopy(PSUPDRVDEVEXT pDevExt, PCVTGOBJHDR pHdr, uint32_t cbStrTab, uint32_t fFlags)
+{
+    PRTLISTANCHOR   pHashList = &pDevExt->aTrackerUmodHash[pHdr->Uuid.au8[3] % RT_ELEMENTS(pDevExt->aTrackerUmodHash)];
+    PSUPDRVVTGCOPY pRet;
+
+    int rc = RTSemFastMutexRequest(pDevExt->mtxTracer);
+    AssertRCReturn(rc, NULL);
+
+    pRet = supdrvVtgFindObjectCopyLocked(pHashList, pHdr, cbStrTab, fFlags);
+
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+    return pRet;
+}
+
+
+/**
+ * Makes a shared copy of the VTG object.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             The device extension.
+ * @param   pVtgHdr             The VTG header (valid).
+ * @param   R3PtrVtgHdr         The ring-3 VTG header address.
+ * @param   uVtgHdrAddr         The address of the VTG header in the context
+ *                              where it is actually used.
+ * @param   R3PtrStrTab         The ring-3 address of the probe location string
+ *                              table.  The probe location array have offsets
+ *                              into this instead of funciton name pointers.
+ * @param   cbStrTab            The size of the probe location string table.
+ * @param   fFlags              The user module flags.
+ * @param   pUmod               The structure we've allocated to track the
+ *                              module.  This have a valid kernel mapping of the
+ *                              probe location array.  Upon successful return,
+ *                              the pVtgCopy member will hold the address of our
+ *                              copy (with a referenced of course).
+ */
+static int supdrvVtgCreateObjectCopy(PSUPDRVDEVEXT pDevExt, PCVTGOBJHDR pVtgHdr, RTR3PTR R3PtrVtgHdr, RTUINTPTR uVtgHdrAddr,
+                                     RTR3PTR R3PtrStrTab, uint32_t cbStrTab, uint32_t fFlags, PSUPDRVTRACERUMOD pUmod)
+{
+    /*
+     * Calculate the space required, allocate and copy in the data.
+     */
+    int             rc;
+    size_t const    cProbeLocs   = pVtgHdr->cbProbeLocs / (pVtgHdr->cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64));
+    size_t const    cbProbeLocs  = cProbeLocs * sizeof(VTGPROBELOC);
+    size_t const    offProbeLocs = RT_ALIGN(pVtgHdr->cbObj, 8);
+    size_t const    cb           = offProbeLocs + cbProbeLocs + cbStrTab + 1;
+    PSUPDRVVTGCOPY  pThis = (PSUPDRVVTGCOPY)RTMemAlloc(RT_OFFSETOF(SUPDRVVTGCOPY, Hdr) + cb);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->u32Magic = SUDPRVVTGCOPY_MAGIC;
+    pThis->cRefs    = 1;
+    pThis->cbStrTab = cbStrTab;
+    pThis->fFlags   = fFlags & SUP_TRACER_UMOD_FLAGS_TYPE_MASK;
+    RTListInit(&pThis->ListEntry);
+
+    rc = RTR0MemUserCopyFrom(&pThis->Hdr, R3PtrVtgHdr, pVtgHdr->cbObj);
+    if (RT_SUCCESS(rc))
+    {
+        char  *pchStrTab = (char *)&pThis->Hdr + offProbeLocs + cbProbeLocs;
+        rc = RTR0MemUserCopyFrom(pchStrTab, R3PtrStrTab, cbStrTab);
+        if (RT_SUCCESS(rc))
+        {
+            PVTGPROBELOC    paDst = (PVTGPROBELOC)((char *)&pThis->Hdr + offProbeLocs);
+            uint32_t        i;
+
+            /*
+             * Some paranoia: Overwrite the header with the copy we've already
+             * validated and zero terminate the string table.
+             */
+            pThis->Hdr = *pVtgHdr;
+            pchStrTab[cbStrTab] = '\0';
+
+            /*
+             * Set the probe location array related header members since we're
+             * making our own copy in a different location.
+             */
+            pThis->Hdr.uProbeLocs.u64     = (uintptr_t)paDst;
+            pThis->Hdr.uProbeLocsEnd.u64  = (uintptr_t)paDst + cbProbeLocs;
+            pThis->Hdr.offProbeLocs       = offProbeLocs;
+            pThis->Hdr.cbProbeLocs        = cbProbeLocs;
+            pThis->Hdr.cBits              = ARCH_BITS;
+
+            /*
+             * Copy, convert and fix up the the probe location table.
+             */
+            if (pVtgHdr->cBits == 32)
+            {
+                uintptr_t const offDelta = (uintptr_t)&pThis->Hdr - uVtgHdrAddr;
+                PCVTGPROBELOC32 paSrc    = (PCVTGPROBELOC32)pUmod->pvProbeLocs;
+
+                for (i = 0; i < cProbeLocs; i++)
+                {
+                    paDst[i].uLine    = paSrc[i].uLine;
+                    paDst[i].fEnabled = paSrc[i].fEnabled;
+                    paDst[i].idProbe  = paSrc[i].idProbe;
+                    if (paSrc[i].pszFunction > cbStrTab)
+                    {
+                        rc = VERR_SUPDRV_TRACER_UMOD_STRTAB_OFF_BAD;
+                        break;
+                    }
+                    paDst[i].pszFunction = pchStrTab + paSrc[i].pszFunction;
+                    paDst[i].pbProbe     = (uint8_t *)(paSrc[i].pbProbe + offDelta);
+                }
+            }
+            else
+            {
+                uint64_t const  offDelta = (uintptr_t)&pThis->Hdr - uVtgHdrAddr;
+                PCVTGPROBELOC64 paSrc    = (PCVTGPROBELOC64)pUmod->pvProbeLocs;
+
+                for (i = 0; i < cProbeLocs; i++)
+                {
+                    paDst[i].uLine    = paSrc[i].uLine;
+                    paDst[i].fEnabled = paSrc[i].fEnabled;
+                    paDst[i].idProbe  = paSrc[i].idProbe;
+                    if (paSrc[i].pszFunction > cbStrTab)
+                    {
+                        rc = VERR_SUPDRV_TRACER_UMOD_STRTAB_OFF_BAD;
+                        break;
+                    }
+                    paDst[i].pszFunction = pchStrTab + (uintptr_t)paSrc[i].pszFunction;
+                    paDst[i].pbProbe     = (uint8_t *)(uintptr_t)(paSrc[i].pbProbe + offDelta);
+                }
+            }
+
+            /*
+             * Validate it
+             *
+             * Note! fUmod is false as this is a kernel copy with all native
+             *       structures.
+             */
+            if (RT_SUCCESS(rc))
+                rc = supdrvVtgValidate(&pThis->Hdr, (uintptr_t)&pThis->Hdr, (uint8_t *)&pThis->Hdr, cb, false /*fUmod*/);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Add it to the hash list, making sure nobody raced us.
+                 */
+                PRTLISTANCHOR pHashList = &pDevExt->aTrackerUmodHash[  pVtgHdr->Uuid.au8[3]
+                                                                     % RT_ELEMENTS(pDevExt->aTrackerUmodHash)];
+
+                rc = RTSemFastMutexRequest(pDevExt->mtxTracer);
+                if (RT_SUCCESS(rc))
+                {
+                    pUmod->pVtgCopy = supdrvVtgFindObjectCopyLocked(pHashList, pVtgHdr, cbStrTab, fFlags);
+                    if (!pUmod->pVtgCopy)
+                    {
+                        pUmod->pVtgCopy = pThis;
+                        RTListAppend(pHashList, &pThis->ListEntry);
+                        RTSemFastMutexRelease(pDevExt->mtxTracer);
+                        return rc;
+                    }
+
+                    /*
+                     * Someone raced us, free our copy and return the existing
+                     * one instead.
+                     */
+                    RTSemFastMutexRelease(pDevExt->mtxTracer);
+                }
+            }
+        }
+    }
+    RTMemFree(pThis);
+    return rc;
+}
+
+
+/**
+ * Undoes what supdrvTracerUmodSetProbeIds did.
+ *
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The current session.
+ * @param   pUmod               The user tracepoint module.
+ */
+static void supdrvTracerUmodClearProbeIds(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVTRACERUMOD pUmod)
+{
+    uint32_t i;
+
+    AssertReturnVoid(pUmod->iLookupTable < RT_ELEMENTS(pSession->apTpLookupTable));
+    AssertReturnVoid(pSession->apTpLookupTable[pUmod->iLookupTable] == pUmod);
+
+    /*
+     * Clear the probe IDs and disable the probes.
+     */
+    i = pUmod->cProbeLocs;
+    if (pUmod->cBits == 32)
+    {
+        PVTGPROBELOC32 paProbeLocs = (PVTGPROBELOC32)pUmod->pvProbeLocs;
+        while (i-- > 0)
+            paProbeLocs[i].idProbe = 0;
+    }
+    else
+    {
+        PVTGPROBELOC64 paProbeLocs = (PVTGPROBELOC64)pUmod->pvProbeLocs;
+        while (i-- > 0)
+            paProbeLocs[i].idProbe = 0;
+    }
+
+    /*
+     * Free the lookup table entry.  We'll have to wait for the table to go
+     * idle to make sure there are no current users of pUmod.
+     */
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+    if (pSession->apTpLookupTable[pUmod->iLookupTable] == pUmod)
+    {
+        if (pSession->cTpProbesFiring > 0)
+        {
+            uint32_t i = 0;
+            while (pSession->cTpProbesFiring > 0)
+            {
+                RTSemFastMutexRelease(pDevExt->mtxTracer);
+                i++;
+                if (!(i & 0xff))
+                    SUPR0Printf("supdrvTracerUmodClearProbeIds: waiting for lookup table to go idle (i=%u)\n", i);
+                RTThreadSleep(10);
+                RTSemFastMutexRequest(pDevExt->mtxTracer);
+            }
+        }
+        ASMAtomicWriteNullPtr(&pSession->apTpLookupTable[pUmod->iLookupTable]);
+    }
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+}
+
+
+/**
+ * Allocates a lookup table entry for the Umod and sets the
+ * VTGPROBELOC::idProbe fields in user mode.
+ *
+ * @returns VINF_SUCCESS or VERR_SUPDRV_TRACER_TOO_MANY_PROVIDERS.
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The current session.
+ * @param   pUmod               The user tracepoint module.
+ */
+static int supdrvTracerUmodSetProbeIds(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVTRACERUMOD pUmod)
+{
+    uint32_t iBase;
+    uint32_t i;
+
+    /*
+     * Allocate a lookup table entry.
+     */
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+    for (i = 0; i < RT_ELEMENTS(pSession->apTpLookupTable); i++)
+    {
+        if (!pSession->apTpLookupTable[i])
+        {
+            pSession->apTpLookupTable[i] = pUmod;
+            pUmod->iLookupTable = i;
+            break;
+        }
+    }
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+    if (i >= RT_ELEMENTS(pSession->apTpLookupTable))
+        return VERR_SUPDRV_TRACER_TOO_MANY_PROVIDERS;
+
+    /*
+     * Set probe IDs of the usermode probe location to indicate our lookup
+     * table entry as well as the probe location array entry.
+     */
+    iBase = (uint32_t)pUmod->iLookupTable << 24;
+    i = pUmod->cProbeLocs;
+    if (pUmod->cBits == 32)
+    {
+        PVTGPROBELOC32 paProbeLocs = (PVTGPROBELOC32)pUmod->pvProbeLocs;
+        while (i-- > 0)
+            paProbeLocs[i].idProbe = iBase | i;
+    }
+    else
+    {
+        PVTGPROBELOC64 paProbeLocs = (PVTGPROBELOC64)pUmod->pvProbeLocs;
+        while (i-- > 0)
+            paProbeLocs[i].idProbe = iBase | i;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+int  VBOXCALL   supdrvIOCtl_TracerUmodRegister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
+                                               RTR3PTR R3PtrVtgHdr, RTUINTPTR uVtgHdrAddr,
+                                               RTR3PTR R3PtrStrTab, uint32_t cbStrTab,
+                                               const char *pszModName, uint32_t fFlags)
+{
+    VTGOBJHDR           Hdr;
+    PSUPDRVTRACERUMOD   pUmod;
+    RTR3PTR             R3PtrLock;
+    size_t              cbLock;
+    uint32_t            cProbeLocs;
+    int                 rc;
+
+    /*
+     * Validate input.
+     */
+    if (pSession->R0Process == NIL_RTR0PROCESS)
+        return VERR_INVALID_CONTEXT;
+    if (   fFlags != SUP_TRACER_UMOD_FLAGS_EXE
+        && fFlags != SUP_TRACER_UMOD_FLAGS_SHARED)
+        return VERR_INVALID_PARAMETER;
+
+    if (pSession->cTpProviders >= RT_ELEMENTS(pSession->apTpLookupTable))
+        return VERR_SUPDRV_TRACER_TOO_MANY_PROVIDERS;
+
+    if (   cbStrTab < 2
+        || cbStrTab > _1M)
+        return VERR_SUPDRV_TRACER_UMOD_STRTAB_TOO_BIG;
+
+    /*
+     * Read the VTG header into a temporary buffer and perform some simple
+     * validations to make sure we aren't wasting our time here.
+     */
+    rc = RTR0MemUserCopyFrom(&Hdr, R3PtrVtgHdr, sizeof(Hdr));
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = supdrvVtgValidateHdr(&Hdr, uVtgHdrAddr, NULL, 0, true /*fUmod*/);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (Hdr.cbProviders / sizeof(VTGDESCPROVIDER) > 2)
+        return VERR_SUPDRV_TRACER_TOO_MANY_PROVIDERS;
+
+    /*
+     * Check how much needs to be locked down and how many probe locations
+     * there are.
+     */
+    if (   Hdr.offProbeLocs <= 0
+        || Hdr.offProbeEnabled > (uint32_t)Hdr.offProbeLocs
+        || (uint32_t)Hdr.offProbeLocs - Hdr.offProbeEnabled - Hdr.cbProbeEnabled > 128)
+        return VERR_SUPDRV_TRACER_UMOD_NOT_ADJACENT;
+    R3PtrLock  = R3PtrVtgHdr + Hdr.offProbeEnabled;
+    cbLock     = Hdr.offProbeLocs + Hdr.cbProbeLocs - Hdr.offProbeEnabled + (R3PtrLock & PAGE_OFFSET_MASK);
+    R3PtrLock &= ~(RTR3PTR)PAGE_OFFSET_MASK;
+    if (cbLock > _64K)
+        return VERR_SUPDRV_TRACER_UMOD_TOO_MANY_PROBES;
+
+    cProbeLocs = Hdr.cbProbeLocs / (Hdr.cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64));
+
+    /*
+     * Allocate the tracker data we keep in the session.
+     */
+    pUmod = (PSUPDRVTRACERUMOD)RTMemAllocZ(  RT_OFFSETOF(SUPDRVTRACERUMOD, aProbeLocs[cProbeLocs])
+                                           + (Hdr.cbProbeEnabled / sizeof(uint32_t) * sizeof(SUPDRVPROBEINFO)) );
+    if (!pUmod)
+        return VERR_NO_MEMORY;
+    pUmod->u32Magic         = SUPDRVTRACERUMOD_MAGIC;
+    RTListInit(&pUmod->ListEntry);
+    pUmod->R3PtrVtgHdr      = R3PtrVtgHdr;
+    pUmod->pVtgCopy         = NULL;
+    pUmod->hMemObjLock      = NIL_RTR0MEMOBJ;
+    pUmod->hMemObjMap       = NIL_RTR0MEMOBJ;
+    pUmod->R3PtrProbeLocs   = (RTR3INTPTR)R3PtrVtgHdr + Hdr.offProbeLocs;
+    pUmod->iLookupTable     = UINT8_MAX;
+    pUmod->cBits            = Hdr.cBits;
+    pUmod->cbProbeLoc       = Hdr.cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64);
+    pUmod->cProbeLocs       = cProbeLocs;
+
+    /*
+     * Lock down and map the user-mode structures.
+     */
+    rc = RTR0MemObjLockUser(&pUmod->hMemObjLock, R3PtrLock, cbLock, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTR0MemObjMapKernel(&pUmod->hMemObjMap, pUmod->hMemObjLock, (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            pUmod->pacProbeEnabled  = (uint32_t *)(  (uintptr_t)RTR0MemObjAddress(pUmod->hMemObjMap)
+                                                   + ((uintptr_t)(R3PtrVtgHdr + Hdr.offProbeEnabled) & PAGE_OFFSET_MASK));
+            pUmod->pvProbeLocs      = (uint8_t *)pUmod->pacProbeEnabled + Hdr.offProbeLocs - Hdr.offProbeEnabled;
+
+            /*
+             * Does some other process use the same module already?  If so,
+             * share the VTG data with it.  Otherwise, make a ring-0 copy it.
+             */
+            pUmod->pVtgCopy = supdrvVtgFindObjectCopy(pDevExt, &Hdr, cbStrTab, fFlags);
+            if (!pUmod->pVtgCopy)
+                rc = supdrvVtgCreateObjectCopy(pDevExt, &Hdr, R3PtrVtgHdr, uVtgHdrAddr, R3PtrStrTab, cbStrTab, fFlags, pUmod);
+            if (RT_SUCCESS(rc))
+            {
+                AssertPtr(pUmod->pVtgCopy);
+
+                /*
+                 * Grabe a place in apTpLookupTable and set the probe IDs
+                 * accordingly.
+                 */
+                rc = supdrvTracerUmodSetProbeIds(pDevExt, pSession, pUmod);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Register the providers.
+                     */
+                    rc = supdrvTracerRegisterVtgObj(pDevExt, &pUmod->pVtgCopy->Hdr,
+                                                    NULL /*pImage*/, pSession, pUmod, pszModName);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTSemFastMutexRequest(pDevExt->mtxTracer);
+                        RTListAppend(&pSession->TpUmods, &pUmod->ListEntry);
+                        RTSemFastMutexRelease(pDevExt->mtxTracer);
+
+                        return VINF_SUCCESS;
+                    }
+
+                    /* bail out. */
+                    supdrvTracerUmodClearProbeIds(pDevExt, pSession, pUmod);
+                }
+                supdrvVtgReleaseObjectCopy(pDevExt, pUmod->pVtgCopy);
+            }
+            RTR0MemObjFree(pUmod->hMemObjMap, false /*fFreeMappings*/);
+        }
+        RTR0MemObjFree(pUmod->hMemObjLock, false /*fFreeMappings*/);
+    }
+    pUmod->u32Magic = ~SUPDRVTRACERUMOD_MAGIC;
+    RTMemFree(pUmod);
+    return rc;
+}
+
+
+int  VBOXCALL   supdrvIOCtl_TracerUmodDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR R3PtrVtgHdr)
+{
+    PSUPDRVTRACERUMOD   pUmod = NULL;
+    uint32_t            i;
+    int                 rc;
+
+    /*
+     * Validate the request.
+     */
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+    for (i = 0; i < RT_ELEMENTS(pSession->apTpLookupTable); i++)
+    {
+        pUmod = pSession->apTpLookupTable[i];
+        if (   pUmod
+            && pUmod->u32Magic    == SUPDRVTRACERUMOD_MAGIC
+            && pUmod->R3PtrVtgHdr == R3PtrVtgHdr)
+            break;
+    }
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+    if (pUmod)
+    {
+        SUPDRVTPPROVIDER   *pProvNext;
+        SUPDRVTPPROVIDER   *pProv;
+
+        /*
+         * Remove ourselves from the lookup table and clean up the ring-3 bits
+         * we've dirtied.  We do this first to make sure no probes are firing
+         * when we're destroying the providers in the next step.
+         */
+        supdrvTracerUmodClearProbeIds(pDevExt, pSession, pUmod);
+
+        /*
+         * Deregister providers related to the VTG object.
+         */
+        RTSemFastMutexRequest(pDevExt->mtxTracer);
+        RTListForEachSafe(&pSession->TpProviders, pProv, pProvNext, SUPDRVTPPROVIDER, SessionListEntry)
+        {
+            if (pProv->pUmod == pUmod)
+                supdrvTracerDeregisterVtgObj(pDevExt, pProv);
+        }
+        RTSemFastMutexRelease(pDevExt->mtxTracer);
+
+        /*
+         * Destroy the Umod object.
+         */
+        pUmod->u32Magic = ~SUPDRVTRACERUMOD_MAGIC;
+        supdrvVtgReleaseObjectCopy(pDevExt, pUmod->pVtgCopy);
+        RTR0MemObjFree(pUmod->hMemObjMap, false /*fFreeMappings*/);
+        RTR0MemObjFree(pUmod->hMemObjLock, false /*fFreeMappings*/);
+        RTMemFree(pUmod);
+    }
+    else
+        rc = VERR_NOT_FOUND;
+    return rc;
+}
+
+
+/**
+ * Implementation of supdrvIOCtl_TracerUmodProbeFire and
+ * SUPR0TracerUmodProbeFire.
+ *
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The calling session.
+ * @param   pCtx                The context record.
+ */
+static void supdrvTracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVTRACERUSRCTX pCtx)
+{
+    /*
+     * We cannot trust user mode to hand us the right bits nor not calling us
+     * when disabled.  So, we have to check for our selves.
+     */
+    PSUPDRVTRACERUMOD   pUmod;
+    uint32_t const      iLookupTable = pCtx->idProbe >> 24;
+    uint32_t const      iProbeLoc    = pCtx->idProbe & UINT32_C(0x00ffffff);
+
+    if (RT_UNLIKELY(   !pDevExt->pTracerOps
+                    || pDevExt->fTracerUnloading))
+        return;
+    if (RT_UNLIKELY(iLookupTable >= RT_ELEMENTS(pSession->apTpLookupTable)))
+        return;
+    if (RT_UNLIKELY(   pCtx->cBits != 32
+                    && pCtx->cBits != 64))
+        return;
+
+    ASMAtomicIncU32(&pSession->cTpProviders);
+
+    pUmod = pSession->apTpLookupTable[iLookupTable];
+    if (RT_LIKELY(pUmod))
+    {
+        if (RT_LIKELY(   pUmod->u32Magic == SUPDRVTRACERUMOD_MAGIC
+                      && iProbeLoc < pUmod->cProbeLocs
+                      && pCtx->cBits == pUmod->cBits))
+        {
+            RTR3PTR R3PtrProbeLoc = pUmod->R3PtrProbeLocs + iProbeLoc * pUmod->cbProbeLoc;
+            if (RT_LIKELY(   (pCtx->cBits == 32 ? (RTR3PTR)pCtx->u.X86.uVtgProbeLoc : pCtx->u.Amd64.uVtgProbeLoc)
+                          == R3PtrProbeLoc))
+            {
+                if (RT_LIKELY(pUmod->aProbeLocs[iProbeLoc].fEnabled))
+                {
+                    ASMAtomicIncU32(&pDevExt->cTracerCallers);
+                    if (RT_LIKELY(   pDevExt->pTracerOps
+                                  && !pDevExt->fTracerUnloading))
+                    {
+                        pCtx->idProbe = pUmod->aProbeLocs[iProbeLoc].idProbe;
+                        pDevExt->pTracerOps->pfnProbeFireUser(pDevExt->pTracerOps, pSession, pCtx);
+                    }
+                    ASMAtomicDecU32(&pDevExt->cTracerCallers);
+                }
+            }
+        }
+    }
+
+    ASMAtomicDecU32(&pSession->cTpProviders);
+}
+
+
+SUPR0DECL(void) SUPR0TracerUmodProbeFire(PSUPDRVSESSION pSession, PSUPDRVTRACERUSRCTX pCtx)
+{
+    AssertReturnVoid(SUP_IS_SESSION_VALID(pSession));
+    AssertPtrReturnVoid(pCtx);
+
+    supdrvTracerUmodProbeFire(pSession->pDevExt, pSession, pCtx);
+}
+
+
+void  VBOXCALL  supdrvIOCtl_TracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVTRACERUSRCTX pCtx)
+{
+    supdrvTracerUmodProbeFire(pDevExt, pSession, pCtx);
 }
 
 
@@ -1433,11 +2365,15 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
     int rc = RTSemFastMutexCreate(&pDevExt->mtxTracer);
     if (RT_SUCCESS(rc))
     {
+        uint32_t i;
+
         pDevExt->TracerHlp.uVersion    = SUPDRVTRACERHLP_VERSION;
         /** @todo  */
         pDevExt->TracerHlp.uEndVersion = SUPDRVTRACERHLP_VERSION;
         RTListInit(&pDevExt->TracerProviderList);
         RTListInit(&pDevExt->TracerProviderZombieList);
+        for (i = 0; i < RT_ELEMENTS(pDevExt->aTrackerUmodHash); i++)
+            RTListInit(&pDevExt->aTrackerUmodHash[i]);
 
 #ifdef VBOX_WITH_NATIVE_DTRACE
         pDevExt->pTracerOps = supdrvDTraceInit();
@@ -1449,7 +2385,7 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
          * Register the provider for this module, if compiled in.
          */
 #ifdef VBOX_WITH_DTRACE_R0DRV
-        rc = supdrvTracerRegisterVtgObj(pDevExt, &g_VTGObjHeader, _1M, NULL /*pImage*/, NULL /*pSession*/, "vboxdrv");
+        rc = supdrvTracerRegisterVtgObj(pDevExt, &g_VTGObjHeader, NULL /*pImage*/, NULL /*pSession*/, NULL /*pUmod*/, "vboxdrv");
         if (RT_SUCCESS(rc))
             return rc;
         SUPR0Printf("supdrvTracerInit: supdrvTracerRegisterVtgObj failed with rc=%d\n", rc);

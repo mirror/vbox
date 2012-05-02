@@ -1622,56 +1622,71 @@
 #define VERR_SUPDRV_VTG_MAGIC                       (-3704)
 /** Bad VTG bit count value.  */
 #define VERR_SUPDRV_VTG_BITS                        (-3705)
-/** Bad VTG header.  */
-#define VERR_SUPDRV_VTG_BAD_HDR                     (-3706)
-/** Bad VTG header - pointer.  */
-#define VERR_SUPDRV_VTG_BAD_HDR_PTR                 (-3707)
+/** Bad VTG header - misc.  */
+#define VERR_SUPDRV_VTG_BAD_HDR_MISC                (-3706)
+/** Bad VTG header - offset.  */
+#define VERR_SUPDRV_VTG_BAD_HDR_OFF                 (-3707)
+/** Bad VTG header - offset.  */
+#define VERR_SUPDRV_VTG_BAD_HDR_PTR                 (-3708)
 /** Bad VTG header - to low value.  */
-#define VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW             (-3708)
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW             (-3709)
 /** Bad VTG header - to high value.  */
-#define VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH            (-3709)
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH            (-3710)
 /** Bad VTG header - size value is not a multiple of the structure size. */
-#define VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE        (-3710)
+#define VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE        (-3711)
 /** Bad VTG string table offset. */
-#define VERR_SUPDRV_VTG_STRTAB_OFF                  (-3711)
+#define VERR_SUPDRV_VTG_STRTAB_OFF                  (-3712)
 /** Bad VTG string. */
-#define VERR_SUPDRV_VTG_BAD_STRING                  (-3712)
+#define VERR_SUPDRV_VTG_BAD_STRING                  (-3713)
 /** VTG string is too long. */
-#define VERR_SUPDRV_VTG_STRING_TOO_LONG             (-3713)
+#define VERR_SUPDRV_VTG_STRING_TOO_LONG             (-3714)
 /** Bad VTG attribute value. */
-#define VERR_SUPDRV_VTG_BAD_ATTR                    (-3714)
+#define VERR_SUPDRV_VTG_BAD_ATTR                    (-3715)
 /** Bad VTG provider descriptor. */
-#define VERR_SUPDRV_VTG_BAD_PROVIDER                (-3715)
+#define VERR_SUPDRV_VTG_BAD_PROVIDER                (-3716)
 /** Bad VTG probe descriptor. */
-#define VERR_SUPDRV_VTG_BAD_PROBE                   (-3716)
+#define VERR_SUPDRV_VTG_BAD_PROBE                   (-3717)
 /** Bad VTG argument list descriptor. */
-#define VERR_SUPDRV_VTG_BAD_ARGLIST                 (-3717)
+#define VERR_SUPDRV_VTG_BAD_ARGLIST                 (-3718)
 /** Bad VTG probe enabled data. */
-#define VERR_SUPDRV_VTG_BAD_PROBE_ENABLED           (-3718)
+#define VERR_SUPDRV_VTG_BAD_PROBE_ENABLED           (-3719)
 /** Bad VTG probe location record. */
-#define VERR_SUPDRV_VTG_BAD_PROBE_LOC               (-3719)
+#define VERR_SUPDRV_VTG_BAD_PROBE_LOC               (-3720)
 /** The VTG object for the session or image has already been registered. */
-#define VERR_SUPDRV_VTG_ALREADY_REGISTERED          (-3720)
+#define VERR_SUPDRV_VTG_ALREADY_REGISTERED          (-3721)
 /** A driver may only register one VTG object per session. */
-#define VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION       (-3721)
+#define VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION       (-3722)
 /** A tracer has already been registered. */
-#define VERR_SUPDRV_TRACER_ALREADY_REGISTERED       (-3722)
+#define VERR_SUPDRV_TRACER_ALREADY_REGISTERED       (-3723)
 /** The session has no tracer associated with it. */
-#define VERR_SUPDRV_TRACER_NOT_REGISTERED           (-3723)
+#define VERR_SUPDRV_TRACER_NOT_REGISTERED           (-3724)
 /** The tracer has already been opened in this sesssion. */
-#define VERR_SUPDRV_TRACER_ALREADY_OPENED           (-3724)
+#define VERR_SUPDRV_TRACER_ALREADY_OPENED           (-3725)
 /** The tracer has not been opened. */
-#define VERR_SUPDRV_TRACER_NOT_OPENED               (-3725)
+#define VERR_SUPDRV_TRACER_NOT_OPENED               (-3726)
 /** There is no tracer present. */
-#define VERR_SUPDRV_TRACER_NOT_PRESENT              (-3726)
+#define VERR_SUPDRV_TRACER_NOT_PRESENT              (-3727)
 /** The tracer is unloading. */
-#define VERR_SUPDRV_TRACER_UNLOADING                (-3727)
+#define VERR_SUPDRV_TRACER_UNLOADING                (-3728)
 /** Another thread in the session is talking to the tracer.  */
-#define VERR_SUPDRV_TRACER_SESSION_BUSY             (-3728)
+#define VERR_SUPDRV_TRACER_SESSION_BUSY             (-3729)
 /** The tracer cannot open it self in the same session. */
-#define VERR_SUPDRV_TRACER_CANNOT_OPEN_SELF         (-3729)
+#define VERR_SUPDRV_TRACER_CANNOT_OPEN_SELF         (-3730)
 /** Bad argument flags. */
-#define VERR_SUPDRV_TRACER_BAD_ARG_FLAGS            (-3730)
+#define VERR_SUPDRV_TRACER_BAD_ARG_FLAGS            (-3731)
+/** The session has reached the max number of (user mode) providers. */
+#define VERR_SUPDRV_TRACER_TOO_MANY_PROVIDERS       (-3732)
+/** The tracepoint provider object is too large. */
+#define VERR_SUPDRV_TRACER_TOO_LARGE                (-3733)
+/** The probe location array isn't adjacent to the probe enable array. */
+#define VERR_SUPDRV_TRACER_UMOD_NOT_ADJACENT        (-3734)
+/** The user mode tracepoint provider has too many probe locations and
+ * probes. */
+#define VERR_SUPDRV_TRACER_UMOD_TOO_MANY_PROBES     (-3735)
+/** The user mode tracepoint provider string table is too large. */
+#define VERR_SUPDRV_TRACER_UMOD_STRTAB_TOO_BIG      (-3736)
+/** The user mode tracepoint provider string table offset is bad. */
+#define VERR_SUPDRV_TRACER_UMOD_STRTAB_OFF_BAD      (-3737)
 /** @} */
 
 

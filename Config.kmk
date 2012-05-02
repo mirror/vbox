@@ -613,11 +613,11 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 #VBOX_WITH_NATIVE_SOLARIS_LOADING = 1
 # Set this to enable user mode dtrace probes.
 if1of ($(KBUILD_TARGET), darwin solaris)
- VBOX_WITH_DTRACE_R3 = 1
+# VBOX_WITH_DTRACE_R3 = 1
 endif
 # Set this to enable kernel driver dtrace probes.
 if1of ($(KBUILD_TARGET), darwin solaris)
- VBOX_WITH_DTRACE_R0DRV = 1
+# VBOX_WITH_DTRACE_R0DRV = 1
 endif
 # Set this to enable dtrace probes in platform agnostic kernel code.
 ifn1of ($(KBUILD_TARGET), os2)
@@ -3315,9 +3315,6 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	-Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
 	-Wl,--rpath-link,$(L4_LIBDIR)
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack $(VBOX_LD_as_needed)
-ifdef VBOX_WITH_DTRACE_R3
- TEMPLATE_VBOXR3EXE_LDFLAGS.linux     += -Wl,--verbose
-endif
 
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl

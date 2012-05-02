@@ -55,6 +55,7 @@ PFNRT g_VBoxRTDeps[] =
     (PFNRT)SUPR3Init,
     (PFNRT)SUPR3PageAllocEx,
     (PFNRT)SUPSemEventCreate,
+    (PFNRT)SUPTracerFireProbe,
 #endif
     (PFNRT)xmlModuleOpen,
     (PFNRT)MD5_Init,

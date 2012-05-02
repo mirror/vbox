@@ -33,6 +33,41 @@
 
 RT_C_DECLS_BEGIN
 
+/**
+ * 32-bit probe location.
+ */
+typedef struct VTGPROBELOC32
+{
+    uint32_t    uLine    : 31;
+    uint32_t    fEnabled : 1;
+    uint32_t    idProbe;
+    uint32_t    pszFunction;
+    uint32_t    pbProbe;
+} VTGPROBELOC32;
+AssertCompileSize(VTGPROBELOC32, 16);
+/** Pointer to a 32-bit probe location. */
+typedef VTGPROBELOC32 *PVTGPROBELOC32;
+/** Pointer to a const 32-bit probe location. */
+typedef VTGPROBELOC32 const *PCVTGPROBELOC32;
+
+/**
+ * 64-bit probe location.
+ */
+typedef struct VTGPROBELOC64
+{
+    uint32_t    uLine    : 31;
+    uint32_t    fEnabled : 1;
+    uint32_t    idProbe;
+    uint64_t    pszFunction;
+    uint64_t    pbProbe;
+    uint64_t    uAlignment;
+} VTGPROBELOC64;
+AssertCompileSize(VTGPROBELOC64, 32);
+/** Pointer to a 64-bit probe location. */
+typedef VTGPROBELOC64 *PVTGPROBELOC64;
+/** Pointer to a const 64-bit probe location. */
+typedef VTGPROBELOC64 const *PCVTGPROBELOC64;
+
 
 /**
  * Probe location.
@@ -51,6 +86,8 @@ typedef struct VTGPROBELOC
 AssertCompileSizeAlignment(VTGPROBELOC, 16);
 /** Pointer to a probe location. */
 typedef VTGPROBELOC *PVTGPROBELOC;
+/** Pointer to a const probe location. */
+typedef VTGPROBELOC const *PCVTGPROBELOC;
 
 /** @def VTG_OBJ_SECT
  * The name of the section containing the other probe data provided by the
@@ -153,6 +190,8 @@ typedef struct VTGDESCARG
 } VTGDESCARG;
 /** Pointer to an argument descriptor. */
 typedef VTGDESCARG         *PVTGDESCARG;
+/** Pointer to a const argument descriptor. */
+typedef VTGDESCARG const *PCVTGDESCARG;
 
 
 /**
@@ -167,6 +206,8 @@ typedef struct VTGDESCARGLIST
 } VTGDESCARGLIST;
 /** Pointer to a VTG argument list descriptor. */
 typedef VTGDESCARGLIST     *PVTGDESCARGLIST;
+/** Pointer to a const VTG argument list descriptor. */
+typedef VTGDESCARGLIST const *PCVTGDESCARGLIST;
 
 
 /**
@@ -180,12 +221,12 @@ typedef struct VTGDESCPROBE
     uint16_t        idxProvider;
     /** The distance from this structure to the VTG object header. */
     int32_t         offObjHdr;
-    uint32_t        u32User;
-    uint32_t        u32User2;
 } VTGDESCPROBE;
-AssertCompileSize(VTGDESCPROBE, 24);
+AssertCompileSize(VTGDESCPROBE, 16);
 /** Pointer to a VTG probe descriptor. */
 typedef VTGDESCPROBE       *PVTGDESCPROBE;
+/** Pointer to a const VTG probe descriptor. */
+typedef VTGDESCPROBE const *PCVTGDESCPROBE;
 
 
 /**
@@ -252,6 +293,8 @@ typedef struct VTGDESCPROVIDER
 } VTGDESCPROVIDER;
 /** Pointer to a VTG provider descriptor. */
 typedef VTGDESCPROVIDER    *PVTGDESCPROVIDER;
+/** Pointer to a const VTG provider descriptor. */
+typedef VTGDESCPROVIDER const *PCVTGDESCPROVIDER;
 
 
 /**
@@ -259,28 +302,96 @@ typedef VTGDESCPROVIDER    *PVTGDESCPROVIDER;
  */
 typedef struct VTGOBJHDR
 {
+    /** Magic value (VTGOBJHDR_MAGIC). */
     char                szMagic[24];
+    /** The bitness of the structures.
+     * This only affects the probe location pointers and structures. */
     uint32_t            cBits;
-    uint32_t            u32Reserved0;
-    PVTGDESCPROVIDER    paProviders;
-    uintptr_t           cbProviders;
-    PVTGDESCPROBE       paProbes;
-    uintptr_t           cbProbes;
-    bool               *pafProbeEnabled;
-    uintptr_t           cbProbeEnabled;
-    char               *pachStrTab;
-    uintptr_t           cbStrTab;
-    PVTGDESCARGLIST     paArgLists;
-    uintptr_t           cbArgLists;
-    PVTGPROBELOC        paProbLocs;
-    PVTGPROBELOC        paProbLocsEnd;
-    uintptr_t           auReserved1[4];
+    /** The size of the VTG object. This excludes the probe locations. */
+    uint32_t            cbObj;
+
+    /** @name Area Descriptors
+     * @remarks The offsets are relative to the header.  The members are
+     *          ordered by ascending offset (maybe with the exception of the
+     *          probe locations).  No overlaps, though there might be zero
+     *          filled gaps between them due to alignment.
+     * @{ */
+    /* 32: */
+    /** Offset of the string table (char) relative to this header. */
+    uint32_t            offStrTab;
+    /** The size of the string table, in bytes. */
+    uint32_t            cbStrTab;
+    /** Offset of the argument lists (VTGDESCARGLIST - variable size) relative
+     * to this header. */
+    uint32_t            offArgLists;
+    /** The size of the argument lists, in bytes. */
+    uint32_t            cbArgLists;
+    /* 48: */
+    /** Offset of the probe array (VTGDESCPROBE) relative to this header. */
+    uint32_t            offProbes;
+    /** The size of the probe array, in bytes. */
+    uint32_t            cbProbes;
+    /** Offset of the provider array (VTGDESCPROVIDER) relative to this
+     * header. */
+    uint32_t            offProviders;
+    /** The size of the provider array, in bytes. */
+    uint32_t            cbProviders;
+    /* 64: */
+    /** Offset of the probe-enabled array (uint32_t) relative to this
+     * header. */
+    uint32_t            offProbeEnabled;
+    /** The size of the probe-enabled array, in bytes. */
+    uint32_t            cbProbeEnabled;
+    /** Offset of the probe location array (VTGPROBELOC) relative to this
+     * header.
+     * @remarks This is filled in by the first VTG user using uProbeLocs. */
+    int32_t             offProbeLocs;
+    /** The size of the probe location array, in bytes.
+     * @remarks This is filled in by the first VTG user using uProbeLocs. */
+    uint32_t            cbProbeLocs;
+    /** @}  */
+    /* 80: */
+    /**
+     * The probe location array is generated by C code and lives in a
+     * different section/subsection/segment than the rest of the data.
+     *
+     * The assembler cannot generate offsets across sections for most (if not
+     * all) object formats, so we have to store pointers here.  The first user
+     * of the data will convert these two members into offset and size and fill
+     * in the offProbeLocs and cbProbeLocs members above.
+     *
+     * @remarks Converting these members to offset+size and reusing the members
+     *          to store the converted values isn't possible because of
+     *          raw-mode context modules having relocations associated with the
+     *          fields.
+     */
+    union
+    {
+        PVTGPROBELOC    p;
+        uintptr_t       uPtr;
+        uint32_t        u32;
+        uint64_t        u64;
+    }
+    /** Pointer to the probe location array. */
+                        uProbeLocs,
+    /** Pointer to the end of the probe location array. */
+                        uProbeLocsEnd;
+    /** UUID for making sharing ring-0 structures for the same ring-3
+     * modules easier. */
+    RTUUID              Uuid;
+    /** Reserved / alignment. */
+    uint32_t            au32Reserved1[4];
 } VTGOBJHDR;
+AssertCompileSize(VTGOBJHDR, 128);
+AssertCompileMemberAlignment(VTGOBJHDR, uProbeLocs, 8);
+AssertCompileMemberAlignment(VTGOBJHDR, uProbeLocsEnd, 8);
 /** Pointer to a VTG data object header. */
 typedef VTGOBJHDR          *PVTGOBJHDR;
+/** Pointer to a const VTG data object header. */
+typedef VTGOBJHDR const    *PCVTGOBJHDR;
 
 /** The current VTGOBJHDR::szMagic value. */
-#define VTGOBJHDR_MAGIC     "VTG Object Header v1.4\0"
+#define VTGOBJHDR_MAGIC     "VTG Object Header v1.5\0"
 
 /** The name of the VTG data object header symbol in the object file. */
 extern VTGOBJHDR            g_VTGObjHeader;
