@@ -159,7 +159,8 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
         return VINF_SUCCESS;
 
 #if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_WITH_NATIVE_DTRACE)
-    //SUPR3TracerRegisterModule(&g_VTGObjHeader, "VBoxVMM");
+    SUPR3TracerRegisterModule(~(uintptr_t)0, "VBoxVMM", &g_VTGObjHeader, (uintptr_t)&g_VTGObjHeader,
+                              SUP_TRACER_UMOD_FLAGS_SHARED);
 #endif
 
     /*

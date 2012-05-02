@@ -91,6 +91,73 @@ typedef enum SUPPAGINGMODE
     SUPPAGINGMODE_AMD64_GLOBAL_NX
 } SUPPAGINGMODE;
 
+/**
+ * Usermode probe context information.
+ */
+typedef struct SUPDRVTRACERUSRCTX
+{
+    /** The probe ID from the VTG location record.  */
+    uint32_t                idProbe;
+    /** 32 if X86, 64 if AMD64. */
+    uint8_t                 cBits;
+    /** Reserved padding. */
+    uint8_t                 abReserved[3];
+    /** Data which format is dictated by the cBits member. */
+    union
+    {
+        /** X86 context info. */
+        struct
+        {
+            uint32_t        uVtgProbeLoc;   /**< Location record address. */
+            uint32_t        aArgs[20];      /**< Raw arguments. */
+            uint32_t        eip;
+            uint32_t        eflags;
+            uint32_t        eax;
+            uint32_t        ecx;
+            uint32_t        edx;
+            uint32_t        ebx;
+            uint32_t        esp;
+            uint32_t        ebp;
+            uint32_t        esi;
+            uint32_t        edi;
+            uint16_t        cs;
+            uint16_t        ss;
+            uint16_t        ds;
+            uint16_t        es;
+            uint16_t        fs;
+            uint16_t        gs;
+        } X86;
+
+        /** AMD64 context info. */
+        struct
+        {
+            uint64_t        uVtgProbeLoc;   /**< Location record address. */
+            uint64_t        aArgs[10];      /**< Raw arguments. */
+            uint64_t        rip;
+            uint64_t        rflags;
+            uint64_t        rax;
+            uint64_t        rcx;
+            uint64_t        rdx;
+            uint64_t        rbx;
+            uint64_t        rsp;
+            uint64_t        rbp;
+            uint64_t        rsi;
+            uint64_t        rdi;
+            uint64_t        r8;
+            uint64_t        r9;
+            uint64_t        r10;
+            uint64_t        r11;
+            uint64_t        r12;
+            uint64_t        r13;
+            uint64_t        r14;
+            uint64_t        r15;
+        } Amd64;
+    } u;
+} SUPDRVTRACERUSRCTX;
+/** Pointer to the usermode probe context information. */
+typedef SUPDRVTRACERUSRCTX *PSUPDRVTRACERUSRCTX;
+/** Pointer to the const usermode probe context information. */
+typedef SUPDRVTRACERUSRCTX const *PCSUPDRVTRACERUSRCTX;
 
 /**
  * The CPU state.
@@ -1186,9 +1253,12 @@ SUPR3DECL(int) SUPR3TracerIoCtl(uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVa
  *                              at hand.
  * @param   pszModule           The module name.
  * @param   pVtgHdr             The VTG header.
+ * @param   uVtgHdrAddr         The address to which the VTG header is loaded
+ *                              in the relevant execution context.
  * @param   fFlags              See SUP_TRACER_UMOD_FLAGS_XXX
  */
-SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszModule, struct VTGOBJHDR *pVtgHdr, uint32_t fFlags);
+SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszModule, struct VTGOBJHDR *pVtgHdr,
+                                         RTUINTPTR uVtgHdrAddr, uint32_t fFlags);
 
 /**
  * Deregisters the user module.
@@ -1373,90 +1443,81 @@ typedef union SUPDRVTRACERDATA
 typedef SUPDRVTRACERDATA *PSUPDRVTRACERDATA;
 
 /**
+ * Probe location info for ring-0.
+ *
+ * Since we cannot trust user tracepoint modules, we need to duplicate the probe
+ * ID and enabled flag in ring-0.
+ */
+typedef struct SUPDRVPROBELOC
+{
+    /** The probe ID. */
+    uint32_t                idProbe;
+    /** Whether it's enabled or not. */
+    bool                    fEnabled;
+} SUPDRVPROBELOC;
+/** Pointer to a ring-0 probe location record. */
+typedef SUPDRVPROBELOC *PSUPDRVPROBELOC;
+
+/**
+ * Probe info for ring-0.
+ *
+ * Since we cannot trust user tracepoint modules, we need to duplicate the
+ * probe enable count.
+ */
+typedef struct SUPDRVPROBEINFO
+{
+    /** The number of times this probe has been enabled. */
+    uint32_t volatile           cEnabled;
+} SUPDRVPROBEINFO;
+/** Pointer to a ring-0 probe info record. */
+typedef SUPDRVPROBEINFO *PSUPDRVPROBEINFO;
+
+/**
  * Support driver tracepoint provider core.
  */
 typedef struct SUPDRVVDTPROVIDERCORE
 {
     /** The tracer data member. */
     SUPDRVTRACERDATA            TracerData;
+    /** Pointer to the provider name (a copy that's always available). */
+    const char                 *pszName;
+    /** Pointer to the module name (a copy that's always available). */
+    const char                 *pszModName;
+
     /** The provider descriptor. */
     struct VTGDESCPROVIDER     *pDesc;
     /** The VTG header. */
     struct VTGOBJHDR           *pHdr;
-    /** Pointer to the provider name (a copy that's always available). */
-    const char                 *pszName;
-    /** Pointer to the module name. */
-    const char                 *pszModName;
+
+    /** The size of the entries in the pvProbeLocsEn table. */
+    uint8_t                     cbProbeLocsEn;
+    /** The actual module bit count (corresponds to cbProbeLocsEn). */
+    uint8_t                     cBits;
+    /** Set if this is a Umod, otherwise clear.. */
+    bool                        fUmod;
+    /** Explicit alignment padding (paranoia). */
+    uint8_t                     abAlignment[ARCH_BITS == 32 ? 1 : 5];
+
+    /** The probe locations used for descriptive purposes. */
+    struct VTGPROBELOC const   *paProbeLocsRO;
+    /** Pointer to the probe location array where the enable flag needs
+     * flipping. For kernel providers, this will always be SUPDRVPROBELOC,
+     * while user providers can either be 32-bit or 64-bit.  Use
+     * cbProbeLocsEn to calculate the address of an entry. */
+    void                       *pvProbeLocsEn;
+    /** Pointer to the probe array containing the enabled counts. */
+    uint32_t                   *pacProbeEnabled;
+
+    /** The ring-0 probe location info for user tracepoint modules.
+     * This is NULL if fUmod is false. */
+    PSUPDRVPROBELOC             paR0ProbeLocs;
+    /** The ring-0 probe info for user tracepoint modules.
+     * This is NULL if fUmod is false. */
+    PSUPDRVPROBEINFO            paR0Probes;
+
 } SUPDRVVDTPROVIDERCORE;
 /** Pointer to a tracepoint provider core structure. */
 typedef SUPDRVVDTPROVIDERCORE *PSUPDRVVDTPROVIDERCORE;
-
-
-/**
- * Usermode probe context information.
- */
-typedef struct SUPDRVTRACERUSRCTX
-{
-    /** The probe ID from the VTG location record.  */
-    uint32_t                idProbe;
-    /** 32 if X86, 64 if AMD64. */
-    uint8_t                 cBits;
-    /** Reserved padding. */
-    uint8_t                 abReserved[3];
-    /** Data which format is dictated by the cBits member. */
-    union
-    {
-        /** X86 context info. */
-        struct
-        {
-            uint32_t        uVtgProbeLoc;   /**< Location record address. */
-            uint32_t        aArgs[20];      /**< Raw arguments. */
-            uint32_t        eip;
-            uint32_t        eflags;
-            uint32_t        eax;
-            uint32_t        ecx;
-            uint32_t        edx;
-            uint32_t        ebx;
-            uint32_t        esp;
-            uint32_t        ebp;
-            uint32_t        esi;
-            uint32_t        edi;
-            uint16_t        cs;
-            uint16_t        ss;
-            uint16_t        ds;
-            uint16_t        es;
-            uint16_t        fs;
-            uint16_t        gs;
-        } X86;
-
-        /** AMD64 context info. */
-        struct
-        {
-            uint64_t        uVtgProbeLoc;   /**< Location record address. */
-            uint64_t        aArgs[10];      /**< Raw arguments. */
-            uint64_t        rip;
-            uint64_t        rflags;
-            uint64_t        rax;
-            uint64_t        rcx;
-            uint64_t        rdx;
-            uint64_t        rbx;
-            uint64_t        rsp;
-            uint64_t        rbp;
-            uint64_t        rsi;
-            uint64_t        rdi;
-            uint64_t        r8;
-            uint64_t        r9;
-            uint64_t        r10;
-            uint64_t        r11;
-            uint64_t        r12;
-            uint64_t        r13;
-            uint64_t        r14;
-        } Amd64;
-    } u;
-} SUPDRVTRACERUSRCTX;
-/** Pointer to the usermode probe context information. */
-typedef SUPDRVTRACERUSRCTX const *PCSUPDRVTRACERUSRCTX;
-
 
 /** Pointer to a tracer registration record. */
 typedef struct SUPDRVTRACERREG const *PCSUPDRVTRACERREG;

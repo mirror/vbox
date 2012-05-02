@@ -696,6 +696,11 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
                 }
                 /*pSession->uTracerData       = 0;*/
                 pSession->hTracerCaller     = NIL_RTNATIVETHREAD;
+                RTListInit(&pSession->TpProviders);
+                /*pSession->cTpProviders      = 0;*/
+                /*pSession->cTpProbesFiring   = 0;*/
+                RTListInit(&pSession->TpUmods);
+                /*RT_ZERO(pSession->apTpLookupTable);*/
 
                 VBOXDRV_SESSION_CREATE(pSession, fUser);
                 LogFlow(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
@@ -1793,9 +1798,14 @@ static int supdrvIOCtlInner(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /* validate */
             PSUPTRACERUMODREG pReq = (PSUPTRACERUMODREG)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_TRACER_UMOD_REG);
+            if (!RTStrEnd(pReq->u.In.szName, sizeof(pReq->u.In.szName)))
+                return VERR_INVALID_PARAMETER;
 
             /* execute */
-            pReqHdr->rc = supdrvIOCtl_TracerUmodRegister(pDevExt, pSession, pReq->u.In.pVtgHdr, pReq->u.In.szName, pReq->u.In.fFlags);
+            pReqHdr->rc = supdrvIOCtl_TracerUmodRegister(pDevExt, pSession,
+                                                         pReq->u.In.R3PtrVtgHdr, pReq->u.In.uVtgHdrAddr,
+                                                         pReq->u.In.R3PtrStrTab, pReq->u.In.cbStrTab,
+                                                         pReq->u.In.szName, pReq->u.In.fFlags);
             return 0;
         }
 
@@ -1807,6 +1817,17 @@ static int supdrvIOCtlInner(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
 
             /* execute */
             pReqHdr->rc = supdrvIOCtl_TracerUmodDeregister(pDevExt, pSession, pReq->u.In.pVtgHdr);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_TRACER_UMOD_FIRE_PROBE):
+        {
+            /* validate */
+            PSUPTRACERUMODFIREPROBE pReq = (PSUPTRACERUMODFIREPROBE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_TRACER_UMOD_FIRE_PROBE);
+
+            supdrvIOCtl_TracerUmodProbeFire(pDevExt, pSession, &pReq->u.In);
+            pReqHdr->rc = VINF_SUCCESS;
             return 0;
         }
 

@@ -439,6 +439,18 @@ typedef struct SUPDRVSESSION
     uintptr_t                       uTracerData;
     /** The thread currently actively talking to the tracer. (One at the time!) */
     RTNATIVETHREAD                  hTracerCaller;
+    /** List of tracepoint providers associated with the session
+     * (SUPDRVTPPROVIDER). */
+    RTLISTANCHOR                    TpProviders;
+    /** The number of providers in TpProviders. */
+    uint32_t                        cTpProviders;
+    /** The number of threads active in supdrvIOCtl_TracerUmodProbeFire or
+     *  SUPR0TracerUmodProbeFire. */
+    uint32_t volatile               cTpProbesFiring;
+    /** User tracepoint modules (PSUPDRVTRACKERUMOD). */
+    RTLISTANCHOR                    TpUmods;
+    /** The user tracepoint module lookup table. */
+    struct SUPDRVTRACERUMOD        *apTpLookupTable[32];
 #ifndef SUPDRV_AGNOSTIC
 # if defined(RT_OS_DARWIN)
     /** Pointer to the associated org_virtualbox_SupDrvClient object. */
@@ -558,8 +570,12 @@ typedef struct SUPDRVDEVEXT
     SUPDRVTRACERHLP                 TracerHlp;
     /** The number of session having opened the tracer currently. */
     uint32_t                        cTracerOpens;
+    /** The number of threads currently calling into the tracer. */
+    uint32_t volatile               cTracerCallers;
     /** Set if the tracer is being unloaded. */
     bool                            fTracerUnloading;
+    /** Hash table for user tracer modules (SUPDRVVTGCOPY). */
+    RTLISTANCHOR                    aTrackerUmodHash[128];
 
     /*
      * Note! The non-agnostic bits must be a the very end of the structure!
@@ -664,15 +680,17 @@ int  VBOXCALL   supdrvTracerInit(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvTracerTerm(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 void VBOXCALL   supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
+int  VBOXCALL   supdrvIOCtl_TracerUmodRegister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
+                                               RTR3PTR R3PtrVtgHdr, RTUINTPTR uVtgHdrAddr,
+                                               RTR3PTR R3PtrStrTab, uint32_t cbStrTab,
+                                               const char *pszModName, uint32_t fFlags);
+int  VBOXCALL   supdrvIOCtl_TracerUmodDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR R3PtrVtgHdr);
+void  VBOXCALL  supdrvIOCtl_TracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVTRACERUSRCTX pCtx);
 int  VBOXCALL   supdrvIOCtl_TracerOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uint32_t uCookie, uintptr_t uArg);
 int  VBOXCALL   supdrvIOCtl_TracerClose(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 int  VBOXCALL   supdrvIOCtl_TracerIOCtl(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal);
 extern PFNRT    g_pfnSupdrvProbeFireKernel;
 DECLASM(void)   supdrvTracerProbeFireStub(void);
-
-int  VBOXCALL   supdrvIOCtl_TracerUmodRegister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR pVtgHdr, const char *pszModName, uint32_t fFlags);
-int  VBOXCALL   supdrvIOCtl_TracerUmodDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR pVtgHdr);
-void  VBOXCALL  supdrvIOCtl_TracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx);
 
 #ifdef VBOX_WITH_NATIVE_DTRACE
 const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void);

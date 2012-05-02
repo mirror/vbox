@@ -36,6 +36,7 @@
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "scmstream.h"
 
@@ -473,7 +474,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    " segment VTG.Obj public CLASS=DATA align=4096 use32\n"
+                    " segment VTG.Obj public CLASS=VTG align=4096 use32\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_MACHO\n"
                     " %%macro VTG_GLOBAL 2\n"
@@ -501,11 +502,14 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  global NAME(%%1):%%2 hidden\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    " [section .VTGPrLc.Begin progbits alloc noexec write align=4096]\n"
+                    " [section .VTGData progbits alloc noexec write align=4096]\n"
+                    " [section .VTGPrLc.Begin progbits alloc noexec write align=32]\n"
+                    " dd 0,0,0,0, 0,0,0,0\n"
                     "VTG_GLOBAL g_aVTGPrLc, data\n"
                     " [section .VTGPrLc       progbits alloc noexec write align=1]\n"
                     " [section .VTGPrLc.End   progbits alloc noexec write align=1]\n"
                     "VTG_GLOBAL g_aVTGPrLc_End, data\n"
+                    " dd 0,0,0,0, 0,0,0,0\n"
                     " [section .VTGData progbits alloc noexec write align=4096]\n"
                     "\n"
                     "%%else\n"
@@ -516,61 +520,52 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "VTG_GLOBAL g_VTGObjHeader, data\n"
                     "                ;0         1         2         3\n"
                     "                ;012345678901234567890123456789012\n"
-                    "    db          'VTG Object Header v1.4', 0, 0\n"
+                    "    db          'VTG Object Header v1.5', 0, 0\n"
                     "    dd          %u\n"
+                    "    dd          NAME(g_acVTGProbeEnabled_End) - NAME(g_VTGObjHeader)\n"
+                    "    dd          NAME(g_achVTGStringTable)     - NAME(g_VTGObjHeader)\n"
+                    "    dd          NAME(g_achVTGStringTable_End) - NAME(g_achVTGStringTable)\n"
+                    "    dd          NAME(g_aVTGArgLists)          - NAME(g_VTGObjHeader)\n"
+                    "    dd          NAME(g_aVTGArgLists_End)      - NAME(g_aVTGArgLists)\n"
+                    "    dd          NAME(g_aVTGProbes)            - NAME(g_VTGObjHeader)\n"
+                    "    dd          NAME(g_aVTGProbes_End)        - NAME(g_aVTGProbes)\n"
+                    "    dd          NAME(g_aVTGProviders)         - NAME(g_VTGObjHeader)\n"
+                    "    dd          NAME(g_aVTGProviders_End)     - NAME(g_aVTGProviders)\n"
+                    "    dd          NAME(g_acVTGProbeEnabled)     - NAME(g_VTGObjHeader)\n"
+                    "    dd          NAME(g_acVTGProbeEnabled_End) - NAME(g_acVTGProbeEnabled)\n"
                     "    dd          0\n"
-                    "    RTCCPTR_DEF NAME(g_aVTGProviders)\n"
-                    "    RTCCPTR_DEF NAME(g_aVTGProviders_End)     - NAME(g_aVTGProviders)\n"
-                    "    RTCCPTR_DEF NAME(g_aVTGProbes)\n"
-                    "    RTCCPTR_DEF NAME(g_aVTGProbes_End)        - NAME(g_aVTGProbes)\n"
-                    "    RTCCPTR_DEF NAME(g_afVTGProbeEnabled)\n"
-                    "    RTCCPTR_DEF NAME(g_afVTGProbeEnabled_End) - NAME(g_afVTGProbeEnabled)\n"
-                    "    RTCCPTR_DEF NAME(g_achVTGStringTable)\n"
-                    "    RTCCPTR_DEF NAME(g_achVTGStringTable_End) - NAME(g_achVTGStringTable)\n"
-                    "    RTCCPTR_DEF NAME(g_aVTGArgLists)\n"
-                    "    RTCCPTR_DEF NAME(g_aVTGArgLists_End)      - NAME(g_aVTGArgLists)\n"
+                    "    dd          0\n"
                     "%%ifdef ASM_FORMAT_MACHO ; Apple has a real decent linker!\n"
                     "extern section$start$__VTG$__VTGPrLc\n"
                     "    RTCCPTR_DEF section$start$__VTG$__VTGPrLc\n"
+                    " %%if ARCH_BITS == 32\n"
+                    "    dd          0\n"
+                    " %%endif\n"
                     "extern section$end$__VTG$__VTGPrLc\n"
                     "    RTCCPTR_DEF section$end$__VTG$__VTGPrLc\n"
+                    " %%if ARCH_BITS == 32\n"
+                    "    dd          0\n"
+                    " %%endif\n"
                     "%%else\n"
                     "    RTCCPTR_DEF NAME(g_aVTGPrLc)\n"
-                    "    RTCCPTR_DEF NAME(g_aVTGPrLc_End) ; cross section/segment size not possible\n"
+                    " %%if ARCH_BITS == 32\n"
+                    "    dd          0\n"
+                    " %%endif\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGPrLc_End)\n"
+                    " %%if ARCH_BITS == 32\n"
+                    "    dd          0\n"
+                    " %%endif\n"
                     "%%endif\n"
-                    "    RTCCPTR_DEF 0\n"
-                    "    RTCCPTR_DEF 0\n"
-                    "    RTCCPTR_DEF 0\n"
-                    "    RTCCPTR_DEF 0\n"
                     ,
                     g_pszScript, g_cBits);
-
-    /*
-     * Declare the probe enable flags.
-     */
+    RTUUID Uuid;
+    int rc = RTUuidCreate(&Uuid);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTUuidCreate failed: %Rrc", rc);
     ScmStreamPrintf(pStrm,
-                    ";\n"
-                    "; Probe enabled flags.  Since these will be accessed all the time\n"
-                    "; they are placed together and early in the section to get some more\n"
-                    "; cache and TLB hits when the probes are disabled.\n"
-                    ";\n"
-                    "VTG_GLOBAL g_afVTGProbeEnabled, data\n"
-                    );
-    uint32_t        cProbes = 0;
-    RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
-    {
-        RTListForEach(&pProvider->ProbeHead, pProbe, VTGPROBE, ListEntry)
-        {
-            ScmStreamPrintf(pStrm,
-                            "VTG_GLOBAL g_fVTGProbeEnabled_%s_%s, data\n"
-                            "    db 0\n",
-                            pProvider->pszName, pProbe->pszMangledName);
-            cProbes++;
-        }
-    }
-    ScmStreamPrintf(pStrm, "VTG_GLOBAL g_afVTGProbeEnabled_End, data\n");
-    if (cProbes >= _32K)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Too many probes: %u (max %u)", cProbes, _32K - 1);
+                    "    dd 0%08xh, 0%08xh, 0%08xh, 0%08xh\n"
+                    "    dd 0, 0, 0, 0\n"
+                    , Uuid.au32[0], Uuid.au32[1], Uuid.au32[2], Uuid.au32[3]);
 
     /*
      * Dump the string table before we start using the strings.
@@ -594,6 +589,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     ";\n"
                     "; The argument lists.\n"
                     ";\n"
+                    "ALIGNDATA(16)\n"
                     "VTG_GLOBAL g_aVTGArgLists, data\n");
     uint32_t off = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
@@ -664,6 +660,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     ";\n"
                     "; Prob definitions.\n"
                     ";\n"
+                    "ALIGNDATA(16)\n"
                     "VTG_GLOBAL g_aVTGProbes, data\n"
                     "\n");
     uint32_t iProvider = 0;
@@ -675,13 +672,11 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         {
             ScmStreamPrintf(pStrm,
                             "VTG_GLOBAL g_VTGProbeData_%s_%s, data ; idx=#%4u\n"
-                            "    dd %6u  ; name\n"
-                            "    dd %6u  ; Argument list offset\n"
-                            "    dw NAME(g_fVTGProbeEnabled_%s_%s) - NAME(g_afVTGProbeEnabled)\n"
-                            "    dw %6u  ; provider index\n"
-                            "    dd NAME(g_VTGObjHeader) - NAME(g_VTGProbeData_%s_%s) ; offset to the object header\n"
-                            "    dd      0  ; for the application\n"
-                            "    dd      0  ; for the application\n"
+                            "    dd %6u  ; offName\n"
+                            "    dd %6u  ; offArgList\n"
+                            "    dw (NAME(g_cVTGProbeEnabled_%s_%s) - NAME(g_acVTGProbeEnabled)) / 4 ; idxEnabled\n"
+                            "    dw %6u  ; idxProvider\n"
+                            "    dd NAME(g_VTGObjHeader) - NAME(g_VTGProbeData_%s_%s) ; offObjHdr\n"
                             ,
                             pProvider->pszName, pProbe->pszMangledName, iProbe,
                             strtabGetOff(pProbe->pszUnmangledName),
@@ -699,13 +694,14 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
     ScmStreamPrintf(pStrm, "VTG_GLOBAL g_aVTGProbes_End, data\n");
 
     /*
-     * The providers data.
+     * The provider data.
      */
     ScmStreamPrintf(pStrm,
                     "\n"
                     ";\n"
                     "; Provider data.\n"
                     ";\n"
+                    "ALIGNDATA(16)\n"
                     "VTG_GLOBAL g_aVTGProviders, data\n");
     iProvider = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
@@ -734,6 +730,37 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         iProvider++;
     }
     ScmStreamPrintf(pStrm, "VTG_GLOBAL g_aVTGProviders_End, data\n");
+
+    /*
+     * Declare the probe enable flags.
+     *
+     * These must be placed at the end so they'll end up adjacent to the probe
+     * locations.  This is important for reducing the amount of memory we need
+     * to lock down for user mode modules.
+     */
+    ScmStreamPrintf(pStrm,
+                    ";\n"
+                    "; Probe enabled flags.\n"
+                    ";\n"
+                    "ALIGNDATA(16)\n"
+                    "VTG_GLOBAL g_acVTGProbeEnabled, data\n"
+                    );
+    uint32_t        cProbes = 0;
+    RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
+    {
+        RTListForEach(&pProvider->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            ScmStreamPrintf(pStrm,
+                            "VTG_GLOBAL g_cVTGProbeEnabled_%s_%s, data\n"
+                            "    dd 0\n",
+                            pProvider->pszName, pProbe->pszMangledName);
+            cProbes++;
+        }
+    }
+    ScmStreamPrintf(pStrm, "VTG_GLOBAL g_acVTGProbeEnabled_End, data\n");
+    if (cProbes >= _32K)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Too many probes: %u (max %u)", cProbes, _32K - 1);
+
 
     /*
      * Emit code for the stub functions.
@@ -941,9 +968,9 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
             ScmStreamPrintf(pStrm,
-                            "extern bool    g_fVTGProbeEnabled_%s_%s;\n"
-                            "extern uint8_t g_VTGProbeData_%s_%s;\n"
-                            "DECLASM(void)  VTGProbeStub_%s_%s(PVTGPROBELOC",
+                            "extern uint32_t g_cVTGProbeEnabled_%s_%s;\n"
+                            "extern uint8_t  g_VTGProbeData_%s_%s;\n"
+                            "DECLASM(void)   VTGProbeStub_%s_%s(PVTGPROBELOC",
                             pProv->pszName, pProbe->pszMangledName,
                             pProv->pszName, pProbe->pszMangledName,
                             pProv->pszName, pProbe->pszMangledName);
@@ -955,7 +982,7 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             ScmStreamPrintf(pStrm,
                             ");\n"
                             "# define %s_ENABLED() \\\n"
-                            "    (RT_UNLIKELY(g_fVTGProbeEnabled_%s_%s)) \n"
+                            "    (RT_UNLIKELY(g_cVTGProbeEnabled_%s_%s)) \n"
                             "# define %s("
                             , szTmp,
                             pProv->pszName, pProbe->pszMangledName,
@@ -970,10 +997,10 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             ScmStreamPrintf(pStrm,
                             ") \\\n"
                             "    do { \\\n"
-                            "        if (RT_UNLIKELY(g_fVTGProbeEnabled_%s_%s)) \\\n"
+                            "        if (RT_UNLIKELY(g_cVTGProbeEnabled_%s_%s)) \\\n"
                             "        { \\\n"
                             "            VTG_DECL_VTGPROBELOC(s_VTGProbeLoc) = \\\n"
-                            "            { __LINE__, 0, UINT32_MAX, __FUNCTION__, &g_VTGProbeData_%s_%s }; \\\n"
+                            "            { __LINE__, 0, 0, __FUNCTION__, &g_VTGProbeData_%s_%s }; \\\n"
                             "            VTGProbeStub_%s_%s(&s_VTGProbeLoc",
                             pProv->pszName, pProbe->pszMangledName,
                             pProv->pszName, pProbe->pszMangledName,

@@ -31,6 +31,7 @@
  * Basic types.
  */
 #include <iprt/types.h>
+#include <VBox/sup.h>
 
 /*
  * IOCtl numbers.
@@ -192,7 +193,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Remove RTSpinlockReleaseNoInts.
  */
-#define SUPDRV_IOC_VERSION                              0x001a0001
+#define SUPDRV_IOC_VERSION                              0x001a0002
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1265,8 +1266,16 @@ typedef struct SUPTRACERUMODREG
     {
         struct
         {
-            /** Pointer to the VTG header. */
-            RTR3PTR         pVtgHdr;
+            /** The address at which the VTG header actually resides.
+             * This will differ from R3PtrVtgHdr for raw-mode context
+             * modules. */
+            RTUINTPTR       uVtgHdrAddr;
+            /** The ring-3 pointer of the VTG header. */
+            RTR3PTR         R3PtrVtgHdr;
+            /** The ring-3 pointer of the probe location string table. */
+            RTR3PTR         R3PtrStrTab;
+            /** The size of the string table. */
+            uint32_t        cbStrTab;
             /** Future flags, MBZ.  */
             uint32_t        fFlags;
             /** The module name. */
@@ -1299,6 +1308,27 @@ typedef struct SUPTRACERUMODDEREG
         } In;
     } u;
 } SUPTRACERUMODDEREG, *PSUPTRACERUMODDEREG;
+/** @} */
+
+
+/** @name SUP_IOCTL_TRACER_UMOD_FIRE_PROBE
+ * Fire a probe in a user tracepoint module.
+ *
+ * @{
+ */
+#define SUP_IOCTL_TRACER_UMOD_FIRE_PROBE            SUP_CTL_CODE_SIZE(33, SUP_IOCTL_TRACER_UMOD_FIRE_PROBE_SIZE)
+#define SUP_IOCTL_TRACER_UMOD_FIRE_PROBE_SIZE       sizeof(SUPTRACERUMODFIREPROBE)
+#define SUP_IOCTL_TRACER_UMOD_FIRE_PROBE_SIZE_IN    sizeof(SUPTRACERUMODFIREPROBE)
+#define SUP_IOCTL_TRACER_UMOD_FIRE_PROBE_SIZE_OUT   sizeof(SUPREQHDR)
+typedef struct SUPTRACERUMODFIREPROBE
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        SUPDRVTRACERUSRCTX  In;
+    } u;
+} SUPTRACERUMODFIREPROBE, *PSUPTRACERUMODFIREPROBE;
 /** @} */
 
 
