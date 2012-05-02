@@ -29,6 +29,14 @@
 ;*******************************************************************************
 %include "iprt/asmdefs.mac"
 
+; This should go into asmdefs.mac
+%ifdef PIC
+ %ifdef ASM_FORMAT_ELF
+  %define RT_ASM_USE_GOT
+  %define RT_ASM_USE_PLT
+ %endif
+%endif
+
 
 ;*******************************************************************************
 ;*  Structures and Typedefs                                                    *
@@ -201,9 +209,7 @@ EXPORTEDNAME SUPTracerFireProbe
         call    NAME(suplibTracerFireProbe)
  %else
         mov     xSI, xSP
-  %ifdef RT_OS_DARWIN
-        call    NAME(suplibTracerFireProbe)
-  %elifdef PIC
+  %ifdef RT_ASM_USE_PLT
         call    [rel NAME(suplibTracerFireProbe) wrt ..plt]
   %else
         call    NAME(suplibTracerFireProbe)
@@ -250,7 +256,11 @@ EXPORTEDNAME SUPTracerFireProbe
         mov     xDX, xSP
         push    xDX
         push    xCX
+ %ifdef RT_ASM_USE_PLT
+        call    NAME(suplibTracerFireProbe) wrt ..plt
+ %else
         call    NAME(suplibTracerFireProbe)
+ %endif
 %else
  %error "Arch not supported (or correctly defined)."
 %endif
