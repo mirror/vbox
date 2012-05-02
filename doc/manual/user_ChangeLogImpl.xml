@@ -71,6 +71,10 @@
          <para>Storage: implemented burning of audio CDs in passthrough mode</para>
        </listitem>
 
+       <listitem>
+         <para>Solaris additions: added support for X.org Server 1.11 and 1.12</para>
+       </listitem>
+
     </itemizedlist>
   </sect1>
 
