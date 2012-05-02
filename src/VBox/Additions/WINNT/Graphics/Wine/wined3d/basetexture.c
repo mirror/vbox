@@ -34,6 +34,8 @@
 #include "config.h"
 #include "wined3d_private.h"
 
+#define GLINFO_LOCATION      (This->resource.device->adapter->gl_info)
+
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_texture);
 
 HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DRESOURCETYPE resource_type,
@@ -99,10 +101,10 @@ void basetexture_cleanup(IWineD3DBaseTexture *iface)
 }
 
 /* A GL context is provided by the caller */
-static void gltexture_delete(struct gl_texture *tex)
+static void gltexture_delete(IWineD3DTextureImpl *This, struct gl_texture *tex)
 {
     ENTER_GL();
-    glDeleteTextures(1, &tex->name);
+    texture_gl_delete(This, tex->name);
     LEAVE_GL();
     tex->name = 0;
 }
@@ -111,31 +113,20 @@ void basetexture_unload(IWineD3DBaseTexture *iface)
 {
     IWineD3DTextureImpl *This = (IWineD3DTextureImpl *)iface;
     IWineD3DDeviceImpl *device = This->resource.device;
-
-#ifdef VBOX_WITH_WDDM
-    if (!VBOXSHRC_CAN_DELETE(device, This))
+    struct wined3d_context *context = NULL;
+    if (This->baseTexture.texture_rgb.name || This->baseTexture.texture_srgb.name)
     {
-        This->baseTexture.texture_rgb.name = 0;
-        This->baseTexture.texture_srgb.name = 0;
+        context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
     }
-    else
-#endif
-    {
-        struct wined3d_context *context = NULL;
-        if (This->baseTexture.texture_rgb.name || This->baseTexture.texture_srgb.name)
-        {
-            context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
-        }
 
-        if(This->baseTexture.texture_rgb.name) {
-            gltexture_delete(&This->baseTexture.texture_rgb);
-        }
-        if(This->baseTexture.texture_srgb.name) {
-            gltexture_delete(&This->baseTexture.texture_srgb);
-        }
-
-        if (context) context_release(context);
+    if(This->baseTexture.texture_rgb.name) {
+        gltexture_delete(This, &This->baseTexture.texture_rgb);
     }
+    if(This->baseTexture.texture_srgb.name) {
+        gltexture_delete(This, &This->baseTexture.texture_srgb);
+    }
+
+    if (context) context_release(context);
 
     This->baseTexture.texture_rgb.dirty = TRUE;
     This->baseTexture.texture_srgb.dirty = TRUE;
@@ -295,10 +286,6 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
     struct gl_texture *gl_tex;
     TRACE("(%p) : About to bind texture\n", This);
 
-#ifdef VBOX_WITH_WDDM
-    Assert(!VBOXSHRC_IS_DISABLED(This));
-#endif
-
     This->baseTexture.is_srgb = srgb; /* SRGB mode cache for PreLoad calls outside drawprim */
     if(srgb) {
         gl_tex = &This->baseTexture.texture_srgb;
@@ -316,6 +303,7 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
         {
             ERR("should not be here!");
             gl_tex->name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
+            GL_EXTCALL(glChromiumParameteriCR(GL_RCUSAGE_TEXTURE_SET_CR, gl_tex->name));
             TRACE("Assigned shared texture %d\n", gl_tex->name);
         }
         else

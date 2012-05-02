@@ -2011,6 +2011,17 @@ BOOL basetexture_set_dirty(IWineD3DBaseTexture *iface, BOOL dirty) DECLSPEC_HIDD
 DWORD basetexture_set_lod(IWineD3DBaseTexture *iface, DWORD new_lod) DECLSPEC_HIDDEN;
 void basetexture_unload(IWineD3DBaseTexture *iface) DECLSPEC_HIDDEN;
 
+#ifdef VBOX_WITH_WDDM
+#define texture_gl_delete(_o, _t) do { \
+        if (VBOXSHRC_IS_SHARED(_o)) GL_EXTCALL(glChromiumParameteriCR(GL_RCUSAGE_TEXTURE_CLEAR_CR, _t)); \
+        else glDeleteTextures(1, &_t);  \
+    } while (0)
+#else
+#define texture_gl_delete(_o, _t) do { \
+        glDeleteTextures(1, &_t);  \
+    } while (0)
+
+#endif
 /*****************************************************************************
  * IWineD3DTexture implementation structure (extends IWineD3DBaseTextureImpl)
  */

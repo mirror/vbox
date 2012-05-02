@@ -387,15 +387,23 @@ static void packspuFluchOnThreadSwitch(GLboolean fEnable)
 
 void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
 {
-    if (GL_FLUSH_ON_THREAD_SWITCH_CR==target)
+    switch (target)
     {
-        /* this is a pure packspu state, don't propagate it any further */
-        packspuFluchOnThreadSwitch(value);
-        return;
-    }
-    if (GL_SHARE_CONTEXT_RESOURCES_CR==target)
-    {
-        crStateShareContext(value);
+        case GL_FLUSH_ON_THREAD_SWITCH_CR:
+            /* this is a pure packspu state, don't propagate it any further */
+            packspuFluchOnThreadSwitch(value);
+            return;
+        case GL_SHARE_CONTEXT_RESOURCES_CR:
+            crStateShareContext(value);
+            break;
+        case GL_RCUSAGE_TEXTURE_SET_CR:
+            crStateSetTextureUsed(value, GL_TRUE);
+            break;
+        case GL_RCUSAGE_TEXTURE_CLEAR_CR:
+            crStateSetTextureUsed(value, GL_FALSE);
+            break;
+        default:
+            break;
     }
     crPackChromiumParameteriCR(target, value);
 }

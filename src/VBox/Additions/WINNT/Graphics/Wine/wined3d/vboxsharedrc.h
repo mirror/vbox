@@ -18,8 +18,6 @@
 
 #define VBOXSHRC_F_SHARED              0x00000001 /* shared rc */
 #define VBOXSHRC_F_SHARED_OPENED       0x00000002 /* if set shared rc is opened, otherwise it is created */
-#define VBOXSHRC_F_GL_DISABLE          0x00000004 /* don't delete gl resources on d3d resource deletion */
-#define VBOXSHRC_F_GL_DELETE           0x00000008 /* don't delete gl resources on d3d resource deletion */
 
 #define VBOXSHRC_GET_SHAREFLAFS(_o) ((_o)->resource.sharerc_flags)
 #define VBOXSHRC_GET_SHAREHANDLE(_o) ((HANDLE)(_o)->resource.sharerc_handle)
@@ -30,22 +28,10 @@
     } while (0)
 #define VBOXSHRC_SET_SHARED(_o) (VBOXSHRC_GET_SHAREFLAFS(_o) |= VBOXSHRC_F_SHARED)
 #define VBOXSHRC_SET_SHARED_OPENED(_o) (VBOXSHRC_GET_SHAREFLAFS(_o) |= VBOXSHRC_F_SHARED_OPENED)
-#define VBOXSHRC_SET_DISABLE(_o) (VBOXSHRC_GET_SHAREFLAFS(_o) |= VBOXSHRC_F_GL_DISABLE)
-#define VBOXSHRC_SET_DELETE(_o) (VBOXSHRC_GET_SHAREFLAFS(_o) = (VBOXSHRC_GET_SHAREFLAFS(_o) | VBOXSHRC_F_GL_DELETE) & (~VBOXSHRC_F_GL_DISABLE))
 
 #define VBOXSHRC_IS_SHARED(_o) (!!(VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_SHARED))
 #define VBOXSHRC_IS_SHARED_OPENED(_o) (!!(VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_SHARED_OPENED))
 #define VBOXSHRC_IS_SHARED_UNLOCKED(_o) (VBOXSHRC_IS_SHARED(_o) && !VBOXSHRC_IS_LOCKED(_o))
-#define VBOXSHRC_IS_DISABLED(_o) ( \
-        VBOXSHRC_IS_SHARED(_o) \
-        && (VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_GL_DISABLE) \
-    )
-#define VBOXSHRC_IS_DELETE(_o) ( \
-        VBOXSHRC_IS_SHARED(_o) \
-        && (VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_GL_DELETE) \
-    )
-
-#define VBOXSHRC_CAN_DELETE(_d, _o) (!VBOXSHRC_IS_DISABLED(_o))
 
 #define VBOXSHRC_LOCK(_o) do{ \
         Assert(VBOXSHRC_IS_SHARED(_o)); \

@@ -3773,8 +3773,15 @@ typedef BOOL (WINAPI *WINED3D_PFNWGLCHOOSEPIXELFORMATARBPROC)(HDC hdc, const int
 typedef BOOL (WINAPI *WINED3D_PFNWGLSETPIXELFORMATWINE)(HDC hdc, int iPixelFormat,
         const PIXELFORMATDESCRIPTOR *ppfd);
 
+/*Global resource ids sharing*/
 #define GL_SHARE_CONTEXT_RESOURCES_CR 0x8B27
+/*do flush for the command buffer of a thread the context was previusly current for*/
 #define GL_FLUSH_ON_THREAD_SWITCH_CR  0x8B28
+/*report that the shared resource is used by this context, the parameter value is a texture name*/
+#define GL_RCUSAGE_TEXTURE_SET_CR     0x8B29
+/*report that the shared resource is no longer used by this context, the parameter value is a texture name*/
+#define GL_RCUSAGE_TEXTURE_CLEAR_CR   0x8B2A
+
 typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
 
 # define VBOXWDDM_GL_EXT_FUNCS_GEN \

@@ -97,15 +97,11 @@ static void surface_cleanup(IWineD3DSurfaceImpl *This)
 
     ENTER_GL();
 
-    if (This->texture_name
-#ifdef VBOX_WITH_WDDM
-            && VBOXSHRC_CAN_DELETE(device, This)
-#endif
-            )
+    if (This->texture_name)
     {
         /* Release the OpenGL texture. */
         TRACE("Deleting texture %u.\n", This->texture_name);
-        glDeleteTextures(1, &This->texture_name);
+        texture_gl_delete(This, This->texture_name);
     }
 
     if (This->Flags & SFLAG_PBO)
@@ -527,35 +523,40 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
 #ifdef VBOX_WITH_WDDM
     if (VBOXSHRC_IS_SHARED(surface))
     {
+        struct wined3d_context * context;
         Assert(shared_handle);
-        surface_shrc_unlock(surface);
         if (!VBOXSHRC_IS_SHARED_OPENED(surface))
         {
-            struct wined3d_context * context;
-
+            surface_shrc_unlock(surface);
             Assert(!(*shared_handle));
             *shared_handle = VBOXSHRC_GET_SHAREHANDLE(surface);
-
-            Assert(!device->isInDraw);
-
-            /* flush to ensure the texture is allocated before it is used by another
-             * process opening it */
-            context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
-            if (context->valid)
-            {
-                wglFlush();
-            }
-            else
-            {
-                ERR("invalid context!");
-            }
-            context_release(context);
         }
         else
         {
+            VBOXSHRC_UNLOCK(surface);
+            Assert(!VBOXSHRC_IS_LOCKED(surface));
+#ifdef DEBUG_misha
+            ERR("test this!");
+#endif
+            surface_setup_location_onopen(surface);
             Assert(*shared_handle);
             Assert(*shared_handle == VBOXSHRC_GET_SHAREHANDLE(surface));
         }
+
+        Assert(!device->isInDraw);
+
+        /* flush to ensure the texture is allocated/referenced before it is used/released by another
+         * process opening/creating it */
+        context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+        if (context->valid)
+        {
+            wglFlush();
+        }
+        else
+        {
+            ERR("invalid context!");
+        }
+        context_release(context);
     }
     else
     {
@@ -1458,13 +1459,8 @@ static void WINAPI IWineD3DSurfaceImpl_UnLoad(IWineD3DSurface *iface) {
     IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **) &texture);
     if(!texture) {
         ENTER_GL();
-#ifdef VBOX_WITH_WDDM
-        if (VBOXSHRC_CAN_DELETE(device, This))
-#endif
-        {
-            glDeleteTextures(1, &This->texture_name);
-            glDeleteTextures(1, &This->texture_name_srgb);
-        }
+        texture_gl_delete(This, This->texture_name);
+        texture_gl_delete(This, This->texture_name_srgb);
         This->texture_name = 0;
         This->texture_name_srgb = 0;
         LEAVE_GL();
@@ -1827,6 +1823,7 @@ void surface_setup_location_onopen(IWineD3DSurfaceImpl *This)
     CONVERT_TYPES convert;
     struct wined3d_format_desc desc;
     IWineD3DBaseTexture *baseTexture = NULL;
+    struct wined3d_context *context;
 
     d3dfmt_get_conv(This, TRUE, TRUE, &desc, &convert);
     if(convert != NO_CONVERSION) This->Flags |= SFLAG_CONVERTED;
@@ -1839,11 +1836,23 @@ void surface_setup_location_onopen(IWineD3DSurfaceImpl *This)
             pTex->baseTexture.texture_rgb.name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(pTex);
             /* @todo: this is not entirely correct: need to share this state among all instances of the given shared resource */
             texture_state_init((IWineD3DTexture*)baseTexture, &pTex->baseTexture.texture_rgb);
+            context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+            ENTER_GL();
+            GL_EXTCALL(glChromiumParameteriCR(GL_RCUSAGE_TEXTURE_SET_CR, pTex->baseTexture.texture_rgb.name));
+            ENTER_GL();
+            context_release(context);
         }
         IWineD3DBaseTexture_Release(baseTexture);
     }
+    else
+    {
+        context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+        ENTER_GL();
+        GL_EXTCALL(glChromiumParameteriCR(GL_RCUSAGE_TEXTURE_SET_CR, (GLuint)VBOXSHRC_GET_SHAREHANDLE(This)));
+        ENTER_GL();
+        context_release(context);
+    }
     This->Flags |= alloc_flag;
-
     This->texture_name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
 
     IWineD3DSurface_ModifyLocation((IWineD3DSurface*)This, SFLAG_INTEXTURE, TRUE);
@@ -2257,7 +2266,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_UnlockRect(IWineD3DSurface *iface) {
     }
 
 #ifdef VBOX_WITH_WDDM
-        surface_shrc_unlock(This);
+    surface_shrc_unlock(This);
 #endif
 
     return WINED3D_OK;
@@ -2268,26 +2277,29 @@ static void surface_release_client_storage(IWineD3DSurface *iface)
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *) iface;
     struct wined3d_context *context;
 
+#ifdef VBOX_WITH_WDDM
+    if (VBOXSHRC_IS_SHARED(This))
+    {
+        ERR("surface_release_client_storage for shared resource! ignoring..");
+        return;
+    }
+#endif
+
     context = context_acquire(This->resource.device, NULL, CTXUSAGE_RESOURCELOAD);
 
     ENTER_GL();
     glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_FALSE);
-#ifdef VBOX_WITH_WDDM
-    if (!VBOXSHRC_IS_SHARED_OPENED(This))
-#endif
+    if(This->texture_name)
     {
-        if(This->texture_name)
-        {
-            surface_bind_and_dirtify(This, FALSE);
-            glTexImage2D(This->texture_target, This->texture_level,
-                         GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        }
-        if(This->texture_name_srgb)
-        {
-            surface_bind_and_dirtify(This, TRUE);
-            glTexImage2D(This->texture_target, This->texture_level,
-                         GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        }
+        surface_bind_and_dirtify(This, FALSE);
+        glTexImage2D(This->texture_target, This->texture_level,
+                     GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    }
+    if(This->texture_name_srgb)
+    {
+        surface_bind_and_dirtify(This, TRUE);
+        glTexImage2D(This->texture_target, This->texture_level,
+                     GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     }
     glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_TRUE);
 
@@ -2868,10 +2880,6 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
     IWineD3DBaseTexture *baseTexture = NULL;
 
-#ifdef VBOX_WITH_WDDM
-    Assert(!VBOXSHRC_IS_DISABLED(This));
-#endif
-
     TRACE("(%p)Checking to see if the container is a base texture\n", This);
     if (IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&baseTexture) == WINED3D_OK) {
         TRACE("Passing to container\n");
@@ -2894,8 +2902,10 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
 #ifdef VBOX_WITH_WDDM
                 if (VBOXSHRC_IS_SHARED_OPENED(This))
                 {
+                    struct wined3d_gl_info *gl_info = &This->resource.device->adapter->gl_info;
                     ERR("should not be here!");
                     *name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
+                    GL_EXTCALL(glChromiumParameteriCR(GL_RCUSAGE_TEXTURE_SET_CR, name));
                 }
                 else
 #endif
@@ -5353,70 +5363,13 @@ BOOL surface_is_offscreen(IWineD3DSurface *iface)
 
 #ifdef VBOX_WITH_WDDM
 static HRESULT WINAPI IWineD3DSurfaceImpl_SetShRcState(IWineD3DSurface *iface, VBOXWINEEX_SHRC_STATE enmState) {
-    IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl*)iface;
-    IWineD3DBaseTextureImpl *texture = NULL;
-    struct wined3d_context *context = NULL;
     HRESULT hr;
-    unsigned int i;
-
-    if (SUCCEEDED(IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&texture)))
-    {
-        /* this is a texture, check that the */
-        switch (enmState)
-        {
-            case VBOXWINEEX_SHRC_STATE_GL_DISABLE:
-                if (!VBOXSHRC_IS_DISABLED(texture))
-                {
-                    ERR("directly doing SetShRcState for texture surface not allowed!");
-                    return E_FAIL;
-                }
-                break;
-            case VBOXWINEEX_SHRC_STATE_GL_DELETE:
-                if (!VBOXSHRC_IS_DELETE(texture))
-                {
-                    ERR("directly doing SetShRcState for texture surface not allowed!");
-                    return E_FAIL;
-                }
-                break;
-            default:
-                ERR("invalid arg");
-                return E_INVALIDARG;
-        }
-
-        IWineD3DBaseTexture_Release((IWineD3DBaseTexture*)texture);
-    }
-
 
     hr = IWineD3DResourceImpl_SetShRcState((IWineD3DResource*)iface, enmState);
     if (FAILED(hr))
     {
         ERR("IWineD3DResource_SetShRcState failed");
         return hr;
-    }
-
-    if (!texture)
-    {
-        if (!This->resource.device->isInDraw)
-        {
-            context = context_acquire(This->resource.device, NULL, CTXUSAGE_RESOURCELOAD);
-            if (!context)
-            {
-                ERR("zero context!");
-                return E_FAIL;
-            }
-
-            if (!context->valid)
-            {
-                ERR("context invalid!");
-                context_release(context);
-                return E_FAIL;
-            }
-        }
-
-        device_cleanup_durtify_texture_target(This->resource.device, This->texture_target);
-
-        if (context)
-            context_release(context);
     }
 
     return WINED3D_OK;

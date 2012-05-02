@@ -72,7 +72,9 @@ struct CRPackContext_t
     int updateBBOX;
     int swapping;
     CRPackBuffer *currentBuffer;
+#ifdef CHROMIUM_THREADSAFE
     CRmutex mutex;
+#endif
     char *file;  /**< for debugging only */
     int line;    /**< for debugging only */
 };
@@ -148,7 +150,7 @@ extern CRtsd _PackerTSD;
 #define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = (CRPackContext *) crGetTSD(&_PackerTSD)
 #define CR_LOCK_PACKER_CONTEXT(PC) crLockMutex(&((PC)->mutex))
 #define CR_UNLOCK_PACKER_CONTEXT(PC) crUnlockMutex(&((PC)->mutex))
-#else
+#elif !defined IN_RING0
 extern DLLDATA(CRPackContext) cr_packer_globals;
 #define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = &cr_packer_globals
 #define CR_LOCK_PACKER_CONTEXT(PC)

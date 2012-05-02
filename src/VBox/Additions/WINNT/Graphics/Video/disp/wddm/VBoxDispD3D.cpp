@@ -2469,73 +2469,6 @@ static HRESULT vboxWddmSwapchainSwtichRtPresent(PVBOXWDDMDISP_DEVICE pDevice, PV
     return hr;
 }
 
-static HRESULT vboxWddmShRcRefAlloc(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL fAddRef, DWORD *pcRefs)
-{
-    D3DDDICB_ESCAPE DdiEscape = {0};
-    VBOXDISPIFESCAPE_SHRC_REF Data = {0};
-    DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
-    DdiEscape.hDevice = pDevice->hDevice;
-    DdiEscape.Flags.HardwareAccess = 1;
-    DdiEscape.pPrivateDriverData = &Data;
-    DdiEscape.PrivateDriverDataSize = sizeof (Data);
-    Data.EscapeHdr.escapeCode = fAddRef ? VBOXESC_SHRC_ADDREF : VBOXESC_SHRC_RELEASE;
-    Data.hAlloc = (uint64_t)pAlloc->hAllocation;
-    HRESULT hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
-    if (FAILED(hr))
-    {
-        WARN(("pfnEscapeCb, hr (0x%x)", hr));
-        return TRUE;
-    }
-
-    LOG(("shrc(0x%p) refs(%d)", (void*)pAlloc->hSharedHandle, Data.EscapeHdr.u32CmdSpecific));
-    if (pcRefs)
-        *pcRefs = Data.EscapeHdr.u32CmdSpecific;
-
-    return hr;
-}
-
-static HRESULT vboxWddmShRcRefRc(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_RESOURCE pRc, BOOL fAddRef, DWORD *pcRefs)
-{
-    Assert(pRc->RcDesc.fFlags.SharedResource);
-    DWORD cTotalRefs = 0;
-    HRESULT hr = S_OK;
-    for (DWORD i = 0; i < pRc->cAllocations; ++i)
-    {
-        DWORD cRefs = 0;
-        PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
-        if(!pAlloc->hSharedHandle)
-            continue;
-
-        hr = vboxWddmShRcRefAlloc(pDevice, pAlloc, fAddRef, &cRefs);
-
-        if (FAILED(hr))
-        {
-            WARN(("vboxWddmShRcRefAlloc failed, hr()0x%x", hr));
-            for (DWORD j = 0; j < i; ++j)
-            {
-                PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
-                if(!pAlloc->hSharedHandle)
-                    continue;
-                HRESULT tmpHr = vboxWddmShRcRefAlloc(pDevice, pAlloc, !fAddRef, NULL);
-                Assert(SUCCEEDED(tmpHr));
-            }
-            return hr;
-        }
-
-        /* success! */
-        cTotalRefs += cRefs;
-    }
-
-    Assert(cTotalRefs || !fAddRef);
-
-    /* success! */
-    if (pcRefs)
-        *pcRefs = cTotalRefs;
-
-    return S_OK;
-}
-
-
 static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
 {
     if (!pSwapchain->fFlags.bChanged && pSwapchain->pSwapChainIf)
@@ -5680,10 +5613,6 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                     if (pResource->Flags.SharedResource)
                     {
-                        if (pAllocation->hSharedHandle)
-                        {
-                            vboxWddmShRcRefAlloc(pDevice, pAllocation, TRUE, NULL);
-                        }
 #ifdef DEBUG_misha
                         Assert(VBOXWDDMDISP_IS_TEXTURE(pResource->Flags));
                         vboxVDbgPrint(("\n\n********\n(0x%x:0n%d)Shared CREATED pAlloc(0x%p), hRc(0x%p), hAl(0x%p), "
@@ -5746,26 +5675,9 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
     {
         for (UINT i = 0; i < pRc->cAllocations; ++i)
         {
-            BOOL fSetDelete = FALSE;
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
             if (pAlloc->hSharedHandle)
             {
-                /* using one and the same shared resource by different clients could lead to the situation where one client can still refer to the resource
-                 * while another one has deleted it
-                 * this could lead to gl state corruption on both host and guest side.
-                 * This is why we take extra care to avoid it.
-                 * Until we do a vboxWddmShRcRefAlloc call below the resource is guarantied to be present, however it can be removed any time after the call
-                 * if cShRcRefs is non-zero, i.e. the current cliet is not the one deleting it.
-                 * We first explicitely say to wine that resource must NOT be accessed any more and that all references to it should be cleaned */
-                pAdapter->D3D.pfnVBoxWineExD3DRc9SetShRcState((IDirect3DResource9*)pAlloc->pD3DIf, VBOXWINEEX_SHRC_STATE_GL_DISABLE);
-
-                DWORD cShRcRefs;
-                HRESULT tmpHr = vboxWddmShRcRefAlloc(pDevice, pAlloc, FALSE, &cShRcRefs);
-                if (!cShRcRefs)
-                {
-                    /* the current client IS the one deleting this resource */
-                    fSetDelete = TRUE;
-                }
 #ifdef DEBUG_misha
                 vboxVDbgPrint(("\n\n********\n(0x%x:0n%d)Shared DESTROYED pAlloc(0x%p), hRc(0x%p), hAl(0x%p), "
                                 "Handle(0x%x), (0n%d) \n***********\n\n",
@@ -5774,12 +5686,6 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
                             pAlloc->hSharedHandle, pAlloc->hSharedHandle
                             ));
 #endif
-            }
-
-            if (fSetDelete)
-            {
-                Assert(pAlloc->pD3DIf);
-                pAdapter->D3D.pfnVBoxWineExD3DRc9SetShRcState((IDirect3DResource9*)pAlloc->pD3DIf, VBOXWINEEX_SHRC_STATE_GL_DELETE);
             }
 
             if (pAlloc->pD3DIf)
@@ -7090,9 +6996,6 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
 #ifndef VBOXWDDMDISP_DEBUG_NOSHARED
                     Assert(pAllocation->hSharedHandle);
 #endif
-
-                    vboxWddmShRcRefAlloc(pDevice, pAllocation, TRUE, NULL);
-
                     vboxVDbgPrint(("\n\n********\n(0x%x:0n%d)Shared OPENNED pAlloc(0x%p), hRc(0x%p), hAl(0x%p), "
                                     "Handle(0x%x), (0n%d) \n***********\n\n",
                                 GetCurrentProcessId(), GetCurrentProcessId(),

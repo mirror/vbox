@@ -19,9 +19,69 @@
 #include "VBoxMPWddm.h"
 #include "VBoxMPCr.h"
 
+#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+
 #include <cr_protocol.h>
 
-#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+#if 0
+#include <cr_pack.h>
+
+typedef struct PVBOXMP_SHGSMIPACKER
+{
+    PVBOXMP_DEVEXT pDevExt;
+    CRPackContext CrPacker;
+    CRPackBuffer CrBuffer;
+} PVBOXMP_SHGSMIPACKER, *PPVBOXMP_SHGSMIPACKER;
+
+static void* vboxMpCrShgsmiBufferAlloc(PVBOXMP_DEVEXT pDevExt, HGSMISIZE cbData)
+{
+    return VBoxSHGSMIHeapBufferAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, cbData);
+}
+
+static void vboxMpCrShgsmiBufferFree(PVBOXMP_DEVEXT pDevExt, void *pvBuffer)
+{
+    VBoxSHGSMIHeapBufferFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pvBuffer);
+}
+
+static void vboxMpCrShgsmiPackerCbFlush(void *pvFlush)
+{
+    PPVBOXMP_SHGSMIPACKER pPacker = (PPVBOXMP_SHGSMIPACKER)pvFlush;
+
+    crPackReleaseBuffer(&pPacker->CrPacker);
+
+    if (pPacker->CrBuffer.opcode_current != pPacker->CrBuffer.opcode_start)
+    {
+        CRMessageOpcodes *pHdr;
+        unsigned int len;
+        pHdr = vboxMpCrPackerPrependHeader(&pPacker->CrBuffer, &len, 0);
+
+        /*Send*/
+    }
+
+
+    crPackSetBuffer(&pPacker->CrPacker, &pPacker->CrBuffer);
+    crPackResetPointers(&pPacker->CrPacker);
+}
+
+static int vboxMpCrShgsmiPackerInit(PPVBOXMP_SHGSMIPACKER pPacker, PVBOXMP_DEVEXT pDevExt)
+{
+    memset(pPacker, 0, sizeof (*pPacker));
+
+    static const cbBuffer = 1000;
+    void *pvBuffer = vboxMpCrShgsmiBufferAlloc(pDevExt, cbBuffer);
+    if (!pvBuffer)
+    {
+        WARN(("vboxMpCrShgsmiBufferAlloc failed"));
+        return VERR_NO_MEMORY;
+    }
+    crPackInitBuffer(&pPacker->CrBuffer, pvBuffer, cbBuffer, cbBuffer);
+    crPackSetBuffer(&pPacker->CrPacker, &pPacker->CrBuffer);
+    crPackFlushFunc(&pPacker->CrPacker, vboxMpCrShgsmiPackerCbFlush);
+    crPackFlushArg(&pPacker->CrPacker, pPacker);
+//    crPackSendHugeFunc( thread->packer, packspuHuge );
+    return VINF_SUCCESS;
+}
+#endif
 
 static int vboxMpCrCtlAddRef(PVBOXMP_CRCTLCON pCrCtlCon)
 {

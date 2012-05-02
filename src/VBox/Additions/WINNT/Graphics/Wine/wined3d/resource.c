@@ -295,19 +295,6 @@ HRESULT WINAPI IWineD3DResourceImpl_SetShRcState(IWineD3DResource *iface, VBOXWI
         return E_INVALIDARG;
     }
 
-    switch (enmState)
-    {
-        case VBOXWINEEX_SHRC_STATE_GL_DISABLE:
-            VBOXSHRC_SET_DISABLE(This);
-            break;
-        case VBOXWINEEX_SHRC_STATE_GL_DELETE:
-            VBOXSHRC_SET_DELETE(This);
-            break;
-        default:
-            ERR("invalid arg");
-            return E_INVALIDARG;
-    }
-
     return WINED3D_OK;
 }
 #endif

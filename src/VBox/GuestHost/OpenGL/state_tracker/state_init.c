@@ -51,8 +51,8 @@ crStateAllocShared(void)
 /**
  * Callback used for crFreeHashtable().
  */
-static void
-DeleteTextureCallback(void *texObj)
+DECLEXPORT(void)
+crStateDeleteTextureCallback(void *texObj)
 {
 #ifndef IN_GUEST
     diff_api.DeleteTextures(1, &((CRTextureObj *)texObj)->hwid);
@@ -73,7 +73,7 @@ static void ReleaseTextureCallback(unsigned long key, void *data1, void *data2)
     CRTextureObj *pObj = (CRTextureObj *)data1;
     CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pData->pCtx);
     if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
-        crHashtableDelete(pData->s->textureTable, key, DeleteTextureCallback);
+        crHashtableDelete(pData->s->textureTable, key, crStateDeleteTextureCallback);
 }
 
 static void ReleaseBufferObjectCallback(unsigned long key, void *data1, void *data2)
@@ -115,7 +115,7 @@ crStateFreeShared(CRContext *pContext, CRSharedState *s)
         {
             gSharedState = NULL;
         }
-        crFreeHashtable(s->textureTable, DeleteTextureCallback);
+        crFreeHashtable(s->textureTable, crStateDeleteTextureCallback);
         crFreeHashtable(s->dlistTable, crFree); /* call crFree for each entry */
         crFreeHashtable(s->buffersTable, crStateFreeBufferObject);
         crFreeHashtable(s->fbTable, crStateFreeFBO);

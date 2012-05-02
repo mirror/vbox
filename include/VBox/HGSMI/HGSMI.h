@@ -295,6 +295,12 @@ bool HGSMIHeapIsItialized (HGSMIHEAP *pHeap);
 
 void HGSMIHeapDestroy (HGSMIHEAP *pHeap);
 
+void* HGSMIHeapBufferAlloc (HGSMIHEAP *pHeap,
+        HGSMISIZE cbBuffer);
+
+void HGSMIHeapBufferFree(HGSMIHEAP *pHeap,
+                    void *pvBuf);
+
 void *HGSMIHeapAlloc (HGSMIHEAP *pHeap,
                       HGSMISIZE cbData,
                       uint8_t u8Channel,
