@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,15 +89,15 @@ void UIMachineWindow::sltTryClose()
     if (widget)
     {
         widget->close();
-        QTimer::singleShot(0, machineWindow(), SLOT(sltTryClose()));
+        QTimer::singleShot(0, this, SLOT(sltTryClose()));
     }
     else
-        machineWindow()->close();
+        close();
 }
 
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : m_pMachineLogic(pMachineLogic)
-    , m_pMachineWindow(0)
+    : QIWithRetranslateUI2<QMainWindow>(0, windowFlags(pMachineLogic->visualStateType()))
+    , m_pMachineLogic(pMachineLogic)
     , m_uScreenId(uScreenId)
     , m_pMachineViewContainer(0)
     , m_pTopSpacer(0)
@@ -135,11 +135,6 @@ UISession* UIMachineWindow::uisession() const
 CSession& UIMachineWindow::session() const
 {
     return uisession()->session();
-}
-
-void UIMachineWindow::setMask(const QRegion &region)
-{
-    machineWindow()->setMask(region);
 }
 
 void UIMachineWindow::retranslateUi()
@@ -205,7 +200,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 return;
             }
             /* Prepare close dialog: */
-            UIVMCloseDialog dlg(machineWindow());
+            UIVMCloseDialog dlg(this);
 
             /* Assign close-dialog pixmap: */
             dlg.pmIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(machine.GetOSTypeId()));
@@ -432,23 +427,23 @@ void UIMachineWindow::prepareWindowIcon()
     /* The default application icon (will be changed to VM-specific icon little bit later):
      * 1. On Win32, it's built-in to the executable;
      * 2. On Mac OS X the icon referenced in info.plist is used. */
-    machineWindow()->setWindowIcon(QIcon(":/VirtualBox_48px.png"));
+    setWindowIcon(QIcon(":/VirtualBox_48px.png"));
 #endif
 
 #ifndef Q_WS_MAC
     /* Set the VM-specific application icon except Mac OS X: */
-    machineWindow()->setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(session().GetMachine().GetOSTypeId()));
+    setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(session().GetMachine().GetOSTypeId()));
 #endif
 }
 
 void UIMachineWindow::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
-    QObject::connect(uisession(), SIGNAL(sigMachineStateChange()), machineWindow(), SLOT(sltMachineStateChanged()));
+    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
 
     /* Guest monitor change updater: */
-    QObject::connect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-                     machineWindow(), SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+    connect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+            this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 }
 
 void UIMachineWindow::prepareMachineViewContainer()
@@ -516,7 +511,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
 #endif /* Q_WS_MAC */
         if (machine.GetMonitorCount() > 1)
             strMachineName += QString(" : %1").arg(m_uScreenId + 1);
-        machineWindow()->setWindowTitle(strMachineName);
+        setWindowTitle(strMachineName);
     }
 }
 
@@ -545,10 +540,23 @@ void UIMachineWindow::sltGuestMonitorChange(KGuestMonitorChangedEventType change
         return;
 
     /* Process KGuestMonitorChangedEventType_Enabled change event: */
-    if (machineWindow()->isHidden() && changeType == KGuestMonitorChangedEventType_Enabled)
+    if (isHidden() && changeType == KGuestMonitorChangedEventType_Enabled)
         showInNecessaryMode();
     /* Process KGuestMonitorChangedEventType_Disabled change event: */
-    else if (!machineWindow()->isHidden() && changeType == KGuestMonitorChangedEventType_Disabled)
-        machineWindow()->hide();
+    else if (!isHidden() && changeType == KGuestMonitorChangedEventType_Disabled)
+        hide();
+}
+
+Qt::WindowFlags UIMachineWindow::windowFlags(UIVisualStateType visualStateType)
+{
+    switch (visualStateType)
+    {
+        case UIVisualStateType_Normal: return Qt::Window;
+        case UIVisualStateType_Fullscreen: return Qt::FramelessWindowHint;
+        case UIVisualStateType_Seamless: return Qt::FramelessWindowHint;
+        case UIVisualStateType_Scale: return Qt::Window;
+    }
+    AssertMsgFailed(("Incorrect visual state!"));
+    return 0;
 }
 

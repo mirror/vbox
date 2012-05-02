@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -120,7 +120,7 @@ protected:
     //virtual void cleanupViewport();
 
     /* Protected getters: */
-    UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
+    UIMachineWindow* machineWindow() const { return m_pMachineWindow; }
     UIMachineLogic* machineLogic() const;
     UISession* uisession() const;
     CSession& session();

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,14 +35,10 @@
 #include "UIMachineView.h"
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QMainWindow>(0, Qt::FramelessWindowHint)
-    , UIMachineWindow(pMachineLogic, uScreenId)
+    : UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
     , m_pMiniToolBar(0)
 {
-    /* "This" is machine window: */
-    m_pMachineWindow = this;
-
     /* Set the main window in VBoxGlobal: */
     if (uScreenId == 0)
         vboxGlobal().setMainWindow(this);
@@ -110,47 +106,14 @@ void UIMachineWindowFullscreen::sltPlaceOnScreen()
     qApp->processEvents();
 }
 
-void UIMachineWindowFullscreen::sltMachineStateChanged()
-{
-    UIMachineWindow::sltMachineStateChanged();
-}
-
-void UIMachineWindowFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
-{
-    UIMachineWindow::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
-}
-
 void UIMachineWindowFullscreen::sltPopupMainMenu()
 {
     /* Popup main menu if present: */
     if (m_pMainMenu && !m_pMainMenu->isEmpty())
     {
-        m_pMainMenu->popup(machineWindow()->geometry().center());
+        m_pMainMenu->popup(geometry().center());
         QTimer::singleShot(0, m_pMainMenu, SLOT(sltSelectFirstAction()));
     }
-}
-
-void UIMachineWindowFullscreen::sltTryClose()
-{
-    UIMachineWindow::sltTryClose();
-}
-
-void UIMachineWindowFullscreen::retranslateUi()
-{
-    /* Translate parent class: */
-    UIMachineWindow::retranslateUi();
-}
-
-#ifdef Q_WS_X11
-bool UIMachineWindowFullscreen::x11Event(XEvent *pEvent)
-{
-    return UIMachineWindow::x11Event(pEvent);
-}
-#endif
-
-void UIMachineWindowFullscreen::closeEvent(QCloseEvent *pEvent)
-{
-    return UIMachineWindow::closeEvent(pEvent);
 }
 
 void UIMachineWindowFullscreen::prepareMenu()

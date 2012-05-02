@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -109,11 +109,7 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
 
 bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    /* Who are we watching? */
-    QMainWindow *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                               qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
-
-    if (pWatched != 0 && pWatched == pMainDialog)
+    if (pWatched != 0 && pWatched == machineWindow())
     {
         switch (pEvent->type())
         {
@@ -157,10 +153,10 @@ void UIMachineViewFullscreen::prepareFilters()
     /* Base class filters: */
     UIMachineView::prepareFilters();
 
-#ifdef Q_WS_MAC // TODO: Is it really needed? See UIMachineViewSeamless::eventFilter(...);
+#ifdef Q_WS_MAC // TODO: Is it really needed? See UIMachineViewFullscreen::eventFilter(...);
     /* Menu bar filter: */
-    qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
-#endif
+    machineWindow()->menuBar()->installEventFilter(this);
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineViewFullscreen::prepareConsoleConnections()

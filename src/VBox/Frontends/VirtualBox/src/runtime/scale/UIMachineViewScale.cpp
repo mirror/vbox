@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -215,10 +215,6 @@ bool UIMachineViewScale::event(QEvent *pEvent)
 
 bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    /* Who are we watching? */
-    QMainWindow *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                               qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
-
     if (pWatched != 0 && pWatched == viewport())
     {
         switch (pEvent->type())
@@ -233,7 +229,7 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
-    else if (pWatched != 0 && pWatched == pMainDialog)
+    else if (pWatched != 0 && pWatched == machineWindow())
     {
         switch (pEvent->type())
         {
@@ -284,9 +280,9 @@ QSize UIMachineViewScale::calculateMaxGuestSize() const
 {
     /* The area taken up by the machine window on the desktop,
      * including window frame, title, menu bar and status bar: */
-    QRect windowGeo = machineWindowWrapper()->machineWindow()->frameGeometry();
+    QRect windowGeo = machineWindow()->frameGeometry();
     /* The area taken up by the machine central widget, so excluding all decorations: */
-    QRect centralWidgetGeo = static_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->centralWidget()->geometry();
+    QRect centralWidgetGeo = machineWindow()->centralWidget()->geometry();
     /* To work out how big we can make the console window while still fitting on the desktop,
      * we calculate workingArea() - (windowGeo - centralWidgetGeo).
      * This works because the difference between machine window and machine central widget

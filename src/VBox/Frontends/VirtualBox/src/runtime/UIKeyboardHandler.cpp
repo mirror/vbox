@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -119,7 +119,7 @@ void UIKeyboardHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineW
         /* Add window: */
         m_windows.insert(uIndex, pMachineWindow);
         /* Install event-filter for window: */
-        m_windows[uIndex]->machineWindow()->installEventFilter(this);
+        m_windows[uIndex]->installEventFilter(this);
     }
 
     /* If that view is NOT registered yet: */
@@ -183,7 +183,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             case UIVisualStateType_Normal:
             case UIVisualStateType_Scale:
             {
-                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync);
+                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->winId(), False, GrabModeAsync, GrabModeAsync);
                 break;
             }
             /* If window is NOT moveable we are making active keyboard grab: */
@@ -194,7 +194,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
                  * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
                  * and after we will just ignore that issue: */
                 int cTriesLeft = 50;
-                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
+                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
                 break;
             }
             /* Should we try to grab keyboard in default case? I think - NO. */
@@ -241,7 +241,7 @@ void UIKeyboardHandler::releaseKeyboard()
             case UIVisualStateType_Normal:
             case UIVisualStateType_Scale:
             {
-                XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId());
+                XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->winId());
                 break;
             }
             /* If window is NOT moveable we are making active keyboard ungrab: */
@@ -1659,7 +1659,7 @@ UIMachineWindow* UIKeyboardHandler::isItListenedWindow(QObject *pWatchedObject) 
     while (!pResultWindow && i != m_windows.constEnd())
     {
         UIMachineWindow *pIteratedWindow = i.value();
-        if (pIteratedWindow->machineWindow() == pWatchedObject)
+        if (pIteratedWindow == pWatchedObject)
         {
             pResultWindow = pIteratedWindow;
             continue;

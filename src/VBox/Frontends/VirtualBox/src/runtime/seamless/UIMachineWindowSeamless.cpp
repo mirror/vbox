@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,16 +41,12 @@
 #endif /* Q_WS_MAC */
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QMainWindow>(0, Qt::FramelessWindowHint)
-    , UIMachineWindow(pMachineLogic, uScreenId)
+    : UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
 #ifndef Q_WS_MAC
     , m_pMiniToolBar(0)
 #endif /* Q_WS_MAC */
 {
-    /* "This" is machine window: */
-    m_pMachineWindow = this;
-
     /* Set the main window in VBoxGlobal: */
     if (uScreenId == 0)
         vboxGlobal().setMainWindow(this);
@@ -130,22 +126,12 @@ void UIMachineWindowSeamless::sltPlaceOnScreen()
     qApp->processEvents();
 }
 
-void UIMachineWindowSeamless::sltMachineStateChanged()
-{
-    UIMachineWindow::sltMachineStateChanged();
-}
-
-void UIMachineWindowSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
-{
-    UIMachineWindow::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
-}
-
 void UIMachineWindowSeamless::sltPopupMainMenu()
 {
     /* Popup main menu if present: */
     if (m_pMainMenu && !m_pMainMenu->isEmpty())
     {
-        m_pMainMenu->popup(machineWindow()->geometry().center());
+        m_pMainMenu->popup(geometry().center());
         QTimer::singleShot(0, m_pMainMenu, SLOT(sltSelectFirstAction()));
     }
 }
@@ -157,17 +143,6 @@ void UIMachineWindowSeamless::sltUpdateMiniToolBarMask()
         setMask(qobject_cast<UIMachineViewSeamless*>(machineView())->lastVisibleRegion());
 }
 #endif /* Q_WS_MAC */
-
-void UIMachineWindowSeamless::sltTryClose()
-{
-    UIMachineWindow::sltTryClose();
-}
-
-void UIMachineWindowSeamless::retranslateUi()
-{
-    /* Translate parent class: */
-    UIMachineWindow::retranslateUi();
-}
 
 #ifdef Q_WS_MAC
 bool UIMachineWindowSeamless::event(QEvent *pEvent)
@@ -186,18 +161,6 @@ bool UIMachineWindowSeamless::event(QEvent *pEvent)
     return QMainWindow::event(pEvent);
 }
 #endif /* Q_WS_MAC */
-
-#ifdef Q_WS_X11
-bool UIMachineWindowSeamless::x11Event(XEvent *pEvent)
-{
-    return UIMachineWindow::x11Event(pEvent);
-}
-#endif
-
-void UIMachineWindowSeamless::closeEvent(QCloseEvent *pEvent)
-{
-    return UIMachineWindow::closeEvent(pEvent);
-}
 
 void UIMachineWindowSeamless::prepareSeamless()
 {

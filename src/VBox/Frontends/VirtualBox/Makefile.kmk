@@ -284,6 +284,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/UIKeyboardHandler.h \
 	src/runtime/UIMachine.h \
 	src/runtime/UIMachineLogic.h \
+	src/runtime/UIMachineWindow.h \
 	src/runtime/UIMachineView.h \
 	src/runtime/UIMouseHandler.h \
 	src/runtime/UIMultiScreenLayout.h \
