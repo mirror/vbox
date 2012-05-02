@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,11 @@
 #ifndef __UIMachineWindow_h__
 #define __UIMachineWindow_h__
 
+/* Global includes */
+#include <QMainWindow>
+
 /* Local includes */
+#include "QIWithRetranslateUI.h"
 #include "UIMachineDefs.h"
 #include "COMDefs.h"
 
@@ -35,27 +39,30 @@ class UISession;
 class UIMachineLogic;
 class UIMachineView;
 
-class UIMachineWindow
+class UIMachineWindow : public QIWithRetranslateUI2<QMainWindow>
 {
+    Q_OBJECT;
+
 public:
 
     /* Factory function to create required machine window child: */
     static UIMachineWindow* create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType, ulong uScreenId = 0);
     static void destroy(UIMachineWindow *pWhichWindow);
 
-    /* Abstract slot to close machine window: */
-    virtual void sltTryClose();
-
     /* Public getters: */
     virtual UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
-    virtual QWidget* machineWindow() const { return m_pMachineWindow; }
     virtual UIMachineView* machineView() const { return m_pMachineView; }
     UISession* uisession() const;
     CSession& session() const;
 
-    /* Public members: */
-    virtual void reshow() {}
-    virtual void setMask(const QRegion &region);
+protected slots:
+
+    /* Session event-handlers: */
+    virtual void sltMachineStateChanged();
+    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+
+    /* Slot to safe close machine-window: */
+    void sltTryClose();
 
 protected:
 
@@ -95,16 +102,14 @@ protected:
     virtual void updateDbgWindows();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-    /* Protected slots: */
-    virtual void sltMachineStateChanged();
-    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    /* Helpers: */
+    Qt::WindowFlags windowFlags(UIVisualStateType visualStateType);
 
     /* Show routine: */
     virtual void showInNecessaryMode() = 0;
 
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;
-    QWidget *m_pMachineWindow;
 
     /* Virtual screen number: */
     ulong m_uScreenId;

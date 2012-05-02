@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,13 +37,9 @@
 #endif /* Q_WS_MAC */
 
 UIMachineWindowScale::UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QMainWindow>(0, Qt::Window)
-    , UIMachineWindow(pMachineLogic, uScreenId)
+    : UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
 {
-    /* "This" is machine window: */
-    m_pMachineWindow = this;
-
     /* Set the main window in VBoxGlobal */
     if (uScreenId == 0)
         vboxGlobal().setMainWindow(this);
@@ -107,35 +103,14 @@ UIMachineWindowScale::~UIMachineWindowScale()
     cleanupMachineView();
 }
 
-void UIMachineWindowScale::sltMachineStateChanged()
-{
-    UIMachineWindow::sltMachineStateChanged();
-}
-
-void UIMachineWindowScale::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
-{
-    UIMachineWindow::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
-}
-
 void UIMachineWindowScale::sltPopupMainMenu()
 {
     /* Popup main menu if present: */
     if (m_pMainMenu && !m_pMainMenu->isEmpty())
     {
-        m_pMainMenu->popup(machineWindow()->geometry().center());
+        m_pMainMenu->popup(geometry().center());
         QTimer::singleShot(0, m_pMainMenu, SLOT(sltSelectFirstAction()));
     }
-}
-
-void UIMachineWindowScale::sltTryClose()
-{
-    UIMachineWindow::sltTryClose();
-}
-
-void UIMachineWindowScale::retranslateUi()
-{
-    /* Translate parent class: */
-    UIMachineWindow::retranslateUi();
 }
 
 bool UIMachineWindowScale::event(QEvent *pEvent)
@@ -219,18 +194,6 @@ bool UIMachineWindowScale::winEvent(MSG *pMessage, long *pResult)
 }
 #endif /* Q_WS_WIN */
 
-#ifdef Q_WS_X11
-bool UIMachineWindowScale::x11Event(XEvent *pEvent)
-{
-    return UIMachineWindow::x11Event(pEvent);
-}
-#endif
-
-void UIMachineWindowScale::closeEvent(QCloseEvent *pEvent)
-{
-    return UIMachineWindow::closeEvent(pEvent);
-}
-
 void UIMachineWindowScale::prepareMenu()
 {
 #ifdef Q_WS_MAC
@@ -306,7 +269,7 @@ void UIMachineWindowScale::loadWindowSettings()
             max = strPositionSettings[4] == VBoxDefs::GUI_LastWindowState_Max;
 
         QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
-                        QApplication::desktop()->availableGeometry(machineWindow());
+                        QApplication::desktop()->availableGeometry(this);
 
         /* If previous parameters were read correctly: */
         if (ok)

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -155,14 +155,11 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 {
     /* Get the current machine: */
     CMachine machine = session().GetMachine();
-    /* Get machine window: */
-    QMainWindow *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                  qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
 
     /* If this slot is invoked directly then use the passed size otherwise get
      * the available size for the guest display. We assume here that centralWidget()
      * contains this view only and gives it all available space: */
-    QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
+    QSize newSize(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
     /* Send new size-hint to the guest: */
@@ -237,7 +234,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
                              , bool bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                              )
-    : QAbstractScrollArea(pMachineWindow->machineWindow())
+    : QAbstractScrollArea(pMachineWindow)
     , m_pMachineWindow(pMachineWindow)
     , m_uScreenId(uScreenId)
     , m_pFrameBuffer(0)
@@ -292,7 +289,7 @@ void UIMachineView::prepareFrameBuffer()
                     /** these two additional template args is a workaround to
                      * this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
-                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
                 }
                 else
                     pFrameBuffer = new UIFrameBufferQImage(this);
@@ -334,7 +331,7 @@ void UIMachineView::prepareFrameBuffer()
                     /** these two additional template args is a workaround to
                      * this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
-                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
                 }
                 else
                     pFrameBuffer = new UIFrameBufferSDL(this);
@@ -380,7 +377,7 @@ void UIMachineView::prepareFrameBuffer()
                     /** these two additional template args is a workaround to
                      * this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
-                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
                 }
                 else
                     pFrameBuffer = new UIFrameBufferQuartz2D(this);
@@ -482,7 +479,7 @@ void UIMachineView::prepareFilters()
     viewport()->installEventFilter(this);
 
     /* We want to be notified on some parent's events: */
-    machineWindowWrapper()->machineWindow()->installEventFilter(this);
+    machineWindow()->installEventFilter(this);
 }
 
 void UIMachineView::prepareConsoleConnections()
@@ -562,7 +559,7 @@ void UIMachineView::cleanupFrameBuffer()
 
 UIMachineLogic* UIMachineView::machineLogic() const
 {
-    return machineWindowWrapper()->machineLogic();
+    return machineWindow()->machineLogic();
 }
 
 UISession* UIMachineView::uisession() const
@@ -1021,13 +1018,13 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
         }
     }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-    if (pWatched == machineWindowWrapper()->machineWindow())
+    if (pWatched == machineWindow())
     {
         switch (pEvent->type())
         {
             case QEvent::WindowStateChange:
             {
-                /* During minimizing and state restoring machineWindowWrapper() gets
+                /* During minimizing and state restoring machineWindow() gets
                  * the focus which belongs to console view window, so returning it properly. */
                 QWindowStateChangeEvent *pWindowEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
                 if (pWindowEvent->oldState() & Qt::WindowMinimized)

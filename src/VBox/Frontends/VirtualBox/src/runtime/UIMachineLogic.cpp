@@ -226,7 +226,7 @@ UIMachineWindow* UIMachineLogic::defaultMachineWindow() const
     /* Check if there is active window present: */
     foreach (UIMachineWindow *pWindowToCheck, machineWindows())
     {
-        if (pWindowToCheck->machineWindow()->isActiveWindow())
+        if (pWindowToCheck->isActiveWindow())
         {
             pWindowToPropose = pWindowToCheck;
             break;
@@ -418,8 +418,8 @@ void UIMachineLogic::sltShowWindows()
          * I might have overlooked something, but I'm buggered what if I know
          * what. So, I'll just always show & activate the stupid window to
          * make it get out of the dock when the user wishes to show a VM. */
-        pMachineWindow->machineWindow()->raise();
-        pMachineWindow->machineWindow()->activateWindow();
+        pMachineWindow->raise();
+        pMachineWindow->activateWindow();
     }
 }
 #endif /* Q_WS_MAC */
@@ -845,8 +845,8 @@ void UIMachineLogic::sltAdjustWindow()
     foreach(UIMachineWindow *pMachineWindow, machineWindows())
     {
         /* Exit maximized window state if actual: */
-        if (pMachineWindow->machineWindow()->isMaximized())
-            pMachineWindow->machineWindow()->showNormal();
+        if (pMachineWindow->isMaximized())
+            pMachineWindow->showNormal();
 
         /* Normalize view's geometry: */
         pMachineWindow->machineView()->normalizeGeometry(true);
@@ -906,7 +906,7 @@ void UIMachineLogic::sltTakeSnapshot()
 
     CMachine machine = session().GetMachine();
 
-    VBoxTakeSnapshotDlg dlg(defaultMachineWindow()->machineWindow(), machine);
+    VBoxTakeSnapshotDlg dlg(defaultMachineWindow(), machine);
 
     QString strTypeId = machine.GetOSTypeId();
     dlg.mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
@@ -977,7 +977,7 @@ void UIMachineLogic::sltTakeScreenshot()
     const QString &strStart = machine.GetSettingsFilePath();
     QString strFilename = QIFileDialog::getSaveFileName(strStart,
                                                         filters.join(";;"),
-                                                        defaultMachineWindow()->machineWindow(),
+                                                        defaultMachineWindow(),
                                                         tr("Select a filename for the screenshot ..."),
                                                         &strFilter,
                                                         true /* resolve symlinks */,
@@ -1006,7 +1006,7 @@ void UIMachineLogic::sltReset()
        update. Emulate this for now until it get fixed. */
     ulong uMonitorCount = session().GetMachine().GetMonitorCount();
     for (ulong uScreenId = 1; uScreenId < uMonitorCount; ++uScreenId)
-        machineWindows().at(uScreenId)->machineWindow()->update();
+        machineWindows().at(uScreenId)->update();
 }
 
 void UIMachineLogic::sltPause(bool fOn)
@@ -1046,7 +1046,7 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
         return;
 
     /* Create and execute current VM settings dialog: */
-    UISettingsDialogMachine dlg(defaultMachineWindow()->machineWindow(),
+    UISettingsDialogMachine dlg(defaultMachineWindow(),
                                 session().GetMachine().GetId(), strCategory, QString());
     dlg.execute();
 }
@@ -1061,7 +1061,7 @@ void UIMachineLogic::sltOpenSharedFoldersDialog()
 {
     /* Do not process if additions are not loaded! */
     if (!uisession()->isGuestAdditionsActive())
-        msgCenter().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow()->machineWindow());
+        msgCenter().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow());
 
     /* Open VM settings : Shared folders page: */
     sltOpenVMSettingsDialog("#sfolders");
@@ -1314,7 +1314,7 @@ void UIMachineLogic::sltMountStorageMedium()
             QApplication::focusWidget()->clearFocus();
         /* Call for file-open window: */
         QString strMachineFolder(QFileInfo(machine.GetSettingsFilePath()).absolutePath());
-        QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, defaultMachineWindow()->machineWindow(),
+        QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, defaultMachineWindow(),
                                                                         strMachineFolder);
         defaultMachineWindow()->machineView()->setFocus();
         if (!strMediumId.isNull())
@@ -1639,7 +1639,7 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
 void UIMachineLogic::sltShowLogDialog()
 {
     /* Show VM Log Viewer: */
-    UIVMLogViewer::showLogViewerFor(mainMachineWindow()->machineWindow(), session().GetMachine());
+    UIVMLogViewer::showLogViewerFor(mainMachineWindow(), session().GetMachine());
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -1776,7 +1776,7 @@ bool UIMachineLogic::dbgCreated()
             if (   DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION)
                 || m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
             {
-                m_pDbgGuiVT->pfnSetParent(m_pDbgGui, defaultMachineWindow()->machineWindow());
+                m_pDbgGuiVT->pfnSetParent(m_pDbgGui, defaultMachineWindow());
                 m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, gActionPool->action(UIActionIndexRuntime_Menu_Debug));
                 dbgAdjustRelativePos();
                 return true;
@@ -1810,7 +1810,7 @@ void UIMachineLogic::dbgAdjustRelativePos()
 {
     if (m_pDbgGui)
     {
-        QRect rct = defaultMachineWindow()->machineWindow()->frameGeometry();
+        QRect rct = defaultMachineWindow()->frameGeometry();
         m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
 }

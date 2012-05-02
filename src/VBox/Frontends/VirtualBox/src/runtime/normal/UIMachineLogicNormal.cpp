@@ -103,7 +103,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
         addMachineWindow(UIMachineWindow::create(this, visualStateType(), uScreenId));
     /* Order machine window(s): */
     for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
-        machineWindows()[uScreenId - 1]->machineWindow()->raise();
+        machineWindows()[uScreenId - 1]->raise();
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,14 +49,10 @@
 #include "UIHotKeyEditor.h"
 
 UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QMainWindow>(0, Qt::Window)
-    , UIMachineWindow(pMachineLogic, uScreenId)
+    : UIMachineWindow(pMachineLogic, uScreenId)
     , m_pIndicatorsPool(new UIIndicatorsPool(pMachineLogic->uisession()->session(), this))
     , m_pIdleTimer(0)
 {
-    /* "This" is machine window: */
-    m_pMachineWindow = this;
-
     /* Set the main window in VBoxGlobal */
     if (uScreenId == 0)
         vboxGlobal().setMainWindow(this);
@@ -163,45 +159,6 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
 {
     updateAppearanceOf(UIVisualElement_VirtualizationStuff);
 }
-
-void UIMachineWindowNormal::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
-{
-    UIMachineWindow::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
-}
-
-void UIMachineWindowNormal::sltTryClose()
-{
-    UIMachineWindow::sltTryClose();
-}
-
-#if 0
-void UIMachineWindowNormal::sltEmbedDownloader(UIDownloadType downloaderType)
-{
-    switch (downloaderType)
-    {
-        case UIDownloadType_Additions:
-        {
-            if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
-                statusBar()->addWidget(pDl->progressWidget(this), 0);
-            break;
-        }
-        case UIDownloadType_UserManual:
-        {
-            if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
-                statusBar()->addWidget(pDl->progressWidget(this), 0);
-            break;
-        }
-        case UIDownloadType_ExtensionPack:
-        {
-            if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
-                statusBar()->addWidget(pDl->progressWidget(this), 0);
-            break;
-        }
-        default:
-            break;
-    }
-}
-#endif
 
 void UIMachineWindowNormal::sltUpdateIndicators()
 {
@@ -334,18 +291,6 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
     return QIWithRetranslateUI2<QMainWindow>::event(pEvent);
 }
 
-#ifdef Q_WS_X11
-bool UIMachineWindowNormal::x11Event(XEvent *pEvent)
-{
-    return UIMachineWindow::x11Event(pEvent);
-}
-#endif
-
-void UIMachineWindowNormal::closeEvent(QCloseEvent *pEvent)
-{
-    return UIMachineWindow::closeEvent(pEvent);
-}
-
 void UIMachineWindowNormal::prepareConsoleConnections()
 {
     /* Base-class connections: */
@@ -450,20 +395,6 @@ void UIMachineWindowNormal::prepareStatusBar()
     /* Add to statusbar: */
     statusBar()->addPermanentWidget(pIndicatorBox, 0);
 
-#if 0
-    /* Add the additions downloader progress bar to the status bar,
-     * if a download is actually running: */
-    tryToEmbedDownloaderForAdditions();
-
-    /* Add the user manual progress bar to the status bar,
-     * if a download is actually running: */
-    tryToEmbedDownloaderForUserManual();
-
-    /* Add the extension pack progress bar to the status bar,
-     * if a download is actually running: */
-    tryToEmbedDownloaderForExtensionPack();
-#endif
-
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
     connect(m_pIdleTimer, SIGNAL(timeout()), this, SLOT(sltUpdateIndicators()));
@@ -480,10 +411,6 @@ void UIMachineWindowNormal::prepareConnections()
     /* Setup global settings change updater: */
     connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
             this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
-#if 0
-    /* Setup network manager listener: */
-    connect(gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)), this, SLOT(sltEmbedDownloader(UIDownloadType)));
-#endif
 }
 
 void UIMachineWindowNormal::prepareMachineView()
@@ -564,7 +491,7 @@ void UIMachineWindowNormal::loadWindowSettings()
             max = strPositionSettings[4] == VBoxDefs::GUI_LastWindowState_Max;
 
         QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
-                        QApplication::desktop()->availableGeometry(machineWindow());
+                        QApplication::desktop()->availableGeometry(this);
 
         /* If previous parameters were read correctly: */
         if (ok)

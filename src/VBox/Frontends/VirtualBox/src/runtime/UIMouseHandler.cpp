@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -91,7 +91,7 @@ void UIMouseHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineWind
     if (!m_windows.contains(uIndex))
     {
         /* Register machine-window: */
-        m_windows.insert(uIndex, pMachineWindow->machineWindow());
+        m_windows.insert(uIndex, pMachineWindow);
         /* Install event-filter for machine-window: */
         m_windows[uIndex]->installEventFilter(this);
     }
@@ -556,7 +556,8 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     /* Check if we should activate window under cursor: */
                     if (!uisession()->isMouseCaptured() &&
                         QApplication::activeWindow() &&
-                        QApplication::activeWindow()->inherits("UIMachineWindow") &&
+                        m_windows.values().contains(QApplication::activeWindow()) &&
+                        m_windows.values().contains(pWatchedWidget->window()) &&
                         QApplication::activeWindow() != pWatchedWidget->window())
                     {
                         /* Activating hovered machine window: */

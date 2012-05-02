@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,7 +45,7 @@ void VBoxVMInformationDlg::createInformationDlg(UIMachineWindow *pMachineWindow)
     {
         /* Creating new information dialog if there is no one existing */
         VBoxVMInformationDlg *id = new VBoxVMInformationDlg(pMachineWindow, Qt::Window);
-        id->centerAccording (pMachineWindow->machineWindow());
+        id->centerAccording (pMachineWindow);
         // TODO_NEW_CORE: this seems not necessary, cause we set WA_DeleteOnClose.
         id->setAttribute (Qt::WA_DeleteOnClose);
         mSelfArray [machine.GetName()] = id;
@@ -60,7 +60,7 @@ void VBoxVMInformationDlg::createInformationDlg(UIMachineWindow *pMachineWindow)
 
 VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt::WindowFlags aFlags)
 # ifdef Q_WS_MAC
-    : QIWithRetranslateUI2 <QIMainDialog> (pMachineWindow->machineWindow(), aFlags)
+    : QIWithRetranslateUI2 <QIMainDialog> (pMachineWindow, aFlags)
 # else /* Q_WS_MAC */
     : QIWithRetranslateUI2 <QIMainDialog> (0, aFlags)
 # endif /* Q_WS_MAC */

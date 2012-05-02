@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,20 +20,17 @@
 #define __UIMachineWindowNormal_h__
 
 /* Global includes */
-#include <QMainWindow>
 #include <QLabel>
 
 /* Local includes */
-#include "QIWithRetranslateUI.h"
 #include "UIMachineWindow.h"
-#include "UINetworkDefs.h"
 
 /* Local forwards */
 class CMediumAttachment;
 class UIIndicatorsPool;
 class QIStateIndicator;
 
-class UIMachineWindowNormal : public QIWithRetranslateUI2<QMainWindow>, public UIMachineWindow
+class UIMachineWindowNormal : public UIMachineWindow
 {
     Q_OBJECT;
 
@@ -53,20 +50,11 @@ private slots:
     void sltNetworkAdapterChange();
     void sltSharedFolderChange();
     void sltCPUExecutionCapChange();
-    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
     /* LED connections: */
     void sltUpdateIndicators();
     void sltShowIndicatorsContextMenu(QIStateIndicator *pIndicator, QContextMenuEvent *pEvent);
     void sltProcessGlobalSettingChange(const char *aPublicName, const char *aName);
-
-    /* Close window reimplementation: */
-    void sltTryClose();
-
-#if 0
-    /* Network manager handler: */
-    void sltEmbedDownloader(UIDownloadType downloaderType);
-#endif
 
 private:
 
@@ -78,10 +66,6 @@ private:
 
     /* Event handlers: */
     bool event(QEvent *pEvent);
-#ifdef Q_WS_X11
-    bool x11Event(XEvent *pEvent);
-#endif
-    void closeEvent(QCloseEvent *pEvent);
 
     /* Private getters: */
     UIIndicatorsPool* indicatorsPool() { return m_pIndicatorsPool; }
@@ -106,13 +90,6 @@ private:
     void showInNecessaryMode();
     bool isMaximizedChecked();
     void updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType);
-
-#if 0
-    /* Network manager helpers: */
-    void tryToEmbedDownloaderForAdditions() { sltEmbedDownloader(UIDownloadType_Additions); }
-    void tryToEmbedDownloaderForUserManual() { sltEmbedDownloader(UIDownloadType_UserManual); }
-    void tryToEmbedDownloaderForExtensionPack() { sltEmbedDownloader(UIDownloadType_ExtensionPack); }
-#endif
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;

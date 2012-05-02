@@ -314,7 +314,7 @@ void UISession::powerUp()
 
 QWidget* UISession::mainMachineWindow() const
 {
-    return uimachine()->machineLogic()->mainMachineWindow()->machineWindow();
+    return uimachine()->machineLogic()->mainMachineWindow();
 }
 
 UIMachineLogic* UISession::machineLogic() const
