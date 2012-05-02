@@ -3529,6 +3529,19 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>The method IVirtualBox::findMedium() has been removed, since
+          it provides a subset of the functionality of <xref linkend="IVirtualBox__openMedium"
+          xreflabel="IVirtualBox::openMedium()" />.</para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
+
+
+    <sect1>
+      <title>Incompatible API changes with version 4.1</title>
+
+      <itemizedlist>
+        <listitem>
           <para>The method <xref linkend="IAppliance__importMachines"
           xreflabel="IAppliance::importMachines()" /> has one more parameter
           now, which allows to configure the import process in more detail.
@@ -3719,8 +3732,7 @@ AuthResult AUTHCALL AuthEntry(
                 <para>To reduce code duplication, the APIs
                 IVirtualBox::findHardDisk(), getHardDisk(), findDVDImage(),
                 getDVDImage(), findFloppyImage() and getFloppyImage() have all
-                been merged into <xref linkend="IVirtualBox__findMedium"
-                xreflabel="IVirtualBox::findMedium()" />, and
+                been merged into IVirtualBox::findMedium(), and
                 IVirtualBox::openHardDisk(), openDVDImage() and
                 openFloppyImage() have all been merged into <xref
                 linkend="IVirtualBox__openMedium"
