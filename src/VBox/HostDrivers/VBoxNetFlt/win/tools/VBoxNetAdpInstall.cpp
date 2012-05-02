@@ -209,7 +209,7 @@ static void printUsage(void)
     printf("host-only network adapter configuration tool\n"
             "  Usage: VBoxNetAdpInstall [cmd]\n"
             "    cmd can be one of the following values:\n"
-            "       i  - install a new host-only interface\n"
+            "       i  - install a new host-only interface (default command)\n"
             "       u  - uninstall all host-only interfaces\n"
             "       a  - update the host-only driver\n"
             "       d  - disable all host-only interfaces\n"
