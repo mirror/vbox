@@ -687,6 +687,51 @@ static void crStateTextureCheckFBOAPs(GLenum target, GLuint texture)
     }
 }
 
+static void crStateCleanupTextureRefs(CRContext *g, CRTextureObj *tObj)
+{
+    CRTextureState *t = &(g->texture);
+    GLuint u;
+
+    /*
+     ** reset back to the base texture.
+     */
+    for (u = 0; u < g->limits.maxTextureUnits; u++)
+    {
+        if (tObj == t->unit[u].currentTexture1D)
+        {
+            t->unit[u].currentTexture1D = &(t->base1D);
+        }
+        if (tObj == t->unit[u].currentTexture2D)
+        {
+            t->unit[u].currentTexture2D = &(t->base2D);
+        }
+#ifdef CR_OPENGL_VERSION_1_2
+        if (tObj == t->unit[u].currentTexture3D)
+        {
+            t->unit[u].currentTexture3D = &(t->base3D);
+        }
+#endif
+#ifdef CR_ARB_texture_cube_map
+        if (tObj == t->unit[u].currentTextureCubeMap)
+        {
+            t->unit[u].currentTextureCubeMap = &(t->baseCubeMap);
+        }
+#endif
+#ifdef CR_NV_texture_rectangle
+        if (tObj == t->unit[u].currentTextureRect)
+        {
+            t->unit[u].currentTextureRect = &(t->baseRect);
+        }
+#endif
+
+#ifdef CR_EXT_framebuffer_object
+        crStateTextureCheckFBOAPs(GL_DRAW_FRAMEBUFFER, tObj->id);
+        crStateTextureCheckFBOAPs(GL_READ_FRAMEBUFFER, tObj->id);
+#endif
+    }
+
+}
+
 void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures) 
 {
     CRContext *g = GetCurrentContext();
@@ -718,48 +763,9 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
         GET_TOBJ(tObj, g, name);
         if (name && tObj)
         {
-            GLuint u;
-            /* remove from hashtable */
-            crHashtableDelete(g->shared->textureTable, name, NULL);
+            crStateCleanupTextureRefs(g, tObj);
 
-            /* if the currentTexture is deleted, 
-             ** reset back to the base texture.
-             */
-            for (u = 0; u < g->limits.maxTextureUnits; u++)
-            {
-                if (tObj == t->unit[u].currentTexture1D) 
-                {
-                    t->unit[u].currentTexture1D = &(t->base1D);
-                }
-                if (tObj == t->unit[u].currentTexture2D) 
-                {
-                    t->unit[u].currentTexture2D = &(t->base2D);
-                }
-#ifdef CR_OPENGL_VERSION_1_2
-                if (tObj == t->unit[u].currentTexture3D) 
-                {
-                    t->unit[u].currentTexture3D = &(t->base3D);
-                }
-#endif
-#ifdef CR_ARB_texture_cube_map
-                if (tObj == t->unit[u].currentTextureCubeMap)
-                {
-                    t->unit[u].currentTextureCubeMap = &(t->baseCubeMap);
-                }
-#endif
-#ifdef CR_NV_texture_rectangle
-                if (tObj == t->unit[u].currentTextureRect)
-                {
-                    t->unit[u].currentTextureRect = &(t->baseRect);
-                }
-#endif
-            }
-
-#ifdef CR_EXT_framebuffer_object
-            crStateTextureCheckFBOAPs(GL_DRAW_FRAMEBUFFER, name);
-            crStateTextureCheckFBOAPs(GL_READ_FRAMEBUFFER, name);
-#endif
-            crStateDeleteTextureObject(tObj);
+            crHashtableDelete(g->shared->textureTable, name, crStateDeleteTextureObject);
         }
     }
 
@@ -833,6 +839,44 @@ void STATE_APIENTRY crStateActiveTextureARB( GLenum texture )
     /* update the current matrix pointer, etc. */
     if (g->transform.matrixMode == GL_TEXTURE) {
         crStateMatrixMode(GL_TEXTURE);
+    }
+}
+
+DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
+{
+    CRContext *g = GetCurrentContext();
+    CRTextureObj *tobj;
+
+    if (!texture)
+    {
+        crWarning("crStateSetTextureUsed: null texture name specified!");
+        return;
+    }
+
+    GET_TOBJ(tobj, g, texture);
+    if (!tobj)
+    {
+        crWarning("crStateSetTextureUsed: failed to fined a HW name for texture(%d)!", texture);
+        return;
+    }
+
+    if (used)
+        CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
+    else
+    {
+        CRStateBits *sb = GetCurrentBits();
+        CRTextureBits *tb = &(sb->texture);
+        CRTextureState *t = &(g->texture);
+
+        CR_STATE_SHAREDOBJ_USAGE_CLEAR(tobj, g);
+
+        crStateCleanupTextureRefs(g, tobj);
+
+        if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(tobj))
+            crHashtableDelete(g->shared->textureTable, texture, crStateDeleteTextureCallback);
+
+        DIRTY(tb->dirty, g->neg_bitid);
+        DIRTY(tb->current[t->curTextureUnit], g->neg_bitid);
     }
 }
 

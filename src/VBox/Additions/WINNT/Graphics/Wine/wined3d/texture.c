@@ -322,10 +322,6 @@ static HRESULT WINAPI IWineD3DTextureImpl_BindTexture(IWineD3DTexture *iface, BO
 
     TRACE("(%p) : relay to BaseTexture\n", This);
 
-#ifdef VBOX_WITH_WDDM
-    Assert(!VBOXSHRC_IS_DISABLED(This));
-#endif
-
     hr = basetexture_bind((IWineD3DBaseTexture *)iface, srgb, &set_gl_texture_desc);
     if (set_gl_texture_desc && SUCCEEDED(hr)) {
         UINT i;
@@ -726,14 +722,14 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         }
 #endif
 
-        if (!VBOXSHRC_IS_SHARED_OPENED(texture))
+        if (!VBOXSHRC_IS_SHARED(texture))
         {
             struct wined3d_context * context;
 
             Assert(!device->isInDraw);
 
-            /* flush to ensure the texture is allocated before it is used by another
-             * process opening it */
+            /* flush to ensure the texture is allocated/referenced before it is used/released by another
+             * process opening/creating it */
             context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
             if (context->valid)
             {

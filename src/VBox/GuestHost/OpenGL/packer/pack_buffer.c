@@ -9,9 +9,11 @@
 #include "packer.h"
 #include "cr_error.h"
 #include "cr_protocol.h"
+#ifndef IN_RING0
 #include "cr_unpack.h"
+#endif
 
-
+#ifndef IN_RING0
 void crWriteUnalignedDouble( void *buffer, double d )
 {
 	unsigned int *ui = (unsigned int *) buffer;
@@ -34,7 +36,7 @@ double crReadUnalignedDouble( const void *buffer )
 	((unsigned int *) &d)[1] = ui[1];
 	return d;
 }
-
+#endif
 /*
  * We need the packer to run as efficiently as possible.  To avoid one
  * pointer dereference from the CRPackContext to the current CRPackBuffer,
@@ -71,6 +73,7 @@ void crPackSetBuffer( CRPackContext *pc, CRPackBuffer *buffer )
 	pc->buffer = *buffer;  /* struct copy */
 }
 
+#ifndef IN_RING0
 /* This is useful for debugging packer problems */
 void crPackSetBufferDEBUG( const char *file, int line,
 													 CRPackContext *pc, CRPackBuffer *buffer)
@@ -81,7 +84,7 @@ void crPackSetBufferDEBUG( const char *file, int line,
 	pc->file = crStrdup(file);
 	pc->line = line;
 }
-
+#endif
 
 /*
  * Release the buffer currently attached to the context.

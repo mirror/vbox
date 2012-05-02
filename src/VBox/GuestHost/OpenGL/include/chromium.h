@@ -20,6 +20,10 @@
 
 #include "cr_compiler.h"
 
+#ifdef IN_RING0
+#include <common/VBoxMPUtils.h>
+#define WINGDIAPI
+#endif
 /*
  * We effectively wrap gl.h, glu.h, etc, just like GLUT
  */
@@ -29,13 +33,18 @@
 #endif
 
 #if defined(WINDOWS)
+# ifdef IN_RING0
+#  error "should not happen!"
+# endif
 #define WIN32_LEAN_AND_MEAN
 #define WGL_APIENTRY __stdcall
 #include <windows.h>
 #elif defined(DARWIN)
 /* nothing */
 #else
-#define GLX
+# ifndef IN_RING0
+#  define GLX
+# endif
 #endif
 
 #include <GL/gl.h>
@@ -687,7 +696,12 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 
 /*Global resource ids sharing*/
 #define GL_SHARE_CONTEXT_RESOURCES_CR 0x8B27
+/*do flush for the command buffer of a thread the context was previusly current for*/
 #define GL_FLUSH_ON_THREAD_SWITCH_CR  0x8B28
+/*report that the shared resource is used by this context, the parameter value is a texture name*/
+#define GL_RCUSAGE_TEXTURE_SET_CR     0x8B29
+/*report that the shared resource is no longer used by this context, the parameter value is a texture name*/
+#define GL_RCUSAGE_TEXTURE_CLEAR_CR   0x8B2A
 
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/

@@ -302,18 +302,9 @@ void *HGSMIHeapAlloc (HGSMIHEAP *pHeap,
 
     size_t cbAlloc = HGSMIBufferRequiredSize (cbData);
 
-    HGSMIBUFFERHEADER *pHeader;
-    if (!pHeap->fOffsetBased)
-        pHeader = (HGSMIBUFFERHEADER *)RTHeapSimpleAlloc (pHeap->u.hPtr, cbAlloc, 0);
-    else
-        pHeader = (HGSMIBUFFERHEADER *)RTHeapOffsetAlloc (pHeap->u.hOff, cbAlloc, 0);
-
+    HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)HGSMIHeapBufferAlloc (pHeap, cbAlloc);
     if (!pHeader)
-    {
         return NULL;
-    }
-
-    ++pHeap->cRefs;
 
     hgsmiBufferInitializeSingle (&pHeap->area, pHeader, cbData, u8Channel, u16ChannelInfo);
 
@@ -338,13 +329,34 @@ void HGSMIHeapFree (HGSMIHEAP *pHeap,
     {
         HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData (pvData);
 
-        if (!pHeap->fOffsetBased)
-            RTHeapSimpleFree (pHeap->u.hPtr, pHeader);
-        else
-            RTHeapOffsetFree (pHeap->u.hOff, pHeader);
-
-        --pHeap->cRefs;
+        HGSMIHeapBufferFree (pHeap, pHeader);
     }
+}
+
+void* HGSMIHeapBufferAlloc (HGSMIHEAP *pHeap, HGSMISIZE cbBuffer)
+{
+    void* pvBuf;
+    if (!pHeap->fOffsetBased)
+        pvBuf = RTHeapSimpleAlloc (pHeap->u.hPtr, cbBuffer, 0);
+    else
+        pvBuf = RTHeapOffsetAlloc (pHeap->u.hOff, cbBuffer, 0);
+
+    if (!pvBuf)
+        return NULL;
+
+    ++pHeap->cRefs;
+    return pvBuf;
+}
+
+void HGSMIHeapBufferFree(HGSMIHEAP *pHeap,
+                    void *pvBuf)
+{
+    if (!pHeap->fOffsetBased)
+        RTHeapSimpleFree (pHeap->u.hPtr, pvBuf);
+    else
+        RTHeapOffsetFree (pHeap->u.hOff, pvBuf);
+
+    --pHeap->cRefs;
 }
 
 /* Verify that the given offBuffer points to a valid buffer, which is within the area.

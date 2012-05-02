@@ -220,6 +220,12 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameteriCR(GLenum target
     case GL_SHARE_CONTEXT_RESOURCES_CR:
         crStateShareContext(value);
         break;
+    case GL_RCUSAGE_TEXTURE_SET_CR:
+        crStateSetTextureUsed(value, GL_TRUE);
+        break;
+    case GL_RCUSAGE_TEXTURE_CLEAR_CR:
+        crStateSetTextureUsed(value, GL_FALSE);
+        break;
     case GL_SHARED_DISPLAY_LISTS_CR:
         cr_server.sharedDisplayLists = value;
         break;

@@ -6278,20 +6278,12 @@ static HRESULT updateSurfaceDesc(IWineD3DSurfaceImpl *surface, const WINED3DPRES
 
     if (surface->texture_name)
     {
-#ifdef VBOX_WITH_WDDM
-# ifdef DEBUG_misha
-        /* shared case needs testing! */
-        Assert(!VBOXSHRC_IS_SHARED(surface));
-# endif
-        if (VBOXSHRC_CAN_DELETE(device, surface))
-#endif
-        {
-            struct wined3d_context *context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
-            ENTER_GL();
-            glDeleteTextures(1, &surface->texture_name);
-            LEAVE_GL();
-            context_release(context);
-        }
+        IWineD3DDeviceImpl *This = device; /* <- to make the below texture_gl_delete macro work and avoid other modifications */
+        struct wined3d_context *context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+        ENTER_GL();
+        texture_gl_delete(surface, surface->texture_name);
+        LEAVE_GL();
+        context_release(context);
         surface->texture_name = 0;
         surface->Flags &= ~SFLAG_CLIENT;
     }

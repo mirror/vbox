@@ -86,7 +86,7 @@ ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_DEFS       += LOG_ENABLED
  endif
  VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
- VBoxVideoWddm_INCS       += ../../../include .. . ../../../../common/VBoxGuestLib $(VBOX_PATH_CROGL_INCLUDE)
+ VBoxVideoWddm_INCS       += ../../../include .. . ../../../../common/VBoxGuestLib $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
  VBoxVideoWddm_LDFLAGS.x86 += /Entry:DriverEntry@8
  VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry
  VBoxVideoWddm_SDKS        = WINDDKWLH

@@ -163,6 +163,28 @@ void VBoxSHGSMIHeapFree(PVBOXSHGSMI pHeap, void *pvBuffer)
     KeReleaseSpinLock(&pHeap->HeapLock, OldIrql);
 }
 
+void* VBoxSHGSMIHeapBufferAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData)
+{
+    KIRQL OldIrql;
+    void* pvData;
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    KeAcquireSpinLock(&pHeap->HeapLock, &OldIrql);
+    pvData = HGSMIHeapBufferAlloc(&pHeap->Heap, cbData);
+    KeReleaseSpinLock(&pHeap->HeapLock, OldIrql);
+    if (!pvData)
+        WARN(("HGSMIHeapAlloc failed!"));
+    return pvData;
+}
+
+void VBoxSHGSMIHeapBufferFree(PVBOXSHGSMI pHeap, void *pvBuffer)
+{
+    KIRQL OldIrql;
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    KeAcquireSpinLock(&pHeap->HeapLock, &OldIrql);
+    HGSMIHeapBufferFree(&pHeap->Heap, pvBuffer);
+    KeReleaseSpinLock(&pHeap->HeapLock, OldIrql);
+}
+
 int VBoxSHGSMIInit(PVBOXSHGSMI pHeap, void *pvBase, HGSMISIZE cbArea, HGSMIOFFSET offBase, bool fOffsetBased)
 {
     KeInitializeSpinLock(&pHeap->HeapLock);

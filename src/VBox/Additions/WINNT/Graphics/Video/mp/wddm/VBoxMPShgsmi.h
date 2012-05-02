@@ -57,6 +57,8 @@ int VBoxSHGSMIInit(PVBOXSHGSMI pHeap, void *pvBase, HGSMISIZE cbArea, HGSMIOFFSE
 void VBoxSHGSMITerm(PVBOXSHGSMI pHeap);
 void* VBoxSHGSMIHeapAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo);
 void VBoxSHGSMIHeapFree(PVBOXSHGSMI pHeap, void *pvBuffer);
+void* VBoxSHGSMIHeapBufferAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData);
+void VBoxSHGSMIHeapBufferFree(PVBOXSHGSMI pHeap, void *pvBuffer);
 void* VBoxSHGSMICommandAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo);
 void VBoxSHGSMICommandFree(PVBOXSHGSMI pHeap, void *pvBuffer);
 int VBoxSHGSMICommandProcessCompletion(PVBOXSHGSMI pHeap, VBOXSHGSMIHEADER* pCmd, bool bIrq, struct VBOXVTLIST * pPostProcessList);

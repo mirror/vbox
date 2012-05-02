@@ -59,6 +59,11 @@ typedef struct CRContext CRContext;
 # define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) (ASMBitSet((_pObj)->ctxUsage, (_pCtx)->id))
 # define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) (ASMBitClear((_pObj)->ctxUsage, (_pCtx)->id))
 # define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (ASMBitFirstSet((_pObj)->ctxUsage, sizeof ((_pObj)->ctxUsage)<<3) >= 0)
+#else
+# define CR_STATE_SHAREDOBJ_USAGE_INIT(_pObj) do {} while (0)
+# define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) do {} while (0)
+# define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) do {} while (0)
+# define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (GL_FALSE)
 #endif
 
 #define CR_MAX_EXTENTS 256
@@ -236,8 +241,11 @@ typedef DECLCALLBACK(CRContext*) FNCRSTATE_CONTEXT_GET(void*);
 typedef FNCRSTATE_CONTEXT_GET *PFNCRSTATE_CONTEXT_GET;
 DECLEXPORT(int32_t) crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM);
 DECLEXPORT(void)    crStateFreeShared(CRContext *pContext, CRSharedState *s);
+DECLEXPORT(void) crStateFreeShared(CRContext *pContext, CRSharedState *s);
 #endif
 
+DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used);
+DECLEXPORT(void) crStateDeleteTextureCallback(void *texObj);
 
    /* XXX move these! */
 
