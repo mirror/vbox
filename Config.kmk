@@ -629,7 +629,7 @@ endif
 #VBOX_WITH_DTRACE_GST = 1
 # Set this to indicate that the host shipts with DTrace.
 if1of ($(KBUILD_TARGET), darwin solaris freebsd)
- VBOX_WITH_NATIVE_DTRACE = 1
+# VBOX_WITH_NATIVE_DTRACE = 1
 endif
 ## @}
 
