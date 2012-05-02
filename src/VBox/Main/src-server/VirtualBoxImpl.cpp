@@ -1770,49 +1770,6 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::FindMedium(IN_BSTR   aLocation,
-                                    DeviceType_T aDeviceType,
-                                    IMedium **aMedium)
-{
-    CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutPointerValid(aMedium);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Guid id(aLocation);
-    Utf8Str strLocation(aLocation);
-
-    HRESULT rc;
-    ComObjPtr<Medium> pMedium;
-
-    switch (aDeviceType)
-    {
-        case DeviceType_HardDisk:
-            if (!id.isEmpty())
-                rc = findHardDiskById(id, true /* setError */, &pMedium);
-            else
-                rc = findHardDiskByLocation(strLocation, true /* setError */, &pMedium);
-        break;
-
-        case DeviceType_Floppy:
-        case DeviceType_DVD:
-            if (!id.isEmpty())
-                rc = findDVDOrFloppyImage(aDeviceType, &id, Utf8Str::Empty, true /* setError */, &pMedium);
-            else
-                rc = findDVDOrFloppyImage(aDeviceType, NULL, strLocation, true /* setError */, &pMedium);
-        break;
-
-        default:
-            return setError(E_INVALIDARG,
-                            tr("Invalid device type %d"), aDeviceType);
-    }
-
-    /* the below will set *aHardDisk to NULL if hardDisk is null */
-    pMedium.queryInterfaceTo(aMedium);
-
-    return rc;
-}
 
 /** @note Locks this object for reading. */
 STDMETHODIMP VirtualBox::GetGuestOSType(IN_BSTR aId, IGuestOSType **aType)

@@ -144,9 +144,6 @@ public:
                           AccessMode_T accessMode,
                           BOOL fForceNewUuid,
                           IMedium **aMedium);
-    STDMETHOD(FindMedium)(IN_BSTR aLocation,
-                          DeviceType_T deviceType,
-                          IMedium **aMedium);
 
     STDMETHOD(GetGuestOSType)(IN_BSTR aId, IGuestOSType **aType);
     STDMETHOD(CreateSharedFolder)(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);

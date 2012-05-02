@@ -626,7 +626,7 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
      * already */
     /** @todo: Maybe too cost-intensive; try to find a lighter way */
     while (    RTPathExists(tmpName)
-            || mVirtualBox->FindMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, &harddisk) != VBOX_E_OBJECT_NOT_FOUND
+            || mVirtualBox->OpenMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, AccessMode_ReadWrite, FALSE /* fForceNewUuid */,  &harddisk)
           )
     {
         RTStrFree(tmpName);
