@@ -1030,8 +1030,28 @@ void UIMachineLogic::sltClose()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Propose to close active machine window: */
-    activeMachineWindow()->sltTryClose();
+    /* Do not try to close machine-window if restricted: */
+    if (isPreventAutoClose())
+        return;
+
+    /* First, we have to close/hide any opened modal & popup application widgets.
+     * We have to make sure such window is hidden even if close-event was rejected.
+     * We are re-throwing this slot if any widget present to test again.
+     * If all opened widgets are closed/hidden, we can try to close machine-window: */
+    QWidget *pWidget = QApplication::activeModalWidget() ? QApplication::activeModalWidget() :
+                       QApplication::activePopupWidget() ? QApplication::activePopupWidget() : 0;
+    if (pWidget)
+    {
+        /* Closing/hiding all we found: */
+        pWidget->close();
+        if (!pWidget->isHidden())
+            pWidget->hide();
+        QTimer::singleShot(0, this, SLOT(sltClose()));
+        return;
+    }
+
+    /* Try to close active machine-window: */
+    activeMachineWindow()->close();
 }
 
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */)

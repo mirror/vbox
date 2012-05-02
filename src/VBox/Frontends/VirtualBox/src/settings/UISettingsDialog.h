@@ -118,7 +118,6 @@ private:
     /* Event-handlers: */
     bool eventFilter(QObject *pObject, QEvent *pEvent);
     void showEvent(QShowEvent *pEvent);
-    void closeEvent(QCloseEvent *pEvent);
 
     void assignValidator(UISettingsPage *pPage);
 

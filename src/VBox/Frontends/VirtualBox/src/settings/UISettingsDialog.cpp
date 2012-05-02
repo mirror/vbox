@@ -603,14 +603,6 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
 #endif /* Q_WS_MAC */
 }
 
-void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
-{
-    if (m_fLoaded)
-        QIMainDialog::closeEvent(pEvent);
-    else
-        pEvent->ignore();
-}
-
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)
 {
     QIWidgetValidator *pValidator = new QIWidgetValidator(m_pSelector->itemTextByPage(pPage), pPage, this);

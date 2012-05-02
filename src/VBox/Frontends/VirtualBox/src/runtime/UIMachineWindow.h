@@ -64,14 +64,10 @@ protected slots:
     virtual void sltMachineStateChanged();
     virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
-    /* Slot to close machine-window: */
-    void sltTryClose();
-
 protected:
 
-    /* Constructor/destructor: */
+    /* Constructor: */
     UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId);
-    ~UIMachineWindow();
 
     /* Show stuff: */
     virtual void showInNecessaryMode() = 0;
