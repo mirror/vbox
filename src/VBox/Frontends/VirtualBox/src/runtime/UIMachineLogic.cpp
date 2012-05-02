@@ -214,27 +214,22 @@ UIMachineWindow* UIMachineLogic::mainMachineWindow() const
     return machineWindows()[0];
 }
 
-UIMachineWindow* UIMachineLogic::defaultMachineWindow() const
+UIMachineWindow* UIMachineLogic::activeMachineWindow() const
 {
     /* Return null if windows are not created yet: */
     if (!isMachineWindowsCreated())
         return 0;
 
-    /* Select main machine window by default: */
-    UIMachineWindow *pWindowToPropose = mainMachineWindow();
-
-    /* Check if there is active window present: */
-    foreach (UIMachineWindow *pWindowToCheck, machineWindows())
+    /* Check if there is an active window present: */
+    for (int i = 0; i < machineWindows().size(); ++i)
     {
-        if (pWindowToCheck->isActiveWindow())
-        {
-            pWindowToPropose = pWindowToCheck;
-            break;
-        }
+        UIMachineWindow *pIteratedWindow = machineWindows()[i];
+        if (pIteratedWindow->isActiveWindow())
+            return pIteratedWindow;
     }
 
-    /* Return default machine window: */
-    return pWindowToPropose;
+    /* Return main machine window: */
+    return mainMachineWindow();
 }
 
 #ifdef Q_WS_MAC
@@ -408,9 +403,9 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
 #ifdef Q_WS_MAC
 void UIMachineLogic::sltShowWindows()
 {
-    for (int i=0; i < m_machineWindowsList.size(); ++i)
+    for (int i=0; i < machineWindows().size(); ++i)
     {
-        UIMachineWindow *pMachineWindow = m_machineWindowsList.at(i);
+        UIMachineWindow *pMachineWindow = machineWindows().at(i);
         /* Dunno what Qt thinks a window that has minimized to the dock
          * should be - it is not hidden, neither is it minimized. OTOH it is
          * marked shown and visible, but not activated. This latter isn't of
@@ -720,7 +715,7 @@ void UIMachineLogic::prepareDock()
 
     /* Now the dock icon preview */
     QString osTypeId = session().GetConsole().GetGuest().GetOSTypeId();
-    m_pDockIconPreview = new UIDockIconPreview(m_pSession, vboxGlobal().vmGuestOSTypeIcon(osTypeId));
+    m_pDockIconPreview = new UIDockIconPreview(uisession(), vboxGlobal().vmGuestOSTypeIcon(osTypeId));
 
     QString strTest = session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
     /* Default to true if it is an empty value */
@@ -860,7 +855,7 @@ void UIMachineLogic::sltToggleMouseIntegration(bool fOff)
         return;
 
     /* Disable/Enable mouse-integration for all view(s): */
-    m_pMouseHandler->setMouseIntegrationEnabled(!fOff);
+    mouseHandler()->setMouseIntegrationEnabled(!fOff);
 }
 
 void UIMachineLogic::sltTypeCAD()
@@ -906,7 +901,7 @@ void UIMachineLogic::sltTakeSnapshot()
 
     CMachine machine = session().GetMachine();
 
-    VBoxTakeSnapshotDlg dlg(defaultMachineWindow(), machine);
+    VBoxTakeSnapshotDlg dlg(activeMachineWindow(), machine);
 
     QString strTypeId = machine.GetOSTypeId();
     dlg.mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
@@ -977,7 +972,7 @@ void UIMachineLogic::sltTakeScreenshot()
     const QString &strStart = machine.GetSettingsFilePath();
     QString strFilename = QIFileDialog::getSaveFileName(strStart,
                                                         filters.join(";;"),
-                                                        defaultMachineWindow(),
+                                                        activeMachineWindow(),
                                                         tr("Select a filename for the screenshot ..."),
                                                         &strFilter,
                                                         true /* resolve symlinks */,
@@ -1035,8 +1030,8 @@ void UIMachineLogic::sltClose()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Propose to close default machine window: */
-    defaultMachineWindow()->sltTryClose();
+    /* Propose to close active machine window: */
+    activeMachineWindow()->sltTryClose();
 }
 
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */)
@@ -1046,8 +1041,7 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
         return;
 
     /* Create and execute current VM settings dialog: */
-    UISettingsDialogMachine dlg(defaultMachineWindow(),
-                                session().GetMachine().GetId(), strCategory, QString());
+    UISettingsDialogMachine dlg(activeMachineWindow(), session().GetMachine().GetId(), strCategory, QString());
     dlg.execute();
 }
 
@@ -1061,7 +1055,7 @@ void UIMachineLogic::sltOpenSharedFoldersDialog()
 {
     /* Do not process if additions are not loaded! */
     if (!uisession()->isGuestAdditionsActive())
-        msgCenter().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow());
+        msgCenter().remindAboutGuestAdditionsAreNotActive(activeMachineWindow());
 
     /* Open VM settings : Shared folders page: */
     sltOpenVMSettingsDialog("#sfolders");
@@ -1314,9 +1308,9 @@ void UIMachineLogic::sltMountStorageMedium()
             QApplication::focusWidget()->clearFocus();
         /* Call for file-open window: */
         QString strMachineFolder(QFileInfo(machine.GetSettingsFilePath()).absolutePath());
-        QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, defaultMachineWindow(),
+        QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, activeMachineWindow(),
                                                                         strMachineFolder);
-        defaultMachineWindow()->machineView()->setFocus();
+        activeMachineWindow()->machineView()->setFocus();
         if (!strMediumId.isNull())
             newId = strMediumId;
         else return;
@@ -1610,7 +1604,7 @@ void UIMachineLogic::sltShowDebugStatistics()
 {
     if (dbgCreated())
     {
-        m_pKeyboardHandler->setDebuggerActive();
+        keyboardHandler()->setDebuggerActive();
         m_pDbgGuiVT->pfnShowStatistics(m_pDbgGui);
     }
 }
@@ -1619,7 +1613,7 @@ void UIMachineLogic::sltShowDebugCommandLine()
 {
     if (dbgCreated())
     {
-        m_pKeyboardHandler->setDebuggerActive();
+        keyboardHandler()->setDebuggerActive();
         m_pDbgGuiVT->pfnShowCommandLine(m_pDbgGui);
     }
 }
@@ -1639,7 +1633,7 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
 void UIMachineLogic::sltShowLogDialog()
 {
     /* Show VM Log Viewer: */
-    UIVMLogViewer::showLogViewerFor(mainMachineWindow(), session().GetMachine());
+    UIVMLogViewer::showLogViewerFor(activeMachineWindow(), session().GetMachine());
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -1647,7 +1641,7 @@ void UIMachineLogic::sltShowLogDialog()
 #ifdef Q_WS_MAC
 void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
 {
-    CMachine machine = m_pSession->session().GetMachine();
+    CMachine machine = session().GetMachine();
     if (!machine.isNull())
     {
         bool fEnabled = true;
@@ -1661,7 +1655,7 @@ void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
 
 void UIMachineLogic::sltDockPreviewMonitorChanged(QAction *pAction)
 {
-    CMachine machine = m_pSession->session().GetMachine();
+    CMachine machine = session().GetMachine();
     if (!machine.isNull())
     {
         int monitor = pAction->data().toInt();
@@ -1776,7 +1770,7 @@ bool UIMachineLogic::dbgCreated()
             if (   DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION)
                 || m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
             {
-                m_pDbgGuiVT->pfnSetParent(m_pDbgGui, defaultMachineWindow());
+                m_pDbgGuiVT->pfnSetParent(m_pDbgGui, activeMachineWindow());
                 m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, gActionPool->action(UIActionIndexRuntime_Menu_Debug));
                 dbgAdjustRelativePos();
                 return true;
@@ -1810,7 +1804,7 @@ void UIMachineLogic::dbgAdjustRelativePos()
 {
     if (m_pDbgGui)
     {
-        QRect rct = defaultMachineWindow()->frameGeometry();
+        QRect rct = activeMachineWindow()->frameGeometry();
         m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
 }
