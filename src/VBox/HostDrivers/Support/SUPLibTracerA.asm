@@ -202,7 +202,7 @@ EXPORTEDNAME SUPTracerFireProbe
  %else
         mov     xSI, xSP
   %ifdef PIC
-        call    [rel NAME(suplibTracerFireProbe) wrt ..got]
+        call    [rel NAME(suplibTracerFireProbe) wrt rip]
   %else
         call    NAME(suplibTracerFireProbe)
   %endif
