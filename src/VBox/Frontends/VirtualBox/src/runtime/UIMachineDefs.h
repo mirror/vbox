@@ -34,7 +34,7 @@ enum UIVisualStateType
 /* Machine elements enum: */
 enum UIVisualElement
 {
-    UIVisualElement_WindowCaption         = RT_BIT(0),
+    UIVisualElement_WindowTitle           = RT_BIT(0),
     UIVisualElement_MouseIntegrationStuff = RT_BIT(1),
     UIVisualElement_PauseStuff            = RT_BIT(2),
     UIVisualElement_HDStuff               = RT_BIT(3),
@@ -45,6 +45,7 @@ enum UIVisualElement
     UIVisualElement_VRDPStuff             = RT_BIT(8),
     UIVisualElement_SharedFolderStuff     = RT_BIT(9),
     UIVisualElement_VirtualizationStuff   = RT_BIT(10),
+    UIVisualElement_MiniToolBar           = RT_BIT(11),
     UIVisualElement_AllStuff              = 0xFFFF
 };
 

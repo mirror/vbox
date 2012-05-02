@@ -19,50 +19,58 @@
 #ifndef __UIMachineWindowScale_h__
 #define __UIMachineWindowScale_h__
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineWindow.h"
 
+/* Scale machine-window implementation: */
 class UIMachineWindowScale : public UIMachineWindow
 {
     Q_OBJECT;
 
 protected:
 
-    /* Scale machine window constructor/destructor: */
+    /* Constructor: */
     UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong uScreenId);
-    virtual ~UIMachineWindowScale();
 
 private slots:
 
-    /* Popup main menu: */
+    /* Popup main-menu: */
     void sltPopupMainMenu();
 
 private:
+
+    /* Prepare helpers: */
+    void prepareMainLayout();
+    void prepareMenu();
+#ifdef Q_WS_MAC
+    void prepareVisualState();
+#endif /* Q_WS_MAC */
+    void loadSettings();
+
+    /* Cleanup helpers: */
+    void saveSettings();
+#ifdef Q_WS_MAC
+    void cleanupVisualState();
+#endif /* Q_WS_MAC */
+    void cleanupMenu();
+    //void cleanupMainLayout() {}
+
+    /* Show stuff: */
+    void showInNecessaryMode();
 
     /* Event handlers: */
     bool event(QEvent *pEvent);
 #ifdef Q_WS_WIN
     bool winEvent(MSG *pMessage, long *pResult);
-#endif
+#endif /* Q_WS_WIN */
 
-    /* Prepare helpers: */
-    void prepareMenu();
-    void prepareMachineViewContainer();
-    void prepareMachineView();
-    void loadWindowSettings();
-
-    /* Cleanup helpers: */
-    void saveWindowSettings();
-    void cleanupMachineView();
-    //void cleanupMachineViewContainer() {}
-    void cleanupMenu();
-
-    /* Other members: */
-    void showInNecessaryMode();
+    /* Helpers: */
     bool isMaximizedChecked();
 
-    /* Other members: */
+    /* Widgets: */
     QMenu *m_pMainMenu;
+
+    /* Variables: */
     QRect m_normalGeometry;
 
     /* Factory support: */
