@@ -1828,7 +1828,7 @@
         created by one of the above methods.
 
         After the storage unit is successfully created, it will be
-        accessible through the <link to="#findMedium"/> method and can
+        accessible through the <link to="#openMedium"/> method and can
         be found in the <link to="#hardDisks"/> array.
 
         The list of all storage formats supported by this VirtualBox
@@ -1866,7 +1866,7 @@
 
     <method name="openMedium">
       <desc>
-        Opens a medium from an existing storage location.
+        Finds existing media or opens a medium from an existing storage location.
 
         Once a medium has been opened, it can be passed to other VirtualBox
         methods, in particular to <link to="IMachine::attachDevice" />.
@@ -1888,8 +1888,9 @@
             <link to="#floppyImages"/> array attribute.</li>
         </ul>
 
-        After having been opened, the medium can be found by the <link to="#findMedium"/>
-        method and can be attached to virtual machines. See <link to="IMedium" /> for more details.
+        After having been opened, the medium can be re-found by this method
+        and can be attached to virtual machines. See <link to="IMedium" /> for
+        more details.
 
         The UUID of the newly opened medium will either be retrieved from the
         storage location, if the format supports it (e.g. for hard disk images),
@@ -10550,7 +10551,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       When a medium has been opened or created using one of the aforementioned
       APIs, it becomes "known" to VirtualBox. Known media can be attached
-      to virtual machines and accessed through <link to="IVirtualBox::findMedium"/>.
+      to virtual machines and re-found through <link to="IVirtualBox::openMedium"/>.
       They also appear in the global
       <link to="IVirtualBox::hardDisks" />,
       <link to="IVirtualBox::DVDImages" /> and
