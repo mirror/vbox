@@ -19,30 +19,30 @@
 #ifndef __UIMachineWindowNormal_h__
 #define __UIMachineWindowNormal_h__
 
-/* Global includes */
+/* Global includes: */
 #include <QLabel>
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineWindow.h"
 
-/* Local forwards */
+/* Forward declarations: */
 class CMediumAttachment;
 class UIIndicatorsPool;
 class QIStateIndicator;
 
+/* Normal machine-window implementation: */
 class UIMachineWindowNormal : public UIMachineWindow
 {
     Q_OBJECT;
 
 protected:
 
-    /* Normal machine window constructor/destructor: */
+    /* Constructor: */
     UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId);
-    virtual ~UIMachineWindowNormal();
 
 private slots:
 
-    /* Console callback handlers: */
+    /* Session event-handlers: */
     void sltMachineStateChanged();
     void sltMediumChange(const CMediumAttachment &attachment);
     void sltUSBControllerChange();
@@ -58,47 +58,46 @@ private slots:
 
 private:
 
-    /* Translate routine: */
-    void retranslateUi();
-
-    /* Update routines: */
-    void updateAppearanceOf(int aElement);
-
-    /* Event handlers: */
-    bool event(QEvent *pEvent);
-
-    /* Private getters: */
-    UIIndicatorsPool* indicatorsPool() { return m_pIndicatorsPool; }
-
     /* Prepare helpers: */
-    void prepareConsoleConnections();
+    void prepareSessionConnections();
     void prepareMenu();
     void prepareStatusBar();
-    void prepareConnections();
-    void prepareMachineView();
-    void loadWindowSettings();
+    void prepareVisualState();
+    void prepareHandlers();
+    void loadSettings();
 
     /* Cleanup helpers: */
-    void saveWindowSettings();
-    void cleanupMachineView();
-    //void cleanupConnections() {}
+    void saveSettings();
+    //void cleanupHandlers() {}
+    //coid cleanupVisualState() {}
     void cleanupStatusBar();
     //void cleanupMenu() {}
     //void cleanupConsoleConnections() {}
 
-    /* Other members: */
+    /* Translate stuff: */
+    void retranslateUi();
+
+    /* Show stuff: */
     void showInNecessaryMode();
+
+    /* Update stuff: */
+    void updateAppearanceOf(int aElement);
+
+    /* Event handler: */
+    bool event(QEvent *pEvent);
+
+    /* Helpers: */
+    UIIndicatorsPool* indicatorsPool() { return m_pIndicatorsPool; }
     bool isMaximizedChecked();
     void updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType);
 
-    /* Indicators pool: */
+    /* Widgets: */
     UIIndicatorsPool *m_pIndicatorsPool;
-    /* Other QWidgets: */
     QWidget *m_pCntHostkey;
     QLabel *m_pNameHostkey;
-    /* Other QObjects: */
+
+    /* Variables: */
     QTimer *m_pIdleTimer;
-    /* Other members: */
     QRect m_normalGeometry;
 
     /* Factory support: */

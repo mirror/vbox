@@ -17,17 +17,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Global includes: */
 #include <QDesktopWidget>
-#include <QMenuBar>
 #include <QTimer>
 #include <QContextMenuEvent>
+#ifdef Q_WS_MAC
+# include <QMenuBar>
+#endif /* Q_WS_MAC */
 
-/* Local includes */
+/* Local includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "VBoxUtils.h"
-
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
@@ -40,72 +41,11 @@ UIMachineWindowScale::UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong 
     : UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
 {
-    /* Set the main window in VBoxGlobal */
-    if (uScreenId == 0)
-        vboxGlobal().setMainWindow(this);
-
-    /* Prepare window icon: */
-    prepareWindowIcon();
-
-    /* Prepare console connections: */
-    prepareConsoleConnections();
-
-    /* Prepare menu: */
-    prepareMenu();
-
-    /* Retranslate normal window finally: */
-    retranslateUi();
-
-    /* Prepare normal machine view container: */
-    prepareMachineViewContainer();
-
-    /* Prepare normal machine view: */
-    prepareMachineView();
-
-    /* Prepare handlers: */
-    prepareHandlers();
-
-    /* Load normal window settings: */
-    loadWindowSettings();
-
-    /* Update all the elements: */
-    updateAppearanceOf(UIVisualElement_AllStuff);
-
-#ifdef Q_WS_MAC
-    /* Install the resize delegate for keeping the aspect ratio. */
-    ::darwinInstallResizeDelegate(this);
-    /* Beta label? */
-    if (vboxGlobal().isBeta())
-    {
-        QPixmap betaLabel = ::betaLabel(QSize(100, 16));
-        ::darwinLabelWindow(this, &betaLabel, true);
-    }
-#endif /* Q_WS_MAC */
-
-    /* Show scaled window: */
-    showInNecessaryMode();
-}
-
-UIMachineWindowScale::~UIMachineWindowScale()
-{
-#ifdef Q_WS_MAC
-    /* Uninstall the resize delegate for keeping the aspect ratio. */
-    ::darwinUninstallResizeDelegate(this);
-#endif /* Q_WS_MAC */
-
-    /* Save normal window settings: */
-    saveWindowSettings();
-
-    /* Prepare handlers: */
-    cleanupHandlers();
-
-    /* Cleanup normal machine view: */
-    cleanupMachineView();
 }
 
 void UIMachineWindowScale::sltPopupMainMenu()
 {
-    /* Popup main menu if present: */
+    /* Popup main-menu if present: */
     if (m_pMainMenu && !m_pMainMenu->isEmpty())
     {
         m_pMainMenu->popup(geometry().center());
@@ -113,99 +53,10 @@ void UIMachineWindowScale::sltPopupMainMenu()
     }
 }
 
-bool UIMachineWindowScale::event(QEvent *pEvent)
-{
-    switch (pEvent->type())
-    {
-        case QEvent::Resize:
-        {
-            QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-            if (!isMaximizedChecked())
-            {
-                m_normalGeometry.setSize(pResizeEvent->size());
-#ifdef VBOX_WITH_DEBUGGER_GUI
-                /* Update debugger window position */
-                updateDbgWindows();
-#endif
-            }
-            break;
-        }
-        case QEvent::Move:
-        {
-            if (!isMaximizedChecked())
-            {
-                m_normalGeometry.moveTo(geometry().x(), geometry().y());
-#ifdef VBOX_WITH_DEBUGGER_GUI
-                /* Update debugger window position */
-                updateDbgWindows();
-#endif
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return QIWithRetranslateUI2<QMainWindow>::event(pEvent);
-}
-
-#ifdef Q_WS_WIN
-bool UIMachineWindowScale::winEvent(MSG *pMessage, long *pResult)
-{
-    /* Try to keep aspect ratio during window resize if:
-     * 1. machine view exists and 2. event-type is WM_SIZING and 3. shift key is NOT pressed: */
-    if (machineView() && pMessage->message == WM_SIZING && !(QApplication::keyboardModifiers() & Qt::ShiftModifier))
-    {
-        if (double dAspectRatio = machineView()->aspectRatio())
-        {
-            RECT *pRect = reinterpret_cast<RECT*>(pMessage->lParam);
-            switch (pMessage->wParam)
-            {
-                case WMSZ_LEFT:
-                case WMSZ_RIGHT:
-                {
-                    pRect->bottom = pRect->top + (double)(pRect->right - pRect->left) / dAspectRatio;
-                    break;
-                }
-                case WMSZ_TOP:
-                case WMSZ_BOTTOM:
-                {
-                    pRect->right = pRect->left + (double)(pRect->bottom - pRect->top) * dAspectRatio;
-                    break;
-                }
-                case WMSZ_BOTTOMLEFT:
-                case WMSZ_BOTTOMRIGHT:
-                {
-                    pRect->bottom = pRect->top + (double)(pRect->right - pRect->left) / dAspectRatio;
-                    break;
-                }
-                case WMSZ_TOPLEFT:
-                case WMSZ_TOPRIGHT:
-                {
-                    pRect->top = pRect->bottom - (double)(pRect->right - pRect->left) / dAspectRatio;
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
-    /* Pass event to base-class: */
-    return QMainWindow::winEvent(pMessage, pResult);
-}
-#endif /* Q_WS_WIN */
-
-void UIMachineWindowScale::prepareMenu()
-{
-#ifdef Q_WS_MAC
-    setMenuBar(uisession()->newMenuBar());
-#endif /* Q_WS_MAC */
-    m_pMainMenu = uisession()->newMenu();
-}
-
-void UIMachineWindowScale::prepareMachineViewContainer()
+void UIMachineWindowScale::prepareMainLayout()
 {
     /* Call to base-class: */
-    UIMachineWindow::prepareMachineViewContainer();
+    UIMachineWindow::prepareMainLayout();
 
     /* Strict spacers to hide them, they are not necessary for scale-mode: */
     m_pTopSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -214,41 +65,47 @@ void UIMachineWindowScale::prepareMachineViewContainer()
     m_pRightSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
-void UIMachineWindowScale::prepareMachineView()
+void UIMachineWindowScale::prepareMenu()
 {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* Need to force the QGL framebuffer in case 2D Video Acceleration is supported & enabled: */
-    bool bAccelerate2DVideo = session().GetMachine().GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable();
-#endif
+    /* Call to base-class: */
+    UIMachineWindow::prepareMenu();
 
-    /* Set central widget: */
-    setCentralWidget(new QWidget);
-
-    /* Set central widget layout: */
-    centralWidget()->setLayout(m_pMachineViewContainer);
-
-    m_pMachineView = UIMachineView::create(  this
-                                           , m_uScreenId
-                                           , machineLogic()->visualStateType()
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                           , bAccelerate2DVideo
-#endif
-                                           );
-
-    /* Add machine view into layout: */
-    m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1);
+#ifdef Q_WS_MAC
+    setMenuBar(uisession()->newMenuBar());
+#endif /* Q_WS_MAC */
+    m_pMainMenu = uisession()->newMenu();
 }
 
-void UIMachineWindowScale::loadWindowSettings()
+#ifdef Q_WS_MAC
+void UIMachineWindowScale::prepareVisualState()
 {
+    /* Call to base-class: */
+    UIMachineWindow::prepareVisualState();
+
+    /* Install the resize delegate for keeping the aspect ratio. */
+    ::darwinInstallResizeDelegate(this);
+    /* Beta label? */
+    if (vboxGlobal().isBeta())
+    {
+        QPixmap betaLabel = ::betaLabel(QSize(100, 16));
+        ::darwinLabelWindow(this, &betaLabel, true);
+    }
+}
+#endif /* Q_WS_MAC */
+
+void UIMachineWindowScale::loadSettings()
+{
+    /* Call to base-class: */
+    UIMachineWindow::loadSettings();
+
     /* Load scale window settings: */
-    CMachine machine = session().GetMachine();
+    CMachine m = machine();
 
     /* Load extra-data settings: */
     {
         QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastScaleWindowPosition) :
                                      QString("%1%2").arg(VBoxDefs::GUI_LastScaleWindowPosition).arg(m_uScreenId);
-        QStringList strPositionSettings = machine.GetExtraDataStringList(strPositionAddress);
+        QStringList strPositionSettings = m.GetExtraDataStringList(strPositionAddress);
 
         bool ok = !strPositionSettings.isEmpty(), max = false;
         int x = 0, y = 0, w = 0, h = 0;
@@ -294,9 +151,10 @@ void UIMachineWindowScale::loadWindowSettings()
     }
 }
 
-void UIMachineWindowScale::saveWindowSettings()
+void UIMachineWindowScale::saveSettings()
 {
-    CMachine machine = session().GetMachine();
+    /* Get machine: */
+    CMachine m = machine();
 
     /* Save extra-data settings: */
     {
@@ -307,24 +165,32 @@ void UIMachineWindowScale::saveWindowSettings()
             strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowState_Max);
         QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastScaleWindowPosition) :
                                      QString("%1%2").arg(VBoxDefs::GUI_LastScaleWindowPosition).arg(m_uScreenId);
-        machine.SetExtraData(strPositionAddress, strWindowPosition);
+        m.SetExtraData(strPositionAddress, strWindowPosition);
     }
+
+    /* Call to base-class: */
+    UIMachineWindow::saveSettings();
 }
 
-void UIMachineWindowScale::cleanupMachineView()
+#ifdef Q_WS_MAC
+void UIMachineWindowScale::cleanupVisualState()
 {
-    /* Do not cleanup machine view if it is not present: */
-    if (!machineView())
-        return;
+    /* Uninstall the resize delegate for keeping the aspect ratio. */
+    ::darwinUninstallResizeDelegate(this);
 
-    UIMachineView::destroy(m_pMachineView);
-    m_pMachineView = 0;
+    /* Call to base-class: */
+    UIMachineWindow::cleanupVisualState();
 }
+#endif /* Q_WS_MAC */
 
 void UIMachineWindowScale::cleanupMenu()
 {
+    /* Cleanup menu: */
     delete m_pMainMenu;
     m_pMainMenu = 0;
+
+    /* Call to base-class: */
+    UIMachineWindow::cleanupMenu();
 }
 
 void UIMachineWindowScale::showInNecessaryMode()
@@ -332,10 +198,91 @@ void UIMachineWindowScale::showInNecessaryMode()
     /* Make sure we really have to show window: */
     BOOL fEnabled = true;
     ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-    session().GetMachine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+    machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
     if (fEnabled)
         show();
 }
+
+bool UIMachineWindowScale::event(QEvent *pEvent)
+{
+    switch (pEvent->type())
+    {
+        case QEvent::Resize:
+        {
+            QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+            if (!isMaximizedChecked())
+            {
+                m_normalGeometry.setSize(pResizeEvent->size());
+#ifdef VBOX_WITH_DEBUGGER_GUI
+                /* Update debugger window position: */
+                updateDbgWindows();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+            }
+            break;
+        }
+        case QEvent::Move:
+        {
+            if (!isMaximizedChecked())
+            {
+                m_normalGeometry.moveTo(geometry().x(), geometry().y());
+#ifdef VBOX_WITH_DEBUGGER_GUI
+                /* Update debugger window position: */
+                updateDbgWindows();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return UIMachineWindow::event(pEvent);
+}
+
+#ifdef Q_WS_WIN
+bool UIMachineWindowScale::winEvent(MSG *pMessage, long *pResult)
+{
+    /* Try to keep aspect ratio during window resize if:
+     * 1. machine view exists and 2. event-type is WM_SIZING and 3. shift key is NOT pressed: */
+    if (machineView() && pMessage->message == WM_SIZING && !(QApplication::keyboardModifiers() & Qt::ShiftModifier))
+    {
+        if (double dAspectRatio = machineView()->aspectRatio())
+        {
+            RECT *pRect = reinterpret_cast<RECT*>(pMessage->lParam);
+            switch (pMessage->wParam)
+            {
+                case WMSZ_LEFT:
+                case WMSZ_RIGHT:
+                {
+                    pRect->bottom = pRect->top + (double)(pRect->right - pRect->left) / dAspectRatio;
+                    break;
+                }
+                case WMSZ_TOP:
+                case WMSZ_BOTTOM:
+                {
+                    pRect->right = pRect->left + (double)(pRect->bottom - pRect->top) * dAspectRatio;
+                    break;
+                }
+                case WMSZ_BOTTOMLEFT:
+                case WMSZ_BOTTOMRIGHT:
+                {
+                    pRect->bottom = pRect->top + (double)(pRect->right - pRect->left) / dAspectRatio;
+                    break;
+                }
+                case WMSZ_TOPLEFT:
+                case WMSZ_TOPRIGHT:
+                {
+                    pRect->top = pRect->bottom - (double)(pRect->right - pRect->left) / dAspectRatio;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+    /* Call to base-class: */
+    return UIMachineWindow::winEvent(pMessage, pResult);
+}
+#endif /* Q_WS_WIN */
 
 bool UIMachineWindowScale::isMaximizedChecked()
 {

@@ -19,52 +19,52 @@
 #ifndef __UIMachineWindowFullscreen_h__
 #define __UIMachineWindowFullscreen_h__
 
-/* Local includes */
+/* Local includes: */
 #include "UIMachineWindow.h"
 
-/* Local forwards */
+/* Forward declarations: */
 class VBoxMiniToolBar;
 
+/* Fullscreen machine-window implementation: */
 class UIMachineWindowFullscreen : public UIMachineWindow
 {
     Q_OBJECT;
 
-public slots:
-
-    void sltPlaceOnScreen();
-
 protected:
 
-    /* Fullscreen machine window constructor/destructor: */
+    /* Constructor: */
     UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
-    virtual ~UIMachineWindowFullscreen();
 
 private slots:
 
-    /* Popup main menu: */
+    /* Session event-handlers: */
+    void sltMachineStateChanged();
+
+    /* Places window on screen: */
+    void sltPlaceOnScreen();
+
+    /* Popup main-menu: */
     void sltPopupMainMenu();
 
 private:
 
     /* Prepare helpers: */
     void prepareMenu();
-    void prepareMiniToolBar();
-    void prepareMachineView();
-    //void loadWindowSettings() {}
+    void prepareVisualState();
+    void prepareMiniToolbar();
 
     /* Cleanup helpers: */
-    void saveWindowSettings();
-    void cleanupMachineView();
-    void cleanupMiniToolBar();
+    void cleanupMiniToolbar();
+    void cleanupVisualState();
     void cleanupMenu();
 
-    /* Update routines: */
-    void updateAppearanceOf(int iElement);
-
-    /* Other members: */
+    /* Show stuff: */
     void showInNecessaryMode();
 
-    /* Private variables: */
+    /* Update stuff: */
+    void updateAppearanceOf(int iElement);
+
+    /* Widgets: */
     QMenu *m_pMainMenu;
     VBoxMiniToolBar *m_pMiniToolBar;
 

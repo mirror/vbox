@@ -100,7 +100,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
     ulong uMonitorCount = session().GetMachine().GetMonitorCount();
     /* Create machine window(s): */
     for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
-        addMachineWindow(UIMachineWindow::create(this, visualStateType(), uScreenId));
+        addMachineWindow(UIMachineWindow::create(this, uScreenId));
     /* Order machine window(s): */
     for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
         machineWindows()[uScreenId - 1]->raise();

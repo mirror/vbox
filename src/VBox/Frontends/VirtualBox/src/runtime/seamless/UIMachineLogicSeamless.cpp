@@ -129,7 +129,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
 
     /* Create machine window(s): */
     for (int cScreenId = 0; cScreenId < m_pScreenLayout->guestScreenCount(); ++cScreenId)
-        addMachineWindow(UIMachineWindow::create(this, visualStateType(), cScreenId));
+        addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
     /* Connect screen-layout change handler: */
     for (int i = 0; i < machineWindows().size(); ++i)
