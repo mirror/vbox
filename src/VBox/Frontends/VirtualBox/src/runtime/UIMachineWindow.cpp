@@ -168,31 +168,6 @@ void UIMachineWindow::sltGuestMonitorChange(KGuestMonitorChangedEventType change
         hide();
 }
 
-void UIMachineWindow::sltTryClose()
-{
-    /* Do not try to close window if restricted: */
-    if (machineLogic()->isPreventAutoClose())
-        return;
-
-#if 0
-    // TODO: Is that really needed?
-    /* This thing here is from Qt3.
-     * First close any open modal & popup widgets.
-     * Use a single shot with timeout 0 to allow the widgets to cleanly close and test then again.
-     * If all open widgets are closed destroy ourself: */
-    QWidget *pWidget = QApplication::activeModalWidget() ? QApplication::activeModalWidget() :
-                       QApplication::activePopupWidget() ? QApplication::activePopupWidget() : 0;
-    if (pWidget)
-    {
-        pWidget->close();
-        QTimer::singleShot(0, this, SLOT(sltTryClose()));
-    }
-    else
-#endif
-
-    close();
-}
-
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI2<QMainWindow>(0, windowFlags(pMachineLogic->visualStateType()))
     , m_pMachineLogic(pMachineLogic)
@@ -217,29 +192,6 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     /* Set the main application window for VBoxGlobal: */
     if (m_uScreenId == 0)
         vboxGlobal().setMainWindow(this);
-}
-
-UIMachineWindow::~UIMachineWindow()
-{
-#if 0
-    // TODO: Is that really needed?
-    /* This thing here is from Qt3.
-     * Close any opened modal & popup widgets: */
-    while (QWidget *pWidget = QApplication::activeModalWidget() ? QApplication::activeModalWidget() :
-                              QApplication::activePopupWidget() ? QApplication::activePopupWidget() : 0)
-    {
-        /* Set modal/popup window's parent to null early,
-         * because deleteLater() is synchronous
-         * and will be called later than this destructor: */
-        pWidget->setParent(0);
-        /* Close modal/popup window early to hide it
-         * because deleteLater() is synchronous
-         * and will be called later than this destructor: */
-        pWidget->close();
-        /* Delete modal/popup window synchronously (safe): */
-        pWidget->deleteLater();
-    }
-#endif
 }
 
 UISession* UIMachineWindow::uisession() const
