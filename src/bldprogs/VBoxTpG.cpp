@@ -968,9 +968,9 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
             ScmStreamPrintf(pStrm,
-                            "extern uint32_t g_cVTGProbeEnabled_%s_%s;\n"
-                            "extern uint8_t  g_VTGProbeData_%s_%s;\n"
-                            "DECLASM(void)   VTGProbeStub_%s_%s(PVTGPROBELOC",
+                            "extern uint32_t        g_cVTGProbeEnabled_%s_%s;\n"
+                            "extern VTGDESCPROBE    g_VTGProbeData_%s_%s;\n"
+                            "DECLASM(void)          VTGProbeStub_%s_%s(PVTGPROBELOC",
                             pProv->pszName, pProbe->pszMangledName,
                             pProv->pszName, pProbe->pszMangledName,
                             pProv->pszName, pProbe->pszMangledName);

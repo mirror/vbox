@@ -616,7 +616,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const ui
             MY_CHECK_RET(paProbeLocs[i].fEnabled == false, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
             MY_CHECK_RET(paProbeLocs[i].idProbe == 0, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
             MY_WITHIN_IMAGE(paProbeLocs[i].pszFunction, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
-            offTmp = (uintptr_t)paProbeLocs[i].pbProbe - (uintptr_t)pVtgHdr->offProbes - (uintptr_t)pVtgHdr;
+            offTmp = (uintptr_t)paProbeLocs[i].pProbe - (uintptr_t)pVtgHdr->offProbes - (uintptr_t)pVtgHdr;
             MY_CHECK_RET(offTmp < pVtgHdr->cbProbes, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
             MY_CHECK_RET(offTmp / sizeof(VTGDESCPROBE) * sizeof(VTGDESCPROBE) == offTmp, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
         }
@@ -1737,7 +1737,7 @@ static int supdrvVtgCreateObjectCopy(PSUPDRVDEVEXT pDevExt, PCVTGOBJHDR pVtgHdr,
                         break;
                     }
                     paDst[i].pszFunction = pchStrTab + paSrc[i].pszFunction;
-                    paDst[i].pbProbe     = (uint8_t *)(paSrc[i].pbProbe + offDelta);
+                    paDst[i].pProbe      = (PVTGDESCPROBE)(uintptr_t)(paSrc[i].pProbe + offDelta);
                 }
             }
             else
@@ -1756,7 +1756,7 @@ static int supdrvVtgCreateObjectCopy(PSUPDRVDEVEXT pDevExt, PCVTGOBJHDR pVtgHdr,
                         break;
                     }
                     paDst[i].pszFunction = pchStrTab + (uintptr_t)paSrc[i].pszFunction;
-                    paDst[i].pbProbe     = (uint8_t *)(uintptr_t)(paSrc[i].pbProbe + offDelta);
+                    paDst[i].pProbe      = (PVTGDESCPROBE)(uintptr_t)(paSrc[i].pProbe + offDelta);
                 }
             }
 
@@ -2148,12 +2148,18 @@ static void supdrvTracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
             {
                 if (RT_LIKELY(pUmod->aProbeLocs[iProbeLoc].fEnabled))
                 {
+                    PSUPDRVVTGCOPY pVtgCopy;
                     ASMAtomicIncU32(&pDevExt->cTracerCallers);
+                    pVtgCopy = pUmod->pVtgCopy;
                     if (RT_LIKELY(   pDevExt->pTracerOps
-                                  && !pDevExt->fTracerUnloading))
+                                  && !pDevExt->fTracerUnloading
+                                  && pVtgCopy))
                     {
+                        PCVTGPROBELOC pProbeLocRO;
+                        pProbeLocRO = (PCVTGPROBELOC)((uintptr_t)&pVtgCopy->Hdr + pVtgCopy->Hdr.offProbeLocs) + iProbeLoc;
+
                         pCtx->idProbe = pUmod->aProbeLocs[iProbeLoc].idProbe;
-                        pDevExt->pTracerOps->pfnProbeFireUser(pDevExt->pTracerOps, pSession, pCtx);
+                        pDevExt->pTracerOps->pfnProbeFireUser(pDevExt->pTracerOps, pSession, pCtx, &pVtgCopy->Hdr, pProbeLocRO);
                     }
                     ASMAtomicDecU32(&pDevExt->cTracerCallers);
                 }

@@ -42,7 +42,7 @@ typedef struct VTGPROBELOC32
     uint32_t    fEnabled : 1;
     uint32_t    idProbe;
     uint32_t    pszFunction;
-    uint32_t    pbProbe;
+    uint32_t    pProbe;
 } VTGPROBELOC32;
 AssertCompileSize(VTGPROBELOC32, 16);
 /** Pointer to a 32-bit probe location. */
@@ -59,7 +59,7 @@ typedef struct VTGPROBELOC64
     uint32_t    fEnabled : 1;
     uint32_t    idProbe;
     uint64_t    pszFunction;
-    uint64_t    pbProbe;
+    uint64_t    pProbe;
     uint64_t    uAlignment;
 } VTGPROBELOC64;
 AssertCompileSize(VTGPROBELOC64, 32);
@@ -74,13 +74,13 @@ typedef VTGPROBELOC64 const *PCVTGPROBELOC64;
  */
 typedef struct VTGPROBELOC
 {
-    uint32_t    uLine    : 31;
-    uint32_t    fEnabled : 1;
-    uint32_t    idProbe;
-    const char *pszFunction;
-    uint8_t    *pbProbe;
+    uint32_t                uLine    : 31;
+    uint32_t                fEnabled : 1;
+    uint32_t                idProbe;
+    const char             *pszFunction;
+    struct VTGDESCPROBE    *pProbe;
 #if ARCH_BITS == 64
-    uintptr_t   uAlignment;
+    uintptr_t               uAlignment;
 #endif
 } VTGPROBELOC;
 AssertCompileSizeAlignment(VTGPROBELOC, 16);
