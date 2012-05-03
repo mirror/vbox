@@ -709,7 +709,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgPro
     /*
      * Convert arguments from uintptr_t to uint64_t.
      */
-    PVTGDESCPROBE   pProbe   = (PVTGDESCPROBE)((PVTGPROBELOC)pVtgProbeLoc)->pbProbe;
+    PVTGDESCPROBE   pProbe   = (PVTGDESCPROBE)((PVTGPROBELOC)pVtgProbeLoc)->pProbe;
     AssertPtrReturnVoid(pProbe);
     PVTGOBJHDR      pVtgHdr  = (PVTGOBJHDR)((uintptr_t)pProbe + pProbe->offObjHdr);
     AssertPtrReturnVoid(pVtgHdr);
@@ -736,7 +736,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgPro
         while (iDstArg < RT_ELEMENTS(au64DstArgs))
             au64DstArgs[iDstArg++] = auSrcArgs[iSrcArg++];
 
-        pStackData->u.ProbeFireK.pauStackArgs = &auSrcArgs[iSrcArg];
+        pStackData->u.ProbeFireKernel.pauStackArgs = &auSrcArgs[iSrcArg];
         dtrace_probe(pVtgProbeLoc->idProbe, au64DstArgs[0], au64DstArgs[1], au64DstArgs[2], au64DstArgs[3], au64DstArgs[4]);
     }
 #else
