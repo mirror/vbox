@@ -47,7 +47,7 @@ crPackDeleteFramebuffersEXT(GLsizei n, const GLuint * framebuffers)
         return;
 
     data_ptr = (unsigned char *) crPackAlloc(packet_length);
-    WRITE_DATA(0, GLenum, CR_DELETERENDERBUFFERSEXT_EXTEND_OPCODE);
+    WRITE_DATA(0, GLenum, CR_DELETEFRAMEBUFFERSEXT_EXTEND_OPCODE);
     WRITE_DATA(4, GLsizei, n);
     crMemcpy(data_ptr + 8, framebuffers, n* sizeof(*framebuffers));
     crHugePacket(CR_EXTEND_OPCODE, data_ptr);
