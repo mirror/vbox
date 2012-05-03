@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkCustomer class implementation.
+ *
+ * VBox frontends: Qt GUI ("VirtualBox"):
+ * UINetworkCustomer class implementation
  */
 
 /*
@@ -22,29 +24,18 @@
 #include "UINetworkCustomer.h"
 #include "UINetworkManager.h"
 
-/* Constructor: */
-UINetworkCustomer::UINetworkCustomer(QObject *pParent)
+UINetworkCustomer::UINetworkCustomer(QObject *pParent /* = 0 */)
     : QObject(pParent)
 {
 }
 
-/* Network request wrapper: */
 void UINetworkCustomer::createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription)
 {
     gNetworkManager->createNetworkRequest(request, type, strDescription, this);
 }
 
-/* Network request wrapper (set): */
 void UINetworkCustomer::createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription)
 {
     gNetworkManager->createNetworkRequest(requests, type, strDescription, this);
 }
-
-#if 0
-/* Downloader creation notification wrapper: */
-void UINetworkCustomer::notifyDownloaderCreated(UIDownloadType downloaderType)
-{
-    gNetworkManager->notifyDownloaderCreated(downloaderType);
-}
-#endif
 
