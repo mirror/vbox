@@ -411,14 +411,12 @@ typedef struct VMMCPU
     /** Pointer to the bottom of the stack - needed for doing relocations. */
     RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
 
-#ifdef LOG_ENABLED
     /** Pointer to the R0 logger instance - R3 Ptr.
      * This is NULL if logging is disabled. */
     R3PTRTYPE(PVMMR0LOGGER)     pR0LoggerR3;
     /** Pointer to the R0 logger instance - R0 Ptr.
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
-#endif
 
     /** @name Rendezvous
      * @{ */
@@ -448,7 +446,7 @@ typedef struct VMMCPU
     /** The argument to the operation. */
     uint64_t                    u64CallRing3Arg;
     /** The Ring-0 jmp buffer.
-     * @remarks The size of this type isn't stable in assembly, so don't put 
+     * @remarks The size of this type isn't stable in assembly, so don't put
      *          anything that needs to be accessed from assembly after it. */
     VMMR0JMPBUF                 CallRing3JmpBufR0;
     /** @} */
