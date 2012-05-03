@@ -30,6 +30,9 @@
 #include "tstHelp.h"
 #include <stdio.h>
 
+#define SUPDRVTRACERUSRCTX32 SUPDRVTRACERUSRCTX
+#define SUPDRVTRACERUSRCTX64 SUPDRVTRACERUSRCTX
+
 
 int main()
 {
