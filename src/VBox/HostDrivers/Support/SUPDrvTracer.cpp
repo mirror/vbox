@@ -2150,9 +2150,11 @@ static void supdrvTracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
                       && iProbeLoc < pUmod->cProbeLocs
                       && pCtx->cBits == pUmod->cBits))
         {
+#if 0 /* This won't work for RC modules. */
             RTR3PTR R3PtrProbeLoc = pUmod->R3PtrProbeLocs + iProbeLoc * pUmod->cbProbeLoc;
             if (RT_LIKELY(   (pCtx->cBits == 32 ? (RTR3PTR)pCtx->u.X86.uVtgProbeLoc : pCtx->u.Amd64.uVtgProbeLoc)
                           == R3PtrProbeLoc))
+#endif
             {
                 if (RT_LIKELY(pUmod->aProbeLocs[iProbeLoc].fEnabled))
                 {
