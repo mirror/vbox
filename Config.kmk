@@ -613,11 +613,11 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 #VBOX_WITH_NATIVE_SOLARIS_LOADING = 1
 # Set this to enable user mode dtrace probes.
 if1of ($(KBUILD_TARGET), darwin solaris)
-# VBOX_WITH_DTRACE_R3 = 1
+ VBOX_WITH_DTRACE_R3 = 1
 endif
 # Set this to enable kernel driver dtrace probes.
 if1of ($(KBUILD_TARGET), darwin solaris)
-# VBOX_WITH_DTRACE_R0DRV = 1
+ VBOX_WITH_DTRACE_R0DRV = 1
 endif
 # Set this to enable dtrace probes in platform agnostic kernel code.
 ifn1of ($(KBUILD_TARGET), os2)
@@ -629,7 +629,7 @@ endif
 #VBOX_WITH_DTRACE_GST = 1
 # Set this to indicate that the host shipts with DTrace.
 if1of ($(KBUILD_TARGET), darwin solaris freebsd)
-# VBOX_WITH_NATIVE_DTRACE = 1
+ VBOX_WITH_NATIVE_DTRACE = 1
 endif
 ## @}
 
