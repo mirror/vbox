@@ -629,7 +629,7 @@ endif
 ##endif
 # Set this to enable support for dtrace probes in guest code.
 #VBOX_WITH_DTRACE_GST = 1
-# Set this to indicate that the host shipts with DTrace.
+# Set this to indicate that the host ships with DTrace.
 if1of ($(KBUILD_TARGET), darwin solaris freebsd)
  VBOX_WITH_NATIVE_DTRACE = 1
 endif
