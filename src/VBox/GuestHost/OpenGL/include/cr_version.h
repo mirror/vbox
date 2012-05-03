@@ -7,6 +7,8 @@
 #ifndef CR_VERSION_H
 #define CR_VERSION_H
 
+#define SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS 28
+#define SHCROGL_SSM_VERSION 29
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0
