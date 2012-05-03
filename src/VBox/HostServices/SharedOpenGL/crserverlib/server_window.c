@@ -257,11 +257,18 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
 #endif
          return;
     }
+
     mural->width = width;
     mural->height = height;
 
     crStateGetCurrent()->buffer.width = mural->width;
     crStateGetCurrent()->buffer.height = mural->height;
+
+    if (!width || !height)
+    {
+        crServerDispatchWindowVisibleRegion(window, 0, NULL);
+        return;
+    }
 
     crServerCheckMuralGeometry(mural);
 
@@ -282,6 +289,9 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
     }
     mural->gX = x;
     mural->gY = y;
+
+    if (!mural->width || !mural->height)
+        return;
 
     crServerCheckMuralGeometry(mural);
 }
