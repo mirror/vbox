@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,8 +25,8 @@
 /* Forward declarations: */
 class UIUpdateQueue;
 
-/* Singleton to perform new version checks and
- * updates of various VirtualBox parts. */
+/* Singleton to perform new version checks
+ * and update of various VirtualBox parts. */
 class UIUpdateManager : public QObject
 {
     Q_OBJECT;
@@ -68,3 +68,4 @@ private:
 #define gUpdateManager UIUpdateManager::instance()
 
 #endif // __UIUpdateManager_h__
+

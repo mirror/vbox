@@ -1,10 +1,12 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIUpdateManager class implementation.
+ *
+ * VBox frontends: Qt4 GUI ("VirtualBox"):
+ * UIUpdateManager class implementation
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +18,6 @@
  */
 
 /* Global includes: */
-#include <QEventLoop>
 #include <QNetworkReply>
 #include <QTimer>
 #include <QDir>
@@ -35,44 +36,13 @@
 #include "UIGlobalSettingsExtension.h"
 #include "VBoxDefs.h"
 
+/* Forward declarations: */
+class UIUpdateStep;
+
 /* Using declarations: */
 using namespace VBoxGlobalDefs;
 
-/* Interface representing update step: */
-class UIUpdateStep : public UINetworkCustomer
-{
-    Q_OBJECT;
-
-signals:
-
-    /* Completion-signal of the step: */
-    void sigStepComplete();
-
-public:
-
-    /* Constructor: */
-    UIUpdateStep()
-    {
-        /* Connect completion-signal of the step to the destruction-slot of the step: */
-        connect(this, SIGNAL(sigStepComplete()), this, SLOT(deleteLater()), Qt::QueuedConnection);
-    }
-
-protected slots:
-
-    /* Starting-slot of the step: */
-    virtual void sltStartStep() = 0;
-
-protected:
-
-    /* Network pregress handler dummy: */
-    void processNetworkReplyProgress(qint64, qint64) {}
-    /* Network reply canceled handler dummy: */
-    void processNetworkReplyCanceled(QNetworkReply*) {}
-    /* Network reply canceled handler dummy: */
-    void processNetworkReplyFinished(QNetworkReply*) {}
-};
-
-/* Queue for processing update steps: */
+/* Queue for processing update-steps: */
 class UIUpdateQueue : public QObject
 {
     Q_OBJECT;
@@ -90,48 +60,77 @@ public:
     /* Constructor: */
     UIUpdateQueue(UIUpdateManager *pParent) : QObject(pParent) {}
 
-    /* Enqueue passed-step with previously queued (if any) passed-steps: */
-    void add(UIUpdateStep *pStep)
-    {
-        /* Set 'this' as parent for passed step,
-         * that way passed-step could be cleaned-up in case of queue destruction: */
-        pStep->setParent(this);
-
-        /* If queue had no passed-steps yet: */
-        if (!m_pLastStep)
-        {
-            /* Connect starting-signal of the queue to starting-slot of the passed-step: */
-            connect(this, SIGNAL(sigStartQueue()), pStep, SLOT(sltStartStep()), Qt::QueuedConnection);
-        }
-        /* If queue already had at least one passed-step: */
-        else
-        {
-            /* Reconnect completion-signal of the last-step from completion-signal of the queue to starting-slot of the passed-step: */
-            disconnect(m_pLastStep, SIGNAL(sigStepComplete()), this, SIGNAL(sigQueueFinished()));
-            connect(m_pLastStep, SIGNAL(sigStepComplete()), pStep, SLOT(sltStartStep()), Qt::QueuedConnection);
-        }
-
-        /* Connect completion-signal of the passed-step to the completion-signal of the queue: */
-        connect(pStep, SIGNAL(sigStepComplete()), this, SIGNAL(sigQueueFinished()), Qt::QueuedConnection);
-
-        /* Remember last-step: */
-        m_pLastStep = pStep;
-    }
-
     /* Starts a queue: */
-    void start()
-    {
-        /* Emit signal which starts queue: */
-        emit sigStartQueue();
-    }
+    void start() { emit sigStartQueue(); }
 
 private:
 
-    /* Guarded pointer to the last passed-step: */
+    /* Helpers: */
+    bool isEmpty() const { return m_pLastStep.isNull(); }
+    UIUpdateStep* lastStep() const { return m_pLastStep; }
+    void setLastStep(UIUpdateStep *pStep) { m_pLastStep = pStep; }
+
+    /* Variables: */
     QPointer<UIUpdateStep> m_pLastStep;
+
+    /* Friend classes: */
+    friend class UIUpdateStep;
 };
 
-/* Update step to check for the new VirtualBox version: */
+/* Interface representing update-step: */
+class UIUpdateStep : public UINetworkCustomer
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Completion-signal of the step: */
+    void sigStepComplete();
+
+public:
+
+    /* Constructor: */
+    UIUpdateStep(UIUpdateQueue *pQueue) : UINetworkCustomer(pQueue)
+    {
+        /* If queue has no steps yet: */
+        if (pQueue->isEmpty())
+        {
+            /* Connect starting-signal of the queue to starting-slot of this step: */
+            connect(pQueue, SIGNAL(sigStartQueue()), this, SLOT(sltStartStep()), Qt::QueuedConnection);
+        }
+        /* If queue has at least one step already: */
+        else
+        {
+            /* Reconnect completion-signal of the last-step from completion-signal of the queue to starting-slot of this step: */
+            disconnect(pQueue->lastStep(), SIGNAL(sigStepComplete()), pQueue, SIGNAL(sigQueueFinished()));
+            connect(pQueue->lastStep(), SIGNAL(sigStepComplete()), this, SLOT(sltStartStep()), Qt::QueuedConnection);
+        }
+
+        /* Connect completion-signal of this step to the completion-signal of the queue: */
+        connect(this, SIGNAL(sigStepComplete()), pQueue, SIGNAL(sigQueueFinished()), Qt::QueuedConnection);
+        /* Connect completion-signal of this step to the destruction-slot of this step: */
+        connect(this, SIGNAL(sigStepComplete()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+
+        /* Remember this step as the last one: */
+        pQueue->setLastStep(this);
+    }
+
+protected slots:
+
+    /* Starting-slot of the step: */
+    virtual void sltStartStep() = 0;
+
+protected:
+
+    /* Network pregress handler dummy: */
+    void processNetworkReplyProgress(qint64, qint64) {}
+    /* Network reply canceled handler dummy: */
+    void processNetworkReplyCanceled(QNetworkReply*) {}
+    /* Network reply canceled handler dummy: */
+    void processNetworkReplyFinished(QNetworkReply*) {}
+};
+
+/* Update-step to check for the new VirtualBox version: */
 class UIUpdateStepVirtualBox : public UIUpdateStep
 {
     Q_OBJECT;
@@ -139,8 +138,9 @@ class UIUpdateStepVirtualBox : public UIUpdateStep
 public:
 
     /* Constructor: */
-    UIUpdateStepVirtualBox(bool fForceCall)
-        : m_url("http://update.virtualbox.org/query.php")
+    UIUpdateStepVirtualBox(UIUpdateQueue *pQueue, bool fForceCall)
+        : UIUpdateStep(pQueue)
+        , m_url("http://update.virtualbox.org/query.php")
         , m_fForceCall(fForceCall)
     {
     }
@@ -242,7 +242,7 @@ private:
     bool m_fForceCall;
 };
 
-/* Update step to check for the new VirtualBox Extension Pack version: */
+/* Update-step to check for the new VirtualBox Extension Pack version: */
 class UIUpdateStepVirtualBoxExtensionPack : public UIUpdateStep
 {
     Q_OBJECT;
@@ -250,7 +250,10 @@ class UIUpdateStepVirtualBoxExtensionPack : public UIUpdateStep
 public:
 
     /* Constructor: */
-    UIUpdateStepVirtualBoxExtensionPack() {}
+    UIUpdateStepVirtualBoxExtensionPack(UIUpdateQueue *pQueue)
+        : UIUpdateStep(pQueue)
+    {
+    }
 
 private slots:
 
@@ -408,8 +411,8 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
     if (fForceCall || currentData.isNeedToCheck())
     {
         /* Prepare update queue: */
-        m_pQueue->add(new UIUpdateStepVirtualBox(fForceCall));
-        m_pQueue->add(new UIUpdateStepVirtualBoxExtensionPack);
+        new UIUpdateStepVirtualBox(m_pQueue, fForceCall);
+        new UIUpdateStepVirtualBoxExtensionPack(m_pQueue);
         /* Start update queue: */
         m_pQueue->start();
     }
