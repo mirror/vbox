@@ -22,7 +22,6 @@
 #include <QTimer>
 #include <QGridLayout>
 #include <QProgressBar>
-#include <QTextEdit>
 #include <QMainWindow>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -41,6 +40,7 @@
 #include "QIDialogButtonBox.h"
 #include "UIPopupBox.h"
 #include "QIToolButton.h"
+#include "QIRichTextLabel.h"
 
 /* Network-request widget: */
 class UINetworkRequestWidget : public QIWithRetranslateUI<UIPopupBox>
@@ -57,7 +57,7 @@ signals:
 public:
 
     /* Constructor: */
-    UINetworkRequestWidget(QWidget *pParent, UINetworkRequest *pNetworkRequest)
+    UINetworkRequestWidget(QMainWindow *pParent, UINetworkRequest *pNetworkRequest)
         : QIWithRetranslateUI<UIPopupBox>(pParent)
         , m_pNetworkRequest(pNetworkRequest)
         , m_pTimer(new QTimer(this))
@@ -66,7 +66,7 @@ public:
         , m_pProgressBar(new QProgressBar(m_pContentWidget))
         , m_pRetryButton(new QIToolButton(m_pContentWidget))
         , m_pCancelButton(new QIToolButton(m_pContentWidget))
-        , m_pErrorPane(new QTextEdit(m_pContentWidget))
+        , m_pErrorPane(new QIRichTextLabel(m_pContentWidget))
     {
         /* Setup self: */
         setTitleIcon(UIIconPool::iconSet(":/nw_16px.png"));
@@ -83,6 +83,9 @@ public:
         /* Setup timer: */
         m_pTimer->setInterval(5000);
         connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltTimeIsOut()));
+
+        /* Setup main-layout: */
+        m_pMainLayout->setContentsMargins(6, 6, 6, 6);
 
         /* Setup progress-bar: */
         m_pProgressBar->setRange(0, 0);
@@ -102,10 +105,26 @@ public:
         connect(m_pCancelButton, SIGNAL(clicked(bool)), this, SIGNAL(sigCancel()));
 
         /* Setup error-label: */
-        m_pErrorPane->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
-        m_pErrorPane->viewport()->setAutoFillBackground(false);
-        m_pErrorPane->setFrameShape(QFrame::NoFrame);
-        m_pErrorPane->setReadOnly(true);
+        m_pErrorPane->setHidden(true);
+        m_pErrorPane->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        /* Calculate required width: */
+        int iMinimumWidth = pParent->minimumWidth();
+        int iLeft, iTop, iRight, iBottom;
+        /* Take into account content-widget layout margins: */
+        m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        iMinimumWidth -= iLeft;
+        iMinimumWidth -= iRight;
+        /* Take into account this layout margins: */
+        layout()->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        iMinimumWidth -= iLeft;
+        iMinimumWidth -= iRight;
+        /* Take into account parent layout margins: */
+        QLayout *pParentLayout = qobject_cast<QMainWindow*>(parent())->centralWidget()->layout();
+        pParentLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        iMinimumWidth -= iLeft;
+        iMinimumWidth -= iRight;
+        /* Set minimum text width: */
+        m_pErrorPane->setMinimumTextWidth(iMinimumWidth);
 
         /* Layout content: */
         m_pMainLayout->addWidget(m_pProgressBar, 0, 0);
@@ -160,8 +179,8 @@ private slots:
         m_pRetryButton->setHidden(true);
 
         /* Hide error label: */
-        m_pErrorPane->setPlainText(QString());
-        m_pErrorPane->setMinimumHeight(0);
+        m_pErrorPane->setHidden(true);
+        m_pErrorPane->setText(QString());
     }
 
     /* Set current network-request progress to 'finished': */
@@ -204,8 +223,8 @@ private slots:
                 strErrorText = strErrorText.arg(QString("<b>%1</b>").arg(links[i]));
 
         /* Show error label: */
+        m_pErrorPane->setHidden(false);
         m_pErrorPane->setText(UINetworkManager::tr("Error: %1.").arg(strErrorText));
-        m_pErrorPane->setMinimumHeight(m_pErrorPane->document()->size().toSize().height());
     }
 
     /* Handle frozen progress: */
@@ -230,7 +249,7 @@ private:
     QProgressBar *m_pProgressBar;
     QIToolButton *m_pRetryButton;
     QIToolButton *m_pCancelButton;
-    QTextEdit *m_pErrorPane;
+    QIRichTextLabel *m_pErrorPane;
 };
 
 /* Network requests dialog: */
@@ -276,7 +295,7 @@ public:
 
         /* Create main-layout: */
         m_pMainLayout = new QVBoxLayout(centralWidget());
-        m_pMainLayout->setMargin(6);
+        m_pMainLayout->setContentsMargins(6, 6, 6, 6);
 
         /* Create description-label: */
         m_pLabel = new QLabel(centralWidget());
