@@ -111,21 +111,6 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_32BIT_HACK = 0x7fffffff
 } VMMCALLRING3;
 
-
-/**
- * VMMRZCallRing0 operations.
- */
-typedef enum VMMCALLRING0
-{
-    /** Invalid operation.  */
-    VMMCALLRING0_INVALID = 0,
-    /** A probe fired, call SUPR0TracerUmodProbeFire. */
-    VMMCALLRING0_TRACER_UMOD_PROBE_FIRE,
-    /** The usual 32-bit hack. */
-    VMMCALLRING0_32BIT_HACK = 0x7fffffff
-} VMMCALLRING0;
-
-
 /**
  * VMMR3AtomicExecuteHandler callback function.
  *
@@ -512,7 +497,6 @@ VMMR0DECL(void)     VMMR0LogFlushEnable(PVMCPU pVCpu);
 VMMRCDECL(int)      VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
 VMMRCDECL(void)     VMMGCGuestToHost(PVM pVM, int rc);
 VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
-VMMRZDECL(int)      VMMRCCallRing0(PVM pVM, PVMCPU pVCpu, VMMCALLRING0 enmOperation, uint64_t uArg);
 /** @} */
 #endif /* IN_RC */
 
