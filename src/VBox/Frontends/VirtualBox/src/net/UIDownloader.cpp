@@ -26,83 +26,6 @@
 #include "UIMessageCenter.h"
 #include "VBoxUtils.h"
 
-#if 0
-/* Global includes: */
-#include <QProgressBar>
-
-/* Local includes: */
-#include "UISpecialControls.h"
-
-/* UIMiniProgressWidget stuff: */
-UIMiniProgressWidget::UIMiniProgressWidget(QWidget *pParent /* = 0 */)
-    : QWidget(pParent)
-    , m_pProgressBar(new QProgressBar(this))
-    , m_pCancelButton(new UIMiniCancelButton(this))
-{
-    /* Progress-bar setup: */
-    m_pProgressBar->setFixedWidth(100);
-    m_pProgressBar->setFormat("%p%");
-    m_pProgressBar->setValue(0);
-
-    /* Cancel-button setup: */
-    m_pCancelButton->setFocusPolicy(Qt::NoFocus);
-    m_pCancelButton->removeBorder();
-    connect(m_pCancelButton, SIGNAL(clicked()), this, SIGNAL(sigCancel()));
-
-    setContentsMargins(0, 0, 0, 0);
-    setFixedHeight(16);
-
-    /* Layout setup: */
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-    VBoxGlobal::setLayoutMargin(pMainLayout, 0);
-
-#ifdef Q_WS_MAC
-    pMainLayout->setSpacing(2);
-    m_pProgressBar->setFixedHeight(14);
-    m_pCancelButton->setFixedHeight(11);
-    pMainLayout->addWidget(m_pProgressBar, 0, Qt::AlignTop);
-    pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignBottom);
-#else /* Q_WS_MAC */
-    pMainLayout->setSpacing(0);
-    pMainLayout->addWidget(m_pProgressBar, 0, Qt::AlignCenter);
-    pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignCenter);
-#endif /* !Q_WS_MAC */
-
-    pMainLayout->addStretch(1);
-}
-
-void UIMiniProgressWidget::setCancelButtonToolTip(const QString &strText)
-{
-    m_pCancelButton->setToolTip(strText);
-}
-
-QString UIMiniProgressWidget::cancelButtonToolTip() const
-{
-    return m_pCancelButton->toolTip();
-}
-
-void UIMiniProgressWidget::setProgressBarToolTip(const QString &strText)
-{
-    m_pProgressBar->setToolTip(strText);
-}
-
-QString UIMiniProgressWidget::progressBarToolTip() const
-{
-    return m_pProgressBar->toolTip();
-}
-
-void UIMiniProgressWidget::sltSetSource(const QString &strSource)
-{
-    m_strSource = strSource;
-}
-
-void UIMiniProgressWidget::sltSetProgress(qint64 cDone, qint64 cTotal)
-{
-    m_pProgressBar->setMaximum(cTotal);
-    m_pProgressBar->setValue(cDone);
-}
-#endif
-
 /* Starting routine: */
 void UIDownloader::start()
 {
@@ -137,21 +60,10 @@ void UIDownloader::sltStartDownloading()
     createNetworkRequest(request, UINetworkRequestType_GET, tr("Downloading %1...").arg(m_strDescription));
 }
 
-#if 0
-/* Cancel-button stuff: */
-void UIDownloader::sltCancel()
-{
-    /* Delete downloader: */
-    deleteLater();
-}
-#endif
-
 /* Constructor: */
 UIDownloader::UIDownloader()
+    : m_state(UIDownloaderState_Null)
 {
-    /* Choose initial state: */
-    m_state = UIDownloaderState_Null;
-
     /* Connect listeners: */
     connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
     connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
@@ -163,10 +75,6 @@ void UIDownloader::processNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
     /* Unused variables: */
     Q_UNUSED(iReceived);
     Q_UNUSED(iTotal);
-
-#if 0
-    emit sigDownloadProgress(iReceived, iTotal);
-#endif
 }
 
 /* Network-reply canceled handler: */
@@ -228,25 +136,4 @@ void UIDownloader::handleDownloadingResult(QNetworkReply *pNetworkReply)
     /* Delete downloader: */
     deleteLater();
 }
-
-#if 0
-/* UIDownloader stuff: */
-UIMiniProgressWidget* UIDownloader::progressWidget(QWidget *pParent) const
-{
-    /* Create progress widget: */
-    UIMiniProgressWidget *pWidget = createProgressWidgetFor(pParent);
-
-    /* Connect the signal to notify about progress canceled: */
-    connect(pWidget, SIGNAL(sigCancel()), this, SLOT(sltCancel()));
-    /* Connect the signal to notify about source changed: */
-    connect(this, SIGNAL(sigSourceChanged(const QString&)), pWidget, SLOT(sltSetSource(const QString&)));
-    /* Connect the signal to notify about downloading progress: */
-    connect(this, SIGNAL(sigDownloadProgress(qint64, qint64)), pWidget, SLOT(sltSetProgress(qint64, qint64)));
-    /* Make sure the widget is destroyed when this class is deleted: */
-    connect(this, SIGNAL(destroyed(QObject*)), pWidget, SLOT(deleteLater()));
-
-    /* Return widget: */
-    return pWidget;
-}
-#endif
 
