@@ -103,7 +103,9 @@ int DHCPServerRunner::start()
     {
         if (mOptionEnabled[i])
         {
-            const ARGDEF * pArgDef = getArgDef((DHCPCFG)i);
+            const ARGDEF *pArgDef = getArgDef((DHCPCFG)i);
+            if (!pArgDef)
+                continue;
             args[index++] = pArgDef->Name;      // e.g. "--network"
 
             /* value can be null for e.g. --begin-config has no value
