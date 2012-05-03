@@ -28,9 +28,10 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
-/* Static stuff: */
+/* static */
 UIDownloaderUserManual* UIDownloaderUserManual::m_spInstance = 0;
 
+/* static */
 UIDownloaderUserManual* UIDownloaderUserManual::create()
 {
     if (!m_spInstance)
@@ -38,19 +39,10 @@ UIDownloaderUserManual* UIDownloaderUserManual::create()
     return m_spInstance;
 }
 
+/* static */
 UIDownloaderUserManual* UIDownloaderUserManual::current()
 {
     return m_spInstance;
-}
-
-void UIDownloaderUserManual::start()
-{
-    /* Call for base-class: */
-    UIDownloader::start();
-#if 0
-    /* Notify about downloading started: */
-    notifyDownloaderCreated(UIDownloadType_UserManual);
-#endif
 }
 
 UIDownloaderUserManual::UIDownloaderUserManual()
@@ -89,30 +81,30 @@ bool UIDownloaderUserManual::askForDownloadingConfirmation(QNetworkReply *pReply
 
 void UIDownloaderUserManual::handleDownloadedObject(QNetworkReply *pReply)
 {
-    /* Read received data: */
+    /* Read received data into the buffer: */
     QByteArray receivedData(pReply->readAll());
-    /* Serialize the incoming buffer into the User Manual file: */
+    /* Serialize that buffer into the file: */
     while (true)
     {
-        /* Try to open file to save document: */
+        /* Try to open file for writing: */
         QFile file(target());
         if (file.open(QIODevice::WriteOnly))
         {
-            /* Write received data into file: */
+            /* Write buffer into the file: */
             file.write(receivedData);
             file.close();
 
-            /* Warn user about User Manual document loaded and saved: */
+            /* Warn the user about user-manual loaded and saved: */
             msgCenter().warnAboutUserManualDownloaded(source().toString(), QDir::toNativeSeparators(target()));
-            /* Warn listener about User Manual was downloaded: */
+            /* Warn the listener about user-manual was downloaded: */
             emit sigDownloadFinished(target());
             break;
         }
 
-        /* Warn user about User Manual document was downloaded but was NOT saved: */
+        /* Warn user about user-manual was downloaded but was NOT saved: */
         msgCenter().warnAboutUserManualCantBeSaved(source().toString(), QDir::toNativeSeparators(target()));
 
-        /* Ask the user for another location for User Manual file: */
+        /* Ask the user for another location for the user-manual file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
                                                                msgCenter().networkManagerOrMainWindowShown(),
                                                                tr("Select folder to save User Manual to"), true);
@@ -124,11 +116,4 @@ void UIDownloaderUserManual::handleDownloadedObject(QNetworkReply *pReply)
             break;
     }
 }
-
-#if 0
-UIMiniProgressWidget* UIDownloaderUserManual::createProgressWidgetFor(QWidget *pParent) const
-{
-    return new UIMiniProcessWidgetUserManual(pParent);
-}
-#endif
 

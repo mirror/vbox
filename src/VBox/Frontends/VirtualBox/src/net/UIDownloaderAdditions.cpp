@@ -28,9 +28,10 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
-/* Static stuff: */
+/* static */
 UIDownloaderAdditions* UIDownloaderAdditions::m_spInstance = 0;
 
+/* static */
 UIDownloaderAdditions* UIDownloaderAdditions::create()
 {
     if (!m_spInstance)
@@ -38,23 +39,12 @@ UIDownloaderAdditions* UIDownloaderAdditions::create()
     return m_spInstance;
 }
 
+/* static */
 UIDownloaderAdditions* UIDownloaderAdditions::current()
 {
     return m_spInstance;
 }
 
-/* Starting routine: */
-void UIDownloaderAdditions::start()
-{
-    /* Call for base-class: */
-    UIDownloader::start();
-#if 0
-    /* Notify about downloading started: */
-    notifyDownloaderCreated(UIDownloadType_Additions);
-#endif
-}
-
-/* Constructor: */
 UIDownloaderAdditions::UIDownloaderAdditions()
 {
     /* Prepare instance: */
@@ -74,7 +64,6 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     setTarget(strTarget);
 }
 
-/* Destructor: */
 UIDownloaderAdditions::~UIDownloaderAdditions()
 {
     /* Cleanup instance: */
@@ -82,38 +71,36 @@ UIDownloaderAdditions::~UIDownloaderAdditions()
         m_spInstance = 0;
 }
 
-/* Virtual stuff reimplementations: */
 bool UIDownloaderAdditions::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
     return msgCenter().confirmDownloadAdditions(source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
-/* Virtual stuff reimplementations: */
 void UIDownloaderAdditions::handleDownloadedObject(QNetworkReply *pReply)
 {
-    /* Read received data: */
+    /* Read received data into the buffer: */
     QByteArray receivedData(pReply->readAll());
-    /* Serialize the incoming buffer into the .iso image: */
+    /* Serialize that buffer into the file: */
     while (true)
     {
-        /* Try to open file to save image: */
+        /* Try to open file for writing: */
         QFile file(target());
         if (file.open(QIODevice::WriteOnly))
         {
-            /* Write received data into the file: */
+            /* Write buffer into the file: */
             file.write(receivedData);
             file.close();
 
-            /* Warn user about additions image loaded and saved, propose to mount it: */
+            /* Warn the user about additions-image loaded and saved, propose to mount it: */
             if (msgCenter().confirmMountAdditions(source().toString(), QDir::toNativeSeparators(target())))
                 emit sigDownloadFinished(target());
             break;
         }
 
-        /* Warn user about additions image was downloaded but was NOT saved: */
+        /* Warn the user about additions-image was downloaded but was NOT saved: */
         msgCenter().warnAboutAdditionsCantBeSaved(target());
 
-        /* Ask the user for another location for the additions image file: */
+        /* Ask the user for another location for the additions-image file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
                                                                msgCenter().networkManagerOrMainMachineWindowShown(),
                                                                tr("Select folder to save Guest Additions image to"), true);
@@ -125,11 +112,4 @@ void UIDownloaderAdditions::handleDownloadedObject(QNetworkReply *pReply)
             break;
     }
 }
-
-#if 0
-UIMiniProgressWidget* UIDownloaderAdditions::createProgressWidgetFor(QWidget *pParent) const
-{
-    return new UIMiniProgressWidgetAdditions(source(), pParent);
-}
-#endif
 

@@ -33,9 +33,10 @@
 /* Using declarations: */
 using namespace VBoxGlobalDefs;
 
-/* Static stuff: */
+/* static */
 UIDownloaderExtensionPack* UIDownloaderExtensionPack::m_spInstance = 0;
 
+/* static */
 UIDownloaderExtensionPack* UIDownloaderExtensionPack::create()
 {
     if (!m_spInstance)
@@ -43,23 +44,12 @@ UIDownloaderExtensionPack* UIDownloaderExtensionPack::create()
     return m_spInstance;
 }
 
+/* static */
 UIDownloaderExtensionPack* UIDownloaderExtensionPack::current()
 {
     return m_spInstance;
 }
 
-/* Starting routine: */
-void UIDownloaderExtensionPack::start()
-{
-    /* Call for base-class: */
-    UIDownloader::start();
-#if 0
-    /* Notify about downloading started: */
-    notifyDownloaderCreated(UIDownloadType_ExtensionPack);
-#endif
-}
-
-/* Constructor: */
 UIDownloaderExtensionPack::UIDownloaderExtensionPack()
 {
     /* Prepare instance: */
@@ -85,7 +75,6 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
     setTarget(strTarget);
 }
 
-/* Destructor: */
 UIDownloaderExtensionPack::~UIDownloaderExtensionPack()
 {
     /* Cleanup instance: */
@@ -93,7 +82,6 @@ UIDownloaderExtensionPack::~UIDownloaderExtensionPack()
         m_spInstance = 0;
 }
 
-/* Virtual stuff reimplementations: */
 bool UIDownloaderExtensionPack::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
     return msgCenter().confirmDownloadExtensionPack(UI_ExtPackName, source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
@@ -101,16 +89,16 @@ bool UIDownloaderExtensionPack::askForDownloadingConfirmation(QNetworkReply *pRe
 
 void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
 {
-    /* Read received data into buffer: */
+    /* Read received data into the buffer: */
     QByteArray receivedData(pReply->readAll());
-    /* Serialize the incoming buffer into the file: */
+    /* Serialize that buffer into the file: */
     while (true)
     {
         /* Try to open file for writing: */
         QFile file(target());
         if (file.open(QIODevice::WriteOnly))
         {
-            /* Write incoming buffer into the file: */
+            /* Write buffer into the file: */
             file.write(receivedData);
             file.close();
 
@@ -125,15 +113,15 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
                 szDigest[0] = '\0';
             }
 
-            /* Notify listener about extension pack was downloaded: */
+            /* Warn the listener about extension-pack was downloaded: */
             emit sigDownloadFinished(source().toString(), target(), &szDigest[0]);
             break;
         }
 
-        /* Warn the user about extension pack was downloaded but was NOT saved: */
+        /* Warn the user about extension-pack was downloaded but was NOT saved: */
         msgCenter().warnAboutExtentionPackCantBeSaved(UI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
 
-        /* Ask the user for another location for the extension pack file: */
+        /* Ask the user for another location for the extension-pack file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
                                                                msgCenter().networkManagerOrMainWindowShown(),
                                                                tr("Select folder to save %1 to").arg(UI_ExtPackName), true);
@@ -145,11 +133,4 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
             break;
     }
 }
-
-#if 0
-UIMiniProgressWidget* UIDownloaderExtensionPack::createProgressWidgetFor(QWidget *pParent) const
-{
-    return new UIMiniProgressWidgetExtension(source(), pParent);
-}
-#endif
 
