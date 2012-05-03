@@ -865,7 +865,7 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
     rc = RTSemFastMutexRequest(pDevExt->mtxTracer);
     if (RT_FAILURE(rc))
         return rc;
-    if (pImage || pSession->R0Process == NIL_RTPROCESS)
+    if (pImage || !pSession || pSession->R0Process == NIL_RTPROCESS)
     {
         RTListForEach(&pDevExt->TracerProviderList, pProv, SUPDRVTPPROVIDER, ListEntry)
         {
