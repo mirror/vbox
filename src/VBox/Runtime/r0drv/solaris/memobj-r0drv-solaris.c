@@ -42,8 +42,11 @@
 #include "internal/memobj.h"
 #include "memobj-r0drv-solaris.h"
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #define SOL_IS_KRNL_ADDR(vx)    ((uintptr_t)(vx) >= kernelbase)
-static vnode_t                  s_PageVnode;
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -65,6 +68,12 @@ typedef struct RTR0MEMOBJSOL
      *  allocation. */
     bool                fLargePage;
 } RTR0MEMOBJSOL, *PRTR0MEMOBJSOL;
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static vnode_t                  g_PageVnode;
 
 
 /**
@@ -124,12 +133,12 @@ static page_t *rtR0MemObjSolPageFromFreelist(caddr_t virtAddr, size_t cbPage)
 {
     seg_t KernelSeg;
     KernelSeg.s_as = &kas;
-    page_t *pPage = page_get_freelist(&s_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
+    page_t *pPage = page_get_freelist(&g_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
                                       cbPage, 0 /* flags */, NULL /* NUMA group */);
     if (   !pPage
         && g_frtSolUseKflt)
     {
-        pPage = page_get_freelist(&s_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
+        pPage = page_get_freelist(&g_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
                                   cbPage, PG_KFLT, NULL /* NUMA group */);
     }
     return pPage;
@@ -149,12 +158,12 @@ static page_t *rtR0MemObjSolPageFromCachelist(caddr_t virtAddr, size_t cbPage)
 {
     seg_t KernelSeg;
     KernelSeg.s_as = &kas;
-    page_t *pPage = page_get_cachelist(&s_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
+    page_t *pPage = page_get_cachelist(&g_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
                                        0 /* flags */, NULL /* NUMA group */);
     if (   !pPage
         && g_frtSolUseKflt)
     {
-        pPage = page_get_cachelist(&s_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
+        pPage = page_get_cachelist(&g_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
                                    PG_KFLT, NULL /* NUMA group */);
     }
 
@@ -916,8 +925,68 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR 
 DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
                                           unsigned fProt, size_t offSub, size_t cbSub)
 {
-    /** @todo rtR0MemObjNativeMapKernel / Solaris - Should be fairly simple alloc kernel memory and memload it. */
-    return VERR_NOT_SUPPORTED;
+    /* Fail if requested to do something we can't. */
+    AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+
+    /*
+     * Use xalloc to get address space.
+     */
+    if (!cbSub)
+        cbSub = pMemToMap->cb;
+    void *pv = vmem_xalloc(heap_arena, cbSub, uAlignment, 0 /* phase */, 0 /* nocross */,
+                           NULL /* minaddr */, NULL /* maxaddr */, VM_SLEEP);
+    if (RT_UNLIKELY(!pv))
+        return VERR_MAP_FAILED;
+
+    /*
+     * Load the pages from the other object into it.
+     */
+    uint32_t fAttr  = HAT_UNORDERED_OK | HAT_MERGING_OK | HAT_LOADCACHING_OK | HAT_STORECACHING_OK;
+    if (fProt & RTMEM_PROT_READ)
+        fAttr |= PROT_READ;
+    if (fProt & RTMEM_PROT_EXEC)
+        fAttr |= PROT_EXEC;
+    if (fProt & RTMEM_PROT_WRITE)
+        fAttr |= PROT_WRITE;
+    fAttr |= HAT_NOSYNC;
+
+    int    rc  = VINF_SUCCESS;
+    size_t off = 0;
+    while (off < cbSub)
+    {
+        RTHCPHYS HCPhys = rtR0MemObjNativeGetPagePhysAddr(pMemToMap, (offSub + offSub) >> PAGE_SHIFT);
+        AssertBreakStmt(HCPhys != NIL_RTHCPHYS, rc = VERR_INTERNAL_ERROR_2);
+        pfn_t pfn = HCPhys >> PAGESHIFT;
+        AssertBreakStmt(((RTHCPHYS)pfn << PAGESHIFT) == HCPhys, rc = VERR_INTERNAL_ERROR_3);
+
+        hat_devload(kas.a_hat, (uint8_t *)pv + off, PAGE_SIZE, pfn, fAttr, HAT_LOAD_LOCK);
+
+        /* Advance. */
+        off += PAGE_SIZE;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Create a memory object for the mapping.
+         */
+        PRTR0MEMOBJSOL pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, cbSub);
+        if (pMemSolaris)
+        {
+            pMemSolaris->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
+            *ppMem = &pMemSolaris->Core;
+            return VINF_SUCCESS;
+        }
+
+        LogRel(("rtR0MemObjNativeMapKernel failed to alloc memory object.\n"));
+        rc = VERR_NO_MEMORY;
+    }
+
+    if (off)
+        hat_unload(kas.a_hat, pv, off, HAT_UNLOAD | HAT_UNLOAD_UNLOCK);
+    vmem_xfree(heap_arena, pv, cbSub);
+    return rc;
 }
 
 
