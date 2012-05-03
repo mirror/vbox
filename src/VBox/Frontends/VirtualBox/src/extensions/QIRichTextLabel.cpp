@@ -58,6 +58,18 @@ void QIRichTextLabel::registerImage(const QImage &image, const QString &strName)
     m_pTextEdit->document()->addResource(QTextDocument::ImageResource, QUrl(strName), QVariant(image));
 }
 
+/* Word-wrap mode getter: */
+QTextOption::WrapMode QIRichTextLabel::wordWrapMode() const
+{
+    return m_pTextEdit->wordWrapMode();
+}
+
+/* Word-wrap mode setter: */
+void QIRichTextLabel::setWordWrapMode(QTextOption::WrapMode policy)
+{
+    m_pTextEdit->setWordWrapMode(policy);
+}
+
 /* Minimum text-width setter: */
 void QIRichTextLabel::setMinimumTextWidth(int iMinimumTextWidth)
 {
