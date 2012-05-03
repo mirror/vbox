@@ -209,6 +209,18 @@ VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
 
 
 /**
+ * Calls the ring-0 host code.
+ *
+ * @param   pVM             The VM handle.
+ */
+DECLASM(void) vmmRCProbeFireHelper(PVM pVM)
+{
+    pVM->vmm.s.pfnGuestToHostRC(VINF_VMM_CALL_TRACER);
+}
+
+
+
+/**
  * Execute the trap testcase.
  *
  * There is some common code here, that's why we're collecting them

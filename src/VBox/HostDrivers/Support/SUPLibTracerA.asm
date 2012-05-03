@@ -28,6 +28,7 @@
 ;* Header Files                                                                *
 ;*******************************************************************************
 %include "iprt/asmdefs.mac"
+%include "VBox/sup.mac"
 
 ; This should go into asmdefs.mac
 %ifdef PIC
@@ -42,63 +43,12 @@
 ;*  Structures and Typedefs                                                    *
 ;*******************************************************************************
 struc SUPREQHDR
-
         .u32Cookie              resd 1
         .u32SessionCookie       resd 1
         .cbIn                   resd 1
         .cbOut                  resd 1
         .fFlags                 resd 1
         .rc                     resd 1
-endstruc
-
-struc SUPDRVTRACERUSRCTX32
-        .idProbe                resd 1
-        .cBits                  resb 1
-        .abReserved             resb 3
-        .u.X86.uVtgProbeLoc     resd 1
-        .u.X86.aArgs            resd 20
-        .u.X86.eip              resd 1
-        .u.X86.eflags           resd 1
-        .u.X86.eax              resd 1
-        .u.X86.ecx              resd 1
-        .u.X86.edx              resd 1
-        .u.X86.ebx              resd 1
-        .u.X86.esp              resd 1
-        .u.X86.ebp              resd 1
-        .u.X86.esi              resd 1
-        .u.X86.edi              resd 1
-        .u.X86.cs               resw 1
-        .u.X86.ss               resw 1
-        .u.X86.ds               resw 1
-        .u.X86.es               resw 1
-        .u.X86.fs               resw 1
-        .u.X86.gs               resw 1
-endstruc
-
-struc SUPDRVTRACERUSRCTX64
-        .idProbe                resd 1
-        .cBits                  resb 1
-        .abReserved             resb 3
-        .u.Amd64.uVtgProbeLoc   resq 1
-        .u.Amd64.aArgs          resq 10
-        .u.Amd64.rip            resq 1
-        .u.Amd64.rflags         resq 1
-        .u.Amd64.rax            resq 1
-        .u.Amd64.rcx            resq 1
-        .u.Amd64.rdx            resq 1
-        .u.Amd64.rbx            resq 1
-        .u.Amd64.rsp            resq 1
-        .u.Amd64.rbp            resq 1
-        .u.Amd64.rsi            resq 1
-        .u.Amd64.rdi            resq 1
-        .u.Amd64.r8             resq 1
-        .u.Amd64.r9             resq 1
-        .u.Amd64.r10            resq 1
-        .u.Amd64.r11            resq 1
-        .u.Amd64.r12            resq 1
-        .u.Amd64.r13            resq 1
-        .u.Amd64.r14            resq 1
-        .u.Amd64.r15            resq 1
 endstruc
 
 struc SUPTRACERUMODFIREPROBE

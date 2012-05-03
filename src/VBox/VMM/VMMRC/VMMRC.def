@@ -65,6 +65,7 @@ EXPORTS
     MMGCRamWriteNoTrapHandler
     MMGCRamReadNoTrapHandler
     VMMGetSvnRev
+    VMMRCProbeFire
     vmmGCLoggerFlush
     vmmGCLoggerWrapper
     vmmGCRelLoggerWrapper

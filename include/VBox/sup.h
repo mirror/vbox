@@ -1669,6 +1669,7 @@ SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession);
 SUPR0DECL(int)  SUPR0TracerRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);
 SUPR0DECL(void) SUPR0TracerFireProbe(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                      uintptr_t uArg3, uintptr_t uArg4);
+SUPR0DECL(void) SUPR0TracerUmodProbeFire(PSUPDRVSESSION pSession, PSUPDRVTRACERUSRCTX pCtx);
 /** @}  */
 
 

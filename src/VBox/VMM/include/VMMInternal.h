@@ -19,6 +19,7 @@
 #define ___VMMInternal_h
 
 #include <VBox/cdefs.h>
+#include <VBox/sup.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/log.h>
 #include <iprt/critsect.h>
@@ -424,8 +425,16 @@ typedef struct VMMCPU
     /** Whether the EMT is executing a rendezvous right now. For detecting
      *  attempts at recursive rendezvous. */
     bool volatile               fInRendezvous;
-    bool                        afPadding[HC_ARCH_BITS == 32 ? 7 : 3];
+    bool                        afPadding[HC_ARCH_BITS == 32 ? 3 : 7];
     /** @} */
+
+    /** @name Raw-mode context tracting data.
+     * @{ */
+    SUPDRVTRACERUSRCTX          TracerCtx;
+    /** @} */
+
+    /** Alignment padding, making sure u64CallRing3Arg is nicly aligned. */
+    uint32_t                    u32Padding1;
 
     /** @name Call Ring-3
      * Formerly known as host calls.
@@ -438,11 +447,14 @@ typedef struct VMMCPU
     int32_t                     rcCallRing3;
     /** The argument to the operation. */
     uint64_t                    u64CallRing3Arg;
-    /** The Ring-0 jmp buffer. */
+    /** The Ring-0 jmp buffer.
+     * @remarks The size of this type isn't stable in assembly, so don't put 
+     *          anything that needs to be accessed from assembly after it. */
     VMMR0JMPBUF                 CallRing3JmpBufR0;
     /** @} */
 
 } VMMCPU;
+AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);
 /** Pointer to VMMCPU. */
 typedef VMMCPU *PVMMCPU;
 

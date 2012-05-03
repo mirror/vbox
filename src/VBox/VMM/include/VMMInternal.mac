@@ -16,6 +16,7 @@
 ;
 
 %include "VBox/asmdefs.mac"
+%include "VBox/sup.mac"
 
 ;
 ; Determine the default stack switching unless specified explicitly.
@@ -92,5 +93,37 @@ struc VMMR0JMPBUF
     .cbUsedAvg      resd 1
     .cbUsedTotal    resq 1
     .cUsedTotal     resq 1
+endstruc
+
+
+struc VMMCPU
+                                
+        .offVMCPU               resd 1
+        .iLastGZRc              resd 1
+        .pbEMTStackR3           RTR3PTR_RES 1
+        .pbEMTStackRC           RTRCPTR_RES 1
+        .pbEMTStackBottomRC     RTRCPTR_RES 1
+%ifdef LOG_ENABLED
+        .pR0LoggerR3            RTR3PTR_RES 1
+        .pR0LoggerR0            RTR0PTR_RES 1
+%endif
+
+        .fInRendezvous          resb 1
+%if HC_ARCH_BITS == 32
+        .afPadding              resb 7
+%else
+        .afPadding              resb 3
+%endif
+
+        alignb 8
+        .TracerCtx              resb SUPDRVTRACERUSRCTX64_size
+
+
+        .cCallRing3Disabled     resd 1
+        .enmCallRing3Operation  resd 1
+        .rcCallRing3            resd 1
+        .u64CallRing3Arg        resq 1
+        ; .CallRing3JmpBufR0    resb no-can-do
+
 endstruc
 
