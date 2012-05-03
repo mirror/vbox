@@ -292,5 +292,6 @@ static struct seg_ops s_SegVBoxOps =
     rtR0SegVBoxSolCapable
 };
 
-#endif /* ___r0drv_solaris_memobj_r0drv_solaris_h */
+#endif /* !___r0drv_solaris_memobj_r0drv_solaris_h */
+
 
