@@ -1558,8 +1558,11 @@ typedef struct SUPDRVTRACERREG
      * @param   pVtgProbeLoc    The probe location record.
      * @param   pSession        The user session.
      * @param   pCtx            The usermode context info.
+     * @param   pVtgHdr         The VTG header (read-only).
+     * @param   pProbeLocRO     The read-only probe location record .
      */
-    DECLR0CALLBACKMEMBER(void, pfnProbeFireUser, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx));
+    DECLR0CALLBACKMEMBER(void, pfnProbeFireUser, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx,
+                                                  struct VTGOBJHDR const *pVtgHdr, struct VTGPROBELOC const *pProbeLocRO));
 
     /**
      * Opens up the tracer.

@@ -65,25 +65,53 @@ typedef int  FNPOPS_ENABLE(void *, dtrace_id_t, void *);
 typedef int  FNPOPS_ENABLE(void *, dtrace_id_t, void *);
 #endif
 
+/** Caller indicator. */
+typedef enum VBOXDTCALLER
+{
+    kVBoxDtCaller_Invalid = 0,
+    kVBoxDtCaller_Generic,
+    kVBoxDtCaller_ProbeFireUser,
+    kVBoxDtCaller_ProbeFireKernel
+} VBOXDTCALLER;
+
 
 /**
  * Stack data planted before calling dtrace_probe so that we can easily find the
  * stack argument later.
  */
-typedef struct SUPDRVDTSTACKDATA
+typedef struct VBDTSTACKDATA
 {
     /** Eyecatcher no. 1 (SUPDRVDT_STACK_DATA_MAGIC2). */
     uint32_t                    u32Magic1;
     /** Eyecatcher no. 2 (SUPDRVDT_STACK_DATA_MAGIC2). */
     uint32_t                    u32Magic2;
-    /** Pointer to the stack arguments of a probe function call. */
-    uintptr_t                  *pauStackArgs;
+    /** The format of the caller specific data. */
+    VBOXDTCALLER                enmCaller;
+    /** Caller specific data.  */
+    union
+    {
+        /** kVBoxDtCaller_ProbeFireKernel. */
+        struct
+        {
+            /** Pointer to the stack arguments of a probe function call. */
+            uintptr_t              *pauStackArgs;
+        } ProbeFireKernel;
+        /** kVBoxDtCaller_ProbeFireUser. */
+        struct
+        {
+            /** The user context.  */
+            PCSUPDRVTRACERUSRCTX    pCtx;
+            /** The argument displacement caused by 64-bit arguments passed directly to
+             *  dtrace_probe. */
+            int                     offArg;
+        } ProbeFireUser;
+    } u;
     /** Pointer to this structure.
      * This is the final bit of integrity checking. */
-    struct SUPDRVDTSTACKDATA   *pSelf;
-} SUPDRVDTSTACKDATA;
+    struct VBDTSTACKDATA           *pSelf;
+} VBDTSTACKDATA;
 /** Pointer to the on-stack thread specific data. */
-typedef SUPDRVDTSTACKDATA *PSUPDRVDTSTACKDATA;
+typedef VBDTSTACKDATA *PVBDTSTACKDATA;
 
 
 /*******************************************************************************
@@ -100,16 +128,17 @@ typedef SUPDRVDTSTACKDATA *PSUPDRVDTSTACKDATA;
 #define SUPDRVDT_STACK_DATA_ALIGN       32
 
 /** Plants the stack data. */
-#define SUPDRVDT_SETUP_STACK_DATA() \
-    uint8_t abBlob[sizeof(SUPDRVDTSTACKDATA) + SUPDRVDT_STACK_DATA_ALIGN - 1]; \
-    PSUPDRVDTSTACKDATA pStackData = (PSUPDRVDTSTACKDATA)(   (uintptr_t)&abBlob[SUPDRVDT_STACK_DATA_ALIGN - 1] \
-                                                         & ~(uintptr_t)(SUPDRVDT_STACK_DATA_ALIGN - 1)); \
+#define VBDT_SETUP_STACK_DATA(a_enmCaller) \
+    uint8_t abBlob[sizeof(VBDTSTACKDATA) + SUPDRVDT_STACK_DATA_ALIGN - 1]; \
+    PVBDTSTACKDATA pStackData = (PVBDTSTACKDATA)(   (uintptr_t)&abBlob[SUPDRVDT_STACK_DATA_ALIGN - 1] \
+                                                 & ~(uintptr_t)(SUPDRVDT_STACK_DATA_ALIGN - 1)); \
     pStackData->u32Magic1   = SUPDRVDT_STACK_DATA_MAGIC1; \
     pStackData->u32Magic2   = SUPDRVDT_STACK_DATA_MAGIC2; \
+    pStackData->enmCaller   = a_enmCaller; \
     pStackData->pSelf       = pStackData
 
 /** Passifies the stack data and frees up resource held within it. */
-#define SUPDRVDT_CLEAR_STACK_DATA() \
+#define VBDT_CLEAR_STACK_DATA() \
     do \
     { \
         pStackData->u32Magic1   = 0; \
@@ -150,6 +179,30 @@ static int         (* g_pfnDTraceProviderUnregister)(dtrace_provider_id_t);
 #endif
 
 
+/**
+ * Gets the stack data.
+ *
+ * @returns Pointer to the stack data.  Never NULL.
+ */
+static PVBDTSTACKDATA vboxDtGetStackData(void)
+{
+    /*
+     * Locate the caller of probe_dtrace.
+     */
+    int volatile    iDummy = 1; /* use this to get the stack address. */
+    PVBDTSTACKDATA  pData = (PVBDTSTACKDATA)(  ((uintptr_t)&iDummy + SUPDRVDT_STACK_DATA_ALIGN - 1)
+                                             & ~(uintptr_t)(SUPDRVDT_STACK_DATA_ALIGN - 1));
+    for (;;)
+    {
+        if (   pData->u32Magic1 == SUPDRVDT_STACK_DATA_MAGIC1
+            && pData->u32Magic2 == SUPDRVDT_STACK_DATA_MAGIC2
+            && pData->pSelf     == pData)
+            return pData;
+        pData = (PVBDTSTACKDATA)((uintptr_t)pData + SUPDRVDT_STACK_DATA_ALIGN);
+    }
+}
+
+
 /*
  *
  * Helpers for handling VTG structures.
@@ -180,10 +233,10 @@ static void vboxDtVtgConvAttr(dtrace_attribute_t *pDtAttr, PCVTGDESCATTR pVtgAtt
  * @param   pVtgHdr             The VTG object header.
  * @param   offStrTab           The string table offset.
  */
-static const char *vboxDtVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
+static const char *vboxDtVtgGetString(PVTGOBJHDR pVtgHdr, uint32_t offStrTab)
 {
     Assert(offStrTab < pVtgHdr->cbStrTab);
-    return &pVtgHdr->pachStrTab[offStrTab];
+    return (const char *)pVtgHdr + pVtgHdr->offStrTab + offStrTab;
 }
 
 
@@ -200,14 +253,11 @@ static const char *vboxDtVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
 /**
  * @callback_method_impl{dtrace_pops_t,dtps_provide}
  */
-static void     supdrvDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc)
+static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc)
 {
-    PSUPDRVVDTPROVIDERCORE  pProv        = (PSUPDRVVDTPROVIDERCORE)pvProv;
+    PSUPDRVVDTPROVIDERCORE  pProv = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturnVoid(pProv);
-    LOG_DTRACE(("supdrvDtPOps_Provide: %p / %p pDtProbeDesc=%p\n", pProv, pProv->TracerData.DTrace.idProvider, pDtProbeDesc));
-    size_t const            cbFnNmBuf    = _4K + _1K;
-    char                   *pszFnNmBuf;
-    uint16_t                idxProv;
+    LOG_DTRACE(("%s: %p / %p pDtProbeDesc=%p\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, pDtProbeDesc));
 
     if (pDtProbeDesc)
         return;  /* We don't generate probes, so never mind these requests. */
@@ -215,126 +265,147 @@ static void     supdrvDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDt
     if (pProv->TracerData.DTrace.fZombie)
         return;
 
-    dtrace_provider_id_t    idProvider   = pProv->TracerData.DTrace.idProvider;
+    dtrace_provider_id_t const idProvider = pProv->TracerData.DTrace.idProvider;
     AssertPtrReturnVoid(idProvider);
 
     AssertPtrReturnVoid(pProv->pHdr);
-    PVTGPROBELOC            pProbeLoc    = pProv->pHdr->paProbLocs;
-    AssertPtrReturnVoid(pProbeLoc);
-    PVTGPROBELOC            pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
-    AssertPtrReturnVoid(pProbeLocEnd);
-    if (pProv->TracerData.DTrace.cProvidedProbes >= (uintptr_t)(pProbeLocEnd - pProbeLoc))
-        return;
+    AssertReturnVoid(pProv->pHdr->offProbeLocs != 0);
+    uint32_t const  cProbeLocs    = pProv->pHdr->cbProbeLocs / sizeof(VTGPROBELOC);
 
-     /* Need a buffer for extracting the function names and mangling them in
-        case of collision. */
-     pszFnNmBuf = (char *)RTMemAlloc(cbFnNmBuf);
-     if (!pszFnNmBuf)
+    /* Need a buffer for extracting the function names and mangling them in
+       case of collision. */
+    size_t const cbFnNmBuf = _4K + _1K;
+    char *pszFnNmBuf = (char *)RTMemAlloc(cbFnNmBuf);
+    if (!pszFnNmBuf)
          return;
 
-     /*
-      * Itereate the probe location list and register all probes related to
-      * this provider.
-      */
-     idxProv      = (uint16_t)(&pProv->pHdr->paProviders[0] - pProv->pDesc);
-     while ((uintptr_t)pProbeLoc < (uintptr_t)pProbeLocEnd)
-     {
-         PVTGDESCPROBE pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-         if (   pProbeDesc->idxProvider == idxProv
-             && pProbeLoc->idProbe      == UINT32_MAX)
+    /*
+     * Itereate the probe location list and register all probes related to
+     * this provider.
+     */
+    uint16_t const idxProv = (uint16_t)((PVTGDESCPROVIDER)((uintptr_t)pProv->pHdr + pProv->pHdr->offProviders) - pProv->pDesc);
+    for (uint32_t idxProbeLoc = 0; idxProbeLoc < cProbeLocs; idxProbeLoc++)
+    {
+        /* Skip probe location belonging to other providers or once that
+           we've already reported. */
+        PCVTGPROBELOC pProbeLocRO = &pProv->paProbeLocsRO[idxProbeLoc];
+        PVTGDESCPROBE pProbeDesc  = pProbeLocRO->pProbe;
+        if (pProbeDesc->idxProvider != idxProv)
+            continue;
+
+        uint32_t *pidProbe;
+        if (!pProv->fUmod)
+            pidProbe = (uint32_t *)&pProbeLocRO->idProbe;
+        else
+            pidProbe = &pProv->paR0ProbeLocs[idxProbeLoc].idProbe;
+        if (*pidProbe != 0)
+            continue;
+
+         /* The function name may need to be stripped since we're using C++
+            compilers for most of the code.  ASSUMES nobody are brave/stupid
+            enough to use function pointer returns without typedef'ing
+            properly them (e.g. signal). */
+         const char *pszPrbName = vboxDtVtgGetString(pProv->pHdr, pProbeDesc->offName);
+         const char *pszFunc    = pProbeLocRO->pszFunction;
+         const char *psz        = strchr(pProbeLocRO->pszFunction, '(');
+         size_t      cch;
+         if (psz)
          {
-             /* The function name normally needs to be stripped since we're
-                using C++ compilers for most of the code.  ASSUMES nobody are
-                brave/stupid enough to use function pointer returns without
-                typedef'ing properly them. */
-             const char *pszPrbName = vboxDtVtgGetString(pProv->pHdr, pProbeDesc->offName);
-             const char *pszFunc    = pProbeLoc->pszFunction;
-             const char *psz        = strchr(pProbeLoc->pszFunction, '(');
-             size_t      cch;
-             if (psz)
+             /* skip blanks preceeding the parameter parenthesis. */
+             while (   (uintptr_t)psz > (uintptr_t)pProbeLocRO->pszFunction
+                    && RT_C_IS_BLANK(psz[-1]))
+                 psz--;
+
+             /* Find the start of the function name. */
+             pszFunc = psz - 1;
+             while ((uintptr_t)pszFunc > (uintptr_t)pProbeLocRO->pszFunction)
              {
-                 /* skip blanks preceeding the parameter parenthesis. */
-                 while (   (uintptr_t)psz > (uintptr_t)pProbeLoc->pszFunction
-                        && RT_C_IS_BLANK(psz[-1]))
-                     psz--;
-
-                 /* Find the start of the function name. */
-                 pszFunc = psz - 1;
-                 while ((uintptr_t)pszFunc > (uintptr_t)pProbeLoc->pszFunction)
-                 {
-                     char ch = pszFunc[-1];
-                     if (!RT_C_IS_ALNUM(ch) && ch != '_' && ch != ':')
-                         break;
-                     pszFunc--;
-                 }
-                 cch = psz - pszFunc;
+                 char ch = pszFunc[-1];
+                 if (!RT_C_IS_ALNUM(ch) && ch != '_' && ch != ':')
+                     break;
+                 pszFunc--;
              }
-             else
-                 cch = strlen(pszFunc);
-             RTStrCopyEx(pszFnNmBuf, cbFnNmBuf, pszFunc, cch);
+             cch = psz - pszFunc;
+         }
+         else
+             cch = strlen(pszFunc);
+         RTStrCopyEx(pszFnNmBuf, cbFnNmBuf, pszFunc, cch);
 
-             /* Look up the probe, if we have one in the same function, mangle
-                the function name a little to avoid having to deal with having
-                multiple location entries with the same probe ID. (lazy bird) */
-             Assert(pProbeLoc->idProbe == UINT32_MAX);
+         /* Look up the probe, if we have one in the same function, mangle
+            the function name a little to avoid having to deal with having
+            multiple location entries with the same probe ID. (lazy bird) */
+         Assert(!*pidProbe);
+         if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
+         {
+             RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u", pProbeLocRO->uLine);
              if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
              {
-                 RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u",  pProbeLoc->uLine);
-                 if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
+                 unsigned iOrd = 2;
+                 while (iOrd < 128)
                  {
-                     unsigned iOrd = 2;
-                     while (iOrd < 128)
-                     {
-                         RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u-%u",  pProbeLoc->uLine, iOrd);
-                         if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) == DTRACE_IDNONE)
-                             break;
-                         iOrd++;
-                     }
-                     if (iOrd >= 128)
-                     {
-                         LogRel(("VBoxDrv: More than 128 duplicate probe location instances %s at line %u in function %s [%s], probe %s\n",
-                                 pProbeLoc->uLine, pProbeLoc->pszFunction, pszFnNmBuf, pszPrbName));
-                         continue;
-                     }
+                     RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u-%u", pProbeLocRO->uLine, iOrd);
+                     if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) == DTRACE_IDNONE)
+                         break;
+                     iOrd++;
+                 }
+                 if (iOrd >= 128)
+                 {
+                     LogRel(("VBoxDrv: More than 128 duplicate probe location instances %s at line %u in function %s [%s], probe %s\n",
+                             pProbeLocRO->uLine, pProbeLocRO->pszFunction, pszFnNmBuf, pszPrbName));
+                     continue;
                  }
              }
-
-             /* Create the probe. */
-             AssertCompile(sizeof(pProbeLoc->idProbe) == sizeof(dtrace_id_t));
-             pProbeLoc->idProbe = dtrace_probe_create(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName,
-                                                      1 /*aframes*/, pProbeLoc);
-             pProv->TracerData.DTrace.cProvidedProbes++;
          }
 
-         pProbeLoc++;
+         /* Create the probe. */
+         AssertCompile(sizeof(*pidProbe) == sizeof(dtrace_id_t));
+         *pidProbe = dtrace_probe_create(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName,
+                                         1 /*aframes*/, (void *)(uintptr_t)idxProbeLoc);
+         pProv->TracerData.DTrace.cProvidedProbes++;
      }
 
      RTMemFree(pszFnNmBuf);
-     LOG_DTRACE(("supdrvDtPOps_Provide: returns\n"));
+     LOG_DTRACE(("%s: returns\n", __FUNCTION__));
 }
 
 
 /**
  * @callback_method_impl{dtrace_pops_t,dtps_enable}
  */
-static int      supdrvDtPOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
+static int      vboxDtPOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
-    PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
-    AssertPtrReturn(pProv, EINVAL);
-    LOG_DTRACE(("supdrvDtPOps_Enable: %p / %p - %#x / %p\n", pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
-    AssertPtrReturn(pvProbe, EINVAL);
+    PSUPDRVVDTPROVIDERCORE  pProv   = (PSUPDRVVDTPROVIDERCORE)pvProv;
+    LOG_DTRACE(("%s: %p / %p - %#x / %p\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
     AssertPtrReturn(pProv->TracerData.DTrace.idProvider, EINVAL);
 
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+        uint32_t        idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PVTGPROBELOC32  pProbeLocEn = (PVTGPROBELOC32)(  (uintptr_t)pProv->pvProbeLocsEn + idxProbeLoc * pProv->cbProbeLocsEn);
+        PCVTGPROBELOC   pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        PCVTGDESCPROBE  pProbeDesc  = pProbeLocRO->pProbe;
+        uint32_t const  idxProbe    = pProbeDesc->idxEnabled;
 
-        if (!pProbeLoc->fEnabled)
+        if (!pProv->fUmod)
         {
-            pProbeLoc->fEnabled = 1;
-            if (ASMAtomicIncU32(&pProbeDesc->u32User) == 1)
-                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
+            if (!pProbeLocEn->fEnabled)
+            {
+                pProbeLocEn->fEnabled = 1;
+                ASMAtomicIncU32(&pProv->pacProbeEnabled[idxProbe]);
+            }
+        }
+        else
+        {
+            /* Update kernel mode structure */
+            if (!pProv->paR0ProbeLocs[idxProbeLoc].fEnabled)
+            {
+                pProv->paR0ProbeLocs[idxProbeLoc].fEnabled = 1;
+                ASMAtomicIncU32(&pProv->paR0Probes[idxProbe].cEnabled);
+            }
+
+            /* Update user mode structure. */
+            pProbeLocEn->fEnabled = 1;
+            pProv->pacProbeEnabled[idxProbe] = pProv->paR0Probes[idxProbe].cEnabled;
         }
     }
 
@@ -345,25 +416,42 @@ static int      supdrvDtPOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvP
 /**
  * @callback_method_impl{dtrace_pops_t,dtps_disable}
  */
-static void     supdrvDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
+static void     vboxDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturnVoid(pProv);
-    LOG_DTRACE(("supdrvDtPOps_Disable: %p / %p - %#x / %p\n", pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
+    LOG_DTRACE(("%s: %p / %p - %#x / %p\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
     AssertPtrReturnVoid(pvProbe);
     AssertPtrReturnVoid(pProv->TracerData.DTrace.idProvider);
 
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-        AssertPtrReturnVoid(pProbeDesc);
+        uint32_t        idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PVTGPROBELOC32  pProbeLocEn = (PVTGPROBELOC32)(  (uintptr_t)pProv->pvProbeLocsEn + idxProbeLoc * pProv->cbProbeLocsEn);
+        PCVTGPROBELOC   pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        PCVTGDESCPROBE  pProbeDesc  = pProbeLocRO->pProbe;
+        uint32_t const  idxProbe    = pProbeDesc->idxEnabled;
 
-        if (pProbeLoc->fEnabled)
+        if (!pProv->fUmod)
         {
-            pProbeLoc->fEnabled = 0;
-            if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
-                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 0;
+            if (pProbeLocEn->fEnabled)
+            {
+                pProbeLocEn->fEnabled = 0;
+                ASMAtomicDecU32(&pProv->pacProbeEnabled[idxProbe]);
+            }
+        }
+        else
+        {
+            /* Update kernel mode structure */
+            if (pProv->paR0ProbeLocs[idxProbeLoc].fEnabled)
+            {
+                pProv->paR0ProbeLocs[idxProbeLoc].fEnabled = 0;
+                ASMAtomicDecU32(&pProv->paR0Probes[idxProbe].cEnabled);
+            }
+
+            /* Update user mode structure. */
+            pProbeLocEn->fEnabled = 0;
+            pProv->pacProbeEnabled[idxProbe] = pProv->paR0Probes[idxProbe].cEnabled;
         }
     }
 }
@@ -372,28 +460,28 @@ static void     supdrvDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pv
 /**
  * @callback_method_impl{dtrace_pops_t,dtps_getargdesc}
  */
-static void     supdrvDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
-                                        dtrace_argdesc_t *pArgDesc)
+static void     vboxDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
+                                      dtrace_argdesc_t *pArgDesc)
 {
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     unsigned                uArg   = pArgDesc->dtargd_ndx;
 
     pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
     AssertPtrReturnVoid(pProv);
-    LOG_DTRACE(("supdrvDtPOps_GetArgDesc: %p / %p - %#x / %p uArg=%d\n", pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe, uArg));
+    LOG_DTRACE(("%s: %p / %p - %#x / %p uArg=%d\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe, uArg));
     AssertPtrReturnVoid(pvProbe);
     AssertPtrReturnVoid(pProv->TracerData.DTrace.idProvider);
 
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-        AssertPtrReturnVoid(pProbeDesc);
-        AssertPtrReturnVoid(pProv->pHdr);
-        PVTGDESCARGLIST pArgList   = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbeDesc->offArgList);
-        AssertPtrReturnVoid(pArgList);
-
+        uint32_t         idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PCVTGPROBELOC    pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        PCVTGDESCPROBE   pProbeDesc  = pProbeLocRO->pProbe;
+        PCVTGDESCARGLIST pArgList    = (PCVTGDESCARGLIST)(  (uintptr_t)pProv->pHdr
+                                                          + pProv->pHdr->offArgLists
+                                                          + pProbeDesc->offArgList);
         AssertReturnVoid(pProbeDesc->offArgList < pProv->pHdr->cbArgLists);
+
         if (uArg < pArgList->cArgs)
         {
             const char *pszType = vboxDtVtgGetString(pProv->pHdr, pArgList->aArgs[uArg].offType);
@@ -403,13 +491,11 @@ static void     supdrvDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void 
                 memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
                 /** @todo mapping? */
                 pArgDesc->dtargd_ndx = uArg;
-SUPR0Printf("supdrvDtPOps_GetArgVal: returns dtargd_native = %s for #%u\n", pArgDesc->dtargd_native, uArg);
-                LOG_DTRACE(("supdrvDtPOps_GetArgVal: returns dtargd_native = %s\n", pArgDesc->dtargd_native));
+                LOG_DTRACE(("%s: returns dtargd_native = %s\n", __FUNCTION__, pArgDesc->dtargd_native));
                 return;
             }
         }
     }
-SUPR0Printf("supdrvDtPOps_GetArgVal: returns faiure for #%u\n", uArg);
 }
 
 
@@ -445,62 +531,98 @@ SUPR0Printf("supdrvDtPOps_GetArgVal: returns faiure for #%u\n", uArg);
  * so we need to make an extra call.
  *
  */
-static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
-                                       int iArg, int cFrames)
+static uint64_t vboxDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
+                                     int iArg, int cFrames)
 {
-    PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
+    PSUPDRVVDTPROVIDERCORE  pProv = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturn(pProv, UINT64_MAX);
-    LOG_DTRACE(("supdrvDtPOps_GetArgVal: %p / %p - %#x / %p iArg=%d cFrames=%u\n", pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe, iArg, cFrames));
+    LOG_DTRACE(("%s: %p / %p - %#x / %p iArg=%d cFrames=%u\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe, iArg, cFrames));
     AssertReturn(iArg >= 5, UINT64_MAX);
-    AssertPtrReturn(pvProbe, UINT64_MAX);
-    AssertReturn(!pProv->TracerData.DTrace.fZombie, UINT64_MAX);
-    AssertPtrReturn(pProv->TracerData.DTrace.idProvider, UINT64_MAX);
-    PVTGPROBELOC    pProbeLoc = (PVTGPROBELOC)pvProbe;
-    AssertPtrReturn(pProbeLoc, UINT64_MAX);
-    PVTGDESCPROBE   pProbe    = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-    AssertPtrReturn(pProbe, UINT64_MAX);
-    PVTGDESCARGLIST pArgList  = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbe->offArgList);
-    AssertPtrReturn(pArgList, UINT64_MAX);
+    if (pProv->TracerData.DTrace.fZombie)
+        return UINT64_MAX;
 
-    /* Locate the caller of probe_dtrace, . */
-    int volatile        iDummy = 1; /* use this to get the stack address. */
-    PSUPDRVDTSTACKDATA  pData = (PSUPDRVDTSTACKDATA)(  ((uintptr_t)&iDummy + SUPDRVDT_STACK_DATA_ALIGN - 1)
-                                                     & ~(uintptr_t)(SUPDRVDT_STACK_DATA_ALIGN - 1));
-    for (;;)
-    {
-        if (   pData->u32Magic1 == SUPDRVDT_STACK_DATA_MAGIC1
-            && pData->u32Magic2 == SUPDRVDT_STACK_DATA_MAGIC2
-            && pData->pSelf     == pData)
-            break;
-        pData = (PSUPDRVDTSTACKDATA)((uintptr_t)pData + SUPDRVDT_STACK_DATA_ALIGN);
-    }
+    uint32_t                idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+    PCVTGPROBELOC           pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+    PCVTGDESCPROBE          pProbeDesc  = pProbeLocRO->pProbe;
+    PCVTGDESCARGLIST        pArgList    = (PCVTGDESCARGLIST)(  (uintptr_t)pProv->pHdr
+                                                             + pProv->pHdr->offArgLists
+                                                             + pProbeDesc->offArgList);
+    AssertReturn(pProbeDesc->offArgList < pProv->pHdr->cbArgLists, UINT64_MAX);
+
+    PVBDTSTACKDATA          pData = vboxDtGetStackData();
 
     /*
      * Get the stack data. This is a wee bit complicated on 32-bit systems
      * since we want to support 64-bit integer arguments.
      */
-#if ARCH_BITS == 64
-    uint64_t u64Ret = pData->pauStackArgs[iArg - 5];
-#else
     uint64_t u64Ret;
-    if (   !pArgList->fHaveLargeArgs
-        || pArgList->cArgs <= iArg)
-        u64Ret = pData->pauStackArgs[iArg - 5];
-    else
+    if (iArg >= 20)
+        u64Ret = UINT64_MAX;
+    else if (pData->enmCaller == kVBoxDtCaller_ProbeFireKernel)
     {
-        /* Similar to what we did for mac in when calling dtrace_probe(). */
-        uint32_t off = 0;
-        for (int i = 5; i < iArg; i++)
+#if ARCH_BITS == 64
+        u64Ret = pData->u.ProbeFireKernel.pauStackArgs[iArg - 5];
+#else
+        if (   !pArgList->fHaveLargeArgs
+            || iArg >= pArgList->cArgs)
+            u64Ret = pData->u.ProbeFireKernel.pauStackArgs[iArg - 5];
+        else
+        {
+            /* Similar to what we did for mac in when calling dtrace_probe(). */
+            uint32_t offArg = 0;
+            for (int i = 5; i < iArg; i++)
+                if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType))
+                    offArg++;
+            u64Ret = pData->u.ProbeFireKernel.pauStackArgs[iArg - 5 + offArg];
             if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType))
-                off++;
-        u64Ret = pData->pauStackArgs[iArg - 5 + off];
-        if (   (pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED)
-            && (pArgList->aArgs[iArg].fType & VTG_TYPE_SIZE_MASK) == 8 )
-               u64Ret |= (uint64_t)pData->pauStackArgs[iArg - 5 + off + 1] << 32;
-    }
+                u64Ret |= (uint64_t)pData->u.ProbeFireKernel.pauStackArgs[iArg - 5 + offArg + 1] << 32;
+        }
 #endif
+    }
+    else if (pData->enmCaller == kVBoxDtCaller_ProbeFireUser)
+    {
+        int                     offArg    = pData->u.ProbeFireUser.offArg;
+        PCSUPDRVTRACERUSRCTX    pCtx      = pData->u.ProbeFireUser.pCtx;
+        AssertPtrReturn(pCtx, UINT64_MAX);
 
-    LOG_DTRACE(("supdrvDtPOps_GetArgVal: returns %#llx\n", u64Ret));
+        if (pCtx->cBits == 32)
+        {
+            if (   !pArgList->fHaveLargeArgs
+                || iArg >= pArgList->cArgs)
+            {
+                if (iArg + offArg < (int)RT_ELEMENTS(pCtx->u.X86.aArgs))
+                    u64Ret = pCtx->u.Amd64.aArgs[iArg + offArg];
+                else
+                    u64Ret = UINT64_MAX;
+            }
+            else
+            {
+                for (int i = 5; i < iArg; i++)
+                    if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType))
+                        offArg++;
+                if (offArg + iArg < (int)RT_ELEMENTS(pCtx->u.X86.aArgs))
+                {
+                    u64Ret = pCtx->u.X86.aArgs[iArg + offArg];
+                    if (   VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType)
+                        && offArg + iArg + 1 < (int)RT_ELEMENTS(pCtx->u.X86.aArgs))
+                        u64Ret |= (uint64_t)pCtx->u.X86.aArgs[iArg + offArg + 1] << 32;
+                }
+                else
+                    u64Ret = UINT64_MAX;
+            }
+        }
+        else
+        {
+            if (iArg + offArg < (int)RT_ELEMENTS(pCtx->u.Amd64.aArgs))
+                u64Ret = pCtx->u.Amd64.aArgs[iArg + offArg];
+            else
+                u64Ret = UINT64_MAX;
+        }
+    }
+    else
+        AssertFailedReturn(UINT64_MAX);
+
+    LOG_DTRACE(("%s: returns %#llx\n", __FUNCTION__, u64Ret));
     return u64Ret;
 }
 
@@ -508,23 +630,32 @@ static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *
 /**
  * @callback_method_impl{dtrace_pops_t,dtps_destroy}
  */
-static void    supdrvDtPOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
+static void    vboxDtPOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturnVoid(pProv);
-    LOG_DTRACE(("supdrvDtPOps_Destroy: %p / %p - %#x / %p\n", pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
+    LOG_DTRACE(("%s: %p / %p - %#x / %p\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
     AssertReturnVoid(pProv->TracerData.DTrace.cProvidedProbes > 0);
     AssertPtrReturnVoid(pProv->TracerData.DTrace.idProvider);
 
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        AssertPtrReturnVoid(pProbeLoc);
-        AssertPtrReturnVoid(pProbeLoc->pszFunction);
-        Assert(!pProbeLoc->fEnabled);
-        AssertReturnVoid(pProbeLoc->idProbe == idProbe);
-
-        pProbeLoc->idProbe = UINT32_MAX;
+        uint32_t        idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PCVTGPROBELOC   pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        uint32_t       *pidProbe;
+        if (!pProv->fUmod)
+        {
+            pidProbe = (uint32_t *)&pProbeLocRO->idProbe;
+            Assert(!pProbeLocRO->fEnabled);
+            Assert(*pidProbe == idProbe);
+        }
+        else
+        {
+            pidProbe = &pProv->paR0ProbeLocs[idxProbeLoc].idProbe;
+            Assert(!pProv->paR0ProbeLocs[idxProbeLoc].fEnabled);
+            Assert(*pidProbe == idProbe); NOREF(idProbe);
+        }
+        *pidProbe = 0;
     }
     pProv->TracerData.DTrace.cProvidedProbes--;
 }
@@ -536,16 +667,16 @@ static void    supdrvDtPOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvP
  */
 static const dtrace_pops_t g_vboxDtVtgProvOps =
 {
-    /* .dtps_provide         = */ supdrvDtPOps_Provide,
+    /* .dtps_provide         = */ vboxDtPOps_Provide,
     /* .dtps_provide_module  = */ NULL,
-    /* .dtps_enable          = */ (FNPOPS_ENABLE *)supdrvDtPOps_Enable,
-    /* .dtps_disable         = */ supdrvDtPOps_Disable,
+    /* .dtps_enable          = */ (FNPOPS_ENABLE *)vboxDtPOps_Enable,
+    /* .dtps_disable         = */ vboxDtPOps_Disable,
     /* .dtps_suspend         = */ NULL,
     /* .dtps_resume          = */ NULL,
-    /* .dtps_getargdesc      = */ supdrvDtPOps_GetArgDesc,
-    /* .dtps_getargval       = */ supdrvDtPOps_GetArgVal,
+    /* .dtps_getargdesc      = */ vboxDtPOps_GetArgDesc,
+    /* .dtps_getargval       = */ vboxDtPOps_GetArgVal,
     /* .dtps_usermode        = */ NULL,
-    /* .dtps_destroy         = */ supdrvDtPOps_Destroy
+    /* .dtps_destroy         = */ vboxDtPOps_Destroy
 };
 
 
@@ -562,19 +693,19 @@ static const dtrace_pops_t g_vboxDtVtgProvOps =
 
 
 /**
- * interface_method_impl{SUPDRVTRACERREG,pfnProbeFireUser}
+ * interface_method_impl{SUPDRVTRACERREG,pfnProbeFireKernel}
  */
-static DECLCALLBACK(void) supdrvDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
-                                                       uintptr_t uArg3, uintptr_t uArg4)
+static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                                     uintptr_t uArg3, uintptr_t uArg4)
 {
     AssertPtrReturnVoid(pVtgProbeLoc);
-    LOG_DTRACE(("supdrvDtTOps_ProbeFireKernel: %p / %p\n", pVtgProbeLoc, pVtgProbeLoc->idProbe));
-    AssertPtrReturnVoid(pVtgProbeLoc->pbProbe);
+    LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pVtgProbeLoc, pVtgProbeLoc->idProbe));
+    AssertPtrReturnVoid(pVtgProbeLoc->pProbe);
     AssertPtrReturnVoid(pVtgProbeLoc->pszFunction);
 
-    SUPDRVDT_SETUP_STACK_DATA();
+    VBDT_SETUP_STACK_DATA(kVBoxDtCaller_ProbeFireKernel);
 
-    pStackData->pauStackArgs  = &uArg4 + 1;
+    pStackData->u.ProbeFireKernel.pauStackArgs  = &uArg4 + 1;
 
 #if defined(RT_OS_DARWIN) && ARCH_BITS == 32
     /*
@@ -584,7 +715,7 @@ static DECLCALLBACK(void) supdrvDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgP
     AssertPtrReturnVoid(pProbe);
     PVTGOBJHDR      pVtgHdr  = (PVTGOBJHDR)((uintptr_t)pProbe + pProbe->offObjHdr);
     AssertPtrReturnVoid(pVtgHdr);
-    PVTGDESCARGLIST pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr->paArgLists + pProbe->offArgList);
+    PVTGDESCARGLIST pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr + pVtgHdr->offArgLists + pProbe->offArgList);
     AssertPtrReturnVoid(pArgList);
     if (!pArgList->fHaveLargeArgs)
         dtrace_probe(pVtgProbeLoc->idProbe, uArg0, uArg1, uArg2, uArg3, uArg4);
@@ -607,33 +738,106 @@ static DECLCALLBACK(void) supdrvDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgP
         while (iDstArg < RT_ELEMENTS(au64DstArgs))
             au64DstArgs[iDstArg++] = auSrcArgs[iSrcArg++];
 
-        pStackData->pauStackArgs  = &auSrcArgs[iSrcArg];
+        pStackData->u.ProbeFireK.pauStackArgs = &auSrcArgs[iSrcArg];
         dtrace_probe(pVtgProbeLoc->idProbe, au64DstArgs[0], au64DstArgs[1], au64DstArgs[2], au64DstArgs[3], au64DstArgs[4]);
     }
 #else
     dtrace_probe(pVtgProbeLoc->idProbe, uArg0, uArg1, uArg2, uArg3, uArg4);
 #endif
 
-    SUPDRVDT_CLEAR_STACK_DATA();
-    LOG_DTRACE(("supdrvDtTOps_ProbeFireKernel: returns\n"));
+    VBDT_CLEAR_STACK_DATA();
+    LOG_DTRACE(("%s: returns\n", __FUNCTION__));
 }
 
 
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnProbeFireUser}
  */
-static DECLCALLBACK(void) supdrvDtTOps_ProbeFireUser(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx)
+static DECLCALLBACK(void) vboxDtTOps_ProbeFireUser(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx,
+                                                   PCVTGOBJHDR pVtgHdr, PCVTGPROBELOC pProbeLocRO)
 {
-    NOREF(pThis); NOREF(pSession); NOREF(pCtx);
-    return;
+    LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pCtx, pCtx->idProbe));
+    AssertPtrReturnVoid(pProbeLocRO);
+    AssertPtrReturnVoid(pVtgHdr);
+
+    VBDT_SETUP_STACK_DATA(kVBoxDtCaller_ProbeFireUser);
+
+    if (pCtx->cBits == 32)
+    {
+        pStackData->u.ProbeFireUser.pCtx   = pCtx;
+        pStackData->u.ProbeFireUser.offArg = 0;
+
+#if ARCH_BITS == 64 || defined(RT_OS_DARWIN)
+        /*
+         * Combine two 32-bit arguments into one 64-bit argument where needed.
+         */
+        PVTGDESCPROBE   pProbeDesc = pProbeLocRO->pProbe;
+        AssertPtrReturnVoid(pProbeDesc);
+        PVTGDESCARGLIST pArgList   = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr + pVtgHdr->offArgLists + pProbeDesc->offArgList);
+        AssertPtrReturnVoid(pArgList);
+
+        if (!pArgList->fHaveLargeArgs)
+            dtrace_probe(pCtx->idProbe,
+                         pCtx->u.X86.aArgs[0],
+                         pCtx->u.X86.aArgs[1],
+                         pCtx->u.X86.aArgs[2],
+                         pCtx->u.X86.aArgs[3],
+                         pCtx->u.X86.aArgs[4]);
+        else
+        {
+            uint32_t const *auSrcArgs = &pCtx->u.X86.aArgs[0];
+            uint32_t        iSrcArg   = 0;
+            uint32_t        iDstArg   = 0;
+            uint64_t        au64DstArgs[5];
+
+            while (   iDstArg < RT_ELEMENTS(au64DstArgs)
+                   && iSrcArg < pArgList->cArgs)
+            {
+                au64DstArgs[iDstArg] = auSrcArgs[iSrcArg];
+                if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iDstArg].fType))
+                    au64DstArgs[iDstArg] |= (uint64_t)auSrcArgs[++iSrcArg] << 32;
+                iSrcArg++;
+                iDstArg++;
+            }
+            while (iDstArg < RT_ELEMENTS(au64DstArgs))
+                au64DstArgs[iDstArg++] = auSrcArgs[iSrcArg++];
+
+            pStackData->u.ProbeFireUser.offArg = iSrcArg - RT_ELEMENTS(au64DstArgs);
+            dtrace_probe(pCtx->idProbe, au64DstArgs[0], au64DstArgs[1], au64DstArgs[2], au64DstArgs[3], au64DstArgs[4]);
+        }
+#else
+        dtrace_probe(pCtx->idProbe,
+                     pCtx->u.X86.aArgs[0],
+                     pCtx->u.X86.aArgs[1],
+                     pCtx->u.X86.aArgs[2],
+                     pCtx->u.X86.aArgs[3],
+                     pCtx->u.X86.aArgs[4]);
+#endif
+    }
+    else if (pCtx->cBits == 64)
+    {
+        pStackData->u.ProbeFireUser.pCtx   = pCtx;
+        pStackData->u.ProbeFireUser.offArg = 0;
+        dtrace_probe(pCtx->idProbe,
+                     pCtx->u.Amd64.aArgs[0],
+                     pCtx->u.Amd64.aArgs[1],
+                     pCtx->u.Amd64.aArgs[2],
+                     pCtx->u.Amd64.aArgs[3],
+                     pCtx->u.Amd64.aArgs[4]);
+    }
+    else
+        AssertFailed();
+
+    VBDT_CLEAR_STACK_DATA();
+    LOG_DTRACE(("%s: returns\n", __FUNCTION__));
 }
 
 
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnTracerOpen}
  */
-static DECLCALLBACK(int) supdrvDtTOps_TracerOpen(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uint32_t uCookie,
-                                                 uintptr_t uArg, uintptr_t *puSessionData)
+static DECLCALLBACK(int) vboxDtTOps_TracerOpen(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uint32_t uCookie,
+                                               uintptr_t uArg, uintptr_t *puSessionData)
 {
     NOREF(pThis); NOREF(pSession); NOREF(uCookie); NOREF(uArg);
     *puSessionData = 0;
@@ -644,8 +848,8 @@ static DECLCALLBACK(int) supdrvDtTOps_TracerOpen(PCSUPDRVTRACERREG pThis, PSUPDR
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnTracerClose}
  */
-static DECLCALLBACK(int) supdrvDtTOps_TracerIoCtl(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData,
-                                                  uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal)
+static DECLCALLBACK(int) vboxDtTOps_TracerIoCtl(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData,
+                                                uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal)
 {
     NOREF(pThis); NOREF(pSession); NOREF(uSessionData);
     NOREF(uCmd); NOREF(uArg); NOREF(piRetVal);
@@ -656,7 +860,7 @@ static DECLCALLBACK(int) supdrvDtTOps_TracerIoCtl(PCSUPDRVTRACERREG pThis, PSUPD
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnTracerClose}
  */
-static DECLCALLBACK(void) supdrvDtTOps_TracerClose(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData)
+static DECLCALLBACK(void) vboxDtTOps_TracerClose(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData)
 {
     NOREF(pThis); NOREF(pSession); NOREF(uSessionData);
     return;
@@ -666,11 +870,10 @@ static DECLCALLBACK(void) supdrvDtTOps_TracerClose(PCSUPDRVTRACERREG pThis, PSUP
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnProviderRegister}
  */
-static DECLCALLBACK(int) supdrvDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
+static DECLCALLBACK(int) vboxDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
-    LOG_DTRACE(("supdrvDtTOps_ProviderRegister: %p %s/%s\n", pThis, pCore->pszModName, pCore->pszName));
-    AssertReturn(pCore->TracerData.DTrace.idProvider == UINT32_MAX || pCore->TracerData.DTrace.idProvider == 0,
-                 VERR_INTERNAL_ERROR_3);
+    LOG_DTRACE(("%s: %p %s/%s\n", __FUNCTION__, pThis, pCore->pszModName, pCore->pszName));
+    AssertReturn(pCore->TracerData.DTrace.idProvider == 0, VERR_INTERNAL_ERROR_3);
 
     PVTGDESCPROVIDER    pDesc = pCore->pDesc;
     dtrace_pattr_t      DtAttrs;
@@ -682,6 +885,7 @@ static DECLCALLBACK(int) supdrvDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, 
 
     /* Note! DTrace may call us back before dtrace_register returns, so we
              have to point it to pCore->TracerData.DTrace.idProvider. */
+    AssertCompile(sizeof(dtrace_provider_id_t) == sizeof(pCore->TracerData.DTrace.idProvider));
     int rc = dtrace_register(pCore->pszName,
                              &DtAttrs,
                              DTRACE_PRIV_KERNEL,
@@ -689,20 +893,19 @@ static DECLCALLBACK(int) supdrvDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, 
                              &g_vboxDtVtgProvOps,
                              pCore,
                              &pCore->TracerData.DTrace.idProvider);
-    LOG_DTRACE(("supdrvDtTOps_ProviderRegister: idProvider=%p\n", pCore->TracerData.DTrace.idProvider));
     if (!rc)
     {
-        Assert(pCore->TracerData.DTrace.idProvider != UINT32_MAX && pCore->TracerData.DTrace.idProvider != 0);
+        LOG_DTRACE(("%s: idProvider=%p\n", __FUNCTION__, pCore->TracerData.DTrace.idProvider));
         AssertPtr(pCore->TracerData.DTrace.idProvider);
         rc = VINF_SUCCESS;
     }
     else
     {
-        pCore->TracerData.DTrace.idProvider = UINT32_MAX;
+        pCore->TracerData.DTrace.idProvider = 0;
         rc = RTErrConvertFromErrno(rc);
     }
 
-    LOG_DTRACE(("supdrvDtTOps_ProviderRegister: returns %Rrc\n", rc));
+    LOG_DTRACE(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -710,18 +913,17 @@ static DECLCALLBACK(int) supdrvDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, 
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnProviderDeregister}
  */
-static DECLCALLBACK(int) supdrvDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
+static DECLCALLBACK(int) vboxDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
     uintptr_t idProvider = pCore->TracerData.DTrace.idProvider;
-    LOG_DTRACE(("supdrvDtTOps_ProviderDeregister: %p / %p\n", pThis, idProvider));
+    LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pThis, idProvider));
     AssertPtrReturn(idProvider, VERR_INTERNAL_ERROR_3);
-    AssertReturn(idProvider != UINT32_MAX && idProvider != 0, VERR_INTERNAL_ERROR_4);
 
     dtrace_invalidate(idProvider);
     int rc = dtrace_unregister(idProvider);
     if (!rc)
     {
-        pCore->TracerData.DTrace.idProvider = UINT32_MAX;
+        pCore->TracerData.DTrace.idProvider = 0;
         rc = VINF_SUCCESS;
     }
     else
@@ -731,7 +933,7 @@ static DECLCALLBACK(int) supdrvDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis
         rc = VERR_TRY_AGAIN;
     }
 
-    LOG_DTRACE(("supdrvDtTOps_ProviderDeregister: returns %Rrc\n", rc));
+    LOG_DTRACE(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -739,18 +941,17 @@ static DECLCALLBACK(int) supdrvDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnProviderDeregisterZombie}
  */
-static DECLCALLBACK(int) supdrvDtTOps_ProviderDeregisterZombie(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
+static DECLCALLBACK(int) vboxDtTOps_ProviderDeregisterZombie(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
     uintptr_t idProvider = pCore->TracerData.DTrace.idProvider;
-    LOG_DTRACE(("supdrvDtTOps_ProviderDeregisterZombie: %p / %p\n", pThis, idProvider));
+    LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pThis, idProvider));
     AssertPtrReturn(idProvider, VERR_INTERNAL_ERROR_3);
-    AssertReturn(idProvider != UINT32_MAX && idProvider != 0, VERR_INTERNAL_ERROR_4);
     Assert(pCore->TracerData.DTrace.fZombie);
 
     int rc = dtrace_unregister(idProvider);
     if (!rc)
     {
-        pCore->TracerData.DTrace.idProvider = UINT32_MAX;
+        pCore->TracerData.DTrace.idProvider = 0;
         rc = VINF_SUCCESS;
     }
     else
@@ -759,7 +960,7 @@ static DECLCALLBACK(int) supdrvDtTOps_ProviderDeregisterZombie(PCSUPDRVTRACERREG
         rc = VERR_TRY_AGAIN;
     }
 
-    LOG_DTRACE(("supdrvDtTOps_ProviderDeregisterZombie: returns %Rrc\n", rc));
+    LOG_DTRACE(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -768,18 +969,18 @@ static DECLCALLBACK(int) supdrvDtTOps_ProviderDeregisterZombie(PCSUPDRVTRACERREG
 /**
  * The tracer registration record of the VBox DTrace implementation
  */
-static SUPDRVTRACERREG g_supdrvDTraceReg =
+static SUPDRVTRACERREG g_VBoxDTraceReg =
 {
     SUPDRVTRACERREG_MAGIC,
     SUPDRVTRACERREG_VERSION,
-    supdrvDtTOps_ProbeFireKernel,
-    supdrvDtTOps_ProbeFireUser,
-    supdrvDtTOps_TracerOpen,
-    supdrvDtTOps_TracerIoCtl,
-    supdrvDtTOps_TracerClose,
-    supdrvDtTOps_ProviderRegister,
-    supdrvDtTOps_ProviderDeregister,
-    supdrvDtTOps_ProviderDeregisterZombie,
+    vboxDtTOps_ProbeFireKernel,
+    vboxDtTOps_ProbeFireUser,
+    vboxDtTOps_TracerOpen,
+    vboxDtTOps_TracerIoCtl,
+    vboxDtTOps_TracerClose,
+    vboxDtTOps_ProviderRegister,
+    vboxDtTOps_ProviderDeregister,
+    vboxDtTOps_ProviderDeregisterZombie,
     SUPDRVTRACERREG_MAGIC
 };
 
@@ -833,7 +1034,7 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
         return NULL;
 #endif
 
-    return &g_supdrvDTraceReg;
+    return &g_VBoxDTraceReg;
 }
 
 #ifndef VBOX_WITH_NATIVE_DTRACE
