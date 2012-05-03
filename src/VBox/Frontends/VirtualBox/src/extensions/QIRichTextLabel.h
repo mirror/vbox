@@ -40,6 +40,10 @@ public:
     /* Register image: */
     void registerImage(const QImage &image, const QString &strName);
 
+    /* Word-wrap mode getter/setter: */
+    QTextOption::WrapMode wordWrapMode() const;
+    void setWordWrapMode(QTextOption::WrapMode policy);
+
 public slots:
 
     /* Minimum text-width setter: */
