@@ -79,20 +79,18 @@ static int32_t crStateAllocAndSSMR3GetMem(PSSMHANDLE pSSM, void **pBuffer, size_
 #define SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) (RT_OFFSETOF(_type, _field) - RT_OFFSETOF(_type, _prevField) - RT_SIZEOFMEMB(_type, _prevField))
 #define SHCROGL_CUT_FIELD_ALIGNMENT(_type, _prevField, _field) do { \
             const int32_t cbAlignment = SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) ; \
-            AssertCompile(SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) >= 0 && SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) < sizeof (void*)); \
+            /*AssertCompile(SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) >= 0 && SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) < sizeof (void*));*/ \
             if (cbAlignment) { \
-                void *Tmp; \
-                rc = SSMR3GetMem(pSSM, &Tmp, cbAlignment); \
+                rc = SSMR3Skip(pSSM, cbAlignment); \
             } \
         } while (0)
 
 #define SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) (sizeof (_type) - RT_OFFSETOF(_type, _lastField) - RT_SIZEOFMEMB(_type, _lastField))
 #define SHCROGL_CUT_TAIL_ALIGNMENT(_type, _lastField) do { \
             const int32_t cbAlignment = SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField); \
-            AssertCompile(SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) >= 0 && SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) < sizeof (void*)); \
+            /*AssertCompile(SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) >= 0 && SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) < sizeof (void*));*/ \
             if (cbAlignment) { \
-                void *Tmp; \
-                rc = SSMR3GetMem(pSSM, &Tmp, cbAlignment); \
+                rc = SSMR3Skip(pSSM, cbAlignment); \
             } \
         } while (0)
 
