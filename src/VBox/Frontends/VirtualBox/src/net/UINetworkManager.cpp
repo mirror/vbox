@@ -334,8 +334,12 @@ public:
         m_pLabel->setHidden(true);
         /* Show button-box: */
         m_pButtonBox->setHidden(false);
-        /* Show dialog: */
-        showNormal();
+        /* If customer made a force-call: */
+        if (pNetworkRequest->customer()->isItForceCall())
+        {
+            /* Show dialog: */
+            showNormal();
+        }
 
         /* Return network-request widget: */
         return pNetworkRequestWidget;
@@ -400,20 +404,6 @@ private:
 
         /* Pass event to the base-class: */
         QMainWindow::showEvent(pShowEvent);
-    }
-
-    /* Overloaded close-event: */
-    void closeEvent(QCloseEvent *pCloseEvent)
-    {
-        /* If there are network-requests present
-         * ask if user wants to cancel all current network-requests
-         * or leave them working at the background: */
-        if (!m_widgets.isEmpty() &&
-            msgCenter().askAboutCancelOrLeaveAllNetworkRequest(this))
-            emit sigCancelNetworkRequests();
-
-        /* Pass event to the base-class: */
-        QMainWindow::closeEvent(pCloseEvent);
     }
 
     /* Overloaded keypress-event: */
@@ -853,12 +843,23 @@ void UINetworkManager::sltHandleNetworkRequestFinish(const QUuid &uuid)
 }
 
 /* Slot to handle network-request failure: */
-void UINetworkManager::sltHandleNetworkRequestFailure(const QUuid &uuid, const QString &strError)
+void UINetworkManager::sltHandleNetworkRequestFailure(const QUuid &uuid, const QString &)
 {
-    /* Just show the dialog: */
-    show();
-    Q_UNUSED(uuid);
-    Q_UNUSED(strError);
+    /* Make sure corresponding map contains received ID: */
+    AssertMsg(m_requests.contains(uuid), ("Network-request NOT found!\n"));
+
+    /* Get corresponding network-request: */
+    UINetworkRequest *pNetworkRequest = m_requests.value(uuid);
+
+    /* Get corresponding customer: */
+    UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
+
+    /* If customer made a force-call: */
+    if (pNetworkCustomer->isItForceCall())
+    {
+        /* Just show the dialog: */
+        show();
+    }
 }
 
 #include "UINetworkManager.moc"
