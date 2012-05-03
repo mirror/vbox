@@ -110,14 +110,15 @@ struc VMMCPU
 
         .fInRendezvous          resb 1
 %if HC_ARCH_BITS == 32
-        .afPadding              resb 7
-%else
         .afPadding              resb 3
+%else
+        .afPadding              resb 7
 %endif
 
         alignb 8
         .TracerCtx              resb SUPDRVTRACERUSRCTX64_size
 
+        .u32Padding1            resd 1
 
         .cCallRing3Disabled     resd 1
         .enmCallRing3Operation  resd 1
