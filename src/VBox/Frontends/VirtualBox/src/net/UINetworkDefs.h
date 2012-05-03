@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,22 +19,12 @@
 #ifndef __UINetworkDefs_h__
 #define __UINetworkDefs_h__
 
-/* Network request types: */
+/* Network-request types: */
 enum UINetworkRequestType
 {
     UINetworkRequestType_HEAD,
     UINetworkRequestType_GET
 };
 
-#if 0
-/* Download types: */
-enum UIDownloadType
-{
-    UIDownloadType_Additions,
-    UIDownloadType_UserManual,
-    UIDownloadType_ExtensionPack,
-    UIDownloadType_Max
-};
-#endif
-
 #endif // __UINetworkDefs_h__
+
