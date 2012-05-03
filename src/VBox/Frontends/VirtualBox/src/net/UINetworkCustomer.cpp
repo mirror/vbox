@@ -24,8 +24,15 @@
 #include "UINetworkCustomer.h"
 #include "UINetworkManager.h"
 
-UINetworkCustomer::UINetworkCustomer(QObject *pParent /* = 0 */)
+UINetworkCustomer::UINetworkCustomer()
+    : QObject(0)
+    , m_fForceCall(true)
+{
+}
+
+UINetworkCustomer::UINetworkCustomer(QObject *pParent, bool fForceCall)
     : QObject(pParent)
+    , m_fForceCall(fForceCall)
 {
 }
 

@@ -36,8 +36,12 @@ class UINetworkCustomer : public QObject
 
 public:
 
-    /* Constructor: */
-    UINetworkCustomer(QObject *pParent = 0);
+    /* Constructors: */
+    UINetworkCustomer();
+    UINetworkCustomer(QObject *pParent, bool fForceCall);
+
+    /* Getters: */
+    bool isItForceCall() const { return m_fForceCall; }
 
     /* Network-reply progress handler: */
     virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) = 0;
@@ -52,6 +56,11 @@ protected:
     void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription);
     /* Network-request wrapper (set): */
     void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription);
+
+private:
+
+    /* Variables: */
+    bool m_fForceCall;
 };
 
 #endif // __UINetworkCustomer_h__

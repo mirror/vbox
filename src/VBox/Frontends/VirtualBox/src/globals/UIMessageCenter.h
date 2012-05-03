@@ -326,7 +326,6 @@ public:
     void showUpdateNotFound();
 
     bool askAboutCancelAllNetworkRequest(QWidget *pParent);
-    bool askAboutCancelOrLeaveAllNetworkRequest(QWidget *pParent);
 
     bool confirmInputCapture(bool *pfAutoConfirmed = NULL);
     void remindAboutAutoCapture();

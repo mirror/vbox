@@ -90,7 +90,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIUpdateStep(UIUpdateQueue *pQueue) : UINetworkCustomer(pQueue)
+    UIUpdateStep(UIUpdateQueue *pQueue, bool fForceCall) : UINetworkCustomer(pQueue, fForceCall)
     {
         /* If queue has no steps yet: */
         if (pQueue->isEmpty())
@@ -139,9 +139,8 @@ public:
 
     /* Constructor: */
     UIUpdateStepVirtualBox(UIUpdateQueue *pQueue, bool fForceCall)
-        : UIUpdateStep(pQueue)
+        : UIUpdateStep(pQueue, fForceCall)
         , m_url("http://update.virtualbox.org/query.php")
-        , m_fForceCall(fForceCall)
     {
     }
 
@@ -216,7 +215,7 @@ private:
         /* No newer version of necessary package found: */
         else
         {
-            if (m_fForceCall)
+            if (isItForceCall())
                 msgCenter().showUpdateNotFound();
         }
 
@@ -239,7 +238,6 @@ private:
 
     /* Variables: */
     QUrl m_url;
-    bool m_fForceCall;
 };
 
 /* Update-step to check for the new VirtualBox Extension Pack version: */
@@ -250,8 +248,8 @@ class UIUpdateStepVirtualBoxExtensionPack : public UIUpdateStep
 public:
 
     /* Constructor: */
-    UIUpdateStepVirtualBoxExtensionPack(UIUpdateQueue *pQueue)
-        : UIUpdateStep(pQueue)
+    UIUpdateStepVirtualBoxExtensionPack(UIUpdateQueue *pQueue, bool fForceCall)
+        : UIUpdateStep(pQueue, fForceCall)
     {
     }
 
@@ -394,10 +392,15 @@ UIUpdateManager::~UIUpdateManager()
 
 void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
 {
-    /* If already running => just open Network Access Manager GUI: */
+    /* If already running: */
     if (m_fIsRunning)
     {
-        gNetworkManager->show();
+        /* And we have a force-call: */
+        if (fForceCall)
+        {
+            /* Just show Network Access Manager: */
+            gNetworkManager->show();
+        }
         return;
     }
 
@@ -412,7 +415,7 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
     {
         /* Prepare update queue: */
         new UIUpdateStepVirtualBox(m_pQueue, fForceCall);
-        new UIUpdateStepVirtualBoxExtensionPack(m_pQueue);
+        new UIUpdateStepVirtualBoxExtensionPack(m_pQueue, fForceCall);
         /* Start update queue: */
         m_pQueue->start();
     }
