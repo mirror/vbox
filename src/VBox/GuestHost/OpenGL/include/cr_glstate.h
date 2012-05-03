@@ -239,7 +239,7 @@ DECLEXPORT(void) crStateApplyFBImage(CRContext *to);
 DECLEXPORT(int32_t) crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM);
 typedef DECLCALLBACK(CRContext*) FNCRSTATE_CONTEXT_GET(void*);
 typedef FNCRSTATE_CONTEXT_GET *PFNCRSTATE_CONTEXT_GET;
-DECLEXPORT(int32_t) crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM);
+DECLEXPORT(int32_t) crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM, uint32_t u32Version);
 DECLEXPORT(void)    crStateFreeShared(CRContext *pContext, CRSharedState *s);
 DECLEXPORT(void) crStateFreeShared(CRContext *pContext, CRSharedState *s);
 #endif

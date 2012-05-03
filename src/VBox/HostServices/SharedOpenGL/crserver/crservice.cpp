@@ -357,13 +357,6 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     AssertRCReturn(rc, rc);
 
     /* The state itself */
-#if SHCROGL_SSM_VERSION==24
-    if (ui32==23)
-    {
-        rc = crVBoxServerLoadState(pSSM, 24);
-    }
-    else
-#endif
     rc = crVBoxServerLoadState(pSSM, ui32);
 
     if (rc==VERR_SSM_DATA_UNIT_FORMAT_CHANGED && ui32!=SHCROGL_SSM_VERSION)

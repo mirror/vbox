@@ -61,6 +61,252 @@ static int32_t crStateAllocAndSSMR3GetMem(PSSMHANDLE pSSM, void **pBuffer, size_
     return SSMR3GetMem(pSSM, *pBuffer, cbBuffer);
 }
 
+#define SHCROGL_GET_STRUCT_PART(_pPtr, _type, _from, _to) do { \
+            rc = SSMR3GetMem(pSSM, &(_pPtr)->_from, RT_OFFSETOF(_type, _to) - RT_OFFSETOF(_type, _from)); \
+            AssertRCReturn(rc, rc); \
+        } while (0)
+
+#define SHCROGL_GET_STRUCT_TAIL(_pPtr, _type, _from) do { \
+            rc = SSMR3GetMem(pSSM, &(_pPtr)->_from, sizeof (_type) - RT_OFFSETOF(_type, _from)); \
+            AssertRCReturn(rc, rc); \
+        } while (0)
+
+#define SHCROGL_GET_STRUCT_HEAD(_pPtr, _type, _to) do { \
+            rc = SSMR3GetMem(pSSM, (_pPtr), RT_OFFSETOF(_type, _to)); \
+            AssertRCReturn(rc, rc); \
+        } while (0)
+
+#define SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) (RT_OFFSETOF(_type, _field) - RT_OFFSETOF(_type, _prevField) - RT_SIZEOFMEMB(_type, _prevField))
+#define SHCROGL_CUT_FIELD_ALIGNMENT(_type, _prevField, _field) do { \
+            const int32_t cbAlignment = SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) ; \
+            AssertCompile(SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) >= 0 && SHCROGL_CUT_FIELD_ALIGNMENT_SIZE(_type, _prevField, _field) < sizeof (void*)); \
+            if (cbAlignment) { \
+                void *Tmp; \
+                rc = SSMR3GetMem(pSSM, &Tmp, cbAlignment); \
+            } \
+        } while (0)
+
+#define SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) (sizeof (_type) - RT_OFFSETOF(_type, _lastField) - RT_SIZEOFMEMB(_type, _lastField))
+#define SHCROGL_CUT_TAIL_ALIGNMENT(_type, _lastField) do { \
+            const int32_t cbAlignment = SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField); \
+            AssertCompile(SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) >= 0 && SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) < sizeof (void*)); \
+            if (cbAlignment) { \
+                void *Tmp; \
+                rc = SSMR3GetMem(pSSM, &Tmp, cbAlignment); \
+            } \
+        } while (0)
+
+static int32_t crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(CRTextureObj *pTexture, PSSMHANDLE pSSM)
+{
+    int32_t rc;
+    uint32_t cbObj = RT_OFFSETOF(CRTextureObj, ctxUsage);
+    cbObj = ((cbObj + sizeof (void*) - 1) & ~(sizeof (void*) - 1));
+    rc = SSMR3GetMem(pSSM, pTexture, cbObj);
+    AssertRCReturn(rc, rc);
+    /* just make all bits are used so that we fall back to the pre-ctxUsage behavior,
+     * i.e. all shared resources will be destructed on last shared context termination */
+    FILLDIRTY(pTexture->ctxUsage);
+    return rc;
+}
+
+static int32_t crStateLoadTextureUnit_v_BEFORE_CTXUSAGE_BITS(CRTextureUnit *t, PSSMHANDLE pSSM)
+{
+    int32_t rc;
+    SHCROGL_GET_STRUCT_HEAD(t, CRTextureUnit, Saved1D);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->Saved1D, pSSM);
+    AssertRCReturn(rc, rc);
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureUnit, Saved1D, Saved2D);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->Saved2D, pSSM);
+    AssertRCReturn(rc, rc);
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureUnit, Saved2D, Saved3D);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->Saved3D, pSSM);
+    AssertRCReturn(rc, rc);
+#ifdef CR_ARB_texture_cube_map
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureUnit, Saved3D, SavedCubeMap);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->SavedCubeMap, pSSM);
+    AssertRCReturn(rc, rc);
+# define SHCROGL_INTERNAL_LAST_FIELD SavedCubeMap
+#else
+# define SHCROGL_INTERNAL_LAST_FIELD Saved3D
+#endif
+#ifdef CR_NV_texture_rectangle
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureUnit, SHCROGL_INTERNAL_LAST_FIELD, SavedRect);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->SavedRect, pSSM);
+    AssertRCReturn(rc, rc);
+# undef SHCROGL_INTERNAL_LAST_FIELD
+# define SHCROGL_INTERNAL_LAST_FIELD SavedRect
+#endif
+    SHCROGL_CUT_TAIL_ALIGNMENT(CRTextureUnit, SHCROGL_INTERNAL_LAST_FIELD);
+#undef SHCROGL_INTERNAL_LAST_FIELD
+    return rc;
+}
+
+static int32_t crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(CRTextureState *t, PSSMHANDLE pSSM)
+{
+    GLint i;
+    int32_t rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->base1D, pSSM);
+    AssertRCReturn(rc, rc);
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, base1D, base2D);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->base2D, pSSM);
+    AssertRCReturn(rc, rc);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->base3D, pSSM);
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, base2D, base3D);
+    AssertRCReturn(rc, rc);
+#ifdef CR_ARB_texture_cube_map
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, base3D, baseCubeMap);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->baseCubeMap, pSSM);
+    AssertRCReturn(rc, rc);
+# define SHCROGL_INTERNAL_LAST_FIELD baseCubeMap
+#else
+# define SHCROGL_INTERNAL_LAST_FIELD base3D
+#endif
+#ifdef CR_NV_texture_rectangle
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, SHCROGL_INTERNAL_LAST_FIELD, baseRect);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->baseRect, pSSM);
+    AssertRCReturn(rc, rc);
+# undef SHCROGL_INTERNAL_LAST_FIELD
+# define SHCROGL_INTERNAL_LAST_FIELD baseRect
+#endif
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, SHCROGL_INTERNAL_LAST_FIELD, proxy1D);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->proxy1D, pSSM);
+    AssertRCReturn(rc, rc);
+#undef SHCROGL_INTERNAL_LAST_FIELD
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, proxy1D, proxy2D);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->proxy2D, pSSM);
+    AssertRCReturn(rc, rc);
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, proxy2D, proxy3D);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->proxy3D, pSSM);
+    AssertRCReturn(rc, rc);
+#ifdef CR_ARB_texture_cube_map
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, proxy3D, proxyCubeMap);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->proxyCubeMap, pSSM);
+    AssertRCReturn(rc, rc);
+# define SHCROGL_INTERNAL_LAST_FIELD proxyCubeMap
+#else
+# define SHCROGL_INTERNAL_LAST_FIELD proxy3D
+#endif
+#ifdef CR_NV_texture_rectangle
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, SHCROGL_INTERNAL_LAST_FIELD, proxyRect);
+    rc = crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(&t->proxyRect, pSSM);
+    AssertRCReturn(rc, rc);
+# undef SHCROGL_INTERNAL_LAST_FIELD
+# define SHCROGL_INTERNAL_LAST_FIELD proxyRect
+#endif
+    SHCROGL_CUT_FIELD_ALIGNMENT(CRTextureState, SHCROGL_INTERNAL_LAST_FIELD, curTextureUnit);
+# undef SHCROGL_INTERNAL_LAST_FIELD
+    SHCROGL_GET_STRUCT_PART(t, CRTextureState, curTextureUnit, unit);
+
+    for (i = 0; i < CR_MAX_TEXTURE_UNITS; ++i)
+    {
+        rc = crStateLoadTextureUnit_v_BEFORE_CTXUSAGE_BITS(&t->unit[i], pSSM);
+        AssertRCReturn(rc, rc);
+    }
+
+    SHCROGL_CUT_TAIL_ALIGNMENT(CRTextureState, unit);
+
+    return rc;
+}
+
+static int32_t crStateLoadTextureStack_v_BEFORE_CTXUSAGE_BITS(CRTextureStack *t, PSSMHANDLE pSSM)
+{
+    int32_t i, rc;
+    SHCROGL_GET_STRUCT_HEAD(t, CRTextureStack, unit);
+    for (i = 0; i < CR_MAX_TEXTURE_UNITS; ++i)
+    {
+        rc = crStateLoadTextureUnit_v_BEFORE_CTXUSAGE_BITS(&t->unit[i], pSSM);
+        AssertRCReturn(rc, rc);
+    }
+    SHCROGL_CUT_TAIL_ALIGNMENT(CRTextureStack, unit);
+    return rc;
+}
+
+static int32_t crStateLoadAttribState_v_BEFORE_CTXUSAGE_BITS(CRAttribState *t, PSSMHANDLE pSSM)
+{
+    int32_t i, rc;
+    SHCROGL_GET_STRUCT_HEAD(t, CRAttribState, textureStack);
+    for (i = 0; i < CR_MAX_ATTRIB_STACK_DEPTH; ++i)
+    {
+        rc = crStateLoadTextureStack_v_BEFORE_CTXUSAGE_BITS(&t->textureStack[i], pSSM);
+        AssertRCReturn(rc, rc);
+    }
+    SHCROGL_GET_STRUCT_TAIL(t, CRAttribState, transformStackDepth);
+    return rc;
+}
+
+
+static int32_t crStateLoadTextureObj(CRTextureObj *pTexture, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int32_t rc;
+    if (u32Version == SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
+        return crStateLoadTextureObj_v_BEFORE_CTXUSAGE_BITS(pTexture, pSSM);
+    rc = SSMR3GetMem(pSSM, pTexture, sizeof (*pTexture));
+    AssertRCReturn(rc, rc);
+    return rc;
+}
+
+static int32_t crStateLoadBufferObject(CRBufferObject *pBufferObj, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int32_t rc;
+    if (u32Version == SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
+    {
+        uint32_t cbObj = RT_OFFSETOF(CRBufferObject, ctxUsage);
+        cbObj = ((cbObj + sizeof (void*) - 1) & ~(sizeof (void*) - 1));
+        rc = SSMR3GetMem(pSSM, pBufferObj, cbObj);
+        AssertRCReturn(rc, rc);
+        /* just make all bits are used so that we fall back to the pre-ctxUsage behavior,
+         * i.e. all shared resources will be destructed on last shared context termination */
+        FILLDIRTY(pBufferObj->ctxUsage);
+    }
+    else
+    {
+        rc = SSMR3GetMem(pSSM, pBufferObj, sizeof(*pBufferObj));
+        AssertRCReturn(rc, rc);
+    }
+    return rc;
+}
+
+static int32_t crStateLoadFramebufferObject(CRFramebufferObject *pFBO, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int32_t rc;
+    if (u32Version == SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
+    {
+        uint32_t cbObj = RT_OFFSETOF(CRFramebufferObject, ctxUsage);
+        cbObj = ((cbObj + sizeof (void*) - 1) & ~(sizeof (void*) - 1));
+        rc = SSMR3GetMem(pSSM, pFBO, cbObj);
+        AssertRCReturn(rc, rc);
+        /* just make all bits are used so that we fall back to the pre-ctxUsage behavior,
+         * i.e. all shared resources will be destructed on last shared context termination */
+        FILLDIRTY(pFBO->ctxUsage);
+    }
+    else
+    {
+        rc = SSMR3GetMem(pSSM, pFBO, sizeof(*pFBO));
+        AssertRCReturn(rc, rc);
+    }
+    return rc;
+}
+
+static int32_t crStateLoadRenderbufferObject(CRRenderbufferObject *pRBO, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int32_t rc;
+    if (u32Version == SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
+    {
+        uint32_t cbObj = RT_OFFSETOF(CRRenderbufferObject, ctxUsage);
+        cbObj = ((cbObj + sizeof (void*) - 1) & ~(sizeof (void*) - 1));
+        rc = SSMR3GetMem(pSSM, pRBO, cbObj);
+        AssertRCReturn(rc, rc);
+        /* just make all bits are used so that we fall back to the pre-ctxUsage behavior,
+         * i.e. all shared resources will be destructed on last shared context termination */
+        FILLDIRTY(pRBO->ctxUsage);
+    }
+    else
+    {
+        rc = SSMR3GetMem(pSSM, pRBO, sizeof(*pRBO));
+        AssertRCReturn(rc, rc);
+    }
+    return rc;
+}
+
 static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM)
 {
     int32_t rc, face, i;
@@ -1403,7 +1649,7 @@ AssertCompile(VBOXTLSREFDATA_SIZE() <= CR_MAX_BITARRAY);
 AssertCompile(VBOXTLSREFDATA_STATE_INITIALIZED != 0);
 AssertCompile(RT_OFFSETOF(CRContext, shared) >= VBOXTLSREFDATA_OFFSET(CRContext) + VBOXTLSREFDATA_SIZE() + RT_SIZEOFMEMB(CRContext, bitid) + RT_SIZEOFMEMB(CRContext, neg_bitid));
 
-int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM)
+int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM, uint32_t u32Version)
 {
     CRContext* pTmpContext;
     int32_t rc, i, j;
@@ -1416,6 +1662,8 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             VBOXTLSREFDATA
         } tlsRef;
     } bitid;
+
+    Assert(0);
 
     CRASSERT(pContext && pSSM);
 
@@ -1473,8 +1721,22 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
      * for simplicity store the VBOXTLSREFDATA from the pContext to pTmpContext */
     VBOXTLSREFDATA_COPY(pTmpContext, pContext);
 
-    rc = SSMR3GetMem(pSSM, &pTmpContext->shared, sizeof (CRContext) - RT_OFFSETOF(CRContext, shared));
-    AssertRCReturn(rc, rc);
+    if (u32Version == SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
+    {
+        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, shared, attrib);
+        rc = crStateLoadAttribState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->attrib, pSSM);
+        AssertRCReturn(rc, rc);
+        SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
+        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, texture);
+        rc = crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->texture, pSSM);
+        AssertRCReturn(rc, rc);
+        SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, texture, transform);
+        SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, transform);
+    }
+    else
+    {
+        SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, shared);
+    }
 
     /* Deal with shared state */
     {
@@ -1719,7 +1981,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             pTexture = (CRTextureObj *) crCalloc(sizeof(CRTextureObj));
             if (!pTexture) return VERR_NO_MEMORY;
 
-            rc = SSMR3GetMem(pSSM, pTexture, sizeof(*pTexture));
+            rc = crStateLoadTextureObj(pTexture, pSSM, u32Version);
             AssertRCReturn(rc, rc);
 
             pTexture->hwid = 0;
@@ -1830,7 +2092,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             if (!pBufferObj) return VERR_NO_MEMORY;
         }
 
-        rc = SSMR3GetMem(pSSM, pBufferObj, sizeof(*pBufferObj));
+        rc = crStateLoadBufferObject(pBufferObj, pSSM, u32Version);
         AssertRCReturn(rc, rc);
 
         pBufferObj->hwid = 0;
@@ -1942,7 +2204,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             rc = SSMR3GetMem(pSSM, &key, sizeof(key));
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3GetMem(pSSM, pFBO, sizeof(*pFBO));
+            rc = crStateLoadFramebufferObject(pFBO, pSSM, u32Version);
             AssertRCReturn(rc, rc);
 
             crHashtableAdd(pContext->shared->fbTable, key, pFBO);
@@ -1959,7 +2221,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             rc = SSMR3GetMem(pSSM, &key, sizeof(key));
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3GetMem(pSSM, pRBO, sizeof(*pRBO));
+            rc = crStateLoadRenderbufferObject(pRBO, pSSM, u32Version);
             AssertRCReturn(rc, rc);
 
             crHashtableAdd(pContext->shared->rbTable, key, pRBO);

@@ -937,7 +937,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         return VINF_SUCCESS;
     }
 
-    if (version!=SHCROGL_SSM_VERSION)
+    if (version < SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
     {
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
@@ -989,7 +989,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         CRASSERT(pContextInfo->pContext);
         pContext = pContextInfo->pContext;
 
-        rc = crStateLoadContext(pContext, cr_server.contextTable, crVBoxServerGetContextCB, pSSM);
+        rc = crStateLoadContext(pContext, cr_server.contextTable, crVBoxServerGetContextCB, pSSM, version);
         AssertRCReturn(rc, rc);
     }
 
