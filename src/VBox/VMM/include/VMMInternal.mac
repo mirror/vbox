@@ -97,16 +97,15 @@ endstruc
 
 
 struc VMMCPU
-                                
+
         .offVMCPU               resd 1
         .iLastGZRc              resd 1
         .pbEMTStackR3           RTR3PTR_RES 1
         .pbEMTStackRC           RTRCPTR_RES 1
         .pbEMTStackBottomRC     RTRCPTR_RES 1
-%ifdef LOG_ENABLED
+
         .pR0LoggerR3            RTR3PTR_RES 1
         .pR0LoggerR0            RTR0PTR_RES 1
-%endif
 
         .fInRendezvous          resb 1
 %if HC_ARCH_BITS == 32
