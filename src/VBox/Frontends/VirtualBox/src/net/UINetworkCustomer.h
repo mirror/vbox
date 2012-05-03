@@ -29,7 +29,7 @@
 class QNetworkReply;
 class QNetworkRequest;
 
-/* Inheritable interface allowing to access UINetworkManager hidden functionality: */
+/* Interface to access UINetworkManager protected functionality: */
 class UINetworkCustomer : public QObject
 {
     Q_OBJECT;
@@ -39,24 +39,20 @@ public:
     /* Constructor: */
     UINetworkCustomer(QObject *pParent = 0);
 
-    /* Network reply progress handler: */
+    /* Network-reply progress handler: */
     virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) = 0;
-    /* Network reply cancel handler: */
+    /* Network-reply cancel handler: */
     virtual void processNetworkReplyCanceled(QNetworkReply *pReply) = 0;
-    /* Network reply finish handler: */
+    /* Network-reply finish handler: */
     virtual void processNetworkReplyFinished(QNetworkReply *pReply) = 0;
 
 protected:
 
-    /* Network request wrapper: */
+    /* Network-request wrapper: */
     void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription);
-    /* Network request wrapper (set): */
+    /* Network-request wrapper (set): */
     void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription);
-
-#if 0
-    /* Downloader creation notification wrapper: */
-    void notifyDownloaderCreated(UIDownloadType downloaderType);
-#endif
 };
 
 #endif // __UINetworkCustomer_h__
+
