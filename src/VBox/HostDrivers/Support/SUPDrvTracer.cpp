@@ -1842,7 +1842,7 @@ static void supdrvTracerUmodClearProbeIds(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION 
     {
         if (pSession->cTpProbesFiring > 0)
         {
-            uint32_t i = 0;
+            i = 0;
             while (pSession->cTpProbesFiring > 0)
             {
                 RTSemFastMutexRelease(pDevExt->mtxTracer);
