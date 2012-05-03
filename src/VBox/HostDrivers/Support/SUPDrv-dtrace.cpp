@@ -421,7 +421,6 @@ static void     vboxDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvPr
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturnVoid(pProv);
     LOG_DTRACE(("%s: %p / %p - %#x / %p\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
-    AssertPtrReturnVoid(pvProbe);
     AssertPtrReturnVoid(pProv->TracerData.DTrace.idProvider);
 
     if (!pProv->TracerData.DTrace.fZombie)
@@ -469,7 +468,6 @@ static void     vboxDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *p
     pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
     AssertPtrReturnVoid(pProv);
     LOG_DTRACE(("%s: %p / %p - %#x / %p uArg=%d\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe, uArg));
-    AssertPtrReturnVoid(pvProbe);
     AssertPtrReturnVoid(pProv->TracerData.DTrace.idProvider);
 
     if (!pProv->TracerData.DTrace.fZombie)
