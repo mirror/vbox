@@ -624,9 +624,9 @@ ifn1of ($(KBUILD_TARGET), os2)
  VBOX_WITH_DTRACE_R0 = 1
 endif
 # Set this to enable dtrace probes raw-mode context code.
-##ifn1of ($(KBUILD_TARGET), os2)
-## VBOX_WITH_DTRACE_RC = 1
-##endif
+if1of ($(KBUILD_TARGET), solaris)
+ VBOX_WITH_DTRACE_RC = 1
+endif
 # Set this to enable support for dtrace probes in guest code.
 #VBOX_WITH_DTRACE_GST = 1
 # Set this to indicate that the host ships with DTrace.
