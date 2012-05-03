@@ -268,7 +268,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00190000
-                                   ? 0x00190002
+                                   ? 0x00190003
                                    : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -2569,9 +2569,13 @@ SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszMo
             return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
         pVtgHdr->cbProbeLocs  = (uint32_t)u64Tmp;
 
-        u64Tmp = pVtgHdr->uProbeLocs.u64 - (uintptr_t)pVtgHdr;
+        u64Tmp = pVtgHdr->uProbeLocs.u64 - uVtgHdrAddr;
         if ((int64_t)u64Tmp != (int32_t)u64Tmp)
+        {
+            LogRel(("SUPR3TracerRegisterModule: VERR_SUPDRV_VTG_BAD_HDR_PTR - u64Tmp=%#llx uProbeLocs=%#llx uVtgHdrAddr=%RTptr\n", 
+                    u64Tmp, pVtgHdr->uProbeLocs.u64, uVtgHdrAddr));
             return VERR_SUPDRV_VTG_BAD_HDR_PTR;
+        }
         pVtgHdr->offProbeLocs = (int32_t)u64Tmp;
     }
 
@@ -2616,7 +2620,7 @@ SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszMo
     Req.u.In.cbStrTab       = pStrTab->cbStrTab;
     Req.u.In.fFlags         = fFlags;
 
-    memcpy(Req.u.In.szName, pszModule, cchModule);
+    memcpy(Req.u.In.szName, pszModule, cchModule + 1);
     if (!RTPathHasExt(Req.u.In.szName))
     {
         /* Add the default suffix if none is given. */

@@ -624,7 +624,9 @@ ifn1of ($(KBUILD_TARGET), os2)
  VBOX_WITH_DTRACE_R0 = 1
 endif
 # Set this to enable dtrace probes raw-mode context code.
-#VBOX_WITH_DTRACE_RC = 1
+##ifn1of ($(KBUILD_TARGET), os2)
+## VBOX_WITH_DTRACE_RC = 1
+##endif
 # Set this to enable support for dtrace probes in guest code.
 #VBOX_WITH_DTRACE_GST = 1
 # Set this to indicate that the host shipts with DTrace.
@@ -2690,6 +2692,7 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_DTRACE_RC
   TEMPLATE_VBoxRc_DTRACETOOL         = VBoxTpG
   TEMPLATE_VBoxRc_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_RC
+  TEMPLATE_VBoxRc_DTRACE_OBJ_FLAGS   = --probe-fn-name "VMMRCProbeFire"
  else
   TEMPLATE_VBoxRc_DTRACETOOL         = VBoxTpG-Disabled
  endif

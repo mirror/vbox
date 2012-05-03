@@ -31,6 +31,7 @@
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/vmm/hwaccm.h>
+#include <VBox/VBoxTpG.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -167,10 +168,10 @@ void pdmR3LdrTermU(PUVM pUVM)
 
 
 /**
- * Applies relocations to GC modules.
+ * Applies relocations to RC modules.
  *
  * This must be done very early in the relocation
- * process so that components can resolve GC symbols during relocation.
+ * process so that components can resolve RC symbols during relocation.
  *
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   offDelta    Relocation delta relative to old location.
@@ -181,7 +182,7 @@ VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
     LogFlow(("PDMR3LdrRelocate: offDelta=%RGv\n", offDelta));
 
     /*
-     * GC Modules.
+     * RC Modules.
      */
     RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
     if (pUVM->pdm.s.pModules)
@@ -430,7 +431,8 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
 
 
 /**
- * Loads a module into the guest context (i.e. into the Hypervisor memory region).
+ * Loads a module into the raw-mode context (i.e. into the Hypervisor memory 
+ * region). 
  *
  * @returns VBox status code.
  * @param   pVM             The VM to load it into.
@@ -527,6 +529,27 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                         rc = RTLdrGetBits(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pdmR3GetImportRC, &Args);
                         if (RT_SUCCESS(rc))
                         {
+#ifdef VBOX_WITH_DTRACE_RC
+                            /*
+                             * Register the tracer bits if present.
+                             */
+                            RTLDRADDR uValue;
+                            rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, 
+                                                  "g_VTGObjHeader", &uValue);
+                            if (RT_SUCCESS(rc))
+                            {
+                                PVTGOBJHDR pVtgHdr = (PVTGOBJHDR)MMHyperRCToCC(pVM, (RTRCPTR)uValue);
+                                if (   pVtgHdr 
+                                    && !memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
+                                    rc = SUPR3TracerRegisterModule(~(uintptr_t)0, pModule->szName, pVtgHdr, uValue, 
+                                                                   SUP_TRACER_UMOD_FLAGS_SHARED);
+                                else
+                                    rc = pVtgHdr ? VERR_INVALID_MAGIC : VERR_INVALID_POINTER;
+                                if (RT_FAILURE(rc))
+                                    LogRel(("PDM: Failed to register tracepoints for '%s': %Rrc\n", pModule->szName, rc));
+                            }
+#endif
+
                             /*
                              * Insert the module.
                              */
@@ -541,9 +564,11 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                             else
                                 pUVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
                             Log(("PDM: RC Module at %RRv %s (%s)\n", (RTRCPTR)pModule->ImageBase, pszName, pszFilename));
+
                             RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
                             RTMemTmpFree(pszFile);
                             RTMemTmpFree(paPages);
+
                             return VINF_SUCCESS;
                         }
                     }

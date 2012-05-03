@@ -334,12 +334,20 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
     {
         uint64_t u64Tmp = pVtgHdr->uProbeLocsEnd.u64 - pVtgHdr->uProbeLocs.u64;
         if (u64Tmp >= UINT32_MAX)
+        {
+            SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH - u64Tmp=%#llx ProbeLocs=%#llx ProbeLocsEnd=%#llx\n", 
+                        u64Tmp, pVtgHdr->uProbeLocs.u64, pVtgHdr->uProbeLocsEnd.u64);
             return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
+        }
         pVtgHdr->cbProbeLocs  = (uint32_t)u64Tmp;
 
         u64Tmp = pVtgHdr->uProbeLocs.u64 - uVtgHdrAddr;
         if ((int64_t)u64Tmp != (int32_t)u64Tmp)
+        {
+            SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_PTR - u64Tmp=%#llx uProbeLocs=%#llx uVtgHdrAddr=%RTptr\n", 
+                        u64Tmp, pVtgHdr->uProbeLocs.u64, uVtgHdrAddr);
             return VERR_SUPDRV_VTG_BAD_HDR_PTR;
+        }
         pVtgHdr->offProbeLocs = (int32_t)u64Tmp;
     }
 

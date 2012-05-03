@@ -193,6 +193,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0TracerRegisterDrv",                 (void *)SUPR0TracerRegisterDrv },
     { "SUPR0TracerRegisterImpl",                (void *)SUPR0TracerRegisterImpl },
     { "SUPR0TracerRegisterModule",              (void *)SUPR0TracerRegisterModule },
+    { "SUPR0TracerUmodProbeFire",               (void *)SUPR0TracerUmodProbeFire },
     { "SUPR0UnlockMem",                         (void *)SUPR0UnlockMem },
     { "SUPSemEventClose",                       (void *)SUPSemEventClose },
     { "SUPSemEventCreate",                      (void *)SUPSemEventCreate },

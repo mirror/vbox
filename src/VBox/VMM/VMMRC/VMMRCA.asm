@@ -3,7 +3,8 @@
 ; VMMGC - Raw-mode Context Virtual Machine Monitor assembly routines.
 ;
 
-; Copyright (C) 2006-2007 Oracle Corporation
+;
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +20,9 @@
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
 %include "iprt/x86.mac"
+%include "VBox/sup.mac"
+%include "VBox/vmm/vm.mac"
+%include "VMMInternal.mac"
 
 
 ;*******************************************************************************
@@ -47,9 +51,11 @@
 ;*******************************************************************************
 ;* External Symbols                                                            *
 ;*******************************************************************************
+extern IMPNAME(g_VM)
 extern IMPNAME(g_Logger)
 extern IMPNAME(g_RelLogger)
 extern NAME(RTLogLogger)
+extern NAME(vmmRCProbeFireHelper)
 
 
 BEGINCODE
@@ -212,4 +218,95 @@ EXPORTEDNAME vmmGCTestTrap0e_ResumeEIP
     xor     eax, eax
     ret
 ENDPROC vmmGCTestTrap0e
+
+
+
+;;
+; The raw-mode context equivalent of SUPTracerFireProbe.  
+;
+; See also SUPLibTracerA.asm.
+;
+EXPORTEDNAME VMMRCProbeFire
+        push    ebp
+        mov     ebp, esp
+
+        ;
+        ; Save edx and eflags so we can use them.
+        ;
+        pushf
+        push    edx
+
+        ;
+        ; Get the address of the tracer context record after first checking 
+        ; that host calls hasn't been disabled.
+        ;
+        mov     edx, IMP(g_VM)
+        add     edx, [ecx + VM.offVMCPU]
+        cmp     dword [edx + VMMCPU.cCallRing3Disabled], 0
+        jnz     .return
+        add     edx, [VMCPU.vmm + VMMCPU.TracerCtx]
+
+        ;
+        ; Save the X86 context.
+        ;
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.eax], eax
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.ecx], ecx
+        pop     eax
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.edx], eax
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.ebx], ebx
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.esi], esi
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.edi], edi
+        pop     eax
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.eflags], eax
+        mov     eax, [ebp + 4]
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.eip], eax
+        mov     eax, [ebp]
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.ebp], eax
+        lea     eax, [ebp + 4*2]
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.esp], eax
+
+        mov     ecx, [ebp + 4*2]
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.uVtgProbeLoc], ecx
+
+        mov     eax, [ecx + 4]          ; VTGPROBELOC::idProbe.
+        mov     [edx + SUPDRVTRACERUSRCTX32.idProbe], eax
+        mov     dword [edx + SUPDRVTRACERUSRCTX32.cBits], 32
+
+        ; Copy the arguments off the stack.
+%macro COPY_ONE_ARG 1
+        mov     eax, [ebp + 8 + %1 * 4]
+        mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.aArgs + %1*4], eax
+%endmacro
+        COPY_ONE_ARG 0
+        COPY_ONE_ARG 1
+        COPY_ONE_ARG 2
+        COPY_ONE_ARG 3
+        COPY_ONE_ARG 4
+        COPY_ONE_ARG 5
+        COPY_ONE_ARG 6
+        COPY_ONE_ARG 7
+        COPY_ONE_ARG 8
+        COPY_ONE_ARG 9
+        COPY_ONE_ARG 10
+        COPY_ONE_ARG 11
+        COPY_ONE_ARG 12
+        COPY_ONE_ARG 13
+        COPY_ONE_ARG 14
+        COPY_ONE_ARG 15
+        COPY_ONE_ARG 16
+        COPY_ONE_ARG 17
+        COPY_ONE_ARG 18
+        COPY_ONE_ARG 19
+
+        ;
+        ; Call the helper (too lazy to do the VMM structure stuff).
+        ;
+        mov     ecx, IMP(g_VM)
+        push    ecx
+        call    NAME(vmmRCProbeFireHelper)
+
+.return:
+        leave
+        ret
+ENDPROC      VMMRCProbeFire
 

@@ -665,14 +665,22 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 if (RT_SUCCESS(rc))
                 {
                     RTCCUINTREG uFlags = ASMIntDisableFlags();
-                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
-                    TMNotifyStartOfExecution(pVCpu);
-                    rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
-                    pVCpu->vmm.s.iLastGZRc = rc;
-                    TMNotifyEndOfExecution(pVCpu);
+                    for (;;)
+                    {
+                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+                        TMNotifyStartOfExecution(pVCpu);
 
-                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+                        rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
+                        pVCpu->vmm.s.iLastGZRc = rc;
+
+                        TMNotifyEndOfExecution(pVCpu);
+                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+
+                        if (rc != VINF_VMM_CALL_TRACER)
+                            break;
+                        SUPR0TracerUmodProbeFire(pVM->pSession, &pVCpu->vmm.s.TracerCtx);
+                    }
 
                     /* Re-enable VT-x if previously turned off. */
                     HWACCMR0LeaveSwitcher(pVM, fVTxDisabled);
