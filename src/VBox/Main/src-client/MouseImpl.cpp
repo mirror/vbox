@@ -167,7 +167,8 @@ HRESULT Mouse::updateVMMDevMouseCaps(uint32_t fCapsAdded,
         return E_FAIL;  /* No assertion, as the front-ends can send events
                          * at all sorts of inconvenient times. */
     PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
-    ComAssertRet(pVMMDevPort, E_FAIL);
+    if (!pVMMDevPort)
+        return E_FAIL;  /* same here */
 
     int rc = pVMMDevPort->pfnUpdateMouseCapabilities(pVMMDevPort, fCapsAdded,
                                                      fCapsRemoved);

@@ -115,7 +115,8 @@ VMMDev::~VMMDev()
 
 PPDMIVMMDEVPORT VMMDev::getVMMDevPort()
 {
-    AssertReturn(mpDrv, NULL);
+    if (!mpDrv)
+        return NULL;
     return mpDrv->pUpPort;
 }
 
