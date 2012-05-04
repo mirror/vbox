@@ -577,6 +577,34 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv);
  */
 RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void);
 
+/**
+ * Copy memory from an potentially unsafe kernel mode location and into a safe
+ * (kernel) buffer.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_ACCESS_DENIED on error.
+ * @retval  VERR_NOT_SUPPORTED if not (yet) supported.
+ *
+ * @param   pvDst       The destination address (safe).
+ * @param   pvSrc       The source address (potentially unsafe).
+ * @param   cb          The number of bytes to copy.
+ */
+RTR0DECL(int) RTR0MemKernelCopyFrom(void *pvDst, void const *pvSrc, size_t cb);
+
+/**
+ * Copy from a safe (kernel) buffer and to a potentially unsafe kenrel mode
+ * location.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_ACCESS_DENIED on error.
+ * @retval  VERR_NOT_SUPPORTED if not (yet) supported.
+ *
+ * @param   pvDst       The destination address (potentially unsafe).
+ * @param   pvSrc       The source address (safe).
+ * @param   cb          The number of bytes to copy.
+ */
+RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb);
+
 #endif /* IN_RING0 */
 
 

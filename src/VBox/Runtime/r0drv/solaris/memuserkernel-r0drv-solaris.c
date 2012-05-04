@@ -80,3 +80,21 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
     return true;
 }
 
+
+RTR0DECL(int) RTR0MemKernelCopyFrom(void *pvDst, void const *pvSrc, size_t cb)
+{
+    int rc = kcopy(pvSrc, pvDst, cb);
+    if (RT_LIKELY(rc == 0))
+        return VINF_SUCCESS;
+    return VERR_ACCESS_DENIED;
+}
+
+
+RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb)
+{
+    int rc = kcopy(pvSrc, pvDst, cb);
+    if (RT_LIKELY(rc == 0))
+        return VINF_SUCCESS;
+    return VERR_ACCESS_DENIED;
+}
+

@@ -193,7 +193,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Remove RTSpinlockReleaseNoInts.
  */
-#define SUPDRV_IOC_VERSION                              0x001a0003
+#define SUPDRV_IOC_VERSION                              0x001a0004
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE

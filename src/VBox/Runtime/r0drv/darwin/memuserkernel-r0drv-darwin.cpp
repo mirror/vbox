@@ -98,3 +98,16 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
 #endif
 }
 
+
+RTR0DECL(int) RTR0MemKernelCopyFrom(void *pvDst, void const *pvSrc, size_t cb)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
+RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+

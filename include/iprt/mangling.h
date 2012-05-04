@@ -985,6 +985,8 @@
 # define RTR0MemKernelIsValidAddr                       RT_MANGLER(RTR0MemKernelIsValidAddr)   /* r0drv */
 # define RTR0MemObjAddress                              RT_MANGLER(RTR0MemObjAddress)          /* r0drv */
 # define RTR0MemObjAddressR3                            RT_MANGLER(RTR0MemObjAddressR3)        /* r0drv */
+# define RTR0MemKernelCopyFrom                          RT_MANGLER(RTR0MemKernelCopyFrom)      /* r0drv */
+# define RTR0MemKernelCopyTo                            RT_MANGLER(RTR0MemKernelCopyTo)        /* r0drv */
 # define RTR0MemObjAllocContTag                         RT_MANGLER(RTR0MemObjAllocContTag)     /* r0drv */
 # define RTR0MemObjAllocLowTag                          RT_MANGLER(RTR0MemObjAllocLowTag)      /* r0drv */
 # define RTR0MemObjAllocPageTag                         RT_MANGLER(RTR0MemObjAllocPageTag)     /* r0drv */
