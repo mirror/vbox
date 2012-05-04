@@ -57,7 +57,7 @@ int main(int argc, char** argv)
   nsAutoString s1, s2;
   PRTime start = PR_Now();
   PRInt32 i;
-  for (i = 0; i < 60000; i++) {
+  for (i = 0; i < 30000; i++) {
     char buf[1000];
     char* s = fgets(buf, sizeof(buf), fp);
     if (nsnull == s) {
