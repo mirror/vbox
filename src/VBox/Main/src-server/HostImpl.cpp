@@ -1135,10 +1135,9 @@ STDMETHODIMP Host::CreateHostOnlyNetworkInterface(IHostNetworkInterface **aHostN
                                        tmpMask.raw());
         ComAssertComRCRet(hrc, hrc);
 #endif
-        return S_OK;
     }
 
-    return r == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+    return S_OK;
 #else
     return E_NOTIMPL;
 #endif
