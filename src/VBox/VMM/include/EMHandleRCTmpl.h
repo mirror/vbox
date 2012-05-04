@@ -19,7 +19,7 @@
 #define ___EMHandleRCTmpl_h
 
 /**
- * Process a subset of the raw-mode return code.
+ * Process a subset of the raw-mode and hwaccm return codes.
  *
  * Since we have to share this with raw-mode single stepping, this inline
  * function has been created to avoid code duplication.
