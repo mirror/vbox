@@ -117,7 +117,7 @@ struc VMMCPU
         alignb 8
         .TracerCtx              resb SUPDRVTRACERUSRCTX64_size
 
-        .u32Padding1            resd 1
+        .au32Padding1           resd 3
 
         .cCallRing3Disabled     resd 1
         .enmCallRing3Operation  resd 1

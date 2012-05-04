@@ -432,7 +432,7 @@ typedef struct VMMCPU
     /** @} */
 
     /** Alignment padding, making sure u64CallRing3Arg is nicly aligned. */
-    uint32_t                    u32Padding1;
+    uint32_t                    au32Padding1[3];
 
     /** @name Call Ring-3
      * Formerly known as host calls.
