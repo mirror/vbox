@@ -1060,9 +1060,18 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
     if (!isMachineWindowsCreated())
         return;
 
-    /* Create and execute current VM settings dialog: */
-    UISettingsDialogMachine dlg(activeMachineWindow(), session().GetMachine().GetId(), strCategory, QString());
-    dlg.execute();
+    /* Create VM settings dialog on the heap!
+     * Its necessary to allow QObject hierarchy cleanup to delete this dialog if necessary: */
+    QPointer<UISettingsDialogMachine> pDialog = new UISettingsDialogMachine(activeMachineWindow(),
+                                                                            session().GetMachine().GetId(),
+                                                                            strCategory, QString());
+    /* Executing VM settings dialog.
+     * This blocking function calls for the internal event-loop to process all further events,
+     * including event which can delete the dialog itself. */
+    pDialog->execute();
+    /* Delete dialog if its still valid: */
+    if (pDialog)
+        delete pDialog;
 }
 
 void UIMachineLogic::sltOpenNetworkAdaptersDialog()

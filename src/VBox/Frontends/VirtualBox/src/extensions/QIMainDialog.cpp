@@ -47,35 +47,37 @@ QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,
 
 QDialog::DialogCode QIMainDialog::exec()
 {
-    AssertMsg (!mEventLoop, ("exec is called recursively!\n"));
+    /* Check for the recursive run: */
+    AssertMsg(!mEventLoop, ("QIMainDialog::exec() is called recursively!\n"));
 
-    /* Reset the result code */
-    setResult (QDialog::Rejected);
-    bool deleteOnClose = testAttribute (Qt::WA_DeleteOnClose);
-    setAttribute (Qt::WA_DeleteOnClose, false);
-    bool wasShowModal = testAttribute (Qt::WA_ShowModal);
-    setAttribute (Qt::WA_ShowModal, true);
+    /* Reset the result code: */
+    setResult(QDialog::Rejected);
 
-    /* Create a local event loop */
-    mEventLoop = new QEventLoop();
-    /* Show the window */
+    /* Tune some attributes: */
+    bool fDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
+    AssertMsg(!fDeleteOnClose, ("QIMainDialog is NOT supposed to be run in 'delete-on-close' mode!"));
+    setAttribute(Qt::WA_DeleteOnClose, false);
+    bool fWasShowModal = testAttribute(Qt::WA_ShowModal);
+    setAttribute(Qt::WA_ShowModal, true);
+
+    /* Create a local event-loop: */
+    QEventLoop eventLoop;
+    mEventLoop = &eventLoop;
+    /* Show the window: */
     show();
-    /* A guard to ourself for the case we destroy ourself. */
+    /* A guard to ourself for the case we destroy ourself: */
     QPointer<QIMainDialog> guard = this;
-    /* Start the event loop. This blocks. */
-    mEventLoop->exec();
-    /* Delete the event loop */
-    delete mEventLoop;
-    /* Are we valid anymore? */
+    /* Start the event-loop: */
+    eventLoop.exec();
+    /* Check if dialog is still valid: */
     if (guard.isNull())
         return QDialog::Rejected;
+    mEventLoop = 0;
+    /* Prepare result: */
     QDialog::DialogCode res = result();
-    /* Set the old show modal attribute */
-    setAttribute (Qt::WA_ShowModal, wasShowModal);
-    /* Delete us in the case we should do so on close */
-    if (deleteOnClose)
-        delete this;
-    /* Return the final result */
+    /* Restore old show-modal attribute: */
+    setAttribute(Qt::WA_ShowModal, fWasShowModal);
+    /* Return the final result: */
     return res;
 }
 
