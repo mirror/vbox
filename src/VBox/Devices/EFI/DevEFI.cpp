@@ -570,6 +570,7 @@ efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd
         if (pFfsFile->Type == FileType)
         {
             *pcbFile = FFS_SIZE(pFfsFile);
+            LogFunc(("Found %RTuuid of type:%d\n", &pFfsFile->Name, FileType));
             return pFfsFile;
         }
         pFfsFile = (EFI_FFS_FILE_HEADER *)((uintptr_t)pFfsFile + RT_ALIGN(FFS_SIZE(pFfsFile), 8));
@@ -577,7 +578,7 @@ efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd
     return NULL;
 }
 
-static int efiFindEntryPoint(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfsFile, RTGCPHYS *pImageBase, uint8_t **ppbImage)
+static int efiFindRelativeAddressOfEPAndBaseAddressOfModule(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfsFile, RTGCPHYS *pImageBase, uint8_t **ppbImage)
 {
     /*
      * Sections headers are lays at the beginning of block it describes,
@@ -636,6 +637,8 @@ static int efiFindEntryPoint(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfs
                                   && pHdr->Nt32.FileHeader.SizeOfOptionalHeader == sizeof(pHdr->Nt64.OptionalHeader)),
                               ("%x / %x\n", pHdr->Nt32.FileHeader.Machine, pHdr->Nt32.FileHeader.SizeOfOptionalHeader),
                               VERR_LDR_ARCH_MISMATCH);
+        EFI_IMAGE_SECTION_HEADER *pSectionsHeaders = NULL;
+        int cSectionsHeaders = 0;
         if (pHdr->Nt32.FileHeader.Machine == EFI_IMAGE_FILE_MACHINE_I386)
         {
             Log2(("EFI: PE32/i386\n"));
@@ -644,21 +647,38 @@ static int efiFindEntryPoint(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfs
                                   VERR_BAD_EXE_FORMAT);
             ImageBase = pHdr->Nt32.OptionalHeader.ImageBase;
             EpRVA     = pHdr->Nt32.OptionalHeader.AddressOfEntryPoint;
+            EpRVA     -= pHdr->Nt32.OptionalHeader.BaseOfCode;
             AssertLogRelMsgReturn(EpRVA < pHdr->Nt32.OptionalHeader.SizeOfImage,
                                   ("%#RGp / %#x\n", EpRVA, pHdr->Nt32.OptionalHeader.SizeOfImage),
                                   VERR_BAD_EXE_FORMAT);
+            pSectionsHeaders = (EFI_IMAGE_SECTION_HEADER *)((uint8_t *)&pHdr->Nt32.OptionalHeader + pHdr->Nt32.FileHeader.SizeOfOptionalHeader);
+            cSectionsHeaders = pHdr->Nt32.FileHeader.NumberOfSections;
         }
         else
         {
-            Log2(("EFI: PE+/AMD64\n"));
+            Log2(("EFI: PE+/AMD64 %RX16\n", pHdr->Nt32.FileHeader.Machine));
             AssertLogRelMsgReturn(pHdr->Nt64.OptionalHeader.SizeOfImage < cbFfsFile,
                                   ("%#x / %#x\n", pHdr->Nt64.OptionalHeader.SizeOfImage, cbFfsFile),
                                   VERR_BAD_EXE_FORMAT);
             ImageBase = pHdr->Nt64.OptionalHeader.ImageBase;
             EpRVA     = pHdr->Nt64.OptionalHeader.AddressOfEntryPoint;
+            EpRVA     -= pHdr->Nt64.OptionalHeader.BaseOfCode;
             AssertLogRelMsgReturn(EpRVA < pHdr->Nt64.OptionalHeader.SizeOfImage,
                                   ("%#RGp / %#x\n", EpRVA, pHdr->Nt64.OptionalHeader.SizeOfImage),
                                   VERR_BAD_EXE_FORMAT);
+            pSectionsHeaders = (EFI_IMAGE_SECTION_HEADER *)((uint8_t *)&pHdr->Nt64.OptionalHeader + pHdr->Nt64.FileHeader.SizeOfOptionalHeader);
+            cSectionsHeaders = pHdr->Nt64.FileHeader.NumberOfSections;
+        }
+        AssertPtrReturn(pSectionsHeaders, VERR_BAD_EXE_FORMAT);
+        int idxSection = 0;
+        for (; idxSection < cSectionsHeaders; ++idxSection)
+        {
+            EFI_IMAGE_SECTION_HEADER *pSection = &pSectionsHeaders[idxSection];
+            if (!RTStrCmp((const char *)&pSection->Name[0], ".text"))
+            {
+                EpRVA += pSection->PointerToRawData;
+                break;
+            }
         }
     }
     else if (pHdr->Te.Signature == RT_MAKE_U16('V', 'Z'))
@@ -683,7 +703,7 @@ static int efiFindEntryPoint(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfs
         *pImageBase = ImageBase;
     if (ppbImage != NULL)
         *ppbImage = (uint8_t *)pbImage;
-    return ImageBase + EpRVA;
+    return (EpRVA);
 }
 
 /**
@@ -727,14 +747,17 @@ static int efiParseFirmware(PDEVEFI pThis)
     pFfsFile = efiFwVolFindFileByType(pFfsFile, pbFwVolEnd, EFI_FV_FILETYPE_SECURITY_CORE, &cbFfsFile);
     AssertLogRelMsgReturn(pFfsFile, ("No SECURITY_CORE found in the firmware volume\n"), VERR_FILE_NOT_FOUND);
 
-    RTGCPHYS ImageBase;
-    uint8_t *pbImage;
-    pThis->GCEntryPoint0 = efiFindEntryPoint(pFfsFile, cbFfsFile, &ImageBase, &pbImage);
-
+    RTGCPHYS ImageBase = NULL;
+    uint8_t *pbImage = NULL;
+    pThis->GCEntryPoint0 = efiFindRelativeAddressOfEPAndBaseAddressOfModule(pFfsFile, cbFfsFile, &ImageBase, &pbImage);
+    pThis->GCEntryPoint0 += pbImage - pThis->pu8EfiRom;
+    Assert(pThis->pu8EfiRom <= pbImage);
+    Assert(pbImage < pThis->pu8EfiRom + pThis->cbEfiRom);
     /*
      * Calc the firmware load address from the image base and validate it.
      */
     pThis->GCLoadAddress = ImageBase - (pbImage - pThis->pu8EfiRom);
+    pThis->GCEntryPoint0 += pThis->GCLoadAddress;
     AssertLogRelMsgReturn(~(pThis->GCLoadAddress & PAGE_OFFSET_MASK),
                           ("%RGp\n", pThis->GCLoadAddress),
                           VERR_INVALID_PARAMETER);
@@ -750,7 +773,9 @@ static int efiParseFirmware(PDEVEFI pThis)
             pThis->GCLoadAddress, ImageBase, pThis->GCEntryPoint0));
 
     pFfsFile = efiFwVolFindFileByType(pFfsFile, pbFwVolEnd, EFI_FV_FILETYPE_PEI_CORE, &cbFfsFile);
-    pThis->GCEntryPoint1 = efiFindEntryPoint(pFfsFile, cbFfsFile, NULL, NULL);
+    pThis->GCEntryPoint1 = efiFindRelativeAddressOfEPAndBaseAddressOfModule(pFfsFile, cbFfsFile, NULL, &pbImage);
+    pThis->GCEntryPoint1 += pThis->GCLoadAddress;
+    pThis->GCEntryPoint1 += pbImage - pThis->pu8EfiRom;
     LogRel(("EFI: Firmware volume loading at %RGp, PEI CORE at with EP at %RGp\n",
             pThis->GCLoadAddress, pThis->GCEntryPoint1));
     return VINF_SUCCESS;
@@ -804,8 +829,9 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
                               cbQuart,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpROMProtectShadow(pThis->pDevIns, pThis->GCLoadAddress, (uint32_t)cbQuart, PGMROMPROT_READ_RAM_WRITE_IGNORE);
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpROMRegister(pThis->pDevIns,
                               pThis->GCLoadAddress + cbQuart,
                               cbQuart,
