@@ -589,7 +589,7 @@ static uint64_t vboxDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pv
                 || iArg >= pArgList->cArgs)
             {
                 if (iArg + offArg < (int)RT_ELEMENTS(pCtx->u.X86.aArgs))
-                    u64Ret = pCtx->u.Amd64.aArgs[iArg + offArg];
+                    u64Ret = pCtx->u.X86.aArgs[iArg + offArg];
                 else
                     u64Ret = UINT64_MAX;
             }
