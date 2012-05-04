@@ -641,13 +641,10 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         pVM->hwaccm.s.vmx.enmFlushContext = VMX_FLUSH_ALL_CONTEXTS;
 
         /* If the capabilities specify we can do more, then make use of it. */
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_INDIV)
-            pVM->hwaccm.s.vmx.enmFlushPage = VMX_FLUSH_PAGE;
-        else
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_CONTEXT)
+        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_SINGLE_CONTEXT)
             pVM->hwaccm.s.vmx.enmFlushPage = VMX_FLUSH_SINGLE_CONTEXT;
 
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_CONTEXT)
+        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_SINGLE_CONTEXT)
             pVM->hwaccm.s.vmx.enmFlushContext = VMX_FLUSH_SINGLE_CONTEXT;
     }
 #ifdef HWACCM_VTX_WITH_VPID
@@ -661,13 +658,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         pVM->hwaccm.s.vmx.enmFlushContext = VMX_FLUSH_ALL_CONTEXTS;
 
         /* If the capabilities specify we can do more, then make use of it. */
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV)
+        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV_ADDR)
             pVM->hwaccm.s.vmx.enmFlushPage = VMX_FLUSH_PAGE;
         else
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT)
+        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT)
             pVM->hwaccm.s.vmx.enmFlushPage = VMX_FLUSH_SINGLE_CONTEXT;
 
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT)
+        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT)
             pVM->hwaccm.s.vmx.enmFlushContext = VMX_FLUSH_SINGLE_CONTEXT;
     }
 #endif /* HWACCM_VTX_WITH_VPID */
