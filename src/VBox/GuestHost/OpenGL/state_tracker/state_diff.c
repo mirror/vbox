@@ -345,25 +345,30 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
 #endif
 }
 
-CRContext * crStateSwichPrepare(CRContext *toCtx)
+CRContext * crStateSwichPrepare(CRContext *toCtx, GLboolean fMultipleContexts, GLuint idFBO)
 {
     CRContext *fromCtx = GetCurrentContext();
 
+    if (!fMultipleContexts)
+    {
 #ifdef CR_EXT_framebuffer_object
-    if (fromCtx)
-        crStateFramebufferObjectDisableHW(fromCtx);
+        if (fromCtx)
+            crStateFramebufferObjectDisableHW(fromCtx, idFBO);
 #endif
-
+    }
     return fromCtx;
 }
 
-void crStateSwichPostprocess(CRContext *fromCtx)
+void crStateSwichPostprocess(CRContext *fromCtx, GLboolean fMultipleContexts, GLuint idFBO)
 {
     CRContext *toCtx = GetCurrentContext();;
     if (!fromCtx || !toCtx)
         return;
 
+    if (!fMultipleContexts)
+    {
 #ifdef CR_EXT_framebuffer_object
-    crStateFramebufferObjectReenableHW(fromCtx, toCtx);
+        crStateFramebufferObjectReenableHW(fromCtx, toCtx, idFBO);
 #endif
+    }
 }

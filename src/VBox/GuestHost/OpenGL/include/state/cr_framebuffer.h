@@ -74,8 +74,8 @@ DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectInit(CRContext *ctx);
 DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectDestroy(CRContext *ctx);
 DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectSwitch(CRContext *from, CRContext *to);
 
-DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectDisableHW(CRContext *ctx);
-DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx);
+DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectDisableHW(CRContext *ctx, GLuint idFBO);
+DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx, GLuint idFBO);
 
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetFramebufferHWID(GLuint id);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetRenderbufferHWID(GLuint id);

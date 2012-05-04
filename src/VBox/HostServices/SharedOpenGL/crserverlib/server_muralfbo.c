@@ -197,11 +197,18 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
 
 GLboolean crServerSupportRedirMuralFBO(void)
 {
-    const GLubyte* pExt = cr_server.head_spu->dispatch_table.GetString(GL_REAL_EXTENSIONS);
+    static GLboolean fInited = GL_FALSE;
+    static GLboolean fSupported = GL_FALSE;
+    if (!fInited)
+    {
+        const GLubyte* pExt = cr_server.head_spu->dispatch_table.GetString(GL_REAL_EXTENSIONS);
 
-    return ( NULL!=crStrstr((const char*)pExt, "GL_ARB_framebuffer_object")
-             || NULL!=crStrstr((const char*)pExt, "GL_EXT_framebuffer_object"))
-           && NULL!=crStrstr((const char*)pExt, "GL_ARB_texture_non_power_of_two");
+        fSupported = ( NULL!=crStrstr((const char*)pExt, "GL_ARB_framebuffer_object")
+                 || NULL!=crStrstr((const char*)pExt, "GL_EXT_framebuffer_object"))
+               && NULL!=crStrstr((const char*)pExt, "GL_ARB_texture_non_power_of_two");
+        fInited = GL_TRUE;
+    }
+    return fSupported;
 }
 
 void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
