@@ -313,13 +313,14 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
     ctx = ctxInfo->pContext;
     CRASSERT(ctx);
 
+    oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
+
     /* Ubuntu 11.04 hosts misbehave if context window switch is
      * done with non-default framebuffer object settings.
      * crStateSwichPrepare & crStateSwichPostprocess are supposed to work around this problem
      * crStateSwichPrepare restores the FBO state to its default values before the context window switch,
      * while crStateSwichPostprocess restores it back to the original values */
-    if (!cr_server.bUseMultipleContexts)
-        oldCtx = crStateSwichPrepare(ctx);
+    oldCtx = crStateSwichPrepare(ctx, cr_server.bUseMultipleContexts, oldMural && oldMural->bUseFBO && crServerSupportRedirMuralFBO() ? oldMural->idFBO : 0);
 
     /*
     crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
@@ -357,8 +358,6 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
                     cr_server.currentWindow, window);
     */
 
-    oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
-
     if (1/*cr_server.firstCallMakeCurrent ||
             cr_server.currentWindow != window ||
             cr_server.currentNativeWindow != nativeWindow*/) {
@@ -383,21 +382,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
 
-
-    if (!cr_server.bUseMultipleContexts)
-        crStateSwichPostprocess(oldCtx);
-
-    if (oldMural != mural && crServerSupportRedirMuralFBO())
-    {
-        if (!crStateGetCurrent()->framebufferobject.drawFB)
-        {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->bUseFBO ? mural->idFBO:0);
-        }
-        if (!crStateGetCurrent()->framebufferobject.readFB)
-        {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->bUseFBO ? mural->idFBO:0);
-        }
-    }
+    crStateSwichPostprocess(oldCtx, cr_server.bUseMultipleContexts, mural->bUseFBO && crServerSupportRedirMuralFBO() ? mural->idFBO : 0);
 
     if (!mural->bUseFBO)
     {
