@@ -96,15 +96,18 @@ ifneq ($(MAKECMDGOALS),clean)
  ifeq ($(rpmspec),)
   $(error failed to detect the .spec file (rpmrel=$(rpmrel)))
  endif
+
+ # contrary to debian we need the verfile earlier to get the correct rpmname into the bld_flags
+ include $(verfile)
+$(verfile): rpm/configure-stamp
+	. rpm/env.sh && kmk -C $(vboxroot) $(verfile) $(bld_flags)
+
 endif
 
-ifneq ($(wildcard $(verfile)),)
-include $(verfile)
 ver      := $(VBOX_VERSION_STRING)
 rpmver   :=$(ver)$(if $(NOSUBVER),,$(if $(svn_revision),_$(svn_revision),)$(VERSUFFIX)$(if $(HEADLESS),_headless,)$(if $(DEBUG),_dbg,))$(if $(BLEEDING_EDGE),_$(BLEEDING_EDGE),)
 archdir  := $(current)/rpm/VirtualBox-$(ver)
 rpmname  := $(verpkg)-$(rpmver)_$(rpmrel)
-endif
 
 # Fedora13/14 is bleeding edge, the other jails have outdated kernel headers
 instmod  := $(if $(filter rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 fedora13 fedora14 fedora15 fedora16 fedora17,$(rpmrel)),,install_rpm)
@@ -166,7 +169,7 @@ rpm/configure-stamp:
 	cd $(vboxroot) && ./configure --odir=$(current)/rpm $(cfg_flags)
 	touch rpm/configure-stamp
 
-rpm/build-stamp $(verfile): rpm/configure-stamp
+rpm/build-stamp: rpm/configure-stamp
 	. rpm/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
