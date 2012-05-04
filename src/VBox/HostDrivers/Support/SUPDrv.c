@@ -291,6 +291,8 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0AssertPanicSystem",                  (void *)RTR0AssertPanicSystem },
     { "RTR0MemAreKrnlAndUsrDifferent",          (void *)RTR0MemAreKrnlAndUsrDifferent },
     { "RTR0MemKernelIsValidAddr",               (void *)RTR0MemKernelIsValidAddr },
+    { "RTR0MemKernelCopyFrom",                  (void *)RTR0MemKernelCopyFrom },
+    { "RTR0MemKernelCopyTo",                    (void *)RTR0MemKernelCopyTo },
     { "RTR0MemObjAddress",                      (void *)RTR0MemObjAddress },
     { "RTR0MemObjAddressR3",                    (void *)RTR0MemObjAddressR3 },
     { "RTR0MemObjAllocContTag",                 (void *)RTR0MemObjAllocContTag },

@@ -91,3 +91,31 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
     return true;
 }
 
+
+RTR0DECL(int) RTR0MemKernelCopyFrom(void *pvDst, void const *pvSrc, size_t cb)
+{
+    __try
+    {
+        memcpy(pvDst, pvSrc, cb);
+    }
+    __except(EXCEPTION_EXECUTE_HANDLER)
+    {
+        return VERR_ACCESS_DENIED;
+    }
+    return VINF_SUCCESS;
+}
+
+
+RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb)
+{
+    __try
+    {
+        memcpy(pvDst, pvSrc, cb);
+    }
+    __except(EXCEPTION_EXECUTE_HANDLER)
+    {
+        return VERR_ACCESS_DENIED;
+    }
+    return VINF_SUCCESS;
+}
+
