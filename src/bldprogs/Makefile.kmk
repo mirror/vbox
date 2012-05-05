@@ -48,6 +48,13 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  VBoxTpG_SOURCES = \
  	VBoxTpG.cpp \
  	scmstream.cpp
+
+ #BLDPROGS += VBoxCPP
+ VBoxCPP_TEMPLATE = VBoxAdvBldProg
+ VBoxCPP_SOURCES = \
+ 	VBoxCPP.cpp \
+ 	scmstream.cpp
+
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
