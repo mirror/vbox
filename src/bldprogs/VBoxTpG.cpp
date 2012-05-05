@@ -2099,7 +2099,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         { "--output",                           'o',                                    RTGETOPT_REQ_STRING  },
         { "--script",                           's',                                    RTGETOPT_REQ_STRING  },
         { "--verbose",                          'v',                                    RTGETOPT_REQ_NOTHING },
-        /* out stuff */
+        /* our stuff */
         { "--assembler",                        kVBoxTpGOpt_Assembler,                  RTGETOPT_REQ_STRING  },
         { "--assembler-fmt-opt",                kVBoxTpGOpt_AssemblerFmtOpt,            RTGETOPT_REQ_STRING  },
         { "--assembler-fmt-val",                kVBoxTpGOpt_AssemblerFmtVal,            RTGETOPT_REQ_STRING  },
@@ -2118,7 +2118,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
     AssertReleaseRCReturn(rc, RTEXITCODE_FAILURE);
 
     /*
-     * Process \the options.
+     * Process the options.
      */
     while ((rc = RTGetOpt(&GetOptState, &ValueUnion)) != 0)
     {
