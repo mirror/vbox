@@ -21,6 +21,7 @@
 
 /* Qt includes */
 #include <QDialog>
+#include <QPointer>
 
 /* Qt forwards declarations */
 class QEventLoop;
@@ -42,7 +43,7 @@ protected:
 private:
     /* Private member vars */
     bool mPolished;
-    QEventLoop *mEventLoop;
+    QPointer<QEventLoop> mEventLoop;
 };
 
 #endif /* __QIDialog_h__ */

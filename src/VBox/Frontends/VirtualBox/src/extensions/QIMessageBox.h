@@ -21,7 +21,6 @@
 
 /* VBox includes */
 #include "QIDialog.h"
-#include "QIArrowSplitter.h"
 
 /* Qt includes */
 #include <QCheckBox>
@@ -103,6 +102,8 @@ private:
     void setDetailsShown (bool aShown);
 
 private slots:
+
+    void sltUpdateSize();
 
     void detailsBack();
     void detailsNext();

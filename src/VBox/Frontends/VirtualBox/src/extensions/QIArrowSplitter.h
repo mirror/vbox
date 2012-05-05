@@ -61,12 +61,11 @@ signals:
 
     void showBackDetails();
     void showNextDetails();
+    void sigSizeChanged();
 
 private:
 
     bool eventFilter (QObject *aObject, QEvent *aEvent);
-
-    void relayout();
 
     QVBoxLayout *mMainLayout;
     QIArrowButtonSwitch *mSwitchButton;
