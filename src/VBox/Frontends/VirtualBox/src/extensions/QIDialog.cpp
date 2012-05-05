@@ -24,13 +24,9 @@
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 
-/* Qt includes */
-#include <QPointer>
-
 QIDialog::QIDialog (QWidget *aParent /* = 0 */, Qt::WindowFlags aFlags /* = 0 */)
     : QDialog (aParent, aFlags)
     , mPolished (false)
-    , mEventLoop (0)
 {
 }
 
@@ -88,20 +84,19 @@ int QIDialog::exec (bool aShow /* = true */)
     setAttribute (Qt::WA_ShowModal, true);
 
     /* Create a local event loop */
-    mEventLoop = new QEventLoop();
+    QEventLoop eventLoop;
+    mEventLoop = &eventLoop;
     /* Show the window if requested */
     if (aShow)
         show();
     /* A guard to ourself for the case we destroy ourself. */
     QPointer<QIDialog> guard = this;
     /* Start the event loop. This blocks. */
-    mEventLoop->exec();
-    /* Delete the event loop */
-    delete mEventLoop;
-    mEventLoop = 0;
+    eventLoop.exec();
     /* Are we valid anymore? */
     if (guard.isNull())
         return QDialog::Rejected;
+    mEventLoop = 0;
     /* Save the result code in case we delete ourself */
     QDialog::DialogCode res = (QDialog::DialogCode)result();
 #if defined(Q_WS_MAC) && QT_VERSION >= 0x040500

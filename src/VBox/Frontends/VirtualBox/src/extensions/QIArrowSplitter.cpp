@@ -77,13 +77,13 @@ void QIArrowSplitter::setButtonEnabled (bool aNext, bool aEnabled)
 void QIArrowSplitter::setName (const QString &aName)
 {
     mSwitchButton->setText (aName);
-    relayout();
+    emit sigSizeChanged();
 }
 
 void QIArrowSplitter::toggleWidget()
 {
     mChild->setVisible (mSwitchButton->isExpanded());
-    relayout();
+    emit sigSizeChanged();
 }
 
 bool QIArrowSplitter::eventFilter (QObject *aObject, QEvent *aEvent)
@@ -136,31 +136,5 @@ bool QIArrowSplitter::eventFilter (QObject *aObject, QEvent *aEvent)
 
     /* Default one handler */
     return QWidget::eventFilter (aObject, aEvent);
-}
-
-void QIArrowSplitter::relayout()
-{
-    /* Update full layout system of message window */
-    QList <QLayout*> layouts = findChildren <QLayout*> ();
-    foreach (QLayout *item, layouts)
-    {
-        item->update();
-        item->activate();
-    }
-
-    /* Update main layout of message window at last */
-    window()->layout()->update();
-    window()->layout()->activate();
-    qApp->processEvents();
-
-    /* Now resize window to minimum possible size */
-    window()->resize (window()->minimumSizeHint());
-    qApp->processEvents();
-
-    /* Check if we have to make dialog fixed in height */
-    if (mSwitchButton->isExpanded())
-        window()->setMaximumHeight (QWIDGETSIZE_MAX);
-    else
-        window()->setFixedHeight (window()->minimumSizeHint().height());
 }
 
