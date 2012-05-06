@@ -20,9 +20,11 @@
 *******************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
-#include <iprt/file.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
+#include <iprt/handle.h>
 #include <iprt/mem.h>
+#include <iprt/pipe.h>
 #include <iprt/string.h>
 
 #include "scmstream.h"
@@ -322,6 +324,48 @@ int ScmStreamWriteToFile(PSCMSTREAM pStream, const char *pszFilenameFmt, ...)
     {
         rc = RTFileWrite(hFile, pStream->pch, pStream->cb, NULL);
         RTFileClose(hFile);
+    }
+    return rc;
+}
+
+/**
+ * Writes the stream to standard output.
+ *
+ * @returns IPRT status code
+ * @param   pStream             The stream.
+ */
+int ScmStreamWriteToStdOut(PSCMSTREAM pStream)
+{
+    int rc;
+
+#ifdef RT_STRICT
+    /*
+     * Check that what we're going to write makes sense first.
+     */
+    rc = ScmStreamCheckItegrity(pStream);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+
+    /*
+     * Do the actual writing.
+     */
+    RTHANDLE h;
+    rc = RTHandleGetStandard(RTHANDLESTD_OUTPUT, &h);
+    if (RT_SUCCESS(rc))
+    {
+        switch (h.enmType)
+        {
+            case RTHANDLETYPE_FILE:
+                rc = RTFileWrite(h.u.hFile, pStream->pch, pStream->cb, NULL);
+                break;
+            case RTHANDLETYPE_PIPE:
+                rc = RTPipeWriteBlocking(h.u.hPipe, pStream->pch, pStream->cb, NULL);
+                break;
+            default:
+                rc = VERR_INVALID_HANDLE;
+                break;
+        }
     }
     return rc;
 }
@@ -641,11 +685,21 @@ const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchL
  */
 const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol)
 {
-    /** @todo this doesn't work when pStream->off !=
-     *        pStream->paLines[pStream->iLine-1].off. */
     if (!pStream->fFullyLineated)
         return scmStreamGetLineInternal(pStream, pcchLine, penmEol);
-    return ScmStreamGetLineByNo(pStream, pStream->iLine, pcchLine, penmEol);
+
+    size_t      offCur   = pStream->off;
+    size_t      iCurLine = pStream->iLine;
+    const char *pszLine  = ScmStreamGetLineByNo(pStream, iCurLine, pcchLine, penmEol);
+    if (   pszLine 
+        && pStream->paLines[iCurLine].off < offCur)
+    {
+        offCur -= pStream->paLines[iCurLine].off;
+        Assert(offCur <= pStream->paLines[iCurLine].off);
+        *pcchLine -= offCur;
+        pszLine   += offCur;
+    }
+    return pszLine;
 }
 
 
