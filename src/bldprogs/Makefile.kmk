@@ -49,7 +49,7 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  	VBoxTpG.cpp \
  	scmstream.cpp
 
- #BLDPROGS += VBoxCPP
+ BLDPROGS += VBoxCPP
  VBoxCPP_TEMPLATE = VBoxAdvBldProg
  VBoxCPP_SOURCES = \
  	VBoxCPP.cpp \

@@ -97,6 +97,7 @@ void        ScmStreamRewindForWriting(PSCMSTREAM pStream);
 bool        ScmStreamIsText(PSCMSTREAM pStream);
 int         ScmStreamCheckItegrity(PSCMSTREAM pStream);
 int         ScmStreamWriteToFile(PSCMSTREAM pStream, const char *pszFilenameFmt, ...);
+int         ScmStreamWriteToStdOut(PSCMSTREAM pStream);
 size_t      ScmStreamTell(PSCMSTREAM pStream);
 size_t      ScmStreamTellLine(PSCMSTREAM pStream);
 size_t      ScmStreamSize(PSCMSTREAM pStream);
