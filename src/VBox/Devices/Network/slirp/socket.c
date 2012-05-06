@@ -194,13 +194,22 @@ sofree(PNATState pData, struct socket *so)
     if (so->so_m != NULL)
         m_freem(pData, so->so_m);
 #ifndef VBOX_WITH_SLIRP_MT
-    if (so->so_next && so->so_prev)
+    /*
+     * We should not remove socket when polling routine do the polling
+     * instead we mark it for deletion.
+     */
+    if (!so->fUnderPolling)
     {
-        remque(pData, so);  /* crashes if so is not in a queue */
-        NSOCK_DEC();
-    }
+        if (so->so_next && so->so_prev)
+        {
+            remque(pData, so);  /* crashes if so is not in a queue */
+            NSOCK_DEC();
+        }
 
-    RTMemFree(so);
+        RTMemFree(so);
+    }
+    else
+        so->fShouldBeRemoved = 1;
 #else
     so->so_deleted = 1;
 #endif

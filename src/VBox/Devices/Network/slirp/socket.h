@@ -111,6 +111,28 @@ struct socket
     struct socket *so_cloneOf; /* pointer to master instance */
     int so_cCloneCounter;      /* number of clones */
 #endif
+    /** These flags (''fUnderPolling'' and ''fShouldBeRemoved'') introduced to
+     *  to let polling routine gain control over freeing socket whatever level of
+     *  TCP/IP initiated socket releasing.
+     *  So polling routine when start processing socket alter it's state to
+     *  ''fUnderPolling'' to 1, and clean (set to 0) when it finish.
+     *  When polling routine calls functions it should be ensure on return,
+     *  whether ''fShouldBeRemoved'' set or not, and depending on state call
+     *  ''sofree'' or continue socket processing.
+     *  On ''fShouldBeRemoved'' equal to 1, polling routine should call ''sofree'',
+     *  clearing ''fUnderPolling'' to do real freeng of the socket and removing from
+     *  the queue.
+     *  @todo: perhaps, to simplefy the things we need some helper function.
+     *  @note: it's used like a bool, I use 'int' to avoid compiler warnings
+     *  appearing if [-Wc++-compat] used.
+     */
+    int fUnderPolling;
+    /** This flag used by ''sofree'' function in following manner
+     *
+     *  fUnderPolling = 1, then we don't remove socket from the queue, just
+     *  alter value ''fShouldBeRemoved'' to 1, else we do removal.
+     */
+    int fShouldBeRemoved;
 };
 
 /* this function inform libalias about socket close */
