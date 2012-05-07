@@ -59,7 +59,7 @@ typedef std::list< ComObjPtr<Medium> > MediaList;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
 #include <atlcom.h>
 
@@ -135,7 +135,7 @@ public:
     CComPtr<IUnknown> m_spObj;
 };
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -155,7 +155,7 @@ public:
  *
  *  @param   expr    Expression which should be true.
  */
-#if defined (DEBUG)
+#if defined(DEBUG)
 #define ComAssert(expr)    Assert(expr)
 #else
 #define ComAssert(expr)    \
@@ -178,7 +178,7 @@ public:
  *  @see VirtualBoxBase::setError
  *
  */
-#if defined (DEBUG)
+#if defined(DEBUG)
 #define ComAssertFailed()    AssertFailed()
 #else
 #define ComAssertFailed()    \
@@ -198,7 +198,7 @@ public:
  *  @param   expr    Expression which should be true.
  *  @param   a       printf argument list (in parenthesis).
  */
-#if defined (DEBUG)
+#if defined(DEBUG)
 #define ComAssertMsg(expr, a)  AssertMsg(expr, a)
 #else
 #define ComAssertMsg(expr, a)  \
@@ -218,7 +218,7 @@ public:
  *
  * @param   vrc     VBox status code.
  */
-#if defined (DEBUG)
+#if defined(DEBUG)
 #define ComAssertRC(vrc)    AssertRC(vrc)
 #else
 #define ComAssertRC(vrc)    ComAssertMsgRC(vrc, ("%Rra", vrc))
@@ -233,7 +233,7 @@ public:
  *  @param   vrc    VBox status code.
  *  @param   msg    printf argument list (in parenthesis).
  */
-#if defined (DEBUG)
+#if defined(DEBUG)
 #define ComAssertMsgRC(vrc, msg)    AssertMsgRC(vrc, msg)
 #else
 #define ComAssertMsgRC(vrc, msg)    ComAssertMsg(RT_SUCCESS(vrc), msg)
@@ -247,7 +247,7 @@ public:
  *
  *  @param rc   COM result code
  */
-#if defined (DEBUG)
+#if defined(DEBUG)
 #define ComAssertComRC(rc)  AssertComRC(rc)
 #else
 #define ComAssertComRC(rc)  ComAssertMsg(SUCCEEDED(rc), ("COM RC = %Rhrc (0x%08X)", (rc), (rc)))
@@ -271,7 +271,7 @@ public:
     do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) return (rc); } while (0)
 /** Special version of ComAssert that returns ret */
 #define ComAssertFailedRet(ret)                \
-    if (1) { ComAssertFailed(); { return (ret); } } else do {} while (0)
+    do { ComAssertFailed(); return (ret); } while (0)
 
 
 /** Special version of ComAssert that evaluates eval and breaks if expr fails */
@@ -279,39 +279,39 @@ public:
     if (1) { ComAssert(expr); if (!(expr)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertMsg that evaluates eval and breaks if expr fails */
 #define ComAssertMsgBreak(expr, a, eval)          \
-    if (1)  { ComAssertMsg(expr, a); if (!(expr)) { eval; break; } } else do {} while (0)
+    if (1) { ComAssertMsg(expr, a); if (!(expr)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertRC that evaluates eval and breaks if vrc does not succeed */
 #define ComAssertRCBreak(vrc, eval)               \
-    if (1)  { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { eval; break; } } else do {} while (0)
+    if (1) { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertFailed that evaluates eval and breaks */
 #define ComAssertFailedBreak(eval)                \
-    if (1)  { ComAssertFailed(); { eval; break; } } else do {} while (0)
+    if (1) { ComAssertFailed(); { eval; break; } } else do {} while (0)
 /** Special version of ComAssertMsgFailed that evaluates eval and breaks */
 #define ComAssertMsgFailedBreak(msg, eval)        \
-    if (1)  { ComAssertMsgFailed (msg); { eval; break; } } else do {} while (0)
+    if (1) { ComAssertMsgFailed (msg); { eval; break; } } else do {} while (0)
 /** Special version of ComAssertComRC that evaluates eval and breaks if rc does not succeed */
 #define ComAssertComRCBreak(rc, eval)             \
-    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { eval; break; } } else do {} while (0)
+    if (1) { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertComRC that just breaks if rc does not succeed */
 #define ComAssertComRCBreakRC(rc)                 \
-    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { break; } } else do {} while (0)
+    if (1) { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { break; } } else do {} while (0)
 
 
 /** Special version of ComAssert that evaluates eval and throws it if expr fails */
 #define ComAssertThrow(expr, eval)                \
-    if (1) { ComAssert(expr); if (!(expr)) { throw (eval); } } else do {} while (0)
+    do { ComAssert(expr); if (!(expr)) { throw (eval); } } while (0)
 /** Special version of ComAssertRC that evaluates eval and throws it if vrc does not succeed */
 #define ComAssertRCThrow(vrc, eval)               \
-    if (1)  { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { throw (eval); } } else do {} while (0)
+    do { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { throw (eval); } } while (0)
 /** Special version of ComAssertComRC that evaluates eval and throws it if rc does not succeed */
 #define ComAssertComRCThrow(rc, eval)             \
-    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw (eval); } } else do {} while (0)
+    do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw (eval); } } while (0)
 /** Special version of ComAssertComRC that just throws rc if rc does not succeed */
 #define ComAssertComRCThrowRC(rc)                 \
-    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw rc; } } else do {} while (0)
+    do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw rc; } } while (0)
 /** Special version of ComAssert that throws eval */
 #define ComAssertFailedThrow(eval)                \
-    if (1) { ComAssertFailed(); { throw (eval); } } else do {} while (0)
+    do { ComAssertFailed(); { throw (eval); } } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -412,7 +412,7 @@ public:
 #define CheckComArgExprMsg(arg, expr, msg) \
     do { \
         if (RT_UNLIKELY(!(expr))) \
-            return setError(E_INVALIDARG, tr ("Argument %s %s"), \
+            return setError(E_INVALIDARG, tr("Argument %s %s"), \
                             #arg, Utf8StrFmt msg .c_str()); \
     } while (0)
 
@@ -426,7 +426,7 @@ public:
         if (RT_UNLIKELY(!VALID_PTR(arg))) \
             return setError(E_POINTER, \
                 tr("Output argument %s points to invalid memory location (%p)"), \
-                #arg, (void *) (arg)); \
+                #arg, (void *)(arg)); \
     } while (0)
 
 /**
@@ -711,7 +711,7 @@ public:
 
     /**
      * Adds a limited caller. This method is equivalent to doing
-     * <tt>addCaller (aState, true)</tt>, but it is preferred because provides
+     * <tt>addCaller(aState, true)</tt>, but it is preferred because provides
      * better self-descriptiveness. See #addCaller() for more info.
      */
     HRESULT addLimitedCaller(State *aState = NULL)
@@ -828,7 +828,7 @@ private:
  * Dummy macro that is used to shut down Qt's lupdate tool warnings in some
  * situations. This macro needs to be present inside (better at the very
  * beginning) of the declaration of the class that inherits from
- * VirtualBoxSupportTranslation template, to make lupdate happy.
+ * VirtualBoxTranslatable, to make lupdate happy.
  */
 #define Q_OBJECT
 
@@ -848,7 +848,7 @@ class Shareable
 {
 public:
 
-    Shareable() : mData (NULL), mIsShared(FALSE) {}
+    Shareable() : mData(NULL), mIsShared(FALSE) {}
     ~Shareable() { free(); }
 
     void allocate() { attach(new D); }
@@ -942,7 +942,7 @@ class Backupable : public Shareable<D>
 {
 public:
 
-    Backupable() : Shareable<D> (), mBackupData(NULL) {}
+    Backupable() : Shareable<D>(), mBackupData(NULL) {}
 
     void free()
     {
