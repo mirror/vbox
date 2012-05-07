@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,6 @@
 
 class ATL_NO_VTABLE Framebuffer :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<Framebuffer>,
     VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
