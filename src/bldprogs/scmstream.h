@@ -98,6 +98,7 @@ bool        ScmStreamIsText(PSCMSTREAM pStream);
 int         ScmStreamCheckItegrity(PSCMSTREAM pStream);
 int         ScmStreamWriteToFile(PSCMSTREAM pStream, const char *pszFilenameFmt, ...);
 int         ScmStreamWriteToStdOut(PSCMSTREAM pStream);
+
 size_t      ScmStreamTell(PSCMSTREAM pStream);
 size_t      ScmStreamTellLine(PSCMSTREAM pStream);
 size_t      ScmStreamSize(PSCMSTREAM pStream);
@@ -105,18 +106,27 @@ size_t      ScmStreamCountLines(PSCMSTREAM pStream);
 int         ScmStreamSeekAbsolute(PSCMSTREAM pStream, size_t offAbsolute);
 int         ScmStreamSeekRelative(PSCMSTREAM pStream, ssize_t offRelative);
 int         ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine);
+
 const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchLine, PSCMEOL penmEol);
 const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol);
 unsigned    ScmStreamGetCh(PSCMSTREAM pStream);
+const char *ScmStreamGetCur(PSCMSTREAM pStream);
 unsigned    ScmStreamPeekCh(PSCMSTREAM pStream);
 int         ScmStreamRead(PSCMSTREAM pStream, void *pvBuf, size_t cbToRead);
 bool        ScmStreamIsWhiteLine(PSCMSTREAM pStream, size_t iLine);
 SCMEOL      ScmStreamGetEol(PSCMSTREAM pStream);
 SCMEOL      ScmStreamGetEolByLine(PSCMSTREAM pStream, size_t iLine);
+
 int         ScmStreamPutLine(PSCMSTREAM pStream, const char *pchLine, size_t cchLine, SCMEOL enmEol);
 int         ScmStreamWrite(PSCMSTREAM pStream, const char *pchBuf, size_t cchBuf);
 int         ScmStreamPutCh(PSCMSTREAM pStream, char ch);
+ssize_t     ScmStreamPrintf(PSCMSTREAM pStream, const char *pszFormat, ...);
+ssize_t     ScmStreamPrintfV(PSCMSTREAM pStream, const char *pszFormat, va_list va);
 int         ScmStreamCopyLines(PSCMSTREAM pDst, PSCMSTREAM pSrc, size_t cLines);
+
+bool        ScmStreamCMatchingWordM1(PSCMSTREAM pStream, const char *pszWord, size_t cchWord);
+const char *ScmStreamCGetWord(PSCMSTREAM pStream, size_t *pcchWord);
+const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord);
 
 RT_C_DECLS_END
 
