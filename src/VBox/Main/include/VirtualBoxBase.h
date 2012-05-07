@@ -145,13 +145,13 @@ public:
 
 /**
  *  Special version of the Assert macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  subclasses.
  *
  *  In the debug build, this macro is equivalent to Assert.
  *  In the release build, this macro uses |setError(E_FAIL, ...)| to set the
  *  error info from the asserted expression.
  *
- *  @see VirtualBoxSupportErrorInfoImpl::setError
+ *  @see VirtualBoxBase::setError
  *
  *  @param   expr    Expression which should be true.
  */
@@ -169,13 +169,13 @@ public:
 
 /**
  *  Special version of the AssertFailed macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  subclasses.
  *
  *  In the debug build, this macro is equivalent to AssertFailed.
  *  In the release build, this macro uses |setError(E_FAIL, ...)| to set the
  *  error info from the asserted expression.
  *
- *  @see VirtualBoxSupportErrorInfoImpl::setError
+ *  @see VirtualBoxBase::setError
  *
  */
 #if defined (DEBUG)
@@ -191,7 +191,7 @@ public:
 
 /**
  *  Special version of the AssertMsg macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  subclasses.
  *
  *  See ComAssert for more info.
  *
@@ -212,7 +212,7 @@ public:
 
 /**
  *  Special version of the AssertRC macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  subclasses.
  *
  *  See ComAssert for more info.
  *
@@ -226,7 +226,7 @@ public:
 
 /**
  *  Special version of the AssertMsgRC macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  subclasses.
  *
  *  See ComAssert for more info.
  *
@@ -241,7 +241,7 @@ public:
 
 /**
  *  Special version of the AssertComRC macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  subclasses.
  *
  *  See ComAssert for more info.
  *

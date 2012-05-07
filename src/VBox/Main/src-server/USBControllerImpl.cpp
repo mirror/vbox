@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -85,7 +85,7 @@ struct USBController::Data
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (USBController)
+DEFINE_EMPTY_CTOR_DTOR(USBController)
 
 HRESULT USBController::FinalConstruct()
 {
@@ -261,7 +261,7 @@ void USBController::uninit()
 // IUSBController properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP USBController::COMGETTER(Enabled) (BOOL *aEnabled)
+STDMETHODIMP USBController::COMGETTER(Enabled)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -276,7 +276,7 @@ STDMETHODIMP USBController::COMGETTER(Enabled) (BOOL *aEnabled)
 }
 
 
-STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
+STDMETHODIMP USBController::COMSETTER(Enabled)(BOOL aEnabled)
 {
     LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 
@@ -307,7 +307,7 @@ STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP USBController::COMGETTER(EnabledEhci) (BOOL *aEnabled)
+STDMETHODIMP USBController::COMGETTER(EnabledEhci)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -321,7 +321,7 @@ STDMETHODIMP USBController::COMGETTER(EnabledEhci) (BOOL *aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP USBController::COMSETTER(EnabledEhci) (BOOL aEnabled)
+STDMETHODIMP USBController::COMSETTER(EnabledEhci)(BOOL aEnabled)
 {
     LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 
@@ -352,7 +352,7 @@ STDMETHODIMP USBController::COMSETTER(EnabledEhci) (BOOL aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP USBController::COMGETTER(ProxyAvailable) (BOOL *aEnabled)
+STDMETHODIMP USBController::COMGETTER(ProxyAvailable)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -370,7 +370,7 @@ STDMETHODIMP USBController::COMGETTER(ProxyAvailable) (BOOL *aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
+STDMETHODIMP USBController::COMGETTER(USBStandard)(USHORT *aUSBStandard)
 {
     CheckComArgOutPointerValid(aUSBStandard);
 
@@ -398,50 +398,49 @@ public:
     DECLARE_NOT_AGGREGATABLE(USBDeviceFilter)
     DECLARE_PROTECT_FINAL_CONSTRUCT()
     BEGIN_COM_MAP(USBDeviceFilter)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IUSBDeviceFilter)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IUSBDeviceFilter)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (USBDeviceFilter)
+    DECLARE_EMPTY_CTOR_DTOR(USBDeviceFilter)
 
     // IUSBDeviceFilter properties
-    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
-    STDMETHOD(COMSETTER(Name)) (IN_BSTR aName);
-    STDMETHOD(COMGETTER(Active)) (BOOL *aActive);
-    STDMETHOD(COMSETTER(Active)) (BOOL aActive);
-    STDMETHOD(COMGETTER(VendorId)) (BSTR *aVendorId);
-    STDMETHOD(COMSETTER(VendorId)) (IN_BSTR aVendorId);
-    STDMETHOD(COMGETTER(ProductId)) (BSTR *aProductId);
-    STDMETHOD(COMSETTER(ProductId)) (IN_BSTR aProductId);
-    STDMETHOD(COMGETTER(Revision)) (BSTR *aRevision);
-    STDMETHOD(COMSETTER(Revision)) (IN_BSTR aRevision);
-    STDMETHOD(COMGETTER(Manufacturer)) (BSTR *aManufacturer);
-    STDMETHOD(COMSETTER(Manufacturer)) (IN_BSTR aManufacturer);
-    STDMETHOD(COMGETTER(Product)) (BSTR *aProduct);
-    STDMETHOD(COMSETTER(Product)) (IN_BSTR aProduct);
-    STDMETHOD(COMGETTER(SerialNumber)) (BSTR *aSerialNumber);
-    STDMETHOD(COMSETTER(SerialNumber)) (IN_BSTR aSerialNumber);
-    STDMETHOD(COMGETTER(Port)) (BSTR *aPort);
-    STDMETHOD(COMSETTER(Port)) (IN_BSTR aPort);
-    STDMETHOD(COMGETTER(Remote)) (BSTR *aRemote);
-    STDMETHOD(COMSETTER(Remote)) (IN_BSTR aRemote);
-    STDMETHOD(COMGETTER(MaskedInterfaces)) (ULONG *aMaskedIfs);
-    STDMETHOD(COMSETTER(MaskedInterfaces)) (ULONG aMaskedIfs);
+    STDMETHOD(COMGETTER(Name))(BSTR *aName);
+    STDMETHOD(COMSETTER(Name))(IN_BSTR aName);
+    STDMETHOD(COMGETTER(Active))(BOOL *aActive);
+    STDMETHOD(COMSETTER(Active))(BOOL aActive);
+    STDMETHOD(COMGETTER(VendorId))(BSTR *aVendorId);
+    STDMETHOD(COMSETTER(VendorId))(IN_BSTR aVendorId);
+    STDMETHOD(COMGETTER(ProductId))(BSTR *aProductId);
+    STDMETHOD(COMSETTER(ProductId))(IN_BSTR aProductId);
+    STDMETHOD(COMGETTER(Revision))(BSTR *aRevision);
+    STDMETHOD(COMSETTER(Revision))(IN_BSTR aRevision);
+    STDMETHOD(COMGETTER(Manufacturer))(BSTR *aManufacturer);
+    STDMETHOD(COMSETTER(Manufacturer))(IN_BSTR aManufacturer);
+    STDMETHOD(COMGETTER(Product))(BSTR *aProduct);
+    STDMETHOD(COMSETTER(Product))(IN_BSTR aProduct);
+    STDMETHOD(COMGETTER(SerialNumber))(BSTR *aSerialNumber);
+    STDMETHOD(COMSETTER(SerialNumber))(IN_BSTR aSerialNumber);
+    STDMETHOD(COMGETTER(Port))(BSTR *aPort);
+    STDMETHOD(COMSETTER(Port))(IN_BSTR aPort);
+    STDMETHOD(COMGETTER(Remote))(BSTR *aRemote);
+    STDMETHOD(COMSETTER(Remote))(IN_BSTR aRemote);
+    STDMETHOD(COMGETTER(MaskedInterfaces))(ULONG *aMaskedIfs);
+    STDMETHOD(COMSETTER(MaskedInterfaces))(ULONG aMaskedIfs);
 };
 #endif /* !VBOX_WITH_USB */
 
 
-STDMETHODIMP USBController::COMGETTER(DeviceFilters) (ComSafeArrayOut(IUSBDeviceFilter *, aDevicesFilters))
+STDMETHODIMP USBController::COMGETTER(DeviceFilters)(ComSafeArrayOut(IUSBDeviceFilter *, aDevicesFilters))
 {
 #ifdef VBOX_WITH_USB
     CheckComArgOutSafeArrayPointerValid(aDevicesFilters);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if(FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IUSBDeviceFilter> collection (*m->llDeviceFilters.data());
+    SafeIfaceArray<IUSBDeviceFilter> collection(*m->llDeviceFilters.data());
     collection.detachTo(ComSafeArrayOutArg(aDevicesFilters));
 
     return S_OK;
@@ -457,8 +456,8 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters) (ComSafeArrayOut(IUSBDevice
 // IUSBController methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP USBController::CreateDeviceFilter (IN_BSTR aName,
-                                                IUSBDeviceFilter **aFilter)
+STDMETHODIMP USBController::CreateDeviceFilter(IN_BSTR aName,
+                                               IUSBDeviceFilter **aFilter)
 {
 #ifdef VBOX_WITH_USB
     CheckComArgOutPointerValid(aFilter);
@@ -476,8 +475,8 @@ STDMETHODIMP USBController::CreateDeviceFilter (IN_BSTR aName,
 
     ComObjPtr<USBDeviceFilter> filter;
     filter.createObject();
-    HRESULT rc = filter->init (this, aName);
-    ComAssertComRCRetRC (rc);
+    HRESULT rc = filter->init(this, aName);
+    ComAssertComRCRetRC(rc);
     rc = filter.queryInterfaceTo(aFilter);
     AssertComRCReturnRC(rc);
 
@@ -508,8 +507,8 @@ STDMETHODIMP USBController::InsertDeviceFilter(ULONG aPosition,
     ComObjPtr<USBDeviceFilter> filter = static_cast<USBDeviceFilter*>(aFilter);
     // @todo r=dj make sure the input object is actually from us
 //     if (!filter)
-//         return setError (E_INVALIDARG,
-//             tr ("The given USB device filter is not created within "
+//         return setError(E_INVALIDARG,
+//             tr("The given USB device filter is not created within "
 //                 "this VirtualBox instance"));
 
     if (filter->mInList)
@@ -524,23 +523,23 @@ STDMETHODIMP USBController::InsertDeviceFilter(ULONG aPosition,
     if (aPosition < m->llDeviceFilters->size())
     {
         it = m->llDeviceFilters->begin();
-        std::advance (it, aPosition);
+        std::advance(it, aPosition);
     }
     else
         it = m->llDeviceFilters->end();
     /* ...and insert */
-    m->llDeviceFilters->insert (it, filter);
+    m->llDeviceFilters->insert(it, filter);
     filter->mInList = true;
 
     /* notify the proxy (only when it makes sense) */
     if (filter->getData().mActive && Global::IsOnline(adep.machineState())
-        && filter->getData().mRemote.isMatch (false))
+        && filter->getData().mRemote.isMatch(false))
     {
         USBProxyService *service = m->pHost->usbProxyService();
         ComAssertRet(service, E_FAIL);
 
         ComAssertRet(filter->getId() == NULL, E_FAIL);
-        filter->getId() = service->insertFilter (&filter->getData().mUSBFilter);
+        filter->getId() = service->insertFilter(&filter->getData().mUSBFilter);
     }
 
     alock.release();
@@ -591,12 +590,12 @@ STDMETHODIMP USBController::RemoveDeviceFilter(ULONG aPosition,
     {
         /* iterate to the position... */
         DeviceFilterList::iterator it = m->llDeviceFilters->begin();
-        std::advance (it, aPosition);
+        std::advance(it, aPosition);
         /* ...get an element from there... */
         filter = *it;
         /* ...and remove */
         filter->mInList = false;
-        m->llDeviceFilters->erase (it);
+        m->llDeviceFilters->erase(it);
     }
 
     /* cancel sharing (make an independent copy of data) */
@@ -606,7 +605,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter(ULONG aPosition,
 
     /* notify the proxy (only when it makes sense) */
     if (filter->getData().mActive && Global::IsOnline(adep.machineState())
-        && filter->getData().mRemote.isMatch (false))
+        && filter->getData().mRemote.isMatch(false))
     {
         USBProxyService *service = m->pHost->usbProxyService();
         ComAssertRet(service, E_FAIL);
@@ -718,15 +717,15 @@ HRESULT USBController::saveSettings(settings::USBController &data)
         f.strVendorId = str;
         (*it)->COMGETTER(ProductId)(str.asOutParam());
         f.strProductId = str;
-        (*it)->COMGETTER (Revision) (str.asOutParam());
+        (*it)->COMGETTER(Revision)(str.asOutParam());
         f.strRevision = str;
-        (*it)->COMGETTER (Manufacturer) (str.asOutParam());
+        (*it)->COMGETTER(Manufacturer)(str.asOutParam());
         f.strManufacturer = str;
-        (*it)->COMGETTER (Product) (str.asOutParam());
+        (*it)->COMGETTER(Product)(str.asOutParam());
         f.strProduct = str;
-        (*it)->COMGETTER (SerialNumber) (str.asOutParam());
+        (*it)->COMGETTER(SerialNumber)(str.asOutParam());
         f.strSerialNumber = str;
-        (*it)->COMGETTER (Port) (str.asOutParam());
+        (*it)->COMGETTER(Port)(str.asOutParam());
         f.strPort = str;
         f.strRemote = filterData.mRemote.string();
         f.ulMaskedInterfaces = filterData.mMaskedIfs;
@@ -764,13 +763,13 @@ void USBController::rollback()
         DeviceFilterList *backedList = m->llDeviceFilters.backedUpData();
         while (it != m->llDeviceFilters->end())
         {
-            if (std::find (backedList->begin(), backedList->end(), *it) ==
+            if (std::find(backedList->begin(), backedList->end(), *it) ==
                 backedList->end())
             {
                 /* notify the proxy (only when it makes sense) */
                 if ((*it)->getData().mActive &&
-                    Global::IsOnline (adep.machineState())
-                    && (*it)->getData().mRemote.isMatch (false))
+                    Global::IsOnline(adep.machineState())
+                    && (*it)->getData().mRemote.isMatch(false))
                 {
                     USBDeviceFilter *filter = *it;
                     Assert(filter->getId() != NULL);
@@ -783,19 +782,19 @@ void USBController::rollback()
             ++ it;
         }
 
-        if (Global::IsOnline (adep.machineState()))
+        if (Global::IsOnline(adep.machineState()))
         {
             /* find all removed old filters (absent in the new list)
              * and insert them back to the USB proxy */
             it = backedList->begin();
             while (it != backedList->end())
             {
-                if (std::find (m->llDeviceFilters->begin(), m->llDeviceFilters->end(), *it) ==
+                if (std::find(m->llDeviceFilters->begin(), m->llDeviceFilters->end(), *it) ==
                     m->llDeviceFilters->end())
                 {
                     /* notify the proxy (only when necessary) */
                     if ((*it)->getData().mActive
-                            && (*it)->getData().mRemote.isMatch (false))
+                            && (*it)->getData().mRemote.isMatch(false))
                     {
                         USBDeviceFilter *flt = *it; /* resolve ambiguity */
                         Assert(flt->getId() == NULL);
@@ -837,11 +836,11 @@ void USBController::commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
     AutoCaller peerCaller(m->pPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -893,7 +892,7 @@ void USBController::commit()
                     m->pPeer->m->llDeviceFilters->remove(peer);
                 }
                 /* and add it to the new list */
-                newList->push_back (peer);
+                newList->push_back(peer);
 
                 ++ it;
             }
@@ -939,23 +938,23 @@ void USBController::commit()
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
-void USBController::copyFrom (USBController *aThat)
+void USBController::copyFrom(USBController *aThat)
 {
-    AssertReturnVoid (aThat != NULL);
+    AssertReturnVoid(aThat != NULL);
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (aThat);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnVoid(thatCaller.rc());
 
     /* even more sanity */
     AutoAnyStateDependency adep(m->pParent);
-    AssertComRCReturnVoid (adep.rc());
+    AssertComRCReturnVoid(adep.rc());
     /* Machine::copyFrom() may not be called when the VM is running */
-    AssertReturnVoid (!Global::IsOnline (adep.machineState()));
+    AssertReturnVoid(!Global::IsOnline(adep.machineState()));
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -979,8 +978,8 @@ void USBController::copyFrom (USBController *aThat)
     {
         ComObjPtr<USBDeviceFilter> filter;
         filter.createObject();
-        filter->initCopy (this, *it);
-        m->llDeviceFilters->push_back (filter);
+        filter->initCopy(this, *it);
+        m->llDeviceFilters->push_back(filter);
     }
 
 #endif /* VBOX_WITH_USB */
@@ -993,8 +992,8 @@ void USBController::copyFrom (USBController *aThat)
  *
  *  @note Locks nothing.
  */
-HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
-                                             BOOL aActiveChanged /* = FALSE */)
+HRESULT USBController::onDeviceFilterChange(USBDeviceFilter *aFilter,
+                                            BOOL aActiveChanged /* = FALSE */)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -1004,7 +1003,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
     AssertComRCReturnRC(adep.rc());
 
     /* nothing to do if the machine isn't running */
-    if (!Global::IsOnline (adep.machineState()))
+    if (!Global::IsOnline(adep.machineState()))
         return S_OK;
 
     /* we don't modify our data fields -- no need to lock */
@@ -1017,7 +1016,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
 
         if (aActiveChanged)
         {
-            if (aFilter->getData().mRemote.isMatch (false))
+            if (aFilter->getData().mRemote.isMatch(false))
             {
                 /* insert/remove the filter from the proxy */
                 if (aFilter->getData().mActive)
@@ -1040,7 +1039,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
                 /* update the filter in the proxy */
                 ComAssertRet(aFilter->getId() != NULL, E_FAIL);
                 service->removeFilter(aFilter->getId());
-                if (aFilter->getData().mRemote.isMatch (false))
+                if (aFilter->getData().mRemote.isMatch(false))
                 {
                     aFilter->getId() = service->insertFilter(&aFilter->getData().mUSBFilter);
                 }
@@ -1059,10 +1058,10 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
  *
  *  @note Locks this object for reading.
  */
-bool USBController::hasMatchingFilter (const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
+bool USBController::hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.rc(), false);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1098,12 +1097,12 @@ bool USBController::hasMatchingFilter (const ComObjPtr<HostUSBDevice> &aDevice, 
  *
  *  @note Locks this object for reading.
  */
-bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs)
+bool USBController::hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaskedIfs)
 {
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.rc(), false);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1115,50 +1114,50 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
 
     /* query fields */
     USBFILTER dev;
-    USBFilterInit (&dev, USBFILTERTYPE_CAPTURE);
+    USBFilterInit(&dev, USBFILTERTYPE_CAPTURE);
 
     USHORT vendorId = 0;
-    rc = aUSBDevice->COMGETTER(VendorId) (&vendorId);
+    rc = aUSBDevice->COMGETTER(VendorId)(&vendorId);
     ComAssertComRCRet(rc, false);
     ComAssertRet(vendorId, false);
-    int vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_VENDOR_ID, vendorId, true); AssertRC(vrc);
+    int vrc = USBFilterSetNumExact(&dev, USBFILTERIDX_VENDOR_ID, vendorId, true); AssertRC(vrc);
 
     USHORT productId = 0;
-    rc = aUSBDevice->COMGETTER(ProductId) (&productId);
+    rc = aUSBDevice->COMGETTER(ProductId)(&productId);
     ComAssertComRCRet(rc, false);
-    vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_PRODUCT_ID, productId, true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact(&dev, USBFILTERIDX_PRODUCT_ID, productId, true); AssertRC(vrc);
 
     USHORT revision;
-    rc = aUSBDevice->COMGETTER(Revision) (&revision);
+    rc = aUSBDevice->COMGETTER(Revision)(&revision);
     ComAssertComRCRet(rc, false);
-    vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_DEVICE, revision, true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact(&dev, USBFILTERIDX_DEVICE, revision, true); AssertRC(vrc);
 
     Bstr manufacturer;
-    rc = aUSBDevice->COMGETTER(Manufacturer) (manufacturer.asOutParam());
+    rc = aUSBDevice->COMGETTER(Manufacturer)(manufacturer.asOutParam());
     ComAssertComRCRet(rc, false);
     if (!manufacturer.isEmpty())
-        USBFilterSetStringExact (&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer).c_str(), true);
+        USBFilterSetStringExact(&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer).c_str(), true);
 
     Bstr product;
-    rc = aUSBDevice->COMGETTER(Product) (product.asOutParam());
+    rc = aUSBDevice->COMGETTER(Product)(product.asOutParam());
     ComAssertComRCRet(rc, false);
     if (!product.isEmpty())
-        USBFilterSetStringExact (&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product).c_str(), true);
+        USBFilterSetStringExact(&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product).c_str(), true);
 
     Bstr serialNumber;
-    rc = aUSBDevice->COMGETTER(SerialNumber) (serialNumber.asOutParam());
+    rc = aUSBDevice->COMGETTER(SerialNumber)(serialNumber.asOutParam());
     ComAssertComRCRet(rc, false);
     if (!serialNumber.isEmpty())
-        USBFilterSetStringExact (&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber).c_str(), true);
+        USBFilterSetStringExact(&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber).c_str(), true);
 
     Bstr address;
-    rc = aUSBDevice->COMGETTER(Address) (address.asOutParam());
+    rc = aUSBDevice->COMGETTER(Address)(address.asOutParam());
     ComAssertComRCRet(rc, false);
 
     USHORT port = 0;
     rc = aUSBDevice->COMGETTER(Port)(&port);
     ComAssertComRCRet(rc, false);
-    USBFilterSetNumExact (&dev, USBFILTERIDX_PORT, port, true);
+    USBFilterSetNumExact(&dev, USBFILTERIDX_PORT, port, true);
 
     BOOL remote = FALSE;
     rc = aUSBDevice->COMGETTER(Remote)(&remote);
@@ -1177,9 +1176,9 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
 
         if (!aData.mActive)
             continue;
-        if (!aData.mRemote.isMatch (remote))
+        if (!aData.mRemote.isMatch(remote))
             continue;
-        if (!USBFilterMatch (&aData.mUSBFilter, &dev))
+        if (!USBFilterMatch(&aData.mUSBFilter, &dev))
             continue;
 
         match = true;
@@ -1201,12 +1200,12 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
  *
  *  @note Locks this object for reading.
  */
-HRESULT USBController::notifyProxy (bool aInsertFilters)
+HRESULT USBController::notifyProxy(bool aInsertFilters)
 {
     LogFlowThisFunc(("aInsertFilters=%RTbool\n", aInsertFilters));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturn(autoCaller.rc(), false);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1220,7 +1219,7 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
 
         /* notify the proxy (only if the filter is active) */
         if (flt->getData().mActive
-                && flt->getData().mRemote.isMatch (false) /* and if the filter is NOT remote */
+                && flt->getData().mRemote.isMatch(false) /* and if the filter is NOT remote */
                 )
         {
             if (aInsertFilters)

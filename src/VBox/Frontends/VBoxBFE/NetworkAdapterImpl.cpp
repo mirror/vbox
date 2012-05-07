@@ -186,13 +186,8 @@ NetworkAdapter::COMSETTER(TAPFileDescriptor)(LONG tapFileDescriptor)
     {
         AssertMsgFailed(("Invalid file descriptor: %ld.\n", tapFileDescriptor));
 
-        //    setError  VirtualBoxSupportErrorInfoImplBase which
-        //       is a parent class of NetworAdapter in the COM flavored version
-        //    return setError (E_INVALIDARG,
-        //        tr ("Invalid file descriptor: %ld"), tapFileDescriptor);
-
-        return S_OK;
-
+        return setError (E_INVALIDARG,
+                tr ("Invalid file descriptor: %ld"), tapFileDescriptor);
     }
 
     AutoLock alock(this);

@@ -25,7 +25,6 @@
 
 class ATL_NO_VTABLE Framebuffer :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<Framebuffer, IFramebuffer>,
     public VirtualBoxSupportTranslation<Framebuffer>,
     VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
@@ -72,10 +71,6 @@ public:
     STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount) = 0;
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand) = 0;
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Framebuffer"; }
-
 };
 
 #endif // ____H_H_FRAMEBUFFERIMPL

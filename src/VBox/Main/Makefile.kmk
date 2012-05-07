@@ -705,8 +705,7 @@ VBoxCOM_SOURCES         = \
 	glue/AutoLock.cpp \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp \
-	glue/errorprint.cpp \
-	glue/VirtualBoxErrorInfo.cpp
+	glue/errorprint.cpp
 VBoxCOM_INCS          += \
 	include
 ifeq ($(KBUILD_TARGET),win)
