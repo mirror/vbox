@@ -1102,15 +1102,11 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
                 LogRel(("HWACCM: VCPU%d: VMCS physaddr            = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.HCPhysVMCS));
             }
 
-#ifdef HWACCM_VTX_WITH_EPT
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                 pVM->hwaccm.s.fNestedPaging = pVM->hwaccm.s.fAllowNestedPaging;
-#endif /* HWACCM_VTX_WITH_EPT */
-#ifdef HWACCM_VTX_WITH_VPID
-            if (    (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
-                &&  !pVM->hwaccm.s.fNestedPaging)    /* VPID and EPT are mutually exclusive. */
+
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                 pVM->hwaccm.s.vmx.fVPID = pVM->hwaccm.s.vmx.fAllowVPID;
-#endif /* HWACCM_VTX_WITH_VPID */
 
             /* Unrestricted guest execution relies on EPT. */
             if (    pVM->hwaccm.s.fNestedPaging
@@ -1211,19 +1207,18 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
                         LogRel(("HWACCM: Large page support enabled!\n"));
                     }
 #endif
+                    LogRel(("HWACCM: enmFlushEPT    %d\n", pVM->hwaccm.s.vmx.enmFlushEPT));
                 }
                 else
                     Assert(!pVM->hwaccm.s.vmx.fUnrestrictedGuest);
 
                 if (pVM->hwaccm.s.vmx.fVPID)
-                    LogRel(("HWACCM: Enabled VPID\n"));
-
-                if (   pVM->hwaccm.s.fNestedPaging
-                    || pVM->hwaccm.s.vmx.fVPID)
                 {
-                    LogRel(("HWACCM: enmFlushPage    %d\n", pVM->hwaccm.s.vmx.enmFlushPage));
-                    LogRel(("HWACCM: enmFlushContext %d\n", pVM->hwaccm.s.vmx.enmFlushContext));
+                    LogRel(("HWACCM: Enabled VPID\n"));
+                    LogRel(("HWACCM: enmFlushVPID   %d\n", pVM->hwaccm.s.vmx.enmFlushVPID));
                 }
+                else if (pVM->hwaccm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_NOT_SUPPORTED)
+                    LogRel(("HWACCM: Ignoring VPID capabilities of CPU.\n"));
 
                 /* TPR patching status logging. */
                 if (pVM->hwaccm.s.fTRPPatchingAllowed)
