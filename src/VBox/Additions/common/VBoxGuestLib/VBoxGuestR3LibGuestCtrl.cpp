@@ -176,25 +176,26 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdExec(uint32_t  u32ClientId,    uint
                                                   char     *pszPassword,    uint32_t  cbPassword,
                                                   uint32_t *pcMsTimeLimit)
 {
-    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszCmd, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszArgs, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcArgs, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszEnv, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbEnv, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcEnvVars, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszUser, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszPassword, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcMsTimeLimit, VERR_INVALID_PARAMETER);
+    AssertReturn(cParms == 11, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszCmd, VERR_INVALID_POINTER);
+    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszArgs, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcArgs, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszEnv, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbEnv, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcEnvVars, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcMsTimeLimit, VERR_INVALID_POINTER);
 
     VBoxGuestCtrlHGCMMsgExecCmd Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
-    Msg.hdr.cParms      = cParms; /** @todo r=bird: This isn't safe/right. The parameter count of this HGCM call
-                                   * is fixed from our point of view. */
+    Msg.hdr.cParms      = 11;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
@@ -244,17 +245,19 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
                                                     uint32_t *puContext,      uint32_t *puPID,
                                                     uint32_t *puHandle,       uint32_t *puFlags)
 {
-    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puPID, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puHandle, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(cParms == 4, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(puPID, VERR_INVALID_POINTER);
+    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
+    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
 
     VBoxGuestCtrlHGCMMsgExecOut Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
-    Msg.hdr.cParms = cParms;
+    Msg.hdr.cParms = 4;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
@@ -298,18 +301,20 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uin
                                                    void     *pvData,         uint32_t  cbData,
                                                    uint32_t *pcbSize)
 {
-    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puPID, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pvData, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbSize, VERR_INVALID_PARAMETER);
+    AssertReturn(cParms == 5, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(puPID, VERR_INVALID_POINTER);
+    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
     VBoxGuestCtrlHGCMMsgExecIn Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
-    Msg.hdr.cParms      = cParms;
+    Msg.hdr.cParms      = 5;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
@@ -448,3 +453,4 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
     }
     return rc;
 }
+
