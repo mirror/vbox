@@ -80,14 +80,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #define tr(a) a
 
 /**
- *  A special version of the Assert macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  Assert macro wrapper.
  *
  *  In the debug build, this macro is equivalent to Assert.
- *  In the release build, this macro uses |setError (E_FAIL, ...)| to set the
- *  error info from the asserted expression.
- *
- *  @see VirtualBoxSupportErrorInfoImpl::setError
+ *  In the release build, this is a no-op.
  *
  *  @param   expr    Expression which should be true.
  */
@@ -99,8 +95,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #endif
 
 /**
- *  A special version of the AssertMsg macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  AssertMsg macro wrapper.
+ *
+ *  In the debug build, this macro is equivalent to AssertMsg.
+ *  In the release build, this is a no-op.
  *
  *  See ComAssert for more info.
  *
@@ -115,8 +113,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #endif
 
 /**
- *  A special version of the AssertRC macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  AssertRC macro wrapper.
+ *
+ *  In the debug build, this macro is equivalent to AssertRC.
+ *  In the release build, this is a no-op.
  *
  *  See ComAssert for more info.
  *
@@ -129,8 +129,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #endif
 
 /**
- *  A special version of the AssertMsgRC macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  AssertMsgRC macro wrapper.
+ *
+ *  In the debug build, this macro is equivalent to AssertMsgRC.
+ *  In the release build, this is a no-op.
  *
  *  See ComAssert for more info.
  *
@@ -145,8 +147,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 
 
 /**
- *  A special version of the AssertFailed macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  AssertFailed macro wrapper.
+ *
+ *  In the debug build, this macro is equivalent to AssertFailed.
+ *  In the release build, this is a no-op.
  *
  *  See ComAssert for more info.
  */
@@ -158,8 +162,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #endif
 
 /**
- *  A special version of the AssertMsgFailed macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  AssertMsgFailed macro wrapper.
+ *
+ *  In the debug build, this macro is equivalent to AssertMsgFailed.
+ *  In the release build, this is a no-op.
  *
  *  See ComAssert for more info.
  *
@@ -173,8 +179,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #endif
 
 /**
- *  A special version of the AssertComRC macro to be used within VirtualBoxBase
- *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *  AssertComRC macro wrapper.
+ *
+ *  In the debug build, this macro is equivalent to AssertComRC.
+ *  In the release build, this is a no-op.
  *
  *  See ComAssert for more info.
  *
@@ -245,7 +253,7 @@ static inline int setError(int iNum, const char *pszFormat, ...)
  *
  *  This macro <b>must</b> be used at the beginning of all interface methods
  *  (right after entering the class lock) in classes derived from both
- *  VirtualBoxBase and VirtualBoxSupportErrorInfoImpl.
+ *  VirtualBoxBase.
  */
 #define CHECK_READY() \
     do { \

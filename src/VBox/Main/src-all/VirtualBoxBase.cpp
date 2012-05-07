@@ -738,7 +738,7 @@ AutoInitSpan::AutoInitSpan(VirtualBoxBase *aObj,
 }
 
 /**
- * Places the managed VirtualBoxBase object to  Ready/Limited state if the
+ * Places the managed VirtualBoxBase object to Ready/Limited state if the
  * initialization succeeded or partly succeeded, or places it to InitFailed
  * state and calls the object's uninit() method.
  *

@@ -1234,7 +1234,7 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode,
 /**
  * Marks the operation as complete and attaches full error info.
  *
- * See com::SupportErrorInfoImpl::setError(HRESULT, const GUID &, const wchar_t
+ * See VirtualBoxBase::setError(HRESULT, const GUID &, const wchar_t
  * *, const char *, ...) for more info.
  *
  * @param aResultCode   Operation result (error) code, must not be S_OK.
