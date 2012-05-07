@@ -41,7 +41,7 @@
  * @param   pVCpu       The VMCPU to operate on.
  * @param   GCVirt      Page to invalidate
  */
-void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
+static void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
     /* Nothing to do if a TLB flush is already pending */
     if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
