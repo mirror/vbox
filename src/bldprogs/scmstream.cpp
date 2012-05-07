@@ -705,6 +705,17 @@ const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmE
     return pszLine;
 }
 
+/**
+ * Get the current buffer pointer.
+ *  
+ * @returns Buffer pointer on success, NULL on failure (asserted).
+ * @param   pStream             The stream.  Must be in read mode.
+ */
+const char *ScmStreamGetCur(PSCMSTREAM pStream)
+{
+    AssertReturn(!pStream->fWriteOrRead, NULL);
+    return pStream->pch + pStream->off;
+}
 
 /**
  * Gets a character from the stream.
@@ -1108,6 +1119,47 @@ int ScmStreamPutCh(PSCMSTREAM pStream, char ch)
 }
 
 /**
+ * Formats a string and writes it to the SCM stream.
+ *
+ * @returns The number of bytes written (>= 0). Negative value are IPRT error
+ *          status codes.
+ * @param   pStream             The stream to write to.
+ * @param   pszFormat           The format string.
+ * @param   va                  The arguments to format.
+ */
+ssize_t ScmStreamPrintfV(PSCMSTREAM pStream, const char *pszFormat, va_list va)
+{
+    char   *psz;
+    ssize_t cch = RTStrAPrintfV(&psz, pszFormat, va);
+    if (cch)
+    {
+        int rc = ScmStreamWrite(pStream, psz, cch);
+        RTStrFree(psz);
+        if (RT_FAILURE(rc))
+            cch = rc;
+    }
+    return cch;
+}
+
+/**
+ * Formats a string and writes it to the SCM stream.
+ *
+ * @returns The number of bytes written (>= 0). Negative value are IPRT error
+ *          status codes.
+ * @param   pStream             The stream to write to.
+ * @param   pszFormat           The format string.
+ * @param   ...                 The arguments to format.
+ */
+ssize_t ScmStreamPrintf(PSCMSTREAM pStream, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    ssize_t cch = ScmStreamPrintfV(pStream, pszFormat, va);
+    va_end(va);
+    return cch;
+}
+
+/**
  * Copies @a cLines from the @a pSrc stream onto the @a pDst stream.
  *
  * The stream positions will be used and changed in both streams.
@@ -1142,4 +1194,128 @@ int ScmStreamCopyLines(PSCMSTREAM pDst, PSCMSTREAM pSrc, size_t cLines)
 
     return VINF_SUCCESS;
 }
+
+
+/**
+ * If the given C word is at off - 1, return @c true and skip beyond it,
+ * otherwise return @c false.
+ *
+ * @retval  true if the given C-word is at the current position minus one char.
+ *          The stream position changes.
+ * @retval  false if not. The stream position is unchanged.
+ *
+ * @param   pStream             The stream.
+ * @param   cchWord             The length of the word.
+ * @param   pszWord             The word.
+ */
+bool ScmStreamCMatchingWordM1(PSCMSTREAM pStream, const char *pszWord, size_t cchWord)
+{
+    /* Check stream state. */
+    AssertReturn(!pStream->fWriteOrRead, false);
+    AssertReturn(RT_SUCCESS(pStream->rc), false);
+    AssertReturn(pStream->fFullyLineated, false);
+
+    /* Sufficient chars left on the line? */
+    size_t const    iLine   = pStream->iLine;
+    AssertReturn(pStream->off > pStream->paLines[iLine].off, false);
+    size_t const    cchLeft = pStream->paLines[iLine].cch + pStream->paLines[iLine].off - (pStream->off - 1);
+    if (cchWord > cchLeft)
+        return false;
+
+    /* Do they match? */
+    const char     *psz     = &pStream->pch[pStream->off - 1];
+    if (memcmp(psz, pszWord, cchWord))
+        return false;
+
+    /* Is it the end of a C word? */
+    if (cchWord < cchLeft)
+    {
+        psz += cchWord;
+        if (RT_C_IS_ALNUM(*psz) || *psz == '_')
+            return false;
+    }
+
+    /* Skip ahead. */
+    pStream->off += cchWord - 1;
+    return true;
+}
+
+/**
+ * Get's the C word starting at the current position.
+ *
+ * @returns Pointer to the word on success and the stream position advanced to
+ *          the end of it.
+ *          NULL on failure, stream position normally unchanged.
+ * @param   pStream             The stream to get the C word from.
+ * @param   pcchWord            Where to return the word length.
+ */
+const char *ScmStreamCGetWord(PSCMSTREAM pStream, size_t *pcchWord)
+{
+    /* Check stream state. */
+    AssertReturn(!pStream->fWriteOrRead, NULL);
+    AssertReturn(RT_SUCCESS(pStream->rc), NULL);
+    AssertReturn(pStream->fFullyLineated, NULL);
+
+    /* Get the number of chars left on the line and locate the current char. */
+    size_t const    iLine   = pStream->iLine;
+    size_t const    cchLeft = pStream->paLines[iLine].cch + pStream->paLines[iLine].off - pStream->off;
+    const char     *psz     = &pStream->pch[pStream->off];
+
+    /* Is it a leading C character. */
+    if (!RT_C_IS_ALPHA(*psz) && *psz == '_')
+        return NULL;
+
+    /* Find the end of the word. */
+    char    ch;
+    size_t  off = 1;
+    while (     off < cchLeft
+           &&  (   (ch = psz[off]) == '_'
+                || RT_C_IS_ALNUM(ch)))
+        off++;
+
+    pStream->off += off;
+    *pcchWord = off;
+    return psz;
+}
+
+
+/**
+ * Get's the C word starting at the current position minus one.
+ *
+ * @returns Pointer to the word on success and the stream position advanced to
+ *          the end of it.
+ *          NULL on failure, stream position normally unchanged.
+ * @param   pStream             The stream to get the C word from.
+ * @param   pcchWord            Where to return the word length.
+ */
+const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord)
+{
+    /* Check stream state. */
+    AssertReturn(!pStream->fWriteOrRead, NULL);
+    AssertReturn(RT_SUCCESS(pStream->rc), NULL);
+    AssertReturn(pStream->fFullyLineated, NULL);
+
+    /* Get the number of chars left on the line and locate the current char. */
+    size_t const    iLine   = pStream->iLine;
+    size_t const    cchLeft = pStream->paLines[iLine].cch + pStream->paLines[iLine].off - (pStream->off - 1);
+    const char     *psz     = &pStream->pch[pStream->off - 1];
+
+    /* Is it a leading C character. */
+    if (!RT_C_IS_ALPHA(*psz) && *psz == '_')
+        return NULL;
+
+    /* Find the end of the word. */
+    char    ch;
+    size_t  off = 1;
+    while (     off < cchLeft
+           &&  (   (ch = psz[off]) == '_'
+                || RT_C_IS_ALNUM(ch)))
+        off++;
+
+    pStream->off += off - 1;
+    *pcchWord = off;
+    return psz;
+}
+
+
 
