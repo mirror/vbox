@@ -300,6 +300,10 @@ static int rtProcWinMapErrorCodes(DWORD dwError)
             rc = VERR_BAD_EXE_FORMAT;
             break;
 
+        case ERROR_BAD_DEVICE: /* Can happen when opening funny things like "CON". */
+            rc = VERR_INVALID_NAME;
+            break;
+
         default:
             /* Could trigger a debug assertion! */
             rc = RTErrConvertFromWin32(dwError);
