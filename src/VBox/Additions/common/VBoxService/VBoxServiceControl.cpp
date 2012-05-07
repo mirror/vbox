@@ -306,6 +306,11 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
         VBOXSERVICECTRLPROCESS proc;
         RT_ZERO(proc);
 
+        /* Initialize maximum environment block size -- needed as input
+         * parameter to retrieve the stuff from the host. On output this then
+         * will contain the actual block size. */
+        proc.cbEnv = sizeof(proc.szEnv);
+
         rc = VbglR3GuestCtrlExecGetHostCmdExec(uClientID,
                                                cParms,
                                                &uContextID,
@@ -324,11 +329,17 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
                                                &proc.uTimeLimitMS);
         if (RT_SUCCESS(rc))
         {
-            VBoxServiceVerbose(3, "Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, uTimeout=%u\n",
+            VBoxServiceVerbose(3, "Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, szPassword=%s, uTimeout=%u\n",
                                proc.szCmd, proc.uFlags,
                                proc.uNumArgs ? proc.szArgs : "<None>",
                                proc.uNumEnvVars ? proc.szEnv : "<None>",
-                               proc.szUser, proc.uTimeLimitMS);
+                               proc.szUser,
+#ifdef DEBUG
+                               proc.szPassword,
+#else
+                               "XXX", /* Never show passwords in release mode. */
+#endif
+                               proc.uTimeLimitMS);
 
             rc = VBoxServiceControlReapThreads();
             if (RT_FAILURE(rc))
