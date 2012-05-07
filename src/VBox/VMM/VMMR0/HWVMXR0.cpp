@@ -4503,7 +4503,7 @@ static void hmR0VmxFlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
 {
     uint64_t descriptor[2];
 
-    LogFlow(("hmR0VmxFlushEPT %d %RGv\n", enmFlush, GCPhys));
+    LogFlow(("hmR0VmxFlushEPT %d\n", enmFlush));
     Assert(pVM->hwaccm.s.fNestedPaging);
     descriptor[0] = pVCpu->hwaccm.s.vmx.GCPhysEPTP;
     descriptor[1] = 0; /* MBZ. Intel spec. 33.3 VMX Instructions */
