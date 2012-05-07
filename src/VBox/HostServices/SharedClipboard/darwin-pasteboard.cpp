@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,11 +36,11 @@
  *
  * @returns IPRT status code.
  */
-int initPasteboard (PasteboardRef *pPasteboardRef)
+int initPasteboard(PasteboardRef *pPasteboardRef)
 {
     int rc = VINF_SUCCESS;
 
-    if (PasteboardCreate (kPasteboardClipboard, pPasteboardRef))
+    if (PasteboardCreate(kPasteboardClipboard, pPasteboardRef))
         rc = VERR_NOT_SUPPORTED;
 
     return rc;
@@ -51,9 +51,9 @@ int initPasteboard (PasteboardRef *pPasteboardRef)
  *
  * @param pPasteboardRef Reference to the global pasteboard.
  */
-void destroyPasteboard (PasteboardRef *pPasteboardRef)
+void destroyPasteboard(PasteboardRef *pPasteboardRef)
 {
-    CFRelease (*pPasteboardRef);
+    CFRelease(*pPasteboardRef);
     *pPasteboardRef = NULL;
 }
 
@@ -69,16 +69,16 @@ void destroyPasteboard (PasteboardRef *pPasteboardRef)
  *
  * @returns IPRT status code. (Always VINF_SUCCESS atm.)
  */
-int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged)
+int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged)
 {
-    Log (("queryNewPasteboardFormats\n"));
+    Log(("queryNewPasteboardFormats\n"));
 
     OSStatus err = noErr;
     *pfChanged = true;
 
     PasteboardSyncFlags syncFlags;
     /* Make sure all is in sync */
-    syncFlags = PasteboardSynchronize (pPasteboard);
+    syncFlags = PasteboardSynchronize(pPasteboard);
     /* If nothing changed return */
     if (!(syncFlags & kPasteboardModified))
     {
@@ -88,45 +88,45 @@ int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, b
 
     /* Are some items in the pasteboard? */
     ItemCount itemCount;
-    err = PasteboardGetItemCount (pPasteboard, &itemCount);
+    err = PasteboardGetItemCount(pPasteboard, &itemCount);
     if (itemCount < 1)
         return VINF_SUCCESS;
 
     /* The id of the first element in the pasteboard */
     int rc = VINF_SUCCESS;
     PasteboardItemID itemID;
-    if (!(err = PasteboardGetItemIdentifier (pPasteboard, 1, &itemID)))
+    if (!(err = PasteboardGetItemIdentifier(pPasteboard, 1, &itemID)))
     {
         /* Retrieve all flavors in the pasteboard, maybe there
          * is something we can use. */
         CFArrayRef flavorTypeArray;
-        if (!(err = PasteboardCopyItemFlavors (pPasteboard, itemID, &flavorTypeArray)))
+        if (!(err = PasteboardCopyItemFlavors(pPasteboard, itemID, &flavorTypeArray)))
         {
             CFIndex flavorCount;
-            flavorCount = CFArrayGetCount (flavorTypeArray);
+            flavorCount = CFArrayGetCount(flavorTypeArray);
             for (CFIndex flavorIndex = 0; flavorIndex < flavorCount; flavorIndex++)
             {
                 CFStringRef flavorType;
-                flavorType = static_cast <CFStringRef> (CFArrayGetValueAtIndex (flavorTypeArray,
-                                                                                flavorIndex));
+                flavorType = static_cast <CFStringRef>(CFArrayGetValueAtIndex(flavorTypeArray,
+                                                                               flavorIndex));
                 /* Currently only unicode supported */
-                if (UTTypeConformsTo (flavorType, CFSTR ("public.utf8-plain-text")) ||
-                    UTTypeConformsTo (flavorType, CFSTR ("public.utf16-plain-text")))
+                if (UTTypeConformsTo(flavorType, kUTTypeUTF8PlainText) ||
+                    UTTypeConformsTo(flavorType, kUTTypeUTF16PlainText))
                 {
-                    Log (("Unicode flavor detected.\n"));
+                    Log(("Unicode flavor detected.\n"));
                     *pfFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
                 }
-                else if (UTTypeConformsTo (flavorType, kUTTypeBMP))
+                else if (UTTypeConformsTo(flavorType, kUTTypeBMP))
                 {
-                    Log (("BMP flavor detected.\n"));
+                    Log(("BMP flavor detected.\n"));
                     *pfFormats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
                 }
             }
-            CFRelease (flavorTypeArray);
+            CFRelease(flavorTypeArray);
         }
     }
 
-    Log (("queryNewPasteboardFormats: rc = %02X\n", rc));
+    Log(("queryNewPasteboardFormats: rc = %02X\n", rc));
     return rc;
 }
 
@@ -142,25 +142,25 @@ int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, b
  *
  * @returns IPRT status code.
  */
-int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual)
+int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
-    Log (("readFromPasteboard: fFormat = %02X\n", fFormat));
+    Log(("readFromPasteboard: fFormat = %02X\n", fFormat));
 
     OSStatus err = noErr;
 
     /* Make sure all is in sync */
-    PasteboardSynchronize (pPasteboard);
+    PasteboardSynchronize(pPasteboard);
 
     /* Are some items in the pasteboard? */
     ItemCount itemCount;
-    err = PasteboardGetItemCount (pPasteboard, &itemCount);
+    err = PasteboardGetItemCount(pPasteboard, &itemCount);
     if (itemCount < 1)
         return VINF_SUCCESS;
 
     /* The id of the first element in the pasteboard */
     int rc = VERR_NOT_SUPPORTED;
     PasteboardItemID itemID;
-    if (!(err = PasteboardGetItemIdentifier (pPasteboard, 1, &itemID)))
+    if (!(err = PasteboardGetItemIdentifier(pPasteboard, 1, &itemID)))
     {
         /* The guest request unicode */
         if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
@@ -168,29 +168,29 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
             CFDataRef outData;
             PRTUTF16 pwszTmp = NULL;
             /* Try utf-16 first */
-            if (!(err = PasteboardCopyItemFlavorData (pPasteboard, itemID, CFSTR ("public.utf16-plain-text"), &outData)))
+            if (!(err = PasteboardCopyItemFlavorData(pPasteboard, itemID, kUTTypeUTF16PlainText, &outData)))
             {
-                Log (("Clipboard content is utf-16\n"));
-                rc = RTUtf16DupEx (&pwszTmp, (PRTUTF16)CFDataGetBytePtr (outData), 0);
+                Log(("Clipboard content is utf-16\n"));
+                rc = RTUtf16DupEx(&pwszTmp, (PRTUTF16)CFDataGetBytePtr(outData), 0);
             }
             /* Second try is utf-8 */
             else
-                if (!(err = PasteboardCopyItemFlavorData (pPasteboard, itemID, CFSTR ("public.utf8-plain-text"), &outData)))
+                if (!(err = PasteboardCopyItemFlavorData(pPasteboard, itemID, kUTTypeUTF8PlainText, &outData)))
                 {
-                    Log (("readFromPasteboard: clipboard content is utf-8\n"));
-                    rc = RTStrToUtf16 ((const char*)CFDataGetBytePtr (outData), &pwszTmp);
+                    Log(("readFromPasteboard: clipboard content is utf-8\n"));
+                    rc = RTStrToUtf16((const char*)CFDataGetBytePtr(outData), &pwszTmp);
                 }
             if (pwszTmp)
             {
                 /* Check how much longer will the converted text will be. */
-                size_t cwSrc = RTUtf16Len (pwszTmp);
+                size_t cwSrc = RTUtf16Len(pwszTmp);
                 size_t cwDest;
-                rc = vboxClipboardUtf16GetWinSize (pwszTmp, cwSrc, &cwDest);
-                if (RT_FAILURE (rc))
+                rc = vboxClipboardUtf16GetWinSize(pwszTmp, cwSrc, &cwDest);
+                if (RT_FAILURE(rc))
                 {
-                    RTUtf16Free (pwszTmp);
-                    Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetWinSize returned %Rrc.  Abandoning.\n", rc));
-                    AssertRCReturn (rc, rc);
+                    RTUtf16Free(pwszTmp);
+                    Log(("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetWinSize returned %Rrc.  Abandoning.\n", rc));
+                    AssertRCReturn(rc, rc);
                 }
                 /* Set the actually needed data size */
                 *pcbActual = cwDest * 2;
@@ -199,19 +199,19 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
                 /* Do not copy data if the dst buffer is not big enough. */
                 if (*pcbActual <= cb)
                 {
-                    rc = vboxClipboardUtf16LinToWin (pwszTmp, RTUtf16Len (pwszTmp), static_cast <PRTUTF16> (pv), cb / 2);
-                    if (RT_FAILURE (rc))
+                    rc = vboxClipboardUtf16LinToWin(pwszTmp, RTUtf16Len(pwszTmp), static_cast <PRTUTF16>(pv), cb / 2);
+                    if (RT_FAILURE(rc))
                     {
-                        RTUtf16Free (pwszTmp);
-                        Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16LinToWin() returned %Rrc.  Abandoning.\n", rc));
-                        AssertRCReturn (rc, rc);
+                        RTUtf16Free(pwszTmp);
+                        Log(("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16LinToWin() returned %Rrc.  Abandoning.\n", rc));
+                        AssertRCReturn(rc, rc);
                     }
 #ifdef SHOW_CLIPBOARD_CONTENT
-                    Log (("readFromPasteboard: clipboard content: %ls\n", static_cast <PRTUTF16> (pv)));
+                    Log(("readFromPasteboard: clipboard content: %ls\n", static_cast <PRTUTF16>(pv)));
 #endif
                 }
                 /* Free the temp string */
-                RTUtf16Free (pwszTmp);
+                RTUtf16Free(pwszTmp);
             }
         }
         /* The guest request BITMAP */
@@ -221,22 +221,22 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
             const void *pTmp = NULL;
             size_t cbTmpSize;
             /* Get the data from the pasteboard */
-            if (!(err = PasteboardCopyItemFlavorData (pPasteboard, itemID, kUTTypeBMP, &outData)))
+            if (!(err = PasteboardCopyItemFlavorData(pPasteboard, itemID, kUTTypeBMP, &outData)))
             {
-                Log (("Clipboard content is BMP\n"));
-                pTmp = CFDataGetBytePtr (outData);
-                cbTmpSize = CFDataGetLength (outData);
+                Log(("Clipboard content is BMP\n"));
+                pTmp = CFDataGetBytePtr(outData);
+                cbTmpSize = CFDataGetLength(outData);
             }
             if (pTmp)
             {
                 const void *pDib;
                 size_t cbDibSize;
-                rc = vboxClipboardBmpGetDib (pTmp, cbTmpSize, &pDib, &cbDibSize);
-                if (RT_FAILURE (rc))
+                rc = vboxClipboardBmpGetDib(pTmp, cbTmpSize, &pDib, &cbDibSize);
+                if (RT_FAILURE(rc))
                 {
                     rc = VERR_NOT_SUPPORTED;
-                    Log (("readFromPasteboard: unknown bitmap format. vboxClipboardBmpGetDib returned %Rrc.  Abandoning.\n", rc));
-                    AssertRCReturn (rc, rc);
+                    Log(("readFromPasteboard: unknown bitmap format. vboxClipboardBmpGetDib returned %Rrc.  Abandoning.\n", rc));
+                    AssertRCReturn(rc, rc);
                 }
 
                 *pcbActual = cbDibSize;
@@ -245,16 +245,16 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
                 /* Do not copy data if the dst buffer is not big enough. */
                 if (*pcbActual <= cb)
                 {
-                    memcpy (pv, pDib, cbDibSize);
+                    memcpy(pv, pDib, cbDibSize);
 #ifdef SHOW_CLIPBOARD_CONTENT
-                    Log (("readFromPasteboard: clipboard content bitmap %d bytes\n", cbDibSize));
+                    Log(("readFromPasteboard: clipboard content bitmap %d bytes\n", cbDibSize));
 #endif
                 }
             }
         }
     }
 
-    Log (("readFromPasteboard: rc = %02X\n", rc));
+    Log(("readFromPasteboard: rc = %02X\n", rc));
     return rc;
 }
 
@@ -269,83 +269,83 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
  *
  * @returns IPRT status code.
  */
-int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat)
+int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat)
 {
-    Log (("writeToPasteboard: fFormat = %02X\n", fFormat));
+    Log(("writeToPasteboard: fFormat = %02X\n", fFormat));
 
     /* Clear the pasteboard */
-    if (PasteboardClear (pPasteboard))
+    if (PasteboardClear(pPasteboard))
         return VERR_NOT_SUPPORTED;
 
     /* Make sure all is in sync */
-    PasteboardSynchronize (pPasteboard);
+    PasteboardSynchronize(pPasteboard);
 
     int rc = VERR_NOT_SUPPORTED;
     /* Handle the unicode text */
     if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
     {
-        PRTUTF16 pwszSrcText = static_cast <PRTUTF16> (pv);
+        PRTUTF16 pwszSrcText = static_cast <PRTUTF16>(pv);
         size_t cwSrc = cb / 2;
         size_t cwDest = 0;
         /* How long will the converted text be? */
-        rc = vboxClipboardUtf16GetLinSize (pwszSrcText, cwSrc, &cwDest);
-        if (RT_FAILURE (rc))
+        rc = vboxClipboardUtf16GetLinSize(pwszSrcText, cwSrc, &cwDest);
+        if (RT_FAILURE(rc))
         {
-            Log (("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
-            AssertRCReturn (rc, rc);
+            Log(("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
+            AssertRCReturn(rc, rc);
         }
         /* Empty clipboard? Not critical */
         if (cwDest == 0)
         {
-            Log (("writeToPasteboard: received empty clipboard data from the guest, returning false.\n"));
+            Log(("writeToPasteboard: received empty clipboard data from the guest, returning false.\n"));
             return VINF_SUCCESS;
         }
         /* Allocate the necessary memory */
-        PRTUTF16 pwszDestText = static_cast <PRTUTF16> (RTMemAlloc (cwDest * 2));
+        PRTUTF16 pwszDestText = static_cast <PRTUTF16>(RTMemAlloc(cwDest * 2));
         if (pwszDestText == NULL)
         {
-            Log (("writeToPasteboard: failed to allocate %d bytes\n", cwDest * 2));
+            Log(("writeToPasteboard: failed to allocate %d bytes\n", cwDest * 2));
             return VERR_NO_MEMORY;
         }
         /* Convert the EOL */
-        rc = vboxClipboardUtf16WinToLin (pwszSrcText, cwSrc, pwszDestText, cwDest);
-        if (RT_FAILURE (rc))
+        rc = vboxClipboardUtf16WinToLin(pwszSrcText, cwSrc, pwszDestText, cwDest);
+        if (RT_FAILURE(rc))
         {
-            Log (("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
-            RTMemFree (pwszDestText);
-            AssertRCReturn (rc, rc);
+            Log(("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
+            RTMemFree(pwszDestText);
+            AssertRCReturn(rc, rc);
         }
 
         CFDataRef textData = NULL;
         /* Item id is 1. Nothing special here. */
         PasteboardItemID itemId = (PasteboardItemID)1;
         /* Create a CData object which we could pass to the pasteboard */
-        if ((textData = CFDataCreate (kCFAllocatorDefault,
-                                      reinterpret_cast<UInt8*> (pwszDestText), cwDest * 2)))
+        if ((textData = CFDataCreate(kCFAllocatorDefault,
+                                     reinterpret_cast<UInt8*>(pwszDestText), cwDest * 2)))
         {
             /* Put the Utf-16 version to the pasteboard */
-            PasteboardPutItemFlavor (pPasteboard, itemId,
-                                     CFSTR ("public.utf16-plain-text"),
-                                     textData, 0);
+            PasteboardPutItemFlavor(pPasteboard, itemId,
+                                    kUTTypeUTF16PlainText,
+                                    textData, 0);
         }
         /* Create a Utf-8 version */
         char *pszDestText;
-        rc = RTUtf16ToUtf8 (pwszDestText, &pszDestText);
-        if (RT_SUCCESS (rc))
+        rc = RTUtf16ToUtf8(pwszDestText, &pszDestText);
+        if (RT_SUCCESS(rc))
         {
             /* Create a CData object which we could pass to the pasteboard */
-            if ((textData = CFDataCreate (kCFAllocatorDefault,
-                                          reinterpret_cast<UInt8*> (pszDestText), strlen(pszDestText))))
+            if ((textData = CFDataCreate(kCFAllocatorDefault,
+                                         reinterpret_cast<UInt8*>(pszDestText), strlen(pszDestText))))
             {
                 /* Put the Utf-8 version to the pasteboard */
-                PasteboardPutItemFlavor (pPasteboard, itemId,
-                                         CFSTR ("public.utf8-plain-text"),
-                                         textData, 0);
+                PasteboardPutItemFlavor(pPasteboard, itemId,
+                                        kUTTypeUTF8PlainText,
+                                        textData, 0);
             }
-            RTStrFree (pszDestText);
+            RTStrFree(pszDestText);
         }
 
-        RTMemFree (pwszDestText);
+        RTMemFree(pwszDestText);
         rc = VINF_SUCCESS;
     }
     /* Handle the bitmap */
@@ -358,26 +358,26 @@ int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_
         /* Item id is 1. Nothing special here. */
         PasteboardItemID itemId = (PasteboardItemID)1;
 
-        rc = vboxClipboardDibToBmp (pv, cb, &pBmp, &cbBmpSize);
-        if (RT_SUCCESS (rc))
+        rc = vboxClipboardDibToBmp(pv, cb, &pBmp, &cbBmpSize);
+        if (RT_SUCCESS(rc))
         {
             /* Create a CData object which we could pass to the pasteboard */
-            if ((bmpData = CFDataCreate (kCFAllocatorDefault,
-                                          reinterpret_cast<UInt8*> (pBmp), cbBmpSize)))
+            if ((bmpData = CFDataCreate(kCFAllocatorDefault,
+                                         reinterpret_cast<UInt8*>(pBmp), cbBmpSize)))
             {
                 /* Put the Utf-8 version to the pasteboard */
-                PasteboardPutItemFlavor (pPasteboard, itemId,
-                                         kUTTypeBMP,
-                                         bmpData, 0);
+                PasteboardPutItemFlavor(pPasteboard, itemId,
+                                        kUTTypeBMP,
+                                        bmpData, 0);
             }
-            RTMemFree (pBmp);
+            RTMemFree(pBmp);
         }
         rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_IMPLEMENTED;
 
-    Log (("writeToPasteboard: rc = %02X\n", rc));
+    Log(("writeToPasteboard: rc = %02X\n", rc));
     return rc;
 }
 
