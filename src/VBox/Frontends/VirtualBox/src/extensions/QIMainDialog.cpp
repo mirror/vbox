@@ -54,7 +54,7 @@ QDialog::DialogCode QIMainDialog::exec()
     setResult(QDialog::Rejected);
 
     /* Tune some attributes: */
-    bool fDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
+    bool fDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose); NOREF(fDeleteOnClose);
     AssertMsg(!fDeleteOnClose, ("QIMainDialog is NOT supposed to be run in 'delete-on-close' mode!"));
     setAttribute(Qt::WA_DeleteOnClose, false);
     bool fWasShowModal = testAttribute(Qt::WA_ShowModal);
