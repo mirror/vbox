@@ -418,8 +418,8 @@ typedef struct HWACCM
         } msr;
 
         /** Flush types for invept & invvpid; they depend on capabilities. */
-        VMX_FLUSH                   enmFlushPage;
-        VMX_FLUSH                   enmFlushContext;
+        VMX_FLUSH_EPT               enmFlushEPT;
+        VMX_FLUSH_VPID              enmFlushVPID;
     } vmx;
 
     struct

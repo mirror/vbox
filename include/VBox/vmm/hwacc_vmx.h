@@ -363,21 +363,42 @@ typedef EPTPT *PEPTPT;
 typedef const EPTPT *PCEPTPT;
 
 /**
- * VPID and EPT flush types
+ * VPID flush types.
  */
 typedef enum
 {
-    /* Invalidate a specific page. */
-    VMX_FLUSH_PAGE                              = 0,
-    /* Invalidate one context (VPID or EPT) */
-    VMX_FLUSH_SINGLE_CONTEXT                    = 1,
-    /* Invalidate all contexts (VPIDs or EPTs) */
-    VMX_FLUSH_ALL_CONTEXTS                      = 2,
-    /* Invalidate a single VPID context retaining global mappings. */
-    VMX_FLUSH_SINGLE_CONTEXT_WITHOUT_GLOBAL     = 3,
+    /** Invalidate a specific page. */
+    VMX_FLUSH_VPID_INDIV_ADDR                    = 0,
+    /** Invalidate one context (specific VPID). */
+    VMX_FLUSH_VPID_SINGLE_CONTEXT                = 1,
+    /** Invalidate all contexts (all VPIDs). */
+    VMX_FLUSH_VPID_ALL_CONTEXTS                  = 2,
+    /** Invalidate a single VPID context retaining global mappings. */
+    VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS = 3,
+    /** Unsupported by VirtualBox. */
+    VMX_FLUSH_VPID_NOT_SUPPORTED                 = 0xbad,
+    /** Unsupported by CPU. */
+    VMX_FLUSH_VPID_NONE                          = 0xb00,
     /** 32bit hackishness. */
-    VMX_FLUSH_32BIT_HACK                        = 0x7fffffff
-} VMX_FLUSH;
+    VMX_FLUSH_VPID_32BIT_HACK                    = 0x7fffffff
+} VMX_FLUSH_VPID;
+
+/**
+ * EPT flush types.
+ */
+typedef enum
+{
+    /** Invalidate one context (specific EPT). */
+    VMX_FLUSH_EPT_SINGLE_CONTEXT                = 1,
+    /* Invalidate all contexts (all EPTs) */
+    VMX_FLUSH_EPT_ALL_CONTEXTS                  = 2,
+    /** Unsupported by VirtualBox.   */
+    VMX_FLUSH_EPT_NOT_SUPPORTED                 = 0xbad,
+    /** Unsupported by CPU. */
+    VMX_FLUSH_EPT_NONE                          = 0xb00,
+    /** 32bit hackishness. */
+    VMX_FLUSH_EPT_32BIT_HACK                    = 0x7fffffff
+} VMX_FLUSH_EPT;
 /** @} */
 
 /** @name MSR load/store elements
@@ -1559,7 +1580,7 @@ VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
  * @param   enmFlush    Type of flush
  * @param   pDescriptor Descriptor
  */
-DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint64_t *pDescriptor);
+DECLASM(int) VMXR0InvEPT(VMX_FLUSH_EPT enmFlush, uint64_t *pDescriptor);
 
 /**
  * Invalidate a page using invvpid
@@ -1567,7 +1588,7 @@ DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint64_t *pDescriptor);
  * @param   enmFlush    Type of flush
  * @param   pDescriptor Descriptor
  */
-DECLASM(int) VMXR0InvVPID(VMX_FLUSH enmFlush, uint64_t *pDescriptor);
+DECLASM(int) VMXR0InvVPID(VMX_FLUSH_VPID enmFlush, uint64_t *pDescriptor);
 
 /**
  * Executes VMREAD
