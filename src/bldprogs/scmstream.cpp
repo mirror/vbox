@@ -479,6 +479,29 @@ size_t ScmStreamTellLine(PSCMSTREAM pStream)
     return pStream->iLine;
 }
 
+
+/**
+ * Gets the stream offset of a given line.
+ *
+ * @returns The offset of the line, or the stream size if the line number is too
+ *          high.
+ * @param   pStream             The stream. Must be in read mode.
+ * @param   iLine               The line we're asking about.
+ */
+size_t ScmStreamTellOffsetOfLine(PSCMSTREAM pStream, size_t iLine)
+{
+    AssertReturn(!pStream->fWriteOrRead, pStream->cb);
+    if (!pStream->fFullyLineated)
+    {
+        int rc = scmStreamLineate(pStream);
+        AssertRCReturn(rc, pStream->cb);
+    }
+    if (iLine >= pStream->cLines)
+        return pStream->cb;
+    return pStream->paLines[iLine].off;
+}
+
+
 /**
  * Get the current stream size in bytes.
  *
@@ -691,7 +714,7 @@ const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmE
     size_t      offCur   = pStream->off;
     size_t      iCurLine = pStream->iLine;
     const char *pszLine  = ScmStreamGetLineByNo(pStream, iCurLine, pcchLine, penmEol);
-    if (   pszLine 
+    if (   pszLine
         && offCur > pStream->paLines[iCurLine].off)
     {
         offCur -= pStream->paLines[iCurLine].off;
@@ -707,7 +730,7 @@ const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmE
 
 /**
  * Get the current buffer pointer.
- *  
+ *
  * @returns Buffer pointer on success, NULL on failure (asserted).
  * @param   pStream             The stream.  Must be in read mode.
  */

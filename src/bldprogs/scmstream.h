@@ -101,6 +101,7 @@ int         ScmStreamWriteToStdOut(PSCMSTREAM pStream);
 
 size_t      ScmStreamTell(PSCMSTREAM pStream);
 size_t      ScmStreamTellLine(PSCMSTREAM pStream);
+size_t      ScmStreamTellOffsetOfLine(PSCMSTREAM pStream, size_t iLine);
 size_t      ScmStreamSize(PSCMSTREAM pStream);
 size_t      ScmStreamCountLines(PSCMSTREAM pStream);
 int         ScmStreamSeekAbsolute(PSCMSTREAM pStream, size_t offAbsolute);

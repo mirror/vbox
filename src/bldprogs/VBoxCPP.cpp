@@ -2,7 +2,7 @@
 /** @file
  * VBox Build Tool - A mini C Preprocessor.
  *
- * Purpuses to which this preprocessor will be put:
+ * Purposes to which this preprocessor will be put:
  *      - Preprocessig vm.h into dtrace/lib/vm.d so we can access the VM
  *        structure (as well as substructures) from DTrace without having
  *        to handcraft it all.
@@ -693,7 +693,7 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
     /*
      * Simple define, no arguments.
      */
-    if (vbcppValidateCIdentifier(pThis, pszDefine, cchDefine))
+    if (!vbcppValidateCIdentifier(pThis, pszDefine, cchDefine))
         return RTEXITCODE_FAILURE;
 
     PVBCPPDEF pDef = (PVBCPPDEF)RTMemAlloc(RT_OFFSETOF(VBCPPDEF, szValue[cchValue + 1 + cchDefine + 1]));
@@ -916,7 +916,7 @@ static RTEXITCODE vbcppOutputCh(PVBCPP pThis, char ch)
     int rc = ScmStreamPutCh(&pThis->StrmOutput, ch);
     if (RT_SUCCESS(rc))
         return RTEXITCODE_SUCCESS;
-    return vbcppError(pThis, "Output error %Rrc");
+    return vbcppError(pThis, "Output error: %Rrc", rc);
 }
 
 
@@ -933,7 +933,44 @@ static RTEXITCODE vbcppOutputWrite(PVBCPP pThis, const char *pch, size_t cch)
     int rc = ScmStreamWrite(&pThis->StrmOutput, pch, cch);
     if (RT_SUCCESS(rc))
         return RTEXITCODE_SUCCESS;
-    return vbcppError(pThis, "Output error %Rrc");
+    return vbcppError(pThis, "Output error: %Rrc", rc);
+}
+
+
+static RTEXITCODE vbcppOutputComment(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart, size_t cchOutputted)
+{
+    size_t offCur = ScmStreamTell(pStrmInput);
+    if (offStart < offCur)
+    {
+        int rc = ScmStreamSeekAbsolute(pStrmInput, offStart);
+        AssertRCReturn(rc, vbcppError(pThis, "Input seek error: %Rrc", rc));
+
+        /*
+         * Use the same indent, if possible.
+         */
+        size_t cchIndent = offStart - ScmStreamTellOffsetOfLine(pStrmInput, ScmStreamTellLine(pStrmInput));
+        if (cchOutputted < cchIndent)
+            rc = ScmStreamPrintf(&pThis->StrmOutput, "%*s", cchIndent - cchOutputted, "");
+        else
+            rc = ScmStreamPutCh(&pThis->StrmOutput, ' ');
+        if (RT_FAILURE(rc))
+            return vbcppError(pThis, "Output error: %Rrc", rc);
+
+        /*
+         * Copy the bytes.
+         */
+        while (ScmStreamTell(pStrmInput) < offCur)
+        {
+            unsigned ch = ScmStreamGetCh(pStrmInput);
+            if (ch == ~(unsigned)0)
+                return vbcppError(pThis, "Input error: %Rrc", rc);
+            rc = ScmStreamPutCh(&pThis->StrmOutput, ch);
+            if (RT_FAILURE(rc))
+                return vbcppError(pThis, "Output error: %Rrc", rc);
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -952,7 +989,8 @@ static RTEXITCODE vbcppProcessMultiLineComment(PVBCPP pThis, PSCMSTREAM pStrmInp
     /* The open comment sequence. */
     ScmStreamGetCh(pStrmInput);         /* '*' */
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    if (pThis->fKeepComments)
+    if (   pThis->fKeepComments
+        && !pThis->fIf0Mode)
         rcExit = vbcppOutputWrite(pThis, "/*", 2);
 
     /* The comment.*/
@@ -967,13 +1005,17 @@ static RTEXITCODE vbcppProcessMultiLineComment(PVBCPP pThis, PSCMSTREAM pStrmInp
             if (ch2 == '/')
             {
                 ScmStreamGetCh(pStrmInput);
-                if (pThis->fKeepComments)
+                if (   pThis->fKeepComments
+                    && !pThis->fIf0Mode)
                     rcExit = vbcppOutputWrite(pThis, "*/", 2);
                 break;
             }
         }
 
-        if (pThis->fKeepComments || ch == '\r' || ch == '\n')
+        if (   (   pThis->fKeepComments
+                && !pThis->fIf0Mode)
+            || ch == '\r'
+            || ch == '\n')
         {
             rcExit = vbcppOutputCh(pThis, ch);
             if (rcExit != RTEXITCODE_SUCCESS)
@@ -1007,7 +1049,8 @@ static RTEXITCODE vbcppProcessOneLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput
     pszLine--; cchLine++;               /* unfetching the first slash. */
     for (;;)
     {
-        if (pThis->fKeepComments)
+        if (   pThis->fKeepComments
+            && !pThis->fIf0Mode)
             rcExit = vbcppOutputWrite(pThis, pszLine, cchLine + enmEol);
         else
             rcExit = vbcppOutputWrite(pThis, pszLine + cchLine, enmEol);
@@ -1218,9 +1261,10 @@ static RTEXITCODE vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(PVBCPP pThi
 /**
  * Skips white spaces.
  *
+ * @returns The current location upon return..
  * @param   pStrmInput          The input stream.
  */
-static void vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
+static size_t vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
 {
     unsigned ch;
     while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
@@ -1230,6 +1274,7 @@ static void vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
         unsigned chCheck = ScmStreamGetCh(pStrmInput);
         AssertBreak(chCheck == ch);
     }
+    return ScmStreamTell(pStrmInput);
 }
 
 
@@ -1251,18 +1296,21 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
     RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        size_t      cchFilename;
-        const char *pchFilename;
+        size_t      cchFileSpec = 0;
+        const char *pchFileSpec = NULL;
+        size_t      cchFilename = 0;
+        const char *pchFilename = NULL;
 
         unsigned ch = ScmStreamPeekCh(pStrmInput);
         unsigned chType = ch;
         if (ch == '"' || ch == '<')
         {
             ScmStreamGetCh(pStrmInput);
-            pchFilename = ScmStreamGetCur(pStrmInput);
+            pchFileSpec = pchFilename = ScmStreamGetCur(pStrmInput);
+            unsigned chEnd  = chType == '<' ? '>' : '"';
             unsigned chPrev = ch;
             while (   (ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0
-                   &&  ch != chType)
+                   &&  ch != chEnd)
             {
                 if (ch == '\r' || ch == '\n')
                 {
@@ -1271,35 +1319,32 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
                 }
             }
 
-            if (rcExit != RTEXITCODE_SUCCESS)
+            if (rcExit == RTEXITCODE_SUCCESS)
             {
                 if (ch != ~(unsigned)0)
-                    cchFilename = ScmStreamGetCur(pStrmInput) - pchFilename;
+                    cchFileSpec = cchFilename = ScmStreamGetCur(pStrmInput) - pchFilename - 1;
                 else
                     rcExit = vbcppError(pThis, "Expected '%c'", chType);
             }
         }
         else if (vbcppIsCIdentifierLeadChar(ch))
         {
-            //size_t      cchDefine;
-            //const char *pchDefine = ScmStreamCGetWord(pStrmInput, &cchDefine);
-            rcExit = vbcppError(pThis, "Including via a define is not implemented yet")
+            //pchFileSpec = ScmStreamCGetWord(pStrmInput, &cchFileSpec);
+            rcExit = vbcppError(pThis, "Including via a define is not implemented yet");
         }
         else
-            rcExit = vbcppError(pThis, "Malformed include directive")
+            rcExit = vbcppError(pThis, "Malformed include directive");
 
         /*
-         * Take down the location of the next non-white space, if we need to
-         * pass thru the directive further down. Then skip to the end of the
+         * Take down the location of the next non-white space, in case we need
+         * to pass thru the directive further down. Then skip to the end of the
          * line.
          */
-        if (rcExit != RTEXITCODE_SUCCESS)
-            vbcppProcessSkipWhite(pStrmInput);
-        size_t const offIncEnd = ScmStreamTell(pStrmInput);
-        if (rcExit != RTEXITCODE_SUCCESS)
+        size_t const offIncEnd = vbcppProcessSkipWhite(pStrmInput);
+        if (rcExit == RTEXITCODE_SUCCESS)
             rcExit = vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(pThis, pStrmInput);
 
-        if (rcExit != RTEXITCODE_SUCCESS)
+        if (rcExit == RTEXITCODE_SUCCESS)
         {
             /*
              * Execute it.
@@ -1312,19 +1357,25 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
             }
             else if (pThis->enmMode != kVBCppMode_SelectiveD)
             {
-/** @todo put this in a function or smth. */
-                ssize_t cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude %.*s",
-                                              pCond->iKeepLevel - 1, "", pchCondition);
-                if (cch < 0)
-                    return vbcppError(pThis, "Output error %Rrc", (int)cch);
-                if (offIncEnd < ScmStreamTell(pStrmInput))
-                {
-                    /** @todo  */
-                    ScmStreamPrintf(&pThis->StrmOutput, "/* missing comment - fixme */");
-                }
+                /* Pretty print the passthru. */
+                unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
+                size_t cch;
+                if (chType == '<')
+                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude <%.*s>",
+                                          cchIndent, "", cchFileSpec, pchFileSpec);
+                else if (chType == '"')
+                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude \"%.*s\"",
+                                          cchIndent, "", cchFileSpec, pchFileSpec);
+                else
+                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude %.*s",
+                                          cchIndent, "", cchFileSpec, pchFileSpec);
+                if (cch > 0)
+                    rcExit = vbcppOutputComment(pThis, pStrmInput, offIncEnd, cch);
+                else
+                    rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
 
             }
-            /* else: strip it */
+            /* else: drop it */
         }
     }
     return rcExit;
@@ -1541,7 +1592,53 @@ static RTEXITCODE vbcppProcessIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  */
 static RTEXITCODE vbcppProcessElse(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    /*
+     * Nothing to parse, just comment positions to find and note down.
+     */
+    offStart = vbcppProcessSkipWhite(pStrmInput);
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(pThis, pStrmInput);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Execute.
+         */
+        PVBCPPCOND pCond = pThis->pCondStack;
+        if (pCond)
+        {
+            if (!pCond->fSeenElse)
+            {
+                pCond->fSeenElse = true;
+                if (   pCond->enmResult != kVBCppEval_Undecided
+                    && (   !pCond->pUp
+                        || pCond->pUp->enmStackResult == kVBCppEval_True))
+                {
+                    if (pCond->enmResult == kVBCppEval_True)
+                        pCond->enmStackResult = kVBCppEval_False;
+                    else
+                        pCond->enmStackResult = kVBCppEval_True;
+                    pThis->fIf0Mode = pCond->enmStackResult == kVBCppEval_False;
+                }
+
+                /*
+                 * Do pass thru.
+                 */
+                if (   !pThis->fIf0Mode
+                    && pCond->enmResult == kVBCppEval_Undecided)
+                {
+                    ssize_t cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*selse", pCond->iKeepLevel - 1, "");
+                    if (cch > 0)
+                        rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch);
+                    else
+                        rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
+                }
+            }
+            else
+                rcExit = vbcppError(pThis, "Double #else or/and missing #endif");
+        }
+        else
+            rcExit = vbcppError(pThis, "#else without #if");
+    }
+    return rcExit;
 }
 
 
@@ -1556,7 +1653,39 @@ static RTEXITCODE vbcppProcessElse(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t o
  */
 static RTEXITCODE vbcppProcessEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    /*
+     * Nothing to parse, just comment positions to find and note down.
+     */
+    offStart = vbcppProcessSkipWhite(pStrmInput);
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(pThis, pStrmInput);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Execute.
+         */
+        PVBCPPCOND pCond = pThis->pCondStack;
+        if (pCond)
+        {
+            pThis->pCondStack = pCond->pUp;
+            pThis->fIf0Mode = pCond->pUp && pCond->pUp->enmStackResult == kVBCppEval_False;
+
+            /*
+             * Do pass thru.
+             */
+            if (   !pThis->fIf0Mode
+                && pCond->enmResult == kVBCppEval_Undecided)
+            {
+                ssize_t cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sendif", pCond->iKeepLevel - 1, "");
+                if (cch > 0)
+                    rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch);
+                else
+                    rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
+            }
+        }
+        else
+            rcExit = vbcppError(pThis, "#endif without #if");
+    }
+    return rcExit;
 }
 
 
@@ -1571,7 +1700,7 @@ static RTEXITCODE vbcppProcessEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
  */
 static RTEXITCODE vbcppProcessPragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
 }
 
 
@@ -1586,7 +1715,7 @@ static RTEXITCODE vbcppProcessPragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  */
 static RTEXITCODE vbcppProcessLineNo(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
 }
 
 
@@ -1596,12 +1725,10 @@ static RTEXITCODE vbcppProcessLineNo(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
  * @param   pThis               The C preprocessor instance.
  * @param   pStrmInput          The input stream.
- * @param   offStart            The stream position where the directive
- *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessLineNoShort(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppProcessLineNoShort(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
 }
 
 
@@ -1850,5 +1977,4 @@ int main(int argc, char **argv)
         vbcppTerm(&This);
     return rcExit;
 }
-
 
