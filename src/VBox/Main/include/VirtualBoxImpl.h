@@ -278,8 +278,6 @@ public:
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
 
-    static HRESULT handleUnexpectedExceptions(RT_SRC_POS_DECL);
-
     const Utf8Str& settingsFilePath();
 
     RWLockHandle& getMediaTreeLockHandle();

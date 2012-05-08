@@ -19,6 +19,9 @@
 
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
+#include <iprt/cpp/exception.h>
+
+#include <typeinfo>
 
 #if !defined (VBOX_WITH_XPCOM)
 #include <windows.h>
@@ -291,6 +294,69 @@ void VirtualBoxBase::releaseCaller()
     }
 
     AssertMsgFailed (("mState = %d!", mState));
+}
+
+/**
+ * Handles unexpected exceptions by turning them into COM errors in release
+ * builds or by hitting a breakpoint in the release builds.
+ *
+ * Usage pattern:
+ * @code
+        try
+        {
+            // ...
+        }
+        catch (LaLalA)
+        {
+            // ...
+        }
+        catch (...)
+        {
+            rc = VirtualBox::handleUnexpectedExceptions(this, RT_SRC_POS);
+        }
+ * @endcode
+ *
+ * @param aThis             object where the exception happened
+ * @param RT_SRC_POS_DECL   "RT_SRC_POS" macro instantiation.
+ *  */
+/* static */
+HRESULT VirtualBoxBase::handleUnexpectedExceptions(VirtualBoxBase *const aThis, RT_SRC_POS_DECL)
+{
+    try
+    {
+        /* re-throw the current exception */
+        throw;
+    }
+    catch (const RTCError &err)      // includes all XML exceptions
+    {
+        return setErrorInternal(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
+                                Utf8StrFmt(tr("%s.\n%s[%d] (%s)"),
+                                           err.what(),
+                                           pszFile, iLine, pszFunction).c_str(),
+                                false /* aWarning */,
+                                true /* aLogIt */);
+    }
+    catch (const std::exception &err)
+    {
+        return setErrorInternal(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
+                                Utf8StrFmt(tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
+                                           err.what(), typeid(err).name(),
+                                           pszFile, iLine, pszFunction).c_str(),
+                                false /* aWarning */,
+                                true /* aLogIt */);
+    }
+    catch (...)
+    {
+        return setErrorInternal(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
+                                Utf8StrFmt(tr("Unknown exception\n%s[%d] (%s)"),
+                                           pszFile, iLine, pszFunction).c_str(),
+                                false /* aWarning */,
+                                true /* aLogIt */);
+    }
+
+    /* should not get here */
+    AssertFailed();
+    return E_FAIL;
 }
 
 /**

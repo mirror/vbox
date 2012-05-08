@@ -114,7 +114,7 @@ struct MachineCloneVMPrivate
     void updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
-    HRESULT createDifferencingMedium(const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const;
+    HRESULT createDifferencingMedium(const ComObjPtr<Machine> &pMachine, const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const;
     static int copyStateFileProgress(unsigned uPercentage, void *pvUser);
 
     /* Private q and parent pointer */
@@ -643,7 +643,7 @@ void MachineCloneVMPrivate::updateStateFile(settings::SnapshotsList &snl, const 
     }
 }
 
-HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const
+HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine> &pMachine, const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const
 {
     HRESULT rc = S_OK;
     try
@@ -689,7 +689,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(pMachine, RT_SRC_POS);
     }
 
     return rc;
@@ -1056,8 +1056,12 @@ HRESULT MachineCloneVM::run()
                     {
                         ComObjPtr<Medium> pDiff;
                         /* create the diff under the snapshot medium */
-                        rc = d->createDifferencingMedium(pLMedium, strTrgSnapshotFolder,
+                        trgLock.release();
+                        srcLock.release();
+                        rc = d->createDifferencingMedium(p, pLMedium, strTrgSnapshotFolder,
                                                          newMedia, &pDiff);
+                        srcLock.acquire();
+                        trgLock.acquire();
                         if (FAILED(rc)) throw rc;
                         map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pDiff));
                         /* diff image has to be used... */
@@ -1232,8 +1236,12 @@ HRESULT MachineCloneVM::run()
                 if (pBase->isReadOnly())
                 {
                     ComObjPtr<Medium> pDiff;
-                    rc = d->createDifferencingMedium(pNewParent, strTrgSnapshotFolder,
+                    trgLock.release();
+                    srcLock.release();
+                    rc = d->createDifferencingMedium(p, pNewParent, strTrgSnapshotFolder,
                                                      newMedia, &pDiff);
+                    srcLock.acquire();
+                    trgLock.acquire();
                     if (FAILED(rc)) throw rc;
                     /* diff image has to be used... */
                     pNewParent = pDiff;
@@ -1357,7 +1365,7 @@ HRESULT MachineCloneVM::run()
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(p, RT_SRC_POS);
     }
 
     MultiResult mrc(rc);

@@ -45,8 +45,6 @@
 #include <vector>
 #include <memory> // for auto_ptr
 
-#include <typeinfo>
-
 #include "VirtualBoxImpl.h"
 
 #include "Global.h"
@@ -486,7 +484,7 @@ HRESULT VirtualBox::init()
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
     if (SUCCEEDED(rc))
@@ -3447,7 +3445,7 @@ HRESULT VirtualBox::saveSettings()
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
     return rc;
@@ -3946,62 +3944,6 @@ HRESULT VirtualBox::ensureFilePathExists(const Utf8Str &strFileName, bool fCreat
     }
 
     return S_OK;
-}
-
-/**
- * Handles unexpected exceptions by turning them into COM errors in release
- * builds or by hitting a breakpoint in the release builds.
- *
- * Usage pattern:
- * @code
-        try
-        {
-            // ...
-        }
-        catch (LaLalA)
-        {
-            // ...
-        }
-        catch (...)
-        {
-            rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
-        }
- * @endcode
- *
- * @param RT_SRC_POS_DECL "RT_SRC_POS" macro instantiation.
- */
-/* static */
-HRESULT VirtualBox::handleUnexpectedExceptions(RT_SRC_POS_DECL)
-{
-    try
-    {
-        /* re-throw the current exception */
-        throw;
-    }
-    catch (const RTCError &err)      // includes all XML exceptions
-    {
-        return setErrorStatic(E_FAIL,
-                              Utf8StrFmt(tr("%s.\n%s[%d] (%s)"),
-                                         err.what(),
-                                         pszFile, iLine, pszFunction).c_str());
-    }
-    catch (const std::exception &err)
-    {
-        return setErrorStatic(E_FAIL,
-                              Utf8StrFmt(tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
-                                         err.what(), typeid(err).name(),
-                                         pszFile, iLine, pszFunction).c_str());
-    }
-    catch (...)
-    {
-        return setErrorStatic(E_FAIL,
-                              Utf8StrFmt(tr("Unknown exception\n%s[%d] (%s)"),
-                                         pszFile, iLine, pszFunction).c_str());
-    }
-
-    /* should not get here */
-    AssertFailed();
-    return E_FAIL;
 }
 
 const Utf8Str& VirtualBox::settingsFilePath()
