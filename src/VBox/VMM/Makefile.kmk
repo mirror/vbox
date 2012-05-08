@@ -561,6 +561,41 @@ ifndef VBOX_ONLY_EXTPACKS
 endif # !VBOX_ONLY_EXTPACKS
 
 
+if  defined(VBOX_WITH_DTRACE_R3) \
+ || defined(VBOX_WITH_DTRACE_R0) \
+ || defined(VBOX_WITH_DTRACE_RC)
+ #
+ # Install the dtrace library files.
+ #
+ INSTALLS += VMMLibDTrace
+ VMMLibDTrace_INST    = $(VBOX_INST_DTRACE_LIB)
+ VMMLibDTrace_SOURCES = \
+	dtrace/lib/types.d \
+	dtrace/lib/$(KBUILD_TARGET_ARCH)/types.d=>$(KBUILD_TARGET_ARCH)/types.d \
+	$(VMMLibDTrace_0_OUTDIR)/vm.d=>$(KBUILD_TARGET_ARCH)/vm.d \
+	$(VMMLibDTrace_0_OUTDIR)/cpumctx.d=>$(KBUILD_TARGET_ARCH)/cpumctx.d \
+
+
+ ##
+ # Turn the header $2 into the DTrace library script $1.
+ #
+ define def_vmm_lib_dtrace_preprocess
+  $$$$(VMMLibDTrace_0_OUTDIR)/$1: $2 $$(VBOX_VBOXCPP) | $$$$(dir $$$$@)
+	$$(QUIET)$$(call MSG_GENERATE,VMMLibDTrace,$$@,$$<)
+	$(VBOX_VBOXCPP) -d \
+		-D VBOX_FOR_DTRACE_LIB \
+		-D VBOX_FOR_DTRACE_LIB_$(toupper $(KBUILD_TARGET_ARCH)) \
+		-D RT_C_DECLS_BEGIN= \
+		-D RT_C_DECLS_END= \
+		$$(addprefix -D ,$$(DEFS) $$(DEFS.$$(KBUILD_TARGET)) $$(DEFS.$(KBUILD_TARGET_ARCH))) $$< $$@
+ endef
+ $(evalcall2 def_vmm_lib_dtrace_preprocess,vm.d,$(PATH_ROOT)/include/VBox/vmm/vm.h)
+ $(evalcall2 def_vmm_lib_dtrace_preprocess,cpumctx.d,$(PATH_ROOT)/include/VBox/vmm/cpumctx.h)
+
+endif
+
+
+
 #
 # For vmmGetSvnRev.
 #
