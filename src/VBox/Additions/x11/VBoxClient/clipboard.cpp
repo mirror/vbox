@@ -33,7 +33,6 @@
 #include <VBox/GuestHost/SharedClipboard.h>
 
 #include "VBoxClient.h"
-#include "clipboard.h"
 
 /****************************************************************************
 *   Global Variables                                                        *
