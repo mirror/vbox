@@ -615,6 +615,19 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
+            <para><computeroutput>--nicbootprio&lt;1-N&gt; 
+            &lt;priority&gt;</computeroutput>: This specifies the order in which 
+            NICs are tried for booting over the network (using PXE). The 
+            priority is an integer in the 0 to 4 range. Priority 1 is the 
+            highest, priority 4 is low. Priority 0, which is the default unless 
+            otherwise specified, is the lowest.
+            </para>
+            <para> Note that this option only has effect when the Intel PXE boot
+            ROM is used.
+            </para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--boot&lt;1-4&gt;
             none|floppy|dvd|disk|net</computeroutput>: This specifies the boot
             order for the virtual machine. There are four "slots", which the
