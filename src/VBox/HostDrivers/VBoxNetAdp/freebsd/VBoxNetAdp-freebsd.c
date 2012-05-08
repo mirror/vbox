@@ -304,8 +304,8 @@ void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
 {
     struct ifnet *ifp;
 
-    VBOXCURVNET_SET(ifp->if_vnet);
     ifp = pThis->u.s.ifp;
+    VBOXCURVNET_SET(ifp->if_vnet);
     ether_ifdetach(ifp);
     if_free(ifp);
     VBOXCURVNET_RESTORE();
