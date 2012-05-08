@@ -144,7 +144,7 @@ typedef BMINFOHEADER *PBMINFOHEADER;
  * @param   ppDest        Where to store the pointer to the buffer for the destination data
  * @param   pcbDest       Pointer to the size of the buffer for the destination data in bytes
  */
-int vboxClipboardDibToBmp(const void *pSrc, size_t cbSrc, void **ppDest, size_t *pcbDest);
+int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDest, size_t *pcbDest);
 
 /**
  * Get the address and size of CF_DIB data in a full BMP data in the input buffer.
@@ -157,7 +157,7 @@ int vboxClipboardDibToBmp(const void *pSrc, size_t cbSrc, void **ppDest, size_t 
  * @param   ppDest        Where to store the pointer to the destination data
  * @param   pcbDest       Pointer to the size of the destination data in bytes
  */
-int vboxClipboardBmpGetDib(const void *pSrc, size_t cbSrc, const void **ppDest, size_t *pcbDest);
+int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest, size_t *pcbDest);
 
 
 #endif
