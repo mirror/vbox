@@ -100,6 +100,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
+ VBOX_INST_DTRACE_LIB = $(INST_BIN)dtrace/lib/
 
 else
 
@@ -122,6 +123,7 @@ else
  INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
+ VBOX_INST_DTRACE_LIB = $(INST_BIN)dtrace/lib/
 endif
 
 INST_DOC              = doc/
@@ -1701,6 +1703,9 @@ VBOX_BIOSSUMS   ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
 
 # RTManifest (extension pack manifest utility)
 VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
+
+# VBoxCPP (special purpose C preprocessor)
+VBOX_VBOXCPP    ?= $(PATH_OBJ)/VBoxCPP/VBoxCPP$(HOSTSUFF_EXE)
 
 # VBoxTpG (tracepoint generator)
 VBOX_VBOXTPG    ?= $(PATH_OBJ)/VBoxTpG/VBoxTpG$(HOSTSUFF_EXE)
