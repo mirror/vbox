@@ -308,86 +308,20 @@ typedef struct VBCPP
 typedef VBCPP *PVBCPP;
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
 
 
-/**
- * Changes the preprocessing mode.
+
+/*
  *
- * @param   pThis               The C preprocessor instance.
- * @param   enmMode             The new mode.
- */
-static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
-{
-    switch (enmMode)
-    {
-        case kVBCppMode_Standard:
-            pThis->fKeepComments                    = false;
-            pThis->fRespectSourceDefines            = true;
-            pThis->fAllowRedefiningCmdLineDefines   = true;
-            pThis->fPassThruDefines                 = false;
-            pThis->fUndecidedConditionals           = false;
-            pThis->fLineSplicing                    = true;
-            pThis->enmIncludeAction                 = kVBCppIncludeAction_Include;
-            break;
-
-        case kVBCppMode_Selective:
-            pThis->fKeepComments                    = true;
-            pThis->fRespectSourceDefines            = false;
-            pThis->fAllowRedefiningCmdLineDefines   = false;
-            pThis->fPassThruDefines                 = true;
-            pThis->fUndecidedConditionals           = true;
-            pThis->fLineSplicing                    = false;
-            pThis->enmIncludeAction                 = kVBCppIncludeAction_PassThru;
-            break;
-
-        case kVBCppMode_SelectiveD:
-            pThis->fKeepComments                    = true;
-            pThis->fRespectSourceDefines            = true;
-            pThis->fAllowRedefiningCmdLineDefines   = false;
-            pThis->fPassThruDefines                 = false;
-            pThis->fUndecidedConditionals           = false;
-            pThis->fLineSplicing                    = false;
-            pThis->enmIncludeAction                 = kVBCppIncludeAction_Drop;
-            break;
-
-        default:
-            AssertFailedReturnVoid();
-    }
-    pThis->enmMode = enmMode;
-}
-
-
-/**
- * Initializes the C preprocessor instance data.
  *
- * @param   pThis               The C preprocessor instance data.
+ * Message Handling.
+ * Message Handling.
+ * Message Handling.
+ * Message Handling.
+ * Message Handling.
+ *
+ *
  */
-static void vbcppInit(PVBCPP pThis)
-{
-    vbcppSetMode(pThis, kVBCppMode_Selective);
-    pThis->cIncludes        = 0;
-    pThis->papszIncludes    = NULL;
-    pThis->pszInput         = NULL;
-    pThis->pszOutput        = NULL;
-    pThis->StrSpace         = NULL;
-    pThis->UndefStrSpace    = NULL;
-    pThis->pExpStack        = NULL;
-    pThis->cExpStackDepth   = 0;
-    pThis->cCondStackDepth  = 0;
-    pThis->pCondStack       = NULL;
-    pThis->fIf0Mode         = false;
-    pThis->fMaybePreprocessorLine = true;
-    VBCPP_BITMAP_EMPTY(pThis->bmDefined);
-    VBCPP_BITMAP_EMPTY(pThis->bmArgs);
-    pThis->cCondStackDepth  = 0;
-    pThis->pInputStack      = NULL;
-    RT_ZERO(pThis->StrmOutput);
-    pThis->rcExit           = RTEXITCODE_SUCCESS;
-    pThis->fStrmOutputValid = false;
-}
 
 
 /**
@@ -456,6 +390,22 @@ static RTEXITCODE vbcppErrorPos(PVBCPP pThis, const char *pszPos, const char *ps
 }
 
 
+
+
+
+/*
+ *
+ *
+ * C Identifier/Word Parsing.
+ * C Identifier/Word Parsing.
+ * C Identifier/Word Parsing.
+ * C Identifier/Word Parsing.
+ * C Identifier/Word Parsing.
+ *
+ *
+ */
+
+
 /**
  * Checks if the given character is a valid C identifier lead character.
  *
@@ -519,6 +469,464 @@ static bool vbcppValidateCIdentifier(PVBCPP pThis, const char *pchIdentifier, si
     }
 
     return true;
+}
+
+
+
+
+
+
+/*
+ *
+ *
+ * Output
+ * Output
+ * Output
+ * Output
+ * Output
+ *
+ *
+ */
+
+
+/**
+ * Outputs a character.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   ch                  The character to output.
+ */
+static RTEXITCODE vbcppOutputCh(PVBCPP pThis, char ch)
+{
+    int rc = ScmStreamPutCh(&pThis->StrmOutput, ch);
+    if (RT_SUCCESS(rc))
+        return RTEXITCODE_SUCCESS;
+    return vbcppError(pThis, "Output error: %Rrc", rc);
+}
+
+
+/**
+ * Outputs a string.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pch                 The string.
+ * @param   cch                 The number of characters to write.
+ */
+static RTEXITCODE vbcppOutputWrite(PVBCPP pThis, const char *pch, size_t cch)
+{
+    int rc = ScmStreamWrite(&pThis->StrmOutput, pch, cch);
+    if (RT_SUCCESS(rc))
+        return RTEXITCODE_SUCCESS;
+    return vbcppError(pThis, "Output error: %Rrc", rc);
+}
+
+
+static RTEXITCODE vbcppOutputComment(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart, size_t cchOutputted,
+                                     size_t cchMinIndent)
+{
+    size_t offCur = ScmStreamTell(pStrmInput);
+    if (offStart < offCur)
+    {
+        int rc = ScmStreamSeekAbsolute(pStrmInput, offStart);
+        AssertRCReturn(rc, vbcppError(pThis, "Input seek error: %Rrc", rc));
+
+        /*
+         * Use the same indent, if possible.
+         */
+        size_t cchIndent = offStart - ScmStreamTellOffsetOfLine(pStrmInput, ScmStreamTellLine(pStrmInput));
+        if (cchOutputted < cchIndent)
+            rc = ScmStreamPrintf(&pThis->StrmOutput, "%*s", cchIndent - cchOutputted, "");
+        else
+            rc = ScmStreamPutCh(&pThis->StrmOutput, ' ');
+        if (RT_FAILURE(rc))
+            return vbcppError(pThis, "Output error: %Rrc", rc);
+
+        /*
+         * Copy the bytes.
+         */
+        while (ScmStreamTell(pStrmInput) < offCur)
+        {
+            unsigned ch = ScmStreamGetCh(pStrmInput);
+            if (ch == ~(unsigned)0)
+                return vbcppError(pThis, "Input error: %Rrc", rc);
+            rc = ScmStreamPutCh(&pThis->StrmOutput, ch);
+            if (RT_FAILURE(rc))
+                return vbcppError(pThis, "Output error: %Rrc", rc);
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+
+
+
+/*
+ *
+ *
+ * Input
+ * Input
+ * Input
+ * Input
+ * Input
+ *
+ *
+ */
+
+
+/**
+ * Skips white spaces, including escaped new-lines.
+ *
+ * @param   pStrmInput          The input stream.
+ */
+static void vbcppProcessSkipWhiteAndEscapedEol(PSCMSTREAM pStrmInput)
+{
+    unsigned chPrev = ~(unsigned)0;
+    unsigned ch;
+    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+    {
+        if (ch == '\r' || ch == '\n')
+        {
+            if (chPrev != '\\')
+                break;
+            chPrev = ch;
+            ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
+        }
+        else if (RT_C_IS_SPACE(ch))
+        {
+            ch = chPrev;
+            ch = ScmStreamGetCh(pStrmInput);
+            Assert(ch == chPrev);
+        }
+        else
+            break;
+    }
+}
+
+
+/**
+ * Skips white spaces, escaped new-lines and multi line comments.
+ *
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ */
+static RTEXITCODE vbcppProcessSkipWhiteEscapedEolAndComments(PVBCPP pThis, PSCMSTREAM pStrmInput)
+{
+    unsigned chPrev = ~(unsigned)0;
+    unsigned ch;
+    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+    {
+        if (!RT_C_IS_SPACE(ch))
+        {
+            /* Multi-line Comment? */
+            if (ch != '/')
+                break;                  /* most definitely, not. */
+
+            size_t offSaved = ScmStreamTell(pStrmInput);
+            ScmStreamGetCh(pStrmInput);
+            if (ScmStreamPeekCh(pStrmInput) != '*')
+            {
+                ScmStreamSeekAbsolute(pStrmInput, offSaved);
+                break;              /* no */
+            }
+
+            /* Skip to the end of the comment. */
+            while ((ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0)
+            {
+                if (ch == '*')
+                {
+                    ch = ScmStreamGetCh(pStrmInput);
+                    if (ch == '/')
+                        break;
+                    if (ch == ~(unsigned)0)
+                        break;
+                }
+            }
+            if (ch == ~(unsigned)0)
+                return vbcppError(pThis, "unterminated multi-line comment");
+            chPrev = '/';
+        }
+        /* New line (also matched by RT_C_IS_SPACE). */
+        else if (ch == '\r' || ch == '\n')
+        {
+            /* Stop if not escaped. */
+            if (chPrev != '\\')
+                break;
+            chPrev = ch;
+            ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
+        }
+        /* Real space char. */
+        else
+        {
+            chPrev = ch;
+            ch = ScmStreamGetCh(pStrmInput);
+            Assert(ch == chPrev);
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Skips white spaces, escaped new-lines, and multi line comments, then checking
+ * that we're at the end of a line.
+ *
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ */
+static RTEXITCODE vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(PVBCPP pThis, PSCMSTREAM pStrmInput)
+{
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        unsigned ch = ScmStreamPeekCh(pStrmInput);
+        if (   ch != ~(unsigned)0
+            && ch != '\r'
+            && ch != '\n')
+            rcExit = vbcppError(pThis, "Did not expected anything more on this line");
+    }
+    return rcExit;
+}
+
+
+/**
+ * Skips white spaces.
+ *
+ * @returns The current location upon return..
+ * @param   pStrmInput          The input stream.
+ */
+static size_t vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
+{
+    unsigned ch;
+    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+    {
+        if (!RT_C_IS_SPACE(ch) || ch == '\r' || ch == '\n')
+            break;
+        unsigned chCheck = ScmStreamGetCh(pStrmInput);
+        AssertBreak(chCheck == ch);
+    }
+    return ScmStreamTell(pStrmInput);
+}
+
+
+/**
+ * Processes a multi-line comment.
+ *
+ * Must either string the comment or keep it. If the latter, we must refrain
+ * from replacing C-words in it.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ */
+static RTEXITCODE vbcppProcessMultiLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput)
+{
+    /* The open comment sequence. */
+    ScmStreamGetCh(pStrmInput);         /* '*' */
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    if (   pThis->fKeepComments
+        && !pThis->fIf0Mode)
+        rcExit = vbcppOutputWrite(pThis, "/*", 2);
+
+    /* The comment.*/
+    unsigned ch;
+    while (   rcExit == RTEXITCODE_SUCCESS
+           && (ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0 )
+    {
+        if (ch == '*')
+        {
+            /* Closing sequence? */
+            unsigned ch2 = ScmStreamPeekCh(pStrmInput);
+            if (ch2 == '/')
+            {
+                ScmStreamGetCh(pStrmInput);
+                if (   pThis->fKeepComments
+                    && !pThis->fIf0Mode)
+                    rcExit = vbcppOutputWrite(pThis, "*/", 2);
+                break;
+            }
+        }
+
+        if (   (   pThis->fKeepComments
+                && !pThis->fIf0Mode)
+            || ch == '\r'
+            || ch == '\n')
+        {
+            rcExit = vbcppOutputCh(pThis, ch);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
+
+            /* Reset the maybe-preprocessor-line indicator when necessary. */
+            if (ch == '\r' || ch == '\n')
+                pThis->fMaybePreprocessorLine = true;
+        }
+    }
+    return rcExit;
+}
+
+
+/**
+ * Processes a single line comment.
+ *
+ * Must either string the comment or keep it. If the latter, we must refrain
+ * from replacing C-words in it.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ */
+static RTEXITCODE vbcppProcessOneLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput)
+{
+    RTEXITCODE  rcExit;
+    SCMEOL      enmEol;
+    size_t      cchLine;
+    const char *pszLine = ScmStreamGetLine(pStrmInput, &cchLine, &enmEol); Assert(pszLine);
+    pszLine--; cchLine++;               /* unfetching the first slash. */
+    for (;;)
+    {
+        if (   pThis->fKeepComments
+            && !pThis->fIf0Mode)
+            rcExit = vbcppOutputWrite(pThis, pszLine, cchLine + enmEol);
+        else
+            rcExit = vbcppOutputWrite(pThis, pszLine + cchLine, enmEol);
+        if (rcExit != RTEXITCODE_SUCCESS)
+            break;
+        if (   cchLine == 0
+            || pszLine[cchLine - 1] != '\\')
+            break;
+
+        pszLine = ScmStreamGetLine(pStrmInput, &cchLine, &enmEol);
+        if (!pszLine)
+            break;
+    }
+    pThis->fMaybePreprocessorLine = true;
+    return rcExit;
+}
+
+
+/**
+ * Processes a double quoted string.
+ *
+ * Must not replace any C-words in strings.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ */
+static RTEXITCODE vbcppProcessDoubleQuotedString(PVBCPP pThis, PSCMSTREAM pStrmInput)
+{
+    RTEXITCODE rcExit = vbcppOutputCh(pThis, '"');
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        bool fEscaped = false;
+        for (;;)
+        {
+            unsigned ch = ScmStreamGetCh(pStrmInput);
+            if (ch == ~(unsigned)0)
+            {
+                rcExit = vbcppError(pThis, "Unterminated double quoted string");
+                break;
+            }
+
+            rcExit = vbcppOutputCh(pThis, ch);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
+
+            if (ch == '"' && !fEscaped)
+                break;
+            fEscaped = !fEscaped && ch == '\\';
+        }
+    }
+    return rcExit;
+}
+
+
+/**
+ * Processes a single quoted litteral.
+ *
+ * Must not replace any C-words in strings.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ */
+static RTEXITCODE vbcppProcessSingledQuotedString(PVBCPP pThis, PSCMSTREAM pStrmInput)
+{
+    RTEXITCODE rcExit = vbcppOutputCh(pThis, '\'');
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        bool fEscaped = false;
+        for (;;)
+        {
+            unsigned ch = ScmStreamGetCh(pStrmInput);
+            if (ch == ~(unsigned)0)
+            {
+                rcExit = vbcppError(pThis, "Unterminated singled quoted string");
+                break;
+            }
+
+            rcExit = vbcppOutputCh(pThis, ch);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
+
+            if (ch == '\'' && !fEscaped)
+                break;
+            fEscaped = !fEscaped && ch == '\\';
+        }
+    }
+    return rcExit;
+}
+
+
+/**
+ * Processes a C word, possibly replacing it with a definition.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ * @param   ch                  The first character.
+ */
+static RTEXITCODE vbcppProcessCWord(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch)
+{
+    /** @todo Implement this... */
+    return vbcppOutputCh(pThis, ch);
+}
+
+
+
+
+
+
+
+/*
+ *
+ *
+ * D E F I N E S
+ * D E F I N E S
+ * D E F I N E S
+ * D E F I N E S
+ * D E F I N E S
+ *
+ *
+ */
+
+
+/**
+ * Checks if a define exists.
+ *
+ * @returns true or false.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pszDefine           The define name and optionally the argument
+ *                              list.
+ * @param   cchDefine           The length of the name. RTSTR_MAX is ok.
+ */
+static bool vbcppDefineExists(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
+{
+    return cchDefine > 0
+        && VBCPP_BITMAP_IS_SET(pThis->bmDefined, *pszDefine)
+        && RTStrSpaceGetN(&pThis->StrSpace, pszDefine, cchDefine) != NULL;
 }
 
 
@@ -830,674 +1238,6 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
 
 
 /**
- * Checks if a define exists.
- *
- * @returns true or false.
- * @param   pThis               The C preprocessor instance.
- * @param   pszDefine           The define name and optionally the argument
- *                              list.
- * @param   cchDefine           The length of the name. RTSTR_MAX is ok.
- */
-static bool vbcppDefineExists(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
-{
-    return cchDefine > 0
-        && VBCPP_BITMAP_IS_SET(pThis->bmDefined, *pszDefine)
-        && RTStrSpaceGetN(&pThis->StrSpace, pszDefine, cchDefine) != NULL;
-}
-
-
-/**
- * Adds an include directory.
- *
- * @returns Program exit code, with error message on failure.
- * @param   pThis               The C preprocessor instance.
- * @param   pszDir              The directory to add.
- */
-static RTEXITCODE vbcppAddInclude(PVBCPP pThis, const char *pszDir)
-{
-    uint32_t cIncludes = pThis->cIncludes;
-    if (cIncludes >= _64K)
-        return vbcppError(pThis, "Too many include directories");
-
-    void *pv = RTMemRealloc(pThis->papszIncludes, (cIncludes + 1) * sizeof(char **));
-    if (!pv)
-        return vbcppError(pThis, "No memory for include directories");
-    pThis->papszIncludes = (char **)pv;
-
-    int rc = RTStrDupEx(&pThis->papszIncludes[cIncludes], pszDir);
-    if (RT_FAILURE(rc))
-        return vbcppError(pThis, "No string memory for include directories");
-
-    pThis->cIncludes = cIncludes + 1;
-    return RTEXITCODE_SUCCESS;
-}
-
-
-/**
- * Parses the command line options.
- *
- * @returns Program exit code. Exit on non-success or if *pfExit is set.
- * @param   pThis               The C preprocessor instance.
- * @param   argc                The argument count.
- * @param   argv                The argument vector.
- * @param   pfExit              Pointer to the exit indicator.
- */
-static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *pfExit)
-{
-    RTEXITCODE rcExit;
-
-    *pfExit = false;
-
-    /*
-     * Option config.
-     */
-    static RTGETOPTDEF const s_aOpts[] =
-    {
-        { "--define",                   'D',                    RTGETOPT_REQ_STRING },
-        { "--include-dir",              'I',                    RTGETOPT_REQ_STRING },
-        { "--undefine",                 'U',                    RTGETOPT_REQ_STRING },
-        { "--keep-comments",            'C',                    RTGETOPT_REQ_NOTHING },
-        { "--strip-comments",           'c',                    RTGETOPT_REQ_NOTHING },
-        { "--D-strip",                  'd',                    RTGETOPT_REQ_NOTHING },
-    };
-
-    RTGETOPTUNION   ValueUnion;
-    RTGETOPTSTATE   GetOptState;
-    int rc = RTGetOptInit(&GetOptState, argc, argv, &s_aOpts[0], RT_ELEMENTS(s_aOpts), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertReleaseRCReturn(rc, RTEXITCODE_FAILURE);
-
-    /*
-     * Process the options.
-     */
-    while ((rc = RTGetOpt(&GetOptState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            case 'c':
-                pThis->fKeepComments = false;
-                break;
-
-            case 'C':
-                pThis->fKeepComments = false;
-                break;
-
-            case 'd':
-                vbcppSetMode(pThis, kVBCppMode_SelectiveD);
-                break;
-
-            case 'D':
-            {
-                const char *pszEqual = strchr(ValueUnion.psz, '=');
-                if (pszEqual)
-                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, pszEqual - ValueUnion.psz, pszEqual + 1, RTSTR_MAX, true);
-                else
-                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, RTSTR_MAX, "1", 1, true);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            case 'I':
-                rcExit = vbcppAddInclude(pThis, ValueUnion.psz);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-
-            case 'U':
-                rcExit = vbcppDefineUndef(pThis, ValueUnion.psz, RTSTR_MAX, true);
-                break;
-
-            case 'h':
-                RTPrintf("No help yet, sorry\n");
-                *pfExit = true;
-                return RTEXITCODE_SUCCESS;
-
-            case 'V':
-            {
-                /* The following is assuming that svn does it's job here. */
-                static const char s_szRev[] = "$Revision$";
-                const char *psz = RTStrStripL(strchr(s_szRev, ' '));
-                RTPrintf("r%.*s\n", strchr(psz, ' ') - psz, psz);
-                *pfExit = true;
-                return RTEXITCODE_SUCCESS;
-            }
-
-            case VINF_GETOPT_NOT_OPTION:
-                if (!pThis->pszInput)
-                    pThis->pszInput = ValueUnion.psz;
-                else if (!pThis->pszOutput)
-                    pThis->pszOutput = ValueUnion.psz;
-                else
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "too many file arguments");
-                break;
-
-
-            /*
-             * Errors and bugs.
-             */
-            default:
-                return RTGetOptPrintError(rc, &ValueUnion);
-        }
-    }
-
-    return RTEXITCODE_SUCCESS;
-}
-
-
-/**
- * Opens the input and output streams.
- *
- * @returns Exit code.
- * @param   pThis               The C preprocessor instance.
- */
-static RTEXITCODE vbcppOpenStreams(PVBCPP pThis)
-{
-    if (!pThis->pszInput)
-        return vbcppError(pThis, "Preprocessing the standard input stream is currently not supported");
-
-    size_t      cchName = strlen(pThis->pszInput);
-    PVBCPPINPUT pInput = (PVBCPPINPUT)RTMemAlloc(RT_OFFSETOF(VBCPPINPUT, szName[cchName + 1]));
-    if (!pInput)
-        return vbcppError(pThis, "out of memory");
-    pInput->pUp          = pThis->pInputStack;
-    pInput->pszSpecified = pInput->szName;
-    memcpy(pInput->szName, pThis->pszInput, cchName + 1);
-    pThis->pInputStack   = pInput;
-    int rc = ScmStreamInitForReading(&pInput->StrmInput, pThis->pszInput);
-    if (RT_FAILURE(rc))
-        return vbcppError(pThis, "ScmStreamInitForReading returned %Rrc when opening input file (%s)",
-                          rc, pThis->pszInput);
-
-    rc = ScmStreamInitForWriting(&pThis->StrmOutput, &pInput->StrmInput);
-    if (RT_FAILURE(rc))
-        return vbcppError(pThis, "ScmStreamInitForWriting returned %Rrc", rc);
-
-    pThis->fStrmOutputValid = true;
-    return RTEXITCODE_SUCCESS;
-}
-
-
-/**
- * Outputs a character.
- *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   ch                  The character to output.
- */
-static RTEXITCODE vbcppOutputCh(PVBCPP pThis, char ch)
-{
-    int rc = ScmStreamPutCh(&pThis->StrmOutput, ch);
-    if (RT_SUCCESS(rc))
-        return RTEXITCODE_SUCCESS;
-    return vbcppError(pThis, "Output error: %Rrc", rc);
-}
-
-
-/**
- * Outputs a string.
- *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   pch                 The string.
- * @param   cch                 The number of characters to write.
- */
-static RTEXITCODE vbcppOutputWrite(PVBCPP pThis, const char *pch, size_t cch)
-{
-    int rc = ScmStreamWrite(&pThis->StrmOutput, pch, cch);
-    if (RT_SUCCESS(rc))
-        return RTEXITCODE_SUCCESS;
-    return vbcppError(pThis, "Output error: %Rrc", rc);
-}
-
-
-static RTEXITCODE vbcppOutputComment(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart, size_t cchOutputted,
-                                     size_t cchMinIndent)
-{
-    size_t offCur = ScmStreamTell(pStrmInput);
-    if (offStart < offCur)
-    {
-        int rc = ScmStreamSeekAbsolute(pStrmInput, offStart);
-        AssertRCReturn(rc, vbcppError(pThis, "Input seek error: %Rrc", rc));
-
-        /*
-         * Use the same indent, if possible.
-         */
-        size_t cchIndent = offStart - ScmStreamTellOffsetOfLine(pStrmInput, ScmStreamTellLine(pStrmInput));
-        if (cchOutputted < cchIndent)
-            rc = ScmStreamPrintf(&pThis->StrmOutput, "%*s", cchIndent - cchOutputted, "");
-        else
-            rc = ScmStreamPutCh(&pThis->StrmOutput, ' ');
-        if (RT_FAILURE(rc))
-            return vbcppError(pThis, "Output error: %Rrc", rc);
-
-        /*
-         * Copy the bytes.
-         */
-        while (ScmStreamTell(pStrmInput) < offCur)
-        {
-            unsigned ch = ScmStreamGetCh(pStrmInput);
-            if (ch == ~(unsigned)0)
-                return vbcppError(pThis, "Input error: %Rrc", rc);
-            rc = ScmStreamPutCh(&pThis->StrmOutput, ch);
-            if (RT_FAILURE(rc))
-                return vbcppError(pThis, "Output error: %Rrc", rc);
-        }
-    }
-
-    return RTEXITCODE_SUCCESS;
-}
-
-
-/**
- * Processes a multi-line comment.
- *
- * Must either string the comment or keep it. If the latter, we must refrain
- * from replacing C-words in it.
- *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- */
-static RTEXITCODE vbcppProcessMultiLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput)
-{
-    /* The open comment sequence. */
-    ScmStreamGetCh(pStrmInput);         /* '*' */
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    if (   pThis->fKeepComments
-        && !pThis->fIf0Mode)
-        rcExit = vbcppOutputWrite(pThis, "/*", 2);
-
-    /* The comment.*/
-    unsigned ch;
-    while (   rcExit == RTEXITCODE_SUCCESS
-           && (ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0 )
-    {
-        if (ch == '*')
-        {
-            /* Closing sequence? */
-            unsigned ch2 = ScmStreamPeekCh(pStrmInput);
-            if (ch2 == '/')
-            {
-                ScmStreamGetCh(pStrmInput);
-                if (   pThis->fKeepComments
-                    && !pThis->fIf0Mode)
-                    rcExit = vbcppOutputWrite(pThis, "*/", 2);
-                break;
-            }
-        }
-
-        if (   (   pThis->fKeepComments
-                && !pThis->fIf0Mode)
-            || ch == '\r'
-            || ch == '\n')
-        {
-            rcExit = vbcppOutputCh(pThis, ch);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                break;
-
-            /* Reset the maybe-preprocessor-line indicator when necessary. */
-            if (ch == '\r' || ch == '\n')
-                pThis->fMaybePreprocessorLine = true;
-        }
-    }
-    return rcExit;
-}
-
-
-/**
- * Processes a single line comment.
- *
- * Must either string the comment or keep it. If the latter, we must refrain
- * from replacing C-words in it.
- *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- */
-static RTEXITCODE vbcppProcessOneLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput)
-{
-    RTEXITCODE  rcExit;
-    SCMEOL      enmEol;
-    size_t      cchLine;
-    const char *pszLine = ScmStreamGetLine(pStrmInput, &cchLine, &enmEol); Assert(pszLine);
-    pszLine--; cchLine++;               /* unfetching the first slash. */
-    for (;;)
-    {
-        if (   pThis->fKeepComments
-            && !pThis->fIf0Mode)
-            rcExit = vbcppOutputWrite(pThis, pszLine, cchLine + enmEol);
-        else
-            rcExit = vbcppOutputWrite(pThis, pszLine + cchLine, enmEol);
-        if (rcExit != RTEXITCODE_SUCCESS)
-            break;
-        if (   cchLine == 0
-            || pszLine[cchLine - 1] != '\\')
-            break;
-
-        pszLine = ScmStreamGetLine(pStrmInput, &cchLine, &enmEol);
-        if (!pszLine)
-            break;
-    }
-    pThis->fMaybePreprocessorLine = true;
-    return rcExit;
-}
-
-
-/**
- * Processes a double quoted string.
- *
- * Must not replace any C-words in strings.
- *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- */
-static RTEXITCODE vbcppProcessDoubleQuotedString(PVBCPP pThis, PSCMSTREAM pStrmInput)
-{
-    RTEXITCODE rcExit = vbcppOutputCh(pThis, '"');
-    if (rcExit == RTEXITCODE_SUCCESS)
-    {
-        bool fEscaped = false;
-        for (;;)
-        {
-            unsigned ch = ScmStreamGetCh(pStrmInput);
-            if (ch == ~(unsigned)0)
-            {
-                rcExit = vbcppError(pThis, "Unterminated double quoted string");
-                break;
-            }
-
-            rcExit = vbcppOutputCh(pThis, ch);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                break;
-
-            if (ch == '"' && !fEscaped)
-                break;
-            fEscaped = !fEscaped && ch == '\\';
-        }
-    }
-    return rcExit;
-}
-
-
-/**
- * Processes a single quoted litteral.
- *
- * Must not replace any C-words in strings.
- *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- */
-static RTEXITCODE vbcppProcessSingledQuotedString(PVBCPP pThis, PSCMSTREAM pStrmInput)
-{
-    RTEXITCODE rcExit = vbcppOutputCh(pThis, '\'');
-    if (rcExit == RTEXITCODE_SUCCESS)
-    {
-        bool fEscaped = false;
-        for (;;)
-        {
-            unsigned ch = ScmStreamGetCh(pStrmInput);
-            if (ch == ~(unsigned)0)
-            {
-                rcExit = vbcppError(pThis, "Unterminated singled quoted string");
-                break;
-            }
-
-            rcExit = vbcppOutputCh(pThis, ch);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                break;
-
-            if (ch == '\'' && !fEscaped)
-                break;
-            fEscaped = !fEscaped && ch == '\\';
-        }
-    }
-    return rcExit;
-}
-
-
-/**
- * Skips white spaces, including escaped new-lines.
- *
- * @param   pStrmInput          The input stream.
- */
-static void vbcppProcessSkipWhiteAndEscapedEol(PSCMSTREAM pStrmInput)
-{
-    unsigned chPrev = ~(unsigned)0;
-    unsigned ch;
-    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
-    {
-        if (ch == '\r' || ch == '\n')
-        {
-            if (chPrev != '\\')
-                break;
-            chPrev = ch;
-            ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
-        }
-        else if (RT_C_IS_SPACE(ch))
-        {
-            ch = chPrev;
-            ch = ScmStreamGetCh(pStrmInput);
-            Assert(ch == chPrev);
-        }
-        else
-            break;
-    }
-}
-
-
-/**
- * Skips white spaces, escaped new-lines and multi line comments.
- *
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- */
-static RTEXITCODE vbcppProcessSkipWhiteEscapedEolAndComments(PVBCPP pThis, PSCMSTREAM pStrmInput)
-{
-    unsigned chPrev = ~(unsigned)0;
-    unsigned ch;
-    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
-    {
-        if (!RT_C_IS_SPACE(ch))
-        {
-            /* Multi-line Comment? */
-            if (ch != '/')
-                break;                  /* most definitely, not. */
-
-            size_t offSaved = ScmStreamTell(pStrmInput);
-            ScmStreamGetCh(pStrmInput);
-            if (ScmStreamPeekCh(pStrmInput) != '*')
-            {
-                ScmStreamSeekAbsolute(pStrmInput, offSaved);
-                break;              /* no */
-            }
-
-            /* Skip to the end of the comment. */
-            while ((ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0)
-            {
-                if (ch == '*')
-                {
-                    ch = ScmStreamGetCh(pStrmInput);
-                    if (ch == '/')
-                        break;
-                    if (ch == ~(unsigned)0)
-                        break;
-                }
-            }
-            if (ch == ~(unsigned)0)
-                return vbcppError(pThis, "unterminated multi-line comment");
-            chPrev = '/';
-        }
-        /* New line (also matched by RT_C_IS_SPACE). */
-        else if (ch == '\r' || ch == '\n')
-        {
-            /* Stop if not escaped. */
-            if (chPrev != '\\')
-                break;
-            chPrev = ch;
-            ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
-        }
-        /* Real space char. */
-        else
-        {
-            chPrev = ch;
-            ch = ScmStreamGetCh(pStrmInput);
-            Assert(ch == chPrev);
-        }
-    }
-    return RTEXITCODE_SUCCESS;
-}
-
-
-/**
- * Skips white spaces, escaped new-lines, and multi line comments, then checking
- * that we're at the end of a line.
- *
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- */
-static RTEXITCODE vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(PVBCPP pThis, PSCMSTREAM pStrmInput)
-{
-    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
-    if (rcExit == RTEXITCODE_SUCCESS)
-    {
-        unsigned ch = ScmStreamPeekCh(pStrmInput);
-        if (   ch != ~(unsigned)0
-            && ch != '\r'
-            && ch != '\n')
-            rcExit = vbcppError(pThis, "Did not expected anything more on this line");
-    }
-    return rcExit;
-}
-
-
-/**
- * Skips white spaces.
- *
- * @returns The current location upon return..
- * @param   pStrmInput          The input stream.
- */
-static size_t vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
-{
-    unsigned ch;
-    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
-    {
-        if (!RT_C_IS_SPACE(ch) || ch == '\r' || ch == '\n')
-            break;
-        unsigned chCheck = ScmStreamGetCh(pStrmInput);
-        AssertBreak(chCheck == ch);
-    }
-    return ScmStreamTell(pStrmInput);
-}
-
-
-
-/**
- * Processes a abbreviated line number directive.
- *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- * @param   offStart            The stream position where the directive
- *                              started (for pass thru).
- */
-static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
-{
-    /*
-     * Parse it.
-     */
-    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
-    if (rcExit == RTEXITCODE_SUCCESS)
-    {
-        size_t      cchFileSpec = 0;
-        const char *pchFileSpec = NULL;
-        size_t      cchFilename = 0;
-        const char *pchFilename = NULL;
-
-        unsigned ch = ScmStreamPeekCh(pStrmInput);
-        unsigned chType = ch;
-        if (ch == '"' || ch == '<')
-        {
-            ScmStreamGetCh(pStrmInput);
-            pchFileSpec = pchFilename = ScmStreamGetCur(pStrmInput);
-            unsigned chEnd  = chType == '<' ? '>' : '"';
-            unsigned chPrev = ch;
-            while (   (ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0
-                   &&  ch != chEnd)
-            {
-                if (ch == '\r' || ch == '\n')
-                {
-                    rcExit = vbcppError(pThis, "Multi-line include file specfications are not supported");
-                    break;
-                }
-            }
-
-            if (rcExit == RTEXITCODE_SUCCESS)
-            {
-                if (ch != ~(unsigned)0)
-                    cchFileSpec = cchFilename = ScmStreamGetCur(pStrmInput) - pchFilename - 1;
-                else
-                    rcExit = vbcppError(pThis, "Expected '%c'", chType);
-            }
-        }
-        else if (vbcppIsCIdentifierLeadChar(ch))
-        {
-            //pchFileSpec = ScmStreamCGetWord(pStrmInput, &cchFileSpec);
-            rcExit = vbcppError(pThis, "Including via a define is not implemented yet");
-        }
-        else
-            rcExit = vbcppError(pThis, "Malformed include directive");
-
-        /*
-         * Take down the location of the next non-white space, in case we need
-         * to pass thru the directive further down. Then skip to the end of the
-         * line.
-         */
-        size_t const offIncEnd = vbcppProcessSkipWhite(pStrmInput);
-        if (rcExit == RTEXITCODE_SUCCESS)
-            rcExit = vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(pThis, pStrmInput);
-
-        if (rcExit == RTEXITCODE_SUCCESS)
-        {
-            /*
-             * Execute it.
-             */
-            if (pThis->enmIncludeAction == kVBCppIncludeAction_Include)
-            {
-                /** @todo Search for the include file and push it onto the input stack.
-                 *  Not difficult, just unnecessary rigth now. */
-                rcExit = vbcppError(pThis, "Includes are fully implemented");
-            }
-            else if (pThis->enmIncludeAction == kVBCppIncludeAction_PassThru)
-            {
-                /* Pretty print the passthru. */
-                unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
-                size_t   cch;
-                if (chType == '<')
-                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude <%.*s>",
-                                          cchIndent, "", cchFileSpec, pchFileSpec);
-                else if (chType == '"')
-                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude \"%.*s\"",
-                                          cchIndent, "", cchFileSpec, pchFileSpec);
-                else
-                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude %.*s",
-                                          cchIndent, "", cchFileSpec, pchFileSpec);
-                if (cch > 0)
-                    rcExit = vbcppOutputComment(pThis, pStrmInput, offIncEnd, cch, 1);
-                else
-                    rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
-
-            }
-            else
-                Assert(pThis->enmIncludeAction == kVBCppIncludeAction_Drop);
-        }
-    }
-    return rcExit;
-}
-
-
-/**
  * Processes a abbreviated line number directive.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
@@ -1620,6 +1360,22 @@ static RTEXITCODE vbcppProcessUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
 {
     return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
 }
+
+
+
+
+
+/*
+ *
+ *
+ * C O N D I T I O N A L S
+ * C O N D I T I O N A L S
+ * C O N D I T I O N A L S
+ * C O N D I T I O N A L S
+ * C O N D I T I O N A L S
+ *
+ *
+ */
 
 
 /**
@@ -1919,6 +1675,152 @@ static RTEXITCODE vbcppProcessEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
 }
 
 
+
+
+
+/*
+ *
+ *
+ * Misc Directives
+ * Misc Directives
+ * Misc Directives
+ * Misc Directives
+ *
+ *
+ */
+
+
+/**
+ * Adds an include directory.
+ *
+ * @returns Program exit code, with error message on failure.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pszDir              The directory to add.
+ */
+static RTEXITCODE vbcppAddInclude(PVBCPP pThis, const char *pszDir)
+{
+    uint32_t cIncludes = pThis->cIncludes;
+    if (cIncludes >= _64K)
+        return vbcppError(pThis, "Too many include directories");
+
+    void *pv = RTMemRealloc(pThis->papszIncludes, (cIncludes + 1) * sizeof(char **));
+    if (!pv)
+        return vbcppError(pThis, "No memory for include directories");
+    pThis->papszIncludes = (char **)pv;
+
+    int rc = RTStrDupEx(&pThis->papszIncludes[cIncludes], pszDir);
+    if (RT_FAILURE(rc))
+        return vbcppError(pThis, "No string memory for include directories");
+
+    pThis->cIncludes = cIncludes + 1;
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Processes a abbreviated line number directive.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ * @param   offStart            The stream position where the directive
+ *                              started (for pass thru).
+ */
+static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+{
+    /*
+     * Parse it.
+     */
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        size_t      cchFileSpec = 0;
+        const char *pchFileSpec = NULL;
+        size_t      cchFilename = 0;
+        const char *pchFilename = NULL;
+
+        unsigned ch = ScmStreamPeekCh(pStrmInput);
+        unsigned chType = ch;
+        if (ch == '"' || ch == '<')
+        {
+            ScmStreamGetCh(pStrmInput);
+            pchFileSpec = pchFilename = ScmStreamGetCur(pStrmInput);
+            unsigned chEnd  = chType == '<' ? '>' : '"';
+            unsigned chPrev = ch;
+            while (   (ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0
+                   &&  ch != chEnd)
+            {
+                if (ch == '\r' || ch == '\n')
+                {
+                    rcExit = vbcppError(pThis, "Multi-line include file specfications are not supported");
+                    break;
+                }
+            }
+
+            if (rcExit == RTEXITCODE_SUCCESS)
+            {
+                if (ch != ~(unsigned)0)
+                    cchFileSpec = cchFilename = ScmStreamGetCur(pStrmInput) - pchFilename - 1;
+                else
+                    rcExit = vbcppError(pThis, "Expected '%c'", chType);
+            }
+        }
+        else if (vbcppIsCIdentifierLeadChar(ch))
+        {
+            //pchFileSpec = ScmStreamCGetWord(pStrmInput, &cchFileSpec);
+            rcExit = vbcppError(pThis, "Including via a define is not implemented yet");
+        }
+        else
+            rcExit = vbcppError(pThis, "Malformed include directive");
+
+        /*
+         * Take down the location of the next non-white space, in case we need
+         * to pass thru the directive further down. Then skip to the end of the
+         * line.
+         */
+        size_t const offIncEnd = vbcppProcessSkipWhite(pStrmInput);
+        if (rcExit == RTEXITCODE_SUCCESS)
+            rcExit = vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(pThis, pStrmInput);
+
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            /*
+             * Execute it.
+             */
+            if (pThis->enmIncludeAction == kVBCppIncludeAction_Include)
+            {
+                /** @todo Search for the include file and push it onto the input stack.
+                 *  Not difficult, just unnecessary rigth now. */
+                rcExit = vbcppError(pThis, "Includes are fully implemented");
+            }
+            else if (pThis->enmIncludeAction == kVBCppIncludeAction_PassThru)
+            {
+                /* Pretty print the passthru. */
+                unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
+                size_t   cch;
+                if (chType == '<')
+                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude <%.*s>",
+                                          cchIndent, "", cchFileSpec, pchFileSpec);
+                else if (chType == '"')
+                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude \"%.*s\"",
+                                          cchIndent, "", cchFileSpec, pchFileSpec);
+                else
+                    cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude %.*s",
+                                          cchIndent, "", cchFileSpec, pchFileSpec);
+                if (cch > 0)
+                    rcExit = vbcppOutputComment(pThis, pStrmInput, offIncEnd, cch, 1);
+                else
+                    rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
+
+            }
+            else
+                Assert(pThis->enmIncludeAction == kVBCppIncludeAction_Drop);
+        }
+    }
+    return rcExit;
+}
+
+
 /**
  * Processes a abbreviated line number directive.
  *
@@ -2023,19 +1925,17 @@ static RTEXITCODE vbcppProcessDirective(PVBCPP pThis, PSCMSTREAM pStrmInput)
 }
 
 
-/**
- * Processes a C word, possibly replacing it with a definition.
+/*
  *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pThis               The C preprocessor instance.
- * @param   pStrmInput          The input stream.
- * @param   ch                  The first character.
+ *
+ * M a i n   b o d y.
+ * M a i n   b o d y.
+ * M a i n   b o d y.
+ * M a i n   b o d y.
+ * M a i n   b o d y.
+ *
+ *
  */
-static RTEXITCODE vbcppProcessCWord(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch)
-{
-    /** @todo Implement this... */
-    return vbcppOutputCh(pThis, ch);
-}
 
 
 /**
@@ -2126,6 +2026,197 @@ static RTEXITCODE vbcppPreprocess(PVBCPP pThis)
 
 
 /**
+ * Opens the input and output streams.
+ *
+ * @returns Exit code.
+ * @param   pThis               The C preprocessor instance.
+ */
+static RTEXITCODE vbcppOpenStreams(PVBCPP pThis)
+{
+    if (!pThis->pszInput)
+        return vbcppError(pThis, "Preprocessing the standard input stream is currently not supported");
+
+    size_t      cchName = strlen(pThis->pszInput);
+    PVBCPPINPUT pInput = (PVBCPPINPUT)RTMemAlloc(RT_OFFSETOF(VBCPPINPUT, szName[cchName + 1]));
+    if (!pInput)
+        return vbcppError(pThis, "out of memory");
+    pInput->pUp          = pThis->pInputStack;
+    pInput->pszSpecified = pInput->szName;
+    memcpy(pInput->szName, pThis->pszInput, cchName + 1);
+    pThis->pInputStack   = pInput;
+    int rc = ScmStreamInitForReading(&pInput->StrmInput, pThis->pszInput);
+    if (RT_FAILURE(rc))
+        return vbcppError(pThis, "ScmStreamInitForReading returned %Rrc when opening input file (%s)",
+                          rc, pThis->pszInput);
+
+    rc = ScmStreamInitForWriting(&pThis->StrmOutput, &pInput->StrmInput);
+    if (RT_FAILURE(rc))
+        return vbcppError(pThis, "ScmStreamInitForWriting returned %Rrc", rc);
+
+    pThis->fStrmOutputValid = true;
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Changes the preprocessing mode.
+ *
+ * @param   pThis               The C preprocessor instance.
+ * @param   enmMode             The new mode.
+ */
+static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
+{
+    switch (enmMode)
+    {
+        case kVBCppMode_Standard:
+            pThis->fKeepComments                    = false;
+            pThis->fRespectSourceDefines            = true;
+            pThis->fAllowRedefiningCmdLineDefines   = true;
+            pThis->fPassThruDefines                 = false;
+            pThis->fUndecidedConditionals           = false;
+            pThis->fLineSplicing                    = true;
+            pThis->enmIncludeAction                 = kVBCppIncludeAction_Include;
+            break;
+
+        case kVBCppMode_Selective:
+            pThis->fKeepComments                    = true;
+            pThis->fRespectSourceDefines            = false;
+            pThis->fAllowRedefiningCmdLineDefines   = false;
+            pThis->fPassThruDefines                 = true;
+            pThis->fUndecidedConditionals           = true;
+            pThis->fLineSplicing                    = false;
+            pThis->enmIncludeAction                 = kVBCppIncludeAction_PassThru;
+            break;
+
+        case kVBCppMode_SelectiveD:
+            pThis->fKeepComments                    = true;
+            pThis->fRespectSourceDefines            = true;
+            pThis->fAllowRedefiningCmdLineDefines   = false;
+            pThis->fPassThruDefines                 = false;
+            pThis->fUndecidedConditionals           = false;
+            pThis->fLineSplicing                    = false;
+            pThis->enmIncludeAction                 = kVBCppIncludeAction_Drop;
+            break;
+
+        default:
+            AssertFailedReturnVoid();
+    }
+    pThis->enmMode = enmMode;
+}
+
+
+/**
+ * Parses the command line options.
+ *
+ * @returns Program exit code. Exit on non-success or if *pfExit is set.
+ * @param   pThis               The C preprocessor instance.
+ * @param   argc                The argument count.
+ * @param   argv                The argument vector.
+ * @param   pfExit              Pointer to the exit indicator.
+ */
+static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *pfExit)
+{
+    RTEXITCODE rcExit;
+
+    *pfExit = false;
+
+    /*
+     * Option config.
+     */
+    static RTGETOPTDEF const s_aOpts[] =
+    {
+        { "--define",                   'D',                    RTGETOPT_REQ_STRING },
+        { "--include-dir",              'I',                    RTGETOPT_REQ_STRING },
+        { "--undefine",                 'U',                    RTGETOPT_REQ_STRING },
+        { "--keep-comments",            'C',                    RTGETOPT_REQ_NOTHING },
+        { "--strip-comments",           'c',                    RTGETOPT_REQ_NOTHING },
+        { "--D-strip",                  'd',                    RTGETOPT_REQ_NOTHING },
+    };
+
+    RTGETOPTUNION   ValueUnion;
+    RTGETOPTSTATE   GetOptState;
+    int rc = RTGetOptInit(&GetOptState, argc, argv, &s_aOpts[0], RT_ELEMENTS(s_aOpts), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertReleaseRCReturn(rc, RTEXITCODE_FAILURE);
+
+    /*
+     * Process the options.
+     */
+    while ((rc = RTGetOpt(&GetOptState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                pThis->fKeepComments = false;
+                break;
+
+            case 'C':
+                pThis->fKeepComments = false;
+                break;
+
+            case 'd':
+                vbcppSetMode(pThis, kVBCppMode_SelectiveD);
+                break;
+
+            case 'D':
+            {
+                const char *pszEqual = strchr(ValueUnion.psz, '=');
+                if (pszEqual)
+                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, pszEqual - ValueUnion.psz, pszEqual + 1, RTSTR_MAX, true);
+                else
+                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, RTSTR_MAX, "1", 1, true);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            case 'I':
+                rcExit = vbcppAddInclude(pThis, ValueUnion.psz);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+
+            case 'U':
+                rcExit = vbcppDefineUndef(pThis, ValueUnion.psz, RTSTR_MAX, true);
+                break;
+
+            case 'h':
+                RTPrintf("No help yet, sorry\n");
+                *pfExit = true;
+                return RTEXITCODE_SUCCESS;
+
+            case 'V':
+            {
+                /* The following is assuming that svn does it's job here. */
+                static const char s_szRev[] = "$Revision$";
+                const char *psz = RTStrStripL(strchr(s_szRev, ' '));
+                RTPrintf("r%.*s\n", strchr(psz, ' ') - psz, psz);
+                *pfExit = true;
+                return RTEXITCODE_SUCCESS;
+            }
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pThis->pszInput)
+                    pThis->pszInput = ValueUnion.psz;
+                else if (!pThis->pszOutput)
+                    pThis->pszOutput = ValueUnion.psz;
+                else
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "too many file arguments");
+                break;
+
+
+            /*
+             * Errors and bugs.
+             */
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
  * Terminates the preprocessor.
  *
  * This may return failure if an error was delayed.
@@ -2177,6 +2268,36 @@ static RTEXITCODE vbcppTerm(PVBCPP pThis)
     pThis->papszIncludes = NULL;
 
     return pThis->rcExit;
+}
+
+
+/**
+ * Initializes the C preprocessor instance data.
+ *
+ * @param   pThis               The C preprocessor instance data.
+ */
+static void vbcppInit(PVBCPP pThis)
+{
+    vbcppSetMode(pThis, kVBCppMode_Selective);
+    pThis->cIncludes        = 0;
+    pThis->papszIncludes    = NULL;
+    pThis->pszInput         = NULL;
+    pThis->pszOutput        = NULL;
+    pThis->StrSpace         = NULL;
+    pThis->UndefStrSpace    = NULL;
+    pThis->pExpStack        = NULL;
+    pThis->cExpStackDepth   = 0;
+    pThis->cCondStackDepth  = 0;
+    pThis->pCondStack       = NULL;
+    pThis->fIf0Mode         = false;
+    pThis->fMaybePreprocessorLine = true;
+    VBCPP_BITMAP_EMPTY(pThis->bmDefined);
+    VBCPP_BITMAP_EMPTY(pThis->bmArgs);
+    pThis->cCondStackDepth  = 0;
+    pThis->pInputStack      = NULL;
+    RT_ZERO(pThis->StrmOutput);
+    pThis->rcExit           = RTEXITCODE_SUCCESS;
+    pThis->fStrmOutputValid = false;
 }
 
 
