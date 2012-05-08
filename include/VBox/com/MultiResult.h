@@ -2,11 +2,11 @@
 
 /** @file
  * MS COM / XPCOM Abstraction Layer:
- * SupportErrorInfo* class family declarations
+ * MultiResult class declarations
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,8 +26,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_com_SupportErrorInfo_h
-#define ___VBox_com_SupportErrorInfo_h
+#ifndef ___VBox_com_MultiResult_h
+#define ___VBox_com_MultiResult_h
 
 #include "VBox/com/defs.h"
 #include "VBox/com/string.h"
@@ -95,8 +95,8 @@ private:
 
 /**
  * The MultiResult class is a com::FWResult enhancement that also acts as a
- * switch to turn on multi-error mode for SupportErrorInfo::setError() and
- * SupportErrorInfo::setWarning() calls.
+ * switch to turn on multi-error mode for VirtualBoxBase::setError() and
+ * VirtualBoxBase::setWarning() calls.
  *
  * When an instance of this class is created, multi-error mode is turned on
  * for the current thread and the turn-on counter is increased by one. In
@@ -258,5 +258,5 @@ private:
 
 } /* namespace com */
 
-#endif /* ___VBox_com_SupportErrorInfo_h */
+#endif /* ___VBox_com_MultiResult_h */
 
