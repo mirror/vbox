@@ -180,7 +180,7 @@ VMMDECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
 
 
 /**
- * Gets the ID virtual of the virtual CPU associated with the calling thread.
+ * Gets the ID of the virtual CPU associated with the calling thread.
  *
  * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
  *
