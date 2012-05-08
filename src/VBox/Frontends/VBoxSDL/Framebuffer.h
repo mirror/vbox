@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,9 +67,10 @@ public:
         return cnt;
     }
 #endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
 
-    NS_DECL_ISUPPORTS
+    BEGIN_COM_MAP(VBoxSDLFB)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IFramebuffer)
+    END_COM_MAP()
 
     STDMETHOD(COMGETTER(Width))(ULONG *width);
     STDMETHOD(COMGETTER(Height))(ULONG *height);
@@ -222,9 +223,10 @@ public:
         return cnt;
     }
 #endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
 
-    NS_DECL_ISUPPORTS
+    BEGIN_COM_MAP(VBoxSDLFBOverlay)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IFramebuffer)
+    END_COM_MAP()
 
     STDMETHOD(COMGETTER(X))(ULONG *x);
     STDMETHOD(COMGETTER(Y))(ULONG *y);
