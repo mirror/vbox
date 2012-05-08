@@ -136,6 +136,21 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
         return VERR_VMX_VMXON_FAILED;
     }
+
+    /*
+     * Flush all VPIDs (in case we or anyother hypervisor have been using VPIDs) so that
+     * we can avoid an explicit flush while using new VPIDs.
+     */
+    if (   pVM
+        && pVM->hwaccm.s.vmx.fVPID
+        && (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL_CONTEXTS))
+    {
+        hmR0VmxFlushVPID(pVM, NULL /* pvCpu */, VMX_FLUSH_VPID_ALL_CONTEXTS, 0 /* GCPtr */);
+        pCpu->fFlushASIDBeforeUse = false;
+    }
+    else
+        pCpu->fFlushASIDBeforeUse = true;
+
     return VINF_SUCCESS;
 }
 
@@ -2206,13 +2221,19 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
             {
                 pCpu->uCurrentASID = 1;       /* start at 1; host uses 0 */
                 pCpu->cTLBFlushes++;
+                pCpu->fFlushASIDBeforeUse = true;
             }
 
             pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
-            hmR0VmxFlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
+            if (pCpu->fFlushASIDBeforeUse)
+                hmR0VmxFlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
         }
         else
+        {
+            /** @todo is it better to flush by EPT or VPID here? find out which is less
+             *        expensive. */
             hmR0VmxFlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushEPT);
+        }
 
         pVCpu->hwaccm.s.cTLBFlushes    = pCpu->cTLBFlushes;
         pVCpu->hwaccm.s.fForceTLBFlush = false;
@@ -2362,13 +2383,14 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     /* Make sure we flush the TLB when required. */
     if (pVCpu->hwaccm.s.fForceTLBFlush)
     {
-        if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
+        ++pCpu->uCurrentASID;
+        if (    pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
             ||  pCpu->fFlushTLB)
         {
             pCpu->fFlushTLB                  = false;
             pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
             pCpu->cTLBFlushes++;
-            hmR0VmxFlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
+            pCpu->fFlushASIDBeforeUse        = true;
         }
         else
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
@@ -2376,6 +2398,8 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
         pVCpu->hwaccm.s.fForceTLBFlush = false;
         pVCpu->hwaccm.s.cTLBFlushes    = pCpu->cTLBFlushes;
         pVCpu->hwaccm.s.uCurrentASID   = pCpu->uCurrentASID;
+        if (pCpu->fFlushASIDBeforeUse)
+            hmR0VmxFlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
     }
     else
     {
@@ -2409,9 +2433,6 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
 
     int rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hwaccm.s.uCurrentASID);
     AssertRC(rc);
-
-    if (pVCpu->hwaccm.s.fForceTLBFlush)
-        hmR0VmxFlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
 
 # ifdef VBOX_WITH_STATISTICS
     if (pVCpu->hwaccm.s.fForceTLBFlush)
