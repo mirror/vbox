@@ -42,34 +42,31 @@ extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 class VBoxSDLFBOverlay;
 
 class VBoxSDLFB :
+    public CComObjectRootEx<CComMultiThreadModelNoCS>,
     VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
-    VBoxSDLFB(uint32_t uScreenId,
-              bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
-              bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
-              uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
-    virtual ~VBoxSDLFB();
+    DECLARE_NOT_AGGREGATABLE(VBoxSDLFB)
 
-    static bool init(bool fShowSDLConfig);
-    static void uninit();
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-#ifdef RT_OS_WINDOWS
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement (&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement (&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
+    VBoxSDLFB() { /* empty */ }
+    ~VBoxSDLFB() { /* empty */ }
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    HRESULT init(uint32_t uScreenId,
+                 bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
+                 bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
+                 uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
+    void uninit();
+
+    static bool initSDL(bool fShowSDLConfig);
+    static void uninitSDL();
 
     BEGIN_COM_MAP(VBoxSDLFB)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IFramebuffer)
+        VBOX_MINIMAL_INTERFACE_ENTRIES(IFramebuffer)
     END_COM_MAP()
 
     STDMETHOD(COMGETTER(Width))(ULONG *width);
@@ -187,11 +184,8 @@ private:
     uint32_t mLabelHeight;
     /** secure label offset from the top of the secure label */
     uint32_t mLabelOffs;
+#endif
 
-#endif
-#ifdef RT_OS_WINDOWS
-    long refcnt;
-#endif
     SDL_Surface *mSurfVRAM;
 
     BYTE *mPtrVRAM;
@@ -203,29 +197,18 @@ private:
 };
 
 class VBoxSDLFBOverlay :
-    public IFramebufferOverlay
+    public CComObjectRootEx<CComMultiThreadModelNoCS>,
+    VBOX_SCRIPTABLE_IMPL(IFramebufferOverlay)
 {
 public:
+    DECLARE_NOT_AGGREGATABLE(VBoxSDLFBOverlay)
+
     VBoxSDLFBOverlay(ULONG x, ULONG y, ULONG width, ULONG height, BOOL visible,
                      VBoxSDLFB *aParent);
     virtual ~VBoxSDLFBOverlay();
 
-#ifdef RT_OS_WINDOWS
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement (&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement (&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-
     BEGIN_COM_MAP(VBoxSDLFBOverlay)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IFramebuffer)
+        VBOX_MINIMAL_INTERFACE_ENTRIES(IFramebufferOverlay)
     END_COM_MAP()
 
     STDMETHOD(COMGETTER(X))(ULONG *x);
@@ -276,9 +259,6 @@ private:
     SDL_Surface *mOverlayBits;
     /** Additional SDL surface used for combining the framebuffer and the overlay */
     SDL_Surface *mBlendedBits;
-#ifdef RT_OS_WINDOWS
-    long refcnt;
-#endif
 };
 
 #endif // __H_FRAMEBUFFER

@@ -202,7 +202,7 @@ static ComPtr<IVRDEServer> gpVRDEServer;
 static ComPtr<IProgress> gpProgress;
 
 static ULONG       gcMonitors = 1;
-static VBoxSDLFB  *gpFramebuffer[64];
+static ComObjPtr<VBoxSDLFB>  gpFramebuffer[64];
 static SDL_Cursor *gpDefaultCursor = NULL;
 #ifdef VBOXSDL_WITH_X11
 static Cursor      gpDefaultOrigX11Cursor;
@@ -1779,7 +1779,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #endif
 
     /* static initialization of the SDL stuff */
-    if (!VBoxSDLFB::init(fShowSDLConfig))
+    if (!VBoxSDLFB::initSDL(fShowSDLConfig))
         goto leave;
 
     gpMachine->COMGETTER(MonitorCount)(&gcMonitors);
@@ -1789,10 +1789,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     for (unsigned i = 0; i < gcMonitors; i++)
     {
         // create our SDL framebuffer instance
-        gpFramebuffer[i] = new VBoxSDLFB(i, fFullscreen, fResizable, fShowSDLConfig, false,
-                                         fixedWidth, fixedHeight, fixedBPP);
+        rc = gpFramebuffer[i].createObject();
+        if (SUCCEEDED(rc))
+            rc = gpFramebuffer[i]->init(i, fFullscreen, fResizable, fShowSDLConfig, false,
+                                        fixedWidth, fixedHeight, fixedBPP);
 
-        if (!gpFramebuffer[i])
+        if (FAILED(rc) || !gpFramebuffer[i])
         {
             RTPrintf("Error: could not create framebuffer object!\n");
             goto leave;
@@ -2869,7 +2871,7 @@ leave:
         }
     }
 
-    VBoxSDLFB::uninit();
+    VBoxSDLFB::uninitSDL();
 
 #ifdef VBOX_SECURELABEL
     /* must do this after destructing the framebuffer */
