@@ -39,7 +39,9 @@ public:
             LogRel(("VBoxClient: error initialising threads in X11, exiting.\n"));
             return VERR_NOT_SUPPORTED;
         }
-        mSeamless.init();
+        int rc = mSeamless.init();
+        if (RT_FAILURE(rc))
+            return rc;
         /* Stay running as long as X does... */
         Display *pDisplay = XOpenDisplay(NULL);
         XEvent ev;
