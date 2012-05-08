@@ -74,16 +74,10 @@ static RTNATIVETHREAD gSdlNativeThread = NIL_RTNATIVETHREAD; /**< the SDL thread
 // Constructor / destructor
 //
 
-HRESULT VBoxSDLFB::FinalConstruct()
-{
-    return S_OK;
-}
-
 /**
- * SDL framebuffer init method. It is called from the main
+ * SDL framebuffer constructor. It is called from the main
  * (i.e. SDL) thread. Therefore it is safe to use SDL calls
  * here.
- * @returns COM status code
  * @param fFullscreen    flag whether we start in fullscreen mode
  * @param fResizable     flag whether the SDL window should be resizable
  * @param fShowSDLConfig flag whether we print out SDL settings
@@ -92,13 +86,17 @@ HRESULT VBoxSDLFB::FinalConstruct()
  * @param iFixedWidth    fixed SDL width (-1 means not set)
  * @param iFixedHeight   fixed SDL height (-1 means not set)
  */
-HRESULT VBoxSDLFB::init(uint32_t uScreenId,
-                        bool fFullscreen, bool fResizable, bool fShowSDLConfig,
-                        bool fKeepHostRes, uint32_t u32FixedWidth,
-                        uint32_t u32FixedHeight, uint32_t u32FixedBPP)
+VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
+                     bool fFullscreen, bool fResizable, bool fShowSDLConfig,
+                     bool fKeepHostRes, uint32_t u32FixedWidth,
+                     uint32_t u32FixedHeight, uint32_t u32FixedBPP)
 {
     int rc;
-    LogFlow(("VBoxSDLFB::init\n"));
+    LogFlow(("VBoxSDLFB::VBoxSDLFB\n"));
+
+#if defined (RT_OS_WINDOWS)
+    refcnt = 0;
+#endif
 
     mScreenId       = uScreenId;
     mScreen         = NULL;
@@ -139,18 +137,11 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
     resizeGuest();
     Assert(mScreen);
     mfInitialized = true;
-
-    return S_OK;
 }
 
-void VBoxSDLFB::FinalRelease()
+VBoxSDLFB::~VBoxSDLFB()
 {
-    uninit();
-}
-
-void VBoxSDLFB::uninit()
-{
-    LogFlow(("VBoxSDLFB::uninit\n"));
+    LogFlow(("VBoxSDLFB::~VBoxSDLFB\n"));
     if (mSurfVRAM)
     {
         SDL_FreeSurface(mSurfVRAM);
@@ -168,7 +159,7 @@ void VBoxSDLFB::uninit()
     RTCritSectDelete(&mUpdateLock);
 }
 
-bool VBoxSDLFB::initSDL(bool fShowSDLConfig)
+bool VBoxSDLFB::init(bool fShowSDLConfig)
 {
     LogFlow(("VBoxSDLFB::init\n"));
 
@@ -248,7 +239,7 @@ bool VBoxSDLFB::initSDL(bool fShowSDLConfig)
  *
  * @remarks must be called from the SDL thread!
  */
-void VBoxSDLFB::uninitSDL()
+void VBoxSDLFB::uninit()
 {
     if (gfSdlInitialized)
     {

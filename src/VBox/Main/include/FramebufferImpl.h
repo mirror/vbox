@@ -31,42 +31,42 @@ public:
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Framebuffer, IFramebuffer)
 
-    DECLARE_NOT_AGGREGATABLE(Framebuffer)
+    DECLARE_NOT_AGGREGATABLE (Framebuffer)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(Framebuffer)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IFramebuffer)
+    BEGIN_COM_MAP (Framebuffer)
+        VBOX_DEFAULT_INTERFACE_ENTRIES (IFramebuffer)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR(Framebuffer)
+    DECLARE_EMPTY_CTOR_DTOR (Framebuffer)
 
     /* IFramebuffer properties */
-    STDMETHOD(COMGETTER(Address))(BYTE **aAddress) = 0;
-    STDMETHOD(COMGETTER(Width))(ULONG *aWidth) = 0;
-    STDMETHOD(COMGETTER(Height))(ULONG *aHeight) = 0;
-    STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *aBitsPerPixel) = 0;
-    STDMETHOD(COMGETTER(BytesPerLine))(ULONG *aBytesPerLine) = 0;
-    STDMETHOD(COMGETTER(PixelFormat))(ULONG *aPixelFormat) = 0;
-    STDMETHOD(COMGETTER(UsesGuestVRAM))(BOOL *aUsesGuestVRAM) = 0;
-    STDMETHOD(COMGETTER(HeightReduction))(ULONG *aHeightReduction) = 0;
-    STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **aOverlay) = 0;
-    STDMETHOD(COMGETTER(WinId))(ULONG64 *winId) = 0;
+    STDMETHOD(COMGETTER(Address)) (BYTE **aAddress) = 0;
+    STDMETHOD(COMGETTER(Width)) (ULONG *aWidth) = 0;
+    STDMETHOD(COMGETTER(Height)) (ULONG *aHeight) = 0;
+    STDMETHOD(COMGETTER(BitsPerPixel)) (ULONG *aBitsPerPixel) = 0;
+    STDMETHOD(COMGETTER(BytesPerLine)) (ULONG *aBytesPerLine) = 0;
+    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *aPixelFormat) = 0;
+    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *aUsesGuestVRAM) = 0;
+    STDMETHOD(COMGETTER(HeightReduction)) (ULONG *aHeightReduction) = 0;
+    STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay) = 0;
+    STDMETHOD(COMGETTER(WinId)) (ULONG64 *winId) = 0;
 
     /* IFramebuffer methods */
     STDMETHOD(Lock)() = 0;
     STDMETHOD(Unlock)() = 0;
 
-    STDMETHOD(RequestResize)(ULONG aScreenId, ULONG aPixelFormat,
-                             BYTE *aVRAM, ULONG aBitsPerPixel, ULONG aBytesPerLine,
-                             ULONG aWidth, ULONG aHeight,
-                             BOOL *aFinished) = 0;
+    STDMETHOD(RequestResize) (ULONG aScreenId, ULONG aPixelFormat,
+                              BYTE *aVRAM, ULONG aBitsPerPixel, ULONG aBytesPerLine,
+                              ULONG aWidth, ULONG aHeight,
+                              BOOL *aFinished) = 0;
 
-    STDMETHOD(VideoModeSupported)(ULONG aWidth, ULONG aHeight, ULONG aBPP,
-                                  BOOL *aSupported) = 0;
+    STDMETHOD(VideoModeSupported) (ULONG aWidth, ULONG aHeight, ULONG aBPP,
+                                   BOOL *aSupported) = 0;
 
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount,
-                                ULONG *aCountCopied) = 0;
+                               ULONG *aCountCopied) = 0;
     STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount) = 0;
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand) = 0;
