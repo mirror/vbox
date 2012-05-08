@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2007 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,32 +42,34 @@ extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 class VBoxSDLFBOverlay;
 
 class VBoxSDLFB :
-    public CComObjectRootEx<CComMultiThreadModelNoCS>,
     VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
-    DECLARE_NOT_AGGREGATABLE(VBoxSDLFB)
+    VBoxSDLFB(uint32_t uScreenId,
+              bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
+              bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
+              uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
+    virtual ~VBoxSDLFB();
 
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
+    static bool init(bool fShowSDLConfig);
+    static void uninit();
 
-    VBoxSDLFB() { /* empty */ }
-    ~VBoxSDLFB() { /* empty */ }
+#ifdef RT_OS_WINDOWS
+    STDMETHOD_(ULONG, AddRef)()
+    {
+        return ::InterlockedIncrement (&refcnt);
+    }
+    STDMETHOD_(ULONG, Release)()
+    {
+        long cnt = ::InterlockedDecrement (&refcnt);
+        if (cnt == 0)
+            delete this;
+        return cnt;
+    }
+#endif
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
 
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
-    HRESULT init(uint32_t uScreenId,
-                 bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
-                 bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
-                 uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
-    void uninit();
-
-    static bool initSDL(bool fShowSDLConfig);
-    static void uninitSDL();
-
-    BEGIN_COM_MAP(VBoxSDLFB)
-        VBOX_MINIMAL_INTERFACE_ENTRIES(IFramebuffer)
-    END_COM_MAP()
+    NS_DECL_ISUPPORTS
 
     STDMETHOD(COMGETTER(Width))(ULONG *width);
     STDMETHOD(COMGETTER(Height))(ULONG *height);
@@ -184,8 +186,11 @@ private:
     uint32_t mLabelHeight;
     /** secure label offset from the top of the secure label */
     uint32_t mLabelOffs;
-#endif
 
+#endif
+#ifdef RT_OS_WINDOWS
+    long refcnt;
+#endif
     SDL_Surface *mSurfVRAM;
 
     BYTE *mPtrVRAM;
@@ -197,19 +202,29 @@ private:
 };
 
 class VBoxSDLFBOverlay :
-    public CComObjectRootEx<CComMultiThreadModelNoCS>,
-    VBOX_SCRIPTABLE_IMPL(IFramebufferOverlay)
+    public IFramebufferOverlay
 {
 public:
-    DECLARE_NOT_AGGREGATABLE(VBoxSDLFBOverlay)
-
     VBoxSDLFBOverlay(ULONG x, ULONG y, ULONG width, ULONG height, BOOL visible,
                      VBoxSDLFB *aParent);
     virtual ~VBoxSDLFBOverlay();
 
-    BEGIN_COM_MAP(VBoxSDLFBOverlay)
-        VBOX_MINIMAL_INTERFACE_ENTRIES(IFramebufferOverlay)
-    END_COM_MAP()
+#ifdef RT_OS_WINDOWS
+    STDMETHOD_(ULONG, AddRef)()
+    {
+        return ::InterlockedIncrement (&refcnt);
+    }
+    STDMETHOD_(ULONG, Release)()
+    {
+        long cnt = ::InterlockedDecrement (&refcnt);
+        if (cnt == 0)
+            delete this;
+        return cnt;
+    }
+#endif
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
+
+    NS_DECL_ISUPPORTS
 
     STDMETHOD(COMGETTER(X))(ULONG *x);
     STDMETHOD(COMGETTER(Y))(ULONG *y);
@@ -259,6 +274,9 @@ private:
     SDL_Surface *mOverlayBits;
     /** Additional SDL surface used for combining the framebuffer and the overlay */
     SDL_Surface *mBlendedBits;
+#ifdef RT_OS_WINDOWS
+    long refcnt;
+#endif
 };
 
 #endif // __H_FRAMEBUFFER
