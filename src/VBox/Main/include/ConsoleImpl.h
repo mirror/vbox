@@ -266,8 +266,6 @@ public:
     static HRESULT setErrorStatic(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setInvalidMachineStateError();
 
-    static HRESULT handleUnexpectedExceptions(RT_SRC_POS_DECL);
-
     static const char *convertControllerTypeToDev(StorageControllerType_T enmCtrlType);
     static HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
     // Called from event listener

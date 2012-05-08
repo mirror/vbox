@@ -90,8 +90,6 @@
 
 #include <algorithm>
 
-#include <typeinfo>
-
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 # define HOSTSUFF_EXE ".exe"
 #else /* !RT_OS_WINDOWS */
@@ -452,7 +450,7 @@ HRESULT Machine::init(VirtualBox *aParent,
             }
             catch (...)
             {
-                rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+                rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
             }
         }
     }
@@ -707,7 +705,7 @@ HRESULT Machine::registeredInit()
         }
         catch (...)
         {
-            rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+            rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
         }
 
         /* Restore the registered flag (even on failure) */
@@ -2558,7 +2556,7 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns)(BSTR *aPatterns)
     }
     catch (...)
     {
-        return VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        return VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
     return S_OK;
@@ -8979,7 +8977,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
     if (fNeedsWrite || (aFlags & SaveS_InformCallbacksAnyway))
@@ -9126,7 +9124,7 @@ HRESULT Machine::saveAllSnapshots(settings::MachineConfigFile &config)
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
     return rc;
@@ -9534,7 +9532,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
     return rc;
@@ -12159,7 +12157,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
     }
     catch (...)
     {
-        return VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        return VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
     return S_OK;
 #else

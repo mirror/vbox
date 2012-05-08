@@ -757,6 +757,8 @@ public:
      */
     WriteLockHandle *stateLockHandle() { return &mStateLock; }
 
+    static HRESULT handleUnexpectedExceptions(VirtualBoxBase *const aThis, RT_SRC_POS_DECL);
+
     static HRESULT setErrorInternal(HRESULT aResultCode,
                                     const GUID &aIID,
                                     const char *aComponent,
