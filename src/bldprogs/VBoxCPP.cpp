@@ -74,7 +74,7 @@
 typedef enum VBCPPMODE
 {
     kVBCppMode_Invalid = 0,
-/*    kVBCppMode_Full,*/
+    kVBCppMode_Standard,
     kVBCppMode_Selective,
     kVBCppMode_SelectiveD,
     kVBCppMode_End
@@ -209,6 +209,19 @@ typedef VBCPPINPUT *PVBCPPINPUT;
 
 
 /**
+ * The action to take with \#include.
+ */
+typedef enum VBCPPINCLUDEACTION
+{
+    kVBCppIncludeAction_Invalid = 0,
+    kVBCppIncludeAction_Include,
+    kVBCppIncludeAction_PassThru,
+    kVBCppIncludeAction_Drop,
+    kVBCppIncludeAction_End
+} VBCPPINCLUDEACTION;
+
+
+/**
  * C Preprocessor instance data.
  */
 typedef struct VBCPP
@@ -219,6 +232,20 @@ typedef struct VBCPP
     VBCPPMODE           enmMode;
     /** Whether to keep comments. */
     bool                fKeepComments;
+    /** Whether to respect source defines. */
+    bool                fRespectSourceDefines;
+    /** Whether to let source defines overrides the ones on the command
+     *  line. */
+    bool                fAllowRedefiningCmdLineDefines;
+    /** Whether to pass thru defines. */
+    bool                fPassThruDefines;
+    /** Whether to allow undecided conditionals. */
+    bool                fUndecidedConditionals;
+    /** Whether to preforme line splicing.
+     * @todo implement line splicing  */
+    bool                fLineSplicing;
+    /** What to do about include files. */
+    VBCPPINCLUDEACTION  enmIncludeAction;
 
     /** The number of include directories. */
     uint32_t            cIncludes;
@@ -286,12 +313,61 @@ typedef VBCPP *PVBCPP;
 *******************************************************************************/
 
 
+/**
+ * Changes the preprocessing mode.
+ *
+ * @param   pThis               The C preprocessor instance.
+ * @param   enmMode             The new mode.
+ */
+static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
+{
+    switch (enmMode)
+    {
+        case kVBCppMode_Standard:
+            pThis->fKeepComments                    = false;
+            pThis->fRespectSourceDefines            = true;
+            pThis->fAllowRedefiningCmdLineDefines   = true;
+            pThis->fPassThruDefines                 = false;
+            pThis->fUndecidedConditionals           = false;
+            pThis->fLineSplicing                    = true;
+            pThis->enmIncludeAction                 = kVBCppIncludeAction_Include;
+            break;
 
+        case kVBCppMode_Selective:
+            pThis->fKeepComments                    = true;
+            pThis->fRespectSourceDefines            = false;
+            pThis->fAllowRedefiningCmdLineDefines   = false;
+            pThis->fPassThruDefines                 = true;
+            pThis->fUndecidedConditionals           = true;
+            pThis->fLineSplicing                    = false;
+            pThis->enmIncludeAction                 = kVBCppIncludeAction_PassThru;
+            break;
+
+        case kVBCppMode_SelectiveD:
+            pThis->fKeepComments                    = true;
+            pThis->fRespectSourceDefines            = true;
+            pThis->fAllowRedefiningCmdLineDefines   = false;
+            pThis->fPassThruDefines                 = false;
+            pThis->fUndecidedConditionals           = false;
+            pThis->fLineSplicing                    = false;
+            pThis->enmIncludeAction                 = kVBCppIncludeAction_Drop;
+            break;
+
+        default:
+            AssertFailedReturnVoid();
+    }
+    pThis->enmMode = enmMode;
+}
+
+
+/**
+ * Initializes the C preprocessor instance data.
+ *
+ * @param   pThis               The C preprocessor instance data.
+ */
 static void vbcppInit(PVBCPP pThis)
 {
-    pThis->enmMode          = kVBCppMode_Selective;
-    pThis->fKeepComments    = true;
-    pThis->cIncludes        = 0;
+    vbcppSetMode(pThis, kVBCppMode_Selective);
     pThis->cIncludes        = 0;
     pThis->papszIncludes    = NULL;
     pThis->pszInput         = NULL;
@@ -501,7 +577,7 @@ static RTEXITCODE vbcppDefineUndef(PVBCPP pThis, const char *pszDefine, size_t c
 
 
 /**
- * Inserts a define.
+ * Inserts a define (rejecting and freeing it in some case).
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + msg.
  * @param   pThis               The C preprocessor instance.
@@ -509,15 +585,46 @@ static RTEXITCODE vbcppDefineUndef(PVBCPP pThis, const char *pszDefine, size_t c
  */
 static RTEXITCODE vbcppDefineInsert(PVBCPP pThis, PVBCPPDEF pDef)
 {
+    /*
+     * Ignore in source-file defines when doing selective preprocessing.
+     */
+    if (   !pThis->fRespectSourceDefines
+        && !pDef->fCmdLine)
+    {
+        /* Ignore*/
+        vbcppFreeDefine(&pDef->Core, NULL);
+        return RTEXITCODE_SUCCESS;
+    }
+
+    /*
+     * Insert it and update the lead character hint bitmap.
+     */
     if (RTStrSpaceInsert(&pThis->StrSpace, &pDef->Core))
         VBCPP_BITMAP_SET(pThis->bmDefined, *pDef->Core.pszString);
     else
     {
-        RTMsgWarning("Redefining '%s'\n", pDef->Core.pszString);
-        PVBCPPDEF pOld = (PVBCPPDEF)vbcppDefineUndef(pThis, pDef->Core.pszString, pDef->Core.cchString, false);
-        bool fRc = RTStrSpaceInsert(&pThis->StrSpace, &pDef->Core);
-        Assert(fRc); Assert(pOld);
-        vbcppFreeDefine(&pOld->Core, NULL);
+        /*
+         * Duplicate. When doing selective D preprocessing, let the command
+         * line take precendece.
+         */
+        PVBCPPDEF pOld = (PVBCPPDEF)RTStrSpaceGet(&pThis->StrSpace, pDef->Core.pszString); Assert(pOld);
+        if (   pThis->fAllowRedefiningCmdLineDefines
+            || pDef->fCmdLine == pOld->fCmdLine)
+        {
+            if (pDef->fCmdLine)
+                RTMsgWarning("Redefining '%s'\n", pDef->Core.pszString);
+
+            RTStrSpaceRemove(&pThis->StrSpace, pOld->Core.pszString);
+            vbcppFreeDefine(&pOld->Core, NULL);
+
+            bool fRc = RTStrSpaceInsert(&pThis->StrSpace, &pDef->Core);
+            Assert(fRc);
+        }
+        else
+        {
+            RTMsgWarning("Ignoring redefinition of '%s'\n", pDef->Core.pszString);
+            vbcppFreeDefine(&pDef->Core, NULL);
+        }
     }
 
     return RTEXITCODE_SUCCESS;
@@ -815,8 +922,7 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
                 break;
 
             case 'd':
-                pThis->enmMode = kVBCppMode_SelectiveD;
-                pThis->fKeepComments = true;
+                vbcppSetMode(pThis, kVBCppMode_SelectiveD);
                 break;
 
             case 'D':
@@ -1357,13 +1463,13 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
             /*
              * Execute it.
              */
-            if (pThis->enmMode < kVBCppMode_Selective)
+            if (pThis->enmIncludeAction == kVBCppIncludeAction_Include)
             {
                 /** @todo Search for the include file and push it onto the input stack.
                  *  Not difficult, just unnecessary rigth now. */
                 rcExit = vbcppError(pThis, "Includes are fully implemented");
             }
-            else if (pThis->enmMode != kVBCppMode_SelectiveD)
+            else if (pThis->enmIncludeAction == kVBCppIncludeAction_PassThru)
             {
                 /* Pretty print the passthru. */
                 unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
@@ -1383,7 +1489,8 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
                     rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
 
             }
-            /* else: drop it */
+            else
+                Assert(pThis->enmIncludeAction == kVBCppIncludeAction_Drop);
         }
     }
     return rcExit;
@@ -1476,9 +1583,8 @@ static RTEXITCODE vbcppProcessDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
                 /*
                  * Pass thru?
                  */
-                if (   pThis->enmMode >= kVBCppMode_Selective
-                    && pThis->enmMode != kVBCppMode_SelectiveD
-                    && rcExit == RTEXITCODE_SUCCESS)
+                if (   rcExit == RTEXITCODE_SUCCESS
+                    && pThis->fPassThruDefines)
                 {
                     unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
                     size_t   cch;
@@ -1516,14 +1622,34 @@ static RTEXITCODE vbcppProcessUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
 }
 
 
-static VBCPPEVAL vbcppCondCombine(VBCPPEVAL enmEvalPush, VBCPPEVAL enmEvalTop)
+/**
+ * Combines current stack result with the one being pushed.
+ *
+ * @returns Combined result.
+ * @param   enmEvalPush         The result of the condition being pushed.
+ * @param   enmEvalStack        The current stack result.
+ */
+static VBCPPEVAL vbcppCondCombine(VBCPPEVAL enmEvalPush, VBCPPEVAL enmEvalStack)
 {
-    if (enmEvalTop == kVBCppEval_False)
+    if (enmEvalStack == kVBCppEval_False)
         return kVBCppEval_False;
     return enmEvalPush;
 }
 
 
+/**
+ * Pushes an conditional onto the stack.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The current input stream.
+ * @param   offStart            Not currently used, using @a pchCondition and
+ *                              @a cchCondition instead.
+ * @param   enmKind             The kind of conditional.
+ * @param   enmResult           The result of the evaluation.
+ * @param   pchCondition        The raw condition.
+ * @param   cchCondition        The length of @a pchCondition.
+ */
 static RTEXITCODE vbcppCondPush(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart,
                                 VBCPPCONDKIND enmKind, VBCPPEVAL enmResult,
                                 const char *pchCondition, size_t cchCondition)
@@ -1623,7 +1749,7 @@ static RTEXITCODE vbcppProcessIfDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
                 VBCPPEVAL enmEval;
                 if (vbcppDefineExists(pThis, pchDefine, cchDefine))
                     enmEval = kVBCppEval_True;
-                else if (   pThis->enmMode < kVBCppMode_Selective
+                else if (   pThis->fUndecidedConditionals
                          || RTStrSpaceGetN(&pThis->UndefStrSpace, pchDefine, cchDefine) != NULL)
                     enmEval = kVBCppEval_False;
                 else
@@ -1669,7 +1795,7 @@ static RTEXITCODE vbcppProcessIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
                 VBCPPEVAL enmEval;
                 if (vbcppDefineExists(pThis, pchDefine, cchDefine))
                     enmEval = kVBCppEval_False;
-                else if (   pThis->enmMode < kVBCppMode_Selective
+                else if (   pThis->fUndecidedConditionals
                          || RTStrSpaceGetN(&pThis->UndefStrSpace, pchDefine, cchDefine) != NULL)
                     enmEval = kVBCppEval_True;
                 else
