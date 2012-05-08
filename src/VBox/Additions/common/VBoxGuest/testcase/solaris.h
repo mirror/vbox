@@ -140,6 +140,8 @@
 #define FE_PAIR_DELTA           2
 #define FE_PAIR_ABSOLUTE        3
 
+typedef struct __ldi_handle             *ldi_handle_t;
+
 typedef enum
 {
     DDI_INFO_DEVT2DEVINFO = 0,

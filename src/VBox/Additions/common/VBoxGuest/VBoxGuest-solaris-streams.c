@@ -23,14 +23,19 @@
 #ifndef TESTCASE
 # include <sys/conf.h>
 # include <sys/modctl.h>
+# include <sys/msio.h>
 # include <sys/mutex.h>
 # include <sys/pci.h>
 # include <sys/stat.h>
 # include <sys/ddi.h>
 # include <sys/ddi_intr.h>
-# include <sys/sunddi.h>
 # include <sys/open.h>
+# include <sys/strsun.h>
+# include <sys/stropts.h>
+# include <sys/sunddi.h>
 # include <sys/sunldi.h>
+# include <sys/vuid_event.h>
+# include <sys/vuid_wheel.h>
 # include <sys/file.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 #else  /* TESTCASE */
@@ -47,6 +52,7 @@
 #include <iprt/mem.h>
 #include <iprt/cdefs.h>
 #include <iprt/asm.h>
+#include <iprt/string.h>
 
 #ifdef TESTCASE  /* Include this last as we . */
 # include "testcase/solaris.h"
@@ -162,7 +168,7 @@ static struct cb_ops g_vbgr0SolCbOps =
     nulldev,                /* c segmap */
     nochpoll,               /* c poll */
     ddi_prop_op,            /* property ops */
-    g_vbgr0SolStreamTab,
+    &g_vbgr0SolStreamTab,
     D_NEW | D_MP,           /* compat. flag */
 };
 
@@ -259,6 +265,12 @@ static ddi_intr_handle_t   *g_pIntr;
 static size_t               g_cIntrAllocated;
 /** The IRQ Mutex */
 static kmutex_t             g_IrqMutex;
+/** Layered device handle for kernel keep-attached opens */
+static ldi_handle_t         g_LdiHandle = NULL;
+/** Ref counting for IDCOpen calls */
+static uint64_t             g_cLdiOpens = 0;
+/** The Mutex protecting the LDI handle in IDC opens */
+static kmutex_t             g_LdiMtx;
 
 
 /******************************************************************************
@@ -280,7 +292,8 @@ int _init(void)
 
         rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
                          "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                         RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
+                           RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER
+                         | RTLOGDEST_USER, NULL);
         if (RT_SUCCESS(rc))
             RTLogRelSetDefaultInstance(pRelLogger);
         else
@@ -294,9 +307,6 @@ int _init(void)
             pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
         else
             LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
-        /* Initialise the node state mutex.  This will be taken in the ISR. */
-        mutex_init(&g_StateMutex, NULL, MUTEX_DRIVER,
-                   DDI_INTR_PRI(uIntrPriority));
         rc = mod_install(&g_vbgr0SolModLinkage);
     }
     else
@@ -305,6 +315,7 @@ int _init(void)
         return EINVAL;
     }
 
+    LogRel((DEVICE_NAME ": initialisation returning %d.\n", rc));
     return rc;
 }
 
@@ -324,7 +335,7 @@ int _fini(void)
 {
     int rc;
 
-    LogFlow((DEVICE_NAME ":_fini\n"));
+    LogRelFlow((DEVICE_NAME ":_fini\n"));
     rc = mod_remove(&g_vbgr0SolModLinkage);
     mutex_destroy(&g_StateMutex);
 
@@ -383,7 +394,7 @@ int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
 
     NOREF(fFlag);
     NOREF(pCred);
-    LogFlow((DEVICE_NAME "::Open\n"));
+    LogRelFlow((DEVICE_NAME "::Open\n"));
 
     /*
      * Sanity check on the mode parameter - only open as a driver, not a
@@ -392,7 +403,10 @@ int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
      * (see https://blogs.oracle.com/timatworkhomeandinbetween/entry/using_makedevice_in_a_drivers).
      */
     if (fMode)
+    {
+        LogRelFlow((DEVICE_NAME "::Open: invalid attempt to clone device."));
         return EINVAL;
+    }
 
     for (cInstance = 1; cInstance < MAX_OPEN_NODES; cInstance++)
     {
@@ -405,7 +419,7 @@ int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
     }
     if (!pState)
     {
-        Log((DEVICE_NAME "::Open: too many open instances."));
+        LogRelFlow((DEVICE_NAME "::Open: too many open instances."));
         return ENXIO;
     }
 
@@ -420,8 +434,8 @@ int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
         /* Initialise user data for the queues to our state and vice-versa. */
         WR(pReadQueue)->q_ptr = (char *)pState;
         pReadQueue->q_ptr = (char *)pState;
-        qprocson(pState->pWriteQueue);
-        Log((DEVICE_NAME "::Open: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
+        qprocson(pReadQueue);
+        LogRel((DEVICE_NAME "::Open: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
         return 0;
     }
 
@@ -451,7 +465,7 @@ int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
         Log((DEVICE_NAME "::Close: failed to get pState.\n"));
         return EFAULT;
     }
-    qprocsoff(pState->pWriteQueue);
+    qprocsoff(pReadQueue);
     pSession = pState->pSession;
     vbgr0SolResetSoftState(pState);
     pReadQueue->q_ptr = NULL;
@@ -505,9 +519,7 @@ static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk);
  */
 int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
-    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
-    
-    LogFlowFunc((DEVICE_NAME "::\n"));
+    LogRelFlowFunc((DEVICE_NAME "::\n"));
     switch (pMBlk->b_datap->db_type)
     {
         case M_FLUSH:
@@ -602,6 +614,7 @@ static struct
 static void testWPutStreams(RTTEST hTest, unsigned i);
 static void testWPutTransparent(RTTEST hTest, unsigned i);
 static void testWPutIOCDataIn(RTTEST hTest, unsigned i);
+static void testWPutIOCDataOut(RTTEST hTest, unsigned i);
 
 /** Test WPut's handling of different IOCtls, which is bulk of the logic in
  * this file. */
@@ -619,6 +632,8 @@ static void testWPut(RTTEST hTest)
             testWPutTransparent(hTest, i);
         if (g_asTestWPut[i].fCanTransparent && g_asTestWPut[i].cbDataIn)
             testWPutIOCDataIn(hTest, i);
+        if (g_asTestWPut[i].fCanTransparent && g_asTestWPut[i].cbDataOut)
+            testWPutIOCDataOut(hTest, i);
     }
 }
 
@@ -772,9 +787,9 @@ void testWPutIOCDataIn(RTTEST hTest, unsigned i)
 
     AssertReturnVoid(pMBlk);
     AssertReturnVoidStmt(pMBlkCont, freemsg(pMBlk));
-    AssertReturnVoid(g_asTestWPut[i].cbDataIn);
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%s: i=%u\n", __PRETTY_FUNCTION__,
                  i);
+    AssertReturnVoidStmt(g_asTestWPut[i].cbDataIn, freemsg(pMBlk));
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
     rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
@@ -783,6 +798,8 @@ void testWPutIOCDataIn(RTTEST hTest, unsigned i)
                             == WR(&aQueues[0]), (hTest, "i=%u\n", i));
     pMBlk->b_datap->db_type = M_IOCDATA;
     pCopyResp->cp_cmd = g_asTestWPut[i].iIOCCmd;
+    if (g_asTestWPut[i].cbDataOut)
+        pCopyResp->cp_private = USER_ADDRESS;
     AssertReturnVoid(g_asTestWPut[i].cbData <= MSG_DATA_SIZE);
     memcpy(pMBlkCont->b_rptr, g_asTestWPut[i].pvDataIn, g_asTestWPut[i].cbDataIn);
     pMBlk->b_cont = pMBlkCont;
@@ -816,6 +833,41 @@ void testWPutIOCDataIn(RTTEST hTest, unsigned i)
         if (!g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), pMBlk))
             RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Called from %s.\n",
                          __PRETTY_FUNCTION__);
+    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    freemsg(pMBlk);
+}
+
+
+/** Simulate sending follow-on IOCData messages to a transparent IOCtl to WPut
+ * with the parameters from table line @a i. */
+void testWPutIOCDataOut(RTTEST hTest, unsigned i)
+{
+    queue_t aQueues[2];
+    dev_t device = 0;
+    struct msgb *pMBlk = allocb(sizeof(struct copyresp), BPRI_MED);
+    struct copyresp *pCopyResp = pMBlk ? (struct copyresp *)pMBlk->b_rptr
+                                       : NULL;
+    int rc, cFormat = 0;
+
+    AssertReturnVoid(pMBlk);
+    AssertReturnVoidStmt(g_asTestWPut[i].cbDataOut, freemsg(pMBlk));
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%s: i=%u\n", __PRETTY_FUNCTION__,
+                 i);
+    RT_ZERO(aQueues);
+    doInitQueues(&aQueues[0]);
+    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
+    RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
+                            == WR(&aQueues[0]), (hTest, "i=%u\n", i));
+    pMBlk->b_datap->db_type = M_IOCDATA;
+    pCopyResp->cp_cmd = g_asTestWPut[i].iIOCCmd;
+    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    RTTEST_CHECK_MSG(hTest, pMBlk->b_datap->db_type == M_IOCACK,
+                     (hTest, "i=%u, db_type=%u\n", i,
+                      (unsigned) pMBlk->b_datap->db_type));
+    if (!g_asTestWPut[i].rcExp)
+        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first == pMBlk,
+                         (hTest, "i=%u\n", i));
     vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
     freemsg(pMBlk);
 }
@@ -903,11 +955,12 @@ struct
 static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
-    int iCmd = pIOCBlk->ioc_cmd, iCmdType = iCmd & ~0xff;
+    int iCmd = pIOCBlk->ioc_cmd, iCmdType = iCmd & (0xff << 8);
     size_t cbBuffer;
     enum IOCTLDIRECTION enmDirection;
 
-    LogFlowFunc((DEVICE_NAME "::iCmdType=%c, iCmd=%d\n", iCmdType, iCmd));
+    LogFlowFunc((DEVICE_NAME "::iCmdType=%c, iCmd=%d\n",
+                 (char) (iCmdType >> 8), iCmd));
     switch (iCmdType)
     {
         case MSIOC:
@@ -927,6 +980,7 @@ static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
             return EINVAL;
         }
         case 'V' << 8:
+            return ENOTTY;
             return vbgr0SolHandleIOCtl(pWriteQueue, pMBlk, vbgr0SolGuestIOCtl,
                                        iCmd, 0, UNSPECIFIED);
         default:
@@ -976,7 +1030,6 @@ static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
                                enum IOCTLDIRECTION enmDirection)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
-    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
 
     if (pMBlk->b_datap->db_type == M_IOCDATA)
         return vbgr0SolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, iCmd,
@@ -1472,7 +1525,7 @@ static int vbgr0SolAddIRQ(dev_info_t *pDip)
                     g_pIntr = RTMemAlloc(IntrCount * sizeof(ddi_intr_handle_t));
                     if (g_pIntr)
                     {
-                        size_t IntrAllocated;
+                        int IntrAllocated;
                         unsigned i;
                         rc = ddi_intr_alloc(pDip, g_pIntr, IntrType, 0, IntrCount, &IntrAllocated, DDI_INTR_ALLOC_NORMAL);
                         if (   rc == DDI_SUCCESS
@@ -1486,6 +1539,10 @@ static int vbgr0SolAddIRQ(dev_info_t *pDip)
                                 /* Initialize the mutex. */
                                 mutex_init(&g_IrqMutex, NULL, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
 
+                                /* Initialise the node state mutex.  This will
+                                 * be taken in the ISR. */
+                                mutex_init(&g_StateMutex, NULL, MUTEX_DRIVER,
+                                           DDI_INTR_PRI(uIntrPriority));
                                 /* Assign interrupt handler functions and enable interrupts. */
                                 for (i = 0; i < IntrAllocated; i++)
                                 {
