@@ -100,6 +100,8 @@ typedef struct VBCPPDEF
     const char        **papszArgs;
     /** Lead character bitmap for the argument names. */
     VBCPP_BITMAP_TYPE   bmArgs[VBCPP_BITMAP_SIZE];
+    /** The value length. */
+    size_t              cchValue;
     /** The define value.  (This is followed by the name and arguments.) */
     char                szValue[1];
 } VBCPPDEF;
@@ -931,6 +933,25 @@ static bool vbcppDefineExists(PVBCPP pThis, const char *pszDefine, size_t cchDef
 
 
 /**
+ * Looks up a define.
+ *
+ * @returns Pointer to the define if found, NULL if not.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pszDefine           The define name and optionally the argument
+ *                              list.
+ * @param   cchDefine           The length of the name. RTSTR_MAX is ok.
+ */
+static PVBCPPDEF vbcppDefineLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
+{
+    if (!cchDefine)
+        return NULL;
+    if (!VBCPP_BITMAP_IS_SET(pThis->bmDefined, *pszDefine))
+        return NULL;
+    return (PVBCPPDEF)RTStrSpaceGetN(&pThis->StrSpace, pszDefine, cchDefine);
+}
+
+
+/**
  * Frees a define.
  *
  * @returns VINF_SUCCESS (used when called by RTStrSpaceDestroy)
@@ -993,6 +1014,16 @@ static RTEXITCODE vbcppDefineUndef(PVBCPP pThis, const char *pszDefine, size_t c
  */
 static RTEXITCODE vbcppDefineInsert(PVBCPP pThis, PVBCPPDEF pDef)
 {
+    /*
+     * Reject illegal macro names.
+     */
+    if (!strcmp(pDef->Core.pszString, "defined"))
+    {
+        RTEXITCODE rcExit = vbcppError(pThis, "Cannot use '%s' as a macro name", pDef->Core.pszString);
+        vbcppFreeDefine(&pDef->Core, NULL);
+        return rcExit;
+    }
+
     /*
      * Ignore in source-file defines when doing selective preprocessing.
      */
@@ -1120,6 +1151,7 @@ static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t c
     pDef->cArgs     = cArgs;
     pDef->papszArgs = (const char **)((uintptr_t)pDef + cbDef - sizeof(const char *) * cArgs);
     VBCPP_BITMAP_EMPTY(pDef->bmArgs);
+    pDef->cchValue  = cchValue;
     memcpy(pDef->szValue, pszValue, cchValue);
     pDef->szValue[cchValue] = '\0';
 
@@ -1230,6 +1262,7 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
     pDef->cArgs     = 0;
     pDef->papszArgs = NULL;
     VBCPP_BITMAP_EMPTY(pDef->bmArgs);
+    pDef->cchValue  = cchValue;
     memcpy(pDef->szValue, pszValue, cchValue);
     pDef->szValue[cchValue] = '\0';
 
@@ -1308,7 +1341,7 @@ static RTEXITCODE vbcppProcessDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
                             break;
                         ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
                     }
-                    ScmStreamGetCh(pStrmInput);
+                    chPrev = ScmStreamGetCh(pStrmInput);
                 }
                 size_t cchValue = ScmStreamGetCur(pStrmInput) - pchValue;
 
@@ -1460,6 +1493,319 @@ static RTEXITCODE vbcppCondPush(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offS
 }
 
 
+#if 0
+typedef enum VBCPPEXPRKIND
+{
+    kVBCppExprKind_Invalid = 0,
+    kVBCppExprKind_Binary,
+    kVBCppExprKind_Unary,
+    kVBCppExprKind_SignedValue,
+    kVBCppExprKind_UnsignedValue,
+    kVBCppExprKind_Define,
+    kVBCppExprKind_End
+} VBCPPEXPRKIND;
+
+typedef struct VBCPPEXPR *PVBCPPEXPR;
+
+/**
+ * Expression parsing structure.
+ */
+typedef struct VBCPPEXPR
+{
+    /** Pointer to the first byte of the expression. */
+    const char         *pchExpr;
+    /** The length of the expression. */
+    size_t              cchExpr;
+
+    uint32_t            iDepth;
+    /** The kind of expression. */
+    VBCPPEXPRKIND       enmKind;
+    /** */
+    union
+    {
+        struct
+        {
+            VBCPPUNARYOP    enmOperator;
+            PVBCPPEXPR      pArg;
+        } Unary;
+
+        struct
+        {
+            VBCPPBINARYOP   enmOperator;
+            PVBCPPEXPR      pLeft;
+            PVBCPPEXPR      pRight;
+        } Binary;
+
+        struct
+        {
+            int64_t         s64;
+            unsigned        cBits;
+        } SignedValue;
+
+        struct
+        {
+            uint64_t        u64;
+            unsigned        cBits;
+        } UnsignedValue;
+
+        struct
+        {
+            const char     *pch;
+            size_t          cch;
+        } Define;
+
+    } u;
+    /** Parent expression. */
+    PVBCPPEXPR          pParent;
+} VBCPPEXPR;
+
+
+
+typedef struct VBCPPEXPRPARSER
+{
+    PVBCPPEXPR          pStack
+} VBCPPEXPRPARSER;
+
+
+/**
+ * Operator return statuses.
+ */
+typedef enum
+{
+    kExprRet_Error = -1,
+    kExprRet_Ok = 0,
+    kExprRet_Operator,
+    kExprRet_Operand,
+    kExprRet_EndOfExpr,
+    kExprRet_End
+} VBCPPEXPRRET;
+
+
+static VBCPPEXPRRET vbcppExprEatUnaryOrOperand(PVBCPPEXPRPARSER pThis, PSCMSTREAM pStrmInput)
+{
+
+}
+
+#endif
+
+
+/**
+ * Evalutes the expression.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pszExpr             The expression.
+ * @param   cchExpr             The length of the expression.
+ * @param   penmResult          Where to store the result.
+ */
+static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, VBCPPEVAL *penmResult)
+{
+    Assert(strlen(pszExpr) == cchExpr);
+#if 0
+    /** @todo */
+#else           /* Greatly simplified for getting DTrace working. */
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    if (strcmp(pszExpr, "1"))
+        *penmResult = kVBCppEval_True;
+    else if (strcmp(pszExpr, "0"))
+        *penmResult = kVBCppEval_False;
+    else if (pThis->fUndecidedConditionals)
+        *penmResult = kVBCppEval_Undecided;
+    else
+        rcExit = vbcppError(pThis, "Too compliated expression '%s'", pszExpr);
+#endif
+    return rcExit;
+}
+
+
+/**
+ * Expands known macros in the expression.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   ppszExpr            The expression to expand. Input/Output.
+ * @param   pcchExpr            The length of the expression. Input/Output.
+ * @param   pcReplacements      Where to store the number of replacements made.
+ *                              Optional.
+ */
+static RTEXITCODE vbcppExprExpand(PVBCPP pThis, char **ppszExpr, size_t *pcchExpr, size_t *pcReplacements)
+{
+    RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
+    char       *pszExpr     = *ppszExpr;
+    size_t      cchExpr     = pcchExpr ? *pcchExpr :  strlen(pszExpr);
+    size_t      cbExprAlloc = cchExpr + 1;
+    size_t      cHits       = 0;
+    size_t      off         = 0;
+    char        ch;
+    while ((ch = pszExpr[off]) != '\0')
+    {
+        if (!vbcppIsCIdentifierLeadChar(ch))
+            off++;
+        else
+        {
+            /* Extract the identifier. */
+            size_t const offIdentifier = off++;
+            while (   off < cchExpr
+                   && vbcppIsCIdentifierChar(pszExpr[off]))
+                off++;
+            size_t const cchIdentifier = off - offIdentifier;
+
+            /* Does it exist?  Will save a whole lot of trouble if it doesn't. */
+            PVBCPPDEF pDef = vbcppDefineLookup(pThis, &pszExpr[offIdentifier], cchIdentifier);
+            if (pDef)
+            {
+                /* Skip white space and check for parenthesis. */
+                while (   off < cchExpr
+                       && RT_C_IS_SPACE(pszExpr[off]))
+                    off++;
+                if (   off < cchExpr
+                    && pszExpr[off] == '(')
+                {
+                    /* Try expand function define. */
+                    rcExit = vbcppError(pThis, "Expanding function macros is not yet implemented");
+                    break;
+                }
+                else
+                {
+                    /* Expand simple define if found. */
+                    if (pDef->cchValue + 2 < cchIdentifier)
+                    {
+                        size_t offDelta = cchIdentifier - pDef->cchValue - 2;
+                        memmove(&pszExpr[offIdentifier], &pszExpr[offIdentifier + offDelta],
+                                cchExpr - offIdentifier - offDelta + 1); /* Lazy bird is moving too much! */
+                        cchExpr -= offDelta;
+                    }
+                    else if (pDef->cchValue + 2 > cchIdentifier)
+                    {
+                        size_t offDelta = pDef->cchValue + 2 - cchIdentifier;
+                        if (cchExpr + offDelta + 1 > cbExprAlloc)
+                        {
+                            do
+                            {
+                                cbExprAlloc *= 2;
+                            } while (cchExpr + offDelta + 1 > cbExprAlloc);
+                            void *pv = RTMemRealloc(pszExpr,  cbExprAlloc);
+                            if (!pv)
+                            {
+                                rcExit = vbcppError(pThis, "out of memory (%zu bytes)", cbExprAlloc);
+                                break;
+                            }
+                            pszExpr = (char *)pv;
+                        }
+                        memmove(&pszExpr[offIdentifier + offDelta], &pszExpr[offIdentifier],
+                                cchExpr - offIdentifier + 1); /* Lazy bird is moving too much! */
+                        cchExpr += offDelta;
+                    }
+
+                    /* Insert with spaces around it. Not entirely sure how
+                       standard compliant this is... */
+                    pszExpr[offIdentifier] = ' ';
+                    memcpy(&pszExpr[offIdentifier + 1], pDef->szValue, pDef->cchValue);
+                    pszExpr[offIdentifier + 1 + pDef->cchValue] = ' ';
+
+                    /* Restart parsing at the inserted macro. */
+                    off = offIdentifier + 1;
+                }
+            }
+        }
+    }
+
+    return rcExit;
+}
+
+
+
+/**
+ * Extracts the expression.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ * @param   ppszExpr            Where to return the expression string..
+ * @param   pcchExpr            Where to return the expression length.
+ *                              Optional.
+ * @param   poffComment         Where to note down the position of the final
+ *                              comment. Optional.
+ */
+static RTEXITCODE vbcppExprExtract(PVBCPP pThis, PSCMSTREAM pStrmInput,
+                                   char **ppszExpr, size_t *pcchExpr, size_t *poffComment)
+{
+    RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
+    size_t      cbExprAlloc = 0;
+    size_t      cchExpr     = 0;
+    char       *pszExpr     = NULL;
+    bool        fInComment  = false;
+    size_t      offComment  = ~(size_t)0;
+    unsigned    chPrev      = 0;
+    unsigned    ch;
+    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+    {
+        if (ch == '\r' || ch == '\n')
+        {
+            if (chPrev == '\\')
+            {
+                ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
+                pszExpr[--cchExpr] = '\0';
+                continue;
+            }
+            if (!fInComment)
+                break;
+            /* The expression continues after multi-line comments. Cool. :-) */
+        }
+        else if (!fInComment)
+        {
+            if (chPrev == '/' && ch == '*' )
+            {
+                pszExpr[--cchExpr] = '\0';
+                fInComment = true;
+                offComment = ScmStreamTell(pStrmInput) - 1;
+            }
+            else if (chPrev == '/' && ch == '/')
+            {
+                offComment = ScmStreamTell(pStrmInput) - 1;
+                rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+                break;                  /* done */
+            }
+            /* Append the char to the expression. */
+            else
+            {
+                if (cchExpr + 2 > cbExprAlloc)
+                {
+                    cbExprAlloc = cbExprAlloc ? cbExprAlloc * 2 : 8;
+                    void *pv = RTMemRealloc(pszExpr, cbExprAlloc);
+                    if (!pv)
+                    {
+                        rcExit = vbcppError(pThis, "out of memory (%zu bytes)", cbExprAlloc);
+                        break;
+                    }
+                    pszExpr = (char *)pv;
+                }
+                pszExpr[cchExpr++] = ch;
+                pszExpr[cchExpr]   = '\0';
+            }
+        }
+        else if (ch == '/' && chPrev == '*')
+            fInComment = false;
+
+        /* advance */
+        chPrev = ch;
+        ch = ScmStreamGetCh(pStrmInput); Assert(ch == chPrev);
+    }
+
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        *ppszExpr = pszExpr;
+        if (pcchExpr)
+            *pcchExpr = cchExpr;
+        if (poffComment)
+            *poffComment;
+    }
+    else
+        RTMemFree(pszExpr);
+    return rcExit;
+}
+
+
 /**
  * Processes a abbreviated line number directive.
  *
@@ -1468,10 +1814,95 @@ static RTEXITCODE vbcppCondPush(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offS
  * @param   pStrmInput          The input stream.
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
+ * @param   enmKind             The kind of directive we're processing.
  */
-static RTEXITCODE vbcppProcessIf(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppProcessIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart,
+                                       VBCPPCONDKIND enmKind)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    /*
+     * Check for missing #if if #elif.
+     */
+    if (   enmKind == kVBCppCondKind_ElIf
+        && !pThis->pCondStack )
+        return vbcppError(pThis, "#elif without #if");
+
+    /*
+     * Extract and expand the expression string.
+     */
+    const char *pchCondition = ScmStreamGetCur(pStrmInput);
+    char       *pszExpr;
+    size_t      cchExpr;
+    size_t      offComment;
+    RTEXITCODE  rcExit = vbcppExprExtract(pThis, pStrmInput, &pszExpr, &cchExpr, &offComment);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        size_t const    cchCondition = ScmStreamGetCur(pStrmInput) - pchCondition;
+        size_t          cReplacements;
+        rcExit = vbcppExprExpand(pThis, &pszExpr, &cchExpr, &cReplacements);
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            /*
+             * Strip it and check that it's not empty.
+             */
+            char *pszExpr2 = pszExpr;
+            while (cchExpr > 0 && RT_C_IS_SPACE(*pszExpr2))
+                pszExpr2++, cchExpr--;
+
+            while (cchExpr > 0 && RT_C_IS_SPACE(pszExpr2[cchExpr - 1]))
+                pszExpr2[--cchExpr] = '\0';
+            if (cchExpr)
+            {
+                /*
+                 * Now, evalute the expression.
+                 */
+                VBCPPEVAL enmResult;
+                rcExit = vbcppExprEval(pThis, pszExpr2, cchExpr, &enmResult);
+                if (rcExit == RTEXITCODE_SUCCESS)
+                {
+                    /*
+                     * Take action.
+                     */
+                    if (enmKind != kVBCppCondKind_ElIf)
+                        rcExit = vbcppCondPush(pThis, pStrmInput, offComment, enmKind, enmResult,
+                                               pchCondition, cchCondition);
+                    else
+                    {
+                        PVBCPPCOND pCond = pThis->pCondStack;
+                        if (   pCond->enmResult != kVBCppEval_Undecided
+                            && (   !pCond->pUp
+                                || pCond->pUp->enmStackResult == kVBCppEval_True))
+                        {
+                            if (enmResult == kVBCppEval_True)
+                                pCond->enmStackResult = kVBCppEval_False;
+                            else
+                                pCond->enmStackResult = kVBCppEval_True;
+                            pThis->fIf0Mode = pCond->enmStackResult == kVBCppEval_False;
+                        }
+                        pCond->enmResult = enmResult;
+                        pCond->pchCond   = pchCondition;
+                        pCond->cchCond   = cchCondition;
+
+                        /*
+                         * Do #elif pass thru.
+                         */
+                        if (   !pThis->fIf0Mode
+                            && pCond->enmResult == kVBCppEval_Undecided)
+                        {
+                            ssize_t cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*selif", pCond->iKeepLevel - 1, "");
+                            if (cch > 0)
+                                rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch, 2);
+                            else
+                                rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
+                        }
+                    }
+                }
+            }
+            else
+                rcExit = vbcppError(pThis, "Empty #if expression");
+        }
+        RTMemFree(pszExpr);
+    }
+    return rcExit;
 }
 
 
@@ -1505,7 +1936,7 @@ static RTEXITCODE vbcppProcessIfDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
                 VBCPPEVAL enmEval;
                 if (vbcppDefineExists(pThis, pchDefine, cchDefine))
                     enmEval = kVBCppEval_True;
-                else if (   pThis->fUndecidedConditionals
+                else if (   !pThis->fUndecidedConditionals
                          || RTStrSpaceGetN(&pThis->UndefStrSpace, pchDefine, cchDefine) != NULL)
                     enmEval = kVBCppEval_False;
                 else
@@ -1551,7 +1982,7 @@ static RTEXITCODE vbcppProcessIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
                 VBCPPEVAL enmEval;
                 if (vbcppDefineExists(pThis, pchDefine, cchDefine))
                     enmEval = kVBCppEval_False;
-                else if (   pThis->fUndecidedConditionals
+                else if (   !pThis->fUndecidedConditionals
                          || RTStrSpaceGetN(&pThis->UndefStrSpace, pchDefine, cchDefine) != NULL)
                     enmEval = kVBCppEval_True;
                 else
@@ -1886,7 +2317,9 @@ static RTEXITCODE vbcppProcessDirective(PVBCPP pThis, PSCMSTREAM pStrmInput)
         size_t const offStart = ScmStreamTell(pStrmInput);
 #define IS_DIRECTIVE(a_sz) ( sizeof(a_sz) - 1 == cchDirective && strncmp(pchDirective, a_sz, sizeof(a_sz) - 1) == 0)
         if (IS_DIRECTIVE("if"))
-            rcExit = vbcppProcessIf(pThis, pStrmInput, offStart);
+            rcExit = vbcppProcessIfOrElif(pThis, pStrmInput, offStart, kVBCppCondKind_If);
+        else if (IS_DIRECTIVE("elif"))
+            rcExit = vbcppProcessIfOrElif(pThis, pStrmInput, offStart, kVBCppCondKind_ElIf);
         else if (IS_DIRECTIVE("ifdef"))
             rcExit = vbcppProcessIfDef(pThis, pStrmInput, offStart);
         else if (IS_DIRECTIVE("ifndef"))
