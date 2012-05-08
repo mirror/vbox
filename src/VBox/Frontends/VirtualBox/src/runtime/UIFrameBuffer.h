@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2004-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -126,9 +126,7 @@ public:
 
     void setDeleted(bool fIsDeleted) { m_fIsDeleted = fIsDeleted; }
 
-    NS_DECL_ISUPPORTS
-
-#if defined (Q_OS_WIN32)
+#if defined(Q_OS_WIN32)
     STDMETHOD_(ULONG, AddRef)()
     {
         return ::InterlockedIncrement(&m_iRefCnt);
@@ -143,30 +141,32 @@ public:
     }
 #endif
 
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
+    BEGIN_COM_MAP(UIFrameBuffer)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IFramebuffer)
+    END_COM_MAP()
 
     /* IFramebuffer COM methods */
-    STDMETHOD(COMGETTER(Address)) (BYTE **ppAddress);
-    STDMETHOD(COMGETTER(Width)) (ULONG *puWidth);
-    STDMETHOD(COMGETTER(Height)) (ULONG *puHeight);
-    STDMETHOD(COMGETTER(BitsPerPixel)) (ULONG *puBitsPerPixel);
-    STDMETHOD(COMGETTER(BytesPerLine)) (ULONG *puBytesPerLine);
-    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *puPixelFormat);
-    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *pbUsesGuestVRAM);
-    STDMETHOD(COMGETTER(HeightReduction)) (ULONG *puHeightReduction);
-    STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **ppOverlay);
-    STDMETHOD(COMGETTER(WinId)) (LONG64 *pWinId);
+    STDMETHOD(COMGETTER(Address))(BYTE **ppAddress);
+    STDMETHOD(COMGETTER(Width))(ULONG *puWidth);
+    STDMETHOD(COMGETTER(Height))(ULONG *puHeight);
+    STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *puBitsPerPixel);
+    STDMETHOD(COMGETTER(BytesPerLine))(ULONG *puBytesPerLine);
+    STDMETHOD(COMGETTER(PixelFormat))(ULONG *puPixelFormat);
+    STDMETHOD(COMGETTER(UsesGuestVRAM))(BOOL *pbUsesGuestVRAM);
+    STDMETHOD(COMGETTER(HeightReduction))(ULONG *puHeightReduction);
+    STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **ppOverlay);
+    STDMETHOD(COMGETTER(WinId))(LONG64 *pWinId);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
 
-    STDMETHOD(RequestResize) (ULONG uScreenId, ULONG uPixelFormat,
-                              BYTE *pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
-                              ULONG uWidth, ULONG uHeight,
-                              BOOL *pbFinished);
+    STDMETHOD(RequestResize)(ULONG uScreenId, ULONG uPixelFormat,
+                             BYTE *pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
+                             ULONG uWidth, ULONG uHeight,
+                             BOOL *pbFinished);
 
-    STDMETHOD(VideoModeSupported) (ULONG uWidth, ULONG uHeight, ULONG uBPP,
-                                   BOOL *pbSupported);
+    STDMETHOD(VideoModeSupported)(ULONG uWidth, ULONG uHeight, ULONG uBPP,
+                                  BOOL *pbSupported);
 
     STDMETHOD(GetVisibleRegion)(BYTE *pRectangles, ULONG uCount, ULONG *puCountCopied);
     STDMETHOD(SetVisibleRegion)(BYTE *pRectangles, ULONG uCount);
@@ -246,7 +246,7 @@ protected:
     int64_t m_WinId;
     bool m_fIsDeleted;
 
-#if defined (Q_OS_WIN32)
+#if defined(Q_OS_WIN32)
 private:
 
     long m_iRefCnt;
