@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -76,12 +76,25 @@ typedef struct CPUMSYSENTER
     uint64_t    esp;
 } CPUMSYSENTER;
 
+/**
+ * For compilers (like DTrace) that does not grok nameless unions, we have a
+ * little hack to make them palatable.
+ */
+#ifdef VBOX_FOR_DTRACE_LIB
+# define CPUM_UNION_NAME    u
+#elif defined(VBOX_WITHOUT_UNNAMED_UNIONS)
+# define CPUM_UNION_NAME    u
+#else
+# define CPUM_UNION_NAME
+#endif
+
 
 /**
  * CPU context core.
  */
-#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
-#pragma pack(1)
+#ifndef VBOX_FOR_DTRACE_LIB
+# pragma pack(1)
+#endif
 typedef struct CPUMCTXCORE
 {
     union
@@ -89,49 +102,49 @@ typedef struct CPUMCTXCORE
         uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        bp;
         uint32_t        ebp;
         uint64_t        rbp;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        sp;
         uint32_t        esp;
         uint64_t        rsp;
-    };
+    } CPUM_UNION_NAME;
     /* Note: lss esp, [] in the switcher needs some space, so we reserve it here instead of relying on the exact esp & ss layout as before. */
     uint32_t            lss_esp;
     RTSEL               ss;
@@ -152,13 +165,13 @@ typedef struct CPUMCTXCORE
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
-    };
+    } CPUM_UNION_NAME;
 
     uint64_t            r8;
     uint64_t            r9;
@@ -180,17 +193,18 @@ typedef struct CPUMCTXCORE
     /** @} */
 
 } CPUMCTXCORE;
-#pragma pack()
-#else  /* VBOX_WITHOUT_UNNAMED_UNIONS */
-typedef struct CPUMCTXCORE CPUMCTXCORE;
-#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
+
+# ifndef VBOX_FOR_DTRACE_LIB
+#  pragma pack()
+# endif
 
 
 /**
  * CPU context.
  */
-#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
+#ifndef VBOX_FOR_DTRACE_LIB
 # pragma pack(1)
+#endif
 typedef struct CPUMCTX
 {
     /** FPU state. (16-byte alignment)
@@ -206,54 +220,54 @@ typedef struct CPUMCTX
         uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint8_t         sil;
         uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        bp;
         uint32_t        ebp;
         uint64_t        rbp;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint8_t         al;
         uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint8_t         bl;
         uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint8_t         dl;
         uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint8_t         cl;
         uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        sp;
         uint32_t        esp;
         uint64_t        rsp;
-    };
+    } CPUM_UNION_NAME;
     /** @note lss esp, [] in the switcher needs some space, so we reserve it here
      *        instead of relying on the exact esp & ss layout as before (prevented
      *        us from using a union with rsp). */
@@ -276,13 +290,13 @@ typedef struct CPUMCTX
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
-    };
+    } CPUM_UNION_NAME;
 
     uint64_t            r8;
     uint64_t            r9;
@@ -363,15 +377,17 @@ typedef struct CPUMCTX
     uint32_t        padding[6];
 # endif
 } CPUMCTX;
-# pragma pack()
-#else  /* VBOX_WITHOUT_UNNAMED_UNIONS */
-typedef struct CPUMCTX CPUMCTX;
-#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
+# ifndef VBOX_FOR_DTRACE_LIB
+#  pragma pack()
+# endif
+
+#ifndef VBOX_FOR_DTRACE_LIB
 
 /**
  * Gets the CPUMCTXCORE part of a CPUMCTX.
  */
-#define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->edi)
+# define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->edi)
+
 
 /**
  * Selector hidden registers, for version 1.6 saved state.
@@ -392,7 +408,6 @@ typedef struct CPUMSELREGHID_VER1_6
  * CPU context, for version 1.6 saved state.
  * @remarks PATM uses this, which is why it has to be here.
  */
-#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
 # pragma pack(1)
 typedef struct CPUMCTX_VER1_6
 {
@@ -407,37 +422,37 @@ typedef struct CPUMCTX_VER1_6
     {
         uint32_t        edi;
         uint64_t        rdi;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint32_t        esi;
         uint64_t        rsi;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint32_t        ebp;
         uint64_t        rbp;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint32_t        eax;
         uint64_t        rax;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint32_t        ebx;
         uint64_t        rbx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint32_t        edx;
         uint64_t        rdx;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint32_t        ecx;
         uint64_t        rcx;
-    };
+    } CPUM_UNION_NAME;
     /** @note We rely on the exact layout, because we use lss esp, [] in the
      *        switcher. */
     uint32_t        esp;
@@ -461,12 +476,12 @@ typedef struct CPUMCTX_VER1_6
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    };
+    } CPUM_UNION_NAME;
     union
     {
         uint32_t        eip;
         uint64_t        rip;
-    };
+    } CPUM_UNION_NAME;
 
     uint64_t            r8;
     uint64_t            r9;
@@ -554,10 +569,9 @@ typedef struct CPUMCTX_VER1_6
     /** padding to get 32byte aligned size. */
     uint32_t        padding[2];
 } CPUMCTX_VER1_6;
-#pragma pack()
-#else  /* VBOX_WITHOUT_UNNAMED_UNIONS */
-typedef struct CPUMCTX_VER1_6 CPUMCTX_VER1_6;
-#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
+# pragma pack()
+
+#endif /* VBOX_FOR_DTRACE_LIB */
 
 /**
  * Additional guest MSRs (i.e. not part of the CPU context structure).

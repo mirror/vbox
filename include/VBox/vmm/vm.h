@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -227,6 +227,8 @@ typedef struct VMCPU
 
 } VMCPU;
 
+
+#ifndef VBOX_FOR_DTRACE_LIB
 
 /** @name Operations on VMCPU::enmState
  * @{ */
@@ -727,6 +729,9 @@ typedef struct VMCPU
                          RT_VALID_ALIGNED_PTR(pVCpu, 64) && RT_VALID_ALIGNED_PTR((pVCpu)->CTX_SUFF(pVM), PAGE_SIZE) \
                          ? VMGetStateName((pVCpu)->pVMR3->enmVMState) : ""), \
                         (rc))
+
+#endif /* !VBOX_FOR_DTRACE_LIB */
+
 
 
 /** This is the VM structure.
