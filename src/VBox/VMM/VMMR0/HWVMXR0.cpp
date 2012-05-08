@@ -4538,9 +4538,11 @@ static void hmR0VmxFlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       The VM CPU to operate on (can be NULL depending on @a
+ *                      enmFlush).
  * @param   enmFlush    Type of flush.
- * @param   GCPtr       Virtual address of the page to flush.
+ * @param   GCPtr       Virtual address of the page to flush (can be 0 depending
+ *                      on @a enmFlush).
  */
 static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr)
 {
