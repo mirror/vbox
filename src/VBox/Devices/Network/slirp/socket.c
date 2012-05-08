@@ -1366,7 +1366,13 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, const struct sockadd
     }
 
     m = icm->im_m;
-    Assert(m != NULL);
+    if (!m)
+    {
+        LogFunc(("%R[natsock] hasn't stored it's mbuf on sent\n", icm->im_so));
+        LIST_REMOVE(icm, im_list);
+        RTMemFree(icm);
+        return;
+    }
 
     src = addr->sin_addr.s_addr;
     if (type == ICMP_ECHOREPLY)
