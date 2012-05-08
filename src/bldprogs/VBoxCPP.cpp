@@ -243,6 +243,14 @@ typedef struct VBCPP
     bool                fPassThruDefines;
     /** Whether to allow undecided conditionals. */
     bool                fUndecidedConditionals;
+    /** Whether to pass thru D pragmas. */
+    bool                fPassThruPragmaD;
+    /** Whether to pass thru STD pragmas. */
+    bool                fPassThruPragmaSTD;
+    /** Whether to pass thru other pragmas. */
+    bool                fPassThruPragmaOther;
+    /** Whether to remove dropped lines from the output. */
+    bool                fRemoveDroppedLines;
     /** Whether to preforme line splicing.
      * @todo implement line splicing  */
     bool                fLineSplicing;
@@ -287,6 +295,8 @@ typedef struct VBCPP
     PVBCPPCOND          pCondStack;
     /** The current condition evaluates to kVBCppEval_False, don't output. */
     bool                fIf0Mode;
+    /** Just dropped a line and should maybe drop the current line. */
+    bool                fJustDroppedLine;
 
     /** Whether the current line could be a preprocessor line.
      * This is set when EOL is encountered and cleared again when a
@@ -309,6 +319,11 @@ typedef struct VBCPP
 /** Pointer to the C preprocessor instance data. */
 typedef VBCPP *PVBCPP;
 
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static PVBCPPDEF vbcppDefineLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
 
 
 
@@ -714,6 +729,68 @@ static size_t vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
 
 
 /**
+ * Skips input until the real end of the current directive line has been
+ * reached.
+ *
+ * This includes multiline comments starting on the same line
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ * @param   poffComment         Where to note down the position of the final
+ *                              comment. Optional.
+ */
+static RTEXITCODE vbcppInputSkipToEndOfDirectiveLine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t *poffComment)
+{
+    if (poffComment)
+        *poffComment = ~(size_t)0;
+
+    RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
+    bool        fInComment  = false;
+    unsigned    chPrev      = 0;
+    unsigned    ch;
+    while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+    {
+        if (ch == '\r' || ch == '\n')
+        {
+            if (chPrev == '\\')
+            {
+                ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
+                continue;
+            }
+            if (!fInComment)
+                break;
+            /* The expression continues after multi-line comments. Cool. :-) */
+        }
+        else if (!fInComment)
+        {
+            if (chPrev == '/' && ch == '*' )
+            {
+                fInComment = true;
+                if (poffComment)
+                    *poffComment = ScmStreamTell(pStrmInput) - 1;
+            }
+            else if (chPrev == '/' && ch == '/')
+            {
+                if (poffComment)
+                    *poffComment = ScmStreamTell(pStrmInput) - 1;
+                rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+                break;                  /* done */
+            }
+        }
+        else if (ch == '/' && chPrev == '*')
+            fInComment = false;
+
+        /* advance */
+        chPrev = ch;
+        ch = ScmStreamGetCh(pStrmInput); Assert(ch == chPrev);
+    }
+    return rcExit;
+}
+
+
+
+/**
  * Processes a multi-line comment.
  *
  * Must either string the comment or keep it. If the latter, we must refrain
@@ -751,19 +828,22 @@ static RTEXITCODE vbcppProcessMultiLineComment(PVBCPP pThis, PSCMSTREAM pStrmInp
             }
         }
 
-        if (   (   pThis->fKeepComments
-                && !pThis->fIf0Mode)
-            || ch == '\r'
-            || ch == '\n')
+        if (ch == '\r' || ch == '\n')
         {
-            rcExit = vbcppOutputCh(pThis, ch);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                break;
-
-            /* Reset the maybe-preprocessor-line indicator when necessary. */
-            if (ch == '\r' || ch == '\n')
-                pThis->fMaybePreprocessorLine = true;
+            if (   (   pThis->fKeepComments
+                    && !pThis->fIf0Mode)
+                || !pThis->fRemoveDroppedLines
+                || !ScmStreamIsAtStartOfLine(&pThis->StrmOutput))
+                rcExit = vbcppOutputCh(pThis, ch);
+            pThis->fJustDroppedLine       = false;
+            pThis->fMaybePreprocessorLine = true;
         }
+        else if (   pThis->fKeepComments
+                 && !pThis->fIf0Mode)
+            rcExit = vbcppOutputCh(pThis, ch);
+
+        if (rcExit != RTEXITCODE_SUCCESS)
+            break;
     }
     return rcExit;
 }
@@ -781,7 +861,7 @@ static RTEXITCODE vbcppProcessMultiLineComment(PVBCPP pThis, PSCMSTREAM pStrmInp
  */
 static RTEXITCODE vbcppProcessOneLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
-    RTEXITCODE  rcExit;
+    RTEXITCODE  rcExit = RTEXITCODE_SUCCESS;
     SCMEOL      enmEol;
     size_t      cchLine;
     const char *pszLine = ScmStreamGetLine(pStrmInput, &cchLine, &enmEol); Assert(pszLine);
@@ -791,7 +871,9 @@ static RTEXITCODE vbcppProcessOneLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput
         if (   pThis->fKeepComments
             && !pThis->fIf0Mode)
             rcExit = vbcppOutputWrite(pThis, pszLine, cchLine + enmEol);
-        else
+        else if (   !pThis->fIf0Mode
+                 || !pThis->fRemoveDroppedLines
+                 || !ScmStreamIsAtStartOfLine(&pThis->StrmOutput) )
             rcExit = vbcppOutputWrite(pThis, pszLine + cchLine, enmEol);
         if (rcExit != RTEXITCODE_SUCCESS)
             break;
@@ -803,6 +885,7 @@ static RTEXITCODE vbcppProcessOneLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput
         if (!pszLine)
             break;
     }
+    pThis->fJustDroppedLine       = false;
     pThis->fMaybePreprocessorLine = true;
     return rcExit;
 }
@@ -892,8 +975,41 @@ static RTEXITCODE vbcppProcessSingledQuotedString(PVBCPP pThis, PSCMSTREAM pStrm
  */
 static RTEXITCODE vbcppProcessCWord(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch)
 {
-    /** @todo Implement this... */
-    return vbcppOutputCh(pThis, ch);
+    RTEXITCODE  rcExit = RTEXITCODE_SUCCESS;
+    size_t      cchDefine;
+    const char *pchDefine = ScmStreamCGetWordM1(pStrmInput, &cchDefine);
+    AssertReturn(pchDefine, vbcppError(pThis, "Internal error in ScmStreamCGetWordM1"));
+
+
+    /*
+     * Does this look like a define we know?
+     */
+    PVBCPPDEF pDef = vbcppDefineLookup(pThis, pchDefine, cchDefine);
+    if (pDef)
+    {
+        if (!pDef->fFunction)
+        {
+#if 0 /** @todo proper expansion! */
+            vbcppDefineExpandSimple(pThis, pDef, )
+#else
+            int rc = ScmStreamWrite(&pThis->StrmOutput, pDef->szValue, pDef->cchValue);
+            if (RT_FAILURE(rc))
+                rcExit = vbcppError(pThis, "Output error: %Rrc", rc);
+#endif
+        }
+        else
+            rcExit = vbcppError(pThis, "Expanding function macros is not implemented\n");
+    }
+    else
+    {
+        /*
+         * Not a define, just output the text unchanged.
+         */
+        int rc = ScmStreamWrite(&pThis->StrmOutput, pchDefine, cchDefine);
+        if (RT_FAILURE(rc))
+            rcExit = vbcppError(pThis, "Output error: %Rrc", rc);
+    }
+    return rcExit;
 }
 
 
@@ -1488,6 +1604,8 @@ static RTEXITCODE vbcppCondPush(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offS
         if (cch < 0)
             return vbcppError(pThis, "Output error %Rrc", (int)cch);
     }
+    else
+        pThis->fJustDroppedLine = true;
 
     return RTEXITCODE_SUCCESS;
 }
@@ -1798,7 +1916,7 @@ static RTEXITCODE vbcppExprExtract(PVBCPP pThis, PSCMSTREAM pStrmInput,
         if (pcchExpr)
             *pcchExpr = cchExpr;
         if (poffComment)
-            *poffComment;
+            *poffComment = offComment;
     }
     else
         RTMemFree(pszExpr);
@@ -1894,6 +2012,8 @@ static RTEXITCODE vbcppProcessIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, size
                             else
                                 rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
                         }
+                        else
+                            pThis->fJustDroppedLine = true;
                     }
                 }
             }
@@ -2048,6 +2168,8 @@ static RTEXITCODE vbcppProcessElse(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t o
                     else
                         rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
                 }
+                else
+                    pThis->fJustDroppedLine = true;
             }
             else
                 rcExit = vbcppError(pThis, "Double #else or/and missing #endif");
@@ -2084,7 +2206,7 @@ static RTEXITCODE vbcppProcessEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
         if (pCond)
         {
             pThis->pCondStack = pCond->pUp;
-            pThis->fIf0Mode = pCond->pUp && pCond->pUp->enmStackResult == kVBCppEval_False;
+            pThis->fIf0Mode   = pCond->pUp && pCond->pUp->enmStackResult == kVBCppEval_False;
 
             /*
              * Do pass thru.
@@ -2098,6 +2220,8 @@ static RTEXITCODE vbcppProcessEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
                 else
                     rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
             }
+            else
+                pThis->fJustDroppedLine = true;
         }
         else
             rcExit = vbcppError(pThis, "#endif without #if");
@@ -2245,7 +2369,10 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
 
             }
             else
+            {
                 Assert(pThis->enmIncludeAction == kVBCppIncludeAction_Drop);
+                pThis->fJustDroppedLine = true;
+            }
         }
     }
     return rcExit;
@@ -2263,7 +2390,52 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
  */
 static RTEXITCODE vbcppProcessPragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
-    return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
+    /*
+     * Parse out the first word.
+     */
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        size_t      cchPragma;
+        const char *pchPragma = ScmStreamCGetWord(pStrmInput, &cchPragma);
+        if (pchPragma)
+        {
+            size_t const off2nd = vbcppProcessSkipWhite(pStrmInput);
+            size_t       offComment;
+            rcExit = vbcppInputSkipToEndOfDirectiveLine(pThis, pStrmInput, &offComment);
+            if (rcExit == RTEXITCODE_SUCCESS)
+            {
+                /*
+                 * What to do about this
+                 */
+                bool fPassThru = false;
+                if (   cchPragma  == 1
+                    && *pchPragma == 'D')
+                    fPassThru = pThis->fPassThruPragmaD;
+                else if (    cchPragma == 3
+                         &&  !strncmp(pchPragma, "STD", 3))
+                    fPassThru = pThis->fPassThruPragmaSTD;
+                else
+                    fPassThru = pThis->fPassThruPragmaOther;
+                if (fPassThru)
+                {
+                    unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
+                    size_t   cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*spragma %.*s",
+                                                   cchIndent, "", cchPragma, pchPragma);
+                    if (cch > 0)
+                        rcExit = vbcppOutputComment(pThis, pStrmInput, off2nd, cch, 1);
+                    else
+                        rcExit = vbcppError(pThis, "output error");
+                }
+                else
+                    pThis->fJustDroppedLine = true;
+            }
+        }
+        else
+            rcExit = vbcppError(pThis, "Malformed #pragma");
+    }
+
+    return rcExit;
 }
 
 
@@ -2413,8 +2585,13 @@ static RTEXITCODE vbcppPreprocess(PVBCPP pThis)
             }
             else if (ch == '\r' || ch == '\n')
             {
+                if (   (   !pThis->fIf0Mode
+                        && !pThis->fJustDroppedLine)
+                    || !pThis->fRemoveDroppedLines
+                    || !ScmStreamIsAtStartOfLine(&pThis->StrmOutput))
+                    rcExit = vbcppOutputCh(pThis, ch);
+                pThis->fJustDroppedLine       = false;
                 pThis->fMaybePreprocessorLine = true;
-                rcExit = vbcppOutputCh(pThis, ch);
             }
             else if (RT_C_IS_SPACE(ch))
             {
@@ -2507,6 +2684,10 @@ static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
             pThis->fAllowRedefiningCmdLineDefines   = true;
             pThis->fPassThruDefines                 = false;
             pThis->fUndecidedConditionals           = false;
+            pThis->fPassThruPragmaD                 = false;
+            pThis->fPassThruPragmaSTD               = true;
+            pThis->fPassThruPragmaOther             = true;
+            pThis->fRemoveDroppedLines              = false;
             pThis->fLineSplicing                    = true;
             pThis->enmIncludeAction                 = kVBCppIncludeAction_Include;
             break;
@@ -2517,6 +2698,10 @@ static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
             pThis->fAllowRedefiningCmdLineDefines   = false;
             pThis->fPassThruDefines                 = true;
             pThis->fUndecidedConditionals           = true;
+            pThis->fPassThruPragmaD                 = true;
+            pThis->fPassThruPragmaSTD               = true;
+            pThis->fPassThruPragmaOther             = true;
+            pThis->fRemoveDroppedLines              = true;
             pThis->fLineSplicing                    = false;
             pThis->enmIncludeAction                 = kVBCppIncludeAction_PassThru;
             break;
@@ -2527,6 +2712,10 @@ static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
             pThis->fAllowRedefiningCmdLineDefines   = false;
             pThis->fPassThruDefines                 = false;
             pThis->fUndecidedConditionals           = false;
+            pThis->fPassThruPragmaD                 = true;
+            pThis->fPassThruPragmaSTD               = false;
+            pThis->fPassThruPragmaOther             = false;
+            pThis->fRemoveDroppedLines              = true;
             pThis->fLineSplicing                    = false;
             pThis->enmIncludeAction                 = kVBCppIncludeAction_Drop;
             break;
@@ -2723,6 +2912,7 @@ static void vbcppInit(PVBCPP pThis)
     pThis->cCondStackDepth  = 0;
     pThis->pCondStack       = NULL;
     pThis->fIf0Mode         = false;
+    pThis->fJustDroppedLine = false;
     pThis->fMaybePreprocessorLine = true;
     VBCPP_BITMAP_EMPTY(pThis->bmDefined);
     VBCPP_BITMAP_EMPTY(pThis->bmArgs);

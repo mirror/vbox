@@ -642,6 +642,24 @@ int ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine)
 }
 
 /**
+ * Checks if the stream position is at the start of a line.
+ *
+ * @returns @c true if at the start, @c false if not.
+ * @param   pStream             The stream.
+ */
+bool ScmStreamIsAtStartOfLine(PSCMSTREAM pStream)
+{
+    if (   !pStream->fFullyLineated
+        && !pStream->fWriteOrRead)
+    {
+        int rc = scmStreamLineate(pStream);
+        if (RT_FAILURE(rc))
+            return false;
+    }
+    return pStream->off == pStream->paLines[pStream->iLine].off;
+}
+
+/**
  * Get a numbered line from the stream (changes the position).
  *
  * A line is always delimited by a LF character or the end of the stream.  The
