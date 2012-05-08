@@ -92,6 +92,8 @@ typedef struct VBCPPDEF
     bool                fFunction;
     /** Variable argument count. */
     bool                fVarArg;
+    /** Set if originating on the command line. */
+    bool                fCmdLine;
     /** The number of known arguments.*/
     uint32_t            cArgs;
     /** Pointer to a list of argument names. */
@@ -533,10 +535,12 @@ static RTEXITCODE vbcppDefineInsert(PVBCPP pThis, PVBCPPDEF pDef)
  * @param   cchParams           The length of the parameter list.
  * @param   pszValue            The value.
  * @param   cchDefine           The length of the value.
+ * @param   fCmdLine            Set if originating on the command line.
  */
 static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t cchDefine,
                                    const char *pszParams, size_t cchParams,
-                                   const char *pszValue, size_t cchValue)
+                                   const char *pszValue, size_t cchValue,
+                                   bool fCmdLine)
 
 {
     Assert(RTStrNLen(pszDefine, cchDefine) == cchDefine);
@@ -597,6 +601,7 @@ static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t c
     *pszDst++ = '\0';
     pDef->fFunction = true;
     pDef->fVarArg   = false;
+    pDef->fCmdLine  = fCmdLine;
     pDef->cArgs     = cArgs;
     pDef->papszArgs = (const char **)((uintptr_t)pDef + cbDef - sizeof(const char *) * cArgs);
     VBCPP_BITMAP_EMPTY(pDef->bmArgs);
@@ -650,9 +655,10 @@ static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t c
  * @param   cchDefine           The length of the name. RTSTR_MAX is ok.
  * @param   pszValue            The value.
  * @param   cchDefine           The length of the value. RTSTR_MAX is ok.
+ * @param   fCmdLine            Set if originating on the command line.
  */
 static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cchDefine,
-                                 const char *pszValue, size_t cchValue)
+                                 const char *pszValue, size_t cchValue, bool fCmdLine)
 {
     /*
      * We need the lengths. Trim the input.
@@ -687,7 +693,7 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
             return vbcppErrorPos(pThis, pszParams + cchParams - 1, "Missing closing parenthesis");
         pszParams++;
         cchParams -= 2;
-        return vbcppDefineAddFn(pThis, pszDefine, cchDefine, pszParams, cchParams, pszValue, cchValue);
+        return vbcppDefineAddFn(pThis, pszDefine, cchDefine, pszParams, cchParams, pszValue, cchValue, fCmdLine);
     }
 
     /*
@@ -705,6 +711,7 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
     ((char *)pDef->Core.pszString)[cchDefine] = '\0';
     pDef->fFunction = false;
     pDef->fVarArg   = false;
+    pDef->fCmdLine  = fCmdLine;
     pDef->cArgs     = 0;
     pDef->papszArgs = NULL;
     VBCPP_BITMAP_EMPTY(pDef->bmArgs);
@@ -816,9 +823,9 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
             {
                 const char *pszEqual = strchr(ValueUnion.psz, '=');
                 if (pszEqual)
-                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, pszEqual - ValueUnion.psz, pszEqual + 1, RTSTR_MAX);
+                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, pszEqual - ValueUnion.psz, pszEqual + 1, RTSTR_MAX, true);
                 else
-                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, RTSTR_MAX, "1", 1);
+                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, RTSTR_MAX, "1", 1, true);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
                 break;
@@ -937,7 +944,8 @@ static RTEXITCODE vbcppOutputWrite(PVBCPP pThis, const char *pch, size_t cch)
 }
 
 
-static RTEXITCODE vbcppOutputComment(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart, size_t cchOutputted)
+static RTEXITCODE vbcppOutputComment(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart, size_t cchOutputted,
+                                     size_t cchMinIndent)
 {
     size_t offCur = ScmStreamTell(pStrmInput);
     if (offStart < offCur)
@@ -1359,7 +1367,7 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
             {
                 /* Pretty print the passthru. */
                 unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
-                size_t cch;
+                size_t   cch;
                 if (chType == '<')
                     cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude <%.*s>",
                                           cchIndent, "", cchFileSpec, pchFileSpec);
@@ -1370,7 +1378,7 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
                     cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude %.*s",
                                           cchIndent, "", cchFileSpec, pchFileSpec);
                 if (cch > 0)
-                    rcExit = vbcppOutputComment(pThis, pStrmInput, offIncEnd, cch);
+                    rcExit = vbcppOutputComment(pThis, pStrmInput, offIncEnd, cch, 1);
                 else
                     rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
 
@@ -1393,7 +1401,103 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
  */
 static RTEXITCODE vbcppProcessDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    /*
+     * Parse it.
+     */
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        size_t      cchDefine;
+        const char *pchDefine = ScmStreamCGetWord(pStrmInput, &cchDefine);
+        if (pchDefine)
+        {
+            /* If it's a function style define, parse out the parameter list. */
+            size_t      cchParams = 0;
+            const char *pchParams = NULL;
+            unsigned    ch = ScmStreamPeekCh(pStrmInput);
+            if (ch == '(')
+            {
+                ScmStreamGetCh(pStrmInput);
+                pchParams = ScmStreamGetCur(pStrmInput);
+
+                unsigned chPrev = ch;
+                while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+                {
+                    if (ch == '\r' || ch == '\n')
+                    {
+                        if (chPrev != '\\')
+                        {
+                            rcExit = vbcppError(pThis, "Missing ')'");
+                            break;
+                        }
+                        ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
+                    }
+                    if (ch == ')')
+                    {
+                        cchParams = ScmStreamGetCur(pStrmInput) - pchParams;
+                        ScmStreamGetCh(pStrmInput);
+                        break;
+                    }
+                    ScmStreamGetCh(pStrmInput);
+                }
+            }
+            /* The simple kind. */
+            else if (!RT_C_IS_SPACE(ch) && ch != ~(unsigned)0)
+                rcExit = vbcppError(pThis, "Expected whitespace after macro name");
+
+            /* Parse out the value. */
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+            if (rcExit == RTEXITCODE_SUCCESS)
+            {
+                size_t      offValue = ScmStreamTell(pStrmInput);
+                const char *pchValue = ScmStreamGetCur(pStrmInput);
+                unsigned    chPrev = ch;
+                while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+                {
+                    if (ch == '\r' || ch == '\n')
+                    {
+                        if (chPrev != '\\')
+                            break;
+                        ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
+                    }
+                    ScmStreamGetCh(pStrmInput);
+                }
+                size_t cchValue = ScmStreamGetCur(pStrmInput) - pchValue;
+
+                /*
+                 * Execute.
+                 */
+                if (pchParams)
+                    rcExit = vbcppDefineAddFn(pThis, pchDefine, cchDefine, pchParams, cchParams, pchValue, cchValue, false);
+                else
+                    rcExit = vbcppDefineAdd(pThis, pchDefine, cchDefine, pchValue, cchValue, false);
+
+                /*
+                 * Pass thru?
+                 */
+                if (   pThis->enmMode >= kVBCppMode_Selective
+                    && pThis->enmMode != kVBCppMode_SelectiveD
+                    && rcExit == RTEXITCODE_SUCCESS)
+                {
+                    unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
+                    size_t   cch;
+                    if (pchParams)
+                        cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sdefine %.*s(%.*s)",
+                                              cchIndent, "", cchDefine, pchDefine, cchParams, pchParams);
+                    else
+                        cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sdefine %.*s",
+                                              cchIndent, "", cchDefine, pchDefine);
+                    if (cch > 0)
+                        vbcppOutputComment(pThis, pStrmInput, offValue, cch, 1);
+                    else
+                        rcExit = vbcppError(pThis, "output error");
+                }
+            }
+
+        }
+    }
+    return rcExit;
 }
 
 
@@ -1575,7 +1679,7 @@ static RTEXITCODE vbcppProcessIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
             }
         }
         else
-            rcExit = vbcppError(pThis, "Malformed #ifdef");
+            rcExit = vbcppError(pThis, "Malformed #ifndef");
     }
     return rcExit;
 }
@@ -1627,7 +1731,7 @@ static RTEXITCODE vbcppProcessElse(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t o
                 {
                     ssize_t cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*selse", pCond->iKeepLevel - 1, "");
                     if (cch > 0)
-                        rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch);
+                        rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch, 2);
                     else
                         rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
                 }
@@ -1677,7 +1781,7 @@ static RTEXITCODE vbcppProcessEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
             {
                 ssize_t cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sendif", pCond->iKeepLevel - 1, "");
                 if (cch > 0)
-                    rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch);
+                    rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch, 1);
                 else
                     rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
             }
