@@ -133,6 +133,25 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
         if (SUCCEEDED(hr))
         {
             hr = setErrorFromProgress(pProgress);
+            if (SUCCEEDED(hr))
+            {
+                VBOXGUESTCTRL_PROCESS proc;
+                int rc = processGetStatus(uPID, &proc,
+                                          true /* Remove when terminated */);
+                if (RT_SUCCESS(rc))
+                {
+                    if (   proc.mStatus   != ExecuteProcessStatus_TerminatedNormally
+                        || proc.mExitCode != 0)
+                    {
+                        hr = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                           tr("Could not create directory \"%s\""), Utf8Str(aDirectory).c_str());
+                    }
+                }
+                else
+                    hr = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("Unable to retrieve status for creating directory \"%s\""),
+                                       Utf8Str(aDirectory).c_str());
+            }
             pProgress.setNull();
         }
     }
