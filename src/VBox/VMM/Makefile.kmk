@@ -561,9 +561,10 @@ ifndef VBOX_ONLY_EXTPACKS
 endif # !VBOX_ONLY_EXTPACKS
 
 
-if  defined(VBOX_WITH_DTRACE_R3) \
- || defined(VBOX_WITH_DTRACE_R0) \
- || defined(VBOX_WITH_DTRACE_RC)
+ifndef VBOX_ONLY_EXTPACKS
+ if  defined(VBOX_WITH_DTRACE_R3) \
+  || defined(VBOX_WITH_DTRACE_R0) \
+  || defined(VBOX_WITH_DTRACE_RC)
  #
  # Install the dtrace library files.
  #
@@ -592,6 +593,7 @@ if  defined(VBOX_WITH_DTRACE_R3) \
  $(evalcall2 def_vmm_lib_dtrace_preprocess,vm.d,$(PATH_ROOT)/include/VBox/vmm/vm.h)
  $(evalcall2 def_vmm_lib_dtrace_preprocess,cpumctx.d,$(PATH_ROOT)/include/VBox/vmm/cpumctx.h)
 
+ endif
 endif
 
 
