@@ -3636,7 +3636,13 @@ ResumeExecution:
 
         /* Handle the pagefault trap for the nested shadow table. */
         rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), GCPhys);
-        if (rc == VINF_SUCCESS)
+
+        /*
+         * Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment below, @bugref{6043}.
+         */
+        if (   rc == VINF_SUCCESS
+            || rc == VERR_PAGE_TABLE_NOT_PRESENT
+            || rc == VERR_PAGE_NOT_PRESENT)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
             Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitReasonNPF);
@@ -3644,9 +3650,6 @@ ResumeExecution:
             TRPMResetTrap(pVCpu);
             goto ResumeExecution;
         }
-        /** @todo We probably should handle failure to get the instruction page
-         *        (VERR_PAGE_NOT_PRESENT, VERR_PAGE_TABLE_NOT_PRESENT). See
-         *        @bugref{6043}. */
 
 #ifdef VBOX_STRICT
         if (rc != VINF_EM_RAW_EMULATE_INSTR)
@@ -3685,14 +3688,21 @@ ResumeExecution:
         }
 
         rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys, UINT32_MAX);
-        if (rc == VINF_SUCCESS)
+
+        /*
+         * If we succeed, resume execution.
+         * Or, if fail in interpreting the instruction because we couldn't get the guest physical address
+         * of the page containing the instruction via the guest's page tables (we would invalidate the guest page
+         * in the host TLB), resume execution which would cause a guest page fault to let the guest handle this
+         * weird case. See @bugref{6043}.
+         */
+        if (   rc == VINF_SUCCESS
+            || rc == VERR_PAGE_TABLE_NOT_PRESENT
+            || rc == VERR_PAGE_NOT_PRESENT)
         {
             Log2(("PGMR0Trap0eHandlerNPMisconfig(,,,%RGp) at %RGv -> resume\n", GCPhys, (RTGCPTR)pCtx->rip));
             goto ResumeExecution;
         }
-        /** @todo We probably should handle failure to get the instruction page
-         *        (VERR_PAGE_NOT_PRESENT, VERR_PAGE_TABLE_NOT_PRESENT). See
-         *        @bugref{6043}. */
 
         Log2(("PGMR0Trap0eHandlerNPMisconfig(,,,%RGp) at %RGv -> %Rrc\n", GCPhys, (RTGCPTR)pCtx->rip, VBOXSTRICTRC_VAL(rc)));
         break;
