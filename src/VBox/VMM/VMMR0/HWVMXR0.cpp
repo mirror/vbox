@@ -138,8 +138,9 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
     }
 
     /*
-     * Flush all VPIDs (in case we or anyother hypervisor have been using VPIDs) so that
-     * we can avoid an explicit flush while using new VPIDs.
+     * Flush all VPIDs (in case we or any other hypervisor have been using VPIDs) so that
+     * we can avoid an explicit flush while using new VPIDs. We would still need to flush
+     * each time while reusing a VPID after hitting the MaxASID limit once.
      */
     if (   pVM
         && pVM->hwaccm.s.vmx.fVPID
@@ -390,7 +391,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Initialize these always.*/
+    /* Initialize these always, see hwaccmR3InitFinalizeR0().*/
     pVM->hwaccm.s.vmx.enmFlushEPT  = VMX_FLUSH_EPT_NONE;
     pVM->hwaccm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_NONE;
 
@@ -4566,12 +4567,14 @@ static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
         }
         else
         {
+            AssertPtr(pVCpu);
             Assert(pVCpu->hwaccm.s.uCurrentASID != 0);
             descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
             descriptor[1] = GCPtr;
         }
         int rc = VMXR0InvVPID(enmFlush, &descriptor[0]); NOREF(rc);
-        AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu->hwaccm.s.uCurrentASID, GCPtr, rc));
+        AssertMsg(rc == VINF_SUCCESS,
+                  ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hwaccm.s.uCurrentASID : 0, GCPtr, rc));
     }
 }
 
@@ -4618,7 +4621,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 
 /**
  * Invalidates a guest page by physical address. Only relevant for EPT/VPID,
- * otherwise ther eis nothing really to invalidate.
+ * otherwise there is nothing really to invalidate.
  *
  * NOTE: Assumes the current instruction references this physical page though a virtual address!!
  *
@@ -4629,8 +4632,6 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
  */
 VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
-    bool fFlushPending = VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH);
-
     LogFlow(("VMXR0InvalidatePhysPage %RGp\n", GCPhys));
 
     /*
