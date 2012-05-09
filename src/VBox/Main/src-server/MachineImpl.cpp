@@ -239,6 +239,8 @@ Machine::Machine()
     : mCollectorGuest(NULL),
       mPeer(NULL),
       mParent(NULL),
+      mSerialPorts(),
+      mParallelPorts(),
       uRegistryNeedsSaving(0)
 {}
 
