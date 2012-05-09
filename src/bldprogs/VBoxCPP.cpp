@@ -110,27 +110,6 @@ typedef VBCPPDEF *PVBCPPDEF;
 
 
 /**
- * Expansion context.
- */
-typedef struct VBCPPCTX
-{
-    /** The next context on the stack. */
-    struct VBCPPCTX    *pUp;
-    /** The define being expanded. */
-    PVBCPPDEF           pDef;
-    /** Arguments. */
-    struct VBCPPCTXARG
-    {
-        /** The value. */
-        const char *pchValue;
-        /** The value length. */
-        const char *cchValue;
-    }                   aArgs[1];
-} VBCPPCTX;
-/** Pointer to an define expansion context. */
-typedef VBCPPCTX *PVBCPPCTX;
-
-/**
  * Evaluation result.
  */
 typedef enum VBCPPEVAL
@@ -278,16 +257,6 @@ typedef struct VBCPP
      * indicates that the lead character is used in a \#define that we know and
      * should expand. */
     VBCPP_BITMAP_TYPE   bmDefined[VBCPP_BITMAP_SIZE];
-    /** Indicates whether a C-word might need argument expansion.
-     * The bitmap is indexed by C-word lead character.  Bits that are set
-     * indicates that the lead character is used in an argument of an currently
-     * expanding  \#define. */
-    VBCPP_BITMAP_TYPE   bmArgs[VBCPP_BITMAP_SIZE];
-
-    /** Expansion context stack. */
-    PVBCPPCTX           pExpStack;
-    /** The current expansion stack depth. */
-    uint32_t            cExpStackDepth;
 
     /** The current depth of the conditional stack. */
     uint32_t            cCondStackDepth;
@@ -323,8 +292,9 @@ typedef VBCPP *PVBCPP;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static PVBCPPDEF vbcppDefineLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
-
+static PVBCPPDEF    vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
+static RTEXITCODE   vbcppMacroExpandFunctionLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion);
+static RTEXITCODE   vbcppMacroExpandObjectLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion);
 
 
 
@@ -729,6 +699,32 @@ static size_t vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
 
 
 /**
+ * Looks for a left parenthesis in the input stream.
+ *
+ * Used during macro expansion.  Will ignore comments, newlines and other
+ * whitespace.
+ *
+ * @retval  true if found. The stream position at opening parenthesis.
+ * @retval  false if not found. The stream position is unchanged.
+ *
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ */
+static bool vbcppInputLookForLeftParenthesis(PVBCPP pThis, PSCMSTREAM pStrmInput)
+{
+    size_t offSaved = ScmStreamTell(pStrmInput);
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    unsigned ch = ScmStreamPeekCh(pStrmInput);
+    if (ch == '(')
+        return true;
+
+    int rc = ScmStreamSeekAbsolute(pStrmInput, offSaved);
+    AssertFatalRC(rc);
+    return false;
+}
+
+
+/**
  * Skips input until the real end of the current directive line has been
  * reached.
  *
@@ -900,7 +896,7 @@ static RTEXITCODE vbcppProcessOneLineComment(PVBCPP pThis, PSCMSTREAM pStrmInput
  * @param   pThis               The C preprocessor instance.
  * @param   pStrmInput          The input stream.
  */
-static RTEXITCODE vbcppProcessDoubleQuotedString(PVBCPP pThis, PSCMSTREAM pStrmInput)
+static RTEXITCODE vbcppProcessStringLitteral(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
     RTEXITCODE rcExit = vbcppOutputCh(pThis, '"');
     if (rcExit == RTEXITCODE_SUCCESS)
@@ -937,7 +933,7 @@ static RTEXITCODE vbcppProcessDoubleQuotedString(PVBCPP pThis, PSCMSTREAM pStrmI
  * @param   pThis               The C preprocessor instance.
  * @param   pStrmInput          The input stream.
  */
-static RTEXITCODE vbcppProcessSingledQuotedString(PVBCPP pThis, PSCMSTREAM pStrmInput)
+static RTEXITCODE vbcppProcessCharacterConstant(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
     RTEXITCODE rcExit = vbcppOutputCh(pThis, '\'');
     if (rcExit == RTEXITCODE_SUCCESS)
@@ -966,46 +962,78 @@ static RTEXITCODE vbcppProcessSingledQuotedString(PVBCPP pThis, PSCMSTREAM pStrm
 
 
 /**
- * Processes a C word, possibly replacing it with a definition.
+ * Processes a integer or floating point number constant.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ * @param   chFirst             The first character.
+ */
+static RTEXITCODE vbcppProcessNumber(PVBCPP pThis, PSCMSTREAM pStrmInput, char chFirst)
+{
+    RTEXITCODE rcExit = vbcppOutputCh(pThis, chFirst);
+
+    unsigned ch;
+    while (   rcExit == RTEXITCODE_SUCCESS
+           && (ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
+    {
+        if (   !vbcppIsCIdentifierChar(ch)
+            && ch != '.')
+            break;
+
+        unsigned ch2 = ScmStreamGetCh(pStrmInput);
+        AssertBreakStmt(ch2 == ch, rcExit = vbcppError(pThis, "internal error"));
+        rcExit = vbcppOutputCh(pThis, ch);
+    }
+
+    return rcExit;
+}
+
+
+/**
+ * Processes a identifier, possibly replacing it with a definition.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
  * @param   pThis               The C preprocessor instance.
  * @param   pStrmInput          The input stream.
  * @param   ch                  The first character.
  */
-static RTEXITCODE vbcppProcessCWord(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch)
+static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch)
 {
+    int         rc     = VINF_SUCCESS;
     RTEXITCODE  rcExit = RTEXITCODE_SUCCESS;
     size_t      cchDefine;
     const char *pchDefine = ScmStreamCGetWordM1(pStrmInput, &cchDefine);
     AssertReturn(pchDefine, vbcppError(pThis, "Internal error in ScmStreamCGetWordM1"));
 
-
     /*
      * Does this look like a define we know?
      */
-    PVBCPPDEF pDef = vbcppDefineLookup(pThis, pchDefine, cchDefine);
-    if (pDef)
+    PVBCPPDEF pMacro = vbcppMacroLookup(pThis, pchDefine, cchDefine);
+    if (   pMacro
+        && (   !pMacro->fFunction
+            || vbcppInputLookForLeftParenthesis(pThis, pStrmInput)) )
     {
-        if (!pDef->fFunction)
+        char *pszExpansion = NULL;
+        if (!pMacro->fFunction)
+            rcExit = vbcppMacroExpandObjectLike(pThis, pMacro, pStrmInput, &pszExpansion);
+        else
+            rcExit = vbcppMacroExpandFunctionLike(pThis, pMacro, pStrmInput, &pszExpansion);
+        if (rcExit == RTEXITCODE_SUCCESS)
         {
-#if 0 /** @todo proper expansion! */
-            vbcppDefineExpandSimple(pThis, pDef, )
-#else
-            int rc = ScmStreamWrite(&pThis->StrmOutput, pDef->szValue, pDef->cchValue);
+            rc = ScmStreamWrite(&pThis->StrmOutput, pszExpansion, strlen(pszExpansion));
             if (RT_FAILURE(rc))
                 rcExit = vbcppError(pThis, "Output error: %Rrc", rc);
-#endif
+            RTMemFree(pszExpansion);
         }
-        else
-            rcExit = vbcppError(pThis, "Expanding function macros is not implemented\n");
     }
     else
     {
         /*
-         * Not a define, just output the text unchanged.
+         * Not a macro or a function-macro name match but no invocation, just
+         * output the text unchanged.
          */
-        int rc = ScmStreamWrite(&pThis->StrmOutput, pchDefine, cchDefine);
+        rc = ScmStreamWrite(&pThis->StrmOutput, pchDefine, cchDefine);
         if (RT_FAILURE(rc))
             rcExit = vbcppError(pThis, "Output error: %Rrc", rc);
     }
@@ -1021,11 +1049,11 @@ static RTEXITCODE vbcppProcessCWord(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch
 /*
  *
  *
- * D E F I N E S
- * D E F I N E S
- * D E F I N E S
- * D E F I N E S
- * D E F I N E S
+ * D E F I N E S   /   M A C R O S
+ * D E F I N E S   /   M A C R O S
+ * D E F I N E S   /   M A C R O S
+ * D E F I N E S   /   M A C R O S
+ * D E F I N E S   /   M A C R O S
  *
  *
  */
@@ -1040,7 +1068,7 @@ static RTEXITCODE vbcppProcessCWord(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch
  *                              list.
  * @param   cchDefine           The length of the name. RTSTR_MAX is ok.
  */
-static bool vbcppDefineExists(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
+static bool vbcppMacroExists(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
 {
     return cchDefine > 0
         && VBCPP_BITMAP_IS_SET(pThis->bmDefined, *pszDefine)
@@ -1057,7 +1085,7 @@ static bool vbcppDefineExists(PVBCPP pThis, const char *pszDefine, size_t cchDef
  *                              list.
  * @param   cchDefine           The length of the name. RTSTR_MAX is ok.
  */
-static PVBCPPDEF vbcppDefineLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
+static PVBCPPDEF vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
 {
     if (!cchDefine)
         return NULL;
@@ -1067,6 +1095,24 @@ static PVBCPPDEF vbcppDefineLookup(PVBCPP pThis, const char *pszDefine, size_t c
 }
 
 
+
+static RTEXITCODE vbcppMacroExpandObjectLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion)
+{
+    *ppszExpansion = RTStrDup(pMacro->szValue);
+    if (!*ppszExpansion)
+        return vbcppError(pThis, "out of memory");
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppMacroExpandFunctionLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion)
+{
+    *ppszExpansion = NULL;
+    return vbcppError(pThis, "Expansion of function like macros is not yet supported");
+}
+
+
+
 /**
  * Frees a define.
  *
@@ -1074,7 +1120,7 @@ static PVBCPPDEF vbcppDefineLookup(PVBCPP pThis, const char *pszDefine, size_t c
  * @param   pStr                Pointer to the VBCPPDEF::Core member.
  * @param   pvUser              Unused.
  */
-static DECLCALLBACK(int) vbcppFreeDefine(PRTSTRSPACECORE pStr, void *pvUser)
+static DECLCALLBACK(int) vbcppMacroFree(PRTSTRSPACECORE pStr, void *pvUser)
 {
     RTMemFree(pStr);
     NOREF(pvUser);
@@ -1092,13 +1138,13 @@ static DECLCALLBACK(int) vbcppFreeDefine(PRTSTRSPACECORE pStr, void *pvUser)
  * @param   fExplicitUndef      Explicit undefinition, that is, in a selective
  *                              preprocessing run it will evaluate to undefined.
  */
-static RTEXITCODE vbcppDefineUndef(PVBCPP pThis, const char *pszDefine, size_t cchDefine, bool fExplicitUndef)
+static RTEXITCODE vbcppMacroUndef(PVBCPP pThis, const char *pszDefine, size_t cchDefine, bool fExplicitUndef)
 {
     PRTSTRSPACECORE pHit = RTStrSpaceGetN(&pThis->StrSpace, pszDefine, cchDefine);
     if (pHit)
     {
         RTStrSpaceRemove(&pThis->StrSpace, pHit->pszString);
-        vbcppFreeDefine(pHit, NULL);
+        vbcppMacroFree(pHit, NULL);
     }
 
     if (fExplicitUndef)
@@ -1126,17 +1172,17 @@ static RTEXITCODE vbcppDefineUndef(PVBCPP pThis, const char *pszDefine, size_t c
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + msg.
  * @param   pThis               The C preprocessor instance.
- * @param   pDef                The define to insert.
+ * @param   pMacro              The define to insert.
  */
-static RTEXITCODE vbcppDefineInsert(PVBCPP pThis, PVBCPPDEF pDef)
+static RTEXITCODE vbcppMacroInsert(PVBCPP pThis, PVBCPPDEF pMacro)
 {
     /*
      * Reject illegal macro names.
      */
-    if (!strcmp(pDef->Core.pszString, "defined"))
+    if (!strcmp(pMacro->Core.pszString, "defined"))
     {
-        RTEXITCODE rcExit = vbcppError(pThis, "Cannot use '%s' as a macro name", pDef->Core.pszString);
-        vbcppFreeDefine(&pDef->Core, NULL);
+        RTEXITCODE rcExit = vbcppError(pThis, "Cannot use '%s' as a macro name", pMacro->Core.pszString);
+        vbcppMacroFree(&pMacro->Core, NULL);
         return rcExit;
     }
 
@@ -1144,41 +1190,41 @@ static RTEXITCODE vbcppDefineInsert(PVBCPP pThis, PVBCPPDEF pDef)
      * Ignore in source-file defines when doing selective preprocessing.
      */
     if (   !pThis->fRespectSourceDefines
-        && !pDef->fCmdLine)
+        && !pMacro->fCmdLine)
     {
         /* Ignore*/
-        vbcppFreeDefine(&pDef->Core, NULL);
+        vbcppMacroFree(&pMacro->Core, NULL);
         return RTEXITCODE_SUCCESS;
     }
 
     /*
      * Insert it and update the lead character hint bitmap.
      */
-    if (RTStrSpaceInsert(&pThis->StrSpace, &pDef->Core))
-        VBCPP_BITMAP_SET(pThis->bmDefined, *pDef->Core.pszString);
+    if (RTStrSpaceInsert(&pThis->StrSpace, &pMacro->Core))
+        VBCPP_BITMAP_SET(pThis->bmDefined, *pMacro->Core.pszString);
     else
     {
         /*
          * Duplicate. When doing selective D preprocessing, let the command
          * line take precendece.
          */
-        PVBCPPDEF pOld = (PVBCPPDEF)RTStrSpaceGet(&pThis->StrSpace, pDef->Core.pszString); Assert(pOld);
+        PVBCPPDEF pOld = (PVBCPPDEF)RTStrSpaceGet(&pThis->StrSpace, pMacro->Core.pszString); Assert(pOld);
         if (   pThis->fAllowRedefiningCmdLineDefines
-            || pDef->fCmdLine == pOld->fCmdLine)
+            || pMacro->fCmdLine == pOld->fCmdLine)
         {
-            if (pDef->fCmdLine)
-                RTMsgWarning("Redefining '%s'\n", pDef->Core.pszString);
+            if (pMacro->fCmdLine)
+                RTMsgWarning("Redefining '%s'", pMacro->Core.pszString);
 
             RTStrSpaceRemove(&pThis->StrSpace, pOld->Core.pszString);
-            vbcppFreeDefine(&pOld->Core, NULL);
+            vbcppMacroFree(&pOld->Core, NULL);
 
-            bool fRc = RTStrSpaceInsert(&pThis->StrSpace, &pDef->Core);
+            bool fRc = RTStrSpaceInsert(&pThis->StrSpace, &pMacro->Core);
             Assert(fRc);
         }
         else
         {
-            RTMsgWarning("Ignoring redefinition of '%s'\n", pDef->Core.pszString);
-            vbcppFreeDefine(&pDef->Core, NULL);
+            RTMsgWarning("Ignoring redefinition of '%s'", pMacro->Core.pszString);
+            vbcppMacroFree(&pMacro->Core, NULL);
         }
     }
 
@@ -1199,10 +1245,10 @@ static RTEXITCODE vbcppDefineInsert(PVBCPP pThis, PVBCPPDEF pDef)
  * @param   cchDefine           The length of the value.
  * @param   fCmdLine            Set if originating on the command line.
  */
-static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t cchDefine,
-                                   const char *pszParams, size_t cchParams,
-                                   const char *pszValue, size_t cchValue,
-                                   bool fCmdLine)
+static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cchDefine,
+                                  const char *pszParams, size_t cchParams,
+                                  const char *pszValue, size_t cchValue,
+                                  bool fCmdLine)
 
 {
     Assert(RTStrNLen(pszDefine, cchDefine) == cchDefine);
@@ -1252,24 +1298,24 @@ static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t c
     size_t    cbDef = RT_OFFSETOF(VBCPPDEF, szValue[cchValue + 1 + cchDefine + 1 + cchArgNames])
                     + sizeof(const char *) * cArgs;
     cbDef = RT_ALIGN_Z(cbDef, sizeof(const char *));
-    PVBCPPDEF pDef  = (PVBCPPDEF)RTMemAlloc(cbDef);
-    if (!pDef)
+    PVBCPPDEF pMacro  = (PVBCPPDEF)RTMemAlloc(cbDef);
+    if (!pMacro)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "out of memory");
 
-    char *pszDst = &pDef->szValue[cchValue + 1];
-    pDef->Core.pszString = pszDst;
+    char *pszDst = &pMacro->szValue[cchValue + 1];
+    pMacro->Core.pszString = pszDst;
     memcpy(pszDst, pszDefine, cchDefine);
     pszDst += cchDefine;
     *pszDst++ = '\0';
-    pDef->fFunction = true;
-    pDef->fVarArg   = false;
-    pDef->fCmdLine  = fCmdLine;
-    pDef->cArgs     = cArgs;
-    pDef->papszArgs = (const char **)((uintptr_t)pDef + cbDef - sizeof(const char *) * cArgs);
-    VBCPP_BITMAP_EMPTY(pDef->bmArgs);
-    pDef->cchValue  = cchValue;
-    memcpy(pDef->szValue, pszValue, cchValue);
-    pDef->szValue[cchValue] = '\0';
+    pMacro->fFunction = true;
+    pMacro->fVarArg   = false;
+    pMacro->fCmdLine  = fCmdLine;
+    pMacro->cArgs     = cArgs;
+    pMacro->papszArgs = (const char **)((uintptr_t)pMacro + cbDef - sizeof(const char *) * cArgs);
+    VBCPP_BITMAP_EMPTY(pMacro->bmArgs);
+    pMacro->cchValue  = cchValue;
+    memcpy(pMacro->szValue, pszValue, cchValue);
+    pMacro->szValue[cchValue] = '\0';
 
     /*
      * Set up the arguments.
@@ -1293,7 +1339,7 @@ static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t c
             break;
 
         /* Found and argument. First character is already validated. */
-        pDef->papszArgs[iArg] = pszDst;
+        pMacro->papszArgs[iArg] = pszDst;
         do
         {
             *pszDst++ = pszParams[off++];
@@ -1302,9 +1348,9 @@ static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t c
         *pszDst++ = '\0';
         iArg++;
     }
-    Assert((uintptr_t)pszDst <= (uintptr_t)pDef->papszArgs);
+    Assert((uintptr_t)pszDst <= (uintptr_t)pMacro->papszArgs);
 
-    return vbcppDefineInsert(pThis, pDef);
+    return vbcppMacroInsert(pThis, pMacro);
 }
 
 
@@ -1320,8 +1366,8 @@ static RTEXITCODE vbcppDefineAddFn(PVBCPP pThis, const char *pszDefine, size_t c
  * @param   cchDefine           The length of the value. RTSTR_MAX is ok.
  * @param   fCmdLine            Set if originating on the command line.
  */
-static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cchDefine,
-                                 const char *pszValue, size_t cchValue, bool fCmdLine)
+static RTEXITCODE vbcppMacroAdd(PVBCPP pThis, const char *pszDefine, size_t cchDefine,
+                                const char *pszValue, size_t cchValue, bool fCmdLine)
 {
     /*
      * We need the lengths. Trim the input.
@@ -1356,7 +1402,7 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
             return vbcppErrorPos(pThis, pszParams + cchParams - 1, "Missing closing parenthesis");
         pszParams++;
         cchParams -= 2;
-        return vbcppDefineAddFn(pThis, pszDefine, cchDefine, pszParams, cchParams, pszValue, cchValue, fCmdLine);
+        return vbcppMacroAddFn(pThis, pszDefine, cchDefine, pszParams, cchParams, pszValue, cchValue, fCmdLine);
     }
 
     /*
@@ -1365,24 +1411,24 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
     if (!vbcppValidateCIdentifier(pThis, pszDefine, cchDefine))
         return RTEXITCODE_FAILURE;
 
-    PVBCPPDEF pDef = (PVBCPPDEF)RTMemAlloc(RT_OFFSETOF(VBCPPDEF, szValue[cchValue + 1 + cchDefine + 1]));
-    if (!pDef)
+    PVBCPPDEF pMacro = (PVBCPPDEF)RTMemAlloc(RT_OFFSETOF(VBCPPDEF, szValue[cchValue + 1 + cchDefine + 1]));
+    if (!pMacro)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "out of memory");
 
-    pDef->Core.pszString = &pDef->szValue[cchValue + 1];
-    memcpy((char *)pDef->Core.pszString, pszDefine, cchDefine);
-    ((char *)pDef->Core.pszString)[cchDefine] = '\0';
-    pDef->fFunction = false;
-    pDef->fVarArg   = false;
-    pDef->fCmdLine  = fCmdLine;
-    pDef->cArgs     = 0;
-    pDef->papszArgs = NULL;
-    VBCPP_BITMAP_EMPTY(pDef->bmArgs);
-    pDef->cchValue  = cchValue;
-    memcpy(pDef->szValue, pszValue, cchValue);
-    pDef->szValue[cchValue] = '\0';
+    pMacro->Core.pszString = &pMacro->szValue[cchValue + 1];
+    memcpy((char *)pMacro->Core.pszString, pszDefine, cchDefine);
+    ((char *)pMacro->Core.pszString)[cchDefine] = '\0';
+    pMacro->fFunction = false;
+    pMacro->fVarArg   = false;
+    pMacro->fCmdLine  = fCmdLine;
+    pMacro->cArgs     = 0;
+    pMacro->papszArgs = NULL;
+    VBCPP_BITMAP_EMPTY(pMacro->bmArgs);
+    pMacro->cchValue  = cchValue;
+    memcpy(pMacro->szValue, pszValue, cchValue);
+    pMacro->szValue[cchValue] = '\0';
 
-    return vbcppDefineInsert(pThis, pDef);
+    return vbcppMacroInsert(pThis, pMacro);
 }
 
 
@@ -1395,7 +1441,7 @@ static RTEXITCODE vbcppDefineAdd(PVBCPP pThis, const char *pszDefine, size_t cch
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     /*
      * Parse it.
@@ -1465,9 +1511,9 @@ static RTEXITCODE vbcppProcessDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
                  * Execute.
                  */
                 if (pchParams)
-                    rcExit = vbcppDefineAddFn(pThis, pchDefine, cchDefine, pchParams, cchParams, pchValue, cchValue, false);
+                    rcExit = vbcppMacroAddFn(pThis, pchDefine, cchDefine, pchParams, cchParams, pchValue, cchValue, false);
                 else
-                    rcExit = vbcppDefineAdd(pThis, pchDefine, cchDefine, pchValue, cchValue, false);
+                    rcExit = vbcppMacroAdd(pThis, pchDefine, cchDefine, pchValue, cchValue, false);
 
                 /*
                  * Pass thru?
@@ -1505,7 +1551,7 @@ static RTEXITCODE vbcppProcessDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
 }
@@ -1769,8 +1815,8 @@ static RTEXITCODE vbcppExprExpand(PVBCPP pThis, char **ppszExpr, size_t *pcchExp
             size_t const cchIdentifier = off - offIdentifier;
 
             /* Does it exist?  Will save a whole lot of trouble if it doesn't. */
-            PVBCPPDEF pDef = vbcppDefineLookup(pThis, &pszExpr[offIdentifier], cchIdentifier);
-            if (pDef)
+            PVBCPPDEF pMacro = vbcppMacroLookup(pThis, &pszExpr[offIdentifier], cchIdentifier);
+            if (pMacro)
             {
                 /* Skip white space and check for parenthesis. */
                 while (   off < cchExpr
@@ -1786,16 +1832,16 @@ static RTEXITCODE vbcppExprExpand(PVBCPP pThis, char **ppszExpr, size_t *pcchExp
                 else
                 {
                     /* Expand simple define if found. */
-                    if (pDef->cchValue + 2 < cchIdentifier)
+                    if (pMacro->cchValue + 2 < cchIdentifier)
                     {
-                        size_t offDelta = cchIdentifier - pDef->cchValue - 2;
+                        size_t offDelta = cchIdentifier - pMacro->cchValue - 2;
                         memmove(&pszExpr[offIdentifier], &pszExpr[offIdentifier + offDelta],
                                 cchExpr - offIdentifier - offDelta + 1); /* Lazy bird is moving too much! */
                         cchExpr -= offDelta;
                     }
-                    else if (pDef->cchValue + 2 > cchIdentifier)
+                    else if (pMacro->cchValue + 2 > cchIdentifier)
                     {
-                        size_t offDelta = pDef->cchValue + 2 - cchIdentifier;
+                        size_t offDelta = pMacro->cchValue + 2 - cchIdentifier;
                         if (cchExpr + offDelta + 1 > cbExprAlloc)
                         {
                             do
@@ -1818,8 +1864,8 @@ static RTEXITCODE vbcppExprExpand(PVBCPP pThis, char **ppszExpr, size_t *pcchExp
                     /* Insert with spaces around it. Not entirely sure how
                        standard compliant this is... */
                     pszExpr[offIdentifier] = ' ';
-                    memcpy(&pszExpr[offIdentifier + 1], pDef->szValue, pDef->cchValue);
-                    pszExpr[offIdentifier + 1 + pDef->cchValue] = ' ';
+                    memcpy(&pszExpr[offIdentifier + 1], pMacro->szValue, pMacro->cchValue);
+                    pszExpr[offIdentifier + 1 + pMacro->cchValue] = ' ';
 
                     /* Restart parsing at the inserted macro. */
                     off = offIdentifier + 1;
@@ -1934,7 +1980,7 @@ static RTEXITCODE vbcppExprExtract(PVBCPP pThis, PSCMSTREAM pStrmInput,
  *                              started (for pass thru).
  * @param   enmKind             The kind of directive we're processing.
  */
-static RTEXITCODE vbcppProcessIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart,
+static RTEXITCODE vbcppDirectiveIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart,
                                        VBCPPCONDKIND enmKind)
 {
     /*
@@ -2035,7 +2081,7 @@ static RTEXITCODE vbcppProcessIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, size
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessIfDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveIfDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     /*
      * Parse it.
@@ -2054,7 +2100,7 @@ static RTEXITCODE vbcppProcessIfDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
                  * Evaluate it.
                  */
                 VBCPPEVAL enmEval;
-                if (vbcppDefineExists(pThis, pchDefine, cchDefine))
+                if (vbcppMacroExists(pThis, pchDefine, cchDefine))
                     enmEval = kVBCppEval_True;
                 else if (   !pThis->fUndecidedConditionals
                          || RTStrSpaceGetN(&pThis->UndefStrSpace, pchDefine, cchDefine) != NULL)
@@ -2081,7 +2127,7 @@ static RTEXITCODE vbcppProcessIfDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t 
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     /*
      * Parse it.
@@ -2100,7 +2146,7 @@ static RTEXITCODE vbcppProcessIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
                  * Evaluate it.
                  */
                 VBCPPEVAL enmEval;
-                if (vbcppDefineExists(pThis, pchDefine, cchDefine))
+                if (vbcppMacroExists(pThis, pchDefine, cchDefine))
                     enmEval = kVBCppEval_False;
                 else if (   !pThis->fUndecidedConditionals
                          || RTStrSpaceGetN(&pThis->UndefStrSpace, pchDefine, cchDefine) != NULL)
@@ -2127,7 +2173,7 @@ static RTEXITCODE vbcppProcessIfNDef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessElse(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveElse(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     /*
      * Nothing to parse, just comment positions to find and note down.
@@ -2190,7 +2236,7 @@ static RTEXITCODE vbcppProcessElse(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t o
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveEndif(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     /*
      * Nothing to parse, just comment positions to find and note down.
@@ -2281,7 +2327,7 @@ static RTEXITCODE vbcppAddInclude(PVBCPP pThis, const char *pszDir)
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     /*
      * Parse it.
@@ -2388,7 +2434,7 @@ static RTEXITCODE vbcppProcessInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessPragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectivePragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     /*
      * Parse out the first word.
@@ -2440,6 +2486,21 @@ static RTEXITCODE vbcppProcessPragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
 
 
 /**
+ * Processes an error directive.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pStrmInput          The input stream.
+ * @param   offStart            The stream position where the directive
+ *                              started (for pass thru).
+ */
+static RTEXITCODE vbcppDirectiveError(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+{
+    return vbcppError(pThis, "Hit an #error");
+}
+
+
+/**
  * Processes a abbreviated line number directive.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
@@ -2448,7 +2509,7 @@ static RTEXITCODE vbcppProcessPragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  * @param   offStart            The stream position where the directive
  *                              started (for pass thru).
  */
-static RTEXITCODE vbcppProcessLineNo(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
+static RTEXITCODE vbcppDirectiveLineNo(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
     return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
 }
@@ -2461,7 +2522,7 @@ static RTEXITCODE vbcppProcessLineNo(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  * @param   pThis               The C preprocessor instance.
  * @param   pStrmInput          The input stream.
  */
-static RTEXITCODE vbcppProcessLineNoShort(PVBCPP pThis, PSCMSTREAM pStrmInput)
+static RTEXITCODE vbcppDirectiveLineNoShort(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
     return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
 }
@@ -2489,29 +2550,31 @@ static RTEXITCODE vbcppProcessDirective(PVBCPP pThis, PSCMSTREAM pStrmInput)
         size_t const offStart = ScmStreamTell(pStrmInput);
 #define IS_DIRECTIVE(a_sz) ( sizeof(a_sz) - 1 == cchDirective && strncmp(pchDirective, a_sz, sizeof(a_sz) - 1) == 0)
         if (IS_DIRECTIVE("if"))
-            rcExit = vbcppProcessIfOrElif(pThis, pStrmInput, offStart, kVBCppCondKind_If);
+            rcExit = vbcppDirectiveIfOrElif(pThis, pStrmInput, offStart, kVBCppCondKind_If);
         else if (IS_DIRECTIVE("elif"))
-            rcExit = vbcppProcessIfOrElif(pThis, pStrmInput, offStart, kVBCppCondKind_ElIf);
+            rcExit = vbcppDirectiveIfOrElif(pThis, pStrmInput, offStart, kVBCppCondKind_ElIf);
         else if (IS_DIRECTIVE("ifdef"))
-            rcExit = vbcppProcessIfDef(pThis, pStrmInput, offStart);
+            rcExit = vbcppDirectiveIfDef(pThis, pStrmInput, offStart);
         else if (IS_DIRECTIVE("ifndef"))
-            rcExit = vbcppProcessIfNDef(pThis, pStrmInput, offStart);
+            rcExit = vbcppDirectiveIfNDef(pThis, pStrmInput, offStart);
         else if (IS_DIRECTIVE("else"))
-            rcExit = vbcppProcessElse(pThis, pStrmInput, offStart);
+            rcExit = vbcppDirectiveElse(pThis, pStrmInput, offStart);
         else if (IS_DIRECTIVE("endif"))
-            rcExit = vbcppProcessEndif(pThis, pStrmInput, offStart);
+            rcExit = vbcppDirectiveEndif(pThis, pStrmInput, offStart);
         else if (!pThis->fIf0Mode)
         {
             if (IS_DIRECTIVE("include"))
-                rcExit = vbcppProcessInclude(pThis, pStrmInput, offStart);
+                rcExit = vbcppDirectiveInclude(pThis, pStrmInput, offStart);
             else if (IS_DIRECTIVE("define"))
-                rcExit = vbcppProcessDefine(pThis, pStrmInput, offStart);
+                rcExit = vbcppDirectiveDefine(pThis, pStrmInput, offStart);
             else if (IS_DIRECTIVE("undef"))
-                rcExit = vbcppProcessUndef(pThis, pStrmInput, offStart);
+                rcExit = vbcppDirectiveUndef(pThis, pStrmInput, offStart);
             else if (IS_DIRECTIVE("pragma"))
-                rcExit = vbcppProcessPragma(pThis, pStrmInput, offStart);
+                rcExit = vbcppDirectivePragma(pThis, pStrmInput, offStart);
+            else if (IS_DIRECTIVE("error"))
+                rcExit = vbcppDirectiveError(pThis, pStrmInput, offStart);
             else if (IS_DIRECTIVE("line"))
-                rcExit = vbcppProcessLineNo(pThis, pStrmInput, offStart);
+                rcExit = vbcppDirectiveLineNo(pThis, pStrmInput, offStart);
             else
                 rcExit = vbcppError(pThis, "Unknown preprocessor directive '#%.*s'", cchDirective, pchDirective);
         }
@@ -2522,7 +2585,7 @@ static RTEXITCODE vbcppProcessDirective(PVBCPP pThis, PSCMSTREAM pStrmInput)
         /* Could it be a # <num> "file" directive? */
         unsigned ch = ScmStreamPeekCh(pStrmInput);
         if (RT_C_IS_DIGIT(ch))
-            rcExit = vbcppProcessLineNoShort(pThis, pStrmInput);
+            rcExit = vbcppDirectiveLineNoShort(pThis, pStrmInput);
         else
             rcExit = vbcppError(pThis, "Malformed preprocessor directive");
     }
@@ -2604,11 +2667,13 @@ static RTEXITCODE vbcppPreprocess(PVBCPP pThis)
                 if (!pThis->fIf0Mode)
                 {
                     if (ch == '"')
-                        rcExit = vbcppProcessDoubleQuotedString(pThis, pStrmInput);
+                        rcExit = vbcppProcessStringLitteral(pThis, pStrmInput);
                     else if (ch == '\'')
-                        rcExit = vbcppProcessSingledQuotedString(pThis, pStrmInput);
+                        rcExit = vbcppProcessCharacterConstant(pThis, pStrmInput);
                     else if (vbcppIsCIdentifierLeadChar(ch))
-                        rcExit = vbcppProcessCWord(pThis, pStrmInput, ch);
+                        rcExit = vbcppProcessIdentifier(pThis, pStrmInput, ch);
+                    else if (RT_C_IS_DIGIT(ch))
+                        rcExit = vbcppProcessNumber(pThis, pStrmInput, ch);
                     else
                         rcExit = vbcppOutputCh(pThis, ch);
                 }
@@ -2783,9 +2848,9 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
             {
                 const char *pszEqual = strchr(ValueUnion.psz, '=');
                 if (pszEqual)
-                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, pszEqual - ValueUnion.psz, pszEqual + 1, RTSTR_MAX, true);
+                    rcExit = vbcppMacroAdd(pThis, ValueUnion.psz, pszEqual - ValueUnion.psz, pszEqual + 1, RTSTR_MAX, true);
                 else
-                    rcExit = vbcppDefineAdd(pThis, ValueUnion.psz, RTSTR_MAX, "1", 1, true);
+                    rcExit = vbcppMacroAdd(pThis, ValueUnion.psz, RTSTR_MAX, "1", 1, true);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
                 break;
@@ -2798,7 +2863,7 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
                 break;
 
             case 'U':
-                rcExit = vbcppDefineUndef(pThis, ValueUnion.psz, RTSTR_MAX, true);
+                rcExit = vbcppMacroUndef(pThis, ValueUnion.psz, RTSTR_MAX, true);
                 break;
 
             case 'h':
@@ -2880,7 +2945,7 @@ static RTEXITCODE vbcppTerm(PVBCPP pThis)
 
     ScmStreamDelete(&pThis->StrmOutput);
 
-    RTStrSpaceDestroy(&pThis->StrSpace, vbcppFreeDefine, NULL);
+    RTStrSpaceDestroy(&pThis->StrSpace, vbcppMacroFree, NULL);
     pThis->StrSpace = NULL;
 
     uint32_t i = pThis->cIncludes;
@@ -2907,15 +2972,12 @@ static void vbcppInit(PVBCPP pThis)
     pThis->pszOutput        = NULL;
     pThis->StrSpace         = NULL;
     pThis->UndefStrSpace    = NULL;
-    pThis->pExpStack        = NULL;
-    pThis->cExpStackDepth   = 0;
     pThis->cCondStackDepth  = 0;
     pThis->pCondStack       = NULL;
     pThis->fIf0Mode         = false;
     pThis->fJustDroppedLine = false;
     pThis->fMaybePreprocessorLine = true;
     VBCPP_BITMAP_EMPTY(pThis->bmDefined);
-    VBCPP_BITMAP_EMPTY(pThis->bmArgs);
     pThis->cCondStackDepth  = 0;
     pThis->pInputStack      = NULL;
     RT_ZERO(pThis->StrmOutput);
