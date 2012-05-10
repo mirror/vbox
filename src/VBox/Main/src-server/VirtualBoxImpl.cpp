@@ -1694,6 +1694,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
                                     BOOL fForceNewUuid,
                                     IMedium **aMedium)
 {
+    HRESULT rc = S_OK;
     CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutPointerValid(aMedium);
 
@@ -1712,14 +1713,14 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
     switch (deviceType)
     {
         case DeviceType_HardDisk:
-            findHardDiskByLocation(aLocation,
+            rc = findHardDiskByLocation(aLocation,
                                    false, /* aSetError */
                                    &pMedium);
         break;
 
         case DeviceType_Floppy:
         case DeviceType_DVD:
-            findDVDOrFloppyImage(deviceType,
+            rc = findDVDOrFloppyImage(deviceType,
                                  NULL, /* guid */
                                  aLocation,
                                  false, /* aSetError */
@@ -1731,10 +1732,9 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
         break;
 
         default:
-            return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy");
+            return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy %d", deviceType);
     }
 
-    HRESULT rc = S_OK;
 
     if (pMedium.isNull())
     {
@@ -1757,9 +1757,13 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
              * because the differencing hard disk would have been already associated
              * with the parent and this association needs to be broken. */
 
-            if (FAILED(rc))
+            if (FAILED(rc)){
                 pMedium->uninit();
+                rc = VBOX_E_OBJECT_NOT_FOUND;
+            }
         }
+        else
+            rc = VBOX_E_OBJECT_NOT_FOUND;
     }
 
     if (SUCCEEDED(rc))
