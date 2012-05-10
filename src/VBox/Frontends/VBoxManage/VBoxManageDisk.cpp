@@ -237,12 +237,18 @@ static HRESULT createHardDisk(HandlerArg *a, const char *pszFormat,
             RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilename);
             return E_FAIL;
         }
-        pszFilename = szFilenameAbs;
-    }
+        pszFilename = szFilenameAbs; 
+	CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(pszFilename).raw(),
+                                   DeviceType_Network, 
+                                   AccessMode_ReadWrite,
+                                   /* fForceNewUuidOnOpen */ false,
+                                   pMedium.asOutParam()));
+    }else{
 
-    CHECK_ERROR(a->virtualBox, CreateHardDisk(Bstr(pszFormat).raw(),
-                                              Bstr(pszFilename).raw(),
-                                              pMedium.asOutParam()));
+        CHECK_ERROR(a->virtualBox, CreateHardDisk(Bstr(pszFormat).raw(),
+                                                  Bstr(pszFilename).raw(),
+                                                  pMedium.asOutParam()));
+    }
     return rc;
 }
 

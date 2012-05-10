@@ -1757,7 +1757,8 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
              * because the differencing hard disk would have been already associated
              * with the parent and this association needs to be broken. */
 
-            if (FAILED(rc)){
+            if (FAILED(rc))
+            {
                 pMedium->uninit();
                 rc = VBOX_E_OBJECT_NOT_FOUND;
             }
