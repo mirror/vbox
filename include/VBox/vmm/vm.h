@@ -26,12 +26,17 @@
 #ifndef ___VBox_vmm_vm_h
 #define ___VBox_vmm_vm_h
 
-#include <VBox/types.h>
-#include <VBox/vmm/cpum.h>
-#include <VBox/vmm/stam.h>
-#include <VBox/vmm/vmapi.h>
-#include <VBox/vmm/vmm.h>
-#include <VBox/sup.h>
+#ifndef VBOX_FOR_DTRACE_LIB
+# include <VBox/types.h>
+# include <VBox/vmm/cpum.h>
+# include <VBox/vmm/stam.h>
+# include <VBox/vmm/vmapi.h>
+# include <VBox/vmm/vmm.h>
+# include <VBox/sup.h>
+#else
+# pragma D depends_on library vbox-types.d
+#endif
+
 
 
 /** @defgroup grp_vm    The Virtual Machine
@@ -902,10 +907,12 @@ typedef struct VM
     STAMPROFILEADV              StatSwitcherTSS;
     /** @} */
 
+#ifndef VBOX_FOR_DTRACE_LIB /** @todo VBoxCPP expression evaluation */
 #if HC_ARCH_BITS != 64
     /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
     uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 32 : 0];
+#endif
 #endif
 
     /** CPUM part. */

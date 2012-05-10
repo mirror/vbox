@@ -1,5 +1,5 @@
 /** @file
- * VBox & DTrace - Types and Constants.
+ * VBox & DTrace - Types and Constants for AMD64.
  */
 
 /*
@@ -24,22 +24,26 @@
  */
 
 
-/*
- * Types used by the other D structure and type definitions.
- *
- * These are taken from a variation of VBox and IPRT headers.
- */
+inline unsigned HC_ARCH_BITS = 64;
+typedef uint64_t    RTR3PTR;
+typedef void       *RTR0PTR;
+typedef uint64_t    RTHCPTR;
 
-typedef uint32_t        VMCPUID;
-typedef uint32_t        RTCPUID;
-typedef struct UVMCPU  *PUVMCPU;
-typedef uintptr_t       PVMR3;
-typedef uint32_t        PVMRC;
-typedef struct VM      *PVMR0;
-typedef uintptr_t       RTNATIVETHREAD;
 
-typedef struct STAMPROFILEADV
+
+typedef union RTFLOAT80U
 {
-    uint64_t            au64[5];
-} STAMPROFILEADV;
+    uint16_t    au16[5];
+} RTFLOAT80U;
+
+typedef union RTFLOAT80U2
+{
+    uint16_t    au16[5];
+} RTFLOAT80U2;
+
+typedef struct uint128_t
+{
+    uint64_t    au64[2];
+} uint128_t;
+
 
