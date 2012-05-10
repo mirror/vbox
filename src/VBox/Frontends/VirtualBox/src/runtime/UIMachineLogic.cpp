@@ -966,10 +966,16 @@ void UIMachineLogic::sltTakeScreenshot()
             i = filters.indexOf(QRegExp(".*bmp.*", Qt::CaseInsensitive));
     }
     if (i != -1)
-        strFilter = filters.at(i);
+    {
+        filters.prepend(filters.takeAt(i));
+        strFilter = filters.first();
+    }
     /* Request the filename from the user. */
     const CMachine &machine = session().GetMachine();
-    const QString &strStart = machine.GetSettingsFilePath();
+    QFileInfo fi(machine.GetSettingsFilePath());
+    QString strAbsolutePath(fi.absolutePath());
+    QString strCompleteBaseName(fi.completeBaseName());
+    QString strStart = QDir(strAbsolutePath).absoluteFilePath(strCompleteBaseName);
     QString strFilename = QIFileDialog::getSaveFileName(strStart,
                                                         filters.join(";;"),
                                                         activeMachineWindow(),
