@@ -2,7 +2,7 @@
 <!--
     VirtualBox Windows Installation Script (WiX)
 
-    Copyright (C) 2006-2011 Oracle Corporation
+    Copyright (C) 2006-2012 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -104,6 +104,10 @@
 
             <!-- Flag is set if the install will trigger an upgrade of an existing install -->
             <UpgradeVersion Property="PREVIOUSVERSIONSINSTALLED" Minimum="1.0.0.0" Maximum="$(var.Property_Version)" IncludeMaximum="yes" />
+            
+            <!-- Set a flag if we upgrade from versions <= 4.1.4 (later: 4.2.0) that might have removed
+                 (additional) host-only interfaces. -->
+            <UpgradeVersion Property="BUG_HOSTONLYIFSREMOVED" Minimum="1.0.0.0" Maximum="4.1.14.*" IncludeMaximum="yes" />
 
         </Upgrade>
 
@@ -805,8 +809,8 @@
             <Custom Action="ca_UninstallTAPInstances" Before="InstallFiles" >1</Custom>
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <!-- Create host-only interfaces on first-time install. -->
-            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED)]]></Custom>
-            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED)]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED OR BUG_HOSTONLYIFSREMOVED)]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED OR BUG_HOSTONLYIFSREMOVED)]]></Custom>
             <!-- Don't remove the host-only interfaces on update, only on uninstall. -->
             <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
             <!-- First stop the existing host-only interfaces on updat ... -->
