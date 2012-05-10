@@ -280,8 +280,7 @@ public slots:
 public:
 
     /* Constructor: */
-    UINetworkManagerDialog(QWidget *pParent = 0)
-        : QIWithRetranslateUI<QMainWindow>(pParent)
+    UINetworkManagerDialog()
     {
         /* Do not count that window as important for application,
          * it will NOT be taken into account when other top-level windows will be closed: */
@@ -362,6 +361,8 @@ public:
             m_pLabel->setHidden(false);
             /* Hide button-box: */
             m_pButtonBox->setHidden(true);
+            /* Let central-widget update its layout before being hidden: */
+            QCoreApplication::sendPostedEvents(centralWidget(), QEvent::LayoutRequest);
             /* Hide dialog: */
             hide();
         }
@@ -396,8 +397,8 @@ private:
     /* Overloaded show-event: */
     void showEvent(QShowEvent *pShowEvent)
     {
-        /* Resize to minimum size: */
-        resize(minimumSize());
+        /* Resize to minimum size-hint: */
+        resize(minimumSizeHint());
 
         /* Center according current main application window: */
         vboxGlobal().centerWidget(this, vboxGlobal().mainWindow(), false);
