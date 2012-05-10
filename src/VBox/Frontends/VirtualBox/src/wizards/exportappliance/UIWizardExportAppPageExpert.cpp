@@ -32,7 +32,6 @@
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppDefs.h"
 #include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
 #include "QILabelSeparator.h"
 #include "VBoxFilePathSelectorWidget.h"
 #include "UIApplianceExportEditorWidget.h"
@@ -266,20 +265,8 @@ bool UIWizardExportAppPageExpert::validatePage()
     /* Lock finish button: */
     startProcessing();
 
-    /* Ask user about machines which are in save state currently: */
-    QStringList savedMachines;
-    QList<QListWidgetItem*> pItems = m_pVMSelector->selectedItems();
-    for (int i=0; i < pItems.size(); ++i)
-    {
-        if (static_cast<VMListWidgetItem*>(pItems.at(i))->isInSaveState())
-            savedMachines << pItems.at(i)->text();
-    }
-    if (!savedMachines.isEmpty())
-        fResult = msgCenter().confirmExportMachinesInSaveState(savedMachines, this);
-
     /* Try to export appliance: */
-    if (fResult)
-        fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
+    fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
 
     /* Unlock finish button: */
     endProcessing();

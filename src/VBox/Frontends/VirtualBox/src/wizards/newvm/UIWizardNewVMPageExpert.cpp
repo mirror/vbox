@@ -31,7 +31,6 @@
 #include "UIWizardNewVMPageExpert.h"
 #include "UIWizardNewVM.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "VBoxOSTypeSelectorWidget.h"
 #include "VBoxGuestRAMSlider.h"
 #include "VBoxMediaComboBox.h"
@@ -294,12 +293,7 @@ bool UIWizardNewVMPageExpert::validatePage()
         Assert(m_virtualDisk.isNull());
         if (fResult)
         {
-            if (!m_pDiskCnt->isChecked())
-            {
-                /* Ask user about disk-less machine: */
-                fResult = msgCenter().confirmHardDisklessMachine(this);
-            }
-            else if (m_pDiskCreate->isChecked())
+            if (m_pDiskCnt->isChecked() && m_pDiskCreate->isChecked())
             {
                 /* Show the New Virtual Disk wizard if necessary: */
                 fResult = getWithNewVirtualDiskWizard();

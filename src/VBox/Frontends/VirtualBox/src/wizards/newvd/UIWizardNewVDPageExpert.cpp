@@ -294,13 +294,11 @@ bool UIWizardNewVDPageExpert::validatePage()
     /* Lock finish button: */
     startProcessing();
 
-    /* Make sure that virtual-disk doesn't exists: */
+    /* Make sure such virtual-disk doesn't exists: */
     QString strMediumPath(mediumPath());
-    if (fResult && QFileInfo(strMediumPath).exists())
-    {
+    fResult = !QFileInfo(strMediumPath).exists();
+    if (!fResult)
         msgCenter().sayCannotOverwriteHardDiskStorage(this, strMediumPath);
-        fResult = false;
-    }
 
     /* Try to create virtual-disk: */
     if (fResult)
