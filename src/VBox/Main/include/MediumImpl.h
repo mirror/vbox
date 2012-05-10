@@ -181,6 +181,7 @@ public:
     bool removeRegistry(const Guid& id, bool fRecurse);
     bool isInRegistry(const Guid& id);
     bool getFirstRegistryMachineId(Guid &uuid) const;
+    void markRegistriesModified();
 
     HRESULT addBackReference(const Guid &aMachineId,
                              const Guid &aSnapshotId = Guid::Empty);
@@ -267,7 +268,6 @@ private:
 
     HRESULT canClose();
     HRESULT unregisterWithVirtualBox();
-    void markRegistriesModified();
 
     HRESULT setStateError();
 

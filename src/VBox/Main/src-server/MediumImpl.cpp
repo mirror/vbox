@@ -3599,9 +3599,12 @@ HRESULT Medium::updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath)
         unconst(m->strLocationFull) = newPath;
 
         LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.c_str()));
+        // we changed something
+        return S_OK;
     }
 
-    return S_OK;
+    // no change was necessary, signal error which the caller needs to interpret
+    return VBOX_E_FILE_ERROR;
 }
 
 /**
