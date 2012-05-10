@@ -69,6 +69,24 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
+ * Variable string buffer (very simple version of SCMSTREAM).
+ */
+typedef struct VBCPPSTRBUF
+{
+    /** The preprocessor instance (for error reporting). */
+    struct VBCPP   *pThis;
+    /** The length of the string in the buffer. */
+    size_t          cchBuf;
+    /** The string storage. */
+    char           *pszBuf;
+    /** Allocated buffer space. */
+    size_t          cbBufAllocated;
+} VBCPPSTRBUF;
+/** Pointer to a variable string buffer. */
+typedef VBCPPSTRBUF *PVBCPPSTRBUF;
+
+
+/**
  * The preprocessor mode.
  */
 typedef enum VBCPPMODE
@@ -88,13 +106,18 @@ typedef struct VBCPPDEF
 {
     /** The string space core. */
     RTSTRSPACECORE      Core;
+    /** For linking macros that have the fExpanding flag set. */
+    struct VBCPPDEF    *pUpExpanding;
     /** Whether it's a function. */
     bool                fFunction;
     /** Variable argument count. */
     bool                fVarArg;
     /** Set if originating on the command line. */
     bool                fCmdLine;
-    /** The number of known arguments.*/
+    /** Set if this macro is currently being expanded and should not be
+     * recursively applied. */
+    bool                fExpanding;
+    /** The number of known arguments. */
     uint32_t            cArgs;
     /** Pointer to a list of argument names. */
     const char        **papszArgs;
@@ -107,6 +130,32 @@ typedef struct VBCPPDEF
 } VBCPPDEF;
 /** Pointer to a define. */
 typedef VBCPPDEF *PVBCPPDEF;
+
+
+/**
+ * Macro expansion data.
+ */
+typedef struct VBCPPMACROEXP
+{
+    /** The expansion buffer. */
+    char           *pszBuf;
+    /** The length of the string in the expansion buffer. */
+    size_t          cchBuf;
+    /** The current allocated buffer size. */
+    size_t          cbBufAllocated;
+    /** List of expanding macros (Stack). */
+    PVBCPPDEF       pMacroStack;
+    /** The input stream (in case we want to look for parameter lists). */
+    PSCMSTREAM      pStrmInput;
+    /** Array of argument values.  Used when expanding function style macros.  */
+    char          **papszArgs;
+    /** The number of argument values current in papszArgs. */
+    size_t          cArgs;
+    /** The number of argument values papszArgs can currently hold  */
+    size_t          cArgsAlloced;
+} VBCPPMACROEXP;
+/** Pointer to macro expansion data. */
+typedef VBCPPMACROEXP *PVBCPPMACROEXP;
 
 
 /**
@@ -293,8 +342,9 @@ typedef VBCPP *PVBCPP;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static PVBCPPDEF    vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
-static RTEXITCODE   vbcppMacroExpandFunctionLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion);
-static RTEXITCODE   vbcppMacroExpandObjectLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion);
+static RTEXITCODE   vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPDEF pMacro, size_t offParameters);
+static RTEXITCODE   vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp);
+static void         vbcppMacroExpandCleanup(PVBCPPMACROEXP pExp);
 
 
 
@@ -380,6 +430,111 @@ static RTEXITCODE vbcppErrorPos(PVBCPP pThis, const char *pszPos, const char *ps
 
 
 
+
+
+/*
+ *
+ *
+ * Variable String Buffers.
+ * Variable String Buffers.
+ * Variable String Buffers.
+ * Variable String Buffers.
+ * Variable String Buffers.
+ *
+ *
+ */
+
+
+static void vbcppStrBufInit(PVBCPPSTRBUF pStrBuf, PVBCPP pThis)
+{
+    pStrBuf->pThis              = pThis;
+    pStrBuf->cchBuf             = 0;
+    pStrBuf->cbBufAllocated     = 0;
+    pStrBuf->pszBuf             = NULL;
+}
+
+
+static void vbcppStrBufDelete(PVBCPPSTRBUF pStrBuf)
+{
+    RTMemFree(pStrBuf->pszBuf);
+    pStrBuf->pszBuf = NULL;
+}
+
+
+static RTEXITCODE vbcppStrBufGrow(PVBCPPSTRBUF pStrBuf, size_t cbMin)
+{
+    if (pStrBuf->cbBufAllocated >= cbMin)
+        return RTEXITCODE_SUCCESS;
+
+    size_t cbNew = pStrBuf->cbBufAllocated * 2;
+    if (cbNew < cbMin)
+        cbNew = RT_ALIGN_Z(cbMin, _1K);
+    void *pv = RTMemRealloc(pStrBuf->pszBuf, cbNew);
+    if (!pv)
+        return vbcppError(pStrBuf->pThis, "out of memory (%zu bytes)", cbNew);
+
+    pStrBuf->pszBuf         = (char *)pv;
+    pStrBuf->cbBufAllocated = cbNew;
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppStrBufAppendN(PVBCPPSTRBUF pStrBuf, const char *pchSrc, size_t cchSrc)
+{
+    size_t cchBuf = pStrBuf->cchBuf;
+    if (cchBuf + cchSrc + 1 > pStrBuf->cbBufAllocated)
+    {
+        RTEXITCODE rcExit = vbcppStrBufGrow(pStrBuf, cchBuf + cchSrc + 1);
+        if (rcExit != RTEXITCODE_SUCCESS)
+            return rcExit;
+    }
+
+    memcpy(&pStrBuf->pszBuf[cchBuf], pchSrc, cchSrc);
+    cchBuf += cchSrc;
+    pStrBuf->pszBuf[cchBuf] = '\0';
+    pStrBuf->cchBuf = cchBuf;
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppStrBufAppendCh(PVBCPPSTRBUF pStrBuf, char ch)
+{
+    size_t cchBuf = pStrBuf->cchBuf;
+    if (cchBuf + 2 > pStrBuf->cbBufAllocated)
+    {
+        RTEXITCODE rcExit = vbcppStrBufGrow(pStrBuf, cchBuf + 2);
+        if (rcExit != RTEXITCODE_SUCCESS)
+            return rcExit;
+    }
+
+    pStrBuf->pszBuf[cchBuf++] = ch;
+    pStrBuf->pszBuf[cchBuf] = '\0';
+    pStrBuf->cchBuf = cchBuf;
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppStrBufAppend(PVBCPPSTRBUF pStrBuf, const char *psz)
+{
+    return vbcppStrBufAppendN(pStrBuf, psz, strlen(psz));
+}
+
+
+static char vbcppStrBufLastCh(PVBCPPSTRBUF pStrBuf)
+{
+    if (!pStrBuf->cchBuf)
+        return '\0';
+    return pStrBuf->pszBuf[pStrBuf->cchBuf - 1];
+}
+
+
+
+
+
+
+
 /*
  *
  *
@@ -459,6 +614,160 @@ static bool vbcppValidateCIdentifier(PVBCPP pThis, const char *pchIdentifier, si
 }
 
 
+
+/**
+ * Checks if the given character is valid C punctuation.
+ *
+ * @returns true / false.
+ * @param   ch                  The character to inspect.
+ */
+DECLINLINE(bool) vbcppIsCPunctuationLeadChar(char ch)
+{
+    switch (ch)
+    {
+        case '!':
+        case '#':
+        case '%':
+        case '&':
+        case '(':
+        case ')':
+        case '*':
+        case '+':
+        case ',':
+        case '-':
+        case '.':
+        case '/':
+        case ':':
+        case ';':
+        case '<':
+        case '=':
+        case '>':
+        case '?':
+        case '[':
+        case ']':
+        case '^':
+        case '{':
+        case '|':
+        case '}':
+        case '~':
+            return true;
+        default:
+            return false;
+    }
+}
+
+
+/**
+ * Checks if the given string start with valid C punctuation.
+ *
+ * @returns 0 if not, otherwise the length of the punctuation.
+ * @param   pch                 The which start we should evaluate.
+ * @param   cchMax              The maximum string length.
+ */
+static size_t vbcppIsCPunctuationLeadChar(const char *psz, size_t cchMax)
+{
+    if (!cchMax)
+        return 0;
+
+    switch (psz[0])
+    {
+        case '!':
+        case '*':
+        case '/':
+        case '=':
+        case '^':
+            if (cchMax >= 2 && psz[1] == '=')
+                return 2;
+            return 1;
+
+        case '#':
+            if (cchMax >= 2 && psz[1] == '#')
+                return 2;
+            return 1;
+
+        case '%':
+            if (cchMax >= 2 && (psz[1] == '=' || psz[1] == '>'))
+                return 2;
+            if (cchMax >= 2 && psz[1] == ':')
+            {
+                if (cchMax >= 4 && psz[2] == '%' && psz[3] == ':')
+                    return 4;
+                return 2;
+            }
+            return 1;
+
+        case '&':
+            if (cchMax >= 2 && (psz[1] == '=' || psz[1] == '&'))
+                return 2;
+            return 1;
+
+        case '(':
+        case ')':
+        case ',':
+        case '?':
+        case '[':
+        case ']':
+        case '{':
+        case '}':
+            return 1;
+
+        case '+':
+            if (cchMax >= 2 && (psz[1] == '=' || psz[1] == '+'))
+                return 2;
+            return 1;
+
+        case '-':
+            if (cchMax >= 2 && (psz[1] == '=' || psz[1] == '-' || psz[1] == '>'))
+                return 2;
+            return 1;
+
+        case ':':
+            if (cchMax >= 2 && psz[1] == '>')
+                return 2;
+            return 1;
+
+        case ';':
+            return 1;
+
+        case '<':
+            if (cchMax >= 2 && psz[1] == '<')
+            {
+                if (cchMax >= 3 && psz[2] == '=')
+                    return 3;
+                return 2;
+            }
+            if (cchMax >= 2 && (psz[1] == '=' || psz[1] == ':' || psz[1] == '%'))
+                return 2;
+            return 1;
+
+        case '.':
+            if (cchMax >= 3 && psz[1] == '.' && psz[2] == '.')
+                return 3;
+            return 1;
+
+        case '>':
+            if (cchMax >= 2 && psz[1] == '>')
+            {
+                if (cchMax >= 3 && psz[2] == '=')
+                    return 3;
+                return 2;
+            }
+            if (cchMax >= 2 && psz[1] == '=')
+                return 2;
+            return 1;
+
+        case '|':
+            if (cchMax >= 2 && (psz[1] == '=' || psz[1] == '|'))
+                return 2;
+            return 1;
+
+        case '~':
+            return 1;
+
+        default:
+            return 0;
+    }
+}
 
 
 
@@ -681,7 +990,7 @@ static RTEXITCODE vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(PVBCPP pThi
 /**
  * Skips white spaces.
  *
- * @returns The current location upon return..
+ * @returns The current location upon return.
  * @param   pStrmInput          The input stream.
  */
 static size_t vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
@@ -925,7 +1234,7 @@ static RTEXITCODE vbcppProcessStringLitteral(PVBCPP pThis, PSCMSTREAM pStrmInput
 
 
 /**
- * Processes a single quoted litteral.
+ * Processes a single quoted constant.
  *
  * Must not replace any C-words in strings.
  *
@@ -1000,8 +1309,7 @@ static RTEXITCODE vbcppProcessNumber(PVBCPP pThis, PSCMSTREAM pStrmInput, char c
  */
 static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch)
 {
-    int         rc     = VINF_SUCCESS;
-    RTEXITCODE  rcExit = RTEXITCODE_SUCCESS;
+    RTEXITCODE  rcExit;
     size_t      cchDefine;
     const char *pchDefine = ScmStreamCGetWordM1(pStrmInput, &cchDefine);
     AssertReturn(pchDefine, vbcppError(pThis, "Internal error in ScmStreamCGetWordM1"));
@@ -1014,18 +1322,46 @@ static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput, ch
         && (   !pMacro->fFunction
             || vbcppInputLookForLeftParenthesis(pThis, pStrmInput)) )
     {
-        char *pszExpansion = NULL;
-        if (!pMacro->fFunction)
-            rcExit = vbcppMacroExpandObjectLike(pThis, pMacro, pStrmInput, &pszExpansion);
-        else
-            rcExit = vbcppMacroExpandFunctionLike(pThis, pMacro, pStrmInput, &pszExpansion);
-        if (rcExit == RTEXITCODE_SUCCESS)
+        /*
+         * Expand it.
+         */
+        VBCPPMACROEXP ExpCtx;
+        ExpCtx.pMacroStack    = NULL;
+        ExpCtx.pStrmInput     = pStrmInput;
+        ExpCtx.papszArgs      = NULL;
+        ExpCtx.cArgs          = 0;
+        ExpCtx.cArgsAlloced   = 0;
+        ExpCtx.cchBuf         = cchDefine;
+        ExpCtx.cbBufAllocated = RT_ALIGN_Z(cchDefine + 1, 16);
+        ExpCtx.pszBuf         = (char *)RTMemAlloc(ExpCtx.cbBufAllocated);
+        if (ExpCtx.pszBuf)
         {
-            rc = ScmStreamWrite(&pThis->StrmOutput, pszExpansion, strlen(pszExpansion));
-            if (RT_FAILURE(rc))
-                rcExit = vbcppError(pThis, "Output error: %Rrc", rc);
-            RTMemFree(pszExpansion);
+            memcpy(ExpCtx.pszBuf, pchDefine, cchDefine);
+            ExpCtx.pszBuf[cchDefine] = '\0';
+
+            rcExit = vbcppMacroExpandIt(pThis, &ExpCtx, 0 /* offset */, pMacro, cchDefine);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = vbcppMacroExpandReScan(pThis, &ExpCtx);
+            if (rcExit == RTEXITCODE_SUCCESS)
+            {
+                /*
+                 * Insert it into the output stream.  Make sure there is a
+                 * whitespace following it.
+                 */
+                int rc = ScmStreamWrite(&pThis->StrmOutput, ExpCtx.pszBuf, ExpCtx.cchBuf);
+                if (RT_SUCCESS(rc))
+                {
+                    unsigned chAfter = ScmStreamPeekCh(pStrmInput);
+                    if (chAfter != ~(unsigned)0 && !RT_C_IS_SPACE(chAfter))
+                        rcExit = vbcppOutputCh(pThis, ' ');
+                }
+                else
+                    rcExit = vbcppError(pThis, "Output error: %Rrc", rc);
+            }
+            vbcppMacroExpandCleanup(&ExpCtx);
         }
+        else
+            rcExit = vbcppError(pThis, "out of memory");
     }
     else
     {
@@ -1033,8 +1369,10 @@ static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput, ch
          * Not a macro or a function-macro name match but no invocation, just
          * output the text unchanged.
          */
-        rc = ScmStreamWrite(&pThis->StrmOutput, pchDefine, cchDefine);
-        if (RT_FAILURE(rc))
+        int rc = ScmStreamWrite(&pThis->StrmOutput, pchDefine, cchDefine);
+        if (RT_SUCCESS(rc))
+            rcExit = RTEXITCODE_SUCCESS;
+        else
             rcExit = vbcppError(pThis, "Output error: %Rrc", rc);
     }
     return rcExit;
@@ -1095,20 +1433,645 @@ static PVBCPPDEF vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cc
 }
 
 
-
-static RTEXITCODE vbcppMacroExpandObjectLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion)
+static uint32_t vbcppMacroLookupArg(PVBCPPDEF pMacro, const char *pchName, size_t cchName)
 {
-    *ppszExpansion = RTStrDup(pMacro->szValue);
-    if (!*ppszExpansion)
-        return vbcppError(pThis, "out of memory");
+    Assert(cchName > 0);
+
+    char const ch = *pchName;
+    for (uint32_t i = 0; i < pMacro->cArgs; i++)
+        if (   pMacro->papszArgs[i][0] == ch
+            && !strncmp(pMacro->papszArgs[i], pchName, cchName)
+            && pMacro->papszArgs[i][cchName] == '\0')
+            return i;
+
+    if (   pMacro->fVarArg
+        && cchName == sizeof("__VA_ARGS__") - 1
+        && !strncmp(pchName, "__VA_ARGS__", sizeof("__VA_ARGS__") - 1) )
+        return pMacro->cArgs;
+
+    return UINT32_MAX;
+}
+
+
+
+
+static RTEXITCODE vbcppMacroExpandReplace(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t off, size_t cchToReplace,
+                                          const char *pchReplacement, size_t cchReplacement)
+{
+    /*
+     * Figure how much space we actually need.
+     * (Hope this whitespace stuff is correct...)
+     */
+    bool const fLeadingSpace            = off > 0
+                                       && !RT_C_IS_SPACE(pExp->pszBuf[off - 1]);
+    bool const fTrailingSpace           = off + cchToReplace < pExp->cchBuf
+                                       && !RT_C_IS_SPACE(pExp->pszBuf[off + cchToReplace]);
+    size_t const cchActualReplacement   = fLeadingSpace + cchReplacement + fTrailingSpace;
+
+    /*
+     * Adjust the buffer size and contents.
+     */
+    if (cchActualReplacement > cchToReplace)
+    {
+        size_t const offMore = cchActualReplacement - cchToReplace;
+
+        /* Ensure enough buffer space. */
+        size_t cbMinBuf = offMore + pExp->cchBuf + 1;
+        if (cbMinBuf > pExp->cbBufAllocated)
+        {
+            if (cbMinBuf > ~(size_t)0 / 4)
+                return vbcppError(pThis, "Expansion is too big - %u bytes or more", offMore + pExp->cchBuf);
+            size_t cbNew = pExp->cbBufAllocated * 2;
+            while (cbNew < cbMinBuf)
+                cbNew *= 2;
+            void *pvNew = RTMemRealloc(pExp->pszBuf, cbNew);
+            if (!pvNew)
+                return vbcppError(pThis, "Out of memory (%u bytes)", cbNew);
+            pExp->pszBuf         = (char *)pvNew;
+            pExp->cbBufAllocated = cbNew;
+        }
+
+        /* Push the chars following the replacement area down to make room. */
+        memmove(&pExp->pszBuf[off + cchToReplace + offMore],
+                &pExp->pszBuf[off + cchToReplace],
+                pExp->cchBuf - off - cchToReplace + 1);
+        pExp->cchBuf += offMore;
+
+    }
+    else if (cchActualReplacement < cchToReplace)
+    {
+        size_t const offLess = cchToReplace - cchActualReplacement;
+
+        /* Pull the chars following the replacement area up. */
+        memmove(&pExp->pszBuf[off + cchToReplace - offLess],
+                &pExp->pszBuf[off + cchToReplace],
+                pExp->cchBuf - off - cchToReplace + 1);
+        pExp->cchBuf -= offLess;
+    }
+
+    /*
+     * Insert the replacement string.
+     */
+    char *pszCur = &pExp->pszBuf[off];
+    if (fLeadingSpace)
+        *pszCur++ = ' ';
+    memcpy(pszCur, pchReplacement, cchReplacement);
+    if (fTrailingSpace)
+        *pszCur++ = ' ';
+
+    Assert(strlen(pExp->pszBuf) == pExp->cchBuf);
+    Assert(pExp->cchBuf < pExp->cbBufAllocated);
+
     return RTEXITCODE_SUCCESS;
 }
 
 
-static RTEXITCODE vbcppMacroExpandFunctionLike(PVBCPP pThis, PVBCPPDEF pMacro, PSCMSTREAM pStrmInput, char **ppszExpansion)
+static unsigned vbcppMacroExpandPeekCh(PVBCPPMACROEXP pExp, size_t *poff)
 {
-    *ppszExpansion = NULL;
-    return vbcppError(pThis, "Expansion of function like macros is not yet supported");
+    size_t off = *poff;
+    if (off >= pExp->cchBuf)
+        return ScmStreamPeekCh(pExp->pStrmInput);
+    return pExp->pszBuf[off];
+}
+
+
+static unsigned vbcppMacroExpandGetCh(PVBCPPMACROEXP pExp, size_t *poff)
+{
+    size_t off = *poff;
+    if (off >= pExp->cchBuf)
+        return ScmStreamGetCh(pExp->pStrmInput);
+    *poff = off + 1;
+    return pExp->pszBuf[off];
+}
+
+
+static RTEXITCODE vbcppMacroExpandSkipEolEx(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t *poff, unsigned chFirst)
+{
+    if (chFirst == '\r')
+    {
+        unsigned ch2 = vbcppMacroExpandPeekCh(pExp, poff);
+        if (ch2 == '\n')
+        {
+            ch2 = ScmStreamGetCh(pExp->pStrmInput);
+            AssertReturn(ch2 == '\n', vbcppError(pThis, "internal error"));
+        }
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppMacroExpandSkipEol(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t *poff)
+{
+    unsigned ch = vbcppMacroExpandGetCh(pExp, poff);
+    AssertReturn(ch == '\r' || ch == '\n', vbcppError(pThis, "internal error"));
+    return vbcppMacroExpandSkipEolEx(pThis, pExp, poff, ch);
+}
+
+
+static RTEXITCODE vbcppMacroExpandSkipCommentLine(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t *poff)
+{
+    unsigned ch = vbcppMacroExpandGetCh(pExp, poff);
+    AssertReturn(ch == '/', vbcppError(pThis, "Internal error - expected '/' got '%c'", ch));
+
+    unsigned chPrev = 0;
+    while ((ch = vbcppMacroExpandGetCh(pExp, poff)) != ~(unsigned)0)
+    {
+        if (ch == '\r' || ch == '\n')
+        {
+            RTEXITCODE rcExit = vbcppMacroExpandSkipEolEx(pThis, pExp, poff, ch);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+            if (chPrev != '\\')
+                break;
+        }
+
+        chPrev = ch;
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppMacroExpandSkipComment(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t *poff)
+{
+    unsigned ch = vbcppMacroExpandGetCh(pExp, poff);
+    AssertReturn(ch == '*', vbcppError(pThis, "Internal error - expected '*' got '%c'", ch));
+
+    unsigned chPrev2 = 0;
+    unsigned chPrev  = 0;
+    while ((ch = vbcppMacroExpandGetCh(pExp, poff)) != ~(unsigned)0)
+    {
+        if (ch == '/' && chPrev == '*')
+            break;
+
+        if (ch == '\r' || ch == '\n')
+        {
+            RTEXITCODE rcExit = vbcppMacroExpandSkipEolEx(pThis, pExp, poff, ch);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+            if (chPrev == '\\')
+            {
+                chPrev = chPrev2;       /* for line splicing */
+                continue;
+            }
+        }
+
+        chPrev2 = chPrev;
+        chPrev  = ch;
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppMacroExpandGrowArgArray(PVBCPP pThis, PVBCPPMACROEXP pExp, uint32_t cMinArgs)
+{
+    if (cMinArgs > pExp->cArgsAlloced)
+    {
+        void *pv = RTMemRealloc(pExp->papszArgs, cMinArgs * sizeof(char *));
+        if (!pv)
+            return vbcppError(pThis, "out of memory");
+        pExp->papszArgs = (char **)pv;
+        pExp->cArgsAlloced = cMinArgs;
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE vbcppMacroExpandAddEmptyParameter(PVBCPP pThis, PVBCPPMACROEXP pExp)
+{
+    RTEXITCODE rcExit = vbcppMacroExpandGrowArgArray(pThis, pExp, pExp->cArgs + 1);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        char *pszArg = (char *)RTMemAllocZ(1);
+        if (pszArg)
+            pExp->papszArgs[pExp->cArgs++] = pszArg;
+        else
+            rcExit = vbcppError(pThis, "out of memory");
+    }
+    return rcExit;
+}
+
+
+static RTEXITCODE vbcppMacroExpandGatherParameters(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t *poff, uint32_t cArgsHint)
+{
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+
+    /*
+     * Free previous argument values.
+     */
+    while (pExp->cArgs > 0)
+    {
+        RTMemFree(pExp->papszArgs[--pExp->cArgs]);
+        pExp->papszArgs[pExp->cArgs] = NULL;
+    }
+
+    /*
+     * The current character should be an opening parenthsis.
+     */
+    unsigned    ch = vbcppMacroExpandGetCh(pExp, poff);
+    if (ch != '(')
+        return vbcppError(pThis, "Internal error - expected '(', found '%c' (#x)", ch, ch);
+
+    /*
+     * Parse the argument list.
+     */
+    char        chQuote      = 0;
+    size_t      cbArgAlloc   = 0;
+    size_t      cchArg       = 0;
+    char       *pszArg       = NULL;
+    size_t      cParentheses = 1;
+    unsigned    chPrev       = 0;
+    while ((ch = vbcppMacroExpandGetCh(pExp, poff)) != ~(unsigned)0)
+    {
+        if (ch == ')' && !chQuote)
+        {
+            Assert(cParentheses >= 1);
+            cParentheses--;
+
+            /* The end? */
+            if (!cParentheses)
+            {
+                if (cchArg)
+                    while (cchArg > 0 && RT_C_IS_SPACE(pszArg[cchArg - 1]))
+                        pszArg[--cchArg] = '\0';
+                else if (pExp->cArgs || cArgsHint > 0)
+                    rcExit = vbcppMacroExpandAddEmptyParameter(pThis, pExp);
+                break;
+            }
+        }
+        else if (ch == '('  && !chQuote)
+            cParentheses++;
+        else if (ch == ',' && cParentheses == 1 && !chQuote)
+        {
+            /* End of one argument, start of the next. */
+            if (cchArg)
+                while (cchArg > 0 && RT_C_IS_SPACE(pszArg[cchArg - 1]))
+                    pszArg[--cchArg] = '\0';
+            else
+            {
+                rcExit = vbcppMacroExpandAddEmptyParameter(pThis, pExp);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    break;
+            }
+
+            cbArgAlloc = 0;
+            cchArg     = 0;
+            pszArg     = NULL;
+            continue;
+        }
+        else if (ch == '/' && !chQuote)
+        {
+            /* Comment? */
+            unsigned ch2 = vbcppMacroExpandPeekCh(pExp, poff);
+            /** @todo This ain't right wrt line splicing. */
+            if (ch2 == '/' || ch == '*')
+            {
+                if (ch2 == '/')
+                    rcExit = vbcppMacroExpandSkipCommentLine(pThis, pExp, poff);
+                else
+                    rcExit = vbcppMacroExpandSkipComment(pThis, pExp, poff);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    break;
+                continue;
+            }
+        }
+        else if (ch == '"')
+        {
+            if (!chQuote)
+                chQuote = '"';
+            else if (chPrev != '\\')
+                chQuote = 0;
+        }
+        else if (ch == '\'')
+        {
+            if (!chQuote)
+                chQuote = '\'';
+            else if (chPrev != '\\')
+                chQuote = 0;
+        }
+        else if (ch == '\\')
+        {
+            /* Splice lines? */
+            unsigned ch2 = vbcppMacroExpandPeekCh(pExp, poff);
+            if (ch2 == '\r' || ch2 == '\n')
+            {
+                rcExit = vbcppMacroExpandSkipEol(pThis, pExp, poff);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    break;
+                continue;
+            }
+        }
+        else if (cchArg == 0 && RT_C_IS_SPACE(ch))
+            continue; /* ignore spaces leading up to an argument value */
+
+        /* Append the character to the argument value, adding the argument
+           to the output array if it's first character in it. */
+        if (cchArg + 1 >= cbArgAlloc)
+        {
+            /* Add argument to the vector. */
+            if (!cchArg)
+            {
+                rcExit = vbcppMacroExpandGrowArgArray(pThis, pExp, RT_MAX(pExp->cArgs + 1, cArgsHint));
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    break;
+                pExp->papszArgs[pExp->cArgs++] = pszArg;
+            }
+
+            /* Resize the argument value buffer. */
+            cbArgAlloc = cbArgAlloc ? cbArgAlloc * 2 : 16;
+            pszArg = (char *)RTMemRealloc(pszArg, cbArgAlloc);
+            if (!pszArg)
+            {
+                rcExit = vbcppError(pThis, "out of memory");
+                break;
+            }
+            pExp->papszArgs[pExp->cArgs - 1] = pszArg;
+        }
+
+        pszArg[cchArg++] = ch;
+        pszArg[cchArg]   = '\0';
+    }
+
+    /*
+     * Check that we're leaving on good terms.
+     */
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        if (cParentheses)
+            rcExit = vbcppError(pThis, "Missing ')'");
+    }
+
+    return rcExit;
+}
+
+
+/**
+ * Expands the arguments referenced in the macro value.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pExp                The expansion context.
+ * @param   pMacro              The macro.  Must be a function macro.
+ * @param   pStrBuf             String buffer containing the result. The caller
+ *                              should initialize and destroy this!
+ */
+static RTEXITCODE vbcppMacroExpandValueWithArguments(PVBCPP pThis, PVBCPPMACROEXP pExp, PVBCPPDEF pMacro,
+                                                     PVBCPPSTRBUF pStrBuf)
+{
+    Assert(pMacro->fFunction);
+
+    /*
+     * Empty?
+     */
+    if (   !pMacro->cchValue
+        || (pMacro->cchValue == 1 && !pMacro->szValue[0] == '#'))
+        return RTEXITCODE_SUCCESS;
+
+    /*
+     * Parse the value.
+     */
+    RTEXITCODE  rcExit    = RTEXITCODE_SUCCESS;
+    const char *pszSrc    = pMacro->szValue;
+    const char *pszSrcSeq;
+    char        ch;
+    while ((ch = *pszSrc++) != '\0')
+    {
+        Assert(ch != '\r'); Assert(ch != '\n'); /* probably not true atm. */
+        if (ch == '#')
+        {
+            if (*pszSrc == '#')
+            {
+                /* Concatenate operator. */
+                rcExit = vbcppError(pThis, "The '##' operatore is not yet implemented");
+            }
+            else
+            {
+                /* Stringify macro argument. */
+                rcExit = vbcppError(pThis, "The '#' operatore is not yet implemented");
+            }
+            return rcExit;
+        }
+        else if (ch == '"')
+        {
+            /* String litteral. */
+            pszSrcSeq = pszSrc - 1;
+            while ((ch = *pszSrc++) != '"')
+            {
+                if (ch == '\\')
+                    ch = *pszSrc++;
+                if (ch == '\0')
+                {
+                    rcExit = vbcppError(pThis, "String litteral is missing closing quote (\").");
+                    break;
+                }
+            }
+            rcExit = vbcppStrBufAppendN(pStrBuf, pszSrcSeq, pszSrc - pszSrcSeq);
+        }
+        else if (ch == '\'')
+        {
+            /* Character constant. */
+            pszSrcSeq = pszSrc - 1;
+            while ((ch = *pszSrc++) != '\'')
+            {
+                if (ch == '\\')
+                    ch = *pszSrc++;
+                if (ch == '\0')
+                {
+                    rcExit = vbcppError(pThis, "Character constant is missing closing quote (').");
+                    break;
+                }
+            }
+            rcExit = vbcppStrBufAppendN(pStrBuf, pszSrcSeq, pszSrc - pszSrcSeq);
+        }
+        else if (RT_C_IS_DIGIT(ch))
+        {
+            /* Process numerical constants correctly (i.e. don't mess with the suffix). */
+            pszSrcSeq = pszSrc - 1;
+            while (   (ch = *pszSrc) != '\0'
+                   && (   vbcppIsCIdentifierChar(ch)
+                       || ch == '.') )
+                pszSrc++;
+            rcExit = vbcppStrBufAppendN(pStrBuf, pszSrcSeq, pszSrc - pszSrcSeq);
+        }
+        else if (RT_C_IS_SPACE(ch))
+        {
+            /* join spaces */
+            if (RT_C_IS_SPACE(vbcppStrBufLastCh(pStrBuf)))
+                continue;
+            rcExit = vbcppStrBufAppendCh(pStrBuf, ch);
+        }
+        else if (vbcppIsCIdentifierLeadChar(ch))
+        {
+            /* Something we should replace? */
+            pszSrcSeq = pszSrc - 1;
+            while (   (ch = *pszSrc) != '\0'
+                   && vbcppIsCIdentifierChar(ch))
+                pszSrc++;
+            size_t      cchDefine = pszSrc - pszSrcSeq;
+            uint32_t    iArg;
+            if (   VBCPP_BITMAP_IS_SET(pMacro->bmArgs, *pszSrcSeq)
+                && (iArg = vbcppMacroLookupArg(pMacro, pszSrcSeq, cchDefine)) != UINT32_MAX)
+            {
+                /** @todo check out spaces here! */
+                if (iArg < pMacro->cArgs)
+                {
+                    Assert(iArg < pExp->cArgs);
+                    rcExit = vbcppStrBufAppend(pStrBuf, pExp->papszArgs[iArg]);
+                    if (*pExp->papszArgs[iArg] != '\0' && rcExit == RTEXITCODE_SUCCESS)
+                        rcExit = vbcppStrBufAppendCh(pStrBuf, ' ');
+                }
+                else
+                {
+                    /* __VA_ARGS__ */
+                    if (iArg < pExp->cArgs)
+                    {
+                        for (;;)
+                        {
+                            rcExit = vbcppStrBufAppend(pStrBuf, pExp->papszArgs[iArg]);
+                            if (rcExit != RTEXITCODE_SUCCESS)
+                                break;
+                            iArg++;
+                            if (iArg >= pExp->cArgs)
+                                break;
+                            rcExit = vbcppStrBufAppendCh(pStrBuf, ',');
+                            if (rcExit != RTEXITCODE_SUCCESS)
+                                break;
+                        }
+                    }
+                    if (rcExit == RTEXITCODE_SUCCESS)
+                        rcExit = vbcppStrBufAppendCh(pStrBuf, ' ');
+                }
+            }
+            /* Not an argument needing replacing. */
+            else
+                rcExit = vbcppStrBufAppendN(pStrBuf, pszSrcSeq, cchDefine);
+        }
+        else
+        {
+            rcExit = vbcppStrBufAppendCh(pStrBuf, ch);
+        }
+    }
+
+    return rcExit;
+}
+
+
+
+/**
+ * Expands the given macro.
+ *
+ * Caller already checked if a function macro should be expanded, i.e. whether
+ * there is a parameter list.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pExp                The expansion context.
+ * @param   offMacro            Offset into the expansion buffer of the macro
+ *                              invocation.
+ * @param   pMacro              The macro.
+ * @param   offParameters       The start of the parameter list if applicable.
+ *                              If the parameter list starts at the current
+ *                              stream position shall be at the end of the
+ *                              expansion buffer.
+ */
+static RTEXITCODE vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPDEF pMacro,
+                                     size_t offParameters)
+{
+    RTEXITCODE rcExit;
+    Assert(offMacro + pMacro->Core.cchString <= pExp->cchBuf);
+    Assert(!pMacro->fExpanding);
+
+    /*
+     * Function macros are kind of difficult...
+     */
+    if (pMacro->fFunction)
+    {
+        size_t offEnd = offParameters;
+        rcExit = vbcppMacroExpandGatherParameters(pThis, pExp, &offEnd, pMacro->cArgs + pMacro->fVarArg);
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            if (pExp->cArgs > pMacro->cArgs && !pMacro->fVarArg)
+                rcExit = vbcppError(pThis, "Too many arguments to macro '%s' - found %u, expected %u",
+                                    pMacro->Core.pszString, pExp->cArgs, pMacro->cArgs);
+            else if (pExp->cArgs < pMacro->cArgs)
+                rcExit = vbcppError(pThis, "Too few arguments to macro '%s' - found %u, expected %u",
+                                    pMacro->Core.pszString, pExp->cArgs, pMacro->cArgs);
+        }
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            VBCPPSTRBUF ValueBuf;
+            vbcppStrBufInit(&ValueBuf, pThis);
+            rcExit = vbcppMacroExpandValueWithArguments(pThis, pExp, pMacro, &ValueBuf);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = vbcppMacroExpandReplace(pThis, pExp, offMacro, offEnd - offMacro, ValueBuf.pszBuf, ValueBuf.cchBuf);
+            vbcppStrBufDelete(&ValueBuf);
+        }
+    }
+    /*
+     * Object-like macros are easy. :-)
+     */
+    else
+        rcExit = vbcppMacroExpandReplace(pThis, pExp, offMacro, pMacro->Core.cchString, pMacro->szValue, pMacro->cchValue);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Push the macro onto the stack.
+         */
+        pMacro->fExpanding   = true;
+        pMacro->pUpExpanding = pExp->pMacroStack;
+        pExp->pMacroStack    = pMacro;
+    }
+
+    return rcExit;
+}
+
+
+/**
+ * Re-scan the expanded macro.
+ *
+ * @returns
+ * @param   pThis               .
+ * @param   pExp                .
+ */
+static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp)
+{
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    Assert(pExp->pMacroStack);
+    Assert(!pExp->pMacroStack->pUpExpanding);
+
+    return rcExit;
+}
+
+
+/**
+ * Cleans up the expansion context.
+ *
+ * This involves clearing VBCPPMACRO::fExpanding and VBCPPMACRO::pUpExpanding,
+ * and freeing the memory resources associated with the expansion context.
+ *
+ * @param   pExp                The expansion context.
+ */
+static void vbcppMacroExpandCleanup(PVBCPPMACROEXP pExp)
+{
+    while (pExp->pMacroStack)
+    {
+        PVBCPPDEF pMacro = pExp->pMacroStack;
+        pExp->pMacroStack = pMacro->pUpExpanding;
+
+        pMacro->fExpanding   = false;
+        pMacro->pUpExpanding = NULL;
+    }
+
+    while (pExp->cArgs > 0)
+    {
+        RTMemFree(pExp->papszArgs[--pExp->cArgs]);
+        pExp->papszArgs[pExp->cArgs] = NULL;
+    }
+
+    RTMemFree(pExp->papszArgs);
+    pExp->papszArgs = NULL;
+
+    RTMemFree(pExp->pszBuf);
+    pExp->pszBuf = NULL;
 }
 
 
@@ -1339,6 +2302,7 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
             break;
 
         /* Found and argument. First character is already validated. */
+        VBCPP_BITMAP_SET(pMacro->bmArgs, pszParams[off]);
         pMacro->papszArgs[iArg] = pszDst;
         do
         {
@@ -1433,6 +2397,145 @@ static RTEXITCODE vbcppMacroAdd(PVBCPP pThis, const char *pszDefine, size_t cchD
 
 
 /**
+ * Tries to convert a define into an inline D constant.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pMacro              The macro.
+ */
+static RTEXITCODE vbcppMacroTryConvertToInlineD(PVBCPP pThis, PVBCPPDEF pMacro)
+{
+    AssertReturn(pMacro, vbcppError(pThis, "Internal error"));
+    if (pMacro->fFunction)
+        return RTEXITCODE_SUCCESS;
+
+    /*
+     * Do some simple macro resolving. (Mostly to make x86.h work.)
+     */
+    const char *pszDefine = pMacro->Core.pszString;
+    const char *pszValue  = pMacro->szValue;
+    size_t      cchValue  = pMacro->cchValue;
+
+    unsigned   i = 0;
+    PVBCPPDEF  pMacro2;
+    while (   i < 10
+           && cchValue > 0
+           && vbcppIsCIdentifierLeadChar(*pszValue)
+           && (pMacro2 = vbcppMacroLookup(pThis, pszValue, cchValue)) != NULL
+           && !pMacro2->fFunction )
+    {
+        pszValue = pMacro2->szValue;
+        cchValue = pMacro2->cchValue;
+        i++;
+    }
+
+    if (!pMacro->cchValue)
+        return RTEXITCODE_SUCCESS;
+
+
+    /*
+     * A lone value?
+     */
+    ssize_t  cch = 0;
+    uint64_t u64;
+    char    *pszNext;
+    int rc = RTStrToUInt64Ex(pszValue, &pszNext, 0, &u64);
+    if (RT_SUCCESS(rc))
+    {
+        if (   rc == VWRN_TRAILING_SPACES
+            || rc == VWRN_NEGATIVE_UNSIGNED
+            || rc == VWRN_NUMBER_TOO_BIG)
+            return RTEXITCODE_SUCCESS;
+        const char *pszType;
+        if (rc == VWRN_TRAILING_CHARS)
+        {
+            if (!strcmp(pszNext, "u") || !strcmp(pszNext, "U"))
+                pszType = "uint32_t";
+            else if (!strcmp(pszNext, "ul") || !strcmp(pszNext, "UL"))
+                pszType = "uintptr_t";
+            else if (!strcmp(pszNext, "ull") || !strcmp(pszNext, "ULL"))
+                pszType = "uint64_t";
+            else
+                pszType = NULL;
+        }
+        else if (u64 <= UINT8_MAX)
+            pszType = "uint8_t";
+        else if (u64 <= UINT16_MAX)
+            pszType = "uint16_t";
+        else if (u64 <= UINT32_MAX)
+            pszType = "uint32_t";
+        else
+            pszType = "uint64_t";
+        if (!pszType)
+            return RTEXITCODE_SUCCESS;
+        cch = ScmStreamPrintf(&pThis->StrmOutput, "inline %s %s = %.*s;\n",
+                              pszType, pszDefine, pszNext - pszValue, pszValue);
+    }
+    /*
+     * A value wrapped in a constant macro?
+     */
+    else if (   (pszNext = strchr(pszValue, '(')) != NULL
+             && pszValue[cchValue - 1] == ')' )
+    {
+        size_t      cchPrefix = pszNext - pszValue;
+        size_t      cchInnerValue  = cchValue - cchPrefix - 2;
+        const char *pchInnerValue  = &pszValue[cchPrefix + 1];
+        while (cchInnerValue > 0 && RT_C_IS_SPACE(*pchInnerValue))
+            cchInnerValue--, pchInnerValue++;
+        while (cchInnerValue > 0 && RT_C_IS_SPACE(pchInnerValue[cchInnerValue - 1]))
+            cchInnerValue--;
+        if (!cchInnerValue || !RT_C_IS_XDIGIT(*pchInnerValue))
+            return RTEXITCODE_SUCCESS;
+
+        rc = RTStrToUInt64Ex(pchInnerValue, &pszNext, 0, &u64);
+        if (   RT_FAILURE(rc)
+            || rc == VWRN_TRAILING_SPACES
+            || rc == VWRN_NEGATIVE_UNSIGNED
+            || rc == VWRN_NUMBER_TOO_BIG)
+            return RTEXITCODE_SUCCESS;
+
+        const char *pszType;
+#define MY_MATCH_STR(a_sz)  (sizeof(a_sz) - 1 == cchPrefix && !strncmp(pszValue, a_sz, sizeof(a_sz) - 1))
+        if (MY_MATCH_STR("UINT8_C"))
+            pszType = "uint8_t";
+        else if (MY_MATCH_STR("UINT16_C"))
+            pszType = "uint16_t";
+        else if (MY_MATCH_STR("UINT32_C"))
+            pszType = "uint32_t";
+        else if (MY_MATCH_STR("UINT64_C"))
+            pszType = "uint64_t";
+        else
+            pszType = NULL;
+        if (pszType)
+            cch = ScmStreamPrintf(&pThis->StrmOutput, "inline %s %s = %.*s;\n",
+                                  pszType, pszDefine, cchInnerValue, pchInnerValue);
+        else if (MY_MATCH_STR("RT_BIT") || MY_MATCH_STR("RT_BIT_32"))
+            cch = ScmStreamPrintf(&pThis->StrmOutput, "inline uint32_t %s = 1U << %llu;\n",
+                                  pszDefine, u64);
+        else if (MY_MATCH_STR("RT_BIT_64"))
+            cch = ScmStreamPrintf(&pThis->StrmOutput, "inline uint64_t %s = 1ULL << %llu;\n",
+                                  pszDefine, u64);
+        else
+            return RTEXITCODE_SUCCESS;
+#undef MY_MATCH_STR
+    }
+    /* Dunno what this is... */
+    else
+        return RTEXITCODE_SUCCESS;
+
+    /*
+     * Check for output error and clear the output suppression indicator.
+     */
+    if (cch < 0)
+        return vbcppError(pThis, "Output error");
+
+    pThis->fJustDroppedLine = false;
+    return RTEXITCODE_SUCCESS;
+}
+
+
+
+/**
  * Processes a abbreviated line number directive.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
@@ -1522,7 +2625,7 @@ static RTEXITCODE vbcppDirectiveDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size
                     && pThis->fPassThruDefines)
                 {
                     unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
-                    size_t   cch;
+                    ssize_t  cch;
                     if (pchParams)
                         cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sdefine %.*s(%.*s)",
                                               cchIndent, "", cchDefine, pchDefine, cchParams, pchParams);
@@ -1534,8 +2637,12 @@ static RTEXITCODE vbcppDirectiveDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size
                     else
                         rcExit = vbcppError(pThis, "output error");
                 }
+                else if (   rcExit == RTEXITCODE_SUCCESS
+                         && pThis->enmMode == kVBCppMode_SelectiveD)
+                    rcExit = vbcppMacroTryConvertToInlineD(pThis, vbcppMacroLookup(pThis, pchDefine, cchDefine));
+                else
+                    pThis->fJustDroppedLine = true;
             }
-
         }
     }
     return rcExit;
@@ -1553,7 +2660,55 @@ static RTEXITCODE vbcppDirectiveDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size
  */
 static RTEXITCODE vbcppDirectiveUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
-    return vbcppError(pThis, "Not implemented %s", __FUNCTION__);
+    /*
+     * Parse it.
+     */
+    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        size_t      cchDefine;
+        const char *pchDefine = ScmStreamCGetWord(pStrmInput, &cchDefine);
+        if (pchDefine)
+        {
+            size_t offMaybeComment = vbcppProcessSkipWhite(pStrmInput);
+            rcExit = vbcppProcessSkipWhiteEscapedEolAndCommentsCheckEol(pThis, pStrmInput);
+            if (rcExit == RTEXITCODE_SUCCESS)
+            {
+                /*
+                 * Take action.
+                 */
+                PVBCPPDEF pMacro = vbcppMacroLookup(pThis, pchDefine, cchDefine);
+                if (    pMacro
+                    &&  pThis->fRespectSourceDefines
+                    &&  (   !pMacro->fCmdLine
+                         || pThis->fAllowRedefiningCmdLineDefines ) )
+                {
+                    RTStrSpaceRemove(&pThis->StrSpace, pMacro->Core.pszString);
+                    vbcppMacroFree(&pMacro->Core, NULL);
+                }
+
+                /*
+                 * Pass thru.
+                 */
+                if (   rcExit == RTEXITCODE_SUCCESS
+                    && pThis->fPassThruDefines)
+                {
+                    unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
+                    ssize_t  cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sundef %.*s",
+                                                   cchIndent, "", cchDefine, pchDefine);
+                    if (cch > 0)
+                        vbcppOutputComment(pThis, pStrmInput, offMaybeComment, cch, 1);
+                    else
+                        rcExit = vbcppError(pThis, "output error");
+                }
+
+            }
+        }
+        else
+            rcExit = vbcppError(pThis, "Malformed #ifndef");
+    }
+    return rcExit;
+
 }
 
 
@@ -2398,7 +3553,7 @@ static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, siz
             {
                 /* Pretty print the passthru. */
                 unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
-                size_t   cch;
+                ssize_t  cch;
                 if (chType == '<')
                     cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sinclude <%.*s>",
                                           cchIndent, "", cchFileSpec, pchFileSpec);
@@ -2466,7 +3621,7 @@ static RTEXITCODE vbcppDirectivePragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size
                 if (fPassThru)
                 {
                     unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
-                    size_t   cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*spragma %.*s",
+                    ssize_t  cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*spragma %.*s",
                                                    cchIndent, "", cchPragma, pchPragma);
                     if (cch > 0)
                         rcExit = vbcppOutputComment(pThis, pStrmInput, off2nd, cch, 1);
