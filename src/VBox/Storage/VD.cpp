@@ -5260,7 +5260,12 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                     break;
                 }
                 *ppszFormat = pszFormat;
-                rc = VINF_SUCCESS;
+                /* Do not consider the typical file access errors as success,
+                 * which allows the caller to deal with such issues. */
+                if (   rc != VERR_ACCESS_DENIED
+                    && rc != VERR_PATH_NOT_FOUND
+                    && rc != VERR_FILE_NOT_FOUND)
+                    rc = VINF_SUCCESS;
                 break;
             }
             rc = VERR_NOT_SUPPORTED;
