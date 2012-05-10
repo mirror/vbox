@@ -5982,7 +5982,8 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
             }
             else if (   vrc != VERR_FILE_NOT_FOUND
                      && vrc != VERR_PATH_NOT_FOUND
-                     && vrc != VERR_ACCESS_DENIED)
+                     && vrc != VERR_ACCESS_DENIED
+                     && locationFull != aLocation)
             {
                 /* assume it's not a file, restore the original location */
                 locationFull = aLocation;
