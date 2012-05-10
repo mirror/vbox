@@ -59,8 +59,11 @@ UIPopupBox::UIPopupBox(QWidget *pParent)
     /* Setup connections: */
     connect(m_pTitleLabel, SIGNAL(linkActivated(const QString)), this, SIGNAL(titleClicked(const QString)));
 
-    /* Install event-filter: */
-    qApp->installEventFilter(this);
+    /* Install local event-filters: */
+    installEventFilter(this);
+    m_pTitleIcon->installEventFilter(this);
+    m_pWarningIcon->installEventFilter(this);
+    m_pTitleLabel->installEventFilter(this);
 }
 
 UIPopupBox::~UIPopupBox()
@@ -130,13 +133,12 @@ void UIPopupBox::setContentWidget(QWidget *pWidget)
 {
     if (m_pContentWidget)
     {
+        m_pContentWidget->removeEventFilter(this);
         layout()->removeWidget(m_pContentWidget);
-//        m_pContentWidget->removeEventFilter(this);
     }
     m_pContentWidget = pWidget;
-//    m_pContentWidget->installEventFilter(this);
-//    m_pContentWidget->setMouseTracking(true);
-    layout()->addWidget(pWidget);
+    layout()->addWidget(m_pContentWidget);
+    m_pContentWidget->installEventFilter(this);
     recalc();
 }
 
@@ -182,11 +184,10 @@ bool UIPopupBox::isOpen() const
 bool UIPopupBox::eventFilter(QObject * /* pWatched */, QEvent *pEvent)
 {
     QEvent::Type type = pEvent->type();
-    if (   type == QEvent::MouseMove
-        || type == QEvent::Wheel
-        || type == QEvent::Resize
-        || type == QEvent::Enter
-        || type == QEvent::Leave)
+    if (type == QEvent::Enter ||
+        type == QEvent::Leave ||
+        type == QEvent::MouseMove ||
+        type == QEvent::Wheel)
         updateHover();
     return false;
 }
@@ -201,30 +202,6 @@ void UIPopupBox::resizeEvent(QResizeEvent *pEvent)
 void UIPopupBox::mouseDoubleClickEvent(QMouseEvent * /* pEvent */)
 {
     toggleOpen();
-}
-
-void UIPopupBox::mouseMoveEvent(QMouseEvent *pEvent)
-{
-    updateHover();
-    QWidget::mouseMoveEvent(pEvent);
-}
-
-void UIPopupBox::wheelEvent(QWheelEvent *pEvent)
-{
-    updateHover();
-    QWidget::wheelEvent(pEvent);
-}
-
-void UIPopupBox::enterEvent(QEvent *pEvent)
-{
-    updateHover();
-    QWidget::enterEvent(pEvent);
-}
-
-void UIPopupBox::leaveEvent(QEvent *pEvent)
-{
-    updateHover();
-    QWidget::leaveEvent(pEvent);
 }
 
 void UIPopupBox::paintEvent(QPaintEvent *pEvent)
