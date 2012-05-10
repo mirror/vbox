@@ -868,6 +868,7 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessSlow(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
 
             if (pBlt->Hdr.fFlags.fVisibleRegions)
             {
+                PVBOXWDDM_SWAPCHAIN pSwapchain = vboxWddmSwapchainRetainByAlloc(pDevExt, pSrcAlloc);
                 POINT pos = pSource->VScreenPos;
                 if (pos.x || pos.y)
                 {
@@ -875,8 +876,11 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessSlow(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
                     vboxWddmBltPipeRectsTranslate(&pBlt->Blt.DstRects, pos.x, pos.y);
                 }
 
-                Status = vboxVdmaGgDirtyRectsProcess(pDevExt, pContext, NULL, &pBlt->Blt.SrcRect, &pBlt->Blt.DstRects);
+                Status = vboxVdmaGgDirtyRectsProcess(pDevExt, pContext, pSwapchain, &pBlt->Blt.SrcRect, &pBlt->Blt.DstRects);
                 Assert(Status == STATUS_SUCCESS);
+
+                if (pSwapchain)
+                    vboxWddmSwapchainRelease(pSwapchain);
             }
             else
             {
