@@ -71,10 +71,6 @@ protected:
 
     void resizeEvent(QResizeEvent *pEvent);
     void mouseDoubleClickEvent(QMouseEvent *pEvent);
-    void mouseMoveEvent(QMouseEvent *pEvent);
-    void wheelEvent(QWheelEvent *pEvent);
-    void enterEvent(QEvent *pEvent);
-    void leaveEvent(QEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
 private:
