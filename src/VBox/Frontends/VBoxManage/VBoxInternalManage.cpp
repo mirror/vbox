@@ -1579,15 +1579,18 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     RTFileClose(hRawFile);
 
 #ifdef DEBUG_klaus
-    RTPrintf("#            start         length    startoffset  partdataptr  device\n");
-    for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
+    if (!RawDescriptor.fRawDisk)
     {
-        RTPrintf("%2u  %14RU64 %14RU64 %14RU64 %#18p %s\n", i,
-                 RawDescriptor.pPartDescs[i].uStart,
-                 RawDescriptor.pPartDescs[i].cbData,
-                 RawDescriptor.pPartDescs[i].uStartOffset,
-                 RawDescriptor.pPartDescs[i].pvPartitionData,
-                 RawDescriptor.pPartDescs[i].pszRawDevice);
+        RTPrintf("#            start         length    startoffset  partdataptr  device\n");
+        for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
+        {
+            RTPrintf("%2u  %14RU64 %14RU64 %14RU64 %#18p %s\n", i,
+                     RawDescriptor.pPartDescs[i].uStart,
+                     RawDescriptor.pPartDescs[i].cbData,
+                     RawDescriptor.pPartDescs[i].uStartOffset,
+                     RawDescriptor.pPartDescs[i].pvPartitionData,
+                     RawDescriptor.pPartDescs[i].pszRawDevice);
+        }
     }
 #endif
 
