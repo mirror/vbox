@@ -170,15 +170,11 @@ HRESULT findMedium(HandlerArg *a, const char *pszFilenameOrUuid,
     }
 
     if (!fSilent)
-        CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(pszFilenameOrUuid).raw(),
-                                              enmDevType, AccessMode_ReadWrite,
-                                              /* fForceNewUuidOnOpen */ false,
-                                              pMedium.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(pszFilenameOrUuid).raw(),
+                                              enmDevType, pMedium.asOutParam()));
     else
-        rc = a->virtualBox->OpenMedium(Bstr(pszFilenameOrUuid).raw(),
-                                              enmDevType, AccessMode_ReadWrite,
-                                              /* fForceNewUuidOnOpen */ false,
-                                              pMedium.asOutParam());
+        rc = a->virtualBox->FindMedium(Bstr(pszFilenameOrUuid).raw(),
+                                       enmDevType, pMedium.asOutParam());
     return rc;
 }
 
@@ -203,9 +199,7 @@ HRESULT findOrOpenMedium(HandlerArg *a, const char *pszFilenameOrUuid,
         pszFilenameOrUuid = szFilenameAbs;
     }
 
-    rc = a->virtualBox->OpenMedium(Bstr(pszFilenameOrUuid).raw(),
-                                   enmDevType, AccessMode_ReadWrite,
-                                   /* fForceNewUuidOnOpen */ false,
+    rc = a->virtualBox->FindMedium(Bstr(pszFilenameOrUuid).raw(), enmDevType,
                                    pMedium.asOutParam());
     /* If the medium is unknown try to open it. */
     if (!pMedium)
@@ -237,18 +231,12 @@ static HRESULT createHardDisk(HandlerArg *a, const char *pszFormat,
             RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilename);
             return E_FAIL;
         }
-        pszFilename = szFilenameAbs; 
-	CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(pszFilename).raw(),
-                                   DeviceType_Network, 
-                                   AccessMode_ReadWrite,
-                                   /* fForceNewUuidOnOpen */ false,
-                                   pMedium.asOutParam()));
-    }else{
-
-        CHECK_ERROR(a->virtualBox, CreateHardDisk(Bstr(pszFormat).raw(),
-                                                  Bstr(pszFilename).raw(),
-                                                  pMedium.asOutParam()));
+        pszFilename = szFilenameAbs;
     }
+
+    CHECK_ERROR(a->virtualBox, CreateHardDisk(Bstr(pszFormat).raw(),
+                                              Bstr(pszFilename).raw(),
+                                              pMedium.asOutParam()));
     return rc;
 }
 
@@ -508,7 +496,7 @@ int handleModifyHardDisk(HandlerArg *a)
                 if (!FilenameOrUuid)
                     FilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_MODIFYHD, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", ValueUnion.psz);
                 break;
 
             default:
