@@ -170,11 +170,17 @@ HRESULT findMedium(HandlerArg *a, const char *pszFilenameOrUuid,
     }
 
     if (!fSilent)
-        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(pszFilenameOrUuid).raw(),
-                                              enmDevType, pMedium.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(pszFilenameOrUuid).raw(), 
+                                   enmDevType, 
+                                   AccessMode_ReadWrite, 
+                                   /*fForceNewUidOnOpen */ false, 
+                                   pMedium.asOutParam()));
     else
-        rc = a->virtualBox->FindMedium(Bstr(pszFilenameOrUuid).raw(),
-                                       enmDevType, pMedium.asOutParam());
+        rc = a->virtualBox->OpenMedium(Bstr(pszFilenameOrUuid).raw(), 
+                                       enmDevType, 
+                                       AccessMode_ReadWrite,
+                                       /*fForceNewUidOnOpen */ false,
+                                       pMedium.asOutParam());
     return rc;
 }
 
@@ -199,7 +205,10 @@ HRESULT findOrOpenMedium(HandlerArg *a, const char *pszFilenameOrUuid,
         pszFilenameOrUuid = szFilenameAbs;
     }
 
-    rc = a->virtualBox->FindMedium(Bstr(pszFilenameOrUuid).raw(), enmDevType,
+    rc = a->virtualBox->OpenMedium(Bstr(pszFilenameOrUuid).raw(), 
+                                   enmDevType,
+		                   AccessMode_ReadWrite,
+                                   /*fForceNewUidOnOpen */ false,
                                    pMedium.asOutParam());
     /* If the medium is unknown try to open it. */
     if (!pMedium)
