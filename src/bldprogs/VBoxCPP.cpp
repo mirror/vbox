@@ -2474,7 +2474,7 @@ static RTEXITCODE vbcppMacroTryConvertToInlineD(PVBCPP pThis, PVBCPPDEF pMacro)
     /*
      * A value wrapped in a constant macro?
      */
-    else if (   (pszNext = strchr(pszValue, '(')) != NULL
+    else if (   (pszNext = (char *)strchr(pszValue, '(')) != NULL
              && pszValue[cchValue - 1] == ')' )
     {
         size_t      cchPrefix = pszNext - pszValue;
