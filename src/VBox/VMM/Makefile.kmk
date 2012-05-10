@@ -561,20 +561,21 @@ ifndef VBOX_ONLY_EXTPACKS
 endif # !VBOX_ONLY_EXTPACKS
 
 
-ifndef VBOX_ONLY_EXTPACKS
- if  defined(VBOX_WITH_DTRACE_R3) \
-  || defined(VBOX_WITH_DTRACE_R0) \
-  || defined(VBOX_WITH_DTRACE_RC)
+if !defined(VBOX_ONLY_EXTPACKS) \
+ && (   defined(VBOX_WITH_DTRACE_R3) \
+     || defined(VBOX_WITH_DTRACE_R0) \
+     || defined(VBOX_WITH_DTRACE_RC))
  #
  # Install the dtrace library files.
  #
  INSTALLS += VMMLibDTrace
- VMMLibDTrace_INST    = $(VBOX_INST_DTRACE_LIB)
+ VMMLibDTrace_INST    = $(VBOX_INST_DTRACE_LIB)$(KBUILD_TARGET_ARCH)/
  VMMLibDTrace_SOURCES = \
-	dtrace/lib/types.d \
-	dtrace/lib/$(KBUILD_TARGET_ARCH)/types.d=>$(KBUILD_TARGET_ARCH)/types.d \
-	$(VMMLibDTrace_0_OUTDIR)/vm.d=>$(KBUILD_TARGET_ARCH)/vm.d \
-	$(VMMLibDTrace_0_OUTDIR)/cpumctx.d=>$(KBUILD_TARGET_ARCH)/cpumctx.d \
+	dtrace/lib/vbox-types.d \
+	dtrace/lib/$(KBUILD_TARGET_ARCH)/vbox-arch-types.d \
+	$(VMMLibDTrace_0_OUTDIR)/vm.d \
+	$(VMMLibDTrace_0_OUTDIR)/cpumctx.d \
+	$(VMMLibDTrace_0_OUTDIR)/x86.d \
 
 
  ##
@@ -588,12 +589,17 @@ ifndef VBOX_ONLY_EXTPACKS
 		-D VBOX_FOR_DTRACE_LIB_$(toupper $(KBUILD_TARGET_ARCH)) \
 		-D RT_C_DECLS_BEGIN= \
 		-D RT_C_DECLS_END= \
+		-D 'RCPTRTYPE(a_Type)=RTRCPTR' \
+		-D 'R3PTRTYPE(a_Type)=RTR3PTR' \
+		-D 'R0PTRTYPE(a_Type)=a_Type' \
+		-D 'AssertCompile(a_Expr)=' \
+		-D 'AssertCompileSize(a_Stuct, a_Size)=' \
 		$$(addprefix -D ,$$(DEFS) $$(DEFS.$$(KBUILD_TARGET)) $$(DEFS.$(KBUILD_TARGET_ARCH))) $$< $$@
  endef
  $(evalcall2 def_vmm_lib_dtrace_preprocess,vm.d,$(PATH_ROOT)/include/VBox/vmm/vm.h)
  $(evalcall2 def_vmm_lib_dtrace_preprocess,cpumctx.d,$(PATH_ROOT)/include/VBox/vmm/cpumctx.h)
+ $(evalcall2 def_vmm_lib_dtrace_preprocess,x86.d,$(PATH_ROOT)/include/iprt/x86.h)
 
- endif
 endif
 
 

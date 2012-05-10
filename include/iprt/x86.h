@@ -28,8 +28,12 @@
 #ifndef ___iprt_x86_h
 #define ___iprt_x86_h
 
-#include <iprt/types.h>
-#include <iprt/assert.h>
+#ifndef VBOX_FOR_DTRACE_LIB
+# include <iprt/types.h>
+# include <iprt/assert.h>
+#else
+# pragma D depends_on library vbox-types.d
+#endif
 
 /* Workaround for Solaris sys/regset.h defining CS, DS */
 #ifdef RT_OS_SOLARIS
@@ -1042,8 +1046,6 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_K7_PERFCTR1                     0xc0010005
 #define MSR_K7_PERFCTR2                     0xc0010006
 #define MSR_K7_PERFCTR3                     0xc0010007
-
-#define MSR_K8_HWCR                         0xc0010015
 
 /** K8 LSTAR - Long mode SYSCALL target (RIP). */
 #define MSR_K8_LSTAR                        0xc0000082
@@ -2309,7 +2311,9 @@ typedef struct X86DESCGATE
      * Ignored if task-gate. */
     unsigned    u16OffsetHigh : 16;
 } X86DESCGATE;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86DESCGATE, 8);
+#endif
 /** Pointer to a Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
 typedef X86DESCGATE *PX86DESCGATE;
 /** Pointer to a const Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
@@ -2337,7 +2341,9 @@ typedef union X86DESC
     /** Unsigned integer view. */
     uint64_t        u;
 } X86DESC;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86DESC, 8);
+#endif
 #pragma pack()
 /** Pointer to descriptor table entry. */
 typedef X86DESC *PX86DESC;
@@ -2495,7 +2501,9 @@ typedef struct X86DESC64GATE
      * For call-gates bits 8 thru 12 must be zero, the other gates ignores this. */
     unsigned    u32Reserved : 32;
 } X86DESC64GATE;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86DESC64GATE, 16);
+#endif
 /** Pointer to a Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
 typedef X86DESC64GATE *PX86DESC64GATE;
 /** Pointer to a const Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
@@ -2524,7 +2532,9 @@ typedef union X86DESC64
     /** 64 bit unsigned integer view. */
     uint64_t            au64[2];
 } X86DESC64;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86DESC64, 16);
+#endif
 #pragma pack()
 /** Pointer to descriptor table entry. */
 typedef X86DESC64 *PX86DESC64;
@@ -2757,7 +2767,9 @@ typedef struct X86TSS16
     /** LDTR before task switch. */
     RTSEL       selLdt;
 } X86TSS16;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86TSS16, 44);
+#endif
 #pragma pack()
 /** Pointer to a 16-bit task segment. */
 typedef X86TSS16 *PX86TSS16;
@@ -2884,7 +2896,9 @@ typedef struct X86TSS64
 typedef X86TSS64 *PX86TSS64;
 /** Pointer to a const 64-bit task segment. */
 typedef const X86TSS64 *PCX86TSS64;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86TSS64, 136);
+#endif
 
 /** @} */
 
@@ -3033,9 +3047,11 @@ typedef struct X86XDTR64
 #define X86_MODRM_MOD_MASK      UINT8_C(0xc0)
 #define X86_MODRM_MOD_SMASK     UINT8_C(0x03)
 #define X86_MODRM_MOD_SHIFT     6
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompile((X86_MODRM_RM_MASK | X86_MODRM_REG_MASK | X86_MODRM_MOD_MASK) == 0xff);
 AssertCompile((X86_MODRM_REG_MASK >> X86_MODRM_REG_SHIFT) == X86_MODRM_REG_SMASK);
 AssertCompile((X86_MODRM_MOD_MASK >> X86_MODRM_MOD_SHIFT) == X86_MODRM_MOD_SMASK);
+#endif
 /** @} */
 
 /** @name SIB
@@ -3047,9 +3063,11 @@ AssertCompile((X86_MODRM_MOD_MASK >> X86_MODRM_MOD_SHIFT) == X86_MODRM_MOD_SMASK
 #define X86_SIB_SCALE_MASK    UINT8_C(0xc0)
 #define X86_SIB_SCALE_SMASK   UINT8_C(0x03)
 #define X86_SIB_SCALE_SHIFT   6
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompile((X86_SIB_BASE_MASK | X86_SIB_INDEX_MASK | X86_SIB_SCALE_MASK) == 0xff);
 AssertCompile((X86_SIB_INDEX_MASK >> X86_SIB_INDEX_SHIFT) == X86_SIB_INDEX_SMASK);
 AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK);
+#endif
 /** @} */
 
 /** @name General register indexes

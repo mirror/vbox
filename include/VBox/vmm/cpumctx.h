@@ -26,8 +26,11 @@
 #ifndef ___VBox_vmm_cpumctx_h
 #define ___VBox_vmm_cpumctx_h
 
-#include <iprt/types.h>
-#include <iprt/x86.h>
+#ifndef VBOX_FOR_DTRACE_LIB
+# include <iprt/x86.h>
+#else
+# pragma D depends_on library x86.d
+#endif
 
 
 RT_C_DECLS_BEGIN
@@ -81,11 +84,11 @@ typedef struct CPUMSYSENTER
  * little hack to make them palatable.
  */
 #ifdef VBOX_FOR_DTRACE_LIB
-# define CPUM_UNION_NAME    u
+# define CPUM_UNION_NAME(a_Nm)  a_Nm
 #elif defined(VBOX_WITHOUT_UNNAMED_UNIONS)
-# define CPUM_UNION_NAME    u
+# define CPUM_UNION_NAME(a_Nm)  a_Nm
 #else
-# define CPUM_UNION_NAME
+# define CPUM_UNION_NAME(a_Nm)
 #endif
 
 
@@ -102,49 +105,49 @@ typedef struct CPUMCTXCORE
         uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rdi);
     union
     {
         uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rsi);
     union
     {
         uint16_t        bp;
         uint32_t        ebp;
         uint64_t        rbp;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rbp);
     union
     {
         uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rax);
     union
     {
         uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rbx);
     union
     {
         uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rdx);
     union
     {
         uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rcx);
     union
     {
         uint16_t        sp;
         uint32_t        esp;
         uint64_t        rsp;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rsp);
     /* Note: lss esp, [] in the switcher needs some space, so we reserve it here instead of relying on the exact esp & ss layout as before. */
     uint32_t            lss_esp;
     RTSEL               ss;
@@ -165,13 +168,13 @@ typedef struct CPUMCTXCORE
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rflags);
     union
     {
         uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rip);
 
     uint64_t            r8;
     uint64_t            r9;
@@ -220,54 +223,54 @@ typedef struct CPUMCTX
         uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rdi);
     union
     {
         uint8_t         sil;
         uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rsi);
     union
     {
         uint16_t        bp;
         uint32_t        ebp;
         uint64_t        rbp;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rbp);
     union
     {
         uint8_t         al;
         uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rax);
     union
     {
         uint8_t         bl;
         uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rbx);
     union
     {
         uint8_t         dl;
         uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rdx);
     union
     {
         uint8_t         cl;
         uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rcx);
     union
     {
         uint16_t        sp;
         uint32_t        esp;
         uint64_t        rsp;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rsp);
     /** @note lss esp, [] in the switcher needs some space, so we reserve it here
      *        instead of relying on the exact esp & ss layout as before (prevented
      *        us from using a union with rsp). */
@@ -290,13 +293,13 @@ typedef struct CPUMCTX
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rflags);
     union
     {
         uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rip);
 
     uint64_t            r8;
     uint64_t            r9;
@@ -422,37 +425,37 @@ typedef struct CPUMCTX_VER1_6
     {
         uint32_t        edi;
         uint64_t        rdi;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rdi);
     union
     {
         uint32_t        esi;
         uint64_t        rsi;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rsi);
     union
     {
         uint32_t        ebp;
         uint64_t        rbp;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rbp);
     union
     {
         uint32_t        eax;
         uint64_t        rax;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rax);
     union
     {
         uint32_t        ebx;
         uint64_t        rbx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rbx);
     union
     {
         uint32_t        edx;
         uint64_t        rdx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rdx);
     union
     {
         uint32_t        ecx;
         uint64_t        rcx;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rcx);
     /** @note We rely on the exact layout, because we use lss esp, [] in the
      *        switcher. */
     uint32_t        esp;
@@ -476,12 +479,12 @@ typedef struct CPUMCTX_VER1_6
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rflags);
     union
     {
         uint32_t        eip;
         uint64_t        rip;
-    } CPUM_UNION_NAME;
+    } CPUM_UNION_NAME(rip);
 
     uint64_t            r8;
     uint64_t            r9;
