@@ -3263,6 +3263,39 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
     m->llPendingMachineRenames.push_back(pmr);
 }
 
+struct SaveMediaRegistriesDesc
+{
+    MediaList llMedia;
+    ComObjPtr<VirtualBox> pVirtualBox;
+};
+
+static int fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser)
+{
+    NOREF(ThreadSelf);
+    SaveMediaRegistriesDesc *pDesc = (SaveMediaRegistriesDesc *)pvUser;
+    if (!pDesc)
+    {
+        LogRelFunc(("Thread for saving media registries lacks parameters\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    for (MediaList::const_iterator it = pDesc->llMedia.begin();
+         it != pDesc->llMedia.end();
+         ++it)
+    {
+        Medium *pMedium = *it;
+        pMedium->markRegistriesModified();
+    }
+
+    pDesc->pVirtualBox->saveModifiedRegistries();
+
+    pDesc->llMedia.clear();
+    pDesc->pVirtualBox.setNull();
+    delete pDesc;
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Goes through all known media (hard disks, floppies and DVDs) and saves
  * those into the given settings::MediaRegistry structures whose registry
@@ -3290,7 +3323,7 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
  *
  * @param mediaRegistry Settings structure to fill.
  * @param uuidRegistry The UUID of the media registry; either a machine UUID (if machine registry) or the UUID of the global registry.
- * @param hardDiskFolder The machine folder for relative paths, if machine registry, or an empty string otherwise.
+ * @param strMachineFolder The machine folder for relative paths, if machine registry, or an empty string otherwise.
  */
 void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
                                    const Guid &uuidRegistry,
@@ -3313,6 +3346,7 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
         for (MediaList::iterator it = m->allFloppyImages.begin(); it != m->allFloppyImages.end(); ++it)
             llAllMedia.push_back(*it);
 
+        SaveMediaRegistriesDesc *pDesc = new SaveMediaRegistriesDesc();
         for (MediaList::iterator it = llAllMedia.begin();
              it != llAllMedia.end();
              ++it)
@@ -3323,12 +3357,47 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
                  ++it2)
             {
                 const Data::PendingMachineRename &pmr = *it2;
-                pMedium->updatePath(pmr.strConfigDirOld,
-                                    pmr.strConfigDirNew);
+                HRESULT rc = pMedium->updatePath(pmr.strConfigDirOld,
+                                                 pmr.strConfigDirNew);
+                if (SUCCEEDED(rc))
+                {
+                    // Remember which medium objects has been changed,
+                    // to trigger saving their registries later.
+                    pDesc->llMedia.push_back(pMedium);
+                } else if (rc == VBOX_E_FILE_ERROR)
+                    /* nothing */;
+                else
+                    AssertComRC(rc);
             }
         }
         // done, don't do it again until we have more machine renames
         m->llPendingMachineRenames.clear();
+
+        if (pDesc->llMedia.size())
+        {
+            // Handle the media registry saving in a separate thread, to
+            // avoid giant locking problems and passing up the list many
+            // levels up to whoever triggered saveSettings, as there are
+            // lots of places which would need to handle saving more settings.
+            pDesc->pVirtualBox = this;
+            int vrc = RTThreadCreate(NULL,
+                                     fntSaveMediaRegistries,
+                                     (void *)pDesc,
+                                     0,     // cbStack (default)
+                                     RTTHREADTYPE_MAIN_WORKER,
+                                     0,     // flags
+                                     "SaveMediaReg");
+            ComAssertRC(vrc);
+            // failure means that settings aren't saved, but there isn't
+            // much we can do besides avoiding memory leaks
+            if (RT_FAILURE(vrc))
+            {
+                LogRelFunc(("Failed to create thread for saving media registries (%Rrc)\n", vrc));
+                delete pDesc;
+            }
+        }
+        else
+            delete pDesc;
     }
 
     struct {
