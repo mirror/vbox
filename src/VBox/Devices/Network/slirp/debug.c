@@ -75,6 +75,16 @@ static DEBUGSTRSOCKETSTATE g_apszSocketStates[8] =
     DEBUGSTRSOCKETSTATE_HELPER(SS_FACCEPTONCE),
 };
 
+static DEBUGSTRSOCKETSTATE g_aTcpFlags[] =
+{
+    DEBUGSTRSOCKETSTATE_HELPER(TH_FIN),
+    DEBUGSTRSOCKETSTATE_HELPER(TH_SYN),
+    DEBUGSTRSOCKETSTATE_HELPER(TH_RST),
+    DEBUGSTRSOCKETSTATE_HELPER(TH_PUSH),
+    DEBUGSTRSOCKETSTATE_HELPER(TH_ACK),
+    DEBUGSTRSOCKETSTATE_HELPER(TH_URG),
+};
+
 /*
  * Dump a packet in the same format as tcpdump -x
  */
@@ -295,18 +305,22 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     if(status != 0 || addr.sa_family != AF_INET)
     {
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                "socket(%d) is invalid(probably closed)", so->s);
+                "socket(%d) is invalid(%s)", so->s, strerror(errno));
     }
 
     in_addr = (struct sockaddr_in *)&addr;
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) exp. in %d "
             "state=%R[natsockstate] "
+            "fUnderPolling:%RTbool "
+            "fShouldBeRemoved:%RTbool "
             "f_(addr:port)=%RTnaipv4:%d "
             "l_(addr:port)=%RTnaipv4:%d "
             "name=%RTnaipv4:%d",
             so->s, so->so_type,
             so->so_expire ? so->so_expire - curtime : 0,
             so->so_state,
+            so->fUnderPolling,
+            so->fShouldBeRemoved,
             so->so_faddr.s_addr,
             RT_N2H_U16(so->so_fport),
             so->so_laddr.s_addr,
@@ -419,6 +433,51 @@ printTcpState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     AssertReturn(RTStrCmp(pszType, "tcpstate") == 0, 0);
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s", pszTcpStateName);
     return cb;
+}
+
+/*
+ * Prints TCP flags
+ */
+static DECLCALLBACK(size_t)
+printTcpFlags(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                 const char *pszType, void const *pvValue,
+                 int cchWidth, int cchPrecision, unsigned fFlags,
+                 void *pvUser)
+{
+    size_t cbPrint = 0;
+    uint32_t u32TcpFlags = (uint32_t)(uintptr_t)pvValue;
+    bool fSingleValue = true;
+    int idxTcpFlags = 0;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
+    AssertReturn(RTStrCmp(pszType, "tcpflags") == 0, 0);
+    cbPrint += RTStrFormat(pfnOutput,
+                           pvArgOutput,
+                           NULL,
+                           0,
+                           "tcpflags: %RX8 [", (uint8_t)u32TcpFlags);
+    for (idxTcpFlags = 0; idxTcpFlags < RT_ELEMENTS(g_aTcpFlags); ++idxTcpFlags)
+    {
+        if (u32TcpFlags & g_aTcpFlags[idxTcpFlags].u32SocketState)
+        {
+            cbPrint += RTStrFormat(pfnOutput,
+                                   pvArgOutput,
+                                   NULL,
+                                   0,
+                                   fSingleValue ? "%s(%RX8)" : "|%s(%RX8)",
+                                   g_aTcpFlags[idxTcpFlags].pcszSocketStateName,
+                                   (uint8_t)g_aTcpFlags[idxTcpFlags].u32SocketState);
+            fSingleValue = false;
+        }
+    }
+    cbPrint += RTStrFormat(pfnOutput,
+                           pvArgOutput,
+                           NULL,
+                           0,
+                           "]");
+    return cbPrint;
 }
 
 /*
@@ -567,6 +626,7 @@ debug_init(PNATState pData)
         rc = RTStrFormatTypeRegister("tcpcb793", printTcpcbRfc793, NULL);       AssertRC(rc);
         rc = RTStrFormatTypeRegister("tcpseg793", printTcpSegmentRfc793, NULL); AssertRC(rc);
         rc = RTStrFormatTypeRegister("tcpstate", printTcpState, NULL);          AssertRC(rc);
+        rc = RTStrFormatTypeRegister("tcpflags", printTcpFlags, NULL);          AssertRC(rc);
         rc = RTStrFormatTypeRegister("sbuf", printSbuf, NULL);                  AssertRC(rc);
         rc = RTStrFormatTypeRegister("mzone", printMbufZone, NULL);             AssertRC(rc);
         rc = RTStrFormatTypeRegister("mzoneitem", printMbufZoneItem, NULL);     AssertRC(rc);
