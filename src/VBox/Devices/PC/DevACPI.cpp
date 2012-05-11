@@ -749,7 +749,7 @@ static int acpiPlantTables(ACPIState *pThis);
 DECLINLINE(void) acpiSetIrq(ACPIState *pThis, int level)
 {
     if (pThis->pm1a_ctl & SCI_EN)
-        PDMDevHlpPCISetIrq(pThis->pDevIns, -1, level);
+        PDMDevHlpPCISetIrq(pThis->pDevIns, 0, level);
 }
 
 DECLINLINE(uint32_t) pm1a_pure_en(uint32_t en)
