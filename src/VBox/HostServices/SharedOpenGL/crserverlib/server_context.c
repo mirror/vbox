@@ -122,7 +122,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
 
         pContextInfo->pContext = newCtx;
         pContextInfo->CreateInfo.visualBits = visualBits;
-        pContextInfo->CreateInfo.internalID = newCtx->id;
+        pContextInfo->CreateInfo.externalID = retVal;
         pContextInfo->CreateInfo.pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
         crHashtableAdd(cr_server.contextTable, retVal, pContextInfo);
     }
@@ -267,7 +267,6 @@ crServerDispatchDestroyContext( GLint ctx )
     }
 }
 
-
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 {
@@ -291,6 +290,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         }
     }
     else {
+#if 0
         oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
         if (oldMural && oldMural->bUseFBO && crServerSupportRedirMuralFBO())
         {
@@ -307,8 +307,12 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         ctxInfo = &cr_server.MainContextInfo;
         window = -1;
         mural = NULL;
+#endif
+        cr_server.bForceMakeCurrentOnClientSwitch = GL_TRUE;
         return;
     }
+
+    cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
 
     ctx = ctxInfo->pContext;
     CRASSERT(ctx);

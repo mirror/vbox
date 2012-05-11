@@ -287,6 +287,7 @@ crServerInit(int argc, char *argv[])
 
     cr_server.firstCallCreateContext = GL_TRUE;
     cr_server.firstCallMakeCurrent = GL_TRUE;
+    cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
 
     /*
      * Create default mural info and hash table.
@@ -359,7 +360,7 @@ GLboolean crVBoxServerInit(void)
 
     cr_server.bIsInLoadingState = GL_FALSE;
     cr_server.bIsInSavingState  = GL_FALSE;
-
+    cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
 
     cr_server.pCleanupClient = NULL;
 
@@ -727,8 +728,10 @@ static void crVBoxServerSaveCreateInfoCB(unsigned long key, void *data1, void *d
 static void crVBoxServerSaveCreateInfoFromCtxInfoCB(unsigned long key, void *data1, void *data2)
 {
     CRContextInfo *pContextInfo = (CRContextInfo *)data1;
-    CRCreateInfo_t *pCreateInfo = &pContextInfo->CreateInfo;
-    crVBoxServerSaveCreateInfoCB(key, pCreateInfo, data2);
+    CRCreateInfo_t CreateInfo = pContextInfo->CreateInfo;
+    /* saved state contains internal id */
+    CreateInfo.externalID = pContextInfo->pContext->id;
+    crVBoxServerSaveCreateInfoCB(key, &CreateInfo, data2);
 }
 
 static void crVBoxServerSyncTextureCB(unsigned long key, void *data1, void *data2)
@@ -965,7 +968,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
             createInfo.pszDpyName = psz;
         }
 
-        ctxID = crServerDispatchCreateContextEx(createInfo.pszDpyName, createInfo.visualBits, 0, key, createInfo.internalID);
+        ctxID = crServerDispatchCreateContextEx(createInfo.pszDpyName, createInfo.visualBits, 0, key, createInfo.externalID /* <-saved state stores internal id here*/);
         CRASSERT((int64_t)ctxID == (int64_t)key);
 
         pContextInfo = (CRContextInfo*) crHashtableSearch(cr_server.contextTable, key);

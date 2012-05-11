@@ -283,6 +283,14 @@ static int blitnum=0;
 static int copynum=0;
 #endif
 
+# ifdef DEBUG_misha
+# define CR_CHECK_BLITS
+#  include <iprt/assert.h>
+#  undef CRASSERT /* iprt assert's int3 are inlined that is why are more convenient to use since they can be easily disabled individually */
+#  define CRASSERT Assert
+# endif
+
+
 void SERVER_DISPATCH_APIENTRY 
 crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 {
@@ -507,11 +515,271 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
     }
 }
 
+#ifdef CR_CHECK_BLITS
+void crDbgFree(void *pvData)
+{
+    crFree(pvData);
+}
+
+void crDbgGetTexImage2D(GLint texTarget, GLint texName, GLvoid **ppvImage, GLint *pw, GLint *ph)
+{
+    SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
+    GLint ppb, pub, dstw, dsth, otex;
+    GLint pa, pr, psp, psr, ua, ur, usp, usr;
+    GLvoid *pvImage;
+    GLint rfb, dfb, rb, db;
+
+    gl->GetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &rfb);
+    gl->GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &dfb);
+    gl->GetIntegerv(GL_READ_BUFFER, &rb);
+    gl->GetIntegerv(GL_DRAW_BUFFER, &db);
+
+    gl->BindFramebufferEXT(GL_READ_FRAMEBUFFER_BINDING_EXT, 0);
+    gl->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER_BINDING_EXT, 0);
+    gl->ReadBuffer(GL_BACK);
+    gl->DrawBuffer(GL_BACK);
+
+    gl->GetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &ppb);
+    gl->GetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING, &pub);
+    gl->GetIntegerv(GL_TEXTURE_BINDING_2D, &otex);
+
+    gl->GetIntegerv(GL_PACK_ROW_LENGTH, &pr);
+    gl->GetIntegerv(GL_PACK_ALIGNMENT, &pa);
+    gl->GetIntegerv(GL_PACK_SKIP_PIXELS, &psp);
+    gl->GetIntegerv(GL_PACK_SKIP_ROWS, &psr);
+
+    gl->GetIntegerv(GL_UNPACK_ROW_LENGTH, &ur);
+    gl->GetIntegerv(GL_UNPACK_ALIGNMENT, &ua);
+    gl->GetIntegerv(GL_UNPACK_SKIP_PIXELS, &usp);
+    gl->GetIntegerv(GL_UNPACK_SKIP_ROWS, &usr);
+
+    gl->BindTexture(texTarget, texName);
+    gl->GetTexLevelParameteriv(texTarget, 0, GL_TEXTURE_WIDTH, &dstw);
+    gl->GetTexLevelParameteriv(texTarget, 0, GL_TEXTURE_HEIGHT, &dsth);
+
+    gl->PixelStorei(GL_PACK_ROW_LENGTH, 0);
+    gl->PixelStorei(GL_PACK_ALIGNMENT, 1);
+    gl->PixelStorei(GL_PACK_SKIP_PIXELS, 0);
+    gl->PixelStorei(GL_PACK_SKIP_ROWS, 0);
+
+    gl->PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    gl->PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    gl->PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+    gl->PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+
+    gl->BindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
+    gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    pvImage = crAlloc(4*dstw*dsth);
+    gl->GetTexImage(texTarget, 0, GL_BGRA, GL_UNSIGNED_BYTE, pvImage);
+
+    gl->BindTexture(texTarget, otex);
+
+    gl->PixelStorei(GL_PACK_ROW_LENGTH, pr);
+    gl->PixelStorei(GL_PACK_ALIGNMENT, pa);
+    gl->PixelStorei(GL_PACK_SKIP_PIXELS, psp);
+    gl->PixelStorei(GL_PACK_SKIP_ROWS, psr);
+
+    gl->PixelStorei(GL_UNPACK_ROW_LENGTH, ur);
+    gl->PixelStorei(GL_UNPACK_ALIGNMENT, ua);
+    gl->PixelStorei(GL_UNPACK_SKIP_PIXELS, usp);
+    gl->PixelStorei(GL_UNPACK_SKIP_ROWS, usr);
+
+    gl->BindBufferARB(GL_PIXEL_PACK_BUFFER, ppb);
+    gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER, pub);
+
+    gl->BindFramebufferEXT(GL_READ_FRAMEBUFFER_BINDING_EXT, rfb);
+    gl->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER_BINDING_EXT, dfb);
+    gl->ReadBuffer(rb);
+    gl->DrawBuffer(db);
+
+    *ppvImage = pvImage;
+    *pw = dstw;
+    *ph = dsth;
+}
+
+DECLEXPORT(void) crDbgPrint(const char *format, ... )
+{
+    va_list args;
+    static char txt[8092];
+
+    va_start( args, format );
+    vsprintf( txt, format, args );
+
+    OutputDebugString(txt);
+}
+
+void crDbgDumpImage2D(const char* pszDesc, const void *pvData, uint32_t width, uint32_t height, uint32_t bpp, uint32_t pitch)
+{
+    crDbgPrint("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">%s</exec>, ( !vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d )\n",
+            pvData, width, height, bpp, pitch,
+            pszDesc,
+            pvData, width, height, bpp, pitch);
+}
+
+void crDbgDumpTexImage2D(const char* pszDesc, GLint texTarget, GLint texName, GLboolean fBreak)
+{
+    GLvoid *pvImage;
+    GLint w, h;
+    crDbgGetTexImage2D(texTarget, texName, &pvImage, &w, &h);
+    crDbgPrint("%s target(%d), name(%d), width(%d), height(%d)", pszDesc, texTarget, texName, w, h);
+    crDbgDumpImage2D("texture data", pvImage, w, h, 32, (32 * w)/8);
+    if (fBreak)
+    {
+        CRASSERT(0);
+    }
+    crDbgFree(pvImage);
+}
+#endif
+
 void SERVER_DISPATCH_APIENTRY 
 crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
                                    GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, 
                                    GLbitfield mask, GLenum filter)
 {
+#ifdef CR_CHECK_BLITS
+//    {
+        SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
+        GLint rfb=0, dfb=0, dtex=0, dlev=-1, rtex=0, rlev=-1, rb=0, db=0, ppb=0, pub=0, vp[4], otex, dstw, dsth;
+        GLint sdtex=0, srtex=0;
+        GLenum dStatus, rStatus;
+        CRContext *ctx = crStateGetCurrent();
+
+        CRTextureObj *tobj = 0;
+        CRTextureLevel *tl = 0;
+        GLint id, tuId, pbufId, pbufIdHw, ubufId, ubufIdHw, width, height, depth;
+
+        crDebug("===StateTracker===");
+        crDebug("Current TU: %i", ctx->texture.curTextureUnit);
+
+        tobj = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D;
+        CRASSERT(tobj);
+        tl = &tobj->level[0][0];
+        crDebug("Texture %i(hw %i), w=%i, h=%i", tobj->id, tobj->hwid, tl->width, tl->height, tl->depth);
+
+        if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+        {
+            pbufId = ctx->bufferobject.packBuffer->hwid;
+        }
+        else
+        {
+            pbufId = 0;
+        }
+        crDebug("Pack BufferId %i", pbufId);
+
+        if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+        {
+            ubufId = ctx->bufferobject.unpackBuffer->hwid;
+        }
+        else
+        {
+            ubufId = 0;
+        }
+        crDebug("Unpack BufferId %i", ubufId);
+
+        crDebug("===GPU===");
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_ACTIVE_TEXTURE, &tuId);
+        crDebug("Current TU: %i", tuId - GL_TEXTURE0_ARB);
+        CRASSERT(tuId - GL_TEXTURE0_ARB == ctx->texture.curTextureUnit);
+
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_TEXTURE_BINDING_2D, &id);
+        cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+        cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+        cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_DEPTH, &depth);
+        crDebug("Texture: %i, w=%i, h=%i, d=%i", id, width, height, depth);
+        CRASSERT(id == tobj->hwid);
+        CRASSERT(width == tl->width);
+        CRASSERT(height == tl->height);
+        CRASSERT(depth == tl->depth);
+
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pbufIdHw);
+        crDebug("Hw Pack BufferId %i", pbufIdHw);
+        CRASSERT(pbufIdHw == pbufId);
+
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING, &ubufIdHw);
+        crDebug("Hw Unpack BufferId %i", ubufIdHw);
+        CRASSERT(ubufIdHw == ubufId);
+
+        gl->GetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &rfb);
+        gl->GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &dfb);
+        gl->GetIntegerv(GL_READ_BUFFER, &rb);
+        gl->GetIntegerv(GL_DRAW_BUFFER, &db);
+
+        gl->GetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &ppb);
+        gl->GetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING, &pub);
+
+        gl->GetIntegerv(GL_VIEWPORT, &vp[0]);
+
+        gl->GetIntegerv(GL_TEXTURE_BINDING_2D, &otex);
+
+        gl->GetFramebufferAttachmentParameterivEXT(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT, &dtex);
+        gl->GetFramebufferAttachmentParameterivEXT(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL_EXT, &dlev);
+        dStatus = gl->CheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER_EXT);
+
+        gl->GetFramebufferAttachmentParameterivEXT(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT, &rtex);
+        gl->GetFramebufferAttachmentParameterivEXT(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL_EXT, &rlev);
+        rStatus = gl->CheckFramebufferStatusEXT(GL_READ_FRAMEBUFFER_EXT);
+
+        if (dtex)
+        {
+            CRASSERT(!dlev);
+        }
+
+        if (rtex)
+        {
+            CRASSERT(!rlev);
+        }
+
+        if (ctx->framebufferobject.drawFB)
+        {
+            CRASSERT(dfb);
+            CRASSERT(ctx->framebufferobject.drawFB->hwid == dfb);
+            CRASSERT(ctx->framebufferobject.drawFB->drawbuffer[0] == db);
+
+            CRASSERT(dStatus==GL_FRAMEBUFFER_COMPLETE_EXT);
+            CRASSERT(db==GL_COLOR_ATTACHMENT0_EXT);
+
+            CRASSERT(ctx->framebufferobject.drawFB->color[0].type == GL_TEXTURE);
+            CRASSERT(ctx->framebufferobject.drawFB->color[0].level == 0);
+            sdtex = ctx->framebufferobject.drawFB->color[0].name;
+            sdtex = crStateGetTextureHWID(sdtex);
+
+            CRASSERT(sdtex);
+        }
+        else
+        {
+            CRASSERT(!dfb);
+        }
+
+        if (ctx->framebufferobject.readFB)
+        {
+            CRASSERT(rfb);
+            CRASSERT(ctx->framebufferobject.readFB->hwid == rfb);
+            CRASSERT(ctx->framebufferobject.readFB->readbuffer == rb);
+
+            CRASSERT(rStatus==GL_FRAMEBUFFER_COMPLETE_EXT);
+            CRASSERT(rb==GL_COLOR_ATTACHMENT0_EXT);
+
+            CRASSERT(ctx->framebufferobject.readFB->color[0].type == GL_TEXTURE);
+            CRASSERT(ctx->framebufferobject.readFB->color[0].level == 0);
+            srtex = ctx->framebufferobject.readFB->color[0].name;
+            srtex = crStateGetTextureHWID(srtex);
+
+            CRASSERT(srtex);
+        }
+        else
+        {
+            CRASSERT(!rfb);
+        }
+
+        CRASSERT(sdtex == dtex);
+        CRASSERT(srtex == rtex);
+
+//        crDbgDumpTexImage2D("==> src tex:", GL_TEXTURE_2D, rtex, true);
+//        crDbgDumpTexImage2D("==> dst tex:", GL_TEXTURE_2D, dtex, true);
+
+//    }
+#endif
 #ifdef CR_DUMP_BLITS
     SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
     GLint rfb=0, dfb=0, dtex=0, dlev=-1, rb=0, db=0, ppb=0, pub=0, vp[4], otex, dstw, dsth;
@@ -585,6 +853,10 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
                                                           dstX0, dstY0, dstX1, dstY1,
                                                           mask, filter);
 
+//#ifdef CR_CHECK_BLITS
+//    crDbgDumpTexImage2D("<== src tex:", GL_TEXTURE_2D, rtex, true);
+//    crDbgDumpTexImage2D("<== dst tex:", GL_TEXTURE_2D, dtex, true);
+//#endif
 #ifdef CR_DUMP_BLITS
     gl->BindTexture(GL_TEXTURE_2D, dtex);
     gl->GetTexImage(GL_TEXTURE_2D, dlev, GL_BGRA, GL_UNSIGNED_BYTE, img);
@@ -592,5 +864,82 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
     crDumpNamedTGA(fname, dstw, dsth, img);
     gl->BindTexture(GL_TEXTURE_2D, otex);
     crFree(img);
+#endif
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )
+{
+    crStateDrawBuffer( mode );
+
+    if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+            && cr_server.curClient->currentMural->idFBO
+            && !crStateGetCurrent()->framebufferobject.drawFB)
+    {
+        switch (mode)
+        {
+            case GL_BACK:
+            case GL_BACK_LEFT:
+                mode = GL_COLOR_ATTACHMENT0;
+                break;
+            case GL_FRONT:
+            case GL_FRONT_LEFT:
+                crWarning("GL_FRONT not supported for FBO mode! (0x%x)", mode);
+                mode = GL_COLOR_ATTACHMENT0;
+                break;
+            default:
+                crWarning("unexpected mode! 0x%x", mode);
+                break;
+        }
+    }
+
+#ifdef DEBUG_misha
+    cr_server.head_spu->dispatch_table.GetError();
+#endif
+    cr_server.head_spu->dispatch_table.DrawBuffer( mode );
+#ifdef DEBUG_misha
+    {
+        GLint db = 0;
+        GLenum err = cr_server.head_spu->dispatch_table.GetError();
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_DRAW_BUFFER, &db);
+        Assert(db == mode);
+    }
+#endif
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
+{
+    crStateReadBuffer( mode );
+
+    if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+            && cr_server.curClient->currentMural->idFBO
+            && !crStateGetCurrent()->framebufferobject.readFB)
+    {
+        switch (mode)
+        {
+            case GL_BACK:
+            case GL_BACK_LEFT:
+                mode = GL_COLOR_ATTACHMENT0;
+                break;
+            case GL_FRONT:
+            case GL_FRONT_LEFT:
+                crWarning("GL_FRONT not supported for FBO mode!");
+                mode = GL_COLOR_ATTACHMENT0;
+                break;
+            default:
+                crWarning("unexpected mode! 0x%x", mode);
+                break;
+        }
+    }
+#ifdef DEBUG_misha
+    cr_server.head_spu->dispatch_table.GetError();
+#endif
+    cr_server.head_spu->dispatch_table.ReadBuffer( mode );
+#ifdef DEBUG_misha
+    {
+        GLint rb = 0;
+        GLenum err = cr_server.head_spu->dispatch_table.GetError();
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_READ_BUFFER, &rb);
+        Assert(rb == mode);
+    }
 #endif
 }

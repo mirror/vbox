@@ -75,12 +75,31 @@ for index in range(len(funcs)):
         GLuint fboid;
         CRASSERT(tablesize/sizeof(%s)==1);
         fboid = crStateFBOHWIDtoID((GLuint) *get_values);
-        if (crServerIsRedirectedToFBO()
+        if (cr_server.curClient->currentMural->bUseFBO
+            && crServerIsRedirectedToFBO()
             && fboid==cr_server.curClient->currentMural->idFBO)
         {
             fboid = 0;
         }
         *get_values = (%s) fboid;
+    }
+    else if (GL_READ_BUFFER==pname)
+    {
+        if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+            && cr_server.curClient->currentMural->idFBO
+            && !crStateGetCurrent()->framebufferobject.readFB)
+        {
+            *get_values = (%s) crStateGetCurrent()->buffer.readBuffer;
+        }
+    }
+    else if (GL_DRAW_BUFFER==pname)
+    {
+        if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+            && cr_server.curClient->currentMural->idFBO
+            && !crStateGetCurrent()->framebufferobject.drawFB)
+        {
+            *get_values = (%s) crStateGetCurrent()->buffer.drawBuffer;
+        }
     }
     else if (GL_RENDERBUFFER_BINDING_EXT==pname)
     {
@@ -113,7 +132,7 @@ for index in range(len(funcs)):
     		*get_values = (%s)CR_MAX_TEXTURE_UNITS;
     	} 
     }
-    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
+    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
     print '\tcrServerReturnValue( get_values, tablesize );'
     print '\tcrFree(get_values);'
     print '}\n'
