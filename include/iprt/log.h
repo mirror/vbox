@@ -782,6 +782,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** Shortcut to |LogFlowFunc ("LEAVE\n")|, marks the end of the function. */
 #define LogFlowFuncLeave()      LogFlowFunc(("LEAVE\n"))
 
+/** Shortcut to |LogFlowFunc ("LEAVE: %Rrc\n")|, marks the end of the function. */
+#define LogFlowFuncLeaveRC(rc)      LogFlowFunc(("LEAVE: %Rrc\n", (rc)))
+
 /** Shortcut to |LogFlowThisFunc ("ENTER\n")|, marks the beginnig of the function. */
 #define LogFlowThisFuncEnter()  LogFlowThisFunc(("ENTER\n"))
 
