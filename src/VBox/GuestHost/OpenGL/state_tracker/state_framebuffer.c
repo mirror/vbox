@@ -803,37 +803,36 @@ crStateFramebufferObjectDisableHW(CRContext *ctx, GLuint idFBO)
 DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx, GLuint idFBO)
 {
-    GLboolean fAdjustDrawReadBuffers = GL_FALSE;
+    GLuint idReadBuffer = 0, idDrawBuffer = 0;
 
     if ((fromCtx->framebufferobject.drawFB) /* <- the FBO state was reset in crStateFramebufferObjectDisableHW */
             && fromCtx->framebufferobject.drawFB == toCtx->framebufferobject.drawFB)  /* .. and it was NOT restored properly in crStateFramebufferObjectSwitch */
     {
         diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, toCtx->framebufferobject.drawFB->hwid);
-        fAdjustDrawReadBuffers = GL_TRUE;
+        idDrawBuffer = toCtx->framebufferobject.drawFB->drawbuffer[0];
     }
     else if (idFBO && !toCtx->framebufferobject.drawFB)
     {
         diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, idFBO);
-        fAdjustDrawReadBuffers = GL_TRUE;
+        idDrawBuffer = GL_COLOR_ATTACHMENT0;
     }
 
     if ((fromCtx->framebufferobject.readFB) /* <- the FBO state was reset in crStateFramebufferObjectDisableHW */
             && fromCtx->framebufferobject.readFB == toCtx->framebufferobject.readFB) /* .. and it was NOT restored properly in crStateFramebufferObjectSwitch */
     {
         diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, toCtx->framebufferobject.readFB->hwid);
-        fAdjustDrawReadBuffers = GL_TRUE;
+        idReadBuffer = toCtx->framebufferobject.readFB->readbuffer;
     }
     else if (idFBO && !toCtx->framebufferobject.readFB)
     {
         diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, idFBO);
-        fAdjustDrawReadBuffers = GL_TRUE;
+        idReadBuffer = GL_COLOR_ATTACHMENT0;
     }
 
-    if (fAdjustDrawReadBuffers)
-    {
-        diff_api.DrawBuffer(toCtx->framebufferobject.drawFB?toCtx->framebufferobject.drawFB->drawbuffer[0]:toCtx->buffer.drawBuffer);
-        diff_api.ReadBuffer(toCtx->framebufferobject.readFB?toCtx->framebufferobject.readFB->readbuffer:toCtx->buffer.readBuffer);
-    }
+    if (idDrawBuffer)
+        diff_api.DrawBuffer(idDrawBuffer);
+    if (idReadBuffer)
+        diff_api.ReadBuffer(idReadBuffer);
 
     if (fromCtx->framebufferobject.renderbuffer /* <- the FBO state was reset in crStateFramebufferObjectDisableHW */
             && fromCtx->framebufferobject.renderbuffer==toCtx->framebufferobject.renderbuffer) /* .. and it was NOT restored properly in crStateFramebufferObjectSwitch */

@@ -246,3 +246,5 @@ GetObjectParameterivARB
 GetObjectParameterfvARB
 BlitFramebufferEXT
 EndList
+DrawBuffer
+ReadBuffer

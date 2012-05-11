@@ -104,7 +104,7 @@ typedef struct {
 typedef struct {
     char   *pszDpyName;
     GLint   visualBits;
-    int32_t internalID;
+    int32_t externalID;
 } CRCreateInfo_t;
 
 typedef struct {
@@ -182,6 +182,7 @@ typedef struct {
     GLboolean firstCallMakeCurrent;
     GLboolean bIsInLoadingState; /* Indicates if we're in process of loading VM snapshot */
     GLboolean bIsInSavingState; /* Indicates if we're in process of saving VM snapshot */
+    GLboolean bForceMakeCurrentOnClientSwitch;
     CRContextInfo *currentCtxInfo;
     GLint currentWindow;
     GLint currentNativeWindow;
