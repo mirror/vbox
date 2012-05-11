@@ -544,7 +544,8 @@ crServerServiceClient(const RunQueue *qEntry)
              int clientWindow = cr_server.curClient->currentWindow;
              int clientContext = cr_server.curClient->currentContextNumber;
              CRContextInfo *clientCtxInfo = cr_server.curClient->currentCtxInfo;
-             if (clientCtxInfo != cr_server.currentCtxInfo) {
+             if (clientCtxInfo != cr_server.currentCtxInfo
+                     || clientWindow != cr_server.currentWindow) {
                  crServerDispatchMakeCurrent(clientWindow, 0, clientContext);
                  /*
                  CRASSERT(cr_server.currentWindow == clientWindow);
