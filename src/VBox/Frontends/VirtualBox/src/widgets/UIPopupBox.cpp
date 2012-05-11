@@ -79,6 +79,8 @@ void UIPopupBox::setTitleIcon(const QIcon &icon)
     m_titleIcon = icon;
     /* Update title-icon: */
     updateTitleIcon();
+    /* Recalculate title-size: */
+    recalc();
 }
 
 QIcon UIPopupBox::titleIcon() const
@@ -92,6 +94,8 @@ void UIPopupBox::setWarningIcon(const QIcon &icon)
     m_warningIcon = icon;
     /* Update warning-icon: */
     updateWarningIcon();
+    /* Recalculate title-size: */
+    recalc();
 }
 
 QIcon UIPopupBox::warningIcon() const
@@ -105,6 +109,8 @@ void UIPopupBox::setTitle(const QString &strTitle)
     m_strTitle = strTitle;
     /* Update title: */
     updateTitle();
+    /* Recalculate title-size: */
+    recalc();
 }
 
 QString UIPopupBox::title() const
@@ -266,8 +272,6 @@ void UIPopupBox::updateTitleIcon()
 {
     /* Assign title-icon: */
     m_pTitleIcon->setPixmap(m_titleIcon.pixmap(16, 16));
-    /* Recalculate title-size: */
-    recalc();
 }
 
 void UIPopupBox::updateWarningIcon()
@@ -276,17 +280,26 @@ void UIPopupBox::updateWarningIcon()
     m_pWarningIcon->setHidden(m_warningIcon.isNull());
     /* Assign warning-icon: */
     m_pWarningIcon->setPixmap(m_warningIcon.pixmap(16, 16));
-    /* Recalculate title-size: */
-    recalc();
 }
 
 void UIPopupBox::updateTitle()
 {
-    /* Update title: */
+    /* If title-link is disabled or not set: */
     if (!m_fLinkEnabled || m_strLink.isEmpty())
+    {
+        /* We should just set simple text title: */
         m_pTitleLabel->setText(QString("<b>%1</b>").arg(m_strTitle));
-    /* Recalculate title-size: */
-    recalc();
+    }
+    /* If title-link is enabled and set: */
+    else if (m_fLinkEnabled && !m_strLink.isEmpty())
+    {
+        /* We should set html reference title: */
+        QPalette pal = m_pTitleLabel->palette();
+        m_pTitleLabel->setText(QString("<b><a style=\"text-decoration: none; color: %1\" href=\"%2\">%3</a></b>")
+                               .arg(m_fHeaderHover ? pal.color(QPalette::Link).name() : pal.color(QPalette::WindowText).name())
+                               .arg(m_strLink)
+                               .arg(m_strTitle));
+    }
 }
 
 void UIPopupBox::updateHover()
@@ -327,11 +340,9 @@ void UIPopupBox::toggleHover(bool fHeaderHover)
     m_fHeaderHover = fHeaderHover;
 
     /* Update title: */
-    QPalette pal = m_pTitleLabel->palette();
-    m_pTitleLabel->setText(QString("<b><a style=\"text-decoration: none; color: %1\" href=\"%2\">%3</a></b>")
-                           .arg(m_fHeaderHover ? pal.color(QPalette::Link).name() : pal.color(QPalette::WindowText).name())
-                           .arg(m_strLink)
-                           .arg(m_strTitle));
+    updateTitle();
+
+    /* Call for update: */
     update();
 }
 
