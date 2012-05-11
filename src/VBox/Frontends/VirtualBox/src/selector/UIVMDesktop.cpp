@@ -280,6 +280,7 @@ private:
     int m_cSectionCount;
     CMachine m_machine;
     QList<Section> m_sections;
+    UIPopupBoxGroup *m_pPopupBoxGroup;
     QMap<Section, UIPopupBox*> m_block;
 };
 
@@ -630,6 +631,7 @@ UIDetailsBlock::UIDetailsBlock(UIDetails *pParent, const QList<Section> &section
     , m_iBlockNumber(iBlockNumber)
     , m_cSectionCount(0)
     , m_sections(sections)
+    , m_pPopupBoxGroup(new UIPopupBoxGroup(this))
 {
 }
 
@@ -1309,9 +1311,10 @@ void UIDetailsBlock::createSection(int iSectionNumber)
     {
         /* Prepare new section (popup box): */
         UIPopupBox *pPopup = m_block[section] = new UIPopupBox(this);
+        m_pPopupBoxGroup->addPopupBox(pPopup);
         pPopup->hide();
-        connect(pPopup, SIGNAL(titleClicked(const QString &)), details()->detailsPage(), SIGNAL(linkClicked(const QString &)));
-        connect(pPopup, SIGNAL(toggled(bool)), parent(), SLOT(sltPopupToggled(bool)));
+        connect(pPopup, SIGNAL(sigTitleClicked(const QString &)), details()->detailsPage(), SIGNAL(linkClicked(const QString &)));
+        connect(pPopup, SIGNAL(sigToggled(bool)), parent(), SLOT(sltPopupToggled(bool)));
         pPopup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         pPopup->setProperty("section-type", static_cast<int>(section));
         if (!m_machine.GetAccessible())
