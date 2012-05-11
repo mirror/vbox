@@ -2,11 +2,11 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIPopupBox class implementation
+ * UIPopupBox/UIPopupBoxGroup classes implementation
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,47 +17,48 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
-#include "UIPopupBox.h"
-#ifdef Q_WS_MAC
-# include "UIImageTools.h"
-#endif /* Q_WS_MAC */
-
-/* Global includes */
-#include <QApplication>
+/* Global includes: */
 #include <QLabel>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QVBoxLayout>
 
+/* Local includes: */
+#include "UIPopupBox.h"
+#ifdef Q_WS_MAC
+# include "UIImageTools.h"
+#endif /* Q_WS_MAC */
+
 UIPopupBox::UIPopupBox(QWidget *pParent)
   : QWidget(pParent)
+  , m_pTitleIcon(new QLabel(this))
+  , m_pWarningIcon(new QLabel(this))
+  , m_pTitleLabel(new QLabel(this))
   , m_fLinkEnabled(false)
   , m_pContentWidget(0)
   , m_fOpen(true)
   , m_pLabelPath(0)
-  , m_aw(9)
+  , m_iArrowWidth(9)
   , m_fHeaderHover(false)
 {
-    /* Placing content: */
+    /* Setup main-layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     pMainLayout->setContentsMargins(10, 5, 5, 5);
-    QHBoxLayout *pTitleLayout = new QHBoxLayout();
-    m_pTitleIcon = new QLabel(this);
-    m_pWarningIcon = new QLabel(this);
-    m_pTitleLabel = new QLabel(this);
+    /* Setup title-layout: */
+    QHBoxLayout *pTitleLayout = new QHBoxLayout;
     pTitleLayout->addWidget(m_pTitleIcon);
     pTitleLayout->addWidget(m_pWarningIcon);
     pTitleLayout->addWidget(m_pTitleLabel, Qt::AlignLeft);
+    /* Add title-layout into main-layout: */
     pMainLayout->addLayout(pTitleLayout);
 
     /* Configure widgets: */
     m_pWarningIcon->setHidden(true);
-    m_arrowPath.lineTo(m_aw / 2.0, m_aw / 2.0);
-    m_arrowPath.lineTo(m_aw, 0);
+    m_arrowPath.lineTo(m_iArrowWidth / 2.0, m_iArrowWidth / 2.0);
+    m_arrowPath.lineTo(m_iArrowWidth, 0);
 
     /* Setup connections: */
-    connect(m_pTitleLabel, SIGNAL(linkActivated(const QString)), this, SIGNAL(titleClicked(const QString)));
+    connect(m_pTitleLabel, SIGNAL(linkActivated(const QString)), this, SIGNAL(sigTitleClicked(const QString)));
 
     /* Install local event-filters: */
     installEventFilter(this);
@@ -72,23 +73,12 @@ UIPopupBox::~UIPopupBox()
         delete m_pLabelPath;
 }
 
-void UIPopupBox::setTitle(const QString& strTitle)
+void UIPopupBox::setTitleIcon(const QIcon &icon)
 {
-    m_strTitle = strTitle;
-    updateHover(true);
-    recalc();
-}
-
-QString UIPopupBox::title() const
-{
-    return m_strTitle;
-}
-
-void UIPopupBox::setTitleIcon(const QIcon& icon)
-{
+    /* Remember new title-icon: */
     m_titleIcon = icon;
-    updateHover(true);
-    recalc();
+    /* Update title-icon: */
+    updateTitleIcon();
 }
 
 QIcon UIPopupBox::titleIcon() const
@@ -96,12 +86,12 @@ QIcon UIPopupBox::titleIcon() const
     return m_titleIcon;
 }
 
-void UIPopupBox::setWarningIcon(const QIcon& icon)
+void UIPopupBox::setWarningIcon(const QIcon &icon)
 {
+    /* Remember new warning-icon: */
     m_warningIcon = icon;
-    m_pWarningIcon->setHidden(m_warningIcon.isNull());
-    updateHover(true);
-    recalc();
+    /* Update warning-icon: */
+    updateWarningIcon();
 }
 
 QIcon UIPopupBox::warningIcon() const
@@ -109,9 +99,25 @@ QIcon UIPopupBox::warningIcon() const
     return m_warningIcon;
 }
 
-void UIPopupBox::setTitleLink(const QString& strLink)
+void UIPopupBox::setTitle(const QString &strTitle)
 {
+    /* Remember new title: */
+    m_strTitle = strTitle;
+    /* Update title: */
+    updateTitle();
+}
+
+QString UIPopupBox::title() const
+{
+    return m_strTitle;
+}
+
+void UIPopupBox::setTitleLink(const QString &strLink)
+{
+    /* Remember new title-link: */
     m_strLink = strLink;
+    /* Update title: */
+    updateTitle();
 }
 
 QString UIPopupBox::titleLink() const
@@ -121,7 +127,10 @@ QString UIPopupBox::titleLink() const
 
 void UIPopupBox::setTitleLinkEnabled(bool fEnabled)
 {
+    /* Remember new title-link availability flag: */
     m_fLinkEnabled = fEnabled;
+    /* Update title: */
+    updateTitle();
 }
 
 bool UIPopupBox::isTitleLinkEnabled() const
@@ -131,11 +140,13 @@ bool UIPopupBox::isTitleLinkEnabled() const
 
 void UIPopupBox::setContentWidget(QWidget *pWidget)
 {
+    /* Cleanup old content-widget if any: */
     if (m_pContentWidget)
     {
         m_pContentWidget->removeEventFilter(this);
         layout()->removeWidget(m_pContentWidget);
     }
+    /* Prepare new content-wodget: */
     m_pContentWidget = pWidget;
     layout()->addWidget(m_pContentWidget);
     m_pContentWidget->installEventFilter(this);
@@ -149,20 +160,20 @@ QWidget* UIPopupBox::contentWidget() const
 
 void UIPopupBox::setOpen(bool fOpen)
 {
-    /* Do not do anything if already done: */
+    /* Check if we should toggle popup-box: */
     if (m_fOpen == fOpen)
         return;
 
     /* Store new value: */
     m_fOpen = fOpen;
 
-    /* Update content widget if present or this itself: */
+    /* Update content-widget if present or this itself: */
     if (m_pContentWidget)
         m_pContentWidget->setVisible(m_fOpen);
     else
         update();
 
-    /* Notify listeners about content widget visibility: */
+    /* Notify listeners about content-widget visibility: */
     if (m_pContentWidget && m_pContentWidget->isVisible())
         emit sigUpdateContentWidget();
 }
@@ -173,7 +184,7 @@ void UIPopupBox::toggleOpen()
     setOpen(!m_fOpen);
 
     /* Notify listeners about toggling: */
-    emit toggled(m_fOpen);
+    emit sigToggled(m_fOpen);
 }
 
 bool UIPopupBox::isOpen() const
@@ -181,31 +192,36 @@ bool UIPopupBox::isOpen() const
     return m_fOpen;
 }
 
-bool UIPopupBox::eventFilter(QObject * /* pWatched */, QEvent *pEvent)
+bool UIPopupBox::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
+    /* Handle all mouse-event to update hover: */
     QEvent::Type type = pEvent->type();
     if (type == QEvent::Enter ||
         type == QEvent::Leave ||
         type == QEvent::MouseMove ||
         type == QEvent::Wheel)
         updateHover();
-    return false;
+    /* Call to base-class: */
+    return QWidget::eventFilter(pWatched, pEvent);
 }
 
 void UIPopupBox::resizeEvent(QResizeEvent *pEvent)
 {
-    updateHover();
+    /* Recalculate title-size: */
     recalc();
+    /* Call to base-class: */
     QWidget::resizeEvent(pEvent);
 }
 
 void UIPopupBox::mouseDoubleClickEvent(QMouseEvent * /* pEvent */)
 {
+    /* Toggle popup-box: */
     toggleOpen();
 }
 
 void UIPopupBox::paintEvent(QPaintEvent *pEvent)
 {
+    /* Create painter: */
     QPainter painter(this);
     painter.setClipRect(pEvent->rect());
 
@@ -246,45 +262,77 @@ void UIPopupBox::paintEvent(QPaintEvent *pEvent)
     }
 }
 
-void UIPopupBox::updateHover(bool fForce /* = false */)
+void UIPopupBox::updateTitleIcon()
 {
-    bool fOld = m_fHeaderHover;
-//    QPoint bl = mapFromGlobal(QCursor::pos());
-//    printf("%d %d\n", bl.x(), bl.y());
-    if (   m_pLabelPath
-        && m_pLabelPath->contains(mapFromGlobal(QCursor::pos())))
-//        if (underMouse())
-        m_fHeaderHover = true;
-    else
-        m_fHeaderHover = false;
+    /* Assign title-icon: */
+    m_pTitleIcon->setPixmap(m_titleIcon.pixmap(16, 16));
+    /* Recalculate title-size: */
+    recalc();
+}
 
-    if (   !m_fLinkEnabled
-        || m_strLink.isEmpty())
-    {
+void UIPopupBox::updateWarningIcon()
+{
+    /* Hide warning-icon if its null: */
+    m_pWarningIcon->setHidden(m_warningIcon.isNull());
+    /* Assign warning-icon: */
+    m_pWarningIcon->setPixmap(m_warningIcon.pixmap(16, 16));
+    /* Recalculate title-size: */
+    recalc();
+}
+
+void UIPopupBox::updateTitle()
+{
+    /* Update title: */
+    if (!m_fLinkEnabled || m_strLink.isEmpty())
         m_pTitleLabel->setText(QString("<b>%1</b>").arg(m_strTitle));
-    }
-    if (   fForce
-        || fOld != m_fHeaderHover)
-    {
-        QPalette pal = m_pTitleLabel->palette();
-        m_pTitleLabel->setText(QString("<b><a style=\"text-decoration: none; color: %1\" href=\"%2\">%3</a></b>")
-                               .arg(m_fHeaderHover ? pal.color(QPalette::Link).name() : pal.color(QPalette::WindowText).name())
-                               .arg(m_strLink)
-                               .arg(m_strTitle));
+    /* Recalculate title-size: */
+    recalc();
+}
 
-        QPixmap titleIcon = m_titleIcon.pixmap(16, 16);
-        QPixmap warningIcon = m_warningIcon.pixmap(16, 16);
-#ifdef Q_WS_MAC
-        /* TODO: Fix this! */
-//        if (!m_fHeaderHover)
-//            titleIcon = QPixmap::fromImage(toGray(titleIcon.toImage()));
-//        if (!m_fHeaderHover)
-//            warningIcon = QPixmap::fromImage(toGray(warningIcon.toImage()));
-#endif /* Q_WS_MAC */
-        m_pTitleIcon->setPixmap(titleIcon);
-        m_pWarningIcon->setPixmap(warningIcon);
-        update();
-    }
+void UIPopupBox::updateHover()
+{
+    /* Calculate new header-hover state: */
+    bool fNewHeaderHover = m_fHeaderHover;
+    if (m_pLabelPath && m_pLabelPath->contains(mapFromGlobal(QCursor::pos())))
+        fNewHeaderHover = true;
+    else
+        fNewHeaderHover = false;
+
+    /* Check if we should toggle hover: */
+    if (m_fHeaderHover == fNewHeaderHover)
+        return;
+
+    /* If header-hover state switched from disabled to enabled: */
+    if (!m_fHeaderHover && fNewHeaderHover)
+        /* Notify listeners: */
+        emit sigGotHover();
+
+    /* Toggle hover: */
+    toggleHover(fNewHeaderHover);
+}
+
+void UIPopupBox::revokeHover()
+{
+    /* Check if we should toggle hover: */
+    if (m_fHeaderHover == false)
+        return;
+
+    /* Toggle hover off: */
+    toggleHover(false);
+}
+
+void UIPopupBox::toggleHover(bool fHeaderHover)
+{
+    /* Remember header-hover state: */
+    m_fHeaderHover = fHeaderHover;
+
+    /* Update title: */
+    QPalette pal = m_pTitleLabel->palette();
+    m_pTitleLabel->setText(QString("<b><a style=\"text-decoration: none; color: %1\" href=\"%2\">%3</a></b>")
+                           .arg(m_fHeaderHover ? pal.color(QPalette::Link).name() : pal.color(QPalette::WindowText).name())
+                           .arg(m_strLink)
+                           .arg(m_strTitle));
+    update();
 }
 
 void UIPopupBox::recalc()
@@ -300,5 +348,43 @@ void UIPopupBox::recalc()
     m_pLabelPath->arcTo(QRectF(rect.x() + rect.width() - d, rect.y(), d, d), 0, 90);
     m_pLabelPath->closeSubpath();
     update();
+}
+
+UIPopupBoxGroup::UIPopupBoxGroup(QObject *pParent)
+    : QObject(pParent)
+{
+}
+
+UIPopupBoxGroup::~UIPopupBoxGroup()
+{
+    /* Clear the list early: */
+    m_list.clear();
+}
+
+void UIPopupBoxGroup::addPopupBox(UIPopupBox *pPopupBox)
+{
+    /* Add popup-box into list: */
+    m_list << pPopupBox;
+
+    /* Connect got-hover signal of the popup-box to hover-change slot of the popup-box group: */
+    connect(pPopupBox, SIGNAL(sigGotHover()), this, SLOT(sltHoverChanged()));
+}
+
+void UIPopupBoxGroup::sltHoverChanged()
+{
+    /* Fetch the sender: */
+    UIPopupBox *pPopupBox = qobject_cast<UIPopupBox*>(sender());
+
+    /* Check if sender popup-box exists/registered: */
+    if (!pPopupBox || !m_list.contains(pPopupBox))
+        return;
+
+    /* Filter the sender: */
+    QList<UIPopupBox*> list(m_list);
+    list.removeOne(pPopupBox);
+
+    /* Notify all other popup-boxes: */
+    for (int i = 0; i < list.size(); ++i)
+        list[i]->revokeHover();
 }
 
