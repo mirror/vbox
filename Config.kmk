@@ -101,6 +101,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
  VBOX_INST_DTRACE_LIB = $(INST_BIN)dtrace/lib/
+ VBOX_INST_DTRACE_TST = $(INST_BIN)dtrace/testcase/
 
 else
 
@@ -124,6 +125,7 @@ else
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
  VBOX_INST_DTRACE_LIB = $(INST_BIN)dtrace/lib/
+ VBOX_INST_DTRACE_TST = $(INST_BIN)dtrace/testcase/
 endif
 
 INST_DOC              = doc/

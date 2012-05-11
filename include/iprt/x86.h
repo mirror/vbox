@@ -201,6 +201,7 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 /** CPUID Feature information - ECX.
  * CPUID query with EAX=1.
  */
+#ifndef VBOX_FOR_DTRACE_LIB
 typedef struct X86CPUIDFEATECX
 {
     /** Bit 0 - SSE3 - Supports SSE3 or not. */
@@ -266,6 +267,9 @@ typedef struct X86CPUIDFEATECX
     /** Bit 31 - Hypervisor present (we're a guest). */
     unsigned    u1HVP : 1;
 } X86CPUIDFEATECX;
+#else  /* VBOX_FOR_DTRACE_LIB */
+typedef uint32_t X86CPUIDFEATECX;
+#endif /* VBOX_FOR_DTRACE_LIB */
 /** Pointer to CPUID Feature Information - ECX. */
 typedef X86CPUIDFEATECX *PX86CPUIDFEATECX;
 /** Pointer to const CPUID Feature Information - ECX. */
@@ -275,6 +279,7 @@ typedef const X86CPUIDFEATECX *PCX86CPUIDFEATECX;
 /** CPUID Feature Information - EDX.
  * CPUID query with EAX=1.
  */
+#ifndef VBOX_FOR_DTRACE_LIB /* DTrace different (brain-dead from a C pov) bitfield implementation */
 typedef struct X86CPUIDFEATEDX
 {
     /** Bit 0 - FPU - x87 FPU on Chip. */
@@ -342,6 +347,9 @@ typedef struct X86CPUIDFEATEDX
     /** Bit 31 - PBE - Pending Break Enabled. */
     unsigned    u1PBE : 1;
 } X86CPUIDFEATEDX;
+#else  /* VBOX_FOR_DTRACE_LIB */
+typedef uint32_t X86CPUIDFEATEDX;
+#endif /* VBOX_FOR_DTRACE_LIB */
 /** Pointer to CPUID Feature Information - EDX. */
 typedef X86CPUIDFEATEDX *PX86CPUIDFEATEDX;
 /** Pointer to const CPUID Feature Information - EDX. */

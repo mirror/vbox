@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +18,15 @@
 #ifndef ___CPUMInternal_h
 #define ___CPUMInternal_h
 
-#include <VBox/cdefs.h>
-#include <VBox/types.h>
-#include <iprt/x86.h>
+#ifndef VBOX_FOR_DTRACE_LIB
+# include <VBox/cdefs.h>
+# include <VBox/types.h>
+# include <iprt/x86.h>
+#else
+# pragma D depends_on library x86.d
+# pragma D depends_on library cpumctx.d
+#endif
+
 
 
 
@@ -76,8 +82,10 @@
 /** @} */
 
 /* Sanity check. */
+#ifndef VBOX_FOR_DTRACE_LIB
 #if defined(VBOX_WITH_HYBRID_32BIT_KERNEL) && (HC_ARCH_BITS != 32 || R0_ARCH_BITS != 32)
 # error "VBOX_WITH_HYBRID_32BIT_KERNEL is only for 32 bit builds."
+#endif
 #endif
 
 
@@ -98,36 +106,36 @@ typedef struct CPUMHOSTCTX
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** General purpose register ++
      * { */
-    //uint64_t        rax; - scratch
+    /*uint64_t        rax; - scratch*/
     uint64_t        rbx;
-    //uint64_t        rcx; - scratch
-    //uint64_t        rdx; - scratch
+    /*uint64_t        rcx; - scratch*/
+    /*uint64_t        rdx; - scratch*/
     uint64_t        rdi;
     uint64_t        rsi;
     uint64_t        rbp;
     uint64_t        rsp;
-    //uint64_t        r8; - scratch
-    //uint64_t        r9; - scratch
+    /*uint64_t        r8; - scratch*/
+    /*uint64_t        r9; - scratch*/
     uint64_t        r10;
     uint64_t        r11;
     uint64_t        r12;
     uint64_t        r13;
     uint64_t        r14;
     uint64_t        r15;
-    //uint64_t        rip; - scratch
+    /*uint64_t        rip; - scratch*/
     uint64_t        rflags;
 #endif
 
 #if HC_ARCH_BITS == 32
-    //uint32_t        eax; - scratch
+    /*uint32_t        eax; - scratch*/
     uint32_t        ebx;
-    //uint32_t        ecx; - scratch
-    //uint32_t        edx; - scratch
+    /*uint32_t        ecx; - scratch*/
+    /*uint32_t        edx; - scratch*/
     uint32_t        edi;
     uint32_t        esi;
     uint32_t        ebp;
     X86EFLAGS       eflags;
-    //uint32_t        eip; - scratch
+    /*uint32_t        eip; - scratch*/
     /* lss pair! */
     uint32_t        esp;
 #endif
@@ -153,7 +161,7 @@ typedef struct CPUMHOSTCTX
     /** Control registers.
      * @{ */
     uint32_t        cr0;
-    //uint32_t        cr2; - scratch
+    /*uint32_t        cr2; - scratch*/
     uint32_t        cr3;
     uint32_t        cr4;
     /** @} */
@@ -199,7 +207,7 @@ typedef struct CPUMHOSTCTX
     /** Control registers.
      * @{ */
     uint64_t        cr0;
-    //uint64_t        cr2; - scratch
+    /*uint64_t        cr2; - scratch*/
     uint64_t        cr3;
     uint64_t        cr4;
     uint64_t        cr8;
@@ -293,6 +301,7 @@ typedef struct CPUM
         uint32_t            OrMask;
     } CR4;
 
+#if 1 /*ndef VBOX_FOR_DTRACE_LIB*/ /* DTrace turns a 'bool' into a uint32_t. Ditto for uint8_t. Stupid, stupid DTrace! */
     /** Synthetic CPU type? */
     bool                    fSyntheticCpu;
     /** The (more) portable CPUID level.  */
@@ -301,6 +310,9 @@ typedef struct CPUM
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
     uint8_t                 abPadding[HC_ARCH_BITS == 64 ? 5 : 1];
+#else
+    uint8_t                 abPadding[(HC_ARCH_BITS == 64 ? 5 : 1) + 3];
+#endif
 
     /** The standard set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdStd[6];
@@ -399,10 +411,11 @@ typedef struct CPUMCPU
 
     /** Align the structure on a 64-byte boundary. */
     uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 34 : 26];
-} CPUMCPU, *PCPUMCPU;
+} CPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
 
+#ifndef VBOX_FOR_DTRACE_LIB
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
@@ -429,6 +442,7 @@ DECLASM(void)       cpumR0SaveDRx(uint64_t *pa4Regs);
 #endif
 
 RT_C_DECLS_END
+#endif /* !VBOX_FOR_DTRACE_LIB */
 
 /** @} */
 

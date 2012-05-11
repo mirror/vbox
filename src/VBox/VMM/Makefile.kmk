@@ -575,6 +575,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
 	dtrace/lib/$(KBUILD_TARGET_ARCH)/vbox-arch-types.d \
 	$(VMMLibDTrace_0_OUTDIR)/vm.d \
 	$(VMMLibDTrace_0_OUTDIR)/cpumctx.d \
+	$(VMMLibDTrace_0_OUTDIR)/CPUMInternal.d \
 	$(VMMLibDTrace_0_OUTDIR)/x86.d \
 
 
@@ -594,10 +595,20 @@ if !defined(VBOX_ONLY_EXTPACKS) \
 		-D 'R0PTRTYPE(a_Type)=a_Type' \
 		-D 'AssertCompile(a_Expr)=' \
 		-D 'AssertCompileSize(a_Stuct, a_Size)=' \
-		$$(addprefix -D ,$$(DEFS) $$(DEFS.$$(KBUILD_TARGET)) $$(DEFS.$(KBUILD_TARGET_ARCH))) $$< $$@
+		-D 'bool=uint8_t' \
+		$$(foreach def,\
+			$$(DEFS) \
+			$$(DEFS.$$(KBUILD_TARGET)) \
+			$$(DEFS.$(KBUILD_TARGET_ARCH)) \
+			$$(VMM_COMMON_DEFS) \
+			$$(ARCH_BITS_DEFS)\
+		   ,-D '$$(def)') \
+		$$< \
+		$$@
  endef
  $(evalcall2 def_vmm_lib_dtrace_preprocess,vm.d,$(PATH_ROOT)/include/VBox/vmm/vm.h)
  $(evalcall2 def_vmm_lib_dtrace_preprocess,cpumctx.d,$(PATH_ROOT)/include/VBox/vmm/cpumctx.h)
+ $(evalcall2 def_vmm_lib_dtrace_preprocess,CPUMInternal.d,$(PATH_CURRENT)/include/CPUMInternal.h)
  $(evalcall2 def_vmm_lib_dtrace_preprocess,x86.d,$(PATH_ROOT)/include/iprt/x86.h)
 
 endif
