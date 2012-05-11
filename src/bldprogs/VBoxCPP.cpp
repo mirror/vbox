@@ -2919,17 +2919,84 @@ static VBCPPEXPRRET vbcppExprEatUnaryOrOperand(PVBCPPEXPRPARSER pThis, PSCMSTREA
  */
 static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, VBCPPEVAL *penmResult)
 {
-    Assert(strlen(pszExpr) == cchExpr);
 #if 0
+    Assert(strlen(pszExpr) == cchExpr);
     /** @todo */
 #else           /* Greatly simplified for getting DTrace working. */
+RTStrmPrintf(g_pStdErr, "expr: '%.*s'\n", cchExpr, pszExpr);
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    if (strcmp(pszExpr, "1"))
+    if (   !strcmp(pszExpr, "1")
+        || !strcmp(pszExpr, "64  == 64")
+        || !strcmp(pszExpr, "64  != 32")
+        || !strcmp(pszExpr, "32  != 64")
+        )
         *penmResult = kVBCppEval_True;
-    else if (strcmp(pszExpr, "0"))
+    else if (   !strcmp(pszExpr, "0")
+             || !strcmp(pszExpr, "32  == 64")
+             || !strcmp(pszExpr, "64  == 32")
+             || !strcmp(pszExpr, "64  != 64")
+             || !strcmp(pszExpr, "32  != 32")
+             )
         *penmResult = kVBCppEval_False;
     else if (pThis->fUndecidedConditionals)
         *penmResult = kVBCppEval_Undecided;
+    else if (   !strcmp(pszExpr, "defined(IN_RING0)")
+             || !strcmp(pszExpr, "defined(IN_RC) || defined(IN_RING0)")
+             || !strcmp(pszExpr, "defined(VBOX_WITHOUT_UNNAMED_UNIONS)")
+             )
+        *penmResult = kVBCppEval_True;
+    else if (   !strcmp(pszExpr, "HC_ARCH_BITS == 32")
+             || !strcmp(pszExpr, "HC_ARCH_BITS != 32")
+             || !strcmp(pszExpr, "HC_ARCH_BITS == 64")
+             || !strcmp(pszExpr, "HC_ARCH_BITS != 64"))
+    {
+        PVBCPPDEF pMacro = vbcppMacroLookup(pThis, RT_STR_TUPLE("HC_ARCH_BITS"));
+        if (pMacro)
+        {
+            if (  !strcmp(pMacro->szValue, "32")
+                ?    !strcmp(pszExpr, "HC_ARCH_BITS == 32")
+                  || !strcmp(pszExpr, "HC_ARCH_BITS != 64")
+                :    !strcmp(pszExpr, "HC_ARCH_BITS == 64")
+                  || !strcmp(pszExpr, "HC_ARCH_BITS != 32"))
+                *penmResult = kVBCppEval_True;
+            else
+                *penmResult = kVBCppEval_False;
+        }
+        else
+            *penmResult = kVBCppEval_False;
+    }
+    else if (   !strcmp(pszExpr, "64  == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)")
+             || !strcmp(pszExpr, "32  == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)") )
+    {
+        PVBCPPDEF pMacro = vbcppMacroLookup(pThis, RT_STR_TUPLE("VBOX_WITH_HYBRID_32BIT_KERNEL"));
+        if (!pMacro && *pszExpr == '3')
+            *penmResult = kVBCppEval_True;
+        else
+            *penmResult = kVBCppEval_False;
+    }
+    else if (   !strcmp(pszExpr, "64  == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)")
+             || !strcmp(pszExpr, "32  == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)")
+             )
+    {
+        PVBCPPDEF pMacro = vbcppMacroLookup(pThis, RT_STR_TUPLE("VBOX_WITH_HYBRID_32BIT_KERNEL"));
+        if (*pszExpr == '6' || pMacro)
+            *penmResult = kVBCppEval_True;
+        else
+            *penmResult = kVBCppEval_False;
+    }
+    else if (   !strcmp(pszExpr, "defined(VBOX_WITH_HYBRID_32BIT_KERNEL) && ( 32  != 32 || R0_ARCH_BITS != 32)")
+             || !strcmp(pszExpr, "defined(VBOX_WITH_HYBRID_32BIT_KERNEL) && ( 64  != 32 || R0_ARCH_BITS != 32)") )
+    {
+        PVBCPPDEF pMacro1 = vbcppMacroLookup(pThis, RT_STR_TUPLE("VBOX_WITH_HYBRID_32BIT_KERNEL"));
+        PVBCPPDEF pMacro2 = vbcppMacroLookup(pThis, RT_STR_TUPLE("HC_ARCH_BITS"));
+        PVBCPPDEF pMacro3 = vbcppMacroLookup(pThis, RT_STR_TUPLE("R0_ARCH_BITS"));
+        if  (   pMacro1
+             && (   (!pMacro2 || strcmp(pMacro2->szValue, "32"))
+                 || (!pMacro3 || strcmp(pMacro3->szValue, "32"))))
+            *penmResult = kVBCppEval_True;
+        else
+            *penmResult = kVBCppEval_False;
+    }
     else
         rcExit = vbcppError(pThis, "Too compliated expression '%s'", pszExpr);
 #endif
