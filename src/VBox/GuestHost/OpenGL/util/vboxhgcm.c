@@ -1706,7 +1706,6 @@ static void *_crVBoxHGSMIDoAlloc(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
     int rc;
 
     buf = _crVBoxHGSMIBufAlloc(pClient, CRVBOXHGSMI_BUF_SIZE(cbSize));
-    CRASSERT(buf);
     if (buf)
     {
         VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags;
@@ -1725,6 +1724,10 @@ static void *_crVBoxHGSMIDoAlloc(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
             crWarning("Failed to Lock the buffer, rc(%d)\n", rc);
         }
         return CRVBOXHGSMI_BUF_DATA(pData);
+    }
+    else
+    {
+        crWarning("_crVBoxHGSMIBufAlloc failed to allocate buffer of size (%d)", CRVBOXHGSMI_BUF_SIZE(cbSize));
     }
 
     /* fall back */
