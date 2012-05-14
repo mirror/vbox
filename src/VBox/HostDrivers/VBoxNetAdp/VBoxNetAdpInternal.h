@@ -29,7 +29,7 @@ RT_C_DECLS_BEGIN
 /** Pointer to the globals. */
 typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
 
-#define VBOXNETADP_MAX_INSTANCES   8
+#define VBOXNETADP_MAX_INSTANCES   128
 #define VBOXNETADP_MAX_UNITS       128
 #define VBOXNETADP_NAME            "vboxnet"
 #define VBOXNETADP_MAX_NAME_LEN    32
@@ -125,17 +125,7 @@ struct VBoxNetAdapter
         /** Union alignment to a pointer. */
         void *pvAlign;
         /** Padding. */
-#if defined(RT_OS_WINDOWS)
-# if defined(VBOX_NETFLT_ONDEMAND_BIND)
-        uint8_t abPadding[192];
-# else
-        uint8_t abPadding[1024];
-# endif
-#elif defined(RT_OS_LINUX)
         uint8_t abPadding[64];
-#else
-        uint8_t abPadding[64];
-#endif
     } u;
     /** The interface name. */
     char szName[VBOXNETADP_MAX_NAME_LEN];
