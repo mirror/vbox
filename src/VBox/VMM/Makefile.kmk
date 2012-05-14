@@ -585,7 +585,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
  define def_vmm_lib_dtrace_preprocess
   $$$$(VMMLibDTrace_0_OUTDIR)/$1: $2 $$(VBOX_VBOXCPP) | $$$$(dir $$$$@)
 	$$(QUIET)$$(call MSG_GENERATE,VMMLibDTrace,$$@,$$<)
-	$(VBOX_VBOXCPP) -d \
+	$$(QUIET)$(VBOX_VBOXCPP) -d \
 		-D VBOX_FOR_DTRACE_LIB \
 		-D VBOX_FOR_DTRACE_LIB_$(toupper $(KBUILD_TARGET_ARCH)) \
 		-D IN_RING0 \
@@ -606,6 +606,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
 		   ,-D '$$(def)') \
 		$$< \
 		$$@
+	$$(QUIET)$$(CHMOD) 644 $$@
  endef
  $(evalcall2 def_vmm_lib_dtrace_preprocess,vm.d,$(PATH_ROOT)/include/VBox/vmm/vm.h)
  $(evalcall2 def_vmm_lib_dtrace_preprocess,cpumctx.d,$(PATH_ROOT)/include/VBox/vmm/cpumctx.h)
