@@ -398,7 +398,7 @@ static int machineAdd(const Bstr &strUuid)
         for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
             if (g_aModules[j].fEnabled)
             {
-                int rc2 = g_aModules[j].pDesc->pfnOnMachineRegistered(strUuid);
+                rc2 = g_aModules[j].pDesc->pfnOnMachineRegistered(strUuid);
                 if (RT_FAILURE(rc2))
                     serviceLog("OnMachineRegistered: Module '%s' reported an error: %Rrc\n",
                                g_aModules[j].pDesc->pszName, rc);
@@ -1086,7 +1086,6 @@ int main(int argc, char *argv[])
                                    szError, sizeof(szError));
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, rc);
-        AssertPtr(pLoggerReleaseFile);
     }
 #endif
 
