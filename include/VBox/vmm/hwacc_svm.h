@@ -409,6 +409,18 @@
 /** @} */
 
 
+/** @name SVM_VMCB.ctrl.TLBCtrl.n.u8TLBFlush
+ * @{
+ */
+/** Flush nothing. */
+#define SVM_TLB_FLUSH_NOTHING                           0
+/** Flush entire TLB (host+guest entries) */
+#define SVM_TLB_FLUSH_ENTIRE                            1
+/** Flush this guest's TLB entries (by ASID) */
+#define SVM_TLB_FLUSH_SINGLE_CONTEXT                    3
+/** Flush this guest's non-global TLB entries (by ASID) */
+#define SVM_TLB_FLUSH_SINGLE_CONTEXT_RETAIN_GLOBALS     7
+/** @} */
 
 
 /**
@@ -492,8 +504,7 @@ typedef union
     struct
     {
         uint32_t    u32ASID             : 32;
-        uint32_t    u1TLBFlush          : 1;
-        uint32_t    u7Reserved          : 7;
+        uint32_t    u8TLBFlush          : 8;
         uint32_t    u24Reserved         : 24;
     } n;
     uint64_t    au64[1];

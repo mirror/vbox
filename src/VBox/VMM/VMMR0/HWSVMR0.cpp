@@ -96,6 +96,13 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
        while executing the VM. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, HCPhysCpuPage);
 
+    /*
+     * Theoretically, other hypervisors may have used ASIDs, ideally we should flush all non-zero ASIDs
+     * when enabling SVM. AMD doesn't have an SVM instruction to flush all ASIDs (flushing is done
+     * upon VMRUN). Therefore, just set the fFlushASIDBeforeUse flag which instructs hmR0SvmSetupTLB()
+     * to flush the TLB with before using a new ASID.
+     */
+    pCpu->fFlushASIDBeforeUse = true;
     return VINF_SUCCESS;
 }
 
@@ -950,6 +957,141 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return VINF_SUCCESS;
 }
 
+/**
+ * Setup TLB for ASID.
+ *
+ * @param    pVM        The VM to operate on.
+ * @param    pVCpu      The VM CPU to operate on.
+ */
+static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
+{
+    PHMGLOBLCPUINFO pCpu;
+
+    AssertPtr(pVM);
+    AssertPtr(pVCpu);
+
+    SVM_VMCB *pVMCB = (SVM_VMCB *)pVCpu->hwaccm.s.svm.pVMCB;
+    pCpu = HWACCMR0GetCurrentCpu();
+
+    /*
+     * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last.
+     * This can happen both for start & resume due to long jumps back to ring-3.
+     * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB,
+     * so we cannot reuse the ASIDs without flushing.
+     */
+    bool fNewASID = false;
+    if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
+        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+    {
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
+        fNewASID = true;
+    }
+
+    /*
+     * Set TLB flush state as checked until we return from the world switch.
+     */
+    ASMAtomicWriteBool(&pVCpu->hwaccm.s.fCheckedTLBFlush, true);
+
+    /*
+     * Check for TLB shootdown flushes.
+     */
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
+
+    pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
+    pCpu->fFlushTLB = false;
+    pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
+
+    if (RT_UNLIKELY(pVM->hwaccm.s.svm.fAlwaysFlushTLB))
+    {
+        /*
+         * This is the AMD erratum 170. We need to flush the entire TLB for each world switch. Sad.
+         */
+        pCpu->uCurrentASID               = 1;
+        pVCpu->hwaccm.s.uCurrentASID     = 1;
+        pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+    }
+    else if (pVCpu->hwaccm.s.fForceTLBFlush)
+    {
+        if (fNewASID)
+        {
+            ++pCpu->uCurrentASID;
+            bool fHitASIDLimit = false;
+            if (pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID)
+            {
+                pCpu->uCurrentASID        = 1;  /* start at 1; host uses 0 */
+                pCpu->cTLBFlushes++;
+                fHitASIDLimit             = true;
+
+                if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                {
+                    pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+                    pCpu->fFlushASIDBeforeUse = true;
+                }
+                else
+                {
+                    pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                    pCpu->fFlushASIDBeforeUse = false;
+                }
+            }
+
+            if (   !fHitASIDLimit
+                && pCpu->fFlushASIDBeforeUse)
+            {
+                if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                    pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+                else
+                {
+                    pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                    pCpu->fFlushASIDBeforeUse = false;
+                }
+            }
+
+            pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
+            pVCpu->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
+        }
+        else
+        {
+            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+            else
+                pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+        }
+
+        pVCpu->hwaccm.s.fForceTLBFlush = false;
+    }
+    else
+    {
+        /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
+         *        not be executed. See hwaccmQueueInvlPage() where it is commented
+         *        out. Support individual entry flushing someday. */
+        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
+        {
+            /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
+            for (unsigned i = 0; i < pVCpu->hwaccm.s.TlbShootdown.cPages; i++)
+                SVMR0InvlpgA(pVCpu->hwaccm.s.TlbShootdown.aPages[i], pVMCB->ctrl.TLBCtrl.n.u32ASID);
+        }
+    }
+
+    pVCpu->hwaccm.s.TlbShootdown.cPages = 0;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+
+    /* Update VMCB with the ASID. */
+    pVMCB->ctrl.TLBCtrl.n.u32ASID = pVCpu->hwaccm.s.uCurrentASID;
+
+    AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
+    AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
+
+#ifdef VBOX_WITH_STATISTICS
+    if (pVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
+    else
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch);
+#endif
+}
+
 
 /**
  * Runs guest code in an AMD-V VM.
@@ -1205,82 +1347,10 @@ ResumeExecution:
 #endif
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatEntry, &pVCpu->hwaccm.s.StatInGC, x);
 
-    pCpu = HWACCMR0GetCurrentCpu();
-    /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
-    /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
-    if (    pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
-            /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
-        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
-    {
-        /* Force a TLB flush on VM entry. */
-        pVCpu->hwaccm.s.fForceTLBFlush = true;
-    }
-    else
-        Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
-
-    pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
-
-    /* Set TLB flush state as checked until we return from the world switch. */
-    ASMAtomicWriteBool(&pVCpu->hwaccm.s.fCheckedTLBFlush, true);
-
-    /* Check for tlb shootdown flushes. */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
-        pVCpu->hwaccm.s.fForceTLBFlush = true;
-
-    /* Make sure we flush the TLB when required.  Switch ASID to achieve the
-       same thing, but without actually flushing the whole TLB (which is
-       expensive). */
-    if (    pVCpu->hwaccm.s.fForceTLBFlush
-        && !pVM->hwaccm.s.svm.fAlwaysFlushTLB)
-    {
-        if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
-            ||  pCpu->fFlushTLB)
-        {
-            pCpu->fFlushTLB                  = false;
-            pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
-            pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = 1;       /* wrap around; flush TLB */
-            pCpu->cTLBFlushes++;
-        }
-        else
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
-
-        pVCpu->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
-        pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
-    }
-    else
-    {
-        Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
-
-        /* We never increase uCurrentASID in the fAlwaysFlushTLB (erratum 170) case. */
-        if (!pCpu->uCurrentASID || !pVCpu->hwaccm.s.uCurrentASID)
-            pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
-
-        Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVCpu->hwaccm.s.fForceTLBFlush);
-        pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVCpu->hwaccm.s.fForceTLBFlush;
-
-        if (    !pVM->hwaccm.s.svm.fAlwaysFlushTLB
-            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
-        {
-            /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
-            for (unsigned i=0;i<pVCpu->hwaccm.s.TlbShootdown.cPages;i++)
-                SVMR0InvlpgA(pVCpu->hwaccm.s.TlbShootdown.aPages[i], pVMCB->ctrl.TLBCtrl.n.u32ASID);
-        }
-    }
-    pVCpu->hwaccm.s.TlbShootdown.cPages = 0;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-
-    AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
-    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
-    pVMCB->ctrl.TLBCtrl.n.u32ASID = pVCpu->hwaccm.s.uCurrentASID;
-
-#ifdef VBOX_WITH_STATISTICS
-    if (pVMCB->ctrl.TLBCtrl.n.u1TLBFlush)
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch);
-    else
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
-#endif
+    /*
+     * Setup TLB control and ASID in the VMCB.
+     */
+    hmR0SvmSetupTLB(pVM, pVCpu);
 
     /* In case we execute a goto ResumeExecution later on. */
     pVCpu->hwaccm.s.fResumeVM      = true;
@@ -1339,7 +1409,7 @@ ResumeExecution:
         Log(("ctrl.u64TSCOffset                 %RX64\n",   pVMCB->ctrl.u64TSCOffset));
 
         Log(("ctrl.TLBCtrl.u32ASID              %x\n",      pVMCB->ctrl.TLBCtrl.n.u32ASID));
-        Log(("ctrl.TLBCtrl.u1TLBFlush           %x\n",      pVMCB->ctrl.TLBCtrl.n.u1TLBFlush));
+        Log(("ctrl.TLBCtrl.u8TLBFlush           %x\n",      pVMCB->ctrl.TLBCtrl.n.u8TLBFlush));
         Log(("ctrl.TLBCtrl.u7Reserved           %x\n",      pVMCB->ctrl.TLBCtrl.n.u7Reserved));
         Log(("ctrl.TLBCtrl.u24Reserved          %x\n",      pVMCB->ctrl.TLBCtrl.n.u24Reserved));
 
