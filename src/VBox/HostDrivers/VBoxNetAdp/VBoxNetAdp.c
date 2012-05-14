@@ -1184,6 +1184,8 @@ int  vboxNetAdpInit(void)
      */
     memset(g_aUnits, 0, sizeof(g_aUnits));
     memset(g_aAdapters, 0, sizeof(g_aAdapters));
+    LogFlow(("vboxnetadp: max host-only interfaces supported: %d (%d bytes)\n",
+             VBOXNETADP_MAX_INSTANCES, sizeof(g_aAdapters)));
     for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
     {
         g_aAdapters[i].enmState = kVBoxNetAdpState_Invalid;
