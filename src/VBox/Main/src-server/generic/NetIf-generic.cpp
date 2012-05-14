@@ -180,6 +180,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                                                  COM_IIDOF(IHostNetworkInterface),
                                                  HostNetworkInterface::getStaticComponentName(),
                                                  "%s", szBuf);
+                        pclose(fp);
                         return E_FAIL;
                     }
                     char *pLast = szBuf + strlen(szBuf) - 1;
