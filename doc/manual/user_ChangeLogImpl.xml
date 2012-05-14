@@ -28,6 +28,16 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: improved VM context switch performance for Intel CPUs using
+          nested paging</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: added support for FlushByASID features of AMD CPUs (Bulldozer
+          and newer)</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: fixed unreal mode handling on older CPUs with VT-x
           (gPXE, Solaris 7/8/9; bug #9941)</para>
       </listitem>
