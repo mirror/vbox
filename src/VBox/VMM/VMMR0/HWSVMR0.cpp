@@ -1410,7 +1410,6 @@ ResumeExecution:
 
         Log(("ctrl.TLBCtrl.u32ASID              %x\n",      pVMCB->ctrl.TLBCtrl.n.u32ASID));
         Log(("ctrl.TLBCtrl.u8TLBFlush           %x\n",      pVMCB->ctrl.TLBCtrl.n.u8TLBFlush));
-        Log(("ctrl.TLBCtrl.u7Reserved           %x\n",      pVMCB->ctrl.TLBCtrl.n.u7Reserved));
         Log(("ctrl.TLBCtrl.u24Reserved          %x\n",      pVMCB->ctrl.TLBCtrl.n.u24Reserved));
 
         Log(("ctrl.IntCtrl.u8VTPR               %x\n",      pVMCB->ctrl.IntCtrl.n.u8VTPR));
