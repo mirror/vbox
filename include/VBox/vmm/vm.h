@@ -52,8 +52,8 @@
  * addition, there are sub-states when started for assisting scheduling (GVMM
  * mostly).
  *
- * The transision out of the STOPPED state is done by a vmR3PowerOn.
- * The transision back to the STOPPED state is done by vmR3PowerOff.
+ * The transition out of the STOPPED state is done by a vmR3PowerOn.
+ * The transition back to the STOPPED state is done by vmR3PowerOff.
  *
  * (Alternatively we could let vmR3PowerOn start CPU 0 only and let the SPIP
  * handling switch on the other CPUs. Then vmR3Reset would stop all but CPU 0.)
