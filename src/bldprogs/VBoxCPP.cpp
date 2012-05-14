@@ -68,6 +68,10 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/** Pointer to the C preprocessor instance data. */
+typedef struct VBCPP *PVBCPP;
+
+
 /**
  * Variable string buffer (very simple version of SCMSTREAM).
  */
@@ -168,6 +172,166 @@ typedef enum VBCPPMACRORESCANMODE
     /** End of valid modes. */
     kMacroReScanMode_End
 } VBCPPMACRORESCANMODE;
+
+
+/**
+ * Expression node type.
+ */
+typedef enum VBCPPEXPRKIND
+{
+    kVBCppExprKind_Invalid = 0,
+    kVBCppExprKind_Unary,
+    kVBCppExprKind_Binary,
+    kVBCppExprKind_Ternary,
+    kVBCppExprKind_SignedValue,
+    kVBCppExprKind_UnsignedValue,
+    kVBCppExprKind_End
+} VBCPPEXPRKIND;
+
+
+/** Macro used for the precedence field. */
+#define VBCPPOP_PRECEDENCE(a_iPrecedence)   ((a_iPrecedence) << 8)
+/** Mask for getting the precedence field value. */
+#define VBCPPOP_PRECEDENCE_MASK             0xff00
+/** Operator associativity - Left to right. */
+#define VBCPPOP_L2R                         (1 << 16)
+/** Operator associativity - Right to left. */
+#define VBCPPOP_R2L                         (2 << 16)
+
+/**
+ * Unary operators.
+ */
+typedef enum VBCPPUNARYOP
+{
+    kVBCppUnaryOp_Invalid = 0,
+    kVBCppUnaryOp_Pluss             = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  5,
+    kVBCppUnaryOp_Minus             = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  6,
+    kVBCppUnaryOp_LogicalNot        = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  7,
+    kVBCppUnaryOp_BitwiseNot        = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  8,
+    kVBCppUnaryOp_Parenthesis       = VBCPPOP_R2L | VBCPPOP_PRECEDENCE(15) |  9,
+    kVBCppUnaryOp_End
+} VBCPPUNARYOP;
+
+/**
+ * Binary operators.
+ */
+typedef enum VBCPPBINARYOP
+{
+    kVBCppBinary_Invalid = 0,
+    kVBCppBinary_Multiplication     = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 5) |  2,
+    kVBCppBinary_Division           = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 5) |  4,
+    kVBCppBinary_Modulo             = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 5) |  5,
+    kVBCppBinary_Addition           = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 6) |  6,
+    kVBCppBinary_Subtraction        = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 6) |  7,
+    kVBCppBinary_LeftShift          = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 7) |  8,
+    kVBCppBinary_RightShift         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 7) |  9,
+    kVBCppBinary_LessThan           = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 10,
+    kVBCppBinary_LessThanOrEqual    = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 11,
+    kVBCppBinary_GreaterThan        = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 12,
+    kVBCppBinary_GreaterThanOrEqual = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 13,
+    kVBCppBinary_EqualTo            = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 9) | 14,
+    kVBCppBinary_NotEqualTo         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 9) | 15,
+    kVBCppBinary_BitwiseAnd         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(10) | 16,
+    kVBCppBinary_BitwiseXor         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(11) | 17,
+    kVBCppBinary_BitwiseOr          = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(12) | 18,
+    kVBCppBinary_LogicalAnd         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(13) | 19,
+    kVBCppBinary_LogicalOr          = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(14) | 20,
+    kVBCppBinary_End
+} VBCPPBINARYOP;
+
+/** The precedence of the ternary operator (expr ? true : false). */
+#define VBCPPTERNAROP_PRECEDENCE   VBCPPOP_PRECEDENCE(16)
+
+
+/** Pointer to an expression parsing node. */
+typedef struct VBCPPEXPR *PVBCPPEXPR;
+/**
+ * Expression parsing node.
+ */
+typedef struct VBCPPEXPR
+{
+    /** Parent expression. */
+    PVBCPPEXPR          pParent;
+    /** Whether the expression is complete or not. */
+    bool                fComplete;
+    /** The kind of expression. */
+    VBCPPEXPRKIND       enmKind;
+    /** Kind specific content. */
+    union
+    {
+        /** kVBCppExprKind_Unary */
+        struct
+        {
+            VBCPPUNARYOP    enmOperator;
+            PVBCPPEXPR      pArg;
+        } Unary;
+
+        /** kVBCppExprKind_Binary */
+        struct
+        {
+            VBCPPBINARYOP   enmOperator;
+            PVBCPPEXPR      pLeft;
+            PVBCPPEXPR      pRight;
+        } Binary;
+
+        /** kVBCppExprKind_Ternary */
+        struct
+        {
+            PVBCPPEXPR      pExpr;
+            PVBCPPEXPR      pTrue;
+            PVBCPPEXPR      pFalse;
+        } Ternary;
+
+        /** kVBCppExprKind_SignedValue */
+        struct
+        {
+            int64_t         s64;
+        } SignedValue;
+
+        /** kVBCppExprKind_UnsignedValue */
+        struct
+        {
+            uint64_t        u64;
+        } UnsignedValue;
+    } u;
+} VBCPPEXPR;
+
+
+/**
+ * Operator return statuses.
+ */
+typedef enum VBCPPEXPRRET
+{
+    kExprRet_Error = -1,
+    kExprRet_Ok = 0,
+    kExprRet_UnaryOperator,
+    kExprRet_Value,
+    kExprRet_EndOfExpr,
+    kExprRet_End
+} VBCPPEXPRRET;
+
+/**
+ * Expression parser context.
+ */
+typedef struct VBCPPEXPRPARSER
+{
+    /** The current expression posistion. */
+    const char         *pszCur;
+    /** The root node. */
+    PVBCPPEXPR          pRoot;
+    /** The current expression node. */
+    PVBCPPEXPR          pCur;
+    /** Where to insert the next expression. */
+    PVBCPPEXPR         *ppCur;
+    /** The expression. */
+    const char         *pszExpr;
+    /** The number of undefined macros we've encountered while parsing. */
+    size_t              cUndefined;
+    /** Pointer to the C preprocessor instance. */
+    PVBCPP              pThis;
+} VBCPPEXPRPARSER;
+/** Pointer to an expression parser context. */
+typedef VBCPPEXPRPARSER *PVBCPPEXPRPARSER;
 
 
 /**
@@ -348,8 +512,6 @@ typedef struct VBCPP
     /** Whether StrmOutput is valid (for vbcppTerm). */
     bool                fStrmOutputValid;
 } VBCPP;
-/** Pointer to the C preprocessor instance data. */
-typedef VBCPP *PVBCPP;
 
 
 /*******************************************************************************
@@ -469,6 +631,12 @@ static RTEXITCODE vbcppErrorPos(PVBCPP pThis, const char *pszPos, const char *ps
  */
 
 
+/**
+ * Initializes a string buffer.
+ *
+ * @param   pStrBuf             The buffer structure to initialize.
+ * @param   pThis               The C preprocessor instance.
+ */
 static void vbcppStrBufInit(PVBCPPSTRBUF pStrBuf, PVBCPP pThis)
 {
     pStrBuf->pThis              = pThis;
@@ -478,6 +646,11 @@ static void vbcppStrBufInit(PVBCPPSTRBUF pStrBuf, PVBCPP pThis)
 }
 
 
+/**
+ * Deletes a string buffer.
+ *
+ * @param   pStrBuf             Pointer to the string buffer.
+ */
 static void vbcppStrBufDelete(PVBCPPSTRBUF pStrBuf)
 {
     RTMemFree(pStrBuf->pszBuf);
@@ -485,6 +658,14 @@ static void vbcppStrBufDelete(PVBCPPSTRBUF pStrBuf)
 }
 
 
+/**
+ * Ensures that sufficient bufferspace is available, growing the buffer if
+ * necessary.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pStrBuf             Pointer to the string buffer.
+ * @param   cbMin               The minimum buffer size.
+ */
 static RTEXITCODE vbcppStrBufGrow(PVBCPPSTRBUF pStrBuf, size_t cbMin)
 {
     if (pStrBuf->cbBufAllocated >= cbMin)
@@ -503,6 +684,14 @@ static RTEXITCODE vbcppStrBufGrow(PVBCPPSTRBUF pStrBuf, size_t cbMin)
 }
 
 
+/**
+ * Appends a substring.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pStrBuf             Pointer to the string buffer.
+ * @param   pchSrc              Pointer to the first character in the substring.
+ * @param   cchSrc              The length of the substring.
+ */
 static RTEXITCODE vbcppStrBufAppendN(PVBCPPSTRBUF pStrBuf, const char *pchSrc, size_t cchSrc)
 {
     size_t cchBuf = pStrBuf->cchBuf;
@@ -522,6 +711,13 @@ static RTEXITCODE vbcppStrBufAppendN(PVBCPPSTRBUF pStrBuf, const char *pchSrc, s
 }
 
 
+/**
+ * Appends a character.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pStrBuf             Pointer to the string buffer.
+ * @param   ch                  The charater to append.
+ */
 static RTEXITCODE vbcppStrBufAppendCh(PVBCPPSTRBUF pStrBuf, char ch)
 {
     size_t cchBuf = pStrBuf->cchBuf;
@@ -540,12 +736,25 @@ static RTEXITCODE vbcppStrBufAppendCh(PVBCPPSTRBUF pStrBuf, char ch)
 }
 
 
+/**
+ * Appends a string to the buffer.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pStrBuf             Pointer to the string buffer.
+ * @param   psz                 The string to append.
+ */
 static RTEXITCODE vbcppStrBufAppend(PVBCPPSTRBUF pStrBuf, const char *psz)
 {
     return vbcppStrBufAppendN(pStrBuf, psz, strlen(psz));
 }
 
 
+/**
+ * Gets the last char in the buffer.
+ *
+ * @returns Last character, 0 if empty.
+ * @param   pStrBuf             Pointer to the string buffer.
+ */
 static char vbcppStrBufLastCh(PVBCPPSTRBUF pStrBuf)
 {
     if (!pStrBuf->cchBuf)
@@ -637,7 +846,7 @@ static bool vbcppValidateCIdentifier(PVBCPP pThis, const char *pchIdentifier, si
     return true;
 }
 
-
+#if 0
 
 /**
  * Checks if the given character is valid C punctuation.
@@ -792,6 +1001,9 @@ static size_t vbcppIsCPunctuationLeadChar(const char *psz, size_t cchMax)
             return 0;
     }
 }
+
+#endif
+
 
 
 
@@ -1118,7 +1330,6 @@ static RTEXITCODE vbcppInputSkipToEndOfDirectiveLine(PVBCPP pThis, PSCMSTREAM pS
 }
 
 
-
 /**
  * Processes a multi-line comment.
  *
@@ -1260,7 +1471,7 @@ static RTEXITCODE vbcppProcessStringLitteral(PVBCPP pThis, PSCMSTREAM pStrmInput
 /**
  * Processes a single quoted constant.
  *
- * Must not replace any C-words in strings.
+ * Must not replace any C-words in character constants.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
  * @param   pThis               The C preprocessor instance.
@@ -1296,6 +1507,8 @@ static RTEXITCODE vbcppProcessCharacterConstant(PVBCPP pThis, PSCMSTREAM pStrmIn
 
 /**
  * Processes a integer or floating point number constant.
+ *
+ * Must not replace the type suffix.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
  * @param   pThis               The C preprocessor instance.
@@ -1470,8 +1683,6 @@ static uint32_t vbcppMacroLookupArg(PVBCPPDEF pMacro, const char *pchName, size_
 
     return UINT32_MAX;
 }
-
-
 
 
 static RTEXITCODE vbcppMacroExpandReplace(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t off, size_t cchToReplace,
@@ -3019,150 +3230,6 @@ static RTEXITCODE vbcppCondPush(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offS
 }
 
 
-typedef enum VBCPPEXPRKIND
-{
-    kVBCppExprKind_Invalid = 0,
-    kVBCppExprKind_Unary,
-    kVBCppExprKind_Binary,
-    kVBCppExprKind_Ternary,
-    kVBCppExprKind_SignedValue,
-    kVBCppExprKind_UnsignedValue,
-    kVBCppExprKind_End
-} VBCPPEXPRKIND;
-
-#define VBCPPOP_PRECEDENCE(a_iPrecedence)   ((a_iPrecedence) << 8)
-#define VBCPPOP_PRECEDENCE_MASK             0xff00
-#define VBCPPOP_L2R                         (1 << 16)
-#define VBCPPOP_R2L                         (2 << 16)
-
-typedef enum VBCPPUNARYOP
-{
-    kVBCppUnaryOp_Invalid = 0,
-    kVBCppUnaryOp_Pluss             = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  5,
-    kVBCppUnaryOp_Minus             = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  6,
-    kVBCppUnaryOp_LogicalNot        = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  7,
-    kVBCppUnaryOp_BitwiseNot        = VBCPPOP_R2L | VBCPPOP_PRECEDENCE( 3) |  8,
-    kVBCppUnaryOp_Parenthesis       = VBCPPOP_R2L | VBCPPOP_PRECEDENCE(15) |  9,
-    kVBCppUnaryOp_End
-} VBCPPUNARYOP;
-
-typedef enum VBCPPBINARYOP
-{
-    kVBCppBinary_Invalid = 0,
-//    kVBCppBinary_SizeOf             = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 3) |  1,
-    kVBCppBinary_Multiplication     = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 5) |  2,
-    kVBCppBinary_Division           = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 5) |  4,
-    kVBCppBinary_Modulo             = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 5) |  5,
-    kVBCppBinary_Addition           = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 6) |  6,
-    kVBCppBinary_Subtraction        = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 6) |  7,
-    kVBCppBinary_LeftShift          = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 7) |  8,
-    kVBCppBinary_RightShift         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 7) |  9,
-    kVBCppBinary_LessThan           = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 10,
-    kVBCppBinary_LessThanOrEqual    = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 11,
-    kVBCppBinary_GreaterThan        = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 12,
-    kVBCppBinary_GreaterThanOrEqual = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 8) | 13,
-    kVBCppBinary_EqualTo            = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 9) | 14,
-    kVBCppBinary_NotEqualTo         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE( 9) | 15,
-    kVBCppBinary_BitwiseAnd         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(10) | 16,
-    kVBCppBinary_BitwiseXor         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(11) | 17,
-    kVBCppBinary_BitwiseOr          = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(12) | 18,
-    kVBCppBinary_LogicalAnd         = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(13) | 19,
-    kVBCppBinary_LogicalOr          = VBCPPOP_L2R | VBCPPOP_PRECEDENCE(14) | 20,
-    kVBCppBinary_End
-} VBCPPBINARYOP;
-
-/** The precedence of the ternary operator (expr ? true : false). */
-#define VBCPPTERNAROP_PRECEDENCE   VBCPPOP_PRECEDENCE(16)
-
-
-typedef struct VBCPPEXPR *PVBCPPEXPR;
-
-/**
- * Expression parsing structure.
- */
-typedef struct VBCPPEXPR
-{
-    /** Parent expression. */
-    PVBCPPEXPR          pParent;
-    /** Whether the expression is complete or not. */
-    bool                fComplete;
-    /** The kind of expression. */
-    VBCPPEXPRKIND       enmKind;
-    /** Content specific. */
-    union
-    {
-        struct
-        {
-            VBCPPUNARYOP    enmOperator;
-            PVBCPPEXPR      pArg;
-        } Unary;
-
-        struct
-        {
-            VBCPPBINARYOP   enmOperator;
-            PVBCPPEXPR      pLeft;
-            PVBCPPEXPR      pRight;
-        } Binary;
-
-        struct
-        {
-            PVBCPPEXPR      pExpr;
-            PVBCPPEXPR      pTrue;
-            PVBCPPEXPR      pFalse;
-        } Ternary;
-
-        struct
-        {
-            int64_t         s64;
-        } SignedValue;
-
-        struct
-        {
-            uint64_t        u64;
-        } UnsignedValue;
-
-    } u;
-} VBCPPEXPR;
-
-
-
-/**
- * Operator return statuses.
- */
-typedef enum VBCPPEXPRRET
-{
-    kExprRet_Error = -1,
-    kExprRet_Ok = 0,
-    kExprRet_UnaryOperator,
-    kExprRet_Value,
-    kExprRet_EndOfExpr,
-    kExprRet_End
-} VBCPPEXPRRET;
-
-/**
- * Expression parser context.
- */
-typedef struct VBCPPEXPRPARSER
-{
-    /** The current expression posistion. */
-    const char         *pszCur;
-    /** The root node. */
-    PVBCPPEXPR          pRoot;
-    /** The current expression node. */
-    PVBCPPEXPR          pCur;
-    /** Where to insert the next expression. */
-    PVBCPPEXPR         *ppCur;
-    /** The expression. */
-    const char         *pszExpr;
-    /** The number of undefined macros we've encountered while parsing. */
-    size_t              cUndefined;
-    /** Pointer to the C preprocessor instance. */
-    PVBCPP              pThis;
-} VBCPPEXPRPARSER;
-/** Pointer to an expression parser context. */
-typedef VBCPPEXPRPARSER *PVBCPPEXPRPARSER;
-
-
 /**
  * Recursively destroys the expression tree.
  *
@@ -3198,7 +3265,15 @@ static void vbcppExprDestoryTree(PVBCPPEXPR pExpr)
 }
 
 
-static VBCPPEXPRRET vbcppExprParserError(PVBCPPEXPRPARSER pParser, const char *pszMsg, ...)
+/**
+ * Report error during expression parsing.
+ *
+ * @returns kExprRet_Error
+ * @param   pParser             The parser instance.
+ * @param   pszMsg              The error message.
+ * @param   ...                 Format arguments.
+ */
+static VBCPPEXPRRET vbcppExprParseError(PVBCPPEXPRPARSER pParser, const char *pszMsg, ...)
 {
     va_list va;
     va_start(va, pszMsg);
@@ -3208,6 +3283,11 @@ static VBCPPEXPRRET vbcppExprParserError(PVBCPPEXPRPARSER pParser, const char *p
 }
 
 
+/**
+ * Skip white space.
+ *
+ * @param   pParser             The parser instance.
+ */
 static void vbcppExprParseSkipWhiteSpace(PVBCPPEXPRPARSER pParser)
 {
     while (RT_C_IS_SPACE(*pParser->pszCur))
@@ -3215,25 +3295,37 @@ static void vbcppExprParseSkipWhiteSpace(PVBCPPEXPRPARSER pParser)
 }
 
 
+/**
+ * Allocate a new
+ *
+ * @returns Pointer to the node. NULL+msg on failure.
+ * @param   pParser             The parser instance.
+ */
 static PVBCPPEXPR vbcppExprParseAllocNode(PVBCPPEXPRPARSER pParser)
 {
     PVBCPPEXPR pExpr = (PVBCPPEXPR)RTMemAllocZ(sizeof(*pExpr));
+    if (!pExpr)
+        vbcppExprParseError(pParser, "out of memory (expression node)");
     return pExpr;
 }
 
 
-static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
+/**
+ * Looks for right parentheses and/or end of expression.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Ok
+ * @retval  kExprRet_Error with msg.
+ * @retval  kExprRet_EndOfExpr
+ * @param   pParser             The parser instance.
+ */
+static VBCPPEXPRRET vbcppExprParseMaybeRParenOrEoe(PVBCPPEXPRPARSER pParser)
 {
     Assert(!pParser->ppCur);
-
-    /*
-     * Right parenthesis closes
-     */
-    char ch;
     for (;;)
     {
         vbcppExprParseSkipWhiteSpace(pParser);
-        ch = *pParser->pszCur;
+        char ch = *pParser->pszCur;
         if (ch == '\0')
             return kExprRet_EndOfExpr;
         if (ch != ')')
@@ -3252,74 +3344,89 @@ static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
                     Assert(pCur->fComplete);
                     break;
                 case kVBCppExprKind_Unary:
-                    AssertReturn(pCur->u.Unary.pArg, vbcppExprParserError(pParser, "internal error"));
+                    AssertReturn(pCur->u.Unary.pArg, vbcppExprParseError(pParser, "internal error"));
                     pCur->fComplete = true;
                     break;
                 case kVBCppExprKind_Binary:
-                    AssertReturn(pCur->u.Binary.pLeft, vbcppExprParserError(pParser, "internal error"));
-                    AssertReturn(pCur->u.Binary.pRight, vbcppExprParserError(pParser, "internal error"));
+                    AssertReturn(pCur->u.Binary.pLeft, vbcppExprParseError(pParser, "internal error"));
+                    AssertReturn(pCur->u.Binary.pRight, vbcppExprParseError(pParser, "internal error"));
                     pCur->fComplete = true;
                     break;
                 case kVBCppExprKind_Ternary:
 #if 1 /** @todo Check out the ternary operator implementation. */
-                    return vbcppExprParserError(pParser, "The ternary operator is not implemented");
+                    return vbcppExprParseError(pParser, "The ternary operator is not implemented");
 #else
                     Assert(pCur->u.Ternary.pExpr);
                     if (!pCur->u.Ternary.pTrue)
-                        return vbcppExprParserError(pParser, "?!?!?");
+                        return vbcppExprParseError(pParser, "?!?!?");
                     if (!pCur->u.Ternary.pFalse)
-                        return vbcppExprParserError(pParser, "?!?!?!?");
+                        return vbcppExprParseError(pParser, "?!?!?!?");
                     pCur->fComplete = true;
 #endif
                     break;
                 default:
-                    return vbcppExprParserError(pParser, "Internal error (enmKind=%d)", pCur->enmKind);
+                    return vbcppExprParseError(pParser, "Internal error (enmKind=%d)", pCur->enmKind);
             }
             pCur = pCur->pParent;
         }
         if (!pCur)
-            return vbcppExprParserError(pParser, "Right parenthesis without a left one");
+            return vbcppExprParseError(pParser, "Right parenthesis without a left one");
         pCur->fComplete = true;
 
         while (   pCur->enmKind == kVBCppExprKind_Unary
                && pCur->u.Unary.enmOperator != kVBCppUnaryOp_Parenthesis
                && pCur->pParent)
         {
-            AssertReturn(pCur->u.Unary.pArg, vbcppExprParserError(pParser, "internal error"));
+            AssertReturn(pCur->u.Unary.pArg, vbcppExprParseError(pParser, "internal error"));
             pCur->fComplete = true;
             pCur = pCur->pParent;
         }
     }
 
+    return kExprRet_Ok;
+}
+
+
+/**
+ * Parses an binary operator.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Ok
+ * @retval  kExprRet_Error with msg.
+ * @param   pParser             The parser instance.
+ */
+static VBCPPEXPRRET vbcppExprParseBinaryOperator(PVBCPPEXPRPARSER pParser)
+{
     /*
      * Binary or ternary operator should follow now.
      */
     VBCPPBINARYOP enmOp;
+    char ch = *pParser->pszCur;
     switch (ch)
     {
         case '*':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by product operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by product operator is not valid in a preprocessor expression");
             enmOp = kVBCppBinary_Multiplication;
             break;
         case '/':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by quotient operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by quotient operator is not valid in a preprocessor expression");
             enmOp = kVBCppBinary_Division;
             break;
         case '%':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by remainder operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by remainder operator is not valid in a preprocessor expression");
             enmOp = kVBCppBinary_Modulo;
             break;
         case '+':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by sum operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by sum operator is not valid in a preprocessor expression");
             enmOp = kVBCppBinary_Addition;
             break;
         case '-':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by difference operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by difference operator is not valid in a preprocessor expression");
             enmOp = kVBCppBinary_Subtraction;
             break;
         case '<':
@@ -3333,7 +3440,7 @@ static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
             {
                 pParser->pszCur++;
                 if (pParser->pszCur[1] == '=')
-                    return vbcppExprParserError(pParser, "The assignment by bitwise left shift operator is not valid in a preprocessor expression");
+                    return vbcppExprParseError(pParser, "The assignment by bitwise left shift operator is not valid in a preprocessor expression");
                 enmOp = kVBCppBinary_LeftShift;
             }
             break;
@@ -3348,27 +3455,27 @@ static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
             {
                 pParser->pszCur++;
                 if (pParser->pszCur[1] == '=')
-                    return vbcppExprParserError(pParser, "The assignment by bitwise right shift operator is not valid in a preprocessor expression");
+                    return vbcppExprParseError(pParser, "The assignment by bitwise right shift operator is not valid in a preprocessor expression");
                 enmOp = kVBCppBinary_LeftShift;
             }
             break;
         case '=':
             if (pParser->pszCur[1] != '=')
-                return vbcppExprParserError(pParser, "The assignment operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment operator is not valid in a preprocessor expression");
             pParser->pszCur++;
             enmOp = kVBCppBinary_EqualTo;
             break;
 
         case '!':
             if (pParser->pszCur[1] != '=')
-                return vbcppExprParserError(pParser, "Expected binary operator, found the unary operator logical NOT");
+                return vbcppExprParseError(pParser, "Expected binary operator, found the unary operator logical NOT");
             pParser->pszCur++;
             enmOp = kVBCppBinary_NotEqualTo;
             break;
 
         case '&':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by bitwise AND operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by bitwise AND operator is not valid in a preprocessor expression");
             if (pParser->pszCur[1] == '&')
             {
                 pParser->pszCur++;
@@ -3379,12 +3486,12 @@ static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
             break;
         case '^':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by bitwise XOR operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by bitwise XOR operator is not valid in a preprocessor expression");
             enmOp = kVBCppBinary_BitwiseXor;
             break;
         case '|':
             if (pParser->pszCur[1] == '=')
-                return vbcppExprParserError(pParser, "The assignment by bitwise AND operator is not valid in a preprocessor expression");
+                return vbcppExprParseError(pParser, "The assignment by bitwise AND operator is not valid in a preprocessor expression");
             if (pParser->pszCur[1] == '|')
             {
                 pParser->pszCur++;
@@ -3394,14 +3501,14 @@ static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
                 enmOp = kVBCppBinary_BitwiseOr;
             break;
         case '~':
-            return vbcppExprParserError(pParser, "Expected binary operator, found the unary operator bitwise NOT");
+            return vbcppExprParseError(pParser, "Expected binary operator, found the unary operator bitwise NOT");
 
         case ':':
         case '?':
-            return vbcppExprParserError(pParser, "The ternary operator is not yet implemented");
+            return vbcppExprParseError(pParser, "The ternary operator is not yet implemented");
 
         default:
-            return vbcppExprParserError(pParser, "Expected binary operator, found '%.20s'", pParser->pszCur);
+            return vbcppExprParseError(pParser, "Expected binary operator, found '%.20s'", pParser->pszCur);
     }
     pParser->pszCur++;
 
@@ -3432,34 +3539,34 @@ static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
                 ppPlace = &pParent->u.Unary.pArg;
                 break;
             }
-            AssertReturn(pParent->u.Unary.pArg, vbcppExprParserError(pParser, "internal error"));
+            AssertReturn(pParent->u.Unary.pArg, vbcppExprParseError(pParser, "internal error"));
             pParent->fComplete = true;
         }
         else if (pParent->enmKind == kVBCppExprKind_Binary)
         {
-            AssertReturn(pParent->u.Binary.pLeft, vbcppExprParserError(pParser, "internal error"));
-            AssertReturn(pParent->u.Binary.pRight, vbcppExprParserError(pParser, "internal error"));
+            AssertReturn(pParent->u.Binary.pLeft, vbcppExprParseError(pParser, "internal error"));
+            AssertReturn(pParent->u.Binary.pRight, vbcppExprParseError(pParser, "internal error"));
             if ((pParent->u.Binary.enmOperator & VBCPPOP_PRECEDENCE_MASK) >= (enmOp & VBCPPOP_PRECEDENCE_MASK))
             {
-                AssertReturn(pChild, vbcppExprParserError(pParser, "internal error"));
+                AssertReturn(pChild, vbcppExprParseError(pParser, "internal error"));
 
                 if (pParent->u.Binary.pRight == pChild)
                     ppPlace = &pParent->u.Binary.pRight;
                 else
                     ppPlace = &pParent->u.Binary.pLeft;
-                AssertReturn(*ppPlace == pChild, vbcppExprParserError(pParser, "internal error"));
+                AssertReturn(*ppPlace == pChild, vbcppExprParseError(pParser, "internal error"));
                 break;
             }
             pParent->fComplete = true;
         }
         else if (pParent->enmKind == kVBCppExprKind_Ternary)
         {
-            return vbcppExprParserError(pParser, "The ternary operator is not implemented");
+            return vbcppExprParseError(pParser, "The ternary operator is not implemented");
         }
         else
             AssertReturn(   pParent->enmKind == kVBCppExprKind_SignedValue
                          || pParent->enmKind == kVBCppExprKind_UnsignedValue,
-                         vbcppExprParserError(pParser, "internal error"));
+                         vbcppExprParseError(pParser, "internal error"));
 
         /* Up on level */
         pChild  = pParent;
@@ -3488,8 +3595,40 @@ static VBCPPEXPRRET vbcppExprParserBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
 }
 
 
+/**
+ * Deals with right paretheses or/and end of expression, looks for binary
+ * operators.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Ok if binary operator was found processed.
+ * @retval  kExprRet_Error with msg.
+ * @retval  kExprRet_EndOfExpr
+ * @param   pParser             The parser instance.
+ */
+static VBCPPEXPRRET vbcppExprParseBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
+{
+    VBCPPEXPRRET enmRet = vbcppExprParseMaybeRParenOrEoe(pParser);
+    if (enmRet != kExprRet_Ok)
+        return enmRet;
+    return vbcppExprParseBinaryOperator(pParser);
+}
+
+
+/**
+ * Parses an identifier in the expression, replacing it by 0.
+ *
+ * All known identifiers has already been replaced by their macro values, so
+ * what's left are unknown macros.  These are replaced by 0.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Value
+ * @retval  kExprRet_Error with msg.
+ * @param   pParser             The parser instance.
+ */
 static VBCPPEXPRRET vbcppExprParseIdentifier(PVBCPPEXPRPARSER pParser)
 {
+/** @todo don't increment if it's an actively undefined macro. Need to revise
+ *        the expression related code wrt selective preprocessing. */
     pParser->cUndefined++;
 
     /* Find the end. */
@@ -3517,14 +3656,20 @@ static VBCPPEXPRRET vbcppExprParseIdentifier(PVBCPPEXPRPARSER pParser)
     pParser->pszCur = pszNext;
     vbcppExprParseSkipWhiteSpace(pParser);
     if (*pParser->pszCur == '(')
-        return vbcppExprParserError(pParser, "Unknown unary operator '%.*s'", cchMacro, pszMacro);
-
+        return vbcppExprParseError(pParser, "Unknown unary operator '%.*s'", cchMacro, pszMacro);
 
     return kExprRet_Value;
-
 }
 
 
+/**
+ * Parses an numeric constant in the expression.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Value
+ * @retval  kExprRet_Error with msg.
+ * @param   pParser             The parser instance.
+ */
 static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
 {
     bool        fSigned;
@@ -3537,11 +3682,11 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
     {
         ch2 = *++pParser->pszCur;
         if (!RT_C_IS_XDIGIT(ch2))
-            return vbcppExprParserError(pParser, "Expected hex digit following '0x'");
+            return vbcppExprParseError(pParser, "Expected hex digit following '0x'");
         int rc = RTStrToUInt64Ex(pParser->pszCur, &pszNext, 16, &u64);
         if (   RT_FAILURE(rc)
             || rc == VWRN_NUMBER_TOO_BIG)
-            return vbcppExprParserError(pParser, "Invalid hex value '%.20s...' (%Rrc)", pParser->pszCur, rc);
+            return vbcppExprParseError(pParser, "Invalid hex value '%.20s...' (%Rrc)", pParser->pszCur, rc);
         fSigned = false;
     }
     else if (ch == '0')
@@ -3549,7 +3694,7 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
         int rc = RTStrToUInt64Ex(pParser->pszCur - 1, &pszNext, 8, &u64);
         if (   RT_FAILURE(rc)
             || rc == VWRN_NUMBER_TOO_BIG)
-            return vbcppExprParserError(pParser, "Invalid octal value '%.20s...' (%Rrc)", pParser->pszCur, rc);
+            return vbcppExprParseError(pParser, "Invalid octal value '%.20s...' (%Rrc)", pParser->pszCur, rc);
         fSigned = u64 > (uint64_t)INT64_MAX ? false : true;
     }
     else
@@ -3557,7 +3702,7 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
         int rc = RTStrToUInt64Ex(pParser->pszCur - 1, &pszNext, 10, &u64);
         if (   RT_FAILURE(rc)
             || rc == VWRN_NUMBER_TOO_BIG)
-            return vbcppExprParserError(pParser, "Invalid decimal value '%.20s...' (%Rrc)", pParser->pszCur, rc);
+            return vbcppExprParseError(pParser, "Invalid decimal value '%.20s...' (%Rrc)", pParser->pszCur, rc);
         fSigned = u64 > (uint64_t)INT64_MAX ? false : true;
     }
 
@@ -3583,7 +3728,7 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
                  && (!strncmp(pszNext, "ull", 3) || !strncmp(pszNext, "ULL", 3)))
             fSigned = false;
         else
-            return vbcppExprParserError(pParser, "Invalid number suffix '%.*s'", cchSuffix, pszNext);
+            return vbcppExprParseError(pParser, "Invalid number suffix '%.*s'", cchSuffix, pszNext);
 
         pszNext += cchSuffix;
     }
@@ -3615,12 +3760,20 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
 }
 
 
+/**
+ * Parses an character constant in the expression.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Value
+ * @retval  kExprRet_Error with msg.
+ * @param   pParser             The parser instance.
+ */
 static VBCPPEXPRRET vbcppExprParseCharacterConstant(PVBCPPEXPRPARSER pParser)
 {
     char ch  = *pParser->pszCur++;
     char ch2 = *pParser->pszCur++;
     if (ch2 == '\'')
-        return vbcppExprParserError(pParser, "Empty character constant");
+        return vbcppExprParseError(pParser, "Empty character constant");
     int64_t s64;
     if (ch2 == '\\')
     {
@@ -3632,13 +3785,13 @@ static VBCPPEXPRRET vbcppExprParseCharacterConstant(PVBCPPEXPRPARSER pParser)
             case 'r': s64 = 0x0a; break;
             case 't': s64 = 0x09; break;
             default:
-                return vbcppExprParserError(pParser, "Escape character '%c' is not implemented", ch2);
+                return vbcppExprParseError(pParser, "Escape character '%c' is not implemented", ch2);
         }
     }
     else
         s64 = ch2;
     if (*pParser->pszCur != '\'')
-        return vbcppExprParserError(pParser, "Character constant contains more than one character");
+        return vbcppExprParseError(pParser, "Character constant contains more than one character");
 
     /* Create a signed value node. */
     PVBCPPEXPR pExpr = vbcppExprParseAllocNode(pParser);
@@ -3658,12 +3811,21 @@ static VBCPPEXPRRET vbcppExprParseCharacterConstant(PVBCPPEXPRPARSER pParser)
 }
 
 
-static VBCPPEXPRRET vbcppExprParseUnaryOrValueOrEoe(PVBCPPEXPRPARSER pParser)
+/**
+ * Parses a unary operator or a value.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Value if value was found and processed.
+ * @retval  kExprRet_UnaryOperator if an unary operator was found and processed.
+ * @retval  kExprRet_Error with msg.
+ * @param   pParser             The parser instance.
+ */
+static VBCPPEXPRRET vbcppExprParseUnaryOrValue(PVBCPPEXPRPARSER pParser)
 {
     vbcppExprParseSkipWhiteSpace(pParser);
     char ch = *pParser->pszCur;
     if (ch == '\0')
-        return vbcppExprParserError(pParser, "Premature end of expression");
+        return vbcppExprParseError(pParser, "Premature end of expression");
 
     /*
      * Value?
@@ -3673,7 +3835,7 @@ static VBCPPEXPRRET vbcppExprParseUnaryOrValueOrEoe(PVBCPPEXPRPARSER pParser)
     if (RT_C_IS_DIGIT(ch))
         return vbcppExprParseNumber(pParser);
     if (ch == '"')
-        return vbcppExprParserError(pParser, "String litteral");
+        return vbcppExprParseError(pParser, "String litteral");
     if (vbcppIsCIdentifierLeadChar(ch))
         return vbcppExprParseIdentifier(pParser);
 
@@ -3685,13 +3847,13 @@ static VBCPPEXPRRET vbcppExprParseUnaryOrValueOrEoe(PVBCPPEXPRPARSER pParser)
     {
         enmOperator = kVBCppUnaryOp_Pluss;
         if (pParser->pszCur[1] == '+')
-            return vbcppExprParserError(pParser, "The prefix increment operator is not valid in a preprocessor expression");
+            return vbcppExprParseError(pParser, "The prefix increment operator is not valid in a preprocessor expression");
     }
     else if (ch == '-')
     {
         enmOperator = kVBCppUnaryOp_Minus;
         if (pParser->pszCur[1] == '-')
-            return vbcppExprParserError(pParser, "The prefix decrement operator is not valid in a preprocessor expression");
+            return vbcppExprParseError(pParser, "The prefix decrement operator is not valid in a preprocessor expression");
     }
     else if (ch == '!')
         enmOperator = kVBCppUnaryOp_LogicalNot;
@@ -3700,7 +3862,7 @@ static VBCPPEXPRRET vbcppExprParseUnaryOrValueOrEoe(PVBCPPEXPRPARSER pParser)
     else if (ch == '(')
         enmOperator = kVBCppUnaryOp_Parenthesis;
     else
-        return vbcppExprParserError(pParser, "Unknown token '%.*s'", 32, pParser->pszCur - 1);
+        return vbcppExprParseError(pParser, "Unknown token '%.*s'", 32, pParser->pszCur - 1);
     pParser->pszCur++;
 
     /* Create an operator node. */
@@ -3722,10 +3884,21 @@ static VBCPPEXPRRET vbcppExprParseUnaryOrValueOrEoe(PVBCPPEXPRPARSER pParser)
 }
 
 
-
+/**
+ * Parses an expanded preprocessor expression.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pszExpr             The expression to parse.
+ * @param   cchExpr             The length of the expression in case we need it.
+ * @param   ppExprTree          Where to return the parse tree.
+ * @param   pcUndefined         Where to return the number of unknown undefined
+ *                              macros.  Optional.
+ */
 static RTEXITCODE vbcppExprParse(PVBCPP pThis, char *pszExpr, size_t cchExpr, PVBCPPEXPR *ppExprTree, size_t *pcUndefined)
 {
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
+    NOREF(cchExpr);
 
     /*
      * Initialize the parser context structure.
@@ -3749,16 +3922,16 @@ static RTEXITCODE vbcppExprParse(PVBCPP pThis, char *pszExpr, size_t cchExpr, PV
          * Eat unary operators until we hit a value.
          */
         do
-            enmRet = vbcppExprParseUnaryOrValueOrEoe(&Parser);
+            enmRet = vbcppExprParseUnaryOrValue(&Parser);
         while (enmRet == kExprRet_UnaryOperator);
         if (enmRet == kExprRet_Error)
             break;
-        AssertBreakStmt(enmRet == kExprRet_Value, enmRet = vbcppExprParserError(&Parser, "Expected value (enmRet=%d)", enmRet));
+        AssertBreakStmt(enmRet == kExprRet_Value, enmRet = vbcppExprParseError(&Parser, "Expected value (enmRet=%d)", enmRet));
 
         /*
          * Non-unary operator, right parenthesis or end of expression is up next.
          */
-        enmRet = vbcppExprParserBinaryOrEoeOrRparen(&Parser);
+        enmRet = vbcppExprParseBinaryOrEoeOrRparen(&Parser);
         if (enmRet == kExprRet_Error)
             break;
         if (enmRet == kExprRet_EndOfExpr)
@@ -3767,7 +3940,7 @@ static RTEXITCODE vbcppExprParse(PVBCPP pThis, char *pszExpr, size_t cchExpr, PV
             rcExit = RTEXITCODE_SUCCESS;
             break;
         }
-        AssertBreakStmt(enmRet == kExprRet_Ok, enmRet = vbcppExprParserError(&Parser, "Expected value (enmRet=%d)", enmRet));
+        AssertBreakStmt(enmRet == kExprRet_Ok, enmRet = vbcppExprParseError(&Parser, "Expected value (enmRet=%d)", enmRet));
     }
 
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -3783,15 +3956,30 @@ static RTEXITCODE vbcppExprParse(PVBCPP pThis, char *pszExpr, size_t cchExpr, PV
 }
 
 
+/**
+ * Checks if an expression value value is evaluates to @c true or @c false.
+ *
+ * @returns @c true or @c false.
+ * @param   pExpr               The value expression.
+ */
 static bool vbcppExprIsExprTrue(PVBCPPEXPR pExpr)
 {
     Assert(pExpr->enmKind == kVBCppExprKind_SignedValue || pExpr->enmKind == kVBCppExprKind_UnsignedValue);
+
     return pExpr->enmKind == kVBCppExprKind_SignedValue
          ? pExpr->u.SignedValue.s64   != 0
          : pExpr->u.UnsignedValue.u64 != 0;
 }
 
 
+/**
+ * Evalutes a parse (sub-)tree.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pThis               The C preprocessor instance.
+ * @param   pRoot               The root of the parse (sub-)tree.
+ * @param   pResult             Where to store the result value.
+ */
 static RTEXITCODE vbcppExprEvaluteTree(PVBCPP pThis, PVBCPPEXPR pRoot, PVBCPPEXPR pResult)
 {
     RTEXITCODE rcExit;
@@ -3864,7 +4052,7 @@ static RTEXITCODE vbcppExprEvaluteTree(PVBCPP pThis, PVBCPPEXPR pRoot, PVBCPPEXP
 
             /* Evalute the right side. */
             VBCPPEXPR Result2;
-            rcExit = vbcppExprEvaluteTree(pThis, pRoot->u.Binary.pLeft, &Result2);
+            rcExit = vbcppExprEvaluteTree(pThis, pRoot->u.Binary.pRight, &Result2);
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
 
@@ -4043,7 +4231,7 @@ static RTEXITCODE vbcppExprEvaluteTree(PVBCPP pThis, PVBCPPEXPR pRoot, PVBCPPEXP
  */
 static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, size_t cReplacements, VBCPPEVAL *penmResult)
 {
-    //Assert(strlen(pszExpr) == cchExpr);
+    Assert(strlen(pszExpr) == cchExpr);
     size_t      cUndefined;
     PVBCPPEXPR  pExprTree;
     RTEXITCODE  rcExit = vbcppExprParse(pThis, pszExpr, cchExpr, &pExprTree, &cUndefined);
@@ -4198,13 +4386,14 @@ static RTEXITCODE vbcppExtractDirectiveLine(PVBCPP pThis, PSCMSTREAM pStrmInput,
             rcExit = vbcppExtractQuotedString(pThis, pStrmInput, pStrBuf, '"', '"');
         }
         else if (ch == '\r' || ch == '\n')
-        {
             break; /* done */
-        }
-        else if (RT_C_IS_SPACE(ch) && RT_C_IS_SPACE(vbcppStrBufLastCh(pStrBuf)))
+        else if (   RT_C_IS_SPACE(ch)
+                 && (   RT_C_IS_SPACE(vbcppStrBufLastCh(pStrBuf))
+                     || vbcppStrBufLastCh(pStrBuf) == '\0') )
         {
             unsigned ch2 = ScmStreamGetCh(pStrmInput);
             Assert(ch == ch2);
+            rcExit = RTEXITCODE_SUCCESS;
         }
         else
         {
@@ -4216,6 +4405,7 @@ static RTEXITCODE vbcppExtractDirectiveLine(PVBCPP pThis, PSCMSTREAM pStrmInput,
                     || ch2 == '\n'))
             {
                 ScmStreamSeekByLine(pStrmInput, ScmStreamTellLine(pStrmInput) + 1);
+                rcExit = RTEXITCODE_SUCCESS;
             }
             else
             {
