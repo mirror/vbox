@@ -250,20 +250,24 @@ static int _crVBoxHGSMIClientInit(PCRVBOXHGSMI_CLIENT pClient, PVBOXUHGSMI pHgsm
     pClient->pHgsmi = pHgsmi;
     Flags.fCommand = 1;
     rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1), Flags, &pClient->pCmdBuffer);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         Flags.Value = 0;
         rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1), Flags, &pClient->pHGBuffer);
-        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             pClient->pvHGBuffer = NULL;
             pClient->bufpool = crBufferPoolInit(16);
             return VINF_SUCCESS;
         }
+        else
+            crWarning("_crVBoxHGSMIClientInit: pfnBufferCreate failed to allocate host->guest buffer");
+
         pClient->pCmdBuffer->pfnDestroy(pClient->pCmdBuffer);
     }
+    else
+        crWarning("_crVBoxHGSMIClientInit: pfnBufferCreate failed to allocate cmd buffer");
+
     pClient->pHgsmi = NULL;
     return rc;
 }
@@ -374,9 +378,8 @@ static PVBOXUHGSMI_BUFFER _crVBoxHGSMIBufAlloc(PCRVBOXHGSMI_CLIENT pClient, uint
                         (void *) pClient->bufpool,
                         cbSize);
         rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, cbSize, Flags, &buf);
-        AssertRC(rc);
         if (RT_FAILURE(rc))
-            crWarning("Failed to Create a buffer of size(%d), rc(%d)\n", cbSize, rc);
+            crWarning("_crVBoxHGSMIBufAlloc: Failed to Create a buffer of size(%d), rc(%d)\n", cbSize, rc);
     }
     return buf;
 }
@@ -2004,7 +2007,6 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
                 crDebug("Reallocating host buffer from %d to %d bytes", conn->cbHostBufferAllocated, cbWriteback);
 
                 rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(cbWriteback), Flags, &pClient->pHGBuffer);
-                AssertRC(rc);
                 if (RT_SUCCESS(rc))
                 {
                     rc = pOldBuf->pfnDestroy(pOldBuf);
@@ -2014,6 +2016,7 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
                 }
                 else
                 {
+                    crWarning("_crVBoxHGSMIWriteReadExact: pfnBufferCreate(%d) failed!", CRVBOXHGSMI_PAGE_ALIGN(cbWriteback));
                     crFree(conn->pHostBuffer);
                     conn->cbHostBufferAllocated = cbWriteback;
                     conn->pHostBuffer = crAlloc(conn->cbHostBufferAllocated);
