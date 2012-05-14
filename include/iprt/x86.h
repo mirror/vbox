@@ -3028,7 +3028,11 @@ typedef struct X86XDTR32
     /** Size of the descriptor table. */
     uint16_t    cb;
     /** Address of the descriptor table. */
+#ifndef VBOX_FOR_DTRACE_LIB
     uint32_t    uAddr;
+#else
+    uint16_t    au16Addr[2];
+#endif
 } X86XDTR32, *PX86XDTR32;
 #pragma pack()
 
@@ -3041,7 +3045,11 @@ typedef struct X86XDTR64
     /** Size of the descriptor table. */
     uint16_t    cb;
     /** Address of the descriptor table. */
+#ifndef VBOX_FOR_DTRACE_LIB
     uint64_t    uAddr;
+#else
+    uint16_t    au16Addr[4];
+#endif
 } X86XDTR64, *PX86XDTR64;
 #pragma pack()
 
