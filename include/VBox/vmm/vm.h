@@ -36,7 +36,7 @@
 #else
 # pragma D depends_on library vbox-types.d
 # pragma D depends_on library CPUMInternal.d
-/*# define ___CPUMInternal_h*/
+# define ___CPUMInternal_h
 #endif
 
 
