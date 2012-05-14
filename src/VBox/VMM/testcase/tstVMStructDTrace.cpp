@@ -126,6 +126,12 @@ int main()
            "    exit(1);\n"
            "}\n"
            "\n"
+           "dtrace:::BEGIN\n"
+           "{\n"
+           "    printf(\"Success!\\n\");\n"
+           "    exit(0);\n"
+           "}\n"
+           "\n"
            );
 
 
