@@ -95,9 +95,7 @@ typedef struct CPUMSYSENTER
 /**
  * CPU context core.
  */
-#ifndef VBOX_FOR_DTRACE_LIB
-# pragma pack(1)
-#endif
+#pragma pack(1)
 typedef struct CPUMCTXCORE
 {
     union
@@ -196,18 +194,13 @@ typedef struct CPUMCTXCORE
     /** @} */
 
 } CPUMCTXCORE;
-
-# ifndef VBOX_FOR_DTRACE_LIB
-#  pragma pack()
-# endif
+#pragma pack()
 
 
 /**
  * CPU context.
  */
-#ifndef VBOX_FOR_DTRACE_LIB
-# pragma pack(1)
-#endif
+#pragma pack(1)
 typedef struct CPUMCTX
 {
     /** FPU state. (16-byte alignment)
@@ -375,14 +368,12 @@ typedef struct CPUMCTX
     CPUMSELREGHID   trHid;
     /** @} */
 
-# if 0
+#if 0
     /** Padding to align the size on a 64 byte boundary. */
     uint32_t        padding[6];
-# endif
+#endif
 } CPUMCTX;
-# ifndef VBOX_FOR_DTRACE_LIB
-#  pragma pack()
-# endif
+#pragma pack()
 
 #ifndef VBOX_FOR_DTRACE_LIB
 

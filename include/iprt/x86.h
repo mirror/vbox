@@ -2257,6 +2257,7 @@ typedef X86DESCATTR *PX86DESCATTR;
 /** Pointer to const descriptor attributes. */
 typedef const X86DESCATTR *PCX86DESCATTR;
 
+#ifndef VBOX_FOR_DTRACE_LIB
 
 /**
  * Generic descriptor table entry
@@ -2328,13 +2329,12 @@ typedef struct X86DESCGATE
      * Ignored if task-gate. */
     unsigned    u16OffsetHigh : 16;
 } X86DESCGATE;
-#ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSize(X86DESCGATE, 8);
-#endif
 /** Pointer to a Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
 typedef X86DESCGATE *PX86DESCGATE;
 /** Pointer to a const Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
 typedef const X86DESCGATE *PCX86DESCGATE;
+
+#endif /* VBOX_FOR_DTRACE_LIB */
 
 /**
  * Descriptor table entry.
@@ -2342,10 +2342,12 @@ typedef const X86DESCGATE *PCX86DESCGATE;
 #pragma pack(1)
 typedef union X86DESC
 {
+#ifndef VBOX_FOR_DTRACE_LIB
     /** Generic descriptor view. */
     X86DESCGENERIC  Gen;
     /** Gate descriptor view. */
     X86DESCGATE     Gate;
+#endif
 
     /** 8 bit unsigned integer view. */
     uint8_t         au8[8];
@@ -2388,6 +2390,7 @@ typedef const X86DESC *PCX86DESC;
 #define X86DESC_GET_HID_ATTR(desc) /*ASM-NOINC*/ \
         ( (desc.u >> (16+16+8)) & UINT32_C(0xf0ff) ) /** @todo do we have a define for 0xf0ff? */
 
+#ifndef VBOX_FOR_DTRACE_LIB
 
 /**
  * 64 bits generic descriptor table entry
@@ -2518,14 +2521,13 @@ typedef struct X86DESC64GATE
      * For call-gates bits 8 thru 12 must be zero, the other gates ignores this. */
     unsigned    u32Reserved : 32;
 } X86DESC64GATE;
-#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86DESC64GATE, 16);
-#endif
 /** Pointer to a Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
 typedef X86DESC64GATE *PX86DESC64GATE;
 /** Pointer to a const Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
 typedef const X86DESC64GATE *PCX86DESC64GATE;
 
+#endif /* VBOX_FOR_DTRACE_LIB */
 
 /**
  * Descriptor table entry.
@@ -2533,12 +2535,14 @@ typedef const X86DESC64GATE *PCX86DESC64GATE;
 #pragma pack(1)
 typedef union X86DESC64
 {
+#ifndef VBOX_FOR_DTRACE_LIB
     /** Generic descriptor view. */
     X86DESC64GENERIC    Gen;
     /** System descriptor view. */
     X86DESC64SYSTEM     System;
     /** Gate descriptor view. */
     X86DESC64GATE       Gate;
+#endif
 
     /** 8 bit unsigned integer view. */
     uint8_t             au8[16];
