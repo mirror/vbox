@@ -889,8 +889,8 @@ static void quirk_fullsize_blit(struct wined3d_gl_info *gl_info)
 static BOOL match_mesa_nvidia(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
         enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
 {
-    if (card_vendor != HW_VENDOR_NVIDIA) return FALSE;
-    if (gl_vendor != GL_VENDOR_MESA) return FALSE;
+//    if (card_vendor != HW_VENDOR_NVIDIA) return FALSE;
+//    if (gl_vendor != GL_VENDOR_MESA) return FALSE;
     return TRUE;
 }
 
