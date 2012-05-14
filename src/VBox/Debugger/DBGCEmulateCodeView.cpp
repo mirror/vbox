@@ -3484,11 +3484,12 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     }
 
     /*
-     * Dump the I/O bitmap if present.
+     * Dump the I/O permission bitmap if present. The IOPM cannot start below offset 0x64
+     * (that applies to both 32-bit and 64-bit TSSs since their size is the same).
      */
     if (enmTssType != kTss16)
     {
-        if (offIoBitmap < cbTss)
+        if (offIoBitmap < cbTss && offIoBitmap >= 0x64)
         {
             uint32_t        cPorts      = RT_MIN((cbTss - offIoBitmap) * 8, _64K);
             DBGCVAR         VarAddr;
