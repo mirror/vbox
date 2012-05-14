@@ -315,9 +315,10 @@ DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
     if (pClient)
     {
         int rc = _crVBoxHGSMIClientInit(pClient, pHgsmi);
-        AssertRC(rc);
         if (RT_SUCCESS(rc))
             return (HVBOXCRHGSMI_CLIENT)pClient;
+        else
+            crWarning("_crVBoxHGSMIClientCreate: _crVBoxHGSMIClientInit failed rc %d", rc);
 
         crFree(pCLient);
     }
@@ -347,12 +348,13 @@ DECLINLINE(PCRVBOXHGSMI_CLIENT) _crVBoxHGSMIClientGet(CRConnection *conn)
         if (pHgsmi)
         {
             int rc = _crVBoxHGSMIClientInit(&conn->HgsmiClient, pHgsmi);
-            AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
                 CRASSERT(conn->HgsmiClient.pHgsmi);
                 return &conn->HgsmiClient;
             }
+            else
+                crWarning("_crVBoxHGSMIClientGet: _crVBoxHGSMIClientInit failed rc %d", rc);
             VBoxCrHgsmiDestroy(pHgsmi);
         }
         else
@@ -392,9 +394,9 @@ static PVBOXUHGSMI_BUFFER _crVBoxHGSMIBufFromHdr(CRVBOXHGCMBUFFER *pHdr)
     CRASSERT(pHdr->kind == CR_VBOXHGCM_UHGSMI_BUFFER);
     pBuf = pHdr->pBuffer;
     rc = pBuf->pfnUnlock(pBuf);
-    AssertRC(rc);
     if (RT_FAILURE(rc))
     {
+        crWarning("_crVBoxHGSMIBufFromHdr: pfnUnlock failed rc %d", rc);
         return NULL;
     }
     return pBuf;
@@ -423,9 +425,10 @@ static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLock(PCRVBOXHGSMI_CLIENT pClient, ui
     fFlags.Value = 0;
     fFlags.bDiscard = 1;
     rc = pClient->pCmdBuffer->pfnLock(pClient->pCmdBuffer, 0, cbBuffer, fFlags, (void**)&pHdr);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
         return pHdr;
+    else
+        crWarning("_crVBoxHGSMICmdBufferLock: pfnLock failed rc %d", rc);
 
     crWarning("Failed to Lock the command buffer of size(%d), rc(%d)\n", cbBuffer, rc);
     return NULL;
@@ -443,13 +446,12 @@ static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLockRo(PCRVBOXHGSMI_CLIENT pClient, 
      * 2. guest must eventually wait for command completion unless he specified bDoNotSignalCompletion
      * 3. guest must wait for command completion in the same order as it submits them
      * in case we can not satisfy any of the above, we should introduce multiple command buffers */
-    CRVBOXHGSMIHDR * pHdr;
+    CRVBOXHGSMIHDR * pHdr = NULL;
     VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags;
     int rc;
     fFlags.Value = 0;
     fFlags.bReadOnly = 1;
     rc = pClient->pCmdBuffer->pfnLock(pClient->pCmdBuffer, 0, cbBuffer, fFlags, (void**)&pHdr);
-    AssertRC(rc);
     if (RT_FAILURE(rc))
         crWarning("Failed to Lock the command buffer of size(%d), rc(%d)\n", cbBuffer, rc);
     return pHdr;
@@ -458,9 +460,8 @@ static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLockRo(PCRVBOXHGSMI_CLIENT pClient, 
 static void _crVBoxHGSMICmdBufferUnlock(PCRVBOXHGSMI_CLIENT pClient)
 {
     int rc = pClient->pCmdBuffer->pfnUnlock(pClient->pCmdBuffer);
-    AssertRC(rc);
     if (RT_FAILURE(rc))
-        crWarning("Failed to Unlock the command buffer rc(%d)\n", rc);
+        crError("Failed to Unlock the command buffer rc(%d)\n", rc);
 }
 
 static int32_t _crVBoxHGSMICmdBufferGetRc(PCRVBOXHGSMI_CLIENT pClient)
@@ -472,7 +473,6 @@ static int32_t _crVBoxHGSMICmdBufferGetRc(PCRVBOXHGSMI_CLIENT pClient)
     fFlags.Value = 0;
     fFlags.bReadOnly = 1;
     rc = pClient->pCmdBuffer->pfnLock(pClient->pCmdBuffer, 0, sizeof (*pHdr), fFlags, (void**)&pHdr);
-    AssertRC(rc);
     if (RT_FAILURE(rc))
     {
         crWarning("Failed to Lock the command buffer of size(%d), rc(%d)\n", sizeof (*pHdr), rc);
@@ -507,11 +507,11 @@ DECLINLINE(void*) _crVBoxHGSMIRecvBufData(PCRVBOXHGSMI_CLIENT pClient, uint32_t 
     CRASSERT(!pClient->pvHGBuffer);
     fFlags.Value = 0;
     rc = pClient->pHGBuffer->pfnLock(pClient->pHGBuffer, 0, cbBuffer, fFlags, &pClient->pvHGBuffer);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
-    {
         return pClient->pvHGBuffer;
-    }
+    else
+        crWarning("_crVBoxHGSMIRecvBufData: pfnLock failed rc %d", rc);
+
     return NULL;
 }
 
@@ -1438,8 +1438,7 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
         /* @todo check if we could rollback to softwareopengl */
         if (g_crvboxhgcm.hGuestDrv == INVALID_HANDLE_VALUE)
         {
-            crDebug("could not open VBox Guest Additions driver! rc = %d\n", GetLastError());
-            CRASSERT(0);
+            crWarning("could not open VBox Guest Additions driver! rc = %d\n", GetLastError());
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return FALSE;
         }
@@ -1835,7 +1834,6 @@ static void _crVBoxHGSMIPollHost(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
     aSubmit[1].fFlags.bHostWriteOnly = 1;
 
     rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
-    AssertRC(rc);
     if (RT_FAILURE(rc))
     {
         crError("pfnBufferSubmit failed with %d \n", rc);
@@ -1923,16 +1921,15 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
         fFlags.bDiscard = 1;
         fFlags.bWriteOnly = 1;
         rc = pBuf->pfnLock(pBuf, 0, len, fFlags, &pvBuf);
-        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             memcpy(pvBuf, buf, len);
             rc = pBuf->pfnUnlock(pBuf);
-            AssertRC(rc);
             CRASSERT(RT_SUCCESS(rc));
         }
         else
         {
+            crWarning("_crVBoxHGSMIWriteReadExact: pfnUnlock failed rc %d", rc);
             _crVBoxHGSMIBufFree(pClient, pBuf);
             /* fallback */
             crVBoxHGCMWriteReadExact(conn, buf, len, CR_VBOXHGCM_USERALLOCATED);
@@ -1967,7 +1964,6 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
         aSubmit[2].fFlags.Value = 0;
 
         rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 3);
-        AssertRC(rc);
         if (RT_FAILURE(rc))
         {
             crError("pfnBufferSubmit failed with %d \n", rc);
@@ -2076,7 +2072,6 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         aSubmit[1].fFlags.bHostReadOnly = 1;
 
         rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
-        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             callRes = _crVBoxHGSMICmdBufferGetRc(pClient);
@@ -2109,7 +2104,6 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         aSubmit[1].fFlags.bHostReadOnly = 1;
 
         rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
-        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             callRes = _crVBoxHGSMICmdBufferGetRc(pClient);
