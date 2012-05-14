@@ -301,7 +301,6 @@ typedef struct CPUM
         uint32_t            OrMask;
     } CR4;
 
-#if 1 /*ndef VBOX_FOR_DTRACE_LIB*/ /* DTrace turns a 'bool' into a uint32_t. Ditto for uint8_t. Stupid, stupid DTrace! */
     /** Synthetic CPU type? */
     bool                    fSyntheticCpu;
     /** The (more) portable CPUID level.  */
@@ -310,9 +309,6 @@ typedef struct CPUM
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
     uint8_t                 abPadding[HC_ARCH_BITS == 64 ? 5 : 1];
-#else
-    uint8_t                 abPadding[(HC_ARCH_BITS == 64 ? 5 : 1) + 3];
-#endif
 
     /** The standard set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdStd[6];
