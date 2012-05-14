@@ -747,7 +747,7 @@ static int efiParseFirmware(PDEVEFI pThis)
     pFfsFile = efiFwVolFindFileByType(pFfsFile, pbFwVolEnd, EFI_FV_FILETYPE_SECURITY_CORE, &cbFfsFile);
     AssertLogRelMsgReturn(pFfsFile, ("No SECURITY_CORE found in the firmware volume\n"), VERR_FILE_NOT_FOUND);
 
-    RTGCPHYS ImageBase = NULL;
+    RTGCPHYS ImageBase = NIL_RTGCPHYS;
     uint8_t *pbImage = NULL;
     pThis->GCEntryPoint0 = efiFindRelativeAddressOfEPAndBaseAddressOfModule(pFfsFile, cbFfsFile, &ImageBase, &pbImage);
     pThis->GCEntryPoint0 += pbImage - pThis->pu8EfiRom;
