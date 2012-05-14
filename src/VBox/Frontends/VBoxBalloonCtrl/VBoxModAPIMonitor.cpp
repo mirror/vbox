@@ -66,7 +66,7 @@ enum APIMON_RESPONSE
 };
 
 /** The VM group(s) the API monitor handles. If none, all VMs get handled. */
-static mapGroups                    g_vecAPIMonGroups;
+static mapGroups                    g_vecAPIMonGroups; /** @todo Move this into module payload! */
 static APIMON_RESPONSE              g_enmAPIMonIslnResp     = APIMON_RESPONSE_NONE;
 static unsigned long                g_ulAPIMonIslnTimeoutMS = 0;
 static Bstr                         g_strAPIMonIslnLastBeat;
@@ -246,7 +246,6 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                     serviceLogVerbose(("apimon: Waiting for saving state of machine \"%ls\" ...\n",
                                        strUuid.raw()));
 
-                    ComPtr<IProgress> progress;
                     CHECK_ERROR(console, SaveState(progress.asOutParam()));
                     if (FAILED(rc))
                     {
