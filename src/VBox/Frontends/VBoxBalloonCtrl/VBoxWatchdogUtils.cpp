@@ -24,6 +24,41 @@
 
 
 /**
+ * Adds a group / a set of groups to the specified map.
+ * If a group in the group map exists there will be no action.
+ *
+ * @return  IPRT status code.
+ * @param   groups                  Map to add group(s) to.
+ * @param   pszGroupsToAdd          Comma-separated string of one or more groups to add.
+ * @param   fFlags                  Flags to set to the groups added.
+ */
+int groupAdd(mapGroups &groups, const char *pszGroupsToAdd, uint32_t fFlags)
+{
+    AssertPtrReturn(pszGroupsToAdd, VERR_INVALID_POINTER);
+
+    try
+    {
+        std::istringstream strGroups(pszGroupsToAdd);
+        for(std::string strToken; getline(strGroups, strToken, ','); )
+        {
+            strToken.erase(remove_if(strToken.begin(), strToken.end(), isspace), strToken.end());
+
+            Utf8Str strTokenUtf8(strToken.c_str());
+            mapGroupsIterConst it = groups.find(strTokenUtf8);
+
+            if (it == groups.end())
+                groups.insert(std::make_pair(strTokenUtf8, fFlags));
+        }
+    }
+    catch (...)
+    {
+        AssertFailed();
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Retrieves a metric from a specified machine.
  *
  * @return  IPRT status code.
@@ -104,7 +139,7 @@ int getMetric(PVBOXWATCHDOG_MACHINE pMachine, const Bstr& strName, LONG *pulData
  * @param   pMachine                Machine to get payload for.
  * @param   pszModule               Module name to get payload from.
  */
-void* getPayload(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule)
+void* payloadFrom(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule)
 {
     AssertPtrReturn(pMachine, NULL);
     AssertPtrReturn(pszModule, NULL);
