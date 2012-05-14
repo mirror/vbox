@@ -77,6 +77,10 @@
        </listitem>
 
        <listitem>
+         <para>Main: sanitise the name of VM folders and settings file (bug #10549)</para>
+       </listitem>
+
+       <listitem>
          <para>Solaris additions: added support for X.org Server 1.11 and 1.12</para>
        </listitem>
 
