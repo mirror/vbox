@@ -46,6 +46,7 @@
  * @{
  */
 
+#ifndef VBOX_FOR_DTRACE_LIB
 /**
  * EFLAGS Bits.
  */
@@ -100,6 +101,7 @@ typedef struct X86EFLAGSBITS
 typedef X86EFLAGSBITS *PX86EFLAGSBITS;
 /** Pointer to const EFLAGS bits. */
 typedef const X86EFLAGSBITS *PCX86EFLAGSBITS;
+#endif /* !VBOX_FOR_DTRACE_LIB */
 
 /**
  * EFLAGS.
@@ -108,8 +110,10 @@ typedef union X86EFLAGS
 {
     /** The plain unsigned view. */
     uint32_t        u;
+#ifndef VBOX_FOR_DTRACE_LIB
     /** The bitfield view. */
     X86EFLAGSBITS   Bits;
+#endif
     /** The 8-bit view. */
     uint8_t         au8[4];
     /** The 16-bit view. */
@@ -131,8 +135,10 @@ typedef union X86RFLAGS
 {
     /** The plain unsigned view. */
     uint64_t        u;
+#ifndef VBOX_FOR_DTRACE_LIB
     /** The bitfield view. */
     X86EFLAGSBITS   Bits;
+#endif
     /** The 8-bit view. */
     uint8_t         au8[8];
     /** The 16-bit view. */
@@ -2206,6 +2212,7 @@ typedef const X86FXSTATE *PCX86FXSTATE;
  * @{
  */
 
+#ifndef VBOX_FOR_DTRACE_LIB
 /**
  * Descriptor attributes.
  */
@@ -2232,15 +2239,17 @@ typedef struct X86DESCATTRBITS
      * clear byte. */
     unsigned    u1Granularity : 1;
 } X86DESCATTRBITS;
-
+#endif /* !VBOX_FOR_DTRACE_LIB */
 
 #pragma pack(1)
 typedef union X86DESCATTR
 {
     /** Unsigned integer view. */
     uint32_t           u;
+#ifndef VBOX_FOR_DTRACE_LIB
     /** Normal view. */
     X86DESCATTRBITS    n;
+#endif
 } X86DESCATTR;
 #pragma pack()
 /** Pointer to descriptor attributes. */
