@@ -36,18 +36,20 @@ using namespace com;
  */
 enum GETOPTDEF_APIMON
 {
-    GETOPTDEF_APIMON_ISLN_RESPONSE = 3000,
+    GETOPTDEF_APIMON_GROUPS = 3000,
+    GETOPTDEF_APIMON_ISLN_RESPONSE,
     GETOPTDEF_APIMON_ISLN_TIMEOUT,
-    GETOPTDEF_APIMON_GROUPS
+    GETOPTDEF_APIMON_TRIGGER_TIMEOUT
 };
 
 /**
  * The module's command line arguments.
  */
 static const RTGETOPTDEF g_aAPIMonitorOpts[] = {
-    { "--apimon-isln-response",  GETOPTDEF_APIMON_ISLN_RESPONSE,  RTGETOPT_REQ_STRING },
-    { "--apimon-isln-timeout",   GETOPTDEF_APIMON_ISLN_TIMEOUT,   RTGETOPT_REQ_UINT32 },
-    { "--apimon-groups",         GETOPTDEF_APIMON_GROUPS,         RTGETOPT_REQ_STRING }
+    { "--apimon-groups",            GETOPTDEF_APIMON_GROUPS,         RTGETOPT_REQ_STRING },
+    { "--apimon-isln-response",     GETOPTDEF_APIMON_ISLN_RESPONSE,  RTGETOPT_REQ_STRING },
+    { "--apimon-isln-timeout",      GETOPTDEF_APIMON_ISLN_TIMEOUT,   RTGETOPT_REQ_UINT32 },
+    { "--apimon-trigger-timeout",   GETOPTDEF_APIMON_ISLN_TIMEOUT,   RTGETOPT_REQ_UINT32 }
 };
 
 enum APIMON_RESPONSE
@@ -68,6 +70,7 @@ static mapGroups                    g_vecAPIMonGroups;
 static APIMON_RESPONSE              g_enmAPIMonIslnResp     = APIMON_RESPONSE_NONE;
 static unsigned long                g_ulAPIMonIslnTimeoutMS = 0;
 static Bstr                         g_strAPIMonIslnLastBeat;
+static unsigned long                g_ulAPIMonTriggerTimeoutMS = 0;
 static uint64_t                     g_uAPIMonIslnLastBeatMS = 0;
 
 static int apimonResponseToEnum(const char *pszResponse, APIMON_RESPONSE *pResp)
@@ -222,7 +225,6 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                         if (rc == VBOX_E_INVALID_VM_STATE)
                         {
                             /* Check if we are already paused. */
-                            MachineState_T machineState;
                             CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
                             /* The error code was lost by the previous instruction. */
                             rc = VBOX_E_INVALID_VM_STATE;
@@ -340,7 +342,7 @@ static int apimonTrigger(APIMON_RESPONSE enmResp)
             if (fHandleVM)
             {
                 int rc2 = apimonMachineControl(it->first /* Uuid */,
-                                               &it->second /* Machine */, enmResp, 30 * 1000 /* 30s timeout */);
+                                               &it->second /* Machine */, enmResp, g_ulAPIMonTriggerTimeoutMS);
                 if (RT_FAILURE(rc2))
                     serviceLog("apimon: Controlling machine \"%ls\" (action: %s) failed with rc=%Rrc",
                                it->first.raw(), apimonResponseToStr(enmResp), rc);
@@ -389,6 +391,14 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
     {
         switch (c)
         {
+            case GETOPTDEF_APIMON_GROUPS:
+            {
+                rc = groupAdd(g_vecAPIMonGroups, ValueUnion.psz, 0 /* Flags */);
+                if (RT_FAILURE(rc))
+                    rc = -1; /* Option unknown. */
+                break;
+            }
+
             case GETOPTDEF_APIMON_ISLN_RESPONSE:
                 rc = apimonResponseToEnum(ValueUnion.psz, &g_enmAPIMonIslnResp);
                 if (RT_FAILURE(rc))
@@ -401,13 +411,11 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
                     g_ulAPIMonIslnTimeoutMS = 1000;
                 break;
 
-            case GETOPTDEF_APIMON_GROUPS:
-            {
-                rc = groupAdd(g_vecAPIMonGroups, ValueUnion.psz, 0 /* Flags */);
-                if (RT_FAILURE(rc))
-                    rc = -1; /* Option unknown. */
+            case GETOPTDEF_APIMON_TRIGGER_TIMEOUT:
+                g_ulAPIMonTriggerTimeoutMS = ValueUnion.u32;
+                if (g_ulAPIMonTriggerTimeoutMS < 5000) /* Don't allow timeouts < 5s. */
+                    g_ulAPIMonTriggerTimeoutMS = 5000;
                 break;
-            }
 
             default:
                 rc = -1; /* We don't handle this option, skip. */
@@ -426,6 +434,19 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
     {
         Bstr strValue;
 
+        /* VM groups to watch for. */
+        if (g_vecAPIMonGroups.empty()) /* Not set by command line? */
+        {
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/Groups").raw(),
+                                                          strValue.asOutParam()));
+            if (!strValue.isEmpty())
+            {
+                int rc2 = groupAdd(g_vecAPIMonGroups, Utf8Str(strValue).c_str(), 0 /* Flags */);
+                if (RT_FAILURE(rc2))
+                    serviceLog("apimon: Warning: API monitor groups string invalid (%ls)\n", strValue.raw());
+            }
+        }
+
         /* Host isolation timeout (in ms). */
         if (!g_ulAPIMonIslnTimeoutMS) /* Not set by command line? */
         {
@@ -442,19 +463,6 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
             g_ulAPIMonIslnTimeoutMS = 30 * 1000;
         }
 
-        /* VM groups to watch for. */
-        if (g_vecAPIMonGroups.empty()) /* Not set by command line? */
-        {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/Groups").raw(),
-                                                          strValue.asOutParam()));
-            if (!strValue.isEmpty())
-            {
-                int rc2 = groupAdd(g_vecAPIMonGroups, Utf8Str(strValue).c_str(), 0 /* Flags */);
-                if (RT_FAILURE(rc2))
-                    serviceLog("apimon: Warning: API monitor groups string invalid (%ls)\n", strValue.raw());
-            }
-        }
-
         /* Host isolation command response. */
         if (g_enmAPIMonIslnResp == APIMON_RESPONSE_NONE) /* Not set by command line? */
         {
@@ -468,6 +476,23 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
                                strValue.raw());
             }
         }
+
+        /* Trigger timeout (in ms). */
+        if (!g_ulAPIMonTriggerTimeoutMS) /* Not set by command line? */
+        {
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/TriggerTimeout").raw(),
+                                                          strValue.asOutParam()));
+            if (!strValue.isEmpty())
+                g_ulAPIMonTriggerTimeoutMS = Utf8Str(strValue).toUInt32();
+        }
+        if (!g_ulAPIMonTriggerTimeoutMS) /* Still not set? Use a default. */
+        {
+            serviceLogVerbose(("apimon: API monitor trigger timeout not given, defaulting to 30s\n"));
+
+            /* Default is 30 seconds timeout. */
+            g_ulAPIMonTriggerTimeoutMS = 30 * 1000;
+        }
+
     } while (0);
 
     if (SUCCEEDED(rc))
@@ -578,12 +603,15 @@ VBOXMODULE g_ModAPIMonitor =
     /* uPriority. */
     0 /* Not used */,
     /* pszUsage. */
+    " [--apimon-groups=<string>]\n"
     " [--apimon-isln-response=<cmd>] [--apimon-isln-timeout=<ms>]\n"
-    " [--apimon-groups=<string>]\n",
+    " [--apimon-trigger-timeout=<ms>]",
     /* pszOptions. */
+    "--apimon-groups        Sets the VM groups for monitoring (none).\n"
     "--apimon-isln-response Sets the isolation response (shutdown VM).\n"
     "--apimon-isln-timeout  Sets the isolation timeout in ms (30s).\n"
-    "--apimon-groups        Sets the VM groups for monitoring (none).\n",
+    "--apimon-trigger-timeout\n"
+    "                       Sets the trigger timeout in ms (30s).\n",
     /* methods. */
     VBoxModAPIMonitorPreInit,
     VBoxModAPIMonitorOption,
