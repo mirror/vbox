@@ -204,7 +204,7 @@ static bool balloonIsRequired(PVBOXWATCHDOG_MACHINE pMachine)
 
     /* Only do ballooning if we have a maximum balloon size set. */
     PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD pData = (PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD)
-                                              getPayload(pMachine, VBOX_MOD_BALLOONING_NAME);
+                                              payloadFrom(pMachine, VBOX_MOD_BALLOONING_NAME);
     AssertPtr(pData);
     pData->ulBalloonSizeMax = pMachine->machine.isNull()
                               ? 0 : balloonGetMaxSize(pMachine->machine);
@@ -297,7 +297,7 @@ static int balloonMachineUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
         lBalloonCur /= 1024;
 
         PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD pData = (PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD)
-                                                  getPayload(pMachine, VBOX_MOD_BALLOONING_NAME);
+                                                  payloadFrom(pMachine, VBOX_MOD_BALLOONING_NAME);
         AssertPtr(pData);
 
         serviceLogVerbose(("%ls: Balloon: %ld, Free mem: %ld, Max ballon: %ld\n",
@@ -315,11 +315,10 @@ static int balloonMachineUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                        strUuid.raw(),
                        lDelta > 0 ? "Inflating" : "Deflating", lDelta, lBalloonCur);
 
-            HRESULT rc;
-
             if (!g_fDryrun)
             {
                 /* Open a session for the VM. */
+                HRESULT rc;
                 CHECK_ERROR(pMachine->machine, LockMachine(g_pSession, LockType_Shared));
 
                 do
@@ -335,6 +334,8 @@ static int balloonMachineUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                     else
                         serviceLog("Error: Unable to set new balloon size %ld for machine \"%ls\", rc=%Rhrc",
                                    lBalloonCur, strUuid.raw(), rc);
+                    if (FAILED(rc))
+                        vrc = VERR_COM_IPRT_ERROR;
                 } while (0);
 
                 /* Unlock the machine again. */

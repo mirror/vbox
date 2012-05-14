@@ -136,7 +136,7 @@ static EventQueue               *g_pEventQ = NULL;
 /* Prototypes. */
 static int machineAdd(const Bstr &strUuid);
 static int machineRemove(const Bstr &strUuid);
-static HRESULT watchdogSetup();
+static int watchdogSetup();
 static void watchdogShutdown();
 
 #ifdef RT_OS_WINDOWS
@@ -263,9 +263,9 @@ class VirtualBoxEventListener
                     else
                     {
                         serviceLog("VBoxSVC became available\n");
-                        HRESULT hrc = watchdogSetup();
-                        if (FAILED(hrc))
-                            serviceLog("Unable to re-set up watchdog (rc=%Rhrc)!\n", hrc);
+                        int rc2 = watchdogSetup();
+                        if (RT_FAILURE(rc2))
+                            serviceLog("Unable to re-set up watchdog (rc=%Rrc)!\n", rc2);
                     }
 
                     break;
@@ -346,16 +346,18 @@ static int machineAdd(const Bstr &strUuid)
         CHECK_ERROR_BREAK(g_pVirtualBox, FindMachine(strUuid.raw(), machine.asOutParam()));
         Assert(!machine.isNull());
 
-        Bstr strGroup;
+        /* Note: Currently only one group per VM supported? We don't care. */
+        Bstr strGroups;
         CHECK_ERROR_BREAK(machine, GetExtraData(Bstr("VBoxInternal2/VMGroup").raw(),
-                                                strGroup.asOutParam()));
+                                                strGroups.asOutParam()));
 
         /*
          * Add machine to map.
          */
         VBOXWATCHDOG_MACHINE m;
         m.machine = machine;
-        m.group = strGroup;
+        int rc2 = groupAdd(m.groups, Utf8Str(strGroups).c_str(), 0 /* Flags */);
+        AssertRC(rc2);
 
         mapVMIter it = g_mapVM.find(strUuid);
         Assert(it == g_mapVM.end());
@@ -365,31 +367,29 @@ static int machineAdd(const Bstr &strUuid)
         /*
          * Get the machine's VM group(s).
          */
-        if (!strGroup.isEmpty())
+        mapGroupsIterConst itGroup = m.groups.begin();
+        while (itGroup != m.groups.end())
         {
-            serviceLogVerbose(("Machine \"%ls\" is in VM group \"%ls\"\n",
-                               strUuid.raw(), strGroup.raw()));
+            serviceLogVerbose(("Machine \"%ls\" is in VM group \"%s\"\n",
+                               strUuid.raw(), itGroup->first.c_str()));
 
-            /** @todo Support more than one group! */
             /* Add machine to group(s). */
-            mapGroupIter itGroup = g_mapGroup.find(strGroup);
-            if (itGroup == g_mapGroup.end())
+            mapGroupIter itGroups = g_mapGroup.find(itGroup->first);
+            if (itGroups == g_mapGroup.end())
             {
                 vecGroupMembers vecMembers;
                 vecMembers.push_back(strUuid);
-                g_mapGroup.insert(std::make_pair(strGroup, vecMembers));
+                g_mapGroup.insert(std::make_pair(itGroup->first, vecMembers));
 
-                itGroup = g_mapGroup.find(strGroup);
-                Assert(itGroup != g_mapGroup.end());
+                itGroups = g_mapGroup.find(itGroup->first);
+                Assert(itGroups != g_mapGroup.end());
             }
             else
-                itGroup->second.push_back(strUuid);
+                itGroups->second.push_back(strUuid);
             serviceLogVerbose(("Group \"%ls\" now has %ld machine(s)\n",
-                               strGroup.raw(), itGroup->second.size()));
+                               itGroup->first.c_str(), itGroups->second.size()));
+            itGroup++;
         }
-        else
-            serviceLogVerbose(("Machine \"%ls\" has no VM group assigned\n",
-                               strUuid.raw()));
 
         /*
          * Let all modules know. Typically all modules would register
@@ -431,39 +431,50 @@ static int machineDestroy(const Bstr &strUuid)
     /* Must log before erasing the iterator because of the UUID ref! */
     serviceLogVerbose(("Removing machine \"%ls\"\n", strUuid.raw()));
 
-    mapVMIter itVM = g_mapVM.find(strUuid);
-    Assert(itVM != g_mapVM.end());
-
-    /* Remove machine from group(s). */
-    /** @todo Add support for multiple groups! */
-    Bstr strGroup = itVM->second.group;
-    if (!strGroup.isEmpty())
+    try
     {
-        mapGroupIter itGroup = g_mapGroup.find(strGroup);
-        Assert(itGroup != g_mapGroup.end());
+        mapVMIter itVM = g_mapVM.find(strUuid);
+        Assert(itVM != g_mapVM.end());
 
-        vecGroupMembers vecMembers = itGroup->second;
-        vecGroupMembersIter itMember = std::find(vecMembers.begin(),
-                                                 vecMembers.end(),
-                                                 strUuid);
-        Assert(itMember != vecMembers.end());
-        vecMembers.erase(itMember);
+        /* Remove machine from group(s). */
+        mapGroupsIterConst itGroups = itVM->second.groups.begin();
+        while (itGroups != itVM->second.groups.end())
+        {
+            mapGroupIter itGroup = g_mapGroup.find(itGroups->first);
+            Assert(itGroup != g_mapGroup.end());
 
-        serviceLogVerbose(("Group \"%ls\" has %ld machines left\n",
-                           itGroup->first.raw(), vecMembers.size()));
-        if (!vecMembers.size())
-            g_mapGroup.erase(itGroup);
-    }
+            vecGroupMembers vecMembers = itGroup->second;
+            vecGroupMembersIter itMember = std::find(vecMembers.begin(),
+                                                     vecMembers.end(),
+                                                     strUuid);
+            Assert(itMember != vecMembers.end());
+            vecMembers.erase(itMember);
+
+            serviceLogVerbose(("Group \"%s\" has %ld machines left\n",
+                               itGroup->first.c_str(), vecMembers.size()));
+            if (!vecMembers.size())
+            {
+                serviceLogVerbose(("Deleteting group \"%s\n", itGroup->first.c_str()));
+                g_mapGroup.erase(itGroup);
+            }
+
+            itGroups++;
+        }
 
 #ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
-    itVM->second.collector.setNull();
+        itVM->second.collector.setNull();
 #endif
-    itVM->second.machine.setNull();
+        itVM->second.machine.setNull();
 
-    /*
-     * Remove machine from map.
-     */
-    g_mapVM.erase(itVM);
+        /*
+         * Remove machine from map.
+         */
+        g_mapVM.erase(itVM);
+    }
+    catch (...)
+    {
+        AssertFailed();
+    }
 
     return rc;
 }
@@ -879,51 +890,45 @@ static void displayHelp(const char *pszImage)
  *
  * @return  HRESULT
  */
-static HRESULT watchdogSetup()
+static int watchdogSetup()
 {
     serviceLogVerbose(("Setting up ...\n"));
 
+    /*
+     * Setup VirtualBox + session interfaces.
+     */
     HRESULT rc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
-    if (FAILED(rc))
-    {
-        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", rc);
-    }
-    else
+    if (SUCCEEDED(rc))
     {
         rc = g_pSession.createInprocObject(CLSID_Session);
         if (FAILED(rc))
             RTMsgError("Failed to create a session object (rc=%Rhrc)!", rc);
     }
+    else
+        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", rc);
 
-    do
-    {
-        /*
-         * Setup metrics.
-         */
+    if (FAILED(rc))
+        return VERR_COM_OBJECT_NOT_FOUND;
+
+    /*
+     * Setup metrics.
+     */
 #ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
-        CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(g_pPerfCollector.asOutParam()));
+    CHECK_ERROR_RET(g_pVirtualBox,
+                    COMGETTER(PerformanceCollector)(g_pPerfCollector.asOutParam()), VERR_COM_UNEXPECTED);
 #endif
 
-        int vrc = RTCritSectInit(&g_csMachines);
-        if (RT_FAILURE(vrc))
-        {
-            rc = VBOX_E_IPRT_ERROR;
-            break;
-        }
+    int vrc = RTCritSectInit(&g_csMachines);
+    if (RT_SUCCESS(vrc))
+    {
 
         /*
          * Build up initial VM list.
          */
         vrc = vmListBuild();
-        if (RT_FAILURE(vrc))
-        {
-            rc = VBOX_E_IPRT_ERROR;
-            break;
-        }
+    }
 
-    } while (0);
-
-    return rc;
+    return vrc;
 }
 
 static void watchdogShutdown()
@@ -1072,7 +1077,6 @@ int main(int argc, char *argv[])
         rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, pszPidFile);
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
-
         /* create release logger, to file */
         rc = com::VBoxLogRelCreate("Watchdog", pszLogFile,
                                    RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
@@ -1082,6 +1086,7 @@ int main(int argc, char *argv[])
                                    szError, sizeof(szError));
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, rc);
+        AssertPtr(pLoggerReleaseFile);
     }
 #endif
 
@@ -1121,8 +1126,8 @@ int main(int argc, char *argv[])
     if (g_fDryrun)
         serviceLog("Running in dryrun mode\n");
 
-    hrc = watchdogSetup();
-    if (FAILED(hrc))
+    rc = watchdogSetup();
+    if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
     HandlerArg handlerArg = { argc, argv };

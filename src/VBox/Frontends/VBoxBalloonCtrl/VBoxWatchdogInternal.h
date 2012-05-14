@@ -31,7 +31,10 @@
 # include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
+#include <algorithm>
 #include <map>
+#include <sstream>
+#include <string>
 #include <vector>
 
 using namespace com;
@@ -73,7 +76,11 @@ typedef std::map<const char*, VBOXWATCHDOG_MODULE_PAYLOAD> mapPayload;
 typedef std::map<const char*, VBOXWATCHDOG_MODULE_PAYLOAD>::iterator mapPayloadIter;
 typedef std::map<const char*, VBOXWATCHDOG_MODULE_PAYLOAD>::const_iterator mapPayloadIterConst;
 
-struct VBOXWATCHDOG_VM_GROUP;
+/** Group list (plus additional per-group flags, not used yet) for one VM.
+ *  Primary key is the group name, secondary specify flags (if any). */
+typedef std::map<Utf8Str, uint32_t> mapGroups;
+typedef std::map<Utf8Str, uint32_t>::iterator mapGroupsIter;
+typedef std::map<Utf8Str, uint32_t>::const_iterator mapGroupsIterConst;
 
 /** A machine's internal entry.
  *  Primary key is the machine's UUID. */
@@ -83,8 +90,9 @@ typedef struct VBOXWATCHDOG_MACHINE
 #ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
     ComPtr<IPerformanceCollector> collector;
 #endif
-    /** The machine's VM group(s). */
-    Bstr group;
+    /** The VM group(s) this machine belongs to.
+     *  Contains groups from per-machine "VBoxInternal2/VMGroup". */
+    mapGroups groups;
     /** Map containing the individual
      *  module payloads. */
     mapPayload payload;
@@ -93,15 +101,17 @@ typedef std::map<Bstr, VBOXWATCHDOG_MACHINE> mapVM;
 typedef std::map<Bstr, VBOXWATCHDOG_MACHINE>::iterator mapVMIter;
 typedef std::map<Bstr, VBOXWATCHDOG_MACHINE>::const_iterator mapVMIterConst;
 
-/** Members of a VM group; currently only represented by the machine's UUID. */
+/** Members of a VM group; currently only represented by the machine's UUID.
+ *  Primary key is the machine's UUID. */
 typedef std::vector<Bstr> vecGroupMembers;
 typedef std::vector<Bstr>::iterator vecGroupMembersIter;
 typedef std::vector<Bstr>::const_iterator vecGroupMembersIterConst;
 
-/** A VM group. Can contain none, one or more group members. */
-typedef std::map<Bstr, vecGroupMembers> mapGroup;
-typedef std::map<Bstr, vecGroupMembers>::iterator mapGroupIter;
-typedef std::map<Bstr, vecGroupMembers>::const_iterator mapGroupIterConst;
+/** A VM group. Can contain none, one or more group members.
+ *  Primary key is the group's name. */
+typedef std::map<Utf8Str, vecGroupMembers> mapGroup;
+typedef std::map<Utf8Str, vecGroupMembers>::iterator mapGroupIter;
+typedef std::map<Utf8Str, vecGroupMembers>::const_iterator mapGroupIterConst;
 
 /**
  * A module descriptor.
@@ -215,8 +225,10 @@ extern VBOXMODULE g_ModAPIMonitor;
 extern void serviceLog(const char *pszFormat, ...);
 #define serviceLogVerbose(a) if (g_fVerbose) { serviceLog a; }
 
+int groupAdd(mapGroups &groups, const char *pszGroupsToAdd, uint32_t fFlags);
+
 extern int getMetric(PVBOXWATCHDOG_MACHINE pMachine, const Bstr& strName, LONG *pulData);
-void* getPayload(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
+void* payloadFrom(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
 int payloadAlloc(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule, size_t cbSize, void **ppszPayload);
 void payloadFree(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
 PVBOXWATCHDOG_MACHINE getMachine(const Bstr& strUuid);
