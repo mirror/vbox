@@ -1329,11 +1329,31 @@ static void hmR0VmxUpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     uint32_t u32TrapMask;
     Assert(pCtx);
 
-    u32TrapMask = HWACCM_VMX_TRAP_MASK;
-#ifndef DEBUG
-    if (pVM->hwaccm.s.fNestedPaging)
-        u32TrapMask &= ~RT_BIT(X86_XCPT_PF);   /* no longer need to intercept #PF. */
+    /* Set up a mask for intercepting traps. */
+    /** @todo Do we really need to always intercept #DB? */
+    u32TrapMask  =   RT_BIT(X86_XCPT_DB)
+                   | RT_BIT(X86_XCPT_NM)
+#ifdef VBOX_ALWAYS_TRAP_PF
+                   | RT_BIT(X86_XCPT_PF)
 #endif
+#ifdef VBOX_STRICT
+                   | RT_BIT(X86_XCPT_BP)
+                   | RT_BIT(X86_XCPT_DB)
+                   | RT_BIT(X86_XCPT_DE)
+                   | RT_BIT(X86_XCPT_NM)
+                   | RT_BIT(X86_XCPT_PF)
+                   | RT_BIT(X86_XCPT_UD)
+                   | RT_BIT(X86_XCPT_NP)
+                   | RT_BIT(X86_XCPT_SS)
+                   | RT_BIT(X86_XCPT_GP)
+                   | RT_BIT(X86_XCPT_MF)
+#endif
+                   ;
+
+    /** @todo NP state won't change so maybe we should build the initial trap mask up front? */
+    /* Without nested paging, #PF must be intercepted to implement shadow paging. */
+    if (!pVM->hwaccm.s.fNestedPaging)
+        u32TrapMask |= RT_BIT(X86_XCPT_PF);
 
     /* Also catch floating point exceptions if we need to report them to the guest in a different way. */
     if (!(pCtx->cr0 & X86_CR0_NE))
@@ -1346,9 +1366,27 @@ static void hmR0VmxUpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     /* Intercept all exceptions in real mode as none of them can be injected directly (#GP otherwise). */
+    /** @todo Despite the claim to intercept everything, with NP we do not intercept #PF. Should we? */
     if (    CPUMIsGuestInRealModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.pRealModeTSS)
-        u32TrapMask |= HWACCM_VMX_TRAP_MASK_REALMODE;
+        u32TrapMask |=   RT_BIT(X86_XCPT_DE)
+                       | RT_BIT(X86_XCPT_DB)
+                       | RT_BIT(X86_XCPT_NMI)
+                       | RT_BIT(X86_XCPT_BP)
+                       | RT_BIT(X86_XCPT_OF)
+                       | RT_BIT(X86_XCPT_BR)
+                       | RT_BIT(X86_XCPT_UD)
+                       | RT_BIT(X86_XCPT_DF)
+                       | RT_BIT(X86_XCPT_CO_SEG_OVERRUN)
+                       | RT_BIT(X86_XCPT_TS)
+                       | RT_BIT(X86_XCPT_NP)
+                       | RT_BIT(X86_XCPT_SS)
+                       | RT_BIT(X86_XCPT_GP)
+                       | RT_BIT(X86_XCPT_MF)
+                       | RT_BIT(X86_XCPT_AC)
+                       | RT_BIT(X86_XCPT_MC)
+                       | RT_BIT(X86_XCPT_XF)
+                       ;
 
     int rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, u32TrapMask);
     AssertRC(rc);
@@ -3053,7 +3091,7 @@ ResumeExecution:
 
             case X86_XCPT_PF: /* Page fault */
             {
-#ifdef DEBUG
+#ifdef VBOX_ALWAYS_TRAP_PF
                 if (pVM->hwaccm.s.fNestedPaging)
                 {   /* A genuine pagefault.
                      * Forward the trap to the guest by injecting the exception and resuming execution.
