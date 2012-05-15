@@ -184,8 +184,13 @@ static void rtlogLoggerExFLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iG
 #ifdef IN_RC
 /** Default logger instance. Make it weak because our RC module loader does not
  *  necessarily resolve this symbol and the compiler _must_ check if this is
- *  the case or not. */
+ *  the case or not. That doesn't work for Darwin (``incompatible feature used:
+ *  .weak_reference (must specify "-dynamic" to be used'') */
+# ifdef RT_OS_DARWIN
+extern "C" DECLIMPORT(RTLOGGERRC) g_Logger;
+# else
 extern "C" DECLWEAK(DECLIMPORT(RTLOGGERRC)) g_Logger;
+# endif
 #else /* !IN_RC */
 /** Default logger instance. */
 static PRTLOGGER                    g_pLogger;
