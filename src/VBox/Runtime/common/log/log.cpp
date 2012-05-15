@@ -2117,7 +2117,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
          * is not always true for g_Logger (special case in our RC loader)
          */
         PRTLOGGER pLogger1 = &g_Logger;
-        pLogger = ASMAtomicReadPtrT(&pLogger, PRTLOGGER);
+        pLogger = ASMAtomicReadPtrT(&pLogger1, PRTLOGGER);
 #else
         pLogger = g_pLogger;
 #endif
