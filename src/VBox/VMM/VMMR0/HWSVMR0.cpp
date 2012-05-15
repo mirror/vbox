@@ -292,36 +292,37 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_HMSVM_INVALID_PVMCB);
 
-        /* Program the control fields. Most of them never have to be changed again. */
-        /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
-        /* Note: CR0 & CR4 can be safely read when guest and shadow copies are identical. */
-        if (!pVM->hwaccm.s.fNestedPaging)
-            pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
-        else
-            pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
+        /* Program the control fields. Most of them never have to be changed again.
+         * CR0/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's.
+         * Note: CR0 & CR4 can be safely read when guest and shadow copies are identical.
+         */
+        pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
 
-        /*
-        * CR0/3/4 writes must be intercepted for obvious reasons.
-        */
-        if (!pVM->hwaccm.s.fNestedPaging)
-            pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
-        else
-            pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4);
+        /* CR0/4 writes must be intercepted for obvious reasons. */
+        pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4);
 
         /* Intercept all DRx reads and writes by default. Changed later on. */
         pVMCB->ctrl.u16InterceptRdDRx = 0xFFFF;
         pVMCB->ctrl.u16InterceptWrDRx = 0xFFFF;
 
-        /* Currently we don't care about DRx reads or writes. DRx registers are trashed.
-        * All breakpoints are automatically cleared when the VM exits.
-        */
-
-        pVMCB->ctrl.u32InterceptException = HWACCM_SVM_TRAP_MASK;
-#ifndef DEBUG
-        if (pVM->hwaccm.s.fNestedPaging)
-            pVMCB->ctrl.u32InterceptException &= ~RT_BIT(X86_XCPT_PF);   /* no longer need to intercept #PF. */
+        /* Intercept traps; only #NM is always intercepted. */
+        pVMCB->ctrl.u32InterceptException  =   RT_BIT(X86_XCPT_NM);
+#ifdef VBOX_ALWAYS_TRAP_PF
+        pVMCB->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_PF);
+#endif
+#ifdef VBOX_STRICT
+        pVMCB->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_BP)
+                                             | RT_BIT(X86_XCPT_DB)
+                                             | RT_BIT(X86_XCPT_DE)
+                                             | RT_BIT(X86_XCPT_UD)
+                                             | RT_BIT(X86_XCPT_NP)
+                                             | RT_BIT(X86_XCPT_SS)
+                                             | RT_BIT(X86_XCPT_GP)
+                                             | RT_BIT(X86_XCPT_MF)
+                                             ;
 #endif
 
+        /* Set up instruction and miscellaneous intercepts. */
         pVMCB->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR
                                         | SVM_CTRL1_INTERCEPT_VINTR
                                         | SVM_CTRL1_INTERCEPT_NMI
@@ -333,16 +334,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                         | SVM_CTRL1_INTERCEPT_HLT
                                         | SVM_CTRL1_INTERCEPT_INOUT_BITMAP
                                         | SVM_CTRL1_INTERCEPT_MSR_SHADOW
-                                        | SVM_CTRL1_INTERCEPT_INVLPG
                                         | SVM_CTRL1_INTERCEPT_INVLPGA       /* AMD only */
-                                        | SVM_CTRL1_INTERCEPT_TASK_SWITCH
                                         | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* fatal */
                                         | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Legacy FPU FERR handling. */
                                         ;
-        /* With nested paging we don't care about invlpg or task switches anymore. */
-        if (pVM->hwaccm.s.fNestedPaging)
-            pVMCB->ctrl.u32InterceptCtrl1 &= ~(SVM_CTRL1_INTERCEPT_INVLPG | SVM_CTRL1_INTERCEPT_TASK_SWITCH);
-
         pVMCB->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* required */
                                         | SVM_CTRL2_INTERCEPT_VMMCALL
                                         | SVM_CTRL2_INTERCEPT_VMLOAD
@@ -370,12 +365,31 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* No LBR virtualization. */
         pVMCB->ctrl.u64LBRVirt      = 0;
 
-        /** The ASID must start at 1; the host uses 0. */
+        /* The ASID must start at 1; the host uses 0. */
         pVMCB->ctrl.TLBCtrl.n.u32ASID = 1;
 
-        /** Setup the PAT msr (nested paging only) */
+        /* Setup the PAT msr (nested paging only) */
         /* The default value should be 0x0007040600070406ULL, but we want to treat all guest memory as WB, so choose type 6 for all PAT slots. */
         pVMCB->guest.u64GPAT = 0x0006060606060606ULL;
+
+        /* If nested paging is not in use, additional intercepts have to be set up. */
+        if (!pVM->hwaccm.s.fNestedPaging)
+        {
+            /* CR3 reads/writes must be intercepted; our shadow values are different from guest's. */
+            pVMCB->ctrl.u16InterceptRdCRx |= RT_BIT(3);
+            pVMCB->ctrl.u16InterceptWrCRx |= RT_BIT(3);
+
+            /* We must also intercept:
+             * - INVLPG (must go through shadow paging)
+             * - task switches (may change CR3/EFLAGS/LDT)
+             */
+            pVMCB->ctrl.u32InterceptCtrl1 |=   SVM_CTRL1_INTERCEPT_INVLPG
+                                             | SVM_CTRL1_INTERCEPT_TASK_SWITCH
+                                             ;
+
+            /* Page faults must be intercepted to implement shadow paging. */
+            pVMCB->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_PF);
+        }
 
         /* The following MSRs are saved automatically by vmload/vmsave, so we allow the guest
          * to modify them directly.
@@ -1759,7 +1773,7 @@ ResumeExecution:
             uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
             RTGCUINTPTR uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
 
-#ifdef DEBUG
+#ifdef VBOX_ALWAYS_TRAP_PF
             if (pVM->hwaccm.s.fNestedPaging)
             {   /* A genuine pagefault.
                  * Forward the trap to the guest by injecting the exception and resuming execution.
