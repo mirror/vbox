@@ -104,14 +104,14 @@ typedef enum VBCPPMODE
 
 
 /**
- * A define.
+ * A macro (aka define).
  */
-typedef struct VBCPPDEF
+typedef struct VBCPPMACRO
 {
     /** The string space core. */
     RTSTRSPACECORE      Core;
     /** For linking macros that have the fExpanding flag set. */
-    struct VBCPPDEF    *pUpExpanding;
+    struct VBCPPMACRO  *pUpExpanding;
     /** Whether it's a function. */
     bool                fFunction;
     /** Variable argument count. */
@@ -131,9 +131,9 @@ typedef struct VBCPPDEF
     size_t              cchValue;
     /** The define value.  (This is followed by the name and arguments.) */
     char                szValue[1];
-} VBCPPDEF;
-/** Pointer to a define. */
-typedef VBCPPDEF *PVBCPPDEF;
+} VBCPPMACRO;
+/** Pointer to a macro. */
+typedef VBCPPMACRO *PVBCPPMACRO;
 
 
 /**
@@ -144,7 +144,7 @@ typedef struct VBCPPMACROEXP
     /** The expansion buffer. */
     VBCPPSTRBUF     StrBuf;
     /** List of expanding macros (Stack). */
-    PVBCPPDEF       pMacroStack;
+    PVBCPPMACRO     pMacroStack;
     /** The input stream (in case we want to look for parameter lists). */
     PSCMSTREAM      pStrmInput;
     /** Array of argument values.  Used when expanding function style macros.  */
@@ -517,8 +517,8 @@ typedef struct VBCPP
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static PVBCPPDEF    vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
-static RTEXITCODE   vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPDEF pMacro, size_t *poffParameters);
+static PVBCPPMACRO  vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
+static RTEXITCODE   vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPMACRO pMacro, size_t *poffParameters);
 static RTEXITCODE   vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode, size_t *pcReplacements);
 static void         vbcppMacroExpandCleanup(PVBCPPMACROEXP pExp);
 
@@ -1554,7 +1554,7 @@ static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput, ch
     /*
      * Does this look like a define we know?
      */
-    PVBCPPDEF pMacro = vbcppMacroLookup(pThis, pchDefine, cchDefine);
+    PVBCPPMACRO pMacro = vbcppMacroLookup(pThis, pchDefine, cchDefine);
     if (   pMacro
         && (   !pMacro->fFunction
             || vbcppInputLookForLeftParenthesis(pThis, pStrmInput)) )
@@ -1655,17 +1655,17 @@ static bool vbcppMacroExists(PVBCPP pThis, const char *pszDefine, size_t cchDefi
  *                              list.
  * @param   cchDefine           The length of the name. RTSTR_MAX is ok.
  */
-static PVBCPPDEF vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
+static PVBCPPMACRO vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine)
 {
     if (!cchDefine)
         return NULL;
     if (!VBCPP_BITMAP_IS_SET(pThis->bmDefined, *pszDefine))
         return NULL;
-    return (PVBCPPDEF)RTStrSpaceGetN(&pThis->StrSpace, pszDefine, cchDefine);
+    return (PVBCPPMACRO)RTStrSpaceGetN(&pThis->StrSpace, pszDefine, cchDefine);
 }
 
 
-static uint32_t vbcppMacroLookupArg(PVBCPPDEF pMacro, const char *pchName, size_t cchName)
+static uint32_t vbcppMacroLookupArg(PVBCPPMACRO pMacro, const char *pchName, size_t cchName)
 {
     Assert(cchName > 0);
 
@@ -2034,7 +2034,7 @@ static RTEXITCODE vbcppMacroExpandGatherParameters(PVBCPP pThis, PVBCPPMACROEXP 
  * @param   pStrBuf             String buffer containing the result. The caller
  *                              should initialize and destroy this!
  */
-static RTEXITCODE vbcppMacroExpandValueWithArguments(PVBCPP pThis, PVBCPPMACROEXP pExp, PVBCPPDEF pMacro,
+static RTEXITCODE vbcppMacroExpandValueWithArguments(PVBCPP pThis, PVBCPPMACROEXP pExp, PVBCPPMACRO pMacro,
                                                      PVBCPPSTRBUF pStrBuf)
 {
     Assert(pMacro->fFunction);
@@ -2198,7 +2198,7 @@ static RTEXITCODE vbcppMacroExpandValueWithArguments(PVBCPP pThis, PVBCPPMACROEX
  *                              closing parenthesis on success.  Undefined on
  *                              failure.
  */
-static RTEXITCODE vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPDEF pMacro,
+static RTEXITCODE vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPMACRO pMacro,
                                      size_t *poffParameters)
 {
     RTEXITCODE rcExit;
@@ -2433,7 +2433,7 @@ static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCP
                 vbcppMacroExpandGetCh(pExp, &off);
             size_t cchDefine = off - offDefine;
 
-            PVBCPPDEF pMacro = vbcppMacroLookup(pThis, &pExp->StrBuf.pszBuf[offDefine], cchDefine);
+            PVBCPPMACRO pMacro = vbcppMacroLookup(pThis, &pExp->StrBuf.pszBuf[offDefine], cchDefine);
             if (   pMacro
                 && (   !pMacro->fFunction
                     || vbcppMacroExpandLookForLeftParenthesis(pThis, pExp, &off)) )
@@ -2472,7 +2472,7 @@ static void vbcppMacroExpandCleanup(PVBCPPMACROEXP pExp)
 {
     while (pExp->pMacroStack)
     {
-        PVBCPPDEF pMacro = pExp->pMacroStack;
+        PVBCPPMACRO pMacro = pExp->pMacroStack;
         pExp->pMacroStack = pMacro->pUpExpanding;
 
         pMacro->fExpanding   = false;
@@ -2497,7 +2497,7 @@ static void vbcppMacroExpandCleanup(PVBCPPMACROEXP pExp)
  * Frees a define.
  *
  * @returns VINF_SUCCESS (used when called by RTStrSpaceDestroy)
- * @param   pStr                Pointer to the VBCPPDEF::Core member.
+ * @param   pStr                Pointer to the VBCPPMACRO::Core member.
  * @param   pvUser              Unused.
  */
 static DECLCALLBACK(int) vbcppMacroFree(PRTSTRSPACECORE pStr, void *pvUser)
@@ -2554,7 +2554,7 @@ static RTEXITCODE vbcppMacroUndef(PVBCPP pThis, const char *pszDefine, size_t cc
  * @param   pThis               The C preprocessor instance.
  * @param   pMacro              The define to insert.
  */
-static RTEXITCODE vbcppMacroInsert(PVBCPP pThis, PVBCPPDEF pMacro)
+static RTEXITCODE vbcppMacroInsert(PVBCPP pThis, PVBCPPMACRO pMacro)
 {
     /*
      * Reject illegal macro names.
@@ -2588,7 +2588,7 @@ static RTEXITCODE vbcppMacroInsert(PVBCPP pThis, PVBCPPDEF pMacro)
          * Duplicate. When doing selective D preprocessing, let the command
          * line take precendece.
          */
-        PVBCPPDEF pOld = (PVBCPPDEF)RTStrSpaceGet(&pThis->StrSpace, pMacro->Core.pszString); Assert(pOld);
+        PVBCPPMACRO pOld = (PVBCPPMACRO)RTStrSpaceGet(&pThis->StrSpace, pMacro->Core.pszString); Assert(pOld);
         if (   pThis->fAllowRedefiningCmdLineDefines
             || pMacro->fCmdLine == pOld->fCmdLine)
         {
@@ -2675,10 +2675,10 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
     /*
      * Allocate a structure.
      */
-    size_t    cbDef = RT_OFFSETOF(VBCPPDEF, szValue[cchValue + 1 + cchDefine + 1 + cchArgNames])
+    size_t    cbDef = RT_OFFSETOF(VBCPPMACRO, szValue[cchValue + 1 + cchDefine + 1 + cchArgNames])
                     + sizeof(const char *) * cArgs;
     cbDef = RT_ALIGN_Z(cbDef, sizeof(const char *));
-    PVBCPPDEF pMacro  = (PVBCPPDEF)RTMemAlloc(cbDef);
+    PVBCPPMACRO pMacro  = (PVBCPPMACRO)RTMemAlloc(cbDef);
     if (!pMacro)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "out of memory");
 
@@ -2687,13 +2687,14 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
     memcpy(pszDst, pszDefine, cchDefine);
     pszDst += cchDefine;
     *pszDst++ = '\0';
-    pMacro->fFunction = true;
-    pMacro->fVarArg   = false;
-    pMacro->fCmdLine  = fCmdLine;
-    pMacro->cArgs     = cArgs;
-    pMacro->papszArgs = (const char **)((uintptr_t)pMacro + cbDef - sizeof(const char *) * cArgs);
+    pMacro->fFunction   = true;
+    pMacro->fVarArg     = false;
+    pMacro->fCmdLine    = fCmdLine;
+    pMacro->fExpanding  = false;
+    pMacro->cArgs       = cArgs;
+    pMacro->papszArgs   = (const char **)((uintptr_t)pMacro + cbDef - sizeof(const char *) * cArgs);
     VBCPP_BITMAP_EMPTY(pMacro->bmArgs);
-    pMacro->cchValue  = cchValue;
+    pMacro->cchValue    = cchValue;
     memcpy(pMacro->szValue, pszValue, cchValue);
     pMacro->szValue[cchValue] = '\0';
 
@@ -2792,20 +2793,21 @@ static RTEXITCODE vbcppMacroAdd(PVBCPP pThis, const char *pszDefine, size_t cchD
     if (!vbcppValidateCIdentifier(pThis, pszDefine, cchDefine))
         return RTEXITCODE_FAILURE;
 
-    PVBCPPDEF pMacro = (PVBCPPDEF)RTMemAlloc(RT_OFFSETOF(VBCPPDEF, szValue[cchValue + 1 + cchDefine + 1]));
+    PVBCPPMACRO pMacro = (PVBCPPMACRO)RTMemAlloc(RT_OFFSETOF(VBCPPMACRO, szValue[cchValue + 1 + cchDefine + 1]));
     if (!pMacro)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "out of memory");
 
     pMacro->Core.pszString = &pMacro->szValue[cchValue + 1];
     memcpy((char *)pMacro->Core.pszString, pszDefine, cchDefine);
     ((char *)pMacro->Core.pszString)[cchDefine] = '\0';
-    pMacro->fFunction = false;
-    pMacro->fVarArg   = false;
-    pMacro->fCmdLine  = fCmdLine;
-    pMacro->cArgs     = 0;
-    pMacro->papszArgs = NULL;
+    pMacro->fFunction   = false;
+    pMacro->fVarArg     = false;
+    pMacro->fCmdLine    = fCmdLine;
+    pMacro->fExpanding  = false;
+    pMacro->cArgs       = 0;
+    pMacro->papszArgs   = NULL;
     VBCPP_BITMAP_EMPTY(pMacro->bmArgs);
-    pMacro->cchValue  = cchValue;
+    pMacro->cchValue    = cchValue;
     memcpy(pMacro->szValue, pszValue, cchValue);
     pMacro->szValue[cchValue] = '\0';
 
@@ -2820,7 +2822,7 @@ static RTEXITCODE vbcppMacroAdd(PVBCPP pThis, const char *pszDefine, size_t cchD
  * @param   pThis               The C preprocessor instance.
  * @param   pMacro              The macro.
  */
-static RTEXITCODE vbcppMacroTryConvertToInlineD(PVBCPP pThis, PVBCPPDEF pMacro)
+static RTEXITCODE vbcppMacroTryConvertToInlineD(PVBCPP pThis, PVBCPPMACRO pMacro)
 {
     AssertReturn(pMacro, vbcppError(pThis, "Internal error"));
     if (pMacro->fFunction)
@@ -2833,8 +2835,8 @@ static RTEXITCODE vbcppMacroTryConvertToInlineD(PVBCPP pThis, PVBCPPDEF pMacro)
     const char *pszValue  = pMacro->szValue;
     size_t      cchValue  = pMacro->cchValue;
 
-    unsigned   i = 0;
-    PVBCPPDEF  pMacro2;
+    unsigned    i = 0;
+    PVBCPPMACRO pMacro2;
     while (   i < 10
            && cchValue > 0
            && vbcppIsCIdentifierLeadChar(*pszValue)
@@ -3094,7 +3096,7 @@ static RTEXITCODE vbcppDirectiveUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
                 /*
                  * Take action.
                  */
-                PVBCPPDEF pMacro = vbcppMacroLookup(pThis, pchDefine, cchDefine);
+                PVBCPPMACRO pMacro = vbcppMacroLookup(pThis, pchDefine, cchDefine);
                 if (    pMacro
                     &&  pThis->fRespectSourceDefines
                     &&  (   !pMacro->fCmdLine
@@ -4497,7 +4499,6 @@ static RTEXITCODE vbcppDirectiveIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, si
                                                pchCondition, cchCondition);
                     else
                     {
-
                         PVBCPPCOND pCond = pThis->pCondStack;
                         if (   pCond->enmResult != kVBCppEval_Undecided
                             && (   !pCond->pUp
