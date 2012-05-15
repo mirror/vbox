@@ -295,9 +295,9 @@
 /** Internal processing error \#1 in the DBGF stack code. */
 #define VERR_DBGF_STACK_IPE_1               (-1218)
 /** Internal processing error \#2 in the DBGF stack code. */
-#define VERR_DBGF_STACK_IPE_2               (-1218)
+#define VERR_DBGF_STACK_IPE_2               (-1219)
 /** No trace buffer available, please change the VM config. */
-#define VERR_DBGF_NO_TRACE_BUFFER           (-1219)
+#define VERR_DBGF_NO_TRACE_BUFFER           (-1220)
 /** @} */
 
 
@@ -1299,8 +1299,6 @@
 #define VERR_PDM_TOO_MANY_DEVICE_INSTANCES          (-2867)
 /** Too many instances of a driver. */
 #define VERR_PDM_TOO_MANY_DRIVER_INSTANCES          (-2868)
-/** Too many instances of a usb device. */
-#define VERR_PDM_TOO_MANY_USB_DEVICE_INSTANCES      (-2869)
 /** Too many instances of a usb device. */
 #define VERR_PDM_TOO_MANY_USB_DEVICE_INSTANCES      (-2869)
 /** The device instance structure version has changed.
