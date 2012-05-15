@@ -1,6 +1,15 @@
 %ifndef ___iprt_x86_h
 %define ___iprt_x86_h
+%ifndef VBOX_FOR_DTRACE_LIB
+%else
+%endif
 %ifdef RT_OS_SOLARIS
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %define X86_EFL_CF          RT_BIT(0)
 %define X86_EFL_1           RT_BIT(1)
@@ -23,6 +32,12 @@
 %define X86_EFL_IOPL_SHIFT  12
 %define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
 %define X86_EFL_POPF_BITS       (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID)
+%ifndef VBOX_FOR_DTRACE_LIB
+%else
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%else
+%endif
 %define X86_CPUID_VENDOR_INTEL_EBX      0x756e6547
 %define X86_CPUID_VENDOR_INTEL_ECX      0x6c65746e
 %define X86_CPUID_VENDOR_INTEL_EDX      0x49656e69
@@ -269,6 +284,37 @@
 %define MSR_IA32_MISC_ENABLE_LIMIT_CPUID       RT_BIT(22)
 %define MSR_IA32_MISC_ENABLE_XTPR_MSG_DISABLE  RT_BIT(23)
 %define MSR_IA32_MISC_ENABLE_XD_DISABLE        RT_BIT(34)
+%define IA32_MTRR_PHYSBASE0                 0x200
+%define IA32_MTRR_PHYSMASK0                 0x201
+%define IA32_MTRR_PHYSBASE1                 0x202
+%define IA32_MTRR_PHYSMASK1                 0x203
+%define IA32_MTRR_PHYSBASE2                 0x204
+%define IA32_MTRR_PHYSMASK2                 0x205
+%define IA32_MTRR_PHYSBASE3                 0x206
+%define IA32_MTRR_PHYSMASK3                 0x207
+%define IA32_MTRR_PHYSBASE4                 0x208
+%define IA32_MTRR_PHYSMASK4                 0x209
+%define IA32_MTRR_PHYSBASE5                 0x20a
+%define IA32_MTRR_PHYSMASK5                 0x20b
+%define IA32_MTRR_PHYSBASE6                 0x20c
+%define IA32_MTRR_PHYSMASK6                 0x20d
+%define IA32_MTRR_PHYSBASE7                 0x20e
+%define IA32_MTRR_PHYSMASK7                 0x20f
+%define IA32_MTRR_PHYSBASE8                 0x210
+%define IA32_MTRR_PHYSMASK8                 0x211
+%define IA32_MTRR_PHYSBASE9                 0x212
+%define IA32_MTRR_PHYSMASK9                 0x213
+%define IA32_MTRR_FIX64K_00000              0x250
+%define IA32_MTRR_FIX16K_80000              0x258
+%define IA32_MTRR_FIX16K_A0000              0x259
+%define IA32_MTRR_FIX4K_C0000               0x268
+%define IA32_MTRR_FIX4K_C8000               0x269
+%define IA32_MTRR_FIX4K_D0000               0x26a
+%define IA32_MTRR_FIX4K_D8000               0x26b
+%define IA32_MTRR_FIX4K_E0000               0x26c
+%define IA32_MTRR_FIX4K_E8000               0x26d
+%define IA32_MTRR_FIX4K_F0000               0x26e
+%define IA32_MTRR_FIX4K_F8000               0x26f
 %define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 %define MSR_IA32_MC0_CTL                    0x400
 %define MSR_IA32_MC0_STATUS                 0x401
@@ -313,7 +359,6 @@
 %define MSR_K7_PERFCTR1                     0xc0010005
 %define MSR_K7_PERFCTR2                     0xc0010006
 %define MSR_K7_PERFCTR3                     0xc0010007
-%define MSR_K8_HWCR                         0xc0010015
 %define MSR_K8_LSTAR                        0xc0000082
 %define MSR_K8_CSTAR                        0xc0000083
 %define MSR_K8_SF_MASK                      0xc0000084
@@ -483,6 +528,7 @@
 %define X86_FCW_UM          RT_BIT(4)
 %define X86_FCW_PM          RT_BIT(5)
 %define X86_FCW_MASK_ALL    0x007f
+%define X86_FCW_XCPT_MASK    0x003f
 %define X86_FCW_PC_MASK     0x0300
 %define X86_FCW_PC_24       0x0000
 %define X86_FCW_PC_RSVD     0x0100
@@ -493,6 +539,23 @@
 %define X86_FCW_RC_DOWN     0x0400
 %define X86_FCW_RC_UP       0x0800
 %define X86_FCW_RC_ZERO     0x0c00
+%define X86_FCW_ZERO_MASK   0xf080
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %if HC_ARCH_BITS == 64
 %else
 %endif
@@ -555,6 +618,10 @@
 %define X86_DESC_AVL                        RT_BIT(20)
 %define X86_DESC_DB                         RT_BIT(22)
 %define X86_DESC_G                          RT_BIT(23)
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_SEL_SHIFT       3
 %define X86_SEL_MASK        0xfff8
 %define X86_SEL_LDT         0x0004
@@ -569,6 +636,12 @@
 %define X86_TRAP_PF_US              RT_BIT(2)
 %define X86_TRAP_PF_RSVD            RT_BIT(3)
 %define X86_TRAP_PF_ID              RT_BIT(4)
+%ifndef VBOX_FOR_DTRACE_LIB
+%else
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%else
+%endif
 %define X86_MODRM_RM_MASK       0x07
 %define X86_MODRM_REG_MASK      0x38
 %define X86_MODRM_REG_SMASK     0x07
@@ -576,6 +649,8 @@
 %define X86_MODRM_MOD_MASK      0xc0
 %define X86_MODRM_MOD_SMASK     0x03
 %define X86_MODRM_MOD_SHIFT     6
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_SIB_BASE_MASK     0x07
 %define X86_SIB_INDEX_MASK    0x38
 %define X86_SIB_INDEX_SMASK   0x07
@@ -583,6 +658,8 @@
 %define X86_SIB_SCALE_MASK    0xc0
 %define X86_SIB_SCALE_SMASK   0x03
 %define X86_SIB_SCALE_SHIFT   6
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_GREG_xAX            0
 %define X86_GREG_xCX            1
 %define X86_GREG_xDX            2
