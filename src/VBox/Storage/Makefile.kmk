@@ -45,6 +45,7 @@ StorageLib_SOURCES  = \
 	RAW.cpp \
 	QED.cpp \
 	QCOW.cpp \
+	VHDX.cpp \
 	VCICache.cpp
 
 #StorageLibNoDB_TEMPLATE = VBOXR3
