@@ -290,6 +290,9 @@ int main(int argc, char **argv)
         /*
          * Cleanup.
          */
+        rc = VMR3PowerOff(pVM);
+        if (RT_FAILURE(rc))
+            RTTestFailed(hTest, "VMR3PowerOff failed: rc=%Rrc\n", rc);
         rc = VMR3Destroy(pVM);
         if (RT_FAILURE(rc))
             RTTestFailed(hTest, "VMR3Destroy failed: rc=%Rrc\n", rc);
