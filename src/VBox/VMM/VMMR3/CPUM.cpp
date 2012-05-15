@@ -2638,7 +2638,7 @@ static void cpumR3InfoParseArg(const char *pszArgs, CPUMDUMPTYPE *penmType, cons
     {
         if (!strncmp(pszArgs, "verbose", sizeof("verbose") - 1))
         {
-            pszArgs += 5;
+            pszArgs += 7;
             *penmType = CPUMDUMPTYPE_VERBOSE;
         }
         else if (!strncmp(pszArgs, "terse", sizeof("terse") - 1))
