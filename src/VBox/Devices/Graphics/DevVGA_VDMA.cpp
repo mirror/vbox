@@ -158,7 +158,8 @@ static DECLCALLBACK(void) vboxVDMACrCtlCbReleaseCmd(PVGASTATE pVGAState, PVBOXVD
 
 static int vboxVDMACrCtlPostAsync (PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd, uint32_t cbCmd, PFNVBOXVDMACRCTL_CALLBACK pfnCompletion, void *pvCompletion)
 {
-    if (pVGAState->pDrv->pfnCrHgsmiControlProcess)
+    if (   pVGAState->pDrv
+        && pVGAState->pDrv->pfnCrHgsmiControlProcess)
     {
         PVBOXVDMACMD_CHROMIUM_CTL_PRIVATE pHdr = VBOXVDMACMD_CHROMIUM_CTL_PRIVATE_FROM_CTL(pCmd);
         pHdr->pfnCompletion = pfnCompletion;
