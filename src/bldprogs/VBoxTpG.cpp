@@ -438,7 +438,13 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    " [section __VTG __VTGObj        align=64]\n"
+                    " ; Section order hack!\n"
+                    " ; With the ld64-97.17 linker there was a problem with it determin the section\n"
+                    " ; order based on symbol references. The references to the start and end of the\n"
+                    " ; __VTGPrLc section forced it in front of __VTGObj. \n"
+                    " extern section$start$__VTG$__VTGObj\n"
+                    " extern section$end$__VTG$__VTGObj\n"
+                    " [section __VTG __VTGObj        align=1024]\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_PE\n"
                     " %%macro VTG_GLOBAL 2\n"
@@ -521,7 +527,15 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTUuidCreate failed: %Rrc", rc);
     ScmStreamPrintf(pStrm,
                     "    dd 0%08xh, 0%08xh, 0%08xh, 0%08xh\n"
-                    "    dd 0, 0, 0, 0\n"
+                    "%%ifdef ASM_FORMAT_MACHO\n"
+                    "    RTCCPTR_DEF section$start$__VTG$__VTGObj\n"
+                    " %%if ARCH_BITS == 32\n"
+                    "    dd          0\n"
+                    " %%endif\n"
+                    "%%else\n"
+                    "    dd 0, 0\n"
+                    "%%endif\n"
+                    "    dd 0, 0\n"
                     , Uuid.au32[0], Uuid.au32[1], Uuid.au32[2], Uuid.au32[3]);
 
     /*

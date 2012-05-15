@@ -335,16 +335,32 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
         uint64_t u64Tmp = pVtgHdr->uProbeLocsEnd.u64 - pVtgHdr->uProbeLocs.u64;
         if (u64Tmp >= UINT32_MAX)
         {
-            SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH - u64Tmp=%#llx ProbeLocs=%#llx ProbeLocsEnd=%#llx\n", 
+            SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH - u64Tmp=%#llx ProbeLocs=%#llx ProbeLocsEnd=%#llx\n",
                         u64Tmp, pVtgHdr->uProbeLocs.u64, pVtgHdr->uProbeLocsEnd.u64);
             return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
         }
         pVtgHdr->cbProbeLocs  = (uint32_t)u64Tmp;
 
         u64Tmp = pVtgHdr->uProbeLocs.u64 - uVtgHdrAddr;
+#ifdef RT_OS_DARWIN
+        /* The loader and/or ld64-97.17 seems not to generate fixups for our
+           __VTGObj section. Detect this by comparing them with the
+           u64VtgObjSectionStart member and assume max image size of 4MB. */
+        if (   (int64_t)u64Tmp != (int32_t)u64Tmp
+            && pVtgHdr->u64VtgObjSectionStart != uVtgHdrAddr
+            && pVtgHdr->u64VtgObjSectionStart < _4M
+            && pVtgHdr->uProbeLocsEnd.u64     < _4M
+            && !fUmod)
+        {
+            uint64_t offDelta = uVtgHdrAddr - pVtgHdr->u64VtgObjSectionStart;
+            pVtgHdr->uProbeLocs.u64        += offDelta;
+            pVtgHdr->uProbeLocsEnd.u64     += offDelta;
+            u64Tmp += offDelta;
+        }
+#endif
         if ((int64_t)u64Tmp != (int32_t)u64Tmp)
         {
-            SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_PTR - u64Tmp=%#llx uProbeLocs=%#llx uVtgHdrAddr=%RTptr\n", 
+            SUPR0Printf("supdrvVtgValidateHdr: VERR_SUPDRV_VTG_BAD_HDR_PTR - u64Tmp=%#llx uProbeLocs=%#llx uVtgHdrAddr=%RTptr\n",
                         u64Tmp, pVtgHdr->uProbeLocs.u64, uVtgHdrAddr);
             return VERR_SUPDRV_VTG_BAD_HDR_PTR;
         }
@@ -361,13 +377,9 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
             || (   pVtgHdr->cBits != 32
                 && pVtgHdr->cBits != 64)) )
         return VERR_SUPDRV_VTG_BITS;
-    if (   pVtgHdr->au32Reserved1[0]
-        || pVtgHdr->au32Reserved1[1]
-        || pVtgHdr->au32Reserved1[2]
-        || pVtgHdr->au32Reserved1[3])
-        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
-    if (RTUuidIsNull(&pVtgHdr->Uuid))
-        return VERR_SUPDRV_VTG_BAD_HDR_MISC;
+    MY_CHECK_RET(pVtgHdr->au32Reserved1[0] == 0, VERR_SUPDRV_VTG_BAD_HDR_MISC);
+    MY_CHECK_RET(pVtgHdr->au32Reserved1[1] == 0, VERR_SUPDRV_VTG_BAD_HDR_MISC);
+    MY_CHECK_RET(!RTUuidIsNull(&pVtgHdr->Uuid), VERR_SUPDRV_VTG_BAD_HDR_MISC);
 
     /*
      * Check the individual area descriptors.
@@ -616,7 +628,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const ui
      * Probe locations.
      */
     {
-        PCVTGPROBELOC paProbeLocs = (PCVTGPROBELOC)((intptr_t)pVtgHdr + pVtgHdr->offProbeLocs);
+        PVTGPROBELOC paProbeLocs = (PVTGPROBELOC)((intptr_t)pVtgHdr + pVtgHdr->offProbeLocs);
         i = pVtgHdr->cbProbeLocs / sizeof(VTGPROBELOC);
         while (i-- > 0)
         {
@@ -625,6 +637,18 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const ui
             MY_CHECK_RET(paProbeLocs[i].idProbe == 0, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
             MY_WITHIN_IMAGE(paProbeLocs[i].pszFunction, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
             offTmp = (uintptr_t)paProbeLocs[i].pProbe - (uintptr_t)pVtgHdr->offProbes - (uintptr_t)pVtgHdr;
+#ifdef RT_OS_DARWIN /* See header validation code. */
+            if (   offTmp >= pVtgHdr->cbProbes
+                && pVtgHdr->u64VtgObjSectionStart != uVtgHdrAddr
+                && pVtgHdr->u64VtgObjSectionStart   < _4M
+                && (uintptr_t)paProbeLocs[i].pProbe < _4M
+                && !fUmod )
+            {
+                uint64_t offDelta = uVtgHdrAddr - pVtgHdr->u64VtgObjSectionStart;
+                paProbeLocs[i].pProbe = (PVTGDESCPROBE)((uintptr_t)paProbeLocs[i].pProbe + offDelta);
+                offTmp += offDelta;
+            }
+#endif
             MY_CHECK_RET(offTmp < pVtgHdr->cbProbes, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
             MY_CHECK_RET(offTmp / sizeof(VTGDESCPROBE) * sizeof(VTGDESCPROBE) == offTmp, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
         }

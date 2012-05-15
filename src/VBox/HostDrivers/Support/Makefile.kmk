@@ -310,10 +310,10 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
 	win/SUPDrvA-win.asm \
 	win/VBoxDrv.rc
  VBoxDrv_SOURCES          = \
+ 	SUPDrv.d \
  	SUPDrv.c \
  	SUPDrvSem.c \
-  	SUPDrvTracer.cpp \
- 	SUPDrv.d
+  	SUPDrvTracer.cpp
  ifdef VBOX_WITH_NATIVE_DTRACE
   VBoxDrv_SOURCES        += \
   	SUPDrv-dtrace.cpp
