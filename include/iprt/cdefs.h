@@ -737,6 +737,20 @@
 # define DECLNORETURN(type)     type
 #endif
 
+/** @def DECLWEAK
+ * How to declare a variable which is not necessarily resolved at
+ * runtime.
+ * @note: This macro can be combined with other macros, for example
+ * @code
+ *   EMR3DECL(DECLWEAK(int)) foo;
+ * @endcode
+ */
+#if defined(__GNUC__)
+# define DECLWEAK(type)         type __attribute__((weak))
+#else
+# define DECLWEAK(type)         type
+#endif
+
 /** @def DECLCALLBACK
  * How to declare an call back function type.
  * @param   type    The return type of the function declaration.
