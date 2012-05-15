@@ -2112,7 +2112,12 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
     if (!pLogger)
     {
 #ifdef IN_RC
-        pLogger = &g_Logger;
+        /*
+         * XXX gcc assumes that the address of a variable is always > 0 but this
+         * is not always true for g_Logger (special case in our RC loader)
+         */
+        PRTLOGGER pLogger1 = &g_Logger;
+        pLogger = ASMAtomicReadPtrT(&pLogger, PRTLOGGER);
 #else
         pLogger = g_pLogger;
 #endif
@@ -2158,7 +2163,12 @@ RT_EXPORT_SYMBOL(RTLogFlush);
 RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
 {
 #ifdef IN_RC
-    return &g_Logger;
+    /*
+     * XXX gcc assumes that the address of a variable is always > 0 but this
+     * is not always true for g_Logger (special case in our RC loader)
+     */
+    PRTLOGGER pLogger = &g_Logger;
+    return ASMAtomicReadPtrT(&pLogger, PRTLOGGER);
 
 #else /* !IN_RC */
 # ifdef IN_RING0
@@ -2195,7 +2205,12 @@ RT_EXPORT_SYMBOL(RTLogDefaultInstance);
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void)
 {
 #ifdef IN_RC
-    return &g_Logger;
+    /*
+     * XXX gcc assumes that the address of a variable is always > 0 but this
+     * is not always true for g_Logger (special case in our RC loader)
+     */
+    PRTLOGGER pLogger = &g_Logger;
+    return ASMAtomicReadPtrT(&pLogger, PRTLOGGER);
 #else
 # ifdef IN_RING0
     /*
