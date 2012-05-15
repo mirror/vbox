@@ -294,7 +294,7 @@ BEGINPROC_EXPORTED tstPFR1
     COPY_STACK_ESP_EBP_RESUME tstPFR1_Resume
 
     ; Setup iret to execute r1 code.
-    mov     eax, 02069h                 ; load ds and es with r3 selectors.
+    mov     eax, 02069h                 ; load ds and es with R1 selectors.
     mov     es, eax
     mov     ds, eax
     push    dword 01069h                ; ss
@@ -308,7 +308,7 @@ BEGINPROC_EXPORTED tstPFR1
     mov     [ebx + TSTMICRO.u64TSCR0Start + 4], edx
     iret
 
-    ; R3 code
+    ; R1 code
 tstPTR1_R1:
     RDTSC_ECX_EBP                       ; ebp:ecx - Rx enter time (0:0).
     xor     ebx, ebx
@@ -334,7 +334,7 @@ BEGINPROC_EXPORTED tstPFR2
     COPY_STACK_ESP_EBP_RESUME tstPFR2_Resume
 
     ; Setup iret to execute r2 code.
-    mov     eax, 0206ah                 ; load ds and es with r3 selectors.
+    mov     eax, 0206ah                 ; load ds and es with R2 selectors.
     mov     es, eax
     mov     ds, eax
     push    0206ah                      ; ss
@@ -348,7 +348,7 @@ BEGINPROC_EXPORTED tstPFR2
     mov     [ebx + TSTMICRO.u64TSCR0Start + 4], edx
     iret
 
-    ; R3 code
+    ; R2 code
 tstPTR2_R2:
     RDTSC_ECX_EBP                       ; ebp:ecx - Rx enter time (0:0).
     xor     ebx, ebx
@@ -374,7 +374,7 @@ BEGINPROC_EXPORTED tstPFR3
     COPY_STACK_ESP_EBP_RESUME tstPFR3_Resume
 
     ; Setup iret to execute r3 code.
-    mov     eax, 0306bh                 ; load ds and es with r3 selectors.
+    mov     eax, 0306bh                 ; load ds and es with R3 selectors.
     mov     es, eax
     mov     ds, eax
     push    0306bh                      ; ss
