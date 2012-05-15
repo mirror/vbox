@@ -2235,7 +2235,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_STATISTICS
             /*
-             * This is not terribly accurate (i.e. we don't have a StatFlushEPT counter so we currently count these
+             * This is not terribly accurate (i.e. we don't have any StatFlushEPT counter). We currently count these
              * as ASID flushes too, better than including them under StatFlushTLBWorldSwitch.
              */
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
