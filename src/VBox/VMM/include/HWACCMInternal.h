@@ -111,22 +111,6 @@ RT_C_DECLS_BEGIN
 
 /** @} */
 
-/** @name Intercepted traps
- *  Traps that need to be intercepted so we can correctly dispatch them to the guest if required.
- *  Currently #NM and #PF only
- */
-#ifdef VBOX_STRICT
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_BP) | RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
-#define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
-#else
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
-#define HWACCM_SVM_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
-#endif
-/* All exceptions have to be intercept in emulated real-mode (minus NM & PF as they are always intercepted. */
-#define HWACCM_VMX_TRAP_MASK_REALMODE       RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NMI) | RT_BIT(X86_XCPT_BP) | RT_BIT(X86_XCPT_OF) | RT_BIT(X86_XCPT_BR) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_DF) | RT_BIT(X86_XCPT_CO_SEG_OVERRUN) | RT_BIT(X86_XCPT_TS) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF) | RT_BIT(X86_XCPT_AC) | RT_BIT(X86_XCPT_MC) | RT_BIT(X86_XCPT_XF)
-/** @} */
-
-
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
 #define HWACCM_MAX_TLB_SHOOTDOWN_PAGES      8
 
