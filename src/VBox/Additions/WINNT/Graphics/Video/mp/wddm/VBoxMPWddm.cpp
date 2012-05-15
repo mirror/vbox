@@ -187,10 +187,22 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PVBOXMP_DEVEXT pDevExt, PVBOXWD
 
 }
 
-NTSTATUS vboxWddmGhDisplayPostInfoScreen (PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation, POINT * pVScreenPos)
+NTSTATUS vboxWddmGhDisplayPostInfoScreen(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation, POINT * pVScreenPos)
 {
     NTSTATUS Status = vboxWddmGhDisplayPostInfoScreenBySDesc(pDevExt, &pAllocation->SurfDesc, pVScreenPos, VBVA_SCREEN_F_ACTIVE);
-    Assert(Status == STATUS_SUCCESS);
+    if (!NT_SUCCESS(Status))
+        WARN(("vboxWddmGhDisplayPostInfoScreenBySDesc failed Status 0x%x", Status));
+    return Status;
+}
+
+NTSTATUS vboxWddmGhDisplayHideScreen(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
+{
+    VBOXWDDM_SURFACE_DESC SurfDesc = {0};
+    POINT VScreenPos = {0};
+    SurfDesc.VidPnSourceId = VidPnTargetId;
+    NTSTATUS Status = vboxWddmGhDisplayPostInfoScreenBySDesc(pDevExt, &SurfDesc, &VScreenPos, VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_DISABLED);
+    if (!NT_SUCCESS(Status))
+        WARN(("vboxWddmGhDisplayPostInfoScreenBySDesc failed Status 0x%x", Status));
     return Status;
 }
 
@@ -4446,6 +4458,8 @@ DxgkDdiSetVidPnSourceAddress(
             pAllocation = pSource->pPrimaryAllocation;
 
         Assert(pAllocation);
+        Assert(pAllocation->SurfDesc.VidPnSourceId == pSetVidPnSourceAddress->VidPnSourceId);
+
         if (pAllocation)
         {
 //            Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE);
@@ -4569,6 +4583,17 @@ DxgkDdiSetVidPnSourceVisibility(
     return Status;
 }
 
+static DECLCALLBACK(BOOLEAN) vboxWddmVidPnCleanupTargetsForSrcEnum(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
+        CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId, SIZE_T cTgtPaths, PVOID pContext)
+{
+    AssertRelease(VidPnTargetId < RT_ELEMENTS(pDevExt->aTargets));
+    PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[VidPnTargetId];
+    /* see comments in DxgkDdiCommitVidPn */
+    pTarget->HeightVisible = 0;
+    return TRUE;
+}
+
+
 NTSTATUS
 APIENTRY
 DxgkDdiCommitVidPn(
@@ -4579,29 +4604,92 @@ DxgkDdiCommitVidPn(
     LOGF(("ENTER, context(0x%x)", hAdapter));
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
+    uint32_t au32OldHeightVisible[VBOX_VIDEO_MAX_SCREENS];
+    NTSTATUS Status;
 
     vboxVDbgBreakFv();
 
-    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pCommitVidPnArg->hFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
-    Assert(Status == STATUS_SUCCESS);
-    if (Status == STATUS_SUCCESS)
+    /* we first store the current visible height for each target (monitor)
+     * and then we will zero up it for targets either for the given source
+     * (in case pCommitVidPnArg->AffectedVidPnSourceId != D3DDDI_ID_ALL)
+     * or all targets otherwize.
+     * In the end we will match the old and new visible height for all targets to see if
+     * some of them become inactivated and hide them accordingly,
+     * or we will restore the old height values on failure */
+    for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
+        PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
+        au32OldHeightVisible[i] = pTarget->HeightVisible;
+    }
+
+    do {
+        const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
+        Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pCommitVidPnArg->hFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("DxgkCbQueryVidPnInterface failed Status 0x%x", Status));
+            break;
+        }
+
 #ifdef VBOXWDDM_DEBUG_VIDPN
         vboxVidPnDumpVidPn("\n>>>>COMMIT VidPN: >>>>", pDevExt, pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n");
 #endif
+
         if (pCommitVidPnArg->AffectedVidPnSourceId != D3DDDI_ID_ALL)
         {
+            /* there is not VidPn on driver start, check that */
+            if (pDevExt->u.primary.hCommittedVidPn)
+            {
+                D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+                CONST DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+                const DXGK_VIDPN_INTERFACE* pOldVidPnInterface = NULL;
+                Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pDevExt->u.primary.hCommittedVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pOldVidPnInterface);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("DxgkCbQueryVidPnInterface for current VidPn failed Status 0x%x", Status));
+                    break;
+                }
+
+                Status = pOldVidPnInterface->pfnGetTopology(pDevExt->u.primary.hCommittedVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("pfnGetTopology for current VidPn failed Status 0x%x", Status));
+                    break;
+                }
+
+                /* this will sero up visible height for all targets of the fiven source, see above comment */
+                Status = vboxVidPnEnumTargetsForSource(pDevExt, hVidPnTopology, pVidPnTopologyInterface,
+                                pCommitVidPnArg->AffectedVidPnSourceId,
+                                vboxWddmVidPnCleanupTargetsForSrcEnum, NULL);
+                if (Status == STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY)
+                    Status = STATUS_SUCCESS;
+
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("vboxVidPnEnumTargetsForSource for current VidPn failed Status 0x%x", Status));
+                    break;
+                }
+            }
+
             Status = vboxVidPnCommitSourceModeForSrcId(
                     pDevExt,
                     pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface,
                     pCommitVidPnArg->AffectedVidPnSourceId, (PVBOXWDDM_ALLOCATION)pCommitVidPnArg->hPrimaryAllocation);
-            Assert(Status == STATUS_SUCCESS);
-            if (Status != STATUS_SUCCESS)
-                LOGREL(("vboxVidPnCommitSourceModeForSrcId failed Status(0x%x)", Status));
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("vboxVidPnCommitSourceModeForSrcId for current VidPn failed Status 0x%x", Status));
+                break;
+            }
         }
         else
         {
+            for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+            {
+                PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
+                /* see above comment */
+                pTarget->HeightVisible = 0;
+            }
+
             /* clear all current primaries */
             for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
@@ -4610,41 +4698,61 @@ DxgkDdiCommitVidPn(
 
             D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
             const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
-            NTSTATUS Status = pVidPnInterface->pfnGetTopology(pCommitVidPnArg->hFunctionalVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-            Assert(Status == STATUS_SUCCESS);
-            if (Status == STATUS_SUCCESS)
+            Status = pVidPnInterface->pfnGetTopology(pCommitVidPnArg->hFunctionalVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+            if (!NT_SUCCESS(Status))
             {
-                VBOXVIDPNCOMMIT CbContext = {0};
-                CbContext.pDevExt = pDevExt;
-                CbContext.pVidPnInterface = pVidPnInterface;
-                CbContext.pCommitVidPnArg = pCommitVidPnArg;
-                Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
-                            vboxVidPnCommitPathEnum, &CbContext);
-                Assert(Status == STATUS_SUCCESS);
-                if (Status == STATUS_SUCCESS)
-                {
-                        Status = CbContext.Status;
-                        Assert(Status == STATUS_SUCCESS);
-                        if (Status != STATUS_SUCCESS)
-                            LOGREL(("vboxVidPnCommitPathEnum failed Status(0x%x)", Status));
-                }
-                else
-                    LOGREL(("vboxVidPnEnumPaths failed Status(0x%x)", Status));
+                WARN(("pfnGetTopology failed Status 0x%x", Status));
+                break;
             }
-            else
-                LOGREL(("pfnGetTopology failed Status(0x%x)", Status));
+
+            VBOXVIDPNCOMMIT CbContext = {0};
+            CbContext.pDevExt = pDevExt;
+            CbContext.pVidPnInterface = pVidPnInterface;
+            CbContext.pCommitVidPnArg = pCommitVidPnArg;
+            Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
+                        vboxVidPnCommitPathEnum, &CbContext);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("vboxVidPnEnumPaths failed Status 0x%x", Status));
+                break;
+            }
+
+            Status = CbContext.Status;
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("vboxVidPnCommitPathEnum failed Status 0x%x", Status));
+                break;
+            }
         }
 
-        if (Status == STATUS_SUCCESS)
+        Assert(NT_SUCCESS(Status));
+        pDevExt->u.primary.hCommittedVidPn = pCommitVidPnArg->hFunctionalVidPn;
+
+        for (int i = 1; /* <- never try to hide a primary monitor */
+                i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
         {
-            pDevExt->u.primary.hCommittedVidPn = pCommitVidPnArg->hFunctionalVidPn;
+            PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
+            if (!pTarget->HeightVisible && !!au32OldHeightVisible[i])
+            {
+                /* the target was previously visible */
+                vboxWddmGhDisplayHideScreen(pDevExt, i);
+            }
         }
+
+        LOGF(("LEAVE, SUCCESS status(0x%x), context(0x%x)", Status, hAdapter));
+
+        return Status;
+    } while (0);
+
+    AssertRelease(!NT_SUCCESS(Status));
+    /* failure branch restore original visible height values, see comments above */
+    for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    {
+        PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
+        pTarget->HeightVisible = au32OldHeightVisible[i];
     }
-    else
-        LOGREL(("DxgkCbQueryVidPnInterface failed Status(0x%x)", Status));
 
-    LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
-
+    LOGF(("LEAVE, !!FAILURE!! status(0x%x), context(0x%x)", Status, hAdapter));
     return Status;
 }
 

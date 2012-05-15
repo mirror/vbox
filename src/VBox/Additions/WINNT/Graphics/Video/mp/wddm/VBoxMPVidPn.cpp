@@ -2123,6 +2123,13 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
     D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
 
+#ifdef DEBUG_misha
+    if (pAllocation)
+    {
+        Assert(pAllocation->SurfDesc.VidPnSourceId == srcId);
+    }
+#endif
+
     NTSTATUS Status = pVidPnInterface->pfnAcquireSourceModeSet(hDesiredVidPn,
                 srcId,
                 &hCurVidPnSourceModeSet,
