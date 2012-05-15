@@ -339,9 +339,9 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                         | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* fatal */
                                         | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Legacy FPU FERR handling. */
                                         ;
-        /* With nested paging we don't care about invlpg anymore. */
+        /* With nested paging we don't care about invlpg or task switches anymore. */
         if (pVM->hwaccm.s.fNestedPaging)
-            pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_INVLPG;
+            pVMCB->ctrl.u32InterceptCtrl1 &= ~(SVM_CTRL1_INTERCEPT_INVLPG | SVM_CTRL1_INTERCEPT_TASK_SWITCH);
 
         pVMCB->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* required */
                                         | SVM_CTRL2_INTERCEPT_VMMCALL
