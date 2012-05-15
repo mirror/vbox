@@ -765,7 +765,9 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
         {
             crStateCleanupTextureRefs(g, tObj);
 
-            crHashtableDelete(g->shared->textureTable, name, crStateDeleteTextureObject);
+            /* on the host side, ogl texture object is deleted by a separate cr_server.head_spu->dispatch_table.DeleteTextures(n, newTextures);
+             * in crServerDispatchDeleteTextures, we just delete a state object here, which crStateDeleteTextureObject does */
+            crHashtableDelete(g->shared->textureTable, name, (CRHashtableCallback)crStateDeleteTextureObject);
         }
     }
 
@@ -873,7 +875,11 @@ DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
         crStateCleanupTextureRefs(g, tobj);
 
         if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(tobj))
+        {
+            /* on the host side, we need to delete an ogl texture object here as well, which crStateDeleteTextureCallback will do
+             * in addition to calling crStateDeleteTextureObject to delete a state object */
             crHashtableDelete(g->shared->textureTable, texture, crStateDeleteTextureCallback);
+        }
 
         DIRTY(tb->dirty, g->neg_bitid);
         DIRTY(tb->current[t->curTextureUnit], g->neg_bitid);
