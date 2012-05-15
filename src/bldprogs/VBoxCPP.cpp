@@ -522,7 +522,7 @@ typedef struct VBCPP
 *   Internal Functions                                                         *
 *******************************************************************************/
 static PVBCPPMACRO  vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
-static RTEXITCODE   vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPMACRO pMacro, size_t *poffParameters);
+static RTEXITCODE   vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPMACRO pMacro, size_t offParameters);
 static RTEXITCODE   vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode, size_t *pcReplacements);
 static void         vbcppMacroExpandCleanup(PVBCPPMACROEXP pExp);
 
@@ -1577,10 +1577,7 @@ static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput, ch
         vbcppStrBufInit(&ExpCtx.StrBuf, pThis);
         rcExit = vbcppStrBufAppendN(&ExpCtx.StrBuf, pchDefine, cchDefine);
         if (rcExit == RTEXITCODE_SUCCESS)
-        {
-            size_t offIgnore = cchDefine;
-            rcExit = vbcppMacroExpandIt(pThis, &ExpCtx, 0 /* offset */, pMacro, &offIgnore);
-        }
+            rcExit = vbcppMacroExpandIt(pThis, &ExpCtx, 0 /* offset */, pMacro, cchDefine);
         if (rcExit == RTEXITCODE_SUCCESS)
             rcExit = vbcppMacroExpandReScan(pThis, &ExpCtx, kMacroReScanMode_Normal, NULL);
         if (rcExit == RTEXITCODE_SUCCESS)
@@ -2194,18 +2191,14 @@ static RTEXITCODE vbcppMacroExpandValueWithArguments(PVBCPP pThis, PVBCPPMACROEX
  * @param   offMacro            Offset into the expansion buffer of the macro
  *                              invocation.
  * @param   pMacro              The macro.
- * @param   poffParameters      The start of the parameter list if applicable.
- *                              Ignored if not function macro.
- *
- *                              If the parameter list starts at the current stream position shall
- *                              be at the end of the expansion buffer.
- *
- *                              Will be advanced to the character following the
- *                              closing parenthesis on success.  Undefined on
- *                              failure.
+ * @param   offParameters       The start of the parameter list if applicable.
+ *                              Ignored if not function macro.  If the
+ *                              parameter list starts at the current stream
+ *                              position shall be at the end of the expansion
+ *                              buffer.
  */
 static RTEXITCODE vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPMACRO pMacro,
-                                     size_t *poffParameters)
+                                     size_t offParameters)
 {
     RTEXITCODE rcExit;
     Assert(offMacro + pMacro->Core.cchString <= pExp->StrBuf.cchBuf);
@@ -2216,7 +2209,7 @@ static RTEXITCODE vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t o
      */
     if (pMacro->fFunction)
     {
-        rcExit = vbcppMacroExpandGatherParameters(pThis, pExp, poffParameters, pMacro->cArgs + pMacro->fVarArg);
+        rcExit = vbcppMacroExpandGatherParameters(pThis, pExp, &offParameters, pMacro->cArgs + pMacro->fVarArg);
         if (rcExit == RTEXITCODE_SUCCESS)
         {
             if (pExp->cArgs > pMacro->cArgs && !pMacro->fVarArg)
@@ -2232,7 +2225,7 @@ static RTEXITCODE vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t o
             vbcppStrBufInit(&ValueBuf, pThis);
             rcExit = vbcppMacroExpandValueWithArguments(pThis, pExp, pMacro, &ValueBuf);
             if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = vbcppMacroExpandReplace(pThis, pExp, offMacro, *poffParameters - offMacro,
+                rcExit = vbcppMacroExpandReplace(pThis, pExp, offMacro, offParameters - offMacro,
                                                  ValueBuf.pszBuf, ValueBuf.cchBuf);
             vbcppStrBufDelete(&ValueBuf);
         }
@@ -2445,7 +2438,10 @@ static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCP
             if (   pMacro
                 && (   !pMacro->fFunction
                     || vbcppMacroExpandLookForLeftParenthesis(pThis, pExp, &off)) )
-                rcExit = vbcppMacroExpandIt(pThis, pExp, offDefine, pMacro, &off);
+            {
+                rcExit = vbcppMacroExpandIt(pThis, pExp, offDefine, pMacro, off);
+                off = offDefine;
+            }
             else
             {
                 if (   !pMacro
