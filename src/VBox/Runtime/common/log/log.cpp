@@ -182,8 +182,10 @@ static void rtlogLoggerExFLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iG
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef IN_RC
-/** Default logger instance. */
-extern "C" DECLIMPORT(RTLOGGERRC)   g_Logger;
+/** Default logger instance. Make it weak because our RC module loader does not
+ *  necessarily resolve this symbol and the compiler _must_ check if this is
+ *  the case or not. */
+extern "C" DECLWEAK(DECLIMPORT(RTLOGGERRC)) g_Logger;
 #else /* !IN_RC */
 /** Default logger instance. */
 static PRTLOGGER                    g_pLogger;
@@ -2112,12 +2114,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
     if (!pLogger)
     {
 #ifdef IN_RC
-        /*
-         * XXX gcc assumes that the address of a variable is always > 0 but this
-         * is not always true for g_Logger (special case in our RC loader)
-         */
-        PRTLOGGER pLogger1 = &g_Logger;
-        pLogger = ASMAtomicReadPtrT(&pLogger1, PRTLOGGER);
+        pLogger = &g_Logger;
 #else
         pLogger = g_pLogger;
 #endif
@@ -2163,12 +2160,7 @@ RT_EXPORT_SYMBOL(RTLogFlush);
 RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
 {
 #ifdef IN_RC
-    /*
-     * XXX gcc assumes that the address of a variable is always > 0 but this
-     * is not always true for g_Logger (special case in our RC loader)
-     */
-    PRTLOGGER pLogger = &g_Logger;
-    return ASMAtomicReadPtrT(&pLogger, PRTLOGGER);
+    return &g_Logger;
 
 #else /* !IN_RC */
 # ifdef IN_RING0
@@ -2205,12 +2197,7 @@ RT_EXPORT_SYMBOL(RTLogDefaultInstance);
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void)
 {
 #ifdef IN_RC
-    /*
-     * XXX gcc assumes that the address of a variable is always > 0 but this
-     * is not always true for g_Logger (special case in our RC loader)
-     */
-    PRTLOGGER pLogger = &g_Logger;
-    return ASMAtomicReadPtrT(&pLogger, PRTLOGGER);
+    return &g_Logger;
 #else
 # ifdef IN_RING0
     /*
