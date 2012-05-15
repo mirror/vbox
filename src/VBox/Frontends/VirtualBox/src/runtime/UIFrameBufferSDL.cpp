@@ -87,7 +87,7 @@ void UIFrameBufferSDL::paintEvent(QPaintEvent *pEvent)
 
             if (m_pSurfVRAM)
             {
-                SDL_Rect rect = { (Sint16)r.x(), (Sint16)r.y(), (Sint16)r.width(), (Sint16)r.height() };
+                SDL_Rect rect = { (Sint16)r.x(), (Sint16)r.y(), (Uint16)r.width(), (Uint16)r.height() };
                 SDL_BlitSurface(m_pSurfVRAM, &rect, m_pScreen, &rect);
                 /** @todo may be: if ((m_pScreen->flags & SDL_HWSURFACE) == 0) */
                 SDL_UpdateRect(m_pScreen, r.x(), r.y(), r.width(), r.height());
