@@ -637,7 +637,7 @@
         </listitem>
       </itemizedlist></para>
     <para><note>On Linux and Mac OS X hosts the number of host-only interfaces is
-    limited to 128.</note></para>
+    limited to 128. There is no such limit for Solaris and Windows hosts.</note></para>
   </sect1>
 
   <sect1 id="network_udp_tunnel">
