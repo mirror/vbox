@@ -77,7 +77,7 @@ int main()
 
             if (g_aErrorMessages[i].iCode == g_aErrorMessages[j].iCode)
             {
-                RTPrintf("tstErrUnique: status code %d can mean '%s' or '%s'\n", g_aErrorMessages[i].iCode, g_aErrorMessages[i].pszMsgShort, g_aErrorMessages[j]);
+                RTPrintf("tstErrUnique: status code %d\n  can mean '%s'\n  or '%s'\n", g_aErrorMessages[i].iCode, g_aErrorMessages[i].pszMsgShort, g_aErrorMessages[j].pszMsgShort);
                 cErrors++;
             }
         }
