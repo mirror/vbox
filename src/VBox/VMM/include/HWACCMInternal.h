@@ -168,9 +168,6 @@ typedef struct HMGLOBLCPUINFO
     /** Whether to flush each new ASID/VPID before use. */
     bool                fFlushASIDBeforeUse;
 
-    /** Set the first time a cpu is used to make sure we start with a clean TLB. */
-    bool                fFlushTLB;
-
     /** Configured for VT-x or AMD-V. */
     bool                fConfigured;
 
