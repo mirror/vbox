@@ -379,8 +379,14 @@ typedef struct VTGOBJHDR
     /** UUID for making sharing ring-0 structures for the same ring-3
      * modules easier. */
     RTUUID              Uuid;
+    /** Mac 10.6.x load workaround.
+     * The linker or/and load messes up the uProbeLocs and uProbeLocsEnd fields
+     * so that they will be link addresses instead of load addresses.  To be
+     * able to work around it we store the start address of the __VTGObj section
+     * here and uses it to validate the probe location addresses. */
+    uint64_t            u64VtgObjSectionStart;
     /** Reserved / alignment. */
-    uint32_t            au32Reserved1[4];
+    uint32_t            au32Reserved1[2];
 } VTGOBJHDR;
 AssertCompileSize(VTGOBJHDR, 128);
 AssertCompileMemberAlignment(VTGOBJHDR, uProbeLocs, 8);
