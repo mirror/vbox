@@ -31,6 +31,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>
+#include <iprt/file.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
@@ -441,7 +442,7 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         /* next */
         cb -= PAGE_SIZE;
         pu8Org += PAGE_SIZE;
-        if (pu8Org > &gabBigMem[sizeof(gabBigMem)])
+        if (pu8Org >= &gabBigMem[sizeof(gabBigMem)])
             pu8Org = &gabBigMem[0];
     }
 
@@ -506,7 +507,7 @@ DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVers
         /* next */
         cb -= PAGE_SIZE;
         pu8Org += PAGE_SIZE;
-        if (pu8Org > &gabBigMem[sizeof(gabBigMem)])
+        if (pu8Org >= &gabBigMem[sizeof(gabBigMem)])
             pu8Org = &gabBigMem[0];
     }
 
@@ -907,6 +908,9 @@ int main(int argc, char **argv)
         RTPrintf("SSMR3Close #1 -> %Rrc\n", rc);
         return 1;
     }
+
+    /* delete */
+    RTFileDelete(pszFilename);
 
     RTPrintf("tstSSM: SUCCESS\n");
     return 0;
