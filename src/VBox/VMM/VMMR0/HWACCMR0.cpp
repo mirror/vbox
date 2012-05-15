@@ -864,10 +864,6 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     Assert(!g_HvmR0.fGlobalInit || ASMAtomicReadBool(&pCpu->fInUse) == false);
 
     pCpu->idCpu         = idCpu;
-
-    /* Make sure we start with a clean TLB. */
-    pCpu->fFlushTLB     = true;
-
     pCpu->uCurrentASID  = 0;    /* we'll aways increment this the first time (host uses ASID 0) */
     pCpu->cTLBFlushes   = 0;
 

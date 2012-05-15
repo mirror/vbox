@@ -1013,7 +1013,6 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
         pVCpu->hwaccm.s.fForceTLBFlush = true;
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
-    pCpu->fFlushTLB = false;
     pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
 
     if (RT_UNLIKELY(pVM->hwaccm.s.svm.fAlwaysFlushTLB))
@@ -1101,6 +1100,11 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
 #ifdef VBOX_WITH_STATISTICS
     if (pVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
+    else if (   pVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT
+             || pVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT_RETAIN_GLOBALS)
+    {
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
+    }
     else
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch);
 #endif
@@ -1331,8 +1335,8 @@ ResumeExecution:
         else
             LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     }
-    if (pCpu->fFlushTLB)
-        LogFlow(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
+    else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+        LogFlow(("Manual TLB flush\n"));
 #endif
 
     /*

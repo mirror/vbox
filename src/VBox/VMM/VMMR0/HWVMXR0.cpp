@@ -232,7 +232,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     }
 #endif
 
-    /* Allocate VMCBs for all guest CPUs. */
+    /* Allocate VMCSs for all guest CPUs. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -2204,14 +2204,6 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
         pVCpu->hwaccm.s.fForceTLBFlush = true;
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
-    pCpu->fFlushTLB           = false;
-
-#ifdef VBOX_WITH_STATISTICS
-    if (pVCpu->hwaccm.s.fForceTLBFlush)
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch);
-    else
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
-#endif
 
     if (pVCpu->hwaccm.s.fForceTLBFlush)
     {
@@ -2227,7 +2219,12 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
 
             pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
             if (pCpu->fFlushASIDBeforeUse)
+            {
                 hmR0VmxFlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
+#ifdef VBOX_WITH_STATISTICS
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
+#endif
+            }
         }
         else
         {
@@ -2235,6 +2232,14 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
                 hmR0VmxFlushVPID(pVM, pVCpu, VMX_FLUSH_VPID_SINGLE_CONTEXT, 0 /* GCPtr */);
             else
                 hmR0VmxFlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushEPT);
+
+#ifdef VBOX_WITH_STATISTICS
+            /*
+             * This is not terribly accurate (i.e. we don't have a StatFlushEPT counter so we currently count these
+             * as ASID flushes too, better than including them under StatFlushTLBWorldSwitch.
+             */
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
+#endif
         }
 
         pVCpu->hwaccm.s.cTLBFlushes    = pCpu->cTLBFlushes;
@@ -2263,11 +2268,16 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
             else
                 hmR0VmxFlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushEPT);
         }
+        else
+        {
+#ifdef VBOX_WITH_STATISTICS
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
+#endif
+        }
     }
     pVCpu->hwaccm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
-    Assert(pCpu->fFlushTLB == false);
     AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes,
               ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID,
@@ -2306,22 +2316,15 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
         /* Force a TLB flush on VM entry. */
         pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
-    /* Disabled because this has triggered every time I have suspended my
-     * laptop with a VM running for the past three months or more.  */
-    // else
-    //     Assert(!pCpu->fFlushTLB);
 
     /* Check for tlb shootdown flushes. */
     if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
         pVCpu->hwaccm.s.fForceTLBFlush = true;
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
-    pCpu->fFlushTLB           = false;
 
     if (pVCpu->hwaccm.s.fForceTLBFlush)
-    {
         hmR0VmxFlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushEPT);
-    }
     else
     {
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
@@ -2373,8 +2376,6 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
         /* Force a TLB flush on VM entry. */
         pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
-    else
-        Assert(!pCpu->fFlushTLB);
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
 
@@ -2386,10 +2387,8 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     if (pVCpu->hwaccm.s.fForceTLBFlush)
     {
         ++pCpu->uCurrentASID;
-        if (    pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
-            ||  pCpu->fFlushTLB)
+        if (pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID)
         {
-            pCpu->fFlushTLB                  = false;
             pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
             pCpu->cTLBFlushes++;
             pCpu->fFlushASIDBeforeUse        = true;
@@ -2405,7 +2404,6 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     }
     else
     {
-        Assert(!pCpu->fFlushTLB);
         Assert(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID);
 
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
@@ -2756,9 +2754,7 @@ ResumeExecution:
             else
                 LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
         }
-        if (pCpu->fFlushTLB)
-            LogFlow(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
-        else if (pVCpu->hwaccm.s.fForceTLBFlush)
+        else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
             LogFlow(("Manual TLB flush\n"));
     }
 #endif
