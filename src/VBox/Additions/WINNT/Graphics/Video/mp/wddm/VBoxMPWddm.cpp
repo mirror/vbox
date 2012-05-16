@@ -5283,28 +5283,6 @@ DECLINLINE(BOOLEAN) vboxWddmPixFormatConversionSupported(D3DDDIFORMAT From, D3DD
     return From == To;
 }
 
-#if 0
-DECLINLINE(bool) vboxWddmCheckForVisiblePrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
-{
-    !!!primary could be of pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC!!!
-    if (pAllocation->enmType != VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
-        return false;
-
-    if (!pAllocation->bVisible)
-        return false;
-
-    D3DDDI_VIDEO_PRESENT_SOURCE_ID id = pAllocation->SurfDesc.VidPnSourceId;
-    if (id >= (D3DDDI_VIDEO_PRESENT_SOURCE_ID)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
-        return false;
-
-    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[id];
-    if (pSource->pPrimaryAllocation != pAllocation)
-        return false;
-
-    return true;
-}
-#endif
-
 /**
  * DxgkDdiPresent
  */
@@ -5387,8 +5365,6 @@ DxgkDdiPresent(
                                     Assert(pPresent->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_SHADOW2PRIMARY));
                                     if (pPresent->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_SHADOW2PRIMARY))
                                     {
-                                        VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->SurfDesc.VidPnSourceId];
-//                                        vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pDstAlloc->SurfDesc.VidPnSourceId);
                                         Assert(pPresent->SrcRect.left == pPresent->DstRect.left);
                                         Assert(pPresent->SrcRect.right == pPresent->DstRect.right);
                                         Assert(pPresent->SrcRect.top == pPresent->DstRect.top);
