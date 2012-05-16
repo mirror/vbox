@@ -22,11 +22,10 @@
 #include <QMenuBar>
 #include <QTimer>
 #include <QContextMenuEvent>
+#include <QResizeEvent>
 
 /* Local includes: */
 #include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "VBoxUtils.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIIndicatorsPool.h"
@@ -35,16 +34,13 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindowNormal.h"
 #include "UIMachineView.h"
-#include "UINetworkManager.h"
-#include "UIDownloaderAdditions.h"
-#include "UIDownloaderUserManual.h"
-#include "UIDownloaderExtensionPack.h"
-#ifdef Q_WS_MAC
-# include "UIImageTools.h"
-#endif /* Q_WS_MAC */
 #include "QIStatusBar.h"
 #include "QIStateIndicator.h"
 #include "UIHotKeyEditor.h"
+#ifdef Q_WS_MAC
+# include "VBoxUtils.h"
+# include "UIImageTools.h"
+#endif /* Q_WS_MAC */
 
 UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

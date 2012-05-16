@@ -19,21 +19,24 @@
 
 /* Global includes: */
 #include <QDesktopWidget>
+#include <QMenu>
 #include <QTimer>
-#include <QContextMenuEvent>
+#include <QSpacerItem>
+#include <QResizeEvent>
 #ifdef Q_WS_MAC
 # include <QMenuBar>
 #endif /* Q_WS_MAC */
 
 /* Local includes: */
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "VBoxUtils.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
-#include "UIMachineView.h"
 #include "UIMachineWindowScale.h"
+#ifdef Q_WS_WIN
+# include "UIMachineView.h"
+#endif /* Q_WS_WIN */
 #ifdef Q_WS_MAC
+# include "VBoxUtils.h"
+# include "VBoxGlobal.h"
 # include "UIImageTools.h"
 #endif /* Q_WS_MAC */
 
