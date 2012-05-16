@@ -2672,6 +2672,7 @@ define TOOL_VBoxTpG_DTRACE_OBJ_CMDS
 		-o "$(out)" -s "$(source)"
 endef
 
+
 #
 # VBoxTpG tool - Disabled, only generate the header.
 #
@@ -2682,6 +2683,25 @@ define TOOL_VBoxTpG-Disabled_DTRACE_HDR_CMDS
 	$(QUIET)$(VBOX_VBOXTPG) $(flags) -o "$(out)" -s "$(source)"
 endef
 TOOL_VBoxTpG-Disabled_DTRACE_OBJ_NOT_NEEDED := $(KBUILD_OSES)
+
+
+#
+# dtrace+VBoxTpG tool for ring-3 to ring-0 pointer conversion.
+#
+TOOL_DTraceAndVBoxTpG = DTrace and the VirtualBox Tracepoint Generator working together on static ring-3 probes.
+TOOL_DTraceAndVBoxTpG_EXTENDS = StandardDTrace
+TOOL_DTraceAndVBoxTpG_DTRACE_DEPEND   = $(VBOX_VBOXTPG)
+TOOL_DTraceAndVBoxTpG_DTRACE_HDR_CMDS =
+define TOOL_DTraceAndVBoxTpG_DTRACE_HDR_CMDS
+	$(TOOL_StandardDTrace_DTRACE_HDR_CMDS)
+	$(QUIET)$(VBOX_VBOXTPG) --generate-wrapper-header --host-$(VBOX_HC_ARCH_BITS)-bit --ring-3-context \
+		$(filter-out -C, $(filter-out -h,$(flags))) \
+		-o "$(out).tmp" -s "$(source)"
+	$(APPEND) "$(out).tmp"
+	$(SED) -e 's/\(#define.*\)(arg0/\1_ORIGINAL(arg0/' --append "$(out).tmp" "$(out)"
+	$(MV) -f -- "$(out).tmp" "$(out)"
+endef
+TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_CMDS = $(TOOL_StandardDTrace_DTRACE_OBJ_CMDS)
 
 
 ifdef VBOX_WITH_RAW_MODE
@@ -3216,7 +3236,7 @@ TEMPLATE_VBOXR3EXE_ASFLAGS.amd64       = $(VBOX_ASFLAGS64)
 TEMPLATE_VBOXR3EXE_DEFS                = IN_RING3 $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXR3EXE_USES                = dtrace
 if defined(VBOX_WITH_DTRACE_R3) && defined(VBOX_WITH_NATIVE_DTRACE)
- TEMPLATE_VBOXR3EXE_DTRACETOOL         = StandardDTrace
+ TEMPLATE_VBOXR3EXE_DTRACETOOL         = DTraceAndVBoxTpG
  TEMPLATE_VBOXR3EXE_DTRACE_OBJ_FLAGS   = -C
  TEMPLATE_VBOXR3EXE_DTRACE_HDR_FLAGS   = -C
  TEMPLATE_VBOXR3EXE_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_NATIVE_DTRACE
