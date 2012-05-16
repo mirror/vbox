@@ -136,11 +136,13 @@ static enum
 {
     kVBoxTpGAction_Nothing,
     kVBoxTpGAction_GenerateHeader,
+    kVBoxTpGAction_GenerateWrapperHeader,
     kVBoxTpGAction_GenerateObject
 }                           g_enmAction                 = kVBoxTpGAction_Nothing;
 static uint32_t             g_cBits                     = HC_ARCH_BITS;
 static uint32_t             g_cHostBits                 = HC_ARCH_BITS;
 static uint32_t             g_fTypeContext              = VTG_TYPE_CTX_R0;
+static const char          *g_pszContextDefine          = "IN_RING0";
 static bool                 g_fApplyCpp                 = false;
 static uint32_t             g_cVerbosity                = 0;
 static const char          *g_pszOutput                 = NULL;
@@ -293,14 +295,7 @@ static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *psz
     else
         apszArgs[iArg++] = "RT_ARCH_AMD64";
     apszArgs[iArg++] = g_pszAssemblerDefOpt;
-    if (g_fTypeContext == VTG_TYPE_CTX_R0)
-        apszArgs[iArg++] = "IN_RING0";
-    else if (g_fTypeContext == VTG_TYPE_CTX_R3)
-        apszArgs[iArg++] = "IN_RING3";
-    else if (g_fTypeContext == VTG_TYPE_CTX_RC)
-        apszArgs[iArg++] = "IN_RC";
-    else
-        apszArgs[iArg++] = "IN_UNKNOWN";
+    apszArgs[iArg++] = g_pszContextDefine;
     if (g_szAssemblerOsDef[0])
     {
         apszArgs[iArg++] = g_pszAssemblerDefOpt;
@@ -901,13 +896,14 @@ static RTEXITCODE generateProbeDefineName(char *pszBuf, size_t cbBuf, const char
     return RTEXITCODE_SUCCESS;
 }
 
+
 /**
  * Called via generateFile to generate the header file.
  *
  * @returns Exit code status.
  * @param   pStrm               The output stream.
  */
-static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
+static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
 {
     /*
      * Calc the double inclusion blocker define and then write the file header.
@@ -932,16 +928,6 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             *psz = '_';
         psz++;
     }
-
-    const char *pszCtxDefine = "UNKNOWN_DEFINE";
-    if (g_fTypeContext == VTG_TYPE_CTX_R0)
-        pszCtxDefine = "IN_RING0";
-    else if (g_fTypeContext == VTG_TYPE_CTX_R3)
-        pszCtxDefine = "IN_RING3";
-    else if (g_fTypeContext == VTG_TYPE_CTX_RC)
-        pszCtxDefine = "IN_RC";
-    else
-        AssertFailed();
 
     ScmStreamPrintf(pStrm,
                     "/* $Id$ */\n"
@@ -971,8 +957,8 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                     g_pszScript,
                     szTmp,
                     szTmp,
-                    pszCtxDefine,
-                    pszCtxDefine);
+                    g_pszContextDefine,
+                    g_pszContextDefine);
 
     /*
      * Declare data, code and macros for each probe.
@@ -1090,9 +1076,147 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
 }
 
 
-static RTEXITCODE generateHeader(const char *pszHeader)
+/**
+ * Called via generateFile to generate the wrapper header file.
+ *
+ * @returns Exit code status.
+ * @param   pStrm               The output stream.
+ */
+static RTEXITCODE generateWrapperHeader(PSCMSTREAM pStrm)
 {
-    return generateFile(pszHeader, "header", generateHeaderInner);
+    /*
+     * Calc the double inclusion blocker define and then write the file header.
+     */
+    char szTmp[4096];
+    const char *pszName = RTPathFilename(g_pszScript);
+    size_t      cchName = strlen(pszName);
+    if (cchName >= sizeof(szTmp) - 64)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "File name is too long '%s'", pszName);
+    szTmp[0] = '_';
+    szTmp[1] = '_';
+    szTmp[2] = '_';
+    memcpy(&szTmp[3], pszName, cchName);
+    strcpy(&szTmp[3 + cchName ], "___WRAPPER___");
+    char *psz = &szTmp[3];
+    while (*psz)
+    {
+        if (!RT_C_IS_ALNUM(*psz) && *psz != '_')
+            *psz = '_';
+        psz++;
+    }
+
+    ScmStreamPrintf(pStrm,
+                    "/* $Id$ */\n"
+                    "/** @file\n"
+                    " * Automatically generated from %s.  Do NOT edit!\n"
+                    " */\n"
+                    "\n"
+                    "#ifndef %s\n"
+                    "#define %s\n"
+                    "\n"
+                    "#include <VBox/VBoxTpG.h>\n"
+                    "\n"
+                    "#ifndef %s\n"
+                    "# error \"Expected '%s' to be defined\"\n"
+                    "#endif\n"
+                    "\n"
+                    "#ifdef VBOX_WITH_DTRACE\n"
+                    "\n"
+                    ,
+                    g_pszScript,
+                    szTmp,
+                    szTmp,
+                    g_pszContextDefine,
+                    g_pszContextDefine);
+
+    /*
+     * Declare macros for each probe.
+     */
+    PVTGPROVIDER pProv;
+    PVTGPROBE    pProbe;
+    PVTGARG      pArg;
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            PVTGARG const pFirstArg = RTListGetFirst(&pProbe->ArgHead, VTGARG, ListEntry);
+
+            generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszMangledName);
+            ScmStreamPrintf(pStrm,
+                            ");\n"
+                            "# define %s("
+                            , szTmp);
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                if (RTListNodeIsFirst(&pProbe->ArgHead, &pArg->ListEntry))
+                    ScmStreamPrintf(pStrm, "%s", pArg->pszName);
+                else
+                    ScmStreamPrintf(pStrm, ", %s", pArg->pszName);
+            }
+            ScmStreamPrintf(pStrm,
+                            ") \\\n"
+                            "    do { \\\n"
+                            "        if (RT_UNLIKELY(%s_ENABLED())) \\\n"
+                            "        { \\\n"
+                            "            %s_ORIGINAL("
+                            , szTmp, szTmp);
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                const char *pszFmt = pArg->pszArgPassingFmt;
+                if (pArg->fType & VTG_TYPE_AUTO_CONV_PTR)
+                {
+                    /* Casting is required.  ASSUMES sizeof(RTR0PTR) == sizeof(RTR3PTR) - safe! */
+                    pszFmt += sizeof(", ") - 1;
+                    if (RTListNodeIsFirst(&pProbe->ArgHead, &pArg->ListEntry))
+                        ScmStreamPrintf(pStrm, "(%s)%M", pArg->pszTracerType, pszFmt, pArg->pszName);
+                    else
+                        ScmStreamPrintf(pStrm, ", (%s)%M", pArg->pszTracerType, pszFmt, pArg->pszName);
+                }
+                else
+                {
+                    if (RTListNodeIsFirst(&pProbe->ArgHead, &pArg->ListEntry))
+                        ScmStreamPrintf(pStrm, pArg->pszArgPassingFmt + sizeof(", ") - 1, pArg->pszName);
+                    else
+                        ScmStreamPrintf(pStrm, pArg->pszArgPassingFmt, pArg->pszName);
+                }
+            }
+            ScmStreamPrintf(pStrm,
+                            "); \\\n"
+                            "        } \\\n"
+                            "    } while (0)\n"
+                            "\n");
+        }
+    }
+
+    ScmStreamPrintf(pStrm,
+                    "\n"
+                    "#else\n"
+                    "\n");
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszMangledName);
+            ScmStreamPrintf(pStrm,
+                            "# define %s("
+                            , szTmp);
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                if (RTListNodeIsFirst(&pProbe->ArgHead, &pArg->ListEntry))
+                    ScmStreamPrintf(pStrm, "%s", pArg->pszName);
+                else
+                    ScmStreamPrintf(pStrm, ", %s", pArg->pszName);
+            }
+            ScmStreamPrintf(pStrm,
+                            ") do { } while (0)\n");
+        }
+    }
+
+    ScmStreamWrite(pStrm, RT_STR_TUPLE("\n"
+                                       "#endif\n"
+                                       "\n"
+                                       "#endif\n"));
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -2047,6 +2171,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
     {
         kVBoxTpGOpt_32Bit = 1000,
         kVBoxTpGOpt_64Bit,
+        kVBoxTpGOpt_GenerateWrapperHeader,
         kVBoxTpGOpt_Assembler,
         kVBoxTpGOpt_AssemblerFmtOpt,
         kVBoxTpGOpt_AssemblerFmtVal,
@@ -2076,6 +2201,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         { "--script",                           's',                                    RTGETOPT_REQ_STRING  },
         { "--verbose",                          'v',                                    RTGETOPT_REQ_NOTHING },
         /* our stuff */
+        { "--generate-wrapper-header",          kVBoxTpGOpt_GenerateWrapperHeader,      RTGETOPT_REQ_NOTHING },
         { "--assembler",                        kVBoxTpGOpt_Assembler,                  RTGETOPT_REQ_STRING  },
         { "--assembler-fmt-opt",                kVBoxTpGOpt_AssemblerFmtOpt,            RTGETOPT_REQ_STRING  },
         { "--assembler-fmt-val",                kVBoxTpGOpt_AssemblerFmtVal,            RTGETOPT_REQ_STRING  },
@@ -2126,7 +2252,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
             case 'G':
                 if (   g_enmAction != kVBoxTpGAction_Nothing
                     && g_enmAction != kVBoxTpGAction_GenerateObject)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "-G and -h does not mix");
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "-G does not mix with -h or --generate-wrapper-header");
                 g_enmAction = kVBoxTpGAction_GenerateObject;
                 break;
 
@@ -2135,7 +2261,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
                 {
                     if (   g_enmAction != kVBoxTpGAction_Nothing
                         && g_enmAction != kVBoxTpGAction_GenerateHeader)
-                        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "-h and -G does not mix");
+                        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "-h does not mix with -G or --generate-wrapper-header");
                     g_enmAction = kVBoxTpGAction_GenerateHeader;
                 }
                 else
@@ -2189,6 +2315,13 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
             /*
              * Our options.
              */
+            case kVBoxTpGOpt_GenerateWrapperHeader:
+                if (   g_enmAction != kVBoxTpGAction_Nothing
+                    && g_enmAction != kVBoxTpGAction_GenerateWrapperHeader)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--generate-wrapper-header does not mix with -h or -G");
+                g_enmAction = kVBoxTpGAction_GenerateWrapperHeader;
+                break;
+
             case kVBoxTpGOpt_Assembler:
                 g_pszAssembler = ValueUnion.psz;
                 break;
@@ -2238,14 +2371,17 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
 
             case kVBoxTpGOpt_RawModeContext:
                 g_fTypeContext = VTG_TYPE_CTX_RC;
+                g_pszContextDefine = "IN_RC";
                 break;
 
             case kVBoxTpGOpt_Ring0Context:
                 g_fTypeContext = VTG_TYPE_CTX_R0;
+                g_pszContextDefine = "IN_RING0";
                 break;
 
             case kVBoxTpGOpt_Ring3Context:
                 g_fTypeContext = VTG_TYPE_CTX_R3;
+                g_pszContextDefine = "IN_RING3";
                 break;
 
 
@@ -2261,7 +2397,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
      * Check that we've got all we need.
      */
     if (g_enmAction == kVBoxTpGAction_Nothing)
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No action specified (-h or -G)");
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No action specified (-h, -G or --generate-wrapper-header)");
     if (!g_pszScript)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No script file specified (-s)");
     if (!g_pszOutput)
@@ -2291,7 +2427,9 @@ int main(int argc, char **argv)
              * Take action.
              */
             if (g_enmAction == kVBoxTpGAction_GenerateHeader)
-                rcExit = generateHeader(g_pszOutput);
+                rcExit = generateFile(g_pszOutput, "header", generateHeader);
+            else if (g_enmAction == kVBoxTpGAction_GenerateWrapperHeader)
+                rcExit = generateFile(g_pszOutput, "wrapper header", generateWrapperHeader);
             else
                 rcExit = generateObject(g_pszOutput, g_pszTempAsm);
         }
