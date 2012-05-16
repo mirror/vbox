@@ -51,10 +51,10 @@ provider vboxvmm
 
 
     probe r0__gvmm__vm__created(void *a_pGVM, void *a_pVM, uint32_t a_Pid, void *a_hEMT0, uint32_t a_cCpus);
-    probe r0__hmsvm__vmexit(struct VMCPU *a_pVM, struct CPUMCTX *a_pCtx, uint64_t a_ExitCode,
+    probe r0__hmsvm__vmexit(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint64_t a_ExitCode,
                             uint64_t a_ExitInfo1, uint64_t a_ExitInfo2, uint64_t a_ExitIntInfo,
                             uint64_t a_TestArgument);
-    probe r0__hmvmx__vmexit(struct VMCPU *a_pVM, struct CPUMCTX *a_pCtx, uint64_t a_ExitReason);
+    probe r0__hmvmx__vmexit(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint64_t a_ExitReason);
 
 };
 

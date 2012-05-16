@@ -57,8 +57,16 @@ typedef VTGATTRS *PVTGATTRS;
 typedef struct VTGARG
 {
     RTLISTNODE      ListEntry;
+    /** The argument name. (heap) */
     char           *pszName;
-    const char     *pszType;
+    /** The type presented to the tracer (in string table). */
+    const char     *pszTracerType;
+    /** The argument type used in the probe method in that context. (heap) */
+    char           *pszCtxType;
+    /** Argument passing format string.  First and only argument is the name.
+     *  (const string) */
+    const char     *pszArgPassingFmt;
+    /** The type flags. */
     uint32_t        fType;
 } VTGARG;
 typedef VTGARG *PVTGARG;
@@ -118,9 +126,9 @@ static RTSTRSPACE       g_StrSpace = NULL;
 static uint32_t         g_offStrTab;
 /** List of providers created by the parser. */
 static RTLISTANCHOR     g_ProviderHead;
-
 /** The number of type errors. */
-static uint32_t        g_cTypeErrors = 0;
+static uint32_t         g_cTypeErrors = 0;
+
 
 /** @name Options
  * @{ */
@@ -130,7 +138,9 @@ static enum
     kVBoxTpGAction_GenerateHeader,
     kVBoxTpGAction_GenerateObject
 }                           g_enmAction                 = kVBoxTpGAction_Nothing;
-static uint32_t             g_cBits                     = ARCH_BITS;
+static uint32_t             g_cBits                     = HC_ARCH_BITS;
+static uint32_t             g_cHostBits                 = HC_ARCH_BITS;
+static uint32_t             g_fTypeContext              = VTG_TYPE_CTX_R0;
 static bool                 g_fApplyCpp                 = false;
 static uint32_t             g_cVerbosity                = 0;
 static const char          *g_pszOutput                 = NULL;
@@ -173,7 +183,7 @@ static const char           g_szAssemblerOsDef[]        = "RT_OS_SOLARIS";
 #  error "Port me!"
 # endif
 #endif
-static const char          *g_pszAssemblerFmtVal        = RT_CONCAT(g_szAssemblerFmtVal, ARCH_BITS);
+static const char          *g_pszAssemblerFmtVal        = RT_CONCAT(g_szAssemblerFmtVal, HC_ARCH_BITS);
 static const char          *g_pszAssemblerDefOpt        = "-D";
 static const char          *g_pszAssemblerIncOpt        = "-I";
 static char                 g_szAssemblerIncVal[RTPATH_MAX];
@@ -273,10 +283,24 @@ static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *psz
     else
         apszArgs[iArg++] = "ARCH_BITS=64";
     apszArgs[iArg++] = g_pszAssemblerDefOpt;
+    if (g_cHostBits == 32)
+        apszArgs[iArg++] = "HC_ARCH_BITS=32";
+    else
+        apszArgs[iArg++] = "HC_ARCH_BITS=64";
+    apszArgs[iArg++] = g_pszAssemblerDefOpt;
     if (g_cBits == 32)
         apszArgs[iArg++] = "RT_ARCH_X86";
     else
         apszArgs[iArg++] = "RT_ARCH_AMD64";
+    apszArgs[iArg++] = g_pszAssemblerDefOpt;
+    if (g_fTypeContext == VTG_TYPE_CTX_R0)
+        apszArgs[iArg++] = "IN_RING0";
+    else if (g_fTypeContext == VTG_TYPE_CTX_R3)
+        apszArgs[iArg++] = "IN_RING3";
+    else if (g_fTypeContext == VTG_TYPE_CTX_RC)
+        apszArgs[iArg++] = "IN_RC";
+    else
+        apszArgs[iArg++] = "IN_UNKNOWN";
     if (g_szAssemblerOsDef[0])
     {
         apszArgs[iArg++] = g_pszAssemblerDefOpt;
@@ -441,7 +465,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     " ; Section order hack!\n"
                     " ; With the ld64-97.17 linker there was a problem with it determin the section\n"
                     " ; order based on symbol references. The references to the start and end of the\n"
-                    " ; __VTGPrLc section forced it in front of __VTGObj. \n"
+                    " ; __VTGPrLc section forced it in front of __VTGObj.\n"
                     " extern section$start$__VTG$__VTGObj\n"
                     " extern section$end$__VTG$__VTGObj\n"
                     " [section __VTG __VTGObj        align=1024]\n"
@@ -473,7 +497,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     " [section .VTGPrLc.End   progbits alloc noexec write align=1]\n"
                     "VTG_GLOBAL g_aVTGPrLc_End, data\n"
                     " dd 0,0,0,0, 0,0,0,0\n"
-                    " [section .VTGData progbits alloc noexec write align=4096]\n"
+                    " [section .VTGData]\n"
                     "\n"
                     "%%else\n"
                     " %%error \"ASM_FORMAT_XXX is not defined\"\n"
@@ -584,7 +608,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                 ScmStreamPrintf(pStrm,
                                 "    dd  %8u  ; type '%s' (name '%s')\n"
                                 "    dd 0%08xh ; type flags\n",
-                                strtabGetOff(pArg->pszType), pArg->pszType, pArg->pszName,
+                                strtabGetOff(pArg->pszTracerType), pArg->pszTracerType, pArg->pszName,
                                 pArg->fType);
                 off += 8;
             }
@@ -606,8 +630,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     pArg2 = RTListNodeGetNext(&pProbe2->ArgHead, VTGARG, ListEntry);
                     int32_t cArgs = pProbe->cArgs;
                     while (   cArgs-- > 0
-                           && pArg2->pszType == pArg->pszType
-                           && pArg2->fType   == pArg->fType)
+                           && pArg2->pszTracerType == pArg->pszTracerType
+                           && pArg2->fType         == pArg->fType)
                     {
                         pArg  = RTListNodeGetNext(&pArg->ListEntry, VTGARG, ListEntry);
                         pArg2 = RTListNodeGetNext(&pArg2->ListEntry, VTGARG, ListEntry);
@@ -764,7 +788,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                             pProvider->pszName, pProbe->pszMangledName);
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
-                ScmStreamPrintf(pStrm, ", %s %s", pArg->pszType, pArg->pszName);
+                ScmStreamPrintf(pStrm, ", %s %s", pArg->pszTracerType, pArg->pszName);
             }
             ScmStreamPrintf(pStrm,
                             ");\n");
@@ -877,6 +901,12 @@ static RTEXITCODE generateProbeDefineName(char *pszBuf, size_t cbBuf, const char
     return RTEXITCODE_SUCCESS;
 }
 
+/**
+ * Called via generateFile to generate the header file.
+ *
+ * @returns Exit code status.
+ * @param   pStrm               The output stream.
+ */
 static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
 {
     /*
@@ -903,16 +933,30 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
         psz++;
     }
 
+    const char *pszCtxDefine = "UNKNOWN_DEFINE";
+    if (g_fTypeContext == VTG_TYPE_CTX_R0)
+        pszCtxDefine = "IN_RING0";
+    else if (g_fTypeContext == VTG_TYPE_CTX_R3)
+        pszCtxDefine = "IN_RING3";
+    else if (g_fTypeContext == VTG_TYPE_CTX_RC)
+        pszCtxDefine = "IN_RC";
+    else
+        AssertFailed();
+
     ScmStreamPrintf(pStrm,
                     "/* $Id$ */\n"
                     "/** @file\n"
-                    " * Automatically generated from %s. Do NOT edit!\n"
+                    " * Automatically generated from %s.  Do NOT edit!\n"
                     " */\n"
                     "\n"
                     "#ifndef %s\n"
                     "#define %s\n"
                     "\n"
                     "#include <VBox/VBoxTpG.h>\n"
+                    "\n"
+                    "#ifndef %s\n"
+                    "# error \"Expected '%s' to be defined\"\n"
+                    "#endif\n"
                     "\n"
                     "RT_C_DECLS_BEGIN\n"
                     "\n"
@@ -926,7 +970,8 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                     ,
                     g_pszScript,
                     szTmp,
-                    szTmp);
+                    szTmp,
+                    pszCtxDefine);
 
     /*
      * Declare data, code and macros for each probe.
@@ -938,6 +983,8 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
     {
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
+            PVTGARG const pFirstArg = RTListGetFirst(&pProbe->ArgHead, VTGARG, ListEntry);
+
             ScmStreamPrintf(pStrm,
                             "extern uint32_t        g_cVTGProbeEnabled_%s_%s;\n"
                             "extern VTGDESCPROBE    g_VTGProbeData_%s_%s;\n"
@@ -947,7 +994,7 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                             pProv->pszName, pProbe->pszMangledName);
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
-                ScmStreamPrintf(pStrm, ", %s", pArg->pszType);
+                ScmStreamPrintf(pStrm, ", %s", pArg->pszCtxType);
             }
             generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszMangledName);
             ScmStreamPrintf(pStrm,
@@ -978,7 +1025,7 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                             pProv->pszName, pProbe->pszMangledName);
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
-                ScmStreamPrintf(pStrm, ", %s", pArg->pszName);
+                ScmStreamPrintf(pStrm, pArg->pszArgPassingFmt, pArg->pszName);
             }
             ScmStreamPrintf(pStrm,
                             "); \\\n"
@@ -987,18 +1034,18 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             uint32_t iArg = 0;
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
-                if (pArg->fType & VTG_TYPE_FIXED_SIZED)
+                if ((pArg->fType & (VTG_TYPE_FIXED_SIZED | VTG_TYPE_AUTO_CONV_PTR)) == VTG_TYPE_FIXED_SIZED)
                     ScmStreamPrintf(pStrm,
                                     "        AssertCompile(sizeof(%s) == %u); \\\n"
                                     "        AssertCompile(sizeof(%s) <= %u); \\\n",
-                                    pArg->pszType, pArg->fType & VTG_TYPE_SIZE_MASK,
+                                    pArg->pszTracerType, pArg->fType & VTG_TYPE_SIZE_MASK,
                                     pArg->pszName, pArg->fType & VTG_TYPE_SIZE_MASK);
                 else if (pArg->fType & (VTG_TYPE_POINTER | VTG_TYPE_HC_ARCH_SIZED))
                     ScmStreamPrintf(pStrm,
                                     "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n"
                                     "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n",
                                     pArg->pszName,
-                                    pArg->pszType);
+                                    pArg->pszTracerType);
                 iArg++;
             }
             ScmStreamPrintf(pStrm,
@@ -1541,8 +1588,9 @@ static uint32_t parseTypeExpression(const char *pszType)
     /*
      * The special VBox types.
      */
-    if (MY_STRMATCH("PVM"))             return VTG_TYPE_CTX_POINTER;
-    if (MY_STRMATCH("PVMCPU"))          return VTG_TYPE_CTX_POINTER;
+    if (MY_STRMATCH("PVM"))             return VTG_TYPE_POINTER;
+    if (MY_STRMATCH("PVMCPU"))          return VTG_TYPE_POINTER;
+    if (MY_STRMATCH("PCPUMCTX"))        return VTG_TYPE_POINTER;
 
     /*
      * Preaching time.
@@ -1600,6 +1648,79 @@ static uint32_t parseTypeExpression(const char *pszType)
 
 #undef MY_STRCMP
     return 0;
+}
+
+
+/**
+ * Initializes the members of an argument.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pProbe              The probe.
+ * @param   pArg                The argument.
+ * @param   pStrm               The input stream (for errors).
+ * @param   pchType             The type.
+ * @param   cchType             The type length.
+ * @param   pchName             The name.
+ * @param   cchName             The name length.
+ */
+static RTEXITCODE parseInitArgument(PVTGPROBE pProbe, PVTGARG pArg, PSCMSTREAM pStrm,
+                                    char *pchType, size_t cchType, char *pchName, size_t cchName)
+{
+    Assert(!pArg->pszName); Assert(!pArg->pszTracerType); Assert(!pArg->pszCtxType); Assert(!pArg->fType);
+
+    pArg->pszArgPassingFmt  = ", %s";
+    pArg->pszName           = RTStrDupN(pchName, cchName);
+    pArg->pszTracerType     = strtabInsertN(pchType, cchType);
+    if (!pArg->pszTracerType || !pArg->pszName)
+        return parseError(pStrm, 1, "Out of memory");
+    pArg->fType             = parseTypeExpression(pArg->pszTracerType);
+
+    if (   (pArg->fType & VTG_TYPE_POINTER)
+        && !(g_fTypeContext & VTG_TYPE_CTX_R0) )
+    {
+        pArg->fType &= ~VTG_TYPE_POINTER;
+        if (   !strcmp(pArg->pszTracerType, "struct VM *")          || !strcmp(pArg->pszTracerType, "PVM")
+            || !strcmp(pArg->pszTracerType, "struct VMCPU *")       || !strcmp(pArg->pszTracerType, "PVMCPU")
+            || !strcmp(pArg->pszTracerType, "struct CPUMCTX *")     || !strcmp(pArg->pszTracerType, "PCPUMCTX")
+            )
+        {
+            pArg->fType |= VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R0
+                         | VTG_TYPE_FIXED_SIZED | (g_cHostBits / 8)
+                         | VTG_TYPE_AUTO_CONV_PTR;
+            pArg->pszCtxType = RTStrDup("RTR0PTR");
+
+            if (!strcmp(pArg->pszTracerType, "struct VM *")         || !strcmp(pArg->pszTracerType, "PVM"))
+                pArg->pszArgPassingFmt = ", VTG_VM_TO_R0(%s)";
+            else if (!strcmp(pArg->pszTracerType, "struct VMCPU *") || !strcmp(pArg->pszTracerType, "PVMCPU"))
+                pArg->pszArgPassingFmt = ", VTG_VMCPU_TO_R0(%s)";
+            else
+            {
+                PVTGARG pFirstArg = RTListGetFirst(&pProbe->ArgHead, VTGARG, ListEntry);
+                if (   !pFirstArg
+                    || pFirstArg == pArg
+                    || strcmp(pFirstArg->pszName, "a_pVCpu")
+                    || (   strcmp(pFirstArg->pszTracerType, "struct VMCPU *")
+                        && strcmp(pFirstArg->pszTracerType, "PVMCPU *")) )
+                    return parseError(pStrm, 1, "The automatic ring-0 pointer conversion requires 'a_pVCpu' with type 'struct VMCPU *' as the first argument");
+
+                if (!strcmp(pArg->pszTracerType, "struct CPUMCTX *")|| !strcmp(pArg->pszTracerType, "PCPUMCTX"))
+                    pArg->pszArgPassingFmt = ", VTG_CPUMCTX_TO_R0(a_pVCpu, %s)";
+                else
+                    pArg->pszArgPassingFmt = ", VBoxTpG-Is-Buggy!!";
+            }
+        }
+        else
+        {
+            pArg->fType |= VTG_TYPE_CTX_POINTER | g_fTypeContext | VTG_TYPE_FIXED_SIZED | (g_cBits / 8);
+            pArg->pszCtxType = RTStrDupN(pchType, cchType);
+        }
+    }
+    else
+        pArg->pszCtxType = RTStrDupN(pchType, cchType);
+    if (!pArg->pszCtxType)
+        return parseError(pStrm, 1, "Out of memory");
+
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -1692,14 +1813,13 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
                         return parseError(pStrm, 1, "Argument has no name");
                     if (cchArg - cchName - 1 >= 128)
                         return parseError(pStrm, 1, "Argument type too long");
-                    pArg->pszType = strtabInsertN(szArg, cchArg - cchName - 1);
-                    pArg->pszName = RTStrDupN(&szArg[cchArg - cchName], cchName);
-                    if (!pArg->pszType || !pArg->pszName)
-                        return parseError(pStrm, 1, "Out of memory");
-                    pArg->fType   = parseTypeExpression(pArg->pszType);
+                    RTEXITCODE rcExit = parseInitArgument(pProbe, pArg, pStrm,
+                                                          szArg, cchArg - cchName - 1,
+                                                          &szArg[cchArg - cchName], cchName);
+                    if (rcExit != RTEXITCODE_SUCCESS)
+                        return rcExit;
                     if (VTG_TYPE_IS_LARGE(pArg->fType))
                         pProbe->fHaveLargeArgs = true;
-
                     pArg = NULL;
                     cchName = cchArg = 0;
                 }
@@ -1935,6 +2055,11 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         kVBoxTpGOpt_ProbeFnName,
         kVBoxTpGOpt_ProbeFnImported,
         kVBoxTpGOpt_ProbeFnNotImported,
+        kVBoxTpGOpt_Host32Bit,
+        kVBoxTpGOpt_Host64Bit,
+        kVBoxTpGOpt_RawModeContext,
+        kVBoxTpGOpt_Ring0Context,
+        kVBoxTpGOpt_Ring3Context,
         kVBoxTpGOpt_End
     };
 
@@ -1959,6 +2084,11 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         { "--probe-fn-name",                    kVBoxTpGOpt_ProbeFnName,                RTGETOPT_REQ_STRING  },
         { "--probe-fn-imported",                kVBoxTpGOpt_ProbeFnImported,            RTGETOPT_REQ_NOTHING },
         { "--probe-fn-not-imported",            kVBoxTpGOpt_ProbeFnNotImported,         RTGETOPT_REQ_NOTHING },
+        { "--host-32-bit",                      kVBoxTpGOpt_Host32Bit,                  RTGETOPT_REQ_NOTHING },
+        { "--host-64-bit",                      kVBoxTpGOpt_Host64Bit,                  RTGETOPT_REQ_NOTHING },
+        { "--raw-mode-context",                 kVBoxTpGOpt_RawModeContext,             RTGETOPT_REQ_NOTHING },
+        { "--ring-0-context",                   kVBoxTpGOpt_Ring0Context,               RTGETOPT_REQ_NOTHING },
+        { "--ring-3-context",                   kVBoxTpGOpt_Ring3Context,               RTGETOPT_REQ_NOTHING },
         /** @todo We're missing a bunch of assembler options! */
     };
 
@@ -1978,12 +2108,12 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
              * DTrace compatible options.
              */
             case kVBoxTpGOpt_32Bit:
-                g_cBits = 32;
+                g_cHostBits = g_cBits = 32;
                 g_pszAssemblerFmtVal = g_szAssemblerFmtVal32;
                 break;
 
             case kVBoxTpGOpt_64Bit:
-                g_cBits = 64;
+                g_cHostBits = g_cBits = 64;
                 g_pszAssemblerFmtVal = g_szAssemblerFmtVal64;
                 break;
 
@@ -2096,6 +2226,27 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
             case kVBoxTpGOpt_ProbeFnNotImported:
                 g_fProbeFnImported = false;
                 break;
+
+            case kVBoxTpGOpt_Host32Bit:
+                g_cHostBits = 32;
+                break;
+
+            case kVBoxTpGOpt_Host64Bit:
+                g_cHostBits = 64;
+                break;
+
+            case kVBoxTpGOpt_RawModeContext:
+                g_fTypeContext = VTG_TYPE_CTX_RC;
+                break;
+
+            case kVBoxTpGOpt_Ring0Context:
+                g_fTypeContext = VTG_TYPE_CTX_R0;
+                break;
+
+            case kVBoxTpGOpt_Ring3Context:
+                g_fTypeContext = VTG_TYPE_CTX_R3;
+                break;
+
 
             /*
              * Errors and bugs.

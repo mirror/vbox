@@ -553,7 +553,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const ui
         MY_CHECK_RET(i - pProvider->iFirstProbe < pProvider->cProbes, VERR_SUPDRV_VTG_BAD_PROBE);
         if (pProbe->offObjHdr != (intptr_t)pVtgHdr - (intptr_t)pProbe)
         {
-            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u offObjHdr=%d expected %zd\n",
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_PROBE - iProbe=%u offObjHdr=%d expected %zd\n",
                         i, pProbe->offObjHdr, (intptr_t)pVtgHdr - (intptr_t)pProbe);
             return VERR_SUPDRV_VTG_BAD_PROBE;
         }
@@ -561,18 +561,18 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const ui
         /* The referenced argument list. */
         if (pArgList->cArgs > 16)
         {
-            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u cArgs=%u\n", i, pArgList->cArgs);
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_ARGLIST - iProbe=%u cArgs=%u\n", i, pArgList->cArgs);
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
         }
         if (pArgList->fHaveLargeArgs >= 2)
         {
-            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u fHaveLargeArgs=%d\n", i, pArgList->fHaveLargeArgs);
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_ARGLIST - iProbe=%u fHaveLargeArgs=%d\n", i, pArgList->fHaveLargeArgs);
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
         }
         if (   pArgList->abReserved[0]
             || pArgList->abReserved[1])
         {
-            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - reserved MBZ iProbe=%u\n", i);
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_ARGLIST - reserved MBZ iProbe=%u\n", i);
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
         }
         fHaveLargeArgs = false;

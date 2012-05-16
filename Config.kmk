@@ -1533,9 +1533,11 @@ endif
 # ARCH_BITS_DEFS.
 #
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
- ARCH_BITS_DEFS := HC_ARCH_BITS=64
+ VBOX_HC_ARCH_BITS := 64
+ ARCH_BITS_DEFS    := HC_ARCH_BITS=64
 else ifeq ($(KBUILD_TARGET_ARCH),x86)
- ARCH_BITS_DEFS := HC_ARCH_BITS=32
+ VBOX_HC_ARCH_BITS := 32
+ ARCH_BITS_DEFS    := HC_ARCH_BITS=32
 else
  error KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)
 endif
@@ -2657,12 +2659,12 @@ endif
 #
 TOOL_VBoxTpG = The VirtualBox Tracepoint Generator
 TOOL_VBoxTpG_DTRACE_DEPEND         = $(VBOX_VBOXTPG)
-TOOL_VBoxTpG_DTRACE_HDR_FLAGS      := -h #-vvv
+TOOL_VBoxTpG_DTRACE_HDR_FLAGS      := -h --host-$(VBOX_HC_ARCH_BITS)-bit #-vvv
 define TOOL_VBoxTpG_DTRACE_HDR_CMDS
 	$(QUIET)$(VBOX_VBOXTPG) $(flags) -o "$(out)" -s "$(source)"
 endef
 TOOL_VBoxTpG_DTRACE_OBJ_NOT_NEEDED :=
-TOOL_VBoxTpG_DTRACE_OBJ_FLAGS      := -G #-vvv
+TOOL_VBoxTpG_DTRACE_OBJ_FLAGS      := -G --host-$(VBOX_HC_ARCH_BITS)-bit #-vvv
 define TOOL_VBoxTpG_DTRACE_OBJ_CMDS
 	$(QUIET)$(VBOX_VBOXTPG) \
 		$(if-expr $(intersects $(bld_trg_arch),$(KBUILD_ARCHES_64)),-64,-32) \
@@ -2699,7 +2701,8 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_DTRACE_RC
   TEMPLATE_VBoxRc_DTRACETOOL         = VBoxTpG
   TEMPLATE_VBoxRc_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_RC
-  TEMPLATE_VBoxRc_DTRACE_OBJ_FLAGS   = --probe-fn-name "VMMRCProbeFire"
+  TEMPLATE_VBoxRc_DTRACE_HDR_FLAGS   = --raw-mode-context
+  TEMPLATE_VBoxRc_DTRACE_OBJ_FLAGS   = --raw-mode-context --probe-fn-name "VMMRCProbeFire"
  else
   TEMPLATE_VBoxRc_DTRACETOOL         = VBoxTpG-Disabled
  endif
@@ -3220,7 +3223,8 @@ ifdef VBOX_WITH_DTRACE_R3
   TEMPLATE_VBOXR3EXE_DEFS             += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_NATIVE_DTRACE
  else
   TEMPLATE_VBOXR3EXE_DTRACETOOL        = VBoxTpG
-  TEMPLATE_VBOXR3EXE_DTRACE_OBJ_FLAGS  = --pic --probe-fn-imported --probe-fn-name "SUPTracerFireProbe"
+  TEMPLATE_VBOXR3EXE_DTRACE_HDR_FLAGS  = --ring-3-context
+  TEMPLATE_VBOXR3EXE_DTRACE_OBJ_FLAGS  = --ring-3-context --pic --probe-fn-imported --probe-fn-name "SUPTracerFireProbe"
   TEMPLATE_VBOXR3EXE_DEFS             += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3
  endif
 else
