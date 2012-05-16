@@ -5117,6 +5117,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             pAllocation->SurfDesc.pitch = vboxWddmCalcPitch(pSurf->Width, pResource->Format);
 
         pAllocation->SurfDesc.cbSize = vboxWddmCalcSize(pAllocation->SurfDesc.pitch, pAllocation->SurfDesc.height, pAllocation->SurfDesc.format);
+
+        pAllocation->SurfDesc.VidPnSourceId = pResource->VidPnSourceId;
     }
 
     if (VBOXDISPMODE_IS_3D(pAdapter))

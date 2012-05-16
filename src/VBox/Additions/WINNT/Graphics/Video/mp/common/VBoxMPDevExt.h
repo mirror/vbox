@@ -276,7 +276,6 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
     {
         pAllocation->bVisible = FALSE;
         Assert(pAllocation->SurfDesc.VidPnSourceId == srcId);
-        pAllocation->SurfDesc.VidPnSourceId = srcId;
         pAllocation->bAssigned = TRUE;
     }
 
