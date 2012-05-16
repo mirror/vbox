@@ -31,9 +31,9 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindowSeamless.h"
+#include "UIMachineViewSeamless.h"
 #ifndef Q_WS_MAC
 # include "VBoxMiniToolBar.h"
-# include "UIMachineViewSeamless.h"
 #endif /* !Q_WS_MAC */
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
