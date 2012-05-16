@@ -222,7 +222,7 @@ ENDPROC vmmGCTestTrap0e
 
 
 ;;
-; The raw-mode context equivalent of SUPTracerFireProbe.  
+; The raw-mode context equivalent of SUPTracerFireProbe.
 ;
 ; See also SUPLibTracerA.asm.
 ;
@@ -237,7 +237,7 @@ EXPORTEDNAME VMMRCProbeFire
         push    edx
 
         ;
-        ; Get the address of the tracer context record after first checking 
+        ; Get the address of the tracer context record after first checking
         ; that host calls hasn't been disabled.
         ;
         mov     edx, IMP(g_VM)
@@ -274,7 +274,7 @@ EXPORTEDNAME VMMRCProbeFire
 
         ; Copy the arguments off the stack.
 %macro COPY_ONE_ARG 1
-        mov     eax, [ebp + 8 + %1 * 4]
+        mov     eax, [ebp + 12 + %1 * 4]
         mov     [edx + SUPDRVTRACERUSRCTX32.u.X86.aArgs + %1*4], eax
 %endmacro
         COPY_ONE_ARG 0

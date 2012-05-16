@@ -163,6 +163,8 @@ typedef uint32_t VTGSTROFF;
 #define VTG_TYPE_CTX_GST        RT_BIT_32(27)
 /** The type context mask. */
 #define VTG_TYPE_CTX_MASK       UINT32_C(0x0f000000)
+/** The type is automatically converted to a ring-0 pointer. */
+#define VTG_TYPE_AUTO_CONV_PTR  RT_BIT_32(28)
 /** The type is a physical address. */
 #define VTG_TYPE_PHYS           RT_BIT_32(29)
 /** The type is unsigned. */
@@ -170,7 +172,7 @@ typedef uint32_t VTGSTROFF;
 /** The type is signed. */
 #define VTG_TYPE_SIGNED         RT_BIT_32(31)
 /** Mask of valid bits (for simple validation). */
-#define VTG_TYPE_VALID_MASK     UINT32_C(0xef000fff)
+#define VTG_TYPE_VALID_MASK     UINT32_C(0xff000fff)
 /** @} */
 
 /**
@@ -401,6 +403,21 @@ typedef VTGOBJHDR const    *PCVTGOBJHDR;
 
 /** The name of the VTG data object header symbol in the object file. */
 extern VTGOBJHDR            g_VTGObjHeader;
+
+
+/** @name Macros for converting typical pointer arguments to ring-0 pointers.
+ * @{ */
+#ifdef IN_RING0
+# define VTG_VM_TO_R0(a_pVM)                     (a_pVM)
+# define VTG_VMCPU_TO_R0(a_pVCpu)                (a_pVCpu)
+# define VTG_CPUMCTX_TO_R0(a_pVCpu, a_pCtx)      (a_pCtx)
+#else
+# define VTG_VM_TO_R0(a_pVM)                     ((a_pVM)->pVMR0)
+# define VTG_VMCPU_TO_R0(a_pVCpu)                VM_R0_ADDR((a_pVCpu)->CTX_SUFF(pVM), a_pVCpu)
+# define VTG_CPUMCTX_TO_R0(a_pVCpu, a_pCtx)      VM_R0_ADDR((a_pVCpu)->CTX_SUFF(pVM), a_pCtx)
+#endif
+/** @} */
+
 
 RT_C_DECLS_END
 
