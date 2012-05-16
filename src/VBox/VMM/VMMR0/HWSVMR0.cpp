@@ -970,7 +970,8 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             /* Fall back to rdtsc emulation as we would otherwise pass decreasing tsc values to the guest. */
             LogFlow(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC,
-                     pVMCB->ctrl.u64TSCOffset, u64CurTSC + pVMCB->ctrl.u64TSCOffset, TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVMCB->ctrl.u64TSCOffset, TMCpuTickGet(pVCpu)));
+                     pVMCB->ctrl.u64TSCOffset, u64CurTSC + pVMCB->ctrl.u64TSCOffset, TMCpuTickGetLastSeen(pVCpu),
+                     TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVMCB->ctrl.u64TSCOffset, TMCpuTickGet(pVCpu)));
             pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
             pVMCB->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCInterceptOverFlow);
@@ -1361,7 +1362,8 @@ ResumeExecution:
         }
         else
         {
-            pVMCB->ctrl.IntCtrl.n.u8VTPR = (u8LastTPR >> 4); /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+            /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+            pVMCB->ctrl.IntCtrl.n.u8VTPR = (u8LastTPR >> 4);
 
             if (fPending)
             {
@@ -1391,9 +1393,15 @@ ResumeExecution:
         ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
     {
         if (pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu)
-            LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu, pCpu->idCpu));
+        {
+            LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu,
+                     pCpu->idCpu));
+        }
         else
-            LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+        {
+            LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes,
+                     pCpu->cTLBFlushes));
+        }
     }
     else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
         LogFlow(("Manual TLB flush\n"));
@@ -1446,7 +1454,8 @@ ResumeExecution:
 #endif
     TMNotifyStartOfExecution(pVCpu);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    hwaccmR0SVMRunWrapXMM(pVCpu->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu, pVCpu->hwaccm.s.svm.pfnVMRun);
+    hwaccmR0SVMRunWrapXMM(pVCpu->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu,
+                          pVCpu->hwaccm.s.svm.pfnVMRun);
 #else
     pVCpu->hwaccm.s.svm.pfnVMRun(pVCpu->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
 #endif
@@ -1454,7 +1463,10 @@ ResumeExecution:
     ASMAtomicIncU32(&pVCpu->hwaccm.s.cWorldSwitchExits);
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in TSC offset mode). */
     if (!(pVMCB->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVMCB->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
+    {
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() +
+                             pVMCB->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
+    }
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatInGC, &pVCpu->hwaccm.s.StatExit1, x);
@@ -1465,7 +1477,7 @@ ResumeExecution:
 
     /*
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     * IMPORTANT: WE CAN'T DO ANY LOGGING OR OPERATIONS THAT CAN DO A LONGJMP BACK TO RING 3 *BEFORE* WE'VE SYNCED BACK (MOST OF) THE GUEST STATE
+     * IMPORTANT: WE CAN'T DO ANY LOGGING OR OPERATIONS THAT CAN DO A LONGJMP BACK TO RING-3 *BEFORE* WE'VE SYNCED BACK (MOST OF) THE GUEST STATE
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      */
 
@@ -2520,7 +2532,8 @@ ResumeExecution:
                 }
                 goto ResumeExecution;
             }
-            Log2(("EM status from IO at %RGv %x size %d: %Rrc\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize, VBOXSTRICTRC_VAL(rc)));
+            Log2(("EM status from IO at %RGv %x size %d: %Rrc\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize,
+                  VBOXSTRICTRC_VAL(rc)));
             break;
         }
 
@@ -2530,7 +2543,12 @@ ResumeExecution:
         else if (rc == VINF_IOM_R3_IOPORT_WRITE)
             Assert(IoExitInfo.n.u1Type == 0);
         else
-            AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rc)));
+        {
+            AssertMsg(   RT_FAILURE(rc)
+                      || rc == VINF_EM_RAW_EMULATE_INSTR
+                      || rc == VINF_EM_RAW_GUEST_TRAP
+                      || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rc)));
+        }
 #endif
         Log2(("Failed IO at %RGv %x size %d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
         break;
@@ -2649,7 +2667,8 @@ ResumeExecution:
             /* Only resume if successful. */
             goto ResumeExecution;
         }
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Rrc\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr", VBOXSTRICTRC_VAL(rc)));
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Rrc\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr",
+                                              VBOXSTRICTRC_VAL(rc)));
         break;
     }
 
@@ -3071,7 +3090,8 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PC
  * @param   cbParam     Number of parameters.
  * @param   paParam     Array of 32-bit parameters.
  */
-VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
+VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam,
+                                         uint32_t *paParam)
 {
     int             rc;
     RTHCUINTREG     uOldEFlags;
