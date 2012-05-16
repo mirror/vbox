@@ -777,6 +777,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    char szAbsPath[RTPATH_MAX];
+    rc = RTPathAbs(szPath, szAbsPath, sizeof(szAbsPath));
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstIntNet-1: RTPathAbs -> %Rrc\n", rc);
+        return 1;
+    }
+
     rc = SUPR3LoadVMM(strcat(szPath, "/../VMMR0.r0"));
     if (RT_FAILURE(rc))
     {
