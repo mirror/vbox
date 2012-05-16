@@ -770,9 +770,8 @@ static void hmR0VmxSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
         /* Pentium-compatible MSRs */
         ulBit    = ulMSR;
     }
-    else
-    if (   ulMSR >= 0xC0000000
-        && ulMSR <= 0xC0001FFF)
+    else if (   ulMSR >= 0xC0000000
+             && ulMSR <= 0xC0001FFF)
     {
         /* AMD Sixth Generation x86 Processor MSRs */
         ulBit = (ulMSR - 0xC0000000);
@@ -933,7 +932,7 @@ static int hmR0VmxInjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t int
 
 
 /**
- * Checks for pending guest interrupts and injects them into the guest.
+ * Checks for pending guest interrupts and injects them.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
