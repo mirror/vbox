@@ -52,9 +52,6 @@ public:
     /* Returns virtual-disk: */
     CMedium virtualDisk() const { return m_virtualDisk; }
 
-    /* Returns full medium format name: */
-    static QString fullFormatName(const QString &strBaseFormatName);
-
 protected:
 
     /* Copy virtual-disk: */

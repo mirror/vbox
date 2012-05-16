@@ -44,24 +44,6 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualD
 #endif /* Q_WS_MAC */
 }
 
-/* static */
-QString UIWizardCloneVD::fullFormatName(const QString &strBaseFormatName)
-{
-    if (strBaseFormatName == "VDI")
-        return QApplication::translate("UIWizardCloneVD", "&VDI (VirtualBox Disk Image)");
-    else if (strBaseFormatName == "VMDK")
-        return QApplication::translate("UIWizardCloneVD", "V&MDK (Virtual Machine Disk)");
-    else if (strBaseFormatName == "VHD")
-        return QApplication::translate("UIWizardCloneVD", "V&HD (Virtual Hard Disk)");
-    else if (strBaseFormatName == "Parallels")
-        return QApplication::translate("UIWizardCloneVD", "H&DD (Parallels Hard Disk)");
-    else if (strBaseFormatName == "QED")
-        return QApplication::translate("UIWizardCloneVD", "Q&ED (QEMU enhanced disk)");
-    else if (strBaseFormatName == "QCOW")
-        return QApplication::translate("UIWizardCloneVD", "&QCOW (QEMU Copy-On-Write)");
-    return strBaseFormatName;
-}
-
 bool UIWizardCloneVD::copyVirtualDisk()
 {
     /* Gather attributes: */

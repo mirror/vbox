@@ -257,12 +257,12 @@ void UIWizardNewVDPageExpert::retranslateUi()
     m_pLocationCnt->setTitle(UIWizardNewVD::tr("&Location"));
     m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a virtual hard disk file..."));
     m_pSizeCnt->setTitle(UIWizardNewVD::tr("&Size"));
-    m_pFormatCnt->setTitle(UIWizardNewVD::tr("File type"));
+    m_pFormatCnt->setTitle(UIWizardNewVD::tr("File &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)
     {
         QAbstractButton *pButton = buttons[i];
-        pButton->setText(UIWizardNewVD::fullFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
+        pButton->setText(VBoxGlobal::fullMediumFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
     }
     m_pVariantCnt->setTitle(UIWizardNewVD::tr("Storage details"));
     m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));

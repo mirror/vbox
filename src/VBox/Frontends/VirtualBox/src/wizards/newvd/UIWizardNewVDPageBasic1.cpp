@@ -145,12 +145,12 @@ void UIWizardNewVDPageBasic1::retranslateUi()
                                                            "to use for the new virtual disk. If you do not need "
                                                            "to use it with other virtualization software you can "
                                                            "leave this setting unchanged.</p>"));
-    m_pFormatCnt->setTitle(UIWizardNewVD::tr("File type"));
+    m_pFormatCnt->setTitle(UIWizardNewVD::tr("File &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)
     {
         QAbstractButton *pButton = buttons[i];
-        pButton->setText(UIWizardNewVD::fullFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
+        pButton->setText(VBoxGlobal::fullMediumFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
     }
 }
 

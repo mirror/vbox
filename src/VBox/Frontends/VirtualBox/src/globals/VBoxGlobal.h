@@ -742,6 +742,9 @@ public:
     bool isSheetWindowsAllowed(QWidget *pParent) const;
 #endif /* Q_WS_MAC */
 
+    /* Returns full medium-format name for the given base medium-format name: */
+    static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
+
 signals:
 
     /**
