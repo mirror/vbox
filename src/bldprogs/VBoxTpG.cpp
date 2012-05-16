@@ -1143,7 +1143,6 @@ static RTEXITCODE generateWrapperHeader(PSCMSTREAM pStrm)
 
             generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszMangledName);
             ScmStreamPrintf(pStrm,
-                            ");\n"
                             "# define %s("
                             , szTmp);
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
