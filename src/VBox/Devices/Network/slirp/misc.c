@@ -24,10 +24,11 @@
  * terms and conditions of the copyright.
  */
 
+#ifndef VBOX_NAT_TST_QUEUE
 #include <slirp.h>
 #include "zone.h"
 
-#ifndef HAVE_INET_ATON
+# ifndef HAVE_INET_ATON
 int
 inet_aton(const char *cp, struct in_addr *ia)
 {
@@ -37,7 +38,7 @@ inet_aton(const char *cp, struct in_addr *ia)
     ia->s_addr = addr;
     return 1;
 }
-#endif
+# endif
 
 /*
  * Get our IP address and put it in our_addr
@@ -47,7 +48,9 @@ getouraddr(PNATState pData)
 {
     our_addr.s_addr = loopback_addr.s_addr;
 }
-
+#else /* VBOX_NAT_TST_QUEUE */
+# include "misc.h"
+#endif
 struct quehead
 {
     struct quehead *qh_link;
@@ -77,41 +80,41 @@ remque(PNATState pData, void *a)
     /*  element->qh_link = NULL;  TCP FIN1 crashes if you do this.  Why ? */
 }
 
-
+#ifndef VBOX_NAT_TST_QUEUE
 /*
  * Set fd blocking and non-blocking
  */
 void
 fd_nonblock(int fd)
 {
-#ifdef FIONBIO
+# ifdef FIONBIO
     int opt = 1;
 
     ioctlsocket(fd, FIONBIO, &opt);
-#else
+# else /* !FIONBIO */
     int opt;
 
     opt = fcntl(fd, F_GETFL, 0);
     opt |= O_NONBLOCK;
     fcntl(fd, F_SETFL, opt);
-#endif
+# endif
 }
 
-#if !defined(VBOX_NAT_MEM_DEBUG) && defined(LOG_ENABLED)
-# undef LogFlowFunc
-# define LogFlowFunc(x)
+# if !defined(VBOX_NAT_MEM_DEBUG) && defined(LOG_ENABLED)
+#  undef LogFlowFunc
+#  define LogFlowFunc(x)
 
-# undef LogFlowFuncEnter
-# define LogFlowFuncEnter()
+#  undef LogFlowFuncEnter
+#  define LogFlowFuncEnter()
 
-# undef LogFlowFuncLeave
-# define LogFlowFuncLeave()
+#  undef LogFlowFuncLeave
+#  define LogFlowFuncLeave()
 
-# undef Log2
-# define Log2(x)
-#else
+#  undef Log2
+#  define Log2(x)
+# else /* VBOX_NAT_MEM_DEBUG */
 # define NAT_MEM_LOG_ENABLED
-#endif
+# endif
 
 
 /**
@@ -149,11 +152,11 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     int rc;
 
     LogFlowFunc(("ENTER: %R[mzone], size:%d, pflags:%p, %RTbool\n", zone, size, pflags, fWait));
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(size);
     NOREF(pflags);
     NOREF(fWait);
-#endif
+# endif
     RTCritSectEnter(&zone->csZone);
     for (;;)
     {
@@ -227,10 +230,10 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 {
     struct item *it;
     uma_zone_t zone;
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(size);
     NOREF(flags);
-#endif
+# endif
 
     Assert(item);
     it = &((struct item *)item)[-1];
@@ -262,10 +265,10 @@ uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
                        ctor_t ctor, dtor_t dtor, zinit_t init, zfini_t fini, int flags1, int flags2)
 {
     uma_zone_t zone = NULL;
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(flags1);
     NOREF(flags2);
-#endif
+# endif
     LogFlowFunc(("ENTER: name:%s size:%d, ctor:%p, dtor:%p, init:%p, fini:%p, flags1:%RX32, flags2:%RX32\n",
                 name, ctor, dtor, init, fini, flags1, flags2));
     zone = RTMemAllocZ(sizeof(struct uma_zone));
@@ -353,9 +356,9 @@ uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
     /** @todo (vvl) this function supposed to work with special zone storing
     reference counters */
     struct item *it = NULL;
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(zone);
-#endif
+# endif
     LogFlowFunc(("ENTER: zone:%R[mzone], mem:%p\n", zone, mem));
     it = (struct item *)mem; /* 1st element */
     Assert(mem != NULL);
@@ -369,9 +372,9 @@ uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
 void *uma_zalloc_arg(uma_zone_t zone, void *args, int how)
 {
     void *mem;
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(how);
-#endif
+# endif
     Assert(zone->magic == ZONE_MAGIC);
     LogFlowFunc(("ENTER: zone:%R[mzone], args:%p, how:%RX32\n", zone, args, how));
     if (zone->pfAlloc == NULL)
@@ -405,9 +408,9 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     Assert((zone->pfFree));
     Assert((mem));
     LogFlowFunc(("ENTER: zone:%R[mzone], mem:%p, flags:%p\n", zone, mem, flags));
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(flags);
-#endif
+# endif
 
     RTCritSectEnter(&zone->csZone);
     it = &((struct item *)mem)[-1];
@@ -465,19 +468,19 @@ void slirp_null_arg_free(void *mem, void *arg)
     /** @todo (vvl) make it wiser  */
     LogFlowFunc(("ENTER: mem:%p, arg:%p\n", mem, arg));
     Assert(mem);
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(arg);
-#endif
+# endif
     RTMemFree(mem);
     LogFlowFuncLeave();
 }
 
 void *uma_zalloc(uma_zone_t zone, int len)
 {
-#ifndef NAT_MEM_LOG_ENABLED
+# ifndef NAT_MEM_LOG_ENABLED
     NOREF(zone);
     NOREF(len);
-#endif
+# endif
     LogFlowFunc(("ENTER: zone:%R[mzone], len:%d\n", zone, len));
     LogFlowFunc(("LEAVE: NULL"));
     return NULL;
@@ -541,14 +544,14 @@ static void zone_destroy(uma_zone_t zone)
 void m_fini(PNATState pData)
 {
     LogFlowFuncEnter();
-#define ZONE_DESTROY(zone) do { zone_destroy((zone)); (zone) = NULL;} while (0)
+# define ZONE_DESTROY(zone) do { zone_destroy((zone)); (zone) = NULL;} while (0)
     ZONE_DESTROY(pData->zone_clust);
     ZONE_DESTROY(pData->zone_pack);
     ZONE_DESTROY(pData->zone_mbuf);
     ZONE_DESTROY(pData->zone_jumbop);
     ZONE_DESTROY(pData->zone_jumbo9);
     ZONE_DESTROY(pData->zone_jumbo16);
-#undef ZONE_DESTROY
+# undef ZONE_DESTROY
     /** @todo do finalize here.*/
     LogFlowFuncLeave();
 }
@@ -562,3 +565,4 @@ if_init(PNATState pData)
     if_mtu = 1500;
     if_mru = 1500;
 }
+#endif /* VBOX_NAT_TST_QUEUE */

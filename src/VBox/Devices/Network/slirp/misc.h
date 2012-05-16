@@ -27,10 +27,14 @@
 #ifndef _MISC_H_
 #define _MISC_H_
 
+#ifdef VBOX_NAT_TST_QUEUE
+typedef void *PNATState;
+#endif
 
-void getouraddr (PNATState);
 void slirp_insque  (PNATState, void *, void *);
 void slirp_remque  (PNATState, void *);
+# ifndef VBOX_NAT_TST_QUEUE
+void getouraddr (PNATState);
 void fd_nonblock (int);
 
 /* UVM interface */
@@ -67,5 +71,8 @@ void zone_drain(uma_zone_t);
 
 void slirp_null_arg_free(void *, void *);
 void m_fini(PNATState pData);
-
+# else /* VBOX_NAT_TST_QUEUE */
+#  define insque slirp_insque
+#  define remque slirp_remque
+# endif
 #endif
