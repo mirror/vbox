@@ -971,6 +971,7 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                     g_pszScript,
                     szTmp,
                     szTmp,
+                    pszCtxDefine,
                     pszCtxDefine);
 
     /*
