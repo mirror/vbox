@@ -4477,6 +4477,24 @@ bool VBoxGlobal::isSheetWindowsAllowed(QWidget *pParent) const
 }
 #endif /* Q_WS_MAC */
 
+/* static */
+QString VBoxGlobal::fullMediumFormatName(const QString &strBaseMediumFormatName)
+{
+    if (strBaseMediumFormatName == "VDI")
+        return tr("VDI (VirtualBox Disk Image)");
+    else if (strBaseMediumFormatName == "VMDK")
+        return tr("VMDK (Virtual Machine Disk)");
+    else if (strBaseMediumFormatName == "VHD")
+        return tr("VHD (Virtual Hard Disk)");
+    else if (strBaseMediumFormatName == "Parallels")
+        return tr("HDD (Parallels Hard Disk)");
+    else if (strBaseMediumFormatName == "QED")
+        return tr("QED (QEMU enhanced disk)");
+    else if (strBaseMediumFormatName == "QCOW")
+        return tr("QCOW (QEMU Copy-On-Write)");
+    return strBaseMediumFormatName;
+}
+
 // Public slots
 ////////////////////////////////////////////////////////////////////////////////
 

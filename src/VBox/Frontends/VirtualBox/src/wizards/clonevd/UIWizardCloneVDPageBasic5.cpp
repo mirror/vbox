@@ -68,7 +68,7 @@ void UIWizardCloneVDPageBasic5::retranslateUi()
         "<tr><td><nobr>%7: </nobr></td><td><nobr>%8 (%9)</nobr></td></tr>"
     )
     .arg(UIWizardCloneVD::tr("File type", "summary"), mediumFormat.isNull() ?
-             QString() : VBoxGlobal::removeAccelMark(UIWizardCloneVD::fullFormatName(mediumFormat.GetName())))
+         QString() : VBoxGlobal::removeAccelMark(VBoxGlobal::fullMediumFormatName(mediumFormat.GetName())))
     .arg(UIWizardCloneVD::tr("Details", "summary"), vboxGlobal().toString((KMediumVariant)uVariant))
     .arg(UIWizardCloneVD::tr("Location", "summary"), strMediumPath)
     .arg(UIWizardCloneVD::tr("Size", "summary"), sizeFormatted, sizeUnformatted);
