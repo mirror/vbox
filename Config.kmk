@@ -2701,6 +2701,7 @@ define TOOL_DTraceAndVBoxTpG_DTRACE_HDR_CMDS
 	$(SED) -e 's/\(#define.*\)(arg0/\1_ORIGINAL(arg0/' --append "$(out).tmp" "$(out)"
 	$(MV) -f -- "$(out).tmp" "$(out)"
 endef
+TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_NOT_NEEDED = $(TOOL_StandardDTrace_DTRACE_OBJ_NOT_NEEDED)
 TOOL_DTraceAndVBoxTpG_DTRACE_OBJ_CMDS = $(TOOL_StandardDTrace_DTRACE_OBJ_CMDS)
 
 
