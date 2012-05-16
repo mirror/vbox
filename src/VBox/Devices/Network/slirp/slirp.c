@@ -1251,15 +1251,20 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 #ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
         Assert((!so->so_cloneOf));
 #endif
+        Assert(!so->fUnderPolling);
+        so->fUnderPolling = 1;
+        if (slirpVerifyAndFreeSocket(pData, so))
+            CONTINUE(tcp);
         /*
          * FD_ISSET is meaningless on these sockets
          * (and they can crash the program)
          */
         if (so->so_state & SS_NOFDREF || so->s == -1)
+        {
+            so->fUnderPolling = 0;
             CONTINUE(tcp);
+        }
 
-        Assert(!so->fUnderPolling);
-        so->fUnderPolling = 1;
         POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
 
         LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
@@ -1490,6 +1495,13 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         if (so->so_cloneOf)
             CONTINUE_NO_UNLOCK(udp);
 #endif
+#if 0
+        so->fUnderPolling = 1;
+        if(slirpVerifyAndFreeSocket(pData, so));
+            CONTINUE(udp);
+        so->fUnderPolling = 0;
+#endif
+
         POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
 
         LOG_NAT_SOCK(so, UDP, &NetworkEvents, readfds, writefds, xfds);

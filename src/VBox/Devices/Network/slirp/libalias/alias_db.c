@@ -1017,6 +1017,7 @@ void slirpDeleteLinkSocket(void *pvLnk)
     {
         struct libalias *la = lnk->la;
         la->sockCount--;
+        lnk->pSo->fShouldBeRemoved = 1;
         lnk->pSo = NULL;
     }
 }
@@ -1060,7 +1061,7 @@ DeleteLink(struct alias_link *lnk)
         la->sockCount--;
         close(lnk->sockfd);
     }
-# else
+# else /* VBOX */
     if (lnk->pSo)
     {
         /* libalias's sockCount decremented in slirpDeleteLinkSocket,
@@ -1070,8 +1071,11 @@ DeleteLink(struct alias_link *lnk)
         /* should we be more smart, or it's enough to be
          * narrow-minded and just do sofree here
          */
+#if 0
         sofree(la->pData, lnk->pSo);
-        lnk->pSo = NULL;
+#else
+	slirpDeleteLinkSocket(lnk);
+#endif
     }
 # endif
 #endif
