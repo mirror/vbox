@@ -5460,7 +5460,7 @@ VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idxField    VMCS field index.
- * @param   u64Val      16, 32 or 64 bits value..
+ * @param   u64Val      16, 32 or 64 bits value.
  */
 VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
 {

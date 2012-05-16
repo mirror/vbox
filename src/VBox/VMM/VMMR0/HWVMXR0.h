@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -102,52 +102,52 @@ RT_C_DECLS_BEGIN
 #ifdef IN_RING0
 
 /**
- * Enters the VT-x session
+ * Enters the VT-x session.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- * @param   pCpu        CPU info struct
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VM CPU.
+ * @param   pCpu        Pointer to the CPU info struct.
  */
 VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu);
 
 /**
- * Leaves the VT-x session
+ * Leaves the VT-x session.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- * @param   pCtx        CPU context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
 /**
- * Sets up and activates VT-x on the current CPU
+ * Sets up and activates VT-x on the current CPU.
  *
  * @returns VBox status code.
- * @param   pCpu            CPU info struct
- * @param   pVM             The VM to operate on. (can be NULL after a resume)
- * @param   pvPageCpu       Pointer to the global cpu page
- * @param   pPageCpuPhys    Physical address of the global cpu page
+ * @param   pCpu            Pointer to the CPU info struct.
+ * @param   pVM             Pointer to the VM. (can be NULL after a resume)
+ * @param   pvPageCpu       Pointer to the global CPU page.
+ * @param   pPageCpuPhys    Physical address of the global CPU page.
  */
 VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
- * Deactivates VT-x on the current CPU
+ * Deactivates VT-x on the current CPU.
  *
  * @returns VBox status code.
- * @param   pCpu            CPU info struct
- * @param   pvPageCpu       Pointer to the global cpu page
- * @param   pPageCpuPhys    Physical address of the global cpu page
+ * @param   pCpu            Pointer to the CPU info struct.
+ * @param   pvPageCpu       Pointer to the global CPU page.
+ * @param   pPageCpuPhys    Physical address of the global CPU page.
  */
 VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
- * Does Ring-0 per VM VT-x init.
+ * Does Ring-0 per VM VT-x initialization.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int) VMXR0InitVM(PVM pVM);
 
@@ -155,35 +155,35 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM);
  * Does Ring-0 per VM VT-x termination.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int) VMXR0TermVM(PVM pVM);
 
 /**
- * Sets up VT-x for the specified VM
+ * Sets up VT-x for the specified VM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int) VMXR0SetupVM(PVM pVM);
 
 
 /**
- * Save the host state
+ * Save the host state.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu);
 
 /**
- * Loads the guest state
+ * Loads the guest state.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- * @param   pCtx        Guest context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
@@ -192,26 +192,27 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  * Runs guest code in a VT-x VM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- * @param   pCtx        Guest context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 /**
- * Executes the specified handler in 64 mode
+ * Executes the specified handler in 64-bit mode.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- * @param   pCtx        Guest context
- * @param   pfnHandler  RC handler
- * @param   cbParam     Number of parameters
- * @param   paParam     Array of 32 bits parameters
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pfnHandler  Pointer to the RC handler function.
+ * @param   cbParam     Number of parameters.
+ * @param   paParam     Array of 32-bit parameters.
  */
-VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam);
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam,
+                                         uint32_t *paParam);
 # endif
 
 # define VMX_WRITE_SELREG(REG, reg) \
@@ -234,9 +235,14 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
             val = 0xf3;                                                                         \
         }                                                                                       \
         else                                                                                    \
-        if (   (pCtx->reg || !CPUMIsGuestInPagedProtectedModeEx(pCtx) || (!pCtx->csHid.Attr.n.u1DefBig && !CPUMIsGuestIn64BitCodeEx(pCtx))) \
+        if (   (   pCtx->reg                                                                    \
+                || !CPUMIsGuestInPagedProtectedModeEx(pCtx)                                     \
+                || (!pCtx->csHid.Attr.n.u1DefBig && !CPUMIsGuestIn64BitCodeEx(pCtx))            \
+                )                                                                               \
             && pCtx->reg##Hid.Attr.n.u1Present == 1)                                            \
+        {                                                                                       \
             val = pCtx->reg##Hid.Attr.u | X86_SEL_TYPE_ACCESSED;                                \
+        }                                                                                       \
         else                                                                                    \
             val = 0x10000;  /* Invalid guest state error otherwise. (BIT(16) = Unusable) */     \
                                                                                                 \
@@ -244,36 +250,37 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 }
 
 # define VMX_READ_SELREG(REG, reg) \
-{                                                                    \
+{                                                                          \
         VMXReadCachedVMCS(VMX_VMCS16_GUEST_FIELD_##REG,           &val);   \
-        pCtx->reg                = val;                              \
+        pCtx->reg                = val;                                    \
         VMXReadCachedVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val);   \
-        pCtx->reg##Hid.u32Limit    = val;                            \
+        pCtx->reg##Hid.u32Limit    = val;                                  \
         VMXReadCachedVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &val);   \
-        pCtx->reg##Hid.u64Base     = val;                            \
+        pCtx->reg##Hid.u64Base     = val;                                  \
         VMXReadCachedVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val);   \
-        pCtx->reg##Hid.Attr.u    = val;                              \
+        pCtx->reg##Hid.Attr.u    = val;                                    \
 }
 
 /* Don't read from the cache in this macro; used only in case of failure where the cache is out of sync. */
 # define VMX_LOG_SELREG(REG, szSelReg, val) \
-{                                                                      \
-        VMXReadVMCS(VMX_VMCS16_GUEST_FIELD_##REG,           &(val));   \
-        Log(("%s Selector     %x\n", szSelReg, (val)));                \
-        VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &(val));   \
-        Log(("%s Limit        %x\n", szSelReg, (val)));                \
-        VMXReadVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &(val));   \
-        Log(("%s Base         %RX64\n", szSelReg, (uint64_t)(val)));   \
-        VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &(val));   \
-        Log(("%s Attributes   %x\n", szSelReg, (val)));                \
+{                                                                          \
+        VMXReadVMCS(VMX_VMCS16_GUEST_FIELD_##REG,           &(val));       \
+        Log(("%s Selector     %x\n", szSelReg, (val)));                    \
+        VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &(val));       \
+        Log(("%s Limit        %x\n", szSelReg, (val)));                    \
+        VMXReadVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &(val));       \
+        Log(("%s Base         %RX64\n", szSelReg, (uint64_t)(val)));       \
+        VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &(val));       \
+        Log(("%s Attributes   %x\n", szSelReg, (val)));                    \
 }
 
 /**
- * Cache VMCS writes for performance reasons (Darwin) and for running 64 bits guests on 32 bits hosts.
+ * Cache VMCS writes for performance reasons (Darwin) and for running 64 bits
+ * guests on 32-bit hosts.
  *
- * @param   pVCpu       The VMCPU to operate on.
- * @param   idxField    VMCS field
- * @param   u64Val      Value
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   idxField    VMCS field index.
+ * @param   u64Val      16, 32 or 64 bits value.
  */
 VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
 
@@ -281,9 +288,9 @@ VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
 /**
  * Return value of cached VMCS read for performance reasons (Darwin) and for running 64 bits guests on 32 bits hosts.
  *
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   idxField    VMCS cache index (not VMCS field index!)
- * @param   pVal        Value
+ * @param   pVal        16, 32 or 64 bits value.
  */
 DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG *pVal)
 {
@@ -294,10 +301,11 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 #endif
 
 /**
- * Return value of cached VMCS read for performance reasons (Darwin) and for running 64 bits guests on 32 bits hosts.
+ * Return value of cached VMCS read for performance reasons (Darwin) and for
+ * running 64 bits guests on 32-bit hosts.
  *
- * @param   idxField    VMCS field
- * @param   pVal        Value pointer (out)
+ * @param   idxField    VMCS field index.
+ * @param   pVal        Value pointer (out).
  */
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 # define VMXReadCachedVMCS(idxField, pVal)              VMXReadCachedVMCSEx(pVCpu, idxField##_CACHE_IDX, pVal)
@@ -306,16 +314,17 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 #endif
 
 /**
- * Setup cached VMCS for performance reasons (Darwin) and for running 64 bits guests on 32 bits hosts.
+ * Setup cached VMCS for performance reasons (Darwin) and for running 64-bit
+ * guests on 32-bit hosts.
  *
  * @param   pCache      The cache.
- * @param   idxField    VMCS field
+ * @param   idxField    VMCS field index.
  */
-#define VMXSetupCachedReadVMCS(pCache, idxField)                        \
-{                                                                       \
-    Assert(pCache->Read.aField[idxField##_CACHE_IDX] == 0);             \
-    pCache->Read.aField[idxField##_CACHE_IDX] = idxField;               \
-    pCache->Read.aFieldVal[idxField##_CACHE_IDX] = 0;                   \
+#define VMXSetupCachedReadVMCS(pCache, idxField)                                    \
+{                                                                                   \
+    Assert(pCache->Read.aField[idxField##_CACHE_IDX] == 0);                         \
+    pCache->Read.aField[idxField##_CACHE_IDX] = idxField;                           \
+    pCache->Read.aFieldVal[idxField##_CACHE_IDX] = 0;                               \
 }
 
 #define VMX_SETUP_SELREG(REG, pCache)                                               \
@@ -327,39 +336,39 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 }
 
 /**
- * Prepares for and executes VMLAUNCH (32 bits guest mode)
+ * Prepares for and executes VMLAUNCH (32-bit guest mode).
  *
- * @returns VBox status code
- * @param   fResume     vmlauch/vmresume
- * @param   pCtx        Guest context
- * @param   pCache      VMCS cache
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @returns VBox status code.
+ * @param   fResume     Whether to vmlauch/vmresume.
+ * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pCache      Pointer to the VMCS cache.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 
 /**
- * Prepares for and executes VMLAUNCH (64 bits guest mode)
+ * Prepares for and executes VMLAUNCH (64-bit guest mode).
  *
- * @returns VBox status code
- * @param   fResume     vmlauch/vmresume
- * @param   pCtx        Guest context
- * @param   pCache      VMCS cache
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @returns VBox status code.
+ * @param   fResume     Whether to vmlauch/vmresume.
+ * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pCache      Pointer to the VMCS cache.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 /**
- * Prepares for and executes VMLAUNCH (64 bits guest mode)
+ * Prepares for and executes VMLAUNCH (64-bit guest mode).
  *
  * @returns VBox status code
- * @param   fResume     vmlauch/vmresume
- * @param   pCtx        Guest context
- * @param   pCache      VMCS cache
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   fResume     Whether to vmlauch/vmresume.
+ * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pCache      Pointer to the VMCS cache.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 # endif
@@ -370,5 +379,5 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
 RT_C_DECLS_END
 
-#endif
+#endif /* ___HWVMXR0_h */
 
