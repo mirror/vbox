@@ -19,6 +19,7 @@
 
 /* Global includes: */
 #include <QDesktopWidget>
+#include <QMenu>
 #include <QTimer>
 #ifdef Q_WS_MAC
 # include <QMenuBar>
@@ -26,14 +27,14 @@
 
 /* Local includes: */
 #include "VBoxGlobal.h"
-#ifndef Q_WS_MAC
-# include "VBoxMiniToolBar.h"
-#endif /* !Q_WS_MAC */
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindowSeamless.h"
-#include "UIMachineViewSeamless.h"
+#ifndef Q_WS_MAC
+# include "VBoxMiniToolBar.h"
+# include "UIMachineViewSeamless.h"
+#endif /* !Q_WS_MAC */
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */

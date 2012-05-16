@@ -19,6 +19,7 @@
 
 /* Global includes: */
 #include <QDesktopWidget>
+#include <QMenu>
 #include <QTimer>
 #ifdef Q_WS_MAC
 # include <QMenuBar>
