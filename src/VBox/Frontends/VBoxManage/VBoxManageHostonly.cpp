@@ -77,11 +77,9 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
 
 static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
 {
+    *pcProcessed = 0;
     if (a->argc - iStart < 1)
-    {
-        *pcProcessed = 0;
         return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
-    }
 
     int index = iStart;
     HRESULT rc;
