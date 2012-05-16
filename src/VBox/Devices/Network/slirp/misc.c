@@ -49,6 +49,8 @@ getouraddr(PNATState pData)
     our_addr.s_addr = loopback_addr.s_addr;
 }
 #else /* VBOX_NAT_TST_QUEUE */
+# include <iprt/cdefs.h>
+# include <iprt/types.h>
 # include "misc.h"
 #endif
 struct quehead
