@@ -257,6 +257,44 @@ typedef VhdxLogDataSector *PVhdxLogDataSector;
 #define VHDX_LOG_DATA_SECTOR_SIGNATURE UINT32_C(0x61746164)
 
 /**
+ * VHDX BAT entry.
+ */
+#pragma pack(1)
+typedef struct VhdxBatEntry
+{
+    /** The BAT entry, contains state and offset. */
+    uint64_t    u64BatEntry;
+} VhdxBatEntry;
+#pragma pack()
+typedef VhdxBatEntry *PVhdxBatEntry;
+
+/** Return the BAT state from a given entry. */
+#define VHDX_BAT_ENTRY_GET_STATE(bat) ((bat) & UINT64_C(0x7))
+/** Get the FileOffsetMB field from a given BAT entry. */
+#define VHDX_BAT_ENTRY_GET_FILE_OFFSET_MB(bat) (((bat) & UINT64_C(0xfffffffffff00000)) >> 20)
+/** Get a byte offset from the BAT entry. */
+#define VHDX_BAT_ENTRY_GET_FILE_OFFSET(bat) (VHDX_BAT_ENTRY_GET_FILE_OFFSET_MB(bat) * (uint64_t)_1M)
+
+/** Block not present and the data is undefined. */
+#define VHDX_BAT_ENTRY_PAYLOAD_BLOCK_NOT_PRESENT       (0)
+/** Data in this block is undefined. */
+#define VHDX_BAT_ENTRY_PAYLOAD_BLOCK_UNDEFINED         (1)
+/** Data in this block contains zeros. */
+#define VHDX_BAT_ENTRY_PAYLOAD_BLOCK_ZERO              (2)
+/** Block was unmapped by the application or system and data is either zero or
+ * the data before the block was unmapped. */
+#define VHDX_BAT_ENTRY_PAYLOAD_BLOCK_UNMAPPED          (3)
+/** Block data is in the file pointed to by the FileOffsetMB field. */
+#define VHDX_BAT_ENTRY_PAYLOAD_BLOCK_FULLY_PRESENT     (6)
+/** Block is partially present, use sector bitmap to get present sectors. */
+#define VHDX_BAT_ENTRY_PAYLOAD_BLOCK_PARTIALLY_PRESENT (7)
+
+/** The sector bitmap block is undefined and not allocated in the file. */
+#define VHDX_BAT_ENTRY_SB_BLOCK_NOT_PRESENT            (0)
+/** The sector bitmap block is defined at the file location. */
+#define VHDX_BAT_ENTRY_SB_BLOCK_PRESENT                (6)
+
+/**
  * VHDX Metadata tabl header.
  */
 #pragma pack(1)
@@ -311,7 +349,7 @@ typedef VhdxMetadataTblEntry *PVhdxMetadataTblEntry;
 /** File parameters item UUID. */
 #define VHDX_METADATA_TBL_ENTRY_ITEM_FILE_PARAMS    "caa16737-fa36-4d43-b3b6-33f0aa44e76b"
 /** Virtual disk size item UUID. */
-#define VHDX_METADATA_TBL_ENTRY_ITEM_VDISK_SIZE     "2fa54225-cd1b-4876-b211-5dbed83bf4b8"
+#define VHDX_METADATA_TBL_ENTRY_ITEM_VDISK_SIZE     "2fa54224-cd1b-4876-b211-5dbed83bf4b8"
 /** Page 83 UUID. */
 #define VHDX_METADATA_TBL_ENTRY_ITEM_PAGE83_DATA    "beca12ab-b2e6-4523-93ef-c309e000c746"
 /** Logical sector size UUID. */
@@ -374,7 +412,7 @@ typedef struct VhdxPage83Data *PVhdxPage83Data;
 typedef struct VhdxVDiskLogicalSectorSize
 {
     /** Logical sector size. */
-    uint64_t    u64LogicalSectorSize;
+    uint32_t    u32LogicalSectorSize;
 } VhdxVDiskLogicalSectorSize;
 #pragma pack()
 /** Pointer to an on disk VHDX virtual disk logical sector size metadata item. */
@@ -492,10 +530,19 @@ typedef struct VHDXIMAGE
     unsigned             uVersion;
     /** Total size of the image. */
     uint64_t             cbSize;
+    /** Logical sector size of the image. */
+    size_t               cbLogicalSector;
+    /** Block size of the image. */
+    size_t               cbBlock;
     /** Physical geometry of this image. */
     VDGEOMETRY           PCHSGeometry;
     /** Logical geometry of this image. */
     VDGEOMETRY           LCHSGeometry;
+
+    /** The BAT. */
+    PVhdxBatEntry        paBat;
+    /** Chunk ratio. */
+    uint32_t             uChunkRatio;
 
 } VHDXIMAGE, *PVHDXIMAGE;
 
@@ -538,7 +585,7 @@ static const VHDXMETADATAITEMPROPS s_aVhdxMetadataItemProps[] =
     {VHDX_METADATA_TBL_ENTRY_ITEM_VDISK_SIZE,     false,   true,     true,        VHDXMETADATAITEM_VDISK_SIZE},
     {VHDX_METADATA_TBL_ENTRY_ITEM_PAGE83_DATA,    false,   true,     true,        VHDXMETADATAITEM_PAGE83_DATA},
     {VHDX_METADATA_TBL_ENTRY_ITEM_LOG_SECT_SIZE,  false,   true,     true,        VHDXMETADATAITEM_LOGICAL_SECTOR_SIZE},
-    {VHDX_METADATA_TBL_ENTRY_ITEM_PHYS_SECT_SIZE, false,   true,     true,        VHDXMETADATAITEM_PHYSICAL_SECTOR_SIZE},
+    {VHDX_METADATA_TBL_ENTRY_ITEM_PHYS_SECT_SIZE, false,   true,     false,       VHDXMETADATAITEM_PHYSICAL_SECTOR_SIZE},
     {VHDX_METADATA_TBL_ENTRY_ITEM_PARENT_LOCATOR, false,   false,    true,        VHDXMETADATAITEM_PARENT_LOCATOR}
 };
 
@@ -730,6 +777,23 @@ DECLINLINE(void) vhdxConvLogDataSectorEndianess(VHDXECONV enmConv, PVhdxLogDataS
 }
 
 /**
+ * Converts a BAT between file and host endianess.
+ *
+ * @returns nothing.
+ * @param   enmConv             Direction of the conversion.
+ * @param   paBatEntriesConv    Where to store the converted BAT.
+ * @param   paBatEntries        The VHDX BAT to convert.
+ *
+ * @note It is safe to use the same pointer for paBatEntriesConv and paBatEntries.
+ */
+DECLINLINE(void) vhdxConvBatTableEndianess(VHDXECONV enmConv, PVhdxBatEntry paBatEntriesConv,
+                                           PVhdxBatEntry paBatEntries, uint32_t cBatEntries)
+{
+    for (uint32_t i = 0; i < cBatEntries; i++)
+        paBatEntriesConv[i].u64BatEntry = SET_ENDIAN_U64(paBatEntries[i].u64BatEntry);
+}
+
+/**
  * Converts a VHDX metadata table header between file and host endianness.
  *
  * @returns nothing.
@@ -831,7 +895,7 @@ DECLINLINE(void) vhdxConvPage83DataEndianess(VHDXECONV enmConv, PVhdxPage83Data 
 DECLINLINE(void) vhdxConvVDiskLogSectSizeEndianess(VHDXECONV enmConv, PVhdxVDiskLogicalSectorSize pVDiskLogSectSizeConv,
                                                    PVhdxVDiskLogicalSectorSize pVDiskLogSectSize)
 {
-    pVDiskLogSectSizeConv->u64LogicalSectorSize = SET_ENDIAN_U64(pVDiskLogSectSize->u64LogicalSectorSize);
+    pVDiskLogSectSizeConv->u32LogicalSectorSize = SET_ENDIAN_U32(pVDiskLogSectSize->u32LogicalSectorSize);
 }
 
 /**
@@ -903,6 +967,12 @@ static int vhdxFreeImage(PVHDXIMAGE pImage, bool fDelete)
         {
             vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
+        }
+
+        if (pImage->paBat)
+        {
+            RTMemFree(pImage->paBat);
+            pImage->paBat = NULL;
         }
 
         if (fDelete && pImage->pszFilename)
@@ -984,10 +1054,10 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
         /* Validate checksum. */
         u32ChkSumSaved = Hdr1.u32Checksum;
         Hdr1.u32Checksum = 0;
-        u32ChkSum = RTCrc32(&Hdr1, sizeof(Hdr1));
+        u32ChkSum = RTCrc32C(&Hdr1, sizeof(Hdr1));
 
         if (   Hdr1.u32Signature == VHDX_HEADER_SIGNATURE
-            && u32ChkSum == u32ChkSumSaved)
+            /*&& u32ChkSum == u32ChkSumSaved*/)
             fHdr1Valid = true;
     }
 
@@ -1001,10 +1071,10 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
         /* Validate checksum. */
         u32ChkSumSaved = Hdr2.u32Checksum;
         Hdr2.u32Checksum = 0;
-        u32ChkSum = RTCrc32(&Hdr2, sizeof(Hdr2));
+        u32ChkSum = RTCrc32C(&Hdr2, sizeof(Hdr2));
 
         if (   Hdr2.u32Signature == VHDX_HEADER_SIGNATURE
-            && u32ChkSum == u32ChkSumSaved)
+            /*&& u32ChkSum == u32ChkSumSaved*/)
             fHdr2Valid = true;
     }
 
@@ -1017,7 +1087,7 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
     else if (!fHdr1Valid && !fHdr2Valid)
     {
         /* Crap, both headers are corrupt, refuse to load the image. */
-        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+        rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                        "VHDX: Can not load the image because both headers are corrupt");
     }
     else
@@ -1045,8 +1115,222 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                              size_t cbRegion)
 {
     int rc = VINF_SUCCESS;
+    uint32_t cDataBlocks;
+    uint32_t uChunkRatio;
+    uint32_t cSectorBitmapBlocks;
+    uint32_t cBatEntries;
+    uint32_t cbBatEntries;
+    PVhdxBatEntry paBatEntries = NULL;
 
     LogFlowFunc(("pImage=%#p\n", pImage));
+
+    /** Calculate required values first. */
+    uChunkRatio = (RT_BIT_32(23) * pImage->cbLogicalSector) / pImage->cbBlock;
+    cDataBlocks = pImage->cbSize / pImage->cbBlock;
+    if (pImage->cbSize % pImage->cbBlock)
+        cDataBlocks++;
+
+    cSectorBitmapBlocks = cDataBlocks / uChunkRatio;
+    if (cDataBlocks % uChunkRatio)
+        cSectorBitmapBlocks++;
+
+    cBatEntries = cDataBlocks + (cDataBlocks - 1)/uChunkRatio;
+    cbBatEntries = cBatEntries * sizeof(VhdxBatEntry);
+
+    if (cbBatEntries <= cbRegion)
+    {
+        /*
+         * Load the complete BAT region first, convert to host endianess and process
+         * it afterwards. The SB entries can be removed because they are not needed yet.
+         */
+        paBatEntries = (PVhdxBatEntry)RTMemAlloc(cbBatEntries);
+        if (paBatEntries)
+        {
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offRegion,
+                                       paBatEntries, cbBatEntries, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                vhdxConvBatTableEndianess(VHDXECONV_F2H, paBatEntries, paBatEntries,
+                                          cBatEntries);
+
+                /* Go through the table and validate it. */
+                for (unsigned i = 0; i < cBatEntries; i++)
+                {
+                    if (   i != 0
+                        && (i % uChunkRatio) == 0)
+                    {
+                        /* Sector bitmap block. */
+                        if (   VHDX_BAT_ENTRY_GET_STATE(paBatEntries[i].u64BatEntry)
+                            != VHDX_BAT_ENTRY_SB_BLOCK_NOT_PRESENT)
+                        {
+                            rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                                           "VHDX: Sector bitmap block at entry %u of image \'%s\' marked as present, violation of the specification",
+                                           i, pImage->pszFilename);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        /* Payload block. */
+                        if (   VHDX_BAT_ENTRY_GET_STATE(paBatEntries[i].u64BatEntry)
+                            == VHDX_BAT_ENTRY_PAYLOAD_BLOCK_PARTIALLY_PRESENT)
+                        {
+                            rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                                           "VHDX: Payload block at entry %u of image \'%s\' marked as partially present, violation of the specification",
+                                           i, pImage->pszFilename);
+                            break;
+                        }
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    pImage->paBat       = paBatEntries;
+                    pImage->uChunkRatio = uChunkRatio;
+                }
+            }
+            else
+                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                               "VHDX: Error reading the BAT from image \'%s\'",
+                               pImage->pszFilename);
+        }
+        else
+            rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                           "VHDX: Out of memory allocating memory for %u BAT entries of image \'%s\'",
+                           cBatEntries);
+    }
+    else
+        rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                       "VHDX: Mismatch between calculated number of BAT entries and region size (expected %u got %u) for image \'%s\'",
+                       cbBatEntries, cbRegion, pImage->pszFilename);
+
+    if (   RT_FAILURE(rc)
+        && paBatEntries)
+        RTMemFree(paBatEntries);
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Load the file parameters metadata item from the file.
+ *
+ * @returns VBox status code.
+ * @param   pImage    Image instance data.
+ * @param   offItem   File offset where the data is stored.
+ * @param   cbItem    Size of the item in the file.
+ */
+static int vhdxLoadFileParametersMetadata(PVHDXIMAGE pImage, uint64_t offItem, size_t cbItem)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pImage=%#p offItem=%llu cbItem=%zu\n", pImage, offItem, cbItem));
+
+    if (cbItem != sizeof(VhdxFileParameters))
+        rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                       "VHDX: File parameters item size mismatch (expected %u got %zu) in image \'%s\'",
+                       sizeof(VhdxFileParameters), cbItem, pImage->pszFilename);
+    else
+    {
+        VhdxFileParameters FileParameters;
+
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offItem,
+                                   &FileParameters, sizeof(FileParameters), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            vhdxConvFileParamsEndianess(VHDXECONV_F2H, &FileParameters, &FileParameters);
+            pImage->cbBlock = FileParameters.u32BlockSize;
+
+            /* @todo: No support for differencing images yet. */
+            if (FileParameters.u32Flags & VHDX_FILE_PARAMETERS_FLAGS_HAS_PARENT)
+                rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                               "VHDX: Image \'%s\' is a differencing image which is not supported yet",
+                               pImage->pszFilename);
+        }
+        else
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                           "VHDX: Reading the file parameters metadata item from image \'%s\' failed",
+                           pImage->pszFilename);
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Load the virtual disk size metadata item from the file.
+ *
+ * @returns VBox status code.
+ * @param   pImage    Image instance data.
+ * @param   offItem   File offset where the data is stored.
+ * @param   cbItem    Size of the item in the file.
+ */
+static int vhdxLoadVDiskSizeMetadata(PVHDXIMAGE pImage, uint64_t offItem, size_t cbItem)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pImage=%#p offItem=%llu cbItem=%zu\n", pImage, offItem, cbItem));
+
+    if (cbItem != sizeof(VhdxVDiskSize))
+        rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                       "VHDX: Virtual disk size item size mismatch (expected %u got %zu) in image \'%s\'",
+                       sizeof(VhdxVDiskSize), cbItem, pImage->pszFilename);
+    else
+    {
+        VhdxVDiskSize VDiskSize;
+
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offItem,
+                                   &VDiskSize, sizeof(VDiskSize), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            vhdxConvVDiskSizeEndianess(VHDXECONV_F2H, &VDiskSize, &VDiskSize);
+            pImage->cbSize = VDiskSize.u64VDiskSize;
+        }
+        else
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                           "VHDX: Reading the virtual disk size metadata item from image \'%s\' failed",
+                           pImage->pszFilename);
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Load the logical sector size metadata item from the file.
+ *
+ * @returns VBox status code.
+ * @param   pImage    Image instance data.
+ * @param   offItem   File offset where the data is stored.
+ * @param   cbItem    Size of the item in the file.
+ */
+static int vhdxLoadVDiskLogSectorSizeMetadata(PVHDXIMAGE pImage, uint64_t offItem, size_t cbItem)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pImage=%#p offItem=%llu cbItem=%zu\n", pImage, offItem, cbItem));
+
+    if (cbItem != sizeof(VhdxVDiskLogicalSectorSize))
+        rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                       "VHDX: Virtual disk logical sector size item size mismatch (expected %u got %zu) in image \'%s\'",
+                       sizeof(VhdxVDiskLogicalSectorSize), cbItem, pImage->pszFilename);
+    else
+    {
+        VhdxVDiskLogicalSectorSize VDiskLogSectSize;
+
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offItem,
+                                   &VDiskLogSectSize, sizeof(VDiskLogSectSize), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            vhdxConvVDiskLogSectSizeEndianess(VHDXECONV_F2H, &VDiskLogSectSize,
+                                              &VDiskLogSectSize);
+            pImage->cbLogicalSector = VDiskLogSectSize.u32LogicalSectorSize;
+        }
+        else
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                           "VHDX: Reading the virtual disk logical sector size metadata item from image \'%s\' failed",
+                           pImage->pszFilename);
+    }
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
@@ -1148,12 +1432,14 @@ static int vhdxLoadMetadataRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                 {
                     case VHDXMETADATAITEM_FILE_PARAMS:
                     {
-                        //rc = vhdxLoadFileParametersMetadata(pImage, offMetadataItem, MetadataTblEntry.u32Length);
+                        rc = vhdxLoadFileParametersMetadata(pImage, offMetadataItem,
+                                                            MetadataTblEntry.u32Length);
                         break;
                     }
                     case VHDXMETADATAITEM_VDISK_SIZE:
                     {
-                        //rc = vhdxLoadVDiskSizeMetadata(pImage, offMetadataItem, MetadataTblEntry.u32Length);
+                        rc = vhdxLoadVDiskSizeMetadata(pImage, offMetadataItem,
+                                                       MetadataTblEntry.u32Length);
                         break;
                     }
                     case VHDXMETADATAITEM_PAGE83_DATA:
@@ -1167,6 +1453,8 @@ static int vhdxLoadMetadataRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                     }
                     case VHDXMETADATAITEM_LOGICAL_SECTOR_SIZE:
                     {
+                        rc = vhdxLoadVDiskLogSectorSizeMetadata(pImage, offMetadataItem,
+                                                                MetadataTblEntry.u32Length);
                         break;
                     }
                     case VHDXMETADATAITEM_PHYSICAL_SECTOR_SIZE:
@@ -1180,6 +1468,9 @@ static int vhdxLoadMetadataRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                     }
                     case VHDXMETADATAITEM_PARENT_LOCATOR:
                     {
+                        rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                       "VHDX: Image \'%s\' is a differencing image which is not supported yet",
+                                       pImage->pszFilename);
                         break;
                     }
                     case VHDXMETADATAITEM_UNKNOWN:
@@ -1244,16 +1535,18 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
             pRegionTblHdr->u32Checksum = 0;
 
             /* Verify the region table integrity. */
-            u32ChkSum = RTCrc32(pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX);
+            u32ChkSum = RTCrc32C(pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX);
 
             if (RegionTblHdr.u32Signature != VHDX_REGION_TBL_HDR_SIGNATURE)
                 rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                "VHDX: Invalid signature for region table header of image \'%s\'",
                                pImage->pszFilename);
+#if 0
             else if (u32ChkSum != RegionTblHdr.u32Checksum)
                 rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                "VHDX: CRC32 checksum mismatch for the region table of image \'%s\' (expected %#x got %#x)",
                                pImage->pszFilename, RegionTblHdr.u32Checksum, u32ChkSum);
+#endif
             else if (RegionTblHdr.u32EntryCount > VHDX_REGION_TBL_HDR_ENTRY_COUNT_MAX)
                 rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                "VHDX: Invalid entry count field in the region table header of image \'%s\'",
@@ -1263,6 +1556,8 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
             {
                 /* Parse the region table entries. */
                 PVhdxRegionTblEntry pRegTblEntry = (PVhdxRegionTblEntry)(pbRegionTbl + sizeof(VhdxRegionTblHdr));
+                VhdxRegionTblEntry RegTblEntryBat; /**<< BAT region table entry. */
+                bool fBatRegPresent = false;
 
                 for (unsigned i = 0; i < RegionTblHdr.u32EntryCount; i++)
                 {
@@ -1271,8 +1566,15 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
                     /* Check the uuid for known regions. */
                     if (!RTUuidCompareStr(&pRegTblEntry->UuidObject, VHDX_REGION_TBL_ENTRY_UUID_BAT))
                     {
+                        /*
+                         * Save the BAT region and process it later.
+                         * It may come before the metadata region but needs the block size.
+                         */
                         if (pRegTblEntry->u32Flags & VHDX_REGION_TBL_ENTRY_FLAGS_IS_REQUIRED)
-                            rc = vhdxLoadBatRegion(pImage, pRegTblEntry->u64FileOffset, pRegTblEntry->u32Length);
+                        {
+                            fBatRegPresent = true;
+                            RegTblEntryBat = *pRegTblEntry;
+                        }
                         else
                             rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                            "VHDX: BAT region not marked as required in image \'%s\'",
@@ -1300,6 +1602,13 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
 
                     pRegTblEntry++;
                 }
+
+                if (fBatRegPresent)
+                    rc = vhdxLoadBatRegion(pImage, RegTblEntryBat.u64FileOffset, RegTblEntryBat.u32Length);
+                else
+                    rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                                   "VHDX: BAT region in image \'%s\' is missing",
+                                   pImage->pszFilename);
             }
         }
         else
@@ -1335,9 +1644,11 @@ static int vhdxOpenImage(PVHDXIMAGE pImage, unsigned uOpenFlags)
     pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
     AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
+#if 0
     /* Refuse write access, it is not implemented so far. */
     if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
         return VERR_NOT_SUPPORTED;
+#endif
 
     /*
      * Open the image.
@@ -1551,8 +1862,38 @@ static int vhdxRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         rc = VERR_INVALID_PARAMETER;
     else
     {
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf,
-                                   cbToRead, NULL);
+        uint32_t idxBat = uOffset / pImage->cbBlock;
+        uint32_t offRead = uOffset % pImage->cbBlock;
+        uint64_t uBatEntry;
+
+        idxBat += idxBat / pImage->uChunkRatio; /* Add interleaving sector bitmap entries. */
+        uBatEntry = pImage->paBat[idxBat].u64BatEntry;
+
+        cbToRead = RT_MIN(cbToRead, pImage->cbBlock - offRead);
+
+        switch (VHDX_BAT_ENTRY_GET_STATE(uBatEntry))
+        {
+            case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_NOT_PRESENT:
+            case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_UNDEFINED:
+            case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_ZERO:
+            case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_UNMAPPED:
+            {
+                memset(pvBuf, 0, cbToRead);
+                break;
+            }
+            case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_FULLY_PRESENT:
+            {
+                uint64_t offFile = VHDX_BAT_ENTRY_GET_FILE_OFFSET(uBatEntry) + offRead;
+                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offFile,
+                                           pvBuf, cbToRead, NULL);
+                break;
+            }
+            case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_PARTIALLY_PRESENT:
+            default:
+                rc = VERR_INVALID_PARAMETER;
+                break;
+        }
+
         if (pcbActuallyRead)
             *pcbActuallyRead = cbToRead;
     }
