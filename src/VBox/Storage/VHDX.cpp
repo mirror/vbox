@@ -1054,7 +1054,7 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
         /* Validate checksum. */
         u32ChkSumSaved = Hdr1.u32Checksum;
         Hdr1.u32Checksum = 0;
-        u32ChkSum = RTCrc32C(&Hdr1, sizeof(Hdr1));
+        //u32ChkSum = RTCrc32C(&Hdr1, sizeof(Hdr1));
 
         if (   Hdr1.u32Signature == VHDX_HEADER_SIGNATURE
             /*&& u32ChkSum == u32ChkSumSaved*/)
@@ -1071,7 +1071,7 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
         /* Validate checksum. */
         u32ChkSumSaved = Hdr2.u32Checksum;
         Hdr2.u32Checksum = 0;
-        u32ChkSum = RTCrc32C(&Hdr2, sizeof(Hdr2));
+        //u32ChkSum = RTCrc32C(&Hdr2, sizeof(Hdr2));
 
         if (   Hdr2.u32Signature == VHDX_HEADER_SIGNATURE
             /*&& u32ChkSum == u32ChkSumSaved*/)
@@ -1535,7 +1535,7 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
             pRegionTblHdr->u32Checksum = 0;
 
             /* Verify the region table integrity. */
-            u32ChkSum = RTCrc32C(pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX);
+            //u32ChkSum = RTCrc32C(pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX);
 
             if (RegionTblHdr.u32Signature != VHDX_REGION_TBL_HDR_SIGNATURE)
                 rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
