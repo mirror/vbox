@@ -635,7 +635,8 @@ int handleStorageAttach(HandlerArg *a)
                 {
                     Bstr bstrMedium(pszMedium);
                     rc = findOrOpenMedium(a, pszMedium, devTypeRequested,
-                                          pMedium2Mount, fSetNewUuid, NULL);
+                                          AccessMode_ReadWrite, pMedium2Mount,
+                                          fSetNewUuid, NULL);
                     if (FAILED(rc) || !pMedium2Mount)
                         throw Utf8StrFmt("Invalid UUID or filename \"%s\"", pszMedium);
                 }

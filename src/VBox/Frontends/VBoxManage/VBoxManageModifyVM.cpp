@@ -722,8 +722,8 @@ int handleModifyVM(HandlerArg *a)
                 {
                     ComPtr<IMedium> hardDisk;
                     rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_HardDisk,
-                                          hardDisk, false /* fForceNewUuidOnOpen */,
-                                          NULL);
+                                          AccessMode_ReadWrite, hardDisk,
+                                          false /* fForceNewUuidOnOpen */, NULL);
                     if (FAILED(rc))
                         break;
                     if (hardDisk)
@@ -818,8 +818,8 @@ int handleModifyVM(HandlerArg *a)
                 {
                     ComPtr<IMedium> hardDisk;
                     rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_HardDisk,
-                                          hardDisk, false /* fForceNewUuidOnOpen */,
-                                          NULL);
+                                          AccessMode_ReadWrite, hardDisk,
+                                          false /* fForceNewUuidOnOpen */, NULL);
                     if (FAILED(rc))
                         break;
                     if (hardDisk)
@@ -946,8 +946,8 @@ int handleModifyVM(HandlerArg *a)
                 else
                 {
                     rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_DVD,
-                                          dvdMedium, false /* fForceNewUuidOnOpen */,
-                                          NULL);
+                                          AccessMode_ReadOnly, dvdMedium,
+                                          false /* fForceNewUuidOnOpen */, NULL);
                     if (FAILED(rc))
                         break;
                     if (!dvdMedium)
@@ -1010,8 +1010,8 @@ int handleModifyVM(HandlerArg *a)
                     else
                     {
                         rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_Floppy,
-                                              floppyMedium, false /* fForceNewUuidOnOpen */,
-                                              NULL);
+                                              AccessMode_ReadWrite, floppyMedium,
+                                              false /* fForceNewUuidOnOpen */, NULL);
                         if (FAILED(rc))
                             break;
                         if (!floppyMedium)
