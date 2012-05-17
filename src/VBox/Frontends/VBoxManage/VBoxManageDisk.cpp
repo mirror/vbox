@@ -185,8 +185,9 @@ HRESULT findMedium(HandlerArg *a, const char *pszFilenameOrUuid,
 }
 
 HRESULT findOrOpenMedium(HandlerArg *a, const char *pszFilenameOrUuid,
-                         DeviceType_T enmDevType, ComPtr<IMedium> &pMedium,
-                         bool fForceNewUuidOnOpen, bool *pfWasUnknown)
+                         DeviceType_T enmDevType, AccessMode_T enmAccessMode,
+                         ComPtr<IMedium> &pMedium, bool fForceNewUuidOnOpen,
+                         bool *pfWasUnknown)
 {
     HRESULT rc;
     bool fWasUnknown = false;
@@ -207,14 +208,14 @@ HRESULT findOrOpenMedium(HandlerArg *a, const char *pszFilenameOrUuid,
 
     rc = a->virtualBox->OpenMedium(Bstr(pszFilenameOrUuid).raw(), 
                                    enmDevType,
-		                   AccessMode_ReadWrite,
+                                   enmAccessMode,
                                    /*fForceNewUidOnOpen */ false,
                                    pMedium.asOutParam());
     /* If the medium is unknown try to open it. */
     if (!pMedium)
     {
         CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(pszFilenameOrUuid).raw(),
-                                              enmDevType, AccessMode_ReadWrite,
+                                              enmDevType, enmAccessMode,
                                               fForceNewUuidOnOpen,
                                               pMedium.asOutParam()));
         if (SUCCEEDED(rc))
@@ -371,7 +372,7 @@ int handleCreateHardDisk(HandlerArg *a)
             else
                 format = pszExt;
         }
-        rc = findOrOpenMedium(a, diffparent, DeviceType_HardDisk,
+        rc = findOrOpenMedium(a, diffparent, DeviceType_HardDisk, AccessMode_ReadWrite,
                               parentHardDisk, false /* fForceNewUuidOnOpen */,
                               &fUnknownParent);
         if (FAILED(rc))
@@ -536,7 +537,7 @@ int handleModifyHardDisk(HandlerArg *a)
     if (fModifyDiskType || fModifyAutoReset)
         rc = findMedium(a, FilenameOrUuid, DeviceType_HardDisk, false /* fSilent */, hardDisk);
     else
-        rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk,
+        rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk, AccessMode_ReadWrite,
                               hardDisk, false /* fForceNewUuidOnOpen */, &unknown);
     if (FAILED(rc))
         return 1;
@@ -563,7 +564,7 @@ int handleModifyHardDisk(HandlerArg *a)
     if (fModifyCompact)
     {
         ComPtr<IProgress> progress;
-        CHECK_ERROR(hardDisk, Compact(progress.asOutParam()));
+        CHECK_ERROR(hardDisk, Compact(FALSE, progress.asOutParam()));
         if (SUCCEEDED(rc))
             rc = showProgress(progress);
         if (FAILED(rc))
@@ -693,8 +694,8 @@ int handleCloneHardDisk(HandlerArg *a)
     bool fSrcUnknown = false;
     bool fDstUnknown = false;
 
-    rc = findOrOpenMedium(a, pszSrc, DeviceType_HardDisk, srcDisk,
-                          false /* fForceNewUuidOnOpen */, &fSrcUnknown);
+    rc = findOrOpenMedium(a, pszSrc, DeviceType_HardDisk, AccessMode_ReadOnly,
+                          srcDisk, false /* fForceNewUuidOnOpen */, &fSrcUnknown);
     if (FAILED(rc))
         return 1;
 
@@ -703,8 +704,8 @@ int handleCloneHardDisk(HandlerArg *a)
         /* open/create destination hard disk */
         if (fExisting)
         {
-            rc = findOrOpenMedium(a, pszDst, DeviceType_HardDisk, dstDisk,
-                                  false /* fForceNewUuidOnOpen */, &fDstUnknown);
+            rc = findOrOpenMedium(a, pszDst, DeviceType_HardDisk, AccessMode_ReadWrite,
+                                  dstDisk, false /* fForceNewUuidOnOpen */, &fDstUnknown);
             if (FAILED(rc))
                 break;
 
@@ -985,8 +986,8 @@ int handleShowHardDiskInfo(HandlerArg *a)
     ComPtr<IMedium> hardDisk;
     bool unknown = false;
 
-    rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk, hardDisk,
-                          false /* fForceNewUuidOnOpen */, &unknown);
+    rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk, AccessMode_ReadOnly,
+                          hardDisk, false /* fForceNewUuidOnOpen */, &unknown);
     if (FAILED(rc))
         return 1;
 
