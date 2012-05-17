@@ -564,7 +564,7 @@ int handleModifyHardDisk(HandlerArg *a)
     if (fModifyCompact)
     {
         ComPtr<IProgress> progress;
-        CHECK_ERROR(hardDisk, Compact(FALSE, progress.asOutParam()));
+        CHECK_ERROR(hardDisk, Compact(progress.asOutParam()));
         if (SUCCEEDED(rc))
             rc = showProgress(progress);
         if (FAILED(rc))
