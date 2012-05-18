@@ -27,6 +27,9 @@
 #ifdef VBOX_WITH_USB_VIDEO
 # include "UsbWebcamInterface.h"
 #endif
+#ifdef VBOX_WITH_USB_CARDREADER
+# include "UsbCardReader.h"
+#endif
 #include "ConsoleImpl.h"
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 # include "PciRawDevImpl.h"
@@ -71,6 +74,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
 
 #ifdef VBOX_WITH_USB_VIDEO
     rc = pCallbacks->pfnRegister(pCallbacks, &UsbWebcamInterface::DrvReg);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+
+#ifdef VBOX_WITH_USB_CARDREADER
+    rc = pCallbacks->pfnRegister(pCallbacks, &UsbCardReader::DrvReg);
     if (RT_FAILURE(rc))
         return rc;
 #endif

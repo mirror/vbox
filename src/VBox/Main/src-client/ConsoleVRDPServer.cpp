@@ -25,6 +25,9 @@
 # include "ExtPackManagerImpl.h"
 #endif
 #include "VMMDev.h"
+#ifdef VBOX_WITH_USB_CARDREADER
+# include "UsbCardReader.h"
+#endif
 
 #include "Global.h"
 #include "AutoCaller.h"
@@ -1371,6 +1374,8 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     memset(&m_interfaceImage, 0, sizeof (m_interfaceImage));
     memset(&m_interfaceCallbacksImage, 0, sizeof (m_interfaceCallbacksImage));
     RT_ZERO(m_interfaceMousePtr);
+    RT_ZERO(m_interfaceSCard);
+    RT_ZERO(m_interfaceCallbacksSCard);
 }
 
 ConsoleVRDPServer::~ConsoleVRDPServer()
@@ -1598,6 +1603,29 @@ int ConsoleVRDPServer::Launch(void)
                     else
                     {
                         RT_ZERO(m_interfaceMousePtr);
+                    }
+
+                    /* Smartcard interface. */
+                    m_interfaceSCard.header.u64Version = 1;
+                    m_interfaceSCard.header.u64Size = sizeof(m_interfaceSCard);
+
+                    m_interfaceCallbacksSCard.header.u64Version = 1;
+                    m_interfaceCallbacksSCard.header.u64Size = sizeof(m_interfaceCallbacksSCard);
+                    m_interfaceCallbacksSCard.VRDESCardCbNotify = VRDESCardCbNotify;
+                    m_interfaceCallbacksSCard.VRDESCardCbResponse = VRDESCardCbResponse;
+
+                    vrc = mpEntryPoints->VRDEGetInterface(mhServer,
+                                                          VRDE_SCARD_INTERFACE_NAME,
+                                                          &m_interfaceSCard.header,
+                                                          &m_interfaceCallbacksSCard.header,
+                                                          this);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        LogRel(("VRDE: [%s]\n", VRDE_SCARD_INTERFACE_NAME));
+                    }
+                    else
+                    {
+                        RT_ZERO(m_interfaceSCard);
                     }
 
                     /* Since these interfaces are optional, it is always a success here. */
@@ -1970,6 +1998,62 @@ void ConsoleVRDPServer::remote3DRedirect(void)
     }
 
     return VINF_SUCCESS;
+}
+
+/* static */ DECLCALLBACK(int) ConsoleVRDPServer::VRDESCardCbNotify(void *pvContext,
+                                                                    uint32_t u32Id,
+                                                                    void *pvData,
+                                                                    uint32_t cbData)
+{
+#ifdef VBOX_WITH_USB_CARDREADER
+    ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvContext);
+    UsbCardReader *pReader = pThis->mConsole->getUsbCardReader();
+    return pReader->VRDENotify(u32Id, pvData, cbData);
+#else
+    NOREF(pvContext);
+    NOREF(u32Id);
+    NOREF(pvData);
+    NOREF(cbData);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+/* static */ DECLCALLBACK(int) ConsoleVRDPServer::VRDESCardCbResponse(void *pvContext,
+                                                                      int rcRequest,
+                                                                      void *pvUser,
+                                                                      uint32_t u32Function,
+                                                                      void *pvData,
+                                                                      uint32_t cbData)
+{
+#ifdef VBOX_WITH_USB_CARDREADER
+    ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvContext);
+    UsbCardReader *pReader = pThis->mConsole->getUsbCardReader();
+    return pReader->VRDEResponse(rcRequest, pvUser, u32Function, pvData, cbData);
+#else
+    NOREF(pvContext);
+    NOREF(rcRequest);
+    NOREF(pvUser);
+    NOREF(u32Function);
+    NOREF(pvData);
+    NOREF(cbData);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+int ConsoleVRDPServer::SCardRequest(void *pvUser, uint32_t u32Function, const void *pvData, uint32_t cbData)
+{
+    int rc = VINF_SUCCESS;
+
+    if (mhServer && mpEntryPoints && m_interfaceSCard.VRDESCardRequest)
+    {
+        rc = m_interfaceSCard.VRDESCardRequest(mhServer, pvUser, u32Function, pvData, cbData);
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
 }
 
 void ConsoleVRDPServer::EnableConnections(void)
