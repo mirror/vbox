@@ -1124,8 +1124,8 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
 
     LogFlowFunc(("pImage=%#p\n", pImage));
 
-    /** Calculate required values first. */
-    uChunkRatio = (RT_BIT_32(23) * pImage->cbLogicalSector) / pImage->cbBlock;
+    /* Calculate required values first. */
+    uChunkRatio = (RT_BIT_64(23) * pImage->cbLogicalSector) / pImage->cbBlock;
     cDataBlocks = pImage->cbSize / pImage->cbBlock;
     if (pImage->cbSize % pImage->cbBlock)
         cDataBlocks++;
@@ -1573,7 +1573,8 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
                         if (pRegTblEntry->u32Flags & VHDX_REGION_TBL_ENTRY_FLAGS_IS_REQUIRED)
                         {
                             fBatRegPresent = true;
-                            RegTblEntryBat = *pRegTblEntry;
+                            RegTblEntryBat.u32Length = pRegTblEntry->u32Length;
+                            RegTblEntryBat.u64FileOffset = pRegTblEntry->u64FileOffset;
                         }
                         else
                             rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
@@ -1851,7 +1852,7 @@ static int vhdxRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
     PVHDXIMAGE pImage = (PVHDXIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
