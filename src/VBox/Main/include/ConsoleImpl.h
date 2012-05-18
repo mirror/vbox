@@ -36,6 +36,9 @@ class AudioSniffer;
 #ifdef VBOX_WITH_USB_VIDEO
 class UsbWebcamInterface;
 #endif
+#ifdef VBOX_WITH_USB_CARDREADER
+class UsbCardReader;
+#endif
 class ConsoleVRDPServer;
 class VMMDev;
 class Progress;
@@ -219,6 +222,9 @@ public:
     ExtPackManager *getExtPackManager();
 #endif
     EventSource *getEventSource() { return mEventSource; }
+#ifdef VBOX_WITH_USB_CARDREADER
+    UsbCardReader *getUsbCardReader() { return mUsbCardReader; }
+#endif
 
     int VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     void VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus);
@@ -758,6 +764,9 @@ private:
     AudioSniffer * const mAudioSniffer;
 #ifdef VBOX_WITH_USB_VIDEO
     UsbWebcamInterface * const mUsbWebcamInterface;
+#endif
+#ifdef VBOX_WITH_USB_CARDREADER
+    UsbCardReader * const mUsbCardReader;
 #endif
     BusAssignmentManager* mBusMgr;
 

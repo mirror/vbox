@@ -2342,6 +2342,10 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 # ifdef VBOX_WITH_USB_CARDREADER_TEST
                 InsertConfigString(pLunL0,    "Driver", "DrvDirectCardReader");
                 InsertConfigNode(pLunL0,    "Config", &pCfg);
+# else
+                InsertConfigString(pLunL0,    "Driver", "UsbCardReader");
+                InsertConfigNode(pLunL0,    "Config", &pCfg);
+                InsertConfigInteger(pCfg,   "Object", (uintptr_t)mUsbCardReader);
 # endif
 #endif
 # if 0  /* Virtual MSD*/
