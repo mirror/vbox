@@ -67,8 +67,20 @@
 # undef INT64_MIN
 # define intptr_t dtrace_intptr_t
 # include "dtrace.h"
+# define FIX_UEK_RC(a_rc) (-(a_rc))
 #else
 # include <sys/dtrace.h>
+#endif
+
+
+/** 
+ * The UEK DTrace port is trying to be smart and seems to have turned all 
+ * errno return codes negative.  While this conforms to the linux kernel way of
+ * doing things, it breaks with the way the interfaces work on Solaris and 
+ * Mac OS X.
+ */
+#ifndef FIX_UEK_RC
+# define FIX_UEK_RC(a_rc) (a_rc) 
 #endif
 
 
@@ -924,7 +936,7 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, PS
     else
     {
         pCore->TracerData.DTrace.idProvider = 0;
-        rc = RTErrConvertFromErrno(rc);
+        rc = RTErrConvertFromErrno(FIX_UEK_RC(rc));
     }
 
     LOG_DTRACE(("%s: returns %Rrc\n", __FUNCTION__, rc));
@@ -950,7 +962,7 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis, 
     }
     else
     {
-        AssertMsg(rc == EBUSY, ("%d\n", rc));
+        AssertMsg(FIX_UEK_RC(rc) == EBUSY, ("%d\n", rc));
         pCore->TracerData.DTrace.fZombie = true;
         rc = VERR_TRY_AGAIN;
     }
@@ -978,7 +990,7 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderDeregisterZombie(PCSUPDRVTRACERREG p
     }
     else
     {
-        AssertMsg(rc == EBUSY, ("%d\n", rc));
+        AssertMsg(FIX_UEK_RC(rc) == EBUSY, ("%d\n", rc));
         rc = VERR_TRY_AGAIN;
     }
 
