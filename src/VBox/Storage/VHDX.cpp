@@ -23,6 +23,7 @@
 #include <VBox/err.h>
 
 #include <VBox/log.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/path.h>
