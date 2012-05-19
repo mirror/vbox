@@ -45,6 +45,28 @@
 
 #ifdef RT_OS_DARWIN
 # include VBOX_PATH_MACOSX_DTRACE_H
+#elif defined(RT_OS_LINUX)
+/* DTrace experiments with the Unbreakable Enterprise Kernel (UEK) 
+   (Oracle Linux).
+   1. The dtrace.h here is from the dtrace module source, not 
+      /usr/include/sys/dtrace.h nor /usr/include/dtrace.h.
+   2. To generate the missing entries for the dtrace module in Module.symvers 
+      of UEK:
+      nm /lib/modules/....../kernel/drivers/dtrace/dtrace.ko  \
+      | grep _crc_ \
+      | sed -e 's/^......../0x/' -e 's/ A __crc_/\t/' \
+            -e 's/$/\tdrivers\/dtrace\/dtrace\tEXPORT_SYMBOL/' \
+      >> Module.symvers
+   3. No tracepoints in vboxdrv, vboxnet* or vboxpci yet.  This requires yasm 
+      and VBoxTpG and build time. */ 
+# undef UINT8_MAX
+# undef UINT16_MAX
+# undef UINT32_MAX
+# undef UINT64_MAX
+# undef INT64_MAX
+# undef INT64_MIN
+# define intptr_t dtrace_intptr_t
+# include "dtrace.h"
 #else
 # include <sys/dtrace.h>
 #endif
@@ -284,7 +306,8 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
      * this provider.
      */
     uint16_t const idxProv = (uint16_t)((PVTGDESCPROVIDER)((uintptr_t)pProv->pHdr + pProv->pHdr->offProviders) - pProv->pDesc);
-    for (uint32_t idxProbeLoc = 0; idxProbeLoc < cProbeLocs; idxProbeLoc++)
+    uint32_t idxProbeLoc;
+    for (idxProbeLoc = 0; idxProbeLoc < cProbeLocs; idxProbeLoc++)
     {
         /* Skip probe location belonging to other providers or once that
            we've already reported. */
@@ -595,7 +618,8 @@ static uint64_t vboxDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pv
             }
             else
             {
-                for (int i = 5; i < iArg; i++)
+                int i;
+                for (i = 5; i < iArg; i++)
                     if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType))
                         offArg++;
                 if (offArg + iArg < (int)RT_ELEMENTS(pCtx->u.X86.aArgs))

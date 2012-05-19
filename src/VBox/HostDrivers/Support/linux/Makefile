@@ -121,6 +121,7 @@ OBJS   = \
 	common/misc/handletablectx.o \
 	common/misc/thread.o \
 	common/string/RTStrCopy.o \
+	common/string/RTStrCopyEx.o \
 	common/string/RTStrCopyP.o \
 	common/string/RTStrNCmp.o \
 	common/string/RTStrNLen.o \
@@ -157,6 +158,9 @@ OBJS += math/gcc/divdi3.o \
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 OBJS += common/alloc/heapsimple.o
+endif
+ifdef VBOX_WITH_NATIVE_DTRACE
+OBJS += SUPDrvDTrace.o
 endif
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -249,6 +253,9 @@ ifdef VBOX_REDHAT_KABI
 endif
 ifndef CONFIG_VBOXDRV_FIXEDMAJOR
  KFLAGS  += -DCONFIG_VBOXDRV_AS_MISC
+endif
+ifdef VBOX_WITH_NATIVE_DTRACE
+ KFLAGS  += -DVBOX_WITH_NATIVE_DTRACE
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS  += -DRT_ARCH_AMD64
