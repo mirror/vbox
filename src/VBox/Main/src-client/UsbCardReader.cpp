@@ -1367,7 +1367,7 @@ int UsbCardReader::Connect(struct USBCARDREADER *pDrv,
         rc = mpDrv->pICardReaderUp->pfnCardReaderUpConnect(mpDrv->pICardReaderUp,
                                                            pvUser,
                                                            VRDE_SCARD_E_NO_SMARTCARD,
-                                                           SCARD_PROTOCOL_T0);
+                                                           VRDE_SCARD_PROTOCOL_T0);
     }
     else
     {
@@ -1377,7 +1377,7 @@ int UsbCardReader::Connect(struct USBCARDREADER *pDrv,
             rc = mpDrv->pICardReaderUp->pfnCardReaderUpConnect(mpDrv->pICardReaderUp,
                                                                pvUser,
                                                                VRDE_SCARD_E_NO_MEMORY,
-                                                               SCARD_PROTOCOL_T0);
+                                                               VRDE_SCARD_PROTOCOL_T0);
         }
         else
         {
