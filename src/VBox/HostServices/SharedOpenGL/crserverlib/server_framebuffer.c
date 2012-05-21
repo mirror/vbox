@@ -63,15 +63,68 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture3DEXT(GLenum tar
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, GLuint framebuffer)
 {
+#ifdef DEBUG_misha
+    GLint rfb = 0, dfb = 0;
+#endif
 	crStateBindFramebufferEXT(target, framebuffer);
+
+    if (0==framebuffer)
+    {
+        CRContext *ctx = crStateGetCurrent();
+        if (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT)
+            cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
+    }
 
     if (0==framebuffer && crServerIsRedirectedToFBO())
     {
         cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, cr_server.curClient->currentMural->idFBO);
+#ifdef DEBUG_misha
+        Assert(0);
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &rfb);
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &dfb);
+        if (GL_FRAMEBUFFER_EXT == target)
+        {
+            Assert(rfb == cr_server.curClient->currentMural->idFBO);
+            Assert(dfb == cr_server.curClient->currentMural->idFBO);
+        }
+        else if (GL_READ_FRAMEBUFFER_EXT == target)
+        {
+            Assert(rfb == cr_server.curClient->currentMural->idFBO);
+        }
+        else if (GL_DRAW_FRAMEBUFFER_EXT == target)
+        {
+            Assert(dfb == cr_server.curClient->currentMural->idFBO);
+        }
+        else
+        {
+            Assert(0);
+        }
+#endif
     }
     else
     {
         cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, crStateGetFramebufferHWID(framebuffer));
+#ifdef DEBUG_misha
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &rfb);
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &dfb);
+        if (GL_FRAMEBUFFER_EXT == target)
+        {
+            Assert(rfb == crStateGetFramebufferHWID(framebuffer));
+            Assert(dfb == crStateGetFramebufferHWID(framebuffer));
+        }
+        else if (GL_READ_FRAMEBUFFER_EXT == target)
+        {
+            Assert(rfb == crStateGetFramebufferHWID(framebuffer));
+        }
+        else if (GL_DRAW_FRAMEBUFFER_EXT == target)
+        {
+            Assert(dfb == crStateGetFramebufferHWID(framebuffer));
+        }
+        else
+        {
+            Assert(0);
+        }
+#endif
     }
 }
 

@@ -388,6 +388,10 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 
     crStateSwichPostprocess(oldCtx, cr_server.bUseMultipleContexts, mural->bUseFBO && crServerSupportRedirMuralFBO() ? mural->idFBO : 0);
 
+    if (!ctx->framebufferobject.drawFB
+            && (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT))
+        cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
+
     if (!mural->bUseFBO)
     {
         ctx->buffer.width = mural->width;

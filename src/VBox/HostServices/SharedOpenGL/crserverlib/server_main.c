@@ -1034,6 +1034,9 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         rc = SSMR3GetMem(pSSM, &muralInfo, sizeof(muralInfo));
         AssertRCReturn(rc, rc);
 
+        if (version <= SHCROGL_SSM_VERSION_BEFORE_FRONT_DRAW_TRACKING)
+            muralInfo.bFbDraw = GL_TRUE;
+
         if (muralInfo.pVisibleRects)
         {
             muralInfo.pVisibleRects = crAlloc(4*sizeof(GLint)*muralInfo.cVisibleRects);
