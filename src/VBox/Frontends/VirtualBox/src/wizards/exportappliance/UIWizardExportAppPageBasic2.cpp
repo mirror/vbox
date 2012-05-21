@@ -112,15 +112,14 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
 void UIWizardExportAppPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance Export Settings"));
+    setTitle(UIWizardExportApp::tr("Appliance settings"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardExportApp::tr("Please specify the target for the OVF export. "
-                                            "You can choose between a local file system export, "
-                                            "uploading the OVF to the Sun Cloud service "
-                                            "or an S3 storage server."));
-    m_pTypeCnt->setTitle(UIWizardExportApp::tr("&Destination"));
-    m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&Local Filesystem "));
+    m_pLabel->setText(UIWizardExportApp::tr("Please choose where to create the virtual appliance. "
+                                            "You can create it on your own computer, "
+                                            "on the Sun Cloud service or on an S3 storage server."));
+    m_pTypeCnt->setTitle(UIWizardExportApp::tr("Create on"));
+    m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&This computer"));
     m_pTypeSunCloud->setText(UIWizardExportApp::tr("Sun &Cloud"));
     m_pTypeSimpleStorageSystem->setText(UIWizardExportApp::tr("&Simple Storage System (S3)"));
 }

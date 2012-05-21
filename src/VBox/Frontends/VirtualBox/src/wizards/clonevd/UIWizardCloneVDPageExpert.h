@@ -24,15 +24,13 @@
 #include "UIWizardCloneVDPageBasic2.h"
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVDPageBasic4.h"
-#include "UIWizardCloneVDPageBasic5.h"
 
-/* Expert page of the Clone Virtual Disk wizard: */
+/* Expert page of the Clone Virtual Hard Drive wizard: */
 class UIWizardCloneVDPageExpert : public UIWizardPage,
                                   public UIWizardCloneVDPage1,
                                   public UIWizardCloneVDPage2,
                                   public UIWizardCloneVDPage3,
-                                  public UIWizardCloneVDPage4,
-                                  public UIWizardCloneVDPage5
+                                  public UIWizardCloneVDPage4
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium sourceVirtualDisk READ sourceVirtualDisk WRITE setSourceVirtualDisk);

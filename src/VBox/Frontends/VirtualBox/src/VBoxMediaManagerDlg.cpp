@@ -624,7 +624,7 @@ void VBoxMediaManagerDlg::retranslateUi()
     mReleaseAction->setShortcut (QKeySequence ("Ctrl+L"));
     mRefreshAction->setShortcut (QKeySequence (QKeySequence::Refresh));
 
-    mNewAction->setStatusTip (tr ("Create a new virtual hard disk"));
+    mNewAction->setStatusTip (tr ("Create a new virtual hard drive"));
     mAddAction->setStatusTip (tr ("Add an existing medium"));
     mCopyAction->setStatusTip (tr ("Copy an existing medium"));
     mModifyAction->setStatusTip (tr ("Modify the attributes of the selected medium"));
@@ -1006,25 +1006,25 @@ void VBoxMediaManagerDlg::doAddMedium()
 
     switch (type)
     {
-        case VBoxDefs::MediumType_DVD:
-        {
-            filterList = vboxGlobal().DVDBackends();
-            title = tr ("Select a CD/DVD-ROM disk image file");
-            allType = tr ("CD/DVD-ROM disk");
-            break;
-        }
         case VBoxDefs::MediumType_HardDisk:
         {
             filterList = vboxGlobal().HDDBackends();
-            title = tr ("Select a hard disk image file");
-            allType = tr ("hard disk");
+            title = VBoxGlobal::tr("Please choose a virtual hard drive file");
+            allType = VBoxGlobal::tr("All virtual hard drive files (%1)");
+            break;
+        }
+        case VBoxDefs::MediumType_DVD:
+        {
+            filterList = vboxGlobal().DVDBackends();
+            title = VBoxGlobal::tr("Please choose a virtual optical disk file");
+            allType = VBoxGlobal::tr("All virtual optical disk files (%1)");
             break;
         }
         case VBoxDefs::MediumType_Floppy:
         {
             filterList = vboxGlobal().FloppyBackends();
-            title = tr ("Select a floppy disk image file");
-            allType = tr ("floppy disk");
+            title = VBoxGlobal::tr("Please choose a virtual floppy disk file");
+            allType = VBoxGlobal::tr("All virtual floppy disk files (%1)");
             break;
         }
         default:
@@ -1041,7 +1041,7 @@ void VBoxMediaManagerDlg::doAddMedium()
         allPrefix << item.second;
     }
     if (!allPrefix.isEmpty())
-        backends.insert (0, tr ("All %1 images (%2)").arg (allType). arg (allPrefix.join (" ").trimmed()));
+        backends.insert(0, allType.arg(allPrefix.join(" ").trimmed()));
     backends << tr ("All files (*)");
     filter = backends.join (";;").trimmed();
 

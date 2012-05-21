@@ -60,7 +60,6 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel1 = new QIRichTextLabel(this);
-        m_pLabel2 = new QIRichTextLabel(this);
         m_pMemoryCnt = new QGroupBox(this);
         {
             m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -101,7 +100,6 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
             }
         }
         pMainLayout->addWidget(m_pLabel1);
-        pMainLayout->addWidget(m_pLabel2);
         pMainLayout->addWidget(m_pMemoryCnt);
         pMainLayout->addStretch();
     }
@@ -135,14 +133,16 @@ void UIWizardNewVMPageBasic3::sltRamEditorTextChanged(const QString &strText)
 void UIWizardNewVMPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVM::tr("Memory"));
+    setTitle(UIWizardNewVM::tr("Memory size"));
 
     /* Translate widgets: */
-    m_pLabel1->setText(UIWizardNewVM::tr("<p>Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.</p>"));
     QString strRecommendedRAM = field("type").value<CGuestOSType>().isNull() ?
                                 QString() : QString::number(field("type").value<CGuestOSType>().GetRecommendedRAM());
-    m_pLabel2->setText(UIWizardNewVM::tr("The recommended base memory size is <b>%1</b> MB.").arg(strRecommendedRAM));
-    m_pMemoryCnt->setTitle(UIWizardNewVM::tr("Base &Memory Size"));
+    m_pLabel1->setText(UIWizardNewVM::tr("<p>Select the amount of memory (RAM) in megabytes "
+                                         "to be allocated to the virtual machine.</p>"
+                                         "<p>The recommended memory size is <b>%1</b> MB.</p>")
+                                         .arg(strRecommendedRAM));
+    m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
     m_pRamUnits->setText(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
     m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
     m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));

@@ -26,7 +26,6 @@
 #include "UIWizardCloneVDPageBasic2.h"
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVDPageBasic4.h"
-#include "UIWizardCloneVDPageBasic5.h"
 #include "UIWizardCloneVDPageExpert.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
@@ -101,7 +100,7 @@ void UIWizardCloneVD::retranslateUi()
     UIWizard::retranslateUi();
 
     /* Translate wizard: */
-    setWindowTitle(tr("Copy Virtual Disk"));
+    setWindowTitle(tr("Copy Virtual Hard Drive"));
     setButtonText(QWizard::FinishButton, tr("Copy"));
 }
 
@@ -116,7 +115,6 @@ void UIWizardCloneVD::prepare()
             setPage(Page2, new UIWizardCloneVDPageBasic2);
             setPage(Page3, new UIWizardCloneVDPageBasic3);
             setPage(Page4, new UIWizardCloneVDPageBasic4);
-            setPage(Page5, new UIWizardCloneVDPageBasic5);
             break;
         }
         case UIWizardMode_Expert:

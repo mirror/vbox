@@ -69,21 +69,6 @@ UIWizard* UIWizardPage::wizard() const
     return qobject_cast<UIWizard*>(QWizardPage::wizard());
 }
 
-QString UIWizardPage::standardHelpText() const
-{
-    return tr("Use the <b>%1</b> button to go to the next page of the wizard and the "
-              "<b>%2</b> button to return to the previous page. "
-              "You can also press <b>%3</b> if you want to cancel the execution "
-              "of this wizard.</p>")
-        .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::NextButton).remove(" >"))))
-        .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::BackButton).remove("< "))))
-#ifdef Q_WS_MAC
-        .arg(QKeySequence("ESC").toString()); /* There is no button shown on Mac OS X, so just say the key sequence. */
-#else /* Q_WS_MAC */
-        .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::CancelButton))));
-#endif /* Q_WS_MAC */
-}
-
 void UIWizardPage::startProcessing()
 {
     if (isFinalPage())

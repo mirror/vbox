@@ -136,13 +136,12 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2()
 void UIWizardCloneVDPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Virtual disk file type"));
+    setTitle(UIWizardCloneVD::tr("File type"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("Please choose the type of file that you would like "
-                                          "to use for the new virtual disk. If you do not need "
-                                          "to use it with other virtualization software you can "
-                                          "leave this setting unchanged."));
+    m_pLabel->setText(UIWizardCloneVD::tr("Please choose the type of file that you would like to use "
+                                          "for the new virtual hard drive. If you do not need to use it "
+                                          "with other virtualization software you can leave this setting unchanged."));
     m_pFormatCnt->setTitle(UIWizardCloneVD::tr("File &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)

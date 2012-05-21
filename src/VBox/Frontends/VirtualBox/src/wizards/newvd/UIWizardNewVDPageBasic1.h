@@ -30,7 +30,7 @@ class QGroupBox;
 class QRadioButton;
 class QIRichTextLabel;
 
-/* 1st page of the New Virtual Disk wizard (base part): */
+/* 1st page of the New Virtual Hard Drive wizard (base part): */
 class UIWizardNewVDPage1 : public UIWizardPageBase
 {
 protected:
@@ -54,7 +54,7 @@ protected:
     QGroupBox *m_pFormatCnt;
 };
 
-/* 1st page of the New Virtual Disk wizard (basic extension): */
+/* 1st page of the New Virtual Hard Drive wizard (basic extension): */
 class UIWizardNewVDPageBasic1 : public UIWizardPage, public UIWizardNewVDPage1
 {
     Q_OBJECT;

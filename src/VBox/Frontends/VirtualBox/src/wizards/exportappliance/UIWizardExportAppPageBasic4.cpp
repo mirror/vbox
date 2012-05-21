@@ -81,17 +81,11 @@ UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pVMApplianceLabel = new QILabelSeparator(this);
-        {
-            m_pVMApplianceLabel->hide();
-        }
         m_pApplianceWidget = new UIApplianceExportEditorWidget(this);
         {
             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-            m_pVMApplianceLabel->setBuddy(m_pApplianceWidget);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pVMApplianceLabel);
         pMainLayout->addWidget(m_pApplianceWidget);
     }
 
@@ -104,14 +98,12 @@ UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()
 void UIWizardExportAppPageBasic4::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance Export Settings"));
+    setTitle(UIWizardExportApp::tr("Appliance settings"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardExportApp::tr("Here you can change additional configuration "
-                                            "values of the selected virtual machines. "
-                                            "You can modify most of the properties shown "
-                                            "by double-clicking on the items."));
-    m_pVMApplianceLabel->setText(UIWizardExportApp::tr("&Settings"));
+    m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be added "
+                                            "to the virtual appliance.  You can change it by double "
+                                            "clicking on individual lines."));
 }
 
 void UIWizardExportAppPageBasic4::initializePage()

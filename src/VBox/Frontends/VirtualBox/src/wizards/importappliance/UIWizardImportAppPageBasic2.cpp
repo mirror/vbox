@@ -53,7 +53,7 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
 void UIWizardImportAppPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardImportApp::tr("Appliance Import Settings"));
+    setTitle(UIWizardImportApp::tr("Appliance settings"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "

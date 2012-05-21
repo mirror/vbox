@@ -19,11 +19,9 @@
 
 /* Local includes: */
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
-#include "UIWizardNewVMPageBasic5.h"
 #include "UIWizardNewVMPageExpert.h"
 #include "VBoxDefs.h"
 #include "VBoxGlobal.h"
@@ -68,8 +66,8 @@ bool UIWizardNewVM::createVM()
             return false;
         }
 
-        /* The FirstRun wizard is to be shown only when we don't attach any virtual disk or attach a new (empty) one.
-         * Selecting an existing virtual disk will cancel the FirstRun wizard. */
+        /* The FirstRun wizard is to be shown only when we don't attach any virtual hard drive or attach a new (empty) one.
+         * Selecting an existing virtual hard drive will cancel the FirstRun wizard. */
         if (field("virtualDiskId").toString().isNull() || !field("virtualDisk").value<CMedium>().isNull())
             m_machine.SetExtraData(VBoxDefs::GUI_FirstRun, "yes");
     }
@@ -199,7 +197,7 @@ bool UIWizardNewVM::createVM()
             CMachine machine = session.GetMachine();
 
             QString strId = field("virtualDiskId").toString();
-            /* Boot virtual disk: */
+            /* Boot virtual hard drive: */
             if (!strId.isNull())
             {
                 VBoxMedium vmedium = vboxGlobal().findMedium(strId);
@@ -248,7 +246,7 @@ bool UIWizardNewVM::createVM()
         }
     }
 
-    /* Ensure we don't try to delete a newly created virtual disk on success: */
+    /* Ensure we don't try to delete a newly created virtual hard drive on success: */
     if (!field("virtualDisk").value<CMedium>().isNull())
         field("virtualDisk").value<CMedium>().detach();
 
@@ -261,7 +259,7 @@ void UIWizardNewVM::retranslateUi()
     UIWizard::retranslateUi();
 
     /* Translate wizard: */
-    setWindowTitle(tr("Create New Virtual Machine"));
+    setWindowTitle(tr("Create Virtual Machine"));
     setButtonText(QWizard::FinishButton, tr("Create"));
 }
 
@@ -272,11 +270,9 @@ void UIWizardNewVM::prepare()
     {
         case UIWizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewVMPageBasic1);
-            setPage(Page2, new UIWizardNewVMPageBasic2);
-            setPage(Page3, new UIWizardNewVMPageBasic3);
-            setPage(Page4, new UIWizardNewVMPageBasic4);
-            setPage(Page5, new UIWizardNewVMPageBasic5);
+            setPage(Page1, new UIWizardNewVMPageBasic2);
+            setPage(Page2, new UIWizardNewVMPageBasic3);
+            setPage(Page3, new UIWizardNewVMPageBasic4);
             break;
         }
         case UIWizardMode_Expert:

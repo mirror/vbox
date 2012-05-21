@@ -237,15 +237,15 @@ void UIWizardNewVMPageExpert::retranslateUi()
 {
     /* Translate widgets: */
     m_pNameCnt->setTitle(UIWizardNewVM::tr("&Name"));
-    m_pTypeCnt->setTitle(UIWizardNewVM::tr("OS &Type"));
-    m_pMemoryCnt->setTitle(UIWizardNewVM::tr("Base &Memory Size"));
+    m_pTypeCnt->setTitle(UIWizardNewVM::tr("Operating system"));
+    m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
     m_pRamUnits->setText(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
     m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
     m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
-    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Start-up &Disk"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create new hard disk"));
-    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing hard disk"));
-    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard &drive"));
+    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create new virtual hard drive"));
+    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing virtual hard drive file"));
+    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard drive file..."));
 }
 
 void UIWizardNewVMPageExpert::initializePage()
@@ -295,7 +295,7 @@ bool UIWizardNewVMPageExpert::validatePage()
         {
             if (m_pDiskCnt->isChecked() && m_pDiskCreate->isChecked())
             {
-                /* Show the New Virtual Disk wizard if necessary: */
+                /* Show the New Virtual Hard Drive wizard if necessary: */
                 fResult = getWithNewVirtualDiskWizard();
             }
         }

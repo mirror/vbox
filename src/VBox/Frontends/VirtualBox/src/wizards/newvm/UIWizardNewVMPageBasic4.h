@@ -121,7 +121,6 @@ private:
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel1;
-    QIRichTextLabel *m_pLabel2;
 };
 
 #endif // __UIWizardNewVMPageBasic4_h__

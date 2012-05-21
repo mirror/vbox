@@ -33,7 +33,7 @@ class QLineEdit;
 class QIToolButton;
 class QIRichTextLabel;
 
-/* 4th page of the Clone Virtual Disk wizard (base part): */
+/* 4th page of the Clone Virtual Hard Drive wizard (base part): */
 class UIWizardCloneVDPage4 : public UIWizardPageBase
 {
 protected:
@@ -65,7 +65,7 @@ protected:
     QIToolButton *m_pDestinationDiskOpenButton;
 };
 
-/* 4th page of the Clone Virtual Disk wizard (basic extension): */
+/* 4th page of the Clone Virtual Hard Drive wizard (basic extension): */
 class UIWizardCloneVDPageBasic4 : public UIWizardPage, public UIWizardCloneVDPage4
 {
     Q_OBJECT;

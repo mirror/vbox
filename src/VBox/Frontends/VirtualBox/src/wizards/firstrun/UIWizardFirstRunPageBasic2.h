@@ -86,6 +86,9 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
 
+    /* Validation stuff: */
+    bool validatePage();
+
     /* Stuff for 'source' field: */
     QString source() const;
 

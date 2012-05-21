@@ -29,7 +29,7 @@ class QRadioButton;
 class QCheckBox;
 class QIRichTextLabel;
 
-/* 3rd page of the Clone Virtual Disk wizard (base part): */
+/* 3rd page of the Clone Virtual Hard Drive wizard (base part): */
 class UIWizardCloneVDPage3 : public UIWizardPageBase
 {
 protected:
@@ -49,7 +49,7 @@ protected:
     QCheckBox *m_pSplitBox;
 };
 
-/* 3rd page of the Clone Virtual Disk wizard (basic extension): */
+/* 3rd page of the Clone Virtual Hard Drive wizard (basic extension): */
 class UIWizardCloneVDPageBasic3 : public UIWizardPage, public UIWizardCloneVDPage3
 {
     Q_OBJECT;

@@ -29,7 +29,7 @@ class QRadioButton;
 class QCheckBox;
 class QIRichTextLabel;
 
-/* 2nd page of the New Virtual Disk wizard (base part): */
+/* 2nd page of the New Virtual Hard Drive wizard (base part): */
 class UIWizardNewVDPage2 : public UIWizardPageBase
 {
 protected:
@@ -49,7 +49,7 @@ protected:
     QCheckBox *m_pSplitBox;
 };
 
-/* 2nd page of the New Virtual Disk wizard (basic extension): */
+/* 2nd page of the New Virtual Hard Drive wizard (basic extension): */
 class UIWizardNewVDPageBasic2 : public UIWizardPage, public UIWizardNewVDPage2
 {
     Q_OBJECT;

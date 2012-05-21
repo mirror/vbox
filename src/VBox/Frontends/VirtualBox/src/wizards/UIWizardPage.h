@@ -66,7 +66,6 @@ protected:
 
     /* Helpers: */
     UIWizard* wizard() const;
-    QString standardHelpText() const;
     void startProcessing();
     void endProcessing();
 

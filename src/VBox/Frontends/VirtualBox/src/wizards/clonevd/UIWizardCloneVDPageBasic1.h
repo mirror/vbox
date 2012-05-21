@@ -29,7 +29,7 @@ class VBoxMediaComboBox;
 class QIToolButton;
 class QIRichTextLabel;
 
-/* 1st page of the Clone Virtual Disk wizard (base part): */
+/* 1st page of the Clone Virtual Hard Drive wizard (base part): */
 class UIWizardCloneVDPage1 : public UIWizardPageBase
 {
 protected:
@@ -50,7 +50,7 @@ protected:
     QIToolButton *m_pSourceDiskOpenButton;
 };
 
-/* 1st page of the Clone Virtual Disk wizard (basic extension): */
+/* 1st page of the Clone Virtual Hard Drive wizard (basic extension): */
 class UIWizardCloneVDPageBasic1 : public UIWizardPage, public UIWizardCloneVDPage1
 {
     Q_OBJECT;

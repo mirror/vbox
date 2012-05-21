@@ -30,7 +30,7 @@ class QButtonGroup;
 class QRadioButton;
 class QIRichTextLabel;
 
-/* 2nd page of the Clone Virtual Disk wizard (base part): */
+/* 2nd page of the Clone Virtual Hard Drive wizard (base part): */
 class UIWizardCloneVDPage2 : public UIWizardPageBase
 {
 protected:
@@ -54,7 +54,7 @@ protected:
     QGroupBox *m_pFormatCnt;
 };
 
-/* 2nd page of the Clone Virtual Disk wizard (basic extension): */
+/* 2nd page of the Clone Virtual Hard Drive wizard (basic extension): */
 class UIWizardCloneVDPageBasic2 : public UIWizardPage, public UIWizardCloneVDPage2
 {
     Q_OBJECT;

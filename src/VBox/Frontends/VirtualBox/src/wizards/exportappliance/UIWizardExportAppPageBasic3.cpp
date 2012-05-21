@@ -269,7 +269,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
 void UIWizardExportAppPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance Export Settings"));
+    setTitle(UIWizardExportApp::tr("Appliance settings"));
 
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
@@ -279,22 +279,22 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pHostnameLabel->setText(UIWizardExportApp::tr("&Hostname:"));
     m_pBucketLabel->setText(UIWizardExportApp::tr("&Bucket:"));
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
-    m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Select a file to export into"));
+    m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a virtual appliance file"));
     m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
                                     UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
     m_pOVF09Checkbox->setToolTip(UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility with other virtualization products."));
     m_pOVF09Checkbox->setText(UIWizardExportApp::tr("&Write legacy OVF 0.9"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
+
+    /* Refresh current settings: */
+    refreshCurrentSettings();
 }
 
 void UIWizardExportAppPageBasic3::initializePage()
 {
     /* Translate page: */
     retranslateUi();
-
-    /* Refresh current settings: */
-    refreshCurrentSettings();
 }
 
 bool UIWizardExportAppPageBasic3::isComplete() const
@@ -344,11 +344,12 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
     {
         case Filesystem:
         {
-            m_pLabel->setText(tr("Please choose a filename to export the OVF/OVA to. "
-                                 "If you use an <i>ova</i> file name extension, then all the files "
-                                 "will be combined into one Open Virtualization Format Archive. "
-                                 "If you use an <i>ovf</i> extension, several files "
-                                 "will be written separately. Other extensions are not allowed."));
+            m_pLabel->setText(tr("<p>Please choose a filename to export the OVF/OVA to.</p>"
+                                 "<p>If you use an <i>ova</i> extension, "
+                                 "then all the files will be combined into one Open Virtualization Format Archive.</p>"
+                                 "<p>If you use an <i>ovf</i> extension, "
+                                 "several files will be written separately.</p>"
+                                 "<p>Other extensions are not allowed.</p>"));
             m_pFileSelector->setFocus();
             break;
         }

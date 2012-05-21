@@ -77,7 +77,6 @@ private:
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel1;
-    QIRichTextLabel *m_pLabel2;
 };
 
 #endif // __UIWizardCloneVMPageBasic1_h__

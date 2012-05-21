@@ -23,6 +23,9 @@
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
 
+/* Forward declarations: */
+class QILabelSeparator;
+
 /* Expert page of the Import Appliance wizard: */
 class UIWizardImportAppPageExpert : public UIWizardPage,
                                     public UIWizardImportAppPage1,
@@ -52,6 +55,9 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
+
+    /* Widgets: */
+    QILabelSeparator *m_pVMApplianceLabel;
 };
 
 #endif /* __UIWizardImportAppPageExpert_h__ */

@@ -136,15 +136,12 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
 void UIWizardNewVDPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVD::tr("Welcome to the New Virtual Disk wizard!"));
+    setTitle(UIWizardNewVD::tr("File type"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardNewVD::tr("<p>This wizard will help you to create a new virtual disk for your virtual machine.</p>"));
-    m_pLabel->setText(m_pLabel->text() + QString("<p>%1</p>").arg(standardHelpText()));
-    m_pLabel->setText(m_pLabel->text() + UIWizardNewVD::tr("<p>Please choose the type of file that you would like "
-                                                           "to use for the new virtual disk. If you do not need "
-                                                           "to use it with other virtualization software you can "
-                                                           "leave this setting unchanged.</p>"));
+    m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "
+                                        "for the new virtual hard drive. If you do not need to use it "
+                                        "with other virtualization software you can leave this setting unchanged."));
     m_pFormatCnt->setTitle(UIWizardNewVD::tr("File &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)

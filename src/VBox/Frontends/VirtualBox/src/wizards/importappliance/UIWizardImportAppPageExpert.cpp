@@ -25,6 +25,7 @@
 #include "UIWizardImportAppPageExpert.h"
 #include "UIWizardImportApp.h"
 #include "VBoxGlobal.h"
+#include "QILabelSeparator.h"
 #include "VBoxFilePathSelectorWidget.h"
 #include "UIApplianceImportEditorWidget.h"
 
@@ -34,6 +35,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         pMainLayout->setContentsMargins(8, 6, 8, 6);
+        m_pVMApplianceLabel = new QILabelSeparator(this);
         m_pFileSelector = new VBoxEmptyFileSelector(this);
         {
             m_pFileSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
@@ -44,6 +46,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
             m_pApplianceWidget->setFile(strFileName);
         }
+        pMainLayout->addWidget(m_pVMApplianceLabel);
         pMainLayout->addWidget(m_pFileSelector);
         pMainLayout->addWidget(m_pApplianceWidget);
     }
@@ -72,6 +75,7 @@ void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
 void UIWizardImportAppPageExpert::retranslateUi()
 {
     /* Translate widgets: */
+    m_pVMApplianceLabel->setText(UIWizardImportApp::tr("Appliance to import"));
     m_pFileSelector->setChooseButtonText(UIWizardImportApp::tr("Open appliance..."));
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Select an appliance to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));

@@ -23,7 +23,7 @@
 #include "UIWizard.h"
 #include "COMDefs.h"
 
-/* New Virtual Disk wizard: */
+/* New Virtual Hard Drive wizard: */
 class UIWizardNewVD : public UIWizard
 {
     Q_OBJECT;
@@ -35,8 +35,7 @@ public:
     {
         Page1,
         Page2,
-        Page3,
-        Page4
+        Page3
     };
 
     /* Page IDs: */
@@ -59,7 +58,7 @@ protected:
     bool createVirtualDisk();
 
     /* Who will be able to create virtual-disk: */
-    friend class UIWizardNewVDPageBasic4;
+    friend class UIWizardNewVDPageBasic3;
     friend class UIWizardNewVDPageExpert;
 
 private:
