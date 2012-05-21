@@ -197,4 +197,6 @@ NTSTATUS VBoxWddmVrListRectsGet(PVBOXWDDMVR_LIST pList, UINT cRects, PRECT aRect
 NTSTATUS VBoxWddmVrInit();
 void VBoxWddmVrTerm();
 
+NTSTATUS vboxWddmDrvCfgInit(PUNICODE_STRING pRegStr);
+
 #endif /* #ifndef ___VBoxMPMisc_h__ */
