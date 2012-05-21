@@ -33,15 +33,7 @@ public:
     /* Page IDs: */
     enum
     {
-        Page1,
-        Page2,
-        Page3
-    };
-
-    /* Page IDs: */
-    enum
-    {
-        PageExpert
+        Page
     };
 
     /* Constructor: */
@@ -52,8 +44,8 @@ protected:
     /* Insert medium stuff: */
     bool insertMedium();
 
-    /* Who will be able to export appliance: */
-    friend class UIWizardFirstRunPageBasic2;
+    /* Who will be able to start VM: */
+    friend class UIWizardFirstRunPageBasic;
 
 private:
 

@@ -19,7 +19,7 @@
 
 /* Local includes: */
 #include "UIWizardFirstRun.h"
-#include "UIWizardFirstRunPageBasic2.h"
+#include "UIWizardFirstRunPageBasic.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
@@ -99,7 +99,7 @@ void UIWizardFirstRun::prepare()
     {
         case UIWizardMode_Basic:
         {
-            setPage(Page1, new UIWizardFirstRunPageBasic2(m_machine.GetId(), m_fHardDiskWasSet));
+            setPage(Page, new UIWizardFirstRunPageBasic(m_machine.GetId(), m_fHardDiskWasSet));
             break;
         }
         case UIWizardMode_Expert:

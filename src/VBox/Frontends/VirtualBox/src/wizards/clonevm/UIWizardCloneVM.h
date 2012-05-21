@@ -53,7 +53,6 @@ protected:
     bool cloneVM();
 
     /* Who will be able to clone virtual-machine: */
-    friend class UIWizardCloneVMPageBasic1;
     friend class UIWizardCloneVMPageBasic2;
     friend class UIWizardCloneVMPageBasic3;
     friend class UIWizardCloneVMPageExpert;

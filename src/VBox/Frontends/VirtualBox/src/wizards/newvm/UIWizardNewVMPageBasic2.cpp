@@ -18,277 +18,134 @@
  */
 
 /* Global includes: */
-#include <QDir>
+#include <QIntValidator>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QSpacerItem>
 #include <QGroupBox>
-#include <QLineEdit>
+#include <QLabel>
 
 /* Local includes: */
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
-#include "UIMessageCenter.h"
-#include "VBoxOSTypeSelectorWidget.h"
+#include "COMDefs.h"
+#include "VBoxGlobal.h"
+#include "VBoxGuestRAMSlider.h"
+#include "QILineEdit.h"
 #include "QIRichTextLabel.h"
-
-/* Defines some patterns to guess the right OS type. Should be in sync with
- * VirtualBox-settings-common.xsd in Main. The list is sorted by priority. The
- * first matching string found, will be used. */
-struct osTypePattern
-{
-    QRegExp pattern;
-    const char *pcstId;
-};
-
-static const osTypePattern gs_OSTypePattern[] =
-{
-    /* DOS: */
-    { QRegExp("DOS", Qt::CaseInsensitive), "DOS" },
-
-    /* Windows: */
-    { QRegExp("Wi.*98", Qt::CaseInsensitive), "Windows98" },
-    { QRegExp("Wi.*95", Qt::CaseInsensitive), "Windows95" },
-    { QRegExp("Wi.*Me", Qt::CaseInsensitive), "WindowsMe" },
-    { QRegExp("(Wi.*NT)|(NT4)", Qt::CaseInsensitive), "WindowsNT4" },
-    { QRegExp("((Wi.*XP)|(\\bXP\\b)).*64", Qt::CaseInsensitive), "WindowsXP_64" },
-    { QRegExp("(Wi.*XP)|(\\bXP\\b)", Qt::CaseInsensitive), "WindowsXP" },
-    { QRegExp("((Wi.*2003)|(W2K3)).*64", Qt::CaseInsensitive), "Windows2003_64" },
-    { QRegExp("(Wi.*2003)|(W2K3)", Qt::CaseInsensitive), "Windows2003" },
-    { QRegExp("((Wi.*V)|(Vista)).*64", Qt::CaseInsensitive), "WindowsVista_64" },
-    { QRegExp("(Wi.*V)|(Vista)", Qt::CaseInsensitive), "WindowsVista" },
-    { QRegExp("((Wi.*2008)|(W2K8)).*64", Qt::CaseInsensitive), "Windows2008_64" },
-    { QRegExp("(Wi.*2008)|(W2K8)", Qt::CaseInsensitive), "Windows2008" },
-    { QRegExp("(Wi.*2000)|(W2K)", Qt::CaseInsensitive), "Windows2000" },
-    { QRegExp("(Wi.*7.*64)|(W7.*64)", Qt::CaseInsensitive), "Windows7_64" },
-    { QRegExp("(Wi.*7)|(W7)", Qt::CaseInsensitive), "Windows7" },
-    { QRegExp("(Wi.*8.*64)|(W8.*64)", Qt::CaseInsensitive), "Windows8_64" },
-    { QRegExp("(Wi.*8)|(W8)", Qt::CaseInsensitive), "Windows8" },
-    { QRegExp("Wi.*3", Qt::CaseInsensitive), "Windows31" },
-    { QRegExp("Wi", Qt::CaseInsensitive), "WindowsXP" },
-
-    /* Solaris: */
-    { QRegExp("So.*11", Qt::CaseInsensitive), "Solaris11_64" },
-    { QRegExp("((Op.*So)|(os20[01][0-9])|(So.*10)|(India)|(Neva)).*64", Qt::CaseInsensitive), "OpenSolaris_64" },
-    { QRegExp("(Op.*So)|(os20[01][0-9])|(So.*10)|(India)|(Neva)", Qt::CaseInsensitive), "OpenSolaris" },
-    { QRegExp("So.*64", Qt::CaseInsensitive), "Solaris_64" },
-    { QRegExp("So", Qt::CaseInsensitive), "Solaris" },
-
-    /* OS/2: */
-    { QRegExp("OS[/|!-]{,1}2.*W.*4.?5", Qt::CaseInsensitive), "OS2Warp45" },
-    { QRegExp("OS[/|!-]{,1}2.*W.*4", Qt::CaseInsensitive), "OS2Warp4" },
-    { QRegExp("OS[/|!-]{,1}2.*W", Qt::CaseInsensitive), "OS2Warp3" },
-    { QRegExp("(OS[/|!-]{,1}2.*e)|(eCS.*)", Qt::CaseInsensitive), "OS2eCS" },
-    { QRegExp("OS[/|!-]{,1}2", Qt::CaseInsensitive), "OS2" },
-
-    /* Code names for Linux distributions: */
-    { QRegExp("((edgy)|(feisty)|(gutsy)|(hardy)|(intrepid)|(jaunty)|(karmic)|(lucid)|(maverick)|(natty)|(oneiric)|(precise)).*64", Qt::CaseInsensitive), "Ubuntu_64" },
-    { QRegExp("(edgy)|(feisty)|(gutsy)|(hardy)|(intrepid)|(jaunty)|(karmic)|(lucid)|(maverick)|(natty)|(oneiric)|(precise)", Qt::CaseInsensitive), "Ubuntu" },
-    { QRegExp("((sarge)|(etch)|(lenny)|(squeeze)|(wheezy)|(sid)).*64", Qt::CaseInsensitive), "Debian_64" },
-    { QRegExp("(sarge)|(etch)|(lenny)|(squeeze)|(wheezy)|(sid)", Qt::CaseInsensitive), "Debian" },
-    { QRegExp("((moonshine)|(werewolf)|(sulphur)|(cambridge)|(leonidas)|(constantine)|(goddard)|(laughlin)|(lovelock)|(verne)).*64", Qt::CaseInsensitive), "Fedora_64" },
-    { QRegExp("(moonshine)|(werewolf)|(sulphur)|(cambridge)|(leonidas)|(constantine)|(goddard)|(laughlin)|(lovelock)|(verne)", Qt::CaseInsensitive), "Fedora" },
-
-    /* Regular names of Linux distributions: */
-    { QRegExp("Arc.*64", Qt::CaseInsensitive), "ArchLinux_64" },
-    { QRegExp("Arc", Qt::CaseInsensitive), "ArchLinux" },
-    { QRegExp("Deb.*64", Qt::CaseInsensitive), "Debian_64" },
-    { QRegExp("Deb", Qt::CaseInsensitive), "Debian" },
-    { QRegExp("((SU)|(Nov)|(SLE)).*64", Qt::CaseInsensitive), "OpenSUSE_64" },
-    { QRegExp("(SU)|(Nov)|(SLE)", Qt::CaseInsensitive), "OpenSUSE" },
-    { QRegExp("Fe.*64", Qt::CaseInsensitive), "Fedora_64" },
-    { QRegExp("Fe", Qt::CaseInsensitive), "Fedora" },
-    { QRegExp("((Gen)|(Sab)).*64", Qt::CaseInsensitive), "Gentoo_64" },
-    { QRegExp("(Gen)|(Sab)", Qt::CaseInsensitive), "Gentoo" },
-    { QRegExp("((Man)|(Mag)).*64", Qt::CaseInsensitive), "Mandriva_64" },
-    { QRegExp("((Man)|(Mag))", Qt::CaseInsensitive), "Mandriva" },
-    { QRegExp("((Red)|(rhel)|(cen)).*64", Qt::CaseInsensitive), "RedHat_64" },
-    { QRegExp("(Red)|(rhel)|(cen)", Qt::CaseInsensitive), "RedHat" },
-    { QRegExp("Tur.*64", Qt::CaseInsensitive), "Turbolinux_64" },
-    { QRegExp("Tur", Qt::CaseInsensitive), "Turbolinux" },
-    { QRegExp("Ub.*64", Qt::CaseInsensitive), "Ubuntu_64" },
-    { QRegExp("Ub", Qt::CaseInsensitive), "Ubuntu" },
-    { QRegExp("Xa.*64", Qt::CaseInsensitive), "Xandros_64" },
-    { QRegExp("Xa", Qt::CaseInsensitive), "Xandros" },
-    { QRegExp("((Or)|(oel)).*64", Qt::CaseInsensitive), "Oracle_64" },
-    { QRegExp("(Or)|(oel)", Qt::CaseInsensitive), "Oracle" },
-    { QRegExp("Knoppix", Qt::CaseInsensitive), "Linux26" },
-    { QRegExp("Dsl", Qt::CaseInsensitive), "Linux24" },
-    { QRegExp("((Li)|(lnx)).*2.?2", Qt::CaseInsensitive), "Linux22" },
-    { QRegExp("((Li)|(lnx)).*2.?4.*64", Qt::CaseInsensitive), "Linux24_64" },
-    { QRegExp("((Li)|(lnx)).*2.?4", Qt::CaseInsensitive), "Linux24" },
-    { QRegExp("((((Li)|(lnx)).*2.?6)|(LFS)).*64", Qt::CaseInsensitive), "Linux26_64" },
-    { QRegExp("(((Li)|(lnx)).*2.?6)|(LFS)", Qt::CaseInsensitive), "Linux26" },
-    { QRegExp("((Li)|(lnx)).*64", Qt::CaseInsensitive), "Linux26_64" },
-    { QRegExp("(Li)|(lnx)", Qt::CaseInsensitive), "Linux26" },
-
-    /* Other: */
-    { QRegExp("L4", Qt::CaseInsensitive), "L4" },
-    { QRegExp("((Fr.*B)|(fbsd)).*64", Qt::CaseInsensitive), "FreeBSD_64" },
-    { QRegExp("(Fr.*B)|(fbsd)", Qt::CaseInsensitive), "FreeBSD" },
-    { QRegExp("Op.*B.*64", Qt::CaseInsensitive), "OpenBSD_64" },
-    { QRegExp("Op.*B", Qt::CaseInsensitive), "OpenBSD" },
-    { QRegExp("Ne.*B.*64", Qt::CaseInsensitive), "NetBSD_64" },
-    { QRegExp("Ne.*B", Qt::CaseInsensitive), "NetBSD" },
-    { QRegExp("QN", Qt::CaseInsensitive), "QNX" },
-    { QRegExp("((Mac)|(Tig)|(Leop)|(osx)).*64", Qt::CaseInsensitive), "MacOS_64" },
-    { QRegExp("(Mac)|(Tig)|(Leop)|(osx)", Qt::CaseInsensitive), "MacOS" },
-    { QRegExp("Net", Qt::CaseInsensitive), "Netware" },
-    { QRegExp("Rocki", Qt::CaseInsensitive), "JRockitVE" },
-    { QRegExp("Ot", Qt::CaseInsensitive), "Other" },
-};
 
 UIWizardNewVMPage2::UIWizardNewVMPage2()
 {
 }
 
-void UIWizardNewVMPage2::onNameChanged(const QString &strNewName)
+void UIWizardNewVMPage2::onRamSliderValueChanged(int iValue)
 {
-    /* Search for a matching OS type based on the string the user typed already. */
-    for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
-        if (strNewName.contains(gs_OSTypePattern[i].pattern))
-        {
-            m_pTypeSelector->blockSignals(true);
-            m_pTypeSelector->setType(vboxGlobal().vmGuestOSType(gs_OSTypePattern[i].pcstId));
-            m_pTypeSelector->blockSignals(false);
-            break;
-        }
+    /* Update 'ram' field editor connected to slider: */
+    m_pRamEditor->blockSignals(true);
+    m_pRamEditor->setText(QString::number(iValue));
+    m_pRamEditor->blockSignals(false);
 }
 
-void UIWizardNewVMPage2::onOsTypeChanged()
+void UIWizardNewVMPage2::onRamEditorTextChanged(const QString &strText)
 {
-    /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
-     * So simply disconnect the text-edit signal. */
-    m_pNameEditor->disconnect(thisImp());
-}
-
-bool UIWizardNewVMPage2::machineFolderCreated()
-{
-    return !m_strMachineFolder.isEmpty();
-}
-
-bool UIWizardNewVMPage2::createMachineFolder()
-{
-    /* Cleanup previosly created folder if any: */
-    if (machineFolderCreated() && !cleanupMachineFolder())
-    {
-        msgCenter().warnAboutCannotRemoveMachineFolder(thisImp(), m_strMachineFolder);
-        return false;
-    }
-
-    /* Get VBox: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    /* Get default machines directory: */
-    QString strDefaultMachinesFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
-    /* Compose machine filename: */
-    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameEditor->text(), strDefaultMachinesFolder);
-    /* Compose machine folder/basename: */
-    QFileInfo fileInfo(strMachineFilename);
-    QString strMachineFolder = fileInfo.absolutePath();
-    QString strMachineBaseName = fileInfo.completeBaseName();
-
-    /* Make sure that folder doesn't exists: */
-    if (QDir(strMachineFolder).exists())
-    {
-        msgCenter().warnAboutCannotRewriteMachineFolder(thisImp(), strMachineFolder);
-        return false;
-    }
-
-    /* Try to create new folder (and it's predecessors): */
-    bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
-    if (!fMachineFolderCreated)
-    {
-        msgCenter().warnAboutCannotCreateMachineFolder(thisImp(), strMachineFolder);
-        return false;
-    }
-
-    /* Initialize fields: */
-    m_strMachineFolder = strMachineFolder;
-    m_strMachineBaseName = strMachineBaseName;
-    return true;
-}
-
-bool UIWizardNewVMPage2::cleanupMachineFolder()
-{
-    /* Make sure folder was previosly created: */
-    if (m_strMachineFolder.isEmpty())
-        return false;
-    /* Try to cleanup folder (and it's predecessors): */
-    bool fMachineFolderRemoved = QDir().rmpath(m_strMachineFolder);
-    /* Reset machine folder value: */
-    if (fMachineFolderRemoved)
-        m_strMachineFolder = QString();
-    /* Return cleanup result: */
-    return fMachineFolderRemoved;
+    /* Update 'ram' field slider connected to editor: */
+    m_pRamSlider->blockSignals(true);
+    m_pRamSlider->setValue(strText.toInt());
+    m_pRamSlider->blockSignals(false);
 }
 
 UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
 {
-    /* Create widgets: */
+    /* Create widget: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        m_pLabel = new QIRichTextLabel(this);
-        m_pNameCnt = new QGroupBox(this);
+        m_pLabel1 = new QIRichTextLabel(this);
+        m_pMemoryCnt = new QGroupBox(this);
         {
-            m_pNameCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pNameCntLayout = new QHBoxLayout(m_pNameCnt);
+            m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QGridLayout *pMemoryCntLayout = new QGridLayout(m_pMemoryCnt);
             {
-                m_pNameEditor = new QLineEdit(m_pNameCnt);
-                pNameCntLayout->addWidget(m_pNameEditor);
-            }
-        }
-        m_pTypeCnt = new QGroupBox(this);
-        {
-            m_pTypeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pTypeSelectorLayout = new QHBoxLayout(m_pTypeCnt);
-            {
-                m_pTypeSelector = new VBoxOSTypeSelectorWidget(m_pTypeCnt);
+                m_pRamSlider = new VBoxGuestRAMSlider(m_pMemoryCnt);
                 {
-                    m_pTypeSelector->activateLayout();
+                    m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                    m_pRamSlider->setOrientation(Qt::Horizontal);
+                    m_pRamSlider->setTickPosition(QSlider::TicksBelow);
                 }
-                pTypeSelectorLayout->addWidget(m_pTypeSelector);
+                m_pRamEditor = new QILineEdit(m_pMemoryCnt);
+                {
+                    m_pRamEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                    m_pRamEditor->setFixedWidthByText("88888");
+                    m_pRamEditor->setAlignment(Qt::AlignRight);
+                    m_pRamEditor->setValidator(new QIntValidator(m_pRamSlider->minRAM(), m_pRamSlider->maxRAM(), this));
+                }
+                m_pRamUnits = new QLabel(m_pMemoryCnt);
+                {
+                    m_pRamUnits->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                }
+                m_pRamMin = new QLabel(m_pMemoryCnt);
+                {
+                    m_pRamMin->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                }
+                QSpacerItem *m_pRamSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding);
+                m_pRamMax = new QLabel(m_pMemoryCnt);
+                {
+                    m_pRamMax->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                }
+                pMemoryCntLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
+                pMemoryCntLayout->addWidget(m_pRamEditor, 0, 3);
+                pMemoryCntLayout->addWidget(m_pRamUnits, 0, 4);
+                pMemoryCntLayout->addWidget(m_pRamMin, 1, 0);
+                pMemoryCntLayout->addItem(m_pRamSpacer, 1, 1);
+                pMemoryCntLayout->addWidget(m_pRamMax, 1, 2);
             }
         }
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pNameCnt);
-        pMainLayout->addWidget(m_pTypeCnt);
+        pMainLayout->addWidget(m_pLabel1);
+        pMainLayout->addWidget(m_pMemoryCnt);
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
-    connect(m_pNameEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltNameChanged(const QString&)));
-    connect(m_pTypeSelector, SIGNAL(osTypeChanged()), this, SLOT(sltOsTypeChanged()));
+    connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged(int)));
+    connect(m_pRamEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltRamEditorTextChanged(const QString&)));
 
     /* Register fields: */
-    registerField("name*", m_pNameEditor);
-    registerField("type", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
-    registerField("machineFolder", this, "machineFolder");
-    registerField("machineBaseName", this, "machineBaseName");
+    registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
 }
 
-void UIWizardNewVMPageBasic2::sltNameChanged(const QString &strNewName)
+void UIWizardNewVMPageBasic2::sltRamSliderValueChanged(int iValue)
 {
     /* Call to base-class: */
-    onNameChanged(strNewName);
+    onRamSliderValueChanged(iValue);
+
+    /* Broadcast complete-change: */
+    emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic2::sltOsTypeChanged()
+void UIWizardNewVMPageBasic2::sltRamEditorTextChanged(const QString &strText)
 {
     /* Call to base-class: */
-    onOsTypeChanged();
+    onRamEditorTextChanged(strText);
+
+    /* Broadcast complete-change: */
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVM::tr("Name and operating system"));
+    setTitle(UIWizardNewVM::tr("Memory size"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name for the new virtual machine "
-                                        "and select the type of operating system you intend to install on it. "
-                                        "The name you choose will be used throughout VirtualBox "
-                                        "to identify this machine."));
-    m_pNameCnt->setTitle(UIWizardNewVM::tr("&Name"));
-    m_pTypeCnt->setTitle(UIWizardNewVM::tr("Operating system"));
+    QString strRecommendedRAM = field("type").value<CGuestOSType>().isNull() ?
+                                QString() : QString::number(field("type").value<CGuestOSType>().GetRecommendedRAM());
+    m_pLabel1->setText(UIWizardNewVM::tr("<p>Select the amount of memory (RAM) in megabytes "
+                                         "to be allocated to the virtual machine.</p>"
+                                         "<p>The recommended memory size is <b>%1</b> MB.</p>")
+                                         .arg(strRecommendedRAM));
+    m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
+    m_pRamUnits->setText(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
+    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
 }
 
 void UIWizardNewVMPageBasic2::initializePage()
@@ -296,21 +153,19 @@ void UIWizardNewVMPageBasic2::initializePage()
     /* Translate page: */
     retranslateUi();
 
-    /* 'Name' field should have focus initially: */
-    m_pNameEditor->setFocus();
+    /* Get recommended 'ram' field value: */
+    CGuestOSType type = field("type").value<CGuestOSType>();
+    m_pRamSlider->setValue(type.GetRecommendedRAM());
+    m_pRamEditor->setText(QString::number(type.GetRecommendedRAM()));
+
+    /* 'Ram' field should have focus initially: */
+    m_pRamSlider->setFocus();
 }
 
-void UIWizardNewVMPageBasic2::cleanupPage()
+bool UIWizardNewVMPageBasic2::isComplete() const
 {
-    /* Cleanup: */
-    cleanupMachineFolder();
-    /* Call to base-class: */
-    UIWizardPage::cleanupPage();
-}
-
-bool UIWizardNewVMPageBasic2::validatePage()
-{
-    /* Try to create machine folder: */
-    return createMachineFolder();
+    /* Make sure 'ram' field feats the bounds: */
+    return m_pRamSlider->value() >= qMax(1, (int)m_pRamSlider->minRAM()) &&
+           m_pRamSlider->value() <= (int)m_pRamSlider->maxRAM();
 }
 

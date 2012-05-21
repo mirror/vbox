@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIWizardFirstRunPageBasic2 class declaration
+ * UIWizardFirstRunPageBasic class declaration
  */
 
 /*
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardFirstRunPageBasic2_h__
-#define __UIWizardFirstRunPageBasic2_h__
+#ifndef __UIWizardFirstRunPageBasic_h__
+#define __UIWizardFirstRunPageBasic_h__
 
 /* Local includes: */
 #include "UIWizardPage.h"
@@ -29,13 +29,13 @@ class VBoxMediaComboBox;
 class QIToolButton;
 class QIRichTextLabel;
 
-/* 2nd page of the First Run wizard (base part): */
-class UIWizardFirstRunPage2 : public UIWizardPageBase
+/* Single page of the First Run wizard (base part): */
+class UIWizardFirstRunPage : public UIWizardPageBase
 {
 protected:
 
     /* Constructor: */
-    UIWizardFirstRunPage2(bool fBootHardDiskWasSet);
+    UIWizardFirstRunPage(bool fBootHardDiskWasSet);
 
     /* Handlers: */
     void onOpenMediumWithFileOpenDialog();
@@ -53,8 +53,8 @@ protected:
     QIToolButton *m_pSelectMediaButton;
 };
 
-/* 2nd page of the First Run wizard (basic extension): */
-class UIWizardFirstRunPageBasic2 : public UIWizardPage, public UIWizardFirstRunPage2
+/* Single page of the First Run wizard (basic extension): */
+class UIWizardFirstRunPageBasic : public UIWizardPage, public UIWizardFirstRunPage
 {
     Q_OBJECT;
     Q_PROPERTY(QString source READ source);
@@ -63,7 +63,7 @@ class UIWizardFirstRunPageBasic2 : public UIWizardPage, public UIWizardFirstRunP
 public:
 
     /* Constructor: */
-    UIWizardFirstRunPageBasic2(const QString &strMachineId, bool fBootHardDiskWasSet);
+    UIWizardFirstRunPageBasic(const QString &strMachineId, bool fBootHardDiskWasSet);
 
 protected:
 
@@ -96,5 +96,5 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif // __UIWizardFirstRunPageBasic2_h__
+#endif // __UIWizardFirstRunPageBasic_h__
 
