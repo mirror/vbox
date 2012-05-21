@@ -810,14 +810,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
              */
             if (g_cBits == 32)
                 ScmStreamPrintf(pStrm, g_fPic ?
-                                "        call    .mov_ecx_eip_plus_5\n"
-                                ".got_eip:\n"
-                                "        add     ecx, _GLOBAL_OFFSET_TABLE + ($$ - .got_eip) wrt ..gotpc\n"
-                                "        mov     ecx, [%s@GOT + ecx]\n"
-                                "        jmp     ecx\n"
-                                ".mov_ecx_eip_plus_5:\n"
-                                "        pop     ecx\n"
-                                "        jmp     ecx\n"
+                                "        jmp     %s wrt ..plt\n"
                                 : g_fProbeFnImported ?
                                 "        mov     ecx, IMP2(%s)\n"
                                 "        jmp     ecx\n"
