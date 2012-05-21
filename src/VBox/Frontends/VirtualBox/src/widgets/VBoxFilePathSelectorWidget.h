@@ -194,6 +194,7 @@ private:
     VBoxFilePathSelectorWidget::Mode mMode;
     QILineEdit *mLineEdit;
     QPushButton *mSelectButton;
+    bool m_fButtonTextSet;
     QString mFileDialogTitle;
     QString mFileFilters;
     QString mDefaultSaveExt;
