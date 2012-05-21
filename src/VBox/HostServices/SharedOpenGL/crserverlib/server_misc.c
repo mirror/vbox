@@ -871,24 +871,29 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )
 {
     crStateDrawBuffer( mode );
 
-    if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
-            && cr_server.curClient->currentMural->idFBO
-            && !crStateGetCurrent()->framebufferobject.drawFB)
+    if (!crStateGetCurrent()->framebufferobject.drawFB)
     {
-        switch (mode)
+        if (mode == GL_FRONT || mode == GL_FRONT_LEFT)
+            cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
+
+        if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+                && cr_server.curClient->currentMural->idFBO)
         {
-            case GL_BACK:
-            case GL_BACK_LEFT:
-                mode = GL_COLOR_ATTACHMENT0;
-                break;
-            case GL_FRONT:
-            case GL_FRONT_LEFT:
-                crWarning("GL_FRONT not supported for FBO mode! (0x%x)", mode);
-                mode = GL_COLOR_ATTACHMENT0;
-                break;
-            default:
-                crWarning("unexpected mode! 0x%x", mode);
-                break;
+            switch (mode)
+            {
+                case GL_BACK:
+                case GL_BACK_LEFT:
+                    mode = GL_COLOR_ATTACHMENT0;
+                    break;
+                case GL_FRONT:
+                case GL_FRONT_LEFT:
+                    crDebug("Setting GL_FRONT with FBO mode! (0x%x)", mode);
+                    mode = GL_COLOR_ATTACHMENT0;
+                    break;
+                default:
+                    crWarning("unexpected mode! 0x%x", mode);
+                    break;
+            }
         }
     }
 

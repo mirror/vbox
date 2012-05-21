@@ -275,8 +275,9 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
     cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
 
     /* Work-around Intel driver bug */
-    CRASSERT(cr_server.curClient->currentMural == mural);
-    if (cr_server.curClient->currentMural == mural)
+    CRASSERT(!cr_server.curClient
+            || cr_server.curClient->currentMural == mural);
+    if (cr_server.curClient && cr_server.curClient->currentMural == mural)
     {
         CRContextInfo * ctxInfo = cr_server.currentCtxInfo;
         CRASSERT(ctxInfo);

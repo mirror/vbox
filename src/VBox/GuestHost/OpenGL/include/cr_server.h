@@ -89,6 +89,7 @@ typedef struct {
 
     GLboolean bVisible;      /*guest window is visible*/
     GLboolean bUseFBO;       /*redirect to FBO instead of real host window*/
+    GLboolean bFbDraw;       /*GL_FRONT buffer is drawn to directly*/
 
     GLint       cVisibleRects;    /*count of visible rects*/
     GLint      *pVisibleRects;    /*visible rects left, top, right, bottom*/

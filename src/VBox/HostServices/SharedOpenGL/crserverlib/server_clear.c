@@ -194,6 +194,8 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchSwapBuffers( GLint window, GLint flags )
 {
   CRMuralInfo *mural;
+  CRContext *ctx;
+
 #ifdef VBOXCR_LOGFPS
   static VBOXCRFPS Fps;
   static bool bFpsInited = false;
@@ -423,6 +425,12 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
 	if (!cr_server.clients[0]->conn->actual_network && window == MAGIC_OFFSET)
 		window = 0;
 
+	ctx = crStateGetCurrent();
+
+    if (ctx->framebufferobject.drawFB
+            || (ctx->buffer.drawBuffer != GL_FRONT && ctx->buffer.drawBuffer != GL_FRONT_LEFT))
+        cr_server.curClient->currentMural->bFbDraw = GL_FALSE;
+
     if (crServerIsRedirectedToFBO())
     {
         crServerPresentFBO(mural);
@@ -436,21 +444,41 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchFlush(void)
 {
+    CRContext *ctx = crStateGetCurrent();
     cr_server.head_spu->dispatch_table.Flush();
 
-    if (crServerIsRedirectedToFBO())
+    if (!cr_server.curClient->currentMural) /* <- on window destroy this will be zero */
+        return;
+
+    if (cr_server.curClient->currentMural->bFbDraw && crServerIsRedirectedToFBO())
     {
+#ifdef DEBUG_misha
+        CRASSERT(0);
+#endif
         crServerPresentFBO(cr_server.curClient->currentMural);
     }
+
+    if (ctx->framebufferobject.drawFB
+            || (ctx->buffer.drawBuffer != GL_FRONT && ctx->buffer.drawBuffer != GL_FRONT_LEFT))
+        cr_server.curClient->currentMural->bFbDraw = GL_FALSE;
 }
 
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchFinish(void)
 {
+    CRContext *ctx = crStateGetCurrent();
+
     cr_server.head_spu->dispatch_table.Finish();
 
-    if (crServerIsRedirectedToFBO())
+    if (cr_server.curClient->currentMural->bFbDraw && crServerIsRedirectedToFBO())
     {
+#ifdef DEBUG_misha
+        CRASSERT(0);
+#endif
         crServerPresentFBO(cr_server.curClient->currentMural);
     }
+
+    if (ctx->framebufferobject.drawFB
+            || (ctx->buffer.drawBuffer != GL_FRONT && ctx->buffer.drawBuffer != GL_FRONT_LEFT))
+        cr_server.curClient->currentMural->bFbDraw = GL_FALSE;
 }
