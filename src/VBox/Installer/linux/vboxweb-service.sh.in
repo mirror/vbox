@@ -311,13 +311,13 @@ start() {
         [ -n "$VBOXWEB_LOGINTERVAL" ]    && PARAMS="$PARAMS -I $VBOXWEB_LOGINTERVAL"
         # set authentication method + password hash
         if [ -n "$VBOXWEB_AUTH_LIBRARY" ]; then
-            vboxmanage setproperty websrvauthlibrary $VBOXWEB_AUTH_LIBRARY
+            exec su - "$VBOXWEB_USER" -c "$vboxmanage setproperty websrvauthlibrary \"$VBOXWEB_AUTH_LIBRARY\""
             if [ $? -ne 0 ]; then
                 fail_msg "Error $? setting webservice authentication library to $VBOXWEB_AUTH_LIBRARY"
             fi
         fi
         if [ -n "$VBOXWEB_AUTH_PWHASH" ]; then
-            vboxmanage setextradata global VBoxAuthSimple/users/$VBOXWEB_USER $VBOXWEB_AUTH_PWHASH
+            exec su - "$VBOXWEB_USER" -c "$vboxmanage setextradata global \"VBoxAuthSimple/users/$VBOXWEB_USER\" \"$VBOXWEB_AUTH_PWHASH\""
             if [ $? -ne 0 ]; then
                 fail_msg "Error $? setting webservice password hash"
             fi
