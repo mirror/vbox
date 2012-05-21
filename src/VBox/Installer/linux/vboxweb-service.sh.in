@@ -313,13 +313,13 @@ start() {
         if [ -n "$VBOXWEB_AUTH_LIBRARY" ]; then
             vboxmanage setproperty websrvauthlibrary $VBOXWEB_AUTH_LIBRARY
             if [ $? -ne 0 ]; then
-                fail_msg "Error setting webservice authentication library to $VBOXWEB_AUTH_LIBRARY"
+                fail_msg "Error $? setting webservice authentication library to $VBOXWEB_AUTH_LIBRARY"
             fi
         fi
         if [ -n "$VBOXWEB_AUTH_PWHASH" ]; then
             vboxmanage setextradata global VBoxAuthSimple/users/$VBOXWEB_USER $VBOXWEB_AUTH_PWHASH
             if [ $? -ne 0 ]; then
-                fail_msg "Error setting webservice password hash"
+                fail_msg "Error $? setting webservice password hash"
             fi
         fi
         # prevent inheriting this setting to VBoxSVC
