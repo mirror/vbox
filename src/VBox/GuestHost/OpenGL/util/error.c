@@ -335,7 +335,7 @@ DECLEXPORT(void) crDebug(const char *format, ... )
         if (!fname && fnamePrefix)
         {
             char pname[1024];
-            if (strlen(fnamePrefix) < sizeof (str) - sizeof (pname) - 20)
+            if (crStrlen(fnamePrefix) < sizeof (str) - sizeof (pname) - 20)
             {
                 crGetProcName(pname, 1024);
                 sprintf(str, "%s_%s_%d.txt", fnamePrefix, pname,
