@@ -23,6 +23,9 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class QGroupBox;
+class QLineEdit;
+class VBoxOSTypeSelectorWidget;
 class QIRichTextLabel;
 
 /* 1st page of the New Virtual Machine wizard (base part): */
@@ -32,17 +35,57 @@ protected:
 
     /* Constructor: */
     UIWizardNewVMPage1();
+
+    /* Handlers: */
+    void onNameChanged(const QString &strNewName);
+    void onOsTypeChanged();
+
+    /* Helping stuff: */
+    bool machineFolderCreated();
+    bool createMachineFolder();
+    bool cleanupMachineFolder();
+
+    /* Stuff for 'machineFolder' field: */
+    QString machineFolder() const { return m_strMachineFolder; }
+    void setMachineFolder(const QString &strMachineFolder) { m_strMachineFolder = strMachineFolder; }
+
+    /* Stuff for 'machineBaseName' field: */
+    QString machineBaseName() const { return m_strMachineBaseName; }
+    void setMachineBaseName(const QString &strMachineBaseName) { m_strMachineBaseName = strMachineBaseName; }
+
+    /* Variables: */
+    QString m_strMachineFolder;
+    QString m_strMachineBaseName;
+
+    /* Widgets: */
+    QGroupBox *m_pNameCnt;
+    QLineEdit *m_pNameEditor;
+    QGroupBox *m_pTypeCnt;
+    VBoxOSTypeSelectorWidget *m_pTypeSelector;
 };
 
 /* 1st page of the New Virtual Machine wizard (basic extension): */
 class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 {
     Q_OBJECT;
+    Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
+    Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
 
 public:
 
     /* Constructor: */
     UIWizardNewVMPageBasic1();
+
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
+
+private slots:
+
+    /* Handlers: */
+    void sltNameChanged(const QString &strNewText);
+    void sltOsTypeChanged();
 
 private:
 
@@ -51,13 +94,13 @@ private:
 
     /* Prepare stuff: */
     void initializePage();
+    void cleanupPage();
 
-    /* Helpers: */
-    static QString tableTemplate();
+    /* Validation stuff: */
+    bool validatePage();
 
     /* Widgets: */
-    QIRichTextLabel *m_pLabel1;
-    QIRichTextLabel *m_pLabel2;
+    QIRichTextLabel *m_pLabel;
 };
 
 #endif // __UIWizardNewVMPageBasic1_h__

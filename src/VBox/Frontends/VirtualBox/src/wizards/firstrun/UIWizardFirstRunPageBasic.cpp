@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIWizardFirstRunPageBasic2 class implementation
+ * UIWizardFirstRunPageBasic class implementation
  */
 
 /*
@@ -23,7 +23,7 @@
 #include <QGroupBox>
 
 /* Local includes: */
-#include "UIWizardFirstRunPageBasic2.h"
+#include "UIWizardFirstRunPageBasic.h"
 #include "UIWizardFirstRun.h"
 #include "COMDefs.h"
 #include "UIIconPool.h"
@@ -33,12 +33,12 @@
 #include "QIToolButton.h"
 #include "QIRichTextLabel.h"
 
-UIWizardFirstRunPage2::UIWizardFirstRunPage2(bool fBootHardDiskWasSet)
+UIWizardFirstRunPage::UIWizardFirstRunPage(bool fBootHardDiskWasSet)
     : m_fBootHardDiskWasSet(fBootHardDiskWasSet)
 {
 }
 
-void UIWizardFirstRunPage2::onOpenMediumWithFileOpenDialog()
+void UIWizardFirstRunPage::onOpenMediumWithFileOpenDialog()
 {
     /* Get opened vboxMedium id: */
     QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediaSelector->type(), thisImp());
@@ -47,18 +47,18 @@ void UIWizardFirstRunPage2::onOpenMediumWithFileOpenDialog()
         m_pMediaSelector->setCurrentItem(strMediumId);
 }
 
-QString UIWizardFirstRunPage2::id() const
+QString UIWizardFirstRunPage::id() const
 {
     return m_pMediaSelector->id();
 }
 
-void UIWizardFirstRunPage2::setId(const QString &strId)
+void UIWizardFirstRunPage::setId(const QString &strId)
 {
     m_pMediaSelector->setCurrentItem(strId);
 }
 
-UIWizardFirstRunPageBasic2::UIWizardFirstRunPageBasic2(const QString &strMachineId, bool fBootHardDiskWasSet)
-    : UIWizardFirstRunPage2(fBootHardDiskWasSet)
+UIWizardFirstRunPageBasic::UIWizardFirstRunPageBasic(const QString &strMachineId, bool fBootHardDiskWasSet)
+    : UIWizardFirstRunPage(fBootHardDiskWasSet)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -99,13 +99,13 @@ UIWizardFirstRunPageBasic2::UIWizardFirstRunPageBasic2(const QString &strMachine
     registerField("id", this, "id");
 }
 
-void UIWizardFirstRunPageBasic2::sltOpenMediumWithFileOpenDialog()
+void UIWizardFirstRunPageBasic::sltOpenMediumWithFileOpenDialog()
 {
     /* Call to base-class: */
     onOpenMediumWithFileOpenDialog();
 }
 
-void UIWizardFirstRunPageBasic2::retranslateUi()
+void UIWizardFirstRunPageBasic::retranslateUi()
 {
     /* Translate widgets: */
     if (m_fBootHardDiskWasSet)
@@ -129,19 +129,19 @@ void UIWizardFirstRunPageBasic2::retranslateUi()
     m_pSelectMediaButton->setToolTip(UIWizardFirstRun::tr("Choose a virtual optical disk file..."));
 }
 
-void UIWizardFirstRunPageBasic2::initializePage()
+void UIWizardFirstRunPageBasic::initializePage()
 {
     /* Translate page: */
     retranslateUi();
 }
 
-bool UIWizardFirstRunPageBasic2::isComplete() const
+bool UIWizardFirstRunPageBasic::isComplete() const
 {
     /* Make sure valid medium chosen: */
     return !vboxGlobal().findMedium(id()).isNull();
 }
 
-bool UIWizardFirstRunPageBasic2::validatePage()
+bool UIWizardFirstRunPageBasic::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -160,7 +160,7 @@ bool UIWizardFirstRunPageBasic2::validatePage()
     return fResult;
 }
 
-QString UIWizardFirstRunPageBasic2::source() const
+QString UIWizardFirstRunPageBasic::source() const
 {
     return m_pMediaSelector->currentText();
 }

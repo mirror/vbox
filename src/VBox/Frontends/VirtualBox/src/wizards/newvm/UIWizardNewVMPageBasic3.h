@@ -19,14 +19,18 @@
 #ifndef __UIWizardNewVMPageBasic3_h__
 #define __UIWizardNewVMPageBasic3_h__
 
+/* Global includes: */
+#include <QVariant>
+
 /* Local includes: */
 #include "UIWizardPage.h"
+#include "COMDefs.h"
 
 /* Forward declarations: */
 class QGroupBox;
-class VBoxGuestRAMSlider;
-class QILineEdit;
-class QLabel;
+class QRadioButton;
+class VBoxMediaComboBox;
+class QIToolButton;
 class QIRichTextLabel;
 
 /* 3rd page of the New Virtual Machine wizard (base part): */
@@ -38,48 +42,86 @@ protected:
     UIWizardNewVMPage3();
 
     /* Handlers: */
-    void onRamSliderValueChanged(int iValue);
-    void onRamEditorTextChanged(const QString &strText);
+    void updateVirtualDiskSource();
+    void getWithFileOpenDialog();
+    bool getWithNewVirtualDiskWizard();
+
+    /* Stuff for 'virtualDisk' field: */
+    CMedium virtualDisk() const { return m_virtualDisk; }
+    void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
+
+    /* Stuff for 'virtualDiskId' field: */
+    QString virtualDiskId() const { return m_strVirtualDiskId; }
+    void setVirtualDiskId(const QString &strVirtualDiskId) { m_strVirtualDiskId = strVirtualDiskId; }
+
+    /* Stuff for 'virtualDiskName' field: */
+    QString virtualDiskName() const { return m_strVirtualDiskName; }
+    void setVirtualDiskName(const QString &strVirtualDiskName) { m_strVirtualDiskName = strVirtualDiskName; }
+
+    /* Stuff for 'virtualDiskLocation' field: */
+    QString virtualDiskLocation() const { return m_strVirtualDiskLocation; }
+    void setVirtualDiskLocation(const QString &strVirtualDiskLocation) { m_strVirtualDiskLocation = strVirtualDiskLocation; }
+
+    /* Helpers: */
+    void ensureNewVirtualDiskDeleted();
+
+    /* Variables: */
+    CMedium m_virtualDisk;
+    QString m_strVirtualDiskId;
+    QString m_strVirtualDiskName;
+    QString m_strVirtualDiskLocation;
 
     /* Widgets: */
-    QGroupBox *m_pMemoryCnt;
-    VBoxGuestRAMSlider *m_pRamSlider;
-    QILineEdit *m_pRamEditor;
-    QLabel *m_pRamMin;
-    QLabel *m_pRamMax;
-    QLabel *m_pRamUnits;
+    QGroupBox *m_pDiskCnt;
+    QRadioButton *m_pDiskCreate;
+    QRadioButton *m_pDiskPresent;
+    VBoxMediaComboBox *m_pDiskSelector;
+    QIToolButton *m_pVMMButton;
 };
 
 /* 3rd page of the New Virtual Machine wizard (basic extension): */
 class UIWizardNewVMPageBasic3 : public UIWizardPage, public UIWizardNewVMPage3
 {
     Q_OBJECT;
+    Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
+    Q_PROPERTY(QString virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
+    Q_PROPERTY(QString virtualDiskName READ virtualDiskName WRITE setVirtualDiskName);
+    Q_PROPERTY(QString virtualDiskLocation READ virtualDiskLocation WRITE setVirtualDiskLocation);
 
 public:
 
     /* Constructor: */
     UIWizardNewVMPageBasic3();
 
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
+    /* Wrapper to access 'wizard-field' from base part: */
+    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+
 private slots:
 
     /* Handlers: */
-    void sltRamSliderValueChanged(int iValue);
-    void sltRamEditorTextChanged(const QString &strText);
+    void sltVirtualDiskSourceChanged();
+    void sltGetWithFileOpenDialog();
 
 private:
 
-    /* Translation stuff: */
+    /* Translate stuff: */
     void retranslateUi();
 
     /* Prepare stuff: */
     void initializePage();
+    void cleanupPage();
 
     /* Validation stuff: */
     bool isComplete() const;
+    bool validatePage();
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel1;
 };
 
-#endif // __UINewVMWzd_h__
+#endif // __UIWizardNewVMPageBasic3_h__
 

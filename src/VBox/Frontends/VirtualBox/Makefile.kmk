@@ -360,9 +360,9 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
 	src/wizards/newvm/UIWizardNewVM.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic1.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic3.h \
-	src/wizards/newvm/UIWizardNewVMPageBasic4.h \
 	src/wizards/newvm/UIWizardNewVMPageExpert.h \
 	src/wizards/newvd/UIWizardNewVD.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic1.h \
@@ -391,7 +391,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic2.h
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
 
 VirtualBox_QT_MOCHDRS.darwin += \
     src/platform/darwin/UIWindowMenuManager.h
@@ -569,9 +569,9 @@ VirtualBox_SOURCES = \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
 	src/wizards/newvm/UIWizardNewVM.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic1.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic3.cpp \
-	src/wizards/newvm/UIWizardNewVMPageBasic4.cpp \
 	src/wizards/newvm/UIWizardNewVMPageExpert.cpp \
 	src/wizards/newvd/UIWizardNewVD.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic1.cpp \
@@ -600,7 +600,7 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic2.cpp
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
 
 VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp
