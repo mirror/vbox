@@ -183,6 +183,9 @@ enum
     MODIFYVM_ATTACH_PCI,
     MODIFYVM_DETACH_PCI,
 #endif
+#ifdef VBOX_WITH_USB_CARDREADER
+    MODIFYVM_USBCARDREADER,
+#endif
     MODIFYVM_CHIPSET
 };
 
@@ -321,6 +324,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     { "--pciattach",                MODIFYVM_ATTACH_PCI,                RTGETOPT_REQ_STRING },
     { "--pcidetach",                MODIFYVM_DETACH_PCI,                RTGETOPT_REQ_STRING },
+#endif
+#ifdef VBOX_WITH_USB_CARDREADER
+    { "--usbcardreader",            MODIFYVM_USBCARDREADER,             RTGETOPT_REQ_BOOL_ONOFF },
 #endif
 };
 
@@ -2396,6 +2402,14 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 #endif
+#ifdef VBOX_WITH_USB_CARDREADER
+            case MODIFYVM_USBCARDREADER:
+            {
+                CHECK_ERROR(machine, COMSETTER(EmulatedUSBCardReaderEnabled)(ValueUnion.f));
+                break;
+            }
+#endif /* VBOX_WITH_USB_CARDREADER */
+
             default:
             {
                 errorGetOpt(USAGE_MODIFYVM, c, &ValueUnion);

@@ -2335,19 +2335,26 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 # endif
 #endif
 #ifdef VBOX_WITH_USB_CARDREADER
-                InsertConfigNode(pUsbDevices, "CardReader", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                BOOL aEmulatedUSBCardReaderEnabled = FALSE;
+                hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();
+                if (aEmulatedUSBCardReaderEnabled)
+                {
+                    InsertConfigNode(pUsbDevices, "CardReader", &pDev);
+                    InsertConfigNode(pDev,     "0", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
 # ifdef VBOX_WITH_USB_CARDREADER_TEST
-                InsertConfigString(pLunL0,    "Driver", "DrvDirectCardReader");
-                InsertConfigNode(pLunL0,    "Config", &pCfg);
+                    InsertConfigString(pLunL0, "Driver", "DrvDirectCardReader");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
 # else
-                InsertConfigString(pLunL0,    "Driver", "UsbCardReader");
-                InsertConfigNode(pLunL0,    "Config", &pCfg);
-                InsertConfigInteger(pCfg,   "Object", (uintptr_t)mUsbCardReader);
+                    InsertConfigString(pLunL0, "Driver", "UsbCardReader");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+                    InsertConfigInteger(pCfg,  "Object", (uintptr_t)mUsbCardReader);
 # endif
+                }
 #endif
+
 # if 0  /* Virtual MSD*/
 
                 InsertConfigNode(pUsbDevices, "Msd", &pDev);
