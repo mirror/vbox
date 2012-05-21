@@ -565,6 +565,7 @@ VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     , mLabel (NULL)
     , mMode (VBoxFilePathSelectorWidget::Mode_File_Open)
     , mLineEdit (NULL)
+    , m_fButtonTextSet(false)
     , mHomeDir (QDir::current().absolutePath())
     , mIsModified (false)
 {
@@ -680,6 +681,7 @@ QString VBoxEmptyFileSelector::defaultSaveExt() const
 void VBoxEmptyFileSelector::setChooseButtonText(const QString &strText)
 {
     mSelectButton->setText(strText);
+    m_fButtonTextSet = !strText.isEmpty();
 }
 
 QString VBoxEmptyFileSelector::chooseButtonText() const
@@ -719,7 +721,8 @@ QString VBoxEmptyFileSelector::homeDir() const
 
 void VBoxEmptyFileSelector::retranslateUi()
 {
-    mSelectButton->setText (tr ("&Choose..."));
+    if (!m_fButtonTextSet)
+        mSelectButton->setText(tr("&Choose..."));
 }
 
 void VBoxEmptyFileSelector::choose()
