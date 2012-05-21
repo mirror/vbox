@@ -27,6 +27,27 @@
 #include <VBox/log.h>
 #endif
 
+#if defined(WINDOWS)
+# define CR_DEBUG_TO_CONSOLE_ENABLE
+#endif
+
+#if defined(WINDOWS) && defined(IN_GUEST)
+# ifndef CR_DEBUG_TO_BACKDOOR_ENABLE
+#  error "CR_DEBUG_TO_BACKDOOR_ENABLE is expected!"
+# endif
+#else
+# ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
+#  error "CR_DEBUG_TO_BACKDOOR_ENABLE is NOT expected!"
+# endif
+#endif
+
+
+#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
+# include <VBoxDispMpLogger.h>
+# include <iprt/err.h>
+#endif
+
+
 static char my_hostname[256];
 #ifdef WINDOWS
 static HANDLE my_pid;
@@ -290,26 +311,48 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     static FILE *output;
     static int first_time = 1;
     static int silent = 0;
+#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
+    static int logBackdoor = 0;
+#endif
 
     if (first_time)
     {
         const char *fname = crGetenv( "CR_DEBUG_FILE" );
-        char str[1024];
-
-#if defined(Linux) && defined(IN_GUEST) && defined(DEBUG_leo)
-        if (!fname)
+        const char *fnamePrefix = crGetenv( "CR_DEBUG_FILE_PREFIX" );
+        char str[2048];
+#ifdef CR_DEBUG_TO_CONSOLE_ENABLE
+        int logToConsole = 0;
+#endif
+#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
+        if (crGetenv( "CR_DEBUG_TO_BACKDOOR" ))
         {
-            char pname[1024];
-            crGetProcName(pname, 1024);
-            sprintf(str, "/home/leo/crlog_%s.txt", pname);
-            fname = &str[0];
+            int rc = VBoxDispMpLoggerInit();
+            if (RT_SUCCESS(rc))
+                logBackdoor = 1;
         }
 #endif
+
+        if (!fname && fnamePrefix)
+        {
+            char pname[1024];
+            if (strlen(fnamePrefix) < sizeof (str) - sizeof (pname) - 20)
+            {
+                crGetProcName(pname, 1024);
+                sprintf(str, "%s_%s_%d.txt", fnamePrefix, pname,
+#ifdef RT_OS_WINDOWS
+                        GetCurrentProcessId()
+#else
+                        crGetPID()
+#endif
+                        );
+                fname = &str[0];
+            }
+        }
 
         first_time = 0;
         if (fname)
         {
-            char debugFile[1000], *p;
+            char debugFile[2048], *p;
             crStrcpy(debugFile, fname);
             p = crStrstr(debugFile, "%p");
             if (p) {
@@ -326,16 +369,28 @@ DECLEXPORT(void) crDebug(const char *format, ... )
         }
         else
         {
-#if defined(WINDOWS) && defined(IN_GUEST) && (defined(DEBUG_leo) || defined(DEBUG_ll158262) || defined(DEBUG_misha))
-            crRedirectIOToConsole();
+#ifdef CR_DEBUG_TO_CONSOLE_ENABLE
+            if (crGetenv( "CR_DEBUG_TO_CONSOLE" ))
+            {
+                crRedirectIOToConsole();
+                logToConsole = 1;
+            }
 #endif
             output = stderr;
         }
+
 #if !defined(DEBUG)/* || defined(DEBUG_misha)*/
         /* Release mode: only emit crDebug messages if CR_DEBUG
          * or CR_DEBUG_FILE is set.
          */
-        if (!fname && !crGetenv("CR_DEBUG"))
+        if (!fname && !crGetenv("CR_DEBUG")
+#ifdef CR_DEBUG_TO_CONSOLE_ENABLE
+                    && !logToConsole
+#endif
+#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
+                    && !logBackdoor
+#endif
+                )
             silent = 1;
 #endif
     }
@@ -379,29 +434,35 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     }
     else
     {
-        offset = sprintf( txt, "[0x%x] OpenGL Debug: ", crThreadID());
+        offset = sprintf( txt, "[0x%x.0x%x] OpenGL Debug: ", GetCurrentProcessId(), crThreadID());
     }
 #else
-    offset = sprintf( txt, "[0x%lx] OpenGL Debug: ", crThreadID());
+    offset = sprintf( txt, "[0x%lx.0x%lx] OpenGL Debug: ", crGetPID(), crThreadID());
 #endif
     va_start( args, format );
     vsprintf( txt + offset, format, args );
+#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
+    if (logBackdoor)
+    {
+        VBoxDispMpLoggerLog(txt);
+    }
+#endif
 #if defined(IN_GUEST)
     outputChromiumMessage( output, txt );
 #else
-# if defined(DEBUG) && (defined(DEBUG_leo) || defined(DEBUG_ll158262))
-    outputChromiumMessage( output, txt );
+    if (!output
+# ifndef DEBUG_misha
+            || output==stderr
 # endif
-#ifndef DEBUG_misha
-    if (output==stderr)
-#endif
+            )
     {
         LogRel(("%s\n", txt));
     }
-#ifndef DEBUG_misha
     else
-#endif
     {
+# ifndef DEBUG_misha
+        LogRel(("%s\n", txt));
+# endif
         outputChromiumMessage(output, txt);
     }
 #endif

@@ -57,8 +57,6 @@ typedef struct VBOXDISPMP_CALLBACKS
      * if events are disabled - returns S_FALSE
      */
     PFNVBOXDISPMP_GETREGIONS pfnGetRegions;
-
-    PFNVBOXDISPMP_LOG pfnLog;
 } VBOXDISPMP_CALLBACKS, *PVBOXDISPMP_CALLBACKS;
 
 /** @def VBOXNETCFGWIN_DECL
@@ -67,12 +65,12 @@ typedef struct VBOXDISPMP_CALLBACKS
 
 /* enable this in case we include this in a dll*/
 # ifdef VBOXWDDMDISP
-#  define VBOXDISPMP_DECL(_type) DECLEXPORT(_type)
+#  define VBOXDISPMP_DECL(_type) DECLEXPORT(_type) VBOXCALL
 # else
-#  define VBOXDISPMP_DECL(_type) DECLIMPORT(_type)
+#  define VBOXDISPMP_DECL(_type) DECLIMPORT(_type) VBOXCALL
 # endif
 
-#define VBOXDISPMP_IFVERSION 2
+#define VBOXDISPMP_IFVERSION 3
 #define VBOXDISPMP_VERSION (VBOXVIDEOIF_VERSION | (VBOXDISPMP_IFVERSION < 16))
 /**
  *  VBoxDispMpGetCallbacks export

@@ -252,11 +252,6 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()
     return VINF_SUCCESS;
 }
 
-VBOXCRHGSMI_DECL(void) VBoxCrHgsmiLog(char * szString)
-{
-    vboxVDbgPrint(("%s", szString));
-}
-
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetClientID(PVBOXUHGSMI pHgsmi, uint32_t *pu32ClientID)
 {
     PVBOXUHGSMI_PRIVATE_BASE pHgsmiPrivate = (PVBOXUHGSMI_PRIVATE_BASE)pHgsmi;

@@ -31,6 +31,8 @@
 #include <VBoxDisplay.h> /* this is from Additions/WINNT/include/ to include escape codes */
 #include <VBox/Hardware/VBoxVideoVBE.h>
 
+DWORD g_VBoxLogUm = 0;
+
 #define VBOXWDDM_MEMTAG 'MDBV'
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize)
 {
@@ -4054,11 +4056,10 @@ DxgkDdiEscape(
                     PVBOXDISPIFESCAPE_DBGPRINT pDbgPrint = (PVBOXDISPIFESCAPE_DBGPRINT)pEscapeHdr;
                     /* ensure the last char is \0*/
                     *((uint8_t*)pDbgPrint + pEscape->PrivateDriverDataSize - 1) = '\0';
-#if defined(DEBUG_misha) || defined(DEBUG_leo)
-                    DbgPrint("%s", pDbgPrint->aStringBuf);
-#else
-                    LOGREL_EXACT(("%s", pDbgPrint->aStringBuf));
-#endif
+                    if (g_VBoxLogUm & VBOXWDDM_CFG_LOG_UM_DBGPRINT)
+                        DbgPrint("%s\n", pDbgPrint->aStringBuf);
+                    if (g_VBoxLogUm & VBOXWDDM_CFG_LOG_UM_BACKDOOR)
+                        LOGREL_EXACT(("%s\n", pDbgPrint->aStringBuf));
                 }
                 Status = STATUS_SUCCESS;
                 break;
@@ -6091,6 +6092,8 @@ DriverEntry(
     {
         return STATUS_INVALID_PARAMETER;
     }
+
+    vboxWddmDrvCfgInit(RegistryPath);
 
     ULONG major, minor, build;
     BOOLEAN checkedBuild = PsGetVersion(&major, &minor, &build, NULL);
