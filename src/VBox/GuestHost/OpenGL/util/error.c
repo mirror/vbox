@@ -338,7 +338,7 @@ DECLEXPORT(void) crDebug(const char *format, ... )
             if (crStrlen(fnamePrefix) < sizeof (str) - sizeof (pname) - 20)
             {
                 crGetProcName(pname, 1024);
-                sprintf(str, "%s_%s_%d.txt", fnamePrefix, pname,
+                sprintf(str, "%s_%s_%u.txt", fnamePrefix, pname,
 #ifdef RT_OS_WINDOWS
                         GetCurrentProcessId()
 #else
