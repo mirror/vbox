@@ -34,8 +34,10 @@ NOLSB=%NOLSB%
 
 if [ -n "$INSTALL_DIR" ]; then
     binary="$INSTALL_DIR/vboxwebsrv"
+    vboxmanage="$INSTALL_DIR/VBoxManage"
 else
     binary="/usr/lib/%PACKAGE%/vboxwebsrv"
+    vboxmanage="/usr/lib/%PACKAGE%/VBoxManage"
 fi
 
 # silently exit if the package was uninstalled but not purged,
@@ -307,6 +309,19 @@ start() {
         [ -n "$VBOXWEB_ROTATE" ]         && PARAMS="$PARAMS -R $VBOXWEB_ROTATE"
         [ -n "$VBOXWEB_LOGSIZE" ]        && PARAMS="$PARAMS -S $VBOXWEB_LOGSIZE"
         [ -n "$VBOXWEB_LOGINTERVAL" ]    && PARAMS="$PARAMS -I $VBOXWEB_LOGINTERVAL"
+        # set authentication method + password hash
+        if [ -n "$VBOXWEB_AUTH_LIBRARY" ]; then
+            vboxmanage setproperty websrvauthlibrary $VBOXWEB_AUTH_LIBRARY
+            if [ $? -ne 0 ]; then
+                fail_msg "Error setting webservice authentication library to $VBOXWEB_AUTH_LIBRARY"
+            fi
+        fi
+        if [ -n "$VBOXWEB_AUTH_PWHASH" ]; then
+            vboxmanage setextradata global VBoxAuthSimple/users/$VBOXWEB_USER $VBOXWEB_AUTH_PWHASH
+            if [ $? -ne 0 ]; then
+                fail_msg "Error setting webservice password hash"
+            fi
+        fi
         # prevent inheriting this setting to VBoxSVC
         unset VBOX_RELEASE_LOG_DEST
         start_daemon $VBOXWEB_USER $binary $PARAMS > /dev/null 2>&1

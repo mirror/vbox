@@ -53,6 +53,10 @@ case $VW_OPT in
         [ $? != 0 ] && VW_SSL_DHFILE=
         VW_SSL_RANDFILE=`/usr/bin/svcprop -p config/ssl_randfile $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_SSL_RANDFILE=
+        VW_AUTH_LIBRARY=`/usr/bin/svcprop -p config/auth_library 2>/dev/null`
+        [ $? != 0 ] && VW_AUTH_LIBRARY=
+        VW_AUTH_PWHASH=`/usr/bin/svcprop -p config/auth_pwhash 2>/dev/null`
+        [ $? != 0 ] && VW_AUTH_PWHASH=
         VW_TIMEOUT=`/usr/bin/svcprop -p config/timeout $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_TIMEOUT=
         VW_CHECK_INTERVAL=`/usr/bin/svcprop -p config/checkinterval $SMF_FMRI 2>/dev/null`
@@ -94,6 +98,20 @@ case $VW_OPT in
         [ -n "$VW_SSL_DHFILE" ] && VW_SSL_DHFILE="--dhfile $VW_SSL_DHFILE"
         [ -n "$VW_SSL_RANDFILE" ] && VW_SSL_RANDFILE="--randfile $VW_SSL_RANDFILE"
         [ -n "$VW_LOGFILE" ] && VW_LOGFILE="--logfile $VW_LOGFILE"
+
+        # Set authentication method + password hash
+        if [ -n "$VW_AUTH_LIBRARY" ]; then
+            exec /opt/VirtualBox/VBoxManage setproperty websrvauthlibrary $VW_AUTH_LIBRARY
+            if [ $? != 0 ]; then
+                echo "Error $? setting webservice authentication library to $VW_AUTH_LIBRARY"
+            fi
+        fi
+        if [ -n "$VW_AUTH_PWHASH" ]; then
+            exec /opt/VirtualBox/VBoxManage setextradata global VBoxAuthSimple/users/$VW_USER $VW_AUTH_PWHASH
+            if [ $? != 0 ]; then
+                echo "Error $? setting webservice password hash"
+            fi
+        fi
 
         exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --background --host \"$VW_HOST\" --port \"$VW_PORT\" $VW_SSL $VW_SSL_KEYFILE $VW_SSL_PASSWORDFILE $VW_SSL_CACERT $VW_SSL_CAPATH $VW_SSL_DHFILE $VW_SSL_RANDFILE --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\" --threads \"$VW_THREADS\" --keepalive \"$VW_KEEPALIVE\" --authentication \"$VW_AUTHENTICATION\" $VW_LOGFILE --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
 
