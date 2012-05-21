@@ -335,6 +335,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--faulttolerancesyncinterval <msec>]\n"
                      "                            [--faulttolerancepassword <password>]\n"
 #endif
+#ifdef VBOX_WITH_USB_CARDREADER
+                     "                            [--usbcardreader on|off]\n"
+#endif
                      "\n");
     }
 

@@ -781,6 +781,8 @@ struct Hardware
 
     ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
 
+    bool                fEmulatedUSBCardReader; // 1.12 (VirtualBox 4.1)
+
     VRDESettings        vrdeSettings;
 
     BIOSSettings        biosSettings;

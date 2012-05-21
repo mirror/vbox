@@ -290,6 +290,7 @@ public:
         KeyboardHidType_T    mKeyboardHidType;
         PointingHidType_T    mPointingHidType;
         ChipsetType_T        mChipsetType;
+        BOOL                 mEmulatedUSBCardReaderEnabled;
 
         BOOL                 mIoCacheEnabled;
         ULONG                mIoCacheSize;

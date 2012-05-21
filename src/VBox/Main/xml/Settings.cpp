@@ -1605,6 +1605,7 @@ Hardware::Hardware()
           pointingHidType(PointingHidType_PS2Mouse),
           keyboardHidType(KeyboardHidType_PS2Keyboard),
           chipsetType(ChipsetType_PIIX3),
+          fEmulatedUSBCardReader(false),
           clipboardMode(ClipboardMode_Bidirectional),
           ulMemoryBalloonSize(0),
           fPageFusionEnabled(false)
@@ -1667,6 +1668,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (pointingHidType           == h.pointingHidType)
                   && (keyboardHidType           == h.keyboardHidType)
                   && (chipsetType               == h.chipsetType)
+                  && (fEmulatedUSBCardReader    == h.fEmulatedUSBCardReader)
                   && (vrdeSettings              == h.vrdeSettings)
                   && (biosSettings              == h.biosSettings)
                   && (usbController             == h.usbController)
@@ -2819,6 +2821,15 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
                     hw.pciAttachments.push_back(hpda);
                 }
+            }
+        }
+        else if (pelmHwChild->nameEquals("EmulatedUSB"))
+        {
+            const xml::ElementNode *pelmCardReader;
+
+            if ((pelmCardReader = pelmHwChild->findChildElement("CardReader")))
+            {
+                pelmCardReader->getAttributeValue("enabled", hw.fEmulatedUSBCardReader);
             }
         }
     }
@@ -4041,6 +4052,14 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
+    if (m->sv >= SettingsVersion_v1_12)
+    {
+        xml::ElementNode *pelmEmulatedUSB = pelmHardware->createChild("EmulatedUSB");
+        xml::ElementNode *pelmCardReader = pelmEmulatedUSB->createChild("CardReader");
+
+        pelmCardReader->setAttribute("enabled", hw.fEmulatedUSBCardReader);
+    }
+
     xml::ElementNode *pelmGuest = pelmHardware->createChild("Guest");
     pelmGuest->setAttribute("memoryBalloonSize", hw.ulMemoryBalloonSize);
 
@@ -4643,6 +4662,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // VirtualBox 4.2 adds tracing.
         if (!debugging.areDefaultSettings())
             m->sv = SettingsVersion_v1_13;
+    }
+
+    if (m->sv < SettingsVersion_v1_12)
+    {
+        // 4.1: Emulated USB devices.
+        if (hardwareMachine.fEmulatedUSBCardReader)
+            m->sv = SettingsVersion_v1_12;
     }
 
     if (m->sv < SettingsVersion_v1_12)
