@@ -2046,7 +2046,7 @@ static RTEXITCODE vbcppMacroExpandValueWithArguments(PVBCPP pThis, PVBCPPMACROEX
      * Empty?
      */
     if (   !pMacro->cchValue
-        || (pMacro->cchValue == 1 && !pMacro->szValue[0] == '#'))
+        || (pMacro->cchValue == 1 && pMacro->szValue[0] == '#'))
         return RTEXITCODE_SUCCESS;
 
     /*
