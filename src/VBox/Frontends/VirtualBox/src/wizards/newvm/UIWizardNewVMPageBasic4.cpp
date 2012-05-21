@@ -79,7 +79,7 @@ void UIWizardNewVMPage4::getWithFileOpenDialog()
 
 bool UIWizardNewVMPage4::getWithNewVirtualDiskWizard()
 {
-    /* Create New Virtual Disk wizard: */
+    /* Create New Virtual Hard Drive wizard: */
     UIWizardNewVD dlg(thisImp(),
                       fieldImp("machineBaseName").toString(),
                       fieldImp("machineFolder").toString(),
@@ -131,7 +131,6 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel1 = new QIRichTextLabel(this);
-        m_pLabel2 = new QIRichTextLabel(this);
         m_pDiskCnt = new QGroupBox(this);
         {
             m_pDiskCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -164,7 +163,6 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
             }
         }
         pMainLayout->addWidget(m_pLabel1);
-        pMainLayout->addWidget(m_pLabel2);
         pMainLayout->addWidget(m_pDiskCnt);
         pMainLayout->addStretch();
         updateVirtualDiskSource();
@@ -204,21 +202,22 @@ void UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog()
 void UIWizardNewVMPageBasic4::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVM::tr("Virtual Hard Disk"));
+    setTitle(UIWizardNewVM::tr("Hard drive"));
 
     /* Translate widgets: */
-    m_pLabel1->setText(UIWizardNewVM::tr("<p>If you wish you can now add a start-up disk to the new machine. "
-                                         "You can either create a new virtual disk or select one from the list "
-                                         "or from another location using the folder icon.</p>"
-                                         "<p>If you need a more complex virtual disk setup you can skip this step "
-                                         "and make the changes to the machine settings once the machine is created.</p>"));
     QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
                                 VBoxGlobal::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
-    m_pLabel2->setText(UIWizardNewVM::tr("The recommended size of the start-up disk is <b>%1</b>.").arg(strRecommendedHDD));
-    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Start-up &Disk"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create new hard disk"));
-    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing hard disk"));
-    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+    m_pLabel1->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard drive to the new machine. "
+                                         "You can either create a new hard drive file or select one from the list "
+                                         "or from another location using the folder icon.</p>"
+                                         "<p>If you need a more complex storage set-up you can skip this step "
+                                         "and make the changes to the machine settings once the machine is created.</p>"
+                                         "<p>The recommended size of the hard drive is <b>%1</b>.</p>")
+                                         .arg(strRecommendedHDD));
+    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard &drive"));
+    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create new virtual hard drive"));
+    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing virtual hard drive file"));
+    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard drive file..."));
 }
 
 void UIWizardNewVMPageBasic4::initializePage()
@@ -266,8 +265,20 @@ bool UIWizardNewVMPageBasic4::validatePage()
     }
     else if (m_pDiskCreate->isChecked())
     {
-        /* Show the New Virtual Disk wizard: */
+        /* Show the New Virtual Hard Drive wizard: */
         fResult = getWithNewVirtualDiskWizard();
+    }
+
+    if (fResult)
+    {
+        /* Lock finish button: */
+        startProcessing();
+
+        /* Try to create VM: */
+        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+
+        /* Unlock finish button: */
+        endProcessing();
     }
 
     /* Return result: */

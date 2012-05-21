@@ -255,7 +255,7 @@ void UIWizardNewVDPageExpert::retranslateUi()
 {
     /* Translate widgets: */
     m_pLocationCnt->setTitle(UIWizardNewVD::tr("&Location"));
-    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a virtual hard disk file..."));
+    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a virtual hard drive file..."));
     m_pSizeCnt->setTitle(UIWizardNewVD::tr("&Size"));
     m_pFormatCnt->setTitle(UIWizardNewVD::tr("File &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();

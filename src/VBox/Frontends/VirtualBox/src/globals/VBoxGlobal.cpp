@@ -2689,8 +2689,8 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
         case VBoxDefs::MediumType_HardDisk:
         {
             filters = vboxGlobal().HDDBackends();
-            strTitle = tr ("Choose a virtual hard disk file");
-            allType = tr ("hard disk");
+            strTitle = tr("Please choose a virtual hard drive file");
+            allType = tr("All virtual hard drive files (%1)");
             strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
             if (strLastFolder.isEmpty())
                 strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
@@ -2701,8 +2701,8 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
         case VBoxDefs::MediumType_DVD:
         {
             filters = vboxGlobal().DVDBackends();
-            strTitle = tr ("Choose a virtual CD/DVD disk file");
-            allType = tr ("CD/DVD-ROM disk");
+            strTitle = tr("Please choose a virtual optical disk file");
+            allType = tr("All virtual optical disk files (%1)");
             strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
             if (strLastFolder.isEmpty())
                 strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
@@ -2713,8 +2713,8 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
         case VBoxDefs::MediumType_Floppy:
         {
             filters = vboxGlobal().FloppyBackends();
-            strTitle = tr ("Choose a virtual floppy disk file");
-            allType = tr ("floppy disk");
+            strTitle = tr("Please choose a virtual floppy disk file");
+            allType = tr("All virtual floppy disk files (%1)");
             strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
             if (strLastFolder.isEmpty())
                 strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
@@ -2739,7 +2739,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
         prefixes << item.second;
     }
     if (!prefixes.isEmpty())
-        backends.insert(0, tr("All %1 images (%2)").arg(allType).arg(prefixes.join(" ").trimmed()));
+        backends.insert(0, allType.arg(prefixes.join(" ").trimmed()));
     backends << tr("All files (*)");
     strFilter = backends.join(";;").trimmed();
 

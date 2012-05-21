@@ -53,8 +53,7 @@ protected:
     bool insertMedium();
 
     /* Who will be able to export appliance: */
-    friend class UIWizardFirstRunPageBasic3;
-    friend class UIWizardFirstRunPageExpert;
+    friend class UIWizardFirstRunPageBasic2;
 
 private:
 

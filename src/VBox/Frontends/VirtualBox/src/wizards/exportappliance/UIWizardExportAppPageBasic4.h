@@ -27,7 +27,6 @@
 #include "UIWizardExportAppDefs.h"
 
 /* Forward declarations: */
-class QILabelSeparator;
 class UIWizardExportApp;
 class QIRichTextLabel;
 
@@ -46,7 +45,6 @@ protected:
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
     /* Widgets: */
-    QILabelSeparator *m_pVMApplianceLabel;
     UIApplianceExportEditorWidget *m_pApplianceWidget;
 };
 

@@ -38,8 +38,16 @@ int	UIWizard::exec()
 
 void UIWizard::sltCurrentIdChanged(int iId)
 {
-    /* Enable 1st button (Hide/Show Description) for 1st page only: */
-    setOption(QWizard::HaveCustomButton1, iId == 0);
+    /* Hide/show description button disabled by default: */
+    bool fIsHideShowDescriptionButtonAvailable = false;
+    /* Enable hide/show description button for 1st page: */
+    if (iId == 0)
+        fIsHideShowDescriptionButtonAvailable = true;
+    /* But first-run wizard has no such button anyway: */
+    if (m_type == UIWizardType_FirstRun)
+        fIsHideShowDescriptionButtonAvailable = false;
+    /* Set a flag for hide/show description button finally: */
+    setOption(QWizard::HaveCustomButton1, fIsHideShowDescriptionButtonAvailable);
 }
 
 void UIWizard::sltCustomButtonClicked(int iId)
@@ -400,7 +408,11 @@ double UIWizard::ratio()
         /* New VD wizard much taller than others, fixing: */
         case UIWizardType_NewVD:
         case UIWizardType_CloneVD:
+        case UIWizardType_ExportAppliance:
             dRatio += 0.3;
+            break;
+        case UIWizardType_FirstRun:
+            dRatio += 0.4;
             break;
         default:
             break;
@@ -531,13 +543,14 @@ QString UIWizard::nameForType(UIWizardType type)
 /* static */
 UIWizardMode UIWizard::loadModeForType(UIWizardType type)
 {
-    /* Default mode is Basic: */
-    UIWizardMode mode = UIWizardMode_Basic;
+    /* Some wizard use only basic mode: */
+    if (type == UIWizardType_FirstRun)
+        return UIWizardMode_Basic;
     /* Get mode from extra-data: */
     QStringList wizards = vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_HideDescriptionForWizards);
     if (wizards.contains(nameForType(type)))
-        mode = UIWizardMode_Expert;
+        return UIWizardMode_Expert;
     /* Return mode: */
-    return mode;
+    return UIWizardMode_Basic;
 }
 

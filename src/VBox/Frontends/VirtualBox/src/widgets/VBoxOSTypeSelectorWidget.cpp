@@ -151,7 +151,7 @@ void VBoxOSTypeSelectorWidget::activateLayout()
 
 void VBoxOSTypeSelectorWidget::retranslateUi()
 {
-    mTxFamilyName->setText (tr ("Operating &System:"));
+    mTxFamilyName->setText (tr ("&Type:"));
     mCbFamily->setWhatsThis (tr ("Displays the operating system family that "
                                  "you plan to install into this virtual machine."));
     mTxTypeName->setText (tr ("&Version:"));

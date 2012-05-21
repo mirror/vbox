@@ -23,7 +23,7 @@
 #include "UIWizard.h"
 #include "COMDefs.h"
 
-/* Clone Virtual Disk wizard: */
+/* Clone Virtual Hard Drive wizard: */
 class UIWizardCloneVD : public UIWizard
 {
     Q_OBJECT;
@@ -36,8 +36,7 @@ public:
         Page1,
         Page2,
         Page3,
-        Page4,
-        Page5
+        Page4
     };
 
     /* Page IDs: */
@@ -58,7 +57,7 @@ protected:
     bool copyVirtualDisk();
 
     /* Who will be able to copy virtual-disk: */
-    friend class UIWizardCloneVDPageBasic5;
+    friend class UIWizardCloneVDPageBasic4;
     friend class UIWizardCloneVDPageExpert;
 
 private:

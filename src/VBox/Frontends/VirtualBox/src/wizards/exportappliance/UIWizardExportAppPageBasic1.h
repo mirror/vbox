@@ -23,7 +23,6 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QILabelSeparator;
 class QListWidget;
 class QIRichTextLabel;
 
@@ -45,7 +44,6 @@ protected:
     QStringList machineIDs() const;
 
     /* Widgets: */
-    QILabelSeparator *m_pVMSelectorLabel;
     QListWidget *m_pVMSelector;
 };
 

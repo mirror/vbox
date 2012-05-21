@@ -90,19 +90,23 @@ void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton *pButton)
 void UIWizardCloneVMPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVM::tr("Cloning Configuration"));
+    setTitle(UIWizardCloneVM::tr("Type"));
 
     /* Translate widgets: */
-    QString strLabel = UIWizardCloneVM::tr("<p>Please select the type of the clone.</p><p>If you choose <b>Full Clone</b> an exact copy "
-                                           "(including all virtual disk images) of the original VM will be created. If you select <b>Linked Clone</b>, "
-                                           "a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.</p>");
+    QString strLabel = UIWizardCloneVM::tr("<p>Please select the type of the clone.</p>"
+                                           "<p>If you choose <b>Full clone</b>, "
+                                           "an exact copy (including all virtual hard drive images) "
+                                           "of the original VM will be created.</p>"
+                                           "<p>If you select <b>Linked clone</b>, "
+                                           "a new VM will be created, but the virtual hard drive images "
+                                           "will point to the virtual hard drive images of original VM.</p>");
     if (m_fAdditionalInfo)
-        strLabel += UIWizardCloneVM::tr("<p>Note that a new snapshot within the source VM is created in case you select <b>Linked Clone</b>.</p>");
+        strLabel += UIWizardCloneVM::tr("<p>Note that a new snapshot within the source VM is created in case you select <b>Linked clone</b>.</p>");
     m_pLabel->setText(strLabel);
 
     m_pCloneTypeCnt->setTitle(UIWizardCloneVM::tr("&Type"));
-    m_pFullCloneRadio->setText(UIWizardCloneVM::tr("Full Clone"));
-    m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("Linked Clone"));
+    m_pFullCloneRadio->setText(UIWizardCloneVM::tr("Full clone"));
+    m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("Linked clone"));
 }
 
 void UIWizardCloneVMPageBasic2::initializePage()

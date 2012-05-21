@@ -231,7 +231,7 @@ void UIWizardExportApp::retranslateUi()
     UIWizard::retranslateUi();
 
     /* Translate wizard: */
-    setWindowTitle(tr("Appliance Export Wizard"));
+    setWindowTitle(tr("Export Virtual Appliance"));
     setButtonText(QWizard::CustomButton2, tr("Restore Defaults"));
     setButtonText(QWizard::FinishButton, tr("Export"));
 }

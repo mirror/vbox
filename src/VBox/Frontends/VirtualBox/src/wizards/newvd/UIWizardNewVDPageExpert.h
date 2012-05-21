@@ -23,14 +23,12 @@
 #include "UIWizardNewVDPageBasic1.h"
 #include "UIWizardNewVDPageBasic2.h"
 #include "UIWizardNewVDPageBasic3.h"
-#include "UIWizardNewVDPageBasic4.h"
 
-/* Expert page of the New Virtual Disk wizard: */
+/* Expert page of the New Virtual Hard Drive wizard: */
 class UIWizardNewVDPageExpert : public UIWizardPage,
                                 public UIWizardNewVDPage1,
                                 public UIWizardNewVDPage2,
-                                public UIWizardNewVDPage3,
-                                public UIWizardNewVDPage4
+                                public UIWizardNewVDPage3
 {
     Q_OBJECT;
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);

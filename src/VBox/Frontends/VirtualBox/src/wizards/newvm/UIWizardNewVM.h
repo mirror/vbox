@@ -36,8 +36,7 @@ public:
         Page1,
         Page2,
         Page3,
-        Page4,
-        Page5
+        Page4
     };
 
     /* Page IDs: */
@@ -55,7 +54,7 @@ protected:
     bool createVM();
 
     /* Who will be able to create virtual-machine: */
-    friend class UIWizardNewVMPageBasic5;
+    friend class UIWizardNewVMPageBasic4;
     friend class UIWizardNewVMPageExpert;
 
 private:

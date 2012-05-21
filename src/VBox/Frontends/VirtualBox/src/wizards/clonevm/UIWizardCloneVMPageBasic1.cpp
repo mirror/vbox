@@ -56,7 +56,6 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel1 = new QIRichTextLabel(this);
-        m_pLabel2 = new QIRichTextLabel(this);
         m_pNameCnt = new QGroupBox(this);
         {
             QVBoxLayout *pNameCntLayout = new QVBoxLayout(m_pNameCnt);
@@ -70,7 +69,6 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
         }
         m_pReinitMACsCheckBox = new QCheckBox(this);
         pMainLayout->addWidget(m_pLabel1);
-        pMainLayout->addWidget(m_pLabel2);
         pMainLayout->addWidget(m_pNameCnt);
         pMainLayout->addWidget(m_pReinitMACsCheckBox);
         pMainLayout->addStretch();
@@ -87,12 +85,12 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
 void UIWizardCloneVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVM::tr("Welcome to the Clone Virtual Machine wizard!"));
+    setTitle(UIWizardCloneVM::tr("Name"));
 
     /* Translate widgets: */
-    m_pLabel1->setText(UIWizardCloneVM::tr("<p>This wizard will help you to create a clone of your virtual machine.</p>"));
-    m_pLabel1->setText(m_pLabel1->text() + QString("<p>%1</p>").arg(standardHelpText()));
-    m_pLabel2->setText(UIWizardCloneVM::tr("<p>Please choose a name for the new virtual machine:</p>"));
+    m_pLabel1->setText(UIWizardCloneVM::tr("<p>Please choose a name for the new virtual machine. "
+                                           "The new machine will be a clone of the machine <b>%1</b>.</p>")
+                                           .arg(m_strOriginalName));
     m_pNameCnt->setTitle(UIWizardCloneVM::tr("&Name"));
     m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
     m_pReinitMACsCheckBox->setText(UIWizardCloneVM::tr("&Reinitialize the MAC address of all network cards"));

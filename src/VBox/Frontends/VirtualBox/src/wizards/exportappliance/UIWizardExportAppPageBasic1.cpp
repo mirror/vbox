@@ -107,18 +107,12 @@ UIWizardExportAppPageBasic1::UIWizardExportAppPageBasic1(const QStringList &sele
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pVMSelectorLabel = new QILabelSeparator(this);
-        {
-            m_pVMSelectorLabel->hide();
-        }
         m_pVMSelector = new QListWidget(this);
         {
             m_pVMSelector->setAlternatingRowColors(true);
             m_pVMSelector->setSelectionMode(QAbstractItemView::ExtendedSelection);
-            m_pVMSelectorLabel->setBuddy(m_pVMSelector);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pVMSelectorLabel);
         pMainLayout->addWidget(m_pVMSelector);
         populateVMSelectorItems(selectedVMNames);
     }
@@ -134,17 +128,12 @@ UIWizardExportAppPageBasic1::UIWizardExportAppPageBasic1(const QStringList &sele
 void UIWizardExportAppPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Welcome to the Appliance Export wizard!"));
+    setTitle(UIWizardExportApp::tr("Virtual machines to export"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardExportApp::tr("<p>This wizard will guide you through the process of "
-                                            "exporting an appliance.</p><p>%1</p><p>Please select "
-                                            "the virtual machines that should be added to the "
-                                            "appliance. You can select more than one. Please note "
-                                            "that these machines have to be turned off before they "
-                                            "can be exported.</p>")
-                                            .arg(standardHelpText()));
-    m_pVMSelectorLabel->setText(UIWizardExportApp::tr("VM &List"));
+    m_pLabel->setText(UIWizardExportApp::tr("<p>Please select the virtual machines that should be added to the appliance. "
+                                            "You can select more than one. Please note that these machines have to be "
+                                            "turned off before they can be exported.</p>"));
 }
 
 void UIWizardExportAppPageBasic1::initializePage()

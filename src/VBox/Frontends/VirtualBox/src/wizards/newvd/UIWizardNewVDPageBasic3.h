@@ -32,7 +32,7 @@ class QSlider;
 class QILineEdit;
 class QIRichTextLabel;
 
-/* 3rd page of the New Virtual Disk wizard (base part): */
+/* 3rd page of the New Virtual Hard Drive wizard (base part): */
 class UIWizardNewVDPage3 : public UIWizardPageBase
 {
 protected:
@@ -81,7 +81,7 @@ protected:
     QILineEdit *m_pSizeEditor;
 };
 
-/* 3rd page of the New Virtual Disk wizard (basic extension): */
+/* 3rd page of the New Virtual Hard Drive wizard (basic extension): */
 class UIWizardNewVDPageBasic3 : public UIWizardPage, public UIWizardNewVDPage3
 {
     Q_OBJECT;

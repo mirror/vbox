@@ -63,6 +63,7 @@ UIWizardFirstRunPageBasic2::UIWizardFirstRunPageBasic2(const QString &strMachine
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        pMainLayout->setContentsMargins(8, 0, 8, 0);
         m_pLabel = new QIRichTextLabel(this);
         m_pSourceCnt = new QGroupBox(this);
         {
@@ -106,20 +107,26 @@ void UIWizardFirstRunPageBasic2::sltOpenMediumWithFileOpenDialog()
 
 void UIWizardFirstRunPageBasic2::retranslateUi()
 {
-    /* Translate page: */
-    setTitle(UIWizardFirstRun::tr("Select Installation Media"));
-
     /* Translate widgets: */
     if (m_fBootHardDiskWasSet)
-        m_pLabel->setText(UIWizardFirstRun::tr("<p>Select the media which contains the setup program "
-                                               "of the operating system you want to install. This media must be bootable, "
-                                               "otherwise the setup program will not be able to start.</p>"));
+        m_pLabel->setText(UIWizardFirstRun::tr("<p>Please select a virtual optical disk file "
+                                               "or a physical optical drive containing a disk "
+                                               "to start your new virtual machine from.</p>"
+                                               "<p>The disk should be suitable for starting a computer from "
+                                               "and should contain the operating system you wish to install "
+                                               "on the virtual machine if you want to do that now. "
+                                               "The disk will be ejected from the virtual drive "
+                                               "automatically next time you switch the virtual machine off, "
+                                               "but you can also do this yourself if needed using the Devices menu.</p>"));
     else
-        m_pLabel->setText(UIWizardFirstRun::tr("<p>Select the media that contains the operating system "
-                                               "you want to work with. This media must be bootable, "
-                                               "otherwise the operating system will not be able to start.</p>"));
-    m_pSourceCnt->setTitle(UIWizardFirstRun::tr("Media Source"));
-    m_pSelectMediaButton->setToolTip(VBoxGlobal::tr("Choose a virtual CD/DVD disk file"));
+        m_pLabel->setText(UIWizardFirstRun::tr("<p>Please select a virtual optical disk file "
+                                               "or a physical optical drive containing a disk "
+                                               "to start your new virtual machine from.</p>"
+                                               "<p>The disk should be suitable for starting a computer from. "
+                                               "As this virtual machine has no hard drive "
+                                               "you will not be able to install an operating system on it at the moment.</p>"));
+    m_pSourceCnt->setTitle(UIWizardFirstRun::tr("Start-up disk"));
+    m_pSelectMediaButton->setToolTip(UIWizardFirstRun::tr("Choose a virtual optical disk file..."));
 }
 
 void UIWizardFirstRunPageBasic2::initializePage()
@@ -132,6 +139,25 @@ bool UIWizardFirstRunPageBasic2::isComplete() const
 {
     /* Make sure valid medium chosen: */
     return !vboxGlobal().findMedium(id()).isNull();
+}
+
+bool UIWizardFirstRunPageBasic2::validatePage()
+{
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Lock finish button: */
+    startProcessing();
+
+    /* Try to insert chosen medium: */
+    if (fResult)
+        fResult = qobject_cast<UIWizardFirstRun*>(wizard())->insertMedium();
+
+    /* Unlock finish button: */
+    endProcessing();
+
+    /* Return result: */
+    return fResult;
 }
 
 QString UIWizardFirstRunPageBasic2::source() const

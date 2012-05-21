@@ -78,7 +78,7 @@ void UIWizardCloneVDPage4::onSelectLocationButtonClicked()
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
                                                               strBackendsList, thisImp(),
-                                                              VBoxGlobal::tr("Choose a virtual hard disk file"));
+                                                              UIWizardCloneVD::tr("Please choose a location for new virtual hard drive file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())
@@ -196,13 +196,13 @@ void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
 void UIWizardCloneVDPageBasic4::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Virtual disk file location"));
+    setTitle(UIWizardCloneVD::tr("Copy location"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual disk file into the box below or "
+    m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual hard drive file into the box below or "
                                           "click on the folder icon to select a different folder to create the file in."));
-    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("&Location"));
-    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard disk file..."));
+    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("Copy &location"));
+    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual hard drive file..."));
 }
 
 void UIWizardCloneVDPageBasic4::initializePage()
@@ -217,7 +217,7 @@ void UIWizardCloneVDPageBasic4::initializePage()
     /* Get default extension for virtual-disk copy: */
     m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
     /* Compose default-name for virtual-disk copy: */
-    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual disk name").arg(sourceFileInfo.baseName());
+    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual hard drive name").arg(sourceFileInfo.baseName());
     /* Set default-name as text for location editor: */
     m_pDestinationDiskEditor->setText(strMediumName);
 }
@@ -230,13 +230,28 @@ bool UIWizardCloneVDPageBasic4::isComplete() const
 
 bool UIWizardCloneVDPageBasic4::validatePage()
 {
-    /* Make sure such virtual-disk doesn't exists already: */
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Make sure such file doesn't exists already: */
     QString strMediumPath(mediumPath());
-    if (QFileInfo(strMediumPath).exists())
-    {
+    fResult = !QFileInfo(strMediumPath).exists();
+    if (!fResult)
         msgCenter().sayCannotOverwriteHardDiskStorage(this, strMediumPath);
-        return false;
+
+    if (fResult)
+    {
+        /* Lock finish button: */
+        startProcessing();
+
+        /* Try to copy virtual hard drive file: */
+        fResult = qobject_cast<UIWizardCloneVD*>(wizard())->copyVirtualDisk();
+
+        /* Unlock finish button: */
+        endProcessing();
     }
-    return true;
+
+    /* Return result: */
+    return fResult;
 }
 

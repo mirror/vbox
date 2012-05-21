@@ -56,14 +56,12 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
 void UIWizardImportAppPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardImportApp::tr("Welcome to the Appliance Import wizard!"));
+    setTitle(UIWizardImportApp::tr("Appliance to import"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardImportApp::tr("<p>This wizard will guide you through importing an appliance.</p>"
-                                            "<p>%1</p><p>VirtualBox currently supports importing appliances "
-                                            "saved in the Open Virtualization Format (OVF). To continue, "
-                                            "select the file to import below:</p>")
-                                           .arg(standardHelpText()));
+    m_pLabel->setText(UIWizardImportApp::tr("<p>VirtualBox currently supports importing appliances "
+                                            "saved in the Open Virtualization Format (OVF). "
+                                            "To continue, select the file to import below.</p>"));
     m_pFileSelector->setChooseButtonText(UIWizardImportApp::tr("Open appliance..."));
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Select an appliance to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));

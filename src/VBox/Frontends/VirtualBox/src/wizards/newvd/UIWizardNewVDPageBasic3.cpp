@@ -88,7 +88,7 @@ void UIWizardNewVDPage3::onSelectLocationButtonClicked()
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
                                                               strBackendsList, thisImp(),
-                                                              VBoxGlobal::tr("Choose a virtual hard disk file"));
+                                                              VBoxGlobal::tr("Please choose a location for new virtual hard drive file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())
@@ -366,14 +366,15 @@ void UIWizardNewVDPageBasic3::sltSizeEditorTextChanged(const QString &strValue)
 void UIWizardNewVDPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVD::tr("Virtual disk file location and size"));
+    setTitle(UIWizardNewVD::tr("Location and size"));
 
     /* Translate widgets: */
-    m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual disk file into the box below or "
+    m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard drive file into the box below or "
                                                 "click on the folder icon to select a different folder to create the file in."));
     m_pLocationCnt->setTitle(UIWizardNewVD::tr("&Location"));
-    m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual disk in megabytes. This size will be reported "
-                                            "to the Guest OS as the maximum size of this virtual disk."));
+    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard drive file..."));
+    m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard drive in megabytes. This size will be reported "
+                                            "to the Guest OS as the maximum size of this hard drive."));
     m_pSizeCnt->setTitle(UIWizardNewVD::tr("&Size"));
 }
 
@@ -397,13 +398,28 @@ bool UIWizardNewVDPageBasic3::isComplete() const
 
 bool UIWizardNewVDPageBasic3::validatePage()
 {
-    /* Make sure such virtual-disk doesn't exists already: */
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Make sure such file doesn't exists already: */
     QString strMediumPath(mediumPath());
-    if (QFileInfo(strMediumPath).exists())
-    {
+    fResult = !QFileInfo(strMediumPath).exists();
+    if (!fResult)
         msgCenter().sayCannotOverwriteHardDiskStorage(this, strMediumPath);
-        return false;
+
+    if (fResult)
+    {
+        /* Lock finish button: */
+        startProcessing();
+
+        /* Try to create virtual hard drive file: */
+        fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
+
+        /* Unlock finish button: */
+        endProcessing();
     }
-    return true;
+
+    /* Return result: */
+    return fResult;
 }
 

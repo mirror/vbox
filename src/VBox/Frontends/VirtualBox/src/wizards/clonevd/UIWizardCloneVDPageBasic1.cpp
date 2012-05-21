@@ -103,22 +103,22 @@ void UIWizardCloneVDPageBasic1::sltHandleOpenSourceDiskClick()
 {
     /* Call to base-class: */
     onHandleOpenSourceDiskClick();
+
+    /* Broadcast complete-change: */
+    emit completeChanged();
 }
 
 void UIWizardCloneVDPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Welcome to the Copy Virtual Disk wizard!"));
+    setTitle(UIWizardCloneVD::tr("Hard drive to copy"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("<p>This wizard will help you to copy a virtual disk.</p>"));
-    m_pLabel->setText(m_pLabel->text() + QString("<p>%1</p>").arg(standardHelpText()));
-    m_pLabel->setText(m_pLabel->text() + UIWizardCloneVD::tr("Please select the virtual disk which you would like "
-                                                             "to copy if it is not already selected. You can either "
-                                                             "choose one from the list or use the folder icon "
-                                                             "beside the list to select a virtual disk file."));
-    m_pSourceDiskCnt->setTitle(UIWizardCloneVD::tr("Virtual disk to copy"));
-    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard disk file..."));
+    m_pLabel->setText(UIWizardCloneVD::tr("<p>Please select the virtual hard drive file that you would like to copy "
+                                          "if it is not already selected. You can either choose one from the list "
+                                          "or use the folder icon beside the list to select one.</p>"));
+    m_pSourceDiskCnt->setTitle(UIWizardCloneVD::tr("Hard drive to &copy"));
+    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard drive file to copy..."));
 }
 
 void UIWizardCloneVDPageBasic1::initializePage()

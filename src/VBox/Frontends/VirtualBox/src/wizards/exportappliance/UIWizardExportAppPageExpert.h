@@ -25,6 +25,9 @@
 #include "UIWizardExportAppPageBasic3.h"
 #include "UIWizardExportAppPageBasic4.h"
 
+/* Forward declarations: */
+class QILabelSeparator;
+
 /* Expert page of the Export Appliance wizard: */
 class UIWizardExportAppPageExpert : public UIWizardPage,
                                     public UIWizardExportAppPage1,
@@ -81,6 +84,10 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
+
+    /* Widgets: */
+    QILabelSeparator *m_pVMSelectorLabel;
+    QILabelSeparator *m_pVMApplianceLabel;
 };
 
 #endif /* __UIWizardExportAppPageExpert_h__ */
