@@ -500,14 +500,14 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
         /* Trigger timeout (in ms). */
         if (!g_ulAPIMonResponseTimeoutMS) /* Not set by command line? */
         {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/TriggerTimeout").raw(),
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/ResponseTimeout").raw(),
                                                           strValue.asOutParam()));
             if (!strValue.isEmpty())
                 g_ulAPIMonResponseTimeoutMS = Utf8Str(strValue).toUInt32();
         }
         if (!g_ulAPIMonResponseTimeoutMS) /* Still not set? Use a default. */
         {
-            serviceLogVerbose(("apimon: API monitor trigger timeout not given, defaulting to 30s\n"));
+            serviceLogVerbose(("apimon: API monitor response timeout not given, defaulting to 30s\n"));
 
             /* Default is 30 seconds timeout. */
             g_ulAPIMonResponseTimeoutMS = 30 * 1000;
