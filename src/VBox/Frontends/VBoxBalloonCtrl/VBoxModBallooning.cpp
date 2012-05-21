@@ -490,7 +490,10 @@ static DECLCALLBACK(int) VBoxModBallooningOnMachineStateChanged(const Bstr &strU
                                                                 MachineState_T enmState)
 {
     PVBOXWATCHDOG_MACHINE pMachine = getMachine(strUuid);
-    AssertPtrReturn(pMachine, VERR_INVALID_PARAMETER);
+    /* Note: The machine state will change to "setting up" when machine gets deleted,
+     *       so pMachine might be NULL here. */
+    if (!pMachine)
+        return VINF_SUCCESS;
 
     return balloonMachineUpdate(strUuid, pMachine);
 }

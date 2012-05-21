@@ -386,7 +386,7 @@ static int machineAdd(const Bstr &strUuid)
             }
             else
                 itGroups->second.push_back(strUuid);
-            serviceLogVerbose(("Group \"%ls\" now has %ld machine(s)\n",
+            serviceLogVerbose(("Group \"%s\" has now %ld machine(s)\n",
                                itGroup->first.c_str(), itGroups->second.size()));
             itGroup++;
         }

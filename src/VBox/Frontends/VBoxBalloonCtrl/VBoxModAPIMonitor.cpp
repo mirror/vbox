@@ -39,7 +39,7 @@ enum GETOPTDEF_APIMON
     GETOPTDEF_APIMON_GROUPS = 3000,
     GETOPTDEF_APIMON_ISLN_RESPONSE,
     GETOPTDEF_APIMON_ISLN_TIMEOUT,
-    GETOPTDEF_APIMON_TRIGGER_TIMEOUT
+    GETOPTDEF_APIMON_RESP_TIMEOUT
 };
 
 /**
@@ -49,13 +49,15 @@ static const RTGETOPTDEF g_aAPIMonitorOpts[] = {
     { "--apimon-groups",            GETOPTDEF_APIMON_GROUPS,         RTGETOPT_REQ_STRING },
     { "--apimon-isln-response",     GETOPTDEF_APIMON_ISLN_RESPONSE,  RTGETOPT_REQ_STRING },
     { "--apimon-isln-timeout",      GETOPTDEF_APIMON_ISLN_TIMEOUT,   RTGETOPT_REQ_UINT32 },
-    { "--apimon-trigger-timeout",   GETOPTDEF_APIMON_ISLN_TIMEOUT,   RTGETOPT_REQ_UINT32 }
+    { "--apimon-resp-timeout",      GETOPTDEF_APIMON_RESP_TIMEOUT,   RTGETOPT_REQ_UINT32 }
 };
 
 enum APIMON_RESPONSE
 {
     /** Unknown / unhandled response. */
     APIMON_RESPONSE_NONE       = 0,
+    /** Pauses the VM execution. */
+    APIMON_RESPONSE_PAUSE      = 10,
     /** Does a hard power off. */
     APIMON_RESPONSE_POWEROFF   = 200,
     /** Tries to save the current machine state. */
@@ -70,7 +72,7 @@ static mapGroups                    g_vecAPIMonGroups; /** @todo Move this into 
 static APIMON_RESPONSE              g_enmAPIMonIslnResp     = APIMON_RESPONSE_NONE;
 static unsigned long                g_ulAPIMonIslnTimeoutMS = 0;
 static Bstr                         g_strAPIMonIslnLastBeat;
-static unsigned long                g_ulAPIMonTriggerTimeoutMS = 0;
+static unsigned long                g_ulAPIMonResponseTimeoutMS = 0;
 static uint64_t                     g_uAPIMonIslnLastBeatMS = 0;
 
 static int apimonResponseToEnum(const char *pszResponse, APIMON_RESPONSE *pResp)
@@ -79,19 +81,27 @@ static int apimonResponseToEnum(const char *pszResponse, APIMON_RESPONSE *pResp)
     AssertPtrReturn(pResp, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-    if (   !RTStrICmp(pszResponse, "poweroff")
-        || !RTStrICmp(pszResponse, "powerdown"))
+    if (!RTStrICmp(pszResponse, "none"))
+    {
+        *pResp = APIMON_RESPONSE_NONE;
+    }
+    else if (!RTStrICmp(pszResponse, "pause"))
+    {
+        *pResp = APIMON_RESPONSE_PAUSE;
+    }
+    else if (   !RTStrICmp(pszResponse, "poweroff")
+             || !RTStrICmp(pszResponse, "powerdown"))
     {
         *pResp = APIMON_RESPONSE_POWEROFF;
+    }
+    else if (!RTStrICmp(pszResponse, "save"))
+    {
+        *pResp = APIMON_RESPONSE_SAVE;
     }
     else if (   !RTStrICmp(pszResponse, "shutdown")
              || !RTStrICmp(pszResponse, "shutoff"))
     {
         *pResp = APIMON_RESPONSE_SHUTDOWN;
-    }
-    else if (!RTStrICmp(pszResponse, "save"))
-    {
-        *pResp = APIMON_RESPONSE_SAVE;
     }
     else
     {
@@ -104,14 +114,16 @@ static int apimonResponseToEnum(const char *pszResponse, APIMON_RESPONSE *pResp)
 
 static const char* apimonResponseToStr(APIMON_RESPONSE enmResp)
 {
-    if (APIMON_RESPONSE_POWEROFF == enmResp)
+    if (APIMON_RESPONSE_NONE == enmResp)
+        return "none";
+    else if (APIMON_RESPONSE_PAUSE == enmResp)
+        return "pausing";
+    else if (APIMON_RESPONSE_POWEROFF == enmResp)
         return "powering off";
-    else if (APIMON_RESPONSE_SHUTDOWN == enmResp)
-        return "shutting down";
     else if (APIMON_RESPONSE_SAVE == enmResp)
         return "saving state";
-    else if (APIMON_RESPONSE_NONE == enmResp)
-        return "none";
+    else if (APIMON_RESPONSE_SHUTDOWN == enmResp)
+        return "shutting down";
 
     return "unknown";
 }
@@ -184,110 +196,119 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
     ComPtr <IMachine> machine;
     CHECK_ERROR_RET(g_pVirtualBox, FindMachine(strUuid.raw(),
                                                machine.asOutParam()), VERR_NOT_FOUND);
-
-    /* Open a session for the VM. */
-    CHECK_ERROR_RET(machine, LockMachine(g_pSession, LockType_Shared), VERR_ACCESS_DENIED);
-
     do
     {
-
-        /* Get the associated console. */
-        ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK(g_pSession, COMGETTER(Console)(console.asOutParam()));
-
         /* Query the machine's state to avoid unnecessary IPC. */
         MachineState_T machineState;
-        CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
+        CHECK_ERROR_BREAK(machine, COMGETTER(State)(&machineState));
+
         if (   machineState == MachineState_Running
             || machineState == MachineState_Paused)
         {
-            ComPtr<IProgress> progress;
+            /* Open a session for the VM. */
+            CHECK_ERROR_BREAK(machine, LockMachine(g_pSession, LockType_Shared));
 
-            switch (enmResp)
+            do
             {
-                case APIMON_RESPONSE_POWEROFF:
-                    CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
-                    serviceLogVerbose(("apimon: Waiting for powering off machine \"%ls\" ...\n",
-                                       strUuid.raw()));
-                    progress->WaitForCompletion(ulTimeout);
-                    CHECK_PROGRESS_ERROR(progress, ("Failed to power off machine \"%ls\"",
-                                         strUuid.raw()));
-                    break;
+                /* Get the associated console. */
+                ComPtr<IConsole> console;
+                CHECK_ERROR_BREAK(g_pSession, COMGETTER(Console)(console.asOutParam()));
 
-                case APIMON_RESPONSE_SAVE:
+                ComPtr<IProgress> progress;
+
+                switch (enmResp)
                 {
-                    /* First pause so we don't trigger a live save which needs more time/resources. */
-                    bool fPaused = false;
-                    rc = console->Pause();
-                    if (FAILED(rc))
-                    {
-                        bool fError = true;
-                        if (rc == VBOX_E_INVALID_VM_STATE)
+                    case APIMON_RESPONSE_PAUSE:
+                        if (machineState != MachineState_Paused)
                         {
-                            /* Check if we are already paused. */
-                            CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
-                            /* The error code was lost by the previous instruction. */
-                            rc = VBOX_E_INVALID_VM_STATE;
-                            if (machineState != MachineState_Paused)
-                            {
-                                serviceLog("apimon: Machine \"%s\" in invalid state %d -- %s\n",
-                                           strUuid.raw(), machineState, apimonMachineStateToName(machineState, false));
-                            }
-                            else
-                            {
-                                fError = false;
-                                fPaused = true;
-                            }
+                            serviceLogVerbose(("apimon: Pausing machine \"%ls\" ...\n",
+                                               strUuid.raw()));
+                            CHECK_ERROR_BREAK(console, Pause());
                         }
-                        if (fError)
-                            break;
-                    }
+                        break;
 
-                    serviceLogVerbose(("apimon: Waiting for saving state of machine \"%ls\" ...\n",
-                                       strUuid.raw()));
+                    case APIMON_RESPONSE_POWEROFF:
+                        serviceLogVerbose(("apimon: Powering off machine \"%ls\" ...\n",
+                                           strUuid.raw()));
+                        CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
+                        progress->WaitForCompletion(ulTimeout);
+                        CHECK_PROGRESS_ERROR(progress, ("Failed to power off machine \"%ls\"",
+                                             strUuid.raw()));
+                        break;
 
-                    CHECK_ERROR(console, SaveState(progress.asOutParam()));
-                    if (FAILED(rc))
+                    case APIMON_RESPONSE_SAVE:
                     {
-                        if (!fPaused)
-                            console->Resume();
+                        serviceLogVerbose(("apimon: Saving state of machine \"%ls\" ...\n",
+                                           strUuid.raw()));
+
+                        /* First pause so we don't trigger a live save which needs more time/resources. */
+                        bool fPaused = false;
+                        rc = console->Pause();
+                        if (FAILED(rc))
+                        {
+                            bool fError = true;
+                            if (rc == VBOX_E_INVALID_VM_STATE)
+                            {
+                                /* Check if we are already paused. */
+                                CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
+                                /* The error code was lost by the previous instruction. */
+                                rc = VBOX_E_INVALID_VM_STATE;
+                                if (machineState != MachineState_Paused)
+                                {
+                                    serviceLog("apimon: Machine \"%ls\" in invalid state %d -- %s\n",
+                                               strUuid.raw(), machineState, apimonMachineStateToName(machineState, false));
+                                }
+                                else
+                                {
+                                    fError = false;
+                                    fPaused = true;
+                                }
+                            }
+                            if (fError)
+                                break;
+                        }
+
+                        CHECK_ERROR(console, SaveState(progress.asOutParam()));
+                        if (FAILED(rc))
+                        {
+                            if (!fPaused)
+                                console->Resume();
+                            break;
+                        }
+
+                        progress->WaitForCompletion(ulTimeout);
+                        CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state of machine \"%ls\"",
+                                             strUuid.raw()));
+                        if (FAILED(rc))
+                        {
+                            if (!fPaused)
+                                console->Resume();
+                        }
+
                         break;
                     }
 
-                    progress->WaitForCompletion(ulTimeout);
-                    CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state of machine \"%ls\"",
-                                         strUuid.raw()));
-                    if (FAILED(rc))
-                    {
-                        if (!fPaused)
-                            console->Resume();
-                    }
+                    case APIMON_RESPONSE_SHUTDOWN:
+                        serviceLogVerbose(("apimon: Shutting down machine \"%ls\" ...\n", strUuid.raw()));
+                        CHECK_ERROR_BREAK(console, PowerButton());
+                        break;
 
-                    break;
+                    default:
+                        AssertMsgFailed(("Response %d not implemented", enmResp));
+                        break;
                 }
+            } while (0);
 
-                case APIMON_RESPONSE_SHUTDOWN:
-                    CHECK_ERROR_BREAK(console, PowerButton());
-                    serviceLogVerbose(("apimon: Waiting for shutdown of machine \"%ls\" ...\n",
-                                       strUuid.raw()));
-                    progress->WaitForCompletion(ulTimeout);
-                    CHECK_PROGRESS_ERROR(progress, ("Failed to shutdown machine \"%ls\"",
-                                         strUuid.raw()));
-                    break;
-
-                default:
-                    AssertMsgFailed(("Response %d not implemented", enmResp));
-                    break;
-            }
+            /* Unlock the machine again. */
+            g_pSession->UnlockMachine();
         }
         else
-            serviceLog("apimon: Machine \"%s\" is in invalid state \"%s\" (%d) for triggering \"%s\"\n",
-                       strUuid.raw(), apimonMachineStateToName(machineState, false), machineState,
-                       apimonResponseToStr(enmResp));
+            serviceLogVerbose(("apimon: Warning: Could not trigger \"%s\" (%d) for machine \"%ls\"; in state \"%s\" (%d) currently\n",
+                               apimonResponseToStr(enmResp), enmResp, strUuid.raw(),
+                               apimonMachineStateToName(machineState, false), machineState));
     } while (0);
 
-    /* Unlock the machine again. */
-    g_pSession->UnlockMachine();
+
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR;
 }
@@ -341,9 +362,9 @@ static int apimonTrigger(APIMON_RESPONSE enmResp)
             if (fHandleVM)
             {
                 int rc2 = apimonMachineControl(it->first /* Uuid */,
-                                               &it->second /* Machine */, enmResp, g_ulAPIMonTriggerTimeoutMS);
+                                               &it->second /* Machine */, enmResp, g_ulAPIMonResponseTimeoutMS);
                 if (RT_FAILURE(rc2))
-                    serviceLog("apimon: Controlling machine \"%ls\" (action: %s) failed with rc=%Rrc",
+                    serviceLog("apimon: Controlling machine \"%ls\" (response \"%s\") failed with rc=%Rrc",
                                it->first.raw(), apimonResponseToStr(enmResp), rc);
 
                 if (RT_SUCCESS(rc))
@@ -410,10 +431,10 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
                     g_ulAPIMonIslnTimeoutMS = 1000;
                 break;
 
-            case GETOPTDEF_APIMON_TRIGGER_TIMEOUT:
-                g_ulAPIMonTriggerTimeoutMS = ValueUnion.u32;
-                if (g_ulAPIMonTriggerTimeoutMS < 5000) /* Don't allow timeouts < 5s. */
-                    g_ulAPIMonTriggerTimeoutMS = 5000;
+            case GETOPTDEF_APIMON_RESP_TIMEOUT:
+                g_ulAPIMonResponseTimeoutMS = ValueUnion.u32;
+                if (g_ulAPIMonResponseTimeoutMS < 5000) /* Don't allow timeouts < 5s. */
+                    g_ulAPIMonResponseTimeoutMS = 5000;
                 break;
 
             default:
@@ -477,20 +498,32 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
         }
 
         /* Trigger timeout (in ms). */
-        if (!g_ulAPIMonTriggerTimeoutMS) /* Not set by command line? */
+        if (!g_ulAPIMonResponseTimeoutMS) /* Not set by command line? */
         {
             CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/TriggerTimeout").raw(),
                                                           strValue.asOutParam()));
             if (!strValue.isEmpty())
-                g_ulAPIMonTriggerTimeoutMS = Utf8Str(strValue).toUInt32();
+                g_ulAPIMonResponseTimeoutMS = Utf8Str(strValue).toUInt32();
         }
-        if (!g_ulAPIMonTriggerTimeoutMS) /* Still not set? Use a default. */
+        if (!g_ulAPIMonResponseTimeoutMS) /* Still not set? Use a default. */
         {
             serviceLogVerbose(("apimon: API monitor trigger timeout not given, defaulting to 30s\n"));
 
             /* Default is 30 seconds timeout. */
-            g_ulAPIMonTriggerTimeoutMS = 30 * 1000;
+            g_ulAPIMonResponseTimeoutMS = 30 * 1000;
         }
+
+#ifdef DEBUG
+        /* Groups. */
+        serviceLogVerbose(("apimon: Handling %u groups:", g_vecAPIMonGroups.size()));
+        mapGroupsIterConst itGroups = g_vecAPIMonGroups.begin();
+        while (itGroups != g_vecAPIMonGroups.end())
+        {
+            serviceLogVerbose((" %s", itGroups->first.c_str()));
+            itGroups++;
+        }
+        serviceLogVerbose(("\n"));
+#endif
 
     } while (0);
 
@@ -602,15 +635,17 @@ VBOXMODULE g_ModAPIMonitor =
     /* uPriority. */
     0 /* Not used */,
     /* pszUsage. */
-    " [--apimon-groups=<string>]\n"
+    " [--apimon-groups=<string[,stringN]>]\n"
     " [--apimon-isln-response=<cmd>] [--apimon-isln-timeout=<ms>]\n"
-    " [--apimon-trigger-timeout=<ms>]",
+    " [--apimon-resp-timeout=<ms>]",
     /* pszOptions. */
-    "--apimon-groups        Sets the VM groups for monitoring (none).\n"
-    "--apimon-isln-response Sets the isolation response (shutdown VM).\n"
+    "--apimon-groups        Sets the VM groups for monitoring (all),\n"
+    "                       comma-separated list.\n"
+    "--apimon-isln-response Sets the isolation response to one of:\n"
+    "                       none, pause, poweroff, save, shutdown\n"
+    "                       (none).\n"
     "--apimon-isln-timeout  Sets the isolation timeout in ms (30s).\n"
-    "--apimon-trigger-timeout\n"
-    "                       Sets the trigger timeout in ms (30s).\n",
+    "--apimon-resp-timeout  Sets the response timeout in ms (30s).\n",
     /* methods. */
     VBoxModAPIMonitorPreInit,
     VBoxModAPIMonitorOption,
