@@ -121,7 +121,8 @@ VBoxDispD3D_SDKS     = WINDDKWLH
 VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
-	Psapi.lib
+	Psapi.lib \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB)
 
 #
 # 64-bit systems needs a 32-bit version of VBoxDispD3D.
@@ -132,7 +133,8 @@ VBoxDispD3D-x86_BLD_TRG_ARCH = x86
 VBoxDispD3D-x86_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86) \
-	Psapi.lib
+	Psapi.lib \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB)
 VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
 
 ifdef VBOX_WITH_CRHGSMI
@@ -159,6 +161,26 @@ VBoxCrHgsmi-x86_EXTENDS = VBoxCrHgsmi
 VBoxCrHgsmi-x86_BLD_TRG_ARCH = x86
 VBoxCrHgsmi-x86_DEFS = $(VBoxCrHgsmi_DEFS) VBOX_WDDM_WOW64
 endif #VBOX_WITH_CRHGSMI
+
+#
+# VBoxDispMpLogger - display backdoor logger library
+#
+LIBRARIES += VBoxDispMpLogger
+VBoxDispMpLogger_TEMPLATE    = VBOXGUESTR3LIB
+VBoxDispMpLogger_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
+VBoxDispMpLogger_INCS        = ../../../include ..
+VBoxDispMpLogger_SOURCES     = \
+    wddm/VBoxDispMpLogger.cpp
+VBoxDispMpLogger_SDKS        = WINDDKWLH
+
+#
+# 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
+#
+LIBRARIES.amd64 += VBoxDispMpLogger-x86
+VBoxDispMpLogger-x86_TEMPLATE    = VBOXGUESTR3LIB
+VBoxDispMpLogger-x86_EXTENDS = VBoxDispMpLogger
+VBoxDispMpLogger-x86_BLD_TRG_ARCH = x86
+VBoxDispMpLogger-x86_DEFS = $(VBoxDispMpLogger_DEFS) VBOX_WDDM_WOW64
 
 endif #ifdef VBOX_WITH_WDDM
 

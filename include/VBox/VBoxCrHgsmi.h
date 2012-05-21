@@ -29,13 +29,13 @@ RT_C_DECLS_BEGIN
 #if 0
 /* enable this in case we include this in a dll*/
 # ifdef IN_VBOXCRHGSMI
-#  define VBOXCRHGSMI_DECL(a_Type) DECLEXPORT(a_Type)
+#  define VBOXCRHGSMI_DECL(a_Type) DECLEXPORT(a_Type) RTCALL
 # else
-#  define VBOXCRHGSMI_DECL(a_Type) DECLIMPORT(a_Type)
+#  define VBOXCRHGSMI_DECL(a_Type) DECLIMPORT(a_Type) RTCALL
 # endif
 #else
 /*enable this in case we include this in a static lib*/
-# define VBOXCRHGSMI_DECL(a_Type) a_Type
+# define VBOXCRHGSMI_DECL(a_Type) a_Type RTCALL
 #endif
 
 #ifdef VBOX_CRHGSMI_WITH_D3DDEV
@@ -60,10 +60,6 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(uint32_t crVersionMajor, uint32_t crVersio
 VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate(void);
 VBOXCRHGSMI_DECL(void) VBoxCrHgsmiDestroy(PVBOXUHGSMI pHgsmi);
 #endif
-VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm(void);
-
-VBOXCRHGSMI_DECL(void) VBoxCrHgsmiLog(char * szString);
-
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm(void);
 
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetClientID(PVBOXUHGSMI pHgsmi, uint32_t *pu32ClientID);

@@ -91,6 +91,11 @@ ifdef VBOX_WITH_CRHGSMI
 VBoxOGLcrutil_DEFS.win    += VBOX_WITH_CRHGSMI
 VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLcrutil_DEFS.win    += CR_DEBUG_TO_BACKDOOR_ENABLE
+VBoxOGLcrutil_INCS.win    += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
+VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB)
+endif
 VBoxOGLcrutil_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 
@@ -116,6 +121,11 @@ ifdef VBOX_WITH_CRHGSMI
 VBoxOGLcrutil-x86_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
 endif
 VBoxOGLcrutil-x86_DEFS = $(VBoxOGLcrutil_DEFS) VBOX_WDDM_WOW64
+ifdef VBOX_WITH_WDDM
+# CR_DEBUG_TO_BACKDOOR_ENABLE define is inherited from VBoxOGLcrutil
+VBoxOGLcrutil-x86_INCS.win    += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
+VBoxOGLcrutil-x86_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB)
+endif
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
@@ -140,6 +150,11 @@ VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRHGSMI
 VBoxOGLhostcrutil_LIBS.win = $(subst $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB),,$(VBoxOGLcrutil_LIBS.win))
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLhostcrutil_LIBS.win = $(subst $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB),,$(VBoxOGLcrutil_LIBS.win))
+VBoxOGLhostcrutil_INCS.win = $(NO_SUCH_VARIABLE)
+VBoxOGLhostcrutil_DEFS.win = $(NO_SUCH_VARIABLE)
 endif
 
 #

@@ -110,9 +110,9 @@ void vboxVDbgVEHandlerUnregister();
 #endif
 
 #if defined(LOG_TO_BACKDOOR_DRV) || defined(VBOXWDDMDISP_DEBUG_PRINTDRV)
-# define DbgPrintDrv(_m) do { vboxDispLogDrvF _m; } while (0)
-# define DbgPrintDrvRel(_m) do { vboxDispLogDrvF _m; } while (0)
-# define DbgPrintDrvFlow(_m) do { vboxDispLogDrvF _m; } while (0)
+# define DbgPrintDrv(_m) do { VBoxDispMpLoggerLogF _m; } while (0)
+# define DbgPrintDrvRel(_m) do { VBoxDispMpLoggerLogF _m; } while (0)
+# define DbgPrintDrvFlow(_m) do { VBoxDispMpLoggerLogF _m; } while (0)
 #else
 # define DbgPrintDrv(_m) do { } while (0)
 # define DbgPrintDrvRel(_m) do { } while (0)
@@ -170,11 +170,11 @@ void vboxVDbgVEHandlerUnregister();
 
 #if defined(VBOXWDDMDISP_DEBUG) || defined(LOG_TO_BACKDOOR_DRV)
 
-void vboxDispLogDrvF(char * szString, ...);
-void vboxDispLogDrv(char * szString);
-void vboxDispDumpD3DCAPS9Drv(D3DCAPS9 *pCaps);
+#include "VBoxDispMpLogger.h"
 
-# define vboxDispDumpD3DCAPS9(_pCaps) do { vboxDispDumpD3DCAPS9Drv(_pCaps); } while (0)
+VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerDumpD3DCAPS9(struct _D3DCAPS9 *pCaps);
+
+# define vboxDispDumpD3DCAPS9(_pCaps) do { VBoxDispMpLoggerDumpD3DCAPS9(_pCaps); } while (0)
 #else
 # define vboxDispDumpD3DCAPS9(_pCaps) do { } while (0)
 #endif
