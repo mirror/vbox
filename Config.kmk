@@ -1259,7 +1259,9 @@ ifndef VBOX_GCC_TOOL
  else ifeq ($(KBUILD_TARGET),solaris)
   VBOX_GCC_TOOL := GXX3PLAIN
   VBOX_GCC32_TOOL := GXX3PLAIN
-  TOOL_GXX3PLAIN_LD_SYSMOD ?= /usr/ccs/bin/ld
+  ifeq ($(KBUILD_HOST),solaris)
+   TOOL_GXX3PLAIN_LD_SYSMOD ?= /usr/ccs/bin/ld
+  endif
  else
   VBOX_GCC_TOOL := GXX3
   ifeq ($(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH),x86.amd64) ## @todo mixing target/host here!
@@ -3085,7 +3087,7 @@ TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS               += _MACHDEP _KERNEL _STRICT_STDC
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_SOLARIS_SYS_INCS)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r -dy
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -64
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = $(if $(eq $(KBUILD_HOST),solaris),-64,-m elf_x86_64)
 # Exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress.
 TEMPLATE_VBOXR0DRV_CFLAGS              = -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_fdiagnostics-show-option) \
