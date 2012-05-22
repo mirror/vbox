@@ -67,7 +67,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
         m_pSizeCnt = new QGroupBox(this);
         {
             m_pSizeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *m_pSizeCntLayout = new QGridLayout(m_pSizeCnt);
+            QGridLayout *pSizeCntLayout = new QGridLayout(m_pSizeCnt);
             {
                 m_pSizeSlider = new QSlider(m_pSizeCnt);
                 {
@@ -98,11 +98,11 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                     m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
                     m_pSizeMax->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
                 }
-                m_pSizeCntLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
-                m_pSizeCntLayout->addWidget(m_pSizeEditor, 0, 3);
-                m_pSizeCntLayout->addWidget(m_pSizeMin, 1, 0);
-                m_pSizeCntLayout->setColumnStretch(1, 1);
-                m_pSizeCntLayout->addWidget(m_pSizeMax, 1, 2);
+                pSizeCntLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
+                pSizeCntLayout->addWidget(m_pSizeEditor, 0, 3);
+                pSizeCntLayout->addWidget(m_pSizeMin, 1, 0);
+                pSizeCntLayout->setColumnStretch(1, 1);
+                pSizeCntLayout->addWidget(m_pSizeMax, 1, 2);
             }
         }
         m_pFormatCnt = new QGroupBox(this);
@@ -134,7 +134,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
         m_pVariantCnt = new QGroupBox(this);
         {
             m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pVariantsLayout = new QVBoxLayout(m_pVariantCnt);
+            QVBoxLayout *pVariantCntLayout = new QVBoxLayout(m_pVariantCnt);
             {
                 m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
                 {
@@ -148,9 +148,9 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                     m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
                 }
                 m_pSplitBox = new QCheckBox(m_pVariantCnt);
-                pVariantsLayout->addWidget(m_pDynamicalButton);
-                pVariantsLayout->addWidget(m_pFixedButton);
-                pVariantsLayout->addWidget(m_pSplitBox);
+                pVariantCntLayout->addWidget(m_pDynamicalButton);
+                pVariantCntLayout->addWidget(m_pFixedButton);
+                pVariantCntLayout->addWidget(m_pSplitBox);
             }
         }
         pMainLayout->addWidget(m_pLocationCnt, 0, 0, 1, 2);

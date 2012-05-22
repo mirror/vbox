@@ -79,7 +79,7 @@ UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
         m_pDynamicLabel = new QIRichTextLabel(this);
         m_pFixedLabel = new QIRichTextLabel(this);
         m_pSplitLabel = new QIRichTextLabel(this);
-        QVBoxLayout *pVariantsLayout = new QVBoxLayout;
+        QVBoxLayout *pVariantLayout = new QVBoxLayout;
         {
             m_pVariantButtonGroup = new QButtonGroup(this);
             {
@@ -93,15 +93,15 @@ UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
                 m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
             }
             m_pSplitBox = new QCheckBox(this);
-            pVariantsLayout->addWidget(m_pDynamicalButton);
-            pVariantsLayout->addWidget(m_pFixedButton);
-            pVariantsLayout->addWidget(m_pSplitBox);
+            pVariantLayout->addWidget(m_pDynamicalButton);
+            pVariantLayout->addWidget(m_pFixedButton);
+            pVariantLayout->addWidget(m_pSplitBox);
         }
         pMainLayout->addWidget(m_pDescriptionLabel);
         pMainLayout->addWidget(m_pDynamicLabel);
         pMainLayout->addWidget(m_pFixedLabel);
         pMainLayout->addWidget(m_pSplitLabel);
-        pMainLayout->addLayout(pVariantsLayout);
+        pMainLayout->addLayout(pVariantLayout);
         pMainLayout->addStretch();
     }
 

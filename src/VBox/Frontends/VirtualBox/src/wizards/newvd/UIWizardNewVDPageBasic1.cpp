@@ -32,7 +32,7 @@ UIWizardNewVDPage1::UIWizardNewVDPage1()
 {
 }
 
-void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat)
+void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat)
 {
     /* Check that medium format supports creation: */
     ULONG uFormatCapabilities = medFormat.GetCapabilities();
@@ -49,7 +49,7 @@ void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormats
 
     /* Create/add corresponding radio-button: */
     QRadioButton *pFormatButton = new QRadioButton(pParent);
-    pFormatsLayout->addWidget(pFormatButton);
+    pFormatLayout->addWidget(pFormatButton);
     m_formats << medFormat;
     m_formatNames << medFormat.GetName();
     m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
@@ -76,7 +76,7 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        QVBoxLayout *pFormatsLayout = new QVBoxLayout;
+        QVBoxLayout *pFormatLayout = new QVBoxLayout;
         {
             m_pFormatButtonGroup = new QButtonGroup(this);
             {
@@ -86,20 +86,20 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
                 {
                     const CMediumFormat &medFormat = medFormats[i];
                     if (medFormat.GetName() == "VDI")
-                        addFormatButton(this, pFormatsLayout, medFormat);
+                        addFormatButton(this, pFormatLayout, medFormat);
                 }
                 for (int i = 0; i < medFormats.size(); ++i)
                 {
                     const CMediumFormat &medFormat = medFormats[i];
                     if (medFormat.GetName() != "VDI")
-                        addFormatButton(this, pFormatsLayout, medFormat);
+                        addFormatButton(this, pFormatLayout, medFormat);
                 }
             }
             m_pFormatButtonGroup->button(0)->click();
             m_pFormatButtonGroup->button(0)->setFocus();
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pFormatsLayout);
+        pMainLayout->addLayout(pFormatLayout);
         pMainLayout->addStretch();
     }
 
