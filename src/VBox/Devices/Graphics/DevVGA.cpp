@@ -4114,6 +4114,8 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     val = s->cr[0x12] + ((s->cr[7] & 2) << 7) + ((s->cr[7] & 0x40) << 4) + 1;
     h   = val;
     pHlp->pfnPrintf(pHlp, "vdisp : %d px\n", val);
+    val = ((s->cr[9] & 0x40) << 3) + ((s->cr[7] & 0x10) << 4) + s->cr[0x18];
+    pHlp->pfnPrintf(pHlp, "split : %d ln\n", val);
     val = (s->cr[0xc] << 8) + s->cr[0xd];
     pHlp->pfnPrintf(pHlp, "start : %#x\n", val);
     if (!is_graph)
@@ -4472,6 +4474,41 @@ static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, " Linear scanline pitch: 0x%04x\n", s->vbe_line_offset);
     pHlp->pfnPrintf(pHlp, " Linear display start : 0x%04x\n", s->vbe_start_addr);
     pHlp->pfnPrintf(pHlp, " Selected bank: 0x%04x\n", s->vbe_regs[VBE_DISPI_INDEX_BANK]);
+}
+
+
+/**
+ * Info handler, device version. Dumps register state relevant
+ * to 16-color planar graphics modes (GR/SR) in human-readable form.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoPlanar(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE       s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    int             val1, val2;
+    NOREF(pszArgs);
+
+    val1 = (s->gr[5] >> 3) & 1;
+    val2 = s->gr[5] & 3;
+    pHlp->pfnPrintf(pHlp, "read mode     : %d     write mode: %d\n", val1, val2);
+    val1 = s->gr[0];
+    val2 = s->gr[1];
+    pHlp->pfnPrintf(pHlp, "set/reset data: %02X    S/R enable: %02X\n", val1, val2);
+    val1 = s->gr[2];
+    val2 = s->gr[4] & 3;
+    pHlp->pfnPrintf(pHlp, "color compare : %02X    read map  : %d\n", val1, val2);
+    val1 = s->gr[3] & 7;
+    val2 = (s->gr[3] >> 3) & 3;
+    pHlp->pfnPrintf(pHlp, "rotate        : %d     function  : %d\n", val1, val2);
+    val1 = s->gr[7];
+    val2 = s->gr[8];
+    pHlp->pfnPrintf(pHlp, "don't care    : %02X    bit mask  : %02X\n", val1, val2);
+    val1 = s->sr[2];
+    val2 = s->sr[4] & 8;
+    pHlp->pfnPrintf(pHlp, "seq plane mask: %02X    chain-4   : %s\n", val1, val2 ? "on" : "off");
 }
 
 
@@ -6399,6 +6436,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgagr", "Dump VGA Graphics Controller registers.", vgaInfoGR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgasr", "Dump VGA Sequencer registers.", vgaInfoSR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgaar", "Dump VGA Attribute Controller registers.", vgaInfoAR);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vgapl", "Dump planar graphics state.", vgaInfoPlanar);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgadac", "Dump VGA DAC registers.", vgaInfoDAC);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vbe", "Dump VGA VBE registers.", vgaInfoVBE);
 
