@@ -23,7 +23,6 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class QButtonGroup;
 class QRadioButton;
 class QIRichTextLabel;
@@ -43,7 +42,6 @@ protected:
     bool m_fAdditionalInfo;
 
     /* Widgets: */
-    QGroupBox *m_pCloneTypeCnt;
     QButtonGroup *m_pButtonGroup;
     QRadioButton *m_pFullCloneRadio;
     QRadioButton *m_pLinkedCloneRadio;

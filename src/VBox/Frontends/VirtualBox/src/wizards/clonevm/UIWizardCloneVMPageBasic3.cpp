@@ -19,7 +19,6 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
-#include <QGroupBox>
 #include <QRadioButton>
 
 /* Local includes: */
@@ -58,27 +57,24 @@ UIWizardCloneVMPageBasic3::UIWizardCloneVMPageBasic3(bool fShowChildsOption)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pCloneModeCnt = new QGroupBox(this);
+        QVBoxLayout *pCloneModeCntLayout = new QVBoxLayout;
         {
-            QVBoxLayout *pCloneModeCntLayout = new QVBoxLayout(m_pCloneModeCnt);
+            m_pMachineRadio = new QRadioButton(this);
             {
-                m_pMachineRadio = new QRadioButton(m_pCloneModeCnt);
-                {
-                    m_pMachineRadio->setChecked(true);
-                }
-                m_pMachineAndChildsRadio = new QRadioButton(m_pCloneModeCnt);
-                {
-                    if (!m_fShowChildsOption)
-                       m_pMachineAndChildsRadio->hide();
-                }
-                m_pAllRadio = new QRadioButton(m_pCloneModeCnt);
-                pCloneModeCntLayout->addWidget(m_pMachineRadio);
-                pCloneModeCntLayout->addWidget(m_pMachineAndChildsRadio);
-                pCloneModeCntLayout->addWidget(m_pAllRadio);
+                m_pMachineRadio->setChecked(true);
             }
+            m_pMachineAndChildsRadio = new QRadioButton(this);
+            {
+                if (!m_fShowChildsOption)
+                   m_pMachineAndChildsRadio->hide();
+            }
+            m_pAllRadio = new QRadioButton(this);
+            pCloneModeCntLayout->addWidget(m_pMachineRadio);
+            pCloneModeCntLayout->addWidget(m_pMachineAndChildsRadio);
+            pCloneModeCntLayout->addWidget(m_pAllRadio);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pCloneModeCnt);
+        pMainLayout->addLayout(pCloneModeCntLayout);
         pMainLayout->addStretch();
     }
 
@@ -113,7 +109,6 @@ void UIWizardCloneVMPageBasic3::retranslateUi()
                           .arg(strOpt1)
                           .arg(strOpt3));
 
-    m_pCloneModeCnt->setTitle(UIWizardCloneVM::tr("&Mode"));
     m_pMachineRadio->setText(UIWizardCloneVM::tr("Current machine state"));
     m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current machine and all child states"));
     m_pAllRadio->setText(UIWizardCloneVM::tr("All states"));

@@ -23,7 +23,6 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class QLineEdit;
 class QCheckBox;
 class QIRichTextLabel;
@@ -47,7 +46,6 @@ protected:
     QString m_strOriginalName;
 
     /* Widgets: */
-    QGroupBox *m_pNameCnt;
     QLineEdit *m_pNameEditor;
     QCheckBox *m_pReinitMACsCheckBox;
 };
@@ -76,7 +74,7 @@ private:
     bool isComplete() const;
 
     /* Widgets: */
-    QIRichTextLabel *m_pLabel1;
+    QIRichTextLabel *m_pLabel;
 };
 
 #endif // __UIWizardCloneVMPageBasic1_h__

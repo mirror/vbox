@@ -19,7 +19,6 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
-#include <QGroupBox>
 #include <QRadioButton>
 #include <QButtonGroup>
 
@@ -46,26 +45,23 @@ UIWizardCloneVMPageBasic2::UIWizardCloneVMPageBasic2(bool fAdditionalInfo)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pCloneTypeCnt = new QGroupBox(this);
+        QVBoxLayout *pCloneTypeCntLayout = new QVBoxLayout;
         {
-            m_pButtonGroup = new QButtonGroup(m_pCloneTypeCnt);
+            m_pButtonGroup = new QButtonGroup(this);
             {
-                QVBoxLayout *pCloneTypeCntLayout = new QVBoxLayout(m_pCloneTypeCnt);
+                m_pFullCloneRadio = new QRadioButton(this);
                 {
-                    m_pFullCloneRadio = new QRadioButton(m_pCloneTypeCnt);
-                    {
-                        m_pFullCloneRadio->setChecked(true);
-                    }
-                    m_pLinkedCloneRadio = new QRadioButton(m_pCloneTypeCnt);
-                    pCloneTypeCntLayout->addWidget(m_pFullCloneRadio);
-                    pCloneTypeCntLayout->addWidget(m_pLinkedCloneRadio);
+                    m_pFullCloneRadio->setChecked(true);
                 }
+                m_pLinkedCloneRadio = new QRadioButton(this);
                 m_pButtonGroup->addButton(m_pFullCloneRadio);
                 m_pButtonGroup->addButton(m_pLinkedCloneRadio);
             }
+            pCloneTypeCntLayout->addWidget(m_pFullCloneRadio);
+            pCloneTypeCntLayout->addWidget(m_pLinkedCloneRadio);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pCloneTypeCnt);
+        pMainLayout->addLayout(pCloneTypeCntLayout);
         pMainLayout->addStretch();
     }
 
@@ -104,7 +100,6 @@ void UIWizardCloneVMPageBasic2::retranslateUi()
         strLabel += UIWizardCloneVM::tr("<p>Note that a new snapshot within the source VM is created in case you select <b>Linked clone</b>.</p>");
     m_pLabel->setText(strLabel);
 
-    m_pCloneTypeCnt->setTitle(UIWizardCloneVM::tr("&Type"));
     m_pFullCloneRadio->setText(UIWizardCloneVM::tr("Full clone"));
     m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("Linked clone"));
 }
