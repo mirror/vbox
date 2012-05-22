@@ -3016,6 +3016,12 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     }
 
     /*
+     * Fix the A20 mask.
+     */
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        pVM->aCpus[i].pgm.s.GCPhysA20Mask = ~(RTGCPHYS)(!pVM->aCpus[i].pgm.s.fA20Enabled << 20);
+
+    /*
      * The guest mappings - skipped now, see re-fixation in the caller.
      */
     if (uVersion <= PGM_SAVED_STATE_VERSION_PRE_PAE)

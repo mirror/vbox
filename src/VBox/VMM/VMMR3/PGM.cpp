@@ -1250,6 +1250,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         }
 
         pPGM->fA20Enabled      = true;
+        pPGM->GCPhysA20Mask    = ~(RTGCPHYS)(!pPGM->fA20Enabled << 20);
     }
 
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
