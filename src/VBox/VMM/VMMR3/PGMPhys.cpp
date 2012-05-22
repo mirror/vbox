@@ -101,7 +101,7 @@ static DECLCALLBACK(int) pgmR3PhysReadExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, vo
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          Physical address to read from.
  * @param   pvBuf           Where to read into.
  * @param   cbRead          How many bytes to read.
@@ -230,7 +230,7 @@ static DECLCALLBACK(int) pgmR3PhysWriteExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, c
  * @retval  VINF_SUCCESS.
  * @retval  VERR_EM_NO_MEMORY.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          Physical address to write to.
  * @param   pvBuf           What to write.
  * @param   cbWrite         How many bytes to write.
@@ -734,7 +734,7 @@ static void pgmR3PhysRebuildRamRangeSearchTrees(PVM pVM)
  *
  * Called when anything was relocated.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         The VM handle.
  */
 void pgmR3PhysRelinkRamRanges(PVM pVM)
 {
@@ -784,7 +784,7 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
 /**
  * Links a new RAM range into the list.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         The VM handle.
  * @param   pNew        Pointer to the new list entry.
  * @param   pPrev       Pointer to the previous list entry. If NULL, insert as head.
  */
@@ -823,7 +823,7 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
 /**
  * Unlink an existing RAM range from the list.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         The VM handle.
  * @param   pRam        Pointer to the new list entry.
  * @param   pPrev       Pointer to the previous list entry. If NULL, insert as head.
  */
@@ -859,7 +859,7 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
 /**
  * Unlink an existing RAM range from the list.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         The VM handle.
  * @param   pRam        Pointer to the new list entry.
  */
 static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
@@ -1617,7 +1617,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
  * tracking structures (PGMPAGE).
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          The physical address of the RAM.
  * @param   cb              The size of the RAM.
  * @param   pszDesc         The description - not copied, so, don't free or change it.
@@ -1754,7 +1754,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
  *
  * @returns VBox status code.
  *
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     The VM handle.
  */
 int pgmR3PhysRamPreAllocate(PVM pVM)
 {
@@ -1821,7 +1821,7 @@ int pgmR3PhysRamPreAllocate(PVM pVM)
  * ASSUMES that the caller owns the PGM lock.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     The VM handle.
  */
 int pgmR3PhysRamReset(PVM pVM)
 {
@@ -1983,7 +1983,7 @@ int pgmR3PhysRamReset(PVM pVM)
  * ASSUMES that the caller owns the PGM lock.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     The VM handle.
  */
 int pgmR3PhysRamTerm(PVM pVM)
 {
@@ -2064,7 +2064,7 @@ int pgmR3PhysRamTerm(PVM pVM)
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          The start of the MMIO region.
  * @param   cb              The size of the MMIO region.
  * @param   pfnHandlerR3    The address of the ring-3 handler. (IOMR3MMIOHandler)
@@ -2230,7 +2230,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
  * any ad hoc PGMRAMRANGE left behind.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          The start of the MMIO region.
  * @param   cb              The size of the MMIO region.
  */
@@ -2345,7 +2345,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
  * Locate a MMIO2 range.
  *
  * @returns Pointer to the MMIO2 range.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   pDevIns         The device instance owning the region.
  * @param   iRegion         The region.
  */
@@ -2380,7 +2380,7 @@ DECLINLINE(PPGMMMIO2RANGE) pgmR3PhysMMIO2Find(PVM pVM, PPDMDEVINS pDevIns, uint3
  *          memory.
  * @retval  VERR_ALREADY_EXISTS if the region already exists.
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   pDevIns         The device instance owning the region.
  * @param   iRegion         The region number.  If the MMIO2 memory is a PCI
  *                          I/O region this number has to be the number of that
@@ -2508,7 +2508,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
  * be deregistered before calling this function.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   pDevIns         The device instance owning the region.
  * @param   iRegion         The region. If it's UINT32_MAX it'll be a wildcard match.
  */
@@ -2613,8 +2613,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the shared VM structure.
- * @param   pDevIns         The
+ * @param   pVM             The VM handle.
+ * @param   pDevIns         The device instance owning the region.
  */
 VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
@@ -2869,7 +2869,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
  * Checks if the given address is an MMIO2 base address or not.
  *
  * @returns true/false accordingly.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   pDevIns         The owner of the memory, optional.
  * @param   GCPhys          The address to check.
  */
@@ -2907,7 +2907,7 @@ VMMR3DECL(bool) PGMR3PhysMMIO2IsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhy
  * by anyone else...
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   pDevIns         The owner of the memory, optional.
  * @param   iRegion         The region.
  * @param   off             The page expressed an offset into the MMIO2 region.
@@ -2942,7 +2942,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  *
  * @return VBox status code.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         The VM handle.
  * @param   pDevIns     The device owning the MMIO2 memory.
  * @param   iRegion     The region.
  * @param   off         The offset into the region. Must be page aligned.
@@ -2984,7 +2984,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  * anything first.
  *
  * @returns VBox status.
- * @param   pVM                 VM Handle.
+ * @param   pVM                 The VM handle.
  * @param   pDevIns             The device instance owning the ROM.
  * @param   GCPhys              First physical address in the range.
  *                              Must be page aligned!
@@ -3347,7 +3347,7 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
  * is configured to be preallocated).
  *
  * @returns VBox status.
- * @param   pVM                 VM Handle.
+ * @param   pVM                 The VM handle.
  * @param   pDevIns             The device instance owning the ROM.
  * @param   GCPhys              First physical address in the range.
  *                              Must be page aligned!
@@ -3381,7 +3381,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -3616,7 +3616,7 @@ void pgmR3PhysRomTerm(PVM pVM)
  * @returns VBox status code.
  * @retval  VINF_PGM_SYNC_CR3
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         The VM handle.
  * @param   GCPhys      Where to start. Page aligned.
  * @param   cb          How much to change. Page aligned.
  * @param   enmProt     The new ROM protection.
@@ -3942,7 +3942,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
  * Unmap a chunk to free up virtual address space (request packet handler for pgmR3PhysChunkMap)
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  */
 void pgmR3PhysUnmapChunk(PVM pVM)
 {
@@ -4407,7 +4407,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
  *
  * This is used by ballooning, remapping MMIO2, RAM reset and state loading.
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             The VM handle.
  * @param   pReq            Pointer to the request.
  * @param   pcPendingPages  Where the number of pages waiting to be freed are
  *                          kept.  This will normally be incremented.

@@ -56,7 +56,7 @@
  * This simply pushes everything to the HC handler.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         The VM handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -75,7 +75,7 @@ VMMDECL(int) pgmPhysHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCO
  * We simply ignore the writes or fall back to the recompiler if we don't support the instruction.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         The VM handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -546,7 +546,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
  *
  * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   pPage       The physical page tracking structure. This will
  *                      be modified on success.
  * @param   GCPhys      The address of the page.
@@ -702,7 +702,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   GCPhys      The address of the page.
  *
  * @remarks Must be called from within the PGM critical section. It may
@@ -791,7 +791,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
  * @retval  VINF_SUCCESS on success, the large page can be used again
  * @retval  VERR_PGM_INVALID_LARGE_PAGE_RANGE if it can't be reused
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   GCPhys      The address of the page.
  * @param   pLargePage  Page structure of the base page
  */
@@ -852,7 +852,7 @@ int pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
  *
  * @returns VBox strict status code.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   pPage       The physical page tracking structure.
  *
  * @remarks Called from within the PGM critical section.
@@ -876,7 +876,7 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage)
  * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  *
@@ -999,7 +999,7 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  * @param   ppMap       Where to store the address of the mapping tracking structure.
@@ -1125,7 +1125,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
  * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  * @param   ppv         Where to store the mapping address of the page. The page
@@ -1160,7 +1160,7 @@ int pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   pPage       The physical page tracking structure. Must be in the
  *                      allocated state.
  * @param   GCPhys      The address of the page.
@@ -1189,7 +1189,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  *
- * @param   pVM         The VM address.
+ * @param   pVM         The VM handle.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
  * @param   ppv         Where to store the mapping address of the page. The page
@@ -2031,7 +2031,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 /**
  * Cache PGMPhys memory access
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   pCache          Cache structure pointer
  * @param   GCPhys          GC physical address
  * @param   pbHC            HC pointer corresponding to physical page
@@ -2196,7 +2196,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
  * @retval  VINF_SUCCESS.
  * @retval  VERR_PGM_PHYS_WR_HIT_HANDLER in R0 and GC, NEVER in R3.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          Physical address start reading from.
  * @param   pvBuf           Where to put the read bits.
  * @param   cbRead          How many bytes to read.
@@ -2730,7 +2730,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
  * @retval  VINF_SUCCESS.
  * @retval  VERR_PGM_PHYS_WR_HIT_HANDLER in R0 and GC, NEVER in R3.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          Physical address to write to.
  * @param   pvBuf           What to write.
  * @param   cbWrite         How many bytes to write.
@@ -2843,7 +2843,7 @@ VMMDECL(int) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cb
  * MMIO and access handlers.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
+ * @param   pVM         The VM handle.
  * @param   pvDst       The destination address.
  * @param   GCPhysSrc   The source address (GC physical address).
  * @param   cb          The number of bytes to read.
@@ -2915,7 +2915,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, s
  * This will bypass MMIO and access handlers.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
+ * @param   pVM         The VM handle.
  * @param   GCPhysDst   The GC physical address of the destination.
  * @param   pvSrc       The source buffer.
  * @param   cb          The number of bytes to write.
@@ -3986,7 +3986,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
  * Return the page type of the specified physical address.
  *
  * @returns The page type.
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          Guest physical address
  */
 VMMDECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
