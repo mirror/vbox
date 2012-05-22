@@ -164,9 +164,7 @@ protected:
     QPoint viewportToContents(const QPoint &vp) const;
     void scrollBy(int dx, int dy);
     static void dimImage(QImage &img);
-#ifdef VBOX_WITH_VIDEOHWACCEL
     void scrollContentsBy(int dx, int dy);
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef Q_WS_MAC
     void updateDockIcon();
     CGImageRef vmContentImage();

@@ -2864,6 +2864,41 @@ STDMETHODIMP Display::CompleteVHWACommand(BYTE *pCommand)
 #endif
 }
 
+STDMETHODIMP Display::ViewportChanged(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height)
+{
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    BOOL is3denabled;
+    mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+    if (is3denabled)
+    {
+        VBOXHGCMSVCPARM aParms[5];
+
+        aParms[0].type = VBOX_HGCM_SVC_PARM_32BIT;
+        aParms[0].u.uint32 = aScreenId;
+
+        aParms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
+        aParms[1].u.uint32 = x;
+
+        aParms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
+        aParms[2].u.uint32 = y;
+
+
+        aParms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
+        aParms[3].u.uint32 = width;
+
+        aParms[4].type = VBOX_HGCM_SVC_PARM_32BIT;
+        aParms[4].u.uint32 = height;
+
+        VMMDev *pVMMDev = mParent->getVMMDev();
+
+        if (pVMMDev)
+            pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_VIEWPORT_CHANGED, SHCRGL_CPARMS_VIEWPORT_CHANGED, aParms);
+    }
+#endif /* VBOX_WITH_CROGL && VBOX_WITH_HGCM */
+    return S_OK;
+}
+
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 

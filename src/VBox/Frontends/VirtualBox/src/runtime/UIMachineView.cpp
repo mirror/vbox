@@ -790,16 +790,23 @@ void UIMachineView::dimImage(QImage &img)
     }
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
 void UIMachineView::scrollContentsBy(int dx, int dy)
 {
+#ifdef VBOX_WITH_VIDEOHWACCEL
     if (m_pFrameBuffer)
     {
         m_pFrameBuffer->viewportScrolled(dx, dy);
     }
-    QAbstractScrollArea::scrollContentsBy(dx, dy);
-}
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+    QAbstractScrollArea::scrollContentsBy(dx, dy);
+
+    session().GetConsole().GetDisplay().ViewportChanged(screenId(),
+                            contentsX(),
+                            contentsY(),
+                            contentsWidth(),
+                            contentsHeight());
+}
+
 
 #ifdef Q_WS_MAC
 void UIMachineView::updateDockIcon()
@@ -1002,22 +1009,28 @@ bool UIMachineView::event(QEvent *pEvent)
 
 bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-#ifdef VBOX_WITH_VIDEOHWACCEL
     if (pWatched == viewport())
     {
         switch (pEvent->type())
         {
             case QEvent::Resize:
             {
+                QResizeEvent* pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+#ifdef VBOX_WITH_VIDEOHWACCEL
                 if (m_pFrameBuffer)
-                    m_pFrameBuffer->viewportResized(static_cast<QResizeEvent*>(pEvent));
+                    m_pFrameBuffer->viewportResized(pResizeEvent);
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+                session().GetConsole().GetDisplay().ViewportChanged(screenId(),
+                        contentsX(),
+                        contentsY(),
+                        contentsWidth(),
+                        contentsHeight());
                 break;
             }
             default:
                 break;
         }
     }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
     if (pWatched == machineWindow())
     {
         switch (pEvent->type())

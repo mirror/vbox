@@ -12581,7 +12581,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="09EED313-CD56-4D06-BD56-FAC0F716B5DD"
+    uuid="4b75c45c-e22e-4b75-b7cd-7ce9a83bb36e"
     wsmap="managed"
     >
     <desc>
@@ -12843,6 +12843,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="viewportChanged">
+      <desc>
+        Signals that framebuffer window viewport has changed.
+
+      <result name="E_INVALIDARG">
+        The specified viewport data is invalid.
+      </result>
+
+      </desc>
+
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Monitor to take the screenshot from.
+        </desc>
+      </param>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>
+          Framebuffer x offset.
+        </desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>
+          Framebuffer y offset.
+        </desc>
+      </param>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>
+          Viewport width.
+        </desc>
+      </param>
+      <param name="height" type="unsigned long" dir="in">
+        <desc>
+          Viewport height.
+        </desc>
+      </param>
+    </method>
   </interface>
 
   <!--

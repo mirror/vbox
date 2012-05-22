@@ -41,6 +41,7 @@
 #define SHCRGL_HOST_FN_CRHGSMI_CMD (10)
 #define SHCRGL_HOST_FN_CRHGSMI_CTL (11)
 #endif
+#define SHCRGL_HOST_FN_VIEWPORT_CHANGED (15)
 #define SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT (20)
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
@@ -66,7 +67,7 @@
 #define SHCRGL_CPARMS_WRITE_BUFFER        (4)
 #define SHCRGL_CPARMS_WRITE_READ_BUFFERED (3)
 #define SHCRGL_CPARMS_SET_OUTPUT_REDIRECT (1)
-
+#define SHCRGL_CPARMS_VIEWPORT_CHANGED (5)
 
 /* @todo Move to H3DOR.h begin */
 

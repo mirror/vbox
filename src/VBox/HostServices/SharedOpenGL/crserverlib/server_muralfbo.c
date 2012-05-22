@@ -102,12 +102,13 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
 
     if (cr_server.screenCount<2 && !cr_server.bForceOffscreenRendering)
     {
+        CRScreenViewportInfo *pVieport = &cr_server.screenVieport[mural->screenId];
         CRASSERT(cr_server.screenCount>0);
 
         mural->hX = mural->gX-cr_server.screen[0].x;
         mural->hY = mural->gY-cr_server.screen[0].y;
 
-        cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX, mural->hY);
+        cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX - pVieport->x, mural->hY - pVieport->y);
 
         return;
     }
@@ -156,13 +157,15 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
 
     if (overlappingScreenCount<2 && !cr_server.bForceOffscreenRendering)
     {
+        CRScreenViewportInfo *pVieport = &cr_server.screenVieport[mural->screenId];
+
         if (mural->bUseFBO)
         {
             crServerRedirMuralFBO(mural, GL_FALSE);
             crServerDeleteMuralFBO(mural);
         }
 
-        cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX, mural->hY);
+        cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX - pVieport->x, mural->hY - pVieport->y);
     }
     else
     {
@@ -192,7 +195,9 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
 
         if (!mural->bUseFBO)
         {
-            cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX, mural->hY);
+            CRScreenViewportInfo *pVieport = &cr_server.screenVieport[mural->screenId];
+
+            cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX - pVieport->x, mural->hY - pVieport->y);
         }
     }
 

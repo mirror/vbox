@@ -168,9 +168,16 @@ typedef struct {
 } CRScreenInfo;
 
 typedef struct {
+    int32_t    x, y;
+    uint32_t   w, h;
+} CRScreenViewportInfo;
+
+
+typedef struct {
     unsigned short tcpip_port;
 
     CRScreenInfo screen[CR_MAX_GUEST_MONITORS];
+    CRScreenViewportInfo screenVieport[CR_MAX_GUEST_MONITORS];
     int          screenCount;
 
     int numClients;
@@ -310,6 +317,8 @@ extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPre
 extern DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value);
 
 extern DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks);
+
+extern DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h);
 
 #ifdef VBOX_WITH_CRHGSMI
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
