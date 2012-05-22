@@ -77,88 +77,58 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &sourceVirtua
             pLocationCntLayout->addWidget(m_pDestinationDiskEditor);
             pLocationCntLayout->addWidget(m_pDestinationDiskOpenButton);
         }
-        QVBoxLayout *pFormatWrappingLayout = new QVBoxLayout;
+        m_pFormatCnt = new QGroupBox(this);
         {
-            m_pFormatCnt = new QGroupBox(this);
+            m_pFormatCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pFormatCntLayout = new QVBoxLayout(m_pFormatCnt);
             {
-                m_pFormatCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                QVBoxLayout *pFormatsLayout = new QVBoxLayout(m_pFormatCnt);
+                m_pFormatButtonGroup = new QButtonGroup(this);
                 {
-                    m_pFormatButtonGroup = new QButtonGroup(this);
+                    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+                    const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
+                    for (int i = 0; i < medFormats.size(); ++i)
                     {
-                        CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
-                        const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
-                        for (int i = 0; i < medFormats.size(); ++i)
-                        {
-                            const CMediumFormat &medFormat = medFormats[i];
-                            QString strFormatName(medFormat.GetName());
-                            if (strFormatName == "VDI")
-                            {
-                                QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
-                                if (pButton)
-                                {
-                                    m_formats << medFormat;
-                                    m_formatNames << strFormatName;
-                                    m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
-                                }
-                            }
-                        }
-                        for (int i = 0; i < medFormats.size(); ++i)
-                        {
-                            const CMediumFormat &medFormat = medFormats[i];
-                            QString strFormatName(medFormat.GetName());
-                            if (strFormatName != "VDI")
-                            {
-                                QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
-                                if (pButton)
-                                {
-                                    m_formats << medFormat;
-                                    m_formatNames << strFormatName;
-                                    m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
-                                }
-                            }
-                        }
-                        m_pFormatButtonGroup->button(0)->click();
-                        m_pFormatButtonGroup->button(0)->setFocus();
+                        const CMediumFormat &medFormat = medFormats[i];
+                        if (medFormat.GetName() == "VDI")
+                            addFormatButton(m_pFormatCnt, pFormatCntLayout, medFormat);
                     }
+                    for (int i = 0; i < medFormats.size(); ++i)
+                    {
+                        const CMediumFormat &medFormat = medFormats[i];
+                        if (medFormat.GetName() != "VDI")
+                            addFormatButton(m_pFormatCnt, pFormatCntLayout, medFormat);
+                    }
+                    m_pFormatButtonGroup->button(0)->click();
+                    m_pFormatButtonGroup->button(0)->setFocus();
                 }
             }
-            QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
-            pFormatWrappingLayout->addWidget(m_pFormatCnt);
-            pFormatWrappingLayout->addItem(m_pSizeSpacer);
         }
-        QVBoxLayout *pVariantWrappingLayout = new QVBoxLayout;
+        m_pVariantCnt = new QGroupBox(this);
         {
-            m_pVariantCnt = new QGroupBox(this);
+            m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pVariantCntLayout = new QVBoxLayout(m_pVariantCnt);
             {
-                m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                QVBoxLayout *pVariantCntLayout = new QVBoxLayout(m_pVariantCnt);
+                m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
                 {
-                    m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
+                    m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
                     {
-                        m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
-                        {
-                            m_pDynamicalButton->click();
-                            m_pDynamicalButton->setFocus();
-                        }
-                        m_pFixedButton = new QRadioButton(m_pVariantCnt);
-                        m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
-                        m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
+                        m_pDynamicalButton->click();
+                        m_pDynamicalButton->setFocus();
                     }
-                    m_pSplitBox = new QCheckBox(m_pVariantCnt);
-                    pVariantCntLayout->addWidget(m_pDynamicalButton);
-                    pVariantCntLayout->addWidget(m_pFixedButton);
-                    pVariantCntLayout->addWidget(m_pSplitBox);
+                    m_pFixedButton = new QRadioButton(m_pVariantCnt);
+                    m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
+                    m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
                 }
+                m_pSplitBox = new QCheckBox(m_pVariantCnt);
+                pVariantCntLayout->addWidget(m_pDynamicalButton);
+                pVariantCntLayout->addWidget(m_pFixedButton);
+                pVariantCntLayout->addWidget(m_pSplitBox);
             }
-            QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
-            pVariantWrappingLayout->addWidget(m_pVariantCnt);
-            pVariantWrappingLayout->addItem(m_pSizeSpacer);
         }
         pMainLayout->addWidget(m_pSourceDiskCnt, 0, 0, 1, 2);
         pMainLayout->addWidget(m_pDestinationCnt, 1, 0, 1, 2);
-        pMainLayout->addLayout(pFormatWrappingLayout, 2, 0);
-        pMainLayout->addLayout(pVariantWrappingLayout, 2, 1);
+        pMainLayout->addWidget(m_pFormatCnt, 2, 0, Qt::AlignTop);
+        pMainLayout->addWidget(m_pVariantCnt, 2, 1, Qt::AlignTop);
         sltHandleSourceDiskChange();
         sltMediumFormatChanged();
     }

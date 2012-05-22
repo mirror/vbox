@@ -21,7 +21,6 @@
 #include <QDir>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGroupBox>
 #include <QLineEdit>
 
 /* Local includes: */
@@ -158,23 +157,19 @@ UIWizardCloneVDPageBasic4::UIWizardCloneVDPageBasic4()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pDestinationCnt = new QGroupBox(this);
+        QHBoxLayout *pLocationLayout = new QHBoxLayout;
         {
-            m_pDestinationCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pLocationCntLayout = new QHBoxLayout(m_pDestinationCnt);
+            m_pDestinationDiskEditor = new QLineEdit(this);
+            m_pDestinationDiskOpenButton = new QIToolButton(this);
             {
-                m_pDestinationDiskEditor = new QLineEdit(m_pDestinationCnt);
-                m_pDestinationDiskOpenButton = new QIToolButton(m_pDestinationCnt);
-                {
-                    m_pDestinationDiskOpenButton->setAutoRaise(true);
-                    m_pDestinationDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
-                }
-                pLocationCntLayout->addWidget(m_pDestinationDiskEditor);
-                pLocationCntLayout->addWidget(m_pDestinationDiskOpenButton);
+                m_pDestinationDiskOpenButton->setAutoRaise(true);
+                m_pDestinationDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
             }
+            pLocationLayout->addWidget(m_pDestinationDiskEditor);
+            pLocationLayout->addWidget(m_pDestinationDiskOpenButton);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pDestinationCnt);
+        pMainLayout->addLayout(pLocationLayout);
         pMainLayout->addStretch();
     }
 
@@ -201,7 +196,6 @@ void UIWizardCloneVDPageBasic4::retranslateUi()
     /* Translate widgets: */
     m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual hard drive file into the box below or "
                                           "click on the folder icon to select a different folder to create the file in."));
-    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("Copy &location"));
     m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual hard drive file..."));
 }
 
