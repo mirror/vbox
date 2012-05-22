@@ -966,7 +966,7 @@ typedef enum PGMROMPROT
      * Map the virgin page, use write access handler to ignore writes. */
     PGMROMPROT_READ_ROM_WRITE_IGNORE,
     /** Read from the virgin ROM page, write to the shadow RAM.
-     * Map the virgin page, use write access handler change the RAM. */
+     * Map the virgin page, use write access handler to change the shadow RAM. */
     PGMROMPROT_READ_ROM_WRITE_RAM,
     /** Read from the shadow ROM page, ignore writes.
      * Map the shadow page read-only, use write access handler to ignore writes. */
