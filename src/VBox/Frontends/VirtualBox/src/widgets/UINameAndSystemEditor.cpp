@@ -86,7 +86,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
         pMainLayout->addWidget(m_pFamilyCombo, 1, 1);
         pMainLayout->addWidget(m_pTypeLabel, 2, 0);
         pMainLayout->addWidget(m_pTypeCombo, 2, 1);
-        pMainLayout->addItem(pIconLayout, 1, 2, 2, 1);
+        pMainLayout->addLayout(pIconLayout, 1, 2, 2, 1);
     }
 
     /* Check if host supports (AMD-V or VT-x) and long mode: */
