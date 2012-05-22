@@ -172,7 +172,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         const RTGCPHYS  GCPhysFault = pGstWalk->Core.GCPhys;
 # else
-        const RTGCPHYS  GCPhysFault = (RTGCPHYS)pvFault;
+        const RTGCPHYS  GCPhysFault = PGM_A20_APPLY(pVCpu, (RTGCPHYS)pvFault);
 # endif
         PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
         if (pCur)
@@ -560,7 +560,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                                                                                  pfLockTaken, &GstWalk));
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, 1, uErr);
 #   else
-        rc = pgmPhysGetPageEx(pVM, (RTGCPHYS)pvFault, &pPage);
+        rc = pgmPhysGetPageEx(pVM, PGM_A20_APPLY(pVCpu, (RTGCPHYS)pvFault), &pPage);
         if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
                                                                                  pfLockTaken));
@@ -752,7 +752,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     RTGCPHYS GCPhys = GstWalk.Core.GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 #  else
-    RTGCPHYS GCPhys = (RTGCPHYS)pvFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    RTGCPHYS GCPhys = PGM_A20_APPLY(pVCpu, (RTGCPHYS)pvFault & ~(RTGCPHYS)PAGE_OFFSET_MASK);
 #  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
     PPGMPAGE pPage;
     rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
@@ -1282,7 +1282,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-            GCPhys |= (iPDDst & 1) * (PAGE_SIZE/2);
+            GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | ((iPDDst & 1) * (PAGE_SIZE / 2)));
 # endif
             if (pShwPage->GCPhys == GCPhys)
             {
@@ -1331,7 +1331,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             RTGCPHYS        GCPhys   = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
-            GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
+            GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | (GCPtrPage & (1 << X86_PD_PAE_SHIFT)));
 # endif
             if (    pShwPage->GCPhys == GCPhys
                 &&  pShwPage->enmKind == BTH_PGMPOOLKIND_PT_FOR_BIG)
@@ -1908,7 +1908,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
         GCPhys = GST_GET_PDE_GCPHYS(PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
         /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-        GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
+        GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | ((iPDDst & 1) * (PAGE_SIZE / 2)));
 # endif
     }
     else
@@ -1916,7 +1916,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
         GCPhys = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
         /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
-        GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
+        GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | (GCPtrPage & (1 << X86_PD_PAE_SHIFT)));
 # endif
     }
     /** @todo This doesn't check the G bit of 2/4MB pages. FIXME */
@@ -2036,7 +2036,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                  * (There are many causes of getting here, it's no longer only CSAM.)
                  */
                 /* Calculate the GC physical address of this 4KB shadow page. */
-                GCPhys = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc) | (GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
+                GCPhys = PGM_A20_APPLY(pVCpu, GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc) | (GCPtrPage & GST_BIG_PAGE_OFFSET_MASK));
                 /* Find ram range. */
                 PPGMPAGE pPage;
                 int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
@@ -2672,7 +2672,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             GCPhys = GST_GET_PDE_GCPHYS(PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-            GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
+            GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | ((iPDDst & 1) * (PAGE_SIZE / 2)));
 # endif
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx, iPDDst, &pShwPage);
         }
@@ -2688,7 +2688,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             GCPhys = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
-            GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
+            GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | (GCPtrPage & (1 << X86_PD_PAE_SHIFT)));
 # endif
             /* Determine the right kind of large page to avoid incorrect cached entry reuse. */
             if (PdeSrc.n.u1User)
@@ -2908,11 +2908,17 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             {
                 if (pRam && GCPhys >= pRam->GCPhys)
                 {
+# ifndef PGM_WITH_A20
                     unsigned iHCPage = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;
+# endif
                     do
                     {
                         /* Make shadow PTE. */
+# ifdef PGM_WITH_A20
+                        PPGMPAGE    pPage = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
+# else
                         PPGMPAGE    pPage = &pRam->aPages[iHCPage];
+# endif
                         SHWPTE      PteDst;
 
 # ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
@@ -2976,7 +2982,10 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 
                         /* advance */
                         GCPhys += PAGE_SIZE;
+                        PGM_A20_APPLY_TO_VAR(pVCpu, GCPhys);
+# ifndef PGM_WITH_A20
                         iHCPage++;
+# endif
                         iPTDst++;
                     } while (   iPTDst < RT_ELEMENTS(pPTDst->a)
                              && GCPhys <= pRam->GCPhysLast);
@@ -2995,6 +3004,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                         iPTDst++;
                     } while (   iPTDst < RT_ELEMENTS(pPTDst->a)
                              && GCPhys < pRam->GCPhys);
+                    PGM_A20_APPLY_TO_VAR(pVCpu,GCPhys);
                 }
                 else
                 {
@@ -3091,17 +3101,26 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     {
         /* Check if we allocated a big page before for this 2 MB range. */
         PPGMPAGE pPage;
-        rc = pgmPhysGetPageEx(pVM, GCPtrPage & X86_PDE2M_PAE_PG_MASK, &pPage);
+        rc = pgmPhysGetPageEx(pVM, PGM_A20_APPLY(pVCpu, GCPtrPage & X86_PDE2M_PAE_PG_MASK), &pPage);
         if (RT_SUCCESS(rc))
         {
             RTHCPHYS HCPhys = NIL_RTHCPHYS;
             if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
             {
-                STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageReused);
-                AssertRelease(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-                HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                if (PGM_A20_IS_ENABLED(pVCpu))
+                {
+                    STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageReused);
+                    AssertRelease(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                }
+                else
+                {
+                    PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+                    pVM->pgm.s.cLargePagesDisabled++;
+                }
             }
-            else if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED)
+            else if (   PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED
+                     && PGM_A20_IS_ENABLED(pVCpu))
             {
                 /* Recheck the entire 2 MB range to see if we can use it again as a large page. */
                 rc = pgmPhysRecheckLargePage(pVM, GCPtrPage, pPage);
@@ -3112,7 +3131,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
                 }
             }
-            else if (PGMIsUsingLargePages(pVM))
+            else if (   PGMIsUsingLargePages(pVM)
+                     && PGM_A20_IS_ENABLED(pVCpu))
             {
                 rc = pgmPhysAllocLargePage(pVM, GCPtrPage);
                 if (RT_SUCCESS(rc))
@@ -3160,7 +3180,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     RTGCPHYS        GCPhys;
 
     /* Virtual address = physical address */
-    GCPhys = GCPtrPage & X86_PAGE_4K_BASE_MASK;
+    GCPhys = PGM_A20_APPLY(pVCpu, GCPtrPage & X86_PAGE_4K_BASE_MASK);
     rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx, iPDDst, &pShwPage);
 
     if (    rc == VINF_SUCCESS
@@ -3182,7 +3202,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 
         for (unsigned iPTDst = 0; iPTDst < RT_ELEMENTS(pPTDst->a); iPTDst++)
         {
-            RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
+            RTGCPTR GCPtrCurPage = PGM_A20_APPLY(pVCpu, (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT))
+                                                      | (iPTDst << PAGE_SHIFT));
 
             PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
             Log2(("SyncPage: 4K+ %RGv PteSrc:{P=1 RW=1 U=1} PteDst=%08llx%s\n",
@@ -3562,9 +3583,10 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
  *
  * @returns VBox status code, no specials.
  * @param   pVCpu       The VMCPU handle.
- * @param   cr0         Guest context CR0 register
- * @param   cr3         Guest context CR3 register
- * @param   cr4         Guest context CR4 register
+ * @param   cr0         Guest context CR0 register.
+ * @param   cr3         Guest context CR3 register. Not subjected to the A20
+ *                      mask.
+ * @param   cr4         Guest context CR4 register.
  * @param   fGlobal     Including global page directories or not
  */
 PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
@@ -3689,7 +3711,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
     /*
      * Check that the Guest CR3 and all its mappings are correct.
      */
-    AssertMsgReturn(pPGM->GCPhysCR3 == (cr3 & GST_CR3_PAGE_MASK),
+    AssertMsgReturn(pPGM->GCPhysCR3 == PGM_A20_APPLY(pVCpu, cr3 & GST_CR3_PAGE_MASK),
                     ("Invalid GCPhysCR3=%RGp cr3=%RGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
                     false);
 #  if !defined(IN_RING0) && PGM_GST_TYPE != PGM_TYPE_AMD64
@@ -3700,14 +3722,14 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #   endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
-    rc = pgmRamGCPhys2HCPhys(pVM, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
+    rc = pgmRamGCPhys2HCPhys(pVM, PGM_A20_APPLY(pVCpu, cr3 & GST_CR3_PAGE_MASK), &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%RHp HCPhyswShw=%RHp (cr3)\n", HCPhys, HCPhysShw), false);
 #   if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     pgmGstGet32bitPDPtr(pVCpu);
     RTGCPHYS GCPhys;
     rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGst32BitPdR3, &GCPhys);
     AssertRCReturn(rc, 1);
-    AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%RGp cr3=%RGp\n", GCPhys, (RTGCPHYS)cr3), false);
+    AssertMsgReturn(PGM_A20_APPLY(pVCpu, cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%RGp cr3=%RGp\n", GCPhys, (RTGCPHYS)cr3), false);
 #   endif
 #  endif /* !IN_RING0 */
 
@@ -3754,7 +3776,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
         }
 
         pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
-        GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK;
+        GCPhysPdptSrc = PGM_A20_APPLY(pVCpu, pPml4eSrc->u & X86_PML4E_PG_MASK);
 
         if (pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present)
         {
@@ -3828,7 +3850,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
             }
 
             pShwPde      = pgmPoolGetPage(pPool, pPdpeDst->u & X86_PDPE_PG_MASK);
-            GCPhysPdeSrc = PdpeSrc.u & X86_PDPE_PG_MASK;
+            GCPhysPdeSrc = PGM_A20_APPLY(pVCpu, PdpeSrc.u & X86_PDPE_PG_MASK);
 
             if (pPdpeDst->n.u1Present != PdpeSrc.n.u1Present)
             {
@@ -3939,7 +3961,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                     {
                         GCPhysGst = GST_GET_PDE_GCPHYS(PdeSrc);
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                        GCPhysGst |= (iPDDst & 1) * (PAGE_SIZE / 2);
+                        GCPhysGst = PGM_A20_APPLY(pVCpu, GCPhysGst | ((iPDDst & 1) * (PAGE_SIZE / 2)));
 #  endif
                     }
                     else
@@ -3955,7 +3977,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #  endif
                         GCPhysGst = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                        GCPhysGst |= GCPtr & RT_BIT(X86_PAGE_2M_SHIFT);
+                        GCPhysGst = PGM_A20_APPLY(pVCpu, GCPhysGst | (GCPtr & RT_BIT(X86_PAGE_2M_SHIFT)));
 #  endif
                     }
 
@@ -3991,7 +4013,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                         * Page Table.
                         */
                         const GSTPT *pPTSrc;
-                        rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1), &pPTSrc);
+                        rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, PGM_A20_APPLY(pVCpu, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1)),
+                                                 &pPTSrc);
                         if (RT_FAILURE(rc))
                         {
                             AssertMsgFailed(("Cannot map/convert guest physical address %RGp in the PDE at %RGv! PdeSrc=%#RX64\n",
@@ -4046,7 +4069,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #  endif
                                 AssertMsgFailed(("Out of sync (!P) PTE at %RGv! PteSrc=%#RX64 PteDst=%#RX64 pPTSrc=%RGv iPTSrc=%x PdeSrc=%x physpte=%RGp\n",
                                                 GCPtr + off, (uint64_t)PteSrc.u, SHW_PTE_LOG64(PteDst), pPTSrc, iPT + offPTSrc, PdeSrc.au32[0],
-                                                (uint64_t)GST_GET_PDE_GCPHYS(PdeSrc) + (iPT + offPTSrc)*sizeof(PteSrc)));
+                                                (uint64_t)GST_GET_PDE_GCPHYS(PdeSrc) + (iPT + offPTSrc) * sizeof(PteSrc)));
                                 cErrors++;
                                 continue;
                             }
@@ -4274,7 +4297,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                         /* iterate the page table. */
                         for (unsigned iPT = 0, off = 0;
                             iPT < RT_ELEMENTS(pPTDst->a);
-                            iPT++, off += PAGE_SIZE, GCPhysGst += PAGE_SIZE)
+                            iPT++, off += PAGE_SIZE, GCPhysGst = PGM_A20_APPLY(pVCpu, GCPhysGst + PAGE_SIZE))
                         {
                             const SHWPTE PteDst = pPTDst->a[iPT];
 
@@ -4413,8 +4436,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
  * @returns Strict VBox status code.
  * @retval  VINF_SUCCESS.
  *
- * @param   pVCpu       The VMCPU handle.
- * @param   GCPhysCR3       The physical address in the CR3 register.
+ * @param   pVCpu           The VMCPU handle.
+ * @param   GCPhysCR3       The physical address in the CR3 register.  (A20
+ *                          mask already applied.)
  */
 PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 {
@@ -4480,7 +4504,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
                 {
                     RTHCPTR     HCPtr;
                     RTHCPHYS    HCPhys;
-                    RTGCPHYS    GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
+                    RTGCPHYS    GCPhys = PGM_A20_APPLY(pVCpu, pGuestPDPT->a[i].u & X86_PDPE_PG_MASK);
                     pgmLock(pVM);
                     PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
                     AssertReturn(pPage, VERR_PGM_INVALID_PDPE_ADDR);

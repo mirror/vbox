@@ -166,6 +166,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
 
             pWalk->Core.GCPhys       = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
                                      | (GCPtr & GST_BIG_PAGE_OFFSET_MASK);
+            PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->Core.GCPhys);
             uint8_t fEffectiveXX     = (uint8_t)pWalk->Pde.u
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
                                      & (uint8_t)pWalk->Pde.u
@@ -514,7 +515,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                         GSTPTE      Pte = pPT->a[iPTE];
                         RTGCPHYS    GCPhysNew;
                         if (Pte.n.u1Present)
-                            GCPhysNew = (RTGCPHYS)(pPT->a[iPTE].u & GST_PTE_PG_MASK) + offPage;
+                            GCPhysNew = PGM_A20_APPLY(pVCpu, (RTGCPHYS)(pPT->a[iPTE].u & GST_PTE_PG_MASK) + offPage);
                         else
                             GCPhysNew = NIL_RTGCPHYS;
                         if (pCur->aPhysToVirt[iPage].Core.Key != GCPhysNew)
@@ -566,7 +567,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                      i4KB < PAGE_SIZE / sizeof(GSTPDE) && iPage < pCur->cPages;
                      i4KB++, iPage++, GCPtr += PAGE_SIZE, offPage = 0)
                 {
-                    RTGCPHYS GCPhysNew = GCPhys + (i4KB << PAGE_SHIFT) + offPage;
+                    RTGCPHYS GCPhysNew = PGM_A20_APPLY(pVCpu, GCPhys + (i4KB << PAGE_SHIFT) + offPage);
                     if (pCur->aPhysToVirt[iPage].Core.Key != GCPhysNew)
                     {
                         if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
