@@ -43,6 +43,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
         }
         m_pApplianceWidget = new UIApplianceImportEditorWidget(this);
         {
+            m_pApplianceWidget->setMinimumHeight(300);
             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
             m_pApplianceWidget->setFile(strFileName);
         }
