@@ -52,6 +52,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
         m_pVMApplianceLabel = new QILabelSeparator(this);
         m_pApplianceWidget = new UIApplianceExportEditorWidget(this);
         {
+            m_pApplianceWidget->setMinimumHeight(250);
             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
             m_pVMApplianceLabel->setBuddy(m_pApplianceWidget);
         }
