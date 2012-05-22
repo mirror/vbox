@@ -466,6 +466,8 @@ VBOX_WITH_MSI_DEVICES = 1
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_HOSTNETIF_API = 1
 endif
+# Emulated USB smart card reader
+VBOX_WITH_USB_CARDREADER = 1
 ## @}
 
 
