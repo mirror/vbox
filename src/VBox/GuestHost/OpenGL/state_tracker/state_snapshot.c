@@ -1661,8 +1661,6 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
         } tlsRef;
     } bitid;
 
-    Assert(0);
-
     CRASSERT(pContext && pSSM);
 
     /* This one is rather big for stack allocation and causes macs to crash */
