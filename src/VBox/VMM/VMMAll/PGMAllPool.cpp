@@ -139,7 +139,7 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * Wrapper for getting the current context pointer to the entry being modified.
  *
  * @returns VBox status code suitable for scheduling.
- * @param   pVM         VM Handle.
+ * @param   pVM         The VM handle.
  * @param   pvDst       Destination address
  * @param   pvSrc       Source guest virtual address.
  * @param   GCPhysSrc   The source guest physical address.
@@ -734,7 +734,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsi
  *
  * @returns true if we consider the page as being reused for a different purpose.
  * @returns false if we consider it to still be a paging page.
- * @param   pVM         VM Handle.
+ * @param   pVM         The VM handle.
  * @param   pVCpu       VMCPU Handle.
  * @param   pRegFrame   Trap register frame.
  * @param   pDis        The disassembly info for the faulting instruction.
@@ -1027,7 +1027,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
  * \#PF Handler callback for PT write accesses.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         The VM handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  *                      NULL on DMA and other non CPU access.
@@ -1605,7 +1605,7 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pP
 /**
  * Flush a dirty page
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   pPool           The pool.
  * @param   idxSlot         Dirty array slot index
  * @param   fAllowRemoval   Allow a reused page table to be removed
@@ -1703,7 +1703,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
 /**
  * Add a new dirty page
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         The VM handle.
  * @param   pPool       The pool.
  * @param   pPage       The page.
  */
@@ -1779,7 +1779,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * Check if the specified page is dirty (not write monitored)
  *
  * @return dirty or not
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhys          Guest physical address
  */
 bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
@@ -1809,7 +1809,7 @@ bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
 /**
  * Reset all dirty pages by reinstating page monitoring.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  */
 void pgmPoolResetDirtyPages(PVM pVM)
 {
@@ -1847,7 +1847,7 @@ void pgmPoolResetDirtyPages(PVM pVM)
 /**
  * Invalidate the PT entry for the specified page
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPtrPage       Guest page to invalidate
  */
 void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
@@ -1868,7 +1868,7 @@ void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
 /**
  * Reset all dirty pages by reinstating page monitoring.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             The VM handle.
  * @param   GCPhysPT        Physical address of the page table
  */
 void pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT)

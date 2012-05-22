@@ -522,7 +522,7 @@ VMMDECL(int) PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * @returns Pointer to the mapping.
  * @returns NULL if not
  *
- * @param   pVM         The virtual machine.
+ * @param   pVM         The VM handle.
  * @param   GCPtr       The guest context pointer.
  */
 PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
@@ -799,7 +799,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * Executes an instruction using the interpreter.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM handle.
+ * @param   pVM         The VM handle.
  * @param   pVCpu       VMCPU handle.
  * @param   pRegFrame   Register frame.
  * @param   pvFault     Fault address.
@@ -2317,7 +2317,7 @@ VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
  * Check if any pgm pool pages are marked dirty (not monitored)
  *
  * @returns bool locked/not locked
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  */
 VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
 {
@@ -2329,7 +2329,7 @@ VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
  * Check if this VCPU currently owns the PGM lock.
  *
  * @returns bool owner/not owner
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  */
 VMMDECL(bool) PGMIsLockOwner(PVM pVM)
 {
@@ -2341,7 +2341,7 @@ VMMDECL(bool) PGMIsLockOwner(PVM pVM)
  * Enable or disable large page usage
  *
  * @returns VBox status code.
- * @param   pVM             The VM to operate on.
+ * @param   pVM             The VM handle.
  * @param   fUseLargePages  Use/not use large pages
  */
 VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
@@ -2357,7 +2357,7 @@ VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
  * Acquire the PGM lock.
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  */
 int pgmLock(PVM pVM)
 {
@@ -2375,7 +2375,7 @@ int pgmLock(PVM pVM)
  * Release the PGM lock.
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  */
 void pgmUnlock(PVM pVM)
 {
@@ -2591,7 +2591,7 @@ VMMDECL(void) PGMDeregisterStringFormatTypes(void)
  * Asserts that there are no mapping conflicts.
  *
  * @returns Number of conflicts.
- * @param   pVM     The VM Handle.
+ * @param   pVM     The VM handle.
  */
 VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
 {
@@ -2635,8 +2635,8 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
  * shadow page tables is in sync with the guest page tables.
  *
  * @returns Number of conflicts.
- * @param   pVM     The VM Handle.
- * @param   pVCpu   VMCPU handle.
+ * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU handle.
  * @param   cr3     The current guest CR3 register value.
  * @param   cr4     The current guest CR4 register value.
  */
