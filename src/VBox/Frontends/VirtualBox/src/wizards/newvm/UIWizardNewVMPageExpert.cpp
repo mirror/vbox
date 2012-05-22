@@ -55,7 +55,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
         m_pMemoryCnt = new QGroupBox(this);
         {
             m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *pMemoryCntLayout = new QGridLayout(m_pMemoryCnt);
+            QGridLayout *pMemoryLayout = new QGridLayout(m_pMemoryCnt);
             {
                 m_pRamSlider = new VBoxGuestRAMSlider(m_pMemoryCnt);
                 {
@@ -80,37 +80,33 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                 {
                     m_pRamMin->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
                 }
-                QSpacerItem *m_pRamSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding);
                 m_pRamMax = new QLabel(m_pMemoryCnt);
                 {
                     m_pRamMax->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
                 }
-                pMemoryCntLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
-                pMemoryCntLayout->addWidget(m_pRamEditor, 0, 3);
-                pMemoryCntLayout->addWidget(m_pRamUnits, 0, 4);
-                pMemoryCntLayout->addWidget(m_pRamMin, 1, 0);
-                pMemoryCntLayout->addItem(m_pRamSpacer, 1, 1);
-                pMemoryCntLayout->addWidget(m_pRamMax, 1, 2);
+                pMemoryLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
+                pMemoryLayout->addWidget(m_pRamEditor, 0, 3);
+                pMemoryLayout->addWidget(m_pRamUnits, 0, 4);
+                pMemoryLayout->addWidget(m_pRamMin, 1, 0);
+                pMemoryLayout->setColumnStretch(1, 1);
+                pMemoryLayout->addWidget(m_pRamMax, 1, 2);
             }
         }
         m_pDiskCnt = new QGroupBox(this);
         {
             m_pDiskCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            m_pDiskCnt->setCheckable(true);
-            m_pDiskCnt->setChecked(true);
-            QGridLayout *pDiskCntLayout = new QGridLayout(m_pDiskCnt);
+            QGridLayout *pDiskLayout = new QGridLayout(m_pDiskCnt);
             {
+                m_pDiskSkip = new QRadioButton(m_pDiskCnt);
                 m_pDiskCreate = new QRadioButton(m_pDiskCnt);
                 {
                     m_pDiskCreate->setChecked(true);
                 }
                 m_pDiskPresent = new QRadioButton(m_pDiskCnt);
                 QStyleOptionButton options;
-                options.initFrom(m_pDiskCreate);
-                int iWidth = m_pDiskCreate->style()->subElementRect(QStyle::SE_RadioButtonIndicator, &options, m_pDiskCreate).width() +
-                             m_pDiskCreate->style()->pixelMetric(QStyle::PM_RadioButtonLabelSpacing, &options, m_pDiskCreate) -
-                             pDiskCntLayout->spacing() - 1;
-                QSpacerItem *pSpacer = new QSpacerItem(iWidth, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+                options.initFrom(m_pDiskPresent);
+                int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
+                pDiskLayout->setColumnMinimumWidth(0, iWidth);
                 m_pDiskSelector = new VBoxMediaComboBox(m_pDiskCnt);
                 {
                     m_pDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
@@ -121,11 +117,11 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                     m_pVMMButton->setAutoRaise(true);
                     m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
                 }
-                pDiskCntLayout->addWidget(m_pDiskCreate, 0, 0, 1, 3);
-                pDiskCntLayout->addWidget(m_pDiskPresent, 1, 0, 1, 3);
-                pDiskCntLayout->addItem(pSpacer, 2, 0);
-                pDiskCntLayout->addWidget(m_pDiskSelector, 2, 1);
-                pDiskCntLayout->addWidget(m_pVMMButton, 2, 2);
+                pDiskLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
+                pDiskLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
+                pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
+                pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
+                pDiskLayout->addWidget(m_pVMMButton, 3, 2);
             }
         }
         pMainLayout->addWidget(m_pNameAndSystemCnt);
@@ -140,7 +136,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
     connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged(int)));
     connect(m_pRamEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltRamEditorTextChanged(const QString &)));
-    connect(m_pDiskCnt, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
+    connect(m_pDiskSkip, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
     connect(m_pDiskCreate, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
     connect(m_pDiskPresent, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
     connect(m_pDiskSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltVirtualDiskSourceChanged()));
@@ -228,7 +224,8 @@ void UIWizardNewVMPageExpert::retranslateUi()
     m_pRamUnits->setText(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
     m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
     m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
-    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard &drive"));
+    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard drive"));
+    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add virtual hard drive"));
     m_pDiskCreate->setText(UIWizardNewVM::tr("&Create new virtual hard drive"));
     m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing virtual hard drive file"));
     m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard drive file..."));
@@ -254,7 +251,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
      * 'virtualDisk' field feats the rules: */
     return UIWizardPage::isComplete() &&
            (m_pRamSlider->value() >= qMax(1, (int)m_pRamSlider->minRAM()) && m_pRamSlider->value() <= (int)m_pRamSlider->maxRAM()) &&
-           (!m_pDiskCnt->isChecked() || !m_pDiskPresent->isChecked() || !vboxGlobal().findMedium(m_pDiskSelector->id()).isNull());
+           (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !vboxGlobal().findMedium(m_pDiskSelector->id()).isNull());
 }
 
 bool UIWizardNewVMPageExpert::validatePage()
@@ -276,7 +273,7 @@ bool UIWizardNewVMPageExpert::validatePage()
         Assert(m_virtualDisk.isNull());
         if (fResult)
         {
-            if (m_pDiskCnt->isChecked() && m_pDiskCreate->isChecked())
+            if (m_pDiskCreate->isChecked())
             {
                 /* Show the New Virtual Hard Drive wizard if necessary: */
                 fResult = getWithNewVirtualDiskWizard();

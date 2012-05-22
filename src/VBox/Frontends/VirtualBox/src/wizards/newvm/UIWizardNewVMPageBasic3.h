@@ -27,7 +27,6 @@
 #include "COMDefs.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class QRadioButton;
 class VBoxMediaComboBox;
 class QIToolButton;
@@ -72,7 +71,7 @@ protected:
     QString m_strVirtualDiskLocation;
 
     /* Widgets: */
-    QGroupBox *m_pDiskCnt;
+    QRadioButton *m_pDiskSkip;
     QRadioButton *m_pDiskCreate;
     QRadioButton *m_pDiskPresent;
     VBoxMediaComboBox *m_pDiskSelector;
@@ -120,7 +119,7 @@ private:
     bool validatePage();
 
     /* Widgets: */
-    QIRichTextLabel *m_pLabel1;
+    QIRichTextLabel *m_pLabel;
 };
 
 #endif // __UIWizardNewVMPageBasic3_h__

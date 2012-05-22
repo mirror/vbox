@@ -23,7 +23,6 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class VBoxGuestRAMSlider;
 class QILineEdit;
 class QLabel;
@@ -42,7 +41,6 @@ protected:
     void onRamEditorTextChanged(const QString &strText);
 
     /* Widgets: */
-    QGroupBox *m_pMemoryCnt;
     VBoxGuestRAMSlider *m_pRamSlider;
     QILineEdit *m_pRamEditor;
     QLabel *m_pRamMin;
@@ -78,7 +76,7 @@ private:
     bool isComplete() const;
 
     /* Widgets: */
-    QIRichTextLabel *m_pLabel1;
+    QIRichTextLabel *m_pLabel;
 };
 
 #endif // __UINewVMWzd_h__

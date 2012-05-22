@@ -23,7 +23,6 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class UINameAndSystemEditor;
 class QIRichTextLabel;
 
@@ -57,7 +56,6 @@ protected:
     QString m_strMachineBaseName;
 
     /* Widgets: */
-    QGroupBox *m_pNameAndSystemCnt;
     UINameAndSystemEditor *m_pNameAndSystemEditor;
 };
 

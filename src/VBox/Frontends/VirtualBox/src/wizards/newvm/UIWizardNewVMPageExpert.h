@@ -24,6 +24,9 @@
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
 
+/* Forward declarations: */
+class QGroupBox;
+
 /* Expert page of the New Virtual Machine wizard: */
 class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage1,
@@ -71,6 +74,11 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
+
+    /* Widgets: */
+    QGroupBox *m_pNameAndSystemCnt;
+    QGroupBox *m_pMemoryCnt;
+    QGroupBox *m_pDiskCnt;
 };
 
 #endif // __UIWizardNewVMPageExpert_h__

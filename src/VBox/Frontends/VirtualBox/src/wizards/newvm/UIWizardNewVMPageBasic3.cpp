@@ -21,7 +21,6 @@
 #include <QMetaType>
 #include <QVBoxLayout>
 #include <QGridLayout>
-#include <QGroupBox>
 #include <QRadioButton>
 
 /* Local includes: */
@@ -42,23 +41,21 @@ UIWizardNewVMPage3::UIWizardNewVMPage3()
 void UIWizardNewVMPage3::updateVirtualDiskSource()
 {
     /* Enable/disable controls: */
-    m_pDiskCreate->setEnabled(m_pDiskCnt->isChecked());
-    m_pDiskPresent->setEnabled(m_pDiskCnt->isChecked());
-    m_pDiskSelector->setEnabled(m_pDiskPresent->isEnabled() && m_pDiskPresent->isChecked());
-    m_pVMMButton->setEnabled(m_pDiskPresent->isEnabled() && m_pDiskPresent->isChecked());
+    m_pDiskSelector->setEnabled(m_pDiskPresent->isChecked());
+    m_pVMMButton->setEnabled(m_pDiskPresent->isChecked());
 
     /* Fetch filed values: */
-    if (m_pDiskCnt->isChecked() && m_pDiskPresent->isChecked())
-    {
-        m_strVirtualDiskId = m_pDiskSelector->id();
-        m_strVirtualDiskName = m_pDiskSelector->currentText();
-        m_strVirtualDiskLocation = m_pDiskSelector->location();
-    }
-    else
+    if (m_pDiskSkip->isChecked())
     {
         m_strVirtualDiskId = QString();
         m_strVirtualDiskName = QString();
         m_strVirtualDiskLocation = QString();
+    }
+    else if (m_pDiskPresent->isChecked())
+    {
+        m_strVirtualDiskId = m_pDiskSelector->id();
+        m_strVirtualDiskName = m_pDiskSelector->currentText();
+        m_strVirtualDiskLocation = m_pDiskSelector->location();
     }
 }
 
@@ -130,46 +127,40 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        m_pLabel1 = new QIRichTextLabel(this);
-        m_pDiskCnt = new QGroupBox(this);
+        m_pLabel = new QIRichTextLabel(this);
+        QGridLayout *pDiskLayout = new QGridLayout;
         {
-            m_pDiskCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            m_pDiskCnt->setCheckable(true);
-            QGridLayout *pDiskLayout = new QGridLayout(m_pDiskCnt);
+            m_pDiskSkip = new QRadioButton(this);
+            m_pDiskCreate = new QRadioButton(this);
+            m_pDiskPresent = new QRadioButton(this);
+            QStyleOptionButton options;
+            options.initFrom(m_pDiskPresent);
+            int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
+            pDiskLayout->setColumnMinimumWidth(0, iWidth);
+            m_pDiskSelector = new VBoxMediaComboBox(this);
             {
-                m_pDiskCreate = new QRadioButton(m_pDiskCnt);
-                m_pDiskPresent = new QRadioButton(m_pDiskCnt);
-                QStyleOptionButton options;
-                options.initFrom(m_pDiskCreate);
-                int iWidth = m_pDiskCreate->style()->subElementRect(QStyle::SE_RadioButtonIndicator, &options, m_pDiskCreate).width() +
-                             m_pDiskCreate->style()->pixelMetric(QStyle::PM_RadioButtonLabelSpacing, &options, m_pDiskCreate) -
-                             pDiskLayout->spacing() - 1;
-                QSpacerItem *pSpacer = new QSpacerItem(iWidth, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-                m_pDiskSelector = new VBoxMediaComboBox(m_pDiskCnt);
-                {
-                    m_pDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
-                    m_pDiskSelector->repopulate();
-                }
-                m_pVMMButton = new QIToolButton(m_pDiskCnt);
-                {
-                    m_pVMMButton->setAutoRaise(true);
-                    m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
-                }
-                pDiskLayout->addWidget(m_pDiskCreate, 0, 0, 1, 3);
-                pDiskLayout->addWidget(m_pDiskPresent, 1, 0, 1, 3);
-                pDiskLayout->addItem(pSpacer, 2, 0);
-                pDiskLayout->addWidget(m_pDiskSelector, 2, 1);
-                pDiskLayout->addWidget(m_pVMMButton, 2, 2);
+                m_pDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
+                m_pDiskSelector->repopulate();
             }
+            m_pVMMButton = new QIToolButton(this);
+            {
+                m_pVMMButton->setAutoRaise(true);
+                m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+            }
+            pDiskLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
+            pDiskLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
+            pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
+            pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
+            pDiskLayout->addWidget(m_pVMMButton, 3, 2);
         }
-        pMainLayout->addWidget(m_pLabel1);
-        pMainLayout->addWidget(m_pDiskCnt);
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addLayout(pDiskLayout);
         pMainLayout->addStretch();
         updateVirtualDiskSource();
     }
 
     /* Setup connections: */
-    connect(m_pDiskCnt, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
+    connect(m_pDiskSkip, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
     connect(m_pDiskCreate, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
     connect(m_pDiskPresent, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
     connect(m_pDiskSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltVirtualDiskSourceChanged()));
@@ -207,14 +198,14 @@ void UIWizardNewVMPageBasic3::retranslateUi()
     /* Translate widgets: */
     QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
                                 VBoxGlobal::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
-    m_pLabel1->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard drive to the new machine. "
-                                         "You can either create a new hard drive file or select one from the list "
-                                         "or from another location using the folder icon.</p>"
-                                         "<p>If you need a more complex storage set-up you can skip this step "
-                                         "and make the changes to the machine settings once the machine is created.</p>"
-                                         "<p>The recommended size of the hard drive is <b>%1</b>.</p>")
-                                         .arg(strRecommendedHDD));
-    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard &drive"));
+    m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard drive to the new machine. "
+                                        "You can either create a new hard drive file or select one from the list "
+                                        "or from another location using the folder icon.</p>"
+                                        "<p>If you need a more complex storage set-up you can skip this step "
+                                        "and make the changes to the machine settings once the machine is created.</p>"
+                                        "<p>The recommended size of the hard drive is <b>%1</b>.</p>")
+                                        .arg(strRecommendedHDD));
+    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add virtual hard drive"));
     m_pDiskCreate->setText(UIWizardNewVM::tr("&Create new virtual hard drive"));
     m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing virtual hard drive file"));
     m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard drive file..."));
@@ -226,12 +217,9 @@ void UIWizardNewVMPageBasic3::initializePage()
     retranslateUi();
 
     /* Prepare initial choice: */
-    m_pDiskCnt->setChecked(true);
-    m_pDiskSelector->setCurrentIndex(0);
-    m_pDiskCreate->setChecked(true);
-
-    /* 'Create new hard-disk' should have focus initially: */
     m_pDiskCreate->setFocus();
+    m_pDiskCreate->setChecked(true);
+    m_pDiskSelector->setCurrentIndex(0);
 }
 
 void UIWizardNewVMPageBasic3::cleanupPage()
@@ -244,7 +232,7 @@ void UIWizardNewVMPageBasic3::cleanupPage()
 bool UIWizardNewVMPageBasic3::isComplete() const
 {
     /* Make sure 'virtualDisk' field feats the rules: */
-    return !m_pDiskCnt->isChecked() ||
+    return m_pDiskSkip->isChecked() ||
            !m_pDiskPresent->isChecked() ||
            !vboxGlobal().findMedium(m_pDiskSelector->id()).isNull();
 }
@@ -255,10 +243,10 @@ bool UIWizardNewVMPageBasic3::validatePage()
     bool fResult = true;
 
     /* Ensure unused virtual-disk is deleted: */
-    if (!m_pDiskCnt->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_strVirtualDiskId != m_virtualDisk.GetId()))
+    if (m_pDiskSkip->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_strVirtualDiskId != m_virtualDisk.GetId()))
         ensureNewVirtualDiskDeleted();
 
-    if (!m_pDiskCnt->isChecked())
+    if (m_pDiskSkip->isChecked())
     {
         /* Ask user about disk-less machine: */
         fResult = msgCenter().confirmHardDisklessMachine(this);

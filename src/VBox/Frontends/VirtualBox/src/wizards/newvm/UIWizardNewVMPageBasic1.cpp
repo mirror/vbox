@@ -21,7 +21,6 @@
 #include <QDir>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGroupBox>
 #include <QLineEdit>
 
 /* Local includes: */
@@ -227,17 +226,9 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pNameAndSystemCnt = new QGroupBox(this);
-        {
-            m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pNameAndSystemLayout = new QHBoxLayout(m_pNameAndSystemCnt);
-            {
-                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt);
-                pNameAndSystemLayout->addWidget(m_pNameAndSystemEditor);
-            }
-        }
+        m_pNameAndSystemEditor = new UINameAndSystemEditor(this);
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pNameAndSystemCnt);
+        pMainLayout->addWidget(m_pNameAndSystemEditor);
         pMainLayout->addStretch();
     }
 
@@ -274,7 +265,6 @@ void UIWizardNewVMPageBasic1::retranslateUi()
                                         "and select the type of operating system you intend to install on it. "
                                         "The name you choose will be used throughout VirtualBox "
                                         "to identify this machine."));
-    m_pNameAndSystemCnt->setTitle(UIWizardNewVM::tr("Name and operating system"));
 }
 
 void UIWizardNewVMPageBasic1::initializePage()
