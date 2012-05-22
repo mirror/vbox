@@ -204,9 +204,6 @@ void UIWizard::resizeToGoldenRatio()
             maxOfSizeHints.rheight() = pPage->sizeHint().height() > maxOfSizeHints.height() ?
                                        pPage->sizeHint().height() : maxOfSizeHints.height();
         }
-        /* Minimum height to 350pix: */
-        if (maxOfSizeHints.height() < 350)
-            maxOfSizeHints.setHeight(350);
         /* Feat corresponding height: */
         maxOfSizeHints.setWidth(qMax((int)(1.5 * maxOfSizeHints.height()), maxOfSizeHints.width()));
         /* Use that size-hint for all the pages: */
