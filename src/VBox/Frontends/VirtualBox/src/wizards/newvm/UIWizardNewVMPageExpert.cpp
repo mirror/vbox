@@ -46,16 +46,16 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
         m_pNameAndSystemCnt = new QGroupBox(this);
         {
             m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pNameAndSystemLayout = new QHBoxLayout(m_pNameAndSystemCnt);
+            QHBoxLayout *pNameAndSystemCntLayout = new QHBoxLayout(m_pNameAndSystemCnt);
             {
                 m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt);
-                pNameAndSystemLayout->addWidget(m_pNameAndSystemEditor);
+                pNameAndSystemCntLayout->addWidget(m_pNameAndSystemEditor);
             }
         }
         m_pMemoryCnt = new QGroupBox(this);
         {
             m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *pMemoryLayout = new QGridLayout(m_pMemoryCnt);
+            QGridLayout *pMemoryCntLayout = new QGridLayout(m_pMemoryCnt);
             {
                 m_pRamSlider = new VBoxGuestRAMSlider(m_pMemoryCnt);
                 {
@@ -84,18 +84,18 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                 {
                     m_pRamMax->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
                 }
-                pMemoryLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
-                pMemoryLayout->addWidget(m_pRamEditor, 0, 3);
-                pMemoryLayout->addWidget(m_pRamUnits, 0, 4);
-                pMemoryLayout->addWidget(m_pRamMin, 1, 0);
-                pMemoryLayout->setColumnStretch(1, 1);
-                pMemoryLayout->addWidget(m_pRamMax, 1, 2);
+                pMemoryCntLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
+                pMemoryCntLayout->addWidget(m_pRamEditor, 0, 3);
+                pMemoryCntLayout->addWidget(m_pRamUnits, 0, 4);
+                pMemoryCntLayout->addWidget(m_pRamMin, 1, 0);
+                pMemoryCntLayout->setColumnStretch(1, 1);
+                pMemoryCntLayout->addWidget(m_pRamMax, 1, 2);
             }
         }
         m_pDiskCnt = new QGroupBox(this);
         {
             m_pDiskCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *pDiskLayout = new QGridLayout(m_pDiskCnt);
+            QGridLayout *pDiskCntLayout = new QGridLayout(m_pDiskCnt);
             {
                 m_pDiskSkip = new QRadioButton(m_pDiskCnt);
                 m_pDiskCreate = new QRadioButton(m_pDiskCnt);
@@ -106,7 +106,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                 QStyleOptionButton options;
                 options.initFrom(m_pDiskPresent);
                 int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
-                pDiskLayout->setColumnMinimumWidth(0, iWidth);
+                pDiskCntLayout->setColumnMinimumWidth(0, iWidth);
                 m_pDiskSelector = new VBoxMediaComboBox(m_pDiskCnt);
                 {
                     m_pDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
@@ -117,11 +117,11 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                     m_pVMMButton->setAutoRaise(true);
                     m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
                 }
-                pDiskLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
-                pDiskLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
-                pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
-                pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
-                pDiskLayout->addWidget(m_pVMMButton, 3, 2);
+                pDiskCntLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
+                pDiskCntLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
+                pDiskCntLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
+                pDiskCntLayout->addWidget(m_pDiskSelector, 3, 1);
+                pDiskCntLayout->addWidget(m_pVMMButton, 3, 2);
             }
         }
         pMainLayout->addWidget(m_pNameAndSystemCnt);
