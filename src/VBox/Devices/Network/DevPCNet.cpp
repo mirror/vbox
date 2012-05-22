@@ -271,7 +271,7 @@ struct PCNetState_st
     bool                                fR0Enabled;
     bool                                fAm79C973;
     uint32_t                            u32LinkSpeed;
-    uint32_t                            uLinkUpDelay;
+    uint32_t                            cMsLinkUpDelay;
     uint32_t                            Alignment6;
 
     STAMCOUNTER                         StatReceiveBytes;
@@ -4334,7 +4334,7 @@ static void pcnetTempLinkDown(PCNetState *pThis)
         pThis->cLinkDownReported = 0;
         pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
         pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-        int rc = TMTimerSetMillies(pThis->pTimerRestore, pThis->uLinkUpDelay);
+        int rc = TMTimerSetMillies(pThis->pTimerRestore, pThis->cMsLinkUpDelay);
         AssertRC(rc);
     }
 }
@@ -4777,7 +4777,7 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             pThis->cLinkDownReported = 0;
             pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-            int rc = TMTimerSetMillies(pThis->pTimerRestore, pThis->uLinkUpDelay);
+            int rc = TMTimerSetMillies(pThis->pTimerRestore, pThis->cMsLinkUpDelay);
             AssertRC(rc);
         }
         else
@@ -5065,18 +5065,18 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->fR0Enabled = false;
 #endif /* !PCNET_GC_ENABLED */
 
-    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pThis->uLinkUpDelay, 5000); /* ms */
+    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pThis->cMsLinkUpDelay, 5000); /* ms */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
-    Assert(pThis->uLinkUpDelay <= 300000); /* less than 5 minutes */
-    if (pThis->uLinkUpDelay > 5000 || pThis->uLinkUpDelay < 100)
+    Assert(pThis->cMsLinkUpDelay <= 300000); /* less than 5 minutes */
+    if (pThis->cMsLinkUpDelay > 5000 || pThis->cMsLinkUpDelay < 100)
     {
         LogRel(("PCNet#%d WARNING! Link up delay is set to %u seconds!\n",
-                iInstance, pThis->uLinkUpDelay / 1000));
+                iInstance, pThis->cMsLinkUpDelay / 1000));
     }
     Log(("#%d Link up delay is set to %u seconds\n",
-         iInstance, pThis->uLinkUpDelay / 1000));
+         iInstance, pThis->cMsLinkUpDelay / 1000));
 
 
     /*

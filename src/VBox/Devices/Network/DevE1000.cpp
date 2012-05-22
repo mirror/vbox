@@ -1046,7 +1046,7 @@ struct E1kState_st
 
     bool        Alignment2[3];
     /** Link up delay (in milliseconds). */
-    uint32_t    uLinkUpDelay;
+    uint32_t    cMsLinkUpDelay;
 
     /** All: Device register storage. */
     uint32_t    auRegs[E1K_NUM_OF_32BIT_REGS];
@@ -2173,8 +2173,8 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
 DECLINLINE(void) e1kBringLinkUpDelayed(E1KSTATE* pState)
 {
     E1kLog(("%s Will bring up the link in %d seconds...\n",
-            INSTANCE(pState), pState->uLinkUpDelay / 1000));
-    e1kArmTimer(pState, pState->CTX_SUFF(pLUTimer), pState->uLinkUpDelay * 1000);
+            INSTANCE(pState), pState->cMsLinkUpDelay / 1000));
+    e1kArmTimer(pState, pState->CTX_SUFF(pLUTimer), pState->cMsLinkUpDelay * 1000);
 }
 
 #if 0 /* unused */
@@ -5912,7 +5912,7 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
         if (fNewUp)
         {
             E1kLog(("%s Link will be up in approximately %d secs\n",
-                    INSTANCE(pState), pState->uLinkUpDelay / 1000));
+                    INSTANCE(pState), pState->cMsLinkUpDelay / 1000));
             pState->fCableConnected = true;
             STATUS &= ~STATUS_LU;
             Phy::setLinkStatus(&pState->phy, false);
@@ -6220,7 +6220,7 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     */
     if (    (STATUS & STATUS_LU)
         && !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)
-        && pState->uLinkUpDelay)
+        && pState->cMsLinkUpDelay)
     {
         E1kLog(("%s Link is down temporarily\n", INSTANCE(pState)));
         STATUS &= ~STATUS_LU;
@@ -6717,23 +6717,23 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'EthernetCRC'"));
-    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pState->uLinkUpDelay, 5000); /* ms */
+    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pState->cMsLinkUpDelay, 5000); /* ms */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
-    Assert(pState->uLinkUpDelay <= 300000); /* less than 5 minutes */
-    if (pState->uLinkUpDelay > 5000)
+    Assert(pState->cMsLinkUpDelay <= 300000); /* less than 5 minutes */
+    if (pState->cMsLinkUpDelay > 5000)
     {
         LogRel(("%s WARNING! Link up delay is set to %u seconds!\n",
-                INSTANCE(pState), pState->uLinkUpDelay / 1000));
+                INSTANCE(pState), pState->cMsLinkUpDelay / 1000));
     }
-    else if (pState->uLinkUpDelay == 0)
+    else if (pState->cMsLinkUpDelay == 0)
     {
         LogRel(("%s WARNING! Link up delay is disabled!\n", INSTANCE(pState)));
     }
 
     E1kLog(("%s Chip=%s LinkUpDelay=%ums\n", INSTANCE(pState),
-            g_Chips[pState->eChip].pcszName, pState->uLinkUpDelay));
+            g_Chips[pState->eChip].pcszName, pState->cMsLinkUpDelay));
 
     /* Initialize state structure */
     pState->pDevInsR3    = pDevIns;
