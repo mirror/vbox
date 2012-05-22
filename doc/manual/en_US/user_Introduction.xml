@@ -430,6 +430,7 @@
           <listitem>
             <para>10.7 (Lion, 32-bit and 64-bit)</para>
           </listitem>
+
         </itemizedlist>
 
         <para>Intel hardware is required; please see <xref
@@ -447,7 +448,8 @@
               ("Feisty Fawn"), 7.10 ("Gutsy Gibbon"), 8.04 ("Hardy Heron"),
               8.10 ("Intrepid Ibex"), 9.04 ("Jaunty Jackalope"), 9.10 ("Karmic
               Koala"), 10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
-              11.04 ("Natty Narwhal").</para>
+              11.04 ("Natty Narwhal"), 11.10 ("Oneiric Oncelot"),
+              12.04 ("Precise Pangolin")</para>
             </listitem>
 
             <listitem>
@@ -464,7 +466,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core 4 to 15</para>
+              <para>Fedora Core 4 to 17</para>
             </listitem>
 
             <listitem>
