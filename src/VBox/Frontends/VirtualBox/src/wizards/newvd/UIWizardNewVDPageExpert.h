@@ -24,6 +24,9 @@
 #include "UIWizardNewVDPageBasic2.h"
 #include "UIWizardNewVDPageBasic3.h"
 
+/* Forward declarations: */
+class QGroupBox;
+
 /* Expert page of the New Virtual Hard Drive wizard: */
 class UIWizardNewVDPageExpert : public UIWizardPage,
                                 public UIWizardNewVDPage1,
@@ -70,6 +73,12 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
+
+    /* Widgets: */
+    QGroupBox *m_pFormatCnt;
+    QGroupBox *m_pVariantCnt;
+    QGroupBox *m_pLocationCnt;
+    QGroupBox *m_pSizeCnt;
 };
 
 #endif // __UIWizardNewVDPageExpert_h__

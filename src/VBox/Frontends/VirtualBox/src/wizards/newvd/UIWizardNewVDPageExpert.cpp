@@ -93,7 +93,6 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                     m_pSizeMin->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
                     m_pSizeMin->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
                 }
-                QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
                 QLabel *m_pSizeMax = new QLabel(m_pSizeCnt);
                 {
                     m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
@@ -102,92 +101,62 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                 m_pSizeCntLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
                 m_pSizeCntLayout->addWidget(m_pSizeEditor, 0, 3);
                 m_pSizeCntLayout->addWidget(m_pSizeMin, 1, 0);
-                m_pSizeCntLayout->addItem(m_pSizeSpacer, 1, 1);
+                m_pSizeCntLayout->setColumnStretch(1, 1);
                 m_pSizeCntLayout->addWidget(m_pSizeMax, 1, 2);
             }
         }
-        QVBoxLayout *pFormatWrappingLayout = new QVBoxLayout;
+        m_pFormatCnt = new QGroupBox(this);
         {
-            m_pFormatCnt = new QGroupBox(this);
+            m_pFormatCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pFormatCntLayout = new QVBoxLayout(m_pFormatCnt);
             {
-                m_pFormatCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                QVBoxLayout *pFormatCntLayout = new QVBoxLayout(m_pFormatCnt);
+                m_pFormatButtonGroup = new QButtonGroup(m_pFormatCnt);
                 {
-                    m_pFormatButtonGroup = new QButtonGroup(m_pFormatCnt);
+                    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+                    const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
+                    for (int i = 0; i < medFormats.size(); ++i)
                     {
-                        CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
-                        const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
-                        for (int i = 0; i < medFormats.size(); ++i)
-                        {
-                            const CMediumFormat &medFormat = medFormats[i];
-                            QString strFormatName(medFormat.GetName());
-                            if (strFormatName == "VDI")
-                            {
-                                QRadioButton *pButton = addFormatButton(pFormatCntLayout, medFormat);
-                                if (pButton)
-                                {
-                                    m_formats << medFormat;
-                                    m_formatNames << strFormatName;
-                                    m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
-                                }
-                            }
-                        }
-                        for (int i = 0; i < medFormats.size(); ++i)
-                        {
-                            const CMediumFormat &medFormat = medFormats[i];
-                            QString strFormatName(medFormat.GetName());
-                            if (strFormatName != "VDI")
-                            {
-                                QRadioButton *pButton = addFormatButton(pFormatCntLayout, medFormat);
-                                if (pButton)
-                                {
-                                    m_formats << medFormat;
-                                    m_formatNames << strFormatName;
-                                    m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
-                                }
-                            }
-                        }
-                        m_pFormatButtonGroup->button(0)->click();
-                        m_pFormatButtonGroup->button(0)->setFocus();
+                        const CMediumFormat &medFormat = medFormats[i];
+                        if (medFormat.GetName() == "VDI")
+                            addFormatButton(m_pFormatCnt, pFormatCntLayout, medFormat);
                     }
+                    for (int i = 0; i < medFormats.size(); ++i)
+                    {
+                        const CMediumFormat &medFormat = medFormats[i];
+                        if (medFormat.GetName() != "VDI")
+                            addFormatButton(m_pFormatCnt, pFormatCntLayout, medFormat);
+                    }
+                    m_pFormatButtonGroup->button(0)->click();
+                    m_pFormatButtonGroup->button(0)->setFocus();
                 }
             }
-            QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
-            pFormatWrappingLayout->addWidget(m_pFormatCnt);
-            pFormatWrappingLayout->addItem(m_pSizeSpacer);
         }
-        QVBoxLayout *pVariantWrappingLayout = new QVBoxLayout;
+        m_pVariantCnt = new QGroupBox(this);
         {
-            m_pVariantCnt = new QGroupBox(this);
+            m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pVariantsLayout = new QVBoxLayout(m_pVariantCnt);
             {
-                m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                QVBoxLayout *pVariantsLayout = new QVBoxLayout(m_pVariantCnt);
+                m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
                 {
-                    m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
+                    m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
                     {
-                        m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
-                        {
-                            m_pDynamicalButton->click();
-                            m_pDynamicalButton->setFocus();
-                        }
-                        m_pFixedButton = new QRadioButton(m_pVariantCnt);
-                        m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
-                        m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
+                        m_pDynamicalButton->click();
+                        m_pDynamicalButton->setFocus();
                     }
-                    m_pSplitBox = new QCheckBox(m_pVariantCnt);
-                    pVariantsLayout->addWidget(m_pDynamicalButton);
-                    pVariantsLayout->addWidget(m_pFixedButton);
-                    pVariantsLayout->addWidget(m_pSplitBox);
+                    m_pFixedButton = new QRadioButton(m_pVariantCnt);
+                    m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
+                    m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
                 }
+                m_pSplitBox = new QCheckBox(m_pVariantCnt);
+                pVariantsLayout->addWidget(m_pDynamicalButton);
+                pVariantsLayout->addWidget(m_pFixedButton);
+                pVariantsLayout->addWidget(m_pSplitBox);
             }
-            QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
-            pVariantWrappingLayout->addWidget(m_pVariantCnt);
-            pVariantWrappingLayout->addItem(m_pSizeSpacer);
         }
         pMainLayout->addWidget(m_pLocationCnt, 0, 0, 1, 2);
         pMainLayout->addWidget(m_pSizeCnt, 1, 0, 1, 2);
-        pMainLayout->addLayout(pFormatWrappingLayout, 2, 0);
-        pMainLayout->addLayout(pVariantWrappingLayout, 2, 1);
+        pMainLayout->addWidget(m_pFormatCnt, 2, 0, Qt::AlignTop);
+        pMainLayout->addWidget(m_pVariantCnt, 2, 1, Qt::AlignTop);
         setMediumSize(uDefaultSize);
         sltMediumFormatChanged();
     }
@@ -255,7 +224,7 @@ void UIWizardNewVDPageExpert::retranslateUi()
 {
     /* Translate widgets: */
     m_pLocationCnt->setTitle(UIWizardNewVD::tr("&Location"));
-    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a virtual hard drive file..."));
+    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard drive file..."));
     m_pSizeCnt->setTitle(UIWizardNewVD::tr("&Size"));
     m_pFormatCnt->setTitle(UIWizardNewVD::tr("File &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
