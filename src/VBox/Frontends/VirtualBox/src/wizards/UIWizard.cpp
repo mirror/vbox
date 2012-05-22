@@ -401,11 +401,6 @@ double UIWizard::ratio()
 
     switch (m_type)
     {
-        /* New VM wizard much wider than others, fixing: */
-        case UIWizardType_NewVM:
-            dRatio -= 0.5;
-            break;
-        /* New VD wizard much taller than others, fixing: */
         case UIWizardType_NewVD:
         case UIWizardType_CloneVD:
         case UIWizardType_ExportAppliance:

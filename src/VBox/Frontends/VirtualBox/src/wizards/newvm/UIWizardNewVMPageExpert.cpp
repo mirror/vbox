@@ -31,7 +31,7 @@
 #include "UIWizardNewVMPageExpert.h"
 #include "UIWizardNewVM.h"
 #include "UIIconPool.h"
-#include "VBoxOSTypeSelectorWidget.h"
+#include "UINameAndSystemEditor.h"
 #include "VBoxGuestRAMSlider.h"
 #include "VBoxMediaComboBox.h"
 #include "QILineEdit.h"
@@ -43,25 +43,13 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         pMainLayout->setContentsMargins(8, 6, 8, 6);
-        m_pNameCnt = new QGroupBox(this);
+        m_pNameAndSystemCnt = new QGroupBox(this);
         {
-            m_pNameCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pNameCntLayout = new QHBoxLayout(m_pNameCnt);
+            m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QHBoxLayout *pNameAndSystemLayout = new QHBoxLayout(m_pNameAndSystemCnt);
             {
-                m_pNameEditor = new QLineEdit(m_pNameCnt);
-                pNameCntLayout->addWidget(m_pNameEditor);
-            }
-        }
-        m_pTypeCnt = new QGroupBox(this);
-        {
-            m_pTypeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pTypeCntLayout = new QHBoxLayout(m_pTypeCnt);
-            {
-                m_pTypeSelector = new VBoxOSTypeSelectorWidget(m_pTypeCnt);
-                {
-                    m_pTypeSelector->activateLayout();
-                }
-                pTypeCntLayout->addWidget(m_pTypeSelector);
+                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt);
+                pNameAndSystemLayout->addWidget(m_pNameAndSystemEditor);
             }
         }
         m_pMemoryCnt = new QGroupBox(this);
@@ -74,7 +62,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                     m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                     m_pRamSlider->setOrientation(Qt::Horizontal);
                     m_pRamSlider->setTickPosition(QSlider::TicksBelow);
-                    m_pRamSlider->setValue(m_pTypeSelector->type().GetRecommendedRAM());
+                    m_pRamSlider->setValue(m_pNameAndSystemEditor->type().GetRecommendedRAM());
                 }
                 m_pRamEditor = new QILineEdit(m_pMemoryCnt);
                 {
@@ -82,7 +70,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                     m_pRamEditor->setFixedWidthByText("88888");
                     m_pRamEditor->setAlignment(Qt::AlignRight);
                     m_pRamEditor->setValidator(new QIntValidator(m_pRamSlider->minRAM(), m_pRamSlider->maxRAM(), this));
-                    m_pRamEditor->setText(QString::number(m_pTypeSelector->type().GetRecommendedRAM()));
+                    m_pRamEditor->setText(QString::number(m_pNameAndSystemEditor->type().GetRecommendedRAM()));
                 }
                 m_pRamUnits = new QLabel(m_pMemoryCnt);
                 {
@@ -140,8 +128,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                 pDiskCntLayout->addWidget(m_pVMMButton, 2, 2);
             }
         }
-        pMainLayout->addWidget(m_pNameCnt);
-        pMainLayout->addWidget(m_pTypeCnt);
+        pMainLayout->addWidget(m_pNameAndSystemCnt);
         pMainLayout->addWidget(m_pMemoryCnt);
         pMainLayout->addWidget(m_pDiskCnt);
         pMainLayout->addStretch();
@@ -149,8 +136,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     }
 
     /* Setup connections: */
-    connect(m_pNameEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
-    connect(m_pTypeSelector, SIGNAL(osTypeChanged()), this, SLOT(sltOsTypeChanged()));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
     connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged(int)));
     connect(m_pRamEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltRamEditorTextChanged(const QString &)));
     connect(m_pDiskCnt, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
@@ -162,8 +149,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
     /* Register classes: */
     qRegisterMetaType<CMedium>();
     /* Register fields: */
-    registerField("name*", m_pNameEditor);
-    registerField("type", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
+    registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
+    registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
     registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
@@ -178,7 +165,7 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
     onNameChanged(strNewText);
 
     /* Fetch recommended RAM value: */
-    CGuestOSType type = m_pTypeSelector->type();
+    CGuestOSType type = m_pNameAndSystemEditor->type();
     m_pRamSlider->setValue(type.GetRecommendedRAM());
     m_pRamEditor->setText(QString::number(type.GetRecommendedRAM()));
 
@@ -192,7 +179,7 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
     onOsTypeChanged();
 
     /* Fetch recommended RAM value: */
-    CGuestOSType type = m_pTypeSelector->type();
+    CGuestOSType type = m_pNameAndSystemEditor->type();
     m_pRamSlider->setValue(type.GetRecommendedRAM());
     m_pRamEditor->setText(QString::number(type.GetRecommendedRAM()));
 
@@ -236,8 +223,7 @@ void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 void UIWizardNewVMPageExpert::retranslateUi()
 {
     /* Translate widgets: */
-    m_pNameCnt->setTitle(UIWizardNewVM::tr("&Name"));
-    m_pTypeCnt->setTitle(UIWizardNewVM::tr("Operating system"));
+    m_pNameAndSystemCnt->setTitle(UIWizardNewVM::tr("Name and operating system"));
     m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
     m_pRamUnits->setText(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
     m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
@@ -252,9 +238,6 @@ void UIWizardNewVMPageExpert::initializePage()
 {
     /* Translate page: */
     retranslateUi();
-
-    /* 'Name' field should have focus initially: */
-    m_pNameEditor->setFocus();
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()

@@ -28,7 +28,7 @@
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVM.h"
 #include "UIMessageCenter.h"
-#include "VBoxOSTypeSelectorWidget.h"
+#include "UINameAndSystemEditor.h"
 #include "QIRichTextLabel.h"
 
 /* Defines some patterns to guess the right OS type. Should be in sync with
@@ -147,9 +147,9 @@ void UIWizardNewVMPage1::onNameChanged(const QString &strNewName)
     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
         {
-            m_pTypeSelector->blockSignals(true);
-            m_pTypeSelector->setType(vboxGlobal().vmGuestOSType(gs_OSTypePattern[i].pcstId));
-            m_pTypeSelector->blockSignals(false);
+            m_pNameAndSystemEditor->blockSignals(true);
+            m_pNameAndSystemEditor->setType(vboxGlobal().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+            m_pNameAndSystemEditor->blockSignals(false);
             break;
         }
 }
@@ -158,7 +158,7 @@ void UIWizardNewVMPage1::onOsTypeChanged()
 {
     /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
      * So simply disconnect the text-edit signal. */
-    m_pNameEditor->disconnect(thisImp());
+    m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
 }
 
 bool UIWizardNewVMPage1::machineFolderCreated()
@@ -180,7 +180,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Get default machines directory: */
     QString strDefaultMachinesFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
     /* Compose machine filename: */
-    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameEditor->text(), strDefaultMachinesFolder);
+    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(), strDefaultMachinesFolder);
     /* Compose machine folder/basename: */
     QFileInfo fileInfo(strMachineFilename);
     QString strMachineFolder = fileInfo.absolutePath();
@@ -227,40 +227,27 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pNameCnt = new QGroupBox(this);
+        m_pNameAndSystemCnt = new QGroupBox(this);
         {
-            m_pNameCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pNameCntLayout = new QHBoxLayout(m_pNameCnt);
+            m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QHBoxLayout *pNameAndSystemLayout = new QHBoxLayout(m_pNameAndSystemCnt);
             {
-                m_pNameEditor = new QLineEdit(m_pNameCnt);
-                pNameCntLayout->addWidget(m_pNameEditor);
-            }
-        }
-        m_pTypeCnt = new QGroupBox(this);
-        {
-            m_pTypeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pTypeSelectorLayout = new QHBoxLayout(m_pTypeCnt);
-            {
-                m_pTypeSelector = new VBoxOSTypeSelectorWidget(m_pTypeCnt);
-                {
-                    m_pTypeSelector->activateLayout();
-                }
-                pTypeSelectorLayout->addWidget(m_pTypeSelector);
+                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt);
+                pNameAndSystemLayout->addWidget(m_pNameAndSystemEditor);
             }
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pNameCnt);
-        pMainLayout->addWidget(m_pTypeCnt);
+        pMainLayout->addWidget(m_pNameAndSystemCnt);
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
-    connect(m_pNameEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltNameChanged(const QString&)));
-    connect(m_pTypeSelector, SIGNAL(osTypeChanged()), this, SLOT(sltOsTypeChanged()));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
 
     /* Register fields: */
-    registerField("name*", m_pNameEditor);
-    registerField("type", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
+    registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
+    registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
 }
@@ -287,17 +274,13 @@ void UIWizardNewVMPageBasic1::retranslateUi()
                                         "and select the type of operating system you intend to install on it. "
                                         "The name you choose will be used throughout VirtualBox "
                                         "to identify this machine."));
-    m_pNameCnt->setTitle(UIWizardNewVM::tr("&Name"));
-    m_pTypeCnt->setTitle(UIWizardNewVM::tr("Operating system"));
+    m_pNameAndSystemCnt->setTitle(UIWizardNewVM::tr("Name and operating system"));
 }
 
 void UIWizardNewVMPageBasic1::initializePage()
 {
     /* Translate page: */
     retranslateUi();
-
-    /* 'Name' field should have focus initially: */
-    m_pNameEditor->setFocus();
 }
 
 void UIWizardNewVMPageBasic1::cleanupPage()
