@@ -24,7 +24,6 @@
 #include "COMDefs.h"
 
 /* Forward declaration: */
-class QGroupBox;
 class QRadioButton;
 class QIRichTextLabel;
 
@@ -44,7 +43,6 @@ protected:
     bool m_fShowChildsOption;
 
     /* Widgets: */
-    QGroupBox *m_pCloneModeCnt;
     QRadioButton *m_pMachineRadio;
     QRadioButton *m_pMachineAndChildsRadio;
     QRadioButton *m_pAllRadio;

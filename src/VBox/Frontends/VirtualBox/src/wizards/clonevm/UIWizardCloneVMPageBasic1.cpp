@@ -19,7 +19,6 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
-#include <QGroupBox>
 #include <QLineEdit>
 #include <QCheckBox>
 
@@ -55,21 +54,14 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        m_pLabel1 = new QIRichTextLabel(this);
-        m_pNameCnt = new QGroupBox(this);
+        m_pLabel = new QIRichTextLabel(this);
+        m_pNameEditor = new QLineEdit(this);
         {
-            QVBoxLayout *pNameCntLayout = new QVBoxLayout(m_pNameCnt);
-            {
-                m_pNameEditor = new QLineEdit(m_pNameCnt);
-                {
-                    m_pNameEditor->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
-                }
-                pNameCntLayout->addWidget(m_pNameEditor);
-            }
+            m_pNameEditor->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
         }
         m_pReinitMACsCheckBox = new QCheckBox(this);
-        pMainLayout->addWidget(m_pLabel1);
-        pMainLayout->addWidget(m_pNameCnt);
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pNameEditor);
         pMainLayout->addWidget(m_pReinitMACsCheckBox);
         pMainLayout->addStretch();
     }
@@ -88,10 +80,9 @@ void UIWizardCloneVMPageBasic1::retranslateUi()
     setTitle(UIWizardCloneVM::tr("Name"));
 
     /* Translate widgets: */
-    m_pLabel1->setText(UIWizardCloneVM::tr("<p>Please choose a name for the new virtual machine. "
-                                           "The new machine will be a clone of the machine <b>%1</b>.</p>")
-                                           .arg(m_strOriginalName));
-    m_pNameCnt->setTitle(UIWizardCloneVM::tr("&Name"));
+    m_pLabel->setText(UIWizardCloneVM::tr("<p>Please choose a name for the new virtual machine. "
+                                          "The new machine will be a clone of the machine <b>%1</b>.</p>")
+                                          .arg(m_strOriginalName));
     m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
     m_pReinitMACsCheckBox->setText(UIWizardCloneVM::tr("&Reinitialize the MAC address of all network cards"));
 }

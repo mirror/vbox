@@ -24,6 +24,9 @@
 #include "UIWizardCloneVMPageBasic2.h"
 #include "UIWizardCloneVMPageBasic3.h"
 
+/* Forward declarations: */
+class QGroupBox;
+
 /* Expert page of the Clone Virtual Machine wizard: */
 class UIWizardCloneVMPageExpert : public UIWizardPage,
                                   public UIWizardCloneVMPage1,
@@ -57,6 +60,11 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
+
+    /* Widgets: */
+    QGroupBox *m_pNameCnt;
+    QGroupBox *m_pCloneTypeCnt;
+    QGroupBox *m_pCloneModeCnt;
 };
 
 #endif // __UIWizardCloneVMPageExpert_h__
