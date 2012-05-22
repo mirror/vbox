@@ -28,7 +28,6 @@
 
 /* Forward declarations: */
 class CMediumFormat;
-class QGroupBox;
 class QLineEdit;
 class QIToolButton;
 class QIRichTextLabel;
@@ -60,7 +59,6 @@ protected:
     QString m_strDefaultExtension;
 
     /* Widgets: */
-    QGroupBox *m_pDestinationCnt;
     QLineEdit *m_pDestinationDiskEditor;
     QIToolButton *m_pDestinationDiskOpenButton;
 };

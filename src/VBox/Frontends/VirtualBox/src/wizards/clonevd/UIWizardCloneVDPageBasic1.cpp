@@ -20,7 +20,6 @@
 /* Global includes: */
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGroupBox>
 
 /* Local includes: */
 #include "UIWizardCloneVDPageBasic1.h"
@@ -63,29 +62,25 @@ UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(const CMedium &sourceVirtua
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pSourceDiskCnt = new QGroupBox(this);
+        QHBoxLayout *pSourceDiskLayout = new QHBoxLayout;
         {
-            m_pSourceDiskCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pSourceDiskCntLayout = new QHBoxLayout(m_pSourceDiskCnt);
+            m_pSourceDiskSelector = new VBoxMediaComboBox(this);
             {
-                m_pSourceDiskSelector = new VBoxMediaComboBox(m_pSourceDiskCnt);
-                {
-                    m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-                    m_pSourceDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
-                    m_pSourceDiskSelector->setCurrentItem(sourceVirtualDisk.GetId());
-                    m_pSourceDiskSelector->repopulate();
-                }
-                m_pSourceDiskOpenButton = new QIToolButton(m_pSourceDiskCnt);
-                {
-                    m_pSourceDiskOpenButton->setAutoRaise(true);
-                    m_pSourceDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
-                }
-                pSourceDiskCntLayout->addWidget(m_pSourceDiskSelector);
-                pSourceDiskCntLayout->addWidget(m_pSourceDiskOpenButton);
+                m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+                m_pSourceDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
+                m_pSourceDiskSelector->setCurrentItem(sourceVirtualDisk.GetId());
+                m_pSourceDiskSelector->repopulate();
             }
+            m_pSourceDiskOpenButton = new QIToolButton(this);
+            {
+                m_pSourceDiskOpenButton->setAutoRaise(true);
+                m_pSourceDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+            }
+            pSourceDiskLayout->addWidget(m_pSourceDiskSelector);
+            pSourceDiskLayout->addWidget(m_pSourceDiskOpenButton);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pSourceDiskCnt);
+        pMainLayout->addLayout(pSourceDiskLayout);
         pMainLayout->addStretch();
     }
 
@@ -117,7 +112,6 @@ void UIWizardCloneVDPageBasic1::retranslateUi()
     m_pLabel->setText(UIWizardCloneVD::tr("<p>Please select the virtual hard drive file that you would like to copy "
                                           "if it is not already selected. You can either choose one from the list "
                                           "or use the folder icon beside the list to select one.</p>"));
-    m_pSourceDiskCnt->setTitle(UIWizardCloneVD::tr("Hard drive to &copy"));
     m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard drive file to copy..."));
 }
 

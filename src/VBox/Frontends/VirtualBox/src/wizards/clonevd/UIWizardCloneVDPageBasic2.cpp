@@ -20,7 +20,6 @@
 /* Global includes: */
 #include <QVBoxLayout>
 #include <QButtonGroup>
-#include <QGroupBox>
 #include <QRadioButton>
 
 /* Local includes: */
@@ -33,25 +32,27 @@ UIWizardCloneVDPage2::UIWizardCloneVDPage2()
 {
 }
 
-QRadioButton* UIWizardCloneVDPage2::addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat medFormat)
+void UIWizardCloneVDPage2::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat)
 {
     /* Check that medium format supports creation: */
     ULONG uFormatCapabilities = medFormat.GetCapabilities();
     if (!(uFormatCapabilities & MediumFormatCapabilities_CreateFixed ||
           uFormatCapabilities & MediumFormatCapabilities_CreateDynamic))
-        return 0;
+        return;
 
     /* Check that medium format supports creation of virtual hard-disks: */
     QVector<QString> fileExtensions;
     QVector<KDeviceType> deviceTypes;
     medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     if (!deviceTypes.contains(KDeviceType_HardDisk))
-        return 0;
+        return;
 
     /* Create/add corresponding radio-button: */
-    QRadioButton *pFormatButton = new QRadioButton(m_pFormatCnt);
-    pFormatsLayout->addWidget(pFormatButton);
-    return pFormatButton;
+    QRadioButton *pFormatButton = new QRadioButton(pParent);
+    pFormatLayout->addWidget(pFormatButton);
+    m_formats << medFormat;
+    m_formatNames << medFormat.GetName();
+    m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
 }
 
 CMediumFormat UIWizardCloneVDPage2::mediumFormat() const
@@ -75,52 +76,30 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pFormatCnt = new QGroupBox(this);
+        QVBoxLayout *pFormatLayout = new QVBoxLayout;
         {
-            m_pFormatCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pFormatsLayout = new QVBoxLayout(m_pFormatCnt);
+            m_pFormatButtonGroup = new QButtonGroup(this);
             {
-                m_pFormatButtonGroup = new QButtonGroup(this);
+                CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+                const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
+                for (int i = 0; i < medFormats.size(); ++i)
                 {
-                    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
-                    const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
-                    for (int i = 0; i < medFormats.size(); ++i)
-                    {
-                        const CMediumFormat &medFormat = medFormats[i];
-                        QString strFormatName(medFormat.GetName());
-                        if (strFormatName == "VDI")
-                        {
-                            QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
-                            if (pButton)
-                            {
-                                m_formats << medFormat;
-                                m_formatNames << strFormatName;
-                                m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
-                            }
-                        }
-                    }
-                    for (int i = 0; i < medFormats.size(); ++i)
-                    {
-                        const CMediumFormat &medFormat = medFormats[i];
-                        QString strFormatName(medFormat.GetName());
-                        if (strFormatName != "VDI")
-                        {
-                            QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
-                            if (pButton)
-                            {
-                                m_formats << medFormat;
-                                m_formatNames << strFormatName;
-                                m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
-                            }
-                        }
-                    }
-                    m_pFormatButtonGroup->button(0)->click();
-                    m_pFormatButtonGroup->button(0)->setFocus();
+                    const CMediumFormat &medFormat = medFormats[i];
+                    if (medFormat.GetName() == "VDI")
+                        addFormatButton(this, pFormatLayout, medFormat);
                 }
+                for (int i = 0; i < medFormats.size(); ++i)
+                {
+                    const CMediumFormat &medFormat = medFormats[i];
+                    if (medFormat.GetName() != "VDI")
+                        addFormatButton(this, pFormatLayout, medFormat);
+                }
+                m_pFormatButtonGroup->button(0)->click();
+                m_pFormatButtonGroup->button(0)->setFocus();
             }
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pFormatCnt);
+        pMainLayout->addLayout(pFormatLayout);
         pMainLayout->addStretch();
     }
 
@@ -142,7 +121,6 @@ void UIWizardCloneVDPageBasic2::retranslateUi()
     m_pLabel->setText(UIWizardCloneVD::tr("Please choose the type of file that you would like to use "
                                           "for the new virtual hard drive. If you do not need to use it "
                                           "with other virtualization software you can leave this setting unchanged."));
-    m_pFormatCnt->setTitle(UIWizardCloneVD::tr("File &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)
     {

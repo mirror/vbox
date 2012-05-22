@@ -24,7 +24,6 @@
 #include "COMDefs.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class VBoxMediaComboBox;
 class QIToolButton;
 class QIRichTextLabel;
@@ -45,7 +44,6 @@ protected:
     void setSourceVirtualDisk(const CMedium &sourceVirtualDisk);
 
     /* Widgets: */
-    QGroupBox *m_pSourceDiskCnt;
     VBoxMediaComboBox *m_pSourceDiskSelector;
     QIToolButton *m_pSourceDiskOpenButton;
 };

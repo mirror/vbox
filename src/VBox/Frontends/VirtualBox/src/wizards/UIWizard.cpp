@@ -402,8 +402,8 @@ double UIWizard::ratio()
     switch (m_type)
     {
         case UIWizardType_NewVD:
-            dRatio += 0.1;
         case UIWizardType_CloneVD:
+            dRatio += 0.1;
         case UIWizardType_ExportAppliance:
             dRatio += 0.3;
             break;

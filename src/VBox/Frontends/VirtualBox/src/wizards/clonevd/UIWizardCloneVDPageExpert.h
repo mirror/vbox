@@ -25,6 +25,9 @@
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVDPageBasic4.h"
 
+/* Forward declarations: */
+class QGroupBox;
+
 /* Expert page of the Clone Virtual Hard Drive wizard: */
 class UIWizardCloneVDPageExpert : public UIWizardPage,
                                   public UIWizardCloneVDPage1,
@@ -74,6 +77,12 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
+
+    /* Widgets: */
+    QGroupBox *m_pSourceDiskCnt;
+    QGroupBox *m_pFormatCnt;
+    QGroupBox *m_pVariantCnt;
+    QGroupBox *m_pDestinationCnt;
 };
 
 #endif // __UIWizardCloneVDPageExpert_h__
