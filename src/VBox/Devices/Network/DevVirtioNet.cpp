@@ -161,7 +161,7 @@ struct VNetState_st
     /** True if physical cable is attached in configuration. */
     bool                    fCableConnected;
     /** Link up delay (in milliseconds). */
-    uint32_t                uLinkUpDelay;
+    uint32_t                cMsLinkUpDelay;
 
     uint32_t                alignment;
 
@@ -1595,7 +1595,7 @@ static void vnetTempLinkDown(PVNETSTATE pState)
         STATUS &= ~VNET_S_LINK_UP;
         vpciRaiseInterrupt(&pState->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
         /* Restore the link back in 5 seconds. */
-        int rc = TMTimerSetMillies(pState->pLinkUpTimer, pState->uLinkUpDelay);
+        int rc = TMTimerSetMillies(pState->pLinkUpTimer, pState->cMsLinkUpDelay);
         AssertRC(rc);
     }
 }
@@ -1952,18 +1952,18 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'CableConnected'"));
-    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pState->uLinkUpDelay, 5000); /* ms */
+    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pState->cMsLinkUpDelay, 5000); /* ms */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
-    Assert(pState->uLinkUpDelay <= 300000); /* less than 5 minutes */
-    if (pState->uLinkUpDelay > 5000 || pState->uLinkUpDelay < 100)
+    Assert(pState->cMsLinkUpDelay <= 300000); /* less than 5 minutes */
+    if (pState->cMsLinkUpDelay > 5000 || pState->cMsLinkUpDelay < 100)
     {
         LogRel(("%s WARNING! Link up delay is set to %u seconds!\n",
-                INSTANCE(pState), pState->uLinkUpDelay / 1000));
+                INSTANCE(pState), pState->cMsLinkUpDelay / 1000));
     }
     Log(("%s Link up delay is set to %u seconds\n",
-         INSTANCE(pState), pState->uLinkUpDelay / 1000));
+         INSTANCE(pState), pState->cMsLinkUpDelay / 1000));
 
     /* Initialize PCI config space */
     memcpy(pState->config.mac.au8, pState->macConfigured.au8, sizeof(pState->config.mac.au8));
