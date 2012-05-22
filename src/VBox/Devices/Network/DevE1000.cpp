@@ -1045,7 +1045,8 @@ struct E1kState_st
     bool        fEthernetCRC;
 
     bool        Alignment2[3];
-    uint32_t    Alignment3;
+    /** Link up delay (in milliseconds). */
+    uint32_t    uLinkUpDelay;
 
     /** All: Device register storage. */
     uint32_t    auRegs[E1K_NUM_OF_32BIT_REGS];
@@ -2163,6 +2164,19 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
 }
 
 
+/**
+ * Bring the link up after the configured delay, 5 seconds by default.
+ *
+ * @param   pState      The device state structure.
+ * @thread  any
+ */
+DECLINLINE(void) e1kBringLinkUpDelayed(E1KSTATE* pState)
+{
+    E1kLog(("%s Will bring up the link in %d seconds...\n",
+            INSTANCE(pState), pState->uLinkUpDelay / 1000));
+    e1kArmTimer(pState, pState->CTX_SUFF(pLUTimer), pState->uLinkUpDelay * 1000);
+}
+
 #if 0 /* unused */
 /**
  * Read handler for Device Status register.
@@ -2231,8 +2245,8 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
             && !(STATUS & STATUS_LU))
         {
             /* The driver indicates that we should bring up the link */
-            /* Do so in 5 seconds. */
-            e1kArmTimer(pState, pState->CTX_SUFF(pLUTimer), 5000000);
+            /* Do so in 5 seconds (by default). */
+            e1kBringLinkUpDelayed(pState);
             /*
              * Change the status (but not PHY status) anyway as Windows expects
              * it for 82543GC.
@@ -2872,6 +2886,7 @@ static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     if (!pState->fCableConnected)
         return;
 
+    E1kLog(("%s e1kLinkUpTimer: Link is up\n", INSTANCE(pState)));
     STATUS |= STATUS_LU;
     Phy::setLinkStatus(&pState->phy, true);
     e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
@@ -5896,13 +5911,14 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
     {
         if (fNewUp)
         {
-            E1kLog(("%s Link will be up in approximately 5 secs\n", INSTANCE(pState)));
+            E1kLog(("%s Link will be up in approximately %d secs\n",
+                    INSTANCE(pState), pState->uLinkUpDelay / 1000));
             pState->fCableConnected = true;
             STATUS &= ~STATUS_LU;
             Phy::setLinkStatus(&pState->phy, false);
             e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
-            /* Restore the link back in 5 second. */
-            e1kArmTimer(pState, pState->pLUTimerR3, 5000000);
+            /* Restore the link back in 5 seconds (by default). */
+            e1kBringLinkUpDelayed(pState);
         }
         else
         {
@@ -6203,14 +6219,15 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     * wasn't teleported.
     */
     if (    (STATUS & STATUS_LU)
-        && !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
+        && !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)
+        && pState->uLinkUpDelay)
     {
         E1kLog(("%s Link is down temporarily\n", INSTANCE(pState)));
         STATUS &= ~STATUS_LU;
         Phy::setLinkStatus(&pState->phy, false);
         e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
-        /* Restore the link back in five seconds. */
-        e1kArmTimer(pState, pState->pLUTimerR3, 5000000);
+        /* Restore the link back in five seconds (default). */
+        e1kBringLinkUpDelayed(pState);
     }
     return VINF_SUCCESS;
 }
@@ -6318,8 +6335,8 @@ static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
         STATUS &= ~STATUS_LU;
         Phy::setLinkStatus(&pState->phy, false);
         e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
-        /* Restore the link back in 5 second. */
-        e1kArmTimer(pState, pState->pLUTimerR3, 5000000);
+        /* Restore the link back in 5 seconds (default). */
+        e1kBringLinkUpDelayed(pState);
     }
 
     PDMCritSectLeave(&pState->cs);
@@ -6661,7 +6678,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0"
                                     "LineSpeed\0" "GCEnabled\0" "R0Enabled\0"
-                                    "EthernetCRC\0"))
+                                    "EthernetCRC\0" "LinkUpDelay\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for E1000 device"));
 
@@ -6700,8 +6717,23 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'EthernetCRC'"));
+    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pState->uLinkUpDelay, 5000); /* ms */
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
+    Assert(pState->uLinkUpDelay <= 300000); /* less than 5 minutes */
+    if (pState->uLinkUpDelay > 5000)
+    {
+        LogRel(("%s WARNING! Link up delay is set to %u seconds!\n",
+                INSTANCE(pState), pState->uLinkUpDelay / 1000));
+    }
+    else if (pState->uLinkUpDelay == 0)
+    {
+        LogRel(("%s WARNING! Link up delay is disabled!\n", INSTANCE(pState)));
+    }
 
-    E1kLog(("%s Chip=%s\n", INSTANCE(pState), g_Chips[pState->eChip].pcszName));
+    E1kLog(("%s Chip=%s LinkUpDelay=%ums\n", INSTANCE(pState),
+            g_Chips[pState->eChip].pcszName, pState->uLinkUpDelay));
 
     /* Initialize state structure */
     pState->pDevInsR3    = pDevIns;
