@@ -20,7 +20,6 @@
 /* Global includes: */
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGroupBox>
 
 /* Local includes: */
 #include "UIWizardFirstRunPageBasic.h"
@@ -65,28 +64,24 @@ UIWizardFirstRunPageBasic::UIWizardFirstRunPageBasic(const QString &strMachineId
     {
         pMainLayout->setContentsMargins(8, 0, 8, 0);
         m_pLabel = new QIRichTextLabel(this);
-        m_pSourceCnt = new QGroupBox(this);
+        QHBoxLayout *pSourceDiskLayout = new QHBoxLayout;
         {
-            m_pSourceCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pSourceCntLayout = new QHBoxLayout(m_pSourceCnt);
+            m_pMediaSelector = new VBoxMediaComboBox(this);
             {
-                m_pMediaSelector = new VBoxMediaComboBox(m_pSourceCnt);
-                {
-                    m_pMediaSelector->setMachineId(strMachineId);
-                    m_pMediaSelector->setType(VBoxDefs::MediumType_DVD);
-                    m_pMediaSelector->repopulate();
-                }
-                m_pSelectMediaButton = new QIToolButton(m_pSourceCnt);
-                {
-                    m_pSelectMediaButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
-                    m_pSelectMediaButton->setAutoRaise(true);
-                }
-                pSourceCntLayout->addWidget(m_pMediaSelector);
-                pSourceCntLayout->addWidget(m_pSelectMediaButton);
+                m_pMediaSelector->setMachineId(strMachineId);
+                m_pMediaSelector->setType(VBoxDefs::MediumType_DVD);
+                m_pMediaSelector->repopulate();
             }
+            m_pSelectMediaButton = new QIToolButton(this);
+            {
+                m_pSelectMediaButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+                m_pSelectMediaButton->setAutoRaise(true);
+            }
+            pSourceDiskLayout->addWidget(m_pMediaSelector);
+            pSourceDiskLayout->addWidget(m_pSelectMediaButton);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pSourceCnt);
+        pMainLayout->addLayout(pSourceDiskLayout);
         pMainLayout->addStretch();
     }
 
@@ -125,7 +120,6 @@ void UIWizardFirstRunPageBasic::retranslateUi()
                                                "<p>The disk should be suitable for starting a computer from. "
                                                "As this virtual machine has no hard drive "
                                                "you will not be able to install an operating system on it at the moment.</p>"));
-    m_pSourceCnt->setTitle(UIWizardFirstRun::tr("Start-up disk"));
     m_pSelectMediaButton->setToolTip(UIWizardFirstRun::tr("Choose a virtual optical disk file..."));
 }
 

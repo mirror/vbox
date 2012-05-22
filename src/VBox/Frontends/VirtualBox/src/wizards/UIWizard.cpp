@@ -409,7 +409,7 @@ double UIWizard::ratio()
             dRatio += 0.3;
             break;
         case UIWizardType_FirstRun:
-            dRatio += 0.4;
+            dRatio += 0.3;
             break;
         default:
             break;

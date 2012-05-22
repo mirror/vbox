@@ -24,7 +24,6 @@
 
 /* Forward declarations: */
 class CMachine;
-class QGroupBox;
 class VBoxMediaComboBox;
 class QIToolButton;
 class QIRichTextLabel;
@@ -48,7 +47,6 @@ protected:
     bool m_fBootHardDiskWasSet;
 
     /* Widgets: */
-    QGroupBox *m_pSourceCnt;
     VBoxMediaComboBox *m_pMediaSelector;
     QIToolButton *m_pSelectMediaButton;
 };
