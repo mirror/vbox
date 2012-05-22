@@ -228,7 +228,7 @@
 #include "VBoxNewHDWzd.h"
 #include "VBoxNewVMWzd.h"
 #include "VBoxOSTypeSelectorButton.h"
-#include "VBoxOSTypeSelectorWidget.h"
+#include "UINameAndSystemEditor.h"
 #include "UIMessageCenter.h"
 #include "VBoxProgressDialog.h"
 #include "UISelectorWindow.h"

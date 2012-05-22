@@ -23,6 +23,7 @@
 #include "QIWidgetValidator.h"
 
 #include <QDir>
+#include <QLineEdit>
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : mValidator(0)
@@ -32,7 +33,7 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     Ui::UIMachineSettingsGeneral::setupUi (this);
 
     /* Setup validators */
-    mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
+    m_pNameAndSystemEditor->nameEditor()->setValidator(new QRegExpValidator(QRegExp(".+"), this));
 
     /* Shared Clipboard mode */
     mCbClipboard->addItem (""); /* KClipboardMode_Disabled */
@@ -50,7 +51,7 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
 
 CGuestOSType UIMachineSettingsGeneral::guestOSType() const
 {
-    return mOSTypeSelector->type();
+    return m_pNameAndSystemEditor->type();
 }
 
 void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
@@ -60,13 +61,13 @@ void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
 
 bool UIMachineSettingsGeneral::is64BitOSTypeSelected() const
 {
-    return mOSTypeSelector->type().GetIs64Bit();
+    return m_pNameAndSystemEditor->type().GetIs64Bit();
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 bool UIMachineSettingsGeneral::isWindowsOSTypeSelected() const
 {
-    return mOSTypeSelector->type().GetFamilyId() == "Windows";
+    return m_pNameAndSystemEditor->type().GetFamilyId() == "Windows";
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
@@ -112,8 +113,8 @@ void UIMachineSettingsGeneral::getFromCache()
     const UIDataSettingsMachineGeneral &generalData = m_cache.base();
 
     /* Load general data to page: */
-    mLeName->setText(generalData.m_strName);
-    mOSTypeSelector->setType(vboxGlobal().vmGuestOSType(generalData.m_strGuestOsTypeId));
+    m_pNameAndSystemEditor->setName(generalData.m_strName);
+    m_pNameAndSystemEditor->setType(vboxGlobal().vmGuestOSType(generalData.m_strGuestOsTypeId));
     mCbSaveMounted->setChecked(generalData.m_fSaveMountedAtRuntime);
     mCbShowToolBar->setChecked(generalData.m_fShowMiniToolBar);
     mCbToolBarAlignment->setChecked(generalData.m_fMiniToolBarAtTop);
@@ -138,8 +139,8 @@ void UIMachineSettingsGeneral::putToCache()
     UIDataSettingsMachineGeneral generalData = m_cache.base();
 
     /* Gather general data: */
-    generalData.m_strName = mLeName->text();
-    generalData.m_strGuestOsTypeId = mOSTypeSelector->type().GetId();
+    generalData.m_strName = m_pNameAndSystemEditor->name();
+    generalData.m_strGuestOsTypeId = m_pNameAndSystemEditor->type().GetId();
     generalData.m_fSaveMountedAtRuntime = mCbSaveMounted->isChecked();
     generalData.m_fShowMiniToolBar = mCbShowToolBar->isChecked();
     generalData.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
@@ -196,7 +197,7 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
 void UIMachineSettingsGeneral::setValidator (QIWidgetValidator *aVal)
 {
     mValidator = aVal;
-    connect (mOSTypeSelector, SIGNAL (osTypeChanged()), mValidator, SLOT (revalidate()));
+    connect (m_pNameAndSystemEditor, SIGNAL (sigOsTypeChanged()), mValidator, SLOT (revalidate()));
 }
 
 bool UIMachineSettingsGeneral::revalidate(QString &strWarning, QString& /* strTitle */)
@@ -212,11 +213,10 @@ void UIMachineSettingsGeneral::setOrderAfter (QWidget *aWidget)
 {
     /* Basic tab-order */
     setTabOrder (aWidget, mTwGeneral->focusProxy());
-    setTabOrder (mTwGeneral->focusProxy(), mLeName);
-    setTabOrder (mLeName, mOSTypeSelector);
+    setTabOrder (mTwGeneral->focusProxy(), m_pNameAndSystemEditor);
 
     /* Advanced tab-order */
-    setTabOrder (mOSTypeSelector, mPsSnapshot);
+    setTabOrder (m_pNameAndSystemEditor, mPsSnapshot);
     setTabOrder (mPsSnapshot, mCbClipboard);
     setTabOrder (mCbClipboard, mCbSaveMounted);
     setTabOrder (mCbSaveMounted, mCbShowToolBar);
@@ -247,9 +247,7 @@ void UIMachineSettingsGeneral::retranslateUi()
 void UIMachineSettingsGeneral::polishPage()
 {
     /* Basic tab: */
-    mLbName->setEnabled(isMachineOffline());
-    mLeName->setEnabled(isMachineOffline());
-    mOSTypeSelector->setEnabled(isMachineOffline());
+    m_pNameAndSystemEditor->setEnabled(isMachineOffline());
     /* Advanced tab: */
     mLbSnapshot->setEnabled(isMachineOffline());
     mPsSnapshot->setEnabled(isMachineOffline());

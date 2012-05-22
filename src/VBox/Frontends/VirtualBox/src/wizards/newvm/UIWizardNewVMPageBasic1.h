@@ -24,8 +24,7 @@
 
 /* Forward declarations: */
 class QGroupBox;
-class QLineEdit;
-class VBoxOSTypeSelectorWidget;
+class UINameAndSystemEditor;
 class QIRichTextLabel;
 
 /* 1st page of the New Virtual Machine wizard (base part): */
@@ -58,10 +57,8 @@ protected:
     QString m_strMachineBaseName;
 
     /* Widgets: */
-    QGroupBox *m_pNameCnt;
-    QLineEdit *m_pNameEditor;
-    QGroupBox *m_pTypeCnt;
-    VBoxOSTypeSelectorWidget *m_pTypeSelector;
+    QGroupBox *m_pNameAndSystemCnt;
+    UINameAndSystemEditor *m_pNameAndSystemEditor;
 };
 
 /* 1st page of the New Virtual Machine wizard (basic extension): */

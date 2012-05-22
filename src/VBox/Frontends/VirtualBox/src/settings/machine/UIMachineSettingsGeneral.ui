@@ -37,33 +37,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="VBoxOSTypeSelectorWidget" native="1" name="mOSTypeSelector" >
-         <layout class="QGridLayout" name="mLtOSTypeSelector" >
-          <property name="margin" >
-           <number>0</number>
-          </property>
-          <item row="0" column="0" >
-           <widget class="QLabel" name="mLbName" >
-            <property name="text" >
-             <string>&amp;Name:</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-            <property name="buddy" >
-             <cstring>mLeName</cstring>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" colspan="2" >
-           <widget class="QLineEdit" name="mLeName" >
-            <property name="whatsThis" >
-             <string>Displays the name of the virtual machine.</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
+        <widget class="UINameAndSystemEditor" native="1" name="m_pNameAndSystemEditor" />
        </item>
        <item>
         <spacer name="mSpVer1" >
@@ -277,9 +251,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>VBoxOSTypeSelectorWidget</class>
+   <class>UINameAndSystemEditor</class>
    <extends>QWidget</extends>
-   <header>VBoxOSTypeSelectorWidget.h</header>
+   <header>UINameAndSystemEditor.h</header>
   </customwidget>
   <customwidget>
    <class>VBoxFilePathSelectorWidget</class>

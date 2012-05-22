@@ -355,7 +355,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxMediaComboBox.h \
 	src/widgets/VBoxMiniToolBar.h \
 	src/widgets/VBoxOSTypeSelectorButton.h \
-	src/widgets/VBoxOSTypeSelectorWidget.h \
+	src/widgets/UINameAndSystemEditor.h \
 	src/widgets/VBoxWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -564,7 +564,7 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxMediaComboBox.cpp \
 	src/widgets/VBoxMiniToolBar.cpp \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
-	src/widgets/VBoxOSTypeSelectorWidget.cpp \
+	src/widgets/UINameAndSystemEditor.cpp \
 	src/widgets/VBoxWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
