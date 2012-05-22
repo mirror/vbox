@@ -23,7 +23,6 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class QButtonGroup;
 class QRadioButton;
 class QCheckBox;
@@ -42,7 +41,6 @@ protected:
     void setMediumVariant(qulonglong uMediumVariant);
 
     /* Widgets: */
-    QGroupBox *m_pVariantCnt;
     QButtonGroup *m_pVariantButtonGroup;
     QRadioButton *m_pDynamicalButton;
     QRadioButton *m_pFixedButton;

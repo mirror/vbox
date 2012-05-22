@@ -25,7 +25,6 @@
 
 /* Forward declarations: */
 class CMediumFormat;
-class QGroupBox;
 class QLineEdit;
 class QIToolButton;
 class QSlider;
@@ -73,10 +72,8 @@ protected:
     int m_iSliderScale;
 
     /* Widgets: */
-    QGroupBox *m_pLocationCnt;
     QLineEdit *m_pLocationEditor;
     QIToolButton *m_pLocationOpenButton;
-    QGroupBox *m_pSizeCnt;
     QSlider *m_pSizeSlider;
     QILineEdit *m_pSizeEditor;
 };

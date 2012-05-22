@@ -19,7 +19,6 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
-#include <QGroupBox>
 #include <QButtonGroup>
 #include <QRadioButton>
 #include <QCheckBox>
@@ -80,33 +79,29 @@ UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
         m_pDynamicLabel = new QIRichTextLabel(this);
         m_pFixedLabel = new QIRichTextLabel(this);
         m_pSplitLabel = new QIRichTextLabel(this);
-        m_pVariantCnt = new QGroupBox(this);
+        QVBoxLayout *pVariantsLayout = new QVBoxLayout;
         {
-            m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pVariantCntLayout = new QVBoxLayout(m_pVariantCnt);
+            m_pVariantButtonGroup = new QButtonGroup(this);
             {
-                m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
+                m_pDynamicalButton = new QRadioButton(this);
                 {
-                    m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
-                    {
-                        m_pDynamicalButton->click();
-                        m_pDynamicalButton->setFocus();
-                    }
-                    m_pFixedButton = new QRadioButton(m_pVariantCnt);
-                    m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
-                    m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
+                    m_pDynamicalButton->click();
+                    m_pDynamicalButton->setFocus();
                 }
-                m_pSplitBox = new QCheckBox(m_pVariantCnt);
-                pVariantCntLayout->addWidget(m_pDynamicalButton);
-                pVariantCntLayout->addWidget(m_pFixedButton);
-                pVariantCntLayout->addWidget(m_pSplitBox);
+                m_pFixedButton = new QRadioButton(this);
+                m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
+                m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
             }
+            m_pSplitBox = new QCheckBox(this);
+            pVariantsLayout->addWidget(m_pDynamicalButton);
+            pVariantsLayout->addWidget(m_pFixedButton);
+            pVariantsLayout->addWidget(m_pSplitBox);
         }
         pMainLayout->addWidget(m_pDescriptionLabel);
         pMainLayout->addWidget(m_pDynamicLabel);
         pMainLayout->addWidget(m_pFixedLabel);
         pMainLayout->addWidget(m_pSplitLabel);
-        pMainLayout->addWidget(m_pVariantCnt);
+        pMainLayout->addLayout(pVariantsLayout);
         pMainLayout->addStretch();
     }
 
@@ -135,7 +130,6 @@ void UIWizardNewVDPageBasic2::retranslateUi()
                                              "of up to two gigabytes each. This is mainly useful if you wish to store the "
                                              "virtual machine on removable USB devices or old systems, some of which cannot "
                                              "handle very large files."));
-    m_pVariantCnt->setTitle(UIWizardNewVD::tr("Storage details"));
     m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
     m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
     m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));

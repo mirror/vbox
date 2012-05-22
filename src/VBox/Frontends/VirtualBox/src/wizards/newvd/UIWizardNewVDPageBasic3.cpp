@@ -22,7 +22,6 @@
 #include <QRegExpValidator>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGroupBox>
 #include <QLineEdit>
 #include <QSlider>
 #include <QLabel>
@@ -262,69 +261,60 @@ UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, 
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLocationLabel = new QIRichTextLabel(this);
-        m_pLocationCnt = new QGroupBox(this);
+        QHBoxLayout *pLocationLayout = new QHBoxLayout;
         {
-            m_pLocationCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pLocationCntLayout = new QHBoxLayout(m_pLocationCnt);
+            m_pLocationEditor = new QLineEdit(this);
+            m_pLocationOpenButton = new QIToolButton(this);
             {
-                m_pLocationEditor = new QLineEdit(m_pLocationCnt);
-                m_pLocationOpenButton = new QIToolButton(m_pLocationCnt);
-                {
-                    m_pLocationOpenButton->setAutoRaise(true);
-                    m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
-                }
-                pLocationCntLayout->addWidget(m_pLocationEditor);
-                pLocationCntLayout->addWidget(m_pLocationOpenButton);
+                m_pLocationOpenButton->setAutoRaise(true);
+                m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
             }
+            pLocationLayout->addWidget(m_pLocationEditor);
+            pLocationLayout->addWidget(m_pLocationOpenButton);
         }
         m_pSizeLabel = new QIRichTextLabel(this);
-        m_pSizeCnt = new QGroupBox(this);
+        QGridLayout *m_pSizeLayout = new QGridLayout;
         {
-            m_pSizeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *m_pSizeCntLayout = new QGridLayout(m_pSizeCnt);
+            m_pSizeSlider = new QSlider(this);
             {
-                m_pSizeSlider = new QSlider(m_pSizeCnt);
-                {
-                    m_pSizeSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                    m_pSizeSlider->setOrientation(Qt::Horizontal);
-                    m_pSizeSlider->setTickPosition(QSlider::TicksBelow);
-                    m_pSizeSlider->setFocusPolicy(Qt::StrongFocus);
-                    m_pSizeSlider->setPageStep(m_iSliderScale);
-                    m_pSizeSlider->setSingleStep(m_iSliderScale / 8);
-                    m_pSizeSlider->setTickInterval(0);
-                    m_pSizeSlider->setMinimum(sizeMBToSlider(m_uMediumSizeMin, m_iSliderScale));
-                    m_pSizeSlider->setMaximum(sizeMBToSlider(m_uMediumSizeMax, m_iSliderScale));
-                }
-                m_pSizeEditor = new QILineEdit(m_pSizeCnt);
-                {
-                    m_pSizeEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-                    m_pSizeEditor->setFixedWidthByText("88888.88 MB");
-                    m_pSizeEditor->setAlignment(Qt::AlignRight);
-                    m_pSizeEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
-                }
-                QLabel *m_pSizeMin = new QLabel(m_pSizeCnt);
-                {
-                    m_pSizeMin->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                    m_pSizeMin->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
-                }
-                QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
-                QLabel *m_pSizeMax = new QLabel(m_pSizeCnt);
-                {
-                    m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                    m_pSizeMax->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
-                }
-                m_pSizeCntLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
-                m_pSizeCntLayout->addWidget(m_pSizeEditor, 0, 3);
-                m_pSizeCntLayout->addWidget(m_pSizeMin, 1, 0);
-                m_pSizeCntLayout->addItem(m_pSizeSpacer, 1, 1);
-                m_pSizeCntLayout->addWidget(m_pSizeMax, 1, 2);
+                m_pSizeSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                m_pSizeSlider->setOrientation(Qt::Horizontal);
+                m_pSizeSlider->setTickPosition(QSlider::TicksBelow);
+                m_pSizeSlider->setFocusPolicy(Qt::StrongFocus);
+                m_pSizeSlider->setPageStep(m_iSliderScale);
+                m_pSizeSlider->setSingleStep(m_iSliderScale / 8);
+                m_pSizeSlider->setTickInterval(0);
+                m_pSizeSlider->setMinimum(sizeMBToSlider(m_uMediumSizeMin, m_iSliderScale));
+                m_pSizeSlider->setMaximum(sizeMBToSlider(m_uMediumSizeMax, m_iSliderScale));
             }
-            setMediumSize(uDefaultSize);
+            m_pSizeEditor = new QILineEdit(this);
+            {
+                m_pSizeEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+                m_pSizeEditor->setFixedWidthByText("88888.88 MB");
+                m_pSizeEditor->setAlignment(Qt::AlignRight);
+                m_pSizeEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
+            }
+            QLabel *m_pSizeMin = new QLabel(this);
+            {
+                m_pSizeMin->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+                m_pSizeMin->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
+            }
+            QLabel *m_pSizeMax = new QLabel(this);
+            {
+                m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+                m_pSizeMax->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
+            }
+            m_pSizeLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
+            m_pSizeLayout->addWidget(m_pSizeEditor, 0, 3);
+            m_pSizeLayout->addWidget(m_pSizeMin, 1, 0);
+            m_pSizeLayout->setColumnStretch(1, 1);
+            m_pSizeLayout->addWidget(m_pSizeMax, 1, 2);
         }
+        setMediumSize(uDefaultSize);
         pMainLayout->addWidget(m_pLocationLabel);
-        pMainLayout->addWidget(m_pLocationCnt);
+        pMainLayout->addLayout(pLocationLayout);
         pMainLayout->addWidget(m_pSizeLabel);
-        pMainLayout->addWidget(m_pSizeCnt);
+        pMainLayout->addLayout(m_pSizeLayout);
         pMainLayout->addStretch();
     }
 
@@ -371,11 +361,9 @@ void UIWizardNewVDPageBasic3::retranslateUi()
     /* Translate widgets: */
     m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard drive file into the box below or "
                                                 "click on the folder icon to select a different folder to create the file in."));
-    m_pLocationCnt->setTitle(UIWizardNewVD::tr("&Location"));
     m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard drive file..."));
     m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard drive in megabytes. This size will be reported "
                                             "to the Guest OS as the maximum size of this hard drive."));
-    m_pSizeCnt->setTitle(UIWizardNewVD::tr("&Size"));
 }
 
 void UIWizardNewVDPageBasic3::initializePage()

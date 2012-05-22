@@ -26,7 +26,6 @@
 /* Forward declarations: */
 class QVBoxLayout;
 class QButtonGroup;
-class QGroupBox;
 class QRadioButton;
 class QIRichTextLabel;
 
@@ -39,7 +38,7 @@ protected:
     UIWizardNewVDPage1();
 
     /* Helping stuff: */
-    QRadioButton* addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat mf);
+    void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat);
 
     /* Stuff for 'mediumFormat' field: */
     CMediumFormat mediumFormat() const;
@@ -49,9 +48,6 @@ protected:
     QButtonGroup *m_pFormatButtonGroup;
     QList<CMediumFormat> m_formats;
     QStringList m_formatNames;
-
-    /* Widgets: */
-    QGroupBox *m_pFormatCnt;
 };
 
 /* 1st page of the New Virtual Hard Drive wizard (basic extension): */
