@@ -1388,6 +1388,62 @@ DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallb
     return VINF_SUCCESS;
 }
 
+static void crVBoxServerUpdateScreenViewportCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *mural = (CRMuralInfo*) data1;
+    int *sIndex = (int*) data2;
+
+    if (mural->screenId != sIndex)
+        return;
+
+    if (!mural->width || !mural->height)
+        return;
+
+    crServerCheckMuralGeometry(mural);
+}
+
+
+DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h)
+{
+    CRScreenViewportInfo *pVieport;
+    GLboolean fPosChanged, fSizeChanged;
+
+    crDebug("crVBoxServerSetScreenViewport(%i)", sIndex);
+
+    if (sIndex<0 || sIndex>=cr_server.screenCount)
+    {
+        crWarning("crVBoxServerSetScreenViewport: invalid screen id %d", sIndex);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    pVieport = &cr_server.screenVieport[sIndex];
+    fPosChanged = (pVieport->x != x || pVieport->y != y);
+    fSizeChanged = (pVieport->w != w || pVieport->h != h);
+
+    if (!fPosChanged && !fSizeChanged)
+    {
+        crDebug("crVBoxServerSetScreenViewport: no changes");
+        return;
+    }
+
+    if (fPosChanged)
+    {
+        pVieport->x = x;
+        pVieport->y = y;
+
+        crHashtableWalk(cr_server.muralTable, crVBoxServerUpdateScreenViewportCB, NULL);
+    }
+
+    if (fSizeChanged)
+    {
+        pVieport->w = w;
+        pVieport->h = h;
+
+        /* no need to do anything here actually */
+    }
+    return VINF_SUCCESS;
+}
+
 
 #ifdef VBOX_WITH_CRHGSMI
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.

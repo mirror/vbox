@@ -171,6 +171,8 @@ public:
 
     STDMETHOD(CompleteVHWACommand)(BYTE *pCommand);
 
+    STDMETHOD(ViewportChanged)(ULONG aScreenId, ULONG x, ULONG y, ULONG width, ULONG height);
+
     static const PDMDRVREG  DrvReg;
 
 private:
