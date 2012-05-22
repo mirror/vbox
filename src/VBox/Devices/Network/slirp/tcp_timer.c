@@ -157,8 +157,16 @@ struct tcpcb *
 tcp_timers(PNATState pData, register struct tcpcb *tp, int timer)
 {
     register int rexmt;
+    int fUninitiolizedTemplate = 0;
 
     LogFlowFunc(("ENTER: tp:%R[tcpcb793], timer:%d\n", tp, timer));
+    fUninitiolizedTemplate = RT_BOOL((   tp->t_template.ti_src.s_addr == INADDR_ANY
+                                          || tp->t_template.ti_dst.s_addr == INADDR_ANY));
+    if (fUninitiolizedTemplate)
+    {
+        tp = tcp_drop(pData, tp, 0);
+        return tp;
+    }
 
     switch (timer)
     {
