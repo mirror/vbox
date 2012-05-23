@@ -38,6 +38,14 @@
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
 
+#define VMMDEV_TESTING_OUTPUT(a) \
+    do \
+    { \
+        LogAlways(a);\
+        LogRel(a);\
+        RTPrintf a; \
+    } while (0)
+
 /**
  * @callback_method_impl{FNIOMMMIOWRITE}
  */
@@ -164,13 +172,16 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                             switch (uCmd)
                             {
                                 case VMMDEV_TESTING_CMD_INIT:
-                                    RTPrintf("testing: INIT '%.*s'\n", sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz);
+                                    VMMDEV_TESTING_OUTPUT(("testing: INIT '%.*s'\n",
+                                                           sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz));
                                     break;
                                 case VMMDEV_TESTING_CMD_SUB_NEW:
-                                    RTPrintf("testing: SUB_NEW  '%.*s'\n", sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz);
+                                    VMMDEV_TESTING_OUTPUT(("testing: SUB_NEW  '%.*s'\n",
+                                                           sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz));
                                     break;
                                 case VMMDEV_TESTING_CMD_FAILED:
-                                    RTPrintf("testing: FAILED '%.*s'\n", sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz);
+                                    VMMDEV_TESTING_OUTPUT(("testing: FAILED '%.*s'\n",
+                                                           sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz));
                                     break;
                             }
 #else
@@ -189,9 +200,9 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 #ifdef IN_RING3
                         pThis->TestingData.Error.c = u32;
                         if (uCmd == VMMDEV_TESTING_CMD_TERM)
-                            RTPrintf("testing: TERM - %u errors\n", u32);
+                            VMMDEV_TESTING_OUTPUT(("testing: TERM - %u errors\n", u32));
                         else
-                            RTPrintf("testing: SUB_DONE - %u errors\n", u32);
+                            VMMDEV_TESTING_OUTPUT(("testing: SUB_DONE - %u errors\n", u32));
                         return VINF_SUCCESS;
 #else
                         return VINF_IOM_R3_IOPORT_WRITE;
@@ -225,11 +236,11 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                         else
                         {
 #ifdef IN_RING3
-                            RTPrintf("testing: VALUE '%.*s'%*s: %'9llu (%#llx) [%u]\n",
-                                     sizeof(pThis->TestingData.Value.szName) - 1, pThis->TestingData.Value.szName,
-                                     off - 12 > 48 ? 0 : 48 - (off - 12), "",
-                                     pThis->TestingData.Value.u64Value.u, pThis->TestingData.Value.u64Value.u,
-                                     pThis->TestingData.Value.u32Unit);
+                            VMMDEV_TESTING_OUTPUT(("testing: VALUE '%.*s'%*s: %'9llu (%#llx) [%u]\n",
+                                                   sizeof(pThis->TestingData.Value.szName) - 1, pThis->TestingData.Value.szName,
+                                                   off - 12 > 48 ? 0 : 48 - (off - 12), "",
+                                                   pThis->TestingData.Value.u64Value.u, pThis->TestingData.Value.u64Value.u,
+                                                   pThis->TestingData.Value.u32Unit));
 #else
                             return VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -239,9 +250,9 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 #ifdef IN_RING3
                         pThis->TestingData.Error.c = u32;
                         if (uCmd == VMMDEV_TESTING_CMD_TERM)
-                            RTPrintf("testing: TERM - %u errors\n", u32);
+                            VMMDEV_TESTING_OUTPUT(("testing: TERM - %u errors\n", u32));
                         else
-                            RTPrintf("testing: SUB_DONE - %u errors\n", u32);
+                            VMMDEV_TESTING_OUTPUT(("testing: SUB_DONE - %u errors\n", u32));
                         return VINF_SUCCESS;
 #else
                         return VINF_IOM_R3_IOPORT_WRITE;
