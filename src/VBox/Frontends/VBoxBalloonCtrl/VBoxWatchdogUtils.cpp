@@ -207,3 +207,62 @@ MachineState_T getMachineState(const PVBOXWATCHDOG_MACHINE pMachine)
     return MachineState_Null;
 }
 
+int cfgGetValueStr(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
+                   const char *pszGlobal, const char *pszVM, Utf8Str &strValue, Utf8Str strDefault)
+{
+    AssertReturn(!rptrVBox.isNull(), VERR_INVALID_POINTER);
+
+
+    /* Try per-VM approach. */
+    Bstr strTemp;
+    HRESULT hr;
+    if (!rptrMachine.isNull())
+    {
+        AssertPtr(pszVM);
+        hr = rptrMachine->GetExtraData(Bstr(pszVM).raw(),
+                                       strTemp.asOutParam());
+        if (   SUCCEEDED(hr)
+            && !strTemp.isEmpty())
+        {
+            strValue = Utf8Str(strTemp);
+        }
+    }
+
+    if (strValue.isEmpty()) /* Not set by per-VM value? */
+    {
+        AssertPtr(pszGlobal);
+
+        /* Try global approach. */
+        hr = rptrVBox->GetExtraData(Bstr(pszGlobal).raw(),
+                                    strTemp.asOutParam());
+        if (   SUCCEEDED(hr)
+            && !strTemp.isEmpty())
+        {
+            strValue = Utf8Str(strTemp);
+        }
+    }
+
+    if (strValue.isEmpty())
+    {
+        strValue = strDefault;
+        return VERR_NOT_FOUND;
+    }
+
+    return VINF_SUCCESS;
+}
+
+int cfgGetValueULong(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
+                     const char *pszGlobal, const char *pszVM, unsigned long *pulValue, unsigned long ulDefault)
+{
+    Utf8Str strValue;
+    int rc = cfgGetValueStr(rptrVBox, rptrMachine, pszGlobal, pszVM, strValue, "" /* Default */);
+    if (RT_SUCCESS(rc))
+    {
+        *pulValue = strValue.toUInt32();
+    }
+    else
+        *pulValue = ulDefault;
+
+    return rc;
+}
+

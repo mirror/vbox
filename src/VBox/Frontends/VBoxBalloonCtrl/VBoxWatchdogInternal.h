@@ -231,9 +231,14 @@ extern int getMetric(PVBOXWATCHDOG_MACHINE pMachine, const Bstr& strName, LONG *
 void* payloadFrom(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
 int payloadAlloc(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule, size_t cbSize, void **ppszPayload);
 void payloadFree(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
+
 PVBOXWATCHDOG_MACHINE getMachine(const Bstr& strUuid);
 MachineState_T getMachineState(const PVBOXWATCHDOG_MACHINE pMachine);
 
+int cfgGetValueStr(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
+                   const char *pszGlobal, const char *pszVM, Utf8Str &strValue, Utf8Str strDefault);
+int cfgGetValueULong(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
+                     const char *pszGlobal, const char *pszVM, unsigned long *pulValue, unsigned long ulDefault);
 RT_C_DECLS_END
 
 #endif /* !___H_VBOXWATCHDOG */
