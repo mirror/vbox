@@ -2076,48 +2076,142 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     </sect2>
   </sect1>
 
-  <sect1 id="vboxballoonctrl">
-    <title>Memory Ballooning Service</title>
-
-    <para>Starting with VirtualBox 4.0.8 a new host executable called
-    <computeroutput>VBoxBalloonCtrl</computeroutput> is available to
-    automatically take care of a VM's configured memory balloon (see <xref
-    linkend="guestadd-balloon" /> for an introduction to memory ballooning).
-    This is especially useful for server environments where VMs may
-    dynamically require more or less memory during runtime.</para>
-
-    <para>VBoxBalloonCtrl periodically checks a VM's current memory balloon
-    and its free guest RAM and automatically adjusts the current memory
-    balloon by inflating or deflating it accordingly. This handling only
-    applies to running VMs having recent Guest Additions installed.</para>
-
-    <para>To set up VBoxBalloonCtrl and adjust the maximum ballooning size a
-    VM can reach the following parameters will be checked in the following
-    order: <itemizedlist>
+  <sect1 id="vboxwatchdog">
+    <title>VirtualBox Watchdog</title>
+    <para>Starting with VirtualBox 4.2 the memory ballooning service formerly
+    known as <computeroutput>VBoxBalloonCtrl</computeroutput> was renamed to
+    VBoxWatchdog, which now incorporates several host services that are meant 
+    to be run in a server environment.</para>
+    
+    <para>These services are: <itemizedlist>
         <listitem>
-          specified via VBoxBalloonCtrl command line parameter
+            <para>Memory ballooning control, which automatically takes care of 
+            a VM's configured memory balloon (see <xref linkend="guestadd-balloon" />
+            for an introduction to memory ballooning). This especially is useful 
+            for server environments where VMs may dynamically require more or 
+            less memory during runtime.</para>
 
-          <computeroutput>--balloon-max</computeroutput>
+            <para>The service periodically checks a VM's current memory balloon
+            and its free guest RAM and automatically adjusts the current memory
+            balloon by inflating or deflating it accordingly. This handling only
+            applies to running VMs having recent Guest Additions installed.</para>
         </listitem>
-
         <listitem>
-          per-VM parameter using
-
-          <screen>VBoxManage setextradata "VM-Name" VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen>
+            <para>Host isolation detection, which provides a way to detect whether
+            the host cannot reach the specific VirtualBox server instance anymore
+            and take appropriate actions, such as shutting down, saving the 
+            current state or even powering down certain VMs.</para>
         </listitem>
-
-        <listitem>
-          global parameter for all VMs using
-
-          <screen>VBoxManage setextradata global VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen>
-        </listitem>
-      </itemizedlist> <note>
-        <para>If no maximum ballooning size is specified by at least one of
-        the parameters above, no ballooning will be performed at all.</para>
-      </note></para>
-
-    <para>For more options and parameters check the built-in command line help
-    accessible with <computeroutput>--help</computeroutput>.</para>
+    </itemizedlist></para>
+    
+    <para>
+    All configuration values can be either specified via command line or global
+    extradata, whereas command line values always have a higher priority when set.
+    Some of the configuration values also be be specified on a per-VM basis. So
+    the overall lookup order is: command line, per-VM basis extradata (if available), 
+    global extradata.
+    </para>
+    
+    <sect2 id="vboxwatchdog-ballonctrl">
+        <title>Memory ballooning control</title>
+        <para>The memory ballooning control inflates and deflates the memory balloon
+        of VMs based on the VMs free memory and the desired maximum balloon size.</para>
+        
+        <para>To set up the memory ballooning control the maximum ballooning size a
+        VM can reach needs to be set. This can be specified via command line with 
+        <screen>--balloon-max &lt;Size in MB&gt;</screen>, on a per-VM basis extradata value with 
+        <screen>VBoxManage setextradata &lt;VM-Name&gt; VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax &lt;Size in MB&gt;</screen>
+        or using a global extradata value with
+        <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax &lt;Size in MB&gt;</screen>
+        <note><para>If no maximum ballooning size is specified by at least one of
+            the parameters above, no ballooning will be performed at all.</para></note>
+        </para>
+        
+        <para>Setting the ballooning increment in MB can be either done via 
+        command line with
+        <screen>--balloon-inc &lt;Size in MB&gt;</screen> or using a global 
+        extradata value with
+        <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonIncrementMB &lt;Size in MB&gt;</screen>
+        Default ballooning increment is 256 MB if not specified.</para>
+        
+        <para>Same goes with the ballooning decrement: Via command line with
+        <screen>--balloon-dec &lt;Size in MB&gt;</screen> or using a global 
+        extradata value with
+        <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonDecrementMB &lt;Size in MB&gt;</screen>
+        Default ballooning decrement is 128 MB if not specified.</para>
+        
+        <para>To define the lower limit in MB a balloon can be the command line with
+        <screen>--balloon-lower-limit &lt;Size in MB&gt;</screen> can be used or using a global 
+        extradata value with
+        <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonLowerLimitMB &lt;Size in MB&gt;</screen>
+        is available. Default lower limit is 128 if not specified.</para>
+    </sect2>
+    
+    <sect2 id="vboxwatchdog-hostisln">
+        <title>Host isolation detection</title>
+        <para>To detect whether a host is being isolated, that is, the host cannot
+        reach the VirtualBox server instance anymore, the host needs to set an
+        alternating value to a global extradata value within a time period. If
+        this value is not set within that time period a timeout occurred and the
+        so-called host isolation response will be performed to the VMs handled. 
+        Which VMs are handled can be controlled by defining VM groups and assigning
+        VMs to those groups. By default no groups are set, meaning that all VMs
+        on the server will be handled when no host response is received within 
+        30 seconds.</para>
+        
+        <para>To set the groups handled by the host isolation detection via
+        command line:
+        <screen>--apimon-groups=&lt;string[,stringN]&gt;</screen> or using a global 
+        extradata value with
+        <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/Groups &lt;string[,stringN]&gt;</screen>
+        </para>
+        
+        <para>To set the host isolation timeout via command line:
+        <screen>--apimon-isln-timeout=&lt;ms&gt;</screen> or using a global 
+        extradata value with
+        <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/IsolationTimeoutMS &lt;ms&gt;</screen>
+        </para>
+        
+        <para>To set the actual host isolation response via command line:
+        <screen>--apimon-isln-response=&lt;cmd&gt;</screen> or using a global 
+        extradata value with
+        <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/IsolationResponse &lt;cmd&gt;</screen>
+        The following response commands are available:
+        <itemizedlist>
+            <listitem>
+                <para><computeroutput>none</computeroutput>, which does nothing.</para>
+            </listitem>
+            <listitem>
+                <para><computeroutput>pause</computeroutput>, which pauses the
+                execution of a VM.</para>
+            </listitem>
+            <listitem>
+                <para><computeroutput>poweroff</computeroutput>, which shuts down
+                the VM by pressing the virtual power button. The VM will not have
+                the chance of saving any data or veto the shutdown process.</para>
+            </listitem>
+            <listitem>
+                <para><computeroutput>save</computeroutput>, which saves the current
+                machine state and powers off the VM afterwards. If saving the machine
+                state fails the VM will be paused.</para>
+            </listitem>
+            <listitem>
+                <para><computeroutput>shutdown</computeroutput>, which shuts down
+                the VM in a gentle way by sending an <computeroutput>ACPI</computeroutput>
+                shutdown event to the VM's operating system. The OS then has the
+                chance of doing a clean shutdown.</para>
+            </listitem>
+        </itemizedlist>
+        </para>
+    </sect2>
+    
+    <sect2 id="vboxwatchdog-moreinfo">
+        <title>More information</title>
+        <para>For more advanced options and parameters like verbose logging check 
+        the built-in command line help accessible with 
+        <computeroutput>--help</computeroutput>.</para>
+    </sect2>    
+    
   </sect1>
 
   <sect1 id="otherextpacks">
