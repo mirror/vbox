@@ -28,21 +28,21 @@
 #endif
 
 #if defined(WINDOWS)
-# define CR_DEBUG_TO_CONSOLE_ENABLE
+# define CR_DEBUG_CONSOLE_ENABLE
 #endif
 
 #if defined(WINDOWS) && defined(IN_GUEST)
-# ifndef CR_DEBUG_TO_BACKDOOR_ENABLE
-#  error "CR_DEBUG_TO_BACKDOOR_ENABLE is expected!"
+# ifndef CR_DEBUG_BACKDOOR_ENABLE
+#  error "CR_DEBUG_BACKDOOR_ENABLE is expected!"
 # endif
 #else
-# ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
-#  error "CR_DEBUG_TO_BACKDOOR_ENABLE is NOT expected!"
+# ifdef CR_DEBUG_BACKDOOR_ENABLE
+#  error "CR_DEBUG_BACKDOOR_ENABLE is NOT expected!"
 # endif
 #endif
 
 
-#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
+#ifdef CR_DEBUG_BACKDOOR_ENABLE
 # include <VBoxDispMpLogger.h>
 # include <iprt/err.h>
 #endif
@@ -300,6 +300,16 @@ DECLEXPORT(void) crInfo(const char *format, ... )
     va_end( args );
 }
 
+static DECLCALLBACK(void) crDebugBackdoorRt(char* pcszStr)
+{
+    RTLogBackdoorPrintf("%s", pcszStr);
+}
+
+static DECLCALLBACK(void) crDebugBackdoorDispMp(char* pcszStr)
+{
+    VBoxDispMpLoggerLog(pcszStr);
+}
+
 DECLEXPORT(void) crDebug(const char *format, ... )
 {
     va_list args;
@@ -311,8 +321,10 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     static FILE *output;
     static int first_time = 1;
     static int silent = 0;
-#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
-    static int logBackdoor = 0;
+#ifdef CR_DEBUG_BACKDOOR_ENABLE
+    typedef DECLCALLBACK(void) FNCRGEDUGBACKDOOR(char* pcszStr);
+    typedef FNCRGEDUGBACKDOOR *PFNCRGEDUGBACKDOOR;
+    static PFNCRGEDUGBACKDOOR pfnLogBackdoor = NULL;
 #endif
 
     if (first_time)
@@ -320,15 +332,17 @@ DECLEXPORT(void) crDebug(const char *format, ... )
         const char *fname = crGetenv( "CR_DEBUG_FILE" );
         const char *fnamePrefix = crGetenv( "CR_DEBUG_FILE_PREFIX" );
         char str[2048];
-#ifdef CR_DEBUG_TO_CONSOLE_ENABLE
+#ifdef CR_DEBUG_CONSOLE_ENABLE
         int logToConsole = 0;
 #endif
-#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
-        if (crGetenv( "CR_DEBUG_TO_BACKDOOR" ))
+#ifdef CR_DEBUG_BACKDOOR_ENABLE
+        if (crGetenv( "CR_DEBUG_BACKDOOR" ))
         {
             int rc = VBoxDispMpLoggerInit();
             if (RT_SUCCESS(rc))
-                logBackdoor = 1;
+                pfnLogBackdoor = crDebugBackdoorDispMp;
+            else
+                pfnLogBackdoor = crDebugBackdoorRt;
         }
 #endif
 
@@ -369,8 +383,8 @@ DECLEXPORT(void) crDebug(const char *format, ... )
         }
         else
         {
-#ifdef CR_DEBUG_TO_CONSOLE_ENABLE
-            if (crGetenv( "CR_DEBUG_TO_CONSOLE" ))
+#ifdef CR_DEBUG_CONSOLE_ENABLE
+            if (crGetenv( "CR_DEBUG_CONSOLE" ))
             {
                 crRedirectIOToConsole();
                 logToConsole = 1;
@@ -384,11 +398,11 @@ DECLEXPORT(void) crDebug(const char *format, ... )
          * or CR_DEBUG_FILE is set.
          */
         if (!fname && !crGetenv("CR_DEBUG")
-#ifdef CR_DEBUG_TO_CONSOLE_ENABLE
+#ifdef CR_DEBUG_CONSOLE_ENABLE
                     && !logToConsole
 #endif
-#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
-                    && !logBackdoor
+#ifdef CR_DEBUG_BACKDOOR_ENABLE
+                    && !pfnLogBackdoor
 #endif
                 )
             silent = 1;
@@ -441,10 +455,10 @@ DECLEXPORT(void) crDebug(const char *format, ... )
 #endif
     va_start( args, format );
     vsprintf( txt + offset, format, args );
-#ifdef CR_DEBUG_TO_BACKDOOR_ENABLE
-    if (logBackdoor)
+#ifdef CR_DEBUG_BACKDOOR_ENABLE
+    if (pfnLogBackdoor)
     {
-        VBoxDispMpLoggerLog(txt);
+        pfnLogBackdoor(txt);
     }
 #endif
 #if defined(IN_GUEST)

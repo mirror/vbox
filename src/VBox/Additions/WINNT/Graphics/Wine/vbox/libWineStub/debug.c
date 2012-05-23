@@ -41,10 +41,20 @@
 #include "wine/debug.h"
 //#include "wine/library.h"
 
+#ifdef VBOX_WITH_WDDM
+#include <VBoxDispMpLogger.h>
+#include <iprt/err.h>
+#else
+#include <iprt/log.h>
+#endif
+
 static const char * const debug_classes[] = { "fixme", "err", "warn", "trace" };
 
 #define MAX_DEBUG_OPTIONS 256
 
+typedef DECLCALLBACK(void) FNVBOXWINELOGBACKDOOR(char* pcszStr);
+typedef FNVBOXWINELOGBACKDOOR *PFNVBOXWINELOGBACKDOOR;
+static PFNVBOXWINELOGBACKDOOR vbox_log_backdoor = NULL;
 static unsigned char default_flags = (1 << __WINE_DBCL_ERR) | (1 << __WINE_DBCL_FIXME) | (1 << __WINE_DBCL_WARN);
 static int nb_debug_options = -1;
 static struct __wine_debug_channel debug_options[MAX_DEBUG_OPTIONS];
@@ -192,6 +202,27 @@ static void debug_usage(void)
     exit(1);
 }
 
+#ifndef VBOX_WITH_WDDM
+static DECLCALLBACK(void) vbox_log_backdoor_rt(char* pcszStr)
+{
+    RTLogBackdoorPrintf("%s", pcszStr);
+}
+#else
+static DECLCALLBACK(void) vbox_log_backdoor_dispmp(char* pcszStr)
+{
+    VBoxDispMpLoggerLog(pcszStr);
+}
+#endif
+static void vbox_log_v(const char *pszFormat, va_list args)
+{
+    if (vbox_log_backdoor)
+    {
+        static char buf[8092];
+        int offset = sprintf(buf, "[0x%lx.0x%lx] Wine Debug: ", GetCurrentProcessId(), GetCurrentThreadId());
+        vsprintf(buf + offset, pszFormat, args);
+        vbox_log_backdoor(buf);
+    }
+}
 
 /* initialize all options at startup */
 static void debug_init(void)
@@ -202,7 +233,20 @@ static void debug_init(void)
     nb_debug_options = 0;
     if ((wine_debug = getenv("WINEDEBUG")))
     {
-        if (!strcmp( wine_debug, "help" )) debug_usage();
+        Assert(0);
+        if (!strcmp( wine_debug, "help" ))
+            debug_usage();
+        else if (getenv("WINEDEBUG_BACKDOOR"))
+        {
+#ifdef VBOX_WITH_WDDM
+            int rc = VBoxDispMpLoggerInit();
+            if (RT_SUCCESS(rc))
+                vbox_log_backdoor = vbox_log_backdoor_dispmp;
+//            else
+#else
+                vbox_log_backdoor = vbox_log_backdoor_rt;
+#endif
+        }
         parse_options( wine_debug );
     }
 }
@@ -394,6 +438,7 @@ static const char *default_dbgstr_wn( const WCHAR *str, int n )
 /* default implementation of wine_dbg_vprintf */
 static int default_dbg_vprintf( const char *format, va_list args )
 {
+    vbox_log_v(format, args);
 #ifdef DEBUG_leo
     static FILE *output=NULL;
     static int first_time = 1;
