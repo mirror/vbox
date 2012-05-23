@@ -83,8 +83,13 @@ DWORD g_VBoxVDbgBreakOnD3DErr = _ERR_BREAK_DEFAULT;
 # define ERR_D3D() _ERR_CHECK_BREAK(D3DErr)
 # define ASSERT_D3D(_e) _ERR_CHECK_ASSERT(D3DErr, _e)
 #else
-# define ERR_D3D() do {} while (0)
-# define ASSERT_D3D(_e) do {} while (0)
+# define ERR_D3D() ERR("Error!");
+# define ASSERT_D3D(_e) do { \
+        if (RT_UNLIKELY(!(_e))) \
+        { \
+            ERR("Error: Assertion failure expr (%s)", #_e); \
+        } \
+    } while (0)
 #endif /* #ifdef VBOX_WINE_DEBUG */
 
 #ifdef inline
@@ -354,7 +359,7 @@ static inline const char *debugstr_w( const WCHAR *s ) { return wine_dbgstr_wn( 
 
 
 #ifdef DEBUG_misha
-# define VBOXWINEDBG_SHADERS
+//# define VBOXWINEDBG_SHADERS
 #endif
 
 #ifdef VBOXWINEDBG_SHADERS
