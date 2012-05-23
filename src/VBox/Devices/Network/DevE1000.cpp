@@ -727,7 +727,7 @@ struct E1kTDLegacy
         unsigned fIFCS     : 1;
         unsigned fIC       : 1;
         unsigned fRS       : 1;
-        unsigned fRSV      : 1;
+        unsigned fRPS      : 1;
         unsigned fDEXT     : 1;
         unsigned fVLE      : 1;
         unsigned fIDE      : 1;
@@ -828,7 +828,7 @@ struct E1kTDData
         /** Report status (dw3.STA). */
         unsigned fRS       : 1;
         /** Reserved. 82544GC/EI defines this report packet set (RPS).  */
-        unsigned fRSV      : 1;
+        unsigned fRPS      : 1;
         /** Descriptor extension, must be set for this descriptor type. */
         unsigned fDEXT     : 1;
         /** VLAN enable, requires CTRL.VME, auto enables FCS/CRC.
@@ -1694,9 +1694,10 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
             E1kLogX(uLevel, ("        Address=%16LX DTALEN=%05X\n",
                     pDesc->data.u64BufAddr,
                     pDesc->data.cmd.u20DTALEN));
-            E1kLogX(uLevel, ("        DCMD:%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
+            E1kLogX(uLevel, ("        DCMD:%s%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
                     pDesc->data.cmd.fIDE ? " IDE" :"",
                     pDesc->data.cmd.fVLE ? " VLE" :"",
+                    pDesc->data.cmd.fRPS ? " RPS" :"",
                     pDesc->data.cmd.fRS  ? " RS"  :"",
                     pDesc->data.cmd.fTSE ? " TSE" :"",
                     pDesc->data.cmd.fIFCS? " IFCS":"",
@@ -1716,9 +1717,10 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
             E1kLogX(uLevel, ("        Address=%16LX DTALEN=%05X\n",
                     pDesc->data.u64BufAddr,
                     pDesc->legacy.cmd.u16Length));
-            E1kLogX(uLevel, ("        CMD:%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
+            E1kLogX(uLevel, ("        CMD:%s%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
                     pDesc->legacy.cmd.fIDE ? " IDE" :"",
                     pDesc->legacy.cmd.fVLE ? " VLE" :"",
+                    pDesc->legacy.cmd.fRPS ? " RPS" :"",
                     pDesc->legacy.cmd.fRS  ? " RS"  :"",
                     pDesc->legacy.cmd.fIC  ? " IC"  :"",
                     pDesc->legacy.cmd.fIFCS? " IFCS":"",
@@ -3912,8 +3914,10 @@ static void e1kDescReport(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
      * which is a little bit different from what the real hardware does in
      * case there is a chain of data descritors where some of them have RS set
      * and others do not. It is very uncommon scenario imho.
+     * We need to check RPS as well since some legacy drivers use it instead of
+     * RS even with newer cards.
      */
-    if (pDesc->legacy.cmd.fRS)
+    if (pDesc->legacy.cmd.fRS || pDesc->legacy.cmd.fRPS)
     {
         pDesc->legacy.dw3.fDD = 1; /* Descriptor Done */
         e1kWriteBackDesc(pState, pDesc, addr);
@@ -6523,9 +6527,10 @@ static void e1kTDescInfo(E1KSTATE* pState, PCDBGFINFOHLP pHlp, RTGCPHYS addr, E1
                             addr,
                             pDesc->data.u64BufAddr,
                             pDesc->data.cmd.u20DTALEN);
-            pHlp->pfnPrintf(pHlp, "        DCMD:%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
+            pHlp->pfnPrintf(pHlp, "        DCMD:%s%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
                             pDesc->data.cmd.fIDE ? " IDE" :"",
                             pDesc->data.cmd.fVLE ? " VLE" :"",
+                            pDesc->data.cmd.fRPS ? " RPS" :"",
                             pDesc->data.cmd.fRS  ? " RS"  :"",
                             pDesc->data.cmd.fTSE ? " TSE" :"",
                             pDesc->data.cmd.fIFCS? " IFCS":"",
@@ -6544,9 +6549,10 @@ static void e1kTDescInfo(E1KSTATE* pState, PCDBGFINFOHLP pHlp, RTGCPHYS addr, E1
                             addr,
                             pDesc->data.u64BufAddr,
                             pDesc->legacy.cmd.u16Length);
-            pHlp->pfnPrintf(pHlp, "        CMD:%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
+            pHlp->pfnPrintf(pHlp, "        CMD:%s%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
                             pDesc->legacy.cmd.fIDE ? " IDE" :"",
                             pDesc->legacy.cmd.fVLE ? " VLE" :"",
+                            pDesc->legacy.cmd.fRPS ? " RPS" :"",
                             pDesc->legacy.cmd.fRS  ? " RS"  :"",
                             pDesc->legacy.cmd.fIC  ? " IC"  :"",
                             pDesc->legacy.cmd.fIFCS? " IFCS":"",
