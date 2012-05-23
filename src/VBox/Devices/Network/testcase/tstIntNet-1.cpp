@@ -777,6 +777,8 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    strcat(szPath, "/../VMMR0.r0");
+
     char szAbsPath[RTPATH_MAX];
     rc = RTPathAbs(szPath, szAbsPath, sizeof(szAbsPath));
     if (RT_FAILURE(rc))
@@ -785,10 +787,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    rc = SUPR3LoadVMM(strcat(szPath, "/../VMMR0.r0"));
+    rc = SUPR3LoadVMM(szAbsPath);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstIntNet-1: SUPR3LoadVMM(\"%s\") -> %Rrc\n", szPath, rc);
+        RTPrintf("tstIntNet-1: SUPR3LoadVMM(\"%s\") -> %Rrc\n", szAbsPath, rc);
         return 1;
     }
 
