@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -184,7 +184,7 @@ VMMDECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
  *
  * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
  *
- * @param   pVM         Pointer to the shared VM handle.
+ * @param   pVM         The VM handle.
  */
 VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
 {
@@ -235,7 +235,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
  *
  * @returns The VMCPU pointer. NULL if not an EMT.
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  */
 VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
 {
@@ -289,7 +289,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
  * Returns the VMCPU of the first EMT thread.
  *
  * @returns The VMCPU pointer.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  */
 VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
 {
@@ -303,7 +303,7 @@ VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
  *
  * @returns The VMCPU pointer. NULL if idCpu is invalid.
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM handle.
  * @param   idCpu       The ID of the virtual CPU.
  */
 VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
@@ -331,7 +331,7 @@ VMMDECL(uint32_t) VMMGetSvnRev(void)
  * Queries the current switcher
  *
  * @returns active switcher
- * @param   pVM             VM handle.
+ * @param   pVM             The VM handle.
  */
 VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
 {
