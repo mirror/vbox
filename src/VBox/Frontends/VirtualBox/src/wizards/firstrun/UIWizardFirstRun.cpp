@@ -107,6 +107,11 @@ void UIWizardFirstRun::prepare()
             AssertMsgFailed(("First-run wizard has no expert-mode!"));
             break;
         }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
     }
     /* Call to base-class: */
     UIWizard::prepare();
