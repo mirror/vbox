@@ -2525,13 +2525,15 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage)
 /*#define PGM_WITH_A20*/
 #ifdef PGM_WITH_A20
 # define PGM_A20_IS_ENABLED(a_pVCpu)                        ((a_pVCpu)->pgm.s.fA20Enabled)
-# define PGM_A20_APPLY(a_pVCpu, a_GCPhys)                   ((a_pVCpu)->pgm.s.GCPhysA20Mask & (a_GCPhys))
+# define PGM_A20_APPLY(a_pVCpu, a_GCPhys)                   ((a_GCPhys) & (a_pVCpu)->pgm.s.GCPhysA20Mask)
 # define PGM_A20_APPLY_TO_VAR(a_pVCpu, a_GCPhysVar)         \
-    do { a_GCPhysVar = (a_pVCpu)->pgm.s.GCPhysA20Mask & a_GCPhysVar; } while (0)
+    do { a_GCPhysVar &= (a_pVCpu)->pgm.s.GCPhysA20Mask; } while (0)
+# define PGM_A20_ASSERT_MASKED(pVCpu, a_GCPhys)             Assert(PGM_A20_APPLY(pVCpu, a_GCPhys) == (a_GCPhys))
 #else
 # define PGM_A20_IS_ENABLED(a_pVCpu)                        (true)
 # define PGM_A20_APPLY(a_pVCpu, a_GCPhys)                   (a_GCPhys)
 # define PGM_A20_APPLY_TO_VAR(a_pVCpu, a_GCPhysVar)         do { } while (0)
+# define PGM_A20_ASSERT_MASKED(pVCpu, a_GCPhys)             do { } while (0)
 #endif
 /** @} */
 

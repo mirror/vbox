@@ -1631,6 +1631,8 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         RTGCPHYS GCPhysPage = GST_GET_PTE_GCPHYS(PteSrc);
 # endif
+        PGM_A20_ASSERT_MASKED(pVCpu, GCPhysPage);
+
         /*
          * Find the ram range.
          */
@@ -2242,7 +2244,8 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
         {
             if (!SHW_PTE_IS_P(pPTDst->a[iPTDst]))
             {
-                RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
+                RTGCPTR GCPtrCurPage = PGM_A20_APPLY(pVCpu, (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT))
+                                                          | (iPTDst << PAGE_SHIFT));
 
                 PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=1 RW=1 U=1} PteDst=%08llx%s\n",
@@ -2261,7 +2264,8 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
 # endif /* PGM_SYNC_N_PAGES */
     {
         const unsigned  iPTDst       = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        RTGCPTR         GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
+        RTGCPTR         GCPtrCurPage = PGM_A20_APPLY(pVCpu, (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT))
+                                                          | (iPTDst << PAGE_SHIFT));
 
         PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
 
@@ -3198,7 +3202,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
         Assert(pPTDst);
 
         /* Mask away the page offset. */
-        GCPtrPage &= ~((RTGCPTR)0xfff);
+        GCPtrPage &= ~(RTGCPTR)PAGE_OFFSET_MASK;
 
         for (unsigned iPTDst = 0; iPTDst < RT_ELEMENTS(pPTDst->a); iPTDst++)
         {
@@ -3207,9 +3211,9 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 
             PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
             Log2(("SyncPage: 4K+ %RGv PteSrc:{P=1 RW=1 U=1} PteDst=%08llx%s\n",
-                    GCPtrCurPage,
-                    SHW_PTE_LOG64(pPTDst->a[iPTDst]),
-                    SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
+                  GCPtrCurPage,
+                  SHW_PTE_LOG64(pPTDst->a[iPTDst]),
+                  SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
             if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
                 break;
@@ -3675,8 +3679,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
  * @returns The number of errors.
  * @param   pVM         The virtual machine.
  * @param   pVCpu       The VMCPU handle.
- * @param   cr3         Guest context CR3 register
- * @param   cr4         Guest context CR4 register
+ * @param   cr3         Guest context CR3 register.
+ * @param   cr4         Guest context CR4 register.
  * @param   GCPtr       Where to start. Defaults to 0.
  * @param   cb          How much to check. Defaults to everything.
  */
@@ -4450,6 +4454,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
     LogFlow(("MapCR3: %RGp\n", GCPhysCR3));
+    PGM_A20_ASSERT_MASKED(pVCpu, GCPhysCR3);
 
     /*
      * Map the page CR3 points at.
@@ -4571,6 +4576,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
            && PGM_GST_TYPE != PGM_TYPE_PROT))
 
     Assert(!pVM->pgm.s.fNestedPaging);
+    PGM_A20_ASSERT_MASKED(pVCpu, GCPhysCR3);
 
     /*
      * Update the shadow root page as well since that's not fixed.
