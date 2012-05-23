@@ -300,6 +300,7 @@ DECLEXPORT(void) crInfo(const char *format, ... )
     va_end( args );
 }
 
+#ifdef CR_DEBUG_BACKDOOR_ENABLE
 static DECLCALLBACK(void) crDebugBackdoorRt(char* pcszStr)
 {
     RTLogBackdoorPrintf("%s", pcszStr);
@@ -309,6 +310,7 @@ static DECLCALLBACK(void) crDebugBackdoorDispMp(char* pcszStr)
 {
     VBoxDispMpLoggerLog(pcszStr);
 }
+#endif
 
 DECLEXPORT(void) crDebug(const char *format, ... )
 {
