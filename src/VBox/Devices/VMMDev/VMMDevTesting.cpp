@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -158,6 +158,7 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 case VMMDEV_TESTING_CMD_INIT:
                 case VMMDEV_TESTING_CMD_SUB_NEW:
                 case VMMDEV_TESTING_CMD_FAILED:
+                case VMMDEV_TESTING_CMD_SKIPPED:
                     if (   off < sizeof(pThis->TestingData.String.sz) - 1
                         && cb == 1)
                     {
@@ -181,6 +182,10 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                                     break;
                                 case VMMDEV_TESTING_CMD_FAILED:
                                     VMMDEV_TESTING_OUTPUT(("testing: FAILED '%.*s'\n",
+                                                           sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz));
+                                    break;
+                                case VMMDEV_TESTING_CMD_SKIPPED:
+                                    VMMDEV_TESTING_OUTPUT(("testing: SKIPPED '%.*s'\n",
                                                            sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz));
                                     break;
                             }
