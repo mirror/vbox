@@ -54,13 +54,13 @@ static const RTGETOPTDEF g_aBalloonOpts[] = {
     { "--balloon-max",            GETOPTDEF_BALLOONCTRL_BALLOONMAX,        RTGETOPT_REQ_UINT32 }
 };
 
-static unsigned long g_ulMemoryBalloonTimeoutMS = 30 * 1000; /* Default is 30 seconds timeout. */
-static unsigned long g_ulMemoryBalloonIncrementMB = 256;
-static unsigned long g_ulMemoryBalloonDecrementMB = 128;
+static unsigned long g_ulMemoryBalloonTimeoutMS = 0;
+static unsigned long g_ulMemoryBalloonIncrementMB = 0;
+static unsigned long g_ulMemoryBalloonDecrementMB = 0;
 /** Global balloon limit is 0, so disabled. Can be overridden by a per-VM
  *  "VBoxInternal/Guest/BalloonSizeMax" value. */
 static unsigned long g_ulMemoryBalloonMaxMB = 0;
-static unsigned long g_ulMemoryBalloonLowerLimitMB = 64;
+static unsigned long g_ulMemoryBalloonLowerLimitMB = 0;
 
 /** The ballooning module's payload. */
 typedef struct VBOXWATCHDOG_BALLOONCTRL_PAYLOAD
@@ -134,35 +134,25 @@ static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
      *
      *  By default (e.g. if none of above is set), ballooning is disabled.
      */
-    unsigned long ulBalloonMax = g_ulMemoryBalloonMaxMB; /* Use global limit as default. */
-    if (!ulBalloonMax) /* Not set by command line? */
-    {
-        /* Try per-VM approach. */
-        Bstr strValue;
-        HRESULT rc = rptrMachine->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
-                                               strValue.asOutParam());
-        if (   SUCCEEDED(rc)
-            && !strValue.isEmpty())
-        {
-            ulBalloonMax = Utf8Str(strValue).toUInt32();
-        }
-    }
-    if (!ulBalloonMax) /* Still not set by per-VM value? */
-    {
-        /* Try global approach. */
-        Bstr strValue;
-        HRESULT rc = g_pVirtualBox->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
-                                                 strValue.asOutParam());
-        if (   SUCCEEDED(rc)
-            && !strValue.isEmpty())
-        {
-            ulBalloonMax = Utf8Str(strValue).toUInt32();
-        }
-    }
+    unsigned long ulBalloonMax = g_ulMemoryBalloonMaxMB;
     if (!ulBalloonMax)
     {
-        /** @todo ("VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax") */
+        int rc = cfgGetValueULong(g_pVirtualBox, rptrMachine,
+                                  "VBoxInternal/Guest/BalloonSizeMax", "VBoxInternal/Guest/BalloonSizeMax", &ulBalloonMax, 0 /* Ballooning disabled */);
+        if (RT_FAILURE(rc))
+        {
+            /* Try (new) VBoxWatch per-VM approach. */
+            Bstr strValue;
+            HRESULT rc = rptrMachine->GetExtraData(Bstr("VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax").raw(),
+                                                   strValue.asOutParam());
+            if (   SUCCEEDED(rc)
+                && !strValue.isEmpty())
+            {
+                ulBalloonMax = Utf8Str(strValue).toUInt32();
+            }
+        }
     }
+
     return ulBalloonMax;
 }
 
@@ -397,8 +387,7 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char **argv)
                 g_ulMemoryBalloonMaxMB = ValueUnion.u32;
                 break;
 
-            /** @todo Add (legacy) "--inverval" setting! */
-            /** @todo This option is a common moudle option! Put
+            /** @todo This option is a common module option! Put
              *        this into a utility function! */
             case GETOPTDEF_BALLOONCTRL_TIMEOUTMS:
                 g_ulMemoryBalloonTimeoutMS = ValueUnion.u32;
@@ -417,7 +406,27 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char **argv)
 
 static DECLCALLBACK(int) VBoxModBallooningInit(void)
 {
-    return VINF_SUCCESS; /* Nothing to do here right now. */
+    if (!g_ulMemoryBalloonTimeoutMS)
+        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
+                         "VBoxInternal2/Watchdog/BalloonCtrl/TimeoutMS", NULL /* Per-machine */,
+                         &g_ulMemoryBalloonTimeoutMS, 30 * 1000 /* Default is 30 seconds timeout. */);
+
+    if (!g_ulMemoryBalloonIncrementMB)
+        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
+                         "VBoxInternal2/Watchdog/BalloonCtrl/BalloonIncrementMB", NULL /* Per-machine */,
+                         &g_ulMemoryBalloonIncrementMB, 256);
+
+    if (!g_ulMemoryBalloonDecrementMB)
+        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
+                         "VBoxInternal2/Watchdog/BalloonCtrl/BalloonDecrementMB", NULL /* Per-machine */,
+                         &g_ulMemoryBalloonDecrementMB, 128);
+
+    if (!g_ulMemoryBalloonLowerLimitMB)
+        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
+                         "VBoxInternal2/Watchdog/BalloonCtrl/BalloonLowerLimitMB", NULL /* Per-machine */,
+                         &g_ulMemoryBalloonLowerLimitMB, 128);
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) VBoxModBallooningMain(void)

@@ -457,7 +457,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
         /* VM groups to watch for. */
         if (g_vecAPIMonGroups.empty()) /* Not set by command line? */
         {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/Groups").raw(),
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("VBoxInternal2/Watchdog/APIMonitor/Groups").raw(),
                                                           strValue.asOutParam()));
             if (!strValue.isEmpty())
             {
@@ -467,51 +467,32 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
             }
         }
 
-        /* Host isolation timeout (in ms). */
-        if (!g_ulAPIMonIslnTimeoutMS) /* Not set by command line? */
-        {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/IsolationTimeout").raw(),
-                                                          strValue.asOutParam()));
-            if (!strValue.isEmpty())
-                g_ulAPIMonIslnTimeoutMS = Utf8Str(strValue).toUInt32();
-        }
-        if (!g_ulAPIMonIslnTimeoutMS) /* Still not set? Use a default. */
-        {
-            serviceLogVerbose(("apimon: API monitor isolation timeout not given, defaulting to 30s\n"));
+        if (!g_ulAPIMonIslnTimeoutMS)
+            cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
+                             "VBoxInternal2/Watchdog/APIMonitor/IsolationTimeoutMS", NULL /* Per-machine */,
+                             &g_ulAPIMonIslnTimeoutMS, 30 * 1000 /* Default is 30 seconds timeout. */);
+        g_ulAPIMonIslnTimeoutMS = RT_MIN(1000, g_ulAPIMonIslnTimeoutMS);
 
-            /* Default is 30 seconds timeout. */
-            g_ulAPIMonIslnTimeoutMS = 30 * 1000;
-        }
-
-        /* Host isolation command response. */
         if (g_enmAPIMonIslnResp == APIMON_RESPONSE_NONE) /* Not set by command line? */
         {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/IsolationResponse").raw(),
-                                                          strValue.asOutParam()));
-            if (!strValue.isEmpty())
+            Utf8Str strResp;
+            int rc2 = cfgGetValueStr(g_pVirtualBox, NULL /* Machine */,
+                                     "VBoxInternal2/Watchdog/APIMonitor/IsolationResponse", NULL /* Per-machine */,
+                                     strResp, "" /* Default value. */);
+            if (RT_SUCCESS(rc2))
             {
-                int rc2 = apimonResponseToEnum(Utf8Str(strValue).c_str(), &g_enmAPIMonIslnResp);
+                rc2 = apimonResponseToEnum(strResp.c_str(), &g_enmAPIMonIslnResp);
                 if (RT_FAILURE(rc2))
                     serviceLog("apimon: Warning: API monitor response string invalid (%ls), defaulting to no action\n",
                                strValue.raw());
             }
         }
 
-        /* Trigger timeout (in ms). */
-        if (!g_ulAPIMonResponseTimeoutMS) /* Not set by command line? */
-        {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/ResponseTimeout").raw(),
-                                                          strValue.asOutParam()));
-            if (!strValue.isEmpty())
-                g_ulAPIMonResponseTimeoutMS = Utf8Str(strValue).toUInt32();
-        }
-        if (!g_ulAPIMonResponseTimeoutMS) /* Still not set? Use a default. */
-        {
-            serviceLogVerbose(("apimon: API monitor response timeout not given, defaulting to 30s\n"));
-
-            /* Default is 30 seconds timeout. */
-            g_ulAPIMonResponseTimeoutMS = 30 * 1000;
-        }
+        if (!g_ulAPIMonResponseTimeoutMS)
+            cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
+                             "VBoxInternal2/Watchdog/APIMonitor/ResponseTimeoutMS", NULL /* Per-machine */,
+                             &g_ulAPIMonResponseTimeoutMS, 30 * 1000 /* Default is 30 seconds timeout. */);
+        g_ulAPIMonResponseTimeoutMS = RT_MIN(5000, g_ulAPIMonResponseTimeoutMS);
 
 #ifdef DEBUG
         /* Groups. */
