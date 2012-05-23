@@ -80,7 +80,8 @@ bool UIWizardNewVMPage3::getWithNewVirtualDiskWizard()
     UIWizardNewVD dlg(thisImp(),
                       fieldImp("machineBaseName").toString(),
                       fieldImp("machineFolder").toString(),
-                      fieldImp("type").value<CGuestOSType>().GetRecommendedHDD());
+                      fieldImp("type").value<CGuestOSType>().GetRecommendedHDD(),
+                      wizardImp()->mode());
     if (dlg.exec() == QDialog::Accepted)
     {
         m_virtualDisk = dlg.virtualDisk();

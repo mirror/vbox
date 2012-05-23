@@ -43,6 +43,7 @@ enum UIWizardType
 /* Wizard mode: */
 enum UIWizardMode
 {
+    UIWizardMode_Auto,
     UIWizardMode_Basic,
     UIWizardMode_Expert
 };
@@ -57,6 +58,11 @@ public slots:
     /* Exec slot: */
     int	exec();
 
+public:
+
+    /* Mode related stuff: */
+    UIWizardMode mode() { return m_mode; }
+
 protected slots:
 
     /* Page change handler: */
@@ -67,14 +73,11 @@ protected slots:
 protected:
 
     /* Constructor: */
-    UIWizard(QWidget *pParent, UIWizardType type);
+    UIWizard(QWidget *pParent, UIWizardType type, UIWizardMode mode = UIWizardMode_Auto);
 
     /* Translation stuff: */
     void retranslateUi();
     void retranslatePages();
-
-    /* Mode related stuff: */
-    UIWizardMode mode() { return m_mode; }
 
     /* Page related methods: */
     void setPage(int iId, UIWizardPage *pPage);

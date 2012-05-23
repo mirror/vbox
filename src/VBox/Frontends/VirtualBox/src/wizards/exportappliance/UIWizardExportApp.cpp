@@ -254,6 +254,11 @@ void UIWizardExportApp::prepare()
             setPage(PageExpert, new UIWizardExportAppPageExpert(m_selectedVMNames));
             break;
         }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
     }
     /* Call to base-class: */
     UIWizard::prepare();

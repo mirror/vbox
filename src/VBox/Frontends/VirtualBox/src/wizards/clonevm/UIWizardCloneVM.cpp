@@ -184,6 +184,11 @@ void UIWizardCloneVM::prepare()
                                                               m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
             break;
         }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
     }
     /* Call to base-class: */
     UIWizard::prepare();

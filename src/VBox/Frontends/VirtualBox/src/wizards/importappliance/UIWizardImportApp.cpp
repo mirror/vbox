@@ -231,6 +231,11 @@ void UIWizardImportApp::prepare()
             setPage(PageExpert, new UIWizardImportAppPageExpert(m_strFileName));
             break;
         }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
     }
     /* Call to base-class: */
     UIWizard::prepare();

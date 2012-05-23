@@ -280,6 +280,11 @@ void UIWizardNewVM::prepare()
             setPage(PageExpert, new UIWizardNewVMPageExpert);
             break;
         }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
     }
     /* Call to base-class: */
     UIWizard::prepare();

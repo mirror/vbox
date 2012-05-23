@@ -47,7 +47,8 @@ public:
     /* Constructor: */
     UIWizardNewVD(QWidget *pParent,
                   const QString &strDefaultName, const QString &strDefaultPath,
-                  qulonglong uDefaultSize);
+                  qulonglong uDefaultSize,
+                  UIWizardMode mode = UIWizardMode_Auto);
 
     /* Returns virtual-disk: */
     CMedium virtualDisk() const { return m_virtualDisk; }

@@ -122,6 +122,11 @@ void UIWizardCloneVD::prepare()
             setPage(PageExpert, new UIWizardCloneVDPageExpert(m_sourceVirtualDisk));
             break;
         }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
     }
     /* Call to base-class: */
     UIWizard::prepare();
