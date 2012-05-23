@@ -563,8 +563,9 @@ VBoxC_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxC.dylib \
 	-exported_symbols_list $(VBoxC_0_OUTDIR)/VBoxC.def \
 	-framework IOKit
+VBoxC_LDFLAGS.win += /DELAYLOAD:VBoxVMM.dll
 ifdef VBOX_USE_VCC80
- VBoxC_LDFLAGS.win = /MANIFEST
+ VBoxC_LDFLAGS.win += /MANIFEST
 endif
 
 VBoxC_LIBS += \
@@ -577,7 +578,8 @@ ifdef VBOX_WITH_NETFLT
 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
 	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 endif
 
 ifdef VBOX_WITH_CROGL
