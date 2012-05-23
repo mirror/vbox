@@ -19,6 +19,7 @@
 %define VMMDEV_TESTING_CMD_SUB_DONE     0xcab1e003
 %define VMMDEV_TESTING_CMD_FAILED       0xcab1e004
 %define VMMDEV_TESTING_CMD_VALUE        0xcab1e005
+%define VMMDEV_TESTING_CMD_SKIPPED      0xcab1e006
 %define VMMDEV_TESTING_UNIT_PCT                 0x01
 %define VMMDEV_TESTING_UNIT_BYTES               0x02
 %define VMMDEV_TESTING_UNIT_BYTES_PER_SEC       0x03
