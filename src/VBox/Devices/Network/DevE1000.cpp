@@ -6462,6 +6462,111 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
 }
 
 /**
+ * Dump receive descriptor to debugger info buffer.
+ *
+ * @param   pState      The device state structure.
+ * @param   pHlp        The output helpers.
+ * @param   addr        Physical address of the descriptor in guest context.
+ * @param   pDesc       Pointer to the descriptor.
+ */
+static void e1kRDescInfo(E1KSTATE* pState, PCDBGFINFOHLP pHlp, RTGCPHYS addr, E1KRXDESC* pDesc)
+{
+    pHlp->pfnPrintf(pHlp, "%RGp: Address=%16LX Length=%04X Csum=%04X\n",
+                    addr, pDesc->u64BufAddr, pDesc->u16Length, pDesc->u16Checksum);
+    pHlp->pfnPrintf(pHlp, "        STA: %s %s %s %s %s %s %s ERR: %s %s %s %s SPECIAL: %s VLAN=%03x PRI=%x\n",
+                    pDesc->status.fPIF ? "PIF" : "pif",
+                    pDesc->status.fIPCS ? "IPCS" : "ipcs",
+                    pDesc->status.fTCPCS ? "TCPCS" : "tcpcs",
+                    pDesc->status.fVP ? "VP" : "vp",
+                    pDesc->status.fIXSM ? "IXSM" : "ixsm",
+                    pDesc->status.fEOP ? "EOP" : "eop",
+                    pDesc->status.fDD ? "DD" : "dd",
+                    pDesc->status.fRXE ? "RXE" : "rxe",
+                    pDesc->status.fIPE ? "IPE" : "ipe",
+                    pDesc->status.fTCPE ? "TCPE" : "tcpe",
+                    pDesc->status.fCE ? "CE" : "ce",
+                    E1K_SPEC_CFI(pDesc->status.u16Special) ? "CFI" :"cfi",
+                    E1K_SPEC_VLAN(pDesc->status.u16Special),
+                    E1K_SPEC_PRI(pDesc->status.u16Special));
+}
+
+/**
+ * Dump transmit descriptor to debugger info buffer.
+ *
+ * @param   pState      The device state structure.
+ * @param   pHlp        The output helpers.
+ * @param   addr        Physical address of the descriptor in guest context.
+ * @param   pDesc       Pointer to descriptor union.
+ */
+static void e1kTDescInfo(E1KSTATE* pState, PCDBGFINFOHLP pHlp, RTGCPHYS addr, E1KTXDESC* pDesc)
+{
+    switch (e1kGetDescType(pDesc))
+    {
+        case E1K_DTYP_CONTEXT:
+            pHlp->pfnPrintf(pHlp, "%RGp: Type=Context\n", addr);
+            pHlp->pfnPrintf(pHlp, "        IPCSS=%02X IPCSO=%02X IPCSE=%04X TUCSS=%02X TUCSO=%02X TUCSE=%04X\n",
+                            pDesc->context.ip.u8CSS, pDesc->context.ip.u8CSO, pDesc->context.ip.u16CSE,
+                            pDesc->context.tu.u8CSS, pDesc->context.tu.u8CSO, pDesc->context.tu.u16CSE);
+            pHlp->pfnPrintf(pHlp, "        TUCMD:%s%s%s %s %s PAYLEN=%04x HDRLEN=%04x MSS=%04x STA: %s\n",
+                            pDesc->context.dw2.fIDE ? " IDE":"",
+                            pDesc->context.dw2.fRS  ? " RS" :"",
+                            pDesc->context.dw2.fTSE ? " TSE":"",
+                            pDesc->context.dw2.fIP  ? "IPv4":"IPv6",
+                            pDesc->context.dw2.fTCP ?  "TCP":"UDP",
+                            pDesc->context.dw2.u20PAYLEN,
+                            pDesc->context.dw3.u8HDRLEN,
+                            pDesc->context.dw3.u16MSS,
+                            pDesc->context.dw3.fDD?"DD":"");
+            break;
+        case E1K_DTYP_DATA:
+            pHlp->pfnPrintf(pHlp, "%RGp: Type=Data Address=%16LX DTALEN=%05X\n",
+                            addr,
+                            pDesc->data.u64BufAddr,
+                            pDesc->data.cmd.u20DTALEN);
+            pHlp->pfnPrintf(pHlp, "        DCMD:%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
+                            pDesc->data.cmd.fIDE ? " IDE" :"",
+                            pDesc->data.cmd.fVLE ? " VLE" :"",
+                            pDesc->data.cmd.fRS  ? " RS"  :"",
+                            pDesc->data.cmd.fTSE ? " TSE" :"",
+                            pDesc->data.cmd.fIFCS? " IFCS":"",
+                            pDesc->data.cmd.fEOP ? " EOP" :"",
+                            pDesc->data.dw3.fDD  ? " DD"  :"",
+                            pDesc->data.dw3.fEC  ? " EC"  :"",
+                            pDesc->data.dw3.fLC  ? " LC"  :"",
+                            pDesc->data.dw3.fTXSM? " TXSM":"",
+                            pDesc->data.dw3.fIXSM? " IXSM":"",
+                            E1K_SPEC_CFI(pDesc->data.dw3.u16Special) ? "CFI" :"cfi",
+                            E1K_SPEC_VLAN(pDesc->data.dw3.u16Special),
+                            E1K_SPEC_PRI(pDesc->data.dw3.u16Special));
+            break;
+        case E1K_DTYP_LEGACY:
+            pHlp->pfnPrintf(pHlp, "%RGp: Type=Legacy Address=%16LX DTALEN=%05X\n",
+                            addr,
+                            pDesc->data.u64BufAddr,
+                            pDesc->legacy.cmd.u16Length);
+            pHlp->pfnPrintf(pHlp, "        CMD:%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
+                            pDesc->legacy.cmd.fIDE ? " IDE" :"",
+                            pDesc->legacy.cmd.fVLE ? " VLE" :"",
+                            pDesc->legacy.cmd.fRS  ? " RS"  :"",
+                            pDesc->legacy.cmd.fIC  ? " IC"  :"",
+                            pDesc->legacy.cmd.fIFCS? " IFCS":"",
+                            pDesc->legacy.cmd.fEOP ? " EOP" :"",
+                            pDesc->legacy.dw3.fDD  ? " DD"  :"",
+                            pDesc->legacy.dw3.fEC  ? " EC"  :"",
+                            pDesc->legacy.dw3.fLC  ? " LC"  :"",
+                            pDesc->legacy.cmd.u8CSO,
+                            pDesc->legacy.dw3.u8CSS,
+                            E1K_SPEC_CFI(pDesc->legacy.dw3.u16Special) ? "CFI" :"cfi",
+                            E1K_SPEC_VLAN(pDesc->legacy.dw3.u16Special),
+                            E1K_SPEC_PRI(pDesc->legacy.dw3.u16Special));
+            break;
+        default:
+            pHlp->pfnPrintf(pHlp, "%RGp: Invalid Transmit Descriptor\n", addr);
+            break;
+    }
+}
+
+/**
  * Status info callback.
  *
  * @param   pDevIns     The device instance.
@@ -6511,6 +6616,24 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
             }
             pHlp->pfnPrintf(pHlp, "RA%02d: %s %RTmac\n", i, pcszTmp, ra->addr);
         }
+    }
+    unsigned cDescs = RDLEN / sizeof(E1KRXDESC);
+    pHlp->pfnPrintf(pHlp, "\n-- Receive Descriptors (%d total) --\n", cDescs);
+    for (i = 0; i < cDescs; ++i)
+    {
+        E1KRXDESC desc;
+        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, i),
+                          &desc, sizeof(desc));
+        e1kRDescInfo(pState, pHlp, e1kDescAddr(RDBAH, RDBAL, i), &desc);
+    }
+    cDescs = TDLEN / sizeof(E1KTXDESC);
+    pHlp->pfnPrintf(pHlp, "\n-- Transmit Descriptors (%d total) --\n", cDescs);
+    for (i = 0; i < cDescs; ++i)
+    {
+        E1KTXDESC desc;
+        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(TDBAH, TDBAL, i),
+                          &desc, sizeof(desc));
+        e1kTDescInfo(pState, pHlp, e1kDescAddr(TDBAH, TDBAL, i), &desc);
     }
 
 
