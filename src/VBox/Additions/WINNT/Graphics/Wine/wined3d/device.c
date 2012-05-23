@@ -3031,7 +3031,11 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetVertexShaderConstantB(
     TRACE("(iface %p, srcData %p, start %d, count %d)\n",
             iface, srcData, start, count);
 
-    if (!srcData || start >= MAX_CONST_B) return WINED3DERR_INVALIDCALL;
+    if (!srcData || start >= MAX_CONST_B)
+    {
+        ERR("incorrect vertex shader const data: start(%u), srcData(0x%p), count(%u)", start, srcData, count);
+        return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(&This->updateStateBlock->vertexShaderConstantB[start], srcData, cnt * sizeof(BOOL));
     for (i = 0; i < cnt; i++)
@@ -3059,7 +3063,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetVertexShaderConstantB(
             iface, dstData, start, count);
 
     if (dstData == NULL || cnt < 0)
+    {
+        ERR("incorrect vertex shader const data: start(%u), dstData(0x%p), count(%u)", start, dstData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(dstData, &This->stateBlock->vertexShaderConstantB[start], cnt * sizeof(BOOL));
     return WINED3D_OK;
@@ -3077,7 +3084,11 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetVertexShaderConstantI(
     TRACE("(iface %p, srcData %p, start %d, count %d)\n",
             iface, srcData, start, count);
 
-    if (!srcData || start >= MAX_CONST_I) return WINED3DERR_INVALIDCALL;
+    if (!srcData || start >= MAX_CONST_I)
+    {
+        ERR("incorrect vertex shader const data: start(%u), srcData(0x%p), count(%u)", start, srcData, count);
+        return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(&This->updateStateBlock->vertexShaderConstantI[start * 4], srcData, cnt * sizeof(int) * 4);
     for (i = 0; i < cnt; i++)
@@ -3106,7 +3117,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetVertexShaderConstantI(
             iface, dstData, start, count);
 
     if (dstData == NULL || ((signed int) MAX_CONST_I - (signed int) start) <= 0)
+    {
+        ERR("incorrect vertex shader const data: start(%u), dstData(0x%p), count(%u)", start, dstData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(dstData, &This->stateBlock->vertexShaderConstantI[start * 4], cnt * sizeof(int) * 4);
     return WINED3D_OK;
@@ -3126,7 +3140,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetVertexShaderConstantF(
 
     /* Specifically test start > limit to catch MAX_UINT overflows when adding start + count */
     if (srcData == NULL || start + count > This->d3d_vshader_constantF || start > This->d3d_vshader_constantF)
+    {
+        ERR("incorrect vertex shader const data: start(%u), srcData(0x%p), count(%u)", start, srcData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(&This->updateStateBlock->vertexShaderConstantF[start * 4], srcData, count * sizeof(float) * 4);
     if(TRACE_ON(d3d)) {
@@ -3160,7 +3177,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetVertexShaderConstantF(
             iface, dstData, start, count);
 
     if (dstData == NULL || cnt < 0)
+    {
+        ERR("incorrect vertex shader const data: start(%u), dstData(0x%p), count(%u)", start, dstData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(dstData, &This->stateBlock->vertexShaderConstantF[start * 4], cnt * sizeof(float) * 4);
     return WINED3D_OK;
@@ -3429,7 +3449,11 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetPixelShaderConstantB(
     TRACE("(iface %p, srcData %p, start %u, count %u)\n",
             iface, srcData, start, count);
 
-    if (!srcData || start >= MAX_CONST_B) return WINED3DERR_INVALIDCALL;
+    if (!srcData || start >= MAX_CONST_B)
+    {
+        ERR("incorrect pixel shader const data: start(%u), srcData(0x%p), count(%u)", start, srcData, count);
+        return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(&This->updateStateBlock->pixelShaderConstantB[start], srcData, cnt * sizeof(BOOL));
     for (i = 0; i < cnt; i++)
@@ -3457,7 +3481,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetPixelShaderConstantB(
             iface, dstData, start, count);
 
     if (dstData == NULL || cnt < 0)
+    {
+        ERR("incorrect pixel shader const data: start(%u), dstData(0x%p), count(%u)", start, dstData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(dstData, &This->stateBlock->pixelShaderConstantB[start], cnt * sizeof(BOOL));
     return WINED3D_OK;
@@ -3475,7 +3502,11 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetPixelShaderConstantI(
     TRACE("(iface %p, srcData %p, start %u, count %u)\n",
             iface, srcData, start, count);
 
-    if (!srcData || start >= MAX_CONST_I) return WINED3DERR_INVALIDCALL;
+    if (!srcData || start >= MAX_CONST_I)
+    {
+        ERR("incorrect pixel shader const data: start(%u), srcData(0x%p), count(%u)", start, srcData, count);
+        return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(&This->updateStateBlock->pixelShaderConstantI[start * 4], srcData, cnt * sizeof(int) * 4);
     for (i = 0; i < cnt; i++)
@@ -3504,7 +3535,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetPixelShaderConstantI(
             iface, dstData, start, count);
 
     if (dstData == NULL || cnt < 0)
+    {
+        ERR("incorrect pixel shader const data: start(%u), dstData(0x%p), count(%u)", start, dstData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(dstData, &This->stateBlock->pixelShaderConstantI[start * 4], cnt * sizeof(int) * 4);
     return WINED3D_OK;
@@ -3524,7 +3558,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetPixelShaderConstantF(
 
     /* Specifically test start > limit to catch MAX_UINT overflows when adding start + count */
     if (srcData == NULL || start + count > This->d3d_pshader_constantF || start > This->d3d_pshader_constantF)
+    {
+        ERR("incorrect pixel shader const data: start(%u), srcData(0x%p), count(%u)", start, srcData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(&This->updateStateBlock->pixelShaderConstantF[start * 4], srcData, count * sizeof(float) * 4);
     if(TRACE_ON(d3d)) {
@@ -3558,7 +3595,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetPixelShaderConstantF(
             iface, dstData, start, count);
 
     if (dstData == NULL || cnt < 0)
+    {
+        ERR("incorrect pixel shader const data: start(%u), dstData(0x%p), count(%u)", start, dstData, count);
         return WINED3DERR_INVALIDCALL;
+    }
 
     memcpy(dstData, &This->stateBlock->pixelShaderConstantF[start * 4], cnt * sizeof(float) * 4);
     return WINED3D_OK;
