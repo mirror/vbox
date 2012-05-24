@@ -4525,7 +4525,9 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
  * @param   pVM         The VM handle.
- * @param   GCPhys      The GC physical address to convert.
+ * @param   GCPhys      The GC physical address to convert.  Since this is only
+ *                      used for filling the REM TLB, the A20 mask must be
+ *                      applied before calling this API.
  * @param   fWritable   Whether write access is required.
  * @param   ppv         Where to store the pointer corresponding to GCPhys on
  *                      success.
@@ -4533,6 +4535,7 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
 VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv)
 {
     pgmLock(pVM);
+    PGM_A20_ASSERT_MASKED(VMMGetCpu(pVM), GCPhys);
 
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
