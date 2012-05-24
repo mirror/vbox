@@ -348,7 +348,9 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
 static inline tb_page_addr_t get_page_addr_code(CPUState *env1, target_ulong addr)
 {
     int mmu_idx, page_index, pd;
+# ifndef VBOX
     void *p;
+# endif
 
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = cpu_mmu_index(env1);

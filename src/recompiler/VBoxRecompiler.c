@@ -126,7 +126,6 @@ static STAMPROFILEADV gStatRawCheck;
 static STAMPROFILEADV gStatMemRead;
 static STAMPROFILEADV gStatMemWrite;
 static STAMPROFILE    gStatGCPhys2HCVirt;
-static STAMPROFILE    gStatHCVirt2GCPhys;
 static STAMCOUNTER    gStatCpuGetTSC;
 static STAMCOUNTER    gStatRefuseTFInhibit;
 static STAMCOUNTER    gStatRefuseVM86;
@@ -376,8 +375,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatRawCheck,           STAMTYPE_PROFILE, "/PROF/REM/RawCheck",   STAMUNIT_TICKS_PER_CALL, "Profiling remR3CanExecuteRaw calls.");
     STAM_REG(pVM, &gStatMemRead,            STAMTYPE_PROFILE, "/PROF/REM/MemRead",    STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
     STAM_REG(pVM, &gStatMemWrite,           STAMTYPE_PROFILE, "/PROF/REM/MemWrite",   STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
-    STAM_REG(pVM, &gStatHCVirt2GCPhys,      STAMTYPE_PROFILE, "/PROF/REM/HCVirt2GCPhys", STAMUNIT_TICKS_PER_CALL, "Profiling memory conversion.");
-    STAM_REG(pVM, &gStatGCPhys2HCVirt,      STAMTYPE_PROFILE, "/PROF/REM/GCPhys2HCVirt", STAMUNIT_TICKS_PER_CALL, "Profiling memory conversion.");
+    STAM_REG(pVM, &gStatGCPhys2HCVirt,      STAMTYPE_PROFILE, "/PROF/REM/GCPhys2HCVirt", STAMUNIT_TICKS_PER_CALL, "Profiling memory conversion (PGMR3PhysTlbGCPhys2Ptr).");
 
     STAM_REG(pVM, &gStatCpuGetTSC,          STAMTYPE_COUNTER, "/REM/CpuGetTSC",         STAMUNIT_OCCURENCES,     "cpu_get_tsc calls");
 
@@ -555,7 +553,6 @@ REMR3DECL(int) REMR3Term(PVM pVM)
     STAM_DEREG(pVM, &gStatRawCheck);
     STAM_DEREG(pVM, &gStatMemRead);
     STAM_DEREG(pVM, &gStatMemWrite);
-    STAM_DEREG(pVM, &gStatHCVirt2GCPhys);
     STAM_DEREG(pVM, &gStatGCPhys2HCVirt);
 
     STAM_DEREG(pVM, &gStatCpuGetTSC);
@@ -1650,7 +1647,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         return false;
     }
 
-    Assert(env->pVCpu && PGMPhysIsA20Enabled(env->pVCpu));
+/*    Assert(env->pVCpu && PGMPhysIsA20Enabled(env->pVCpu));*/
     *piException = EXCP_EXECUTE_RAW;
     return true;
 }
@@ -1732,10 +1729,14 @@ void *remR3TlbGCPhys2Ptr(CPUX86State *env1, target_ulong physAddr, int fWritable
     void *pv;
     int rc;
 
+
     /* Address must be aligned enough to fiddle with lower bits */
     Assert((physAddr & 0x3) == 0);
+    /*AssertMsg((env1->a20_mask & physAddr) == physAddr, ("%llx\n", (uint64_t)physAddr));*/
 
+    STAM_PROFILE_START(&gStatGCPhys2HCVirt, a);
     rc = PGMR3PhysTlbGCPhys2Ptr(env1->pVM, physAddr, true /*fWritable*/, &pv);
+    STAM_PROFILE_STOP(&gStatGCPhys2HCVirt, a);
     Assert(   rc == VINF_SUCCESS
            || rc == VINF_PGM_PHYS_TLB_CATCH_WRITE
            || rc == VERR_PGM_PHYS_TLB_CATCH_ALL
