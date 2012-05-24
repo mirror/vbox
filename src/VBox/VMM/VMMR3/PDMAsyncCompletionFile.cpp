@@ -588,12 +588,7 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
     uint64_t cbFile;
     int rc = RTFileGetSize(hFile, &cbFile);
     if (RT_SUCCESS(rc))
-    {
-        if (cbFile != 0)
-            *pcbSize = cbFile;
-        else
-            rc = VERR_INVALID_PARAMETER;
-    }
+        *pcbSize = cbFile;
 
     return rc;
 }
@@ -886,7 +881,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
             uint64_t cbSize;
 
             rc = pdmacFileEpNativeGetSize(hFile, &cbSize);
-            Assert(RT_FAILURE(rc) || cbSize != 0);
 
             if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
                 fFileFlags |= RTFILE_O_NO_CACHE;
@@ -945,8 +939,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
         pEpFile->fFlags = fFileFlags;
 
         rc = pdmacFileEpNativeGetSize(pEpFile->hFile, (uint64_t *)&pEpFile->cbFile);
-        Assert(RT_FAILURE(rc) || pEpFile->cbFile != 0);
-
         if (RT_SUCCESS(rc))
         {
             /* Initialize the segment cache */
