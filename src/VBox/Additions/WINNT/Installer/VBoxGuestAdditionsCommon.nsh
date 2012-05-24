@@ -74,11 +74,6 @@ Function ExtractFiles
   SetOutPath "$0\VBoxVideo\OpenGL"
   FILE "$%PATH_OUT%\bin\additions\d3d8.dll"
   FILE "$%PATH_OUT%\bin\additions\d3d9.dll"
-  !if $%BUILD_TARGET_ARCH% == "x86"
-    ; libWine is used for 32bit d3d only
-    ; @todo: remove it for 32bit as well
-    FILE "$%PATH_OUT%\bin\additions\libWine.dll"
-  !endif
   FILE "$%PATH_OUT%\bin\additions\VBoxD3D8.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxD3D9.dll"
   FILE "$%PATH_OUT%\bin\additions\wined3d.dll"
@@ -88,7 +83,6 @@ Function ExtractFiles
     SetOutPath "$0\VBoxVideo\OpenGL\SysWow64"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll"
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\libWine.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxOGLarrayspu.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxOGLcrutil.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxOGLerrorspu.dll"

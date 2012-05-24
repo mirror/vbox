@@ -19,7 +19,7 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-# @todo: get rid of libwine completely (currently used for xpdm.x86 builds only)
+if 0
 DLLS.x86 += libWine
 
 libWine_TEMPLATE     = VBOXGUESTR3NPDLL
@@ -114,11 +114,9 @@ libWine_SOURCES      := \
     libWine/c_28605.c \
     libWine/c_28606.c \
     libWine/version.c
+endif
 
 DLLS += wined3d
-# @todo: all .amd64 and .x86 stuff below is to get rid of libwine for amd64
-#        and keep it for .x86 to avoid regressions
-#        this should be generalized in the future
 wined3d_TEMPLATE     = VBOXGUESTR3NPDLL
 wined3d_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK USE_WIN32_OPENGL _USE_MATH_DEFINES\
     DLLDIR=\"\" \
