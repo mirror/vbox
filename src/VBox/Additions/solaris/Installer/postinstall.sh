@@ -407,10 +407,37 @@ fi
 if test "$currentzone" = "global"; then
     /usr/sbin/devfsadm -i vboxguest
 
-    # Setup our VBoxService SMF service
-    echo "Configuring service..."
-    /usr/sbin/svcadm restart svc:/system/manifest-import:default
-    /usr/sbin/svcadm enable -s virtualbox/vboxservice
+    # Setup VBoxService & start the service automatically
+    echo "Configuring service (this might take a while)..."
+    cmax=32
+    cslept=0
+    success=0
+    sync
+
+    # Since S11 the way to import a manifest is via restarting manifest-import which is asynchronous and can
+    # take a while to complete, using disable/enable -s doesn't work either. So we restart it, and poll in
+    # 1 second intervals to see if our service has been successfully imported and timeout after 'cmax' seconds.
+    /usr/sbin/svcadm restart svc:system/manifest-import:default
+    is_import=`/usr/bin/svcs virtualbox/vboxservice >/dev/null 2>&1`
+    while test $? -ne 0;
+    do
+        sleep 1
+        cslept=`expr $cslept + 1`
+        if test "$cslept" -eq "$cmax"; then
+            success=1
+            break
+        fi
+        is_import=`/usr/bin/svcs virtualbox/vboxservice >/dev/null 2>&1`
+    done
+    if test "$success" -eq 0; then
+        echo "Enabling service..."
+        /usr/sbin/svcadm enable -s virtualbox/vboxservice
+    else
+        echo "## VBoxService import failed."
+        echo "## See /var/svc/log/system-manifest-import:default.log for details."
+        # Exit as partially failed installation
+        retval=2
+    fi
 
     # Update boot archive
     BOOTADMBIN=/sbin/bootadm
