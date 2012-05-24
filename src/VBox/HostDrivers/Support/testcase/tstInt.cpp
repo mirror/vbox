@@ -39,31 +39,8 @@
 #include <iprt/string.h>
 #include <iprt/alloc.h>
 #include <iprt/time.h>
+#include <iprt/path.h>
 
-
-/**
- * Makes a path to a file in the executable directory.
- */
-static char *ExeDirFile(char *pszFile, const char *pszArgv0, const char *pszFilename)
-{
-    char   *psz;
-    char   *psz2;
-
-    strcpy(pszFile, pszArgv0);
-    psz = strrchr(pszFile, '/');
-    psz2 = strrchr(pszFile, '\\');
-    if (psz < psz2)
-        psz = psz2;
-    if (!psz)
-        psz = strrchr(pszFile, ':');
-    if (!psz)
-    {
-        strcpy(pszFile, "./");
-        psz = &pszFile[1];
-    }
-    strcpy(psz + 1, "VMMR0.r0");
-    return pszFile;
-}
 
 int main(int argc, char **argv)
 {
@@ -82,14 +59,24 @@ int main(int argc, char **argv)
     rc = SUPR3Init(&pSession);
     rcRet += rc != 0;
     RTPrintf("tstInt: SUPR3Init -> rc=%Rrc\n", rc);
+    char szFile[RTPATH_MAX];
     if (!rc)
+    {
+        rc = RTPathExecDir(szFile, sizeof(szFile) - sizeof("/VMMR0.r0"));
+    }
+    char szAbsFile[RTPATH_MAX];
+    if (RT_SUCCESS(rc))
+    {
+        strcat(szFile, "/VMMR0.r0");
+        rc = RTPathAbs(szFile, szAbsFile, sizeof(szAbsFile));
+    }
+    if (RT_SUCCESS(rc))
     {
         /*
          * Load VMM code.
          */
-        char    szFile[RTPATH_MAX];
-        rc = SUPR3LoadVMM(ExeDirFile(szFile, argv[0], "VMMR0.r0"));
-        if (!rc)
+        rc = SUPR3LoadVMM(szAbsFile);
+        if (RT_SUCCESS(rc))
         {
             /*
              * Create a fake 'VM'.
