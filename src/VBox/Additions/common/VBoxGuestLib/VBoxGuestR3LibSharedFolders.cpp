@@ -103,7 +103,7 @@ VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszS
     bool fFound = false;
     int rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
                                            &paMappings, &cMappings);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && cMappings)
     {
         for (uint32_t i = 0; i < cMappings && !fFound; i++)
         {
@@ -185,15 +185,18 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
                     AssertPtrBreakStmt(pvNew, rc = VERR_NO_MEMORY);
                     ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)pvNew;
                 }
-                else
-                    *ppaMappings = ppaMappingsTemp;
             }
         }
     } while (rc == VINF_BUFFER_OVERFLOW);
 
     if (   ppaMappingsTemp
         && (RT_FAILURE(rc) || !*pcMappings))
+    {
         RTMemFree(ppaMappingsTemp);
+        ppaMappingsTemp = NULL;
+    }
+
+    *ppaMappings = ppaMappingsTemp;
 
     return rc;
 }
