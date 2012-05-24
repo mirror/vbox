@@ -27,6 +27,8 @@
 #ifndef __VBoxGuestLib_SysHlp_h
 #define __VBoxGuestLib_SysHlp_h
 
+#include <iprt/types.h>
+
 #ifdef RT_OS_WINDOWS
 # undef PAGE_SIZE
 # undef PAGE_SHIFT
