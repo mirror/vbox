@@ -787,9 +787,6 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
 
   SetOutPath $g_strSystemDir
   DetailPrint "Installing Direct3D support ..."
-  !if $%BUILD_TARGET_ARCH% == "x86"
-    FILE "$%PATH_OUT%\bin\additions\libWine.dll"
-  !endif
   FILE "$%PATH_OUT%\bin\additions\VBoxD3D8.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxD3D9.dll"
   FILE "$%PATH_OUT%\bin\additions\wined3d.dll"
@@ -839,7 +836,6 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
     ; Also copy 32-bit DLLs on 64-bit Windows in SysWOW64 node
     SetOutPath $g_strSysWow64
     DetailPrint "Installing Direct3D support for 32-bit applications (SysWOW64: $g_strSysWow64) ..."
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\libWine.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D8.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D9.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\wined3d.dll"

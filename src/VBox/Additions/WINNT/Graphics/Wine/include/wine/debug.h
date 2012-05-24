@@ -30,9 +30,8 @@
 #ifndef __WINE_WINE_DEBUG_H
 #define __WINE_WINE_DEBUG_H
 
-#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_IPRT)
-# error "Unexpected include! VBOX_WITH_WDDM or VBOX_WINE_WITH_IPRT are defined!"
-#endif
+#error "Unexpected include! VBOX_WITH_WDDM or VBOX_WINE_WITH_IPRT are defined!"
+
 
 #ifdef VBOX_WINE_WITH_IPRT
 # include <iprt/assert.h>

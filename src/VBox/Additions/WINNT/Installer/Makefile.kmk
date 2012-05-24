@@ -112,10 +112,6 @@ DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/wined3d.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxD3D9.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxD3D8.dll
- ifeq ($(KBUILD_TARGET_ARCH),x86)
-DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/libWine.dll
- endif
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 	# Also include 32-bit DLLs on 64-bit guests to enable
 	# running 32-bit OpenGL apps on that.
@@ -126,7 +122,6 @@ DRIVER_FILES += \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLpackspu.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLpassthroughspu.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLfeedbackspu.dll \
-		$(VBOX_PATH_ADDITIONS.win.x86)/libWine.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGL.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/wined3d.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxD3D9.dll \

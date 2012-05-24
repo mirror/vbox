@@ -24,6 +24,8 @@
 
 #ifndef IN_GUEST
 #define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
+#endif
+#if !defined(IN_GUEST) || defined(CR_DEBUG_BACKDOOR_ENABLE)
 #include <VBox/log.h>
 #endif
 
