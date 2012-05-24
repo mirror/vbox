@@ -85,7 +85,7 @@ DWORD g_VBoxVDbgBreakOnD3DErr = _ERR_BREAK_DEFAULT;
 #else
 # define ERR_D3D() ERR("Error!");
 # define ASSERT_D3D(_e) do { \
-        if (RT_UNLIKELY(!(_e))) \
+        if (!(_e)) \
         { \
             ERR("Error: Assertion failure expr (%s)", #_e); \
         } \
