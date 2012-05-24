@@ -123,7 +123,7 @@ int VBoxSharedFoldersAutoMount(void)
 #endif
             RTMemFree(paMappings);
         }
-        else
+        else if (RT_FAILURE(rc))
             Log(("VBoxTray: Error while getting the shared folder mappings, rc = %Rrc\n", rc));
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
@@ -191,7 +191,7 @@ int VBoxSharedFoldersAutoUnmount(void)
             }
             RTMemFree(paMappings);
         }
-        else
+        else if (cMappings)
             Log(("VBoxTray: Error while getting the shared folder mappings, rc = %Rrc\n", rc));
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
