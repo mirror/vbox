@@ -27,9 +27,9 @@
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-ifneq ($(KBUILD_HOST),solaris)
-$(error "The Solaris guest additions can only be built on Solaris!")
-endif
+#ifneq ($(KBUILD_HOST),solaris)
+#$(error "The Solaris guest additions can only be built on Solaris!")
+#endif
 
 #
 # vboxfs - The Shared Folder Driver
