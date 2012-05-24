@@ -280,8 +280,8 @@
 
       <para>The VirtualBox kernel module is automatically installed on your
       system when you install VirtualBox. To maintain it with future kernel
-      updates, for those Linux distributions which provide it -- most
-      current ones -- we recommend installing Dynamic Kernel Module Support
+      updates, for those Linux distributions which provide it -- most current
+      ones -- we recommend installing Dynamic Kernel Module Support
       (DKMS)<footnote>
           <para>See <ulink
           url="http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support">http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support</ulink>
@@ -755,17 +755,17 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
 
       <para>Starting with VirtualBox 4.1, the installer creates the system
       user group <computeroutput>vboxuser</computeroutput> during installation
-      for Solaris hosts that support the required USB features for VirtualBox.
+      for Solaris hosts that support the USB features required by VirtualBox.
       Any system user who is going to use USB devices from VirtualBox guests
-      must be a member of that group. A user can be made a member of this
+      must be a member of this group. A user can be made a member of this
       group through the GUI user/group management or at the command line by
       executing as root:</para>
 
       <screen>usermod -G vboxuser username</screen>
 
-      <para>Adding an active user to the group will require that user to log
-      out and back in again. This must be done manually after installing
-      VirtualBox.</para>
+      <para>Note that adding an active user to that group will require that
+      user to log out and back in again. This should be done manually after
+      successful installation of the package.</para>
     </sect2>
 
     <sect2>
