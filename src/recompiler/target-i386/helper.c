@@ -828,12 +828,17 @@ int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr,
         }
     }
  do_mapping:
+#ifndef VBOX
     pte = pte & env->a20_mask;
+#endif
 
     /* Even if 4MB pages, we map only one 4KB page in the cache to
        avoid filling it too fast */
     page_offset = (addr & TARGET_PAGE_MASK) & (page_size - 1);
     paddr = (pte & TARGET_PAGE_MASK) + page_offset;
+#ifdef VBOX
+    paddr &= env->a20_mask;
+#endif
     vaddr = virt_addr + page_offset;
 
     tlb_set_page(env, vaddr, paddr, prot, mmu_idx, page_size);

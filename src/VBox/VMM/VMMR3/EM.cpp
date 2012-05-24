@@ -1312,7 +1312,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
     }
 
-    Assert(PGMPhysIsA20Enabled(pVCpu));
+    /*Assert(PGMPhysIsA20Enabled(pVCpu));*/
     return EMSTATE_RAW;
 #endif /* !IEM_VERIFICATION_MODE */
 
