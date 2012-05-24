@@ -27,11 +27,11 @@
 SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-ifneq ($(KBUILD_HOST),solaris)
-$(error "The Solaris guest additions installer can only be built on Solaris!")
-endif
+#ifneq ($(KBUILD_HOST),solaris)
+#$(error "The Solaris guest additions installer can only be built on Solaris!")
+#endif
 
-ifeq ($(KBUILD_HOST),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
  include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
  include $(PATH_SUB_CURRENT)/DRM/Makefile.kmk
 endif
