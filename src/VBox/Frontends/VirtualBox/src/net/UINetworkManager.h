@@ -125,11 +125,6 @@ signals:
     /* Notification to UINetworkRequest: */
     void sigCancelNetworkRequests();
 
-#if 0
-    /* Signal to notify listeners about downloader creation: */
-    void sigDownloaderCreated(UIDownloadType downloaderType);
-#endif
-
 public:
 
     /* Instance: */
@@ -174,11 +169,6 @@ private:
     void cleanupNetworkRequest(QUuid uuid);
     /* Network-requests cleanup helper: */
     void cleanupNetworkRequests();
-
-#if 0
-    /* Downloader creation notification: */
-    void notifyDownloaderCreated(UIDownloadType downloaderType);
-#endif
 
 private slots:
 

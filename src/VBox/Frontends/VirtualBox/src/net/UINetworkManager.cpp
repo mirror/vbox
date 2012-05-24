@@ -781,14 +781,6 @@ void UINetworkManager::cleanupNetworkRequests()
         cleanupNetworkRequest(uuids[i]);
 }
 
-#if 0
-/* Downloader creation notificator: */
-void UINetworkManager::notifyDownloaderCreated(UIDownloadType downloaderType)
-{
-    emit sigDownloaderCreated(downloaderType);
-}
-#endif
-
 /* Slot to handle network-request progress: */
 void UINetworkManager::sltHandleNetworkRequestProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal)
 {
