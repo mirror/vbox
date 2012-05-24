@@ -24,105 +24,25 @@
 #include <QUuid>
 #include <QMap>
 #include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QPointer>
 
 /* Local inludes: */
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
-class UINetworkManager;
+class QWidget;
+class UINetworkRequest;
 class UINetworkCustomer;
-class UINetworkRequestWidget;
 class UINetworkManagerDialog;
 
-/* Network request contianer: */
-class UINetworkRequest : public QObject
-{
-    Q_OBJECT;
-
-signals:
-
-    /* Notifications to UINetworkManager: */
-    void sigProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal);
-    void sigCanceled(const QUuid &uuid);
-    void sigFinished(const QUuid &uuid);
-    void sigFailed(const QUuid &uuid, const QString &strError);
-
-    /* Notifications to UINetworkRequestWidget: */
-    void sigProgress(qint64 iReceived, qint64 iTotal);
-    void sigStarted();
-    void sigFinished();
-    void sigFailed(const QString &strError);
-
-public:
-
-    /* Constructor/destructor: */
-    UINetworkRequest(UINetworkManager *pNetworkManager,
-                     UINetworkManagerDialog *pNetworkManagerDialog,
-                     const QNetworkRequest &request, UINetworkRequestType type,
-                     const QString &strDescription, UINetworkCustomer *pCustomer);
-    UINetworkRequest(UINetworkManager *pNetworkManager,
-                     UINetworkManagerDialog *pNetworkManagerDialog,
-                     const QList<QNetworkRequest> &requests, UINetworkRequestType type,
-                     const QString &strDescription, UINetworkCustomer *pCustomer);
-    ~UINetworkRequest();
-
-    /* Getters: */
-    const QUuid& uuid() const { return m_uuid; }
-    const QString& description() const { return m_strDescription; }
-    UINetworkCustomer* customer() { return m_pCustomer; }
-    QNetworkReply* reply() { return m_pReply; }
-
-private slots:
-
-    /* Network-reply progress handler: */
-    void sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
-    /* Network-reply finish handler: */
-    void sltHandleNetworkReplyFinish();
-
-    /* Slot to retry network-request: */
-    void sltRetry();
-    /* Slot to cancel network-request: */
-    void sltCancel();
-
-private:
-
-    /* Initialize: */
-    void initialize();
-
-    /* Prepare network-reply: */
-    void prepareNetworkReply();
-    /* Cleanup network-reply: */
-    void cleanupNetworkReply();
-    /* Abort network-reply: */
-    void abortNetworkReply();
-
-    /* Widgets: */
-    UINetworkManagerDialog *m_pNetworkManagerDialog;
-    UINetworkRequestWidget *m_pNetworkRequestWidget;
-
-    /* Variables: */
-    QUuid m_uuid;
-    QList<QNetworkRequest> m_requests;
-    QNetworkRequest m_request;
-    int m_iCurrentRequestIndex;
-    UINetworkRequestType m_type;
-    QString m_strDescription;
-    UINetworkCustomer *m_pCustomer;
-    QPointer<QNetworkReply> m_pReply;
-    bool m_fRunning;
-};
-
-/* QNetworkAccessManager class reimplementation providing
- * network access for the VirtualBox application purposes. */
+/* QNetworkAccessManager class reimplementation.
+ * Providing network access for VirtualBox application purposes. */
 class UINetworkManager : public QNetworkAccessManager
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notification to UINetworkRequest: */
+    /* Ask listeners (network-requests) to cancel: */
     void sigCancelNetworkRequests();
 
 public:
@@ -134,24 +54,23 @@ public:
     static void create();
     static void destroy();
 
-    /* Network Access Manager GUI window: */
+    /* Pointer to network-manager dialog: */
     QWidget* window() const;
 
 public slots:
 
-    /* Show Network Access Manager GUI: */
+    /* Show network-manager dialog: */
     void show();
 
 protected:
 
-    /* Allow UINetworkCustomer to implicitly use next mothods: */
+    /* Allow UINetworkCustomer to create network-request: */
     friend class UINetworkCustomer;
-    /* Network-request creation wrapper for UINetworkCustomer: */
-    void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type,
-                              const QString &strDescription, UINetworkCustomer *pCustomer);
-    /* Network request (set) creation wrapper for UINetworkCustomer: */
-    void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type,
-                              const QString &strDescription, UINetworkCustomer *pCustomer);
+    /* Network-request creation wrappers for UINetworkCustomer: */
+    void createNetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription,
+                              UINetworkCustomer *pCustomer);
+    void createNetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription,
+                              UINetworkCustomer *pCustomer);
 
 private:
 
@@ -189,9 +108,10 @@ private:
     /* Network-request map: */
     QMap<QUuid, UINetworkRequest*> m_requests;
 
-    /* Network manager UI: */
-    UINetworkManagerDialog *m_pNetworkProgressDialog;
+    /* Network-manager dialog: */
+    UINetworkManagerDialog *m_pNetworkManagerDialog;
 };
 #define gNetworkManager UINetworkManager::instance()
 
 #endif // __UINetworkManager_h__
+
