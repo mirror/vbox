@@ -5,7 +5,7 @@
 
 /*
  * Copyright (C) 2008-2012 Oracle Corporation
- * Copyright (C) 2012 François Revol
+ * Includes contributions from François Revol
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
