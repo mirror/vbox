@@ -1376,7 +1376,7 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
                     VBoxControlError("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
                                      paMappings[i].u32Root, rc);
             }
-            if (cMappings == 0)
+            if (!cMappings)
                 RTPrintf("No Shared Folders available.\n");
             VbglR3SharedFolderFreeMappings(paMappings);
         }

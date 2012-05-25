@@ -103,7 +103,7 @@ VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszS
     bool fFound = false;
     int rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
                                            &paMappings, &cMappings);
-    if (RT_SUCCESS(rc) && cMappings)
+    if (RT_SUCCESS(rc))
     {
         for (uint32_t i = 0; i < cMappings && !fFound; i++)
         {
@@ -117,7 +117,7 @@ VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszS
                 RTStrFree(pszName);
             }
         }
-        RTMemFree(paMappings);
+        VbglR3SharedFolderFreeMappings(paMappings);
     }
     return fFound;
 }
@@ -137,7 +137,11 @@ VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszS
 VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMountOnly,
                                               PVBGLR3SHAREDFOLDERMAPPING *ppaMappings, uint32_t *pcMappings)
 {
-    AssertPtr(pcMappings);
+    AssertPtrReturn(pcMappings, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppaMappings, VERR_INVALID_PARAMETER);
+
+    *pcMappings = 0;
+    *ppaMappings = NULL;
 
     VBoxSFQueryMappings Msg;
 
@@ -159,10 +163,9 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
     uint32_t cMappings = 8; /* Should be a good default value. */
     uint32_t cbSize = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
     VBGLR3SHAREDFOLDERMAPPING *ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)RTMemAllocZ(cbSize);
-    if (ppaMappingsTemp == NULL)
+    if (!ppaMappingsTemp)
         return VERR_NO_MEMORY;
 
-    *pcMappings = 0;
     do
     {
         VbglHGCMParmUInt32Set(&Msg.numberOfMappings, cMappings);
@@ -189,8 +192,8 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
         }
     } while (rc == VINF_BUFFER_OVERFLOW);
 
-    if (   ppaMappingsTemp
-        && (RT_FAILURE(rc) || !*pcMappings))
+    if (   RT_FAILURE(rc)
+        || !*pcMappings)
     {
         RTMemFree(ppaMappingsTemp);
         ppaMappingsTemp = NULL;
@@ -210,7 +213,8 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
  */
 VBGLR3DECL(void) VbglR3SharedFolderFreeMappings(PVBGLR3SHAREDFOLDERMAPPING paMappings)
 {
-    RTMemFree(paMappings);
+    if (paMappings)
+        RTMemFree(paMappings);
 }
 
 
