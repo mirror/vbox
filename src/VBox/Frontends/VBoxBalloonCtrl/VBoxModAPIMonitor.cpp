@@ -269,21 +269,20 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                         }
 
                         CHECK_ERROR(console, SaveState(progress.asOutParam()));
-                        if (FAILED(rc))
+                        if (SUCCEEDED(rc))
                         {
-                            if (!fPaused)
-                                console->Resume();
-                            break;
+                            progress->WaitForCompletion(ulTimeout);
+                            CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state of machine \"%ls\"",
+                                                 strUuid.raw()));
                         }
 
-                        progress->WaitForCompletion(ulTimeout);
-                        CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state of machine \"%ls\"",
-                                             strUuid.raw()));
-                        if (FAILED(rc))
+                        if (SUCCEEDED(rc))
                         {
-                            if (!fPaused)
-                                console->Resume();
+                            serviceLogVerbose(("apimon: State of machine \"%ls\" saved, powering off ...\n", strUuid.raw()));
+                            CHECK_ERROR_BREAK(console, PowerButton());
                         }
+                        else
+                            serviceLogVerbose(("apimon: Saving state of machine \"%ls\" failed\n", strUuid.raw()));
 
                         break;
                     }
