@@ -258,6 +258,13 @@ sf_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 #endif
 {
     TRACE();
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+    /* see Documentation/filesystems/vfs.txt */
+    if (nd && nd->flags & LOOKUP_RCU)
+        return -ECHILD;
+#endif
+
     if (sf_inode_revalidate(dentry))
         return 0;
 
