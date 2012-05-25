@@ -382,7 +382,11 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
 
     sf_i->force_restat = 0;
     dentry->d_time = jiffies;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+    d_set_d_op(dentry, &sf_dentry_ops);
+#else
     dentry->d_op = &sf_dentry_ops;
+#endif
     d_add(dentry, inode);
     return NULL;
 
@@ -446,7 +450,11 @@ static int sf_instantiate(struct inode *parent, struct dentry *dentry,
     SET_INODE_INFO(inode, sf_new_i);
 
     dentry->d_time = jiffies;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+    d_set_d_op(dentry, &sf_dentry_ops);
+#else
     dentry->d_op = &sf_dentry_ops;
+#endif
     sf_new_i->force_restat = 1;
 
     d_instantiate(dentry, inode);
