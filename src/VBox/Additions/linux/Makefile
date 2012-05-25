@@ -45,6 +45,7 @@ all:
 	    else \
 	        cp vboxsf/vboxsf.o .; \
 	    fi; \
+	    echo; \
 	fi
 	@if [ -d vboxvideo ]; then \
 	    if [ -f vboxguest/Module.symvers ]; then \
@@ -57,6 +58,7 @@ all:
 	    else \
 	        cp vboxvideo/vboxvideo.o .; \
 	    fi; \
+	    echo; \
 	fi
 
 install:
