@@ -440,7 +440,7 @@ static int VBoxServiceAutoMountProcessMappings(PVBGLR3SHAREDFOLDERMAPPING paMapp
                         struct vbsf_mount_opts mount_opts =
                         {
                             0,                     /* uid */
-                            grp_vboxsf->gr_gid,    /* gid */
+                            (int)grp_vboxsf->gr_gid, /* gid */
                             0,                     /* ttl */
                             0770,                  /* dmode, owner and group "vboxsf" have full access */
                             0770,                  /* fmode, owner and group "vboxsf" have full access */
@@ -529,13 +529,10 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
             VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder directory, rc = %Rrc\n", rc);
         VbglR3SharedFolderFreeMappings(paMappings);
     }
+    else if (RT_FAILURE(rc))
+        VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mappings, rc = %Rrc\n", rc);
     else
-    {
-        if (RT_FAILURE(rc))
-            VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mappings, rc = %Rrc\n", rc);
-        else if (!cMappings)
-            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: No shared folder mappings fouund\n");
-    }
+        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: No shared folder mappings found\n");
 
     /*
      * Because this thread is a one-timer at the moment we don't want to break/change

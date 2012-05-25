@@ -35,7 +35,7 @@ int VBoxSharedFoldersAutoMount(void)
 
         rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
                                            &paMappings, &cMappings);
-        if (RT_SUCCESS(rc) && cMappings)
+        if (RT_SUCCESS(rc))
         {
 #if 0
             /* Check for a fixed/virtual auto-mount share. */
@@ -121,9 +121,9 @@ int VBoxSharedFoldersAutoMount(void)
 #if 0
             }
 #endif
-            RTMemFree(paMappings);
+            VbglR3SharedFolderFreeMappings(paMappings);
         }
-        else if (RT_FAILURE(rc))
+        else
             Log(("VBoxTray: Error while getting the shared folder mappings, rc = %Rrc\n", rc));
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
@@ -143,7 +143,7 @@ int VBoxSharedFoldersAutoUnmount(void)
 
         rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
                                            &paMappings, &cMappings);
-        if (RT_SUCCESS(rc) && cMappings)
+        if (RT_SUCCESS(rc))
         {
             for (uint32_t i = 0; i < cMappings && RT_SUCCESS(rc); i++)
             {
@@ -189,9 +189,9 @@ int VBoxSharedFoldersAutoUnmount(void)
                     Log(("VBoxTray: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
                          paMappings[i].u32Root, rc));
             }
-            RTMemFree(paMappings);
+            VbglR3SharedFolderFreeMappings(paMappings);
         }
-        else if (cMappings)
+        else
             Log(("VBoxTray: Error while getting the shared folder mappings, rc = %Rrc\n", rc));
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
