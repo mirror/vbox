@@ -624,6 +624,9 @@ DECLINLINE(void) vhdxConvFileIdentifierEndianess(VHDXECONV enmConv, PVhdxFileIde
  */
 DECLINLINE(void) vhdxConvUuidEndianess(VHDXECONV enmConv, PRTUUID pUuidConv, PRTUUID pUuid)
 {
+#if 1
+    memcpy(pUuidConv, pUuid, sizeof(RTUUID));
+#else
     pUuidConv->Gen.u32TimeLow              = SET_ENDIAN_U32(pUuid->Gen.u32TimeLow);
     pUuidConv->Gen.u16TimeMid              = SET_ENDIAN_U16(pUuid->Gen.u16TimeMid);
     pUuidConv->Gen.u16TimeHiAndVersion     = SET_ENDIAN_U16(pUuid->Gen.u16TimeHiAndVersion);
@@ -631,6 +634,7 @@ DECLINLINE(void) vhdxConvUuidEndianess(VHDXECONV enmConv, PRTUUID pUuidConv, PRT
     pUuidConv->Gen.u8ClockSeqLow           = pUuid->Gen.u8ClockSeqLow;
     for (unsigned i = 0; i < RT_ELEMENTS(pUuidConv->Gen.au8Node); i++)
         pUuidConv->Gen.au8Node[i] = pUuid->Gen.au8Node[i];
+#endif
 }
 
 /**
@@ -1030,7 +1034,7 @@ static int vhdxLoadHeader(PVHDXIMAGE pImage, PVhdxHeader pHdr)
  */
 static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
 {
-    VhdxHeader Hdr1, Hdr2;
+    PVhdxHeader pHdr1, pHdr2;
     uint32_t u32ChkSum = 0;
     uint32_t u32ChkSumSaved = 0;
     bool fHdr1Valid = false;
@@ -1044,61 +1048,74 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
      * consistency. Only one header is current. This can be determined using the
      * sequence number and checksum fields in the header.
      */
+    pHdr1 = (PVhdxHeader)RTMemAllocZ(sizeof(VhdxHeader));
+    pHdr2 = (PVhdxHeader)RTMemAllocZ(sizeof(VhdxHeader));
 
-    /* Read the first header. */
-    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_HEADER1_OFFSET,
-                               &Hdr1, sizeof(Hdr1), NULL);
-    if (RT_SUCCESS(rc))
+    if (pHdr1 && pHdr2)
     {
-        vhdxConvHeaderEndianess(VHDXECONV_F2H, &Hdr1, &Hdr1);
+        /* Read the first header. */
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_HEADER1_OFFSET,
+                                   pHdr1, sizeof(*pHdr1), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            vhdxConvHeaderEndianess(VHDXECONV_F2H, pHdr1, pHdr1);
 
-        /* Validate checksum. */
-        u32ChkSumSaved = Hdr1.u32Checksum;
-        Hdr1.u32Checksum = 0;
-        //u32ChkSum = RTCrc32C(&Hdr1, sizeof(Hdr1));
+            /* Validate checksum. */
+            u32ChkSumSaved = pHdr1->u32Checksum;
+            pHdr1->u32Checksum = 0;
+            //u32ChkSum = RTCrc32C(pHdr1, sizeof(*pHdr1));
 
-        if (   Hdr1.u32Signature == VHDX_HEADER_SIGNATURE
-            /*&& u32ChkSum == u32ChkSumSaved*/)
-            fHdr1Valid = true;
-    }
+            if (   pHdr1->u32Signature == VHDX_HEADER_SIGNATURE
+                /*&& u32ChkSum == u32ChkSumSaved*/)
+                fHdr1Valid = true;
+        }
 
-    /* Try to read the second header in any case (even if reading the first failed). */
-    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_HEADER2_OFFSET,
-                               &Hdr2, sizeof(Hdr2), NULL);
-    if (RT_SUCCESS(rc))
-    {
-        vhdxConvHeaderEndianess(VHDXECONV_F2H, &Hdr2, &Hdr2);
+        /* Try to read the second header in any case (even if reading the first failed). */
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_HEADER2_OFFSET,
+                                   pHdr2, sizeof(*pHdr2), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            vhdxConvHeaderEndianess(VHDXECONV_F2H, pHdr2, pHdr2);
 
-        /* Validate checksum. */
-        u32ChkSumSaved = Hdr2.u32Checksum;
-        Hdr2.u32Checksum = 0;
-        //u32ChkSum = RTCrc32C(&Hdr2, sizeof(Hdr2));
+            /* Validate checksum. */
+            u32ChkSumSaved = pHdr2->u32Checksum;
+            pHdr2->u32Checksum = 0;
+            //u32ChkSum = RTCrc32C(pHdr2, sizeof(*pHdr2));
 
-        if (   Hdr2.u32Signature == VHDX_HEADER_SIGNATURE
-            /*&& u32ChkSum == u32ChkSumSaved*/)
-            fHdr2Valid = true;
-    }
+            if (   pHdr2->u32Signature == VHDX_HEADER_SIGNATURE
+                /*&& u32ChkSum == u32ChkSumSaved*/)
+                fHdr2Valid = true;
+        }
 
-    /* Determine the current header. */
-    if (fHdr1Valid != fHdr2Valid)
-    {
-        /* Only one header is valid - use it. */
-        rc = vhdxLoadHeader(pImage, fHdr1Valid ? &Hdr1 : &Hdr2);
-    }
-    else if (!fHdr1Valid && !fHdr2Valid)
-    {
-        /* Crap, both headers are corrupt, refuse to load the image. */
-        rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
-                       "VHDX: Can not load the image because both headers are corrupt");
+        /* Determine the current header. */
+        if (fHdr1Valid != fHdr2Valid)
+        {
+            /* Only one header is valid - use it. */
+            rc = vhdxLoadHeader(pImage, fHdr1Valid ? pHdr1 : pHdr2);
+        }
+        else if (!fHdr1Valid && !fHdr2Valid)
+        {
+            /* Crap, both headers are corrupt, refuse to load the image. */
+            rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                           "VHDX: Can not load the image because both headers are corrupt");
+        }
+        else
+        {
+            /* Both headers are valid. Use the sequence number to find the current one. */
+            if (pHdr1->u64SequenceNumber > pHdr2->u64SequenceNumber)
+                rc = vhdxLoadHeader(pImage, pHdr1);
+            else
+                rc = vhdxLoadHeader(pImage, pHdr2);
+        }
     }
     else
-    {
-        /* Both headers are valid. Use the sequence number to find the current one. */
-        if (Hdr1.u64SequenceNumber > Hdr2.u64SequenceNumber)
-            rc = vhdxLoadHeader(pImage, &Hdr1);
-        else
-            rc = vhdxLoadHeader(pImage, &Hdr2);
-    }
+        rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                       "VHDX: Out of memory while allocating memory for the header");
+
+    if (pHdr1)
+        RTMemFree(pHdr1);
+    if (pHdr2)
+        RTMemFree(pHdr2);
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
@@ -2373,10 +2390,10 @@ static void vhdxDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%zu\n",
                         pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
                         pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
-                        pImage->cbSize / 512);
+                        pImage->cbLogicalSector);
     }
 }
 
