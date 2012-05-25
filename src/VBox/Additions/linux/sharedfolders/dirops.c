@@ -357,6 +357,7 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
             goto fail1;
         }
         sf_new_i->handle = SHFL_HANDLE_NIL;
+        sf_new_i->force_reread = 0;
 
         ino = iunique(parent->i_sb, 1);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
@@ -456,6 +457,7 @@ static int sf_instantiate(struct inode *parent, struct dentry *dentry,
     dentry->d_op = &sf_dentry_ops;
 #endif
     sf_new_i->force_restat = 1;
+    sf_new_i->force_reread = 0;
 
     d_instantiate(dentry, inode);
 
