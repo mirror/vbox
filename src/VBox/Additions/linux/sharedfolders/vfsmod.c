@@ -240,6 +240,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     sf_i->path->u16Size = 2;
     sf_i->path->String.utf8[0] = '/';
     sf_i->path->String.utf8[1] = 0;
+    sf_i->force_reread = 0;
 
     err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
     if (err)
