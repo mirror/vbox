@@ -127,11 +127,6 @@ HANDLE *slirp_get_events(PNATState pData);
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);
 #endif /* RT_OS_WINDOWS */
 
-#ifdef VBOX_WITH_SLIRP_MT
-void slirp_process_queue(PNATState pData);
-void *slirp_get_queue(PNATState pData);
-#endif
-
 struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_t *pcbBuf);
 void slirp_ext_m_free(PNATState pData, struct mbuf *, uint8_t *pu8Buf);
 

@@ -459,32 +459,10 @@ findso:
         || so->so_laddr.s_addr != ti->ti_src.s_addr
         || so->so_faddr.s_addr != ti->ti_dst.s_addr)
     {
-#ifdef VBOX_WITH_SLIRP_MT
-        struct socket *sonxt;
-#endif
         QSOCKET_UNLOCK(tcb);
         /* @todo fix SOLOOKUP macrodefinition to be usable here */
-#ifndef VBOX_WITH_SLIRP_MT
         so = solookup(&tcb, ti->ti_src, ti->ti_sport,
                       ti->ti_dst, ti->ti_dport);
-#else
-        so = NULL;
-        QSOCKET_FOREACH(so, sonxt, tcp)
-        /* { */
-            if (   so->so_lport        == ti->ti_sport
-                && so->so_laddr.s_addr == ti->ti_src.s_addr
-                && so->so_faddr.s_addr == ti->ti_dst.s_addr
-                && so->so_fport        == ti->ti_dport
-                && so->so_deleted != 1)
-            {
-                break; /* so is locked here */
-            }
-        LOOP_LABEL(tcp, so, sonxt);
-        }
-        if (so == &tcb) {
-            so = NULL;
-        }
-#endif
         if (so)
         {
             tcp_last_so = so;

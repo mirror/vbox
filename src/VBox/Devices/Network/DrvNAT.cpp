@@ -159,9 +159,6 @@ typedef struct DRVNAT
     /** Link state set when the VM is suspended. */
     PDMNETWORKLINKSTATE     enmLinkStateWant;
 
-#ifdef VBOX_WITH_SLIRP_MT
-    PPDMTHREAD              pGuestThread;
-#endif
 #ifndef RT_OS_WINDOWS
     /** The write end of the control pipe. */
     RTPIPE                  hPipeWrite;
@@ -533,11 +530,9 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
         /* Set an FTM checkpoint as this operation changes the state permanently. */
         PDMDrvHlpFTSetCheckpoint(pThis->pDrvIns, FTMCHECKPOINTTYPE_NETWORK);
 
-#ifdef VBOX_WITH_SLIRP_MT
-        RTREQQUEUE hQueue = (RTREQQUEUE)slirp_get_queue(pThis->pNATState);
-#else
+
         RTREQQUEUE hQueue = pThis->hSlirpReqQueue;
-#endif
+
         rc = RTReqQueueCallEx(hQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                               (PFNRT)drvNATSendWorker, 2, pThis, pSgBuf);
         if (RT_SUCCESS(rc))
@@ -848,31 +843,6 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_SLIRP_MT
-
-static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-        slirp_process_queue(pThis->pNATState);
-
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-
-    return VINF_SUCCESS;
-}
-
-#endif /* VBOX_WITH_SLIRP_MT */
-
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
  * @returns 1 if possible.
@@ -915,7 +885,9 @@ void slirp_output_pending(void *pvUser)
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
     Assert(pThis);
+    LogFlowFuncEnter();
     pThis->pIAboveNet->pfnXmitPending(pThis->pIAboveNet);
+    LogFlowFuncLeave();
 }
 
 /**
@@ -941,6 +913,7 @@ void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
     AssertRC(rc);
     drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
+    LogFlowFuncLeave();
 }
 
 
@@ -1414,12 +1387,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pSlirpThread, pThis, drvNATAsyncIoThread,
                                        drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
             AssertRCReturn(rc, rc);
-
-#ifdef VBOX_WITH_SLIRP_MT
-            rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pGuestThread, pThis, drvNATAsyncIoGuest,
-                                       drvNATAsyncIoGuestWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATGUEST");
-            AssertRCReturn(rc, rc);
-#endif
 
             pThis->enmLinkState = pThis->enmLinkStateWant = PDMNETWORKLINKSTATE_UP;
 

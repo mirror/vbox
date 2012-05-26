@@ -634,12 +634,6 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     }
     pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
-#ifdef VBOX_WITH_SLIRP_MT
-    QSOCKET_LOCK_CREATE(tcb);
-    QSOCKET_LOCK_CREATE(udb);
-    rc = RTReqQueueCreate(&pData->pReqQueue);
-    AssertReleaseRC(rc);
-#endif
 
     link_up = 1;
 
@@ -1051,10 +1045,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 {
                     so->so_timeout(pData, so, so->so_timeout_arg);
                 }
-#ifdef VBOX_WITH_SLIRP_MT
-                    /* we need so_next for continue our cycle*/
-                so_next = so->so_next;
-#endif
                 UDP_DETACH(pData, so, so_next);
                 CONTINUE_NO_UNLOCK(udp);
             }
@@ -1216,37 +1206,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      */
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
-
-#ifdef VBOX_WITH_SLIRP_MT
-        if (   so->so_state & SS_NOFDREF
-            && so->so_deleted == 1)
-        {
-            struct socket *son, *sop = NULL;
-            QSOCKET_LOCK(tcb);
-            if (so->so_next != NULL)
-            {
-                if (so->so_next != &tcb)
-                    SOCKET_LOCK(so->so_next);
-                son = so->so_next;
-            }
-            if (    so->so_prev != &tcb
-                && so->so_prev != NULL)
-            {
-                SOCKET_LOCK(so->so_prev);
-                sop = so->so_prev;
-            }
-            QSOCKET_UNLOCK(tcb);
-            remque(pData, so);
-            NSOCK_DEC();
-            SOCKET_UNLOCK(so);
-            SOCKET_LOCK_DESTROY(so);
-            RTMemFree(so);
-            so_next = son;
-            if (sop != NULL)
-                SOCKET_UNLOCK(sop);
-            CONTINUE_NO_UNLOCK(tcp);
-        }
-#endif
         /* TCP socket can't be cloned */
 #ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
         Assert((!so->so_cloneOf));
@@ -1461,36 +1420,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      */
      QSOCKET_FOREACH(so, so_next, udp)
      /* { */
-#ifdef VBOX_WITH_SLIRP_MT
-        if (   so->so_state & SS_NOFDREF
-            && so->so_deleted == 1)
-        {
-            struct socket *son, *sop = NULL;
-            QSOCKET_LOCK(udb);
-            if (so->so_next != NULL)
-            {
-                if (so->so_next != &udb)
-                    SOCKET_LOCK(so->so_next);
-                son = so->so_next;
-            }
-            if (   so->so_prev != &udb
-                && so->so_prev != NULL)
-            {
-                SOCKET_LOCK(so->so_prev);
-                sop = so->so_prev;
-            }
-            QSOCKET_UNLOCK(udb);
-            remque(pData, so);
-            NSOCK_DEC();
-            SOCKET_UNLOCK(so);
-            SOCKET_LOCK_DESTROY(so);
-            RTMemFree(so);
-            so_next = son;
-            if (sop != NULL)
-                SOCKET_UNLOCK(sop);
-            CONTINUE_NO_UNLOCK(udp);
-        }
-#endif
 #ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
         if (so->so_cloneOf)
             CONTINUE_NO_UNLOCK(udp);
@@ -2019,16 +1948,6 @@ void slirp_post_sent(PNATState pData, void *pvArg)
     struct mbuf *m = (struct mbuf *)pvArg;
     m_freem(pData, m);
 }
-#ifdef VBOX_WITH_SLIRP_MT
-void slirp_process_queue(PNATState pData)
-{
-     RTReqQueueProcess(pData->pReqQueue, RT_INDEFINITE_WAIT);
-}
-void *slirp_get_queue(PNATState pData)
-{
-    return pData->pReqQueue;
-}
-#endif
 
 void slirp_set_dhcp_TFTP_prefix(PNATState pData, const char *tftpPrefix)
 {
