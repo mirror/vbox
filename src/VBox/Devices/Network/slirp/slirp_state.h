@@ -56,6 +56,7 @@ struct tftp_session
     u_int16_t client_port;
 
     int timestamp;
+    uint64_t u64Offset;
 };
 
 struct dns_domain_entry
@@ -152,9 +153,6 @@ typedef struct NATState
     int socket_rcv;
     int socket_snd;
     int soMaxConn;
-#ifdef VBOX_WITH_SLIRP_MT
-    RTREQQUEUE hReqQueue;
-#endif
 #ifdef RT_OS_WINDOWS
     ULONG (WINAPI * pfGetAdaptersAddresses)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG);
 #endif
@@ -173,9 +171,7 @@ typedef struct NATState
     struct in_addr bindIP;
     /* Stuff from tcp_input.c */
     struct socket tcb;
-#ifdef VBOX_WITH_SLIRP_MT
-    RTCRITSECT      tcb_mutex;
-#endif
+
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
     /* Stuff from tcp_timer.c */
@@ -191,9 +187,6 @@ typedef struct NATState
     /* Stuff from udp.c */
     struct udpstat_t udpstat;
     struct socket udb;
-#ifdef VBOX_WITH_SLIRP_MT
-    RTCRITSECT      udb_mutex;
-#endif
     struct socket *udp_last_so;
     struct socket icmp_socket;
     struct icmp_storage icmp_msg_head;
@@ -426,209 +419,7 @@ typedef struct NATState
 #define VBOX_X2(x) x
 #define VBOX_X(x) VBOX_X2(x)
 
-#ifdef VBOX_WITH_SLIRP_MT
-
-# define QSOCKET_LOCK(queue)                                          \
-    do {                                                              \
-        int rc;                                                       \
-        /* Assert(strcmp(RTThreadSelfName(), "EMT") != 0); */         \
-        rc = RTCritSectEnter(&VBOX_X(queue) ## _mutex);               \
-        AssertRC(rc);                                                 \
-    } while (0)
-# define QSOCKET_UNLOCK(queue)                                        \
-    do {                                                              \
-        int rc;                                                       \
-        rc = RTCritSectLeave(&VBOX_X(queue) ## _mutex);               \
-        AssertRC(rc);                                                 \
-    } while (0)
-# define QSOCKET_LOCK_CREATE(queue)                                   \
-    do {                                                              \
-        int rc;                                                       \
-        rc = RTCritSectInit(&pData->queue ## _mutex);                 \
-        AssertRC(rc);                                                 \
-    } while (0)
-# define QSOCKET_LOCK_DESTROY(queue)                                  \
-    do {                                                              \
-        int rc = RTCritSectDelete(&pData->queue ## _mutex);           \
-        AssertRC(rc);                                                 \
-    } while (0)
-
-# define QSOCKET_FOREACH(so, sonext, label)                           \
-    QSOCKET_LOCK(VBOX_X2(queue_## label ## _label));                  \
-    (so) = (VBOX_X(queue_ ## label ## _label)).so_next;               \
-    QSOCKET_UNLOCK(VBOX_X2(queue_## label ##_label));                 \
-    if ((so) != &(VBOX_X(queue_## label ## _label))) SOCKET_LOCK((so));\
-    for (;;)                                                          \
-    {                                                                 \
-        if ((so) == &(VBOX_X(queue_## label ## _label)))              \
-        {                                                             \
-            break;                                                    \
-        }                                                             \
-        Log2(("%s:%d Processing so:%R[natsock]\n", __FUNCTION__, __LINE__, (so)));
-
-# define CONTINUE_NO_UNLOCK(label) goto loop_end_ ## label ## _mt_nounlock
-# define CONTINUE(label) goto loop_end_ ## label ## _mt
-/* @todo replace queue parameter with macrodinition */
-/* _mt_nounlock - user should lock so_next before calling CONTINUE_NO_UNLOCK */
-# define LOOP_LABEL(label, so, sonext) loop_end_ ## label ## _mt:       \
-    (sonext) = (so)->so_next;                                           \
-    SOCKET_UNLOCK(so);                                                  \
-    QSOCKET_LOCK(VBOX_X(queue_ ## label ## _label));                    \
-    if ((sonext) != &(VBOX_X(queue_## label ## _label)))                \
-    {                                                                   \
-        SOCKET_LOCK((sonext));                                          \
-        QSOCKET_UNLOCK(VBOX_X(queue_ ## label ## _label));              \
-    }                                                                   \
-    else                                                                \
-    {                                                                   \
-        so = &VBOX_X(queue_ ## label ## _label);                        \
-        QSOCKET_UNLOCK(VBOX_X(queue_ ## label ## _label));              \
-        break;                                                          \
-    }                                                                   \
-    (so) = (sonext);                                                    \
-    continue;                                                           \
-    loop_end_ ## label ## _mt_nounlock:                                 \
-    (so) = (sonext)
-
-# define DO_TCP_OUTPUT(data, sotcb)                                     \
-    do {                                                                \
-        PRTREQ pReq;                                                    \
-        int rc;                                                         \
-        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies*/, \
-                                (PFNRT)tcp_output 2, data, sotcb);      \
-        if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
-        {                                                               \
-            SOCKET_UNLOCK(so);                                          \
-            rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
-            AssertReleaseRC(rc);                                        \
-            SOCKET_LOCK(so);                                            \
-            RTReqRelease(pReq);                                         \
-        }                                                               \
-        else                                                            \
-            AssertReleaseRC(rc);                                        \
-} while(0)
-
-# define DO_TCP_INPUT(data, mbuf, size, so)                             \
-    do {                                                                \
-        int rc;                                                         \
-        rc = RTReqQueueCallEx((data)->hReqQueue, NULL, 0 /*cMillies*/,  \
-                              RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,     \
-                              (PFNRT)tcp_input, 4, data, mbuf, size, so); \
-        AssertReleaseRC(rc);                                            \
-    } while(0)
-
-# define DO_TCP_CONNECT(data, so)                                       \
-    do {                                                                \
-        PRTREQ pReq;                                                    \
-        int rc;                                                         \
-        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies*/, \
-                                (PFNRT)tcp_connect, 2, data, so);       \
-        if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
-        {                                                               \
-            SOCKET_UNLOCK(so);                                          \
-            rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
-            AssertReleaseRC(rc);                                        \
-            SOCKET_LOCK(so);                                            \
-            RTReqRelease(pReq);                                         \
-        }                                                               \
-        else                                                            \
-            AssertReleaseRC(rc);                                        \
-    } while(0)
-
-# define DO_SOREAD(ret, data, so, ifclose)                              \
-    do {                                                                \
-        PRTREQ pReq;                                                    \
-        int rc;                                                         \
-        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies*/, \
-                                (PFNRT)soread_queue, 4,                 \
-                                data, so, ifclose, &(ret));             \
-        if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
-        {                                                               \
-            SOCKET_UNLOCK(so);                                          \
-            rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
-            AssertReleaseRC(rc);                                        \
-            SOCKET_LOCK(so);                                            \
-            RTReqRelease(pReq);                                         \
-        }                                                               \
-        else                                                            \
-            AssertReleaseRC(rc);                                        \
-    } while(0)
-
-# define DO_SOWRITE(ret, data, so)                                      \
-    do {                                                                \
-        PRTREQ pReq;                                                    \
-        int rc;                                                         \
-        rc = RTReqQueueCall((data)->hReqQueue, &pReq, 0 /*cMillies*/,   \
-                            (PFNRT)sowrite, 2, data, so);               \
-        if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
-        {                                                               \
-            SOCKET_UNLOCK(so);                                          \
-            rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
-            SOCKET_LOCK(so);                                            \
-            ret = pReq->iStatus;                                        \
-            RTReqRelease(pReq);                                         \
-        }                                                               \
-        else                                                            \
-            AssertReleaseRC(rc);                                        \
-    } while(0)
-
-# define DO_SORECFROM(data, so)                                         \
-    do {                                                                \
-        PRTREQ pReq;                                                    \
-        int rc;                                                         \
-        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies */, \
-                                (PFNRT)sorecvfrom, 2, data, so);        \
-        if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
-        {                                                               \
-            SOCKET_UNLOCK(so);                                          \
-            rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
-            AssertReleaseRC(rc);                                        \
-            SOCKET_LOCK(so);                                            \
-            RTReqRelease(pReq);                                         \
-        }                                                               \
-        else                                                            \
-            AssertReleaseRC(rc);                                        \
-    } while(0)
-
-# define DO_UDP_DETACH(data, so, so_next)                               \
-    do {                                                                \
-        PRTREQ pReq;                                                    \
-        int rc;                                                         \
-        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /* cMillies*/, \
-                                (PFNRT)udp_detach, 2, data, so);        \
-        if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
-        {                                                               \
-            SOCKET_UNLOCK(so);                                          \
-            rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
-            AssertReleaseRC(rc);                                        \
-            if ((so_next) != &udb) SOCKET_LOCK((so_next));              \
-            RTReqRelease(pReq);                                         \
-        }                                                               \
-        else                                                            \
-            AssertReleaseRC(rc);                                        \
-    } while(0)
-
-# define SOLOOKUP(so, label, src, sport, dst, dport)                    \
-    do {                                                                \
-        struct socket *sonxt;                                           \
-        (so) = NULL;                                                    \
-        QSOCKET_FOREACH(so, sonxt, label)                               \
-        /* { */                                                         \
-            if (   so->so_lport        == (sport)                       \
-                && so->so_laddr.s_addr == (src).s_addr                  \
-                && so->so_faddr.s_addr == (dst).s_addr                  \
-                && so->so_fport        == (dport))                      \
-                {                                                       \
-                    if (sonxt != &VBOX_X2(queue_ ## label ## _label))   \
-                        SOCKET_UNLOCK(sonxt);                           \
-                    break; /*so is locked*/                             \
-                }                                                       \
-            LOOP_LABEL(so, sonxt, label);                               \
-            }                                                           \
-        }                                                               \
-    } while (0)
-
-#else /* !VBOX_WITH_SLIRP_MT */
+#if 1
 
 # define QSOCKET_LOCK(queue) do {} while (0)
 # define QSOCKET_UNLOCK(queue) do {} while (0)
@@ -662,7 +453,7 @@ typedef struct NATState
     } while (0)
 # define DO_UDP_DETACH(data, so, ignored) udp_detach((data), (so))
 
-#endif /* !VBOX_WITH_SLIRP_MT */
+#endif
 
 #define TCP_OUTPUT(data, sotcb) DO_TCP_OUTPUT((data), (sotcb))
 #define TCP_INPUT(data, mbuf, size, so) DO_TCP_INPUT((data), (mbuf), (size), (so))

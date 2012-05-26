@@ -176,8 +176,6 @@ socreate()
 
 /*
  * remque and free a socket, clobber cache
- * VBOX_WITH_SLIRP_MT: before sofree queue should be locked, because
- *      in sofree we don't know from which queue item beeing removed.
  */
 void
 sofree(PNATState pData, struct socket *so)
@@ -198,8 +196,6 @@ sofree(PNATState pData, struct socket *so)
     else if (so == udp_last_so)
         udp_last_so = &udb;
 
-#ifndef VBOX_WITH_SLIRP_MT
-
     /* libalias notification */
     if (so->so_pvLnk)
         slirpDeleteLinkSocket(so->so_pvLnk);
@@ -217,19 +213,8 @@ sofree(PNATState pData, struct socket *so)
     }
 
     RTMemFree(so);
-#else
-    so->so_deleted = 1;
-#endif
     LogFlowFuncLeave();
 }
-
-#ifdef VBOX_WITH_SLIRP_MT
-void
-soread_queue(PNATState pData, struct socket *so, int *ret)
-{
-    *ret = soread(pData, so);
-}
-#endif
 
 /*
  * Read from so's socket into sb_snd, updating all relevant sbuf fields
