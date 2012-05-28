@@ -29,6 +29,7 @@
 #include "QISplitter.h"
 #include "UIBar.h"
 #include "UINetworkManager.h"
+#include "UINetworkManagerIndicator.h"
 #include "UIUpdateManager.h"
 #include "UIDownloaderUserManual.h"
 #include "UIDownloaderExtensionPack.h"
@@ -1496,6 +1497,11 @@ void UISelectorWindow::prepareStatusBar()
 {
     /* Setup statusbar policy: */
     statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    /* Add network-manager indicator: */
+    QIStateIndicator *pIndicator = gNetworkManager->indicator();
+    statusBar()->addPermanentWidget(pIndicator);
+    pIndicator->updateAppearance();
 }
 
 void UISelectorWindow::prepareWidgets()

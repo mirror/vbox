@@ -23,6 +23,7 @@
 /* Local includes: */
 #include "UINetworkManager.h"
 #include "UINetworkManagerDialog.h"
+#include "UINetworkManagerIndicator.h"
 #include "UINetworkRequest.h"
 #include "UINetworkCustomer.h"
 #include "VBoxGlobal.h"
@@ -58,6 +59,11 @@ void UINetworkManager::destroy()
 UINetworkManagerDialog* UINetworkManager::window() const
 {
     return m_pNetworkManagerDialog;
+}
+
+UINetworkManagerIndicator* UINetworkManager::indicator() const
+{
+    return m_pNetworkManagerIndicator;
 }
 
 void UINetworkManager::show()
@@ -101,12 +107,19 @@ void UINetworkManager::prepare()
     /* Prepare network-manager dialog: */
     m_pNetworkManagerDialog = new UINetworkManagerDialog;
     connect(m_pNetworkManagerDialog, SIGNAL(sigCancelNetworkRequests()), this, SIGNAL(sigCancelNetworkRequests()));
+
+    /* Prepare network-manager state-indicator: */
+    m_pNetworkManagerIndicator = new UINetworkManagerIndicator;
+    connect(m_pNetworkManagerIndicator, SIGNAL(mouseDoubleClicked(QIStateIndicator *, QMouseEvent *)), this, SLOT(show()));
 }
 
 void UINetworkManager::cleanup()
 {
     /* Cleanup network-requests first: */
     cleanupNetworkRequests();
+
+    /* Cleanup network-manager state-indicator: */
+    delete m_pNetworkManagerIndicator;
 
     /* Cleanup network-manager dialog: */
     delete m_pNetworkManagerDialog;

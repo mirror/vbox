@@ -25,6 +25,7 @@
 #include "UINetworkRequestWidget.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerDialog.h"
+#include "UINetworkManagerIndicator.h"
 #include "UINetworkCustomer.h"
 #include "VBoxGlobal.h"
 
@@ -34,6 +35,7 @@ UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequ
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
     , m_pNetworkManagerDialog(pNetworkManager->window())
+    , m_pNetworkManagerIndicator(pNetworkManager->indicator())
     , m_uuid(QUuid::createUuid())
     , m_requests(QList<QNetworkRequest>() << request)
     , m_iCurrentRequestIndex(0)
@@ -51,6 +53,7 @@ UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINet
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
     , m_pNetworkManagerDialog(pNetworkManager->window())
+    , m_pNetworkManagerIndicator(pNetworkManager->indicator())
     , m_uuid(QUuid::createUuid())
     , m_requests(requests)
     , m_iCurrentRequestIndex(0)
@@ -68,6 +71,9 @@ UINetworkRequest::~UINetworkRequest()
 {
     /* Destroy network-reply: */
     cleanupNetworkReply();
+
+    /* Remove network-request description from network-manager state-indicator: */
+    m_pNetworkManagerIndicator->removeNetworkRequest(m_uuid);
 
     /* Remove network-request widget from network-manager dialog: */
     m_pNetworkManagerDialog->removeNetworkRequestWidget(m_uuid);
@@ -176,6 +182,9 @@ void UINetworkRequest::initialize()
 
     /* Create network-request widget in network-manager dialog: */
     m_pNetworkManagerDialog->addNetworkRequestWidget(this);
+
+    /* Create network-request description in network-manager state-indicator: */
+    m_pNetworkManagerIndicator->addNetworkRequest(this);
 
     /* Choose first network-request as current: */
     m_iCurrentRequestIndex = 0;
