@@ -162,7 +162,8 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     GCPhysCR3 = RT_BIT_64(63);
     pVCpu->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
     pVCpu->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
-    int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVCpu->pgm.s.iShwUser, pVCpu->pgm.s.iShwUserTable,
+    int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          pVCpu->pgm.s.iShwUser, pVCpu->pgm.s.iShwUserTable, false /*fLockPage*/,
                           &pVCpu->pgm.s.pShwPageCR3R3);
     if (rc == VERR_PGM_POOL_FLUSHED)
     {

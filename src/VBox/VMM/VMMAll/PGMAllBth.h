@@ -2678,7 +2678,9 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | ((iPDDst & 1) * (PAGE_SIZE / 2)));
 # endif
-            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx, iPDDst, &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                              pShwPde->idx, iPDDst, false /*fLockPage*/,
+                              &pShwPage);
         }
         else
         {
@@ -2709,8 +2711,9 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                 else
                     enmAccess = (fNoExecute) ? PGMPOOLACCESS_SUPERVISOR_R_NX  : PGMPOOLACCESS_SUPERVISOR_R;
             }
-            rc = pgmPoolAllocEx(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, enmAccess, pShwPde->idx, iPDDst, false /*fLockPage*/,
-                                &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, enmAccess, PGM_A20_IS_ENABLED(pVCpu),
+                              pShwPde->idx, iPDDst, false /*fLockPage*/,
+                              &pShwPage);
         }
         if (rc == VINF_SUCCESS)
             pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
@@ -3185,8 +3188,9 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 
     /* Virtual address = physical address */
     GCPhys = PGM_A20_APPLY(pVCpu, GCPtrPage & X86_PAGE_4K_BASE_MASK);
-    rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx, iPDDst, &pShwPage);
-
+    rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, PGMPOOLACCESS_DONTCARE,
+                      PGM_A20_IS_ENABLED(pVCpu), pShwPde->idx, iPDDst, false /*fLockPage*/,
+                      &pShwPage);
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_CACHED_PAGE)
         pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
@@ -4595,8 +4599,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 # endif
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-    rc = pgmPoolAllocEx(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, SHW_POOL_ROOT_IDX,
-                        GCPhysCR3 >> PAGE_SHIFT, true /*fLockPage*/, &pNewShwPageCR3);
+    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                      SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, true /*fLockPage*/,
+                      &pNewShwPageCR3);
     AssertFatalRC(rc);
     rc = VINF_SUCCESS;
 
