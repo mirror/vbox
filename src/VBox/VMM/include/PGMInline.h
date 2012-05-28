@@ -85,7 +85,6 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVM pVM, RTGCPHYS GCPhys)
 }
 
 
-
 /**
  * Gets the PGMPAGE structure for a guest page.
  *
@@ -131,8 +130,6 @@ DECLINLINE(int) pgmPhysGetPageEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
     return VINF_SUCCESS;
 }
-
-
 
 
 /**
@@ -416,6 +413,7 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage RTLOG_COMMA
     AssertFatalMsgFailed(("pgmPoolMapPageInlined invalid page index %x\n", pPage->idx));
 }
 
+
 /**
  * Maps the page into current context (RC and maybe R0).
  *
@@ -502,7 +500,6 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS G
 }
 
 #endif /* !IN_RC */
-
 
 /**
  * Enables write monitoring for an allocated page.
@@ -666,6 +663,7 @@ DECLINLINE(int) pgmGstGetPaePDPTPtrEx(PVMCPU pVCpu, PX86PDPT *ppPdpt)
 #endif
     return VINF_SUCCESS;
 }
+
 
 /**
  * Gets the guest page directory pointer table.
@@ -1174,7 +1172,6 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PVMCPU pVCpu, unsigned int iPml4
 
 #endif /* !IN_RC */
 
-
 /**
  * Cached physical handler lookup.
  *
@@ -1429,6 +1426,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         pPool->aPages[pPage->iAgeNext].iAgePrev = pPage->idx;
     }
 }
+
 
 /**
  * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
