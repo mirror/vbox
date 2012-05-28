@@ -37,6 +37,7 @@
 #include "UISelectorWindow.h"
 #include "UIProgressDialog.h"
 #include "UINetworkManager.h"
+#include "UINetworkManagerDialog.h"
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
 #endif /* VBOX_OSE */

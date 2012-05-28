@@ -55,7 +55,7 @@ public:
     static void destroy();
 
     /* Pointer to network-manager dialog: */
-    QWidget* window() const;
+    UINetworkManagerDialog* window() const;
 
 public slots:
 
