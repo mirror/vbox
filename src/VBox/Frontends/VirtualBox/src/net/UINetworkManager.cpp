@@ -55,7 +55,7 @@ void UINetworkManager::destroy()
     delete m_pInstance;
 }
 
-QWidget* UINetworkManager::window() const
+UINetworkManagerDialog* UINetworkManager::window() const
 {
     return m_pNetworkManagerDialog;
 }
@@ -70,7 +70,7 @@ void UINetworkManager::createNetworkRequest(const QNetworkRequest &request, UINe
                                             UINetworkCustomer *pCustomer)
 {
     /* Create network-request: */
-    UINetworkRequest *pNetworkRequest = new UINetworkRequest(this, m_pNetworkManagerDialog, request, type, strDescription, pCustomer);
+    UINetworkRequest *pNetworkRequest = new UINetworkRequest(request, type, strDescription, pCustomer, this);
     /* Prepare created network-request: */
     prepareNetworkRequest(pNetworkRequest);
 }
@@ -79,7 +79,7 @@ void UINetworkManager::createNetworkRequest(const QList<QNetworkRequest> &reques
                                             UINetworkCustomer *pCustomer)
 {
     /* Create network-request: */
-    UINetworkRequest *pNetworkRequest = new UINetworkRequest(this, m_pNetworkManagerDialog, requests, type, strDescription, pCustomer);
+    UINetworkRequest *pNetworkRequest = new UINetworkRequest(requests, type, strDescription, pCustomer, this);
     /* Prepare created network-request: */
     prepareNetworkRequest(pNetworkRequest);
 }

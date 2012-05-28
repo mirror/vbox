@@ -29,13 +29,11 @@
 #include "VBoxGlobal.h"
 
 /* Constructor: */
-UINetworkRequest::UINetworkRequest(UINetworkManager *pNetworkManager,
-                                   UINetworkManagerDialog *pNetworkManagerDialog,
-                                   const QNetworkRequest &request, UINetworkRequestType type,
-                                   const QString &strDescription, UINetworkCustomer *pCustomer)
+UINetworkRequest::UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription,
+                                   UINetworkCustomer *pCustomer,
+                                   UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
-    , m_pNetworkManagerDialog(pNetworkManagerDialog)
-    , m_pNetworkRequestWidget(0)
+    , m_pNetworkManagerDialog(pNetworkManager->window())
     , m_uuid(QUuid::createUuid())
     , m_requests(QList<QNetworkRequest>() << request)
     , m_iCurrentRequestIndex(0)
@@ -48,13 +46,11 @@ UINetworkRequest::UINetworkRequest(UINetworkManager *pNetworkManager,
     initialize();
 }
 
-UINetworkRequest::UINetworkRequest(UINetworkManager *pNetworkManager,
-                                   UINetworkManagerDialog *pNetworkManagerDialog,
-                                   const QList<QNetworkRequest> &requests, UINetworkRequestType type,
-                                   const QString &strDescription, UINetworkCustomer *pCustomer)
+UINetworkRequest::UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription,
+                                   UINetworkCustomer *pCustomer,
+                                   UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
-    , m_pNetworkManagerDialog(pNetworkManagerDialog)
-    , m_pNetworkRequestWidget(0)
+    , m_pNetworkManagerDialog(pNetworkManager->window())
     , m_uuid(QUuid::createUuid())
     , m_requests(requests)
     , m_iCurrentRequestIndex(0)
@@ -73,16 +69,16 @@ UINetworkRequest::~UINetworkRequest()
     /* Destroy network-reply: */
     cleanupNetworkReply();
 
-    /* Destroy network-request widget: */
+    /* Remove network-request widget from network-manager dialog: */
     m_pNetworkManagerDialog->removeNetworkRequestWidget(m_uuid);
 }
 
 /* Network-reply progress handler: */
 void UINetworkRequest::sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
 {
-    /* Notify network-manager: */
+    /* Notify general network-requests listeners: */
     emit sigProgress(m_uuid, iReceived, iTotal);
-    /* Notify network-request widget: */
+    /* Notify particular network-request listeners: */
     emit sigProgress(iReceived, iTotal);
 }
 
@@ -119,9 +115,9 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
         }
         else
         {
-            /* Notify UINetworkRequestWidget: */
+            /* Notify particular network-request listeners: */
             emit sigFinished();
-            /* Notify UINetworkManager: */
+            /* Notify general network-requests listeners: */
             emit sigFinished(m_uuid);
         }
     }
@@ -143,9 +139,9 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
         }
         else
         {
-            /* Notify UINetworkRequestWidget: */
+            /* Notify particular network-request listeners: */
             emit sigFailed(pNetworkReply->errorString());
-            /* Notify UINetworkManager: */
+            /* Notify general network-requests listeners: */
             emit sigFailed(m_uuid, pNetworkReply->errorString());
         }
     }
@@ -178,12 +174,8 @@ void UINetworkRequest::initialize()
     /* Prepare listeners for parent(): */
     connect(parent(), SIGNAL(sigCancelNetworkRequests()), this, SLOT(sltCancel()));
 
-    /* Create network-request widget: */
-    m_pNetworkRequestWidget = m_pNetworkManagerDialog->addNetworkRequestWidget(this);
-
-    /* Prepare listeners for m_pNetworkRequestWidget: */
-    connect(m_pNetworkRequestWidget, SIGNAL(sigRetry()), this, SLOT(sltRetry()));
-    connect(m_pNetworkRequestWidget, SIGNAL(sigCancel()), this, SLOT(sltCancel()));
+    /* Create network-request widget in network-manager dialog: */
+    m_pNetworkManagerDialog->addNetworkRequestWidget(this);
 
     /* Choose first network-request as current: */
     m_iCurrentRequestIndex = 0;
@@ -221,7 +213,9 @@ void UINetworkRequest::prepareNetworkReply()
     /* Set as running: */
     m_fRunning = true;
 
-    /* Notify UINetworkRequestWidget: */
+    /* Notify general network-requests listeners: */
+    emit sigStarted(m_uuid);
+    /* Notify particular network-request listeners: */
     emit sigStarted();
 }
 

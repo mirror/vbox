@@ -43,6 +43,7 @@ signals:
 
     /* Notifications to UINetworkManager: */
     void sigProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal);
+    void sigStarted(const QUuid &uuid);
     void sigCanceled(const QUuid &uuid);
     void sigFinished(const QUuid &uuid);
     void sigFailed(const QUuid &uuid, const QString &strError);
@@ -56,14 +57,12 @@ signals:
 public:
 
     /* Constructor/destructor: */
-    UINetworkRequest(UINetworkManager *pNetworkManager,
-                     UINetworkManagerDialog *pNetworkManagerDialog,
-                     const QNetworkRequest &request, UINetworkRequestType type,
-                     const QString &strDescription, UINetworkCustomer *pCustomer);
-    UINetworkRequest(UINetworkManager *pNetworkManager,
-                     UINetworkManagerDialog *pNetworkManagerDialog,
-                     const QList<QNetworkRequest> &requests, UINetworkRequestType type,
-                     const QString &strDescription, UINetworkCustomer *pCustomer);
+    UINetworkRequest(const QNetworkRequest &request, UINetworkRequestType type, const QString &strDescription,
+                     UINetworkCustomer *pCustomer,
+                     UINetworkManager *pNetworkManager);
+    UINetworkRequest(const QList<QNetworkRequest> &requests, UINetworkRequestType type, const QString &strDescription,
+                     UINetworkCustomer *pCustomer,
+                     UINetworkManager *pNetworkManager);
     ~UINetworkRequest();
 
     /* Getters: */
@@ -98,7 +97,6 @@ private:
 
     /* Widgets: */
     UINetworkManagerDialog *m_pNetworkManagerDialog;
-    UINetworkRequestWidget *m_pNetworkRequestWidget;
 
     /* Variables: */
     QUuid m_uuid;
