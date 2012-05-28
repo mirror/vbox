@@ -2140,7 +2140,8 @@ typedef struct PGMPOOLPAGE
     /** Used to mark the page as dirty (write monitoring is temporarily
      *  off). */
     bool                fDirty : 1;
-    bool                afPadding1 : 1+8;
+    bool                fPadding1 : 1;
+    bool                fPadding2;
 
     /** The index of this page. */
     uint16_t            idx;
@@ -2180,7 +2181,7 @@ typedef struct PGMPOOLPAGE
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages. */
     uint32_t volatile   cLocked;
 #if GC_ARCH_BITS == 64
-    uint32_t            Alignment2;
+    uint32_t            u32Alignment3;
 #endif
 # ifdef VBOX_STRICT
     RTGCPTR             GCPtrDirtyFault;
