@@ -43,7 +43,6 @@
 
 #include "PDMAsyncCompletionFileInternal.h"
 
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -70,9 +69,10 @@ static const DBGCVARDESC g_aInjectErrorArgs[] =
 static const DBGCVARDESC g_aInjectDelayArgs[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "direction",    "write/read." },
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "direction",    "write|read|flush|any." },
     {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "filename",     "Filename." },
     {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "delay",        "Delay in milliseconds." },
+    {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "reqs",         "Number of requests to delay." },
 };
 # endif
 
@@ -82,7 +82,7 @@ static const DBGCCMD g_aCmds[] =
     /* pszCmd,       cArgsMin, cArgsMax, paArgDesc,                cArgDescs, fFlags, pfnHandler              pszSyntax, ....pszDescription */
     { "injecterror",        3, 3,        &g_aInjectErrorArgs[0],           3,      0, pdmacEpFileErrorInject, "",        "Inject error into I/O subsystem." }
 # ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
-    ,{ "injectdelay",        3, 3,        &g_aInjectDelayArgs[0],           3,      0, pdmacEpFileDelayInject, "",        "Inject a delay of a request." }
+    ,{ "injectdelay",        4, 4,        &g_aInjectDelayArgs[0],           4,      0, pdmacEpFileDelayInject, "",        "Inject a delay of a request." }
 # endif
 };
 #endif
@@ -333,25 +333,55 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
 
             /* Check if we should delay completion of the request. */
             if (   ASMAtomicReadU32(&pEpFile->msDelay) > 0
-                && ASMAtomicCmpXchgPtr(&pEpFile->pReqDelayed, pTaskFile, NULL))
+                && ASMAtomicReadU32(&pEpFile->cReqsDelay) > 0)
             {
+                ASMAtomicDecU32(&pEpFile->cReqsDelay);
+
                 /* Arm the delay. */
-                pEpFile->tsDelayEnd = RTTimeProgramMilliTS() + pEpFile->msDelay;
+                pTaskFile->tsDelayEnd = RTTimeProgramMilliTS() + pEpFile->msDelay;
+
+                /* Append to the list. */
+                PPDMASYNCCOMPLETIONTASKFILE pHead = NULL;
+                do
+                {
+                    pHead = ASMAtomicReadPtrT(&pEpFile->pDelayedHead, PPDMASYNCCOMPLETIONTASKFILE);
+                    pTaskFile->pDelayedNext = pHead;
+                } while (!ASMAtomicCmpXchgPtr(&pEpFile->pDelayedHead, pTaskFile, pHead));
+
                 LogRel(("AIOMgr: Delaying request %#p for %u ms\n", pTaskFile, pEpFile->msDelay));
                 return;
             }
 #endif
             pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, pTaskFile->rc, true);
 
-#if PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+#ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
             /* Check for an expired delay. */
-            if (   pEpFile->pReqDelayed != NULL
-                && RTTimeProgramMilliTS() >= pEpFile->tsDelayEnd)
+            if (pEpFile->pDelayedHead != NULL)
             {
-                pTaskFile = ASMAtomicXchgPtrT(&pEpFile->pReqDelayed, NULL, PPDMASYNCCOMPLETIONTASKFILE);
-                ASMAtomicXchgU32(&pEpFile->msDelay, 0);
-                LogRel(("AIOMgr: Delayed request %#p completed\n", pTaskFile));
-                pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, pTaskFile->rc, true);
+                uint64_t tsCur = RTTimeProgramMilliTS();
+                pTaskFile = ASMAtomicXchgPtrT(&pEpFile->pDelayedHead, NULL, PPDMASYNCCOMPLETIONTASKFILE);
+
+                while (pTaskFile)
+                {
+                    PPDMASYNCCOMPLETIONTASKFILE pTmp = pTaskFile;
+                    pTaskFile = pTaskFile->pDelayedNext;
+
+                    if (tsCur >= pTmp->tsDelayEnd)
+                    {
+                        LogRel(("AIOMgr: Delayed request %#p completed\n", pTmp));
+                        pdmR3AsyncCompletionCompleteTask(&pTmp->Core, pTmp->rc, true);
+                    }
+                    else
+                    {
+                        /* Prepend to the delayed list again. */
+                        PPDMASYNCCOMPLETIONTASKFILE pHead = NULL;
+                        do
+                        {
+                            pHead = ASMAtomicReadPtrT(&pEpFile->pDelayedHead, PPDMASYNCCOMPLETIONTASKFILE);
+                            pTmp->pDelayedNext = pHead;
+                        } while (!ASMAtomicCmpXchgPtr(&pEpFile->pDelayedHead, pTmp, pHead));
+                    }
+                }
             }
 #endif
         }
@@ -670,7 +700,7 @@ static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
      * Validate input.
      */
     DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
-    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 3);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs >= 3);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, pArgs[0].enmType == DBGCVAR_TYPE_STRING);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, pArgs[1].enmType == DBGCVAR_TYPE_STRING);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 2, pArgs[2].enmType == DBGCVAR_TYPE_NUMBER);
@@ -678,12 +708,16 @@ static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile;
     pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pVM->pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
 
-    /* Syntax is "read|write <filename> <status code>" */
-    bool fWrite;
+    /* Syntax is "read|write|flush|any <filename> <delay> [reqs]" */
+    PDMACFILEREQTYPEDELAY enmDelayType = PDMACFILEREQTYPEDELAY_ANY;
     if (!RTStrCmp(pArgs[0].u.pszString, "read"))
-        fWrite = false;
+        enmDelayType = PDMACFILEREQTYPEDELAY_READ;
     else if (!RTStrCmp(pArgs[0].u.pszString, "write"))
-        fWrite = true;
+        enmDelayType = PDMACFILEREQTYPEDELAY_WRITE;
+    else if (!RTStrCmp(pArgs[0].u.pszString, "flush"))
+        enmDelayType = PDMACFILEREQTYPEDELAY_FLUSH;
+    else if (!RTStrCmp(pArgs[0].u.pszString, "any"))
+        enmDelayType = PDMACFILEREQTYPEDELAY_ANY;
     else
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "invalid transfer direction '%s'", pArgs[0].u.pszString);
 
@@ -691,6 +725,9 @@ static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
     if ((uint64_t)msDelay != pArgs[2].u.u64Number)
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "The delay '%lld' is out of range", pArgs[0].u.u64Number);
 
+    uint32_t cReqsDelay = 1;
+    if (cArgs == 4)
+        cReqsDelay = (uint32_t)pArgs[3].u.u64Number;
 
     /*
      * Search for the matching endpoint.
@@ -707,14 +744,12 @@ static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
     if (pEpFile)
     {
-        bool fXchg = ASMAtomicCmpXchgU32(&pEpFile->msDelay, msDelay, 0);
+        ASMAtomicWriteSize(&pEpFile->enmTypeDelay, enmDelayType);
+        ASMAtomicWriteU32(&pEpFile->msDelay, msDelay);
+        ASMAtomicWriteU32(&pEpFile->cReqsDelay, cReqsDelay);
 
-        if (fXchg)
-            DBGCCmdHlpPrintf(pCmdHlp, "Injected delay of %u ms into '%s' for %s\n",
-                             msDelay, pArgs[1].u.pszString, pArgs[0].u.pszString);
-        else
-            DBGCCmdHlpPrintf(pCmdHlp, "Another delay for '%s' is still active, ignoring\n",
-                             pArgs[1].u.pszString);
+        DBGCCmdHlpPrintf(pCmdHlp, "Injected delay for the next %u requests of %u ms into '%s' for %s\n",
+                         cReqsDelay, msDelay, pArgs[1].u.pszString, pArgs[0].u.pszString);
     }
 
     RTCritSectLeave(&pEpClassFile->Core.CritSect);
