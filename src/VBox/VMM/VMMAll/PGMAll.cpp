@@ -2001,10 +2001,9 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     /*
      * We might be called when we shouldn't.
      *
-     * The mode switching will ensure that the PD is resynced
-     * after every mode switch. So, if we find ourselves here
-     * when in protected or real mode we can safely disable the
-     * FF and return immediately.
+     * The mode switching will ensure that the PD is resynced after every mode
+     * switch.  So, if we find ourselves here when in protected or real mode
+     * we can safely clear the FF and return immediately.
      */
     if (pVCpu->pgm.s.enmGuestMode <= PGMMODE_PROTECTED)
     {
