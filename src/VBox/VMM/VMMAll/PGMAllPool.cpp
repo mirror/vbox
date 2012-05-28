@@ -2166,11 +2166,13 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
  * @param   GCPhys      The GC physical address of the page we're gonna shadow.
  * @param   enmKind     The kind of mapping.
  * @param   enmAccess   Access type for the mapping (only relevant for big pages)
+ * @param   fA20Enabled Whether the CPU has the A20 gate enabled.
  * @param   iUser       The shadow page pool index of the user table.
  * @param   iUserTable  The index into the user table (shadowed).
  * @param   ppPage      Where to store the pointer to the page.
  */
-static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
+static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, bool fA20Enabled,
+                             uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
     /*
      * Look up the GCPhys in the hash.
@@ -2185,8 +2187,12 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
             Log4(("pgmPoolCacheAlloc: slot %d found page %RGp\n", i, pPage->GCPhys));
             if (pPage->GCPhys == GCPhys)
             {
-                if (    (PGMPOOLKIND)pPage->enmKind == enmKind
-                    &&  (PGMPOOLACCESS)pPage->enmAccess == enmAccess)
+                if (   (PGMPOOLKIND)pPage->enmKind == enmKind
+                    && (PGMPOOLACCESS)pPage->enmAccess == enmAccess
+#if 0
+                    && pPage->fA20Enabled == fA20Enabled
+#endif
+                   )
                 {
                     /* Put it at the start of the use list to make sure pgmPoolTrackAddUser
                      * doesn't flush it in case there are no more free use records.
@@ -4960,17 +4966,18 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
  *                      shadow PT is covering.
  * @param   enmKind     The kind of mapping.
  * @param   enmAccess   Access type for the mapping (only relevant for big pages)
+ * @param   fA20Enabled Whether the A20 gate is enabled or not.
  * @param   iUser       The shadow page pool index of the user table.
  * @param   iUserTable  The index into the user table (shadowed).
  * @param   fLockPage   Lock the page
  * @param   ppPage      Where to store the pointer to the page. NULL is stored here on failure.
  */
-int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, uint16_t iUser, uint32_t iUserTable,
-                   bool fLockPage, PPPGMPOOLPAGE ppPage)
+int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, bool fA20Enabled,
+                 uint16_t iUser, uint32_t iUserTable, bool fLockPage, PPPGMPOOLPAGE ppPage)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_ADV_START(&pPool->StatAlloc, a);
-    LogFlow(("pgmPoolAllocEx: GCPhys=%RGp enmKind=%s iUser=%d iUserTable=%#x\n", GCPhys, pgmPoolPoolKindToStr(enmKind), iUser, iUserTable));
+    LogFlow(("pgmPoolAlloc: GCPhys=%RGp enmKind=%s iUser=%d iUserTable=%#x\n", GCPhys, pgmPoolPoolKindToStr(enmKind), iUser, iUserTable));
     *ppPage = NULL;
     /** @todo CSAM/PGMPrefetchPage messes up here during CSAMR3CheckGates
      *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
@@ -4980,14 +4987,14 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
 
     if (pPool->fCacheEnabled)
     {
-        int rc2 = pgmPoolCacheAlloc(pPool, GCPhys, enmKind, enmAccess, iUser, iUserTable, ppPage);
+        int rc2 = pgmPoolCacheAlloc(pPool, GCPhys, enmKind, enmAccess, fA20Enabled, iUser, iUserTable, ppPage);
         if (RT_SUCCESS(rc2))
         {
             if (fLockPage)
                 pgmPoolLockPage(pPool, *ppPage);
             pgmUnlock(pVM);
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-            LogFlow(("pgmPoolAllocEx: cached returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
+            LogFlow(("pgmPoolAlloc: cached returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
             return rc2;
         }
     }
@@ -5003,7 +5010,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
         if (RT_FAILURE(rc))
         {
             pgmUnlock(pVM);
-            Log(("pgmPoolAllocEx: returns %Rrc (Free)\n", rc));
+            Log(("pgmPoolAlloc: returns %Rrc (Free)\n", rc));
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
             return rc;
         }
@@ -5023,6 +5030,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     pPage->enmKind = enmKind;
     pPage->enmAccess = enmAccess;
     pPage->GCPhys = GCPhys;
+    pPage->fA20Enabled = fA20Enabled;
     pPage->fSeenNonGlobal = false;      /* Set this to 'true' to disable this feature. */
     pPage->fMonitored = false;
     pPage->fCached = false;
@@ -5056,7 +5064,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
         pPool->iFreeHead    = pPage->idx;
         pgmUnlock(pVM);
         STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-        Log(("pgmPoolAllocEx: returns %Rrc (Insert)\n", rc3));
+        Log(("pgmPoolAlloc: returns %Rrc (Insert)\n", rc3));
         return rc3;
     }
 
@@ -5080,7 +5088,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     if (fLockPage)
         pgmPoolLockPage(pPool, pPage);
     pgmUnlock(pVM);
-    LogFlow(("pgmPoolAllocEx: returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
+    LogFlow(("pgmPoolAlloc: returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
              rc, pPage, pPage->Core.Key, pPage->idx, pPage->fCached, pPage->fMonitored));
     STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
     return rc;
@@ -5292,18 +5300,23 @@ void pgmR3PoolReset(PVM pVM)
         pPage->enmAccess  = PGMPOOLACCESS_DONTCARE;
         Assert(pPage->idx == i);
         pPage->iNext      = i + 1;
+        pPage->fA20Enabled = true;
         pPage->fZeroed    = false;       /* This could probably be optimized, but better safe than sorry. */
         pPage->fSeenNonGlobal = false;
         pPage->fMonitored = false;
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
         pPage->fDirty     = false;
-#endif
         pPage->fCached    = false;
         pPage->fReusedFlushPending = false;
         pPage->iUserHead  = NIL_PGMPOOL_USER_INDEX;
         pPage->iAgeNext   = NIL_PGMPOOL_IDX;
         pPage->iAgePrev   = NIL_PGMPOOL_IDX;
+        pPage->GCPtrLastAccessHandlerRip = NIL_RTGCPTR;
+        pPage->GCPtrLastAccessHandlerFault = NIL_RTGCPTR;
+        pPage->cLastAccessHandler = 0;
         pPage->cLocked    = 0;
+#ifdef VBOX_STRICT
+        pPage->GCPtrDirtyFault = NIL_RTGCPTR;
+#endif
     }
     pPool->aPages[pPool->cCurPages - 1].iNext = NIL_PGMPOOL_IDX;
     pPool->iFreeHead = PGMPOOL_IDX_FIRST;

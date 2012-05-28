@@ -977,7 +977,9 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
         }
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
-        rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, &pShwPage);
+        rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPdPt, false /*fLockPage*/,
+                          &pShwPage);
         AssertRCReturn(rc, rc);
 
         /* The PD was cached or created; hook it up now. */
@@ -1089,7 +1091,9 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
         }
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
-        rc = pgmPoolAlloc(pVM, GCPml4, enmKind, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, &pShwPage);
+        rc = pgmPoolAlloc(pVM, GCPml4, enmKind, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, false /*fLockPage*/,
+                          &pShwPage);
         AssertRCReturn(rc, rc);
     }
     else
@@ -1126,7 +1130,9 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
         }
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
-        rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, pShwPage->idx, iPdPt, &pShwPage);
+        rc = pgmPoolAlloc(pVM, GCPdPt, enmKind, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          pShwPage->idx, iPdPt, false /*fLockPage*/,
+                          &pShwPage);
         AssertRCReturn(rc, rc);
     }
     else
@@ -1222,7 +1228,9 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
         Assert(!(pPml4e->u & EPT_PML4E_PG_MASK));
         RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
 
-        rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
+        rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          PGMPOOL_IDX_NESTED_ROOT, iPml4, false /*fLockPage*/,
+                          &pShwPage);
         AssertRCReturn(rc, rc);
     }
     else
@@ -1250,8 +1258,9 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
         &&  !(pPdpe->u & EPT_PDPTE_PG_MASK))
     {
         RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
-
-        rc = pgmPoolAlloc(pVM, GCPdPt, PGMPOOLKIND_EPT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
+        rc = pgmPoolAlloc(pVM, GCPdPt, PGMPOOLKIND_EPT_PD_FOR_PHYS, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          pShwPage->idx, iPdPt, false /*fLockPage*/,
+                          &pShwPage);
         AssertRCReturn(rc, rc);
     }
     else
