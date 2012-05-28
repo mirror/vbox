@@ -1819,6 +1819,7 @@ static int pgmR3InitStats(PVM pVM)
     AssertRC(rc);
 
         PGM_REG_COUNTER(&pPgmCpu->cGuestModeChanges, "/PGM/CPU%u/cGuestModeChanges",  "Number of guest mode changes.");
+        PGM_REG_COUNTER(&pPgmCpu->cA20Changes, "/PGM/CPU%u/cA20Changes",  "Number of A20 gate changes.");
 
 #ifdef VBOX_WITH_STATISTICS
         PGMCPUSTATS *pCpuStats = pVM->aCpus[idCpu].pgm.s.pStatsR3;
@@ -2511,6 +2512,7 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
         AssertRC(rc);
 
         STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cGuestModeChanges);
+        STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cA20Changes);
     }
 
     /*
@@ -2616,9 +2618,9 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
     /** @todo SMP support! */
     /* print info. */
     if (fGuest)
-        pHlp->pfnPrintf(pHlp, "Guest paging mode:  %s, changed %RU64 times, A20 %s\n",
+        pHlp->pfnPrintf(pHlp, "Guest paging mode:  %s (changed %RU64 times), A20 %s (changed %RU64 times)\n",
                         PGMGetModeName(pVM->aCpus[0].pgm.s.enmGuestMode), pVM->aCpus[0].pgm.s.cGuestModeChanges.c,
-                        pVM->aCpus[0].pgm.s.fA20Enabled ? "enabled" : "disabled");
+                        pVM->aCpus[0].pgm.s.fA20Enabled ? "enabled" : "disabled", pVM->aCpus[0].pgm.s.cA20Changes.c);
     if (fShadow)
         pHlp->pfnPrintf(pHlp, "Shadow paging mode: %s\n", PGMGetModeName(pVM->aCpus[0].pgm.s.enmShadowMode));
     if (fHost)
@@ -3626,6 +3628,22 @@ int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
               ("%RHp != %RHp %s\n", (RTHCPHYS)CPUMGetHyperCR3(pVCpu), PGMGetHyperCR3(pVCpu), PGMGetModeName(pVCpu->pgm.s.enmShadowMode)));
     return rc;
 }
+
+
+/**
+ * Called by PGMR3PhysSetA20 after changing the A20 state.
+ *
+ * @param   pVCpu   The VMCPU to operate on.
+ */
+void pgmR3RefreshShadowModeAfterA20Change(PVMCPU pVCpu)
+{
+    /** @todo Probably doing a bit too much here. */
+    int rc = pgmR3ExitShadowModeBeforePoolFlush(pVCpu);
+    AssertReleaseRC(rc);
+    rc = pgmR3ReEnterShadowModeAfterPoolFlush(pVCpu->CTX_SUFF(pVM), pVCpu);
+    AssertReleaseRC(rc);
+}
+
 
 #ifdef VBOX_WITH_DEBUGGER
 

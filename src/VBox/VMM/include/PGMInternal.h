@@ -3846,6 +3846,8 @@ typedef struct PGMCPU
      * @{ */
     /** The number of times the guest has switched mode since last reset or statistics reset. */
     STAMCOUNTER                     cGuestModeChanges;
+    /** The number of times the guest has switched mode since last reset or statistics reset. */
+    STAMCOUNTER                     cA20Changes;
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap.  */
@@ -4007,6 +4009,7 @@ void            pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage);
 
 int             pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu);
 int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu);
+void            pgmR3RefreshShadowModeAfterA20Change(PVMCPU pVCpu);
 
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
 void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE, bool fDeactivateCR3);

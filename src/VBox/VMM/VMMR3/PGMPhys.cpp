@@ -2329,7 +2329,8 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
     }
 
     /* Force a PGM pool flush as guest ram references have been changed. */
-    /** todo; not entirely SMP safe; assuming for now the guest takes care of this internally (not touch mapped mmio while changing the mapping). */
+    /** @todo Not entirely SMP safe; assuming for now the guest takes care of
+     *       this internally (not touch mapped mmio while changing the mapping). */
     PVMCPU pVCpu = VMMGetCpu(pVM);
     pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
@@ -2732,7 +2733,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
         GMMR3FreePagesCleanup(pReq);
 
         /* Force a PGM pool flush as guest ram references have been changed. */
-        /** todo; not entirely SMP safe; assuming for now the guest takes care of this internally (not touch mapped mmio while changing the mapping). */
+        /** @todo not entirely SMP safe; assuming for now the guest takes care of
+         *  this internally (not touch mapped mmio while changing the mapping). */
         PVMCPU pVCpu = VMMGetCpu(pVM);
         pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
@@ -3717,9 +3719,11 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 #endif
         /** @todo we're not handling this correctly for VT-x / AMD-V. See #2911 */
 #ifdef PGM_WITH_A20
-        pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL | PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
+        pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        pgmR3RefreshShadowModeAfterA20Change(pVCpu);
 #endif
+        STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }
 }
 
