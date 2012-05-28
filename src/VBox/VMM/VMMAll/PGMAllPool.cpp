@@ -2189,10 +2189,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
             {
                 if (   (PGMPOOLKIND)pPage->enmKind == enmKind
                     && (PGMPOOLACCESS)pPage->enmAccess == enmAccess
-#if 0
-                    && pPage->fA20Enabled == fA20Enabled
-#endif
-                   )
+                    && pPage->fA20Enabled == fA20Enabled)
                 {
                     /* Put it at the start of the use list to make sure pgmPoolTrackAddUser
                      * doesn't flush it in case there are no more free use records.
