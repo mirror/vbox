@@ -1587,15 +1587,12 @@ SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, v
 SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszModule,
                                       const char *pszSrvReqHandler, void **ppvImageBase)
 {
-    int rc = VINF_SUCCESS;
     AssertPtrReturn(pszSrvReqHandler, VERR_INVALID_PARAMETER);
 
-#ifdef VBOX_WITH_HARDENING
     /*
      * Check that the module can be trusted.
      */
-    rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
-#endif
+    int rc = SUPR3HardenedVerifyPlugIn(pszFilename, NULL /*pErrInfo*/);
     if (RT_SUCCESS(rc))
         rc = supLoadModule(pszFilename, pszModule, pszSrvReqHandler, ppvImageBase);
     else
@@ -2572,7 +2569,7 @@ SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszMo
         u64Tmp = pVtgHdr->uProbeLocs.u64 - uVtgHdrAddr;
         if ((int64_t)u64Tmp != (int32_t)u64Tmp)
         {
-            LogRel(("SUPR3TracerRegisterModule: VERR_SUPDRV_VTG_BAD_HDR_PTR - u64Tmp=%#llx uProbeLocs=%#llx uVtgHdrAddr=%RTptr\n", 
+            LogRel(("SUPR3TracerRegisterModule: VERR_SUPDRV_VTG_BAD_HDR_PTR - u64Tmp=%#llx uProbeLocs=%#llx uVtgHdrAddr=%RTptr\n",
                     u64Tmp, pVtgHdr->uProbeLocs.u64, uVtgHdrAddr));
             return VERR_SUPDRV_VTG_BAD_HDR_PTR;
         }
