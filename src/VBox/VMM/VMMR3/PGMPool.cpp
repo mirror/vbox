@@ -908,12 +908,13 @@ void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
     AssertRC(rc);
 }
 
+
 /**
  * Protect all pgm pool page table entries to monitor writes
  *
  * @param   pVM         The VM handle.
  *
- * Remark: assumes the caller will flush all TLBs (!!)
+ * @remarks ASSUMES the caller will flush all TLBs!!
  */
 void pgmR3PoolWriteProtectPages(PVM pVM)
 {

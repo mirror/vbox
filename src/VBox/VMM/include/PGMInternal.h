@@ -2113,21 +2113,35 @@ typedef struct PGMPOOLPAGE
 #else
     R3R0PTRTYPE(void *) pvPageR3;
 #endif
-    /** The guest physical address. */
 #if HC_ARCH_BITS == 32 && GC_ARCH_BITS == 64
     uint32_t            Alignment0;
 #endif
+    /** The guest physical address. */
     RTGCPHYS            GCPhys;
-
-    /** Access handler statistics to determine whether the guest is (re)initializing a page table. */
-    RTGCPTR             pvLastAccessHandlerRip;
-    RTGCPTR             pvLastAccessHandlerFault;
-    uint64_t            cLastAccessHandlerCount;
-
     /** The kind of page we're shadowing. (This is really a PGMPOOLKIND enum.) */
     uint8_t             enmKind;
     /** The subkind of page we're shadowing. (This is really a PGMPOOLACCESS enum.) */
     uint8_t             enmAccess;
+    /** This supplements enmKind and enmAccess */
+    bool                fA20Enabled : 1;
+
+    /** Used to indicate that the page is zeroed. */
+    bool                fZeroed : 1;
+    /** Used to indicate that a PT has non-global entries. */
+    bool                fSeenNonGlobal : 1;
+    /** Used to indicate that we're monitoring writes to the guest page. */
+    bool                fMonitored : 1;
+    /** Used to indicate that the page is in the cache (e.g. in the GCPhys hash).
+     * (All pages are in the age list.) */
+    bool                fCached : 1;
+    /** This is used by the R3 access handlers when invoked by an async thread.
+     * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
+    bool volatile       fReusedFlushPending : 1;
+    /** Used to mark the page as dirty (write monitoring is temporarily
+     *  off). */
+    bool                fDirty : 1;
+    bool                afPadding1 : 1+8;
+
     /** The index of this page. */
     uint16_t            idx;
     /** The next entry in the list this page currently resides in.
@@ -2153,29 +2167,31 @@ typedef struct PGMPOOLPAGE
     uint16_t            iAgeNext;
     /** The previous page in the age list. */
     uint16_t            iAgePrev;
-    /** Used to indicate that the page is zeroed. */
-    bool                fZeroed;
-    /** Used to indicate that a PT has non-global entries. */
-    bool                fSeenNonGlobal;
-    /** Used to indicate that we're monitoring writes to the guest page. */
-    bool                fMonitored;
-    /** Used to indicate that the page is in the cache (e.g. in the GCPhys hash).
-     * (All pages are in the age list.) */
-    bool                fCached;
-    /** This is used by the R3 access handlers when invoked by an async thread.
-     * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
-    bool volatile       fReusedFlushPending;
-    /** Used to mark the page as dirty (write monitoring is temporarily
-     *  off). */
-    bool                fDirty;
+    /** Index into PGMPOOL::aDirtyPages if fDirty is set. */
+    uint8_t             idxDirtyEntry;
 
-    /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
-    uint32_t            cLocked;
-    uint32_t            idxDirty;
-    RTGCPTR             pvDirtyFault;
-} PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
+    /** @name Access handler statistics to determine whether the guest is
+     *        (re)initializing a page table.
+     * @{ */
+    RTGCPTR             GCPtrLastAccessHandlerRip;
+    RTGCPTR             GCPtrLastAccessHandlerFault;
+    uint64_t            cLastAccessHandler;
+    /** @}  */
+    /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages. */
+    uint32_t volatile   cLocked;
+#if GC_ARCH_BITS == 64
+    uint32_t            Alignment2;
+#endif
+# ifdef VBOX_STRICT
+    RTGCPTR             GCPtrDirtyFault;
+# endif
+} PGMPOOLPAGE;
+/** Pointer to a pool page. */
+typedef PGMPOOLPAGE *PPGMPOOLPAGE;
 /** Pointer to a const pool page. */
 typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
+/** Pointer to a pool page pointer. */
+typedef PGMPOOLPAGE **PPPGMPOOLPAGE;
 
 
 /** The hash table size. */
@@ -2255,11 +2271,11 @@ typedef struct PGMPOOL
     /** Alignment padding. */
     uint32_t                    u32Padding2;
 # endif
-    /* Next available slot. */
+    /** Next available slot (in aDirtyPages). */
     uint32_t                    idxFreeDirtyPage;
-    /* Number of active dirty pages. */
+    /** Number of active dirty pages. */
     uint32_t                    cDirtyPages;
-    /* Array of current dirty pgm pool page indices. */
+    /** Array of current dirty pgm pool page indices. */
     struct
     {
         uint16_t                    uIdx;
