@@ -273,6 +273,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/VBoxUtils.h \
 	src/net/UINetworkManager.h \
 	src/net/UINetworkManagerDialog.h \
+	src/net/UINetworkManagerIndicator.h \
 	src/net/UINetworkRequest.h \
 	src/net/UINetworkRequestWidget.h \
 	src/net/UINetworkCustomer.h \
@@ -474,6 +475,7 @@ VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/net/UINetworkManager.cpp \
 	src/net/UINetworkManagerDialog.cpp \
+	src/net/UINetworkManagerIndicator.cpp \
 	src/net/UINetworkRequest.cpp \
 	src/net/UINetworkRequestWidget.cpp \
 	src/net/UINetworkCustomer.cpp \

@@ -31,6 +31,7 @@
 /* Forward declarations: */
 class UINetworkManager;
 class UINetworkManagerDialog;
+class UINetworkManagerIndicator;
 class UINetworkRequestWidget;
 class UINetworkCustomer;
 
@@ -97,6 +98,7 @@ private:
 
     /* Widgets: */
     UINetworkManagerDialog *m_pNetworkManagerDialog;
+    UINetworkManagerIndicator *m_pNetworkManagerIndicator;
 
     /* Variables: */
     QUuid m_uuid;

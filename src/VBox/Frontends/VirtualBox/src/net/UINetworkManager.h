@@ -33,6 +33,7 @@ class QWidget;
 class UINetworkRequest;
 class UINetworkCustomer;
 class UINetworkManagerDialog;
+class UINetworkManagerIndicator;
 
 /* QNetworkAccessManager class reimplementation.
  * Providing network access for VirtualBox application purposes. */
@@ -56,6 +57,9 @@ public:
 
     /* Pointer to network-manager dialog: */
     UINetworkManagerDialog* window() const;
+
+    /* Pointer to network-manager state-indicator: */
+    UINetworkManagerIndicator* indicator() const;
 
 public slots:
 
@@ -110,6 +114,7 @@ private:
 
     /* Network-manager dialog: */
     UINetworkManagerDialog *m_pNetworkManagerDialog;
+    UINetworkManagerIndicator *m_pNetworkManagerIndicator;
 };
 #define gNetworkManager UINetworkManager::instance()
 
