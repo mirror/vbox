@@ -23,6 +23,6 @@ if [ ! -d "${MY_DIR}" ]; then
 fi
 
 set -e
-kmk -C "${MY_DIR}/src/" "$*"
+kmk -C "${MY_DIR}/src/" "$@"
 sudo make -C "${MY_DIR}/src/" load
 
