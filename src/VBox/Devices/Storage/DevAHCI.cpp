@@ -5695,8 +5695,6 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
             }
         }
 
-        /* Add the task to the cache. */
-        ASMAtomicWritePtr(&pAhciPort->aCachedTasks[pAhciReq->uTag], pAhciReq);
         AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0 ,
                          ("Inconsistent request counter\n"));
         ASMAtomicDecU32(&pAhciPort->cTasksActive);
@@ -6197,6 +6195,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                 pAhciReq = (PAHCIREQ)RTMemAllocZ(sizeof(AHCIREQ));
                 AssertMsg(pAhciReq, ("%s: Cannot allocate task state memory!\n"));
                 pAhciReq->enmTxState = AHCITXSTATE_FREE;
+                pAhciPort->aCachedTasks[idx] = pAhciReq;
             }
             else
                 pAhciReq = pAhciPort->aCachedTasks[idx];
@@ -6232,7 +6231,6 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                     ahciLog(("%s: Setting device into reset state\n", __FUNCTION__));
                     pAhciPort->fResetDevice = true;
                     ahciSendD2HFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, true);
-                    pAhciPort->aCachedTasks[idx] = pAhciReq;
 
                     ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
                     AssertMsg(fXchg, ("Task is not active\n"));
@@ -6241,7 +6239,6 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                 else if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
                 {
                     ahciFinishStorageDeviceReset(pAhciPort, pAhciReq);
-                    pAhciPort->aCachedTasks[idx] = pAhciReq;
 
                     ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
                     AssertMsg(fXchg, ("Task is not active\n"));
