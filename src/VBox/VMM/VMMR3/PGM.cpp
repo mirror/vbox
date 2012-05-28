@@ -100,20 +100,32 @@
  *
  * PGM implements the A20 gate masking when translating a virtual guest address
  * into a physical address for CPU access, i.e. PGMGstGetPage (and friends) and
- * the code reading the guest page table entries during shadowing.
+ * the code reading the guest page table entries during shadowing.  The masking
+ * is done consistenly for all CPU modes, paged ones included.  Large pages are
+ * also masked correctly.  (On current CPUs, experiments indicates that AMD does
+ * not apply A20M in paged modes and intel only does it for the 2nd MB of
+ * memory.)
  *
  * The A20 gate implementation is per CPU core.  It can be configured on a per
  * core basis via the keyboard device and PC architecture device.  This is
  * probably not exactly how real CPUs do it, but SMP and A20 isn't a place where
- * guest OSes try pushing things anyway, so who cares.
+ * guest OSes try pushing things anyway, so who cares.  (On current real systems
+ * the A20M signal is probably only sent to the boot CPU and it affects all
+ * thread and probably all cores in that package.)
  *
  * The keyboard device and the PC architecture device doesn't OR their A20
  * config bits together, rather they are currently implemented such that they
  * mirror the CPU state.  So, flipping the bit in either of them will change the
- * A20 state.
+ * A20 state.  (On real hardware the bits of the two devices should probably be
+ * ORed together to indicate enabled, i.e. both needs to be cleared to disable
+ * A20 masking.)
  *
  * The A20 state will change immediately, transmeta fashion.  There is no delays
- * due to buses, wiring or other physical stuff.
+ * due to buses, wiring or other physical stuff.  (On real hardware there are
+ * normally delays, the delays differs between the two devices and probably also
+ * between chipsets and CPU generations. Note that it's said that transmeta CPUs
+ * does the change immediately like us, they apparently intercept/handles the
+ * port accesses in microcode. Neat.)
  *
  * @sa http://en.wikipedia.org/wiki/A20_line#The_80286_and_the_high_memory_area
  *
