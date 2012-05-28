@@ -26,8 +26,8 @@
  * @section         sec_pgm_modes           Paging Modes
  *
  * There are three memory contexts: Host Context (HC), Guest Context (GC)
- * and intermediate context. When talking about paging HC can also be referred to
- * as "host paging", and GC referred to as "shadow paging".
+ * and intermediate context.  When talking about paging HC can also be referred
+ * to as "host paging", and GC referred to as "shadow paging".
  *
  * We define three basic paging modes: 32-bit, PAE and AMD64. The host paging mode
  * is defined by the host operating system. The mode used in the shadow paging mode
@@ -94,6 +94,29 @@
  *
  *
  * @section         sec_pgm_misc            Misc
+ *
+ *
+ * @subsection      sec_pgm_misc_A20        The A20 Gate
+ *
+ * PGM implements the A20 gate masking when translating a virtual guest address
+ * into a physical address for CPU access, i.e. PGMGstGetPage (and friends) and
+ * the code reading the guest page table entries during shadowing.
+ *
+ * The A20 gate implementation is per CPU core.  It can be configured on a per
+ * core basis via the keyboard device and PC architecture device.  This is
+ * probably not exactly how real CPUs do it, but SMP and A20 isn't a place where
+ * guest OSes try pushing things anyway, so who cares.
+ *
+ * The keyboard device and the PC architecture device doesn't OR their A20
+ * config bits together, rather they are currently implemented such that they
+ * mirror the CPU state.  So, flipping the bit in either of them will change the
+ * A20 state.
+ *
+ * The A20 state will change immediately, transmeta fashion.  There is no delays
+ * due to buses, wiring or other physical stuff.
+ *
+ * @sa http://en.wikipedia.org/wiki/A20_line#The_80286_and_the_high_memory_area
+ *
  *
  * @subsection      subsec_pgm_misc_diff    Differences Between Legacy PAE and Long Mode PAE
  *
