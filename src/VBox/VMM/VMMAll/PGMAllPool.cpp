@@ -4277,6 +4277,7 @@ void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCP
  */
 DECLINLINE(void) pgmPoolTrackDerefPT32Bit32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PT pShwPT, PCX86PT pGstPT)
 {
+    RTGCPHYS32 const fPgMask = pPage->fA20Enabled ? X86_PTE_PG_MASK : X86_PTE_PG_MASK & ~RT_BIT_32(20);
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
         Assert(!(pShwPT->a[i].u & RT_BIT_32(10)));
@@ -4284,7 +4285,7 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPag
         {
             Log4(("pgmPoolTrackDerefPT32Bit32Bit: i=%d pte=%RX32 hint=%RX32\n",
                   i, pShwPT->a[i].u & X86_PTE_PG_MASK, pGstPT->a[i].u & X86_PTE_PG_MASK));
-            pgmPoolTracDerefGCPhysHint(pPool, pPage, pShwPT->a[i].u & X86_PTE_PG_MASK, pGstPT->a[i].u & X86_PTE_PG_MASK, i);
+            pgmPoolTracDerefGCPhysHint(pPool, pPage, pShwPT->a[i].u & X86_PTE_PG_MASK, pGstPT->a[i].u & fPgMask, i);
             if (!pPage->cPresent)
                 break;
         }
@@ -4302,6 +4303,7 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPag
  */
 DECLINLINE(void) pgmPoolTrackDerefPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSHWPTPAE pShwPT, PCX86PT pGstPT)
 {
+    RTGCPHYS32 const fPgMask = pPage->fA20Enabled ? X86_PTE_PG_MASK : X86_PTE_PG_MASK & ~RT_BIT_32(20);
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
         Assert(   (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == 0
@@ -4310,7 +4312,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
         {
             Log4(("pgmPoolTrackDerefPTPae32Bit: i=%d pte=%RX64 hint=%RX32\n",
                   i, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pGstPT->a[i].u & X86_PTE_PG_MASK));
-            pgmPoolTracDerefGCPhysHint(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pGstPT->a[i].u & X86_PTE_PG_MASK, i);
+            pgmPoolTracDerefGCPhysHint(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pGstPT->a[i].u & fPgMask, i);
             if (!pPage->cPresent)
                 break;
         }
@@ -4328,6 +4330,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
  */
 DECLINLINE(void) pgmPoolTrackDerefPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSHWPTPAE pShwPT, PCX86PTPAE pGstPT)
 {
+    RTGCPHYS const fPgMask = pPage->fA20Enabled ? X86_PTE_PAE_PG_MASK : X86_PTE_PAE_PG_MASK & ~RT_BIT_64(20);
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
         Assert(   (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == 0
@@ -4336,7 +4339,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
         {
             Log4(("pgmPoolTrackDerefPTPaePae: i=%d pte=%RX32 hint=%RX32\n",
                   i, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK));
-            pgmPoolTracDerefGCPhysHint(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK, i);
+            pgmPoolTracDerefGCPhysHint(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pGstPT->a[i].u & fPgMask, i);
             if (!pPage->cPresent)
                 break;
         }
@@ -4353,7 +4356,8 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
  */
 DECLINLINE(void) pgmPoolTrackDerefPT32Bit4MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PT pShwPT)
 {
-    RTGCPHYS GCPhys = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
+    RTGCPHYS const  GCPhysA20Mask = pPage->fA20Enabled ? UINT64_MAX : ~RT_BIT_64(20);
+    RTGCPHYS        GCPhys        = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
     {
         Assert(!(pShwPT->a[i].u & RT_BIT_32(10)));
@@ -4361,7 +4365,7 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit4MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
         {
             Log4(("pgmPoolTrackDerefPT32Bit4MB: i=%d pte=%RX32 GCPhys=%RGp\n",
                   i, pShwPT->a[i].u & X86_PTE_PG_MASK, GCPhys));
-            pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & X86_PTE_PG_MASK, GCPhys, i);
+            pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & X86_PTE_PG_MASK, GCPhys & GCPhysA20Mask, i);
             if (!pPage->cPresent)
                 break;
         }
@@ -4378,7 +4382,8 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit4MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
  */
 DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSHWPTPAE pShwPT)
 {
-    RTGCPHYS GCPhys = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
+    RTGCPHYS const  GCPhysA20Mask = pPage->fA20Enabled ? UINT64_MAX : ~RT_BIT_64(20);
+    RTGCPHYS        GCPhys        = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
     {
         Assert(   (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == 0
@@ -4387,7 +4392,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
         {
             Log4(("pgmPoolTrackDerefPTPaeBig: i=%d pte=%RX64 hint=%RGp\n",
                   i, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), GCPhys));
-            pgmPoolTracDerefGCPhys(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), GCPhys, i);
+            pgmPoolTracDerefGCPhys(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), GCPhys & GCPhysA20Mask, i);
             if (!pPage->cPresent)
                 break;
         }
@@ -4404,7 +4409,8 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
  */
 DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPT pShwPT)
 {
-    RTGCPHYS GCPhys = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
+    RTGCPHYS const  GCPhysA20Mask = pPage->fA20Enabled ? UINT64_MAX : ~RT_BIT_64(20);
+    RTGCPHYS        GCPhys        = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
     {
         Assert((pShwPT->a[i].u & UINT64_C(0xfff0000000000f80)) == 0);
@@ -4412,7 +4418,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
         {
             Log4(("pgmPoolTrackDerefPTEPT: i=%d pte=%RX64 GCPhys=%RX64\n",
                   i, pShwPT->a[i].u & EPT_PTE_PG_MASK, pPage->GCPhys));
-            pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & EPT_PTE_PG_MASK, GCPhys, i);
+            pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & EPT_PTE_PG_MASK, GCPhys & GCPhysA20Mask, i);
             if (!pPage->cPresent)
                 break;
         }
@@ -4465,7 +4471,9 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
             {
                 Log4(("pgmPoolTrackDerefPDPae: i=%d pde=%RX64 GCPhys=%RX64\n",
                       i, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys));
-                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */, i);
+                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK,
+                                       pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */,
+                                       i);
             }
             else
 #endif
@@ -4578,7 +4586,9 @@ DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
             {
                 Log4(("pgmPoolTrackDerefPDEPT: i=%d pde=%RX64 GCPhys=%RX64\n",
                       i, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys));
-                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */, i);
+                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK,
+                                       pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */,
+                                       i);
             }
             else
 #endif
