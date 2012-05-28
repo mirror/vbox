@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -3722,6 +3722,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
         pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         pgmR3RefreshShadowModeAfterA20Change(pVCpu);
+        HWACCMFlushTLB(pVCpu);
 #endif
         STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }
