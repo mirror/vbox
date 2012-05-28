@@ -243,12 +243,17 @@ struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
         int errno;
 {
 */
+    int fUninitiolizedTemplate = 0;
 #ifndef LOG_ENABLED
     NOREF(err);
 #endif
     LogFlowFunc(("ENTER: tp = %R[tcpcb793], errno = %d\n", tp, err));
+    fUninitiolizedTemplate = RT_BOOL((   tp
+                                      && (  tp->t_template.ti_src.s_addr == INADDR_ANY
+                                         || tp->t_template.ti_dst.s_addr == INADDR_ANY)));
 
-    if (TCPS_HAVERCVDSYN(tp->t_state))
+    if (   TCPS_HAVERCVDSYN(tp->t_state)
+        && !fUninitiolizedTemplate)
     {
         TCP_STATE_SWITCH_TO(tp, TCPS_CLOSED);
         (void) tcp_output(pData, tp);
