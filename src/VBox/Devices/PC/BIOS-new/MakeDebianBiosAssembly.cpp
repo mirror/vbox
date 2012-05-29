@@ -21,6 +21,7 @@
 *******************************************************************************/
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
+#include <iprt/dbg.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
@@ -82,24 +83,181 @@ static uint8_t const   *g_pbImg;
 /** The size of the BIOS image. */
 static size_t           g_cbImg;
 
+/** Debug module for the map file.  */
+static RTDBGMOD         g_hMapMod = NIL_RTDBGMOD;
 /** The number of BIOS segments found in the map file. */
 static uint32_t         g_cSegs = 0;
 /** Array of BIOS segments from the map file. */
 static BIOSSEG          g_aSegs[32];
 
+/** The output stream. */
+static PRTSTREAM        g_hStrmOutput = NULL;
 
+
+static bool outputPrintfV(const char *pszFormat, va_list va)
+{
+    int rc = RTStrmPrintfV(g_hStrmOutput, pszFormat, va);
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("Output error: %Rrc\n", rc);
+        return false;
+    }
+    return true;
+}
+
+
+static bool outputPrintf(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    bool fRc = outputPrintfV(pszFormat, va);
+    va_end(va);
+    return fRc;
+}
+
+
+/**
+ * Opens the output file for writing.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
+ * @param   pszOutput           Path to the output file.
+ */
+static RTEXITCODE OpenOutputFile(const char *pszOutput)
+{
+    if (!pszOutput)
+        g_hStrmOutput = g_pStdOut;
+    else
+    {
+        int rc = RTStrmOpen(pszOutput, "w", &g_hStrmOutput);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open output file '%s': %Rrc", pszOutput, rc);
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Output the disassembly file header.
+ *
+ * @returns @c true on success,
+ */
+static bool disFileHeader(void)
+{
+    bool fRc = true;
+    fRc = fRc && outputPrintf("; $Id$ \n"
+                              ";; @file\n"
+                              "; Auto Generated source file. Do not edit.\n"
+                              ";\n"
+                              "\n"
+                              "org 0xf000\n"
+                              "\n"
+                              );
+    return fRc;
+}
+
+
+static bool disByteData(uint32_t uFlatAddr, uint32_t cb)
+{
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - 0xf0000];
+    size_t          cbOnLine = 0;
+    while (cb-- > 0)
+    {
+        bool fRc;
+        if (cbOnLine >= 16)
+        {
+            fRc = outputPrintf("\n"
+                               "  db    0%02xh", *pb);
+            cbOnLine = 1;
+        }
+        else if (!cbOnLine)
+        {
+            fRc = outputPrintf("  db    0%02xh", *pb);
+            cbOnLine = 1;
+        }
+        else
+        {
+            fRc = outputPrintf(", 0%02xh", *pb);
+            cbOnLine++;
+        }
+        if (!fRc)
+            return false;
+        pb++;
+    }
+    return outputPrintf("\n");
+}
+
+
+
+static bool disCopySegmentGap(uint32_t uFlatAddr, uint32_t cbPadding)
+{
+    if (g_cVerbose > 0)
+        RTStrmPrintf(g_pStdErr, "Padding %#x bytes at %#x\n", cbPadding, uFlatAddr);
+    return disByteData(uFlatAddr, cbPadding);
+}
+
+
+static bool disDataSegment(uint32_t iSeg)
+{
+    return disByteData(g_aSegs[iSeg].uFlatAddr, g_aSegs[iSeg].cb);
+}
+
+
+static bool disCodeSegment(uint32_t iSeg)
+{
+    return disDataSegment(iSeg);
+}
 
 
 
 static RTEXITCODE DisassembleBiosImage(void)
 {
-    return RTMsgErrorExit(RTEXITCODE_FAILURE, "DisassembleBiosImage is not implemented");
+    if (!outputPrintf(""))
+        return RTEXITCODE_FAILURE;
+
+    /*
+     * Work the image segment by segment.
+     */
+    bool        fRc       = true;
+    uint32_t    uFlatAddr = 0xf0000;
+    for (uint32_t iSeg = 0; iSeg < g_cSegs && fRc; iSeg++)
+    {
+        /* Is there a gap between the segments? */
+        if (uFlatAddr < g_aSegs[iSeg].uFlatAddr)
+        {
+            fRc = disCopySegmentGap(uFlatAddr, g_aSegs[iSeg].uFlatAddr - uFlatAddr);
+            if (!fRc)
+                break;
+            uFlatAddr = g_aSegs[iSeg].uFlatAddr;
+        }
+        else if (uFlatAddr > g_aSegs[iSeg].uFlatAddr)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Overlapping segments: %u and %u; uFlatAddr=%#x\n", iSeg - 1, iSeg, uFlatAddr);
+
+        /* Disassemble the segment. */
+        fRc = outputPrintf("\n"
+                           "section %s progbits vstart=%#x align=1\n",
+                           g_aSegs[iSeg].szName, g_aSegs[iSeg].uFlatAddr);
+        if (!fRc)
+            return RTEXITCODE_FAILURE;
+        if (!strcmp(g_aSegs[iSeg].szClass, "DATA"))
+            fRc = disDataSegment(iSeg);
+        else
+            fRc = disCodeSegment(iSeg);
+
+        /* Advance. */
+        uFlatAddr += g_aSegs[iSeg].cb;
+    }
+
+    /* Final gap. */
+    if (uFlatAddr < 0x100000)
+        fRc = disCopySegmentGap(uFlatAddr, 0x100000 - uFlatAddr);
+    else if (uFlatAddr > 0x100000)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Last segment spills beyond 1MB; uFlatAddr=%#x\n", uFlatAddr);
+
+    if (!fRc)
+        return RTEXITCODE_FAILURE;
+    return RTEXITCODE_SUCCESS;
 }
 
-static RTEXITCODE OpenOutputFile(const char *pszOutput)
-{
-    return RTMsgErrorExit(RTEXITCODE_FAILURE, "OpenOutputFile is not implemented");
-}
 
 
 /**
@@ -256,24 +414,6 @@ static char *mapReadLineStripRight(PBIOSMAP pMap, size_t *pcch)
 }
 
 
-
-static char *ReadMapLineR(const char *pszBiosMap, PRTSTREAM hStrm, uint32_t *piLine,
-                          char *pszLine, size_t cbLine, size_t *pcchLine)
-{
-    int rc = RTStrmGetLine(hStrm, pszLine, cbLine);
-    if (RT_FAILURE(rc))
-    {
-        RTMsgError("%s:%d: Read error: %Rrc", pszBiosMap, *piLine, rc);
-        return NULL;
-    }
-    *piLine += 1;
-
-    char  *psz = RTStrStripR(pszLine);
-    *pcchLine = strlen(psz);
-    return psz;
-}
-
-
 /**
  * mapReadLine() + mapStripCurrentLine().
  *
@@ -341,8 +481,9 @@ static bool mapParseAddress(char **ppszCursor, PRTFAR16 pAddr)
         return false;
     size_t cchWord = strlen(szWord);
 
-    /* Check the first 4+1+4 chars. */
-    if (cchWord < 4 + 1 + 4)
+    /* An address is at least 16:16 format. It may be 16:32. It may also be flagged. */
+    size_t cchAddr = 4 + 1 + 4;
+    if (cchWord < cchAddr)
         return false;
     if (   !RT_C_IS_XDIGIT(szWord[0])
         || !RT_C_IS_XDIGIT(szWord[1])
@@ -355,20 +496,31 @@ static bool mapParseAddress(char **ppszCursor, PRTFAR16 pAddr)
         || !RT_C_IS_XDIGIT(szWord[8])
        )
         return false;
+    if (   cchWord > cchAddr
+        && RT_C_IS_XDIGIT(szWord[9])
+        && RT_C_IS_XDIGIT(szWord[10])
+        && RT_C_IS_XDIGIT(szWord[11])
+        && RT_C_IS_XDIGIT(szWord[12]))
+        cchAddr += 4;
 
-    /* Drop annotation. */
-    if (cchWord > 4+1+4)
+    /* Drop flag if present. */
+    if (cchWord > cchAddr)
     {
         if (RT_C_IS_XDIGIT(szWord[4+1+4]))
             return false;
-        szWord[4+1+4] = '\0';
-        cchWord = 4 + 1 + 4;
+        szWord[cchAddr] = '\0';
+        cchWord = cchAddr;
     }
 
     /* Convert it. */
     szWord[4] = '\0';
-    int rc1 = RTStrToUInt16Full(szWord,     16, &pAddr->sel);  AssertRCSuccess(rc1);
-    int rc2 = RTStrToUInt16Full(szWord + 5, 16, &pAddr->off);  AssertRCSuccess(rc2);
+    int rc1 = RTStrToUInt16Full(szWord,     16, &pAddr->sel);
+    if (rc1 != VINF_SUCCESS)
+        return false;
+
+    int rc2 = RTStrToUInt16Full(szWord + 5, 16, &pAddr->off);
+    if (rc2 != VINF_SUCCESS)
+        return false;
     return true;
 }
 
@@ -591,11 +743,13 @@ static bool mapParseSegments(PBIOSMAP pMap)
 
 
 /**
- * Sorts the segment array by flat address.
+ * Sorts the segment array by flat address and adds them to the debug module.
+ *
+ * @returns @c true on success, @c false + msg on failure, @c false on eof.
  */
-static void mapSortSegments(void)
+static bool mapSortAndAddSegments(void)
 {
-    for (uint32_t i = 0; i < g_cSegs - 1; i++)
+    for (uint32_t i = 0; i < g_cSegs; i++)
     {
         for (uint32_t j = i + 1; j < g_cSegs; j++)
             if (g_aSegs[j].uFlatAddr < g_aSegs[i].uFlatAddr)
@@ -613,9 +767,78 @@ static void mapSortSegments(void)
                          g_aSegs[i].szName,
                          g_aSegs[i].szClass,
                          g_aSegs[i].szGroup);
+
+        RTDBGSEGIDX idx = i;
+        int rc = RTDbgModSegmentAdd(g_hMapMod, g_aSegs[i].uFlatAddr, g_aSegs[i].cb, g_aSegs[i].szName, 0 /*fFlags*/, &idx);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("RTDbgModSegmentAdd failed on %s: %Rrc", g_aSegs[i].szName);
+            return false;
+        }
     }
+    return true;
 }
 
+
+/**
+ * Parses a segment list.
+ *
+ * @returns @c true on success, @c false + msg on failure, @c false on eof.
+ * @param   pMap                The map file handle.
+ */
+static bool mapParseSymbols(PBIOSMAP pMap)
+{
+    for (;;)
+    {
+        if (!mapReadLineStripRight(pMap, NULL))
+            return false;
+
+        /* The end? The line should be empty. Expectes segment name to not
+           start with a space. */
+        if (!pMap->szLine[0] || RT_C_IS_SPACE(pMap->szLine[0]))
+        {
+            if (!pMap->szLine[0])
+                return true;
+            RTMsgError("%s:%u: Malformed symbol line", pMap->pszMapFile, pMap->iLine);
+            return false;
+        }
+
+        /* Skip the module name lines for now. */
+        if (!strncmp(pMap->szLine, RT_STR_TUPLE("Module: ")))
+            continue;
+
+        /* Parse the segment line. */
+        char    szName[4096];
+        RTFAR16 Addr;
+        char   *psz = pMap->szLine;
+        if (!mapParseAddress(&psz, &Addr))
+            RTMsgError("%s:%u: Symbol address parser error", pMap->pszMapFile, pMap->iLine);
+        else if (!mapParseWord(&psz, szName, sizeof(szName)))
+            RTMsgError("%s:%u: Symbol name parser error", pMap->pszMapFile, pMap->iLine);
+        else
+        {
+            uint32_t uFlatAddr = ((uint32_t)Addr.sel << 4) + Addr.off;
+            if (uFlatAddr == 0)
+                continue;
+
+            int rc = RTDbgModSymbolAdd(g_hMapMod, szName, RTDBGSEGIDX_RVA, uFlatAddr, 0 /*cb*/,  0 /*fFlags*/, NULL);
+            if (RT_SUCCESS(rc) || rc == VERR_DBG_ADDRESS_CONFLICT)
+            {
+
+                if (g_cVerbose > 2)
+                    RTStrmPrintf(g_pStdErr, "read symbol - %08x %s\n", uFlatAddr, szName);
+                while (RT_C_IS_SPACE(*psz))
+                    psz++;
+                if (!*psz)
+                    continue;
+                RTMsgError("%s:%u: Junk at end of line", pMap->pszMapFile, pMap->iLine);
+            }
+            else
+                RTMsgError("%s:%u: RTDbgModSymbolAdd failed: %Rrc", pMap->pszMapFile, pMap->iLine, rc);
+        }
+        return false;
+    }
+}
 
 
 /**
@@ -627,7 +850,9 @@ static void mapSortSegments(void)
  */
 static RTEXITCODE mapParseFile(PBIOSMAP pMap)
 {
-    const char *psz;
+    int rc = RTDbgModCreate(&g_hMapMod, "VBoxBios", 0 /*cbSeg*/, 0 /*fFlags*/);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgModCreate failed: %Rrc", rc);
 
     /*
      * Read the header.
@@ -655,10 +880,19 @@ static RTEXITCODE mapParseFile(PBIOSMAP pMap)
         return RTEXITCODE_FAILURE;
     if (!mapParseSegments(pMap))
         return RTEXITCODE_FAILURE;
-    mapSortSegments();
+    if (!mapSortAndAddSegments())
+        return RTEXITCODE_FAILURE;
 
+    /*
+     * Parse symbols.
+     */
+    if (!mapSkipThruColumnHeadings(pMap, "Memory Map", 2, "Address", "Symbol"))
+        return RTEXITCODE_FAILURE;
+    if (!mapParseSymbols(pMap))
+        return RTEXITCODE_FAILURE;
 
-    return RTMsgErrorExit(RTEXITCODE_FAILURE, "mapParseFile is not fully implemented");
+    /* Ignore the rest of the file. */
+    return RTEXITCODE_SUCCESS;
 }
 
 
