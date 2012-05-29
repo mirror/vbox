@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,7 @@ HostDrivers-scripts_SOURCES     = \
 HostDrivers-scripts_EXEC_SOURCES = \
 	loadall.sh \
 	do_dkms=>src/do_dkms \
-	build_in_tmp=>src/build_in_tmp 
+	build_in_tmp=>src/build_in_tmp
 HostDrivers-scripts_CLEAN       = \
 	$(HostDrivers-scripts_0_OUTDIR)/dkms.conf
 
@@ -42,5 +42,5 @@ $$(HostDrivers-scripts_0_OUTDIR)/dkms.conf: \
 		-e "s;_OMIT_VBOXPCI_;$(if $(VBOX_WITH_PCI_PASSTHROUGH),,#);g" \
 		--output $@ $<
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

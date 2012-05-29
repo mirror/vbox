@@ -56,5 +56,5 @@ ifdef VBOX_WITH_HARDENING
  VBoxHeadless_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxHeadless.dylib
 endif
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

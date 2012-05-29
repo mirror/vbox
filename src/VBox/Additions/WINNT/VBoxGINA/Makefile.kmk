@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxGINA
 VBoxGINA_TEMPLATE = VBOXGUESTR3DLL
@@ -34,5 +34,5 @@ VBoxGINA_LIBS     = \
 # Include testcase(s).
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

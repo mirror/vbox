@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2011 Oracle Corporation
+# Copyright (C) 2010-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -219,4 +219,4 @@ $$(VBOX_JXPCOM_JAR): $(VBOX_JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(QUIET)$(VBOX_JAR) cf $@ -C $(VBOX_JXPCOM_JDEST) .
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

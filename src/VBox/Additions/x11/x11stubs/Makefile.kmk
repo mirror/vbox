@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -61,5 +61,5 @@ libXext_SONAME.linux       = libXext.so.6
 libXext_SONAME.solaris     = libXext.so.0
 libXext_SOURCES    = libXext-6.4.0/libXext.c
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

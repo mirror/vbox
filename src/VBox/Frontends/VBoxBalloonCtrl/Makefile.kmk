@@ -29,4 +29,4 @@ PROGRAMS += VBoxBalloonCtrl
 	VBoxModAPIMonitor.cpp \
 	VBoxModBallooning.cpp
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

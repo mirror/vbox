@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2009 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,7 @@
 #
 
 SUB_DEPTH = ../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += \
 	SUPInstall \
@@ -92,5 +92,5 @@ tstSupSem_SOURCES     = tstSupSem.cpp
 tstSupSem-Zombie_TEMPLATE = VBOXR3TSTEXE
 tstSupSem-Zombie_SOURCES  = tstSupSem-Zombie.cpp
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

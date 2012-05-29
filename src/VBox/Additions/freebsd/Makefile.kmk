@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008 Oracle Corporation
+# Copyright (C) 2008-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 ifneq ($(KBUILD_HOST),freebsd)
 $(error "The FreeBSD guest additions installer can only be built on FreeBSD!")
@@ -158,7 +158,7 @@ $(VBOX_FBSD_ADD_INS_OUT_DIR)/install.sh: \
 OTHERS_CLEAN += $(VBOX_FBSD_ADD_INS_OUT_DIR)/install.sh
 
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
 
 #

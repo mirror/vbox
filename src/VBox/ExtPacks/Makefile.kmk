@@ -25,5 +25,5 @@ ifdef VBOX_WITH_EXTPACK_VNC
  include $(PATH_SUB_CURRENT)/VNC/Makefile.kmk
 endif
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

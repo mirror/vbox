@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2011 Oracle Corporation
+# Copyright (C) 2010-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxRes
 VBoxRes_TEMPLATE = VBOXR3STATIC
@@ -81,4 +81,4 @@ $$(VBoxRes_0_OUTDIR)/VBoxRes-icons.rc: \
 	$(APPEND) $@ 'IDI_FILETYPE_VBOX_VHD     ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_EXT_VHD))"'
 	$(APPEND) $@ 'IDI_FILETYPE_VBOX_HDD     ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_EXT_HDD))"'
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

@@ -25,7 +25,7 @@
 #
 
 SUB_DEPTH = ../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # Target config.
@@ -190,5 +190,5 @@ VBoxGuestR3LibXFree86_INCS     = \
 
 VBoxGuestR3LibRuntimeXF86.cpp_CXXFLAGS = -Wno-shadow
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

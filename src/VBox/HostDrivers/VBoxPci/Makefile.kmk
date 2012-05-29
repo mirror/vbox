@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2011 Oracle Corporation
+# Copyright (C) 2011-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -73,5 +73,5 @@ $$(VBoxPci-src_0_OUTDIR)/Makefile: \
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/VBoxPci-src-1.dep' 'VBoxPci/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
 endif # Supported platform.
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

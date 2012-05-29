@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2008 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -46,5 +46,5 @@ VBox-zlib-static_TEMPLATE = VBOXR3STATIC
 VBox-zlib-static_DEFS = $(VBox-zlib_DEFS)
 VBox-zlib-static_SOURCES = $(VBox-zlib_SOURCES)
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

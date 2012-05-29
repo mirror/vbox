@@ -26,5 +26,5 @@ VBoxCertUtil_LIBS = \
     $(VBOX_LIB_VBGL_R3) \
     crypt32.lib
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

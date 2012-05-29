@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2011 Oracle Corporation
+# Copyright (C) 2011-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # VBoxDisp - Windows Guest Additions XPDM Display Driver
@@ -212,4 +212,4 @@ DumpD3DCaps9_SDKS     = WINDDKWLH
 
 endif #VBOXVIDEOWINDBG
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

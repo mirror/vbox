@@ -16,11 +16,11 @@
 #
 
 SUB_DEPTH = ../../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstVBoxGINA
 tstVBoxGINA_TEMPLATE = VBOXGUESTR3EXE
 tstVBoxGINA_SOURCES  = \
 	tstVBoxGINA.cpp
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

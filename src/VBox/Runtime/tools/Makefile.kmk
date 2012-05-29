@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,7 @@
 #
 
 SUB_DEPTH = ../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 
 # RTManifest is a tool for creating and verifying manifest files - build version.
@@ -62,5 +62,5 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
 
 endif # !VBOX_ONLY_EXTPACKS_USE_IMPLIBS
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
