@@ -86,22 +86,25 @@ void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton *pButton)
 void UIWizardCloneVMPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVM::tr("Type"));
+    setTitle(UIWizardCloneVM::tr("Clone type"));
 
     /* Translate widgets: */
-    QString strLabel = UIWizardCloneVM::tr("<p>Please select the type of the clone.</p>"
+    QString strLabel = UIWizardCloneVM::tr("<p>Please choose the type of clone you wish to create.</p>"
                                            "<p>If you choose <b>Full clone</b>, "
-                                           "an exact copy (including all virtual hard drive images) "
-                                           "of the original VM will be created.</p>"
-                                           "<p>If you select <b>Linked clone</b>, "
-                                           "a new VM will be created, but the virtual hard drive images "
-                                           "will point to the virtual hard drive images of original VM.</p>");
+                                           "an exact copy (including all virtual hard drive files) "
+                                           "of the original virtual machine will be created.</p>"
+                                           "<p>If you choose <b>Linked clone</b>, "
+                                           "a new machine will be created, but the virtual hard drive files "
+                                           "will be tied to the virtual hard drive files of original machine "
+                                           "and you will not be able to move the new virtual machine "
+                                           "to a different computer without moving the original as well.</p>");
     if (m_fAdditionalInfo)
-        strLabel += UIWizardCloneVM::tr("<p>Note that a new snapshot within the source VM is created in case you select <b>Linked clone</b>.</p>");
+        strLabel += UIWizardCloneVM::tr("<p>If you create a <b>Linked clone</b> then a new snapshot will be created "
+                                        "in the original virtual machine as part of the cloning process.</p>");
     m_pLabel->setText(strLabel);
 
-    m_pFullCloneRadio->setText(UIWizardCloneVM::tr("Full clone"));
-    m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("Linked clone"));
+    m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full clone"));
+    m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked clone"));
 }
 
 void UIWizardCloneVMPageBasic2::initializePage()

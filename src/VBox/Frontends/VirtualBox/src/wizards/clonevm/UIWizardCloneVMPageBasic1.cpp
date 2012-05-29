@@ -77,7 +77,7 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
 void UIWizardCloneVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVM::tr("Name"));
+    setTitle(UIWizardCloneVM::tr("New machine name"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardCloneVM::tr("<p>Please choose a name for the new virtual machine. "

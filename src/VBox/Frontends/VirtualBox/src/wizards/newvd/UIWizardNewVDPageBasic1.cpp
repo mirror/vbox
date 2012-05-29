@@ -115,7 +115,7 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
 void UIWizardNewVDPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVD::tr("File type"));
+    setTitle(UIWizardNewVD::tr("Hard drive file type"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "

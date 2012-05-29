@@ -207,7 +207,7 @@ void UIWizardNewVMPageBasic3::retranslateUi()
                                         "<p>The recommended size of the hard drive is <b>%1</b>.</p>")
                                         .arg(strRecommendedHDD));
     m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add virtual hard drive"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create new virtual hard drive"));
+    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create virtual hard drive now"));
     m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing virtual hard drive file"));
     m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard drive file..."));
 }

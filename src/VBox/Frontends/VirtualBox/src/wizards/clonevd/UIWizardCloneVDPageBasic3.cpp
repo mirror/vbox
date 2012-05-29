@@ -116,13 +116,13 @@ UIWizardCloneVDPageBasic3::UIWizardCloneVDPageBasic3()
 void UIWizardCloneVDPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Storage details"));
+    setTitle(UIWizardCloneVD::tr("Storage on physical hard drive"));
 
     /* Translate widgets: */
-    m_pDescriptionLabel->setText(UIWizardCloneVD::tr("Please choose whether the new virtual hard drive file should be "
-                                                     "allocated as it is used or if it should be created fully allocated."));
+    m_pDescriptionLabel->setText(UIWizardCloneVD::tr("Please choose whether the new virtual hard drive file should grow as it is used "
+                                                     "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
     m_pDynamicLabel->setText(UIWizardCloneVD::tr("<p>A <b>dynamically allocated</b> hard drive file will only use space "
-                                                 "on your physical hard drive as it fills up (up to a <b>fixed maximum size</b>), "
+                                                 "on your physical hard drive as it fills up (up to a maximum <b>fixed size</b>), "
                                                  "although it will not shrink again automatically when space on it is freed.</p>"));
     m_pFixedLabel->setText(UIWizardCloneVD::tr("<p>A <b>fixed size</b> hard drive file may take longer to create on some "
                                                "systems but is often faster to use.</p>"));
