@@ -48,6 +48,28 @@ typedef struct BIOSSEG
 typedef BIOSSEG *PBIOSSEG;
 
 
+/**
+ * Pointer to a BIOS map parser handle.
+ */
+typedef struct BIOSMAP
+{
+    /** The stream pointer. */
+    PRTSTREAM   hStrm;
+    /** The file name. */
+    const char *pszMapFile;
+    /** The current line number (0 based).*/
+    uint32_t    iLine;
+    /** The length of the current line. */
+    uint32_t    cch;
+    /** The offset of the first non-white character on the line. */
+    uint32_t    offNW;
+    /** The line buffer. */
+    char        szLine[16384];
+} BIOSMAP;
+/** Pointer to a BIOS map parser handle. */
+typedef BIOSMAP *PBIOSMAP;
+
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -441,11 +463,13 @@ static RTEXITCODE ParseMapFileSegments(const char *pszBiosMap, PRTSTREAM hStrm, 
 }
 
 
-static RTEXITCODE ParseMapFileInner(const char *pszBiosMap, PRTSTREAM hStrm)
+static RTEXITCODE ParseMapFileInner(PBIOSMAP pMap)
 {
     uint32_t    iLine = 1;
     char        szLine[16384];
     const char *psz;
+    PRTSTREAM   hStrm = pMap->hStrm; /** @todo rewrite the rest. */
+    const char *pszBiosMap = pMap->pszMapFile; /** @todo rewrite the rest. */
 
     /*
      * Read the header.
@@ -495,12 +519,17 @@ static RTEXITCODE ParseMapFileInner(const char *pszBiosMap, PRTSTREAM hStrm)
  */
 static RTEXITCODE ParseMapFile(const char *pszBiosMap)
 {
-    PRTSTREAM hStrm;
-    int rc = RTStrmOpen(pszBiosMap, "rt", &hStrm);
+    BIOSMAP Map;
+    Map.pszMapFile = pszBiosMap;
+    Map.hStrm      = NULL;
+    Map.iLine      = 0;
+    Map.cch        = 0;
+    Map.offNW      = 0;
+    int rc = RTStrmOpen(pszBiosMap, "rt", &Map.hStrm);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening '%s': %Rrc", pszBiosMap, rc);
-    RTEXITCODE rcExit = ParseMapFileInner(pszBiosMap, hStrm);
-    RTStrmClose(hStrm);
+    RTEXITCODE rcExit = ParseMapFileInner(&Map);
+    RTStrmClose(Map.hStrm);
     return rcExit;
 }
 
