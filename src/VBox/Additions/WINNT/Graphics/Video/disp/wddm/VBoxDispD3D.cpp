@@ -1084,9 +1084,8 @@ static VOID vboxWddmDalCheckAddRtsSamplers(PVBOXWDDMDISP_DEVICE pDevice)
         Assert(i < RT_ELEMENTS(pDevice->aSamplerTextures));
         if (!pDevice->aSamplerTextures[i]) continue;
         vboxWddmDalCheckAddRc(pDevice, pDevice->aSamplerTextures[i], FALSE);
-        ++iSampler; \
-    } \
-
+        ++iSampler;
+    }
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

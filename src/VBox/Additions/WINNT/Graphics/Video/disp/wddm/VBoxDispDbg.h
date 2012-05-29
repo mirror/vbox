@@ -208,11 +208,11 @@ void vboxDispLogDbgPrintF(char * szString, ...);
 typedef struct VBOXWDDMDISP_ALLOCATION *PVBOXWDDMDISP_ALLOCATION;
 typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;
 
-/* functions all dump finally comes to */
 #define VBOXVDBG_DUMP_TYPEF_FLOW                   0x00000001
 #define VBOXVDBG_DUMP_TYPEF_CONTENTS               0x00000002
 #define VBOXVDBG_DUMP_TYPEF_DONT_BREAK_ON_CONTENTS 0x00000004
 #define VBOXVDBG_DUMP_TYPEF_BREAK_ON_FLOW          0x00000008
+#define VBOXVDBG_DUMP_TYPEF_SHARED_ONLY            0x00000010
 
 #define VBOXVDBG_DUMP_FLAGS_IS_SETANY(_fFlags, _Value) (((_fFlags) & (_Value)) != 0)
 #define VBOXVDBG_DUMP_FLAGS_IS_SET(_fFlags, _Value) (((_fFlags) & (_Value)) == (_Value))
@@ -221,6 +221,14 @@ typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;
 #define VBOXVDBG_DUMP_FLAGS_SET(_fFlags, _Value) ((_fFlags) | (_Value))
 
 #define VBOXVDBG_DUMP_TYPE_ENABLED(_fFlags) (VBOXVDBG_DUMP_FLAGS_IS_SETANY(_fFlags, VBOXVDBG_DUMP_TYPEF_FLOW | VBOXVDBG_DUMP_TYPEF_CONTENTS))
+#define VBOXVDBG_DUMP_TYPE_ENABLED_FOR_INFO(_pInfo, _fFlags) ( \
+        VBOXVDBG_DUMP_TYPE_ENABLED(_fFlags) \
+        && ( \
+                   !(_pInfo)->pAlloc \
+                || (_pInfo)->pAlloc->pRc->aAllocations[0].hSharedHandle \
+                || VBOXVDBG_DUMP_FLAGS_IS_CLEARED(_fFlags, VBOXVDBG_DUMP_TYPEF_SHARED_ONLY) \
+            ))
+
 #define VBOXVDBG_DUMP_TYPE_FLOW_ONLY(_fFlags) (VBOXVDBG_DUMP_FLAGS_IS_SET(_fFlags, VBOXVDBG_DUMP_TYPEF_FLOW) \
         && VBOXVDBG_DUMP_FLAGS_IS_CLEARED(_fFlags, VBOXVDBG_DUMP_TYPEF_CONTENTS))
 #define VBOXVDBG_DUMP_TYPE_CONTENTS(_fFlags) (VBOXVDBG_DUMP_FLAGS_IS_SET(_fFlags, VBOXVDBG_DUMP_TYPEF_CONTENTS))
@@ -233,11 +241,10 @@ typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;
 VOID vboxVDbgDoDumpAllocRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, RECT *pRect, const char* pSuffix, DWORD fFlags);
 VOID vboxVDbgDoDumpRcRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, IDirect3DResource9 *pD3DRc, RECT *pRect, const char * pSuffix, DWORD fFlags);
 VOID vboxVDbgDoDumpLockUnlockSurfTex(const char * pPrefix, const PVBOXWDDMDISP_ALLOCATION pAlloc, const char * pSuffix, DWORD fFlags);
-/* */
-
 VOID vboxVDbgDoDumpRt(const char * pPrefix, struct VBOXWDDMDISP_DEVICE *pDevice, const char * pSuffix, DWORD fFlags);
 VOID vboxVDbgDoDumpBb(const char * pPrefix, IDirect3DSwapChain9 *pSwapchainIf, const char * pSuffix, DWORD fFlags);
 VOID vboxVDbgDoDumpFb(const char * pPrefix, IDirect3DSwapChain9 *pSwapchainIf, const char * pSuffix, DWORD fFlags);
+VOID vboxVDbgDoDumpSamplers(const char * pPrefix, struct VBOXWDDMDISP_DEVICE *pDevice, const char * pSuffix, DWORD fFlags);
 
 void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * pSuffix);
 void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix);
@@ -375,6 +382,7 @@ extern DWORD g_VBoxVDbgPid;
                 || VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
         { \
             vboxVDbgDoDumpRt("==>"__FUNCTION__": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpSamplers("==>"__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
         }\
     } while (0)
 
@@ -386,6 +394,7 @@ extern DWORD g_VBoxVDbgPid;
         { \
             vboxVDbgDoDumpRt("<=="__FUNCTION__": Rt: ", (_pDevice), "", \
                 VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
+            vboxVDbgDoDumpSamplers("<=="__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
         }\
     } while (0)
 

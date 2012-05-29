@@ -49,6 +49,18 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
+static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, const char * szString, va_list pArgList)
+{
+    uint32_t cbWritten = sprintf(szBuffer, "[0x%x.0x%x] Disp: ", GetCurrentProcessId(), GetCurrentThreadId());
+    if (cbWritten > cbBuffer)
+    {
+        AssertReleaseFailed();
+        return;
+    }
+
+    _vsnprintf(szBuffer + cbWritten, cbBuffer - cbWritten, szString, pArgList);
+}
+
 #ifdef VBOXWDDMDISP_DEBUG
 #define VBOXWDDMDISP_DEBUG_DUMP_DEFAULT 0
 DWORD g_VBoxVDbgFDumpSetTexture = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
@@ -92,18 +104,6 @@ PVBOXWDDMDISP_DEVICE g_VBoxVDbgInternalDevice = NULL;
 PVBOXWDDMDISP_RESOURCE g_VBoxVDbgInternalRc = NULL;
 
 DWORD g_VBoxVDbgCfgCreateSwapchainOnDdiOnce = 0;
-
-static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, const char * szString, va_list pArgList)
-{
-    uint32_t cbWritten = sprintf(szBuffer, "[0x%x.0x%x] Disp: ", GetCurrentProcessId(), GetCurrentThreadId());
-    if (cbWritten > cbBuffer)
-    {
-        AssertReleaseFailed();
-        return;
-    }
-
-    _vsnprintf(szBuffer + cbWritten, cbBuffer - cbWritten, szString, pArgList);
-}
 
 void vboxDispLogDbgPrintF(char * szString, ...)
 {
@@ -173,7 +173,7 @@ VOID vboxVDbgDoDumpPerform(const char * pPrefix, PVBOXVDBG_DUMP_INFO pInfo, cons
 {
     DWORD fFlags = pInfo->fFlags;
 
-    if (!VBOXVDBG_DUMP_TYPE_ENABLED(fFlags))
+    if (!VBOXVDBG_DUMP_TYPE_ENABLED_FOR_INFO(pInfo, fFlags))
         return;
 
     if (!pInfo->pD3DRc && pInfo->pAlloc)
@@ -376,6 +376,22 @@ VOID vboxVDbgDoDumpRt(const char * pPrefix, PVBOXWDDMDISP_DEVICE pDevice, const 
         {
             vboxVDbgPrint((__FUNCTION__": ERROR getting rt: 0x%x", hr));
         }
+    }
+}
+
+VOID vboxVDbgDoDumpSamplers(const char * pPrefix, PVBOXWDDMDISP_DEVICE pDevice, const char * pSuffix, DWORD fFlags)
+{
+    for (UINT i = 0, iSampler = 0; iSampler < pDevice->cSamplerTextures; ++i)
+    {
+        Assert(i < RT_ELEMENTS(pDevice->aSamplerTextures));
+        if (!pDevice->aSamplerTextures[i]) continue;
+        PVBOXWDDMDISP_RESOURCE pRc = pDevice->aSamplerTextures[i];
+        for (UINT j = 0; j < pRc->cAllocations; ++j)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[j];
+            vboxVDbgDoDumpRcRect(pPrefix, pAlloc, NULL, NULL, pSuffix, fFlags);
+        }
+        ++iSampler;
     }
 }
 
