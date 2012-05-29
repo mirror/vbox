@@ -219,7 +219,7 @@ void UIMachineWindowSeamless::cleanupMenu()
 void UIMachineWindowSeamless::showInNecessaryMode()
 {
     /* Show window if we have to: */
-    if (shouldWeShowWindow())
+    if (uisession()->isScreenVisible(m_uScreenId))
     {
         /* Show manually maximized window: */
         sltPlaceOnScreen();
@@ -234,6 +234,8 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         move(r.topLeft());
 #endif /* Q_WS_MAC */
     }
+    /* Else hide window: */
+    else hide();
 }
 
 #ifndef Q_WS_MAC

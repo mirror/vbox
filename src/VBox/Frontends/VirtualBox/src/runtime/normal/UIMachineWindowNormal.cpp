@@ -505,8 +505,11 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
 void UIMachineWindowNormal::showInNecessaryMode()
 {
     /* Show window if we have to: */
-    if (shouldWeShowWindow())
+    if (uisession()->isScreenVisible(m_uScreenId))
         show();
+    /* Else hide window: */
+    else
+        hide();
 }
 
 void UIMachineWindowNormal::updateAppearanceOf(int iElement)

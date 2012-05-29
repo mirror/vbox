@@ -199,8 +199,11 @@ void UIMachineWindowScale::cleanupMenu()
 void UIMachineWindowScale::showInNecessaryMode()
 {
     /* Show window if we have to: */
-    if (shouldWeShowWindow())
+    if (uisession()->isScreenVisible(m_uScreenId))
         show();
+    /* Else hide window: */
+    else
+        hide();
 }
 
 bool UIMachineWindowScale::event(QEvent *pEvent)
