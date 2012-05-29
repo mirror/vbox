@@ -1168,6 +1168,7 @@ void Console::VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus
 
     LogFlowFunc(("%s\n", pszStatus));
 
+#ifdef VBOX_WITH_GUEST_PROPS
     /* Parse the status string. */
     if (RTStrICmp(pszStatus, "ATTACH") == 0)
     {
@@ -1181,6 +1182,7 @@ void Console::VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus
     {
         guestPropertiesVRDPUpdateNameChange(u32ClientId, pszStatus + strlen("NAME="));
     }
+#endif
 
     LogFlowFuncLeave();
 }
