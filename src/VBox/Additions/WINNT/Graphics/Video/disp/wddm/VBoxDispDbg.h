@@ -224,9 +224,8 @@ typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;
 #define VBOXVDBG_DUMP_TYPE_ENABLED_FOR_INFO(_pInfo, _fFlags) ( \
         VBOXVDBG_DUMP_TYPE_ENABLED(_fFlags) \
         && ( \
-                   !(_pInfo)->pAlloc \
-                || (_pInfo)->pAlloc->pRc->aAllocations[0].hSharedHandle \
-                || VBOXVDBG_DUMP_FLAGS_IS_CLEARED(_fFlags, VBOXVDBG_DUMP_TYPEF_SHARED_ONLY) \
+                VBOXVDBG_DUMP_FLAGS_IS_CLEARED(_fFlags, VBOXVDBG_DUMP_TYPEF_SHARED_ONLY) \
+                || ((_pInfo)->pAlloc && (_pInfo)->pAlloc->pRc->aAllocations[0].hSharedHandle) \
             ))
 
 #define VBOXVDBG_DUMP_TYPE_FLOW_ONLY(_fFlags) (VBOXVDBG_DUMP_FLAGS_IS_SET(_fFlags, VBOXVDBG_DUMP_TYPEF_FLOW) \
@@ -381,8 +380,8 @@ extern DWORD g_VBoxVDbgPid;
         if (fDumpShaded \
                 || VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
         { \
-            vboxVDbgDoDumpRt("==>"__FUNCTION__": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
-            vboxVDbgDoDumpSamplers("==>"__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpRt("==>"__FUNCTION__": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpSamplers("==>"__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
         }\
     } while (0)
 
@@ -392,9 +391,8 @@ extern DWORD g_VBoxVDbgPid;
         if (fDumpShaded \
                 || VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
         { \
-            vboxVDbgDoDumpRt("<=="__FUNCTION__": Rt: ", (_pDevice), "", \
-                VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
-            vboxVDbgDoDumpSamplers("<=="__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpRt("<=="__FUNCTION__": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpSamplers("<=="__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
         }\
     } while (0)
 
@@ -456,7 +454,7 @@ extern DWORD g_VBoxVDbgPid;
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED((_pDstAlloc)->pRc) \
                 ) \
         { \
-            DWORD fFlags = VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Blt) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared); \
+            DWORD fFlags = VBOXVDBG_DUMP_FLAGS_FOR_TYPE(_type) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared); \
             if (VBOXVDBG_DUMP_TYPE_CONTENTS(fFlags) && \
                     ((_pSrcSurf) == (_pDstSurf) \
                     && ( ((_pSrcRect) && (_pDstRect) && !memcmp((_pSrcRect), (_pDstRect), sizeof (_pDstRect))) \
@@ -474,8 +472,7 @@ extern DWORD g_VBoxVDbgPid;
             } \
             else \
                 pRect = NULL; \
-            vboxVDbgDoDumpRcRect(_str __FUNCTION__" Src: ", (_pSrcAlloc), (_pSrcSurf), pRect, "", \
-                        VBOXVDBG_DUMP_FLAGS_FOR_TYPE(_type) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
+            vboxVDbgDoDumpRcRect(_str __FUNCTION__" Src: ", (_pSrcAlloc), (_pSrcSurf), pRect, "", fFlags); \
             if (_pDstRect) \
             { \
                 Rect = *((RECT*)(_pDstRect)); \
@@ -483,8 +480,7 @@ extern DWORD g_VBoxVDbgPid;
             } \
             else \
                 pRect = NULL; \
-            vboxVDbgDoDumpRcRect(_str __FUNCTION__" Dst: ", (_pDstAlloc), (_pDstSurf), pRect, "", \
-                        VBOXVDBG_DUMP_FLAGS_FOR_TYPE(_type) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
+            vboxVDbgDoDumpRcRect(_str __FUNCTION__" Dst: ", (_pDstAlloc), (_pDstSurf), pRect, "", fFlags); \
         } \
     } while (0)
 
@@ -608,7 +604,7 @@ extern DWORD g_VBoxVDbgPid;
         if (VBOXVDBG_IS_DUMP_ALLOWED(Flush)) \
         { \
             vboxVDbgDoDumpRt("== "__FUNCTION__": Rt: ", (_pDevice), "", \
-                VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush)); \
+                    VBOXVDBG_DUMP_FLAGS_CLEAR(VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush), VBOXVDBG_DUMP_TYPEF_SHARED_ONLY)); \
         }\
     } while (0)
 
