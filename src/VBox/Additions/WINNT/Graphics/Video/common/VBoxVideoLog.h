@@ -39,6 +39,16 @@
 # define VBOX_VIDEO_LOG_FN_FMT LOG_FN_FMT
 #endif
 
+#ifndef VBOX_VIDEO_LOG_FORMATTER
+# define VBOX_VIDEO_LOG_FORMATTER(_logger, _severity, _a)                     \
+    do                                                                      \
+    {                                                                       \
+        _logger((VBOX_VIDEO_LOG_PREFIX_FMT _severity, VBOX_VIDEO_LOG_PREFIX_PARMS));  \
+        _logger(_a);                                                        \
+        _logger((VBOX_VIDEO_LOG_SUFFIX_FMT  VBOX_VIDEO_LOG_SUFFIX_PARMS));  \
+    } while (0)
+#endif
+
 /* Uncomment to show file/line info in the log */
 /*#define VBOX_VIDEO_LOG_SHOWLINEINFO*/
 
@@ -65,12 +75,10 @@
         _logger(_a);                                                        \
     } while (0)
 
-#define _LOGMSG(_logger, _a)                                                \
+#define _LOGMSG(_logger, _severity, _a)                                     \
     do                                                                      \
     {                                                                       \
-        _logger((VBOX_VIDEO_LOG_PREFIX_FMT, VBOX_VIDEO_LOG_PREFIX_PARMS));  \
-        _logger(_a);                                                        \
-        _logger((VBOX_VIDEO_LOG_SUFFIX_FMT  VBOX_VIDEO_LOG_SUFFIX_PARMS));  \
+        VBOX_VIDEO_LOG_FORMATTER(_logger, _severity, _a);                   \
     } while (0)
 
 /* we can not print paged strings to RT logger, do it this way */
@@ -88,30 +96,22 @@
 # define _WARN_LOGGER VBOX_VIDEO_LOG_LOGGER
 #endif
 
-#define WARN_NOBP(_a)                                                          \
-    do                                                                            \
-    {                                                                             \
-        _WARN_LOGGER((VBOX_VIDEO_LOG_PREFIX_FMT"WARNING! ", VBOX_VIDEO_LOG_PREFIX_PARMS)); \
-        _WARN_LOGGER(_a);                                                                  \
-        _WARN_LOGGER((VBOX_VIDEO_LOG_SUFFIX_FMT VBOX_VIDEO_LOG_SUFFIX_PARMS));             \
+#define WARN_NOBP(_a) _LOGMSG(VBOX_VIDEO_LOG_LOGGER, "WARNING! :", _a)
+#define WARN(_a)           \
+    do                     \
+    {                      \
+        WARN_NOBP(_a);     \
+        BP_WARN();         \
     } while (0)
-
-#define WARN(_a)                                                                  \
-    do                                                                            \
-    {                                                                             \
-        WARN_NOBP(_a);                                                         \
-        BP_WARN();                                                             \
-    } while (0)
-
 #define ASSERT_WARN(_a, _w) do {\
         if(!(_a)) { \
             WARN(_w); \
         }\
     } while (0)
 
-#define LOG(_a) _LOGMSG(VBOX_VIDEO_LOG_LOGGER, _a)
-#define LOGREL(_a) _LOGMSG(VBOX_VIDEO_LOGREL_LOGGER, _a)
-#define LOGF(_a) _LOGMSG(VBOX_VIDEO_LOGFLOW_LOGGER, _a)
+#define LOG(_a) _LOGMSG(VBOX_VIDEO_LOG_LOGGER, "", _a)
+#define LOGREL(_a) _LOGMSG(VBOX_VIDEO_LOGREL_LOGGER, "", _a)
+#define LOGF(_a) _LOGMSG(VBOX_VIDEO_LOGFLOW_LOGGER, "", _a)
 #define LOGF_ENTER() LOGF(("ENTER"))
 #define LOGF_LEAVE() LOGF(("LEAVE"))
 #define LOG_EXACT(_a) _LOGMSG_EXACT(VBOX_VIDEO_LOG_LOGGER, _a)
