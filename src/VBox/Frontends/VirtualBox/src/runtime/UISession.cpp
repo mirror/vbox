@@ -91,6 +91,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     /* Prepare console event-handlers: */
     prepareConsoleEventHandlers();
 
+    /* Prepare screens: */
+    prepareScreens();
+
     /* Prepare framebuffers: */
     prepareFramebuffers();
 
@@ -654,6 +657,30 @@ void UISession::prepareConsoleEventHandlers()
             this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 }
 
+void UISession::prepareScreens()
+{
+    /* Get machine: */
+    CMachine machine = m_session.GetMachine();
+
+    /* Prepare initial screen visibility status: */
+    m_monitorVisibilityVector.resize(machine.GetMonitorCount());
+    m_monitorVisibilityVector.fill(false);
+    m_monitorVisibilityVector[0] = true;
+
+    /* If machine is in 'saved' state: */
+    if (isSaved())
+    {
+        /* Update screen visibility status from saved-state: */
+        for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
+        {
+            BOOL fEnabled = true;
+            ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
+            machine.QuerySavedGuestScreenInfo(i, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+            m_monitorVisibilityVector[i] = fEnabled;
+        }
+    }
+}
+
 void UISession::prepareFramebuffers()
 {
     /* Each framebuffer will be really prepared on first UIMachineView creation: */
@@ -1070,6 +1097,19 @@ void UISession::preparePowerUp()
         UIWizardFirstRun wzd(mainMachineWindow(), session().GetMachine());
         wzd.exec();
     }
+}
+
+bool UISession::isScreenVisible(ulong uScreenId) const
+{
+    Assert(uScreenId < (ulong)m_monitorVisibilityVector.size());
+    return m_monitorVisibilityVector.value((int)uScreenId, false);
+}
+
+void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
+{
+    Assert(uScreenId < (ulong)m_monitorVisibilityVector.size());
+    if (uScreenId < (ulong)m_monitorVisibilityVector.size())
+        m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
 }
 
 UIFrameBuffer* UISession::frameBuffer(ulong uScreenId) const

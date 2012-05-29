@@ -146,6 +146,10 @@ public:
     void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; }
     void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
+    /* Screen visibility status: */
+    bool isScreenVisible(ulong uScreenId) const;
+    void setScreenVisible(ulong uScreenId, bool fIsMonitorVisible);
+
     /* Returns existing framebuffer for the given screen-number;
      * Returns 0 (asserts) if screen-number attribute is out of bounds: */
     UIFrameBuffer* frameBuffer(ulong uScreenId) const;
@@ -201,6 +205,7 @@ private:
 
     /* Prepare helpers: */
     void prepareConsoleEventHandlers();
+    void prepareScreens();
     void prepareFramebuffers();
     void prepareMenuPool();
     void loadSessionSettings();
@@ -209,6 +214,7 @@ private:
     void saveSessionSettings();
     void cleanupMenuPool();
     void cleanupFramebuffers();
+    //void cleanupSession() {}
     void cleanupConsoleEventHandlers();
 
     /* Common helpers: */
@@ -226,6 +232,9 @@ private:
     CSession &m_session;
 
     UIMachineMenuBar *m_pMenuPool;
+
+    /* Screen visibility vector: */
+    QVector<bool> m_monitorVisibilityVector;
 
     /* Frame-buffers vector: */
     QVector<UIFrameBuffer*> m_frameBufferVector;

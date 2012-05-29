@@ -165,7 +165,7 @@ void UIMachineWindowFullscreen::cleanupMenu()
 void UIMachineWindowFullscreen::showInNecessaryMode()
 {
     /* Show window if we have to: */
-    if (shouldWeShowWindow())
+    if (uisession()->isScreenVisible(m_uScreenId))
     {
         /* Make sure the window is placed on valid screen
          * before we are show fullscreen window: */
@@ -185,6 +185,8 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         move(r.topLeft());
 #endif /* Q_WS_MAC */
     }
+    /* Else hide window: */
+    else hide();
 }
 
 void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)

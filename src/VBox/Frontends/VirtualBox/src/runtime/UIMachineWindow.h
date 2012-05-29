@@ -108,7 +108,6 @@ protected:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Helpers: */
-    bool shouldWeShowWindow() const;
     const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
     static Qt::WindowFlags windowFlags(UIVisualStateType visualStateType);
     static Qt::Alignment viewAlignment(UIVisualStateType visualStateType);

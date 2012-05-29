@@ -162,10 +162,13 @@ void UIMachineWindow::sltGuestMonitorChange(KGuestMonitorChangedEventType change
 
     /* Process KGuestMonitorChangedEventType_Enabled change event: */
     if (isHidden() && changeType == KGuestMonitorChangedEventType_Enabled)
-        showInNecessaryMode();
+        uisession()->setScreenVisible(m_uScreenId, true);
     /* Process KGuestMonitorChangedEventType_Disabled change event: */
     else if (!isHidden() && changeType == KGuestMonitorChangedEventType_Disabled)
-        hide();
+        uisession()->setScreenVisible(m_uScreenId, false);
+
+    /* Update screen visibility status: */
+    showInNecessaryMode();
 }
 
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
@@ -610,32 +613,6 @@ void UIMachineWindow::updateDbgWindows()
         machineLogic()->dbgAdjustRelativePos();
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-bool UIMachineWindow::shouldWeShowWindow() const
-{
-    /* By default, every window should be shown: */
-    bool fResult = true;
-    /* But if machine is 'turned off': */
-    if (uisession()->isTurnedOff())
-    {
-        /* If machine is in 'saved' state: */
-        if (uisession()->isSaved())
-        {
-            /* We are getting shown-state from saved-state: */
-            BOOL fEnabled = true;
-            ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-            machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
-            fResult = fEnabled;
-        }
-        /* If machine is in 'powered off', 'teleported' or 'aborted' state: */
-        else
-        {
-            /* Shown-state is 'enabled' only for 1st monitor: */
-            fResult = m_uScreenId == 0;
-        }
-    }
-    return fResult;
-}
 
 /* static */
 Qt::WindowFlags UIMachineWindow::windowFlags(UIVisualStateType visualStateType)
