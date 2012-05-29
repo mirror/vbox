@@ -59,10 +59,10 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_session(sessionReference)
     /* Common variables: */
     , m_pMenuPool(0)
-    , m_machineState(KMachineState_Null)
-#if defined(Q_WS_WIN)
+    , m_machineState(session().GetMachine().GetState())
+#ifdef Q_WS_WIN
     , m_alphaCursor(0)
-#endif
+#endif /* Q_WS_WIN */
     /* Common flags: */
     , m_fIsFirstTimeStarted(false)
     , m_fIsIgnoreRuntimeMediumsChanging(false)
@@ -88,65 +88,16 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsValidPointerShapePresent(false)
     , m_fIsHidingHostPointer(true)
 {
-    /* Explicit initialize the console event handler */
-    UIConsoleEventHandler::instance(this);
-
-    /* Add console event connections */
-    connect(gConsoleEvents, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
-            this, SLOT(sltMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)));
-
-    connect(gConsoleEvents, SIGNAL(sigMouseCapabilityChange(bool, bool, bool)),
-            this, SLOT(sltMouseCapabilityChange(bool, bool, bool)));
-
-    connect(gConsoleEvents, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
-            this, SLOT(sltKeyboardLedsChangeEvent(bool, bool, bool)));
-
-    connect(gConsoleEvents, SIGNAL(sigStateChange(KMachineState)),
-            this, SLOT(sltStateChange(KMachineState)));
-
-    connect(gConsoleEvents, SIGNAL(sigAdditionsChange()),
-            this, SLOT(sltAdditionsChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigVRDEChange()),
-            this, SLOT(sltVRDEChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
-            this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));
-
-    connect(gConsoleEvents, SIGNAL(sigMediumChange(CMediumAttachment)),
-            this, SIGNAL(sigMediumChange(CMediumAttachment)));
-
-    connect(gConsoleEvents, SIGNAL(sigUSBControllerChange()),
-            this, SIGNAL(sigUSBControllerChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
-            this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)));
-
-    connect(gConsoleEvents, SIGNAL(sigSharedFolderChange()),
-            this, SIGNAL(sigSharedFolderChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
-            this, SIGNAL(sigRuntimeError(bool, QString, QString)));
-
-#ifdef Q_WS_MAC
-    connect(gConsoleEvents, SIGNAL(sigShowWindow()),
-            this, SIGNAL(sigShowWindows()),
-            Qt::QueuedConnection);
-#endif /* Q_WS_MAC */
-
-    connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
-            this, SIGNAL(sigCPUExecutionCapChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-            this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+    /* Prepare console event-handlers: */
+    prepareConsoleEventHandlers();
 
     /* Prepare framebuffers: */
     prepareFramebuffers();
 
-    /* Prepare main menu: */
+    /* Prepare main-menu: */
     prepareMenuPool();
 
-    /* Load uisession settings: */
+    /* Load settings: */
     loadSessionSettings();
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
@@ -160,23 +111,23 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 
 UISession::~UISession()
 {
-    /* Save uisession settings: */
+    /* Save settings: */
     saveSessionSettings();
 
-    /* Cleanup main menu: */
+    /* Cleanup main-menu: */
     cleanupMenuPool();
 
     /* Cleanup framebuffers: */
     cleanupFramebuffers();
 
-    /* Destroy the console event handler */
-    UIConsoleEventHandler::destroy();
+    /* Cleanup console event-handlers: */
+    cleanupConsoleEventHandlers();
 
-#if defined(Q_WS_WIN)
+#ifdef Q_WS_WIN
     /* Destroy alpha cursor: */
     if (m_alphaCursor)
         DestroyIcon(m_alphaCursor);
-#endif
+#endif /* Q_WS_WIN */
 }
 
 void UISession::powerUp()
@@ -312,14 +263,14 @@ void UISession::powerUp()
     emit sigMachineStarted();
 }
 
-QWidget* UISession::mainMachineWindow() const
-{
-    return uimachine()->machineLogic()->mainMachineWindow();
-}
-
 UIMachineLogic* UISession::machineLogic() const
 {
     return uimachine()->machineLogic();
+}
+
+QWidget* UISession::mainMachineWindow() const
+{
+    return machineLogic()->mainMachineWindow();
 }
 
 QMenu* UISession::newMenu(UIMainMenuType fOptions /* = UIMainMenuType_ALL */)
@@ -348,11 +299,6 @@ QMenuBar* UISession::newMenuBar(UIMainMenuType fOptions /* = UIMainMenuType_ALL 
 
 bool UISession::setPause(bool fOn)
 {
-    /* Commenting it out as isPaused() could reflect
-     * quite obsolete state due to synchronization: */
-    //if (isPaused() == fOn)
-    //    return true;
-
     CConsole console = session().GetConsole();
 
     if (fOn)
@@ -654,6 +600,60 @@ void UISession::sltAdditionsChange()
     }
 }
 
+void UISession::prepareConsoleEventHandlers()
+{
+    /* Initialize console event-handler: */
+    UIConsoleEventHandler::instance(this);
+
+    /* Add console event connections: */
+    connect(gConsoleEvents, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
+            this, SLOT(sltMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)));
+
+    connect(gConsoleEvents, SIGNAL(sigMouseCapabilityChange(bool, bool, bool)),
+            this, SLOT(sltMouseCapabilityChange(bool, bool, bool)));
+
+    connect(gConsoleEvents, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
+            this, SLOT(sltKeyboardLedsChangeEvent(bool, bool, bool)));
+
+    connect(gConsoleEvents, SIGNAL(sigStateChange(KMachineState)),
+            this, SLOT(sltStateChange(KMachineState)));
+
+    connect(gConsoleEvents, SIGNAL(sigAdditionsChange()),
+            this, SLOT(sltAdditionsChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigVRDEChange()),
+            this, SLOT(sltVRDEChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
+            this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));
+
+    connect(gConsoleEvents, SIGNAL(sigMediumChange(CMediumAttachment)),
+            this, SIGNAL(sigMediumChange(CMediumAttachment)));
+
+    connect(gConsoleEvents, SIGNAL(sigUSBControllerChange()),
+            this, SIGNAL(sigUSBControllerChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
+            this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)));
+
+    connect(gConsoleEvents, SIGNAL(sigSharedFolderChange()),
+            this, SIGNAL(sigSharedFolderChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
+            this, SIGNAL(sigRuntimeError(bool, QString, QString)));
+
+#ifdef Q_WS_MAC
+    connect(gConsoleEvents, SIGNAL(sigShowWindow()),
+            this, SIGNAL(sigShowWindows()), Qt::QueuedConnection);
+#endif /* Q_WS_MAC */
+
+    connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
+            this, SIGNAL(sigCPUExecutionCapChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+            this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+}
+
 void UISession::prepareFramebuffers()
 {
     /* Each framebuffer will be really prepared on first UIMachineView creation: */
@@ -748,6 +748,12 @@ void UISession::cleanupFramebuffers()
         }
     }
     m_frameBufferVector.clear();
+}
+
+void UISession::cleanupConsoleEventHandlers()
+{
+    /* Destroy console event-handler: */
+    UIConsoleEventHandler::destroy();
 }
 
 WId UISession::winId() const

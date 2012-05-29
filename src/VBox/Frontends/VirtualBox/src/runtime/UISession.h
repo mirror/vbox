@@ -87,8 +87,8 @@ public:
     /* Common getters: */
     CSession& session() { return m_session; }
     KMachineState machineState() const { return m_machineState; }
-    QWidget* mainMachineWindow() const;
     UIMachineLogic* machineLogic() const;
+    QWidget* mainMachineWindow() const;
     QMenu* newMenu(UIMainMenuType fOptions = UIMainMenuType_All);
     QMenuBar* newMenuBar(UIMainMenuType fOptions = UIMainMenuType_All);
     QCursor cursor() const { return m_cursor; }
@@ -200,6 +200,7 @@ private:
     UIMachine* uimachine() const { return m_pMachine; }
 
     /* Prepare helpers: */
+    void prepareConsoleEventHandlers();
     void prepareFramebuffers();
     void prepareMenuPool();
     void loadSessionSettings();
@@ -208,6 +209,7 @@ private:
     void saveSessionSettings();
     void cleanupMenuPool();
     void cleanupFramebuffers();
+    void cleanupConsoleEventHandlers();
 
     /* Common helpers: */
     WId winId() const;
