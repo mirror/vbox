@@ -42,6 +42,7 @@ typedef struct BIOSSEG
     char        szClass[32];
     char        szGroup[32];
     RTFAR16     Address;
+    uint32_t    uFlatAddr;
     uint32_t    cb;
 } BIOSSEG;
 /** Pointer to a BIOS segment. */
@@ -57,6 +58,8 @@ typedef struct BIOSMAP
     PRTSTREAM   hStrm;
     /** The file name. */
     const char *pszMapFile;
+    /** Set when EOF has been reached. */
+    bool        fEof;
     /** The current line number (0 based).*/
     uint32_t    iLine;
     /** The length of the current line. */
@@ -119,44 +122,139 @@ static RTEXITCODE ParseSymFile(const char *pszBiosSym)
 }
 
 
+/**
+ * Reads a line from the file.
+ *
+ * @returns @c true on success, @c false + msg on failure, @c false on eof.
+ * @param   pMap                The map file handle.
+ */
+static bool mapReadLine(PBIOSMAP pMap)
+{
+    int rc = RTStrmGetLine(pMap->hStrm, pMap->szLine, sizeof(pMap->szLine));
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_EOF)
+        {
+            pMap->fEof      = true;
+            pMap->cch       = 0;
+            pMap->offNW     = 0;
+            pMap->szLine[0] = '\0';
+        }
+        else
+            RTMsgError("%s:%d: Read error %Rrc", pMap->pszMapFile, pMap->iLine + 1, rc);
+        return false;
+    }
+    pMap->iLine++;
+    pMap->cch   = strlen(pMap->szLine);
+
+    /* Check out leading white space. */
+    if (!RT_C_IS_SPACE(pMap->szLine[0]))
+        pMap->offNW = 0;
+    else
+    {
+        uint32_t off = 1;
+        while (RT_C_IS_SPACE(pMap->szLine[off]))
+            off++;
+        pMap->offNW = off;
+    }
+
+    return true;
+}
 
 
-static bool SkipEmptyLines(PRTSTREAM hStrm, uint32_t *piLine, char *pszLine, size_t cbLine)
+/**
+ * Checks if it is an empty line.
+ * @returns @c true if empty, @c false if not.
+ * @param   pMap                The map file handle.
+ */
+static bool mapIsEmptyLine(PBIOSMAP pMap)
+{
+    Assert(pMap->offNW <= pMap->cch);
+    return pMap->offNW == pMap->cch;
+}
+
+
+/**
+ * Reads ahead in the map file until a non-empty line or EOF is encountered.
+ *
+ * @returns @c true on success, @c false + msg on failure, @c false on eof.
+ * @param   pMap                The map file handle.
+ */
+static bool mapSkipEmptyLines(PBIOSMAP pMap)
 {
     for (;;)
     {
-        int rc = RTStrmGetLine(hStrm, pszLine, cbLine);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Error reading map-file: %Rrc", rc);
+        if (!mapReadLine(pMap))
             return false;
-        }
-
-        *piLine += 1;
-        const char *psz = RTStrStripL(pszLine);
-        if (*psz)
+        if (pMap->offNW < pMap->cch)
             return true;
     }
 }
 
 
-static bool SkipNonEmptyLines(PRTSTREAM hStrm, uint32_t *piLine, char *pszLine, size_t cbLine)
+/**
+ * Reads ahead in the map file until an empty line or EOF is encountered.
+ *
+ * @returns @c true on success, @c false + msg on failure, @c false on eof.
+ * @param   pMap                The map file handle.
+ */
+static bool mapSkipNonEmptyLines(PBIOSMAP pMap)
 {
     for (;;)
     {
-        int rc = RTStrmGetLine(hStrm, pszLine, cbLine);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Error reading map-file: %Rrc", rc);
+        if (!mapReadLine(pMap))
             return false;
-        }
-
-        *piLine += 1;
-        const char *psz = RTStrStripL(pszLine);
-        if (!*psz)
+        if (pMap->offNW == pMap->cch)
             return true;
     }
 }
+
+
+/**
+ * Strips the current line.
+ *
+ * The string length may change.
+ *
+ * @returns Pointer to the first non-space character.
+ * @param   pMap                The map file handle.
+ * @param   pcch                Where to return the length of the unstripped
+ *                              part.  Optional.
+ */
+static char *mapStripCurrentLine(PBIOSMAP pMap, size_t *pcch)
+{
+    char *psz    = &pMap->szLine[pMap->offNW];
+    char *pszEnd = &pMap->szLine[pMap->cch];
+    while (   (uintptr_t)pszEnd > (uintptr_t)psz
+           && RT_C_IS_SPACE(pszEnd[-1]))
+    {
+        *--pszEnd = '\0';
+        pMap->cch--;
+    }
+    if (pcch)
+        *pcch = pszEnd - psz;
+    return psz;
+}
+
+
+/**
+ * Reads a line from the file and right strips it.
+ *
+ * @returns Pointer to szLine on success, @c NULL + msg on failure, @c NULL on
+ *          EOF.
+ * @param   pMap                The map file handle.
+ * @param   pcch                Where to return the length of the unstripped
+ *                              part.  Optional.
+ */
+static char *mapReadLineStripRight(PBIOSMAP pMap, size_t *pcch)
+{
+    if (!mapReadLine(pMap))
+        return NULL;
+    mapStripCurrentLine(pMap, NULL);
+    if (pcch)
+        *pcch = pMap->cch;
+    return pMap->szLine;
+}
+
 
 
 static char *ReadMapLineR(const char *pszBiosMap, PRTSTREAM hStrm, uint32_t *piLine,
@@ -176,40 +274,33 @@ static char *ReadMapLineR(const char *pszBiosMap, PRTSTREAM hStrm, uint32_t *piL
 }
 
 
-static char *ReadMapLineLR(const char *pszBiosMap, PRTSTREAM hStrm, uint32_t *piLine,
-                          char *pszLine, size_t cbLine, size_t *pcchLine)
+/**
+ * mapReadLine() + mapStripCurrentLine().
+ *
+ * @returns Pointer to the first non-space character in the new line. NULL on
+ *          read error (bitched already) or end of file.
+ * @param   pMap                The map file handle.
+ * @param   pcch                Where to return the length of the unstripped
+ *                              part.  Optional.
+ */
+static char *mapReadLineStrip(PBIOSMAP pMap, size_t *pcch)
 {
-    int rc = RTStrmGetLine(hStrm, pszLine, cbLine);
-    if (RT_FAILURE(rc))
-    {
-        RTMsgError("%s:%d: Read error: %Rrc", pszBiosMap, *piLine, rc);
+    if (!mapReadLine(pMap))
         return NULL;
-    }
-    *piLine += 1;
-
-    char  *psz = RTStrStrip(pszLine);
-    *pcchLine = strlen(psz);
-    return psz;
+    return mapStripCurrentLine(pMap, pcch);
 }
 
 
-static char *ReadMapLine(const char *pszBiosMap, PRTSTREAM hStrm, uint32_t *piLine,
-                         char *pszLine, size_t cbLine, size_t *pcchLine)
-{
-    int rc = RTStrmGetLine(hStrm, pszLine, cbLine);
-    if (RT_FAILURE(rc))
-    {
-        RTMsgError("%s:%d: Read error: %Rrc", pszBiosMap, *piLine, rc);
-        return NULL;
-    }
-    *piLine += 1;
-
-    *pcchLine = strlen(pszLine);
-    return pszLine;
-}
-
-
-static bool ParseWord(char **ppszCursor, char *pszBuf, size_t cbBuf)
+/**
+ * Parses a word, copying it into the supplied buffer, and skipping any spaces
+ * following it.
+ *
+ * @returns @c true on success, @c false on failure.
+ * @param   ppszCursor          Pointer to the cursor variable.
+ * @param   pszBuf              The output buffer.
+ * @param   cbBuf               The size of the output buffer.
+ */
+static bool mapParseWord(char **ppszCursor, char *pszBuf, size_t cbBuf)
 {
     /* Check that we start on a non-blank. */
     char *pszStart  = *ppszCursor;
@@ -236,10 +327,17 @@ static bool ParseWord(char **ppszCursor, char *pszBuf, size_t cbBuf)
 }
 
 
-static bool ParseAddress(char **ppszCursor, PRTFAR16 pAddr)
+/**
+ * Parses an 16:16 address.
+ *
+ * @returns @c true on success, @c false on failure.
+ * @param   ppszCursor          Pointer to the cursor variable.
+ * @param   pAddr               Where to return the address.
+ */
+static bool mapParseAddress(char **ppszCursor, PRTFAR16 pAddr)
 {
     char szWord[32];
-    if (!ParseWord(ppszCursor, szWord, sizeof(szWord)))
+    if (!mapParseWord(ppszCursor, szWord, sizeof(szWord)))
         return false;
     size_t cchWord = strlen(szWord);
 
@@ -269,16 +367,23 @@ static bool ParseAddress(char **ppszCursor, PRTFAR16 pAddr)
 
     /* Convert it. */
     szWord[4] = '\0';
-    int rc1 = RTStrToUInt16Ex(szWord,     NULL, 16, &pAddr->sel);  AssertRC(rc1);
-    int rc2 = RTStrToUInt16Ex(szWord + 5, NULL, 16, &pAddr->off);  AssertRC(rc2);
+    int rc1 = RTStrToUInt16Full(szWord,     16, &pAddr->sel);  AssertRCSuccess(rc1);
+    int rc2 = RTStrToUInt16Full(szWord + 5, 16, &pAddr->off);  AssertRCSuccess(rc2);
     return true;
 }
 
 
-static bool ParseSize(char **ppszCursor, uint32_t *pcb)
+/**
+ * Parses a size.
+ *
+ * @returns @c true on success, @c false on failure.
+ * @param   ppszCursor          Pointer to the cursor variable.
+ * @param   pcb                 Where to return the size.
+ */
+static bool mapParseSize(char **ppszCursor, uint32_t *pcb)
 {
     char szWord[32];
-    if (!ParseWord(ppszCursor, szWord, sizeof(szWord)))
+    if (!mapParseWord(ppszCursor, szWord, sizeof(szWord)))
         return false;
     size_t cchWord = strlen(szWord);
     if (cchWord != 8)
@@ -294,26 +399,23 @@ static bool ParseSize(char **ppszCursor, uint32_t *pcb)
 /**
  * Parses a section box and the following column header.
  *
- * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
- * @param   pszBiosMap      The input file name.
- * @param   hStrm           The input stream.
- * @param   piLine          Pointer to the current line number variable.
+ * @returns @c true on success, @c false + msg on failure, @c false on eof.
+ * @param   pMap            Map file handle.
  * @param   pszSectionNm    The expected section name.
  * @param   cColumns        The number of columns.
  * @param   ...             The column names.
  */
-static RTEXITCODE SkipThruColumnHeadings(const char *pszBiosMap, PRTSTREAM hStrm, uint32_t *piLine,
-                                         const char *pszSectionNm, uint32_t cColumns, ...)
+static bool mapSkipThruColumnHeadings(PBIOSMAP pMap, const char *pszSectionNm, uint32_t cColumns, ...)
 {
-    char szLine[16384];
-    if (!SkipEmptyLines(hStrm, piLine, szLine, sizeof(szLine)))
-        return RTEXITCODE_FAILURE;
+    if (   mapIsEmptyLine(pMap)
+        && !mapSkipEmptyLines(pMap))
+        return false;
 
     /* +------------+ */
-    char  *psz = RTStrStrip(szLine);
-    size_t cch = strlen(psz);
+    size_t cch;
+    char  *psz = mapStripCurrentLine(pMap, &cch);
     if (!psz)
-        return RTEXITCODE_FAILURE;
+        return false;
 
     if (   psz[0] != '+'
         || psz[1] != '-'
@@ -324,12 +426,15 @@ static RTEXITCODE SkipThruColumnHeadings(const char *pszBiosMap, PRTSTREAM hStrm
         || psz[cch - 2] != '-'
         || psz[cch - 1] != '+'
        )
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected section box: +-----...", pszBiosMap, *piLine);
+    {
+        RTMsgError("%s:%d: Expected section box: +-----...", pMap->pszMapFile, pMap->iLine);
+        return false;
+    }
 
     /* |   pszSectionNm   | */
-    psz = ReadMapLineLR(pszBiosMap, hStrm, piLine, szLine, sizeof(szLine), &cch);
+    psz = mapReadLineStrip(pMap, &cch);
     if (!psz)
-        return RTEXITCODE_FAILURE;
+        return false;
 
     size_t cchSectionNm = strlen(pszSectionNm);
     if (   psz[0] != '|'
@@ -343,12 +448,15 @@ static RTEXITCODE SkipThruColumnHeadings(const char *pszBiosMap, PRTSTREAM hStrm
         || cch != 1 + 3 + cchSectionNm + 3 + 1
         || strncmp(&psz[4], pszSectionNm, cchSectionNm)
         )
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected section box: |   %s   |", pszBiosMap, *piLine, pszSectionNm);
+    {
+        RTMsgError("%s:%d: Expected section box: |   %s   |", pMap->pszMapFile, pMap->iLine, pszSectionNm);
+        return false;
+    }
 
     /* +------------+ */
-    psz = ReadMapLineLR(pszBiosMap, hStrm, piLine, szLine, sizeof(szLine), &cch);
+    psz = mapReadLineStrip(pMap, &cch);
     if (!psz)
-        return RTEXITCODE_FAILURE;
+        return false;
     if (   psz[0] != '+'
         || psz[1] != '-'
         || psz[2] != '-'
@@ -358,14 +466,14 @@ static RTEXITCODE SkipThruColumnHeadings(const char *pszBiosMap, PRTSTREAM hStrm
         || psz[cch - 2] != '-'
         || psz[cch - 1] != '+'
        )
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected section box: +-----...", pszBiosMap, *piLine);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected section box: +-----...", pMap->pszMapFile, pMap->iLine);
 
     /* There may be a few lines describing the table notation now, surrounded by blank lines. */
     do
     {
-        psz = ReadMapLineR(pszBiosMap, hStrm, piLine, szLine, sizeof(szLine), &cch);
+        psz = mapReadLineStripRight(pMap, &cch);
         if (!psz)
-            return RTEXITCODE_FAILURE;
+            return false;
     } while (   *psz == '\0'
              || (   !RT_C_IS_SPACE(psz[0])
                  && RT_C_IS_SPACE(psz[1])
@@ -385,8 +493,8 @@ static RTEXITCODE SkipThruColumnHeadings(const char *pszBiosMap, PRTSTREAM hStrm
                 && !RT_C_IS_SPACE(psz[cchColumn])))
         {
             va_end(va);
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected column '%s' found '%s'",
-                                  pszBiosMap, *piLine, pszColumn, psz);
+            RTMsgError("%s:%d: Expected column '%s' found '%s'", pMap->pszMapFile, pMap->iLine, pszColumn, psz);
+            return false;
         }
         psz += cchColumn;
         while (RT_C_IS_SPACE(*psz))
@@ -395,117 +503,162 @@ static RTEXITCODE SkipThruColumnHeadings(const char *pszBiosMap, PRTSTREAM hStrm
     va_end(va);
 
     /* The next line is the underlining. */
-    psz = ReadMapLineR(pszBiosMap, hStrm, piLine, szLine, sizeof(szLine), &cch);
+    psz = mapReadLineStripRight(pMap, &cch);
     if (!psz)
-        return RTEXITCODE_FAILURE;
+        return false;
     if (*psz != '=' || psz[cch - 1] != '=')
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected column header underlining", pszBiosMap, *piLine);
+    {
+        RTMsgError("%s:%d: Expected column header underlining", pMap->pszMapFile, pMap->iLine);
+        return false;
+    }
 
     /* Skip one blank line. */
-    psz = ReadMapLineR(pszBiosMap, hStrm, piLine, szLine, sizeof(szLine), &cch);
+    psz = mapReadLineStripRight(pMap, &cch);
     if (!psz)
-        return RTEXITCODE_FAILURE;
+        return false;
     if (*psz)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected blank line beneath the column headers", pszBiosMap, *piLine);
+    {
+        RTMsgError("%s:%d: Expected blank line beneath the column headers", pMap->pszMapFile, pMap->iLine);
+        return false;
+    }
 
-    return RTEXITCODE_SUCCESS;
+    return true;
 }
 
 
-
-static RTEXITCODE ParseMapFileSegments(const char *pszBiosMap, PRTSTREAM hStrm, uint32_t *piLine)
+/**
+ * Parses a segment list.
+ *
+ * @returns @c true on success, @c false + msg on failure, @c false on eof.
+ * @param   pMap                The map file handle.
+ */
+static bool mapParseSegments(PBIOSMAP pMap)
 {
     for (;;)
     {
-        /* Read the next line and right strip it. */
-        char szLine[16384];
-        int rc = RTStrmGetLine(hStrm, szLine, sizeof(szLine));
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Read error: %Rrc", pszBiosMap, *piLine, rc);
-
-        *piLine += 1;
-        RTStrStripR(szLine);
+        if (!mapReadLineStripRight(pMap, NULL))
+            return false;
 
         /* The end? The line should be empty. Expectes segment name to not
            start with a space. */
-        if (!szLine[0] || RT_C_IS_SPACE(szLine[0]))
+        if (!pMap->szLine[0] || RT_C_IS_SPACE(pMap->szLine[0]))
         {
-            if (szLine[0])
-                return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Malformed segment line", pszBiosMap, *piLine);
-            return RTEXITCODE_SUCCESS;
+            if (!pMap->szLine[0])
+                return true;
+            RTMsgError("%s:%u: Malformed segment line", pMap->pszMapFile, pMap->iLine);
+            return false;
         }
 
         /* Parse the segment line. */
         uint32_t iSeg = g_cSegs;
         if (iSeg >= RT_ELEMENTS(g_aSegs))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Too many segments", pszBiosMap, *piLine);
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Too many segments", pMap->pszMapFile, pMap->iLine);
 
-        char *psz = szLine;
-        if (ParseWord(&psz, g_aSegs[iSeg].szName, sizeof(g_aSegs[iSeg].szName)))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Segment name parser error", pszBiosMap, *piLine);
-        if (ParseWord(&psz, g_aSegs[iSeg].szClass, sizeof(g_aSegs[iSeg].szClass)))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Segment class parser error", pszBiosMap, *piLine);
-        if (ParseWord(&psz, g_aSegs[iSeg].szGroup, sizeof(g_aSegs[iSeg].szGroup)))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Segment group parser error", pszBiosMap, *piLine);
-        if (ParseAddress(&psz, &g_aSegs[iSeg].Address))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Segment address parser error", pszBiosMap, *piLine);
-        if (ParseSize(&psz, &g_aSegs[iSeg].cb))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Segment size parser error", pszBiosMap, *piLine);
+        char *psz = pMap->szLine;
+        if (!mapParseWord(&psz, g_aSegs[iSeg].szName, sizeof(g_aSegs[iSeg].szName)))
+            RTMsgError("%s:%u: Segment name parser error", pMap->pszMapFile, pMap->iLine);
+        else if (!mapParseWord(&psz, g_aSegs[iSeg].szClass, sizeof(g_aSegs[iSeg].szClass)))
+            RTMsgError("%s:%u: Segment class parser error", pMap->pszMapFile, pMap->iLine);
+        else if (!mapParseWord(&psz, g_aSegs[iSeg].szGroup, sizeof(g_aSegs[iSeg].szGroup)))
+            RTMsgError("%s:%u: Segment group parser error", pMap->pszMapFile, pMap->iLine);
+        else if (!mapParseAddress(&psz, &g_aSegs[iSeg].Address))
+            RTMsgError("%s:%u: Segment address parser error", pMap->pszMapFile, pMap->iLine);
+        else if (!mapParseSize(&psz, &g_aSegs[iSeg].cb))
+            RTMsgError("%s:%u: Segment size parser error", pMap->pszMapFile, pMap->iLine);
+        else
+        {
+            g_aSegs[iSeg].uFlatAddr = ((uint32_t)g_aSegs[iSeg].Address.sel << 4) + g_aSegs[iSeg].Address.off;
+            g_cSegs++;
+            if (g_cVerbose > 2)
+                RTStrmPrintf(g_pStdErr, "read segment at %08x / %04x:%04x LB %04x %s / %s / %s\n",
+                             g_aSegs[iSeg].uFlatAddr,
+                             g_aSegs[iSeg].Address.sel,
+                             g_aSegs[iSeg].Address.off,
+                             g_aSegs[iSeg].cb,
+                             g_aSegs[iSeg].szName,
+                             g_aSegs[iSeg].szClass,
+                             g_aSegs[iSeg].szGroup);
 
-        g_cSegs++;
-
-        while (RT_C_IS_SPACE(*psz))
-            psz++;
-        if (*psz)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Junk at end of line", pszBiosMap, *piLine);
-
+            while (RT_C_IS_SPACE(*psz))
+                psz++;
+            if (!*psz)
+                continue;
+            RTMsgError("%s:%u: Junk at end of line", pMap->pszMapFile, pMap->iLine);
+        }
+        return false;
     }
 }
 
 
-static RTEXITCODE ParseMapFileInner(PBIOSMAP pMap)
+/**
+ * Sorts the segment array by flat address.
+ */
+static void mapSortSegments(void)
 {
-    uint32_t    iLine = 1;
-    char        szLine[16384];
+    for (uint32_t i = 0; i < g_cSegs - 1; i++)
+    {
+        for (uint32_t j = i + 1; j < g_cSegs; j++)
+            if (g_aSegs[j].uFlatAddr < g_aSegs[i].uFlatAddr)
+            {
+                BIOSSEG Tmp = g_aSegs[i];
+                g_aSegs[i] = g_aSegs[j];
+                g_aSegs[j] = Tmp;
+            }
+        if (g_cVerbose > 0)
+            RTStrmPrintf(g_pStdErr, "segment at %08x / %04x:%04x LB %04x %s / %s / %s\n",
+                         g_aSegs[i].uFlatAddr,
+                         g_aSegs[i].Address.sel,
+                         g_aSegs[i].Address.off,
+                         g_aSegs[i].cb,
+                         g_aSegs[i].szName,
+                         g_aSegs[i].szClass,
+                         g_aSegs[i].szGroup);
+    }
+}
+
+
+
+/**
+ * Parses the given map file.
+ *
+ * @returns RTEXITCODE_SUCCESS and lots of globals, or RTEXITCODE_FAILURE and a
+ *          error message.
+ * @param   pMap                The map file handle.
+ */
+static RTEXITCODE mapParseFile(PBIOSMAP pMap)
+{
     const char *psz;
-    PRTSTREAM   hStrm = pMap->hStrm; /** @todo rewrite the rest. */
-    const char *pszBiosMap = pMap->pszMapFile; /** @todo rewrite the rest. */
 
     /*
      * Read the header.
      */
-    int rc = RTStrmGetLine(hStrm, szLine, sizeof(szLine));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error reading map-file header: %Rrc", rc);
-    if (strncmp(szLine, RT_STR_TUPLE("Open Watcom Linker Version")))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unexpected map-file header: '%s'", szLine);
-    if (   !SkipNonEmptyLines(hStrm, &iLine, szLine, sizeof(szLine))
-        || !SkipEmptyLines(hStrm, &iLine, szLine, sizeof(szLine)) )
+    if (!mapReadLine(pMap))
+        return RTEXITCODE_FAILURE;
+    if (strncmp(pMap->szLine, RT_STR_TUPLE("Open Watcom Linker Version")))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unexpected map-file header: '%s'", pMap->szLine);
+    if (   !mapSkipNonEmptyLines(pMap)
+        || !mapSkipEmptyLines(pMap))
         return RTEXITCODE_FAILURE;
 
     /*
      * Skip groups.
      */
-    if (SkipThruColumnHeadings(pszBiosMap, hStrm, &iLine, "Groups", 3, "Group", "Address", "Size", NULL) != RTEXITCODE_SUCCESS)
+    if (!mapSkipThruColumnHeadings(pMap, "Groups", 3, "Group", "Address", "Size", NULL))
         return RTEXITCODE_FAILURE;
-    if (!SkipNonEmptyLines(hStrm, &iLine, szLine, sizeof(szLine)))
+    if (!mapSkipNonEmptyLines(pMap))
         return RTEXITCODE_FAILURE;
 
     /*
      * Parse segments.
      */
-    if (   SkipThruColumnHeadings(pszBiosMap, hStrm, &iLine, "Segments", 5, "Segment", "Class", "Group", "Address", "Size")
-        != RTEXITCODE_SUCCESS)
+    if (!mapSkipThruColumnHeadings(pMap, "Segments", 5, "Segment", "Class", "Group", "Address", "Size"))
         return RTEXITCODE_FAILURE;
-
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error reading map-file group: %Rrc", rc);
-
-
+    if (!mapParseSegments(pMap))
+        return RTEXITCODE_FAILURE;
+    mapSortSegments();
 
 
-
-    return RTMsgErrorExit(RTEXITCODE_FAILURE, "ParseMapFileInner is not fully implemented");
+    return RTMsgErrorExit(RTEXITCODE_FAILURE, "mapParseFile is not fully implemented");
 }
 
 
@@ -523,12 +676,13 @@ static RTEXITCODE ParseMapFile(const char *pszBiosMap)
     Map.pszMapFile = pszBiosMap;
     Map.hStrm      = NULL;
     Map.iLine      = 0;
+    Map.fEof       = false;
     Map.cch        = 0;
     Map.offNW      = 0;
-    int rc = RTStrmOpen(pszBiosMap, "rt", &Map.hStrm);
+    int rc = RTStrmOpen(pszBiosMap, "r", &Map.hStrm);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening '%s': %Rrc", pszBiosMap, rc);
-    RTEXITCODE rcExit = ParseMapFileInner(&Map);
+    RTEXITCODE rcExit = mapParseFile(&Map);
     RTStrmClose(Map.hStrm);
     return rcExit;
 }
@@ -608,9 +762,9 @@ int main(int argc, char **argv)
                 break;
 
             case 's':
-                if (pszBiosMap)
+                if (pszBiosSym)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--bios-sym is given more than once");
-                pszBiosMap = ValueUnion.psz;
+                pszBiosSym = ValueUnion.psz;
                 break;
 
             case 'o':
