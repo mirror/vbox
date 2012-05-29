@@ -202,10 +202,8 @@ typedef struct VBOXWDDMDISP_DEVICE
     /* no lock is needed for this since we're guaranteed the per-device calls are not reentrant */
     RTLISTANCHOR DirtyAllocList;
 
-#ifdef VBOXWDDMDISP_DEBUG
     UINT cSamplerTextures;
     struct VBOXWDDMDISP_RESOURCE *aSamplerTextures[VBOXWDDMDISP_TOTAL_SAMPLERS];
-#endif
 
     UINT cRTs;
     struct VBOXWDDMDISP_ALLOCATION * apRTs[1];
