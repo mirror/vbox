@@ -2144,7 +2144,7 @@ Virtual system 0:
           space in the guest system first be zeroed out using a suitable
           software tool. For Windows guests, you can use the
           <computeroutput>sdelete</computeroutput> tool provided by Microsoft.
-          Execute <computeroutput>sdelete -c</computeroutput> in the guest to
+          Execute <computeroutput>sdelete -z</computeroutput> in the guest to
           zero the free disk space before compressing the virtual disk
           image. For Linux, use the <code>zerofree</code> utility which
           supports ext2/ext3 filesystems.</para>
