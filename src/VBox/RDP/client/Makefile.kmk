@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -57,7 +57,7 @@ ifdef VBOX_WITH_LINUX_COMPILER_H
  rdesktop-vrdp_DEFS.linux += VBOX_WITH_LINUX_COMPILER_H
 endif
 # @todo once rdp proxy is available on Solaris, add WITH_RDPUSB=1
-# snv_166+ dirent.h: defines dd_fd only if __USE_LEGACY_PROTOTYPES__ is defined, otherwise uses d_fd, let's just 
+# snv_166+ dirent.h: defines dd_fd only if __USE_LEGACY_PROTOTYPES__ is defined, otherwise uses d_fd, let's just
 # define __USE_LEGACY_PROTOTYPES__ until our buildbox is updated sufficiently
 rdesktop-vrdp_DEFS.solaris = \
 	HAVE_SYS_FILIO_H=1 RDPSND_SUN=1 HAVE_ICONV_H=1 ICONV_CONST= STAT_STATVFS64=1 _FILE_OFFSET_BITS=64 \
@@ -380,5 +380,5 @@ $$(rdesktop-tarball_0_OUTDIR)/rdesktop-vrdp.tar.gz: \
 	$(QUIET)cd $(PATH_STAGE)/$(rdesktop-src_INST).. && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR)/ | gzip - > $@
 
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -738,4 +738,4 @@ $(VBOXWEB_METRICSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/java/jax-ws/metrictest.
 
 endif # VBOX_ONLY_SDK
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

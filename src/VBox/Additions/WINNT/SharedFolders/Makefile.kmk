@@ -16,10 +16,10 @@
 #
 
 SUB_DEPTH = ../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile(s).
 include $(PATH_SUB_CURRENT)/np/Makefile.kmk
 include $(PATH_SUB_CURRENT)/driver/Makefile.kmk
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

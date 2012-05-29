@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # Globals
@@ -159,7 +159,7 @@ ifndef VBOX_ONLY_TESTSUITE
  endif
 endif # !VBOX_ONLY_TESTSUITE
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
 #
 # File per-OS/arch file specs for the additions iso (alphabetical order).

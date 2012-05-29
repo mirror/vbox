@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstCredentialProvider
 tstCredentialProvider_TEMPLATE = VBOXGUESTR3EXE
@@ -39,4 +39,4 @@ tstCredentialProvider_LIBS.amd64  := \
 	$(VBOX_PATH_PSDK_200702)/Lib/x64/Credui.Lib \
 	$(VBOX_PATH_PSDK_200702)/Lib/x64/Secur32.Lib
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)

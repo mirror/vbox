@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008-2010 Oracle Corporation
+# Copyright (C) 2008-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 
 if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
@@ -434,5 +434,5 @@ $(PATH_OUT)/opt_netgraph.h:
  endif
 endif # freebsd
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

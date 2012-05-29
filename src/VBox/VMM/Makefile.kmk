@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 ifndef VBOX_ONLY_EXTPACKS
@@ -647,7 +647,7 @@ else
 endif
 
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
 
 # Alias the PGM templates to the object in which they are defined.

@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_TARGET_ARCH),x86)
 SYSMODS += VBoxMouseNT
@@ -38,5 +38,5 @@ VBoxMouseNT_CLEAN       = \
 	$(VBoxMouseNT_0_OUTDIR)/VBoxMouseNT.pdb
 endif # x86
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

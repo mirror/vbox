@@ -8,7 +8,7 @@
 #
 
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -57,5 +57,5 @@ define TOOL_VBoxDummyObjLdTool_LINK_MISCBIN_CMDS
 	$(CP) -vf $(objs) $(out)
 endef
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

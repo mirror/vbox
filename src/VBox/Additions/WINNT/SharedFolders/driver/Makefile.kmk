@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # VBoxSF
@@ -65,5 +65,5 @@ VBoxSF_LIBS = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -45,7 +45,7 @@ VBoxSampleDriver_LIBS     = \
 	$(LIB_VMM) \
 	$(LIB_REM)
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
 
 #

@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
@@ -38,5 +38,5 @@ $$(tstHGCMSvc_0_OUTDIR)/tstHGCMSvc.run: $$(tstHGCMSvc_1_STAGE_TARGET)
 
 endif # VBOX_WITH_TESTCASES
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

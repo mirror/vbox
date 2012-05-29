@@ -3,7 +3,7 @@
 # Sub-Makefile for the Windows NT++ Guest Additions.
 #
 
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -36,5 +36,5 @@ ifdef VBOX_WITH_MMR
 include $(PATH_SUB_CURRENT)/VBoxMMR/Makefile.kmk
 endif
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

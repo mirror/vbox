@@ -50,5 +50,5 @@ ifdef VBOX_WITH_HARDENING
 endif
 
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

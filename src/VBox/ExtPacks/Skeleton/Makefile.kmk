@@ -29,7 +29,7 @@
 #
 
 SUB_DEPTH = ../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # Extend the extension pack templates.
@@ -158,5 +158,5 @@ $(VBOX_PATH_PACKAGES)/$(VBOX_SKELETON_MANGLED_NAME)-$(VBOX_VERSION_STRING)r$(VBO
 
 BLDDIRS += $(VBOX_PATH_PACKAGES)/
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

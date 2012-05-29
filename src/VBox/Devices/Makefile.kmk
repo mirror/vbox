@@ -1170,5 +1170,5 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  VBoxExtPackPuelInsRoms_SOURCES = PC/PXE/PXE-Intel.rom=>PXE-Intel.rom
 endif # VBOX_WITH_EXTPACK_PUEL
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

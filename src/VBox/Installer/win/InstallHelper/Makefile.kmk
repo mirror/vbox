@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxInstallHelper
 VBoxInstallHelper_TEMPLATE = VBOXR3STATIC
@@ -52,5 +52,5 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 endif
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

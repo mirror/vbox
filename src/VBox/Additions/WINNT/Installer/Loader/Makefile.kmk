@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008 Oracle Corporation
+# Copyright (C) 2008-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 # This has to be 32-bit, so don't include it in the 64-bit build.
 if "$(KBUILD_TARGET_ARCH)" == "x86"
@@ -54,5 +54,5 @@ $$(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc: $(VBOX_WINDOWS_A
 
 endif # x86 only
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

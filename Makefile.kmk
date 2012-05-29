@@ -1575,7 +1575,7 @@ snapshot-puel:
 #
 # Generate ALL the rules.
 #
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
 
 #

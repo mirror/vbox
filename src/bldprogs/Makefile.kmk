@@ -57,5 +57,5 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
 
 endif
 
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

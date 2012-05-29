@@ -1033,7 +1033,7 @@ IMAGES :=
 
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
 #
 # Update all known NLS translation (.ts) files in the nls/ subdirectory.

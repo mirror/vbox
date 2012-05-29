@@ -138,5 +138,5 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
 endif # ! VBOX_ONLY_SDK
 
 # generate rules.
-include $(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 

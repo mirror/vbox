@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009-2010 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
 #
 
 SUB_DEPTH = ../../../..
-include	$(KBUILD_PATH)/subheader.kmk
+include $(KBUILD_PATH)/subheader.kmk
 
 if1of ($(KBUILD_TARGET), solaris darwin linux freebsd)
  #
@@ -151,5 +151,5 @@ $$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
 
 endif # freebsd
 
-include	$(KBUILD_PATH)/subfooter.kmk
+include $(FILE_KBUILD_SUB_FOOTER)
 
