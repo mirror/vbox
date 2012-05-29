@@ -1058,7 +1058,18 @@ static BOOLEAN vboxWddmDalCheckAdd(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_A
     return TRUE;
 }
 
-static VOID vboxWddmDalCheckAddRts(PVBOXWDDMDISP_DEVICE pDevice)
+static DECLINLINE(BOOLEAN) vboxWddmDalCheckAddRc(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_RESOURCE pRc, BOOLEAN fWrite)
+{
+    BOOLEAN fChanged = FALSE;
+    for (UINT i = 0; i < pRc->cAllocations; ++i)
+    {
+        PVBOXWDDMDISP_ALLOCATION pDAlloc = &pRc->aAllocations[i];
+        fChanged |= vboxWddmDalCheckAdd(pDevice, pDAlloc, fWrite);
+    }
+    return fChanged;
+}
+
+static VOID vboxWddmDalCheckAddRtsSamplers(PVBOXWDDMDISP_DEVICE pDevice)
 {
     for (UINT i = 0; i < pDevice->cRTs; ++i)
     {
@@ -1067,6 +1078,15 @@ static VOID vboxWddmDalCheckAddRts(PVBOXWDDMDISP_DEVICE pDevice)
             vboxWddmDalCheckAdd(pDevice, pDevice->apRTs[i], TRUE);
         }
     }
+
+    for (UINT i = 0, iSampler = 0; iSampler < pDevice->cSamplerTextures; ++i)
+    {
+        Assert(i < RT_ELEMENTS(pDevice->aSamplerTextures));
+        if (!pDevice->aSamplerTextures[i]) continue;
+        vboxWddmDalCheckAddRc(pDevice, pDevice->aSamplerTextures[i], FALSE);
+        ++iSampler; \
+    } \
+
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -3526,7 +3546,6 @@ static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDL
             Assert(0);
         }
 
-#ifdef VBOXWDDMDISP_DEBUG
         Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
         int idx = VBOXWDDMDISP_SAMPLER_IDX(Stage);
         if (idx >= 0)
@@ -3549,12 +3568,10 @@ static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDL
         {
             WARN(("incorrect dampler index1! (%d)\n", Stage));
         }
-#endif
     }
     else
     {
         pD3DIfTex = NULL;
-#ifdef VBOXWDDMDISP_DEBUG
         Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
         int idx = VBOXWDDMDISP_SAMPLER_IDX(Stage);
         if (idx >= 0)
@@ -3572,7 +3589,6 @@ static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDL
         {
             WARN(("incorrect dampler index2! (%d)\n", Stage));
         }
-#endif
     }
 
     HRESULT hr = pDevice9If->SetTexture(Stage, pD3DIfTex);
@@ -3752,7 +3768,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
 //        vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitive\n"));
     }
 
-    vboxWddmDalCheckAddRts(pDevice);
+    vboxWddmDalCheckAddRtsSamplers(pDevice);
 
     VBOXVDBG_DUMP_DRAWPRIM_LEAVE(pDevice);
 
@@ -3806,7 +3822,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive(HANDLE hDevice, CONST D
             pData->PrimitiveCount);
     Assert(hr == S_OK);
 
-    vboxWddmDalCheckAddRts(pDevice);
+    vboxWddmDalCheckAddRtsSamplers(pDevice);
 
     VBOXVDBG_DUMP_DRAWPRIM_LEAVE(pDevice);
 
@@ -3822,7 +3838,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawRectPatch(HANDLE hDevice, CONST D3DDDIAR
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     Assert(0);
-    vboxWddmDalCheckAddRts(pDevice);
+    vboxWddmDalCheckAddRtsSamplers(pDevice);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -3835,7 +3851,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawTriPatch(HANDLE hDevice, CONST D3DDDIARG
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     Assert(0);
-    vboxWddmDalCheckAddRts(pDevice);
+    vboxWddmDalCheckAddRtsSamplers(pDevice);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -3928,7 +3944,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
 #endif
 #endif
 
-    vboxWddmDalCheckAddRts(pDevice);
+    vboxWddmDalCheckAddRtsSamplers(pDevice);
 
     VBOXVDBG_DUMP_DRAWPRIM_LEAVE(pDevice);
 
@@ -3945,7 +3961,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     Assert(0);
-    vboxWddmDalCheckAddRts(pDevice);
+    vboxWddmDalCheckAddRtsSamplers(pDevice);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -4048,17 +4064,8 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
         }
     }
 
-    for (UINT i = 0; i < pDstRc->cAllocations; ++i)
-    {
-        PVBOXWDDMDISP_ALLOCATION pDAlloc = &pDstRc->aAllocations[i];
-        vboxWddmDalCheckAdd(pDevice, pDAlloc, TRUE);
-    }
-
-    for (UINT i = 0; i < pSrcRc->cAllocations; ++i)
-    {
-        PVBOXWDDMDISP_ALLOCATION pDAlloc = &pSrcRc->aAllocations[i];
-        vboxWddmDalCheckAdd(pDevice, pDAlloc, FALSE);
-    }
+    vboxWddmDalCheckAddRc(pDevice, pDstRc, TRUE);
+    vboxWddmDalCheckAddRc(pDevice, pSrcRc, FALSE);
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
