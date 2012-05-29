@@ -191,7 +191,7 @@ void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
 void UIWizardCloneVDPageBasic4::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Copy location"));
+    setTitle(UIWizardCloneVD::tr("New hard drive to create"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual hard drive file into the box below or "

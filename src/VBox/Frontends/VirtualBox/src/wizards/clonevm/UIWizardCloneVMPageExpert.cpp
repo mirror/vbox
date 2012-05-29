@@ -117,14 +117,14 @@ void UIWizardCloneVMPageExpert::sltButtonClicked(QAbstractButton *pButton)
 void UIWizardCloneVMPageExpert::retranslateUi()
 {
     /* Translate widgets: */
-    m_pNameCnt->setTitle(UIWizardCloneVM::tr("&Name"));
-    m_pCloneTypeCnt->setTitle(UIWizardCloneVM::tr("&Type"));
-    m_pFullCloneRadio->setText(UIWizardCloneVM::tr("Full Clone"));
-    m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("Linked Clone"));
-    m_pCloneModeCnt->setTitle(UIWizardCloneVM::tr("&Mode"));
-    m_pMachineRadio->setText(UIWizardCloneVM::tr("Current machine state"));
-    m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current machine and all child states"));
-    m_pAllRadio->setText(UIWizardCloneVM::tr("All states"));
+    m_pNameCnt->setTitle(UIWizardCloneVM::tr("New machine &name"));
+    m_pCloneTypeCnt->setTitle(UIWizardCloneVM::tr("Clone type"));
+    m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full Clone"));
+    m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked Clone"));
+    m_pCloneModeCnt->setTitle(UIWizardCloneVM::tr("Snapshots"));
+    m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
+    m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
+    m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
     m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
     m_pReinitMACsCheckBox->setText(UIWizardCloneVM::tr("&Reinitialize the MAC address of all network cards"));
 }

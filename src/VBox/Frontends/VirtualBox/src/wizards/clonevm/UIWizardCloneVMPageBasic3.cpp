@@ -87,16 +87,23 @@ UIWizardCloneVMPageBasic3::UIWizardCloneVMPageBasic3(bool fShowChildsOption)
 void UIWizardCloneVMPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVM::tr("Mode"));
+    setTitle(UIWizardCloneVM::tr("Snapshots"));
 
     /* Translate widgets: */
-    const QString strGeneral = UIWizardCloneVM::tr("<p>Please choose which parts of the virtual machine should be cloned.</p>");
-    const QString strOpt1    = UIWizardCloneVM::tr("<p>If you select <b>Current machine state</b>, "
-                                                   "only the current state of the virtual machine is cloned.</p>");
-    const QString strOpt2    = UIWizardCloneVM::tr("<p>If you select <b>Current machine and all child states</b>, "
-                                                   "the current state of the virtual machine and any states of child snapshots are cloned.</p>");
-    const QString strOpt3    = UIWizardCloneVM::tr("<p>If you select <b>All states</b>, "
-                                                   "the current machine state and all snapshots are cloned.</p>");
+    const QString strGeneral = UIWizardCloneVM::tr("<p>Please choose which parts of the snapshot tree "
+                                                   "should be cloned with the machine.</p>");
+    const QString strOpt1    = UIWizardCloneVM::tr("<p>If you choose <b>Current machine state</b>, "
+                                                   "the new machine will reflect the current state "
+                                                   "of the original machine and will have no snapshots.</p>");
+    const QString strOpt2    = UIWizardCloneVM::tr("<p>If you choose <b>Current snapshot tree branch</b>, "
+                                                   "the new machine will reflect the current state "
+                                                   "of the original machine and will have matching snapshots "
+                                                   "for all snapshots in the tree branch "
+                                                   "starting at the current state in the original machine.</p>");
+    const QString strOpt3    = UIWizardCloneVM::tr("<p>If you choose <b>Everything</b>, "
+                                                   "the new machine will reflect the current state "
+                                                   "of the original machine and will have matching snapshots "
+                                                   "for all snapshots in the original machine.</p>");
     if (m_fShowChildsOption)
         m_pLabel->setText(QString("<p>%1</p><p>%2 %3 %4</p>")
                           .arg(strGeneral)
@@ -109,9 +116,9 @@ void UIWizardCloneVMPageBasic3::retranslateUi()
                           .arg(strOpt1)
                           .arg(strOpt3));
 
-    m_pMachineRadio->setText(UIWizardCloneVM::tr("Current machine state"));
-    m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current machine and all child states"));
-    m_pAllRadio->setText(UIWizardCloneVM::tr("All states"));
+    m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
+    m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
+    m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
 }
 
 void UIWizardCloneVMPageBasic3::initializePage()
