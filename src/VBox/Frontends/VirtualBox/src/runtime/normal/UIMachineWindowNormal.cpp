@@ -504,11 +504,8 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
 
 void UIMachineWindowNormal::showInNecessaryMode()
 {
-    /* Make sure we really have to show window: */
-    BOOL fEnabled = true;
-    ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-    machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
-    if (fEnabled)
+    /* Show window if we have to: */
+    if (shouldWeShowWindow())
         show();
 }
 
