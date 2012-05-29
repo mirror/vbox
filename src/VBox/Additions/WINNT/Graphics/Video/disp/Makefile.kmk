@@ -99,6 +99,9 @@ endif
 ifdef VBOXWDDM_TEST_UHGSMI
  VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
 endif
+ifdef VBOX_WITH_CROGL
+ VBoxDispD3D_DEFS   += VBOX_WITH_CROGL
+endif
 VBoxDispD3D_INCS     = ../../../include ..
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
