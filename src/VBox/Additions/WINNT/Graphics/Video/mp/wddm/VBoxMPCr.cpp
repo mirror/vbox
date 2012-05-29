@@ -21,10 +21,11 @@
 
 #include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 
+#ifdef VBOX_WITH_CROGL
 #include <cr_protocol.h>
 
-#if 0
-#include <cr_pack.h>
+# if 0
+#  include <cr_pack.h>
 
 typedef struct PVBOXMP_SHGSMIPACKER
 {
@@ -81,6 +82,7 @@ static int vboxMpCrShgsmiPackerInit(PPVBOXMP_SHGSMIPACKER pPacker, PVBOXMP_DEVEX
 //    crPackSendHugeFunc( thread->packer, packspuHuge );
     return VINF_SUCCESS;
 }
+# endif
 #endif
 
 static int vboxMpCrCtlAddRef(PVBOXMP_CRCTLCON pCrCtlCon)
@@ -266,6 +268,7 @@ int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo
 
 bool VBoxMpCrCtlConIs3DSupported()
 {
+#ifdef VBOX_WITH_CROGL
     VBOXMP_CRCTLCON CrCtlCon = {0};
     uint32_t u32ClientID = 0;
     int rc = VBoxMpCrCtlConConnect(&CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &u32ClientID);
@@ -280,4 +283,7 @@ bool VBoxMpCrCtlConIs3DSupported()
         WARN(("VBoxMpCrCtlConDisconnect failed, ignoring.."));
 
     return true;
+#else
+    return false;
+#endif
 }
