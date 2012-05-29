@@ -2784,6 +2784,8 @@ static void context_setup_target(IWineD3DDeviceImpl *device, struct wined3d_cont
         {
             BOOL oldInDraw = device->isInDraw;
 
+            ERR("context_setup_target: Should not be here!!");
+
             /* surface_internal_preload() requires a context to load the
              * texture, so it will call context_acquire(). Set isInDraw to true
              * to signal surface_internal_preload() that it has a context. */
