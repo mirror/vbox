@@ -4802,7 +4802,11 @@ void VBoxGlobal::init()
         return;
     }
     mHost = virtualBox().GetHost();
+#ifdef VBOX_WITH_CROGL
     m3DAvailable = VBoxOglIs3DAccelerationSupported();
+#else
+    m3DAvailable = false;
+#endif
 
     /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
