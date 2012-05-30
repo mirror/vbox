@@ -6,8 +6,13 @@
 #
 # Copyright (C) 2012 Oracle Corporation
 #
-# Oracle Corporation confidential
-# All rights reserved
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
 SUB_DEPTH = ../../../../..
@@ -100,7 +105,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
 		--output $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(QUIET)yasm -f bin -o $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(CMP) -l -- $< $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
-	if $(CMP_EXT) -s -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm; \
+	@if $(CMP_EXT) -s -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm; \
 	then \
 		$(CP_EXT) -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm; \
 	fi
