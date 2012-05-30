@@ -13,69 +13,100 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-#
-# VBoxBios - Template for building the BIOS bits.
-#
-TEMPLATE_VBoxBios = PXE ROM
-TEMPLATE_VBoxBios_TOOL    = OPENWATCOM-16
-TEMPLATE_VBoxBios_LDTOOL  = OPENWATCOM-WL
-TEMPLATE_VBoxBios_ASTOOL  = OPENWATCOM-16
-TEMPLATE_VBoxBios_BLD_TRG = os-agnostic
-TEMPLATE_VBoxBios_BLD_TRG_ARCH = x86
-TEMPLATE_VBoxBios_BINSUFF = .rom
-TEMPLATE_VBoxBios_INCS    = .
-TEMPLATE_VBoxBios_ASFLAGS = -q -0 -wx
-TEMPLATE_VBoxBios_CFLAGS  = -q -0 -wx -zu -s -oas -d1+ -ms
-TEMPLATE_VBoxBios_DEFS    = \
-	VBOX_PC_BIOS \
-	VBOX_LANBOOT_SEG=0xE200 \
-	VBOX_VERSION_STRING=\"0.9\" \
-	VBOX_WITH_SCSI \
-	VBOX_WITH_AHCI
-TEMPLATE_VBoxBios_LDFLAGS = system dos  \
-	debug all \
-	option quiet, nofarcalls, map, verbose, statics, symfile \
-	output raw offset=0xF0000 order \
-	clname DATA segaddr=0xF000 segment _DATA \
-	clname CODE \
-	segment _TEXT segaddr=0xF000 offset=0x1600 \
-	segment BIOS32 segaddr=0xF000 offset=0xDE00 \
-	segment BIOSSEG segaddr=0xF000 offset=0xE000 \
-	library clibs.lib \
-	disable 1014, 1023, 2120
-TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS)
-TEMPLATE_VBoxBios_POST_CMDS = \
-	$(QUIET)$(EXT_MV) -f $(out) $(out).tmp \
-	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
-	&& $(EXT_RM) -f $(out).tmp
+## @todo move to Config.kmk.
+ifndef VBOX_WITHOUT_OPEN_WATCOM
+ if1of ($(KBUILD_TARGET), os2 win linux)
+  VBOX_WITH_OPEN_WATCOM := 1
+ endif
+endif
 
 
-#
-# VBoxPcBios - The PC BIOS.
-#
-MISCBINS += VBoxPcBios
-VBoxPcBios_TEMPLATE = VBoxBios
-VBoxPcBios_SOURCES = \
-	bios.c \
-	print.c \
-	ata.c \
-	floppy.c \
-	eltorito.c \
-	boot.c \
-	keyboard.c \
-	disk.c \
-	serial.c \
-	system.c \
-	timepci.c \
-	ps2mouse.c \
-	parallel.c \
-	logo.c \
-	scsi.c \
-	ahci.c \
-	pciutil.c \
-	vds.c \
-	pcibio32.asm \
-	orgs.asm
+ifdef VBOX_WITH_OPEN_WATCOM
+
+ #
+ # VBoxBios - Template for building the BIOS bits.
+ #
+ TEMPLATE_VBoxBios = PXE ROM
+ TEMPLATE_VBoxBios_TOOL    = OPENWATCOM-16
+ TEMPLATE_VBoxBios_LDTOOL  = OPENWATCOM-WL
+ TEMPLATE_VBoxBios_ASTOOL  = OPENWATCOM-16
+ TEMPLATE_VBoxBios_BLD_TRG = os-agnostic
+ TEMPLATE_VBoxBios_BLD_TRG_ARCH = x86
+ TEMPLATE_VBoxBios_BINSUFF = .rom
+ TEMPLATE_VBoxBios_INCS    = .
+ TEMPLATE_VBoxBios_ASFLAGS = -q -0 -wx
+ TEMPLATE_VBoxBios_CFLAGS  = -q -0 -wx -zu -s -oas -d1+ -ms
+ TEMPLATE_VBoxBios_DEFS    = \
+ 	VBOX_PC_BIOS \
+ 	VBOX_LANBOOT_SEG=0xE200 \
+ 	VBOX_VERSION_STRING=\"0.9\" \
+ 	VBOX_WITH_SCSI \
+ 	VBOX_WITH_AHCI
+ TEMPLATE_VBoxBios_LDFLAGS = system dos  \
+ 	debug all \
+ 	option quiet, nofarcalls, map, verbose, statics, symfile \
+ 	output raw offset=0xF0000 order \
+ 	clname DATA segaddr=0xF000 segment _DATA \
+ 	clname CODE \
+ 	segment _TEXT segaddr=0xF000 offset=0x1600 \
+ 	segment BIOS32 segaddr=0xF000 offset=0xDE00 \
+ 	segment BIOSSEG segaddr=0xF000 offset=0xE000 \
+ 	library clibs.lib \
+ 	disable 1014, 1023, 2120
+ TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS)
+ TEMPLATE_VBoxBios_POST_CMDS = \
+ 	$(QUIET)$(EXT_MV) -f $(out) $(out).tmp \
+ 	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
+ 	&& $(EXT_RM) -f $(out).tmp
+
+
+ #
+ # VBoxPcBios - The PC BIOS.
+ #
+ MISCBINS += VBoxPcBios
+ VBoxPcBios_TEMPLATE = VBoxBios
+ VBoxPcBios_SOURCES = \
+ 	bios.c \
+ 	print.c \
+ 	ata.c \
+ 	floppy.c \
+ 	eltorito.c \
+ 	boot.c \
+ 	keyboard.c \
+ 	disk.c \
+ 	serial.c \
+ 	system.c \
+ 	timepci.c \
+ 	ps2mouse.c \
+ 	parallel.c \
+ 	logo.c \
+ 	scsi.c \
+ 	ahci.c \
+ 	pciutil.c \
+ 	vds.c \
+ 	pcibio32.asm \
+ 	orgs.asm
+
+ #
+ # Updates the alternative source file.
+ #
+ update-bios-source | $(PATH_SUB_CURRENT)/VBoxBiosAlternative.asm: \
+ 		$$(VBoxPcBios_1_TARGET) \
+ 		$$(MakeDebianBiosAssembly_1_TARGET)
+	$(MakeDebianBiosAssembly_1_TARGET) \
+		--bios-image $< \
+		--bios-map $(basename $<).map \
+		--bios-sym $(basename $<).sym \
+		--output $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
+	$(QUIET)yasm -f bin -o $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
+	$(CMP) -l -- $< $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
+	if $(CMP_EXT) -s -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm; \
+	then \
+		$(CP_EXT) -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm; \
+	fi
+	$(RM) -f -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
+
+endif # VBOX_WITH_OPEN_WATCOM
 
 
 #
@@ -87,9 +118,17 @@ PcBiosBin_DEFS      = IN_VBOXDD2
 PcBiosBin_SOURCES   = $(PcBiosBin_0_OUTDIR)/PcBiosBin.c
 PcBiosBin_CLEAN     = $(PcBiosBin_0_OUTDIR)/PcBiosBin.c
 
-$$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $$(VBoxPcBios_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
+ifdef VBOX_WITH_OPEN_WATCOM
+ $$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $$(VBoxPcBios_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $< $@
+else
+ $$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $(PATH_SUB_CURRENT)/VBoxBiosAlternative.asm $(VBOX_BIN2C) | $$(dir $$@)
+	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
+	$(QUIET)yasm -f bin -o $(PcBiosBin_0_OUTDIR)/VBoxBiosAlternative.bin $<
+	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $(PcBiosBin_0_OUTDIR)/VBoxBiosAlternative.bin $@
+	$(QUIET)$(RM) -f -- $$(PcBiosBin_0_OUTDIR)/VBoxBiosAlternative.bin
+endif
 
 
 #
