@@ -97,8 +97,9 @@ $$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $$(VBoxPcBios_1_TARGET) $(VBOX_BIN2C) | $$(d
 #
 PROGRAMS += MakeDebianBiosAssembly ## TODO this is build program, really. later.
 MakeDebianBiosAssembly_TEMPLATE = VBOXR3EXE
-MakeDebianBiosAssembly_SOURCES = MakeDebianBiosAssembly.cpp
-MakeDebianBiosAssembly_LIBS = \
+MakeDebianBiosAssembly_DEFS     = IN_DIS
+MakeDebianBiosAssembly_SOURCES  = MakeDebianBiosAssembly.cpp
+MakeDebianBiosAssembly_LIBS     = \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME)
 
