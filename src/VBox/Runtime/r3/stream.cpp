@@ -921,27 +921,16 @@ RTR3DECL(int) RTStrmPutStr(PRTSTREAM pStream, const char *pszString)
 }
 
 
-/**
- * Reads a line from a file stream.
- * A line ends with a '\\n', '\\0' or the end of the file.
- *
- * @returns iprt status code.
- * @returns VINF_BUFFER_OVERFLOW if the buffer wasn't big enough to read an entire line.
- * @param   pStream         The stream.
- * @param   pszString       Where to store the line.
- *                          The line will *NOT* contain any '\\n'.
- * @param   cchString       The size of the string buffer.
- */
-RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cchString)
+RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cbString)
 {
     AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
     int rc;
-    if (pszString && cchString > 1)
+    if (pszString && cbString > 1)
     {
         rc = pStream->i32Error;
         if (RT_SUCCESS(rc))
         {
-            cchString--;            /* save space for the terminator. */
+            cbString--;            /* save space for the terminator. */
             rtStrmLock(pStream);
             for (;;)
             {
@@ -950,6 +939,29 @@ RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cchString
 #else
                 int ch = fgetc(pStream->pFile);
 #endif
+
+                /* Deal with \r\n sequences here. We'll return lone CR, but
+                   treat CRLF as LF. */
+                if (ch == '\r')
+                {
+#ifdef HAVE_FWRITE_UNLOCKED /** @todo darwin + freebsd(?) has fgetc_unlocked but not fwrite_unlocked, optimize... */
+                    ch = fgetc_unlocked(pStream->pFile);
+#else
+                    ch = fgetc(pStream->pFile);
+#endif
+                    if (ch == '\n')
+                        break;
+
+                    *pszString++ = '\r';
+                    if (--cbString <= 0)
+                    {
+                        /* yeah, this is an error, we dropped a character. */
+                        rc = VERR_BUFFER_OVERFLOW;
+                        break;
+                    }
+                }
+
+                /* Deal with end of file. */
                 if (ch == EOF)
                 {
 #ifdef HAVE_FWRITE_UNLOCKED
@@ -974,10 +986,14 @@ RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cchString
                     }
                     break;
                 }
-                if (ch == '\0' || ch == '\n' || ch == '\r')
+
+                /* Deal with null terminator and (lone) new line. */
+                if (ch == '\0' || ch == '\n')
                     break;
+
+                /* No special character, append it to the return string. */
                 *pszString++ = ch;
-                if (--cchString <= 0)
+                if (--cbString <= 0)
                 {
                     rc = VINF_BUFFER_OVERFLOW;
                     break;
