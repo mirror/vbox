@@ -439,7 +439,8 @@ HRESULT Display::init (Console *aParent)
         maFramebuffers[ul].u32InformationSize = 0;
 
         maFramebuffers[ul].pFramebuffer = NULL;
-        maFramebuffers[ul].fDisabled = false;
+        /* All secondary monitors are disabled at startup. */
+        maFramebuffers[ul].fDisabled = ul > 0;
 
         maFramebuffers[ul].xOrigin = 0;
         maFramebuffers[ul].yOrigin = 0;
@@ -447,7 +448,7 @@ HRESULT Display::init (Console *aParent)
         maFramebuffers[ul].w = 0;
         maFramebuffers[ul].h = 0;
 
-        maFramebuffers[ul].flags = 0;
+        maFramebuffers[ul].flags = maFramebuffers[ul].fDisabled? VBVA_SCREEN_F_DISABLED: 0;
 
         maFramebuffers[ul].u16BitsPerPixel = 0;
         maFramebuffers[ul].pu8FramebufferVRAM = NULL;
@@ -3430,6 +3431,16 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
             if (uScreenId != VBOX_VIDEO_PRIMARY_SCREEN)
             {
                 /* Primary screen resize is initiated by the VGA device. */
+                if (pFBInfo->fDisabled)
+                {
+                    pFBInfo->fDisabled = false;
+                    fireGuestMonitorChangedEvent(pDrv->pDisplay->mParent->getEventSource(),
+                                                 GuestMonitorChangedEventType_Enabled,
+                                                 uScreenId,
+                                                 pFBInfo->xOrigin, pFBInfo->yOrigin,
+                                                 pFBInfo->w, pFBInfo->h);
+                }
+
                 pDrv->pDisplay->handleDisplayResize(uScreenId, pScreen->bitsPerPixel, (uint8_t *)pvVRAM + pFBInfo->u32Offset, pScreen->u32LineSize, pScreen->u16Width, pScreen->u16Height, VBVA_SCREEN_F_ACTIVE);
             }
         }
