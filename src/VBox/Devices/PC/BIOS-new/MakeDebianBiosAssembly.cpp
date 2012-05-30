@@ -736,7 +736,7 @@ static bool disIs16BitCode(const char *pszSymbol)
 static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAddr, uint32_t cbInstr,
                                        char *pszBuf, size_t cbBuf, size_t cchUsed)
 {
-    bool fDifferent = false;
+    bool fDifferent = DISFormatYasmIsOddEncoding(pCpuState);
     uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
     if (   pb[0] == 0x2a
         && pb[1] == 0xe4)
