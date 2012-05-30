@@ -769,6 +769,7 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
     /*
      * Switch table fun (.sym may help):
      */
+#if 0
     else if (   pb[0] == 0x64
              && pb[1] == 0x65
              && pb[2] == 0x05
@@ -784,6 +785,7 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
              && pb[1] == 0xe7
              /*&& pb[2] == 0x67*/)
         fDifferent = true; /* out 067h, ax - switch table or smth. */
+#endif
 
 
     /*
