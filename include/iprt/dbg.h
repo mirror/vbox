@@ -61,6 +61,18 @@ typedef RTDBGSEGIDX const  *PCRTDBGSEGIDX;
 #define RTDBGSEGIDX_SPECIAL_FIRST   (RTDBGSEGIDX_LAST + 1U)
 
 
+/** @name RTDBGSYMADDR_FLAGS_XXX
+ * Flags used when looking up a symbol by address.
+ * @{ */
+/** Less or equal address. (default) */
+#define RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL    UINT32_C(0)
+/** Greater or equal address.  */
+#define RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL UINT32_C(1)
+/** Mask of valid flags. */
+#define RTDBGSYMADDR_FLAGS_VALID_MASK       UINT32_C(1)
+/** @} */
+
+
 /** Max length (including '\\0') of a segment name. */
 #define RTDBG_SEGMENT_NAME_LENGTH   (128 - 8 - 8 - 8 - 4 - 4)
 
@@ -504,15 +516,18 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
  * @returns IPRT status code. See RTDbgModSymbolAddr for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgAs          The address space handle.
  * @param   Addr            The address which closest symbol is requested.
+ * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
  * @param   pSymbol         Where to return the symbol info.
  * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
+RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, uint32_t fFlags,
+                                PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
 
 /**
  * Query a symbol by address.
@@ -520,16 +535,19 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
  * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgAs          The address space handle.
  * @param   Addr            The address which closest symbol is requested.
+ * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
  * @param   ppSymInfo       Where to return the pointer to the allocated symbol
  *                          info. Always set. Free with RTDbgSymbolFree.
  * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo, PRTDBGMOD phMod);
+RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, uint32_t fFlags,
+                                 PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo, PRTDBGMOD phMod);
 
 /**
  * Query a symbol by name.
@@ -935,16 +953,19 @@ RTDECL(int)         RTDbgModSymbolByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal
  * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
  * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
  *          end of the segment.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgMod             The module handle.
  * @param   iSeg                The segment number.
  * @param   off                 The offset into the segment.
+ * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp            Where to store the distance between the
  *                              specified address and the returned symbol.
  *                              Optional.
  * @param   pSymInfo            Where to store the symbol information.
  */
-RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
+RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
+                                         PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
 
 /**
  * Queries symbol information by address.
@@ -963,17 +984,20 @@ RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTU
  * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
  *          end of the segment.
  * @retval  VERR_NO_MEMORY if RTDbgSymbolAlloc fails.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgMod             The module handle.
  * @param   iSeg                The segment index.
  * @param   off                 The offset into the segment.
+ * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp            Where to store the distance between the
  *                              specified address and the returned symbol. Optional.
  * @param   ppSymInfo           Where to store the pointer to the returned
  *                              symbol information. Always set. Free with
  *                              RTDbgSymbolFree.
  */
-RTDECL(int)         RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo);
+RTDECL(int)         RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
+                                          PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo);
 
 /**
  * Queries symbol information by symbol name.
