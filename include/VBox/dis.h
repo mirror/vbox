@@ -750,6 +750,8 @@ DISDECL(size_t) DISFormatGasEx( PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 
 /** @todo DISAnnotate(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, register reader, memory reader); */
 
+DISDECL(bool)   DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu);
+
 
 RT_C_DECLS_END
 
