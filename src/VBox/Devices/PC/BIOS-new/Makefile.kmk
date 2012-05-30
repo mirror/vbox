@@ -44,7 +44,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  TEMPLATE_VBoxBios_DEFS    = \
  	VBOX_PC_BIOS \
  	VBOX_LANBOOT_SEG=0xE200 \
- 	VBOX_VERSION_STRING=\"0.9\" \
+ 	VBOX_VERSION_STRING=\"VBOX_VERSION_STRING\" \
  	VBOX_WITH_SCSI \
  	VBOX_WITH_AHCI
  TEMPLATE_VBoxBios_LDFLAGS = system dos  \
@@ -95,9 +95,10 @@ ifdef VBOX_WITH_OPEN_WATCOM
  #
  # Updates the alternative source file.
  #
- update-bios-source | $(PATH_SUB_CURRENT)/VBoxBiosAlternative.asm: \
+ update-bios-source | $(PATH_SUB_CURRENT)/VBoxBiosAlternative.asm $(PATH_SUB_CURRENT)/VBoxBiosAlternative.md5sum: \
  		$$(VBoxPcBios_1_TARGET) \
  		$$(MakeDebianBiosAssembly_1_TARGET)
+ if1of ($(KBUILD_TYPE), release)
 	$(MakeDebianBiosAssembly_1_TARGET) \
 		--bios-image $< \
 		--bios-map $(basename $<).map \
@@ -105,11 +106,14 @@ ifdef VBOX_WITH_OPEN_WATCOM
 		--output $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(QUIET)yasm -f bin -o $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(CMP) -l -- $< $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
-	@if $(CMP_EXT) -s -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm; \
-	then \
-		$(CP_EXT) -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm; \
-	fi
-	$(RM) -f -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
+	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm
+	$(MD5SUM) -bo $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(VBoxPcBios_1_TARGET)
+	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.md5sum
+	$(RM) -f -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum
+ else
+	$(QUIET)$(ECHO) "Fatal error: Can only update VBoxBiosAlternative.asm/md5sum with a release build."
+	$(QUIET)exit 1
+ endif
 
 endif # VBOX_WITH_OPEN_WATCOM
 
