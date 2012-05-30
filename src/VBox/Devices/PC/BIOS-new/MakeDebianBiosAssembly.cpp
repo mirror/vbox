@@ -343,8 +343,8 @@ static bool disDWordData(uint32_t uFlatAddr, uint32_t cb)
 
 static bool disStringData(uint32_t uFlatAddr, uint32_t cb)
 {
-    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
-    size_t          cchOnLine = 0;
+    uint8_t const  *pb        = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint32_t        cchOnLine = 0;
     while (cb > 0)
     {
         /* Line endings and beginnings. */
@@ -415,7 +415,7 @@ static bool disStringData(uint32_t uFlatAddr, uint32_t cb)
 static bool disStringsData(uint32_t uFlatAddr, uint32_t cb)
 {
     uint8_t const  *pb        = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
-    size_t          cchOnLine = 0;
+    uint32_t        cchOnLine = 0;
     uint8_t         bPrev     = 255;
     while (cb > 0)
     {
@@ -863,8 +863,8 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
         if (   *pb == '\0'
             && ASMMemIsAll8(pb, RT_MIN(cb, 8), 0) == NULL)
         {
-            void  *pv      = ASMMemIsAll8(pb, cb, 0);
-            size_t cbZeros = pv ? (uint8_t const *)pv - pb : cb;
+            void    *pv      = ASMMemIsAll8(pb, cb, 0);
+            uint32_t cbZeros = pv ? (uint32_t)((uint8_t const *)pv - pb) : cb;
             if (!outputPrintf("    times %#x db 0\n", cbZeros))
                 return false;
             cb -= cbZeros;
@@ -1078,7 +1078,7 @@ static bool mapReadLine(PBIOSMAP pMap)
         return false;
     }
     pMap->iLine++;
-    pMap->cch   = strlen(pMap->szLine);
+    pMap->cch   = (uint32_t)strlen(pMap->szLine);
 
     /* Check out leading white space. */
     if (!RT_C_IS_SPACE(pMap->szLine[0]))
@@ -1393,7 +1393,10 @@ static bool mapSkipThruColumnHeadings(PBIOSMAP pMap, const char *pszSectionNm, u
         || psz[cch - 2] != '-'
         || psz[cch - 1] != '+'
        )
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%d: Expected section box: +-----...", pMap->pszMapFile, pMap->iLine);
+    {
+        RTMsgError("%s:%d: Expected section box: +-----...", pMap->pszMapFile, pMap->iLine);
+        return false;
+    }
 
     /* There may be a few lines describing the table notation now, surrounded by blank lines. */
     do
@@ -1479,7 +1482,10 @@ static bool mapParseSegments(PBIOSMAP pMap)
         /* Parse the segment line. */
         uint32_t iSeg = g_cSegs;
         if (iSeg >= RT_ELEMENTS(g_aSegs))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s:%u: Too many segments", pMap->pszMapFile, pMap->iLine);
+        {
+            RTMsgError("%s:%u: Too many segments", pMap->pszMapFile, pMap->iLine);
+            return false;
+        }
 
         char *psz = pMap->szLine;
         if (!mapParseWord(&psz, g_aSegs[iSeg].szName, sizeof(g_aSegs[iSeg].szName)))
