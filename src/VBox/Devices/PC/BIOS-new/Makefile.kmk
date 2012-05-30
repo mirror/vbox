@@ -107,7 +107,8 @@ ifdef VBOX_WITH_OPEN_WATCOM
 	$(QUIET)yasm -f bin -o $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(CMP) -l -- $< $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
 	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm
-	$(MD5SUM) -bo $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(VBoxPcBios_1_TARGET)
+	$(REDIRECT) -C $(dir $(VBoxPcBios_1_TARGET)) -- \
+		$(MD5SUM_EXT) -bo $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(notdir $(VBoxPcBios_1_TARGET))
 	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.md5sum
 	$(RM) -f -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum
  else
@@ -132,11 +133,18 @@ ifdef VBOX_WITH_OPEN_WATCOM
 	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $< $@
 else
- $$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $(PATH_SUB_CURRENT)/VBoxBiosAlternative.asm $(VBOX_BIN2C) | $$(dir $$@)
+ PcBiosBin_CLEAN    += $(PcBiosBin_0_OUTDIR)/VBoxPcBios.rom
+
+ $$(PcBiosBin_0_OUTDIR)/PcBiosBin.c + $$(PcBiosBin_0_OUTDIR)/VBoxPcBios.rom: \
+		$(PATH_SUB_CURRENT)/VBoxBiosAlternative.asm \
+		$(PATH_SUB_CURRENT)/VBoxBiosAlternative.md5sum \
+		$(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
-	$(QUIET)yasm -f bin -o $(PcBiosBin_0_OUTDIR)/VBoxBiosAlternative.bin $<
-	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $(PcBiosBin_0_OUTDIR)/VBoxBiosAlternative.bin $@
-	$(QUIET)$(RM) -f -- $$(PcBiosBin_0_OUTDIR)/VBoxBiosAlternative.bin
+	$(QUIET)yasm -f bin -o $(PcBiosBin_0_OUTDIR)/VBoxPcBios.rom $<
+	$(QUIET)$(REDIRECT) -C $(PcBiosBin_0_OUTDIR) -- \
+		$(MD5SUM_EXT) -c $(basename $<).md5sum
+	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $(PcBiosBin_0_OUTDIR)/VBoxPcBios.rom $@
+	$(QUIET)$(RM) -f -- $$(PcBiosBin_0_OUTDIR)/VBoxPcBios.rom
 endif
 
 
