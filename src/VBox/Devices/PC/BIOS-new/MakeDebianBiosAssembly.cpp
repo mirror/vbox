@@ -749,47 +749,23 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
      *        wrong length (2 instead of 3)! */
     else if (   pCpuState->opcode == 0xf6
              && pb[1] == 0x0f
-             && pb[2] == 0x08)
+             && pb[2] == 0x08
+             && RT_C_IS_SPACE(*pszBuf) )
+        fDifferent = true;
+    /** @todo "INSB Yb,DX" (6c) ends up with no mnemonic here. */
+    else if (pCpuState->opcode == 0x6c && RT_C_IS_SPACE(*pszBuf))
         fDifferent = true;
     /*
      * Check these out and consider adding them to DISFormatYasmIsOddEncoding.
      */
-    else if (   pb[0] == 0x2a
-             && pb[1] == 0xe4)
-        fDifferent = true; /* sub ah, ah    - alternative form 0x28 0x?? */
-    else if (   pb[0] == 0x2b
-             && pb[1] == 0xc2)
-        fDifferent = true; /* sub ax, dx    - alternative form 0x29 0xd0. */
-    else if (   pb[0] == 0x1b
-             && pb[1] == 0xff)
-        fDifferent = true; /* sbb di, di    - alternative form 0x19 0xff. */
-    else if (   pb[0] == 0x33
-             && (   pb[1] == 0xdb /* xor bx, bx */
-                 || pb[1] == 0xf6 /* xor si, si */
-                 || pb[1] == 0xff /* xor di, di */
-                 || pb[1] == 0xc0 /* xor ax, ax */
-                ))
-        fDifferent = true; /* xor x, x      - alternative form 0x31 xxxx. */
-    else if (   pb[0] == 0x66
-             && pb[1] == 0x33
-             && pb[2] == 0xc0)
-        fDifferent = true; /* xor eax, eax  - alternative form 0x66 0x31 0xc0. */
     else if (   pb[0] == 0xf3
              && pb[1] == 0x66
              && pb[2] == 0x6d)
         fDifferent = true; /* rep insd      - prefix switched. */
-    else if (   pb[0] == 0xf3
-             && pb[1] == 0x66
-             && pb[2] == 0x26
-             && pb[3] == 0x6f)
-        fDifferent = true; /* rep es outsd  - prefix switched. */
     else if (   pb[0] == 0xc6
              && pb[1] == 0xc5
              && pb[2] == 0xba)
         fDifferent = true; /* mov ch, 0bah  - yasm uses a short sequence: 0xb5 0xba. */
-    else if (   pb[0] == 0x8b
-             && pb[1] == 0xe0)
-        fDifferent = true; /* mov sp, ax    - alternative form 0x89 c4. */
     /*
      * Switch table fun (.sym may help):
      */
@@ -808,11 +784,6 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
              && pb[1] == 0xe7
              /*&& pb[2] == 0x67*/)
         fDifferent = true; /* out 067h, ax - switch table or smth. */
-    /*
-     * Disassembler / formatter bugs:
-     */
-    else if (pb[0] == 0x6c && RT_C_IS_SPACE(*pszBuf))
-        fDifferent = true;
 
 
     /*
