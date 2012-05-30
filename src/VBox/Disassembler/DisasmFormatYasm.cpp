@@ -797,7 +797,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 {
                                     if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
                                         PUT_SZ_STRICT("strict byte ", "byte ");
-                                    else if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v)
+                                    else if (   OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v
+                                             || OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_z)
                                         PUT_SZ_STRICT("strict word ", "word ");
                                 }
                                 PUT_NUM_16(pParam->parval);
@@ -819,7 +820,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 {
                                     if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
                                         PUT_SZ_STRICT("strict byte ", "byte ");
-                                    else if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v)
+                                    else if (   OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v
+                                             || OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_z)
                                         PUT_SZ_STRICT("strict dword ", "dword ");
                                 }
                                 PUT_NUM_32(pParam->parval);
