@@ -1423,6 +1423,12 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
                 Assert(pCpu->opcode == 0x8f);
                 return true;
 
+            case OP_MOV:
+                if (   pCpu->opcode == 0x8a
+                    || pCpu->opcode == 0x8b)
+                    return true;
+                break;
+
             default:
                 break;
         }
