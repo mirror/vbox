@@ -39,6 +39,7 @@
 ;;
 
 if BX_PCIBIOS
+public pci_routing_table_structure      ; For disassembly
 
 align 16
 pci_routing_table_structure:

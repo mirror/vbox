@@ -19,6 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/dbg.h>
@@ -29,6 +30,15 @@
 #include <iprt/message.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+
+#include <VBox/dis.h>
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The flat ROM base address. */
+#define VBOX_BIOS_BASE      UINT32_C(0xf0000)
 
 
 /*******************************************************************************
@@ -137,28 +147,102 @@ static RTEXITCODE OpenOutputFile(const char *pszOutput)
 
 
 /**
+ * Displays a disassembly error and returns @c false.
+ *
+ * @returns @c false.
+ * @param   pszFormat           The error format string.
+ * @param   ...                 Format argument.
+ */
+static bool disError(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTMsgErrorV(pszFormat, va);
+    va_end(va);
+    return false;
+}
+
+
+/**
  * Output the disassembly file header.
  *
  * @returns @c true on success,
  */
 static bool disFileHeader(void)
 {
-    bool fRc = true;
-    fRc = fRc && outputPrintf("; $Id$ \n"
-                              ";; @file\n"
-                              "; Auto Generated source file. Do not edit.\n"
-                              ";\n"
-                              "\n"
-                              "org 0xf000\n"
-                              "\n"
-                              );
-    return fRc;
+    return outputPrintf("; $Id$ \n"
+                        ";; @file\n"
+                        "; Auto Generated source file. Do not edit.\n"
+                        ";\n"
+                        "\n"
+                        "org 0xf000\n"
+                        "\n"
+                        );
+}
+
+
+/**
+ * Checks if a byte sequence could be a string litteral.
+ *
+ * @returns @c true if it is, @c false if it isn't.
+ * @param   uFlatAddr           The address of the byte sequence.
+ * @param   cb                  The length of the sequence.
+ */
+static bool disIsString(uint32_t uFlatAddr, uint32_t cb)
+{
+    if (cb < 6)
+        return false;
+
+    uint8_t const *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    while (cb > 0)
+    {
+        if (   !RT_C_IS_PRINT(*pb)
+            && *pb != '\r'
+            && *pb != '\n'
+            && *pb != '\t')
+        {
+            if (*pb == '\0')
+            {
+                do
+                {
+                    pb++;
+                    cb--;
+                } while (cb > 0 && *pb == '\0');
+                return cb == 0;
+            }
+            return false;
+        }
+        pb++;
+        cb--;
+    }
+
+    return true;
+}
+
+
+/**
+ * Checks if a dword could be a far 16:16 BIOS address.
+ *
+ * @returns @c true if it is, @c false if it isn't.
+ * @param   uFlatAddr           The address of the dword.
+ */
+static bool disIsFarBiosAddr(uint32_t uFlatAddr)
+{
+    uint16_t const *pu16 = (uint16_t const *)&g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    if (pu16[1] < 0xf000)
+        return false;
+    if (pu16[1] > 0xfff0)
+        return false;
+    uint32_t uFlatAddr2 = (uint32_t)(pu16[1] << 4) | pu16[0];
+    if (uFlatAddr2 >= VBOX_BIOS_BASE + _64K)
+        return false;
+    return true;
 }
 
 
 static bool disByteData(uint32_t uFlatAddr, uint32_t cb)
 {
-    uint8_t const  *pb = &g_pbImg[uFlatAddr - 0xf0000];
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
     size_t          cbOnLine = 0;
     while (cb-- > 0)
     {
@@ -166,12 +250,12 @@ static bool disByteData(uint32_t uFlatAddr, uint32_t cb)
         if (cbOnLine >= 16)
         {
             fRc = outputPrintf("\n"
-                               "  db    0%02xh", *pb);
+                               "    db  0%02xh", *pb);
             cbOnLine = 1;
         }
         else if (!cbOnLine)
         {
-            fRc = outputPrintf("  db    0%02xh", *pb);
+            fRc = outputPrintf("    db  0%02xh", *pb);
             cbOnLine = 1;
         }
         else
@@ -187,26 +271,714 @@ static bool disByteData(uint32_t uFlatAddr, uint32_t cb)
 }
 
 
+static bool disWordData(uint32_t uFlatAddr, uint32_t cb)
+{
+    if (cb & 1)
+        return disError("disWordData expects word aligned size: cb=%#x uFlatAddr=%#x", uFlatAddr, cb);
 
+    uint16_t const *pu16 = (uint16_t const *)&g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    size_t          cbOnLine = 0;
+    while (cb > 0)
+    {
+        bool fRc;
+        if (cbOnLine >= 16)
+        {
+            fRc = outputPrintf("\n"
+                               "    dw  0%04xh", *pu16);
+            cbOnLine = 2;
+        }
+        else if (!cbOnLine)
+        {
+            fRc = outputPrintf("    dw  0%04xh", *pu16);
+            cbOnLine = 2;
+        }
+        else
+        {
+            fRc = outputPrintf(", 0%04xh", *pu16);
+            cbOnLine += 2;
+        }
+        if (!fRc)
+            return false;
+        pu16++;
+        cb -= 2;
+    }
+    return outputPrintf("\n");
+}
+
+
+static bool disDWordData(uint32_t uFlatAddr, uint32_t cb)
+{
+    if (cb & 3)
+        return disError("disWordData expects dword aligned size: cb=%#x uFlatAddr=%#x", uFlatAddr, cb);
+
+    uint32_t const *pu32 = (uint32_t const *)&g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    size_t          cbOnLine = 0;
+    while (cb > 0)
+    {
+        bool fRc;
+        if (cbOnLine >= 16)
+        {
+            fRc = outputPrintf("\n"
+                               "    dd  0%08xh", *pu32);
+            cbOnLine = 4;
+        }
+        else if (!cbOnLine)
+        {
+            fRc = outputPrintf("    dd  0%08xh", *pu32);
+            cbOnLine = 4;
+        }
+        else
+        {
+            fRc = outputPrintf(", 0%08xh", *pu32);
+            cbOnLine += 4;
+        }
+        if (!fRc)
+            return false;
+        pu32++;
+        cb -= 4;
+    }
+    return outputPrintf("\n");
+}
+
+
+static bool disStringData(uint32_t uFlatAddr, uint32_t cb)
+{
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    size_t          cchOnLine = 0;
+    while (cb > 0)
+    {
+        /* Line endings and beginnings. */
+        if (cchOnLine >= 72)
+        {
+            if (!outputPrintf("\n"))
+                return false;
+            cchOnLine = 0;
+        }
+        if (   !cchOnLine
+            && !outputPrintf("    db  "))
+            return false;
+
+        /* See how many printable character we've got. */
+        uint32_t cchPrintable = 0;
+        while (   cchPrintable < cb
+               && RT_C_IS_PRINT(pb[cchPrintable])
+               && pb[cchPrintable] != '\'')
+            cchPrintable++;
+
+        bool fRc = true;
+        if (cchPrintable)
+        {
+            if (cchPrintable + cchOnLine > 72)
+                cchPrintable = 72 - cchOnLine;
+            if (cchOnLine)
+            {
+                fRc = outputPrintf(", '%.*s'", cchPrintable, pb);
+                cchOnLine += 4 + cchPrintable;
+            }
+            else
+            {
+                fRc = outputPrintf("'%.*s'", cchPrintable, pb);
+                cchOnLine += 2 + cchPrintable;
+            }
+            pb += cchPrintable;
+            cb -= cchPrintable;
+        }
+        else
+        {
+            if (cchOnLine)
+            {
+                fRc = outputPrintf(", 0%02xh", *pb);
+                cchOnLine += 6;
+            }
+            else
+            {
+                fRc = outputPrintf("0%02xh", *pb);
+                cchOnLine += 4;
+            }
+            pb++;
+            cb--;
+        }
+        if (!fRc)
+            return false;
+    }
+    return outputPrintf("\n");
+}
+
+
+/**
+ * For dumping a portion of a string table.
+ *
+ * @returns @c true on success, @c false on failure.
+ * @param   uFlatAddr           The start address.
+ * @param   cb                  The size of the string table.
+ */
+static bool disStringsData(uint32_t uFlatAddr, uint32_t cb)
+{
+    uint8_t const  *pb        = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    size_t          cchOnLine = 0;
+    uint8_t         bPrev     = 255;
+    while (cb > 0)
+    {
+        /* Line endings and beginnings. */
+        if (   cchOnLine >= 72
+            || (bPrev == '\0' && *pb != '\0'))
+        {
+            if (!outputPrintf("\n"))
+                return false;
+            cchOnLine = 0;
+        }
+        if (   !cchOnLine
+            && !outputPrintf("    db   "))
+            return false;
+
+        /* See how many printable character we've got. */
+        uint32_t cchPrintable = 0;
+        while (   cchPrintable < cb
+               && RT_C_IS_PRINT(pb[cchPrintable])
+               && pb[cchPrintable] != '\'')
+            cchPrintable++;
+
+        bool fRc = true;
+        if (cchPrintable)
+        {
+            if (cchPrintable + cchOnLine > 72)
+                cchPrintable = 72 - cchOnLine;
+            if (cchOnLine)
+            {
+                fRc = outputPrintf(", '%.*s'", cchPrintable, pb);
+                cchOnLine += 4 + cchPrintable;
+            }
+            else
+            {
+                fRc = outputPrintf("'%.*s'", cchPrintable, pb);
+                cchOnLine += 2 + cchPrintable;
+            }
+            pb += cchPrintable;
+            cb -= cchPrintable;
+        }
+        else
+        {
+            if (cchOnLine)
+            {
+                fRc = outputPrintf(", 0%02xh", *pb);
+                cchOnLine += 6;
+            }
+            else
+            {
+                fRc = outputPrintf("0%02xh", *pb);
+                cchOnLine += 4;
+            }
+            pb++;
+            cb--;
+        }
+        if (!fRc)
+            return false;
+        bPrev = pb[-1];
+    }
+    return outputPrintf("\n");
+}
+
+
+/**
+ * Minds the gap between two segments.
+ *
+ * Gaps should generally be zero filled.
+ *
+ * @returns @c true on success, @c false on failure.
+ * @param   uFlatAddr           The address of the gap.
+ * @param   cbPadding           The size of the gap.
+ */
 static bool disCopySegmentGap(uint32_t uFlatAddr, uint32_t cbPadding)
 {
     if (g_cVerbose > 0)
-        RTStrmPrintf(g_pStdErr, "Padding %#x bytes at %#x\n", cbPadding, uFlatAddr);
+        outputPrintf("\n"
+                     "  ; Padding %#x bytes at %#x\n", cbPadding, uFlatAddr);
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    if (!ASMMemIsAll8(pb, cbPadding, 0))
+        return outputPrintf("  times %u db 0\n", cbPadding);
+
     return disByteData(uFlatAddr, cbPadding);
 }
 
 
+/**
+ * Worker for disGetNextSymbol that only does the looking up, no RTDBSYMBOL::cb
+ * calc.
+ *
+ * @param   uFlatAddr           The address to start searching at.
+ * @param   cbMax               The size of the search range.
+ * @param   poff                Where to return the offset between the symbol
+ *                              and @a uFlatAddr.
+ * @param   pSym                Where to return the symbol data.
+ */
+static void disGetNextSymbolWorker(uint32_t uFlatAddr, uint32_t cbMax, uint32_t *poff, PRTDBGSYMBOL pSym)
+{
+    RTINTPTR off = 0;
+    int rc = RTDbgModSymbolByAddr(g_hMapMod, RTDBGSEGIDX_RVA, uFlatAddr, RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL, &off, pSym);
+    if (RT_SUCCESS(rc))
+    {
+        /* negative offset, indicates beyond. */
+        if (off <= 0)
+        {
+            *poff = (uint32_t)-off;
+            return;
+        }
+
+        outputPrintf("  ; !! RTDbgModSymbolByAddr(,,%#x,,) -> off=%RTptr cb=%RTptr uValue=%RTptr '%s'\n",
+                     uFlatAddr, off, pSym->cb, pSym->Value, pSym->szName);
+    }
+    else if (rc != VERR_SYMBOL_NOT_FOUND)
+        outputPrintf("  ; !! RTDbgModSymbolByAddr(,,%#x,,) -> %Rrc\n", uFlatAddr, rc);
+
+    RTStrPrintf(pSym->szName, sizeof(pSym->szName), "_dummy_addr_%#x", uFlatAddr + cbMax);
+    pSym->Value     = uFlatAddr + cbMax;
+    pSym->cb        = 0;
+    pSym->offSeg    = uFlatAddr + cbMax;
+    pSym->iSeg      = RTDBGSEGIDX_RVA;
+    pSym->iOrdinal  = 0;
+    pSym->fFlags    = 0;
+    *poff = cbMax;
+}
+
+
+/**
+ * Gets the symbol at or after the given address.
+ *
+ * If there are no symbols in the specified range, @a pSym and @a poff will be
+ * set up to indicate a symbol at the first byte after the range.
+ *
+ * @param   uFlatAddr           The address to start searching at.
+ * @param   cbMax               The size of the search range.
+ * @param   poff                Where to return the offset between the symbol
+ *                              and @a uFlatAddr.
+ * @param   pSym                Where to return the symbol data.
+ */
+static void disGetNextSymbol(uint32_t uFlatAddr, uint32_t cbMax, uint32_t *poff, PRTDBGSYMBOL pSym)
+{
+    disGetNextSymbolWorker(uFlatAddr, cbMax, poff, pSym);
+    if (   *poff < cbMax
+        && pSym->cb == 0)
+    {
+        if (*poff + 1 < cbMax)
+        {
+            uint32_t    off2;
+            RTDBGSYMBOL Sym2;
+            disGetNextSymbolWorker(uFlatAddr + *poff + 1, cbMax - *poff - 1, &off2, &Sym2);
+            pSym->cb = off2 + 1;
+        }
+        else
+            pSym->cb = 1;
+    }
+    if (pSym->cb > cbMax - *poff)
+        pSym->cb = cbMax - *poff;
+
+    if (g_cVerbose > 1)
+        outputPrintf("  ; disGetNextSymbol %#x LB %#x -> off=%#x cb=%RTptr uValue=%RTptr '%s'\n",
+                     uFlatAddr, cbMax, *poff, pSym->cb, pSym->Value, pSym->szName);
+
+}
+
+
+/**
+ * For dealing with the const segment (string constants).
+ *
+ * @returns @c true on success, @c false on failure.
+ * @param   iSeg                The segment.
+ */
+static bool disConstSegment(uint32_t iSeg)
+{
+    uint32_t    uFlatAddr = g_aSegs[iSeg].uFlatAddr;
+    uint32_t    cb        = g_aSegs[iSeg].cb;
+
+    while (cb > 0)
+    {
+        uint32_t    off;
+        RTDBGSYMBOL Sym;
+        disGetNextSymbol(uFlatAddr, cb, &off, &Sym);
+
+        if (off > 0)
+        {
+            if (!disStringsData(uFlatAddr, off))
+                return false;
+            cb        -= off;
+            uFlatAddr += off;
+            off        = 0;
+            if (!cb)
+                break;
+        }
+
+        bool fRc;
+        if (off == 0)
+        {
+            size_t cchName = strlen(Sym.szName);
+            fRc = outputPrintf("%s: %*s; %#x LB %#x\n", Sym.szName, cchName < 41 - 2 ? cchName - 41 - 2 : 0, "", uFlatAddr, Sym.cb);
+            if (!fRc)
+                return false;
+            fRc = disStringsData(uFlatAddr, Sym.cb);
+            uFlatAddr += Sym.cb;
+            cb        -= Sym.cb;
+        }
+        else
+        {
+            fRc = disStringsData(uFlatAddr, Sym.cb);
+            uFlatAddr += cb;
+            cb = 0;
+        }
+        if (!fRc)
+            return false;
+    }
+
+    return true;
+}
+
+
+
 static bool disDataSegment(uint32_t iSeg)
 {
-    return disByteData(g_aSegs[iSeg].uFlatAddr, g_aSegs[iSeg].cb);
+    uint32_t    uFlatAddr = g_aSegs[iSeg].uFlatAddr;
+    uint32_t    cb        = g_aSegs[iSeg].cb;
+
+    while (cb > 0)
+    {
+        uint32_t    off;
+        RTDBGSYMBOL Sym;
+        disGetNextSymbol(uFlatAddr, cb, &off, &Sym);
+
+        if (off > 0)
+        {
+            if (!disByteData(uFlatAddr, off))
+                return false;
+            cb        -= off;
+            uFlatAddr += off;
+            off        = 0;
+            if (!cb)
+                break;
+        }
+
+        bool fRc;
+        if (off == 0)
+        {
+            size_t cchName = strlen(Sym.szName);
+            fRc = outputPrintf("%s: %*s; %#x LB %#x\n", Sym.szName, cchName < 41 - 2 ? cchName - 41 - 2 : 0, "", uFlatAddr, Sym.cb);
+            if (!fRc)
+                return false;
+
+            if (Sym.cb == 2)
+                fRc = disWordData(uFlatAddr, 2);
+            //else if (Sym.cb == 4 && disIsFarBiosAddr(uFlatAddr))
+            //    fRc = disDWordData(uFlatAddr, 4);
+            else if (Sym.cb == 4)
+                fRc = disDWordData(uFlatAddr, 4);
+            else if (disIsString(uFlatAddr, Sym.cb))
+                fRc = disStringData(uFlatAddr, Sym.cb);
+            else
+                fRc = disByteData(uFlatAddr, Sym.cb);
+
+            uFlatAddr += Sym.cb;
+            cb        -= Sym.cb;
+        }
+        else
+        {
+            fRc = disByteData(uFlatAddr, cb);
+            uFlatAddr += cb;
+            cb = 0;
+        }
+        if (!fRc)
+            return false;
+    }
+
+    return true;
+}
+
+
+static bool disIsCodeAndAdjustSize(uint32_t uFlatAddr, PRTDBGSYMBOL pSym, PBIOSSEG pSeg)
+{
+    if (!strcmp(pSeg->szName, "BIOSSEG"))
+    {
+        if (   !strcmp(pSym->szName, "rom_fdpt")
+            || !strcmp(pSym->szName, "pmbios_gdt")
+            || !strcmp(pSym->szName, "pmbios_gdt_desc")
+            || !strcmp(pSym->szName, "_pmode_IDT")
+            || !strcmp(pSym->szName, "_rmode_IDT")
+            || !strncmp(pSym->szName, RT_STR_TUPLE("font"))
+            || !strcmp(pSym->szName, "bios_string")
+            || !strcmp(pSym->szName, "vector_table")
+            || !strcmp(pSym->szName, "pci_routing_table_structure")
+            )
+            return false;
+    }
+
+    if (!strcmp(pSym->szName, "cpu_reset"))
+        pSym->cb = RT_MIN(pSym->cb, 5);
+    else if (!strcmp(pSym->szName, "pci_init_end"))
+        pSym->cb = RT_MIN(pSym->cb, 3);
+
+    return true;
+}
+
+
+static bool disIs16BitCode(const char *pszSymbol)
+{
+    return true;
+}
+
+/*
+< 00006590  67 aa 67 e7 67 1b 68 56  55 89 e5 83 ec 08 8a 46  |g.g.g.hVU......F|
+< 000065a0  23 30 e4 3d e8 00 74 3f  3d 86 00 75 49 fb 8b 46  |#0.=..t?=..uI..F|
+
+> 00006590  67 aa e7 67 1b 68 56 55  89 e5 83 ec 08 8a 46 23  |g..g.hVU......F#|
+> 000065a0  30 e4 3d e8 00 74 40 3d  86 00 75 4a fb 8b 46 1e  |0.=..t@=..uJ..F.|
+*/
+
+/**
+ * Deals with instructions that YASM will assemble differently than WASM/WCC.
+ */
+static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAddr, uint32_t cbInstr,
+                                       char *pszBuf, size_t cbBuf, size_t cchUsed)
+{
+    bool fDifferent = false;
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    if (   pb[0] == 0x2a
+        && pb[1] == 0xe4)
+        fDifferent = true; /* sub ah, ah    - alternative form 0x28 0x?? */
+    else if (   pb[0] == 0x2b
+             && pb[1] == 0xc2)
+        fDifferent = true; /* sub ax, dx    - alternative form 0x29 0xd0. */
+    else if (   pb[0] == 0x1b
+             && pb[1] == 0xff)
+        fDifferent = true; /* sbb di, di    - alternative form 0x19 0xff. */
+    else if (   pb[0] == 0x33
+             && (   pb[1] == 0xdb /* xor bx, bx */
+                 || pb[1] == 0xf6 /* xor si, si */
+                 || pb[1] == 0xff /* xor di, di */
+                 || pb[1] == 0xc0 /* xor ax, ax */
+                ))
+        fDifferent = true; /* xor x, x      - alternative form 0x31 xxxx. */
+    else if (   pb[0] == 0x66
+             && pb[1] == 0x33
+             && pb[2] == 0xc0)
+        fDifferent = true; /* xor eax, eax  - alternative form 0x66 0x31 0xc0. */
+    else if (   pb[0] == 0xf3
+             && pb[1] == 0x66
+             && pb[2] == 0x6d)
+        fDifferent = true; /* rep insd      - prefix switched. */
+    else if (   pb[0] == 0xf3
+             && pb[1] == 0x66
+             && pb[2] == 0x26
+             && pb[3] == 0x6f)
+        fDifferent = true; /* rep es outsd  - prefix switched. */
+    else if (   pb[0] == 0xc6
+             && pb[1] == 0xc5
+             && pb[2] == 0xba)
+        fDifferent = true; /* mov ch, 0bah  - yasm uses a short sequence: 0xb5 0xba. */
+    else if (   pb[0] == 0x8b
+             && pb[1] == 0xe0)
+        fDifferent = true; /* mov sp, ax    - alternative form 0x89 c4. */
+    /*
+     * Switch table fun (.sym may help):
+     */
+    else if (   pb[0] == 0x64
+             && pb[1] == 0x65
+             && pb[2] == 0x05
+             /*&& pb[3] == 0x61
+             && pb[4] == 0x19*/)
+        fDifferent = true; /* gs add ax, 01961h - both fs and gs prefix. Probably some switch table. */
+    else if (   pb[0] == 0x65
+             && pb[1] == 0x36
+             && pb[2] == 0x65
+             && pb[3] == 0xae)
+        fDifferent = true; /* gs scasb - switch table or smth. */
+    else if (   pb[0] == 0x67
+             && pb[1] == 0xe7
+             /*&& pb[2] == 0x67*/)
+        fDifferent = true; /* out 067h, ax - switch table or smth. */
+    /*
+     * Disassembler / formatter bugs:
+     */
+    else if (pb[0] == 0x6c && RT_C_IS_SPACE(*pszBuf))
+        fDifferent = true;
+
+
+    /*
+     * Handle different stuff.
+     */
+    if (fDifferent)
+    {
+        disByteData(uFlatAddr, cbInstr); /* lazy bird. */
+
+        if (cchUsed + 2 < cbBuf)
+        {
+            memmove(pszBuf + 2, pszBuf, cchUsed + 2);
+            cchUsed += 2;
+        }
+
+        pszBuf[0] = ';';
+        pszBuf[1] = ' ';
+    }
+
+    return cchUsed;
+}
+
+
+/**
+ * Disassembler callback for reading opcode bytes.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   uFlatAddr           The address to read at.
+ * @param   pbDst               Where to store them.
+ * @param   cbToRead            How many to read.
+ * @param   pvUser              Unused.
+ */
+static DECLCALLBACK(int) disReadOpcodeBytes(RTUINTPTR uFlatAddr, uint8_t *pbDst, unsigned cbToRead, void *pvUser)
+{
+    if (uFlatAddr + cbToRead >= VBOX_BIOS_BASE + _64K)
+    {
+        RT_BZERO(pbDst, cbToRead);
+        if (uFlatAddr >= VBOX_BIOS_BASE + _64K)
+            cbToRead = 0;
+        else
+            cbToRead = VBOX_BIOS_BASE + _64K - uFlatAddr;
+    }
+    memcpy(pbDst, &g_pbImg[uFlatAddr - VBOX_BIOS_BASE], cbToRead);
+    NOREF(pvUser);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Disassembles code.
+ *
+ * @returns @c true on success, @c false on failure.
+ * @param   uFlatAddr           The address where the code starts.
+ * @param   cb                  The amount of code to disassemble.
+ * @param   fIs16Bit            Is is 16-bit (@c true) or 32-bit (@c false).
+ */
+static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
+{
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+
+    while (cb > 0)
+    {
+        /* Trailing zero padding detection. */
+        if (   *pb == '\0'
+            && ASMMemIsAll8(pb, RT_MIN(cb, 8), 0) == NULL)
+        {
+            void  *pv      = ASMMemIsAll8(pb, cb, 0);
+            size_t cbZeros = pv ? (uint8_t const *)pv - pb : cb;
+            if (!outputPrintf("    times %#x db 0\n", cbZeros))
+                return false;
+            cb -= cbZeros;
+            pb += cbZeros;
+            uFlatAddr += cbZeros;
+            if (   cb == 2
+                && pb[0] == 'X'
+                && pb[1] == 'M')
+                return disStringData(uFlatAddr, cb);
+        }
+        /* Work arounds for switch tables and such (disas assertions). */
+        else if (   (   pb[0] == 0x11   /* int13_cdemu switch */
+                     && pb[1] == 0xda
+                     && pb[2] == 0x05
+                     && pb[3] == 0xff
+                     && pb[4] == 0xff
+                    )
+                 || 0
+                 )
+            return disByteData(uFlatAddr, cb);
+        else
+        {
+            unsigned    cbInstr;
+            DISCPUSTATE CpuState;
+            int rc = DISCoreOneEx(uFlatAddr, fIs16Bit ? CPUMODE_16BIT : CPUMODE_32BIT,
+                                  disReadOpcodeBytes, NULL, &CpuState, &cbInstr);
+            if (   RT_SUCCESS(rc)
+                && cbInstr <= cb)
+            {
+                char szTmp[4096];
+                size_t cch = DISFormatYasmEx(&CpuState, szTmp, sizeof(szTmp),
+                                             DIS_FMT_FLAGS_STRICT
+                                             | DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_BYTES_COMMENT | DIS_FMT_FLAGS_BYTES_SPACED,
+                                             NULL, NULL);
+                cch = disHandleYasmDifferences(&CpuState, uFlatAddr, cbInstr, szTmp, sizeof(szTmp), cch);
+                Assert(cch < sizeof(szTmp));
+
+                if (g_cVerbose > 1)
+                {
+                    while (cch < 72)
+                        szTmp[cch++] = ' ';
+                    RTStrPrintf(&szTmp[cch], sizeof(szTmp) - cch, "; %#x", uFlatAddr);
+                }
+
+                if (!outputPrintf("    %s\n", szTmp))
+                    return false;
+                cb -= cbInstr;
+                pb += cbInstr;
+                uFlatAddr += cbInstr;
+            }
+            else
+            {
+                if (!disByteData(uFlatAddr, 1))
+                    return false;
+                cb--;
+                pb++;
+                uFlatAddr++;
+            }
+        }
+    }
+    return true;
 }
 
 
 static bool disCodeSegment(uint32_t iSeg)
 {
-    return disDataSegment(iSeg);
-}
+    uint32_t    uFlatAddr = g_aSegs[iSeg].uFlatAddr;
+    uint32_t    cb        = g_aSegs[iSeg].cb;
 
+    while (cb > 0)
+    {
+        uint32_t    off;
+        RTDBGSYMBOL Sym;
+        disGetNextSymbol(uFlatAddr, cb, &off, &Sym);
+
+        if (off > 0)
+        {
+            if (!disByteData(uFlatAddr, off))
+                return false;
+            cb        -= off;
+            uFlatAddr += off;
+            off        = 0;
+            if (!cb)
+                break;
+        }
+
+        bool fRc;
+        if (off == 0)
+        {
+            size_t cchName = strlen(Sym.szName);
+            fRc = outputPrintf("%s: %*s; %#x LB %#x\n", Sym.szName, cchName < 41 - 2 ? cchName - 41 - 2 : 0, "", uFlatAddr, Sym.cb);
+            if (!fRc)
+                return false;
+
+            if (disIsCodeAndAdjustSize(uFlatAddr, &Sym, &g_aSegs[iSeg]))
+                fRc = disCode(uFlatAddr, Sym.cb, disIs16BitCode(Sym.szName));
+            else
+                fRc = disByteData(uFlatAddr, Sym.cb);
+
+            uFlatAddr += Sym.cb;
+            cb        -= Sym.cb;
+        }
+        else
+        {
+            fRc = disByteData(uFlatAddr, cb);
+            uFlatAddr += cb;
+            cb = 0;
+        }
+        if (!fRc)
+            return false;
+    }
+
+    return true;
+}
 
 
 static RTEXITCODE DisassembleBiosImage(void)
@@ -218,7 +990,7 @@ static RTEXITCODE DisassembleBiosImage(void)
      * Work the image segment by segment.
      */
     bool        fRc       = true;
-    uint32_t    uFlatAddr = 0xf0000;
+    uint32_t    uFlatAddr = VBOX_BIOS_BASE;
     for (uint32_t iSeg = 0; iSeg < g_cSegs && fRc; iSeg++)
     {
         /* Is there a gap between the segments? */
@@ -234,11 +1006,14 @@ static RTEXITCODE DisassembleBiosImage(void)
 
         /* Disassemble the segment. */
         fRc = outputPrintf("\n"
-                           "section %s progbits vstart=%#x align=1\n",
-                           g_aSegs[iSeg].szName, g_aSegs[iSeg].uFlatAddr);
+                           "section %s progbits vstart=%#x align=1 ; size=%#x class=%s group=%s\n",
+                           g_aSegs[iSeg].szName, g_aSegs[iSeg].uFlatAddr - VBOX_BIOS_BASE,
+                           g_aSegs[iSeg].cb, g_aSegs[iSeg].szClass, g_aSegs[iSeg].szGroup);
         if (!fRc)
             return RTEXITCODE_FAILURE;
-        if (!strcmp(g_aSegs[iSeg].szClass, "DATA"))
+        if (!strcmp(g_aSegs[iSeg].szName, "CONST"))
+            fRc = disConstSegment(iSeg);
+        else if (!strcmp(g_aSegs[iSeg].szClass, "DATA"))
             fRc = disDataSegment(iSeg);
         else
             fRc = disCodeSegment(iSeg);
@@ -248,9 +1023,9 @@ static RTEXITCODE DisassembleBiosImage(void)
     }
 
     /* Final gap. */
-    if (uFlatAddr < 0x100000)
-        fRc = disCopySegmentGap(uFlatAddr, 0x100000 - uFlatAddr);
-    else if (uFlatAddr > 0x100000)
+    if (uFlatAddr < VBOX_BIOS_BASE + _64K)
+        fRc = disCopySegmentGap(uFlatAddr, VBOX_BIOS_BASE + _64K - uFlatAddr);
+    else if (uFlatAddr > VBOX_BIOS_BASE + _64K)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Last segment spills beyond 1MB; uFlatAddr=%#x\n", uFlatAddr);
 
     if (!fRc)
