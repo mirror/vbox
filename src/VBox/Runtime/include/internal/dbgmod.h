@@ -363,11 +363,13 @@ typedef struct RTDBGMODVTDBG
      * @param   pMod        Pointer to the module structure.
      * @param   iSeg        The segment number (0-based) or RTDBGSEGIDX_ABS.
      * @param   off         The offset into the segment.
+     * @param   fFlags      Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
      * @param   poffDisp    Where to store the distance between the specified address
      *                      and the returned symbol. Optional.
      * @param   pSymInfo    Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
+    DECLCALLBACKMEMBER(int, pfnSymbolByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, uint32_t fFlags,
+                                             PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
 
 
 

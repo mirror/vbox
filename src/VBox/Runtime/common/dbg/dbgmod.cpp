@@ -1120,16 +1120,19 @@ RT_EXPORT_SYMBOL(RTDbgModSymbolByOrdinalA);
  * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
  * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
  *          end of the segment.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgMod             The module handle.
  * @param   iSeg                The segment number.
  * @param   off                 The offset into the segment.
+ * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp            Where to store the distance between the
  *                              specified address and the returned symbol.
  *                              Optional.
  * @param   pSymInfo            Where to store the symbol information.
  */
-RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
+RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
+                                 PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
     /*
      * Validate input.
@@ -1138,6 +1141,7 @@ RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR o
     RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
     AssertPtrNull(poffDisp);
     AssertPtr(pSymInfo);
+    AssertReturn(!(fFlags & ~RTDBGSYMADDR_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
 
     RTDBGMOD_LOCK(pDbgMod);
 
@@ -1157,7 +1161,7 @@ RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR o
     /*
      * Get down to business.
      */
-    int rc = pDbgMod->pDbgVt->pfnSymbolByAddr(pDbgMod, iSeg, off, poffDisp, pSymInfo);
+    int rc = pDbgMod->pDbgVt->pfnSymbolByAddr(pDbgMod, iSeg, off, fFlags, poffDisp, pSymInfo);
 
     RTDBGMOD_UNLOCK(pDbgMod);
     return rc;
@@ -1182,17 +1186,20 @@ RT_EXPORT_SYMBOL(RTDbgModSymbolByAddr);
  * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
  *          end of the segment.
  * @retval  VERR_NO_MEMORY if RTDbgSymbolAlloc fails.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgMod             The module handle.
  * @param   iSeg                The segment index.
  * @param   off                 The offset into the segment.
+ * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp            Where to store the distance between the
  *                              specified address and the returned symbol. Optional.
  * @param   ppSymInfo           Where to store the pointer to the returned
  *                              symbol information. Always set. Free with
  *                              RTDbgSymbolFree.
  */
-RTDECL(int) RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo)
+RTDECL(int) RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
+                                  PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo)
 {
     AssertPtr(ppSymInfo);
     *ppSymInfo = NULL;
@@ -1201,7 +1208,7 @@ RTDECL(int) RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR 
     if (!pSymInfo)
         return VERR_NO_MEMORY;
 
-    int rc = RTDbgModSymbolByAddr(hDbgMod, iSeg, off, poffDisp, pSymInfo);
+    int rc = RTDbgModSymbolByAddr(hDbgMod, iSeg, off, fFlags, poffDisp, pSymInfo);
 
     if (RT_SUCCESS(rc))
         *ppSymInfo = pSymInfo;

@@ -1288,15 +1288,18 @@ RT_EXPORT_SYMBOL(RTDbgAsSymbolAdd);
  * @returns IPRT status code. See RTDbgModSymbolAddr for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgAs          The address space handle.
  * @param   Addr            The address which closest symbol is requested.
- * @param   poffDisp        Where to return the distance between the symbol
- *                          and address. Optional.
+ * @param   fFlags          Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
+ * @param   poffDisp        Where to return the distance between the symbol and
+ *                          address. Optional.
  * @param   pSymbol         Where to return the symbol info.
  * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
+RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, uint32_t fFlags,
+                                PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
 {
     /*
      * Validate input and resolve the address.
@@ -1318,7 +1321,7 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
     /*
      * Forward the call.
      */
-    int rc = RTDbgModSymbolByAddr(hMod, iSeg, offSeg, poffDisp, pSymbol);
+    int rc = RTDbgModSymbolByAddr(hMod, iSeg, offSeg, fFlags, poffDisp, pSymbol);
     if (RT_SUCCESS(rc))
         rtDbgAsAdjustSymbolValue(pSymbol, hMod, MapAddr, iSeg);
     if (phMod)
@@ -1336,16 +1339,19 @@ RT_EXPORT_SYMBOL(RTDbgAsSymbolByAddr);
  * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ * @retval  VERR_INVALID_PARAMETER if incorrect flags.
  *
  * @param   hDbgAs          The address space handle.
  * @param   Addr            The address which closest symbol is requested.
+ * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
  * @param   ppSymInfo       Where to return the pointer to the allocated symbol
  *                          info. Always set. Free with RTDbgSymbolFree.
  * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo, PRTDBGMOD phMod)
+RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, uint32_t fFlags,
+                                 PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo, PRTDBGMOD phMod)
 {
     /*
      * Validate input and resolve the address.
@@ -1367,7 +1373,7 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
     /*
      * Forward the call.
      */
-    int rc = RTDbgModSymbolByAddrA(hMod, iSeg, offSeg, poffDisp, ppSymInfo);
+    int rc = RTDbgModSymbolByAddrA(hMod, iSeg, offSeg, fFlags, poffDisp, ppSymInfo);
     if (RT_SUCCESS(rc))
         rtDbgAsAdjustSymbolValue(*ppSymInfo, hMod, MapAddr, iSeg);
     if (phMod)

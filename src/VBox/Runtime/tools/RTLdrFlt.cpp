@@ -321,7 +321,7 @@ int main(int argc, char **argv)
                      */
                     RTDBGSYMBOL Symbol;
                     RTINTPTR    offSym;
-                    rc = RTDbgAsSymbolByAddr(hDbgAs, u64Address, &offSym, &Symbol, NULL);
+                    rc = RTDbgAsSymbolByAddr(hDbgAs, u64Address, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &offSym, &Symbol, NULL);
                     if (RT_SUCCESS(rc))
                     {
                         if (!offSym)
