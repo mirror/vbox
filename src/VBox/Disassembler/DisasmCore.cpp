@@ -303,8 +303,10 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
                 switch (opcode)
                 {
                 case OP_INVALID:
+#if 0
                     AssertMsgFailed(("Invalid opcode!!\n"));
-                    return VERR_GENERAL_FAILURE; /** @todo better error code. */
+#endif
+                    return VERR_DIS_INVALID_OPCODE;
 
                 // segment override prefix byte
                 case OP_SEG:
