@@ -18,13 +18,6 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-## @todo move to Config.kmk.
-ifndef VBOX_WITHOUT_OPEN_WATCOM
- if1of ($(KBUILD_TARGET), os2 win linux)
-  VBOX_WITH_OPEN_WATCOM := 1
- endif
-endif
-
 
 ifdef VBOX_WITH_OPEN_WATCOM
 
