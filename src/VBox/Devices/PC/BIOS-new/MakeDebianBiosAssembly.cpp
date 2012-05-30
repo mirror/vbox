@@ -1034,12 +1034,18 @@ static RTEXITCODE DisassembleBiosImage(void)
  */
 static RTEXITCODE ParseSymFile(const char *pszBiosSym)
 {
+#if 1
     /** @todo use RTDbg* later. (Just checking for existance currently.) */
     PRTSTREAM hStrm;
     int rc = RTStrmOpen(pszBiosSym, "rb", &hStrm);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening '%s': %Rrc", pszBiosSym, rc);
     RTStrmClose(hStrm);
+#else
+    RTDBGMOD hDbgMod;
+    int rc = RTDbgModCreateFromImage(&hDbgMod, pszBiosSym, "VBoxBios", 0 /*fFlags*/);
+    RTMsgInfo("RTDbgModCreateFromImage -> %Rrc\n", rc);
+#endif
     return RTEXITCODE_SUCCESS;
 }
 
