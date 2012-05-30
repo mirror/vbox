@@ -30,6 +30,7 @@
 #include <iprt/message.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/x86.h>
 
 #include <VBox/dis.h>
 
@@ -722,13 +723,6 @@ static bool disIs16BitCode(const char *pszSymbol)
     return true;
 }
 
-/*
-< 00006590  67 aa 67 e7 67 1b 68 56  55 89 e5 83 ec 08 8a 46  |g.g.g.hVU......F|
-< 000065a0  23 30 e4 3d e8 00 74 3f  3d 86 00 75 49 fb 8b 46  |#0.=..t?=..uI..F|
-
-> 00006590  67 aa e7 67 1b 68 56 55  89 e5 83 ec 08 8a 46 23  |g..g.hVU......F#|
-> 000065a0  30 e4 3d e8 00 74 40 3d  86 00 75 4a fb 8b 46 1e  |0.=..t@=..uJ..F.|
-*/
 
 /**
  * Deals with instructions that YASM will assemble differently than WASM/WCC.
@@ -738,8 +732,30 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
 {
     bool fDifferent = DISFormatYasmIsOddEncoding(pCpuState);
     uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
-    if (   pb[0] == 0x2a
-        && pb[1] == 0xe4)
+
+    /*
+     * Disassembler bugs.
+     */
+    /** @todo Group 1a and 11 seems to be disassembled incorrectly when
+     *        modrm.reg != 0. Those encodings should be invalid AFAICT. */
+
+    if (   (   pCpuState->opcode  == 0x8f            /* group 1a */
+            || pCpuState->opcode  == 0xc7            /* group 11 */
+            || pCpuState->opcode  == 0xc6            /* group 11 - not verified */
+           )
+        && pCpuState->ModRM.Bits.Reg != 0)
+        fDifferent = true;
+    /** @todo "TEST Eb,Ib" (f6 0f 08) ends up with no mnemonic as well as
+     *        wrong length (2 instead of 3)! */
+    else if (   pCpuState->opcode == 0xf6
+             && pb[1] == 0x0f
+             && pb[2] == 0x08)
+        fDifferent = true;
+    /*
+     * Check these out and consider adding them to DISFormatYasmIsOddEncoding.
+     */
+    else if (   pb[0] == 0x2a
+             && pb[1] == 0xe4)
         fDifferent = true; /* sub ah, ah    - alternative form 0x28 0x?? */
     else if (   pb[0] == 0x2b
              && pb[1] == 0xc2)
