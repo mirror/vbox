@@ -755,7 +755,7 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
             if (pThis->iShutdown == 8)
             {
                 pThis->iShutdown = 0;
-                LogRel(("8900h shutdown request.\n"));
+                LogRel(("DevPcBios: 8900h shutdown request.\n"));
                 return PDMDevHlpVMPowerOff(pDevIns);
             }
         }
@@ -1223,7 +1223,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (RT_FAILURE(rc))
             return rc;
 
-        LogRel(("Using BIOS ROM '%s' with a size of %#x bytes\n", pThis->pszPcBiosFile, pThis->cbPcBios));
+        LogRel(("DevPcBios: Using BIOS ROM '%s' with a size of %#x bytes\n", pThis->pszPcBiosFile, pThis->cbPcBios));
     }
     else
     {
@@ -1351,7 +1351,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             /*
              * Ignore failure and fall back to the built-in LAN boot ROM.
              */
-            Log(("pcbiosConstruct: Failed to open LAN boot ROM file '%s', rc=%Rrc!\n", pThis->pszLanBootFile, rc));
+            LogRel(("DevPcBios: Failed to open LAN boot ROM file '%s', rc=%Rrc!\n", pThis->pszLanBootFile, rc));
             RTFileClose(FileLanBoot);
             FileLanBoot = NIL_RTFILE;
             MMR3HeapFree(pThis->pszLanBootFile);
@@ -1364,6 +1364,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (pThis->pszLanBootFile)
     {
+        LogRel(("DevPcBios: Using LAN ROM '%s' with a size of %#x bytes\n", pThis->pszLanBootFile, cbFileLanBoot));
         /*
          * Allocate buffer for the LAN boot ROM data.
          */
