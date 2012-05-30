@@ -140,8 +140,10 @@ static int RTLDRELF_NAME(MapBits)(PRTLDRMODELF pModElf, bool fNeedsBits)
     if (RT_SUCCESS(rc))
     {
         const uint8_t *pu8 = (const uint8_t *)pModElf->pvBits;
-        pModElf->paSyms = (const Elf_Sym *)(pu8 + pModElf->paShdrs[pModElf->iSymSh].sh_offset);
-        pModElf->pStr   =    (const char *)(pu8 + pModElf->paShdrs[pModElf->iStrSh].sh_offset);
+        if (pModElf->iSymSh != ~0U)
+            pModElf->paSyms = (const Elf_Sym *)(pu8 + pModElf->paShdrs[pModElf->iSymSh].sh_offset);
+        if (pModElf->iStrSh != ~0U)
+            pModElf->pStr   =    (const char *)(pu8 + pModElf->paShdrs[pModElf->iStrSh].sh_offset);
     }
     return rc;
 }
@@ -512,7 +514,23 @@ static DECLCALLBACK(size_t) RTLDRELF_NAME(GetImageSize)(PRTLDRMODINTERNAL pMod)
 /** @copydoc RTLDROPS::GetBits */
 static DECLCALLBACK(int) RTLDRELF_NAME(GetBits)(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+    PRTLDRMODELF    pModElf = (PRTLDRMODELF)pMod;
+
+    /*
+     * This operation is currently only available on relocatable images.
+     */
+    switch (pModElf->Ehdr.e_type)
+    {
+        case ET_REL:
+            break;
+        case ET_EXEC:
+            Log(("RTLdrELF: %s: Executable images are not supported yet!\n", pModElf->pReader->pfnLogName(pModElf->pReader)));
+            return VERR_LDRELF_EXEC;
+        case ET_DYN:
+            Log(("RTLdrELF: %s: Dynamic images are not supported yet!\n", pModElf->pReader->pfnLogName(pModElf->pReader)));
+            return VERR_LDRELF_DYN;
+        default: AssertFailedReturn(VERR_BAD_EXE_FORMAT);
+    }
 
     /*
      * Load the bits into pvBits.
@@ -557,8 +575,27 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetBits)(PRTLDRMODINTERNAL pMod, void *pv
 static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
                                                  RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+    PRTLDRMODELF    pModElf = (PRTLDRMODELF)pMod;
+#ifdef LOG_ENABLED
+    const char     *pszLogName = pModElf->pReader->pfnLogName(pModElf->pReader);
+#endif
     NOREF(OldBaseAddress);
+
+    /*
+     * This operation is currently only available on relocatable images.
+     */
+    switch (pModElf->Ehdr.e_type)
+    {
+        case ET_REL:
+            break;
+        case ET_EXEC:
+            Log(("RTLdrELF: %s: Executable images are not supported yet!\n", pszLogName));
+            return VERR_LDRELF_EXEC;
+        case ET_DYN:
+            Log(("RTLdrELF: %s: Dynamic images are not supported yet!\n", pszLogName));
+            return VERR_LDRELF_DYN;
+        default: AssertFailedReturn(VERR_BAD_EXE_FORMAT);
+    }
 
     /*
      * Validate the input.
@@ -579,10 +616,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *p
      * for in the sh_info member.
      */
     const Elf_Shdr *paShdrs = pModElf->paShdrs;
-#ifdef LOG_ENABLED
-    const char     *pszLogName = pModElf->pReader->pfnLogName(pModElf->pReader);
     Log2(("rtLdrElf: %s: Fixing up image\n", pszLogName));
-#endif
     for (unsigned iShdr = 0; iShdr < pModElf->Ehdr.e_shnum; iShdr++)
     {
         const Elf_Shdr *pShdrRel = &paShdrs[iShdr];
@@ -647,7 +681,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, cons
      * Calc all kinds of pointers before we start iterating the symbol table.
      */
     const char         *pStr  = pModElf->pStr;
-    const Elf_Sym    *paSyms = pModElf->paSyms;
+    const Elf_Sym     *paSyms = pModElf->paSyms;
     unsigned            cSyms = pModElf->cSyms;
     for (unsigned iSym = 1; iSym < cSyms; iSym++)
     {
@@ -858,13 +892,9 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
     switch (pEhdr->e_type)
     {
         case ET_REL:
-            break;
         case ET_EXEC:
-            Log(("RTLdrELF: %s: Executable images are not supported yet!\n", pszLogName));
-            return VERR_LDRELF_EXEC;
         case ET_DYN:
-            Log(("RTLdrELF: %s: Dynamic images are not supported yet!\n", pszLogName));
-            return VERR_LDRELF_DYN;
+            break;
         default:
             Log(("RTLdrELF: %s: image type %#x is not supported!\n", pszLogName, pEhdr->e_type));
             return VERR_BAD_EXE_FORMAT;
@@ -1160,7 +1190,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
 
                 Log2(("RTLdrElf: iSymSh=%u cSyms=%u iStrSh=%u cbStr=%u rc=%Rrc cbImage=%#zx\n",
                       pModElf->iSymSh, pModElf->cSyms, pModElf->iStrSh, pModElf->cbStr, rc, pModElf->cbImage));
-
+#if 0
                 /*
                  * Are the section headers fine?
                  * We require there to be symbol & string tables (at least for the time being).
@@ -1168,6 +1198,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                 if (    pModElf->iSymSh == ~0U
                     ||  pModElf->iStrSh == ~0U)
                     rc = VERR_LDRELF_NO_SYMBOL_OR_NO_STRING_TABS;
+#endif
                 if (RT_SUCCESS(rc))
                 {
                     pModElf->Core.pOps      = &RTLDRELF_MID(s_rtldrElf,Ops);
