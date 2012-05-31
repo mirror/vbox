@@ -1015,8 +1015,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                QResizeEvent* pResizeEvent = static_cast<QResizeEvent*>(pEvent);
 #ifdef VBOX_WITH_VIDEOHWACCEL
+                QResizeEvent* pResizeEvent = static_cast<QResizeEvent*>(pEvent);
                 if (m_pFrameBuffer)
                     m_pFrameBuffer->viewportResized(pResizeEvent);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
