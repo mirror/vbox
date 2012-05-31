@@ -443,7 +443,7 @@ void USBProxyServiceSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
 bool USBProxyServiceSolaris::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
-    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false)
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
 }
 
