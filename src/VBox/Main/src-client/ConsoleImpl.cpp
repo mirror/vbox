@@ -3008,27 +3008,35 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
             tr("USB device with UUID {%RTuuid} is not attached to this machine"),
             Guid(aId).raw());
 
+    /* Remove the device from the collection, it is re-added below for failures */
+    mUSBDevices.erase(it);
+
     /*
      * Inform the USB device and USB proxy about what's cooking.
      */
     alock.release();
-    HRESULT rc2 = mControl->DetachUSBDevice(aId, false /* aDone */);
-    if (FAILED(rc2))
-        return rc2;
-    alock.acquire();
+    HRESULT rc = mControl->DetachUSBDevice(aId, false /* aDone */);
+    if (FAILED(rc))
+    {
+        /* Re-add the device to the collection */
+        alock.acquire();
+        mUSBDevices.push_back(pUSBDevice);
+        return rc;
+    }
 
     /* Request the PDM to detach the USB device. */
-    HRESULT rc = detachUSBDevice(it);
-
+    rc = detachUSBDevice(pUSBDevice);
     if (SUCCEEDED(rc))
     {
-        /* release the lock since we don't need it any more (note though that
-         * the USB Proxy service must not call us back here) */
-        alock.release();
-
         /* Request the device release. Even if it fails, the device will
          * remain as held by proxy, which is OK for us (the VM process). */
         rc = mControl->DetachUSBDevice(aId, true /* aDone */);
+    }
+    else
+    {
+        /* Re-add the device to the collection */
+        alock.acquire();
+        mUSBDevices.push_back(pUSBDevice);
     }
 
     return rc;
@@ -4995,8 +5003,8 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
 
     if (aError != NULL)
     {
-        alock.release();
         /* notify callbacks about the error */
+        alock.release();
         onUSBDeviceStateChange(aDevice, true /* aAttached */, aError);
         return S_OK;
     }
@@ -5009,7 +5017,6 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
     }
 
     alock.release();
-
     HRESULT rc = attachUSBDevice(aDevice, aMaskedIfs);
     if (FAILED(rc))
     {
@@ -5086,19 +5093,25 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
         AssertFailedReturn(E_FAIL);
     }
 
-    alock.release();
-
     if (aError != NULL)
     {
         /* notify callback about an error */
+        alock.release();
         onUSBDeviceStateChange(pUSBDevice, false /* aAttached */, aError);
         return S_OK;
     }
 
-    HRESULT rc = detachUSBDevice(it);
+    /* Remove the device from the collection, it is re-added below for failures */
+    mUSBDevices.erase(it);
 
+    alock.release();
+    HRESULT rc = detachUSBDevice(pUSBDevice);
     if (FAILED(rc))
     {
+        /* Re-add the device to the collection */
+        alock.acquire();
+        mUSBDevices.push_back(pUSBDevice);
+        alock.release();
         /* take the current error info */
         com::ErrorInfoKeeper eik;
         /* the error must be a VirtualBoxErrorInfo instance */
@@ -7624,12 +7637,11 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
  * @param aHostDevice  device to attach
  *
  * @note Synchronously calls EMT.
- * @note Must be called from under this object's lock.
  */
 HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 {
     AssertReturn(aHostDevice, E_FAIL);
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
 
     HRESULT hrc;
 
@@ -7660,14 +7672,41 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n",
                       Address.c_str(), uuid.raw()));
 
-/** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
+    void *pvRemoteBackend = NULL;
+    if (fRemote)
+    {
+        RemoteUSBDevice *pRemoteUSBDevice = static_cast<RemoteUSBDevice *>(aHostDevice);
+        pvRemoteBackend = consoleVRDPServer()->USBBackendRequestPointer(pRemoteUSBDevice->clientId(), &uuid);
+        if (!pvRemoteBackend)
+            return E_INVALIDARG; /* The clientId is invalid then. */
+    }
+
+    USHORT portVersion = 1;
+    hrc = aHostDevice->COMGETTER(PortVersion)(&portVersion);
+    AssertComRCReturnRC(hrc);
+    Assert(portVersion == 1 || portVersion == 2);
+
     int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
-                              (PFNRT)usbAttachCallback, 7,
-                              this, ptrVM.raw(), aHostDevice, uuid.raw(), fRemote, Address.c_str(), aMaskedIfs);
+                              (PFNRT)usbAttachCallback, 9,
+                              this, ptrVM.raw(), aHostDevice, uuid.raw(), fRemote, Address.c_str(), pvRemoteBackend, portVersion, aMaskedIfs);
 
-    /* hrc is S_OK here */
+    if (RT_SUCCESS(vrc))
+    {
+        /* Create a OUSBDevice and add it to the device list */
+        ComObjPtr<OUSBDevice> pUSBDevice;
+        pUSBDevice.createObject();
+        hrc = pUSBDevice->init(aHostDevice);
+        AssertComRC(hrc);
 
-    if (RT_FAILURE(vrc))
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        mUSBDevices.push_back(pUSBDevice);
+        LogFlowFunc(("Attached device {%RTuuid}\n", pUSBDevice->id().raw()));
+
+        /* notify callbacks */
+        alock.release();
+        onUSBDeviceStateChange(pUSBDevice, true /* aAttached */, NULL);
+    }
+    else
     {
         LogWarningThisFunc(("Failed to create proxy device for '%s' {%RTuuid} (%Rrc)\n",
                             Address.c_str(), uuid.raw(), vrc));
@@ -7704,49 +7743,16 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
  */
 //static
 DECLCALLBACK(int)
-Console::usbAttachCallback(Console *that, PVM pVM, IUSBDevice *aHostDevice, PCRTUUID aUuid, bool aRemote, const char *aAddress, ULONG aMaskedIfs)
+Console::usbAttachCallback(Console *that, PVM pVM, IUSBDevice *aHostDevice, PCRTUUID aUuid, bool aRemote, const char *aAddress, void *pvRemoteBackend, USHORT aPortVersion, ULONG aMaskedIfs)
 {
     LogFlowFuncEnter();
-    LogFlowFunc(("that={%p}\n", that));
+    LogFlowFunc(("that={%p} aUuid={%RTuuid}\n", that, aUuid));
 
     AssertReturn(that && aUuid, VERR_INVALID_PARAMETER);
-
-    void *pvRemoteBackend = NULL;
-    if (aRemote)
-    {
-        RemoteUSBDevice *pRemoteUSBDevice = static_cast<RemoteUSBDevice *>(aHostDevice);
-        Guid guid(*aUuid);
-
-        pvRemoteBackend = that->consoleVRDPServer()->USBBackendRequestPointer(pRemoteUSBDevice->clientId(), &guid);
-        if (!pvRemoteBackend)
-            return VERR_INVALID_PARAMETER; /* The clientId is invalid then. */
-    }
-
-    USHORT portVersion = 1;
-    HRESULT hrc = aHostDevice->COMGETTER(PortVersion)(&portVersion);
-    AssertComRCReturn(hrc, VERR_GENERAL_FAILURE);
-    Assert(portVersion == 1 || portVersion == 2);
+    AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     int vrc = PDMR3USBCreateProxyDevice(pVM, aUuid, aRemote, aAddress, pvRemoteBackend,
-                                        portVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20, aMaskedIfs);
-    if (RT_SUCCESS(vrc))
-    {
-        /* Create a OUSBDevice and add it to the device list */
-        ComObjPtr<OUSBDevice> pUSBDevice;
-        pUSBDevice.createObject();
-        hrc = pUSBDevice->init(aHostDevice);
-        AssertComRC(hrc);
-
-        AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
-        that->mUSBDevices.push_back(pUSBDevice);
-        LogFlowFunc(("Attached device {%RTuuid}\n", pUSBDevice->id().raw()));
-
-        alock.release();
-
-        /* notify callbacks */
-        that->onUSBDeviceStateChange(pUSBDevice, true /* aAttached */, NULL);
-    }
-
+                                        aPortVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20, aMaskedIfs);
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
@@ -7757,14 +7763,13 @@ Console::usbAttachCallback(Console *that, PVM pVM, IUSBDevice *aHostDevice, PCRT
  * succeeds, the detached device will disappear from the mUSBDevices
  * collection.
  *
- * @param aIt  Iterator pointing to the device to detach.
+ * @param aHostDevice  device to attach
  *
  * @note Synchronously calls EMT.
- * @note Must be called from under this object's lock.
  */
-HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
+HRESULT Console::detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice)
 {
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
 
     /* Get the VM handle. */
     SafeVMPtr ptrVM(this);
@@ -7774,13 +7779,39 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
     /* if the device is attached, then there must at least one USB hub. */
     AssertReturn(PDMR3USBHasHub(ptrVM), E_FAIL);
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("Detaching USB proxy device {%RTuuid}...\n",
-                     (*aIt)->id().raw()));
+                     aHostDevice->id().raw()));
 
-/** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
+    /*
+     * If this was a remote device, release the backend pointer.
+     * The pointer was requested in usbAttachCallback.
+     */
+    BOOL fRemote = FALSE;
+
+    HRESULT hrc2 = aHostDevice->COMGETTER(Remote)(&fRemote);
+    if (FAILED(hrc2))
+        setErrorStatic(hrc2, "GetRemote() failed");
+
+    PCRTUUID pUuid = aHostDevice->id().raw();
+    if (fRemote)
+    {
+        Guid guid(*pUuid);
+        consoleVRDPServer()->USBBackendReleasePointer(&guid);
+    }
+
+    alock.release();
     int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
                               (PFNRT)usbDetachCallback, 5,
-                              this, ptrVM.raw(), &aIt, (*aIt)->id().raw());
+                              this, ptrVM.raw(), pUuid);
+    if (RT_SUCCESS(vrc))
+    {
+        LogFlowFunc(("Detached device {%RTuuid}\n", pUuid));
+
+        /* notify callbacks */
+        onUSBDeviceStateChange(aHostDevice, false /* aAttached */, NULL);
+    }
+
     ComAssertRCRet(vrc, E_FAIL);
 
     return S_OK;
@@ -7793,49 +7824,18 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
  * interface pointers passed in.
  *
  * @thread EMT
- * @note Locks the console object for writing.
  */
 //static
 DECLCALLBACK(int)
-Console::usbDetachCallback(Console *that, PVM pVM, USBDeviceList::iterator *aIt, PCRTUUID aUuid)
+Console::usbDetachCallback(Console *that, PVM pVM, PCRTUUID aUuid)
 {
     LogFlowFuncEnter();
-    LogFlowFunc(("that={%p}\n", that));
+    LogFlowFunc(("that={%p} aUuid={%RTuuid}\n", that, aUuid));
 
     AssertReturn(that && aUuid, VERR_INVALID_PARAMETER);
-    ComObjPtr<OUSBDevice> pUSBDevice = **aIt;
-
-    /*
-     * If that was a remote device, release the backend pointer.
-     * The pointer was requested in usbAttachCallback.
-     */
-    BOOL fRemote = FALSE;
-
-    HRESULT hrc2 = (**aIt)->COMGETTER(Remote)(&fRemote);
-    if (FAILED(hrc2))
-        setErrorStatic(hrc2, "GetRemote() failed");
-
-    if (fRemote)
-    {
-        Guid guid(*aUuid);
-        that->consoleVRDPServer()->USBBackendReleasePointer(&guid);
-    }
+    AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     int vrc = PDMR3USBDetachDevice(pVM, aUuid);
-
-    if (RT_SUCCESS(vrc))
-    {
-        AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
-
-        /* Remove the device from the collection */
-        that->mUSBDevices.erase(*aIt);
-        LogFlowFunc(("Detached device {%RTuuid}\n", pUSBDevice->id().raw()));
-
-        alock.release();
-
-        /* notify callbacks */
-        that->onUSBDeviceStateChange(pUSBDevice, false /* aAttached */, NULL);
-    }
 
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();

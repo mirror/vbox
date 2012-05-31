@@ -73,15 +73,13 @@ enum VBoxLockingClass
     LOCKCLASS_SNAPSHOTOBJECT = 6,           // snapshot object locks
                                             // (the snapshots tree, including the child pointers in Snapshot,
                                             // is protected by the normal Machine object lock)
-    LOCKCLASS_LISTOFMEDIA = 7,              // list of media (hard disks, DVDs, floppies) in VirtualBox object
-    LOCKCLASS_LISTOFOTHEROBJECTS = 8,       // any other list of objects
-    LOCKCLASS_MEDIUMQUERY = 9,              // lock used to protect Machine::queryInfo
+    LOCKCLASS_MEDIUMQUERY = 7,              // lock used to protect Machine::queryInfo
+    LOCKCLASS_LISTOFMEDIA = 8,              // list of media (hard disks, DVDs, floppies) in VirtualBox object
+    LOCKCLASS_LISTOFOTHEROBJECTS = 9,       // any other list of objects
     LOCKCLASS_OTHEROBJECT = 10,             // any regular object member variable lock
-    LOCKCLASS_USBLIST = 11,                 // temporary hack to avoid having to clean up the USB filters
-                                            // too much @todo r=dj get rid of this!
-    LOCKCLASS_PROGRESSLIST = 12,            // list of progress objects in VirtualBox; no other object lock
+    LOCKCLASS_PROGRESSLIST = 11,            // list of progress objects in VirtualBox; no other object lock
                                             // may be held after this!
-    LOCKCLASS_OBJECTSTATE = 13              // object state lock (handled by AutoCaller classes)
+    LOCKCLASS_OBJECTSTATE = 12              // object state lock (handled by AutoCaller classes)
 };
 
 void InitAutoLockSystem();

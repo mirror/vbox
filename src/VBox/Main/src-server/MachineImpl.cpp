@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2004-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -12672,7 +12672,7 @@ HRESULT SessionMachine::onStorageDeviceChange(IMediumAttachment *aAttachment, BO
  *  Returns @c true if this machine's USB controller reports it has a matching
  *  filter for the given USB device and @c false otherwise.
  *
- *  @note Caller must have requested machine read lock.
+ *  @note locks this object for reading.
  */
 bool SessionMachine::hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
 {
@@ -12682,8 +12682,9 @@ bool SessionMachine::hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevic
     if (!autoCaller.isOk())
         return false;
 
-
 #ifdef VBOX_WITH_USB
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     switch (mData->mMachineState)
     {
         case MachineState_Starting:
@@ -12693,6 +12694,7 @@ bool SessionMachine::hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevic
         case MachineState_Running:
         /** @todo Live Migration: snapshoting & teleporting. Need to fend things of
          *        elsewhere... */
+            alock.release();
             return mUSBController->hasMatchingFilter(aDevice, aMaskedIfs);
         default: break;
     }

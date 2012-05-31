@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2004-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -183,7 +183,8 @@ tstUSBProxyLinux_DEFS      = \
 tstUSBProxyLinux_DEPS     = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 tstUSBProxyLinux_LIBS     += \
-	$(PATH_OUT)/lib/USBLib.a
+	$(PATH_OUT)/lib/USBLib.a \
+	$(PATH_OUT)/lib/VBoxCOM.a
 
 
 # generate rules.
