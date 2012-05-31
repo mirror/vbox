@@ -160,11 +160,6 @@ void UIMachineLogic::prepare()
     prepareDock();
 #endif /* Q_WS_MAC */
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Prepare debugger: */
-    prepareDebugger();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-
     /* Power up machine: */
     uisession()->powerUp();
 
@@ -172,6 +167,11 @@ void UIMachineLogic::prepare()
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Prepare debugger: */
+    prepareDebugger();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Retranslate logic part: */
     retranslateUi();
