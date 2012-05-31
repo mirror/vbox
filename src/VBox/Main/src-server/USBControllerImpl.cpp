@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -171,7 +171,7 @@ HRESULT USBController::init(Machine *aParent, USBController *aPeer)
         filter.createObject();
         filter->init(this, *it);
         m->llDeviceFilters->push_back(filter);
-        ++ it;
+        ++it;
     }
 #endif /* VBOX_WITH_USB */
 
@@ -214,7 +214,7 @@ HRESULT USBController::initCopy(Machine *aParent, USBController *aPeer)
         filter.createObject();
         filter->initCopy(this, *it);
         m->llDeviceFilters->push_back(filter);
-        ++ it;
+        ++it;
     }
 #endif /* VBOX_WITH_USB */
 
@@ -779,7 +779,7 @@ void USBController::rollback()
 
                 (*it)->uninit();
             }
-            ++ it;
+            ++it;
         }
 
         if (Global::IsOnline(adep.machineState()))
@@ -801,7 +801,7 @@ void USBController::rollback()
                         flt->getId() = service->insertFilter(&flt->getData().mUSBFilter);
                     }
                 }
-                ++ it;
+                ++it;
             }
         }
 
@@ -894,7 +894,7 @@ void USBController::commit()
                 /* and add it to the new list */
                 newList->push_back(peer);
 
-                ++ it;
+                ++it;
             }
 
             /* uninit old peer's filters that are left */
@@ -902,7 +902,7 @@ void USBController::commit()
             while (it != m->pPeer->m->llDeviceFilters->end())
             {
                 (*it)->uninit();
-                ++ it;
+                ++it;
             }
 
             /* attach new list of filters to our peer */
@@ -928,7 +928,7 @@ void USBController::commit()
         while (it != m->llDeviceFilters->end())
         {
             (*it)->commit();
-            ++ it;
+            ++it;
         }
     }
 #endif /* VBOX_WITH_USB */
@@ -974,7 +974,7 @@ void USBController::copyFrom(USBController *aThat)
     m->llDeviceFilters->clear();
     for (DeviceFilterList::const_iterator it = aThat->m->llDeviceFilters->begin();
         it != aThat->m->llDeviceFilters->end();
-        ++ it)
+        ++it)
     {
         ComObjPtr<USBDeviceFilter> filter;
         filter.createObject();
@@ -1072,7 +1072,7 @@ bool USBController::hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevice, U
     /* apply self filters */
     for (DeviceFilterList::const_iterator it = m->llDeviceFilters->begin();
          it != m->llDeviceFilters->end();
-         ++ it)
+         ++it)
     {
         AutoWriteLock filterLock(*it COMMA_LOCKVAL_SRC_POS);
         if (aDevice->isMatch((*it)->getData()))
@@ -1169,7 +1169,7 @@ bool USBController::hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaskedIfs)
     /* apply self filters */
     for (DeviceFilterList::const_iterator it = m->llDeviceFilters->begin();
          it != m->llDeviceFilters->end();
-         ++ it)
+         ++it)
     {
         AutoWriteLock filterLock(*it COMMA_LOCKVAL_SRC_POS);
         const USBDeviceFilter::Data &aData = (*it)->getData();
@@ -1218,9 +1218,9 @@ HRESULT USBController::notifyProxy(bool aInsertFilters)
         USBDeviceFilter *flt = *it; /* resolve ambiguity (for ComPtr below) */
 
         /* notify the proxy (only if the filter is active) */
-        if (flt->getData().mActive
-                && flt->getData().mRemote.isMatch(false) /* and if the filter is NOT remote */
-                )
+        if (   flt->getData().mActive
+            && flt->getData().mRemote.isMatch(false) /* and if the filter is NOT remote */
+           )
         {
             if (aInsertFilters)
             {
@@ -1239,7 +1239,7 @@ HRESULT USBController::notifyProxy(bool aInsertFilters)
                 }
             }
         }
-        ++ it;
+        ++it;
     }
 
     return S_OK;
