@@ -457,7 +457,7 @@ VBOX_WITH_LSILOGIC = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable the new BIOS code.
-if1of ($(KBUILD_TARGET), darwin) # freebsd linux solaris win)
+if1of ($(KBUILD_TARGET), darwin win) # freebsd linux solaris)
  VBOX_WITH_NEW_BIOS = 1
 endif
 # Enable this setting to force a fallback to default DMI data on configuration errors
