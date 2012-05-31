@@ -358,7 +358,7 @@ VBOX_WITH_PDM_LOCK = 1
 ## @}
 
 
-## @name Devices, Drivers,
+## @name Devices, Drivers, ...
 ## @{
 # Build the Host Guest Communication Manager component.
 VBOX_WITH_HGCM = 1
@@ -456,6 +456,10 @@ VBOX_WITH_BUSLOGIC = 1
 VBOX_WITH_LSILOGIC = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
+# Enable the new BIOS code.
+#if1of ($(KBUILD_TARGET), darwin) # freebsd linux solaris win)
+# VBOX_WITH_NEW_BIOS = 1
+#endif
 # Enable this setting to force a fallback to default DMI data on configuration errors
 VBOX_BIOS_DMI_FALLBACK =
 # Enable the builtin PXE ROM
@@ -649,10 +653,8 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86
  VBOX_WITH_WARNINGS_AS_ERRORS = 1
 endif
 # Whether we can use Open Watcom to build stuff.
-ifndef VBOX_WITHOUT_OPEN_WATCOM
- if1of ($(KBUILD_TARGET), os2 win) # + linux
-  VBOX_WITH_OPEN_WATCOM := 1
- endif
+if1of ($(KBUILD_TARGET), darwin linux os2 win)
+ VBOX_WITH_OPEN_WATCOM = 1
 endif
 ## @}
 
