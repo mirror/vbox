@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -137,6 +137,17 @@ void USBProxyServiceWindows::removeFilter(void *aID)
 int USBProxyServiceWindows::captureDevice(HostUSBDevice *aDevice)
 {
     /*
+     * Check preconditions.
+     */
+    AssertReturn(aDevice, VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
+
+    Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
+
+    /*
      * Create a one-shot ignore filter for the device
      * and trigger a re-enumeration of it.
      */
@@ -167,6 +178,17 @@ int USBProxyServiceWindows::captureDevice(HostUSBDevice *aDevice)
 
 int USBProxyServiceWindows::releaseDevice(HostUSBDevice *aDevice)
 {
+    /*
+     * Check preconditions.
+     */
+    AssertReturn(aDevice, VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
+
+    Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
+
     /*
      * Create a one-shot ignore filter for the device
      * and trigger a re-enumeration of it.
@@ -199,13 +221,13 @@ int USBProxyServiceWindows::releaseDevice(HostUSBDevice *aDevice)
 
 bool USBProxyServiceWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
+    AssertReturn(aDevice, false);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     /* Nothing special here so far, so fall back on parent */
     return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
 
 /// @todo remove?
 #if 0
-    AssertReturn(aDevice, false);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), false);
 
     /*
      * We're only called in the 'existing device' state, so if there is a pending async

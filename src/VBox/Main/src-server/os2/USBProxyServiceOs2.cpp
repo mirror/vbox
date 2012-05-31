@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,31 +37,31 @@
 /**
  * Initialize data members.
  */
-USBProxyServiceOs2::USBProxyServiceOs2 (Host *aHost)
-    : USBProxyService (aHost), mhev (NULLHANDLE), mhmod (NULLHANDLE),
-    mpfnUsbRegisterChangeNotification (NULL), mpfnUsbDeregisterNotification (NULL),
-    mpfnUsbQueryNumberDevices (NULL), mpfnUsbQueryDeviceReport (NULL)
+USBProxyServiceOs2::USBProxyServiceOs2(Host *aHost)
+    : USBProxyService(aHost), mhev(NULLHANDLE), mhmod(NULLHANDLE),
+    mpfnUsbRegisterChangeNotification(NULL), mpfnUsbDeregisterNotification(NULL),
+    mpfnUsbQueryNumberDevices(NULL), mpfnUsbQueryDeviceReport(NULL)
 {
     LogFlowThisFunc(("aHost=%p\n", aHost));
 
     /*
      * Try initialize the usbcalls stuff.
      */
-    int rc = DosCreateEventSem (NULL, &mhev, 0, FALSE);
-    rc = RTErrConvertFromOS2 (rc);
+    int rc = DosCreateEventSem(NULL, &mhev, 0, FALSE);
+    rc = RTErrConvertFromOS2(rc);
     if (RT_SUCCESS(rc))
     {
-        rc = DosLoadModule (NULL, 0, (PCSZ)"usbcalls", &mhmod);
-        rc = RTErrConvertFromOS2 (rc);
+        rc = DosLoadModule(NULL, 0, (PCSZ)"usbcalls", &mhmod);
+        rc = RTErrConvertFromOS2(rc);
         if (RT_SUCCESS(rc))
         {
-            if (    (rc = DosQueryProcAddr (mhmod, 0, (PCSZ)"UsbQueryNumberDevices",            (PPFN)&mpfnUsbQueryNumberDevices))          == NO_ERROR
-                &&  (rc = DosQueryProcAddr (mhmod, 0, (PCSZ)"UsbQueryDeviceReport",             (PPFN)&mpfnUsbQueryDeviceReport))           == NO_ERROR
-                &&  (rc = DosQueryProcAddr (mhmod, 0, (PCSZ)"UsbRegisterChangeNotification",    (PPFN)&mpfnUsbRegisterChangeNotification))  == NO_ERROR
-                &&  (rc = DosQueryProcAddr (mhmod, 0, (PCSZ)"UsbDeregisterNotification",        (PPFN)&mpfnUsbDeregisterNotification))      == NO_ERROR
+            if (    (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbQueryNumberDevices",         (PPFN)&mpfnUsbQueryNumberDevices))          == NO_ERROR
+                &&  (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbQueryDeviceReport",          (PPFN)&mpfnUsbQueryDeviceReport))           == NO_ERROR
+                &&  (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbRegisterChangeNotification", (PPFN)&mpfnUsbRegisterChangeNotification))  == NO_ERROR
+                &&  (rc = DosQueryProcAddr(mhmod, 0, (PCSZ)"UsbDeregisterNotification",     (PPFN)&mpfnUsbDeregisterNotification))      == NO_ERROR
                )
             {
-                rc = mpfnUsbRegisterChangeNotification (&mNotifyId, mhev, mhev);
+                rc = mpfnUsbRegisterChangeNotification(&mNotifyId, mhev, mhev);
                 if (!rc)
                 {
                     /*
@@ -76,15 +76,15 @@ USBProxyServiceOs2::USBProxyServiceOs2 (Host *aHost)
                     }
                 }
 
-                LogRel (("USBProxyServiceOs2: failed to register change notification, rc=%d\n", rc));
+                LogRel(("USBProxyServiceOs2: failed to register change notification, rc=%d\n", rc));
             }
             else
-                LogRel (("USBProxyServiceOs2: failed to load usbcalls\n"));
+                LogRel(("USBProxyServiceOs2: failed to load usbcalls\n"));
 
-            DosFreeModule (mhmod);
+            DosFreeModule(mhmod);
         }
         else
-            LogRel (("USBProxyServiceOs2: failed to load usbcalls, rc=%d\n", rc));
+            LogRel(("USBProxyServiceOs2: failed to load usbcalls, rc=%d\n", rc));
         mhmod = NULLHANDLE;
     }
     else
@@ -114,45 +114,51 @@ USBProxyServiceOs2::~USBProxyServiceOs2()
     if (mhmod)
     {
         if (mpfnUsbDeregisterNotification)
-            mpfnUsbDeregisterNotification (mNotifyId);
+            mpfnUsbDeregisterNotification(mNotifyId);
 
         mpfnUsbRegisterChangeNotification = NULL;
         mpfnUsbDeregisterNotification = NULL;
         mpfnUsbQueryNumberDevices = NULL;
         mpfnUsbQueryDeviceReport = NULL;
 
-        DosFreeModule (mhmod);
+        DosFreeModule(mhmod);
         mhmod = NULLHANDLE;
     }
 }
 
 
-int USBProxyServiceOs2::captureDevice (HostUSBDevice *aDevice)
+int USBProxyServiceOs2::captureDevice(HostUSBDevice *aDevice)
 {
-    Log (("USBProxyServiceOs2::captureDevice: %p\n", aDevice));
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
 
     /*
      * Don't think we need to do anything when the device is held... fake it.
      */
     Assert(aDevice->isStatePending());
+    devLock.release();
     interruptWait();
 
     return VINF_SUCCESS;
 }
 
 
-int USBProxyServiceOs2::releaseDevice (HostUSBDevice *aDevice)
+int USBProxyServiceOs2::releaseDevice(HostUSBDevice *aDevice)
 {
-    Log (("USBProxyServiceOs2::releaseDevice: %p\n", aDevice));
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
 
     /*
      * We're not really holding it atm., just fake it.
      */
     Assert(aDevice->isStatePending());
+    devLock.release();
     interruptWait();
 
     return VINF_SUCCESS;
@@ -161,6 +167,8 @@ int USBProxyServiceOs2::releaseDevice (HostUSBDevice *aDevice)
 
 bool USBProxyServiceOs2::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
+    AssertReturn(aDevice, false);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
 }
 
@@ -173,23 +181,23 @@ int USBProxyServiceOs2::wait(RTMSINTERVAL aMillies)
 }
 
 
-int USBProxyServiceOs2::interruptWait (void)
+int USBProxyServiceOs2::interruptWait(void)
 {
-    int rc = DosPostEventSem (mhev);
+    int rc = DosPostEventSem(mhev);
     return rc == NO_ERROR || rc == ERROR_ALREADY_POSTED
          ? VINF_SUCCESS
-         : RTErrConvertFromOS2 (rc);
+         : RTErrConvertFromOS2(rc);
 }
 
 #include <stdio.h>
 
-PUSBDEVICE USBProxyServiceOs2::getDevices (void)
+PUSBDEVICE USBProxyServiceOs2::getDevices(void)
 {
     /*
      * Count the devices.
      */
     ULONG cDevices = 0;
-    int rc = mpfnUsbQueryNumberDevices ((PULONG)&cDevices); /* Thanks to com/xpcom, PULONG and ULONG * aren't the same. */
+    int rc = mpfnUsbQueryNumberDevices((PULONG)&cDevices); /* Thanks to com/xpcom, PULONG and ULONG * aren't the same. */
     if (rc)
         return NULL;
 

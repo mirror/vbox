@@ -65,7 +65,7 @@ void InitAutoLockSystem()
         const char          *pcszDescription;
     } aClasses[] =
     {
-        { LOCKCLASS_VIRTUALBOXOBJECT,   "1-VIRTUALBOXOBJECT" },
+        { LOCKCLASS_VIRTUALBOXOBJECT,   "2-VIRTUALBOXOBJECT" },
         { LOCKCLASS_HOSTOBJECT,         "3-HOSTOBJECT" },
         { LOCKCLASS_LISTOFMACHINES,     "4-LISTOFMACHINES" },
         { LOCKCLASS_MACHINEOBJECT,      "5-MACHINEOBJECT" },
@@ -74,9 +74,8 @@ void InitAutoLockSystem()
         { LOCKCLASS_LISTOFMEDIA,        "8-LISTOFMEDIA" },
         { LOCKCLASS_LISTOFOTHEROBJECTS, "9-LISTOFOTHEROBJECTS" },
         { LOCKCLASS_OTHEROBJECT,        "10-OTHEROBJECT" },
-        { LOCKCLASS_USBLIST,            "11-USBLIST" },
-        { LOCKCLASS_PROGRESSLIST,       "12-PROGRESSLIST" },
-        { LOCKCLASS_OBJECTSTATE,        "13-OBJECTSTATE" }
+        { LOCKCLASS_PROGRESSLIST,       "11-PROGRESSLIST" },
+        { LOCKCLASS_OBJECTSTATE,        "12-OBJECTSTATE" }
     };
 
     RTLOCKVALCLASS hClass;

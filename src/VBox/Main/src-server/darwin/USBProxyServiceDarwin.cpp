@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,8 +38,8 @@
 /**
  * Initialize data members.
  */
-USBProxyServiceDarwin::USBProxyServiceDarwin (Host *aHost)
-    : USBProxyService (aHost), mServiceRunLoopRef (NULL), mNotifyOpaque (NULL), mWaitABitNextTime (false), mUSBLibInitialized (false)
+USBProxyServiceDarwin::USBProxyServiceDarwin(Host *aHost)
+    : USBProxyService(aHost), mServiceRunLoopRef(NULL), mNotifyOpaque(NULL), mWaitABitNextTime(false), mUSBLibInitialized(false)
 {
     LogFlowThisFunc(("aHost=%p\n", aHost));
 }
@@ -100,15 +100,15 @@ USBProxyServiceDarwin::~USBProxyServiceDarwin()
 
 
 #ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-void *USBProxyServiceDarwin::insertFilter (PCUSBFILTER aFilter)
+void *USBProxyServiceDarwin::insertFilter(PCUSBFILTER aFilter)
 {
-    return USBLibAddFilter (aFilter);
+    return USBLibAddFilter(aFilter);
 }
 
 
-void USBProxyServiceDarwin::removeFilter (void *aId)
+void USBProxyServiceDarwin::removeFilter(void *aId)
 {
-    USBLibRemoveFilter (aId);
+    USBLibRemoveFilter(aId);
 }
 #endif /* VBOX_WITH_NEW_USB_CODE_ON_DARWIN */
 
@@ -119,8 +119,11 @@ int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
      * Check preconditions.
      */
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
     Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
 
 #ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
@@ -128,6 +131,7 @@ int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
      * Fake it.
      */
     ASMAtomicWriteBool(&mFakeAsync, true);
+    devLock.release();
     interruptWait();
     return VINF_SUCCESS;
 
@@ -160,6 +164,7 @@ int USBProxyServiceDarwin::captureDevice(HostUSBDevice *aDevice)
 
 void USBProxyServiceDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
+    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
 #ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     /*
      * Remove the one-shot filter if necessary.
@@ -178,8 +183,11 @@ int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
      * Check preconditions.
      */
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
     Assert(aDevice->getUnistate() == kHostUSBDeviceState_ReleasingToHost);
 
 #ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
@@ -187,6 +195,7 @@ int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
      * Fake it.
      */
     ASMAtomicWriteBool(&mFakeAsync, true);
+    devLock.release();
     interruptWait();
     return VINF_SUCCESS;
 
@@ -221,6 +230,7 @@ int USBProxyServiceDarwin::releaseDevice(HostUSBDevice *aDevice)
 
 void USBProxyServiceDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
+    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
 #ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     /*
      * Remove the one-shot filter if necessary.
@@ -233,10 +243,11 @@ void USBProxyServiceDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool 
 }
 
 
+/** @todo unused */
 void USBProxyServiceDarwin::detachingDevice(HostUSBDevice *aDevice)
 {
 #ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-    aDevice->setLogicalReconnect (HostUSBDevice::kDetachingPendingDetach);
+    aDevice->setLogicalReconnect(HostUSBDevice::kDetachingPendingDetach);
 #else
     NOREF(aDevice);
 #endif
@@ -245,6 +256,8 @@ void USBProxyServiceDarwin::detachingDevice(HostUSBDevice *aDevice)
 
 bool USBProxyServiceDarwin::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
+    AssertReturn(aDevice, false);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
 #ifndef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     /* We're faking async state stuff. */
     return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
@@ -263,7 +276,7 @@ int USBProxyServiceDarwin::wait(RTMSINTERVAL aMillies)
         return VINF_SUCCESS;
 #endif
 
-    SInt32 rc = CFRunLoopRunInMode(CFSTR (VBOX_IOKIT_MODE_STRING),
+    SInt32 rc = CFRunLoopRunInMode(CFSTR(VBOX_IOKIT_MODE_STRING),
                                    mWaitABitNextTime && aMillies >= 1000
                                    ? 1.0 /* seconds */
                                    : aMillies >= 5000 /* Temporary measure to poll for status changes (MSD). */
@@ -276,31 +289,31 @@ int USBProxyServiceDarwin::wait(RTMSINTERVAL aMillies)
 }
 
 
-int USBProxyServiceDarwin::interruptWait (void)
+int USBProxyServiceDarwin::interruptWait(void)
 {
     if (mServiceRunLoopRef)
-        CFRunLoopStop (mServiceRunLoopRef);
+        CFRunLoopStop(mServiceRunLoopRef);
     return 0;
 }
 
 
-PUSBDEVICE USBProxyServiceDarwin::getDevices (void)
+PUSBDEVICE USBProxyServiceDarwin::getDevices(void)
 {
     /* call iokit.cpp */
     return DarwinGetUSBDevices();
 }
 
 
-void USBProxyServiceDarwin::serviceThreadInit (void)
+void USBProxyServiceDarwin::serviceThreadInit(void)
 {
     mServiceRunLoopRef = CFRunLoopGetCurrent();
     mNotifyOpaque = DarwinSubscribeUSBNotifications();
 }
 
 
-void USBProxyServiceDarwin::serviceThreadTerm (void)
+void USBProxyServiceDarwin::serviceThreadTerm(void)
 {
-    DarwinUnsubscribeUSBNotifications (mNotifyOpaque);
+    DarwinUnsubscribeUSBNotifications(mNotifyOpaque);
     mServiceRunLoopRef = NULL;
 }
 
@@ -310,8 +323,8 @@ void USBProxyServiceDarwin::serviceThreadTerm (void)
  *
  * @param   pCur    The USB device to free.
  */
-void DarwinFreeUSBDeviceFromIOKit (PUSBDEVICE pCur)
+void DarwinFreeUSBDeviceFromIOKit(PUSBDEVICE pCur)
 {
-    USBProxyService::freeDevice (pCur);
+    USBProxyService::freeDevice(pCur);
 }
 

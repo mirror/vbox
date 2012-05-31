@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -110,14 +110,17 @@ USBProxyServiceFreeBSD::~USBProxyServiceFreeBSD()
 
 int USBProxyServiceFreeBSD::captureDevice(HostUSBDevice *aDevice)
 {
-    Log(("USBProxyServiceFreeBSD::captureDevice: %p {%s}\n", aDevice, aDevice->getName().c_str()));
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
 
     /*
      * Don't think we need to do anything when the device is held... fake it.
      */
     Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
+    devLock.release();
     interruptWait();
 
     return VINF_SUCCESS;
@@ -126,14 +129,17 @@ int USBProxyServiceFreeBSD::captureDevice(HostUSBDevice *aDevice)
 
 int USBProxyServiceFreeBSD::releaseDevice(HostUSBDevice *aDevice)
 {
-    Log(("USBProxyServiceFreeBSD::releaseDevice: %p\n", aDevice));
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
 
     /*
      * We're not really holding it atm., just fake it.
      */
     Assert(aDevice->getUnistate() == kHostUSBDeviceState_ReleasingToHost);
+    devLock.release();
     interruptWait();
 
     return VINF_SUCCESS;
@@ -142,12 +148,15 @@ int USBProxyServiceFreeBSD::releaseDevice(HostUSBDevice *aDevice)
 
 bool USBProxyServiceFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
+    AssertReturn(aDevice, false);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
+
     return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
 }
 
 
 /**
- * A device was added, we need to adjust mUdevPolls.
+ * A device was added
  *
  * See USBProxyService::deviceAdded for details.
  */

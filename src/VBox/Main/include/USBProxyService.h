@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,6 +78,7 @@ public:
      * @{ */
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
+    /** @todo unused */
     virtual void detachingDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
     virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
@@ -159,6 +160,7 @@ public:
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
+    /** @todo unused */
     virtual void detachingDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
     virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2005-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,7 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (HostUSBDevice)
+DEFINE_EMPTY_CTOR_DTOR(HostUSBDevice)
 
 HRESULT HostUSBDevice::FinalConstruct()
 {
@@ -113,7 +113,7 @@ void HostUSBDevice::uninit()
 
     if (mUsb != NULL)
     {
-        USBProxyService::freeDevice (mUsb);
+        USBProxyService::freeDevice(mUsb);
         mUsb = NULL;
     }
 
@@ -188,7 +188,7 @@ STDMETHODIMP HostUSBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Bstr (mUsb->pszManufacturer).cloneTo(aManufacturer);
+    Bstr(mUsb->pszManufacturer).cloneTo(aManufacturer);
 
     return S_OK;
 }
@@ -202,7 +202,7 @@ STDMETHODIMP HostUSBDevice::COMGETTER(Product)(BSTR *aProduct)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Bstr (mUsb->pszProduct).cloneTo(aProduct);
+    Bstr(mUsb->pszProduct).cloneTo(aProduct);
 
     return S_OK;
 }
@@ -216,7 +216,7 @@ STDMETHODIMP HostUSBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Bstr (mUsb->pszSerialNumber).cloneTo(aSerialNumber);
+    Bstr(mUsb->pszSerialNumber).cloneTo(aSerialNumber);
 
     return S_OK;
 }
@@ -230,7 +230,7 @@ STDMETHODIMP HostUSBDevice::COMGETTER(Address)(BSTR *aAddress)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Bstr (mUsb->pszAddress).cloneTo(aAddress);
+    Bstr(mUsb->pszAddress).cloneTo(aAddress);
 
     return S_OK;
 }
@@ -304,7 +304,7 @@ STDMETHODIMP HostUSBDevice::COMGETTER(Remote)(BOOL *aRemote)
 // IHostUSBDevice properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP HostUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
+STDMETHODIMP HostUSBDevice::COMGETTER(State)(USBDeviceState_T *aState)
 {
     CheckComArgOutPointerValid(aState);
 
@@ -330,18 +330,18 @@ Utf8Str HostUSBDevice::getName()
     Utf8Str name;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), name);
+    AssertComRCReturn(autoCaller.rc(), name);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool haveManufacturer = mUsb->pszManufacturer && *mUsb->pszManufacturer;
     bool haveProduct = mUsb->pszProduct && *mUsb->pszProduct;
     if (haveManufacturer && haveProduct)
-        name = Utf8StrFmt ("%s %s", mUsb->pszManufacturer, mUsb->pszProduct);
+        name = Utf8StrFmt("%s %s", mUsb->pszManufacturer, mUsb->pszProduct);
     else if (haveManufacturer)
-        name = Utf8StrFmt ("%s", mUsb->pszManufacturer);
+        name = Utf8StrFmt("%s", mUsb->pszManufacturer);
     else if (haveProduct)
-        name = Utf8StrFmt ("%s", mUsb->pszProduct);
+        name = Utf8StrFmt("%s", mUsb->pszProduct);
     else
         name = "<unknown>";
 
@@ -364,19 +364,19 @@ Utf8Str HostUSBDevice::getName()
  * @retval  S_OK on success.
  * @retval  E_UNEXPECTED if the device state doesn't permit for any attaching.
  * @retval  E_* as appropriate.
- *
- * @note   Must be called from under the object write lock.
- * @note   May lock the given machine object for reading.
  */
 HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetError, ULONG aMaskedIfs /* = 0*/)
 {
-    LogFlowThisFunc(("{%s} aMachine=%p aMaskedIfs=%#x\n", mName, aMachine, aMaskedIfs));
-
     /*
      * Validate preconditions and input.
      */
     AssertReturn(aMachine, E_INVALIDARG);
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!aMachine->isWriteLockOnCurrentThread(), E_FAIL);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("{%s} aMachine=%p aMaskedIfs=%#x\n", mName, aMachine, aMaskedIfs));
+
     if (aSetError)
     {
         if (mUniState == kHostUSBDeviceState_Unsupported)
@@ -390,6 +390,7 @@ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetEr
         if (mUniState == kHostUSBDeviceState_UsedByVM)
         {
             /* Machine::name() requires a read lock */
+            alock.release();
             AutoReadLock machLock(mMachine COMMA_LOCKVAL_SRC_POS);
             return setError(E_INVALIDARG,
                             tr("USB device '%s' with UUID {%RTuuid} is already captured by the virtual machine '%s'"),
@@ -419,6 +420,7 @@ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetEr
      */
     if (mUniState == kHostUSBDeviceState_HeldByProxy)
     {
+        alock.release();
         HRESULT hrc = attachToVM(aMachine, aMaskedIfs);
         return SUCCEEDED(hrc);
     }
@@ -438,9 +440,11 @@ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetEr
 #endif
     mMachine = aMachine;
     mMaskedIfs = aMaskedIfs;
+    alock.release();
     int rc = mUSBProxyService->captureDevice(this);
     if (RT_FAILURE(rc))
     {
+        alock.acquire();
         failTransition();
         mMachine.setNull();
         if (rc == VERR_SHARING_VIOLATION)
@@ -472,6 +476,8 @@ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetEr
  */
 HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* = 0*/)
 {
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     /*
      * Validate and update the state.
      */
@@ -486,11 +492,6 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
      */
     ComPtr<IUSBDevice> d = this;
 
-    AutoWriteLock alockSelf(this COMMA_LOCKVAL_SRC_POS);
-    alockSelf.release();
-    AutoWriteLock alockProxy(mUSBProxyService COMMA_LOCKVAL_SRC_POS);
-    alockProxy.release();
-
     /*
      * Call the VM process (IPC) and request it to attach the device.
      *
@@ -499,15 +500,15 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
      * out of people.
      */
     LogFlowThisFunc(("{%s} Calling machine->onUSBDeviceAttach()...\n", mName));
-    HRESULT hrc = aMachine->onUSBDeviceAttach (d, NULL, aMaskedIfs);
+    alock.release();
+    HRESULT hrc = aMachine->onUSBDeviceAttach(d, NULL, aMaskedIfs);
     LogFlowThisFunc(("{%s} Done machine->onUSBDeviceAttach()=%08X\n", mName, hrc));
 
     /*
      * As we re-acquire the lock, we'll have to check if the device was
      * physically detached while we were busy.
      */
-    alockProxy.acquire();
-    alockSelf.acquire();
+    alock.acquire();
 
     if (SUCCEEDED(hrc))
     {
@@ -516,6 +517,7 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
             setState(kHostUSBDeviceState_UsedByVM);
         else
         {
+            alock.release();
             detachFromVM(kHostUSBDeviceState_PhysDetached);
             hrc = E_UNEXPECTED;
         }
@@ -531,6 +533,7 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
         }
         else
         {
+            alock.release();
             onPhysicalDetachedInternal();
             hrc = E_UNEXPECTED;
         }
@@ -555,6 +558,8 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
      * Assert preconditions.
      */
     Assert(aFinalState == kHostUSBDeviceState_PhysDetached);
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Assert(   mUniState == kHostUSBDeviceState_AttachingToVM
            || mUniState == kHostUSBDeviceState_UsedByVM);
     Assert(!mMachine.isNull());
@@ -565,10 +570,6 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
      * so, it's not a bit issue here.
      */
     setState(kHostUSBDeviceState_PhysDetachingFromVM, kHostUSBDeviceState_PhysDetached);
-    AutoWriteLock alockSelf(this COMMA_LOCKVAL_SRC_POS);
-    alockSelf.release();
-    AutoWriteLock alockProxy(mUSBProxyService COMMA_LOCKVAL_SRC_POS);
-    alockProxy.release();
 
     /*
      * Call the VM process (IPC) and request it to detach the device.
@@ -577,6 +578,7 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
      * assert the return code as it will crash the daemon and annoy the heck
      * out of people.
      */
+    alock.release();
     LogFlowThisFunc(("{%s} Calling machine->onUSBDeviceDetach()...\n", mName));
     HRESULT hrc = mMachine->onUSBDeviceDetach(mId.toUtf16().raw(), NULL);
     LogFlowThisFunc(("{%s} Done machine->onUSBDeviceDetach()=%Rhrc\n", mName, hrc));
@@ -585,8 +587,7 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
     /*
      * Re-acquire the locks and complete the transition.
      */
-    alockProxy.acquire();
-    alockSelf.acquire();
+    alock.acquire();
     advanceTransition();
 }
 
@@ -671,17 +672,18 @@ HRESULT HostUSBDevice::onDetachFromVM(SessionMachine *aMachine, bool aDone, bool
  * @retval  E_UNEXPECTED on bad state.
  * @retval  E_* as appropriate.
  *
- * @note Must be called from under the object write lock.
+ * @note Must be called without holding the object lock.
  */
 HRESULT HostUSBDevice::requestReleaseToHost()
 {
-    LogFlowThisFunc(("{%s}\n", mName));
-
     /*
      * Validate preconditions.
      */
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
     Assert(mMachine.isNull());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("{%s}\n", mName));
     if (    mUniState == kHostUSBDeviceState_Unused
         ||  mUniState == kHostUSBDeviceState_Capturable)
         return S_OK;
@@ -696,9 +698,11 @@ HRESULT HostUSBDevice::requestReleaseToHost()
 #else
     startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused);
 #endif
+    alock.release();
     int rc = mUSBProxyService->releaseDevice(this);
     if (RT_FAILURE(rc))
     {
+        alock.acquire();
         failTransition();
         return E_FAIL;
     }
@@ -717,16 +721,16 @@ HRESULT HostUSBDevice::requestReleaseToHost()
  * @retval  E_UNEXPECTED on bad state.
  * @retval  E_* as appropriate.
  *
- * @note Must be called from under the object write lock.
+ * @note Must be called without holding the object lock.
  */
 HRESULT HostUSBDevice::requestHold()
 {
-    LogFlowThisFunc(("{%s}\n", mName));
-
     /*
      * Validate preconditions.
      */
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    LogFlowThisFunc(("{%s}\n", mName));
     AssertMsgReturn(   mUniState == kHostUSBDeviceState_Unused
                     || mUniState == kHostUSBDeviceState_Capturable
                     || mUniState == kHostUSBDeviceState_HeldByProxy,
@@ -748,9 +752,11 @@ HRESULT HostUSBDevice::requestHold()
 #else
     startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy);
 #endif
+    alock.release();
     int rc = mUSBProxyService->captureDevice(this);
     if (RT_FAILURE(rc))
     {
+        alock.acquire();
         failTransition();
         return E_FAIL;
     }
@@ -795,9 +801,9 @@ bool HostUSBDevice::wasActuallyDetached()
                 {
 #ifndef RT_OS_WINDOWS /* check the implementation details here. */
                     uint64_t elapsedNanoseconds = RTTimeNanoTS() - mLastStateChangeTS;
-                    if (elapsedNanoseconds > UINT64_C (60000000000) ) /* 60 seconds */
+                    if (elapsedNanoseconds > UINT64_C(60000000000)) /* 60 seconds */
                     {
-                        LogRel (("USB: Async operation timed out for device %s (state: %s)\n", mName, getStateName()));
+                        LogRel(("USB: Async operation timed out for device %s (state: %s)\n", mName, getStateName()));
                         failTransition();
                     }
 #endif
@@ -822,7 +828,7 @@ bool HostUSBDevice::wasActuallyDetached()
             break;
 
         default:
-            AssertLogRelMsgFailed (("this=%p %s\n", this, getStateName()));
+            AssertLogRelMsgFailed(("this=%p %s\n", this, getStateName()));
             break;
     }
 
@@ -837,19 +843,21 @@ bool HostUSBDevice::wasActuallyDetached()
  * handled when the transition advances forward.
  *
  * Otherwise the device will be detached from any VM currently using it - this
- * involves IPC and will temporarily abandond locks - and all the device data
+ * involves IPC and will temporarily abandon locks - and all the device data
  * reset.
- *
- * @note Must be called from under the object write lock.
  */
 void HostUSBDevice::onPhysicalDetached()
 {
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("{%s}\n", mName));
-    AssertReturnVoid(isWriteLockOnCurrentThread());
 
     mIsPhysicallyDetached = true;
     if (mUniState < kHostUSBDeviceState_FirstTransitional)
+    {
+        alock.release();
         onPhysicalDetachedInternal();
+    }
 }
 
 
@@ -858,13 +866,12 @@ void HostUSBDevice::onPhysicalDetached()
  * at a transition state change.
  *
  * See onPhysicalDetach() for details.
- *
- * @note Must be called from under the object write lock.
  */
 void HostUSBDevice::onPhysicalDetachedInternal()
 {
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("{%s}\n", mName));
-    AssertReturnVoid(isWriteLockOnCurrentThread());
     Assert(mIsPhysicallyDetached);
 
     /*
@@ -873,7 +880,11 @@ void HostUSBDevice::onPhysicalDetachedInternal()
     if (    !mMachine.isNull()
         &&  (   mUniState == kHostUSBDeviceState_UsedByVM
              || mUniState == kHostUSBDeviceState_AttachingToVM))
+    {
+        alock.release();
         detachFromVM(kHostUSBDeviceState_PhysDetached);
+        alock.acquire();
+    }
     else
         AssertMsg(mMachine.isNull(), ("%s\n", getStateName()));
 
@@ -1060,8 +1071,6 @@ int HostUSBDevice::compare(PCUSBDEVICE aDev1, PCUSBDEVICE aDev2, bool aIsAwaitin
  *
  * @returns Whether the Host object should be bothered with this state change.
  *
- * @note    Locks this object for writing.
- *
  * @todo    Just do everything here, that is, call filter runners and everything that
  *          works by state change. Using 3 return codes/parameters is just plain ugly.
  */
@@ -1073,11 +1082,10 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
     /*
      * Locking.
      */
-    AssertReturn(isWriteLockOnCurrentThread(), false);
+    AssertReturn(!isWriteLockOnCurrentThread(), false);
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
 
     /*
      * Replace the existing structure by the new one.
@@ -1137,7 +1145,7 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
 #endif
         aDev->pNext = mUsb->pNext;
         aDev->pPrev = mUsb->pPrev;
-        USBProxyService::freeDevice (mUsb);
+        USBProxyService::freeDevice(mUsb);
         mUsb = aDev;
     }
 
@@ -1473,19 +1481,17 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
  * @param[out]  aIgnoreMachine  See HostUSBDevice::updateState()
  *
  * @returns See HostUSBDevice::updateState()
- *
- * @note    Caller must write lock the object.
  */
 bool HostUSBDevice::updateStateFake(PCUSBDEVICE aDev, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
+    Assert(!isWriteLockOnCurrentThread());
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     const HostUSBDeviceState enmState = mUniState;
     switch (enmState)
     {
         case kHostUSBDeviceState_Capturing:
         case kHostUSBDeviceState_ReleasingToHost:
         {
-            Assert(isWriteLockOnCurrentThread());
-
             *aIgnoreMachine = mUniState == kHostUSBDeviceState_ReleasingToHost ? mMachine : NULL;
             *aRunFilters = advanceTransition();
             LogThisFunc(("{%s} %s\n", mName, getStateName()));
@@ -1506,11 +1512,15 @@ bool HostUSBDevice::updateStateFake(PCUSBDEVICE aDev, bool *aRunFilters, Session
 
             /* Take action if we're supposed to attach it to a VM. */
             if (mUniState == kHostUSBDeviceState_AttachingToVM)
+            {
+                alock.release();
                 attachToVM(mMachine, mMaskedIfs);
+            }
             return true;
         }
 
         default:
+            alock.release();
             return updateState(aDev, aRunFilters, aIgnoreMachine);
     }
 }
@@ -1806,8 +1816,8 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                     Assert(aNewSubState == kHostUSBDeviceSubState_Default);
                     break;
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -1834,13 +1844,13 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                         case kHostUSBDeviceState_UsedByVM:
                             break;
                         default:
-                            AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                          stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                            AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                         stateName(aNewState, aNewPendingState, aNewSubState)), false);
                     }
                     break;
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -1863,13 +1873,13 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                         case kHostUSBDeviceState_UsedByVM:
                             break;
                         default:
-                            AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                          stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                            AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                         stateName(aNewState, aNewPendingState, aNewSubState)), false);
                     }
                     break;
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -1892,8 +1902,8 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                         case kHostUSBDeviceState_UsedByVM:
                             break;
                         default:
-                            AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                          stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                            AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                         stateName(aNewState, aNewPendingState, aNewSubState)), false);
                     }
                     break;
                 case kHostUSBDeviceState_ReleasingToHost:
@@ -1902,13 +1912,13 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                         case kHostUSBDeviceState_Unused: /* Only this! */
                             break;
                         default:
-                            AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                          stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                            AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                         stateName(aNewState, aNewPendingState, aNewSubState)), false);
                     }
                     break;
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -1930,13 +1940,13 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                         case kHostUSBDeviceState_Unused: /* Only this! */
                             break;
                         default:
-                            AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                          stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                            AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                         stateName(aNewState, aNewPendingState, aNewSubState)), false);
                     }
                     break;
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -1960,8 +1970,8 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                 case kHostUSBDeviceState_AttachingToVM: // ??
                 case kHostUSBDeviceState_UsedByVM:
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -2012,8 +2022,8 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -2056,8 +2066,8 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -2085,8 +2095,8 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -2121,8 +2131,8 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
@@ -2138,13 +2148,13 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
                     Assert(aNewSubState == kHostUSBDeviceSubState_Default);
                     break;
                 default:
-                    AssertLogRelMsgFailedReturn (("this=%p %s -X-> %s\n", this, getStateName(),
-                                                  stateName(aNewState, aNewPendingState, aNewSubState)), false);
+                    AssertLogRelMsgFailedReturn(("this=%p %s -X-> %s\n", this, getStateName(),
+                                                 stateName(aNewState, aNewPendingState, aNewSubState)), false);
             }
             break;
 
         default:
-            AssertReleaseMsgFailedReturn (("this=%p mUniState=%d\n", this, mUniState), false);
+            AssertReleaseMsgFailedReturn(("this=%p mUniState=%d\n", this, mUniState), false);
     }
 
     /*
@@ -2167,7 +2177,6 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
 }
 
 
-
 /**
  * A convenience for entering a transitional state.
 
@@ -2179,9 +2188,10 @@ bool HostUSBDevice::setState(HostUSBDeviceState aNewState, HostUSBDeviceState aN
  *
  * @note    The caller must own the write lock for this object.
  */
-bool HostUSBDevice::startTransition (HostUSBDeviceState aNewState, HostUSBDeviceState aFinalState,
-                                     HostUSBDeviceSubState aNewSubState /*= kHostUSBDeviceSubState_Default*/)
+bool HostUSBDevice::startTransition(HostUSBDeviceState aNewState, HostUSBDeviceState aFinalState,
+                                    HostUSBDeviceSubState aNewSubState /*= kHostUSBDeviceSubState_Default*/)
 {
+    AssertReturn(isWriteLockOnCurrentThread(), false);
     /*
      * A quick prevalidation thing. Not really necessary since setState
      * verifies this too, but it's very easy here.
@@ -2201,14 +2211,14 @@ bool HostUSBDevice::startTransition (HostUSBDeviceState aNewState, HostUSBDevice
         case kHostUSBDeviceState_ReleasingToHost:
         case kHostUSBDeviceState_AttachingToVM:
         case kHostUSBDeviceState_PhysDetachingFromVM:
-            AssertMsgFailedReturn (("this=%p %s is a transitional state.\n", this, getStateName()), false);
+            AssertMsgFailedReturn(("this=%p %s is a transitional state.\n", this, getStateName()), false);
 
         case kHostUSBDeviceState_PhysDetached:
         default:
-            AssertReleaseMsgFailedReturn (("this=%p mUniState=%d\n", this, mUniState), false);
+            AssertReleaseMsgFailedReturn(("this=%p mUniState=%d\n", this, mUniState), false);
     }
 
-    return setState (aNewState, aFinalState, aNewSubState);
+    return setState(aNewState, aFinalState, aNewSubState);
 }
 
 
@@ -2224,6 +2234,7 @@ bool HostUSBDevice::startTransition (HostUSBDeviceState aNewState, HostUSBDevice
  */
 bool HostUSBDevice::advanceTransition(bool aSkipReAttach /* = false */)
 {
+    AssertReturn(isWriteLockOnCurrentThread(), false);
     HostUSBDeviceState enmPending = mPendingUniState;
     HostUSBDeviceSubState enmSub = mUniSubState;
     HostUSBDeviceState enmState = mUniState;
@@ -2385,6 +2396,7 @@ bool HostUSBDevice::advanceTransition(bool aSkipReAttach /* = false */)
  */
 bool HostUSBDevice::failTransition()
 {
+    AssertReturn(isWriteLockOnCurrentThread(), false);
     HostUSBDeviceSubState enmSub = mUniSubState;
     HostUSBDeviceState enmState = mUniState;
     switch (enmState)
@@ -2411,12 +2423,12 @@ bool HostUSBDevice::failTransition()
                     enmState = kHostUSBDeviceState_PhysDetached;
                     break;
                 default:
-                    AssertReleaseMsgFailedReturn (("this=%p mUniState=%d\n", this, mUniState), false);
+                    AssertReleaseMsgFailedReturn(("this=%p mUniState=%d\n", this, mUniState), false);
             }
             break;
 
         case kHostUSBDeviceState_PhysDetachingFromVM:
-            AssertMsgFailedReturn (("this=%p %s shall not fail\n", this, getStateName()), false);
+            AssertMsgFailedReturn(("this=%p %s shall not fail\n", this, getStateName()), false);
 
         case kHostUSBDeviceState_Unsupported:
         case kHostUSBDeviceState_UsedByHost:
@@ -2424,10 +2436,10 @@ bool HostUSBDevice::failTransition()
         case kHostUSBDeviceState_Unused:
         case kHostUSBDeviceState_HeldByProxy:
         case kHostUSBDeviceState_UsedByVM:
-            AssertMsgFailedReturn (("this=%p %s is not transitional\n", this, getStateName()), false);
+            AssertMsgFailedReturn(("this=%p %s is not transitional\n", this, getStateName()), false);
         case kHostUSBDeviceState_PhysDetached:
         default:
-            AssertReleaseMsgFailedReturn (("this=%p mUniState=%d\n", this, mUniState), false);
+            AssertReleaseMsgFailedReturn(("this=%p mUniState=%d\n", this, mUniState), false);
 
     }
 
@@ -2501,7 +2513,7 @@ USBDeviceState_T HostUSBDevice::canonicalState() const
 
         case kHostUSBDeviceState_PhysDetached:
         default:
-            AssertReleaseMsgFailedReturn (("this=%p mUniState=%d\n", this, mUniState), USBDeviceState_NotSupported);
+            AssertReleaseMsgFailedReturn(("this=%p mUniState=%d\n", this, mUniState), USBDeviceState_NotSupported);
     }
     /* won't ever get here. */
 }

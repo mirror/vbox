@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -139,7 +139,7 @@ HRESULT USBProxyService::getDeviceCollection(ComSafeArrayOut(IHostUSBDevice *, a
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IHostUSBDevice> Collection (mDevices);
+    SafeIfaceArray<IHostUSBDevice> Collection(mDevices);
     Collection.detachTo(ComSafeArrayOutArg(aUSBDevices));
 
     return S_OK;
@@ -180,7 +180,7 @@ HRESULT USBProxyService::captureDeviceForVM(SessionMachine *aMachine, IN_GUID aI
     /*
      * Try to capture the device
      */
-    AutoWriteLock DevLock(pHostDevice COMMA_LOCKVAL_SRC_POS);
+    alock.release();
     return pHostDevice->requestCaptureForVM(aMachine, true /* aSetError */);
 }
 
@@ -223,7 +223,7 @@ HRESULT USBProxyService::detachDeviceFromVM(SessionMachine *aMachine, IN_GUID aI
 
     ComObjPtr<HostUSBDevice> pHostDevice = findDeviceById(aId);
     ComAssertRet(!pHostDevice.isNull(), E_FAIL);
-    AutoWriteLock DevLock(pHostDevice COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock devLock(pHostDevice COMMA_LOCKVAL_SRC_POS);
 
     /*
      * Work the state machine.
@@ -240,6 +240,8 @@ HRESULT USBProxyService::detachDeviceFromVM(SessionMachine *aMachine, IN_GUID aI
         &&  fRunFilters)
     {
         Assert(aDone && pHostDevice->getUnistate() == kHostUSBDeviceState_HeldByProxy && pHostDevice->getMachine().isNull());
+        devLock.release();
+        alock.release();
         HRESULT hrc2 = runAllFiltersOnDevice(pHostDevice, llOpenedMachines, aMachine);
         ComAssertComRC(hrc2);
     }
@@ -264,34 +266,36 @@ HRESULT USBProxyService::detachDeviceFromVM(SessionMachine *aMachine, IN_GUID aI
  *
  * @returns COM status code, perhaps with error info.
  *
- * @remarks Write locks the host object and may temporarily abandon
- *          its locks to perform IPC.
+ * @remarks Temporarily locks this object, the machine object and some USB
+ *          device, and the called methods will lock similar objects.
  */
 HRESULT USBProxyService::autoCaptureDevicesForVM(SessionMachine *aMachine)
 {
     LogFlowThisFunc(("aMachine=%p{%s}\n",
                      aMachine,
                      aMachine->getName().c_str()));
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    AutoWriteLock mlock(aMachine COMMA_LOCKVAL_SRC_POS);
 
     /*
-     * Make a copy of the list because we might have to exit and
-     * re-enter the lock protecting it. (This will not make copies
-     * of any HostUSBDevice objects, only reference them.)
+     * Make a copy of the list because we cannot hold the lock protecting it.
+     * (This will not make copies of any HostUSBDevice objects, only reference them.)
      */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     HostUSBDeviceList ListCopy = mDevices;
+    alock.release();
 
     for (HostUSBDeviceList::iterator it = ListCopy.begin();
          it != ListCopy.end();
          ++it)
     {
         ComObjPtr<HostUSBDevice> device = *it;
-        AutoWriteLock devLock(device COMMA_LOCKVAL_SRC_POS);
+        AutoReadLock devLock(device COMMA_LOCKVAL_SRC_POS);
         if (   device->getUnistate() == kHostUSBDeviceState_HeldByProxy
             || device->getUnistate() == kHostUSBDeviceState_Unused
             || device->getUnistate() == kHostUSBDeviceState_Capturable)
+        {
+            devLock.release();
             runMachineFilters(aMachine, device);
+        }
     }
 
     return S_OK;
@@ -322,7 +326,7 @@ HRESULT USBProxyService::autoCaptureDevicesForVM(SessionMachine *aMachine)
 HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool aDone, bool aAbnormal)
 {
     // get a list of all running machines while we're outside the lock
-    // (getOpenedMachines requests locks which are incompatible with the lock of the machines list)
+    // (getOpenedMachines requests locks which are incompatible with the host object lock)
     SessionMachinesList llOpenedMachines;
     mHost->parent()->getOpenedMachines(llOpenedMachines);
 
@@ -335,11 +339,11 @@ HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool a
      */
     HostUSBDeviceList ListCopy = mDevices;
 
-    for (HostUSBDeviceList::iterator It = ListCopy.begin();
-         It != ListCopy.end();
-         ++It)
+    for (HostUSBDeviceList::iterator it = ListCopy.begin();
+         it != ListCopy.end();
+         ++it)
     {
-        ComObjPtr<HostUSBDevice> pHostDevice = *It;
+        ComObjPtr<HostUSBDevice> pHostDevice = *it;
         AutoWriteLock devLock(pHostDevice COMMA_LOCKVAL_SRC_POS);
         if (pHostDevice->getMachine() == aMachine)
         {
@@ -352,8 +356,11 @@ HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool a
                 &&  fRunFilters)
             {
                 Assert(aDone && pHostDevice->getUnistate() == kHostUSBDeviceState_HeldByProxy && pHostDevice->getMachine().isNull());
+                devLock.release();
+                alock.release();
                 HRESULT hrc2 = runAllFiltersOnDevice(pHostDevice, llOpenedMachines, aMachine);
                 ComAssertComRC(hrc2);
+                alock.acquire();
             }
         }
     }
@@ -381,8 +388,7 @@ HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool a
  * @param   aIgnoreMachine  The machine to ignore filters from (we've just
  *                          detached the device from this machine).
  *
- * @note    The caller is expected to own both the device and Host write locks,
- *          and be prepared that these locks may be abandond temporarily.
+ * @note    The caller is expected to own no locks.
  */
 HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice,
                                                SessionMachinesList &llOpenedMachines,
@@ -393,8 +399,10 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
     /*
      * Verify preconditions.
      */
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), E_FAIL);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
     AssertMsgReturn(aDevice->isCapturableOrHeld(), ("{%s} %s\n", aDevice->getName().c_str(), aDevice->getStateName()), E_FAIL);
 
     /*
@@ -405,7 +413,7 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
     mHost->getUSBFilters(&globalFilters);
 
     /*
-     * Run global filters filerts first.
+     * Run global filters filters first.
      */
     bool fHoldIt = false;
     for (Host::USBDeviceFilterList::const_iterator it = globalFilters.begin();
@@ -423,6 +431,9 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
                 /*
                  * Release the device to the host and we're done.
                  */
+                filterLock.release();
+                devLock.release();
+                alock.release();
                 aDevice->requestReleaseToHost();
                 return S_OK;
             }
@@ -455,17 +466,23 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
             continue;
 
         /* runMachineFilters takes care of checking the machine state. */
+        devLock.release();
+        alock.release();
         if (runMachineFilters(pMachine, aDevice))
         {
             LogFlowThisFunc(("{%s} attached to %p\n", aDevice->getName().c_str(), (void *)pMachine));
             return S_OK;
         }
+        alock.acquire();
+        devLock.acquire();
     }
 
     /*
      * No matching machine, so request hold or release depending
      * on global filter match.
      */
+    devLock.release();
+    alock.release();
     if (fHoldIt)
         aDevice->requestHold();
     else
@@ -484,8 +501,7 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
  * @param   aDevice     The USB device in question.
  * @returns @c true if the device has been or is being attached to the VM, @c false otherwise.
  *
- * @note    Caller must own the USB and device locks for writing.
- * @note    Locks aMachine for reading.
+ * @note    Locks several objects temporarily for reading or writing.
  */
 bool USBProxyService::runMachineFilters(SessionMachine *aMachine, ComObjPtr<HostUSBDevice> &aDevice)
 {
@@ -495,8 +511,9 @@ bool USBProxyService::runMachineFilters(SessionMachine *aMachine, ComObjPtr<Host
      * Validate preconditions.
      */
     AssertReturn(aMachine, false);
-    AssertReturn(isWriteLockOnCurrentThread(), false);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), false);
+    AssertReturn(!isWriteLockOnCurrentThread(), false);
+    AssertReturn(!aMachine->isWriteLockOnCurrentThread(), false);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     /* Let HostUSBDevice::requestCaptureToVM() validate the state. */
 
     /*
@@ -573,6 +590,8 @@ void USBProxyService::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSucce
  * The device is going to be detached from a VM.
  *
  * @param   aDevice     The device in question.
+ *
+ * @todo unused
  */
 void USBProxyService::detachingDevice(HostUSBDevice *aDevice)
 {
@@ -819,6 +838,7 @@ static PUSBDEVICE sortDevices(PUSBDEVICE pDevices)
         }
     }
 
+    LogFlowFuncLeave();
     return pHead;
 }
 
@@ -839,24 +859,24 @@ void USBProxyService::processChanges(void)
     pDevices = sortDevices(pDevices);
 
     // get a list of all running machines while we're outside the lock
-    // (getOpenedMachines requests locks which are incompatible with the lock of the machines list)
+    // (getOpenedMachines requests higher priority locks)
     SessionMachinesList llOpenedMachines;
     mHost->parent()->getOpenedMachines(llOpenedMachines);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /*
-     * Compare previous list with the previous list of devices
+     * Compare previous list with the new list of devices
      * and merge in any changes while notifying Host.
      */
-    HostUSBDeviceList::iterator It = this->mDevices.begin();
-    while (    It != mDevices.end()
+    HostUSBDeviceList::iterator it = this->mDevices.begin();
+    while (    it != mDevices.end()
             || pDevices)
     {
         ComObjPtr<HostUSBDevice> pHostDevice;
 
-        if (It != mDevices.end())
-            pHostDevice = *It;
+        if (it != mDevices.end())
+            pHostDevice = *it;
 
         /*
          * Assert that the object is still alive (we still reference it in
@@ -897,11 +917,14 @@ void USBProxyService::processChanges(void)
 
             bool fRunFilters = false;
             SessionMachine *pIgnoreMachine = NULL;
+            devLock.release();
+            alock.release();
             if (updateDeviceState(pHostDevice, pCur, &fRunFilters, &pIgnoreMachine))
                 deviceChanged(pHostDevice,
                               (fRunFilters ? &llOpenedMachines : NULL),
                               pIgnoreMachine);
-            It++;
+            alock.acquire();
+            it++;
         }
         else
         {
@@ -927,11 +950,12 @@ void USBProxyService::processChanges(void)
                      pNew->pszProduct,
                      pNew->pszManufacturer));
 
-                mDevices.insert(It, NewObj);
+                mDevices.insert(it, NewObj);
 
-                /* Not really necessary to lock here, but make Assert checks happy. */
-                AutoWriteLock newDevLock(NewObj COMMA_LOCKVAL_SRC_POS);
+                devLock.release();
+                alock.release();
                 deviceAdded(NewObj, llOpenedMachines, pNew);
+                alock.acquire();
             }
             else
             {
@@ -940,10 +964,12 @@ void USBProxyService::processChanges(void)
                  * as the result of a re-enumeration.
                  */
                 if (!pHostDevice->wasActuallyDetached())
-                    It++;
+                    it++;
                 else
                 {
-                    It = mDevices.erase(It);
+                    it = mDevices.erase(it);
+                    devLock.release();
+                    alock.release();
                     deviceRemoved(pHostDevice);
                     Log(("USBProxyService::processChanges: detached %p {%s}\n",
                          (HostUSBDevice *)pHostDevice,
@@ -953,6 +979,7 @@ void USBProxyService::processChanges(void)
                      * uninitialize to avoid abuse */
                     devCaller.release();
                     pHostDevice->uninit();
+                    alock.acquire();
                 }
             }
         }
@@ -992,8 +1019,9 @@ void USBProxyService::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
     /*
      * Validate preconditions.
      */
-    AssertReturnVoid(isWriteLockOnCurrentThread());
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AssertReturnVoid(!aDevice->isWriteLockOnCurrentThread());
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
                      (HostUSBDevice *)aDevice,
                      aDevice->getName().c_str(),
@@ -1005,6 +1033,7 @@ void USBProxyService::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
      */
     if (aDevice->isCapturableOrHeld())
     {
+        devLock.release();
         HRESULT rc = runAllFiltersOnDevice(aDevice, llOpenedMachines, NULL /* aIgnoreMachine */);
         AssertComRC(rc);
     }
@@ -1025,8 +1054,9 @@ void USBProxyService::deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice)
     /*
      * Validate preconditions.
      */
-    AssertReturnVoid(isWriteLockOnCurrentThread());
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AssertReturnVoid(!aDevice->isWriteLockOnCurrentThread());
+    AutoWriteLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid}\n",
                      (HostUSBDevice *)aDevice,
                      aDevice->getName().c_str(),
@@ -1037,6 +1067,7 @@ void USBProxyService::deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice)
      * Detach the device from any machine currently using it,
      * reset all data and uninitialize the device object.
      */
+    devLock.release();
     aDevice->onPhysicalDetached();
 }
 
@@ -1054,7 +1085,7 @@ bool USBProxyService::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE a
     *aRunFilters = false;
     *aIgnoreMachine = NULL;
     AssertReturn(aDevice, false);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), false);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
 
     /*
      * Just hand it to the device, it knows best what needs to be done.
@@ -1077,7 +1108,7 @@ bool USBProxyService::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE a
 bool USBProxyService::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), false);
+    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
 
     return aDevice->updateState(aUSBDevice, aRunFilters, aIgnoreMachine);
 }
@@ -1098,8 +1129,9 @@ void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMa
     /*
      * Validate preconditions.
      */
-    AssertReturnVoid(isWriteLockOnCurrentThread());
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AssertReturnVoid(!aDevice->isWriteLockOnCurrentThread());
+    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("aDevice=%p name={%s} state=%s id={%RTuuid} aRunFilters=%RTbool aIgnoreMachine=%p\n",
                      (HostUSBDevice *)aDevice,
                      aDevice->getName().c_str(),
@@ -1107,6 +1139,7 @@ void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMa
                      aDevice->getId().raw(),
                      (pllOpenedMachines != NULL),       // used to be "bool aRunFilters"
                      aIgnoreMachine));
+    devLock.release();
 
     /*
      * Run filters if requested to do so.
@@ -1211,12 +1244,12 @@ ComObjPtr<HostUSBDevice> USBProxyService::findDeviceById(IN_GUID aId)
 {
     Guid Id(aId);
     ComObjPtr<HostUSBDevice> Dev;
-    for (HostUSBDeviceList::iterator It = mDevices.begin();
-         It != mDevices.end();
-         ++It)
-        if ((*It)->getId() == Id)
+    for (HostUSBDeviceList::iterator it = mDevices.begin();
+         it != mDevices.end();
+         ++it)
+        if ((*it)->getId() == Id)
         {
-            Dev = (*It);
+            Dev = (*it);
             break;
         }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2004-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -172,9 +172,6 @@ struct Host::Data
 {
     Data()
         :
-#ifdef VBOX_WITH_USB
-          usbListsLock(LOCKCLASS_USBLIST),
-#endif
           fDVDDrivesListBuilt(false),
           fFloppyDrivesListBuilt(false)
     {};
@@ -182,8 +179,6 @@ struct Host::Data
     VirtualBox              *pParent;
 
 #ifdef VBOX_WITH_USB
-    WriteLockHandle         usbListsLock;               // protects the below two lists
-
     USBDeviceFilterList     llChildren;                 // all USB device filters
     USBDeviceFilterList     llUSBDeviceFilters;         // USB device filters in use by the USB proxy service
 
@@ -778,7 +773,7 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters)(ComSafeArrayOut(IHostUSBDeviceFil
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
@@ -1228,7 +1223,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     clearError();
     MultiResult rc = checkUSBProxyService();
@@ -1290,7 +1285,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     clearError();
     MultiResult rc = checkUSBProxyService();
@@ -1567,7 +1562,7 @@ HRESULT Host::loadSettings(const settings::Host &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     for (settings::USBDeviceFiltersList::const_iterator it = data.llUSBDeviceFilters.begin();
          it != data.llUSBDeviceFilters.end();
@@ -1601,8 +1596,7 @@ HRESULT Host::saveSettings(settings::Host &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock1(this COMMA_LOCKVAL_SRC_POS);
-    AutoReadLock alock2(&m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.llUSBDeviceFilters.clear();
 
@@ -2009,7 +2003,7 @@ HRESULT Host::addChild(HostUSBDeviceFilter *pChild)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(&m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->llChildren.push_back(pChild);
 
@@ -2021,7 +2015,7 @@ HRESULT Host::removeChild(HostUSBDeviceFilter *pChild)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(&m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     for (USBDeviceFilterList::iterator it = m->llChildren.begin();
          it != m->llChildren.end();
@@ -2101,7 +2095,7 @@ HRESULT Host::onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
  */
 void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters)
 {
-    AutoReadLock alock(&m->usbListsLock COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aGlobalFilters = m->llUSBDeviceFilters;
 }
