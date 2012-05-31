@@ -4117,8 +4117,8 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
 
 
 /**
- * Response to VMMCALLRING3_PGM_ALLOCATE_LARGE_PAGE to allocate a large (2MB) page
- * for use with a nested paging PDE.
+ * Response to VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE to allocate a large
+ * (2MB) page for use with a nested paging PDE.
  *
  * @returns The following VBox status codes.
  * @retval  VINF_SUCCESS on success.
