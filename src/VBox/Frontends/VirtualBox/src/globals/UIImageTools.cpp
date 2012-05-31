@@ -220,7 +220,7 @@ static QImage betaLabelImage(const QSize& ls)
     float c = ((float)ls.width() / ls.height()) + 1;
     float g = (ls.width() / (c - 1));
     for (int i = 0; i < c; ++i)
-        p.drawLine(-g / 2 + g * i, ls.height(), -g / 2 + g * (i + 1), 0);
+        p.drawLine((int)(-g / 2 + g * i), ls.height(), (int)(-g / 2 + g * (i + 1)), 0);
     /* The text */
     QFont f = p.font();
     f.setBold(true);
@@ -265,7 +265,7 @@ QPixmap betaLabelSleeve(const QSize &ls /* = QSize(80, 16) */)
 {
     const QImage &i = betaLabelImage(ls);
     /* Create a secondary image which will contain the rotated banner. */
-    int w = sqrtf(powf(ls.width(), 2) / 2);
+    int w = (int)sqrtf(powf(ls.width(), 2) / 2);
     QImage i1(w, w, QImage::Format_ARGB32);
     i1.fill(Qt::transparent);
     QPainter p1(&i1);
