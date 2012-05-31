@@ -542,6 +542,63 @@ check_as86()
 
 
 #
+# Check for the OpenWatcom compiler, needed for compiling the BIOS
+#
+# If the system has Open Watcom installed, WATCOM will be set in the
+# environment.  If the user has her/his own Open Watcom install it will be
+# pointed to by on the command line, which will set the WATCOM variable.
+# The only exception is detecting OpenWatcom in tools/common/openwatcom.
+#
+check_open_watcom()
+{
+  test_header "Open Watcom"
+
+  if [ -z "$WATCOM" ]; then
+    WATCOM=`/bin/ls -rd1 $PWD/tools/common/openwatcom/* 2> /dev/null | head -1`
+    if [ -z "$WATCOM" ]; then
+      log_failure "Open Watcom was not found"
+      cnf_append "VBOX_WITH_OPEN_WATCOM" ""
+      return 0;
+    fi
+  fi
+
+  case "$OS" in
+    "darwin")   wc_bin="binosx";;  # ??
+    "dos")      wc_bin="binw";;
+    "freebsd")  wc_bin="binfbsd";; # ??
+    "linux")    wc_bin="binl";;
+    "solaris")  wc_bin="binsol";;  # ??
+    "os2")      wc_bin="binp";;
+    "win")      wc_bin="binnt";;
+    *)          wc_bin="binl";;
+  esac
+
+  # Check that the tools we use are there.
+  for prog in wasm wcc wlink;
+  do
+    if [ ! -f "$WATCOM/$wc_bin/$prog" ]; then
+      log_failure "$WATCOM/$wc_bin/$prog does not exist or is not a regular file."
+      fail
+    fi
+  done
+
+  # Use WASM to get the version.
+  wasm_ver=`$WATCOM/$wc_bin/wasm -? 2>&1 | sed -e '1!d' -e 's/Open Watcom Assembler Version *//'`
+  if [ -z "$wasm_ver" ]; then
+    log_failure "$WATCOM/$wc_bin/wasm -? did not produce the expected response"
+    fail
+  fi
+  log_success "found version $wasm_ver"
+  cnf_append "PATH_TOOL_OPENWATCOM" "$WATCOM"
+  cnf_append "VBOX_WITH_OPEN_WATCOM" "1"
+
+  unset wasm_ver
+  unset wc_wasm
+  unset wc_bin
+}
+
+
+#
 # Check for yasm, needed to compile assembler files
 #
 check_yasm()
@@ -2152,6 +2209,7 @@ EOF
 [ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)"
 cat << EOF
   --with-openssl-dir=DIR   directory for OpenSSL headers/libraries
+  --with-ow-dir=DIR        directory where Open Watcom can be found [$WATCOM]
   --out-path=PATH          the folder to which configuration and build output
                            should go
 
@@ -2222,6 +2280,9 @@ for option in $*; do
       OPENSSLDIR=`echo $option | cut -d'=' -f2`
       INCCRYPTO="-I${OPENSSLDIR}/include"
       LIBCRYPTO="${OPENSSLDIR}/lib/libcrypto.a ${OPENSSLDIR}/lib/libssl.a"
+      ;;
+    --with-ow-dir=*)
+      WATCOM=`echo $option | cut -d'=' -f2`
       ;;
     --with-gsoap-dir=*)
       GSOAP=`echo $option | cut -d'=' -f2`
@@ -2489,6 +2550,7 @@ fi
 check_gcc
 [ "$OS" != "darwin"  ] && check_as86
 [ "$OS" != "darwin"  ] && check_bcc
+check_open_watcom
 [ "$OS" != "darwin"  ] && check_iasl
 # don't check for yasm for the time beeing as 0.40 and 0.50 both have known bugs
 # [ "$OS" != "darwin" ] && check_yasm
