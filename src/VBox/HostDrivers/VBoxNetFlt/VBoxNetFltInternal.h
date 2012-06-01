@@ -164,6 +164,8 @@ typedef struct VBOXNETFLTINS
             bool volatile fPromiscuousSet;
             /** Whether device exists and physically attached. */
             bool volatile fRegistered;
+            /** Whether our packet handler is installed. */
+            bool volatile fPacketHandler;
             /** The MAC address of the interface. */
             RTMAC MacAddr;
             struct notifier_block Notifier;
