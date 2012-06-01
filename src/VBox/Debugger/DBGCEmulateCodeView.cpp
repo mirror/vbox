@@ -706,13 +706,13 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDB
             break;
     }
 
-    DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%4#x %c %d %c %RGv %04RX64 (%04RX64 to ",
-                     pBp->iBp, pBp->fEnabled ? 'e' : 'd', cb, chType,
+    DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%#4x %c %d %c %RGv %04RX64 (%04RX64 to ",
+                     pBp->iBp, pBp->fEnabled ? 'e' : 'd', (int)cb, chType,
                      pBp->GCPtr, pBp->cHits, pBp->iHitTrigger);
     if (pBp->iHitDisable == ~(uint64_t)0)
         DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "~0)  ");
     else
-        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%04RX64)");
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%04RX64)", pBp->iHitDisable);
 
     /*
      * Try resolve the address.
