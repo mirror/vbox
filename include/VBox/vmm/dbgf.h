@@ -336,7 +336,7 @@ typedef struct DBGFBP
      * (PC register value if REM type?) */
     RTGCUINTPTR     GCPtr;
     /** The breakpoint id. */
-    RTUINT          iBp;
+    uint32_t        iBp;
     /** The breakpoint status - enabled or disabled. */
     bool            fEnabled;
 
@@ -1474,6 +1474,8 @@ typedef struct DBGFREGENTRYNM
 typedef DBGFREGENTRYNM *PDBGFREGENTRYNM;
 /** Pointer to a const named register entry in a batch operation. */
 typedef DBGFREGENTRYNM const *PCDBGFREGENTRYNM;
+
+VMMR3DECL(int) DBGFR3RegNmValidate( PVM pVM, VMCPUID idDefCpu, const char *pszReg);
 
 VMMR3DECL(int) DBGFR3RegNmQuery(    PVM pVM, VMCPUID idDefCpu, const char *pszReg, PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType);
 VMMR3DECL(int) DBGFR3RegNmQueryU8(  PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint8_t     *pu8);
