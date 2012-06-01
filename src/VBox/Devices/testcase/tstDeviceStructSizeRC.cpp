@@ -210,6 +210,12 @@ int main()
     /* DevVGA.cpp */
     GEN_CHECK_SIZE(VGASTATE);
     GEN_CHECK_OFF(VGASTATE, vram_ptrR3);
+    GEN_CHECK_OFF(VGASTATE, get_bpp);
+    GEN_CHECK_OFF(VGASTATE, get_offsets);
+    GEN_CHECK_OFF(VGASTATE, get_resolution);
+    GEN_CHECK_OFF(VGASTATE, rgb_to_pixel);
+    GEN_CHECK_OFF(VGASTATE, cursor_invalidate);
+    GEN_CHECK_OFF(VGASTATE, cursor_draw_line);
     GEN_CHECK_OFF(VGASTATE, vram_size);
     GEN_CHECK_OFF(VGASTATE, latch);
     GEN_CHECK_OFF(VGASTATE, sr_index);
@@ -239,9 +245,6 @@ int main()
     GEN_CHECK_OFF(VGASTATE, palette);
     GEN_CHECK_OFF(VGASTATE, palette[1]);
     GEN_CHECK_OFF(VGASTATE, bank_offset);
-    GEN_CHECK_OFF(VGASTATE, get_bpp);
-    GEN_CHECK_OFF(VGASTATE, get_offsets);
-    GEN_CHECK_OFF(VGASTATE, get_resolution);
 #ifdef CONFIG_BOCHS_VBE
     GEN_CHECK_OFF(VGASTATE, vbe_index);
     GEN_CHECK_OFF(VGASTATE, vbe_regs);
@@ -270,50 +273,46 @@ int main()
     GEN_CHECK_OFF(VGASTATE, cursor_start);
     GEN_CHECK_OFF(VGASTATE, cursor_end);
     GEN_CHECK_OFF(VGASTATE, cursor_offset);
-    GEN_CHECK_OFF(VGASTATE, rgb_to_pixel);
     GEN_CHECK_OFF(VGASTATE, invalidated_y_table);
     GEN_CHECK_OFF(VGASTATE, invalidated_y_table[1]);
     GEN_CHECK_OFF(VGASTATE, invalidated_y_table[(VGA_MAX_HEIGHT / 32) - 1]);
-    GEN_CHECK_OFF(VGASTATE, cursor_invalidate);
-    GEN_CHECK_OFF(VGASTATE, cursor_draw_line);
     GEN_CHECK_OFF(VGASTATE, last_palette);
     GEN_CHECK_OFF(VGASTATE, last_palette[1]);
     GEN_CHECK_OFF(VGASTATE, last_ch_attr);
     GEN_CHECK_OFF(VGASTATE, last_ch_attr[CH_ATTR_SIZE - 1]);
     GEN_CHECK_OFF(VGASTATE, u32Marker);
-    GEN_CHECK_OFF(VGASTATE, GCPhysVRAM);
-    GEN_CHECK_OFF(VGASTATE, vram_ptrR0);
+    GEN_CHECK_OFF(VGASTATE, pDevInsRC);
     GEN_CHECK_OFF(VGASTATE, vram_ptrRC);
-    GEN_CHECK_OFF(VGASTATE, fLFBUpdated);
-    GEN_CHECK_OFF(VGASTATE, fGCEnabled);
-    GEN_CHECK_OFF(VGASTATE, fR0Enabled);
-    GEN_CHECK_OFF(VGASTATE, fHasDirtyBits);
-    GEN_CHECK_OFF(VGASTATE, fRemappedVGA);
-    GEN_CHECK_OFF(VGASTATE, fRenderVRAM);
+    GEN_CHECK_OFF(VGASTATE, RCPtrLFBHandler);
+    GEN_CHECK_OFF(VGASTATE, pDevInsR3);
 #ifdef VBOX_WITH_HGSMI
     GEN_CHECK_OFF(VGASTATE, pHGSMI);
 #endif
 #ifdef VBOX_WITH_VDMA
     GEN_CHECK_OFF(VGASTATE, pVdma);
 #endif
-    GEN_CHECK_OFF(VGASTATE, cMonitors);
-    GEN_CHECK_OFF(VGASTATE, cMilliesRefreshInterval);
-    GEN_CHECK_OFF(VGASTATE, RefreshTimer);
-    GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap);
-    GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[1]);
-    GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[(VGA_VRAM_MAX / PAGE_SIZE / 32) - 1]);
-    GEN_CHECK_OFF(VGASTATE, RCPtrLFBHandler);
-    GEN_CHECK_OFF(VGASTATE, pDevInsRC);
-    GEN_CHECK_OFF(VGASTATE, pDevInsR3);
-    GEN_CHECK_OFF(VGASTATE, pDevInsR0);
-    GEN_CHECK_OFF(VGASTATE, lock);
     GEN_CHECK_OFF(VGASTATE, IBase);
     GEN_CHECK_OFF(VGASTATE, IPort);
-#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+#if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI))
     GEN_CHECK_OFF(VGASTATE, IVBVACallbacks);
 #endif
     GEN_CHECK_OFF(VGASTATE, pDrvBase);
     GEN_CHECK_OFF(VGASTATE, pDrv);
+    GEN_CHECK_OFF(VGASTATE, RefreshTimer);
+    GEN_CHECK_OFF(VGASTATE, pDevInsR0);
+    GEN_CHECK_OFF(VGASTATE, cMonitors);
+    GEN_CHECK_OFF(VGASTATE, cMilliesRefreshInterval);
+    GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap);
+    GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[1]);
+    GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[(VGA_VRAM_MAX / PAGE_SIZE / 32) - 1]);
+    GEN_CHECK_OFF(VGASTATE, fHasDirtyBits);
+    GEN_CHECK_OFF(VGASTATE, fLFBUpdated);
+    GEN_CHECK_OFF(VGASTATE, fGCEnabled);
+    GEN_CHECK_OFF(VGASTATE, fR0Enabled);
+    GEN_CHECK_OFF(VGASTATE, fRemappedVGA);
+    GEN_CHECK_OFF(VGASTATE, fRenderVRAM);
+    GEN_CHECK_OFF(VGASTATE, GCPhysVRAM);
+    GEN_CHECK_OFF(VGASTATE, lock);
     GEN_CHECK_OFF(VGASTATE, Dev);
     GEN_CHECK_OFF(VGASTATE, StatRZMemoryRead);
     GEN_CHECK_OFF(VGASTATE, StatR3MemoryRead);
@@ -331,10 +330,28 @@ int main()
 # endif
 #endif
 #ifdef VBE_NEW_DYN_LIST
-    GEN_CHECK_OFF(VGASTATE, cbVBEExtraData);
     GEN_CHECK_OFF(VGASTATE, pu8VBEExtraData);
+    GEN_CHECK_OFF(VGASTATE, cbVBEExtraData);
     GEN_CHECK_OFF(VGASTATE, u16VBEExtraAddress);
 #endif
+    GEN_CHECK_OFF(VGASTATE, pu8Logo);
+    GEN_CHECK_OFF(VGASTATE, pszLogoFile);
+    GEN_CHECK_OFF(VGASTATE, pu8LogoBitmap);
+    GEN_CHECK_OFF(VGASTATE, offLogoData);
+    GEN_CHECK_OFF(VGASTATE, cbLogo);
+    GEN_CHECK_OFF(VGASTATE, LogoCommand);
+    GEN_CHECK_OFF(VGASTATE, cxLogo);
+    GEN_CHECK_OFF(VGASTATE, cyLogo);
+    GEN_CHECK_OFF(VGASTATE, cLogoPlanes);
+    GEN_CHECK_OFF(VGASTATE, cLogoBits);
+    GEN_CHECK_OFF(VGASTATE, LogoCompression);
+    GEN_CHECK_OFF(VGASTATE, cLogoUsedColors);
+    GEN_CHECK_OFF(VGASTATE, cLogoPalEntries);
+    GEN_CHECK_OFF(VGASTATE, fLogoClearScreen);
+    GEN_CHECK_OFF(VGASTATE, au32LogoPalette);
+    GEN_CHECK_OFF(VGASTATE, pu8VgaBios);
+    GEN_CHECK_OFF(VGASTATE, cbVgaBios);
+    GEN_CHECK_OFF(VGASTATE, pszVgaBiosFile);
 #ifdef VBOX_WITH_HGSMI
     GEN_CHECK_OFF(VGASTATE, IOPortBase);
 #endif
