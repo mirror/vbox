@@ -177,6 +177,10 @@ typedef struct vga_retrace_s {
 
 #else /* VBOX */
 
+/* bird: Since we've changed types, reordered members, done alignment
+         paddings and more, VGA_STATE_COMMON was added directly to the
+         struct to make it more readable and easier to handle. */
+
 struct VGAState;
 typedef int FNGETBPP(struct VGAState *s);
 typedef void FNGETOFFSETS(struct VGAState *s, uint32_t *pline_offset, uint32_t *pstart_addr, uint32_t *pline_compare);
@@ -185,62 +189,6 @@ typedef unsigned int FNRGBTOPIXEL(unsigned int r, unsigned int g, unsigned b);
 typedef void FNCURSORINVALIDATE(struct VGAState *s);
 typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 
-/* bird: vram_offset have been remove, function pointers declared external,
-         some type changes, and some padding have been added. */
-#define VGA_STATE_COMMON                                                \
-    R3PTRTYPE(uint8_t *) vram_ptrR3;                                    \
-    R3PTRTYPE(FNGETBPP *) get_bpp;                                      \
-    R3PTRTYPE(FNGETOFFSETS *) get_offsets;                              \
-    R3PTRTYPE(FNGETRESOLUTION *) get_resolution;                        \
-    R3PTRTYPE(FNRGBTOPIXEL *) rgb_to_pixel;                             \
-    R3PTRTYPE(FNCURSORINVALIDATE *) cursor_invalidate;                  \
-    R3PTRTYPE(FNCURSORDRAWLINE *) cursor_draw_line;                     \
-    RTR3PTR R3PtrCmnAlignment;                                          \
-    uint32_t vram_size;                                                 \
-    uint32_t latch;                                                     \
-    uint8_t sr_index;                                                   \
-    uint8_t sr[256];                                                    \
-    uint8_t gr_index;                                                   \
-    uint8_t gr[256];                                                    \
-    uint8_t ar_index;                                                   \
-    uint8_t ar[21];                                                     \
-    int32_t ar_flip_flop;                                               \
-    uint8_t cr_index;                                                   \
-    uint8_t cr[256]; /* CRT registers */                                \
-    uint8_t msr; /* Misc Output Register */                             \
-    uint8_t fcr; /* Feature Control Register */                         \
-    uint8_t st00; /* status 0 */                                        \
-    uint8_t st01; /* status 1 */                                        \
-    uint8_t dac_state;                                                  \
-    uint8_t dac_sub_index;                                              \
-    uint8_t dac_read_index;                                             \
-    uint8_t dac_write_index;                                            \
-    uint8_t dac_cache[3]; /* used when writing */                       \
-    uint8_t palette[768];                                               \
-    int32_t bank_offset;                                                \
-    VGA_STATE_COMMON_BOCHS_VBE                                          \
-    /* display refresh support */                                       \
-    uint32_t font_offsets[2];                                           \
-    int32_t graphic_mode;                                               \
-    uint8_t shift_control;                                              \
-    uint8_t double_scan;                                                \
-    uint8_t padding1[2];                                                \
-    uint32_t line_offset;                                               \
-    uint32_t line_compare;                                              \
-    uint32_t start_addr;                                                \
-    uint32_t plane_updated;                                             \
-    uint8_t last_cw, last_ch, padding2[2];                              \
-    uint32_t last_width, last_height; /* in chars or pixels */          \
-    uint32_t last_scr_width, last_scr_height; /* in pixels */           \
-    uint32_t last_bpp;                                                  \
-    uint8_t cursor_start, cursor_end, padding3[2];                      \
-    uint32_t cursor_offset;                                             \
-    /* hardware mouse cursor support */                                 \
-    uint32_t invalidated_y_table[VGA_MAX_HEIGHT / 32];                  \
-    /* tell for each page if it has been updated since the last time */ \
-    uint32_t last_palette[256];                                         \
-    uint32_t last_ch_attr[CH_ATTR_SIZE]; /* XXX: make it dynamic */
-
 #endif /* VBOX */
 
 #ifdef VBOX_WITH_VDMA
@@ -248,8 +196,62 @@ typedef struct VBOXVDMAHOST *PVBOXVDMAHOST;
 #endif
 
 typedef struct VGAState {
+#ifndef VBOX
     VGA_STATE_COMMON
-#ifdef VBOX
+#else /* VBOX */
+    R3PTRTYPE(uint8_t *) vram_ptrR3;
+    R3PTRTYPE(FNGETBPP *) get_bpp;
+    R3PTRTYPE(FNGETOFFSETS *) get_offsets;
+    R3PTRTYPE(FNGETRESOLUTION *) get_resolution;
+    R3PTRTYPE(FNRGBTOPIXEL *) rgb_to_pixel;
+    R3PTRTYPE(FNCURSORINVALIDATE *) cursor_invalidate;
+    R3PTRTYPE(FNCURSORDRAWLINE *) cursor_draw_line;
+    RTR3PTR R3PtrCmnAlignment;
+    uint32_t vram_size;
+    uint32_t latch;
+    uint8_t sr_index;
+    uint8_t sr[256];
+    uint8_t gr_index;
+    uint8_t gr[256];
+    uint8_t ar_index;
+    uint8_t ar[21];
+    int32_t ar_flip_flop;
+    uint8_t cr_index;
+    uint8_t cr[256]; /* CRT registers */
+    uint8_t msr; /* Misc Output Register */
+    uint8_t fcr; /* Feature Control Register */
+    uint8_t st00; /* status 0 */
+    uint8_t st01; /* status 1 */
+    uint8_t dac_state;
+    uint8_t dac_sub_index;
+    uint8_t dac_read_index;
+    uint8_t dac_write_index;
+    uint8_t dac_cache[3]; /* used when writing */
+    uint8_t palette[768];
+    int32_t bank_offset;
+    VGA_STATE_COMMON_BOCHS_VBE
+    /* display refresh support */
+    uint32_t font_offsets[2];
+    int32_t graphic_mode;
+    uint8_t shift_control;
+    uint8_t double_scan;
+    uint8_t padding1[2];
+    uint32_t line_offset;
+    uint32_t line_compare;
+    uint32_t start_addr;
+    uint32_t plane_updated;
+    uint8_t last_cw, last_ch, padding2[2];
+    uint32_t last_width, last_height; /* in chars or pixels */
+    uint32_t last_scr_width, last_scr_height; /* in pixels */
+    uint32_t last_bpp;
+    uint8_t cursor_start, cursor_end, padding3[2];
+    uint32_t cursor_offset;
+    /* hardware mouse cursor support */
+    uint32_t invalidated_y_table[VGA_MAX_HEIGHT / 32];
+    /* tell for each page if it has been updated since the last time */
+    uint32_t last_palette[256];
+    uint32_t last_ch_attr[CH_ATTR_SIZE]; /* XXX: make it dynamic */
+
     /** end-of-common-state-marker */
     uint32_t                    u32Marker;
 
