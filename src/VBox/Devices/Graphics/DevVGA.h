@@ -276,7 +276,7 @@ typedef struct VGAState {
     bool                        fRenderVRAM;
     bool                        Padding1[2];
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 64
     uint32_t                    Padding2;
 #endif
 
