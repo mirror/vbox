@@ -32,8 +32,8 @@ ifdef VBOX_WITH_OPEN_WATCOM
  TEMPLATE_VBoxBios_BLD_TRG_ARCH = x86
  TEMPLATE_VBoxBios_BINSUFF = .rom
  TEMPLATE_VBoxBios_INCS    = .
- TEMPLATE_VBoxBios_ASFLAGS = -q -0 -wx
- TEMPLATE_VBoxBios_CFLAGS  = -q -0 -wx -zu -s -oas -d1+ -ms
+ TEMPLATE_VBoxBios_ASFLAGS = -q -3 -wx
+ TEMPLATE_VBoxBios_CFLAGS  = -q -3 -wx -zu -s -oas -d1+ -ms
  TEMPLATE_VBoxBios_DEFS    = \
  	VBOX_PC_BIOS \
  	VBOX_LANBOOT_SEG=0xE200 \
@@ -53,9 +53,9 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	disable 1014, 1023, 2120
  TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS)
  TEMPLATE_VBoxBios_POST_CMDS = \
- 	$(QUIET)$(EXT_MV) -f $(out) $(out).tmp \
+ 	$(QUIET)$(MV_EXT) -f $(out) $(out).tmp \
  	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
- 	&& $(EXT_RM) -f $(out).tmp
+ 	&& $(RM_EXT) -f $(out).tmp
 
 
  #
