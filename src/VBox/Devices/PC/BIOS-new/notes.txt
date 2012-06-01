@@ -20,8 +20,8 @@
 - DOS 4.01 (both IBM and Microsoft) calls INT 13h to read from disk with less
   than 100 bytes of stack space early in the boot sequence.
 
-- Very few guests use the 32-bit BIOS interface. One is OS/2 (but falls back),
-  another is Etherboot.
+- Very few guests use the 32-bit PCI BIOS interface. One is OS/2 (but falls
+  back), another is Etherboot.
 
 - OS/2 is the only known guest which can run the 16-bit PCI BIOS in protected
   mode (but only if the 32-bit PCI BIOS is unavailable).
