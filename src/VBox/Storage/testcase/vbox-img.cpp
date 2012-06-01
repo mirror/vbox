@@ -30,6 +30,9 @@
 #include <iprt/message.h>
 #include <iprt/getopt.h>
 #include <iprt/assert.h>
+#include <iprt/dvm.h>
+#include <iprt/filesystem.h>
+#include <iprt/vfs.h>
 
 const char *g_pszProgName = "";
 static void printUsage(PRTSTREAM pStrm)
@@ -52,6 +55,7 @@ static void printUsage(PRTSTREAM pStrm)
                  "   info         --filename <filename>\n"
                  "\n"
                  "   compact      --filename <filename>\n"
+                 "                [--filesystemaware]\n"
                  "\n"
                  "   createcache  --filename <filename>\n"
                  "                --size <cache size>\n"
@@ -962,16 +966,113 @@ int handleInfo(HandlerArg *a)
 }
 
 
+static DECLCALLBACK(int) vboximgDvmRead(void *pvUser, uint64_t off, void *pvBuf, size_t cbRead)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = (PVBOXHDD)pvUser;
+
+    /* Take shortcut if possible. */
+    if (   off % 512 == 0
+        && cbRead % 512 == 0)
+        rc = VDRead(pDisk, off, pvBuf, cbRead);
+    else
+    {
+        uint8_t *pbBuf = (uint8_t *)pvBuf;
+        uint8_t abBuf[512];
+
+        /* Unaligned access, make it aligned. */
+        if (off % 512 != 0)
+        {
+            uint64_t offAligned = off & ~(uint64_t)(512 - 1);
+            size_t cbToCopy = 512 - (off - offAligned);
+            rc = VDRead(pDisk, offAligned, abBuf, 512);
+            if (RT_SUCCESS(rc))
+            {
+                memcpy(pbBuf, &abBuf[off - offAligned], cbToCopy);
+                pbBuf  += cbToCopy;
+                off    += cbToCopy;
+                cbRead -= cbToCopy;
+            }
+        }
+
+        if (   RT_SUCCESS(rc)
+            && (cbRead & ~(uint64_t)(512 - 1)))
+        {
+            size_t cbReadAligned = cbRead & ~(uint64_t)(512 - 1);
+
+            Assert(!(off % 512));
+            rc = VDRead(pDisk, off, pbBuf, cbReadAligned);
+            if (RT_SUCCESS(rc))
+            {
+                pbBuf  += cbReadAligned;
+                off    += cbReadAligned;
+                cbRead -= cbReadAligned;
+            }
+        }
+
+        if (   RT_SUCCESS(rc)
+            && cbRead)
+        {
+            Assert(cbRead < 512);
+            Assert(!(off % 512));
+
+            rc = VDRead(pDisk, off, abBuf, 512);
+            if (RT_SUCCESS(rc))
+                memcpy(pbBuf, abBuf, cbRead);
+        }
+    }
+
+    return rc;
+}
+
+
+static DECLCALLBACK(int) vboximgDvmWrite(void *pvUser, uint64_t off, const void *pvBuf, size_t cbWrite)
+{
+    PVBOXHDD pDisk = (PVBOXHDD)pvUser;
+    return VDWrite(pDisk, off, pvBuf, cbWrite);
+}
+
+
+static DECLCALLBACK(int) vboximgQueryBlockStatus(void *pvUser, uint64_t off,
+                                                 uint64_t cb, bool *pfAllocated)
+{
+    RTVFS hVfs = (RTVFS)pvUser;
+    return RTVfsIsRangeInUse(hVfs, off, cb, pfAllocated);
+}
+
+
+static DECLCALLBACK(int) vboximgQueryRangeUse(void *pvUser, uint64_t off, uint64_t cb,
+                                              bool *pfUsed)
+{
+    RTDVM hVolMgr = (RTDVM)pvUser;
+    return RTDvmMapQueryBlockStatus(hVolMgr, off, cb, pfUsed);
+}
+
+
+typedef struct VBOXIMGVFS
+{
+    /** Pointer to the next VFS handle. */
+    struct VBOXIMGVFS *pNext;
+    /** VFS handle. */
+    RTVFS              hVfs;
+} VBOXIMGVFS, *PVBOXIMGVFS;
+
 int handleCompact(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = NULL;
     const char *pszFilename = NULL;
+    bool fFilesystemAware = false;
+    VDINTERFACEQUERYRANGEUSE VDIfQueryRangeUse;
+    PVDINTERFACE pIfsCompact = NULL;
+    RTDVM hDvm = NIL_RTDVM;
+    PVBOXIMGVFS pVBoxImgVfsHead = NULL;
 
     /* Parse the command line. */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--filename", 'f', RTGETOPT_REQ_STRING }
+        { "--filename",        'f', RTGETOPT_REQ_STRING },
+        { "--filesystemaware", 'a', RTGETOPT_REQ_NOTHING }
     };
     int ch;
     RTGETOPTUNION ValueUnion;
@@ -983,6 +1084,10 @@ int handleCompact(HandlerArg *a)
         {
             case 'f':   // --filename
                 pszFilename = ValueUnion.psz;
+                break;
+
+            case 'a':
+                fFilesystemAware = true;
                 break;
 
             default:
@@ -1012,9 +1117,120 @@ int handleCompact(HandlerArg *a)
     if (RT_FAILURE(rc))
         return errorRuntime("Error while opening the image: %Rrc\n", rc);
 
-    rc = VDCompact(pDisk, 0, NULL);
-    if (RT_FAILURE(rc))
-        errorRuntime("Error while compacting image: %Rrc\n", rc);
+    if (   RT_SUCCESS(rc)
+        && fFilesystemAware)
+    {
+        uint64_t cbDisk = 0;
+
+        cbDisk = VDGetSize(pDisk, 0);
+        if (cbDisk > 0)
+        {
+            rc = RTDvmCreate(&hDvm, vboximgDvmRead, vboximgDvmWrite, cbDisk, 512,
+                             0 /* fFlags*/, pDisk);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTDvmMapOpen(hDvm);
+                if (   RT_SUCCESS(rc)
+                    && RTDvmMapGetValidVolumes(hDvm))
+                {
+                    RTDVMVOLUME hVol;
+
+                    /* Get all volumes and set the block query status callback. */
+                    rc = RTDvmMapQueryFirstVolume(hDvm, &hVol);
+                    AssertRC(rc);
+
+                    do
+                    {
+                        RTVFSFILE hVfsFile;
+                        RTVFS hVfs;
+                        RTDVMVOLUME hVolNext;
+
+                        rc = RTDvmVolumeCreateVfsFile(hVol, &hVfsFile);
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        /* Try to detect the filesystem in this volume. */
+                        rc = RTFilesystemVfsFromFile(hVfsFile, &hVfs);
+                        if (rc == VERR_NOT_SUPPORTED)
+                        {
+                            /* Release the file handle and continue.*/
+                            RTVfsFileRelease(hVfsFile);
+                        }
+                        else if RT_FAILURE(rc)
+                            break;
+                        else
+                        {
+                            PVBOXIMGVFS pVBoxImgVfs = (PVBOXIMGVFS)RTMemAllocZ(sizeof(VBOXIMGVFS));
+                            if (!pVBoxImgVfs)
+                                rc = VERR_NO_MEMORY;
+                            else
+                            {
+                                pVBoxImgVfs->hVfs = hVfs;
+                                pVBoxImgVfs->pNext = pVBoxImgVfsHead;
+                                pVBoxImgVfsHead = pVBoxImgVfs;
+                                RTDvmVolumeSetQueryBlockStatusCallback(hVol, vboximgQueryBlockStatus, hVfs);
+                            }
+                        }
+
+                        if (RT_SUCCESS(rc))
+                            rc = RTDvmMapQueryNextVolume(hDvm, hVol, &hVolNext);
+
+                        /*
+                         * Release the volume handle, the file handle has a reference
+                         * to keep it open.
+                         */
+                        RTDvmVolumeRelease(hVol);
+                        hVol = hVolNext;
+                    } while (RT_SUCCESS(rc));
+
+                    if (rc == VERR_DVM_MAP_NO_VOLUME)
+                        rc = VINF_SUCCESS;
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        VDIfQueryRangeUse.pfnQueryRangeUse = vboximgQueryRangeUse;
+                        VDInterfaceAdd(&VDIfQueryRangeUse.Core, "QueryRangeUse", VDINTERFACETYPE_QUERYRANGEUSE,
+                                       hDvm, sizeof(VDINTERFACEQUERYRANGEUSE), &pIfsCompact);
+                    }
+                }
+                else if (RT_SUCCESS(rc))
+                    RTPrintf("There are no partitions in the volume map\n");
+                else if (rc == VERR_NOT_FOUND)
+                {
+                    rc = VINF_SUCCESS;
+                    RTPrintf("No known volume format on disk found\n");
+                }
+                else
+                    errorRuntime("Error while opening the volume manager: %Rrc\n", rc);
+            }
+            else
+                errorRuntime("Error creating the volume manager: %Rrc\n", rc);
+        }
+        else
+        {
+            rc = VERR_INVALID_STATE;
+            errorRuntime("Error while getting the disk size\n");
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = VDCompact(pDisk, 0, pIfsCompact);
+        if (RT_FAILURE(rc))
+            errorRuntime("Error while compacting image: %Rrc\n", rc);
+    }
+
+    while (pVBoxImgVfsHead)
+    {
+        PVBOXIMGVFS pVBoxImgVfsFree = pVBoxImgVfsHead;
+
+        pVBoxImgVfsHead = pVBoxImgVfsHead->pNext;
+        RTVfsRelease(pVBoxImgVfsFree->hVfs);
+        RTMemFree(pVBoxImgVfsFree);
+    }
+
+    if (hDvm)
+        RTDvmRelease(hDvm);
 
     VDDestroy(pDisk);
 
