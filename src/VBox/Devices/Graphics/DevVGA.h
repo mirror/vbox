@@ -253,6 +253,9 @@ typedef struct VGAState {
 #ifdef VBOX
     /** end-of-common-state-marker */
     uint32_t                    u32Marker;
+#if HC_ARCH_BITS == 64
+    uint32_t                    Padding0;
+#endif
     /** The physical address the VRAM was assigned. */
     RTGCPHYS                    GCPhysVRAM;
     /** The R0 vram pointer... */
