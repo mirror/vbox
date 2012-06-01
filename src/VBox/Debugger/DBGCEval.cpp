@@ -25,6 +25,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/ctype.h>
 
@@ -489,7 +490,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
             else
                 rc = dbgcEvalSubUnary(pDbgc, pszExpr2, cchExpr - (pszExpr2 - pszExpr), pOp->enmCatArg1, &Arg);
             if (RT_SUCCESS(rc))
-                rc = pOp->pfnHandlerUnary(pDbgc, &Arg, pResult);
+                rc = pOp->pfnHandlerUnary(pDbgc, &Arg, enmCategory, pResult);
         }
     }
     else
@@ -608,6 +609,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
 int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCategory, PDBGCVAR pResult)
 {
     Log2(("dbgcEvalSub: cchExpr=%d pszExpr=%s\n", cchExpr, pszExpr));
+
     /*
      * First we need to remove blanks in both ends.
      * ASSUMES: There is no quoting unless the entire expression is a string.
@@ -785,7 +787,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
         rc = dbgcEvalSub(pDbgc, pszOpSplit, cchExpr - (pszOpSplit - pszExpr), pOpSplit->enmCatArg1, &Arg);
         if (RT_SUCCESS(rc))
             /* apply the operator. */
-            rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, pResult);
+            rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, enmCategory, pResult);
     }
     else
         /* plain expression or using unary operators perhaps with parentheses. */
@@ -850,8 +852,14 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
     /*
      * The parse loop.
      */
-    PDBGCVAR        pArg0 = &paArgs[0];
-    PDBGCVAR        pArg = pArg0;
+    PDBGCVAR        pArg0       = &paArgs[0];
+    PDBGCVAR        pArg        = pArg0;
+    PCDBGCVARDESC   pPrevDesc   = NULL;
+    PCDBGCVARDESC   paVarDescs  = pCmd->paArgDescs;
+    unsigned const  cVarDescs   = pCmd->cArgDescs;
+    unsigned        cCurDesc    = 0;
+    unsigned        iVar        = 0;
+    unsigned        iVarDesc    = 0;
     *pcArgs = 0;
     do
     {
@@ -862,6 +870,21 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
             return VERR_PARSE_TOO_MANY_ARGUMENTS;
         if (pArg >= &paArgs[cArgs])
             return VERR_PARSE_ARGUMENT_OVERFLOW;
+#ifdef DEBUG_bird /* work in progress. */
+        if (iVarDesc >= cVarDescs)
+            return VERR_PARSE_TOO_MANY_ARGUMENTS;
+
+        /* Walk argument descriptors. */
+        if (    (    paVarDescs[iVarDesc].fFlags & DBGCVD_FLAGS_DEP_PREV
+                &&  &paVarDescs[iVarDesc - 1] != pPrevDesc)
+            ||  cCurDesc >= paVarDescs[iVarDesc].cTimesMax)
+        {
+            iVarDesc++;
+            if (iVarDesc >= cVarDescs)
+                return VERR_PARSE_TOO_MANY_ARGUMENTS;
+            cCurDesc = 0;
+        }
+#endif
 
         /*
          * Find the end of the argument.
@@ -971,17 +994,53 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         }
         *pszEnd = '\0';
         /* (psz = next char to process) */
+        size_t cchArgs = strlen(pszArgs);
 
+
+#ifdef DEBUG_bird /* work in progress. */
+        /*
+         * Try optional arguments until we find something which matches
+         * or can easily be promoted to what the descriptor want.
+         */
+        for (;;)
+        {
+            char *pszArgsCopy = (char *)RTMemDup(pszArgs, cchArgs + 1);
+            if (!pszArgsCopy)
+                return VERR_NO_MEMORY;
+
+            int rc = dbgcEvalSub(pDbgc, pszArgs, strlen(pszArgs), paVarDescs[iVarDesc].enmCategory, pArg);
+            if (RT_SUCCESS(rc))
+            {
+                pArg->pDesc = pPrevDesc = &paVarDescs[iVarDesc];
+                cCurDesc++;
+                RTMemFree(pszArgsCopy);
+                break;
+            }
+
+            memcpy(pszArgs, pszArgsCopy, cchArgs + 1);
+            RTMemFree(pszArgsCopy);
+
+            /* can we advance? */
+            if (paVarDescs[iVarDesc].cTimesMin > cCurDesc)
+                return VERR_PARSE_ARGUMENT_TYPE_MISMATCH;
+            if (++iVarDesc >= cVarDescs)
+                return VERR_PARSE_ARGUMENT_TYPE_MISMATCH;
+            cCurDesc = 0;
+        }
+
+#else
         /*
          * Parse and evaluate the argument.
          */
-        int rc = dbgcEvalSub(pDbgc, pszArgs, strlen(pszArgs), DBGCVAR_CAT_ANY, pArg);
+        int rc = dbgcEvalSub(pDbgc, pszArgs, cchArgs, DBGCVAR_CAT_ANY, pArg);
         if (RT_FAILURE(rc))
             return rc;
+#endif
 
         /*
          * Next.
          */
+        iVar++;
         pArg++;
         (*pcArgs)++;
         pszArgs = psz;
@@ -1049,7 +1108,8 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
      * Parse arguments (if any).
      */
     unsigned cArgs;
-    int rc = dbgcProcessArguments(pDbgc, pCmd, pszArgs, &pDbgc->aArgs[pDbgc->iArg], RT_ELEMENTS(pDbgc->aArgs) - pDbgc->iArg, &cArgs);
+    int rc = dbgcProcessArguments(pDbgc, pCmd, pszArgs, &pDbgc->aArgs[pDbgc->iArg],
+                                  RT_ELEMENTS(pDbgc->aArgs) - pDbgc->iArg, &cArgs);
     if (RT_SUCCESS(rc))
     {
         AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n",  rc));
@@ -1151,7 +1211,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
                 break;
 
             default:
-                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: Unknown error %d!\n", rc);
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: Unknown error %Rrc (%d)!\n", rc, rc);
                 break;
         }
     }

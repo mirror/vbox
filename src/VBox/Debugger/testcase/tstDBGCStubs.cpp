@@ -194,6 +194,10 @@ VMMDECL(int) DBGFR3PagingDumpEx(PVM pVM, VMCPUID idCpu, uint32_t fFlags, uint64_
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(int) DBGFR3RegNmValidate(PVM pVM, VMCPUID idDefCpu, const char *pszReg)
+{
+    return VINF_SUCCESS;
+}
 VMMR3DECL(int) DBGFR3RegCpuQueryU8(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t     *pu8)
 {
     return VERR_INTERNAL_ERROR;
