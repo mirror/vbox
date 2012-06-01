@@ -280,6 +280,7 @@ RuntimeR3_SOURCES       = \
 	common/dvm/dvmbsdlabel.cpp \
 	common/dvm/dvmgpt.cpp \
 	common/dvm/dvmmbr.cpp \
+	common/dvm/dvmvfs.cpp \
 	common/err/errinfo.cpp \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \

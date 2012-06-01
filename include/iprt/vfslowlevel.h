@@ -186,6 +186,19 @@ typedef struct RTVFSOPS
      */
     DECLCALLBACKMEMBER(int, pfnOpenRoot)(void *pvThis, PRTVFSDIR phVfsDir);
 
+    /**
+     * Checks whether a given range in the underlying medium
+     * is in use by the virtual filesystem.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific data.
+     * @param   off         Start offset to check.
+     * @param   cb          Number of bytes to check.
+     * @param   pfUsed      Where to store whether the given range is in use.
+     */
+    DECLCALLBACKMEMBER(int, pfnIsRangeInUse)(void *pvThis, RTFOFF off, size_t cb,
+                                             bool *pfUsed);
+
     /** @todo There will be more methods here to optimize opening and
      *        querying. */
 
@@ -219,6 +232,23 @@ typedef RTVFSOPS const *PCRTVFSOPS;
 #define RTVFSOPS_FEAT_ATTACH        RT_BIT_32(0)
 /** @}  */
 
+/**
+ * Creates a new VFS handle.
+ *
+ * @returns IPRT status code
+ * @param   pVfs Ops            The VFS operations.
+ * @param   cbInstance          The size of the instance data.
+ * @param   hVfs                The VFS handle to associate this VFS with.
+ *                              NIL_VFS is ok.
+ * @param   hLock               Handle to a custom lock to be used with the new
+ *                              object.  The reference is consumed.  NIL and
+ *                              special lock handles are fine.
+ * @param   phVfs               Where to return the new handle.
+ * @param   ppvInstance         Where to return the pointer to the instance data
+ *                              (size is @a cbInstance).
+ */
+RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
+                     PRTVFS phVfs, void **ppvInstance);
 
 /**
  * The basis for all virtual file system objects except RTVFS.

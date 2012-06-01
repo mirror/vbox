@@ -211,6 +211,21 @@ static DECLCALLBACK(void) rtDvmFmtMbrClose(RTDVMFMT hVolMgrFmt)
     RTMemFree(pThis);
 }
 
+static DECLCALLBACK(int) rtDvmFmtMbrQueryRangeUse(RTDVMFMT hVolMgrFmt,
+                                                  uint64_t off, uint64_t cbRange,
+                                                  bool *pfUsed)
+{
+    PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
+
+    /* MBR uses the first sector only. */
+    if (off < 512)
+        *pfUsed = true;
+    else
+        *pfUsed = false;
+
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(uint32_t) rtDvmFmtMbrGetValidVolumes(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
@@ -398,6 +413,8 @@ RTDVMFMTOPS g_rtDvmFmtMbr =
     rtDvmFmtMbrInitialize,
     /* pfnClose */
     rtDvmFmtMbrClose,
+    /* pfnQueryRangeUse */
+    rtDvmFmtMbrQueryRangeUse,
     /* pfnGetValidVolumes */
     rtDvmFmtMbrGetValidVolumes,
     /* pfnGetMaxVolumes */

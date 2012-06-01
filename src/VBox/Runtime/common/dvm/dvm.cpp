@@ -468,7 +468,6 @@ RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb,
                                      bool *pfAllocated)
 {
     int rc = VINF_SUCCESS;
-    bool fAllocated = false;
     PRTDVMINTERNAL       pThis = hVolMgr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(pfAllocated, VERR_INVALID_POINTER);
@@ -477,59 +476,74 @@ RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb,
     AssertReturn(off + cb <= pThis->DvmDisk.cbDisk * pThis->DvmDisk.cbSector,
                  VERR_INVALID_PARAMETER);
 
-    while (   cb > 0
-           && !fAllocated)
+    /* Check whether the range is inuse by the volume manager metadata first. */
+    rc = pThis->pDvmFmtOps->pfnQueryRangeUse(pThis->hVolMgrFmt, off, cb, pfAllocated);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (!*pfAllocated)
     {
-        PRTDVMVOLUMEINTERNAL pVol;
-        bool fVolFound = false;
-        uint64_t cbIntersect;
-        uint64_t offVol;
+        bool fAllocated = false;
 
-        /*
-         * Search through all volumes. It is not possible to
-         * get all start sectors and sizes of all volumes here
-         * because volumes can be scattered around the disk for certain formats.
-         * Linux LVM is one example, extents of logical volumes don't need to be
-         * contigous on the medium.
-         */
-        RTListForEach(&pThis->VolumeList, pVol, RTDVMVOLUMEINTERNAL, VolumeNode)
+        while (   cb > 0
+               && !fAllocated)
         {
-            bool fIntersect = pThis->pDvmFmtOps->pfnVolumeIsRangeIntersecting(pVol->hVolFmt, off,
-                                                                              cb, &offVol,
-                                                                              &cbIntersect);
-            if (fIntersect)
+            PRTDVMVOLUMEINTERNAL pVol;
+            bool fVolFound = false;
+            uint64_t cbIntersect;
+            uint64_t offVol;
+
+            /*
+             * Search through all volumes. It is not possible to
+             * get all start sectors and sizes of all volumes here
+             * because volumes can be scattered around the disk for certain formats.
+             * Linux LVM is one example, extents of logical volumes don't need to be
+             * contigous on the medium.
+             */
+            RTListForEach(&pThis->VolumeList, pVol, RTDVMVOLUMEINTERNAL, VolumeNode)
             {
-                fVolFound = true;
-                if (pVol->pfnQueryBlockStatus)
+                bool fIntersect = pThis->pDvmFmtOps->pfnVolumeIsRangeIntersecting(pVol->hVolFmt, off,
+                                                                                  cb, &offVol,
+                                                                                  &cbIntersect);
+                if (fIntersect)
                 {
-                    bool fVolAllocated = true;
+                    fVolFound = true;
+                    if (pVol->pfnQueryBlockStatus)
+                    {
+                        bool fVolAllocated = true;
 
-                    rc = pVol->pfnQueryBlockStatus(pVol->pvUser, offVol, cbIntersect,
-                                                   &fVolAllocated);
-                    if (RT_FAILURE(rc))
-                        break;
+                        rc = pVol->pfnQueryBlockStatus(pVol->pvUser, offVol, cbIntersect,
+                                                       &fVolAllocated);
+                        if (RT_FAILURE(rc))
+                            break;
+                        else if (fVolAllocated)
+                        {
+                            fAllocated = true;
+                            break;
+                        }
+                    }
+                    else if (!(pThis->fFlags & DVM_FLAGS_NO_STATUS_CALLBACK_MARK_AS_UNUSED))
+                        fAllocated = true;
+                    /* else, flag is set, continue. */
+
+                    cb  -= cbIntersect;
+                    off += cbIntersect;
+                    break;
                 }
-                else if (!(pThis->fFlags & DVM_FLAGS_NO_STATUS_CALLBACK_MARK_AS_UNUSED))
-                    fAllocated = true;
-                /* else, flag is set, continue. */
+            }
 
-                cb  -= cbIntersect;
-                off += cbIntersect;
-                break;
+            if (!fVolFound)
+            {
+                if (pThis->fFlags & DVM_FLAGS_UNUSED_SPACE_MARK_AS_USED)
+                    fAllocated = true;
+
+                cb  -= pThis->DvmDisk.cbSector;
+                off += pThis->DvmDisk.cbSector;
             }
         }
 
-        if (!fVolFound)
-        {
-            if (pThis->fFlags & DVM_FLAGS_UNUSED_SPACE_MARK_AS_USED)
-                fAllocated = true;
-
-            cb  -= pThis->DvmDisk.cbSector;
-            off += pThis->DvmDisk.cbSector;
-        }
+        *pfAllocated = fAllocated;
     }
-
-    *pfAllocated = fAllocated;
 
     return rc;
 }

@@ -30,127 +30,57 @@
 #include <iprt/types.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/vfslowlevel.h>
 #include "internal/magics.h"
 
 RT_C_DECLS_BEGIN
 
-/** A filesystem format handle. */
-typedef struct RTFILESYSTEMFMTINT   *RTFILESYSTEMFMT;
-/** Pointer to a filesystem format handle. */
-typedef RTFILESYSTEMFMT             *PRTFILESYSTEMFMT;
-/** NIL filesystem format handle. */
-#define NIL_RTFILESYSTEMFMT         ((RTFILESYSTEMFMT)~0)
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 
-/** A medium handle. */
-typedef struct RTFILESYSTEMMEDIUMINT *RTFILESYSTEMMEDIUM;
-/** Pointer to a medium handle. */
-typedef RTFILESYSTEMMEDIUM *PRTFILESYSTEMMEDIUM;
+/** Filesystem format specific initialization structure. */
+typedef DECLCALLBACK(int) FNRTFILESYSTEMINIT(void *pvThis, RTVFSFILE hVfsFile);
+/** Pointer to a format specific initialization structure. */
+typedef FNRTFILESYSTEMINIT *PFNRTFILESYSTEMINIT;
 
-/** Score to indicate that the backend can't handle the format at all */
 #define RTFILESYSTEM_MATCH_SCORE_UNSUPPORTED 0
-/** Score to indicate that a backend supports the format
- * but there can be other backends. */
-#define RTFILESYSTEM_MATCH_SCORE_SUPPORTED   (UINT32_MAX/2)
-/** Score to indicate a perfect match. */
-#define RTFILESYSTEM_MATCH_SCORE_PERFECT     UINT32_MAX
+#define RTFILESYSTEM_MATCH_SCORE_SUPPORTED UINT32_MAX
 
 /**
- * Filesystem format operations.
+ * Filesystem descriptor.
  */
-typedef struct RTFILESYSTEMFMTOPS
+typedef struct RTFILESYSTEMDESC
 {
-    /** Name of the format. */
-    const char *pcszFmt;
+    /** Size of the filesystem specific state in bytes. */
+    size_t        cbFs;
+    /** Pointer to the VFS vtable. */
+    RTVFSOPS      VfsOps;
 
     /**
-     * Probes the given disk for known structures.
+     * Probes the underlying for a known filesystem.
      *
      * @returns IPRT status code.
-     * @param   hMedium          Medium handle.
-     * @param   puScore          Where to store the match score on success.
+     * @param   hVfsFile    VFS file handle of the underlying medium.
+     * @param   puScore     Where to store the match score on success.
      */
-    DECLCALLBACKMEMBER(int, pfnProbe)(RTFILESYSTEMMEDIUM hMedium, uint32_t *puScore);
+    DECLCALLBACKMEMBER(int, pfnProbe) (RTVFSFILE hVfsFile, uint32_t *puScore);
 
     /**
-     * Opens the format to set up all structures.
+     * Initializes the given filesystem state.
      *
      * @returns IPRT status code.
-     * @param   hMedium          Medium handle.
-     * @param   phFileSysFmt     Where to store the filesystem format instance on success.
+     * @param   pvThis      Uninitialized filesystem state.
+     * @param   hVfsFile    VFS file handle of the underlying medium.
      */
-    DECLCALLBACKMEMBER(int, pfnOpen)(RTFILESYSTEMMEDIUM hMedium, PRTFILESYSTEMFMT phFsFmt);
+    DECLCALLBACKMEMBER(int, pfnInit) (void *pvThis, RTVFSFILE hVfsFile);
 
-    /**
-     * Closes the filesystem format.
-     *
-     * @returns IPRT status code.
-     * @param   hFsFmt           The format specific filesystem handle.
-     */
-    DECLCALLBACKMEMBER(int, pfnClose)(RTFILESYSTEMFMT hFsFmt);
+} RTFILESYSTEMDESC;
+/** Pointer to a filesystem descriptor. */
+typedef RTFILESYSTEMDESC *PRTFILESYSTEMDESC;
+typedef const RTFILESYSTEMDESC *PCRTFILESYSTEMDESC;
 
-    /**
-     * Returns block size of the given filesystem.
-     *
-     * @returns Block size of filesystem.
-     * @param   hFsFmt           The format specific filesystem handle.
-     */
-    DECLCALLBACKMEMBER(uint64_t, pfnGetBlockSize)(RTFILESYSTEMFMT hFsFmt);
-
-    /**
-     * Query the use of the given range in the filesystem.
-     *
-     * @returns IPRT status code.
-     * @param   hFsFmt           The format specific filesystem handle.
-     * @param   offStart         Start offset to check.
-     * @param   cb               Size of the range to check.
-     * @param   pfUsed           Where to store whether the range is in use
-     *                           by the filesystem.
-     */
-    DECLCALLBACKMEMBER(int, pfnQueryRangeUse)(RTFILESYSTEMFMT hFsFmt, uint64_t offStart,
-                                              size_t cb, bool *pfUsed);
-
-} RTFILESYSTEMFMTOPS;
-/** Pointer to a filesystem format ops table. */
-typedef RTFILESYSTEMFMTOPS *PRTFILESYSTEMFMTOPS;
-/** Pointer to a const filesystem format ops table. */
-typedef const RTFILESYSTEMFMTOPS *PCRTFILESYSTEMFMTOPS;
-
-/** Converts a LBA number to the byte offset. */
-#define RTFILESYSTEM_LBA2BYTE(lba, disk) ((lba) * (disk)->cbSector)
-/** Converts a Byte offset to the LBA number. */
-#define RTFILESYSTEM_BYTE2LBA(off, disk) ((off) / (disk)->cbSector)
-
-/**
- * Return size of the medium in bytes.
- *
- * @returns Size of the medium in bytes.
- * @param   hMedium    The medium handle.
- */
-DECLHIDDEN(uint64_t) rtFilesystemMediumGetSize(RTFILESYSTEMMEDIUM hMedium);
-
-/**
- * Read from the medium at the given offset.
- *
- * @returns IPRT status code.
- * @param   hMedium  The medium handle to read from.
- * @param   off      Start offset.
- * @param   pvBuf    Destination buffer.
- * @param   cbRead   How much to read.
- */
-DECLHIDDEN(int) rtFilesystemMediumRead(RTFILESYSTEMMEDIUM hMedium, uint64_t off,
-                                       void *pvBuf, size_t cbRead);
-
-/**
- * Write to the disk at the given offset.
- *
- * @returns IPRT status code.
- * @param   hMedium  The medium handle to write to.
- * @param   off      Start offset.
- * @param   pvBuf    Source buffer.
- * @param   cbWrite  How much to write.
- */
-DECLHIDDEN(int) rtFilesystemMediumWrite(RTFILESYSTEMMEDIUM hMedium, uint64_t off,
-                                        const void *pvBuf, size_t cbWrite);
+extern DECLHIDDEN(RTFILESYSTEMDESC const) g_rtFsExt;
 
 RT_C_DECLS_END
 
