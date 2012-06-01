@@ -8642,8 +8642,8 @@ ASM_START
     pop es
     pop ds
 ASM_END
-          } else if (manuf == 0x65746E49) {
-            // Found Intel PXE ROM
+          } else { 
+            //Found PNP BIOS 
             print_boot_device(bootcd, bootlan, bootdrv);
 ASM_START
     push ds
