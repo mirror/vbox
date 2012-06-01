@@ -254,7 +254,7 @@ typedef struct VGAState {
     /** end-of-common-state-marker */
     uint32_t                    u32Marker;
     /** The physical address the VRAM was assigned. */
-    RTGCPHYS32                  GCPhysVRAM;
+    RTGCPHYS                    GCPhysVRAM;
     /** The R0 vram pointer... */
     R0PTRTYPE(uint8_t *)        vram_ptrR0;
     /** Pointer to the GC vram mapping. */
@@ -273,7 +273,7 @@ typedef struct VGAState {
     bool                        fRenderVRAM;
     bool                        Padding1[2];
 
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 32
     uint32_t                    Padding2;
 #endif
 
