@@ -3821,7 +3821,7 @@ static void vmR3SetErrorWorkerDoCall(PVM pVM, PVMATERROR pCur, int rc, RT_SRC_PO
 VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
-    AssertReleaseMsgFailed(("And we have a winner! You get to implement Ring-0 and GC VMSetErrorV! Contracts!\n"));
+    AssertReleaseMsgFailed(("And we have a winner! You get to implement Ring-0 and GC VMSetErrorV! Congrats!\n"));
 
     /*
      * Unpack the error (if we managed to format one).
