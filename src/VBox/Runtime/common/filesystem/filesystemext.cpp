@@ -231,7 +231,7 @@ static int rtFsExtLoadBlkGrpDesc(PRTFILESYSTEMEXT pThis, uint32_t iBlkGrp)
 }
 
 static bool rtFsExtIsBlockRangeInUse(PRTFILESYSTEMEXTBLKGRP pBlkGrpDesc,
-                                     uint32_t offBlockStart, uint32_t cBlocks)
+                                     uint32_t offBlockStart, size_t cBlocks)
 {
     bool fUsed = false;
 
