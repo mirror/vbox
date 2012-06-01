@@ -29,7 +29,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/filesystem.h>
-
+#include <iprt/vfs.h>
 #include <iprt/err.h>
 #include <iprt/test.h>
 #include <iprt/file.h>
@@ -40,51 +40,41 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 
-static int filesystemDiskRead(void *pvUser, uint64_t off, void *pvBuf, size_t cbRead)
-{
-    RTFILE hFile = (RTFILE)pvUser;
-
-    return RTFileReadAt(hFile, off, pvBuf, cbRead, NULL);
-}
-
-static int filesystemDiskWrite(void *pvUser, uint64_t off, const void *pvBuf, size_t cbWrite)
-{
-    RTFILE hFile = (RTFILE)pvUser;
-
-    return RTFileWriteAt(hFile, off, pvBuf, cbWrite, NULL);
-}
-
-static int tstRTFilesystem(RTTEST hTest, RTFILE hFile, uint64_t cb)
+static int tstRTFilesystem(RTTEST hTest, RTVFSFILE hVfsFile)
 {
     int rc = VINF_SUCCESS;
+    RTVFS hVfs = NIL_RTVFS;
 
     RTTestSubF(hTest, "Create filesystem object");
-    RTFILESYSTEM hFs;
-    rc = RTFilesystemOpen(&hFs, filesystemDiskRead, filesystemDiskWrite, cb, 512, hFile, 0 /* fFlags */);
+
+    rc = RTFilesystemVfsFromFile(hVfsFile, &hVfs);
     if (RT_FAILURE(rc))
     {
-        RTTestIFailed("RTFilesystemOpen -> %Rrc", rc);
+        RTTestIFailed("RTFilesystemVfsFromFile -> %Rrc", rc);
         return rc;
     }
-
-    RTTestIPrintf(RTTESTLVL_ALWAYS, "Successfully opened filesystem with format: %s.\n",
-                  RTFilesystemGetFormat(hFs));
-    RTTestIPrintf(RTTESTLVL_ALWAYS, "Block size is: %llu.\n",
-                  RTFilesystemGetBlockSize(hFs));
 
     /* Check all blocks. */
     uint64_t off = 0;
     uint32_t cBlocksUsed = 0;
     uint32_t cBlocksUnused = 0;
+    uint64_t cbFs = 0;
 
-    while (off < cb)
+    rc = RTVfsFileGetSize(hVfsFile, &cbFs);
+    if (RT_FAILURE(rc))
+    {
+        RTTestIFailed("RTVfsFileGetSize -> %Rrc", rc);
+        return rc;
+    }
+
+    while (off < cbFs)
     {
         bool fUsed = false;
 
-        rc = RTFilesystemQueryRangeUse(hFs, off, 1024, &fUsed);
+        rc = RTVfsIsRangeInUse(hVfs, off, 1024, &fUsed);
         if (RT_FAILURE(rc))
         {
-            RTTestIFailed("RTFileSysQueryRangeUse -> %Rrc", rc);
+            RTTestIFailed("RTVfsIsRangeInUse -> %Rrc", rc);
             break;
         }
 
@@ -100,7 +90,7 @@ static int tstRTFilesystem(RTTEST hTest, RTFILE hFile, uint64_t cb)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%u blocks used and %u blocks unused\n",
                       cBlocksUsed, cBlocksUnused);
 
-    RTFilesystemRelease(hFs);
+    RTVfsRelease(hVfs);
 
     return rc;
 }
@@ -127,7 +117,7 @@ int main(int argc, char **argv)
 
     /* Open image. */
     RTFILE hFile;
-    uint64_t cb = 0;
+    RTVFSFILE hVfsFile;
     rc = RTFileOpen(&hFile, argv[1], RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ);
     if (RT_FAILURE(rc))
     {
@@ -135,17 +125,18 @@ int main(int argc, char **argv)
         return RTTestSummaryAndDestroy(hTest);
     }
 
-    rc = RTFileGetSize(hFile, &cb);
-    if (   RT_FAILURE(rc)
-        || cb % 512 != 0) /* Assume 512 byte sector size. */
+    rc = RTVfsFileFromRTFile(hFile, 0, false, &hVfsFile);
+    if (RT_FAILURE(rc))
     {
-        RTTestIFailed("RTFileGetSize -> %Rrc", rc);
+        RTTestIFailed("RTVfsFileFromRTFile -> %Rrc", rc);
         return RTTestSummaryAndDestroy(hTest);
     }
 
-    rc = tstRTFilesystem(hTest, hFile, cb);
+    rc = tstRTFilesystem(hTest, hVfsFile);
 
     RTTESTI_CHECK(rc == VINF_SUCCESS);
+
+    RTVfsFileRelease(hVfsFile);
 
     /*
      * Summary

@@ -121,6 +121,20 @@ typedef struct RTDVMFMTOPS
     DECLCALLBACKMEMBER(void, pfnClose)(RTDVMFMT hVolMgrFmt);
 
     /**
+     * Returns whether the given range is in use by the volume manager.
+     *
+     * @returns IPRT status code.
+     * @param   hVolMgrFmt      The format specific volume manager handle.
+     * @param   offStart        Start offset of the range.
+     * @param   cbRange         Size of the range to check in bytes.
+     * @param   pfUsed          Where to store whether the range is in use by the
+     *                          volume manager.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryRangeUse)(RTDVMFMT hVolMgrFmt,
+                                              uint64_t off, uint64_t cbRange,
+                                              bool *pfUsed);
+
+    /**
      * Gets the number of valid volumes in the map.
      *
      * @returns Number of valid volumes in the map or UINT32_MAX on failure.

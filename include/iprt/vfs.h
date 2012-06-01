@@ -117,6 +117,17 @@ RTDECL(uint32_t)    RTVfsGetAttachmentCount(RTVFS hVfs);
 RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *phVfsAttached, uint32_t *pfFlags,
                                        char *pszMountPoint, size_t cbMountPoint);
 
+/**
+ * Checks whether a given range is in use by the virtual filesystem.
+ *
+ * @returns IPRT status code.
+ * @param   hVfs        VFS handle.
+ * @param   off         Start offset to check.
+ * @param   cb          Number of bytes to check.
+ * @param   pfUsed      Where to store the result.
+ */
+RTDECL(int)         RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb,
+                                      bool *pfUsed);
 
 /** @defgroup grp_vfs_dir           VFS Base Object API
  * @{
@@ -520,6 +531,7 @@ RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pOb
  *          RTSocketRead
  */
 RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, bool fBlocking, size_t *pcbRead);
+RTDECL(int)         RTVfsIoStrmReadAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, void *pvBuf, size_t cbToRead, bool fBlocking, size_t *pcbRead);
 
 /**
  * Write bytes to the I/O stream.
@@ -538,6 +550,7 @@ RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t c
  *          RTSocketWrite
  */
 RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, bool fBlocking, size_t *pcbWritten);
+RTDECL(int)         RTVfsIoStrmWriteAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, const void *pvBuf, size_t cbToWrite, bool fBlocking, size_t *pcbWritten);
 
 /**
  * Reads bytes from the I/O stream into a scatter buffer.

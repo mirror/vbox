@@ -92,7 +92,6 @@ static DECLCALLBACK(int) rtDvmVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
     int rc = VINF_SUCCESS;
 
     Assert(pSgBuf->cSegs == 1);
-    Assert(off < 0);
     NOREF(fBlocking);
 
     /*
@@ -148,7 +147,6 @@ static DECLCALLBACK(int) rtDvmVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
     int rc = VINF_SUCCESS;
 
     Assert(pSgBuf->cSegs == 1);
-    Assert(off < 0);
     NOREF(fBlocking);
 
     /*

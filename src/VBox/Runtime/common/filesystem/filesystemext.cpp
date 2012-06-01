@@ -34,6 +34,7 @@
 #include <iprt/mem.h>
 #include <iprt/filesystem.h>
 #include <iprt/string.h>
+#include <iprt/vfs.h>
 #include "internal/filesystem.h"
 
 
@@ -150,7 +151,7 @@ typedef BlockGroupDesc *PBlockGroupDesc;
 /**
  * Cached block group descriptor data.
  */
-typedef struct RTFILESYSTEMFMTEXTBLKGRP
+typedef struct RTFILESYSTEMEXTBLKGRP
 {
     /** Start offset (in bytes and from the start of the disk). */
     uint64_t    offStart;
@@ -159,17 +160,17 @@ typedef struct RTFILESYSTEMFMTEXTBLKGRP
     /** Block bitmap - variable in size (depends on the block size
      * and number of blocks per group). */
     uint8_t     abBlockBitmap[1];
-} RTFILESYSTEMFMTEXTBLKGRP;
+} RTFILESYSTEMEXTBLKGRP;
 /** Pointer to block group descriptor data. */
-typedef RTFILESYSTEMFMTEXTBLKGRP *PRTFILESYSTEMFMTEXTBLKGRP;
+typedef RTFILESYSTEMEXTBLKGRP *PRTFILESYSTEMEXTBLKGRP;
 
 /**
  * Ext2/3 filesystem data.
  */
-typedef struct RTFILESYSTEMFMTINT
+typedef struct RTFILESYSTEMEXT
 {
-    /** Handle to the underlying medium. */
-    RTFILESYSTEMMEDIUM        hMedium;
+    /** VFS file handle. */
+    RTVFSFILE                 hVfsFile;
     /** Block number of the superblock. */
     uint32_t                  iSbBlock;
     /** Size of one block. */
@@ -179,10 +180,10 @@ typedef struct RTFILESYSTEMFMTINT
     /** Number of blocks groups in the volume. */
     unsigned                  cBlockGroups;
     /** Cached block group descriptor data. */
-    PRTFILESYSTEMFMTEXTBLKGRP pBlkGrpDesc;
-} RTFILESYSTEMFMTINT;
+    PRTFILESYSTEMEXTBLKGRP    pBlkGrpDesc;
+} RTFILESYSTEMEXT;
 /** Pointer to the ext filesystem data. */
-typedef RTFILESYSTEMFMTINT *PRTFILESYSTEMFMTINT;
+typedef RTFILESYSTEMEXT *PRTFILESYSTEMEXT;
 
 /*******************************************************************************
 *   Methods                                                                    *
@@ -195,10 +196,10 @@ typedef RTFILESYSTEMFMTINT *PRTFILESYSTEMFMTINT;
  * @param   pThis    EXT filesystem instance data.
  * @param   iBlkGrp  Block group number to load.
  */
-static int rtFilesystemExtLoadBlkGrpDesc(PRTFILESYSTEMFMTINT pThis, uint32_t iBlkGrp)
+static int rtFsExtLoadBlkGrpDesc(PRTFILESYSTEMEXT pThis, uint32_t iBlkGrp)
 {
     int rc = VINF_SUCCESS;
-    PRTFILESYSTEMFMTEXTBLKGRP pBlkGrpDesc = pThis->pBlkGrpDesc;
+    PRTFILESYSTEMEXTBLKGRP pBlkGrpDesc = pThis->pBlkGrpDesc;
     uint64_t offRead = (pThis->iSbBlock + 1) * pThis->cbBlock;
     BlockGroupDesc BlkDesc;
     size_t cbBlockBitmap;
@@ -209,19 +210,19 @@ static int rtFilesystemExtLoadBlkGrpDesc(PRTFILESYSTEMFMTINT pThis, uint32_t iBl
 
     if (!pBlkGrpDesc)
     {
-        size_t cbBlkDesc = RT_OFFSETOF(RTFILESYSTEMFMTEXTBLKGRP, abBlockBitmap[cbBlockBitmap]);
-        pBlkGrpDesc = (PRTFILESYSTEMFMTEXTBLKGRP)RTMemAllocZ(cbBlkDesc);
+        size_t cbBlkDesc = RT_OFFSETOF(RTFILESYSTEMEXTBLKGRP, abBlockBitmap[cbBlockBitmap]);
+        pBlkGrpDesc = (PRTFILESYSTEMEXTBLKGRP)RTMemAllocZ(cbBlkDesc);
         if (!pBlkGrpDesc)
             return VERR_NO_MEMORY;
     }
 
-    rc = rtFilesystemMediumRead(pThis->hMedium, offRead, &BlkDesc, sizeof(BlkDesc));
+    rc = RTVfsFileReadAt(pThis->hVfsFile, offRead, &BlkDesc, sizeof(BlkDesc), NULL);
     if (RT_SUCCESS(rc))
     {
         pBlkGrpDesc->offStart = pThis->iSbBlock + (uint64_t)iBlkGrp * pThis->cBlocksPerGroup * pThis->cbBlock;
         pBlkGrpDesc->offLast  = pBlkGrpDesc->offStart + pThis->cBlocksPerGroup * pThis->cbBlock;
-        rc = rtFilesystemMediumRead(pThis->hMedium, BlkDesc.offBlockBitmap * pThis->cbBlock,
-                                    &pBlkGrpDesc->abBlockBitmap[0], cbBlockBitmap);
+        rc = RTVfsFileReadAt(pThis->hVfsFile, BlkDesc.offBlockBitmap * pThis->cbBlock,
+                             &pBlkGrpDesc->abBlockBitmap[0], cbBlockBitmap, NULL);
     }
 
     pThis->pBlkGrpDesc = pBlkGrpDesc;
@@ -229,97 +230,8 @@ static int rtFilesystemExtLoadBlkGrpDesc(PRTFILESYSTEMFMTINT pThis, uint32_t iBl
     return rc;
 }
 
-static DECLCALLBACK(int) rtFilesystemExtProbe(RTFILESYSTEMMEDIUM hMedium, uint32_t *puScore)
-{
-    int rc = VINF_SUCCESS;
-    uint64_t cbMedium = rtFilesystemMediumGetSize(hMedium);
-
-    *puScore = RTFILESYSTEM_MATCH_SCORE_UNSUPPORTED;
-
-    if (cbMedium >= 2*sizeof(ExtSuperBlock))
-    {
-        ExtSuperBlock SuperBlock;
-
-        rc = rtFilesystemMediumRead(hMedium, 1024, &SuperBlock, sizeof(ExtSuperBlock));
-        if (RT_SUCCESS(rc))
-        {
-#if defined(RT_BIGENDIAN)
-            /** @todo: Convert to host endianess. */
-#endif
-            if (SuperBlock.u16Signature == RTFILESYSTEM_EXT2_SIGNATURE)
-                *puScore = RTFILESYSTEM_MATCH_SCORE_SUPPORTED;
-        }
-    }
-
-    return rc;
-}
-
-static DECLCALLBACK(int) rtFilesystemExtOpen(RTFILESYSTEMMEDIUM hMedium, PRTFILESYSTEMFMT phFsFmt)
-{
-    int rc = VINF_SUCCESS;
-    PRTFILESYSTEMFMTINT pThis;
-    ExtSuperBlock SuperBlock;
-
-    pThis = (PRTFILESYSTEMFMTINT)RTMemAllocZ(sizeof(RTFILESYSTEMFMTINT));
-    if (!pThis)
-        return VERR_NO_MEMORY;
-
-    pThis->hMedium     = hMedium;
-    pThis->pBlkGrpDesc = NULL;
-
-    rc = rtFilesystemMediumRead(hMedium, 1024, &SuperBlock, sizeof(ExtSuperBlock));
-    if (RT_SUCCESS(rc))
-    {
-#if defined(RT_BIGENDIAN)
-        /** @todo: Convert to host endianess. */
-#endif
-        if (SuperBlock.u16FilesystemState == RTFILESYSTEM_EXT2_STATE_ERRORS)
-            rc = VERR_FILESYSTEM_CORRUPT;
-        else
-        {
-            pThis->iSbBlock = SuperBlock.iBlockOfSuperblock;
-            pThis->cbBlock = 1024 << SuperBlock.cBitsShiftLeftBlockSize;
-            pThis->cBlocksPerGroup = SuperBlock.cBlocksPerGroup;
-            pThis->cBlockGroups = SuperBlock.cBlocksTotal / pThis->cBlocksPerGroup;
-
-            /* Load first block group descriptor. */
-            rc = rtFilesystemExtLoadBlkGrpDesc(pThis, 0);
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-        *phFsFmt = pThis;
-    else
-    {
-        if (pThis->pBlkGrpDesc)
-            RTMemFree(pThis->pBlkGrpDesc);
-        RTMemFree(pThis);
-    }
-
-    return rc;
-}
-
-static DECLCALLBACK(int) rtFilesystemExtClose(RTFILESYSTEMFMT hFsFmt)
-{
-    PRTFILESYSTEMFMTINT pThis = hFsFmt;
-
-    if (pThis->pBlkGrpDesc)
-        RTMemFree(pThis->pBlkGrpDesc);
-    RTMemFree(pThis);
-
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(uint64_t) rtFilesystemExtGetBlockSize(RTFILESYSTEMFMT hFsFmt)
-{
-    PRTFILESYSTEMFMTINT pThis = hFsFmt;
-
-    return pThis->cbBlock;
-}
-
-static bool rtFilesystemExtIsBlockRangeInUse(PRTFILESYSTEMFMTEXTBLKGRP pBlkGrpDesc,
-                                             uint32_t offBlockStart,
-                                             uint32_t cBlocks)
+static bool rtFsExtIsBlockRangeInUse(PRTFILESYSTEMEXTBLKGRP pBlkGrpDesc,
+                                     uint32_t offBlockStart, uint32_t cBlocks)
 {
     bool fUsed = false;
 
@@ -341,11 +253,89 @@ static bool rtFilesystemExtIsBlockRangeInUse(PRTFILESYSTEMFMTEXTBLKGRP pBlkGrpDe
     return fUsed;
 }
 
-static DECLCALLBACK(int) rtFilesystemExtQueryRangeUse(RTFILESYSTEMFMT hFsFmt, uint64_t offStart,
-                                                      size_t cb, bool *pfUsed)
+
+static DECLCALLBACK(int) rtFsExtProbe(RTVFSFILE hVfsFile, uint32_t *puScore)
 {
     int rc = VINF_SUCCESS;
-    PRTFILESYSTEMFMTINT pThis = hFsFmt;
+    uint64_t cbMedium = 0;
+
+    *puScore = RTFILESYSTEM_MATCH_SCORE_UNSUPPORTED;
+
+    rc = RTVfsFileGetSize(hVfsFile, &cbMedium);
+    if (RT_SUCCESS(rc))
+    {
+        if (cbMedium >= 2*sizeof(ExtSuperBlock))
+        {
+            ExtSuperBlock SuperBlock;
+
+            rc = RTVfsFileReadAt(hVfsFile, 1024, &SuperBlock, sizeof(ExtSuperBlock), NULL);
+            if (RT_SUCCESS(rc))
+            {
+#if defined(RT_BIGENDIAN)
+                /** @todo: Convert to host endianess. */
+#endif
+                if (SuperBlock.u16Signature == RTFILESYSTEM_EXT2_SIGNATURE)
+                    *puScore = RTFILESYSTEM_MATCH_SCORE_SUPPORTED;
+            }
+        }
+    }
+
+    return rc;
+}
+
+static DECLCALLBACK(int) rtFsExtInit(void *pvThis, RTVFSFILE hVfsFile)
+{
+    int rc = VINF_SUCCESS;
+    PRTFILESYSTEMEXT pThis = (PRTFILESYSTEMEXT)pvThis;
+    ExtSuperBlock SuperBlock;
+
+    pThis->hVfsFile    = hVfsFile;
+    pThis->pBlkGrpDesc = NULL;
+
+    rc = RTVfsFileReadAt(hVfsFile, 1024, &SuperBlock, sizeof(ExtSuperBlock), NULL);
+    if (RT_SUCCESS(rc))
+    {
+#if defined(RT_BIGENDIAN)
+        /** @todo: Convert to host endianess. */
+#endif
+        if (SuperBlock.u16FilesystemState == RTFILESYSTEM_EXT2_STATE_ERRORS)
+            rc = VERR_FILESYSTEM_CORRUPT;
+        else
+        {
+            pThis->iSbBlock = SuperBlock.iBlockOfSuperblock;
+            pThis->cbBlock = 1024 << SuperBlock.cBitsShiftLeftBlockSize;
+            pThis->cBlocksPerGroup = SuperBlock.cBlocksPerGroup;
+            pThis->cBlockGroups = SuperBlock.cBlocksTotal / pThis->cBlocksPerGroup;
+
+            /* Load first block group descriptor. */
+            rc = rtFsExtLoadBlkGrpDesc(pThis, 0);
+        }
+    }
+
+    return rc;
+}
+
+static DECLCALLBACK(void) rtFsExtDestroy(void *pvThis)
+{
+    PRTFILESYSTEMEXT pThis = (PRTFILESYSTEMEXT)pvThis;
+
+    if (pThis->pBlkGrpDesc)
+        RTMemFree(pThis->pBlkGrpDesc);
+}
+
+static DECLCALLBACK(int) rtFsExtOpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static DECLCALLBACK(int) rtFsExtIsRangeInUse(void *pvThis, RTFOFF off, size_t cb,
+                                             bool *pfUsed)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t offStart = (uint64_t)off;
+    PRTFILESYSTEMEXT pThis = (PRTFILESYSTEMEXT)pvThis;
+
+    *pfUsed = false;
 
     while (cb > 0)
     {
@@ -359,17 +349,15 @@ static DECLCALLBACK(int) rtFilesystemExtQueryRangeUse(RTFILESYSTEMFMT hFsFmt, ui
             || offStart > pThis->pBlkGrpDesc->offLast)
         {
             /* Load new block descriptor. */
-            rc = rtFilesystemExtLoadBlkGrpDesc(pThis, iBlockGroup);
+            rc = rtFsExtLoadBlkGrpDesc(pThis, iBlockGroup);
             if (RT_FAILURE(rc))
                 break;
         }
 
         cbThis = RT_MIN(cb, pThis->pBlkGrpDesc->offLast - offStart + 1);
-        fUsed = rtFilesystemExtIsBlockRangeInUse(pThis->pBlkGrpDesc, offBlockRelStart,
-                                                 cbThis / pThis->cbBlock +
-                                                 cbThis % pThis->cbBlock
-                                                 ? 1
-                                                 : 0);
+        fUsed = rtFsExtIsBlockRangeInUse(pThis->pBlkGrpDesc, offBlockRelStart,
+                                         cbThis / pThis->cbBlock +
+                                         (cbThis % pThis->cbBlock ? 1 : 0));
 
         if (fUsed)
         {
@@ -377,26 +365,37 @@ static DECLCALLBACK(int) rtFilesystemExtQueryRangeUse(RTFILESYSTEMFMT hFsFmt, ui
             break;
         }
 
-        cb -= cbThis;
+        cb       -= cbThis;
         offStart += cbThis;
     }
 
     return rc;
 }
 
-RTFILESYSTEMFMTOPS g_rtFilesystemFmtExt =
+DECL_HIDDEN_CONST(RTFILESYSTEMDESC) const g_rtFsExt =
 {
-    /* pcszFmt */
-    "EXT",
-    /* pfnProbe */
-    rtFilesystemExtProbe,
-    /* pfnOpen */
-    rtFilesystemExtOpen,
-    /* pfnClose */
-    rtFilesystemExtClose,
-    /* pfnGetBlockSize */
-    rtFilesystemExtGetBlockSize,
-    /* pfnQueryRangeUse */
-    rtFilesystemExtQueryRangeUse
+    /** cbFs */
+    sizeof(RTFILESYSTEMEXT),
+    /** VfsOps */
+    {
+        /** uVersion. */
+        RTVFSOPS_VERSION,
+        /** fFeatures */
+        0,
+        /** pszName */
+        "ExtVfsOps",
+        /** pfnDestroy */
+        rtFsExtDestroy,
+        /** pfnOpenRoot */
+        rtFsExtOpenRoot,
+        /** pfnIsRangeInUse */
+        rtFsExtIsRangeInUse,
+        /** uEndMarker */
+        RTVFSOPS_VERSION
+    },
+    /** pfnProbe */
+    rtFsExtProbe,
+    /** pfnInit */
+    rtFsExtInit
 };
 
