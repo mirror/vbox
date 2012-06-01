@@ -369,7 +369,7 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
             case DBGCVAR_TYPE_HC_FLAT:
             {
                 DBGCVAR Var2;
-                rc = dbgcOpAddrFlat(pDbgc, &Var, &Var2);
+                rc = dbgcOpAddrFlat(pDbgc, &Var, DBGCVAR_CAT_ANY, &Var2);
                 if (RT_SUCCESS(rc))
                 {
                     /** @todo protect this!!! */
@@ -518,7 +518,7 @@ static DECLCALLBACK(int) dbgcHlpMemWrite(PDBGCCMDHLP pCmdHlp, PVM pVM, const voi
             {
                 /* convert to flat address */
                 DBGCVAR Var2;
-                rc = dbgcOpAddrFlat(pDbgc, &Var, &Var2);
+                rc = dbgcOpAddrFlat(pDbgc, &Var, DBGCVAR_CAT_ANY, &Var2);
                 if (RT_FAILURE(rc))
                 {
                     if (pcbWritten && *pcbWritten)

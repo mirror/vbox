@@ -36,11 +36,11 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
 
 static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcOpMult(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult);
@@ -243,7 +243,7 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpMinus\n"));
     *pResult = *pArg;
@@ -288,7 +288,7 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpPluss\n"));
     *pResult = *pArg;
@@ -322,7 +322,7 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBooleanNot\n"));
     *pResult = *pArg;
@@ -370,7 +370,7 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseNot\n"));
     *pResult = *pArg;
@@ -415,7 +415,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpVar: %s\n", pArg->u.pszString));
 
@@ -452,7 +452,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpRegister: %s\n", pArg->u.pszString));
 
@@ -462,6 +462,18 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
     if (   pArg->enmType != DBGCVAR_TYPE_STRING
         && pArg->enmType != DBGCVAR_TYPE_SYMBOL)
         return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+    /*
+     * If the desired result is a symbol, pass the argument along unmodified.
+     * This is a great help for "r @eax" and such, since it will be translated to "r eax".
+     */
+    if (enmCat == DBGCVAR_CAT_SYMBOL)
+    {
+        int rc = DBGFR3RegNmValidate(pDbgc->pVM, pDbgc->idCpu, pArg->u.pszString);
+        if (RT_SUCCESS(rc))
+            DBGCVAR_INIT_STRING(pResult, pArg->u.pszString);
+        return rc;
+    }
 
     /*
      * Get the register.
@@ -526,7 +538,7 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrFlat\n"));
     DBGCVARTYPE enmType = DBGCVAR_ISHCPOINTER(pArg->enmType) ? DBGCVAR_TYPE_HC_FLAT : DBGCVAR_TYPE_GC_FLAT;
@@ -544,7 +556,7 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrPhys\n"));
     DBGCVARTYPE enmType = DBGCVAR_ISHCPOINTER(pArg->enmType) ? DBGCVAR_TYPE_HC_PHYS : DBGCVAR_TYPE_GC_PHYS;
@@ -562,7 +574,7 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrPhys\n"));
     return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, DBGCVAR_TYPE_HC_PHYS, true /*fConvSyms*/, pResult);
@@ -579,7 +591,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
  * @param   pArg        The argument.
  * @param   pResult     Where to store the result.
  */
-DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrHost\n"));
     return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, DBGCVAR_TYPE_HC_FLAT, true /*fConvSyms*/, pResult);
@@ -777,7 +789,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
-                    rc = dbgcOpAddrFlat(pDbgc, pArg2, &Var);
+                    rc = dbgcOpAddrFlat(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     pResult->u.GCFlat += pArg2->u.GCFlat;
@@ -799,10 +811,10 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     pResult->u.GCFar.off += (RTGCPTR)pArg2->u.u64Number;
                     break;
                 default:
-                    rc = dbgcOpAddrFlat(pDbgc, pArg1, pResult);
+                    rc = dbgcOpAddrFlat(pDbgc, pArg1, DBGCVAR_CAT_ANY, pResult);
                     if (RT_FAILURE(rc))
                         return rc;
-                    rc = dbgcOpAddrFlat(pDbgc, pArg2, &Var);
+                    rc = dbgcOpAddrFlat(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     pResult->u.GCFlat += pArg2->u.GCFlat;
@@ -821,7 +833,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
-                    rc = dbgcOpAddrPhys(pDbgc, pArg2, &Var);
+                    rc = dbgcOpAddrPhys(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     if (Var.enmType != DBGCVAR_TYPE_GC_PHYS)
@@ -836,10 +848,10 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
          */
         case DBGCVAR_TYPE_HC_FLAT:
             *pResult = *pArg1;
-            rc = dbgcOpAddrHost(pDbgc, pArg2, &Var2);
+            rc = dbgcOpAddrHost(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var2);
             if (RT_FAILURE(rc))
                 return rc;
-            rc = dbgcOpAddrFlat(pDbgc, &Var2, &Var);
+            rc = dbgcOpAddrFlat(pDbgc, &Var2, DBGCVAR_CAT_ANY, &Var);
             if (RT_FAILURE(rc))
                 return rc;
             pResult->u.pvHCFlat = (char *)pResult->u.pvHCFlat + (uintptr_t)Var.u.pvHCFlat;
@@ -850,7 +862,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
          */
         case DBGCVAR_TYPE_HC_PHYS:
             *pResult = *pArg1;
-            rc = dbgcOpAddrHostPhys(pDbgc, pArg2, &Var);
+            rc = dbgcOpAddrHostPhys(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
             if (RT_FAILURE(rc))
                 return rc;
             pResult->u.HCPhys += Var.u.HCPhys;
@@ -975,7 +987,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
         }
         if (pOp)
         {
-            int rc = pOp(pDbgc, pArg1, &Sym1);
+            int rc = pOp(pDbgc, pArg1, DBGCVAR_CAT_ANY, &Sym1);
             if (RT_FAILURE(rc))
                 return rc;
             pArg1 = &Sym1;
@@ -1002,7 +1014,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
-                    rc = dbgcOpAddrFlat(pDbgc, pArg2, &Var);
+                    rc = dbgcOpAddrFlat(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     pResult->u.GCFlat -= pArg2->u.GCFlat;
@@ -1024,10 +1036,10 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     pResult->u.GCFar.off -= (RTGCPTR)pArg2->u.u64Number;
                     break;
                 default:
-                    rc = dbgcOpAddrFlat(pDbgc, pArg1, pResult);
+                    rc = dbgcOpAddrFlat(pDbgc, pArg1, DBGCVAR_CAT_ANY, pResult);
                     if (RT_FAILURE(rc))
                         return rc;
-                    rc = dbgcOpAddrFlat(pDbgc, pArg2, &Var);
+                    rc = dbgcOpAddrFlat(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     pResult->u.GCFlat -= pArg2->u.GCFlat;
@@ -1046,7 +1058,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
-                    rc = dbgcOpAddrPhys(pDbgc, pArg2, &Var);
+                    rc = dbgcOpAddrPhys(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     if (Var.enmType != DBGCVAR_TYPE_GC_PHYS)
@@ -1061,10 +1073,10 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
          */
         case DBGCVAR_TYPE_HC_FLAT:
             *pResult = *pArg1;
-            rc = dbgcOpAddrHost(pDbgc, pArg2, &Var2);
+            rc = dbgcOpAddrHost(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var2);
             if (RT_FAILURE(rc))
                 return rc;
-            rc = dbgcOpAddrFlat(pDbgc, &Var2, &Var);
+            rc = dbgcOpAddrFlat(pDbgc, &Var2, DBGCVAR_CAT_ANY, &Var);
             if (RT_FAILURE(rc))
                 return rc;
             pResult->u.pvHCFlat = (char *)pResult->u.pvHCFlat - (uintptr_t)Var.u.pvHCFlat;
@@ -1075,7 +1087,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
          */
         case DBGCVAR_TYPE_HC_PHYS:
             *pResult = *pArg1;
-            rc = dbgcOpAddrHostPhys(pDbgc, pArg2, &Var);
+            rc = dbgcOpAddrHostPhys(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
             if (RT_FAILURE(rc))
                 return rc;
             pResult->u.HCPhys -= Var.u.HCPhys;
