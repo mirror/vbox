@@ -711,15 +711,24 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                     CHECK_ERROR_RET(dev, COMGETTER(ProductId)(&usProductId), 1);
                     USHORT bcdRevision;
                     CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), 1);
+                    USHORT usPort;
+                    CHECK_ERROR_RET(dev, COMGETTER(Port)(&usPort), 1);
+                    USHORT usVersion;
+                    CHECK_ERROR_RET(dev, COMGETTER(Version)(&usVersion), 1);
+                    USHORT usPortVersion;
+                    CHECK_ERROR_RET(dev, COMGETTER(PortVersion)(&usPortVersion), 1);
 
                     RTPrintf("UUID:               %s\n"
                              "VendorId:           %#06x (%04X)\n"
                              "ProductId:          %#06x (%04X)\n"
-                             "Revision:           %u.%u (%02u%02u)\n",
+                             "Revision:           %u.%u (%02u%02u)\n"
+                             "Port:               %u\n"
+                             "USB version/speed:  %u/%u\n",
                              Utf8Str(id).c_str(),
                              usVendorId, usVendorId, usProductId, usProductId,
                              bcdRevision >> 8, bcdRevision & 0xff,
-                             bcdRevision >> 8, bcdRevision & 0xff);
+                             bcdRevision >> 8, bcdRevision & 0xff,
+                             usPort, usVersion, usPortVersion);
 
                     /* optional stuff. */
                     Bstr bstr;
