@@ -24,47 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/dbg.h>
-
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/* to err.h! */
-#define VERR_DBGC_QUIT                          (-11999)
-#define VERR_PARSE_FIRST                        (-11000)
-#define VERR_PARSE_TOO_FEW_ARGUMENTS            (VERR_PARSE_FIRST - 0)
-#define VERR_PARSE_TOO_MANY_ARGUMENTS           (VERR_PARSE_FIRST - 1)
-#define VERR_PARSE_ARGUMENT_OVERFLOW            (VERR_PARSE_FIRST - 2)
-#define VERR_PARSE_ARGUMENT_TYPE_MISMATCH       (VERR_PARSE_FIRST - 3)
-#define VERR_PARSE_NO_RANGE_ALLOWED             (VERR_PARSE_FIRST - 4)
-#define VERR_PARSE_UNBALANCED_QUOTE             (VERR_PARSE_FIRST - 5)
-#define VERR_PARSE_UNBALANCED_PARENTHESIS       (VERR_PARSE_FIRST - 6)
-#define VERR_PARSE_EMPTY_ARGUMENT               (VERR_PARSE_FIRST - 7)
-#define VERR_PARSE_UNEXPECTED_OPERATOR          (VERR_PARSE_FIRST - 8)
-#define VERR_PARSE_INVALID_NUMBER               (VERR_PARSE_FIRST - 9)
-#define VERR_PARSE_NUMBER_TOO_BIG               (VERR_PARSE_FIRST - 10)
-#define VERR_PARSE_INVALID_OPERATION            (VERR_PARSE_FIRST - 11)
-#define VERR_PARSE_FUNCTION_NOT_FOUND           (VERR_PARSE_FIRST - 12)
-#define VERR_PARSE_NOT_A_FUNCTION               (VERR_PARSE_FIRST - 13)
-#define VERR_PARSE_NO_MEMORY                    (VERR_PARSE_FIRST - 14)
-#define VERR_PARSE_INCORRECT_ARG_TYPE           (VERR_PARSE_FIRST - 15)
-#define VERR_PARSE_VARIABLE_NOT_FOUND           (VERR_PARSE_FIRST - 16)
-#define VERR_PARSE_CONVERSION_FAILED            (VERR_PARSE_FIRST - 17)
-#define VERR_PARSE_NOT_IMPLEMENTED              (VERR_PARSE_FIRST - 18)
-#define VERR_PARSE_BAD_RESULT_TYPE              (VERR_PARSE_FIRST - 19)
-#define VERR_PARSE_WRITEONLY_SYMBOL             (VERR_PARSE_FIRST - 20)
-#define VERR_PARSE_NO_ARGUMENT_MATCH            (VERR_PARSE_FIRST - 21)
-#define VINF_PARSE_COMMAND_NOT_FOUND            (VERR_PARSE_FIRST - 22)
-#define VINF_PARSE_INVALD_COMMAND_NAME          (VERR_PARSE_FIRST - 23)
-#define VERR_PARSE_LAST                         (VERR_PARSE_FIRST - 30)
-
-#define VWRN_DBGC_CMD_PENDING                   12000
-#define VWRN_DBGC_ALREADY_REGISTERED            12001
-#define VERR_DBGC_COMMANDS_NOT_REGISTERED       (-12002)
-#define VERR_DBGC_BP_NOT_FOUND                  (-12003)
-#define VERR_DBGC_BP_EXISTS                     (-12004)
-#define VINF_DBGC_BP_NO_COMMAND                 12005
-#define VERR_DBGC_COMMAND_FAILED                (-12006)
+#include <VBox/err.h>
 
 
 /*******************************************************************************

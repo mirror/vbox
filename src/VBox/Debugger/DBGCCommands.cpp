@@ -905,9 +905,9 @@ static DECLCALLBACK(int) dbgcCmdInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     /*
      * Dump it.
      */
-    int rc = DBGFR3InfoEx(pVM, pDbgc->idCpu, 
-                          paArgs[0].u.pszString, 
-                          cArgs == 2 ? paArgs[1].u.pszString : NULL, 
+    int rc = DBGFR3InfoEx(pVM, pDbgc->idCpu,
+                          paArgs[0].u.pszString,
+                          cArgs == 2 ? paArgs[1].u.pszString : NULL,
                           DBGCCmdHlpGetDbgfOutputHlp(pCmdHlp));
     if (RT_FAILURE(rc))
         return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3InfoEx()\n");
@@ -1124,7 +1124,7 @@ static DECLCALLBACK(int) dbgcCmdLoadImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                  &&  cArgs <= 3
                  &&  paArgs[0].enmType == DBGCVAR_TYPE_STRING
                  &&  DBGCVAR_ISPOINTER(paArgs[1].enmType),
-                 VERR_PARSE_INCORRECT_ARG_TYPE);
+                 VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
 
     const char     *pszFilename = paArgs[0].u.pszString;
 
@@ -1136,7 +1136,7 @@ static DECLCALLBACK(int) dbgcCmdLoadImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     const char     *pszModName  = NULL;
     if (cArgs >= 3)
     {
-        AssertReturn(paArgs[2].enmType == DBGCVAR_TYPE_STRING, VERR_PARSE_INCORRECT_ARG_TYPE);
+        AssertReturn(paArgs[2].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
         pszModName = paArgs[2].u.pszString;
     }
 
@@ -1174,7 +1174,7 @@ static DECLCALLBACK(int) dbgcCmdLoadMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
                  &&  cArgs <= 5
                  &&  paArgs[0].enmType == DBGCVAR_TYPE_STRING
                  &&  DBGCVAR_ISPOINTER(paArgs[1].enmType),
-                 VERR_PARSE_INCORRECT_ARG_TYPE);
+                 VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
 
     const char     *pszFilename = paArgs[0].u.pszString;
 
@@ -1186,21 +1186,21 @@ static DECLCALLBACK(int) dbgcCmdLoadMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     const char     *pszModName  = NULL;
     if (cArgs >= 3)
     {
-        AssertReturn(paArgs[2].enmType == DBGCVAR_TYPE_STRING, VERR_PARSE_INCORRECT_ARG_TYPE);
+        AssertReturn(paArgs[2].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
         pszModName = paArgs[2].u.pszString;
     }
 
     RTGCUINTPTR uSubtrahend = 0;
     if (cArgs >= 4)
     {
-        AssertReturn(paArgs[3].enmType == DBGCVAR_TYPE_NUMBER, VERR_PARSE_INCORRECT_ARG_TYPE);
+        AssertReturn(paArgs[3].enmType == DBGCVAR_TYPE_NUMBER, VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
         uSubtrahend = paArgs[3].u.u64Number;
     }
 
     RTDBGSEGIDX     iModSeg = NIL_RTDBGSEGIDX;
     if (cArgs >= 5)
     {
-        AssertReturn(paArgs[4].enmType == DBGCVAR_TYPE_NUMBER, VERR_PARSE_INCORRECT_ARG_TYPE);
+        AssertReturn(paArgs[4].enmType == DBGCVAR_TYPE_NUMBER, VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
         iModSeg = (RTDBGSEGIDX)paArgs[4].u.u64Number;
         if (    iModSeg != paArgs[4].u.u64Number
             ||  iModSeg > RTDBGSEGIDX_LAST)
@@ -1242,7 +1242,7 @@ static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
                  &&  paArgs[0].enmType == DBGCVAR_TYPE_STRING
                  &&  DBGCVAR_ISPOINTER(paArgs[1].enmType)
                  &&  paArgs[2].enmType == DBGCVAR_TYPE_NUMBER,
-                 VERR_PARSE_INCORRECT_ARG_TYPE);
+                 VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
 
     const char     *pszFilename = paArgs[0].u.pszString;
 
@@ -1259,7 +1259,7 @@ static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     const char     *pszModName  = NULL;
     if (cArgs >= 4)
     {
-        AssertReturn(paArgs[3].enmType == DBGCVAR_TYPE_STRING, VERR_PARSE_INCORRECT_ARG_TYPE);
+        AssertReturn(paArgs[3].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
         pszModName = paArgs[3].u.pszString;
     }
 
@@ -1297,7 +1297,7 @@ static DECLCALLBACK(int) dbgcCmdLoadSyms(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
         ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
     {
         AssertMsgFailed(("Parse error, first argument required to be string!\n"));
-        return VERR_PARSE_INCORRECT_ARG_TYPE;
+        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     DBGCVAR     AddrVar;
     RTGCUINTPTR Delta = 0;
@@ -1317,7 +1317,7 @@ static DECLCALLBACK(int) dbgcCmdLoadSyms(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
             if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
             {
                 AssertMsgFailed(("Parse error, module argument required to be string!\n"));
-                return VERR_PARSE_INCORRECT_ARG_TYPE;
+                return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
             }
             pszModule = paArgs[iArg].u.pszString;
             iArg++;
@@ -1326,7 +1326,7 @@ static DECLCALLBACK(int) dbgcCmdLoadSyms(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                 if (!DBGCVAR_ISPOINTER(paArgs[iArg].enmType))
                 {
                     AssertMsgFailed(("Parse error, module argument required to be GC pointer!\n"));
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+                    return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
                 }
                 int rc = DBGCCmdHlpEval(pCmdHlp, &AddrVar, "%%(%Dv)", &paArgs[iArg]);
                 if (RT_FAILURE(rc))
@@ -1338,14 +1338,14 @@ static DECLCALLBACK(int) dbgcCmdLoadSyms(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                     if (paArgs[iArg].enmType != DBGCVAR_TYPE_NUMBER)
                     {
                         AssertMsgFailed(("Parse error, module argument required to be an integer!\n"));
-                        return VERR_PARSE_INCORRECT_ARG_TYPE;
+                        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
                     }
                     cbModule = (unsigned)paArgs[iArg].u.u64Number;
                     iArg++;
                     if (iArg < cArgs)
                     {
                         AssertMsgFailed(("Parse error, too many arguments!\n"));
-                        return VERR_PARSE_TOO_MANY_ARGUMENTS;
+                        return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
                     }
                 }
             }
@@ -1382,7 +1382,7 @@ static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM
     /* parse sanity check. */
     AssertMsg(paArgs[0].enmType == DBGCVAR_TYPE_STRING, ("expected string not %d as first arg!\n", paArgs[0].enmType));
     if (paArgs[0].enmType != DBGCVAR_TYPE_STRING)
-        return VERR_PARSE_INCORRECT_ARG_TYPE;
+        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
 
 
     /*
@@ -1420,7 +1420,7 @@ static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM
              */
             void *pv = RTMemRealloc(pDbgc->papVars[iVar], cbVar);
             if (!pv)
-                return VERR_PARSE_NO_MEMORY;
+                return VERR_DBGC_PARSE_NO_MEMORY;
             PDBGCNAMEDVAR pVar = pDbgc->papVars[iVar] = (PDBGCNAMEDVAR)pv;
 
             pVar->Var = paArgs[1];
@@ -1448,7 +1448,7 @@ static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM
         if (!pv)
         {
             RTMemFree(pVar);
-            return VERR_PARSE_NO_MEMORY;
+            return VERR_DBGC_PARSE_NO_MEMORY;
         }
         pDbgc->papVars = (PDBGCNAMEDVAR *)pv;
     }
@@ -1480,7 +1480,7 @@ static DECLCALLBACK(int) dbgcCmdUnset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
         if (paArgs[i].enmType != DBGCVAR_TYPE_STRING)
         {
             AssertMsgFailed(("expected strings only. (arg=%d)!\n", i));
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
         }
 
     /*
@@ -1536,7 +1536,7 @@ static DECLCALLBACK(int) dbgcCmdLoadVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
         ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
     {
         AssertMsgFailed(("Expected one string exactly!\n"));
-        return VERR_PARSE_INCORRECT_ARG_TYPE;
+        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
 
     /*
@@ -2088,7 +2088,7 @@ static DECLCALLBACK(int) dbgcCmdWriteCore(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
     {
         AssertMsgFailed(("Expected one string exactly!\n"));
-        return VERR_PARSE_INCORRECT_ARG_TYPE;
+        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
 
     const char *pszDumpPath = paArgs[0].u.pszString;
