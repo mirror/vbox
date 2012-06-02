@@ -173,7 +173,7 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
     if (pSymDesc)
     {
         if (!pSymDesc->pfnGet)
-            return VERR_PARSE_WRITEONLY_SYMBOL;
+            return VERR_DBGC_PARSE_WRITEONLY_SYMBOL;
         return pSymDesc->pfnGet(pSymDesc, &pDbgc->CmdHlp, enmType, pResult);
     }
 
@@ -249,7 +249,7 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
 
             /* impossible at the moment. */
             case DBGCVAR_TYPE_GC_FAR:
-                return VERR_PARSE_CONVERSION_FAILED;
+                return VERR_DBGC_PARSE_CONVERSION_FAILED;
 
             /* simply make it numeric. */
             case DBGCVAR_TYPE_NUMBER:
@@ -269,7 +269,7 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
         }
     }
 
-    return VERR_PARSE_NOT_IMPLEMENTED;
+    return VERR_DBGC_PARSE_NOT_IMPLEMENTED;
 }
 
 

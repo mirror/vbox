@@ -118,7 +118,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
                     (pResult)->u.u64Number  = (pResult)->u.u64Number  Operator  u64Right; \
                     break; \
                 default: \
-                    return VERR_PARSE_INCORRECT_ARG_TYPE; \
+                    return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE; \
             } \
         } \
         return rc; \
@@ -168,7 +168,7 @@ const DBGCOP g_aOps[] =
     { {'@'},            1,       false,      3,              dbgcOpRegister,     NULL,                       DBGCVAR_CAT_STRING, DBGCVAR_CAT_ANY, "Reference a register." },
     { {'*'},            1,       true,       10,             NULL,               dbgcOpMult,                 DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Multiplication." },
     { {'/'},            1,       true,       11,             NULL,               dbgcOpDiv,                  DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Division." },
-    { {'%'},            1,       true,       12,             NULL,               dbgcOpMod,                  DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Modulus." },
+    { {'m','o','d'},    3,       true,       12,             NULL,               dbgcOpMod,                  DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Modulus." },
     { {'+'},            1,       true,       13,             NULL,               dbgcOpAdd,                  DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Addition." },
     { {'-'},            1,       true,       14,             NULL,               dbgcOpSub,                  DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Subtraction." },
     { {'<','<'},        2,       true,       15,             NULL,               dbgcOpBitwiseShiftLeft,     DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Bitwise left shift." },
@@ -227,7 +227,7 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
             *pu64Ret = Var.u.u64Number;
             break;
         default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     return VINF_SUCCESS;
 }
@@ -271,7 +271,7 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
         case DBGCVAR_TYPE_UNKNOWN:
         case DBGCVAR_TYPE_STRING:
         default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     NOREF(pDbgc);
     return VINF_SUCCESS;
@@ -305,7 +305,7 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
         case DBGCVAR_TYPE_UNKNOWN:
         case DBGCVAR_TYPE_STRING:
         default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     NOREF(pDbgc);
     return VINF_SUCCESS;
@@ -352,7 +352,7 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
 
         case DBGCVAR_TYPE_UNKNOWN:
         default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     pResult->enmType = DBGCVAR_TYPE_NUMBER;
     NOREF(pDbgc);
@@ -398,7 +398,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
         case DBGCVAR_TYPE_UNKNOWN:
         case DBGCVAR_TYPE_STRING:
         default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     NOREF(pDbgc);
     return VINF_SUCCESS;
@@ -423,7 +423,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCa
      * Parse sanity.
      */
     if (pArg->enmType != DBGCVAR_TYPE_STRING)
-        return VERR_PARSE_INCORRECT_ARG_TYPE;
+        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
 
     /*
      * Lookup the variable.
@@ -438,7 +438,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCa
         }
     }
 
-    return VERR_PARSE_VARIABLE_NOT_FOUND;
+    return VERR_DBGC_PARSE_VARIABLE_NOT_FOUND;
 }
 
 
@@ -461,7 +461,7 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
      */
     if (   pArg->enmType != DBGCVAR_TYPE_STRING
         && pArg->enmType != DBGCVAR_TYPE_SYMBOL)
-        return VERR_PARSE_INCORRECT_ARG_TYPE;
+        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
 
     /*
      * If the desired result is a symbol, pass the argument along unmodified.
@@ -631,7 +631,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
         case DBGCVAR_TYPE_HC_PHYS:
         case DBGCVAR_TYPE_UNKNOWN:
         default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     pResult->u.GCFar.sel = (RTSEL)pResult->u.u64Number;
 
@@ -669,7 +669,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
         case DBGCVAR_TYPE_HC_PHYS:
         case DBGCVAR_TYPE_UNKNOWN:
         default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
+            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
     return VINF_SUCCESS;
 
@@ -786,7 +786,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             {
                 case DBGCVAR_TYPE_HC_FLAT:
                 case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
                     rc = dbgcOpAddrFlat(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
@@ -805,7 +805,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             {
                 case DBGCVAR_TYPE_HC_FLAT:
                 case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
                 case DBGCVAR_TYPE_NUMBER:
                     *pResult = *pArg1;
                     pResult->u.GCFar.off += (RTGCPTR)pArg2->u.u64Number;
@@ -830,14 +830,14 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             {
                 case DBGCVAR_TYPE_HC_FLAT:
                 case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
                     rc = dbgcOpAddrPhys(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     if (Var.enmType != DBGCVAR_TYPE_GC_PHYS)
-                        return VERR_PARSE_INVALID_OPERATION;
+                        return VERR_DBGC_PARSE_INVALID_OPERATION;
                     pResult->u.GCPhys += Var.u.GCPhys;
                     break;
             }
@@ -884,12 +884,12 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     pResult->u.u64Number += pArg2->u.u64Number;
                     break;
                 default:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
             }
             break;
 
         default:
-            return VERR_PARSE_INVALID_OPERATION;
+            return VERR_DBGC_PARSE_INVALID_OPERATION;
 
     }
     return VINF_SUCCESS;
@@ -1011,7 +1011,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             {
                 case DBGCVAR_TYPE_HC_FLAT:
                 case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
                     rc = dbgcOpAddrFlat(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
@@ -1030,7 +1030,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             {
                 case DBGCVAR_TYPE_HC_FLAT:
                 case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
                 case DBGCVAR_TYPE_NUMBER:
                     *pResult = *pArg1;
                     pResult->u.GCFar.off -= (RTGCPTR)pArg2->u.u64Number;
@@ -1055,14 +1055,14 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             {
                 case DBGCVAR_TYPE_HC_FLAT:
                 case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
                 default:
                     *pResult = *pArg1;
                     rc = dbgcOpAddrPhys(pDbgc, pArg2, DBGCVAR_CAT_ANY, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
                     if (Var.enmType != DBGCVAR_TYPE_GC_PHYS)
-                        return VERR_PARSE_INVALID_OPERATION;
+                        return VERR_DBGC_PARSE_INVALID_OPERATION;
                     pResult->u.GCPhys -= Var.u.GCPhys;
                     break;
             }
@@ -1109,12 +1109,12 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     pResult->u.u64Number -= pArg2->u.u64Number;
                     break;
                 default:
-                    return VERR_PARSE_INVALID_OPERATION;
+                    return VERR_DBGC_PARSE_INVALID_OPERATION;
             }
             break;
 
         default:
-            return VERR_PARSE_INVALID_OPERATION;
+            return VERR_DBGC_PARSE_INVALID_OPERATION;
 
     }
     return VINF_SUCCESS;
@@ -1299,7 +1299,7 @@ static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCV
         }
 
         default:
-            return VERR_PARSE_INVALID_OPERATION;
+            return VERR_DBGC_PARSE_INVALID_OPERATION;
     }
 
     return VINF_SUCCESS;
@@ -1377,7 +1377,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
         case DBGCVAR_TYPE_STRING:
         default:
             AssertMsgFailed(("Impossible!\n"));
-            return VERR_PARSE_INVALID_OPERATION;
+            return VERR_DBGC_PARSE_INVALID_OPERATION;
     }
 
     return VINF_SUCCESS;

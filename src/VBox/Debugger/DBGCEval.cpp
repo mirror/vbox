@@ -74,7 +74,7 @@ static int dbgcEvalSubString(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVA
     if (ch == '"' || ch == '\'' || ch == '`')
     {
         if (pszExpr[--cchExpr] != ch)
-            return VERR_PARSE_UNBALANCED_QUOTE;
+            return VERR_DBGC_PARSE_UNBALANCED_QUOTE;
         cchExpr--;
         pszExpr++;
 
@@ -116,11 +116,11 @@ static int dbgcEvalSubNum(char *pszExpr, unsigned uBase, PDBGCVAR pArg)
         else if (ch >= 'A' && (u = ch - ('A' - 10)) < uBase)
             u64 = u64 * uBase + u;
         else
-            return VERR_PARSE_INVALID_NUMBER;
+            return VERR_DBGC_PARSE_INVALID_NUMBER;
 
         /* check for overflow - ARG!!! How to detect overflow correctly!?!?!? */
         if (u64Prev != u64 / uBase)
-            return VERR_PARSE_NUMBER_TOO_BIG;
+            return VERR_DBGC_PARSE_NUMBER_TOO_BIG;
 
         /* next */
         pszExpr++;
@@ -169,7 +169,7 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
         case DBGCVAR_CAT_POINTER_NO_RANGE:
         case DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE:
             if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                return VERR_PARSE_NO_RANGE_ALLOWED;
+                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
             /* fallthru */
         case DBGCVAR_CAT_POINTER:
         case DBGCVAR_CAT_POINTER_NUMBER:
@@ -225,7 +225,7 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
          */
         case DBGCVAR_CAT_GC_POINTER_NO_RANGE:
             if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                return VERR_PARSE_NO_RANGE_ALLOWED;
+                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
             /* fallthru */
         case DBGCVAR_CAT_GC_POINTER:
             switch (pVar->enmType)
@@ -237,7 +237,7 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
 
                 case DBGCVAR_TYPE_HC_FLAT:
                 case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_CONVERSION_FAILED;
+                    return VERR_DBGC_PARSE_CONVERSION_FAILED;
 
                 case DBGCVAR_TYPE_SYMBOL:
                 case DBGCVAR_TYPE_STRING:
@@ -280,7 +280,7 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
          */
         case DBGCVAR_CAT_NUMBER_NO_RANGE:
             if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                return VERR_PARSE_NO_RANGE_ALLOWED;
+                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
             /* fallthru */
         case DBGCVAR_CAT_NUMBER:
             switch (pVar->enmType)
@@ -346,7 +346,7 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
             break;
     }
 
-    return VERR_PARSE_NO_ARGUMENT_MATCH;
+    return VERR_DBGC_PARSE_NO_ARGUMENT_MATCH;
 }
 
 
@@ -371,9 +371,9 @@ static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMa
      * Just do basic min / max checks first.
      */
     if (cVars < cVarsMin)
-        return VERR_PARSE_TOO_FEW_ARGUMENTS;
+        return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
     if (cVars > cVarsMax)
-        return VERR_PARSE_TOO_MANY_ARGUMENTS;
+        return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
 
     /*
      * Match the descriptors and actual variables.
@@ -386,14 +386,14 @@ static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMa
     {
         /* walk the descriptors */
         if (iVarDesc >= cVarDescs)
-            return VERR_PARSE_TOO_MANY_ARGUMENTS;
+            return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
         if (    (    paVarDescs[iVarDesc].fFlags & DBGCVD_FLAGS_DEP_PREV
                 &&  &paVarDescs[iVarDesc - 1] != pPrevDesc)
             ||  cCurDesc >= paVarDescs[iVarDesc].cTimesMax)
         {
             iVarDesc++;
             if (iVarDesc >= cVarDescs)
-                return VERR_PARSE_TOO_MANY_ARGUMENTS;
+                return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
             cCurDesc = 0;
         }
 
@@ -413,9 +413,9 @@ static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMa
 
             /* can we advance? */
             if (paVarDescs[iVarDesc].cTimesMin > cCurDesc)
-                return VERR_PARSE_ARGUMENT_TYPE_MISMATCH;
+                return VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH;
             if (++iVarDesc >= cVarDescs)
-                return VERR_PARSE_ARGUMENT_TYPE_MISMATCH;
+                return VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH;
             cCurDesc = 0;
         }
 
@@ -429,7 +429,7 @@ static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMa
     while (iVarDesc < cVarDescs)
     {
         if (paVarDescs[iVarDesc].cTimesMin > cCurDesc)
-            return VERR_PARSE_TOO_FEW_ARGUMENTS;
+            return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
         cCurDesc = 0;
 
         /* next */
@@ -469,7 +469,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
     {
         /* binary operators means syntax error. */
         if (pOp->fBinary)
-            return VERR_PARSE_UNEXPECTED_OPERATOR;
+            return VERR_DBGC_PARSE_UNEXPECTED_OPERATOR;
 
         /*
          * If the next expression (the one following the unary operator) is in a
@@ -481,7 +481,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
             pszExpr2++;
 
         if (!*pszExpr2)
-            rc = VERR_PARSE_EMPTY_ARGUMENT;
+            rc = VERR_DBGC_PARSE_EMPTY_ARGUMENT;
         else
         {
             DBGCVAR Arg;
@@ -526,10 +526,10 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
                 pszExpr++, cchExpr--;
             PCDBGCCMD pFun = dbgcRoutineLookup(pDbgc, pszExpr, pszFunEnd - pszExpr, fExternal);
             if (!pFun)
-                return VERR_PARSE_FUNCTION_NOT_FOUND;
+                return VERR_DBGC_PARSE_FUNCTION_NOT_FOUND;
 #if 0
             if (!pFun->pResultDesc)
-                return VERR_PARSE_NOT_A_FUNCTION;
+                return VERR_DBGC_PARSE_NOT_A_FUNCTION;
 
             /*
              * Parse the expression in parenthesis.
@@ -545,7 +545,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
                 if (!rc)
                     rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, &Arg, 1, pResult);
             }
-            else if (rc == VERR_PARSE_EMPTY_ARGUMENT && pFun->cArgsMin == 0)
+            else if (rc == VERR_DBGC_PARSE_EMPTY_ARGUMENT && pFun->cArgsMin == 0)
                 rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, NULL, 0, pResult);
 #else
             rc = VERR_NOT_IMPLEMENTED;
@@ -621,7 +621,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
     while (RT_C_IS_BLANK(*pszExpr))
         pszExpr++, cchExpr--;
     if (!*pszExpr)
-        return VERR_PARSE_EMPTY_ARGUMENT;
+        return VERR_DBGC_PARSE_EMPTY_ARGUMENT;
 
     /* it there is any kind of quoting in the expression, it's string meat. */
     if (strpbrk(pszExpr, "\"'`"))
@@ -644,7 +644,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
                 else if (ch == ')')
                 {
                     if (cPar <= 0)
-                        return VERR_PARSE_UNBALANCED_PARENTHESIS;
+                        return VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS;
                     cPar--;
                     if (cPar == 0 && psz[1]) /* If not at end, there's nothing to do. */
                         break;
@@ -666,7 +666,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
             while (RT_C_IS_BLANK(*pszExpr))
                 pszExpr++, cchExpr--;
             if (!*pszExpr)
-                return VERR_PARSE_EMPTY_ARGUMENT;
+                return VERR_DBGC_PARSE_EMPTY_ARGUMENT;
         } while (pszExpr[0] == '(' && pszExpr[cchExpr - 1] == ')');
     }
 
@@ -704,7 +704,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
         else if (ch == ')')
         {
             if (cPar <= 0)
-                return VERR_PARSE_UNBALANCED_PARENTHESIS;
+                return VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS;
             cPar--;
             fBinary = true;
         }
@@ -720,7 +720,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
             {
                 /* If not the right kind of operator we've got a syntax error. */
                 if (pOp->fBinary != fBinary)
-                    return VERR_PARSE_UNEXPECTED_OPERATOR;
+                    return VERR_DBGC_PARSE_UNEXPECTED_OPERATOR;
 
                 /*
                  * Update the parse state and skip the operator.
@@ -827,11 +827,11 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
     {
         if (!pCmd->cArgsMin)
             return VINF_SUCCESS;
-        return VERR_PARSE_TOO_FEW_ARGUMENTS;
+        return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
     }
     /** @todo fixme - foo() doesn't work. */
     if (!pCmd->cArgsMax)
-        return VERR_PARSE_TOO_MANY_ARGUMENTS;
+        return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
 
     /*
      * This is a hack, it's "temporary" and should go away "when" the parser is
@@ -867,12 +867,12 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
          * Can we have another argument?
          */
         if (*pcArgs >= pCmd->cArgsMax)
-            return VERR_PARSE_TOO_MANY_ARGUMENTS;
+            return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
         if (pArg >= &paArgs[cArgs])
-            return VERR_PARSE_ARGUMENT_OVERFLOW;
+            return VERR_DBGC_PARSE_ARGUMENT_OVERFLOW;
 #ifdef DEBUG_bird /* work in progress. */
         if (iVarDesc >= cVarDescs)
-            return VERR_PARSE_TOO_MANY_ARGUMENTS;
+            return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
 
         /* Walk argument descriptors. */
         if (    (    paVarDescs[iVarDesc].fFlags & DBGCVD_FLAGS_DEP_PREV
@@ -881,7 +881,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         {
             iVarDesc++;
             if (iVarDesc >= cVarDescs)
-                return VERR_PARSE_TOO_MANY_ARGUMENTS;
+                return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
             cCurDesc = 0;
         }
 #endif
@@ -903,9 +903,9 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
             if ((ch = *psz) == '\0')
             {
                 if (chQuote)
-                    return VERR_PARSE_UNBALANCED_QUOTE;
+                    return VERR_DBGC_PARSE_UNBALANCED_QUOTE;
                 if (cPar)
-                    return VERR_PARSE_UNBALANCED_PARENTHESIS;
+                    return VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS;
                 pszEnd = psz;
                 break;
             }
@@ -940,7 +940,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
             else if (ch == ')')
             {
                 if (!cPar)
-                    return VERR_PARSE_UNBALANCED_PARENTHESIS;
+                    return VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS;
                 cPar--;
                 fBinary = true;
             }
@@ -1022,9 +1022,9 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
 
             /* can we advance? */
             if (paVarDescs[iVarDesc].cTimesMin > cCurDesc)
-                return VERR_PARSE_ARGUMENT_TYPE_MISMATCH;
+                return rc;
             if (++iVarDesc >= cVarDescs)
-                return VERR_PARSE_ARGUMENT_TYPE_MISMATCH;
+                return rc;
             cCurDesc = 0;
         }
 
@@ -1091,7 +1091,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
     if (*pszArgs && (!RT_C_IS_BLANK(*pszArgs) || pszArgs == pszCmd))
     {
         DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Invalid command '%s'!\n", pszCmdInput);
-        return pDbgc->rcCmd = VINF_PARSE_INVALD_COMMAND_NAME;
+        return pDbgc->rcCmd = VERR_DBGC_PARSE_INVALD_COMMAND_NAME;
     }
 
     /*
@@ -1101,7 +1101,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
     if (!pCmd)
     {
         DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Unknown command '%s'!\n", pszCmdInput);
-        return pDbgc->rcCmd = VINF_PARSE_COMMAND_NOT_FOUND;
+        return pDbgc->rcCmd = VERR_DBGC_PARSE_COMMAND_NOT_FOUND;
     }
 
     /*
@@ -1130,79 +1130,79 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
         /* report parse / eval error. */
         switch (rc)
         {
-            case VERR_PARSE_TOO_FEW_ARGUMENTS:
+            case VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Too few arguments. Minimum is %d for command '%s'.\n", pCmd->cArgsMin, pCmd->pszCmd);
                 break;
-            case VERR_PARSE_TOO_MANY_ARGUMENTS:
+            case VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Too many arguments. Maximum is %d for command '%s'.\n", pCmd->cArgsMax, pCmd->pszCmd);
                 break;
-            case VERR_PARSE_ARGUMENT_OVERFLOW:
+            case VERR_DBGC_PARSE_ARGUMENT_OVERFLOW:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Too many arguments.\n");
                 break;
-            case VERR_PARSE_UNBALANCED_QUOTE:
+            case VERR_DBGC_PARSE_UNBALANCED_QUOTE:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Unbalanced quote (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_UNBALANCED_PARENTHESIS:
+            case VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Unbalanced parenthesis (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_EMPTY_ARGUMENT:
+            case VERR_DBGC_PARSE_EMPTY_ARGUMENT:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: An argument or subargument contains nothing useful (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_UNEXPECTED_OPERATOR:
+            case VERR_DBGC_PARSE_UNEXPECTED_OPERATOR:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Invalid operator usage (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_INVALID_NUMBER:
+            case VERR_DBGC_PARSE_INVALID_NUMBER:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
-                    "Syntax error: Ivalid numeric value (argument %d). If a string was the intention, then quote it.\n", cArgs);
+                    "Syntax error: Invalid numeric value (argument %d). If a string was the intention, then quote it.\n", cArgs);
                 break;
-            case VERR_PARSE_NUMBER_TOO_BIG:
+            case VERR_DBGC_PARSE_NUMBER_TOO_BIG:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Numeric overflow (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_INVALID_OPERATION:
+            case VERR_DBGC_PARSE_INVALID_OPERATION:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Invalid operation attempted (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_FUNCTION_NOT_FOUND:
+            case VERR_DBGC_PARSE_FUNCTION_NOT_FOUND:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Function not found (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_NOT_A_FUNCTION:
+            case VERR_DBGC_PARSE_NOT_A_FUNCTION:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: The function specified is not a function (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_NO_MEMORY:
+            case VERR_DBGC_PARSE_NO_MEMORY:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Out memory in the regular heap! Expect odd stuff to happen...\n", cArgs);
                 break;
-            case VERR_PARSE_INCORRECT_ARG_TYPE:
+            case VERR_DBGC_PARSE_INCORRECT_ARG_TYPE:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Incorrect argument type (argument %d?).\n", cArgs);
                 break;
-            case VERR_PARSE_VARIABLE_NOT_FOUND:
+            case VERR_DBGC_PARSE_VARIABLE_NOT_FOUND:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: An undefined variable was referenced (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_CONVERSION_FAILED:
+            case VERR_DBGC_PARSE_CONVERSION_FAILED:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: A conversion between two types failed (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_NOT_IMPLEMENTED:
+            case VERR_DBGC_PARSE_NOT_IMPLEMENTED:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: You hit a debugger feature which isn't implemented yet (argument %d).\n", cArgs);
                 break;
-            case VERR_PARSE_BAD_RESULT_TYPE:
+            case VERR_DBGC_PARSE_BAD_RESULT_TYPE:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Couldn't satisfy a request for a specific result type (argument %d). (Usually applies to symbols)\n", cArgs);
                 break;
-            case VERR_PARSE_WRITEONLY_SYMBOL:
+            case VERR_DBGC_PARSE_WRITEONLY_SYMBOL:
                 rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Cannot get symbol, it's set only (argument %d).\n", cArgs);
                 break;
@@ -1211,8 +1211,14 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
                 break;
 
             default:
-                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: Unknown error %Rrc (%d)!\n", rc, rc);
+            {
+                PCRTSTATUSMSG pErr = RTErrGet(rc);
+                if (strncmp(pErr->pszDefine, RT_STR_TUPLE("Unknown Status")))
+                    rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: %s (%d) - %s\n", pErr->pszDefine, rc, pErr->pszMsgFull);
+                else
+                    rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: Unknown error %d (%#x)!\n", rc, rc);
                 break;
+            }
         }
     }
     return rc;

@@ -2094,6 +2094,81 @@
 /** @} */
 
 
+/** @name DBGC Status Codes
+ *  @{ */
+/** Status that causes DBGC to quit. */
+#define VERR_DBGC_QUIT                              (-5400)
+/** Async command pending. */
+#define VWRN_DBGC_CMD_PENDING                       5401
+/** The command has already been registered. */
+#define VWRN_DBGC_ALREADY_REGISTERED                5402
+/** The command cannot be deregistered because has not been registered.  */
+#define VERR_DBGC_COMMANDS_NOT_REGISTERED           (-5403)
+/** Unknown breakpoint.  */
+#define VERR_DBGC_BP_NOT_FOUND                      (-5404)
+/** The breakpoint already exists. */
+#define VERR_DBGC_BP_EXISTS                         (-5405)
+/** The breakpoint has no command. */
+#define VINF_DBGC_BP_NO_COMMAND                     5406
+/** Generic debugger command failure. */
+#define VERR_DBGC_COMMAND_FAILED                    (-5407)
+
+/** The lowest parse status code.   */
+#define VERR_DBGC_PARSE_LOWEST                      (-5499)
+/** Syntax error - too few arguments. */
+#define VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS           (VERR_DBGC_PARSE_LOWEST + 0)
+/** Syntax error - too many arguments. */
+#define VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS          (VERR_DBGC_PARSE_LOWEST + 1)
+/** Syntax error - too many arguments for static storage. */
+#define VERR_DBGC_PARSE_ARGUMENT_OVERFLOW           (VERR_DBGC_PARSE_LOWEST + 2)
+/** Syntax error - argument didn't match description. */
+#define VERR_DBGC_PARSE_NO_ARGUMENT_MATCH           (VERR_DBGC_PARSE_LOWEST + 3)
+/** Syntax error - the argument does not allow a range to be specified. */
+#define VERR_DBGC_PARSE_NO_RANGE_ALLOWED            (VERR_DBGC_PARSE_LOWEST + 5)
+/** Syntax error - unbalanced quotes. */
+#define VERR_DBGC_PARSE_UNBALANCED_QUOTE            (VERR_DBGC_PARSE_LOWEST + 6)
+/** Syntax error - unbalanced parenthesis. */
+#define VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS      (VERR_DBGC_PARSE_LOWEST + 7)
+/** Syntax error - an argument or subargument contains nothing useful. */
+#define VERR_DBGC_PARSE_EMPTY_ARGUMENT              (VERR_DBGC_PARSE_LOWEST + 8)
+/** Syntax error - invalid operator usage. */
+#define VERR_DBGC_PARSE_UNEXPECTED_OPERATOR         (VERR_DBGC_PARSE_LOWEST + 9)
+/** Syntax error - invalid numeric value. */
+#define VERR_DBGC_PARSE_INVALID_NUMBER              (VERR_DBGC_PARSE_LOWEST + 10)
+/** Syntax error - numeric overflow. */
+#define VERR_DBGC_PARSE_NUMBER_TOO_BIG              (VERR_DBGC_PARSE_LOWEST + 11)
+/** Syntax error - invalid operation attempted. */
+#define VERR_DBGC_PARSE_INVALID_OPERATION           (VERR_DBGC_PARSE_LOWEST + 12)
+/** Syntax error - function not found. */
+#define VERR_DBGC_PARSE_FUNCTION_NOT_FOUND          (VERR_DBGC_PARSE_LOWEST + 13)
+/** Syntax error - the specified function is not a function. */
+#define VERR_DBGC_PARSE_NOT_A_FUNCTION              (VERR_DBGC_PARSE_LOWEST + 14)
+/** Syntax error - out of regular heap memory. */
+#define VERR_DBGC_PARSE_NO_MEMORY                   (VERR_DBGC_PARSE_LOWEST + 15)
+/** Syntax error - incorrect argument type. */
+#define VERR_DBGC_PARSE_INCORRECT_ARG_TYPE          (VERR_DBGC_PARSE_LOWEST + 16)
+/** Syntax error - an undefined variable was referenced. */
+#define VERR_DBGC_PARSE_VARIABLE_NOT_FOUND          (VERR_DBGC_PARSE_LOWEST + 17)
+/** Syntax error - a type conversion failed. */
+#define VERR_DBGC_PARSE_CONVERSION_FAILED           (VERR_DBGC_PARSE_LOWEST + 18)
+/** Syntax error - you hit a debugger feature which isn't implemented yet.
+ * (Feel free to help implement it.) */
+#define VERR_DBGC_PARSE_NOT_IMPLEMENTED             (VERR_DBGC_PARSE_LOWEST + 19)
+/** Syntax error - Couldn't staisfy a request for a sepcific result type. */
+#define VERR_DBGC_PARSE_BAD_RESULT_TYPE             (VERR_DBGC_PARSE_LOWEST + 20)
+/** Syntax error - Cannot read symbol value, it is a set-only symbol. */
+#define VERR_DBGC_PARSE_WRITEONLY_SYMBOL            (VERR_DBGC_PARSE_LOWEST + 21)
+/** Syntax error - Invalid command name. */
+#define VERR_DBGC_PARSE_INVALD_COMMAND_NAME         (VERR_DBGC_PARSE_LOWEST + 22)
+/** Syntax error - Command not found. */
+#define VERR_DBGC_PARSE_COMMAND_NOT_FOUND           (VERR_DBGC_PARSE_LOWEST + 23)
+
+/** Syntax error - Obsolete. */
+#define VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH      (VERR_DBGC_PARSE_LOWEST + 4)
+
+
+/** @} */
+
 /** @name VBox Extension Pack Status Codes
  * @{
  */
