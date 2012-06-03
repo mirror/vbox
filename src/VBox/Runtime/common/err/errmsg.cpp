@@ -85,8 +85,14 @@ RTDECL(PCRTSTATUSMSG) RTErrGet(int rc)
              * Since this isn't a unique key, we must check that it's not
              * one of those start/end #defines before we return.
              */
-            if (    !strstr(g_aStatusMsgs[i].pszDefine, "FIRST")
-                &&  !strstr(g_aStatusMsgs[i].pszDefine, "LAST"))
+#define STR_ENDS_WITH(a_psz, a_cch, a_sz) \
+    ( (a_cch) >= sizeof(a_sz) && !strncmp((a_psz) + (a_cch) - sizeof(a_sz) + 1, RT_STR_TUPLE(a_sz)) )
+            size_t const cchDefine = strlen(g_aStatusMsgs[i].pszDefine);
+            if (   !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_FIRST")
+                && !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_LAST")
+                && !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_LOWEST")
+                && !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_HIGHEST")
+               )
                 return &g_aStatusMsgs[i];
             iFound = i;
         }
