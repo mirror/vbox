@@ -51,6 +51,7 @@ static DECLCALLBACK(int) dbgcHlpPrintf(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, 
     return rc;
 }
 
+
 /**
  * Callback to format non-standard format specifiers, employed by dbgcPrintfV
  * and others.
@@ -210,6 +211,31 @@ static DECLCALLBACK(int) dbgcHlpPrintfV(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten,
         *pcbWritten = cb;
 
     return pDbgc->rcOutput;
+}
+
+
+/**
+ * @interface_method_impl{DBGCCMDHLP,pfnStrPrintf}
+ */
+static DECLCALLBACK(size_t) dbgcHlpStrPrintfV(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf,
+                                              const char *pszFormat, va_list va)
+{
+    PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    return RTStrPrintfExV(dbgcStringFormatter, pDbgc, pszBuf, cbBuf, pszFormat, va);
+}
+
+
+/**
+ * @interface_method_impl{DBGCCMDHLP,pfnStrPrintf}
+ */
+static DECLCALLBACK(size_t) dbgcHlpStrPrintf(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf, const char *pszFormat, ...)
+{
+    PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    va_list va;
+    va_start(va, pszFormat);
+    size_t cch = RTStrPrintfExV(dbgcStringFormatter, pDbgc, pszBuf, cbBuf, pszFormat, va);
+    va_end(va);
+    return cch;
 }
 
 
@@ -1254,6 +1280,8 @@ void dbgcInitCmdHlp(PDBGC pDbgc)
     pDbgc->CmdHlp.u32Magic              = DBGCCMDHLP_MAGIC;
     pDbgc->CmdHlp.pfnPrintfV            = dbgcHlpPrintfV;
     pDbgc->CmdHlp.pfnPrintf             = dbgcHlpPrintf;
+    pDbgc->CmdHlp.pfnStrPrintf          = dbgcHlpStrPrintf;
+    pDbgc->CmdHlp.pfnStrPrintfV         = dbgcHlpStrPrintfV;
     pDbgc->CmdHlp.pfnVBoxErrorV         = dbgcHlpVBoxErrorV;
     pDbgc->CmdHlp.pfnVBoxError          = dbgcHlpVBoxError;
     pDbgc->CmdHlp.pfnMemRead            = dbgcHlpMemRead;
