@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,9 +30,10 @@
 *******************************************************************************/
 #include <iprt/err.h>
 #include <iprt/string.h>
-#include <iprt/stream.h>
-#include <iprt/initterm.h>
-#include <VBox/err.h>
+#include <iprt/test.h>
+#ifdef VBOX
+# include <VBox/err.h>
+#endif
 
 
 /*******************************************************************************
@@ -47,49 +48,41 @@ static const RTSTATUSMSG  g_aErrorMessages[] =
 };
 
 
-static bool strIsPermissibleDuplicate(const RTSTATUSMSG *msg)
+static bool strIsPermissibleDuplicate(const RTSTATUSMSG *pMsg)
 {
-    const char *pszMsgShort = msg->pszMsgShort;
-    const char *pszDefine = msg->pszDefine;
-    size_t cbDefine = strlen(pszDefine);
+    const char *pszDefine = pMsg->pszDefine;
+    size_t      cchDefine = strlen(pszDefine);
 
-    return    (strstr(pszMsgShort, "(mapped to") != 0)
-           || (strstr(pszDefine, "FIRST") == pszDefine + (cbDefine - 5))
-           || (strstr(pszDefine, "LAST") == pszDefine + (cbDefine - 4));
+#define STR_ENDS_WITH(a_psz, a_cch, a_sz) \
+    ( (a_cch) >= sizeof(a_sz) && !strncmp((a_psz) + (a_cch) - sizeof(a_sz) + 1, RT_STR_TUPLE(a_sz)) )
+
+    return  STR_ENDS_WITH(pszDefine, cchDefine, "_FIRST")
+         || STR_ENDS_WITH(pszDefine, cchDefine, "_LASTX")
+         || STR_ENDS_WITH(pszDefine, cchDefine, "_LOWEST")
+         || STR_ENDS_WITH(pszDefine, cchDefine, "_HIGHEST")
+         || strstr(pMsg->pszMsgShort, "(mapped to") != 0;
 }
 
 
 int main()
 {
-    int         cErrors = 0;
-    RTR3InitExeNoArguments(0);
-    RTPrintf("tstErrUnique: TESTING\n");
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTErrUnique", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    RTTestBanner(hTest);
 
+    RTTestSub(hTest, "IPRT status code");
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aErrorMessages) - 1; i++)
-    {
-        if (strIsPermissibleDuplicate(&g_aErrorMessages[i]))
-            continue;
+        if (!strIsPermissibleDuplicate(&g_aErrorMessages[i]))
+            for (uint32_t j = i + 1; j < RT_ELEMENTS(g_aErrorMessages); j++)
+                if (   !strIsPermissibleDuplicate(&g_aErrorMessages[j])
+                    && g_aErrorMessages[i].iCode == g_aErrorMessages[j].iCode)
+                    RTTestFailed(hTest, "Status code %d can mean both '%s' and '%s'",
+                                 g_aErrorMessages[i].iCode,
+                                 g_aErrorMessages[i].pszDefine,
+                                 g_aErrorMessages[j].pszDefine);
 
-        for (uint32_t j = i + 1; j < RT_ELEMENTS(g_aErrorMessages); j++)
-        {
-            if (strIsPermissibleDuplicate(&g_aErrorMessages[j]))
-                continue;
-
-            if (g_aErrorMessages[i].iCode == g_aErrorMessages[j].iCode)
-            {
-                RTPrintf("tstErrUnique: status code %d\n  can mean '%s'\n  or '%s'\n", g_aErrorMessages[i].iCode, g_aErrorMessages[i].pszMsgShort, g_aErrorMessages[j].pszMsgShort);
-                cErrors++;
-            }
-        }
-    }
-
-    /*
-     * Summary
-     */
-    if (cErrors == 0)
-        RTPrintf("tstErrUnique: SUCCESS\n");
-    else
-        RTPrintf("tstErrUnique: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
