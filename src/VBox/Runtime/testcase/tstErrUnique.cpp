@@ -57,7 +57,7 @@ static bool strIsPermissibleDuplicate(const RTSTATUSMSG *pMsg)
     ( (a_cch) >= sizeof(a_sz) && !strncmp((a_psz) + (a_cch) - sizeof(a_sz) + 1, RT_STR_TUPLE(a_sz)) )
 
     return  STR_ENDS_WITH(pszDefine, cchDefine, "_FIRST")
-         || STR_ENDS_WITH(pszDefine, cchDefine, "_LASTX")
+         || STR_ENDS_WITH(pszDefine, cchDefine, "_LAST")
          || STR_ENDS_WITH(pszDefine, cchDefine, "_LOWEST")
          || STR_ENDS_WITH(pszDefine, cchDefine, "_HIGHEST")
          || strstr(pMsg->pszMsgShort, "(mapped to") != 0;
