@@ -2121,8 +2121,7 @@
 #define VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS          (VERR_DBGC_PARSE_LOWEST + 1)
 /** Syntax error - too many arguments for static storage. */
 #define VERR_DBGC_PARSE_ARGUMENT_OVERFLOW           (VERR_DBGC_PARSE_LOWEST + 2)
-/** Syntax error - argument didn't match description. */
-#define VERR_DBGC_PARSE_NO_ARGUMENT_MATCH           (VERR_DBGC_PARSE_LOWEST + 3)
+
 /** Syntax error - the argument does not allow a range to be specified. */
 #define VERR_DBGC_PARSE_NO_RANGE_ALLOWED            (VERR_DBGC_PARSE_LOWEST + 5)
 /** Syntax error - unbalanced quotes. */
@@ -2143,28 +2142,27 @@
 #define VERR_DBGC_PARSE_FUNCTION_NOT_FOUND          (VERR_DBGC_PARSE_LOWEST + 13)
 /** Syntax error - the specified function is not a function. */
 #define VERR_DBGC_PARSE_NOT_A_FUNCTION              (VERR_DBGC_PARSE_LOWEST + 14)
+/** Syntax error - out of scratch memory. */
+#define VERR_DBGC_PARSE_NO_SCRATCH                  (VERR_DBGC_PARSE_LOWEST + 15)
 /** Syntax error - out of regular heap memory. */
-#define VERR_DBGC_PARSE_NO_MEMORY                   (VERR_DBGC_PARSE_LOWEST + 15)
+#define VERR_DBGC_PARSE_NO_MEMORY                   (VERR_DBGC_PARSE_LOWEST + 16)
 /** Syntax error - incorrect argument type. */
-#define VERR_DBGC_PARSE_INCORRECT_ARG_TYPE          (VERR_DBGC_PARSE_LOWEST + 16)
+#define VERR_DBGC_PARSE_INCORRECT_ARG_TYPE          (VERR_DBGC_PARSE_LOWEST + 17)
 /** Syntax error - an undefined variable was referenced. */
-#define VERR_DBGC_PARSE_VARIABLE_NOT_FOUND          (VERR_DBGC_PARSE_LOWEST + 17)
+#define VERR_DBGC_PARSE_VARIABLE_NOT_FOUND          (VERR_DBGC_PARSE_LOWEST + 18)
 /** Syntax error - a type conversion failed. */
-#define VERR_DBGC_PARSE_CONVERSION_FAILED           (VERR_DBGC_PARSE_LOWEST + 18)
+#define VERR_DBGC_PARSE_CONVERSION_FAILED           (VERR_DBGC_PARSE_LOWEST + 19)
 /** Syntax error - you hit a debugger feature which isn't implemented yet.
  * (Feel free to help implement it.) */
-#define VERR_DBGC_PARSE_NOT_IMPLEMENTED             (VERR_DBGC_PARSE_LOWEST + 19)
+#define VERR_DBGC_PARSE_NOT_IMPLEMENTED             (VERR_DBGC_PARSE_LOWEST + 20)
 /** Syntax error - Couldn't staisfy a request for a sepcific result type. */
-#define VERR_DBGC_PARSE_BAD_RESULT_TYPE             (VERR_DBGC_PARSE_LOWEST + 20)
+#define VERR_DBGC_PARSE_BAD_RESULT_TYPE             (VERR_DBGC_PARSE_LOWEST + 21)
 /** Syntax error - Cannot read symbol value, it is a set-only symbol. */
-#define VERR_DBGC_PARSE_WRITEONLY_SYMBOL            (VERR_DBGC_PARSE_LOWEST + 21)
+#define VERR_DBGC_PARSE_WRITEONLY_SYMBOL            (VERR_DBGC_PARSE_LOWEST + 22)
 /** Syntax error - Invalid command name. */
-#define VERR_DBGC_PARSE_INVALD_COMMAND_NAME         (VERR_DBGC_PARSE_LOWEST + 22)
+#define VERR_DBGC_PARSE_INVALD_COMMAND_NAME         (VERR_DBGC_PARSE_LOWEST + 23)
 /** Syntax error - Command not found. */
-#define VERR_DBGC_PARSE_COMMAND_NOT_FOUND           (VERR_DBGC_PARSE_LOWEST + 23)
-
-/** Syntax error - Obsolete. */
-#define VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH      (VERR_DBGC_PARSE_LOWEST + 4)
+#define VERR_DBGC_PARSE_COMMAND_NOT_FOUND           (VERR_DBGC_PARSE_LOWEST + 24)
 
 
 /** @} */

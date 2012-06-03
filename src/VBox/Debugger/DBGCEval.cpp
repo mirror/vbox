@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,9 @@
 #include <iprt/ctype.h>
 
 #include "DBGCInternal.h"
+
+/** Rewrite in progress.  */
+#define BETTER_ARGUMENT_MATCHING
 
 
 /*******************************************************************************
@@ -63,6 +66,7 @@ DECLINLINE(bool) dbgcIsOpChar(char ch)
 }
 
 
+
 static int dbgcEvalSubString(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pArg)
 {
     Log2(("dbgcEvalSubString: cchExpr=%d pszExpr=%s\n", cchExpr, pszExpr));
@@ -71,7 +75,7 @@ static int dbgcEvalSubString(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVA
      * Removing any quoting and escapings.
      */
     char ch = *pszExpr;
-    if (ch == '"' || ch == '\'' || ch == '`')
+    if (ch == '"' || ch == '\'')
     {
         if (pszExpr[--cchExpr] != ch)
             return VERR_DBGC_PARSE_UNBALANCED_QUOTE;
@@ -141,302 +145,169 @@ static int dbgcEvalSubNum(char *pszExpr, unsigned uBase, PDBGCVAR pArg)
 
 
 /**
- * Match variable and variable descriptor, promoting the variable if necessary.
+ * dbgcEvalSubUnary worker that handles simple numeric or pointer expressions.
  *
- * @returns VBox status code.
- * @param   pDbgc       Debug console instanace.
- * @param   pVar        Variable.
- * @param   pVarDesc    Variable descriptor.
+ * @returns VBox status code. pResult contains the result on success.
+ * @param   pDbgc       Debugger console instance data.
+ * @param   pszExpr     The expression string.
+ * @param   cchExpr     The length of the expression.
+ * @param   enmCategory The desired type category (for range / no range).
+ * @param   pResult     Where to store the result of the expression evaluation.
  */
-static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDesc)
+static int dbgcEvalSubNumericOrPointer(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCategory,
+                                       PDBGCVAR pResult)
 {
-    /*
-     * (If match or promoted to match, return, else break.)
-     */
-    switch (pVarDesc->enmCategory)
+    char const  ch  = pszExpr[0];
+    char const  ch2 = pszExpr[1];
+
+    /* 0x<hex digits> */
+    if (ch == '0' && (ch2 == 'x' || ch2 == 'X'))
+        return dbgcEvalSubNum(pszExpr + 2, 16, pResult);
+
+    /* <hex digits>h */
+    if (RT_C_IS_XDIGIT(*pszExpr) && (pszExpr[cchExpr - 1] == 'h' || pszExpr[cchExpr - 1] == 'H'))
     {
-        /*
-         * Anything goes
-         */
-        case DBGCVAR_CAT_ANY:
-            return VINF_SUCCESS;
-
-        /*
-         * Pointer with and without range.
-         * We can try resolve strings and symbols as symbols and promote
-         * numbers to flat GC pointers.
-         */
-        case DBGCVAR_CAT_POINTER_NO_RANGE:
-        case DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE:
-            if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
-            /* fallthru */
-        case DBGCVAR_CAT_POINTER:
-        case DBGCVAR_CAT_POINTER_NUMBER:
-            switch (pVar->enmType)
-            {
-                case DBGCVAR_TYPE_GC_FLAT:
-                case DBGCVAR_TYPE_GC_FAR:
-                case DBGCVAR_TYPE_GC_PHYS:
-                case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_PHYS:
-                    return VINF_SUCCESS;
-
-                case DBGCVAR_TYPE_SYMBOL:
-                case DBGCVAR_TYPE_STRING:
-                {
-                    DBGCVAR Var;
-                    int rc = dbgcSymbolGet(pDbgc, pVar->u.pszString, DBGCVAR_TYPE_GC_FLAT, &Var);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* deal with range */
-                        if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                        {
-                            Var.enmRangeType = pVar->enmRangeType;
-                            Var.u64Range = pVar->u64Range;
-                        }
-                        else if (pVarDesc->enmCategory == DBGCVAR_CAT_POINTER_NO_RANGE)
-                            Var.enmRangeType = DBGCVAR_RANGE_NONE;
-                        *pVar = Var;
-                        return rc;
-                    }
-                    break;
-                }
-
-                case DBGCVAR_TYPE_NUMBER:
-                    if (   pVarDesc->enmCategory != DBGCVAR_CAT_POINTER_NUMBER
-                        && pVarDesc->enmCategory != DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE)
-                    {
-                        RTGCPTR GCPtr = (RTGCPTR)pVar->u.u64Number;
-                        pVar->enmType = DBGCVAR_TYPE_GC_FLAT;
-                        pVar->u.GCFlat = GCPtr;
-                    }
-                    return VINF_SUCCESS;
-
-                default:
-                    break;
-            }
-            break;
-
-        /*
-         * GC pointer with and without range.
-         * We can try resolve strings and symbols as symbols and
-         * promote numbers to flat GC pointers.
-         */
-        case DBGCVAR_CAT_GC_POINTER_NO_RANGE:
-            if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
-            /* fallthru */
-        case DBGCVAR_CAT_GC_POINTER:
-            switch (pVar->enmType)
-            {
-                case DBGCVAR_TYPE_GC_FLAT:
-                case DBGCVAR_TYPE_GC_FAR:
-                case DBGCVAR_TYPE_GC_PHYS:
-                    return VINF_SUCCESS;
-
-                case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_DBGC_PARSE_CONVERSION_FAILED;
-
-                case DBGCVAR_TYPE_SYMBOL:
-                case DBGCVAR_TYPE_STRING:
-                {
-                    DBGCVAR Var;
-                    int rc = dbgcSymbolGet(pDbgc, pVar->u.pszString, DBGCVAR_TYPE_GC_FLAT, &Var);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* deal with range */
-                        if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                        {
-                            Var.enmRangeType = pVar->enmRangeType;
-                            Var.u64Range = pVar->u64Range;
-                        }
-                        else if (pVarDesc->enmCategory == DBGCVAR_CAT_POINTER_NO_RANGE)
-                            Var.enmRangeType = DBGCVAR_RANGE_NONE;
-                        *pVar = Var;
-                        return rc;
-                    }
-                    break;
-                }
-
-                case DBGCVAR_TYPE_NUMBER:
-                {
-                    RTGCPTR GCPtr = (RTGCPTR)pVar->u.u64Number;
-                    pVar->enmType = DBGCVAR_TYPE_GC_FLAT;
-                    pVar->u.GCFlat = GCPtr;
-                    return VINF_SUCCESS;
-                }
-
-                default:
-                    break;
-            }
-            break;
-
-        /*
-         * Number with or without a range.
-         * Numbers can be resolved from symbols, but we cannot demote a pointer
-         * to a number.
-         */
-        case DBGCVAR_CAT_NUMBER_NO_RANGE:
-            if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
-                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
-            /* fallthru */
-        case DBGCVAR_CAT_NUMBER:
-            switch (pVar->enmType)
-            {
-                case DBGCVAR_TYPE_NUMBER:
-                    return VINF_SUCCESS;
-
-                case DBGCVAR_TYPE_SYMBOL:
-                case DBGCVAR_TYPE_STRING:
-                {
-                    DBGCVAR Var;
-                    int rc = dbgcSymbolGet(pDbgc, pVar->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
-                    if (RT_SUCCESS(rc))
-                    {
-                        *pVar = Var;
-                        return rc;
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-            break;
-
-        /*
-         * Strings can easily be made from symbols (and of course strings).
-         * We could consider reformatting the addresses and numbers into strings later...
-         */
-        case DBGCVAR_CAT_STRING:
-            switch (pVar->enmType)
-            {
-                case DBGCVAR_TYPE_SYMBOL:
-                    pVar->enmType = DBGCVAR_TYPE_STRING;
-                    /* fallthru */
-                case DBGCVAR_TYPE_STRING:
-                    return VINF_SUCCESS;
-                default:
-                    break;
-            }
-            break;
-
-        /*
-         * Symol is pretty much the same thing as a string (at least until we actually implement it).
-         */
-        case DBGCVAR_CAT_SYMBOL:
-            switch (pVar->enmType)
-            {
-                case DBGCVAR_TYPE_STRING:
-                    pVar->enmType = DBGCVAR_TYPE_SYMBOL;
-                    /* fallthru */
-                case DBGCVAR_TYPE_SYMBOL:
-                    return VINF_SUCCESS;
-                default:
-                    break;
-            }
-            break;
-
-        /*
-         * Anything else is illegal.
-         */
-        default:
-            AssertMsgFailed(("enmCategory=%d\n", pVar->enmType));
-            break;
+        pszExpr[cchExpr] = '\0';
+        return dbgcEvalSubNum(pszExpr, 16, pResult);
     }
 
-    return VERR_DBGC_PARSE_NO_ARGUMENT_MATCH;
+    /* 0i<decimal digits> */
+    if (ch == '0' && ch2 == 'i')
+        return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+
+    /* 0t<octal digits> */
+    if (ch == '0' && ch2 == 't')
+        return dbgcEvalSubNum(pszExpr + 2, 8, pResult);
+
+    /* 0y<binary digits> */
+    if (ch == '0' && ch2 == 'y')
+        return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+
+    /* Hex number? */
+    unsigned off = 0;
+    while (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`')
+        off++;
+    if (off == cchExpr)
+        return dbgcEvalSubNum(pszExpr, 16, pResult);
+
+    /*
+     * Some kind of symbol?
+     */
+    DBGCVARTYPE enmType;
+    bool        fStripRange = false;
+    switch (enmCategory)
+    {
+        case DBGCVAR_CAT_POINTER_NUMBER:            enmType = DBGCVAR_TYPE_NUMBER; break;
+        case DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE:   enmType = DBGCVAR_TYPE_NUMBER; fStripRange = true; break;
+        case DBGCVAR_CAT_POINTER:                   enmType = DBGCVAR_TYPE_NUMBER; break;
+        case DBGCVAR_CAT_POINTER_NO_RANGE:          enmType = DBGCVAR_TYPE_NUMBER; fStripRange = true; break;
+        case DBGCVAR_CAT_GC_POINTER:                enmType = DBGCVAR_TYPE_GC_FLAT; break;
+        case DBGCVAR_CAT_GC_POINTER_NO_RANGE:       enmType = DBGCVAR_TYPE_GC_FLAT; fStripRange = true; break;
+        case DBGCVAR_CAT_NUMBER:                    enmType = DBGCVAR_TYPE_NUMBER; break;
+        case DBGCVAR_CAT_NUMBER_NO_RANGE:           enmType = DBGCVAR_TYPE_NUMBER; fStripRange = true; break;
+        default:
+            AssertFailedReturn(VERR_DBGC_PARSE_NOT_IMPLEMENTED);
+    }
+
+    if (   (*pszExpr == '"' || *pszExpr == '\'')
+        && pszExpr[cchExpr - 1] == *pszExpr)
+    {
+        pszExpr[cchExpr - 1] = '\0';
+        pszExpr++;
+    }
+
+    int rc = dbgcSymbolGet(pDbgc, pszExpr, enmType, pResult);
+    if (RT_SUCCESS(rc))
+    {
+        if (fStripRange)
+        {
+            pResult->enmRangeType = DBGCVAR_RANGE_NONE;
+            pResult->u64Range     = 0;
+        }
+    }
+    else if (rc == VERR_DBGC_PARSE_NOT_IMPLEMENTED)
+        rc = VERR_DBGC_PARSE_INVALID_NUMBER;
+    return rc;
 }
 
 
 /**
- * Matches a set of variables with a description set.
+ * dbgcEvalSubUnary worker that handles simple DBGCVAR_CAT_ANY expressions.
  *
- * This is typically used for routine arguments before a call. The effects in
- * addition to the validation, is that some variables might be propagated to
- * other types in order to match the description. The following transformations
- * are supported:
- *      - String reinterpreted as a symbol and resolved to a number or pointer.
- *      - Number to a pointer.
- *      - Pointer to a number.
- *
- * @returns VBox status code. Modified @a paVars on success.
+ * @returns VBox status code. pResult contains the result on success.
+ * @param   pDbgc       Debugger console instance data.
+ * @param   pszExpr     The expression string.
+ * @param   cchExpr     The length of the expression.
+ * @param   pResult     Where to store the result of the expression evaluation.
  */
-static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMax,
-                                PCDBGCVARDESC paVarDescs, unsigned cVarDescs,
-                                PDBGCVAR paVars, unsigned cVars)
+static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult)
 {
-    /*
-     * Just do basic min / max checks first.
-     */
-    if (cVars < cVarsMin)
-        return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
-    if (cVars > cVarsMax)
-        return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
+    char const  ch  = pszExpr[0];
+    char const  ch2 = pszExpr[1];
+    unsigned    off = 2;
 
-    /*
-     * Match the descriptors and actual variables.
-     */
-    PCDBGCVARDESC   pPrevDesc = NULL;
-    unsigned        cCurDesc = 0;
-    unsigned        iVar = 0;
-    unsigned        iVarDesc = 0;
-    while (iVar < cVars)
+    /* 0x<hex digits> */
+    if (ch == '0' && (ch2 == 'x' || ch2 == 'X'))
     {
-        /* walk the descriptors */
-        if (iVarDesc >= cVarDescs)
-            return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
-        if (    (    paVarDescs[iVarDesc].fFlags & DBGCVD_FLAGS_DEP_PREV
-                &&  &paVarDescs[iVarDesc - 1] != pPrevDesc)
-            ||  cCurDesc >= paVarDescs[iVarDesc].cTimesMax)
-        {
-            iVarDesc++;
-            if (iVarDesc >= cVarDescs)
-                return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
-            cCurDesc = 0;
-        }
-
-        /*
-         * Skip thru optional arguments until we find something which matches
-         * or can easily be promoted to what the descriptor want.
-         */
-        for (;;)
-        {
-            int rc = dbgcEvalSubMatchVar(pDbgc, &paVars[iVar], &paVarDescs[iVarDesc]);
-            if (RT_SUCCESS(rc))
-            {
-                paVars[iVar].pDesc = &paVarDescs[iVarDesc];
-                cCurDesc++;
-                break;
-            }
-
-            /* can we advance? */
-            if (paVarDescs[iVarDesc].cTimesMin > cCurDesc)
-                return VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH;
-            if (++iVarDesc >= cVarDescs)
-                return VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH;
-            cCurDesc = 0;
-        }
-
-        /* next var */
-        iVar++;
+        while (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`')
+            off++;
+        if (off == cchExpr)
+            return dbgcEvalSubNum(pszExpr + 2, 16, pResult);
+        return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
     }
 
-    /*
-     * Check that the rest of the descriptors are optional.
-     */
-    while (iVarDesc < cVarDescs)
+    /* <hex digits>h */
+    if (RT_C_IS_XDIGIT(*pszExpr) && (pszExpr[cchExpr - 1] == 'h' || pszExpr[cchExpr - 1] == 'H'))
     {
-        if (paVarDescs[iVarDesc].cTimesMin > cCurDesc)
-            return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
-        cCurDesc = 0;
-
-        /* next */
-        iVarDesc++;
+        cchExpr--;
+        while (off < cchExpr && (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`'))
+            off++;
+        if (off == cchExpr)
+        {
+            pszExpr[cchExpr] = '\0';
+            return dbgcEvalSubNum(pszExpr, 16, pResult);
+        }
+        return dbgcEvalSubString(pDbgc, pszExpr, cchExpr + 1, pResult);
     }
 
-    return VINF_SUCCESS;
+    /* 0i<decimal digits> */
+    if (ch == '0' && ch2 == 'i')
+    {
+        while (RT_C_IS_DIGIT(pszExpr[off]) || pszExpr[off] == '`')
+            off++;
+        if (off == cchExpr)
+            return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+        return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
+    }
+
+    /* 0t<octal digits> */
+    if (ch == '0' && ch2 == 't')
+    {
+        while (RT_C_IS_ODIGIT(pszExpr[off]) || pszExpr[off] == '`')
+            off++;
+        if (off == cchExpr)
+            return dbgcEvalSubNum(pszExpr + 2, 8, pResult);
+        return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
+    }
+
+    /* 0y<binary digits> */
+    if (ch == '0' && ch2 == 'y')
+    {
+        while (pszExpr[off] == '0' || pszExpr[off] == '1' || pszExpr[off] == '`')
+            off++;
+        if (off == cchExpr)
+            return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+        return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
+    }
+
+    /* Ok, no prefix of suffix. Is it a hex number after all? If not it must
+       be a string. */
+    off = 0;
+    while (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`')
+        off++;
+    if (off == cchExpr)
+        return dbgcEvalSubNum(pszExpr, 16, pResult);
+    return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
 }
 
 
@@ -480,9 +351,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
         while (RT_C_IS_BLANK(*pszExpr2))
             pszExpr2++;
 
-        if (!*pszExpr2)
-            rc = VERR_DBGC_PARSE_EMPTY_ARGUMENT;
-        else
+        if (*pszExpr2)
         {
             DBGCVAR Arg;
             if (*pszExpr2 == '(')
@@ -492,105 +361,101 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
             if (RT_SUCCESS(rc))
                 rc = pOp->pfnHandlerUnary(pDbgc, &Arg, enmCategory, pResult);
         }
+        else
+            rc = VERR_DBGC_PARSE_EMPTY_ARGUMENT;
+        return rc;
     }
-    else
+
+    /*
+     * Could this be a function call?
+     *
+     * ASSUMPTIONS:
+     *    - A function name only contains alphanumerical chars and it can not
+     *      start with a numerical character.
+     *    - Immediately following the name is a parenthesis which must cover
+     *      the remaining part of the expression.
+     */
+    bool    fExternal = *pszExpr == '.';
+    char   *pszFun    = fExternal ? pszExpr + 1 : pszExpr;
+    char   *pszFunEnd = NULL;
+    if (pszExpr[cchExpr - 1] == ')' && RT_C_IS_ALPHA(*pszFun))
+    {
+        pszFunEnd = pszExpr + 1;
+        while (*pszFunEnd != '(' && RT_C_IS_ALNUM(*pszFunEnd))
+            pszFunEnd++;
+        if (*pszFunEnd != '(')
+            pszFunEnd = NULL;
+    }
+    if (pszFunEnd)
     {
         /*
-         * Didn't find any operators, so it we have to check if this can be an
-         * function call before assuming numeric or string expression.
-         *
-         * (ASSUMPTIONS:)
-         * A function name only contains alphanumerical chars and it can not start
-         * with a numerical character.
-         * Immediately following the name is a parenthesis which must over
-         * the remaining part of the expression.
+         * Ok, it's a function call.
          */
-        bool    fExternal = *pszExpr == '.';
-        char   *pszFun    = fExternal ? pszExpr + 1 : pszExpr;
-        char   *pszFunEnd = NULL;
-        if (pszExpr[cchExpr - 1] == ')' && RT_C_IS_ALPHA(*pszFun))
-        {
-            pszFunEnd = pszExpr + 1;
-            while (*pszFunEnd != '(' && RT_C_IS_ALNUM(*pszFunEnd))
-                pszFunEnd++;
-            if (*pszFunEnd != '(')
-                pszFunEnd = NULL;
-        }
-
-        if (pszFunEnd)
-        {
-            /*
-             * Ok, it's a function call.
-             */
-            if (fExternal)
-                pszExpr++, cchExpr--;
-            PCDBGCCMD pFun = dbgcRoutineLookup(pDbgc, pszExpr, pszFunEnd - pszExpr, fExternal);
-            if (!pFun)
-                return VERR_DBGC_PARSE_FUNCTION_NOT_FOUND;
+        if (fExternal)
+            pszExpr++, cchExpr--;
+        PCDBGCCMD pFun = dbgcRoutineLookup(pDbgc, pszExpr, pszFunEnd - pszExpr, fExternal);
+        if (!pFun)
+            return VERR_DBGC_PARSE_FUNCTION_NOT_FOUND;
 #if 0
-            if (!pFun->pResultDesc)
-                return VERR_DBGC_PARSE_NOT_A_FUNCTION;
+        if (!pFun->pResultDesc)
+            return VERR_DBGC_PARSE_NOT_A_FUNCTION;
 
-            /*
-             * Parse the expression in parenthesis.
-             */
-            cchExpr -= pszFunEnd - pszExpr;
-            pszExpr = pszFunEnd;
-            /** @todo implement multiple arguments. */
-            DBGCVAR     Arg;
-            rc = dbgcEvalSub(pDbgc, pszExpr, cchExpr, enmCategory, &Arg);
-            if (!rc)
-            {
-                rc = dbgcEvalSubMatchVars(pDbgc, pFun->cArgsMin, pFun->cArgsMax, pFun->paArgDescs, pFun->cArgDescs, &Arg, 1);
-                if (!rc)
-                    rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, &Arg, 1, pResult);
-            }
-            else if (rc == VERR_DBGC_PARSE_EMPTY_ARGUMENT && pFun->cArgsMin == 0)
-                rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, NULL, 0, pResult);
-#else
-            rc = VERR_NOT_IMPLEMENTED;
-#endif
-        }
-        else if (   enmCategory == DBGCVAR_CAT_STRING
-                 || enmCategory == DBGCVAR_CAT_SYMBOL)
-            rc = dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
-        else
+        /*
+         * Parse the expression in parenthesis.
+         */
+        cchExpr -= pszFunEnd - pszExpr;
+        pszExpr = pszFunEnd;
+        /** @todo implement multiple arguments. */
+        DBGCVAR     Arg;
+        rc = dbgcEvalSub(pDbgc, pszExpr, cchExpr, enmCategory, &Arg);
+        if (!rc)
         {
-            /*
-             * Didn't find any operators, so it must be a plain expression.
-             * This might be numeric or a string expression.
-             */
-            char ch  = pszExpr[0];
-            char ch2 = pszExpr[1];
-            if (ch == '0' && (ch2 == 'x' || ch2 == 'X'))
-                rc = dbgcEvalSubNum(pszExpr + 2, 16, pResult);
-            else if (ch == '0' && (ch2 == 'i' || ch2 == 'i'))
-                rc = dbgcEvalSubNum(pszExpr + 2, 10, pResult);
-            else if (ch == '0' && (ch2 == 't' || ch2 == 'T'))
-                rc = dbgcEvalSubNum(pszExpr + 2, 8, pResult);
-            /// @todo 0b doesn't work as a binary prefix, we confuse it with 0bf8:0123 and stuff.
-            //else if (ch == '0' && (ch2 == 'b' || ch2 == 'b'))
-            //    rc = dbgcEvalSubNum(pszExpr + 2, 2, pResult);
-            else
-            {
-                /*
-                 * Hexadecimal number or a string?
-                 */
-                char *psz = pszExpr;
-                while (RT_C_IS_XDIGIT(*psz))
-                    psz++;
-                if (!*psz)
-                    rc = dbgcEvalSubNum(pszExpr, 16, pResult);
-                else if ((*psz == 'h' || *psz == 'H') && !psz[1])
-                {
-                    *psz = '\0';
-                    rc = dbgcEvalSubNum(pszExpr, 16, pResult);
-                }
-                else
-                    rc = dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
-            }
+            rc = dbgcEvalSubMatchVars(pDbgc, pFun->cArgsMin, pFun->cArgsMax, pFun->paArgDescs, pFun->cArgDescs, &Arg, 1);
+            if (!rc)
+                rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, &Arg, 1, pResult);
         }
+        else if (rc == VERR_DBGC_PARSE_EMPTY_ARGUMENT && pFun->cArgsMin == 0)
+            rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, NULL, 0, pResult);
+#else
+        rc = VERR_NOT_IMPLEMENTED;
+#endif
+        return rc;
     }
+
+    /*
+     * Assuming plain expression.
+     * Didn't find any operators, so it must be a plain expression.
+     * Go by desired category first, then if anythings go, try guess.
+     */
+    switch (enmCategory)
+    {
+        case DBGCVAR_CAT_ANY:
+            return dbgcEvalSubUnaryAny(pDbgc, pszExpr, cchExpr, pResult);
+
+        case DBGCVAR_CAT_POINTER_NUMBER:
+        case DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE:
+        case DBGCVAR_CAT_POINTER:
+        case DBGCVAR_CAT_POINTER_NO_RANGE:
+        case DBGCVAR_CAT_GC_POINTER:
+        case DBGCVAR_CAT_GC_POINTER_NO_RANGE:
+        case DBGCVAR_CAT_NUMBER:
+        case DBGCVAR_CAT_NUMBER_NO_RANGE:
+            /* Pointers will be promoted later. */
+            return dbgcEvalSubNumericOrPointer(pDbgc, pszExpr, cchExpr, enmCategory, pResult);
+
+        case DBGCVAR_CAT_STRING:
+        case DBGCVAR_CAT_SYMBOL:
+            /* Symbols will be promoted later. */
+            return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
+
+        case DBGCVAR_CAT_OPTION:
+        case DBGCVAR_CAT_OPTION_STRING:
+        case DBGCVAR_CAT_OPTION_NUMBER:
+            return VERR_DBGC_PARSE_NOT_IMPLEMENTED;
+    }
+
+    AssertMsgFailed(("enmCategory=%d\n", enmCategory));
+    rc = VERR_NOT_IMPLEMENTED;
 
     return rc;
 }
@@ -622,10 +487,6 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
         pszExpr++, cchExpr--;
     if (!*pszExpr)
         return VERR_DBGC_PARSE_EMPTY_ARGUMENT;
-
-    /* it there is any kind of quoting in the expression, it's string meat. */
-    if (strpbrk(pszExpr, "\"'`"))
-        return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
 
     /*
      * Check if there are any parenthesis which needs removing.
@@ -670,10 +531,12 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
         } while (pszExpr[0] == '(' && pszExpr[cchExpr - 1] == ')');
     }
 
-    /* tabs to spaces. */
+#if 0  /* why was this needed? It'll screw up strings. */
+    /* tabs to spaces */
     char *psz = pszExpr;
     while ((psz = strchr(psz, '\t')) != NULL)
         *psz = ' ';
+#endif
 
     /*
      * Now, we need to look for the binary operator with the lowest precedence.
@@ -681,22 +544,37 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
      * If there are no operators we're left with a simple expression which we
      * evaluate with respect to unary operators
      */
-    char       *pszOpSplit = NULL;
-    PCDBGCOP    pOpSplit = NULL;
-    unsigned    cBinaryOps = 0;
-    unsigned    cPar = 0;
+    char       *pszOpSplit  = NULL;
+    PCDBGCOP    pOpSplit    = NULL;
+    unsigned    cBinaryOps  = 0;
+    unsigned    cPar        = 0;
+    char        chQuote     = '\0';
+    char        chPrev      = ' ';
+    bool        fBinary     = false;
+    char       *psz         = pszExpr;
     char        ch;
-    char        chPrev = ' ';
-    bool        fBinary = false;
-    psz = pszExpr;
 
     while ((ch = *psz) != '\0')
     {
         //Log2(("ch=%c cPar=%d fBinary=%d\n", ch, cPar, fBinary));
         /*
-         * Parenthesis.
+         * String quoting.
          */
-        if (ch == '(')
+        if (chQuote)
+        {
+            if (   ch == chQuote
+                && psz[1] != chQuote)
+            {
+                chQuote = '\0';
+                fBinary = true;
+            }
+        }
+        else if (ch == '"' || ch == '\'')
+            chQuote = ch;
+        /*
+         * Parentheses.
+         */
+        else if (ch == '(')
         {
             cPar++;
             fBinary = false;
@@ -753,6 +631,8 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
         chPrev = ch;
     } /* parse loop. */
 
+    if (chQuote)
+        return VERR_DBGC_PARSE_UNBALANCED_QUOTE;
 
     /*
      * Either we found an operator to divide the expression by
@@ -790,10 +670,236 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
             rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, enmCategory, pResult);
     }
     else
-        /* plain expression or using unary operators perhaps with parentheses. */
+        /* plain expression, qutoed string, or using unary operators perhaps with parentheses. */
         rc = dbgcEvalSubUnary(pDbgc, pszExpr, cchExpr, enmCategory, pResult);
 
     return rc;
+}
+
+
+/**
+ * Worker for dbgcProcessArguments that performs type checking and promoptions.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDbgc       Debugger console instance data.
+ * @param   enmCategory The target category for the result.
+ * @param   pArg        The argument to check and promote.
+ */
+static int dbgcCheckAndTypePromoteArgument(PDBGC pDbgc, DBGCVARCAT enmCategory, PDBGCVAR pArg)
+{
+    switch (enmCategory)
+    {
+        /*
+         * Anything goes
+         */
+        case DBGCVAR_CAT_ANY:
+            return VINF_SUCCESS;
+
+        /*
+         * Pointer with and without range.
+         * We can try resolve strings and symbols as symbols and promote
+         * numbers to flat GC pointers.
+         */
+        case DBGCVAR_CAT_POINTER_NO_RANGE:
+        case DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE:
+            if (pArg->enmRangeType != DBGCVAR_RANGE_NONE)
+                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
+            /* fallthru */
+        case DBGCVAR_CAT_POINTER:
+        case DBGCVAR_CAT_POINTER_NUMBER:
+            switch (pArg->enmType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                case DBGCVAR_TYPE_GC_FAR:
+                case DBGCVAR_TYPE_GC_PHYS:
+                case DBGCVAR_TYPE_HC_FLAT:
+                case DBGCVAR_TYPE_HC_PHYS:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_SYMBOL:
+                case DBGCVAR_TYPE_STRING:
+                {
+                    DBGCVAR Var;
+                    int rc = dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_GC_FLAT, &Var);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* deal with range */
+                        if (pArg->enmRangeType != DBGCVAR_RANGE_NONE)
+                        {
+                            Var.enmRangeType = pArg->enmRangeType;
+                            Var.u64Range = pArg->u64Range;
+                        }
+                        else if (enmCategory == DBGCVAR_CAT_POINTER_NO_RANGE)
+                            Var.enmRangeType = DBGCVAR_RANGE_NONE;
+                        *pArg = Var;
+                    }
+                    return rc;
+                }
+
+                case DBGCVAR_TYPE_NUMBER:
+                    if (   enmCategory != DBGCVAR_CAT_POINTER_NUMBER
+                        && enmCategory != DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE)
+                    {
+                        RTGCPTR GCPtr = (RTGCPTR)pArg->u.u64Number;
+                        pArg->enmType = DBGCVAR_TYPE_GC_FLAT;
+                        pArg->u.GCFlat = GCPtr;
+                    }
+                    return VINF_SUCCESS;
+
+                default:
+                    AssertMsgFailedReturn(("Invalid type %d\n"), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+            }
+            break;                      /* (not reached) */
+
+        /*
+         * GC pointer with and without range.
+         * We can try resolve strings and symbols as symbols and
+         * promote numbers to flat GC pointers.
+         */
+        case DBGCVAR_CAT_GC_POINTER_NO_RANGE:
+            if (pArg->enmRangeType != DBGCVAR_RANGE_NONE)
+                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
+            /* fallthru */
+        case DBGCVAR_CAT_GC_POINTER:
+            switch (pArg->enmType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                case DBGCVAR_TYPE_GC_FAR:
+                case DBGCVAR_TYPE_GC_PHYS:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                case DBGCVAR_TYPE_HC_PHYS:
+                    return VERR_DBGC_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_SYMBOL:
+                case DBGCVAR_TYPE_STRING:
+                {
+                    DBGCVAR Var;
+                    int rc = dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_GC_FLAT, &Var);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* deal with range */
+                        if (pArg->enmRangeType != DBGCVAR_RANGE_NONE)
+                        {
+                            Var.enmRangeType = pArg->enmRangeType;
+                            Var.u64Range = pArg->u64Range;
+                        }
+                        else if (enmCategory == DBGCVAR_CAT_POINTER_NO_RANGE)
+                            Var.enmRangeType = DBGCVAR_RANGE_NONE;
+                        *pArg = Var;
+                    }
+                    return rc;
+                }
+
+                case DBGCVAR_TYPE_NUMBER:
+                {
+                    RTGCPTR GCPtr = (RTGCPTR)pArg->u.u64Number;
+                    pArg->enmType = DBGCVAR_TYPE_GC_FLAT;
+                    pArg->u.GCFlat = GCPtr;
+                    return VINF_SUCCESS;
+                }
+
+                default:
+                    AssertMsgFailedReturn(("Invalid type %d\n"), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+            }
+            break;                      /* (not reached) */
+
+        /*
+         * Number with or without a range.
+         * Numbers can be resolved from symbols, but we cannot demote a pointer
+         * to a number.
+         */
+        case DBGCVAR_CAT_NUMBER_NO_RANGE:
+            if (pArg->enmRangeType != DBGCVAR_RANGE_NONE)
+                return VERR_DBGC_PARSE_NO_RANGE_ALLOWED;
+            /* fallthru */
+        case DBGCVAR_CAT_NUMBER:
+            switch (pArg->enmType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                case DBGCVAR_TYPE_GC_FAR:
+                case DBGCVAR_TYPE_GC_PHYS:
+                case DBGCVAR_TYPE_HC_FLAT:
+                case DBGCVAR_TYPE_HC_PHYS:
+                    return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_SYMBOL:
+                case DBGCVAR_TYPE_STRING:
+                {
+                    DBGCVAR Var;
+                    int rc = dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* deal with range */
+                        if (pArg->enmRangeType != DBGCVAR_RANGE_NONE)
+                        {
+                            Var.enmRangeType = pArg->enmRangeType;
+                            Var.u64Range = pArg->u64Range;
+                        }
+                        else if (enmCategory == DBGCVAR_CAT_POINTER_NO_RANGE)
+                            Var.enmRangeType = DBGCVAR_RANGE_NONE;
+                        *pArg = Var;
+                    }
+                    return rc;
+                }
+
+                default:
+                    AssertMsgFailedReturn(("Invalid type %d\n"), VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+            }
+            break;                      /* (not reached) */
+
+        /*
+         * Symbols and strings are basically the same thing for the time being.
+         */
+        case DBGCVAR_CAT_STRING:
+        case DBGCVAR_CAT_SYMBOL:
+        {
+            switch (pArg->enmType)
+            {
+                case DBGCVAR_TYPE_STRING:
+                    if (enmCategory == DBGCVAR_CAT_SYMBOL)
+                        pArg->enmType = DBGCVAR_TYPE_SYMBOL;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_SYMBOL:
+                    if (enmCategory == DBGCVAR_CAT_STRING)
+                        pArg->enmType = DBGCVAR_TYPE_STRING;
+                    return VINF_SUCCESS;
+                default:
+                    break;
+            }
+
+            /* Stringify numeric and poitner values. */
+            size_t cbScratch = sizeof(pDbgc->achScratch) - (pDbgc->pszScratch - &pDbgc->achScratch[0]);
+            size_t cch = pDbgc->CmdHlp.pfnStrPrintf(&pDbgc->CmdHlp, pDbgc->pszScratch, cbScratch, "%Dv", pArg);
+            if (cch + 1 >= cbScratch)
+                return VERR_DBGC_PARSE_NO_SCRATCH;
+
+            pArg->enmType      = enmCategory == DBGCVAR_CAT_STRING ? DBGCVAR_TYPE_STRING : DBGCVAR_TYPE_SYMBOL;
+            pArg->u.pszString  = pDbgc->pszScratch;
+            pArg->enmRangeType = DBGCVAR_RANGE_BYTES;
+            pArg->u64Range     = cch;
+
+            pDbgc->pszScratch += cch + 1;
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * These are not yet implemented.
+         */
+        case DBGCVAR_CAT_OPTION:
+        case DBGCVAR_CAT_OPTION_STRING:
+        case DBGCVAR_CAT_OPTION_NUMBER:
+            AssertMsgFailedReturn(("Not implemented enmCategory=%d\n", enmCategory), VERR_DBGC_PARSE_NOT_IMPLEMENTED);
+
+        default:
+            AssertMsgFailedReturn(("Bad enmCategory=%d\n", enmCategory), VERR_DBGC_PARSE_NOT_IMPLEMENTED);
+    }
 }
 
 
@@ -834,22 +940,6 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
 
     /*
-     * This is a hack, it's "temporary" and should go away "when" the parser is
-     * modified to match arguments while parsing.
-     */
-    if (    pCmd->cArgsMax == 1
-        &&  pCmd->cArgsMin == 1
-        &&  pCmd->cArgDescs == 1
-        &&  (   pCmd->paArgDescs[0].enmCategory == DBGCVAR_CAT_STRING
-             || pCmd->paArgDescs[0].enmCategory == DBGCVAR_CAT_SYMBOL)
-        &&  cArgs >= 1)
-    {
-        *pcArgs = 1;
-        RTStrStripR(pszArgs);
-        return dbgcEvalSubString(pDbgc, pszArgs, strlen(pszArgs), &paArgs[0]);
-    }
-
-    /*
      * The parse loop.
      */
     PDBGCVAR        pArg0       = &paArgs[0];
@@ -870,21 +960,17 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
             return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
         if (pArg >= &paArgs[cArgs])
             return VERR_DBGC_PARSE_ARGUMENT_OVERFLOW;
-#ifdef DEBUG_bird /* work in progress. */
         if (iVarDesc >= cVarDescs)
             return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
 
         /* Walk argument descriptors. */
-        if (    (    paVarDescs[iVarDesc].fFlags & DBGCVD_FLAGS_DEP_PREV
-                &&  &paVarDescs[iVarDesc - 1] != pPrevDesc)
-            ||  cCurDesc >= paVarDescs[iVarDesc].cTimesMax)
+        if (cCurDesc >= paVarDescs[iVarDesc].cTimesMax)
         {
             iVarDesc++;
             if (iVarDesc >= cVarDescs)
                 return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
             cCurDesc = 0;
         }
-#endif
 
         /*
          * Find the end of the argument.
@@ -913,7 +999,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
              * When quoted we ignore everything but the quotation char.
              * We use the REXX way of escaping the quotation char, i.e. double occurrence.
              */
-            else if (ch == '\'' || ch == '"' || ch == '`')
+            else if (ch == '\'' || ch == '"')
             {
                 if (chQuote)
                 {
@@ -932,12 +1018,12 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
             /*
              * Parenthesis can of course be nested.
              */
-            else if (ch == '(')
+            else if (!chQuote && ch == '(')
             {
                 cPar++;
                 fBinary = false;
             }
-            else if (ch == ')')
+            else if (!chQuote && ch == ')')
             {
                 if (!cPar)
                     return VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS;
@@ -996,8 +1082,6 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         /* (psz = next char to process) */
         size_t cchArgs = strlen(pszArgs);
 
-
-#ifdef DEBUG_bird /* work in progress. */
         /*
          * Try optional arguments until we find something which matches
          * or can easily be promoted to what the descriptor want.
@@ -1006,9 +1090,11 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         {
             char *pszArgsCopy = (char *)RTMemDup(pszArgs, cchArgs + 1);
             if (!pszArgsCopy)
-                return VERR_NO_MEMORY;
+                return VERR_DBGC_PARSE_NO_MEMORY;
 
-            int rc = dbgcEvalSub(pDbgc, pszArgs, strlen(pszArgs), paVarDescs[iVarDesc].enmCategory, pArg);
+            int rc = dbgcEvalSub(pDbgc, pszArgs, cchArgs, paVarDescs[iVarDesc].enmCategory, pArg);
+            if (RT_SUCCESS(rc))
+                rc = dbgcCheckAndTypePromoteArgument(pDbgc, paVarDescs[iVarDesc].enmCategory, pArg);
             if (RT_SUCCESS(rc))
             {
                 pArg->pDesc = pPrevDesc = &paVarDescs[iVarDesc];
@@ -1020,25 +1106,28 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
             memcpy(pszArgs, pszArgsCopy, cchArgs + 1);
             RTMemFree(pszArgsCopy);
 
-            /* can we advance? */
+            /* Continue searching optional descriptors? */
+            if (   rc != VERR_DBGC_PARSE_INCORRECT_ARG_TYPE
+                && rc != VERR_DBGC_PARSE_INVALID_NUMBER
+                && rc != VERR_DBGC_PARSE_NO_RANGE_ALLOWED
+               )
+                   return rc;
+
+            /* Try advance to the next descriptor. */
             if (paVarDescs[iVarDesc].cTimesMin > cCurDesc)
                 return rc;
-            if (++iVarDesc >= cVarDescs)
+            iVarDesc++;
+            if (!cCurDesc)
+                while (   iVarDesc < cVarDescs
+                       && (paVarDescs[iVarDesc].fFlags & DBGCVD_FLAGS_DEP_PREV))
+                    iVarDesc++;
+            if (iVarDesc >= cVarDescs)
                 return rc;
             cCurDesc = 0;
         }
 
-#else
         /*
-         * Parse and evaluate the argument.
-         */
-        int rc = dbgcEvalSub(pDbgc, pszArgs, cchArgs, DBGCVAR_CAT_ANY, pArg);
-        if (RT_FAILURE(rc))
-            return rc;
-#endif
-
-        /*
-         * Next.
+         * Next argument.
          */
         iVar++;
         pArg++;
@@ -1049,9 +1138,22 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
     } while (*pszArgs);
 
     /*
-     * Match the arguments.
+     * Check that the rest of the argument descriptors indicate optional args.
      */
-    return dbgcEvalSubMatchVars(pDbgc, pCmd->cArgsMin, pCmd->cArgsMax, pCmd->paArgDescs, pCmd->cArgDescs, pArg0, pArg - pArg0);
+    if (iVarDesc < cVarDescs)
+    {
+        if (cCurDesc < paVarDescs[iVarDesc].cTimesMin)
+            return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
+        iVarDesc++;
+        while (iVarDesc < cVarDescs)
+        {
+            if (paVarDescs[iVarDesc].cTimesMin)
+                return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
+            iVarDesc++;
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 

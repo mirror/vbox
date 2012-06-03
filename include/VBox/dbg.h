@@ -387,8 +387,8 @@ typedef struct DBGCCMDHLP
      * @returns VBox status.
      * @param   pCmdHlp     Pointer to the command callback structure.
      * @param   pcb         Where to store the number of bytes written.
-     * @param   pszFormat   The format string.
-     *                      This is using the log formatter, so it's format extensions can be used.
+     * @param   pszFormat   The format string.  This may use all IPRT extensions as
+     *                      well as the debugger ones.
      * @param   ...         Arguments specified in the format string.
      */
     DECLCALLBACKMEMBER(int, pfnPrintf)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, ...);
@@ -399,11 +399,38 @@ typedef struct DBGCCMDHLP
      * @returns VBox status.
      * @param   pCmdHlp     Pointer to the command callback structure.
      * @param   pcb         Where to store the number of bytes written.
-     * @param   pszFormat   The format string.
-     *                      This is using the log formatter, so it's format extensions can be used.
+     * @param   pszFormat   The format string.  This may use all IPRT extensions as
+     *                      well as the debugger ones.
      * @param   args        Arguments specified in the format string.
      */
     DECLCALLBACKMEMBER(int, pfnPrintfV)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, va_list args);
+
+    /**
+     * Command helper for formatting a string with debugger format specifiers.
+     *
+     * @returns The number of bytes written.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pszBuf      The output buffer.
+     * @param   cbBuf       The size of the output buffer.
+     * @param   pszFormat   The format string.  This may use all IPRT extensions as
+     *                      well as the debugger ones.
+     * @param   ...         Arguments specified in the format string.
+     */
+    DECLCALLBACKMEMBER(size_t, pfnStrPrintf)(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf, const char *pszFormat, ...);
+
+    /**
+     * Command helper for formatting a string with debugger format specifiers.
+     *
+     * @returns The number of bytes written.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pszBuf      The output buffer.
+     * @param   cbBuf       The size of the output buffer.
+     * @param   pszFormat   The format string.  This may use all IPRT extensions as
+     *                      well as the debugger ones.
+     * @param   va          Arguments specified in the format string.
+     */
+    DECLCALLBACKMEMBER(size_t, pfnStrPrintfV)(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf,
+                                              const char *pszFormat, va_list va);
 
     /**
      * Command helper for formatting and error message for a VBox status code.
@@ -612,13 +639,7 @@ typedef struct DBGCCMDHLP
 #ifdef IN_RING3
 
 /**
- * Command helper for writing formatted text to the debug console.
- *
- * @returns VBox status.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pszFormat   The format string.
- *                      This is using the log formatter, so it's format extensions can be used.
- * @param   ...         Arguments specified in the format string.
+ * @copydoc DBGCCMDHLP::pfnPrintf
  */
 DECLINLINE(int) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...)
 {
@@ -630,6 +651,22 @@ DECLINLINE(int) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...
     va_end(va);
 
     return rc;
+}
+
+
+/**
+ * @copydoc DBGCCMDHLP::pfnStrPrintf
+ */
+DECLINLINE(size_t) DBGCCmdHlpStrPrintf(PDBGCCMDHLP pCmdHlp, char *pszBuf, size_t cbBuf, const char *pszFormat, ...)
+{
+    va_list va;
+    size_t  cch;
+
+    va_start(va, pszFormat);
+    cch = pCmdHlp->pfnStrPrintfV(pCmdHlp, pszBuf, cbBuf, pszFormat, va);
+    va_end(va);
+
+    return cch;
 }
 
 /**

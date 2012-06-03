@@ -405,6 +405,14 @@ static void tstNumOp(PDBGC pDbgc, const char *pszExpr, uint64_t u64Expect)
 }
 
 
+/*
+ *
+ * CodeView emulation commands.
+ * CodeView emulation commands.
+ * CodeView emulation commands.
+ *
+ */
+
 
 static void testCodeView_ba(PDBGC pDbgc)
 {
@@ -446,10 +454,679 @@ static void testCodeView_ba(PDBGC pDbgc)
              DBGCVAR_TYPE_NUMBER, UINT64_C(0x1000),             DBGCVAR_RANGE_NONE,
              DBGCVAR_TYPE_STRING, "command",                    DBGCVAR_RANGE_BYTES, UINT64_C(7));
 
-    tstTry(pDbgc, "ba x 1 0f000:1234 qnx 1000 \"command\"\n",   VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH);
-    tstTry(pDbgc, "ba x 1 0f000:1234 5 qnx \"command\"\n",      VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH);
-    tstTry(pDbgc, "ba x qnx 0f000:1234 5 1000 \"command\"\n",   VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH);
-    tstTry(pDbgc, "ba x 1 qnx 5 1000 \"command\"\n",            VERR_DBGC_PARSE_ARGUMENT_TYPE_MISMATCH);
+    tstTry(pDbgc, "ba x 1 0f000:1234 qnx 1000 \"command\"\n",   VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "ba x 1 0f000:1234 5 qnx \"command\"\n",      VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "ba x qnx 0f000:1234 5 1000 \"command\"\n",   VERR_DBGC_PARSE_INVALID_NUMBER);
+    tstTry(pDbgc, "ba x 1 qnx 5 1000 \"command\"\n",            VERR_DBGC_PARSE_INVALID_NUMBER);
+}
+
+
+static void testCodeView_bc(PDBGC pDbgc)
+{
+    RTTestISub("codeview - bc");
+}
+
+
+static void testCodeView_bd(PDBGC pDbgc)
+{
+    RTTestISub("codeview - bc");
+}
+
+
+static void testCodeView_be(PDBGC pDbgc)
+{
+    RTTestISub("codeview - be");
+}
+
+
+static void testCodeView_bl(PDBGC pDbgc)
+{
+    RTTestISub("codeview - bl");
+}
+
+
+static void testCodeView_bp(PDBGC pDbgc)
+{
+    RTTestISub("codeview - bp");
+}
+
+
+static void testCodeView_br(PDBGC pDbgc)
+{
+    RTTestISub("codeview - br");
+}
+
+
+static void testCodeView_d(PDBGC pDbgc)
+{
+    RTTestISub("codeview - d");
+}
+
+
+static void testCodeView_da(PDBGC pDbgc)
+{
+    RTTestISub("codeview - da");
+}
+
+
+static void testCodeView_db(PDBGC pDbgc)
+{
+    RTTestISub("codeview - db");
+}
+
+
+static void testCodeView_dd(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dd");
+}
+
+
+static void testCodeView_dg(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dg");
+}
+
+
+static void testCodeView_dga(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dga");
+}
+
+
+static void testCodeView_di(PDBGC pDbgc)
+{
+    RTTestISub("codeview - di");
+}
+
+
+static void testCodeView_dia(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dia");
+}
+
+
+static void testCodeView_dl(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dl");
+}
+
+
+static void testCodeView_dla(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dla");
+}
+
+
+static void testCodeView_dpd(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dpd");
+}
+
+
+static void testCodeView_dpda(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dpda");
+}
+
+
+static void testCodeView_dpdb(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dpdb");
+}
+
+
+static void testCodeView_dpdg(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dpdg");
+}
+
+
+static void testCodeView_dpdh(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dpdh");
+}
+
+
+static void testCodeView_dph(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dph");
+}
+
+
+static void testCodeView_dphg(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dphg");
+}
+
+
+static void testCodeView_dphh(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dphh");
+}
+
+
+static void testCodeView_dq(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dq");
+}
+
+
+static void testCodeView_dt(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dt");
+}
+
+
+static void testCodeView_dt16(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dt16");
+}
+
+
+static void testCodeView_dt32(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dt32");
+}
+
+
+static void testCodeView_dt64(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dt64");
+}
+
+
+static void testCodeView_dw(PDBGC pDbgc)
+{
+    RTTestISub("codeview - dw");
+}
+
+
+static void testCodeView_eb(PDBGC pDbgc)
+{
+    RTTestISub("codeview - eb");
+}
+
+
+static void testCodeView_ew(PDBGC pDbgc)
+{
+    RTTestISub("codeview - ew");
+}
+
+
+static void testCodeView_ed(PDBGC pDbgc)
+{
+    RTTestISub("codeview - ed");
+}
+
+
+static void testCodeView_eq(PDBGC pDbgc)
+{
+    RTTestISub("codeview - eq");
+}
+
+
+static void testCodeView_g(PDBGC pDbgc)
+{
+    RTTestISub("codeview - g");
+}
+
+
+static void testCodeView_k(PDBGC pDbgc)
+{
+    RTTestISub("codeview - k");
+}
+
+
+static void testCodeView_kg(PDBGC pDbgc)
+{
+    RTTestISub("codeview - kg");
+}
+
+
+static void testCodeView_kh(PDBGC pDbgc)
+{
+    RTTestISub("codeview - kh");
+}
+
+
+static void testCodeView_lm(PDBGC pDbgc)
+{
+    RTTestISub("codeview - lm");
+}
+
+
+static void testCodeView_lmo(PDBGC pDbgc)
+{
+    RTTestISub("codeview - lmo");
+}
+
+
+static void testCodeView_ln(PDBGC pDbgc)
+{
+    RTTestISub("codeview - ln");
+}
+
+
+static void testCodeView_ls(PDBGC pDbgc)
+{
+    RTTestISub("codeview - ls");
+}
+
+
+static void testCodeView_m(PDBGC pDbgc)
+{
+    RTTestISub("codeview - m");
+}
+
+
+static void testCodeView_r(PDBGC pDbgc)
+{
+    RTTestISub("codeview - r");
+}
+
+
+static void testCodeView_rg(PDBGC pDbgc)
+{
+    RTTestISub("codeview - rg");
+}
+
+
+static void testCodeView_rg32(PDBGC pDbgc)
+{
+    RTTestISub("codeview - rg32");
+}
+
+
+static void testCodeView_rg64(PDBGC pDbgc)
+{
+    RTTestISub("codeview - rg64");
+}
+
+
+static void testCodeView_rh(PDBGC pDbgc)
+{
+    RTTestISub("codeview - rh");
+}
+
+
+static void testCodeView_rt(PDBGC pDbgc)
+{
+    RTTestISub("codeview - rt");
+}
+
+
+static void testCodeView_s(PDBGC pDbgc)
+{
+    RTTestISub("codeview - s");
+}
+
+
+static void testCodeView_sa(PDBGC pDbgc)
+{
+    RTTestISub("codeview - sa");
+}
+
+
+static void testCodeView_sb(PDBGC pDbgc)
+{
+    RTTestISub("codeview - sb");
+}
+
+
+static void testCodeView_sd(PDBGC pDbgc)
+{
+    RTTestISub("codeview - sd");
+}
+
+
+static void testCodeView_sq(PDBGC pDbgc)
+{
+    RTTestISub("codeview - sq");
+}
+
+
+static void testCodeView_su(PDBGC pDbgc)
+{
+    RTTestISub("codeview - su");
+}
+
+
+static void testCodeView_sw(PDBGC pDbgc)
+{
+    RTTestISub("codeview - sw");
+}
+
+
+static void testCodeView_t(PDBGC pDbgc)
+{
+    RTTestISub("codeview - t");
+}
+
+
+static void testCodeView_y(PDBGC pDbgc)
+{
+    RTTestISub("codeview - y");
+}
+
+
+static void testCodeView_u64(PDBGC pDbgc)
+{
+    RTTestISub("codeview - u64");
+}
+
+
+static void testCodeView_u32(PDBGC pDbgc)
+{
+    RTTestISub("codeview - u32");
+}
+
+
+static void testCodeView_u16(PDBGC pDbgc)
+{
+    RTTestISub("codeview - u16");
+}
+
+
+static void testCodeView_uv86(PDBGC pDbgc)
+{
+    RTTestISub("codeview - uv86");
+}
+
+
+/*
+ * Common commands.
+ */
+
+static void testCommon_bye_exit_quit(PDBGC pDbgc)
+{
+    RTTestISub("common - bye/exit/quit");
+    /* These have the same parameter descriptor and handler, the command really
+       just has a couple of aliases.*/
+    tstTry(pDbgc, "bye\n", VINF_SUCCESS);
+    tstTry(pDbgc, "bye x\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "bye 1\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "bye %bad:bad\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "exit\n", VINF_SUCCESS);
+    tstTry(pDbgc, "quit\n", VINF_SUCCESS);
+}
+
+
+static void testCommon_cpu(PDBGC pDbgc)
+{
+    RTTestISub("common - cpu");
+    tstTry(pDbgc, "cpu\n", VINF_SUCCESS);
+    tstTry(pDbgc, "cpu 1\n", VINF_SUCCESS);
+    tstTry(pDbgc, "cpu 1 1\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "cpu emt\n", VERR_DBGC_PARSE_INVALID_NUMBER);
+    tstTry(pDbgc, "cpu @eax\n", VINF_SUCCESS);
+    tstTry(pDbgc, "cpu %bad:bad\n", VERR_DBGC_PARSE_CONVERSION_FAILED);
+}
+
+
+static void testCommon_echo(PDBGC pDbgc)
+{
+    RTTestISub("common - echo");
+    tstTry(pDbgc, "echo\n", VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS);
+    tstTry(pDbgc, "echo 1\n", VINF_SUCCESS);
+    tstTryEx(pDbgc, "echo 1 2 3  4 5   6\n", VINF_SUCCESS, false, "1 2 3 4 5 6", -1);
+
+    /* The idea here is that since the prefered input is a string, we
+       definitely won't be mistaking number like beginnings as numbers. */
+    tstTryEx(pDbgc, "echo 1234567890abcdefghijklmn\n", VINF_SUCCESS, false, "1234567890abcdefghijklmn", -1);
+
+    /* The idea here is that we'll perform the + operation and then convert the
+       result to a string (hex). */
+    tstTryEx(pDbgc, "echo 1 + 1\n", VINF_SUCCESS, false, "2", -1);
+    tstTryEx(pDbgc, "echo \"1 + 1\"\n", VINF_SUCCESS, false, "1 + 1", -1);
+
+    tstTryEx(pDbgc, "echo 0i10 + 6\n", VINF_SUCCESS, false, "10", -1);
+    tstTryEx(pDbgc, "echo \"0i10 + 6\"\n", VINF_SUCCESS, false, "0i10 + 6", -1);
+
+    tstTryEx(pDbgc, "echo %f000:0010\n", VINF_SUCCESS, false, "%00000000000f0010", -1);
+    tstTryEx(pDbgc, "echo \"%f000:0010\"\n", VINF_SUCCESS, false, "%f000:0010", -1);
+
+    tstTry(pDbgc, "echo %bad:bad\n", VERR_DBGC_PARSE_CONVERSION_FAILED);
+}
+
+
+static void testCommon_format(PDBGC pDbgc)
+{
+    RTTestISub("common - format");
+}
+
+
+static void testCommon_detect(PDBGC pDbgc)
+{
+    RTTestISub("common - detect");
+}
+
+
+static void testCommon_harakiri(PDBGC pDbgc)
+{
+    RTTestISub("common - harakiri");
+}
+
+
+static void testCommon_help(PDBGC pDbgc)
+{
+    RTTestISub("common - help");
+}
+
+
+static void testCommon_info(PDBGC pDbgc)
+{
+    RTTestISub("common - info");
+    tstTry(pDbgc, "info 12fg\n", VINF_SUCCESS);
+    tstTry(pDbgc, "info fflags argument\n", VINF_SUCCESS);
+}
+
+
+static void testCommon_loadimage(PDBGC pDbgc)
+{
+    RTTestISub("common - loadimage");
+}
+
+
+static void testCommon_loadmap(PDBGC pDbgc)
+{
+    RTTestISub("common - loadmap");
+}
+
+
+static void testCommon_loadplugin(PDBGC pDbgc)
+{
+    RTTestISub("common - loadplugin");
+}
+
+
+static void testCommon_loadseg(PDBGC pDbgc)
+{
+    RTTestISub("common - loadseg");
+}
+
+
+static void testCommon_loadsyms(PDBGC pDbgc)
+{
+    RTTestISub("common - loadsyms");
+}
+
+
+static void testCommon_loadvars(PDBGC pDbgc)
+{
+    RTTestISub("common - loadvars");
+}
+
+
+static void testCommon_log(PDBGC pDbgc)
+{
+    RTTestISub("common - log");
+}
+
+
+static void testCommon_logdest(PDBGC pDbgc)
+{
+    RTTestISub("common - logdest");
+}
+
+
+static void testCommon_logflags(PDBGC pDbgc)
+{
+    RTTestISub("common - logflags");
+}
+
+
+static void testCommon_runscript(PDBGC pDbgc)
+{
+    RTTestISub("common - runscript");
+}
+
+
+static void testCommon_set(PDBGC pDbgc)
+{
+    RTTestISub("common - set");
+}
+
+
+static void testCommon_showplugins(PDBGC pDbgc)
+{
+    RTTestISub("common - showplugins");
+}
+
+
+static void testCommon_showvars(PDBGC pDbgc)
+{
+    RTTestISub("common - showvars");
+}
+
+
+static void testCommon_stop(PDBGC pDbgc)
+{
+    RTTestISub("common - stop");
+}
+
+
+static void testCommon_unloadplugin(PDBGC pDbgc)
+{
+    RTTestISub("common - unloadplugin");
+}
+
+
+static void testCommon_unset(PDBGC pDbgc)
+{
+    RTTestISub("common - unset");
+}
+
+
+static void testCommon_writecore(PDBGC pDbgc)
+{
+    RTTestISub("common - writecore");
+}
+
+
+
+/*
+ * Basic tests.
+ */
+
+static void testBasicsOddCases(PDBGC pDbgc)
+{
+    RTTestISub("Odd cases");
+    tstTry(pDbgc, "r @rax\n", VINF_SUCCESS);
+    tstTry(pDbgc, "r @eax\n", VINF_SUCCESS);
+    tstTry(pDbgc, "r @ah\n", VINF_SUCCESS);
+    tstTry(pDbgc, "r @notavalidregister\n", VERR_DBGF_REGISTER_NOT_FOUND);
+}
+
+
+static void testBasicsOperators(PDBGC pDbgc)
+{
+    RTTestISub("Operators");
+    tstNumOp(pDbgc, "1",                                        1);
+    tstNumOp(pDbgc, "1",                                        1);
+    tstNumOp(pDbgc, "1",                                        1);
+
+    tstNumOp(pDbgc, "+1",                                       1);
+    tstNumOp(pDbgc, "++++++1",                                  1);
+
+    tstNumOp(pDbgc, "-1",                                       UINT64_MAX);
+    tstNumOp(pDbgc, "--1",                                      1);
+    tstNumOp(pDbgc, "---1",                                     UINT64_MAX);
+    tstNumOp(pDbgc, "----1",                                    1);
+
+    tstNumOp(pDbgc, "~0",                                       UINT64_MAX);
+    tstNumOp(pDbgc, "~1",                                       UINT64_MAX-1);
+    tstNumOp(pDbgc, "~~0",                                      0);
+    tstNumOp(pDbgc, "~~1",                                      1);
+
+    tstNumOp(pDbgc, "!1",                                       0);
+    tstNumOp(pDbgc, "!0",                                       1);
+    tstNumOp(pDbgc, "!42",                                      0);
+    tstNumOp(pDbgc, "!!42",                                     1);
+    tstNumOp(pDbgc, "!!!42",                                    0);
+    tstNumOp(pDbgc, "!!!!42",                                   1);
+
+    tstNumOp(pDbgc, "1 +1",                                     2);
+    tstNumOp(pDbgc, "1 + 1",                                    2);
+    tstNumOp(pDbgc, "1+1",                                      2);
+    tstNumOp(pDbgc, "1+ 1",                                     2);
+
+    tstNumOp(pDbgc, "1 - 1",                                    0);
+    tstNumOp(pDbgc, "99 - 90",                                  9);
+
+    tstNumOp(pDbgc, "2 * 2",                                    4);
+
+    tstNumOp(pDbgc, "2 / 2",                                    1);
+    tstNumOp(pDbgc, "2 / 0",                                    UINT64_MAX);
+    tstNumOp(pDbgc, "0i1024 / 0i4",                             256);
+
+    tstNumOp(pDbgc, "8 mod 7",                                  1);
+
+    tstNumOp(pDbgc, "1<<1",                                     2);
+    tstNumOp(pDbgc, "1<<0i32",                                  UINT64_C(0x0000000100000000));
+    tstNumOp(pDbgc, "1<<0i48",                                  UINT64_C(0x0001000000000000));
+    tstNumOp(pDbgc, "1<<0i63",                                  UINT64_C(0x8000000000000000));
+
+    tstNumOp(pDbgc, "fedcba0987654321>>0i04",                   UINT64_C(0x0fedcba098765432));
+    tstNumOp(pDbgc, "fedcba0987654321>>0i32",                   UINT64_C(0xfedcba09));
+    tstNumOp(pDbgc, "fedcba0987654321>>0i48",                   UINT64_C(0x0000fedc));
+
+    tstNumOp(pDbgc, "0ef & 4",                                  4);
+    tstNumOp(pDbgc, "01234567891 & fff",                        UINT64_C(0x00000000891));
+    tstNumOp(pDbgc, "01234567891 & ~fff",                       UINT64_C(0x01234567000));
+
+    tstNumOp(pDbgc, "1 | 1",                                    1);
+    tstNumOp(pDbgc, "0 | 4",                                    4);
+    tstNumOp(pDbgc, "4 | 0",                                    4);
+    tstNumOp(pDbgc, "4 | 4",                                    4);
+    tstNumOp(pDbgc, "1 | 4 | 2",                                7);
+
+    tstNumOp(pDbgc, "1 ^ 1",                                    0);
+    tstNumOp(pDbgc, "1 ^ 0",                                    1);
+    tstNumOp(pDbgc, "0 ^ 1",                                    1);
+    tstNumOp(pDbgc, "3 ^ 1",                                    2);
+    tstNumOp(pDbgc, "7 ^ 3",                                    4);
+
+    tstNumOp(pDbgc, "7 || 3",                                   1);
+    tstNumOp(pDbgc, "1 || 0",                                   1);
+    tstNumOp(pDbgc, "0 || 1",                                   1);
+    tstNumOp(pDbgc, "0 || 0",                                   0);
+
+    tstNumOp(pDbgc, "0 && 0",                                   0);
+    tstNumOp(pDbgc, "1 && 0",                                   0);
+    tstNumOp(pDbgc, "0 && 1",                                   0);
+    tstNumOp(pDbgc, "1 && 1",                                   1);
+    tstNumOp(pDbgc, "4 && 1",                                   1);
+}
+
+
+static void testBasicsFundametalParsing(PDBGC pDbgc)
+{
+    RTTestISub("Fundamental parsing");
+    tstTry(pDbgc, "stop\n", VINF_SUCCESS);
+    tstTry(pDbgc, "format 1\n", VINF_SUCCESS);
+    tstTry(pDbgc, "format \n", VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS);
+    tstTry(pDbgc, "format 0 1 23 4\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "sa 3 23 4 'q' \"21123123\" 'b' \n", VINF_SUCCESS);
 }
 
 
@@ -476,112 +1153,110 @@ int main()
         tstCompleteOutput();
         if (RT_SUCCESS(rc))
         {
-            RTTestSub(g_hTest, "basic parsing");
-            tstTry(pDbgc, "stop\n", VINF_SUCCESS);
-            tstTry(pDbgc, "format 1\n", VINF_SUCCESS);
-            tstTry(pDbgc, "format \n", VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS);
-            tstTry(pDbgc, "format 0 1 23 4\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
-            tstTry(pDbgc, "sa 3 23 4 'q' \"21123123\" 'b' \n", VINF_SUCCESS);
-
+            /*
+             * Perform basic tests first.
+             */
+            testBasicsFundametalParsing(pDbgc);
             if (RTTestErrorCount(g_hTest) == 0)
-            {
-                RTTestSub(g_hTest, "Operators");
-                tstNumOp(pDbgc, "1",                                        1);
-                tstNumOp(pDbgc, "1",                                        1);
-                tstNumOp(pDbgc, "1",                                        1);
-
-                tstNumOp(pDbgc, "+1",                                       1);
-                tstNumOp(pDbgc, "++++++1",                                  1);
-
-                tstNumOp(pDbgc, "-1",                                       UINT64_MAX);
-                tstNumOp(pDbgc, "--1",                                      1);
-                tstNumOp(pDbgc, "---1",                                     UINT64_MAX);
-                tstNumOp(pDbgc, "----1",                                    1);
-
-                tstNumOp(pDbgc, "~0",                                       UINT64_MAX);
-                tstNumOp(pDbgc, "~1",                                       UINT64_MAX-1);
-                tstNumOp(pDbgc, "~~0",                                      0);
-                tstNumOp(pDbgc, "~~1",                                      1);
-
-                tstNumOp(pDbgc, "!1",                                       0);
-                tstNumOp(pDbgc, "!0",                                       1);
-                tstNumOp(pDbgc, "!42",                                      0);
-                tstNumOp(pDbgc, "!!42",                                     1);
-                tstNumOp(pDbgc, "!!!42",                                    0);
-                tstNumOp(pDbgc, "!!!!42",                                   1);
-
-                tstNumOp(pDbgc, "1 +1",                                     2);
-                tstNumOp(pDbgc, "1 + 1",                                    2);
-                tstNumOp(pDbgc, "1+1",                                      2);
-                tstNumOp(pDbgc, "1+ 1",                                     2);
-
-                tstNumOp(pDbgc, "1 - 1",                                    0);
-                tstNumOp(pDbgc, "99 - 90",                                  9);
-
-                tstNumOp(pDbgc, "2 * 2",                                    4);
-
-                tstNumOp(pDbgc, "2 / 2",                                    1);
-                tstNumOp(pDbgc, "2 / 0",                                    UINT64_MAX);
-                tstNumOp(pDbgc, "0i1024 / 0i4",                             256);
-
-                tstNumOp(pDbgc, "8 mod 7",                                  1);
-
-                tstNumOp(pDbgc, "1<<1",                                     2);
-                tstNumOp(pDbgc, "1<<0i32",                                  UINT64_C(0x0000000100000000));
-                tstNumOp(pDbgc, "1<<0i48",                                  UINT64_C(0x0001000000000000));
-                tstNumOp(pDbgc, "1<<0i63",                                  UINT64_C(0x8000000000000000));
-
-                tstNumOp(pDbgc, "fedcba0987654321>>0i04",                   UINT64_C(0x0fedcba098765432));
-                tstNumOp(pDbgc, "fedcba0987654321>>0i32",                   UINT64_C(0xfedcba09));
-                tstNumOp(pDbgc, "fedcba0987654321>>0i48",                   UINT64_C(0x0000fedc));
-
-                tstNumOp(pDbgc, "0ef & 4",                                  4);
-                tstNumOp(pDbgc, "01234567891 & fff",                        UINT64_C(0x00000000891));
-                tstNumOp(pDbgc, "01234567891 & ~fff",                       UINT64_C(0x01234567000));
-
-                tstNumOp(pDbgc, "1 | 1",                                    1);
-                tstNumOp(pDbgc, "0 | 4",                                    4);
-                tstNumOp(pDbgc, "4 | 0",                                    4);
-                tstNumOp(pDbgc, "4 | 4",                                    4);
-                tstNumOp(pDbgc, "1 | 4 | 2",                                7);
-
-                tstNumOp(pDbgc, "1 ^ 1",                                    0);
-                tstNumOp(pDbgc, "1 ^ 0",                                    1);
-                tstNumOp(pDbgc, "0 ^ 1",                                    1);
-                tstNumOp(pDbgc, "3 ^ 1",                                    2);
-                tstNumOp(pDbgc, "7 ^ 3",                                    4);
-
-                tstNumOp(pDbgc, "7 || 3",                                   1);
-                tstNumOp(pDbgc, "1 || 0",                                   1);
-                tstNumOp(pDbgc, "0 || 1",                                   1);
-                tstNumOp(pDbgc, "0 || 0",                                   0);
-
-                tstNumOp(pDbgc, "0 && 0",                                   0);
-                tstNumOp(pDbgc, "1 && 0",                                   0);
-                tstNumOp(pDbgc, "0 && 1",                                   0);
-                tstNumOp(pDbgc, "1 && 1",                                   1);
-                tstNumOp(pDbgc, "4 && 1",                                   1);
-            }
-
+                testBasicsOperators(pDbgc);
             if (RTTestErrorCount(g_hTest) == 0)
-            {
-                RTTestSub(g_hTest, "Odd cases");
-                tstTry(pDbgc, "r @rax\n", VINF_SUCCESS);
-                tstTry(pDbgc, "r @eax\n", VINF_SUCCESS);
-                tstTry(pDbgc, "r @ah\n", VINF_SUCCESS);
-                tstTry(pDbgc, "r @notavalidregister\n", VERR_DBGF_REGISTER_NOT_FOUND);
-            }
+                testBasicsOddCases(pDbgc);
 
             /*
-             * Test codeview commands.
+             * Test commands.
              */
-#ifdef DEBUG_bird /* This will fail for a while */
             if (RTTestErrorCount(g_hTest) == 0)
             {
                 testCodeView_ba(pDbgc);
+                testCodeView_bc(pDbgc);
+                testCodeView_bd(pDbgc);
+                testCodeView_be(pDbgc);
+                testCodeView_bl(pDbgc);
+                testCodeView_bp(pDbgc);
+                testCodeView_br(pDbgc);
+                testCodeView_d(pDbgc);
+                testCodeView_da(pDbgc);
+                testCodeView_db(pDbgc);
+                testCodeView_dd(pDbgc);
+                testCodeView_dg(pDbgc);
+                testCodeView_dga(pDbgc);
+                testCodeView_di(pDbgc);
+                testCodeView_dia(pDbgc);
+                testCodeView_dl(pDbgc);
+                testCodeView_dla(pDbgc);
+                testCodeView_dpd(pDbgc);
+                testCodeView_dpda(pDbgc);
+                testCodeView_dpdb(pDbgc);
+                testCodeView_dpdg(pDbgc);
+                testCodeView_dpdh(pDbgc);
+                testCodeView_dph(pDbgc);
+                testCodeView_dphg(pDbgc);
+                testCodeView_dphh(pDbgc);
+                testCodeView_dq(pDbgc);
+                testCodeView_dt(pDbgc);
+                testCodeView_dt16(pDbgc);
+                testCodeView_dt32(pDbgc);
+                testCodeView_dt64(pDbgc);
+                testCodeView_dw(pDbgc);
+                testCodeView_eb(pDbgc);
+                testCodeView_ew(pDbgc);
+                testCodeView_ed(pDbgc);
+                testCodeView_eq(pDbgc);
+                testCodeView_g(pDbgc);
+                testCodeView_k(pDbgc);
+                testCodeView_kg(pDbgc);
+                testCodeView_kh(pDbgc);
+                testCodeView_lm(pDbgc);
+                testCodeView_lmo(pDbgc);
+                testCodeView_ln(pDbgc);
+                testCodeView_ls(pDbgc);
+                testCodeView_m(pDbgc);
+                testCodeView_r(pDbgc);
+                testCodeView_rg(pDbgc);
+                testCodeView_rg32(pDbgc);
+                testCodeView_rg64(pDbgc);
+                testCodeView_rh(pDbgc);
+                testCodeView_rt(pDbgc);
+                testCodeView_s(pDbgc);
+                testCodeView_sa(pDbgc);
+                testCodeView_sb(pDbgc);
+                testCodeView_sd(pDbgc);
+                testCodeView_sq(pDbgc);
+                testCodeView_su(pDbgc);
+                testCodeView_sw(pDbgc);
+                testCodeView_t(pDbgc);
+                testCodeView_y(pDbgc);
+                testCodeView_u64(pDbgc);
+                testCodeView_u32(pDbgc);
+                testCodeView_u16(pDbgc);
+                testCodeView_uv86(pDbgc);
 
+                testCommon_bye_exit_quit(pDbgc);
+                testCommon_cpu(pDbgc);
+                testCommon_echo(pDbgc);
+                testCommon_format(pDbgc);
+                testCommon_detect(pDbgc);
+                testCommon_harakiri(pDbgc);
+                testCommon_help(pDbgc);
+                testCommon_info(pDbgc);
+                testCommon_loadimage(pDbgc);
+                testCommon_loadmap(pDbgc);
+                testCommon_loadplugin(pDbgc);
+                testCommon_loadseg(pDbgc);
+                testCommon_loadsyms(pDbgc);
+                testCommon_loadvars(pDbgc);
+                testCommon_log(pDbgc);
+                testCommon_logdest(pDbgc);
+                testCommon_logflags(pDbgc);
+                testCommon_runscript(pDbgc);
+                testCommon_set(pDbgc);
+                testCommon_showplugins(pDbgc);
+                testCommon_showvars(pDbgc);
+                testCommon_stop(pDbgc);
+                testCommon_unloadplugin(pDbgc);
+                testCommon_unset(pDbgc);
+                testCommon_writecore(pDbgc);
             }
-#endif
         }
 
         dbgcDestroy(pDbgc);
