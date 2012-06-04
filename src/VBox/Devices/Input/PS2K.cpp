@@ -691,7 +691,7 @@ static void PS2KSetupTypematic(PPS2K pThis, uint8_t val)
     B = (val >> 3) & 3;
     period = (8 + A) * (1 << B) * 417 / 100;
     pThis->uTypematicRepeat = period;
-    LogRel(("Typematic delay %u ms, repeat period %u ms\n",
+    Log(("Typematic delay %u ms, repeat period %u ms\n",
             pThis->uTypematicDelay, pThis->uTypematicRepeat));
 }
 
@@ -848,9 +848,9 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pVal)
     Assert(pVal);
 
     /* Anything in the command queue has priority over data
-     * in the keystroke queue. Additionally, keystrokes are 
-     * blocked if a command is currently in progress, even if 
-     * the command queue is empty. 
+     * in the keystroke queue. Additionally, keystrokes are
+     * blocked if a command is currently in progress, even if
+     * the command queue is empty.
      */
     rc = PS2RemoveQueue((GeneriQ *)&pThis->cmdQ, pVal);
     if (rc != VINF_SUCCESS && !pThis->u8CurrCmd && pThis->fScanning)
