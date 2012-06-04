@@ -491,6 +491,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 #ifndef IN_RING3
         rc = VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
+        LogRel(("Reset initiated by keyboard controller\n"));
         rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns));
 #endif /* !IN_RING3 */
         break;

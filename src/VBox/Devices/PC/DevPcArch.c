@@ -197,7 +197,10 @@ static DECLCALLBACK(int) pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns,
          * Fast reset?
          */
         if (u32 & 1)
+        {
+            LogRel(("Reset initiated by system port A\n"));
             return PDMDevHlpVMReset(pDevIns);
+        }
 
         /*
          * A20 is the only thing we care about of the other stuff.
