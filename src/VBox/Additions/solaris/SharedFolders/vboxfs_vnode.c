@@ -95,6 +95,13 @@
 #include "vboxfs_vnode.h"
 #include "vboxfs_vfs.h"
 
+/*
+ * Solaris 11u1b10 Extended Policy putback CR 7121445 removes secpolicy_vnode_access from sys/policy.h
+ */
+#ifdef VBOX_VFS_EXTENDED_POLICY
+int secpolicy_vnode_access(const cred_t *, vnode_t *, uid_t, mode_t);
+#endif
+
 #define VBOXVFS_WITH_MMAP
 
 static struct vnodeops *sffs_ops = NULL;

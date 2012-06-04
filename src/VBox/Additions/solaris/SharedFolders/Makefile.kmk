@@ -47,6 +47,11 @@ vboxfs_SOURCES       = \
 vboxfs_LIBS          = \
 	$(VBOX_LIB_VBGL_R0)
 vboxfs_LDFLAGS      += -N drv/vboxguest -N misc/ctf
+if $(VBOX_SOLARIS_11_VERSION) >= 175
+ && $(VBOX_SOLARIS_11_UPDATE_VERSION) >= 1
+ && (VBOX_SOLARIS_11_BUILD_VERSION) >= 10
+vboxfs_DEFS         += VBOX_VFS_EXTENDED_POLICY
+endif
 
 
 ifndef VBOX_OSE
