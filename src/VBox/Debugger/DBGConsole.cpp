@@ -364,9 +364,9 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
         /*
          * Parse and execute this command.
          */
-        pDbgc->pszScratch = psz;
+        pDbgc->pszScratch = pszTrg + 1;
         pDbgc->iArg       = 0;
-        rc = dbgcEvalCommand(pDbgc, &pDbgc->achScratch[0], psz - &pDbgc->achScratch[0] - 1, fNoExecute);
+        rc = dbgcEvalCommand(pDbgc, &pDbgc->achScratch[0], pszTrg - &pDbgc->achScratch[0] - 1, fNoExecute);
         if (   rc == VERR_DBGC_QUIT
             || rc == VWRN_DBGC_CMD_PENDING)
             break;

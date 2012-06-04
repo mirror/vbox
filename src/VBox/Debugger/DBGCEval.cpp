@@ -398,6 +398,20 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
 }
 
 
+/**
+ * Handles a call.
+ *
+ * @returns VBox status code. pResult contains the result on success.
+ * @param   pDbgc               The DBGC instance.
+ * @param   pszFuncNm           The function name.
+ * @param   cchFuncNm           The length of the function name.
+ * @param   fExternal           Whether it's an external name.
+ * @param   pszArgs             The start of the arguments (after parenthesis).
+ * @param   cchArgs             The length for the argument (exclusing
+ *                              parentesis).
+ * @param   enmCategory         The desired category of the result (ignored).
+ * @param   pResult             The result.
+ */
 static int dbgcEvalSubCall(PDBGC pDbgc, char *pszFuncNm, size_t cchFuncNm, bool fExternal, char *pszArgs, size_t cchArgs,
                            DBGCVARCAT enmCategory, PDBGCVAR pResult)
 {
@@ -539,9 +553,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
     }
 
     AssertMsgFailed(("enmCategory=%d\n", enmCategory));
-    rc = VERR_NOT_IMPLEMENTED;
-
-    return rc;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
