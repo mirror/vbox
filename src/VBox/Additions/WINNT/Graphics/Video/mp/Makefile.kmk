@@ -77,15 +77,18 @@ ifdef VBOX_WITH_WDDM
   endif
  endif
  ifdef VBOX_WITH_VDMA
-  VBoxVideoWddm_DEFS     += VBOX_WITH_VDMA
+  VBoxVideoWddm_DEFS      += VBOX_WITH_VDMA
  endif
  ifdef VBOX_WITH_CRHGSMI
-  VBoxVideoWddm_DEFS     += VBOX_WITH_CRHGSMI
+  VBoxVideoWddm_DEFS      += VBOX_WITH_CRHGSMI
  endif
  ifdef DEBUG_misha
-  VBoxVideoWddm_DEFS       += LOG_ENABLED
+  VBoxVideoWddm_DEFS      += LOG_ENABLED
  endif
  VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
+ ifdef VBOX_WITH_CROGL
+  VBoxVideoWddm_DEFS      += VBOX_WITH_CROGL
+ endif
  VBoxVideoWddm_INCS       += ../../../include .. . ../../../../common/VBoxGuestLib $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
  VBoxVideoWddm_LDFLAGS.x86 += /Entry:DriverEntry@8
  VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry
