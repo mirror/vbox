@@ -2112,6 +2112,8 @@
 #define VINF_DBGC_BP_NO_COMMAND                     5406
 /** Generic debugger command failure. */
 #define VERR_DBGC_COMMAND_FAILED                    (-5407)
+/** Logic bug in the DBGC code.. */
+#define VERR_DBGC_IPE                               (-5408)
 
 /** The lowest parse status code.   */
 #define VERR_DBGC_PARSE_LOWEST                      (-5499)

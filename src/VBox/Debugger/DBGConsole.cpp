@@ -242,7 +242,7 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
         if (!strchr(pszSymbol, ';'))
         {
             DBGCVAR Var;
-            DBGCVAR_INIT_STRING(&Var, pszSymbol);
+            DBGCVAR_INIT_SYMBOL(&Var, pszSymbol);
             rc = dbgcOpRegister(pDbgc, &Var, DBGCVAR_CAT_ANY, pResult);
             if (RT_SUCCESS(rc))
                 return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pResult, enmType, false /*fConvSyms*/, pResult);

@@ -108,12 +108,11 @@ typedef enum DBGCVARTYPE
     DBGCVAR_TYPE_HC_FLAT,
     /** Physical HC pointer. */
     DBGCVAR_TYPE_HC_PHYS,
-    /** String. */
-    DBGCVAR_TYPE_STRING,
     /** Number. */
     DBGCVAR_TYPE_NUMBER,
-    /** Symbol.
-     * @todo drop this   */
+    /** String. */
+    DBGCVAR_TYPE_STRING,
+    /** Symbol. */
     DBGCVAR_TYPE_SYMBOL,
     /** Special type used when querying symbols. */
     DBGCVAR_TYPE_ANY
@@ -317,6 +316,19 @@ typedef const DBGCVAR *PCDBGCVAR;
             (pVar)->enmRangeType = DBGCVAR_RANGE_BYTES; \
             (pVar)->u.pszString  = (a_pszString); \
             (pVar)->u64Range     = strlen(a_pszString); \
+        } while (0)
+
+
+/**
+ * Macro for initializing a DBGC variable with a symbol.
+ */
+#define DBGCVAR_INIT_SYMBOL(pVar, a_pszSymbol) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType      = DBGCVAR_TYPE_SYMBOL; \
+            (pVar)->enmRangeType = DBGCVAR_RANGE_BYTES; \
+            (pVar)->u.pszString  = (a_pszSymbol); \
+            (pVar)->u64Range     = strlen(a_pszSymbol); \
         } while (0)
 
 
