@@ -2121,6 +2121,8 @@
 #define VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS          (VERR_DBGC_PARSE_LOWEST + 1)
 /** Syntax error - too many arguments for static storage. */
 #define VERR_DBGC_PARSE_ARGUMENT_OVERFLOW           (VERR_DBGC_PARSE_LOWEST + 2)
+/** Syntax error - expected binary operator. */
+#define VERR_DBGC_PARSE_EXPECTED_BINARY_OP          (VERR_DBGC_PARSE_LOWEST + 3)
 
 /** Syntax error - the argument does not allow a range to be specified. */
 #define VERR_DBGC_PARSE_NO_RANGE_ALLOWED            (VERR_DBGC_PARSE_LOWEST + 5)

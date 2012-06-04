@@ -860,6 +860,7 @@ static void testCommon_cpu(PDBGC pDbgc)
     tstTry(pDbgc, "cpu emt\n", VERR_DBGC_PARSE_INVALID_NUMBER);
     tstTry(pDbgc, "cpu @eax\n", VINF_SUCCESS);
     tstTry(pDbgc, "cpu %bad:bad\n", VERR_DBGC_PARSE_CONVERSION_FAILED);
+    tstTry(pDbgc, "cpu '1'\n", VERR_DBGC_PARSE_INVALID_NUMBER);
 }
 
 
@@ -871,7 +872,7 @@ static void testCommon_echo(PDBGC pDbgc)
     tstTryEx(pDbgc, "echo 1 2 3  4 5   6\n", VINF_SUCCESS, false, "1 2 3 4 5 6", -1);
 
     /* The idea here is that since the prefered input is a string, we
-       definitely won't be mistaking number like beginnings as numbers. */
+       definitely won't be confused by the number like beginning. */
     tstTryEx(pDbgc, "echo 1234567890abcdefghijklmn\n", VINF_SUCCESS, false, "1234567890abcdefghijklmn", -1);
 
     /* The idea here is that we'll perform the + operation and then convert the
@@ -1126,7 +1127,17 @@ static void testBasicsFundametalParsing(PDBGC pDbgc)
     tstTry(pDbgc, "format 1\n", VINF_SUCCESS);
     tstTry(pDbgc, "format \n", VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS);
     tstTry(pDbgc, "format 0 1 23 4\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "format 'x'\n", VINF_SUCCESS);
+    tstTry(pDbgc, "format 'x' 'x'\n", VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS);
+    tstTry(pDbgc, "format 'x''x'\n", VINF_SUCCESS);
+    tstTry(pDbgc, "format 'x'\"x\"\n", VERR_DBGC_PARSE_EXPECTED_BINARY_OP);
+    tstTry(pDbgc, "format 'x'1\n", VERR_DBGC_PARSE_EXPECTED_BINARY_OP);
+    tstTry(pDbgc, "format (1)1\n", VERR_DBGC_PARSE_EXPECTED_BINARY_OP);
+    tstTry(pDbgc, "format (1)(1)\n", VERR_DBGC_PARSE_EXPECTED_BINARY_OP);
+    tstTry(pDbgc, "format (1)''\n", VERR_DBGC_PARSE_EXPECTED_BINARY_OP);
+    tstTry(pDbgc, "format foo(1)\n", VERR_DBGC_PARSE_EXPECTED_BINARY_OP); /** @todo VERR_DBGC_PARSE_FUNCTION_NOT_FOUND */
     tstTry(pDbgc, "sa 3 23 4 'q' \"21123123\" 'b' \n", VINF_SUCCESS);
+    tstTry(pDbgc, "sa 3,23, 4,'q' ,\"21123123\" , 'b' \n", VINF_SUCCESS);
 }
 
 
