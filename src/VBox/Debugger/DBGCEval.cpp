@@ -75,33 +75,98 @@ DECLINLINE(bool) dbgcIsOpChar(char ch)
 }
 
 
-
-static int dbgcEvalSubString(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pArg)
+/**
+ * Returns the amount of free scratch space.
+ *
+ * @returns Number of unallocated bytes.
+ * @param   pDbgc               The DBGC instance.
+ */
+size_t dbgcGetFreeScratchSpace(PDBGC pDbgc)
 {
-    Log2(("dbgcEvalSubString: cchExpr=%d pszExpr=%s\n", cchExpr, pszExpr));
+    return sizeof(pDbgc->achScratch) - (pDbgc->pszScratch - &pDbgc->achScratch[0]);
+}
+
+
+/**
+ * Allocates a string from the scratch space.
+ *
+ * @returns Pointer to the allocated string buffer, NULL if out of space.
+ * @param   pDbgc               The DBGC instance.
+ * @param   cbRequested         The number of bytes to allocate.
+ */
+char *dbgcAllocStringScatch(PDBGC pDbgc, size_t cbRequested)
+{
+    if (cbRequested > dbgcGetFreeScratchSpace(pDbgc))
+        return NULL;
+    char *psz = pDbgc->pszScratch;
+    pDbgc->pszScratch += cbRequested;
+    return psz;
+}
+
+
+/**
+ * Evals an expression into a string or symbol (single quotes).
+ *
+ * The string memory is allocated from the scratch buffer.
+ *
+ * @returns VBox status code.
+ * @param   pDbgc               The DBGC instance.
+ * @param   pachExpr            The string/symbol expression.
+ * @param   cchExpr             The length of the expression.
+ * @param   pArg                Where to return the string.
+ */
+static int dbgcEvalSubString(PDBGC pDbgc, const char *pachExpr, size_t cchExpr, PDBGCVAR pArg)
+{
+    Log2(("dbgcEvalSubString: cchExpr=%d pachExpr=%.*s\n", cchExpr, cchExpr, pachExpr));
+
+    /*
+     * Allocate scratch space for the string.
+     */
+    char *pszCopy = dbgcAllocStringScatch(pDbgc, cchExpr + 1);
+    if (!pszCopy)
+        return VERR_DBGC_PARSE_NO_SCRATCH;
 
     /*
      * Removing any quoting and escapings.
      */
-    char ch = *pszExpr;
-    if (ch == '"' || ch == '\'')
+    char const chQuote = *pachExpr;
+    if (chQuote == '"' || chQuote == '\'')
     {
-        if (pszExpr[--cchExpr] != ch)
+        if (pachExpr[--cchExpr] != chQuote)
             return VERR_DBGC_PARSE_UNBALANCED_QUOTE;
-        cchExpr--;
-        pszExpr++;
 
-        /** @todo string unescaping. */
+        cchExpr--;
+        pachExpr++;
+        if (!memchr(pachExpr, chQuote, cchExpr))
+            memcpy(pszCopy, pachExpr, cchExpr);
+        else
+        {
+            size_t offSrc = 0;
+            size_t offDst = 0;
+            while (offSrc < cchExpr)
+            {
+                char const ch = pachExpr[offSrc++];
+                if (ch == chQuote)
+                {
+                    if (pachExpr[offSrc] != ch)
+                        return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
+                    offSrc++;
+                }
+                pszCopy[offDst++] = ch;
+            }
+        }
     }
-    pszExpr[cchExpr] = '\0';
+    else
+        memcpy(pszCopy, pachExpr, cchExpr);
+    pszCopy[cchExpr] = '\0';
 
     /*
      * Make the argument.
      */
     pArg->pDesc         = NULL;
     pArg->pNext         = NULL;
-    pArg->enmType       = DBGCVAR_TYPE_STRING;
-    pArg->u.pszString   = pszExpr;
+    pArg->enmType       = chQuote == '\'' ? DBGCVAR_TYPE_SYMBOL : DBGCVAR_TYPE_STRING;
+    pArg->u.pszString   = pszCopy;
     pArg->enmRangeType  = DBGCVAR_RANGE_BYTES;
     pArg->u64Range      = cchExpr;
 
@@ -110,16 +175,23 @@ static int dbgcEvalSubString(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVA
 }
 
 
-static int dbgcEvalSubNum(char *pszExpr, unsigned uBase, PDBGCVAR pArg)
+static int dbgcEvalSubNum(const char *pachExpr, size_t cchExpr, unsigned uBase, PDBGCVAR pArg)
 {
-    Log2(("dbgcEvalSubNum: uBase=%d pszExpr=%s\n", uBase, pszExpr));
+    Log2(("dbgcEvalSubNum: uBase=%d pachExpr=%.*s\n", uBase, cchExpr, pachExpr));
+
+    /*
+     * Empty expressions cannot be valid numbers.
+     */
+    if (!cchExpr)
+        return VERR_DBGC_PARSE_INVALID_NUMBER;
+
     /*
      * Convert to number.
      */
     uint64_t    u64 = 0;
-    char        ch;
-    while ((ch = *pszExpr) != '\0')
+    while (cchExpr-- > 0)
     {
+        char const ch = *pachExpr;
         uint64_t    u64Prev = u64;
         unsigned    u = ch - '0';
         if (u < 10 && u < uBase)
@@ -136,7 +208,7 @@ static int dbgcEvalSubNum(char *pszExpr, unsigned uBase, PDBGCVAR pArg)
             return VERR_DBGC_PARSE_NUMBER_TOO_BIG;
 
         /* next */
-        pszExpr++;
+        pachExpr++;
     }
 
     /*
@@ -171,36 +243,37 @@ static int dbgcEvalSubNumericOrPointer(PDBGC pDbgc, char *pszExpr, size_t cchExp
 
     /* 0x<hex digits> */
     if (ch == '0' && (ch2 == 'x' || ch2 == 'X'))
-        return dbgcEvalSubNum(pszExpr + 2, 16, pResult);
+        return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 16, pResult);
 
     /* <hex digits>h */
     if (RT_C_IS_XDIGIT(*pszExpr) && (pszExpr[cchExpr - 1] == 'h' || pszExpr[cchExpr - 1] == 'H'))
     {
         pszExpr[cchExpr] = '\0';
-        return dbgcEvalSubNum(pszExpr, 16, pResult);
+        return dbgcEvalSubNum(pszExpr, cchExpr - 1, 16, pResult);
     }
 
     /* 0i<decimal digits> */
     if (ch == '0' && ch2 == 'i')
-        return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+        return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 10, pResult);
 
     /* 0t<octal digits> */
     if (ch == '0' && ch2 == 't')
-        return dbgcEvalSubNum(pszExpr + 2, 8, pResult);
+        return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 8, pResult);
 
     /* 0y<binary digits> */
     if (ch == '0' && ch2 == 'y')
-        return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+        return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 10, pResult);
 
     /* Hex number? */
     unsigned off = 0;
-    while (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`')
+    while (off < cchExpr && (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`'))
         off++;
     if (off == cchExpr)
-        return dbgcEvalSubNum(pszExpr, 16, pResult);
+        return dbgcEvalSubNum(pszExpr, cchExpr, 16, pResult);
 
     /*
-     * Some kind of symbol?
+     * Some kind of symbol?  Rejected double quoted strings, only unquoted
+     * and single quoted strings will be considered as symbols.
      */
     DBGCVARTYPE enmType;
     bool        fStripRange = false;
@@ -218,9 +291,14 @@ static int dbgcEvalSubNumericOrPointer(PDBGC pDbgc, char *pszExpr, size_t cchExp
             AssertFailedReturn(VERR_DBGC_PARSE_NOT_IMPLEMENTED);
     }
 
-    if (   (*pszExpr == '"' || *pszExpr == '\'')
-        && pszExpr[cchExpr - 1] == *pszExpr)
+    char const chQuote = *pszExpr;
+    if (chQuote == '"')
+        return VERR_DBGC_PARSE_INVALID_NUMBER;
+
+    if (chQuote == '\'')
     {
+        if (pszExpr[cchExpr - 1] != chQuote)
+            return VERR_DBGC_PARSE_UNBALANCED_QUOTE;
         pszExpr[cchExpr - 1] = '\0';
         pszExpr++;
     }
@@ -261,7 +339,7 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
         while (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`')
             off++;
         if (off == cchExpr)
-            return dbgcEvalSubNum(pszExpr + 2, 16, pResult);
+            return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 16, pResult);
         return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
     }
 
@@ -274,18 +352,18 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
         if (off == cchExpr)
         {
             pszExpr[cchExpr] = '\0';
-            return dbgcEvalSubNum(pszExpr, 16, pResult);
+            return dbgcEvalSubNum(pszExpr, cchExpr, 16, pResult);
         }
         return dbgcEvalSubString(pDbgc, pszExpr, cchExpr + 1, pResult);
     }
 
-    /* 0i<decimal digits> */
-    if (ch == '0' && ch2 == 'i')
+    /* 0n<decimal digits> or 0i<decimal digits> */
+    if (ch == '0' && (ch2 == 'n' || ch2 == 'i'))
     {
         while (RT_C_IS_DIGIT(pszExpr[off]) || pszExpr[off] == '`')
             off++;
         if (off == cchExpr)
-            return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+            return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 10, pResult);
         return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
     }
 
@@ -295,7 +373,7 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
         while (RT_C_IS_ODIGIT(pszExpr[off]) || pszExpr[off] == '`')
             off++;
         if (off == cchExpr)
-            return dbgcEvalSubNum(pszExpr + 2, 8, pResult);
+            return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 8, pResult);
         return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
     }
 
@@ -305,7 +383,7 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
         while (pszExpr[off] == '0' || pszExpr[off] == '1' || pszExpr[off] == '`')
             off++;
         if (off == cchExpr)
-            return dbgcEvalSubNum(pszExpr + 2, 10, pResult);
+            return dbgcEvalSubNum(pszExpr + 2, cchExpr - 2, 10, pResult);
         return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
     }
 
@@ -315,7 +393,7 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
     while (RT_C_IS_XDIGIT(pszExpr[off]) || pszExpr[off] == '`')
         off++;
     if (off == cchExpr)
-        return dbgcEvalSubNum(pszExpr, 16, pResult);
+        return dbgcEvalSubNum(pszExpr, cchExpr, 16, pResult);
     return dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
 }
 
@@ -536,13 +614,6 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
                 return VERR_DBGC_PARSE_EMPTY_ARGUMENT;
         } while (pszExpr[0] == '(' && pszExpr[cchExpr - 1] == ')');
     }
-
-#if 0  /* why was this needed? It'll screw up strings. */
-    /* tabs to spaces */
-    char *psz = pszExpr;
-    while ((psz = strchr(psz, '\t')) != NULL)
-        *psz = ' ';
-#endif
 
     /*
      * Now, we need to look for the binary operator with the lowest precedence.

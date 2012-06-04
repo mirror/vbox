@@ -1063,6 +1063,13 @@ static DECLCALLBACK(int) dbgcCmdFormat(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
                     paArgs[iArg].u.pszString);
                 break;
 
+            case DBGCVAR_TYPE_SYMBOL:
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                    "Symbol, %lld bytes long: %s\n",
+                    paArgs[iArg].u64Range,
+                    paArgs[iArg].u.pszString);
+                break;
+
             case DBGCVAR_TYPE_NUMBER:
                 if (paArgs[iArg].enmRangeType != DBGCVAR_RANGE_NONE)
                     rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
