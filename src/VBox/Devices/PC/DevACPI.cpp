@@ -1752,7 +1752,10 @@ PDMBOTHCBDECL(int) acpiResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     /* No state locking required. */
     int rc = VINF_SUCCESS;
     if (u32 == ACPI_RESET_REG_VAL)
+    {
+        LogRel(("Reset initiated by ACPI\n"));
         rc = PDMDevHlpVMReset(pDevIns);
+    }
     else
         Log(("acpiResetWrite: %#x <- unknown value\n", u32));
 
