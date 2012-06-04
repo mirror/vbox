@@ -1271,6 +1271,40 @@ static DECLCALLBACK(PCDBGFINFOHLP) dbgcHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
 
 
 /**
+ * @interface_method_impl{DBGCCMDHLP,pfnGetCurrentCpu}
+ */
+static DECLCALLBACK(VMCPUID) dbgcHlpGetCurrentCpu(PDBGCCMDHLP pCmdHlp)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    return pDbgc->idCpu;
+}
+
+
+/**
+ * @interface_method_impl{DBGCCMDHLP,pfnGetCpuMode}
+ */
+static DECLCALLBACK(CPUMMODE) dbgcHlpGetCpuMode(PDBGCCMDHLP pCmdHlp)
+{
+    PDBGC    pDbgc   = DBGC_CMDHLP2DBGC(pCmdHlp);
+    CPUMMODE enmMode = CPUMMODE_INVALID;
+    if (pDbgc->fRegCtxGuest)
+    {
+        if (pDbgc->pVM)
+            enmMode = DBGFR3CpuGetMode(pDbgc->pVM, DBGCCmdHlpGetCurrentCpu(pCmdHlp));
+        if (enmMode == CPUMMODE_INVALID)
+#if HC_ARCH_BITS == 64
+            enmMode = CPUMMODE_LONG;
+#else
+            enmMode = CPUMMODE_PROTECTED;
+#endif
+    }
+    else
+        enmMode = CPUMMODE_PROTECTED;
+    return enmMode;
+}
+
+
+/**
  * Initializes the Command Helpers for a DBGC instance.
  *
  * @param   pDbgc   Pointer to the DBGC instance.
@@ -1297,6 +1331,8 @@ void dbgcInitCmdHlp(PDBGC pDbgc)
     pDbgc->CmdHlp.pfnVarGetRange        = dbgcHlpVarGetRange;
     pDbgc->CmdHlp.pfnVarConvert         = dbgcHlpVarConvert;
     pDbgc->CmdHlp.pfnGetDbgfOutputHlp   = dbgcHlpGetDbgfOutputHlp;
+    pDbgc->CmdHlp.pfnGetCurrentCpu      = dbgcHlpGetCurrentCpu;
+    pDbgc->CmdHlp.pfnGetCpuMode         = dbgcHlpGetCpuMode;
     pDbgc->CmdHlp.u32EndMarker          = DBGCCMDHLP_MAGIC;
 }
 

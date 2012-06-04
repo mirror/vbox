@@ -633,6 +633,23 @@ typedef struct DBGCCMDHLP
      */
     DECLCALLBACKMEMBER(PCDBGFINFOHLP, pfnGetDbgfOutputHlp)(PDBGCCMDHLP pCmdHlp);
 
+    /**
+     * Gets the ID currently selected CPU.
+     *
+     * @returns Current CPU ID.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     */
+    DECLCALLBACKMEMBER(VMCPUID, pfnGetCurrentCpu)(PDBGCCMDHLP pCmdHlp);
+
+    /**
+     * Gets the mode the currently selected CPU is running in, in the current
+     * context.
+     *
+     * @returns Current CPU mode.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     */
+    DECLCALLBACKMEMBER(CPUMMODE, pfnGetCpuMode)(PDBGCCMDHLP pCmdHlp);
+
     /** End marker (DBGCCMDHLP_MAGIC). */
     uint32_t                u32EndMarker;
 } DBGCCMDHLP;
@@ -865,6 +882,22 @@ DECLINLINE(int) DBGCCmdHlpConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, DBGCVARTY
 DECLINLINE(PCDBGFINFOHLP) DBGCCmdHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
 {
     return pCmdHlp->pfnGetDbgfOutputHlp(pCmdHlp);
+}
+
+/**
+ * @copydoc DBGCCMDHLP::pfnGetCurrentCpu
+ */
+DECLINLINE(VMCPUID) DBGCCmdHlpGetCurrentCpu(PDBGCCMDHLP pCmdHlp)
+{
+    return pCmdHlp->pfnGetCurrentCpu(pCmdHlp);
+}
+
+/**
+ * @copydoc DBGCCMDHLP::pfnGetCpuMode
+ */
+DECLINLINE(CPUMMODE) DBGCCmdHlpGetCpuMode(PDBGCCMDHLP pCmdHlp)
+{
+    return pCmdHlp->pfnGetCpuMode(pCmdHlp);
 }
 
 #endif /* IN_RING3 */
