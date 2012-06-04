@@ -370,15 +370,6 @@ const DBGCCMD    g_aCmdsCodeView[] =
 const uint32_t g_cCmdsCodeView = RT_ELEMENTS(g_aCmdsCodeView);
 
 
-/** Function descriptors for the CodeView / WinDbg emulation.
- * The emulation isn't attempting to be identical, only somewhat similar.
- */
-const DBGCFUNC g_aFuncsCodeView[] =
-{
-};
-
-/** The number of functions in the CodeView/WinDbg emulation. */
-const uint32_t g_cFuncsCodeView = RT_ELEMENTS(g_aFuncsCodeView);
 
 
 /**
@@ -4217,3 +4208,80 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     NOREF(pCmd);
     return VINF_SUCCESS;
 }
+
+
+
+
+/**
+ * @callback_method_impl{The hi(value) function implementation.}
+ */
+static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                    PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    uint16_t uHi;
+    switch (paArgs[0].enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:  uHi = (uint16_t)(paArgs[0].u.GCFlat >> 16); break;
+        case DBGCVAR_TYPE_GC_FAR:   uHi = (uint16_t)paArgs[0].u.GCFar.sel; break;
+        case DBGCVAR_TYPE_GC_PHYS:  uHi = (uint16_t)(paArgs[0].u.GCPhys >> 16); break;
+        case DBGCVAR_TYPE_HC_FLAT:  uHi = (uint16_t)((uintptr_t)paArgs[0].u.pvHCFlat >> 16); break;
+        case DBGCVAR_TYPE_HC_PHYS:  uHi = (uint16_t)(paArgs[0].u.HCPhys >> 16); break;
+        case DBGCVAR_TYPE_NUMBER:   uHi = (uint16_t)(paArgs[0].u.u64Number >> 16); break;
+        default:
+            AssertFailedReturn(VERR_DBGC_PARSE_BUG);
+    }
+
+    DBGCVAR_INIT_NUMBER(pResult, uHi);
+    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{The low(value) function implementation.}
+ */
+static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                     PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    uint16_t uLow;
+    switch (paArgs[0].enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:  uLow = (uint16_t)paArgs[0].u.GCFlat; break;
+        case DBGCVAR_TYPE_GC_FAR:   uLow = (uint16_t)paArgs[0].u.GCFar.off; break;
+        case DBGCVAR_TYPE_GC_PHYS:  uLow = (uint16_t)paArgs[0].u.GCPhys; break;
+        case DBGCVAR_TYPE_HC_FLAT:  uLow = (uint16_t)(uintptr_t)paArgs[0].u.pvHCFlat; break;
+        case DBGCVAR_TYPE_HC_PHYS:  uLow = (uint16_t)paArgs[0].u.HCPhys; break;
+        case DBGCVAR_TYPE_NUMBER:   uLow = (uint16_t)paArgs[0].u.u64Number; break;
+        default:
+            AssertFailedReturn(VERR_DBGC_PARSE_BUG);
+    }
+
+    DBGCVAR_INIT_NUMBER(pResult, uLow);
+    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
+    return VINF_SUCCESS;
+}
+
+
+/** Generic pointer or number argument. */
+static const DBGCVARDESC    g_aArgPointerNumber[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,      DBGCVAR_CAT_POINTER_NUMBER, 0,                              "value",        "Address or number." },
+};
+
+
+
+/** Function descriptors for the CodeView / WinDbg emulation.
+ * The emulation isn't attempting to be identical, only somewhat similar.
+ */
+const DBGCFUNC g_aFuncsCodeView[] =
+{
+    { "hi",     1, 1,   &g_aArgPointerNumber[0],    RT_ELEMENTS(g_aArgPointerNumber),   0, dbgcFuncHi,      "value", "Returns the high 16-bit bits of a value." },
+    { "low",    1, 1,   &g_aArgPointerNumber[0],    RT_ELEMENTS(g_aArgPointerNumber),   0, dbgcFuncLow,     "value", "Returns the low 16-bit bits of a value." },
+};
+
+/** The number of functions in the CodeView/WinDbg emulation. */
+const uint32_t g_cFuncsCodeView = RT_ELEMENTS(g_aFuncsCodeView);
+
