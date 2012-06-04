@@ -4211,6 +4211,106 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
 
 
+/**
+ * @callback_method_impl{Reads a unsigned 8-bit value.}
+ */
+static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                        PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
+    AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
+
+    uint8_t b;
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &b, sizeof(b), &paArgs[0], NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    DBGCVAR_INIT_NUMBER(pResult, b);
+
+    NOREF(pFunc);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{Reads a unsigned 16-bit value.}
+ */
+static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                         PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
+    AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
+
+    uint16_t u16;
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &u16, sizeof(u16), &paArgs[0], NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    DBGCVAR_INIT_NUMBER(pResult, u16);
+
+    NOREF(pFunc);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{Reads a unsigned 32-bit value.}
+ */
+static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                         PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
+    AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
+
+    uint32_t u32;
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &u32, sizeof(u32), &paArgs[0], NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    DBGCVAR_INIT_NUMBER(pResult, u32);
+
+    NOREF(pFunc);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{Reads a unsigned 64-bit value.}
+ */
+static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                         PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
+    AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
+
+    uint64_t u64;
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &u64, sizeof(u64), &paArgs[0], NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    DBGCVAR_INIT_NUMBER(pResult, u64);
+
+    NOREF(pFunc);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{Reads a unsigned pointer-sized value.}
+ */
+static DECLCALLBACK(int) dbgcFuncReadPtr(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                         PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
+    AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
+
+    CPUMMODE enmMode = DBGCCmdHlpGetCpuMode(pCmdHlp);
+    if (enmMode == CPUMMODE_LONG)
+        return dbgcFuncReadU64(pFunc, pCmdHlp, pVM, paArgs, cArgs, pResult);
+    return dbgcFuncReadU32(pFunc, pCmdHlp, pVM, paArgs, cArgs, pResult);
+}
+
 
 /**
  * @callback_method_impl{The hi(value) function implementation.}
@@ -4219,6 +4319,7 @@ static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM p
                                     PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+
     uint16_t uHi;
     switch (paArgs[0].enmType)
     {
@@ -4231,8 +4332,9 @@ static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM p
         default:
             AssertFailedReturn(VERR_DBGC_PARSE_BUG);
     }
-
     DBGCVAR_INIT_NUMBER(pResult, uHi);
+    DBGCVAR_SET_RANGE(pResult, paArgs[0].enmRangeType, paArgs[0].u64Range);
+
     NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
     return VINF_SUCCESS;
 }
@@ -4245,6 +4347,7 @@ static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM 
                                      PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+
     uint16_t uLow;
     switch (paArgs[0].enmType)
     {
@@ -4257,12 +4360,32 @@ static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM 
         default:
             AssertFailedReturn(VERR_DBGC_PARSE_BUG);
     }
-
     DBGCVAR_INIT_NUMBER(pResult, uLow);
+    DBGCVAR_SET_RANGE(pResult, paArgs[0].enmRangeType, paArgs[0].u64Range);
+
     NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
     return VINF_SUCCESS;
 }
 
+
+/**
+ * @callback_method_impl{The low(value) function implementation.}
+ */
+static DECLCALLBACK(int) dbgcFuncNot(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                     PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
+    return DBGCCmdHlpEval(pCmdHlp, pResult, "!(%Dv)", &paArgs[0]);
+}
+
+
+/** Generic pointer argument wo/ range. */
+static const DBGCVARDESC    g_aArgPointerWoRange[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,    DBGCVAR_CAT_POINTER_NO_RANGE, 0,                              "value",        "Address or number." },
+};
 
 /** Generic pointer or number argument. */
 static const DBGCVARDESC    g_aArgPointerNumber[] =
@@ -4278,8 +4401,14 @@ static const DBGCVARDESC    g_aArgPointerNumber[] =
  */
 const DBGCFUNC g_aFuncsCodeView[] =
 {
+    { "by",     1, 1,   &g_aArgPointerWoRange[0],   RT_ELEMENTS(g_aArgPointerWoRange),  0, dbgcFuncReadU8,  "address", "Reads a byte at the given address." },
+    { "dwo",    1, 1,   &g_aArgPointerWoRange[0],   RT_ELEMENTS(g_aArgPointerWoRange),  0, dbgcFuncReadU32, "address", "Reads a 32-bit value at the given address." },
     { "hi",     1, 1,   &g_aArgPointerNumber[0],    RT_ELEMENTS(g_aArgPointerNumber),   0, dbgcFuncHi,      "value", "Returns the high 16-bit bits of a value." },
     { "low",    1, 1,   &g_aArgPointerNumber[0],    RT_ELEMENTS(g_aArgPointerNumber),   0, dbgcFuncLow,     "value", "Returns the low 16-bit bits of a value." },
+    { "not",    1, 1,   &g_aArgPointerNumber[0],    RT_ELEMENTS(g_aArgPointerNumber),   0, dbgcFuncNot,     "address", "Boolean NOT." },
+    { "poi",    1, 1,   &g_aArgPointerWoRange[0],   RT_ELEMENTS(g_aArgPointerWoRange),  0, dbgcFuncReadPtr, "address", "Reads a pointer sized (CS) value at the given address." },
+    { "qwo",    1, 1,   &g_aArgPointerWoRange[0],   RT_ELEMENTS(g_aArgPointerWoRange),  0, dbgcFuncReadU64, "address", "Reads a 32-bit value at the given address." },
+    { "wo",     1, 1,   &g_aArgPointerWoRange[0],   RT_ELEMENTS(g_aArgPointerWoRange),  0, dbgcFuncReadU16, "address", "Reads a 16-bit value at the given address." },
 };
 
 /** The number of functions in the CodeView/WinDbg emulation. */

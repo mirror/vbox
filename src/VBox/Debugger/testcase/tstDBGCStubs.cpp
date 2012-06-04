@@ -303,6 +303,11 @@ VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fF
     return VERR_INTERNAL_ERROR;
 }
 
+VMMR3DECL(CPUMMODE) DBGFR3CpuGetMode(PVM pVM, VMCPUID idCpu)
+{
+    return CPUMMODE_INVALID;
+}
+
 VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszFilename, bool fReplaceFile)
 {
     return VERR_INTERNAL_ERROR;
