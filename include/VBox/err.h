@@ -2165,6 +2165,8 @@
 #define VERR_DBGC_PARSE_INVALD_COMMAND_NAME         (VERR_DBGC_PARSE_LOWEST + 23)
 /** Syntax error - Command not found. */
 #define VERR_DBGC_PARSE_COMMAND_NOT_FOUND           (VERR_DBGC_PARSE_LOWEST + 24)
+/** Syntax error - buggy parser. */
+#define VERR_DBGC_PARSE_BUG                         (VERR_DBGC_PARSE_LOWEST + 25)
 
 
 /** @} */

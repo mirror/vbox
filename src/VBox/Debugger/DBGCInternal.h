@@ -117,10 +117,14 @@ typedef struct DBGC
     RTDBGAS             hDbgAs;
     /** The current debugger emulation. */
     const char         *pszEmulation;
-    /** Pointer to the command and functions for the current debugger emulation. */
+    /** Pointer to the commands for the current debugger emulation. */
     PCDBGCCMD           paEmulationCmds;
     /** The number of commands paEmulationCmds points to. */
     unsigned            cEmulationCmds;
+    /** Pointer to the functions for the current debugger emulation. */
+    PCDBGCFUNC          paEmulationFuncs;
+    /** The number of functions paEmulationFuncs points to. */
+    uint32_t            cEmulationFuncs;
     /** Log indicator. (If set we're writing the log to the console.) */
     bool                fLog;
 
@@ -226,6 +230,22 @@ typedef struct DBGCEXTCMDS
 } DBGCEXTCMDS;
 /** Pointer to chunk of external commands. */
 typedef DBGCEXTCMDS *PDBGCEXTCMDS;
+
+
+/**
+ * Chunk of external functions.
+ */
+typedef struct DBGCEXTFUNCS
+{
+    /** Number of functions descriptors. */
+    uint32_t            cFuncs;
+    /** Pointer to array of functions descriptors. */
+    PCDBGCFUNC          paFuncs;
+    /** Pointer to the next chunk. */
+    struct DBGCEXTFUNCS *pNext;
+} DBGCEXTFUNCS;
+/** Pointer to chunk of external functions. */
+typedef DBGCEXTFUNCS *PDBGCEXTFUNCS;
 
 
 
@@ -362,7 +382,8 @@ int     dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecut
 int     dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult);
 PCDBGCSYM   dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol);
 PCDBGCOP    dbgcOperatorLookup(PDBGC pDbgc, const char *pszExpr, bool fPreferBinary, char chPrev);
-PCDBGCCMD   dbgcRoutineLookup(PDBGC pDbgc, const char *pachName, size_t cchName, bool fExternal);
+PCDBGCCMD   dbgcCommandLookup(PDBGC pDbgc, const char *pachName, size_t cchName, bool fExternal);
+PCDBGCFUNC  dbgcFunctionLookup(PDBGC pDbgc, const char *pachName, size_t cchName, bool fExternal);
 
 DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
 DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
@@ -385,12 +406,30 @@ void    dbgcDestroy(PDBGC pDbgc);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-extern const DBGCCMD    g_aCmds[];
-extern const unsigned   g_cCmds;
+extern const DBGCCMD    g_aDbgcCmds[];
+extern const uint32_t   g_cDbgcCmds;
+extern const DBGCFUNC   g_aDbgcFuncs[];
+extern const uint32_t   g_cDbgcFuncs;
 extern const DBGCCMD    g_aCmdsCodeView[];
-extern const unsigned   g_cCmdsCodeView;
-extern const DBGCOP     g_aOps[];
-extern const unsigned   g_cOps;
+extern const uint32_t   g_cCmdsCodeView;
+extern const DBGCFUNC   g_aFuncsCodeView[];
+extern const uint32_t   g_cFuncsCodeView;
+extern const DBGCOP     g_aDbgcOps[];
+extern const uint32_t   g_cDbgcOps;
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Locks the g_pExtCmdsHead and g_pExtFuncsHead lists for reading. */
+#define DBGCEXTLISTS_LOCK_RD()      do { } while (0)
+/** Locks the g_pExtCmdsHead and g_pExtFuncsHead lists for writing. */
+#define DBGCEXTLISTS_LOCK_WR()      do { } while (0)
+/** UnLocks the g_pExtCmdsHead and g_pExtFuncsHead lists after reading. */
+#define DBGCEXTLISTS_UNLOCK_RD()    do { } while (0)
+/** UnLocks the g_pExtCmdsHead and g_pExtFuncsHead lists after writing. */
+#define DBGCEXTLISTS_UNLOCK_WR()    do { } while (0)
+
 
 
 #endif

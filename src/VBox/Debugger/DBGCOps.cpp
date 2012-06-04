@@ -151,7 +151,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Operators. */
-const DBGCOP g_aOps[] =
+const DBGCOP g_aDbgcOps[] =
 {
     /* szName is initialized as a 4 char array because of M$C elsewise optimizing it away in /Ox mode (the 'const char' vs 'char' problem). */
     /* szName,          cchName, fBinary,    iPrecedence,    pfnHandlerUnary,    pfnHandlerBitwise  */
@@ -184,7 +184,7 @@ const DBGCOP g_aOps[] =
 };
 
 /** Number of operators in the operator array. */
-const unsigned g_cOps = RT_ELEMENTS(g_aOps);
+const uint32_t g_cDbgcOps = RT_ELEMENTS(g_aDbgcOps);
 
 
 /**
@@ -1399,30 +1399,30 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 PCDBGCOP dbgcOperatorLookup(PDBGC pDbgc, const char *pszExpr, bool fPreferBinary, char chPrev)
 {
     PCDBGCOP    pOp = NULL;
-    for (unsigned iOp = 0; iOp < RT_ELEMENTS(g_aOps); iOp++)
+    for (unsigned iOp = 0; iOp < RT_ELEMENTS(g_aDbgcOps); iOp++)
     {
-        if (     g_aOps[iOp].szName[0] == pszExpr[0]
-            &&  (!g_aOps[iOp].szName[1] || g_aOps[iOp].szName[1] == pszExpr[1])
-            &&  (!g_aOps[iOp].szName[2] || g_aOps[iOp].szName[2] == pszExpr[2]))
+        if (     g_aDbgcOps[iOp].szName[0] == pszExpr[0]
+            &&  (!g_aDbgcOps[iOp].szName[1] || g_aDbgcOps[iOp].szName[1] == pszExpr[1])
+            &&  (!g_aDbgcOps[iOp].szName[2] || g_aDbgcOps[iOp].szName[2] == pszExpr[2]))
         {
             /*
              * Check that we don't mistake it for some other operator which have more chars.
              */
             unsigned j;
-            for (j = iOp + 1; j < RT_ELEMENTS(g_aOps); j++)
-                if (    g_aOps[j].cchName > g_aOps[iOp].cchName
-                    &&  g_aOps[j].szName[0] == pszExpr[0]
-                    &&  (!g_aOps[j].szName[1] || g_aOps[j].szName[1] == pszExpr[1])
-                    &&  (!g_aOps[j].szName[2] || g_aOps[j].szName[2] == pszExpr[2]) )
+            for (j = iOp + 1; j < RT_ELEMENTS(g_aDbgcOps); j++)
+                if (    g_aDbgcOps[j].cchName > g_aDbgcOps[iOp].cchName
+                    &&  g_aDbgcOps[j].szName[0] == pszExpr[0]
+                    &&  (!g_aDbgcOps[j].szName[1] || g_aDbgcOps[j].szName[1] == pszExpr[1])
+                    &&  (!g_aDbgcOps[j].szName[2] || g_aDbgcOps[j].szName[2] == pszExpr[2]) )
                     break;
-            if (j < RT_ELEMENTS(g_aOps))
+            if (j < RT_ELEMENTS(g_aDbgcOps))
                 continue;       /* we'll catch it later. (for theoretical +,++,+++ cases.) */
-            pOp = &g_aOps[iOp];
+            pOp = &g_aDbgcOps[iOp];
 
             /*
              * Preferred type?
              */
-            if (g_aOps[iOp].fBinary == fPreferBinary)
+            if (g_aDbgcOps[iOp].fBinary == fPreferBinary)
                 break;
         }
     }

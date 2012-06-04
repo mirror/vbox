@@ -364,10 +364,15 @@ typedef const DBGCVAR *PCDBGCVAR;
     } while (0)
 
 
-/** Pointer to command descriptor. */
+/** Pointer to a command descriptor. */
 typedef struct DBGCCMD *PDBGCCMD;
-/** Pointer to const command descriptor. */
+/** Pointer to a const command descriptor. */
 typedef const struct DBGCCMD *PCDBGCCMD;
+
+/** Pointer to a function descriptor. */
+typedef struct DBGCFUNC *PDBGCFUNC;
+/** Pointer to a const function descriptor. */
+typedef const struct DBGCFUNC *PCDBGCFUNC;
 
 /** Pointer to helper functions for commands. */
 typedef struct DBGCCMDHLP *PDBGCCMDHLP;
@@ -886,10 +891,6 @@ typedef FNDBGCCMD *PFNDBGCCMD;
 
 /**
  * DBGC command descriptor.
- *
- * If a pResultDesc is specified the command can be called and used
- * as a function too. If it's a pure function, set fFlags to
- * DBGCCMD_FLAGS_FUNCTION.
  */
 typedef struct DBGCCMD
 {
@@ -917,6 +918,52 @@ typedef struct DBGCCMD
  * @{
  */
 /** @} */
+
+
+/**
+ * Function handler.
+ *
+ * The console will call the handler for a command once it's finished
+ * parsing the user input.  The command handler function is responsible
+ * for executing the command itself.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ * @param   pResult     Where to return the result.
+ */
+typedef DECLCALLBACK(int) FNDBGCFUNC(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs,
+                                     PDBGCVAR pResult);
+/** Pointer to a FNDBGCFUNC() function. */
+typedef FNDBGCFUNC *PFNDBGCFUNC;
+
+/**
+ * DBGC function descriptor.
+ */
+typedef struct DBGCFUNC
+{
+    /** Command string. */
+    const char     *pszFuncNm;
+    /** Minimum number of arguments. */
+    unsigned        cArgsMin;
+    /** Max number of arguments. */
+    unsigned        cArgsMax;
+    /** Argument descriptors (array). */
+    PCDBGCVARDESC   paArgDescs;
+    /** Number of argument descriptors. */
+    unsigned        cArgDescs;
+    /** flags. (reserved for now) */
+    unsigned        fFlags;
+    /** Handler function. */
+    PFNDBGCFUNC     pfnHandler;
+    /** Function syntax. */
+    const char     *pszSyntax;
+    /** Function description. */
+    const char     *pszDescription;
+} DBGCFUNC;
 
 
 

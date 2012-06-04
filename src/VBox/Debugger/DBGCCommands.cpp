@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,6 +34,7 @@
 #include <iprt/env.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
+#include <iprt/rand.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 
@@ -219,7 +220,7 @@ static const DBGCVARDESC    g_aArgWriteCore[] =
 
 
 /** Command descriptors for the basic commands. */
-const DBGCCMD    g_aCmds[] =
+const DBGCCMD    g_aDbgcCmds[] =
 {
     /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,          cArgDescs,               fFlags, pfnHandler        pszSyntax,          ....pszDescription */
     { "bye",        0,        0,        NULL,                0,                            0, dbgcCmdQuit,      "",                     "Exits the debugger." },
@@ -258,23 +259,10 @@ const DBGCCMD    g_aCmds[] =
     { "unset",      1,       ~0U,       &g_aArgMultiStr[0],  RT_ELEMENTS(g_aArgMultiStr),  0, dbgcCmdUnset,     "<var1> [var1..[varN]]",  "Unsets (delete) one or more global variables." },
     { "writecore",  1,        1,        &g_aArgWriteCore[0], RT_ELEMENTS(g_aArgWriteCore), 0, dbgcCmdWriteCore,   "<filename>",           "Write core to file." },
 };
-
 /** The number of native commands. */
-const unsigned g_cCmds = RT_ELEMENTS(g_aCmds);
-
-
-/**
- * Pointer to head of the list of external commands.
- */
-static PDBGCEXTCMDS g_pExtCmdsHead;     /** @todo rw protect g_pExtCmdsHead! */
-/** Locks the g_pExtCmdsHead list for reading. */
-#define DBGCEXTCMDS_LOCK_RD()       do { } while (0)
-/** Locks the g_pExtCmdsHead list for writing. */
-#define DBGCEXTCMDS_LOCK_WR()       do { } while (0)
-/** UnLocks the g_pExtCmdsHead list after reading. */
-#define DBGCEXTCMDS_UNLOCK_RD()     do { } while (0)
-/** UnLocks the g_pExtCmdsHead list after writing. */
-#define DBGCEXTCMDS_UNLOCK_WR()     do { } while (0)
+const uint32_t      g_cDbgcCmds = RT_ELEMENTS(g_aDbgcCmds);
+/** Pointer to head of the list of external commands. */
+static PDBGCEXTCMDS g_pExtCmdsHead;
 
 
 
@@ -291,7 +279,7 @@ static PDBGCEXTCMDS g_pExtCmdsHead;     /** @todo rw protect g_pExtCmdsHead! */
  * @param   cchName     Length of the routine name.
  * @param   fExternal   Whether or not the routine is external.
  */
-PCDBGCCMD dbgcRoutineLookup(PDBGC pDbgc, const char *pachName, size_t cchName, bool fExternal)
+PCDBGCCMD dbgcCommandLookup(PDBGC pDbgc, const char *pachName, size_t cchName, bool fExternal)
 {
     if (!fExternal)
     {
@@ -306,16 +294,16 @@ PCDBGCCMD dbgcRoutineLookup(PDBGC pDbgc, const char *pachName, size_t cchName, b
             pCmd++;
         }
 
-        for (unsigned iCmd = 0; iCmd < RT_ELEMENTS(g_aCmds); iCmd++)
+        for (unsigned iCmd = 0; iCmd < RT_ELEMENTS(g_aDbgcCmds); iCmd++)
         {
-            if (    !strncmp(pachName, g_aCmds[iCmd].pszCmd, cchName)
-                &&  !g_aCmds[iCmd].pszCmd[cchName])
-                return &g_aCmds[iCmd];
+            if (    !strncmp(pachName, g_aDbgcCmds[iCmd].pszCmd, cchName)
+                &&  !g_aDbgcCmds[iCmd].pszCmd[cchName])
+                return &g_aDbgcCmds[iCmd];
         }
     }
     else
     {
-        DBGCEXTCMDS_LOCK_RD();
+        DBGCEXTLISTS_LOCK_RD();
         for (PDBGCEXTCMDS pExtCmds = g_pExtCmdsHead; pExtCmds; pExtCmds = pExtCmds->pNext)
         {
             for (unsigned iCmd = 0; iCmd < pExtCmds->cCmds; iCmd++)
@@ -325,10 +313,9 @@ PCDBGCCMD dbgcRoutineLookup(PDBGC pDbgc, const char *pachName, size_t cchName, b
                     return &pExtCmds->paCmds[iCmd];
             }
         }
-        DBGCEXTCMDS_UNLOCK_RD();
+        DBGCEXTLISTS_UNLOCK_RD();
     }
 
-    NOREF(pDbgc);
     return NULL;
 }
 
@@ -347,13 +334,13 @@ DBGDECL(int)    DBGCRegisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
     /*
      * Lock the list.
      */
-    DBGCEXTCMDS_LOCK_WR();
+    DBGCEXTLISTS_LOCK_WR();
     PDBGCEXTCMDS pCur = g_pExtCmdsHead;
     while (pCur)
     {
         if (paCommands == pCur->paCmds)
         {
-            DBGCEXTCMDS_UNLOCK_WR();
+            DBGCEXTLISTS_UNLOCK_WR();
             AssertMsgFailed(("Attempt at re-registering %d command(s)!\n", cCommands));
             return VWRN_DBGC_ALREADY_REGISTERED;
         }
@@ -374,7 +361,7 @@ DBGDECL(int)    DBGCRegisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
     }
     else
         rc = VERR_NO_MEMORY;
-    DBGCEXTCMDS_UNLOCK_WR();
+    DBGCEXTLISTS_UNLOCK_WR();
 
     return rc;
 }
@@ -394,7 +381,7 @@ DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
     /*
      * Lock the list.
      */
-    DBGCEXTCMDS_LOCK_WR();
+    DBGCEXTLISTS_LOCK_WR();
     PDBGCEXTCMDS pPrev = NULL;
     PDBGCEXTCMDS pCur = g_pExtCmdsHead;
     while (pCur)
@@ -405,7 +392,7 @@ DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
                 pPrev->pNext = pCur->pNext;
             else
                 g_pExtCmdsHead = pCur->pNext;
-            DBGCEXTCMDS_UNLOCK_WR();
+            DBGCEXTLISTS_UNLOCK_WR();
 
             RTMemFree(pCur);
             return VINF_SUCCESS;
@@ -413,7 +400,7 @@ DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
         pPrev = pCur;
         pCur = pCur->pNext;
     }
-    DBGCEXTCMDS_UNLOCK_WR();
+    DBGCEXTLISTS_UNLOCK_WR();
 
     NOREF(cCommands);
     return VERR_DBGC_COMMANDS_NOT_REGISTERED;
@@ -497,13 +484,13 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                                 "VirtualBox Debugger\n"
                                 "-------------------\n"
                                 "\n"
-                                "Commands and Functions:\n");
-        for (i = 0; i < RT_ELEMENTS(g_aCmds); i++)
+                                "Commands:\n");
+        for (i = 0; i < RT_ELEMENTS(g_aDbgcCmds); i++)
             rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                                     "%-11s %-30s %s\n",
-                                    g_aCmds[i].pszCmd,
-                                    g_aCmds[i].pszSyntax,
-                                    g_aCmds[i].pszDescription);
+                                    g_aDbgcCmds[i].pszCmd,
+                                    g_aDbgcCmds[i].pszSyntax,
+                                    g_aDbgcCmds[i].pszDescription);
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                                 "\n"
                                 "Emulation: %s\n", pDbgc->pszEmulation);
@@ -517,10 +504,10 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
 
         if (g_pExtCmdsHead)
         {
-            DBGCEXTCMDS_LOCK_RD();
+            DBGCEXTLISTS_LOCK_RD();
             rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                                     "\n"
-                                    "External Commands and Functions:\n");
+                                    "External Commands:\n");
             for (PDBGCEXTCMDS pExtCmd = g_pExtCmdsHead; pExtCmd; pExtCmd = pExtCmd->pNext)
                 for (i = 0; i < pExtCmd->cCmds; i++)
                     rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
@@ -528,24 +515,26 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                                             pExtCmd->paCmds[i].pszCmd,
                                             pExtCmd->paCmds[i].pszSyntax,
                                             pExtCmd->paCmds[i].pszDescription);
-            DBGCEXTCMDS_UNLOCK_RD();
+            DBGCEXTLISTS_UNLOCK_RD();
         }
+
+
 
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                                 "\n"
                                 "Operators:\n");
         unsigned iPrecedence = 0;
-        unsigned cLeft = g_cOps;
+        unsigned cLeft = g_cDbgcOps;
         while (cLeft > 0)
         {
-            for (i = 0; i < g_cOps; i++)
-                if (g_aOps[i].iPrecedence == iPrecedence)
+            for (i = 0; i < g_cDbgcOps; i++)
+                if (g_aDbgcOps[i].iPrecedence == iPrecedence)
                 {
                     rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                                             "%-10s  %s  %s\n",
-                                            g_aOps[i].szName,
-                                            g_aOps[i].fBinary ? "Binary" : "Unary ",
-                                            g_aOps[i].pszDescription);
+                                            g_aDbgcOps[i].szName,
+                                            g_aDbgcOps[i].fBinary ? "Binary" : "Unary ",
+                                            g_aDbgcOps[i].pszDescription);
                     cLeft--;
                 }
             iPrecedence++;
@@ -571,10 +560,10 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                 }
 
             /* lookup in the command list (even when found in the emulation) */
-            for (i = 0; i < RT_ELEMENTS(g_aCmds); i++)
-                if (RTStrSimplePatternMatch(pszPattern, g_aCmds[i].pszCmd))
+            for (i = 0; i < RT_ELEMENTS(g_aDbgcCmds); i++)
+                if (RTStrSimplePatternMatch(pszPattern, g_aDbgcCmds[i].pszCmd))
                 {
-                    rc = dbgcPrintHelp(pCmdHlp, &g_aCmds[i], false);
+                    rc = dbgcPrintHelp(pCmdHlp, &g_aDbgcCmds[i], false);
                     fFound = true;
                 }
 
@@ -585,7 +574,7 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                      || *pszPattern == '?'
                      || *pszPattern == '*'))
            {
-               DBGCEXTCMDS_LOCK_RD();
+               DBGCEXTLISTS_LOCK_RD();
                const char *pszPattern2 = pszPattern + (*pszPattern == '.' || *pszPattern == '?');
                for (PDBGCEXTCMDS pExtCmd = g_pExtCmdsHead; pExtCmd; pExtCmd = pExtCmd->pNext)
                    for (i = 0; i < pExtCmd->cCmds; i++)
@@ -594,20 +583,20 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                            rc = dbgcPrintHelp(pCmdHlp, &pExtCmd->paCmds[i], true);
                            fFound = true;
                        }
-               DBGCEXTCMDS_UNLOCK_RD();
+               DBGCEXTLISTS_UNLOCK_RD();
            }
 
            /* operators */
-           if (!fFound && strlen(paArgs[iArg].u.pszString) < sizeof(g_aOps[i].szName))
+           if (!fFound && strlen(paArgs[iArg].u.pszString) < sizeof(g_aDbgcOps[i].szName))
            {
-               for (i = 0; i < g_cOps; i++)
-                   if (RTStrSimplePatternMatch(pszPattern, g_aOps[i].szName))
+               for (i = 0; i < g_cDbgcOps; i++)
+                   if (RTStrSimplePatternMatch(pszPattern, g_aDbgcOps[i].szName))
                    {
                        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                                                "%-10s  %s  %s\n",
-                                               g_aOps[i].szName,
-                                               g_aOps[i].fBinary ? "Binary" : "Unary ",
-                                               g_aOps[i].pszDescription);
+                                               g_aDbgcOps[i].szName,
+                                               g_aDbgcOps[i].fBinary ? "Binary" : "Unary ",
+                                               g_aDbgcOps[i].pszDescription);
                        fFound = true;
                    }
            }
@@ -2099,6 +2088,21 @@ static DECLCALLBACK(int) dbgcCmdWriteCore(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     if (RT_FAILURE(rc))
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "DBGFR3WriteCore failed. rc=%Rrc\n", rc);
 
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * @callback_method_impl{The randu32() function implementation.}
+ */
+static DECLCALLBACK(int) dbgcFuncRandU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+                                         PDBGCVAR pResult)
+{
+    AssertReturn(cArgs == 0, VERR_DBGC_PARSE_BUG);
+    uint32_t u32 = RTRandU32();
+    DBGCVAR_INIT_NUMBER(pResult, u32);
+    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM); NOREF(paArgs);
     return VINF_SUCCESS;
 }
 

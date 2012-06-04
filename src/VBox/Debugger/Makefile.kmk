@@ -46,7 +46,8 @@ Debugger_SOURCES   = \
 	DBGCBuiltInSymbols.cpp \
 	DBGCCmdHlp.cpp \
 	DBGCCmdWorkers.cpp \
-	DBGCCommands.cpp \
+		DBGCCommands.cpp \
+	DBGCFunctions.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
 	DBGCGdbRemoteStub.cpp \

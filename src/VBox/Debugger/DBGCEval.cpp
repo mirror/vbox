@@ -42,6 +42,15 @@
 static uint32_t g_bmOperatorChars[256 / (4*8)];
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
+                                uint32_t const cArgsMin, uint32_t const cArgsMax,
+                                PCDBGCVARDESC const paVarDescs, uint32_t const cVarDescs,
+                                char *pszArgs, unsigned *piArg, unsigned *pcArgs);
+
+
 
 /**
  * Initializes g_bmOperatorChars.
@@ -49,8 +58,8 @@ static uint32_t g_bmOperatorChars[256 / (4*8)];
 void dbgcEvalInit(void)
 {
     memset(g_bmOperatorChars, 0, sizeof(g_bmOperatorChars));
-    for (unsigned iOp = 0; iOp < g_cOps; iOp++)
-        ASMBitSet(&g_bmOperatorChars[0], (uint8_t)g_aOps[iOp].szName[0]);
+    for (unsigned iOp = 0; iOp < g_cDbgcOps; iOp++)
+        ASMBitSet(&g_bmOperatorChars[0], (uint8_t)g_aDbgcOps[iOp].szName[0]);
 }
 
 
@@ -311,6 +320,32 @@ static int dbgcEvalSubUnaryAny(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGC
 }
 
 
+static int dbgcEvalSubCall(PDBGC pDbgc, char *pszFuncNm, size_t cchFuncNm, bool fExternal, char *pszArgs, size_t cchArgs,
+                           DBGCVARCAT enmCategory, PDBGCVAR pResult)
+{
+    /*
+     * Lookup the function.
+     */
+    PCDBGCFUNC pFunc = dbgcFunctionLookup(pDbgc, pszFuncNm, cchFuncNm, fExternal);
+    if (!pFunc)
+        return VERR_DBGC_PARSE_FUNCTION_NOT_FOUND;
+
+    /*
+     * Parse the arguments.
+     */
+    unsigned cArgs;
+    unsigned iArg;
+    pszArgs[cchArgs] = '\0';
+    int rc = dbgcProcessArguments(pDbgc, pFunc->pszFuncNm,
+                                  pFunc->cArgsMin, pFunc->cArgsMax, pFunc->paArgDescs, pFunc->cArgDescs,
+                                  pszArgs, &iArg, &cArgs);
+    if (RT_SUCCESS(rc))
+        rc = pFunc->pfnHandler(pFunc, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[iArg], cArgs, pResult);
+    pDbgc->iArg = iArg;
+    return rc;
+}
+
+
 /**
  * Evaluates one argument with respect to unary operators.
  *
@@ -388,38 +423,9 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
     }
     if (pszFunEnd)
     {
-        /*
-         * Ok, it's a function call.
-         */
-        if (fExternal)
-            pszExpr++, cchExpr--;
-        PCDBGCCMD pFun = dbgcRoutineLookup(pDbgc, pszExpr, pszFunEnd - pszExpr, fExternal);
-        if (!pFun)
-            return VERR_DBGC_PARSE_FUNCTION_NOT_FOUND;
-#if 0
-        if (!pFun->pResultDesc)
-            return VERR_DBGC_PARSE_NOT_A_FUNCTION;
-
-        /*
-         * Parse the expression in parenthesis.
-         */
-        cchExpr -= pszFunEnd - pszExpr;
-        pszExpr = pszFunEnd;
-        /** @todo implement multiple arguments. */
-        DBGCVAR     Arg;
-        rc = dbgcEvalSub(pDbgc, pszExpr, cchExpr, enmCategory, &Arg);
-        if (!rc)
-        {
-            rc = dbgcEvalSubMatchVars(pDbgc, pFun->cArgsMin, pFun->cArgsMax, pFun->paArgDescs, pFun->cArgDescs, &Arg, 1);
-            if (!rc)
-                rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, &Arg, 1, pResult);
-        }
-        else if (rc == VERR_DBGC_PARSE_EMPTY_ARGUMENT && pFun->cArgsMin == 0)
-            rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, NULL, 0, pResult);
-#else
-        rc = VERR_NOT_IMPLEMENTED;
-#endif
-        return rc;
+        size_t cchFunNm = pszFunEnd - pszFun;
+        return dbgcEvalSubCall(pDbgc, pszFun, cchFunNm, fExternal, pszFunEnd + 1, cchExpr - cchFunNm - fExternal - 2,
+                               enmCategory, pResult);
     }
 
     /*
@@ -590,7 +596,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
          */
         else if (ch == '(')
         {
-            if (!cPar && (fBinary || cchWord)) /** @todo function call */
+            if (!cPar && fBinary && !cchWord)
                 return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
             cPar++;
             fBinary = false;
@@ -935,44 +941,49 @@ static int dbgcCheckAndTypePromoteArgument(PDBGC pDbgc, DBGCVARCAT enmCategory, 
  * @returns VBox statuc code. On parser errors the index of the troublesome
  *          argument is indicated by *pcArg.
  *
- * @param   pDbgc       Debugger console instance data.
- * @param   pCmd        Pointer to the command descriptor.
- * @param   pszArg      Pointer to the arguments to parse.
- * @param   paArgs      Where to store the parsed arguments.
- * @param   cArgs       Size of the paArgs array.
- * @param   pcArgs      Where to store the number of arguments.  In the event
- *                      of an error this is (ab)used to store the index of the
- *                      offending argument.
+ * @param   pDbgc           Debugger console instance data.
+ * @param   pszCmdOrFunc    The name of the function or command. (For logging.)
+ * @param   cArgsMin        See DBGCCMD::cArgsMin and DBGCFUNC::cArgsMin.
+ * @param   cArgsMax        See DBGCCMD::cArgsMax and DBGCFUNC::cArgsMax.
+ * @param   paVarDescs      See DBGCCMD::paVarDescs and DBGCFUNC::paVarDescs.
+ * @param   cVarDescs       See DBGCCMD::cVarDescs and DBGCFUNC::cVarDescs.
+ * @param   pszArg          Pointer to the arguments to parse.
+ * @param   piArg           Where to return the index of the first argument in
+ *                          DBGC::aArgs. Always set. Caller must restore DBGC::iArg
+ *                          to this value when done, even on failure.
+ * @param   pcArgs          Where to store the number of arguments.  In the event
+ *                          of an error this is (ab)used to store the index of the
+ *                          offending argument.
  */
-static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBGCVAR paArgs, unsigned cArgs, unsigned *pcArgs)
+static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
+                                uint32_t const cArgsMin, uint32_t const cArgsMax,
+                                PCDBGCVARDESC const paVarDescs, uint32_t const cVarDescs,
+                                char *pszArgs, unsigned *piArg, unsigned *pcArgs)
 {
-    Log2(("dbgcProcessArguments: pCmd=%s pszArgs='%s'\n", pCmd->pszCmd, pszArgs));
+    Log2(("dbgcProcessArguments: pszCmdOrFunc=%s pszArgs='%s'\n", pszCmdOrFunc, pszArgs));
 
     /*
      * Check if we have any argument and if the command takes any.
      */
+    *piArg  = pDbgc->iArg;
     *pcArgs = 0;
     /* strip leading blanks. */
     while (*pszArgs && RT_C_IS_BLANK(*pszArgs))
         pszArgs++;
     if (!*pszArgs)
     {
-        if (!pCmd->cArgsMin)
+        if (!cArgsMin)
             return VINF_SUCCESS;
         return VERR_DBGC_PARSE_TOO_FEW_ARGUMENTS;
     }
-    /** @todo fixme - foo() doesn't work. */
-    if (!pCmd->cArgsMax)
+    if (!cArgsMax)
         return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
 
     /*
      * The parse loop.
      */
-    PDBGCVAR        pArg0       = &paArgs[0];
-    PDBGCVAR        pArg        = pArg0;
+    PDBGCVAR        pArg        = &pDbgc->aArgs[pDbgc->iArg];
     PCDBGCVARDESC   pPrevDesc   = NULL;
-    PCDBGCVARDESC   paVarDescs  = pCmd->paArgDescs;
-    unsigned const  cVarDescs   = pCmd->cArgDescs;
     unsigned        cCurDesc    = 0;
     unsigned        iVar        = 0;
     unsigned        iVarDesc    = 0;
@@ -982,9 +993,9 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         /*
          * Can we have another argument?
          */
-        if (*pcArgs >= pCmd->cArgsMax)
+        if (*pcArgs >= cArgsMax)
             return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
-        if (pArg >= &paArgs[cArgs])
+        if (pDbgc->iArg >= RT_ELEMENTS(pDbgc->aArgs))
             return VERR_DBGC_PARSE_ARGUMENT_OVERFLOW;
         if (iVarDesc >= cVarDescs)
             return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
@@ -1050,8 +1061,6 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
              */
             else if (ch == '(')
             {
-                if (!cPar && fBinary)
-                    return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
                 cPar++;
                 fBinary = false;
             }
@@ -1180,7 +1189,8 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
          */
         iVar++;
         pArg++;
-        (*pcArgs)++;
+        pDbgc->iArg++;
+        *pcArgs += 1;
         pszArgs = psz;
         while (*pszArgs && RT_C_IS_BLANK(*pszArgs))
             pszArgs++;
@@ -1248,7 +1258,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
     /*
      * Find the command.
      */
-    PCDBGCCMD pCmd = dbgcRoutineLookup(pDbgc, pszCmd, pszArgs - pszCmd, fExternal);
+    PCDBGCCMD pCmd = dbgcCommandLookup(pDbgc, pszCmd, pszArgs - pszCmd, fExternal);
     if (!pCmd)
     {
         DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Unknown command '%s'!\n", pszCmdInput);
@@ -1258,9 +1268,11 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
     /*
      * Parse arguments (if any).
      */
+    unsigned iArg;
     unsigned cArgs;
-    int rc = dbgcProcessArguments(pDbgc, pCmd, pszArgs, &pDbgc->aArgs[pDbgc->iArg],
-                                  RT_ELEMENTS(pDbgc->aArgs) - pDbgc->iArg, &cArgs);
+    int rc = dbgcProcessArguments(pDbgc,  pCmd->pszCmd,
+                                  pCmd->cArgsMin, pCmd->cArgsMax, pCmd->paArgDescs, pCmd->cArgDescs,
+                                  pszArgs, &iArg, &cArgs);
     if (RT_SUCCESS(rc))
     {
         AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n",  rc));
@@ -1269,14 +1281,16 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
          * Execute the command.
          */
         if (!fNoExecute)
-            rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[0], cArgs);
+            rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[iArg], cArgs);
         pDbgc->rcCmd = rc;
+        pDbgc->iArg  = iArg;
         if (rc == VERR_DBGC_COMMAND_FAILED)
             rc = VINF_SUCCESS;
     }
     else
     {
         pDbgc->rcCmd = rc;
+        pDbgc->iArg  = iArg;
 
         /* report parse / eval error. */
         switch (rc)
@@ -1372,6 +1386,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
             }
         }
     }
+
     return rc;
 }
 

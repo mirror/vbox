@@ -367,8 +367,18 @@ const DBGCCMD    g_aCmdsCodeView[] =
 };
 
 /** The number of commands in the CodeView/WinDbg emulation. */
-const unsigned g_cCmdsCodeView = RT_ELEMENTS(g_aCmdsCodeView);
+const uint32_t g_cCmdsCodeView = RT_ELEMENTS(g_aCmdsCodeView);
 
+
+/** Function descriptors for the CodeView / WinDbg emulation.
+ * The emulation isn't attempting to be identical, only somewhat similar.
+ */
+const DBGCFUNC g_aFuncsCodeView[] =
+{
+};
+
+/** The number of functions in the CodeView/WinDbg emulation. */
+const uint32_t g_cFuncsCodeView = RT_ELEMENTS(g_aFuncsCodeView);
 
 
 /**
