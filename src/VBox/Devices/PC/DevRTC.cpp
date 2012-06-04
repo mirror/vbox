@@ -989,6 +989,31 @@ static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 
 
 /**
+ * @copydoc
+ */
+static DECLCALLBACK(void) rtcReset(PPDMDEVINS pDevIns)
+{
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+
+    /* If shutdown status is non-zero, log its value. */
+    if (pThis->cmos_data[0xF])
+    {
+        LogRel(("CMOS shutdown status byte is %02X\n", pThis->cmos_data[0xF]));
+
+#if 0   /* It would be nice to log the warm reboot vector but alas, we already trashed it. */
+        uint32_t u32WarmVector;
+        int rc;
+        rc = PDMDevHlpPhysRead(pDevIns, 0x467, &u32WarmVector, sizeof(u32WarmVector));
+        AssertRC(rc);
+        LogRel((", 40:67 contains %04X:%04X\n", u32WarmVector >> 16, u32WarmVector & 0xFFFF));
+#endif
+        /* If we're going to trash the VM's memory, we also have to clear this. */
+        pThis->cmos_data[0xF] = 0;
+    }
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -1176,7 +1201,7 @@ const PDMDEVREG g_DeviceMC146818 =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    rtcReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
