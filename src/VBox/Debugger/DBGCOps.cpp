@@ -80,6 +80,9 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 #define DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, Operator, fIsDiv) \
     do \
     { \
+        if ((pArg1)->enmType == DBGCVAR_TYPE_STRING) \
+            return VERR_DBGC_PARSE_INVALID_OPERATION; \
+        \
         /* Get the 64-bit right side value. */ \
         uint64_t u64Right; \
         int rc = dbgcOpHelperGetNumber((pDbgc), (pArg2), &u64Right); \
@@ -88,8 +91,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
         else if (RT_SUCCESS(rc)) \
         { \
             /* Apply it to the left hand side. */ \
-            if (   (pArg1)->enmType == DBGCVAR_TYPE_SYMBOL \
-                || (pArg1)->enmType == DBGCVAR_TYPE_STRING) \
+            if ((pArg1)->enmType == DBGCVAR_TYPE_SYMBOL) \
             { \
                 rc = dbgcSymbolGet((pDbgc), (pArg1)->u.pszString, DBGCVAR_TYPE_ANY, (pResult)); \
                 if (RT_FAILURE(rc)) \
@@ -164,8 +166,8 @@ const DBGCOP g_aDbgcOps[] =
     { {'%','%'},        2,       false,      3,              dbgcOpAddrPhys,     NULL,                       DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Physical address." },
     { {'#'},            1,       false,      3,              dbgcOpAddrHost,     NULL,                       DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Flat host address." },
     { {'#','%','%'},    3,       false,      3,              dbgcOpAddrHostPhys, NULL,                       DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Physical host address." },
-    { {'$'},            1,       false,      3,              dbgcOpVar,          NULL,                       DBGCVAR_CAT_STRING, DBGCVAR_CAT_ANY, "Reference a variable." },
-    { {'@'},            1,       false,      3,              dbgcOpRegister,     NULL,                       DBGCVAR_CAT_STRING, DBGCVAR_CAT_ANY, "Reference a register." },
+    { {'$'},            1,       false,      3,              dbgcOpVar,          NULL,                       DBGCVAR_CAT_SYMBOL, DBGCVAR_CAT_ANY, "Reference a variable." },
+    { {'@'},            1,       false,      3,              dbgcOpRegister,     NULL,                       DBGCVAR_CAT_SYMBOL, DBGCVAR_CAT_ANY, "Reference a register." },
     { {'*'},            1,       true,       10,             NULL,               dbgcOpMult,                 DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Multiplication." },
     { {'/'},            1,       true,       11,             NULL,               dbgcOpDiv,                  DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Division." },
     { {'m','o','d'},    3,       true,       12,             NULL,               dbgcOpMod,                  DBGCVAR_CAT_ANY,    DBGCVAR_CAT_ANY, "Modulus." },
@@ -215,7 +217,9 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
         case DBGCVAR_TYPE_HC_PHYS:
             *pu64Ret = Var.u.HCPhys;
             break;
-        case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_NUMBER:
+            *pu64Ret = Var.u.u64Number;
+            break;
         case DBGCVAR_TYPE_SYMBOL:
         {
             int rc = dbgcSymbolGet(pDbgc, Var.u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
@@ -223,9 +227,7 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
                 return rc;
             /* fall thru */
         }
-        case DBGCVAR_TYPE_NUMBER:
-            *pu64Ret = Var.u.u64Number;
-            break;
+        case DBGCVAR_TYPE_STRING:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
@@ -268,8 +270,8 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
             pResult->u.u64Number    = -(int64_t)pResult->u.u64Number;
             break;
 
-        case DBGCVAR_TYPE_UNKNOWN:
         case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
@@ -302,8 +304,8 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
         case DBGCVAR_TYPE_NUMBER:
             break;
 
-        case DBGCVAR_TYPE_UNKNOWN:
         case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
@@ -347,6 +349,7 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
             pResult->u.u64Number    = !pResult->u.u64Number;
             break;
         case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
             pResult->u.u64Number    = !pResult->u64Range;
             break;
 
@@ -395,8 +398,8 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
             pResult->u.u64Number    = ~pResult->u.u64Number;
             break;
 
-        case DBGCVAR_TYPE_UNKNOWN:
         case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
@@ -418,12 +421,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
 static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpVar: %s\n", pArg->u.pszString));
-
-    /*
-     * Parse sanity.
-     */
-    if (pArg->enmType != DBGCVAR_TYPE_STRING)
-        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
+    AssertReturn(pArg->enmType == DBGCVAR_TYPE_SYMBOL, VERR_DBGC_PARSE_BUG);
 
     /*
      * Lookup the variable.
@@ -455,13 +453,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCa
 DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpRegister: %s\n", pArg->u.pszString));
-
-    /*
-     * Parse sanity.
-     */
-    if (   pArg->enmType != DBGCVAR_TYPE_STRING
-        && pArg->enmType != DBGCVAR_TYPE_SYMBOL)
-        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
+    AssertReturn(pArg->enmType == DBGCVAR_TYPE_SYMBOL, VERR_DBGC_PARSE_BUG);
 
     /*
      * If the desired result is a symbol, pass the argument along unmodified.
@@ -615,7 +607,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 
     switch (pArg1->enmType)
     {
-        case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
             rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_NUMBER, pResult);
             if (RT_FAILURE(rc))
                 return rc;
@@ -623,13 +615,6 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
         case DBGCVAR_TYPE_NUMBER:
             *pResult = *pArg1;
             break;
-
-        case DBGCVAR_TYPE_GC_FLAT:
-        case DBGCVAR_TYPE_GC_FAR:
-        case DBGCVAR_TYPE_GC_PHYS:
-        case DBGCVAR_TYPE_HC_FLAT:
-        case DBGCVAR_TYPE_HC_PHYS:
-        case DBGCVAR_TYPE_UNKNOWN:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
@@ -653,7 +638,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
             pResult->enmType    = DBGCVAR_TYPE_GC_FAR;
             break;
 
-        case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
         {
             DBGCVAR Var;
             rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
@@ -664,10 +649,6 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
             break;
         }
 
-        case DBGCVAR_TYPE_GC_FAR:
-        case DBGCVAR_TYPE_GC_PHYS:
-        case DBGCVAR_TYPE_HC_PHYS:
-        case DBGCVAR_TYPE_UNKNOWN:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }
@@ -749,18 +730,23 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
     /*
      * An addition operation will return (when possible) the left side type in the
      * expression. We make an omission for numbers, where we'll take the right side
-     * type instead. An expression where only the left hand side is a string we'll
-     * use the right hand type assuming that the string is a symbol.
+     * type instead. An expression where only the left hand side is a symbol we'll
+     * use the right hand type to try resolve it.
      */
-    if (    (pArg1->enmType == DBGCVAR_TYPE_NUMBER && pArg2->enmType != DBGCVAR_TYPE_STRING)
-        ||  (pArg1->enmType == DBGCVAR_TYPE_STRING && pArg2->enmType != DBGCVAR_TYPE_STRING))
+    if (   pArg1->enmType == DBGCVAR_TYPE_STRING
+        || pArg2->enmType == DBGCVAR_TYPE_STRING)
+        return VERR_DBGC_PARSE_INVALID_OPERATION; /** @todo string contactenation later. */
+
+    if (    (pArg1->enmType == DBGCVAR_TYPE_NUMBER && pArg2->enmType != DBGCVAR_TYPE_SYMBOL)
+        ||  (pArg1->enmType == DBGCVAR_TYPE_SYMBOL && pArg2->enmType != DBGCVAR_TYPE_SYMBOL))
     {
         PCDBGCVAR pTmp = pArg2;
         pArg2 = pArg1;
         pArg1 = pTmp;
     }
+
     DBGCVAR     Sym1, Sym2;
-    if (pArg1->enmType == DBGCVAR_TYPE_STRING)
+    if (pArg1->enmType == DBGCVAR_TYPE_SYMBOL)
     {
         int rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_ANY, &Sym1);
         if (RT_FAILURE(rc))
@@ -876,7 +862,6 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_SYMBOL:
-                case DBGCVAR_TYPE_STRING:
                     rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
@@ -915,12 +900,12 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
      * An subtraction operation will return the left side type in the expression.
      * However, if the left hand side is a number and the right hand a pointer of
      * some kind we'll convert the left hand side to the same type as the right hand.
-     * Any strings will be attempted resolved as symbols.
+     * Any symbols will be resolved, strings will be rejected.
      */
     DBGCVAR     Sym1, Sym2;
-    if (    pArg2->enmType == DBGCVAR_TYPE_STRING
+    if (    pArg2->enmType == DBGCVAR_TYPE_SYMBOL
         &&  (   pArg1->enmType == DBGCVAR_TYPE_NUMBER
-             || pArg1->enmType == DBGCVAR_TYPE_STRING))
+             || pArg1->enmType == DBGCVAR_TYPE_SYMBOL))
     {
         int rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_ANY, &Sym2);
         if (RT_FAILURE(rc))
@@ -928,7 +913,11 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
         pArg2 = &Sym2;
     }
 
-    if (pArg1->enmType == DBGCVAR_TYPE_STRING)
+    if (   pArg1->enmType == DBGCVAR_TYPE_STRING
+        || pArg2->enmType == DBGCVAR_TYPE_STRING)
+        return VERR_DBGC_PARSE_INVALID_OPERATION;
+
+    if (pArg1->enmType == DBGCVAR_TYPE_SYMBOL)
     {
         DBGCVARTYPE enmType;
         switch (pArg2->enmType)
@@ -945,12 +934,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             case DBGCVAR_TYPE_GC_FAR:
                 enmType = DBGCVAR_TYPE_GC_FLAT;
                 break;
-
-            default:
-            case DBGCVAR_TYPE_STRING:
-                AssertMsgFailed(("Can't happen\n"));
-                enmType = DBGCVAR_TYPE_STRING;
-                break;
+            default: AssertFailedReturn(VERR_DBGC_IPE);
         }
         if (enmType != DBGCVAR_TYPE_STRING)
         {
@@ -980,10 +964,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                 break;
             case DBGCVAR_TYPE_NUMBER:
                 break;
-            default:
-            case DBGCVAR_TYPE_STRING:
-                AssertMsgFailed(("Can't happen\n"));
-                break;
+            default: AssertFailedReturn(VERR_DBGC_IPE);
         }
         if (pOp)
         {
@@ -993,7 +974,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             pArg1 = &Sym1;
         }
     }
-
 
     /*
      * Normal processing.
@@ -1101,7 +1081,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_SYMBOL:
-                case DBGCVAR_TYPE_STRING:
                     rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
@@ -1267,10 +1246,13 @@ static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCV
 {
     LogFlow(("dbgcOpRangeLength\n"));
 
-    /*
-     * Make result. Strings needs to be resolved into symbols.
-     */
     if (pArg1->enmType == DBGCVAR_TYPE_STRING)
+        return VERR_DBGC_PARSE_INVALID_OPERATION;
+
+    /*
+     * Make result. Symbols needs to be resolved.
+     */
+    if (pArg1->enmType == DBGCVAR_TYPE_SYMBOL)
     {
         int rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_ANY, pResult);
         if (RT_FAILURE(rc))
@@ -1289,7 +1271,7 @@ static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCV
             pResult->u64Range = pArg2->u.u64Number;
             break;
 
-        case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
         {
             int rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, pResult);
             if (RT_FAILURE(rc))
@@ -1298,6 +1280,7 @@ static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCV
             break;
         }
 
+        case DBGCVAR_TYPE_STRING:
         default:
             return VERR_DBGC_PARSE_INVALID_OPERATION;
     }
@@ -1375,6 +1358,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 
         case DBGCVAR_TYPE_GC_FAR:
         case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
         default:
             AssertMsgFailed(("Impossible!\n"));
             return VERR_DBGC_PARSE_INVALID_OPERATION;

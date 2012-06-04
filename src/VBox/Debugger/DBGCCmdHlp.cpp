@@ -53,6 +53,40 @@ static DECLCALLBACK(int) dbgcHlpPrintf(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, 
 
 
 /**
+ * Outputs a string in quotes.
+ *
+ * @returns The number of bytes formatted.
+ * @param   pfnOutput       Pointer to output function.
+ * @param   pvArgOutput     Argument for the output function.
+ * @param   chQuote         The quote character.
+ * @param   psz             The string to quote.
+ * @param   cch             The string length.
+ */
+static size_t dbgcStringOutputInQuotes(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char chQuote, const char *psz, size_t cch)
+{
+    size_t cchOutput = pfnOutput(pvArgOutput, &chQuote, 1);
+
+    while (cch > 0)
+    {
+        char *pchQuote = (char *)memchr(psz, chQuote, cch);
+        if (!pchQuote)
+        {
+            cchOutput += pfnOutput(pvArgOutput, psz, cch);
+            break;
+        }
+        size_t cchSub = pchQuote - psz + 1;
+        cchOutput += pfnOutput(pvArgOutput, psz, cchSub);
+        cchOutput += pfnOutput(pvArgOutput, &chQuote, 1);
+        cchSub -= cchSub;
+        psz    += cchSub;
+    }
+
+    cchOutput += pfnOutput(pvArgOutput, &chQuote, 1);
+    return cchOutput;
+}
+
+
+/**
  * Callback to format non-standard format specifiers, employed by dbgcPrintfV
  * and others.
  *
@@ -102,10 +136,12 @@ static DECLCALLBACK(size_t) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnO
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%%#%RHv", (uintptr_t)pVar->u.pvHCFlat);
                 case DBGCVAR_TYPE_HC_PHYS:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "#%%%%%RHp", pVar->u.HCPhys);
-                case DBGCVAR_TYPE_STRING:
-                    return pfnOutput(pvArgOutput, pVar->u.pszString, (size_t)pVar->u64Range);
                 case DBGCVAR_TYPE_NUMBER:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%llx", pVar->u.u64Number);
+                case DBGCVAR_TYPE_STRING:
+                    return dbgcStringOutputInQuotes(pfnOutput, pvArgOutput, '"', pVar->u.pszString, (size_t)pVar->u64Range);
+                case DBGCVAR_TYPE_SYMBOL:
+                    return dbgcStringOutputInQuotes(pfnOutput, pvArgOutput, '\'', pVar->u.pszString, (size_t)pVar->u64Range);
 
                 case DBGCVAR_TYPE_UNKNOWN:
                 default:
@@ -148,10 +184,12 @@ static DECLCALLBACK(size_t) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnO
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%%#%RHv%s", (uintptr_t)pVar->u.pvHCFlat, szRange);
                 case DBGCVAR_TYPE_HC_PHYS:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "#%%%%%RHp%s", pVar->u.HCPhys, szRange);
-                case DBGCVAR_TYPE_STRING:
-                    return pfnOutput(pvArgOutput, pVar->u.pszString, (size_t)pVar->u64Range);
                 case DBGCVAR_TYPE_NUMBER:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%llx%s", pVar->u.u64Number, szRange);
+                case DBGCVAR_TYPE_STRING:
+                    return dbgcStringOutputInQuotes(pfnOutput, pvArgOutput, '"', pVar->u.pszString, (size_t)pVar->u64Range);
+                case DBGCVAR_TYPE_SYMBOL:
+                    return dbgcStringOutputInQuotes(pfnOutput, pvArgOutput, '\'', pVar->u.pszString, (size_t)pVar->u64Range);
 
                 case DBGCVAR_TYPE_UNKNOWN:
                 default:
@@ -709,7 +747,6 @@ static DECLCALLBACK(int) dbgcHlpVarToDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVa
             DBGFR3AddrFromPhys(pDbgc->pVM, pAddress, pVar->u.GCPhys);
             return VINF_SUCCESS;
 
-        case DBGCVAR_TYPE_STRING:
         case DBGCVAR_TYPE_SYMBOL:
         {
             DBGCVAR Var;
@@ -719,6 +756,7 @@ static DECLCALLBACK(int) dbgcHlpVarToDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVa
             return dbgcHlpVarToDbgfAddr(pCmdHlp, &Var, pAddress);
         }
 
+        case DBGCVAR_TYPE_STRING:
         case DBGCVAR_TYPE_HC_FLAT:
         case DBGCVAR_TYPE_HC_PHYS:
         default:
@@ -792,6 +830,7 @@ static DECLCALLBACK(int) dbgcHlpVarToNumber(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar,
             u64Number = (uintptr_t)pVar->u.GCFar.off;
             break;
         case DBGCVAR_TYPE_SYMBOL:
+            /** @todo try convert as symbol? */
         case DBGCVAR_TYPE_STRING:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE; /** @todo better error code! */
         default:
@@ -812,31 +851,20 @@ static DECLCALLBACK(int) dbgcHlpVarToBool(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, b
 
     switch (pVar->enmType)
     {
+        case DBGCVAR_TYPE_SYMBOL:
         case DBGCVAR_TYPE_STRING:
-            /** @todo add strcasecmp / stricmp wrappers to iprt/string.h. */
-            if (    !strcmp(pVar->u.pszString, "true")
-                ||  !strcmp(pVar->u.pszString, "True")
-                ||  !strcmp(pVar->u.pszString, "TRUE")
-                ||  !strcmp(pVar->u.pszString, "on")
-                ||  !strcmp(pVar->u.pszString, "On")
-                ||  !strcmp(pVar->u.pszString, "oN")
-                ||  !strcmp(pVar->u.pszString, "ON")
-                ||  !strcmp(pVar->u.pszString, "enabled")
-                ||  !strcmp(pVar->u.pszString, "Enabled")
-                ||  !strcmp(pVar->u.pszString, "DISABLED"))
+            if (    !RTStrICmp(pVar->u.pszString, "true")
+                ||  !RTStrICmp(pVar->u.pszString, "on")
+                ||  !RTStrICmp(pVar->u.pszString, "no")
+                ||  !RTStrICmp(pVar->u.pszString, "enabled"))
             {
                 *pf = true;
                 return VINF_SUCCESS;
             }
-            if (    !strcmp(pVar->u.pszString, "false")
-                ||  !strcmp(pVar->u.pszString, "False")
-                ||  !strcmp(pVar->u.pszString, "FALSE")
-                ||  !strcmp(pVar->u.pszString, "off")
-                ||  !strcmp(pVar->u.pszString, "Off")
-                ||  !strcmp(pVar->u.pszString, "OFF")
-                ||  !strcmp(pVar->u.pszString, "disabled")
-                ||  !strcmp(pVar->u.pszString, "Disabled")
-                ||  !strcmp(pVar->u.pszString, "DISABLED"))
+            if (    !RTStrICmp(pVar->u.pszString, "false")
+                ||  !RTStrICmp(pVar->u.pszString, "off")
+                ||  !RTStrICmp(pVar->u.pszString, "yes")
+                ||  !RTStrICmp(pVar->u.pszString, "disabled"))
             {
                 *pf = false;
                 return VINF_SUCCESS;
@@ -852,7 +880,6 @@ static DECLCALLBACK(int) dbgcHlpVarToBool(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, b
             return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_GC_FAR:
-        case DBGCVAR_TYPE_SYMBOL:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
     }

@@ -45,6 +45,7 @@ static uint32_t g_bmOperatorChars[256 / (4*8)];
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static int dbgcCheckAndTypePromoteArgument(PDBGC pDbgc, DBGCVARCAT enmCategory, PDBGCVAR pArg);
 static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
                                 uint32_t const cArgsMin, uint32_t const cArgsMax,
                                 PCDBGCVARDESC const paVarDescs, uint32_t const cVarDescs,
@@ -165,7 +166,7 @@ static int dbgcEvalSubString(PDBGC pDbgc, const char *pachExpr, size_t cchExpr, 
      */
     pArg->pDesc         = NULL;
     pArg->pNext         = NULL;
-    pArg->enmType       = chQuote == '\'' ? DBGCVAR_TYPE_SYMBOL : DBGCVAR_TYPE_STRING;
+    pArg->enmType       = chQuote == '"' ? DBGCVAR_TYPE_STRING : DBGCVAR_TYPE_SYMBOL;
     pArg->u.pszString   = pszCopy;
     pArg->enmRangeType  = DBGCVAR_RANGE_BYTES;
     pArg->u64Range      = cchExpr;
@@ -486,6 +487,8 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
             else
                 rc = dbgcEvalSubUnary(pDbgc, pszExpr2, cchExpr - (pszExpr2 - pszExpr), pOp->enmCatArg1, &Arg);
             if (RT_SUCCESS(rc))
+                rc = dbgcCheckAndTypePromoteArgument(pDbgc, pOp->enmCatArg1, &Arg);
+            if (RT_SUCCESS(rc))
                 rc = pOp->pfnHandlerUnary(pDbgc, &Arg, enmCategory, pResult);
         }
         else
@@ -750,10 +753,10 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
         return VERR_DBGC_PARSE_UNBALANCED_QUOTE;
 
     /*
-     * Either we found an operator to divide the expression by
-     * or we didn't find any. In the first case it's divide and
-     * conquer. In the latter it's a single expression which
-     * needs dealing with its unary operators if any.
+     * Either we found an operator to divide the expression by or we didn't
+     * find any.  In the first case it's divide and conquer.  In the latter
+     * it's a single expression which needs dealing with its unary operators
+     * if any.
      */
     int rc;
     if (    cBinaryOps
@@ -770,7 +773,10 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
             DBGCVAR     Arg2;
             rc = dbgcEvalSub(pDbgc, psz2, cchExpr - (psz2 - pszExpr), pOpSplit->enmCatArg2, &Arg2);
             if (RT_SUCCESS(rc))
-                /* apply the operator. */
+                rc = dbgcCheckAndTypePromoteArgument(pDbgc, pOpSplit->enmCatArg1, &Arg1);
+            if (RT_SUCCESS(rc))
+                rc = dbgcCheckAndTypePromoteArgument(pDbgc, pOpSplit->enmCatArg2, &Arg2);
+            if (RT_SUCCESS(rc))
                 rc = pOpSplit->pfnHandlerBinary(pDbgc, &Arg1, &Arg2, pResult);
         }
     }
@@ -781,7 +787,8 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
         DBGCVAR     Arg;
         rc = dbgcEvalSub(pDbgc, pszOpSplit, cchExpr - (pszOpSplit - pszExpr), pOpSplit->enmCatArg1, &Arg);
         if (RT_SUCCESS(rc))
-            /* apply the operator. */
+            rc = dbgcCheckAndTypePromoteArgument(pDbgc, pOpSplit->enmCatArg1, &Arg);
+        if (RT_SUCCESS(rc))
             rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, enmCategory, pResult);
     }
     else
@@ -1308,8 +1315,6 @@ static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
  * @param   pszCmd      Pointer to the command.
  * @param   cchCmd      Length of the command.
  * @param   fNoExecute  Indicates that no commands should actually be executed.
- *
- * @todo    Change pszCmd into argc/argv?
  */
 int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
 {
@@ -1330,9 +1335,10 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
      * Find arguments.
      */
     char *pszArgs = pszCmd;
-    while (RT_C_IS_ALNUM(*pszArgs))
+    while (RT_C_IS_ALNUM(*pszArgs) || *pszArgs == '_')
         pszArgs++;
-    if (*pszArgs && (!RT_C_IS_BLANK(*pszArgs) || pszArgs == pszCmd))
+    if (   (*pszArgs && !RT_C_IS_BLANK(*pszArgs))
+        || !RT_C_IS_ALPHA(*pszCmd))
     {
         DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Invalid command '%s'!\n", pszCmdInput);
         return pDbgc->rcCmd = VERR_DBGC_PARSE_INVALD_COMMAND_NAME;

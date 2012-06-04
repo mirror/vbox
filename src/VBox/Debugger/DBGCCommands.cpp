@@ -205,10 +205,16 @@ static const DBGCVARDESC    g_aArgPlugIn[] =
 static const DBGCVARDESC    g_aArgSet[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "var",          "Variable name." },
+    {  1,           1,          DBGCVAR_CAT_SYMBOL,     0,                              "var",          "Variable name." },
     {  1,           1,          DBGCVAR_CAT_ANY,        0,                              "value",        "Value to assign to the variable." },
 };
 
+/** 'unset' arguments */
+static const DBGCVARDESC    g_aArgUnset[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           ~0U,        DBGCVAR_CAT_SYMBOL,     0,                              "vars",         "One or more variable names." },
+};
 
 /** writecore arguments. */
 static const DBGCVARDESC    g_aArgWriteCore[] =
@@ -256,7 +262,7 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "showvars",   0,        0,        NULL,                0,                            0, dbgcCmdShowVars,  "",                     "List all the defined variables." },
     { "stop",       0,        0,        NULL,                0,                            0, dbgcCmdStop,      "",                     "Stop execution." },
     { "unloadplugin", 1,     ~0U,       &g_aArgPlugIn[0],    RT_ELEMENTS(g_aArgPlugIn),    0, dbgcCmdUnloadPlugIn, "<plugin1> [plugin2..N]", "Unloads one or more plugins." },
-    { "unset",      1,       ~0U,       &g_aArgMultiStr[0],  RT_ELEMENTS(g_aArgMultiStr),  0, dbgcCmdUnset,     "<var1> [var1..[varN]]",  "Unsets (delete) one or more global variables." },
+    { "unset",      1,       ~0U,       &g_aArgUnset[0],     RT_ELEMENTS(g_aArgUnset),     0, dbgcCmdUnset,     "<var1> [var1..[varN]]",  "Unsets (delete) one or more global variables." },
     { "writecore",  1,        1,        &g_aArgWriteCore[0], RT_ELEMENTS(g_aArgWriteCore), 0, dbgcCmdWriteCore,   "<filename>",           "Write core to file." },
 };
 /** The number of native commands. */
@@ -475,6 +481,7 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     int         rc = VINF_SUCCESS;
     unsigned    i;
 
+/** @todo rewrite this.  */
     if (!cArgs)
     {
         /*
@@ -547,7 +554,7 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
          */
         for (unsigned iArg = 0; iArg < cArgs; iArg++)
         {
-            Assert(paArgs[iArg].enmType == DBGCVAR_TYPE_STRING);
+            AssertReturn(paArgs[iArg].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_BUG);
             const char *pszPattern = paArgs[iArg].u.pszString;
             bool        fFound     = false;
 
@@ -686,10 +693,8 @@ static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     int rc = 0;
     for (unsigned i = 0; i < cArgs; i++)
     {
-        if (paArgs[i].enmType == DBGCVAR_TYPE_STRING)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, i ? " %s" : "%s", paArgs[i].u.pszString);
-        else
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, i ? " <parser error>" : "<parser error>");
+        AssertReturn(paArgs[i].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_BUG);
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, i ? " %s" : "%s", paArgs[i].u.pszString);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1468,16 +1473,8 @@ static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM
 static DECLCALLBACK(int) dbgcCmdUnset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-
-    /*
-     * Don't trust the parser.
-     */
     for (unsigned  i = 0; i < cArgs; i++)
-        if (paArgs[i].enmType != DBGCVAR_TYPE_STRING)
-        {
-            AssertMsgFailed(("expected strings only. (arg=%d)!\n", i));
-            return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
-        }
+        AssertReturn(paArgs[i].enmType == DBGCVAR_TYPE_SYMBOL, VERR_DBGC_PARSE_BUG);
 
     /*
      * Iterate the variables and unset them.
