@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1197,14 +1197,7 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                     {
                         rc = dbgcSymbolGet(pDbgc, InVar.u.pszString, enmToType, pResult);
                         if (RT_SUCCESS(rc))
-                        {
-                            if (InVar.enmRangeType != DBGCVAR_RANGE_NONE)
-                            {
-                                pResult->enmRangeType = InVar.enmRangeType;
-                                pResult->u64Range     = InVar.u64Range;
-                            }
                             return VINF_SUCCESS;
-                        }
                     }
                     return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
 

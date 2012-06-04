@@ -19,21 +19,29 @@
 /** @page pg_dbgc                       DBGC - The Debug Console
  *
  * The debugger console is an early attempt to make some interactive
- * debugging facilities for the VirtualBox VMM. It was initially only
- * accessible thru a telnet session on debug builds. Later it was hastily
- * built into the VBoxDbg module with a very simple Qt wrapper around it.
+ * debugging facilities for the VirtualBox VMM.  It was initially only
+ * accessible thru a telnet session in debug builds.  Later it was hastily built
+ * into the VBoxDbg module with a very simple Qt wrapper around it.
  *
- * The debugger is optional and presently not built into release builds
- * of VirtualBox. It is therefore necessary to enclose code related to it
- * in \#ifdef VBOX_WITH_DEBUGGER blocks. This is mandatory for components
- * that register extenral commands.
+ * The current state is that it's by default shipped with all standard
+ * VirtualBox builds.  The GUI component is by default accessible in all
+ * non-release builds, while release builds require extra data, environment or
+ * command line options to make it visible.
+ *
+ * Now, even if we ship it with all standard builds we would like it to remain
+ * an optional feature that can be omitted when building VirtualBox.  Therefore,
+ * all external code interfacing DBGC need to be enclosed in
+ * \#ifdef VBOX_WITH_DEBUGGER blocks. This is mandatory for components that
+ * register external commands.
  *
  *
- * @section sec_dbgc_op                 Operation (intentions)
+ * @section sec_dbgc_op                 Operation
  *
- * The console will process commands in a manner similar to the OS/2 and
- * windows kernel debuggers. This means ';' is a command separator and
- * that when possible we'll use the same command names as these two uses.
+ * The console will process commands in a manner similar to the OS/2 and Windows
+ * kernel debuggers.  This means ';' is a command separator and that when
+ * possible we'll use the same command names as these two uses.  As an
+ * alternative we intent to provide a set of gdb-like commands as well and let
+ * the user decide which should take precedence.
  *
  *
  * @subsection sec_dbg_op_numbers       Numbers
@@ -41,14 +49,36 @@
  * Numbers are hexadecimal unless specified with a prefix indicating
  * elsewise. Prefixes:
  *      - '0x' - hexadecimal.
- *      - '0i' - decimal
+ *      - '0n' - decimal
  *      - '0t' - octal.
  *      - '0y' - binary.
  *
- * Some of the prefixes are a bit uncommon, the reason for this that
- * the typical binary prefix '0b' can also be a hexadecimal value since
- * no prefix or suffix is required for such values. Ditto for '0d' and
- * '0' for decimal and octal.
+ * Some of the  prefixes are a bit uncommon, the reason for this that the
+ * typical binary prefix '0b' can also be a hexadecimal value since no prefix or
+ * suffix is required for such values. Ditto for '0n' and '0' for decimal and
+ * octal.
+ *
+ * The '`' can be used in the numeric value to separate parts as the user
+ * wishes.  Generally, though the debugger may use it in output as thousand
+ * separator in decimal numbers and 32-bit separator in hex numbers.
+ *
+ * For historical reasons, a 'h' suffix is suffered on hex numbers.  Unlike most
+ * assemblers, a leading 0 before a-f is not required with the 'h' suffix.
+ *
+ * The prefix '0i' can be used instead of '0n', as it was the early decimal
+ * prefix employed by DBGC.  It's being deprecated and may be removed later.
+ *
+ *
+ * @subsection sec_dbg_op_strings       Strings and Symbols
+ *
+ * The debugger will try to guess, convert or promote what the type of an
+ * argument to a command, function or operator based on the input description of
+ * the receiver.  If the user wants to make it clear to the debugger that
+ * something is a string, put it inside double quotes.  Symbols should use
+ * single quotes, though we're current still a bit flexible on this point.
+ *
+ * If you need to put a quote character inside the quoted text, you escape it by
+ * repating it once: echo "printf(""hello world"");"
  *
  *
  * @subsection sec_dbg_op_address       Addressing modes
@@ -61,49 +91,47 @@
  *        Note that several operations won't work on host addresses.
  *
  * The '%', '%%' and '#' prefixes is implemented as unary operators, while ':'
- * is a binary operator. Operator precedence takes care of evaluation order.
+ * is a binary operator.  Operator precedence takes care of evaluation order.
  *
  *
- * @subsection sec_dbg_op_evalution     Evaluation
+ * @subsection sec_dbg_op_c_operators   C/C++ Operators
  *
- * Most unary and binary C operators are supported, check the help text for
- * details. However, some of these are not yet implemented because this is
- * tiresome and annoying work. So, if something is missing and you need it
- * you implement it or complain to bird. (Ditto for missing functions.)
+ * Most unary and binary arithmetic, comparison, logical and bitwise C/C++
+ * operators are supported by the debugger, with the same precedence rules of
+ * course.  There is one notable change made due to the unary '%' and '%%'
+ * operators, and that is that the modulo (remainder) operator is called 'mod'
+ * instead of '%'.  This saves a lot of trouble separating argument.
  *
- * Simple variable support is provided thru the 'set' and 'unset' commands and
- * the unary '$' operator.
- *
- * The unary '@' operator will indicate function calls. Commands and functions
- * are the same thing, except that functions has a return type.
+ * There are no assignment operators.  Instead some simple global variable space
+ * is provided thru the 'set' and 'unset' commands and the unary '$' operator.
  *
  *
  * @subsection sec_dbg_op_registers     Registers
  *
- * Registers are addressed using their name. Some registers which have several fields
- * (like gdtr) will have separate names indicating the different fields. The default
- * register set is the guest one. To access the hypervisor register one have to
- * prefix the register names with '.'.
- *
- * The registers are implemented as built-in symbols. For making gdb guys more at
- * home it is possible to access them with the '$' operator, i.e. as a variable.
+ * All registers and their sub-fields exposed by the DBGF API are accessible via
+ * the '\@' operator.  A few CPU register are accessible directly (as symbols)
+ * without using the '\@' operator.  Hypervisor registers are accessible by
+ * prefixing the register name with a dot ('.').
  *
  *
- * @subsection sec_dbg_op_commands      Commands and Functions
+ * @subsection sec_dbg_op_commands      Commands
  *
- * Commands and functions are the same thing, except that functions may return a
- * value. So, functions may be used as commands. The command/function handlers
- * can detect whether they are invoked as a command or function by checking whether
- * there is a return variable or not.
+ * Commands names are case sensitive. By convention they are lower cased, starts
+ * with a letter but may contain digits and underscores afterwards.  Operators
+ * are not allowed in the name (not even part of it), as we would risk
+ * misunderstanding it otherwise.
  *
- * The command/function names are all lowercase, case sensitive, and starting
- * with a letter. Operator characters are not permitted in the names of course.
- * Space is allowed, but must be flagged so the parser can check for multiple
- * spaces and tabs. (This feature is for 'dump xyz' and for emulating the
- * gdb 'info abc'.)
+ * Commands returns a status code.
  *
  * The '.' prefix indicates the set of external commands. External commands are
  * command registered by VMM components.
+ *
+ *
+ * @subsection sec_dbg_op_functions     Functions
+ *
+ * Functions are similar to commands, but return a variable and can only be used
+ * as part of an expression making up the argument of a command, function,
+ * operator or language statement (if we get around to implement that).
  *
  *
  * @section sec_dbgc_logging            Logging
@@ -113,17 +141,17 @@
  * logger instance and while this was sketched it hasn't yet been implemented
  * (dbgcProcessLog and DBGC::fLog).
  *
+ * This feature has not materialized and probably never will.
  *
  *
  * @section sec_dbgc_linking            Linking and API
  *
- * The DBGC code is linked into the VBoxVMM module. (At present it is also
- * linked into VBoxDbg, but this is obviously very wrong.)
+ * The DBGC code is linked into the VBoxVMM module.
  *
- * A COM object will be created for the DBGC so it can be operated remotely
- * without using TCP. VBoxDbg is the intended audience for this usage. Some
- * questions about callbacks (for output) and security (you may wish to
- * restrict users from debugging a VM) needs to be answered first though.
+ * IMachineDebugger may one day be extended with a DBGC interface so we can work
+ * with DBGC remotely without requiring TCP.  Some questions about callbacks
+ * (for output) and security (you may wish to restrict users from debugging a
+ * VM) needs to be answered first though.
  */
 
 
@@ -217,7 +245,7 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
             DBGCVAR_INIT_STRING(&Var, pszSymbol);
             rc = dbgcOpRegister(pDbgc, &Var, DBGCVAR_CAT_ANY, pResult);
             if (RT_SUCCESS(rc))
-                return DBGCCmdHlpConvert(&pDbgc->CmdHlp, &Var, enmType, false /*fConvSyms*/, pResult);
+                return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pResult, enmType, false /*fConvSyms*/, pResult);
         }
     }
 
