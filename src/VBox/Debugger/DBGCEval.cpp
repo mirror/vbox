@@ -548,6 +548,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
     PCDBGCOP    pOpSplit    = NULL;
     unsigned    cBinaryOps  = 0;
     unsigned    cPar        = 0;
+    unsigned    cchWord     = 0;
     char        chQuote     = '\0';
     char        chPrev      = ' ';
     bool        fBinary     = false;
@@ -556,28 +557,44 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
 
     while ((ch = *psz) != '\0')
     {
-        //Log2(("ch=%c cPar=%d fBinary=%d\n", ch, cPar, fBinary));
         /*
          * String quoting.
          */
         if (chQuote)
         {
-            if (   ch == chQuote
-                && psz[1] != chQuote)
+            if (ch == chQuote)
             {
-                chQuote = '\0';
-                fBinary = true;
+                if (psz[1] == chQuote)
+                {
+                    psz++;              /* escaped quote */
+                    cchWord++;
+                }
+                else
+                {
+                    chQuote = '\0';
+                    fBinary = true;
+                    cchWord = 0;
+                }
             }
+            else
+                cchWord++;
         }
         else if (ch == '"' || ch == '\'')
+        {
+            if (fBinary || cchWord)
+                return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
             chQuote = ch;
+        }
         /*
          * Parentheses.
          */
         else if (ch == '(')
         {
+            if (!cPar && (fBinary || cchWord)) /** @todo function call */
+                return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
             cPar++;
             fBinary = false;
+            cchWord = 0;
         }
         else if (ch == ')')
         {
@@ -585,6 +602,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
                 return VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS;
             cPar--;
             fBinary = true;
+            cchWord = 0;
         }
         /*
          * Potential operator.
@@ -621,10 +639,18 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCatego
 
                 psz += pOp->cchName - 1;
                 fBinary = false;
+                cchWord = 0;
             }
+            else if (fBinary && !cchWord)
+                return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
             else
+            {
                 fBinary = true;
+                cchWord++;
+            }
         }
+        else if (cPar == 0 && RT_C_IS_BLANK(ch))
+            cchWord++;
 
         /* next */
         psz++;
@@ -973,7 +999,8 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         }
 
         /*
-         * Find the end of the argument.
+         * Find the end of the argument.  This is just rough splitting,
+         * dbgcEvalSub will do stricter syntax checking later on.
          */
         int     cPar    = 0;
         char    chQuote = '\0';
@@ -999,51 +1026,73 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
              * When quoted we ignore everything but the quotation char.
              * We use the REXX way of escaping the quotation char, i.e. double occurrence.
              */
-            else if (ch == '\'' || ch == '"')
+            else if (chQuote)
             {
-                if (chQuote)
+                if (ch == chQuote)
                 {
-                    /* end quote? */
-                    if (ch == chQuote)
+                    if (psz[1] == chQuote)
+                        psz++;          /* skip the escaped quote char */
+                    else
                     {
-                        if (psz[1] == ch)
-                            psz++;          /* skip the escaped quote char */
-                        else
-                            chQuote = '\0'; /* end of quoted string. */
+                        chQuote = '\0'; /* end of quoted string. */
+                        fBinary = true;
                     }
                 }
-                else
-                    chQuote = ch;           /* open new quote */
+            }
+            else if (ch == '\'' || ch == '"')
+            {
+                if (fBinary)
+                    return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
+                chQuote = ch;
             }
             /*
              * Parenthesis can of course be nested.
              */
-            else if (!chQuote && ch == '(')
+            else if (ch == '(')
             {
+                if (!cPar && fBinary)
+                    return VERR_DBGC_PARSE_EXPECTED_BINARY_OP;
                 cPar++;
                 fBinary = false;
             }
-            else if (!chQuote && ch == ')')
+            else if (ch == ')')
             {
                 if (!cPar)
                     return VERR_DBGC_PARSE_UNBALANCED_PARENTHESIS;
                 cPar--;
                 fBinary = true;
             }
-            else if (!chQuote && !cPar)
+            else if (!cPar)
             {
                 /*
-                 * Encountering blanks may mean the end of it all. A binary operator
-                 * will force continued parsing.
+                 * Encountering a comma is a definite end of parameter.
                  */
-                if (RT_C_IS_BLANK(*psz))
+                if (ch == ',')
                 {
-                    pszEnd = psz++;         /* just in case. */
+                    pszEnd = psz++;
+                    break;
+                }
+
+                /*
+                 * Encountering blanks may mean the end of it all.  A binary
+                 * operator will force continued parsing.
+                 */
+                if (RT_C_IS_BLANK(ch))
+                {
+                    pszEnd = psz++;         /* in case it's the end. */
                     while (RT_C_IS_BLANK(*psz))
                         psz++;
+
+                    if (*psz == ',')
+                    {
+                        psz++;
+                        break;
+                    }
+
                     PCDBGCOP pOp = dbgcOperatorLookup(pDbgc, psz, fBinary, ' ');
                     if (!pOp || pOp->fBinary != fBinary)
                         break;              /* the end. */
+
                     psz += pOp->cchName;
                     while (RT_C_IS_BLANK(*psz))   /* skip blanks so we don't get here again */
                         psz++;
@@ -1054,7 +1103,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
                 /*
                  * Look for operators without a space up front.
                  */
-                if (dbgcIsOpChar(*psz))
+                if (dbgcIsOpChar(ch))
                 {
                     PCDBGCOP pOp = dbgcOperatorLookup(pDbgc, psz, fBinary, ' ');
                     if (pOp)
