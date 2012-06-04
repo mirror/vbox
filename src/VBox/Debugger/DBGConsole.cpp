@@ -867,6 +867,8 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     pDbgc->pszEmulation     = "CodeView/WinDbg";
     pDbgc->paEmulationCmds  = &g_aCmdsCodeView[0];
     pDbgc->cEmulationCmds   = g_cCmdsCodeView;
+    pDbgc->paEmulationFuncs = &g_aFuncsCodeView[0];
+    pDbgc->cEmulationFuncs  = g_cFuncsCodeView;
     //pDbgc->fLog             = false;
     pDbgc->fRegCtxGuest     = true;
     pDbgc->fRegTerse        = true;
