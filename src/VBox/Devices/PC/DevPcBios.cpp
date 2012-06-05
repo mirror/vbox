@@ -41,6 +41,10 @@
 
 #define NET_BOOT_DEVS   4
 
+#define CMOS_BANK_LOWER_LIMIT 0x0E
+#define CMOS_BANK_UPPER_LIMIT 0x7F
+#define CMOS_BANK2_LOWER_LIMIT 0x80
+#define CMOS_BANK2_UPPER_LIMIT 0xFF
 
 /** @page pg_devbios_cmos_assign    CMOS Assignments (BIOS)
  *
@@ -256,6 +260,40 @@ static uint8_t pcbiosCmosRead(PPDMDEVINS pDevIns, int off)
     return u8val;
 }
 
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV,
+ *      Dumps the cmos Bank Info.}
+ */
+static DECLCALLBACK(void) CMOSBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    const char *PChCMOSBank = "CMOS Bank Info 0x0E - 0x7F";
+    uint16_t u16ByteCount = 0;
+    uint8_t   u8CMOSByte;
+    pHlp->pfnPrintf(pHlp, "%s\n" ,PChCMOSBank);
+    for (u16ByteCount = CMOS_BANK_LOWER_LIMIT; u16ByteCount < CMOS_BANK_UPPER_LIMIT; u16ByteCount++)
+    {
+        u8CMOSByte  = pcbiosCmosRead(pDevIns, u16ByteCount);
+        pHlp->pfnPrintf(pHlp, "Off: 0x%02x Val: 0x%02x\n",u16ByteCount, u8CMOSByte);
+    }
+}
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV,
+ *      Dumps the cmos Bank2 Info.}
+ */
+static DECLCALLBACK(void) CMOSBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    const char *PChCMOSBank = "CMOS Bank2 Info 0x80 - 0xFF";
+    uint16_t u16ByteCount = 0;
+    uint8_t   u8CMOSByte;
+    pHlp->pfnPrintf(pHlp, "%s\n" ,PChCMOSBank);
+    for (u16ByteCount = CMOS_BANK2_LOWER_LIMIT; u16ByteCount < CMOS_BANK2_UPPER_LIMIT; u16ByteCount++)
+    {
+        u8CMOSByte  = pcbiosCmosRead(pDevIns, u16ByteCount);
+        pHlp->pfnPrintf(pHlp, "Off: 0x%02x Val: 0x%02x\n",u16ByteCount, u8CMOSByte);
+    }
+	
+}
 /* -=-=-=-=-=-=- based on code from pc.c -=-=-=-=-=-=- */
 
 /**
@@ -1429,6 +1467,14 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                     N_("Configuration error: Querying \"DelayBoot\" as integer failed"));
     if (pThis->uBootDelay > 15)
         pThis->uBootDelay = 15;
+     
+    /*
+     * Register debugger info callback.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos", "Display CMOS Bank 1 Info.. "
+                              "'cmos'. No argument.", CMOSBankInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info.. "
+                              "'cmos2'. No argument", CMOSBank2Info);
 
     /*
      * Call reset plant tables and shadow the PXE ROM.
