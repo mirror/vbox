@@ -254,6 +254,8 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
 
     CHECK_ERROR_RET(bwCtrl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), rc);
 
+    if (bwGroups.size() && details != VMINFO_MACHINEREADABLE)
+        RTPrintf("\n\n");
     for (size_t i = 0; i < bwGroups.size(); i++)
     {
         Bstr strName;
@@ -270,8 +272,8 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
         else
             RTPrintf("Name: '%ls', Type: %s, Limit: %d Mbytes/sec\n", strName.raw(), pszType, cMaxMbPerSec);
     }
-    if (details != VMINFO_MACHINEREADABLE && bwGroups.size() != 0)
-        RTPrintf("\n");
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf(bwGroups.size() != 0 ? "\n" : "<none>\n\n");
 
     return rc;
 }
@@ -1923,7 +1925,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
      * Bandwidth groups
      */
     if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf("Bandwidth groups:\n\n");
+        RTPrintf("Bandwidth groups:  ");
     {
         ComPtr<IBandwidthControl> bwCtrl;
         CHECK_ERROR_RET(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()), rc);
