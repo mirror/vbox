@@ -270,8 +270,10 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
                     print_boot_device(bootcd, bootlan, bootdrv);
                     netboot_entry = (void __far *)(fplan + 6);
                     netboot_entry();
-                } else if (manuf == 0x65746E49/* 'Inte' */) {
-                    // Found Intel PXE ROM
+                } 
+		else
+		{
+		    //Found Normal Pnp ROM
                     print_boot_device(bootcd, bootlan, bootdrv);
                     int_enable();   /* Disabled as we were invoked via INT instruction. */
                     netboot_entry = (void __far *)(fplan + pnps->bev);
