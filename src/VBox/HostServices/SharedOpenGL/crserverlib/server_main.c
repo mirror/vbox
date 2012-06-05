@@ -1423,7 +1423,7 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
     if (!fPosChanged && !fSizeChanged)
     {
         crDebug("crVBoxServerSetScreenViewport: no changes");
-        return;
+        return VINF_SUCCESS;
     }
 
     if (fPosChanged)
