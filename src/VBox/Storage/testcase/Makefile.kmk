@@ -79,6 +79,7 @@ ifdef VBOX_WITH_TESTCASES
  vbox-img_SOURCES = \
 	vbox-img.cpp \
 	$(VBOX_PATH_STORAGE_SRC)/VD.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VDVfs.cpp \
 	$(VBOX_PATH_STORAGE_SRC)/VDI.cpp \
 	$(VBOX_PATH_STORAGE_SRC)/VMDK.cpp \
 	$(VBOX_PATH_STORAGE_SRC)/VHD.cpp \
