@@ -46,6 +46,13 @@
 #define CMOS_BANK2_LOWER_LIMIT 0x80
 #define CMOS_BANK2_UPPER_LIMIT 0xFF
 
+#define CMOS_RTC_OFFSET_SEC          0x0
+#define CMOS_RTC_OFFSET_MIN          0x02
+#define CMOS_RTC_OFFSET_HR           0x04
+#define CMOS_RTC_OFFSET_DAY          0x07
+#define CMOS_RTC_OFFSET_MONTH        0x08
+#define CMOS_RTC_OFFSET_YEAR         0x09
+
 /** @page pg_devbios_cmos_assign    CMOS Assignments (BIOS)
  *
  * The BIOS uses a CMOS to store configuration data.
@@ -231,6 +238,11 @@ static int biosGuessDiskLCHS(PPDMIBLOCK pBlock, PPDMMEDIAGEOMETRY pLCHSGeometry)
 }
 
 
+static uint8_t bcd2bin(uint8_t val)
+{
+    return (val & 0x0f) + (val >>4) *10;
+}
+
 /**
  * Write to CMOS memory.
  * This is used by the init complete code.
@@ -292,8 +304,37 @@ static DECLCALLBACK(void) CMOSBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
         u8CMOSByte  = pcbiosCmosRead(pDevIns, u16ByteCount);
         pHlp->pfnPrintf(pHlp, "Off: 0x%02x Val: 0x%02x\n",u16ByteCount, u8CMOSByte);
     }
-	
 }
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV,
+ *      Dumps the cmos RTC Info.}
+ */
+static DECLCALLBACK(void) CMOSRTCInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    uint8_t u8Sec;
+    uint8_t u8Min;
+    uint8_t u8Hr;
+    uint8_t u8Day;
+    uint8_t u8Month;
+    uint8_t u8Year;
+
+    u8Sec = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_SEC);
+    u8Min = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_MIN);
+    u8Min = bcd2bin(u8Min);
+    u8Hr  = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_HR);
+    
+    u8Day   = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_DAY);
+    u8Month = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_MONTH);
+    
+    u8Year  = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_YEAR);
+    u8Year = bcd2bin(u8Year);
+    pHlp->pfnPrintf(pHlp, "Day:%u Month:%u Year:%u, Time: Hr:%u Min:%u Sec%u\n",u8Day, u8Month, u8Year, u8Hr, u8Min, u8Sec);
+
+          
+}
+
 /* -=-=-=-=-=-=- based on code from pc.c -=-=-=-=-=-=- */
 
 /**
@@ -1475,6 +1516,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "'cmos'. No argument.", CMOSBankInfo);
     PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info.. "
                               "'cmos2'. No argument", CMOSBank2Info);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc", "Display CMOS RTC info "
+                              "'rtc'. No argument", CMOSRTCInfo);
 
     /*
      * Call reset plant tables and shadow the PXE ROM.
