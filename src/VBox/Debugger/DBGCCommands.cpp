@@ -414,6 +414,94 @@ DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
 
 
 /**
+ * Outputs a command or function summary line.
+ *
+ * @returns Output status code
+ * @param   pCmdHlp         The command helpers.
+ * @param   pszName         The name of the function or command.
+ * @param   fExternal       Whether it's external.
+ * @param   pszSyntax       The syntax.
+ * @param   pszDescription  The description.
+ */
+static int dbgcCmdHelpCmdOrFunc(PDBGCCMDHLP pCmdHlp, const char *pszName, bool fExternal,
+                                const char *pszSyntax, const char *pszDescription)
+{
+    /*
+     * Aiming for "%-11s %-30s %s".  Need to adjust when any of the two
+     * columns are two wide as well as break the last column up if its
+     * too wide.
+     */
+    size_t const cchMaxWidth = 100;
+    size_t const cchCol1     = 11;
+    size_t const cchCol2     = 30;
+    size_t const cchCol3     = cchMaxWidth - cchCol1 - cchCol2 - 2;
+
+    size_t const cchName     = strlen(pszName) + fExternal;
+    size_t const cchSyntax   = strlen(pszSyntax);
+    size_t       cchDesc     = strlen(pszDescription);
+
+    /* Can we do it the simple + fast way? */
+    if (   cchName <= cchCol1
+        && (   cchSyntax <= cchCol2
+            || cchSyntax + cchDesc  <= cchCol2 + cchCol3))
+        return DBGCCmdHlpPrintf(pCmdHlp,
+                                !fExternal ? "%-*s %-*s %s\n" :  ".%-*s %-*s %s\n",
+                                cchCol1, pszName,
+                                cchCol2, pszSyntax,
+                                pszDescription);
+
+    /* Column 1. */
+    size_t off = 0;
+    DBGCCmdHlpPrintf(pCmdHlp, !fExternal ? "%s" :  ".%s", pszName);
+    off += cchName;
+    if (off < cchCol1)
+        DBGCCmdHlpPrintf(pCmdHlp, "%*s", cchCol1 - off, "");
+
+    /* Column 2. */
+    DBGCCmdHlpPrintf(pCmdHlp, " %s", pszSyntax);
+    off += 1 + cchSyntax;
+    if (off < cchCol1 + 1 + cchCol2)
+        DBGCCmdHlpPrintf(pCmdHlp, "%*s", cchCol1 + 1 + cchCol2 - off, "");
+
+    /* Column 3. */
+    for (;;)
+    {
+        if (off + 1 + cchDesc < cchMaxWidth)
+            return DBGCCmdHlpPrintf(pCmdHlp, " %s\n", pszDescription);
+
+/** @todo fix this code! */
+        /* Split on preceeding blank. */
+        const char *pszNext = &pszDescription[cchCol3];
+        const char *pszEnd = pszNext;
+        if (!RT_C_IS_BLANK(*pszEnd))
+            while (pszEnd != pszDescription && !RT_C_IS_BLANK(pszEnd[-1]))
+                pszEnd--;
+        while (pszEnd != pszDescription && RT_C_IS_BLANK(pszEnd[-1]))
+            pszEnd--;
+        if (pszEnd == pszDescription)
+        {
+            while (*pszEnd && !RT_C_IS_BLANK(*pszEnd))
+                pszEnd++;
+            pszNext = pszEnd;
+        }
+
+        while (RT_C_IS_BLANK(*pszNext))
+            pszNext++;
+
+        /* Output it and advance to the next line. */
+        if (!*pszNext)
+            return DBGCCmdHlpPrintf(pCmdHlp, " %.*s\n", pszEnd - pszDescription, pszDescription);
+        off = cchCol1 + 1 + cchCol2;
+        DBGCCmdHlpPrintf(pCmdHlp, " %.*s\n%*s", pszEnd - pszDescription, pszDescription, off, "");
+
+        /* next */
+        cchDesc -= pszNext - pszDescription;
+        pszDescription = pszNext;
+    }
+}
+
+
+/**
  * Prints full command help.
  */
 static int dbgcPrintHelpCmd(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, bool fExternal)
@@ -467,6 +555,7 @@ static int dbgcCmdHelpCommandsWorker(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, PCDBGCCMD
                                      const char *pszDescFmt, ...)
 {
     int rc = VINF_SUCCESS;
+
     if (pszDescFmt)
     {
         va_list va;
@@ -476,12 +565,9 @@ static int dbgcCmdHelpCommandsWorker(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, PCDBGCCMD
     }
 
     for (unsigned i = 0; i < cCmds && RT_SUCCESS(rc); i++)
-        rc = DBGCCmdHlpPrintf(pCmdHlp,
-                              !fExternal ? "%-11s %-30s %s\n" :  ".%-10s %-30s %s\n",
-                              paCmds[i].pszCmd,
-                              paCmds[i].pszSyntax,
-                              paCmds[i].pszDescription);
-    return VINF_SUCCESS;
+        rc = dbgcCmdHelpCmdOrFunc(pCmdHlp, paCmds[i].pszCmd, fExternal, paCmds[i].pszSyntax, paCmds[i].pszDescription);
+
+    return rc;
 }
 
 
@@ -552,7 +638,8 @@ static int dbgcPrintHelpFunction(PDBGCCMDHLP pCmdHlp, PCDBGCFUNC pFunc, bool fEx
             if (pFunc->paArgDescs[i].cTimesMax == ~0U)
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u+>\n", pFunc->paArgDescs[i].cTimesMin);
             else
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u-%u>\n", pFunc->paArgDescs[i].cTimesMin, pFunc->paArgDescs[i].cTimesMax);
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u-%u>\n", pFunc->paArgDescs[i].cTimesMin,
+                                        pFunc->paArgDescs[i].cTimesMax);
         }
     }
     return rc;
@@ -572,11 +659,7 @@ static int dbgcCmdHelpFunctionsWorker(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, PCDBGCFU
     }
 
     for (unsigned i = 0; i < cFuncs && RT_SUCCESS(rc); i++)
-        rc = DBGCCmdHlpPrintf(pCmdHlp,
-                              !fExternal ? "%-11s %-30s %s\n" :  ".%-10s %-30s %s\n",
-                              paFuncs[i].pszFuncNm,
-                              paFuncs[i].pszSyntax,
-                              paFuncs[i].pszDescription);
+        rc = dbgcCmdHelpCmdOrFunc(pCmdHlp, paFuncs[i].pszFuncNm, fExternal, paFuncs[i].pszSyntax, paFuncs[i].pszDescription);
     return VINF_SUCCESS;
 }
 
@@ -657,6 +740,7 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                               "help commands      Show help on all commands.\n"
                               "help functions     Show help on all functions.\n"
                               "help operators     Show help on all operators.\n"
+                              "help all           All the above.\n"
                               "help <cmd-pattern> [...]\n"
                               "                   Show details help on individual commands, simple\n"
                               "                   patterns can be used to match several commands.\n"
@@ -693,7 +777,6 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                 rc = dbgcCmdHelpOperators(pDbgc, pCmdHlp);
             else if (!strcmp(pszPattern, "all"))
             {
-                rc = dbgcCmdHelpFunctions(pDbgc, pCmdHlp);
                 rc = DBGCCmdHlpPrintf(pCmdHlp,
                                       "VirtualBox Debugger Help\n"
                                       "------------------------\n"
