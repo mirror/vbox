@@ -413,12 +413,10 @@ DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
 }
 
 
-
-
 /**
  * Prints full command help.
  */
-static int dbgcPrintHelp(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, bool fExternal)
+static int dbgcPrintHelpCmd(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, bool fExternal)
 {
     int rc;
 
@@ -465,6 +463,173 @@ static int dbgcPrintHelp(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, bool fExternal)
 }
 
 
+static int dbgcCmdHelpCommandsWorker(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, PCDBGCCMD paCmds, size_t cCmds, bool fExternal,
+                                     const char *pszDescFmt, ...)
+{
+    int rc = VINF_SUCCESS;
+    if (pszDescFmt)
+    {
+        va_list va;
+        va_start(va, pszDescFmt);
+        rc = pCmdHlp->pfnPrintfV(pCmdHlp, NULL, pszDescFmt, va);
+        va_end(va);
+    }
+
+    for (unsigned i = 0; i < cCmds && RT_SUCCESS(rc); i++)
+        rc = DBGCCmdHlpPrintf(pCmdHlp,
+                              !fExternal ? "%-11s %-30s %s\n" :  ".%-10s %-30s %s\n",
+                              paCmds[i].pszCmd,
+                              paCmds[i].pszSyntax,
+                              paCmds[i].pszDescription);
+    return VINF_SUCCESS;
+}
+
+
+static int dbgcCmdHelpCommands(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp)
+{
+    int rc = dbgcCmdHelpCommandsWorker(pDbgc, pCmdHlp, pDbgc->paEmulationCmds, pDbgc->cEmulationCmds, false,
+                                       "Commands for %s emulation:\n", pDbgc->pszEmulation);
+    if (RT_SUCCESS(rc))
+        rc = dbgcCmdHelpCommandsWorker(pDbgc, pCmdHlp, g_aDbgcCmds, RT_ELEMENTS(g_aDbgcCmds), false,
+                                       "\nCommon Commands:\n");
+
+    if (RT_SUCCESS(rc))
+    {
+        DBGCEXTLISTS_LOCK_RD();
+        const char *pszDesc = "\nExternal Commands:\n";
+        for (PDBGCEXTCMDS pExtCmd = g_pExtCmdsHead; pExtCmd && RT_SUCCESS(rc); pExtCmd = pExtCmd->pNext)
+        {
+            rc = dbgcCmdHelpCommandsWorker(pDbgc, pCmdHlp, pExtCmd->paCmds, pExtCmd->cCmds, false,
+                                           pszDesc);
+            pszDesc = NULL;
+        }
+        DBGCEXTLISTS_UNLOCK_RD();
+    }
+
+    return rc;
+}
+
+
+/**
+ * Prints full function help.
+ */
+static int dbgcPrintHelpFunction(PDBGCCMDHLP pCmdHlp, PCDBGCFUNC pFunc, bool fExternal)
+{
+    int rc;
+
+    /* the command */
+    rc = DBGCCmdHlpPrintf(pCmdHlp, "%s%-*s %-30s %s",
+                          fExternal ? "." : "",
+                          fExternal ? 10 : 11,
+                          pFunc->pszFuncNm,
+                          pFunc->pszSyntax,
+                          pFunc->pszDescription);
+    if (!pFunc->cArgsMin && pFunc->cArgsMin == pFunc->cArgsMax)
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <no args>\n");
+    else if (pFunc->cArgsMin == pFunc->cArgsMax)
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u args>\n", pFunc->cArgsMin);
+    else if (pFunc->cArgsMax == ~0U)
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u+ args>\n", pFunc->cArgsMin);
+    else
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u to %u args>\n", pFunc->cArgsMin, pFunc->cArgsMax);
+
+    /* argument descriptions. */
+    for (unsigned i = 0; i < pFunc->cArgDescs; i++)
+    {
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                                "    %-12s %s",
+                                pFunc->paArgDescs[i].pszName,
+                                pFunc->paArgDescs[i].pszDescription);
+        if (!pFunc->paArgDescs[i].cTimesMin)
+        {
+            if (pFunc->paArgDescs[i].cTimesMax == ~0U)
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <optional+>\n");
+            else
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <optional-%u>\n", pFunc->paArgDescs[i].cTimesMax);
+        }
+        else
+        {
+            if (pFunc->paArgDescs[i].cTimesMax == ~0U)
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u+>\n", pFunc->paArgDescs[i].cTimesMin);
+            else
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " <%u-%u>\n", pFunc->paArgDescs[i].cTimesMin, pFunc->paArgDescs[i].cTimesMax);
+        }
+    }
+    return rc;
+}
+
+
+static int dbgcCmdHelpFunctionsWorker(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, PCDBGCFUNC paFuncs, size_t cFuncs, bool fExternal,
+                                      const char *pszDescFmt, ...)
+{
+    int rc = VINF_SUCCESS;
+    if (pszDescFmt)
+    {
+        va_list va;
+        va_start(va, pszDescFmt);
+        rc = DBGCCmdHlpPrintf(pCmdHlp, pszDescFmt, va);
+        va_end(va);
+    }
+
+    for (unsigned i = 0; i < cFuncs && RT_SUCCESS(rc); i++)
+        rc = DBGCCmdHlpPrintf(pCmdHlp,
+                              !fExternal ? "%-11s %-30s %s\n" :  ".%-10s %-30s %s\n",
+                              paFuncs[i].pszFuncNm,
+                              paFuncs[i].pszSyntax,
+                              paFuncs[i].pszDescription);
+    return VINF_SUCCESS;
+}
+
+
+static int dbgcCmdHelpFunctions(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp)
+{
+    int rc = dbgcCmdHelpFunctionsWorker(pDbgc, pCmdHlp, pDbgc->paEmulationFuncs, pDbgc->cEmulationFuncs, false,
+                                        "Functions for %s emulation:\n", pDbgc->pszEmulation);
+    if (RT_SUCCESS(rc))
+        rc = dbgcCmdHelpFunctionsWorker(pDbgc, pCmdHlp, g_aDbgcFuncs, g_cDbgcFuncs, false,
+                                        "\nCommon Functions:\n");
+#if 0
+    if (RT_SUCCESS(rc))
+    {
+        DBGCEXTLISTS_LOCK_RD();
+        const char *pszDesc = "\nExternal Functions:\n";
+        for (PDBGCEXTFUNCS pExtFunc = g_pExtFuncsHead; pExtFunc && RT_SUCCESS(rc); pExtFunc = pExtFunc->pNext)
+        {
+            rc = dbgcCmdHelpFunctionsWorker(pDbgc, pCmdHlp, pExtFunc->paFuncs, pExtFunc->cFuncs, false,
+                                            pszDesc);
+            pszDesc = NULL;
+        }
+        DBGCEXTLISTS_UNLOCK_RD();
+    }
+#endif
+    return rc;
+}
+
+
+static int dbgcCmdHelpOperators(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp)
+{
+    int rc = DBGCCmdHlpPrintf(pCmdHlp, "Operators:\n");
+
+    unsigned iPrecedence = 0;
+    unsigned cLeft = g_cDbgcOps;
+    while (cLeft > 0)
+    {
+        for (unsigned i = 0; i < g_cDbgcOps; i++)
+            if (g_aDbgcOps[i].iPrecedence == iPrecedence)
+            {
+                rc = DBGCCmdHlpPrintf(pCmdHlp,
+                                      "%-10s  %s  %s\n",
+                                      g_aDbgcOps[i].szName,
+                                      g_aDbgcOps[i].fBinary ? "Binary" : "Unary ",
+                                      g_aDbgcOps[i].pszDescription);
+                cLeft--;
+            }
+        iPrecedence++;
+    }
+    return rc;
+}
+
+
 /**
  * The 'help' command.
  *
@@ -479,140 +644,131 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
 {
     PDBGC       pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     int         rc = VINF_SUCCESS;
-    unsigned    i;
 
-/** @todo rewrite this.  */
     if (!cArgs)
     {
         /*
-         * All the stuff.
+         * No arguments, show summary.
          */
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                "VirtualBox Debugger\n"
-                                "-------------------\n"
-                                "\n"
-                                "Commands:\n");
-        for (i = 0; i < RT_ELEMENTS(g_aDbgcCmds); i++)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                    "%-11s %-30s %s\n",
-                                    g_aDbgcCmds[i].pszCmd,
-                                    g_aDbgcCmds[i].pszSyntax,
-                                    g_aDbgcCmds[i].pszDescription);
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                "\n"
-                                "Emulation: %s\n", pDbgc->pszEmulation);
-        PCDBGCCMD pCmd2 = pDbgc->paEmulationCmds;
-        for (i = 0; i < pDbgc->cEmulationCmds; i++, pCmd2++)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                    "%-11s %-30s %s\n",
-                                    pCmd2->pszCmd,
-                                    pCmd2->pszSyntax,
-                                    pCmd2->pszDescription);
+        rc = DBGCCmdHlpPrintf(pCmdHlp,
+                              "VirtualBox Debugger Help Summary\n"
+                              "--------------------------------\n"
+                              "\n"
+                              "help commands      Show help on all commands.\n"
+                              "help functions     Show help on all functions.\n"
+                              "help operators     Show help on all operators.\n"
+                              "help <cmd-pattern> [...]\n"
+                              "                   Show details help on individual commands, simple\n"
+                              "                   patterns can be used to match several commands.\n"
+                              );
 
-        if (g_pExtCmdsHead)
-        {
-            DBGCEXTLISTS_LOCK_RD();
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                    "\n"
-                                    "External Commands:\n");
-            for (PDBGCEXTCMDS pExtCmd = g_pExtCmdsHead; pExtCmd; pExtCmd = pExtCmd->pNext)
-                for (i = 0; i < pExtCmd->cCmds; i++)
-                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                            ".%-10s %-30s %s\n",
-                                            pExtCmd->paCmds[i].pszCmd,
-                                            pExtCmd->paCmds[i].pszSyntax,
-                                            pExtCmd->paCmds[i].pszDescription);
-            DBGCEXTLISTS_UNLOCK_RD();
-        }
-
-
-
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                "\n"
-                                "Operators:\n");
-        unsigned iPrecedence = 0;
-        unsigned cLeft = g_cDbgcOps;
-        while (cLeft > 0)
-        {
-            for (i = 0; i < g_cDbgcOps; i++)
-                if (g_aDbgcOps[i].iPrecedence == iPrecedence)
-                {
-                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                            "%-10s  %s  %s\n",
-                                            g_aDbgcOps[i].szName,
-                                            g_aDbgcOps[i].fBinary ? "Binary" : "Unary ",
-                                            g_aDbgcOps[i].pszDescription);
-                    cLeft--;
-                }
-            iPrecedence++;
-        }
     }
     else
     {
         /*
          * Search for the arguments (strings).
          */
-        for (unsigned iArg = 0; iArg < cArgs; iArg++)
+        DBGCEXTCMDS  aFixedCmds[] =
+        {
+            { pDbgc->cEmulationCmds,    pDbgc->paEmulationCmds,     NULL },
+            { g_cDbgcCmds,              g_aDbgcCmds,                NULL },
+        };
+        DBGCEXTFUNCS aFixedFuncs[] =
+        {
+            { pDbgc->cEmulationFuncs,   pDbgc->paEmulationFuncs,    NULL },
+            { g_cDbgcFuncs,             g_aDbgcFuncs,               NULL },
+        };
+
+        for (unsigned iArg = 0; iArg < cArgs && RT_SUCCESS(rc); iArg++)
         {
             AssertReturn(paArgs[iArg].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_BUG);
             const char *pszPattern = paArgs[iArg].u.pszString;
-            bool        fFound     = false;
 
-            /* lookup in the emulation command list first */
-            for (i = 0; i < pDbgc->cEmulationCmds; i++)
-                if (RTStrSimplePatternMatch(pszPattern, pDbgc->paEmulationCmds[i].pszCmd))
-                {
-                    rc = dbgcPrintHelp(pCmdHlp, &pDbgc->paEmulationCmds[i], false);
-                    fFound = true;
-                }
+            /* aliases */
+            if (!strcmp(pszPattern, "commands"))
+                rc = dbgcCmdHelpCommands(pDbgc, pCmdHlp);
+            else if (!strcmp(pszPattern, "functions"))
+                rc = dbgcCmdHelpFunctions(pDbgc, pCmdHlp);
+            else if (!strcmp(pszPattern, "operators"))
+                rc = dbgcCmdHelpOperators(pDbgc, pCmdHlp);
+            else if (!strcmp(pszPattern, "all"))
+            {
+                rc = dbgcCmdHelpFunctions(pDbgc, pCmdHlp);
+                rc = DBGCCmdHlpPrintf(pCmdHlp,
+                                      "VirtualBox Debugger Help\n"
+                                      "------------------------\n"
+                                      "\n");
+                rc = dbgcCmdHelpCommands(pDbgc, pCmdHlp);
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+                rc = dbgcCmdHelpFunctions(pDbgc, pCmdHlp);
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+                rc = dbgcCmdHelpOperators(pDbgc, pCmdHlp);
+            }
+            else
+            {
+                /* Individual commands. */
+                bool    fFound     = false;
 
-            /* lookup in the command list (even when found in the emulation) */
-            for (i = 0; i < RT_ELEMENTS(g_aDbgcCmds); i++)
-                if (RTStrSimplePatternMatch(pszPattern, g_aDbgcCmds[i].pszCmd))
-                {
-                    rc = dbgcPrintHelp(pCmdHlp, &g_aDbgcCmds[i], false);
-                    fFound = true;
-                }
+                /* lookup in the emulation command list first */
+                for (unsigned j = 0; j < RT_ELEMENTS(aFixedCmds); j++)
+                    for (unsigned i = 0; i < aFixedCmds[j].cCmds; i++)
+                        if (RTStrSimplePatternMatch(pszPattern, aFixedCmds[j].paCmds[i].pszCmd))
+                        {
+                            rc = dbgcPrintHelpCmd(pCmdHlp, &aFixedCmds[j].paCmds[i], false);
+                            fFound = true;
+                        }
+                for (unsigned j = 0; j < RT_ELEMENTS(aFixedFuncs); j++)
+                    for (unsigned i = 0; i < aFixedFuncs[j].cFuncs; i++)
+                        if (RTStrSimplePatternMatch(pszPattern, aFixedFuncs[j].paFuncs[i].pszFuncNm))
+                        {
+                            rc = dbgcPrintHelpFunction(pCmdHlp, &aFixedFuncs[j].paFuncs[i], false);
+                            fFound = true;
+                        }
 
-           /* external commands */
-           if (     !fFound
-               &&   g_pExtCmdsHead
-               &&   (   *pszPattern == '.'
-                     || *pszPattern == '?'
-                     || *pszPattern == '*'))
-           {
-               DBGCEXTLISTS_LOCK_RD();
-               const char *pszPattern2 = pszPattern + (*pszPattern == '.' || *pszPattern == '?');
-               for (PDBGCEXTCMDS pExtCmd = g_pExtCmdsHead; pExtCmd; pExtCmd = pExtCmd->pNext)
-                   for (i = 0; i < pExtCmd->cCmds; i++)
-                       if (RTStrSimplePatternMatch(pszPattern2, pExtCmd->paCmds[i].pszCmd))
+               /* external commands */
+               if (     g_pExtCmdsHead
+                   &&   (   *pszPattern == '.'
+                         || *pszPattern == '?'
+                         || *pszPattern == '*'))
+               {
+                   DBGCEXTLISTS_LOCK_RD();
+                   const char *pszPattern2 = pszPattern + (*pszPattern == '.' || *pszPattern == '?');
+                   for (PDBGCEXTCMDS pExtCmd = g_pExtCmdsHead; pExtCmd; pExtCmd = pExtCmd->pNext)
+                       for (unsigned i = 0; i < pExtCmd->cCmds; i++)
+                           if (RTStrSimplePatternMatch(pszPattern2, pExtCmd->paCmds[i].pszCmd))
+                           {
+                               rc = dbgcPrintHelpCmd(pCmdHlp, &pExtCmd->paCmds[i], true);
+                               fFound = true;
+                           }
+#if 0
+                   for (PDBGCEXTFUNCS pExtFunc = g_pExtFuncsHead; pExtFunc; pExtFunc = pExtFunc->pNext)
+                       for (unsigned i = 0; i < pExtFunc->cFuncs; i++)
+                           if (RTStrSimplePatternMatch(pszPattern2, pExtFunc->paFuncs[i].pszFuncNm))
+                           {
+                               rc = dbgcPrintHelpFunction(pCmdHlp, &pExtFunc->paFuncs[i], true);
+                               fFound = true;
+                           }
+#endif
+                   DBGCEXTLISTS_UNLOCK_RD();
+               }
+
+               /* operators */
+               if (!fFound && strlen(paArgs[iArg].u.pszString) < sizeof(g_aDbgcOps[0].szName))
+                   for (unsigned i = 0; i < g_cDbgcOps && RT_SUCCESS(rc); i++)
+                       if (RTStrSimplePatternMatch(pszPattern, g_aDbgcOps[i].szName))
                        {
-                           rc = dbgcPrintHelp(pCmdHlp, &pExtCmd->paCmds[i], true);
+                           rc = DBGCCmdHlpPrintf(pCmdHlp, "%-10s  %s  %s\n",
+                                                 g_aDbgcOps[i].szName,
+                                                 g_aDbgcOps[i].fBinary ? "Binary" : "Unary ",
+                                                 g_aDbgcOps[i].pszDescription);
                            fFound = true;
                        }
-               DBGCEXTLISTS_UNLOCK_RD();
-           }
 
-           /* operators */
-           if (!fFound && strlen(paArgs[iArg].u.pszString) < sizeof(g_aDbgcOps[i].szName))
-           {
-               for (i = 0; i < g_cDbgcOps; i++)
-                   if (RTStrSimplePatternMatch(pszPattern, g_aDbgcOps[i].szName))
-                   {
-                       rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                               "%-10s  %s  %s\n",
-                                               g_aDbgcOps[i].szName,
-                                               g_aDbgcOps[i].fBinary ? "Binary" : "Unary ",
-                                               g_aDbgcOps[i].pszDescription);
-                       fFound = true;
-                   }
-           }
-
-           /* found? */
-           if (!fFound)
-               rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                                       "error: '%s' was not found!\n",
-                                       paArgs[iArg].u.pszString);
+               /* found? */
+               if (!fFound)
+                   rc = DBGCCmdHlpPrintf(pCmdHlp, "error: '%s' was not found!\n",
+                                         paArgs[iArg].u.pszString);
+            }
         } /* foreach argument */
     }
 
