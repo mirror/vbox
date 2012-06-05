@@ -32,6 +32,7 @@
 #include <iprt/file.h>
 #include <iprt/net.h>
 #include <iprt/sg.h>
+#include <iprt/vfs.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
@@ -112,6 +113,16 @@ RT_C_DECLS_BEGIN
 
 /** Mask of all valid repair flags. */
 #define VD_REPAIR_FLAGS_MASK                    (VD_REPAIR_DRY_RUN)
+/** @} */
+
+/** @name VD image VFS file flags
+ * @{
+ */
+/** Destroy the VD disk container when the VFS file is released. */
+#define VD_VFSFILE_DESTROY_ON_RELEASE           RT_BIT_32(0)
+
+/** Mask of all valid repair flags. */
+#define VD_VFSFILE_FLAGS_MASK                   (VD_VFSFILE_DESTROY_ON_RELEASE)
 /** @} */
 
 /**
@@ -1200,6 +1211,17 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsig
 VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                            const char *pszFilename, const char *pszBackend,
                            uint32_t fFlags);
+
+/**
+ * Create a VFS file handle from the given HDD container.
+ *
+ * @return  VBox status code.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   fFlags          Combination of the VD_VFSFILE_* flags.
+ * @param   phVfsFile       Where to stoer the handle to the VFS file on success.
+ */
+VBOXDDU_DECL(int) VDCreateVfsFileFromDisk(PVBOXHDD pDisk, uint32_t fFlags,
+                                          PRTVFSFILE phVfsFile);
 
 RT_C_DECLS_END
 

@@ -36,6 +36,7 @@ StorageLib_TEMPLATE = VBOXR3
 StorageLib_DEFS     = IN_VBOXDDU
 StorageLib_SOURCES  = \
 	VD.cpp \
+	VDVfs.cpp \
 	VDI.cpp \
 	VMDK.cpp \
 	VHD.cpp \
