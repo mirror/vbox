@@ -49,6 +49,7 @@
 #endif /* Q_WS_WIN */
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CSystemProperties.h"
 #include "CVirtualBoxErrorInfo.h"
 #include "CMediumAttachment.h"

@@ -38,6 +38,7 @@
 #include "UIVMCloseDialog.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CSnapshot.h"
 
 /* Other VBox includes: */

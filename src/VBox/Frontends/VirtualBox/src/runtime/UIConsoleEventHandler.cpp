@@ -27,6 +27,7 @@
 #endif /* Q_WS_MAC */
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CEventSource.h"
 
 /* static */

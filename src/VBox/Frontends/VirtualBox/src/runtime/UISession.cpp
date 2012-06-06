@@ -53,6 +53,7 @@
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CSystemProperties.h"
 #include "CMachineDebugger.h"
 #include "CGuest.h"

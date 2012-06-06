@@ -20,7 +20,15 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-/* Local includes */
+
+/* Qt includes: */
+#include <QDateTime>
+#include <QHeaderView>
+#include <QMenu>
+#include <QScrollBar>
+#include <QWindowsStyle>
+
+/* GUI includes: */
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "VBoxSnapshotDetailsDlg.h"
@@ -31,12 +39,8 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UISelectorShortcuts.h"
 
-/* Global includes */
-#include <QDateTime>
-#include <QHeaderView>
-#include <QMenu>
-#include <QScrollBar>
-#include <QWindowsStyle>
+/* COM includes: */
+#include "CConsole.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
