@@ -20,7 +20,7 @@
 /* Qt includes: */
 #include <QCloseEvent>
 #include <QTimer>
-#include <VBox/version.h>
+#include <QProcess>
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -36,17 +36,20 @@
 #include "UIMouseHandler.h"
 #include "UISession.h"
 #include "UIVMCloseDialog.h"
-#ifdef Q_WS_X11
-# include <X11/Xlib.h>
-#endif /* Q_WS_X11 */
 
 /* COM includes: */
 #include "CSnapshot.h"
 
 /* Other VBox includes: */
+#include <VBox/version.h>
 #ifdef VBOX_BLEEDING_EDGE
 # include <iprt/buildconfig.h>
 #endif /* VBOX_BLEEDING_EDGE */
+
+/* External includes: */
+#ifdef Q_WS_X11
+# include <X11/Xlib.h>
+#endif /* Q_WS_X11 */
 
 /* static */
 UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, ulong uScreenId)

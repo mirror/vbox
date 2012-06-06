@@ -255,6 +255,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIListView.h \
 	src/extensions/QIMainDialog.h \
 	src/extensions/QIMessageBox.h \
+	src/extensions/QIProcess.h \
 	src/extensions/QIRichTextLabel.h \
 	src/extensions/QIRichToolButton.h \
 	src/extensions/QISplitter.h \
@@ -455,6 +456,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QIListView.cpp \
 	src/extensions/QIMainDialog.cpp \
 	src/extensions/QIMessageBox.cpp \
+	src/extensions/QIProcess.cpp \
 	src/extensions/QIRichTextLabel.cpp \
 	src/extensions/QIRichToolButton.cpp \
 	src/extensions/QISplitter.cpp \
