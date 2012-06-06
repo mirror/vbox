@@ -137,9 +137,9 @@ static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
     unsigned long ulBalloonMax = g_ulMemoryBalloonMaxMB;
     if (!ulBalloonMax)
     {
-        int rc = cfgGetValueULong(g_pVirtualBox, rptrMachine,
+        int vrc = cfgGetValueULong(g_pVirtualBox, rptrMachine,
                                   "VBoxInternal/Guest/BalloonSizeMax", "VBoxInternal/Guest/BalloonSizeMax", &ulBalloonMax, 0 /* Ballooning disabled */);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
         {
             /* Try (new) VBoxWatch per-VM approach. */
             Bstr strValue;
