@@ -57,6 +57,7 @@
 #include "UIMessageCenter.h"
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
+#include "QIProcess.h"
 #include "UIIconPool.h"
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
@@ -2140,15 +2141,14 @@ QString VBoxGlobal::platformInfo()
     platform += QString (" [Distribution: %1 | Version: %2 | Build: %3]")
         .arg (distrib).arg (version).arg (kernel);
 #elif defined (Q_OS_LINUX)
-    /* Get script path */
-    char szAppPrivPath [RTPATH_MAX];
-    int rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath)); NOREF(rc);
-    AssertRC (rc);
-    /* Run script */
-    QByteArray result =
-        Process::singleShot (QString (szAppPrivPath) + "/VBoxSysInfo.sh");
+    /* Get script path: */
+    char szAppPrivPath[RTPATH_MAX];
+    int rc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath)); NOREF(rc);
+    AssertRC(rc);
+    /* Run script: */
+    QByteArray result = QIProcess::singleShot(QString(szAppPrivPath) + "/VBoxSysInfo.sh");
     if (!result.isNull())
-        platform += QString (" [%1]").arg (QString (result).trimmed());
+        platform += QString(" [%1]").arg(QString(result).trimmed());
 #else
     /* Use RTSystemQueryOSInfo. */
     char szTmp[256];

@@ -23,6 +23,7 @@
 #include <QFileInfo>
 #include <QLocale>
 #include <QThread>
+#include <QProcess>
 #ifdef Q_WS_MAC
 # include <QPushButton>
 #endif /* Q_WS_MAC */
