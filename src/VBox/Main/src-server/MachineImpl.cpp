@@ -6023,22 +6023,34 @@ STDMETHODIMP Machine::ReadSavedThumbnailPNGToArray(ULONG aScreenId, ULONG *aWidt
     *aWidth = u32Width;
     *aHeight = u32Height;
 
+    HRESULT rc = S_OK;
     uint8_t *pu8PNG = NULL;
     uint32_t cbPNG = 0;
     uint32_t cxPNG = 0;
     uint32_t cyPNG = 0;
 
-    DisplayMakePNG(pu8Data, u32Width, u32Height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
+    vrc = DisplayMakePNG(pu8Data, u32Width, u32Height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
 
-    com::SafeArray<BYTE> screenData(cbPNG);
-    screenData.initFrom(pu8PNG, cbPNG);
-    RTMemFree(pu8PNG);
-
-    screenData.detachTo(ComSafeArrayOutArg(aData));
+    if (RT_SUCCESS(vrc))
+    {
+        com::SafeArray<BYTE> screenData(cbPNG);
+        screenData.initFrom(pu8PNG, cbPNG);
+        if (pu8PNG)
+            RTMemFree(pu8PNG);
+        screenData.detachTo(ComSafeArrayOutArg(aData));
+    }
+    else
+    {
+        if (pu8PNG)
+            RTMemFree(pu8PNG);
+            return setError(VBOX_E_IPRT_ERROR,
+                            tr("Could not convert screenshot to PNG (%Rrc)"),
+                            vrc);
+    }
 
     freeSavedDisplayScreenshot(pu8Data);
 
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight)

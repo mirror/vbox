@@ -240,10 +240,21 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 
             /* Prepare a small thumbnail and a PNG screenshot. */
             displayMakeThumbnail(pu8Data, cx, cy, &pu8Thumbnail, &cbThumbnail, &cxThumbnail, &cyThumbnail);
-            DisplayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 1);
+            rc = DisplayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 1);
+            if (RT_FAILURE(rc))
+            {
+                if (pu8PNG)
+                {
+                    RTMemFree(pu8PNG);
+                    pu8PNG = NULL;
+                }
+                cbPNG = 0;
+                cxPNG = 0;
+                cyPNG = 0;
+            }
 
             /* This can be called from any thread. */
-            that->mpDrv->pUpPort->pfnFreeScreenshot (that->mpDrv->pUpPort, pu8Data);
+            that->mpDrv->pUpPort->pfnFreeScreenshot(that->mpDrv->pUpPort, pu8Data);
         }
     }
     else
@@ -2322,17 +2333,17 @@ static int displayTakeScreenshot(PVM pVM, Display *pDisplay, struct DRVMAINDISPL
             int srcH = cy;
             int iDeltaLine = cx * 4;
 
-            BitmapScale32 (dst,
-                           dstW, dstH,
-                           src,
-                           iDeltaLine,
-                           srcW, srcH);
+            BitmapScale32(dst,
+                          dstW, dstH,
+                          src,
+                          iDeltaLine,
+                          srcW, srcH);
         }
 
         if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
         {
             /* This can be called from any thread. */
-            pDrv->pUpPort->pfnFreeScreenshot (pDrv->pUpPort, pu8Data);
+            pDrv->pUpPort->pfnFreeScreenshot(pDrv->pUpPort, pu8Data);
         }
         else
         {
@@ -2343,7 +2354,7 @@ static int displayTakeScreenshot(PVM pVM, Display *pDisplay, struct DRVMAINDISPL
     return vrc;
 }
 
-STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG width, ULONG height)
+STDMETHODIMP Display::TakeScreenShot(ULONG aScreenId, BYTE *address, ULONG width, ULONG height)
 {
     /// @todo (r=dmik) this function may take too long to complete if the VM
     //  is doing something like saving state right now. Which, in case if it
@@ -2351,8 +2362,8 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
     //  check the machine state here (by enclosing the check and VMRequCall
     //  within the Console lock to make it atomic).
 
-    LogRelFlowFunc (("address=%p, width=%d, height=%d\n",
-                  address, width, height));
+    LogRelFlowFunc(("address=%p, width=%d, height=%d\n",
+                    address, width, height));
 
     CheckComArgNotNull(address);
     CheckComArgExpr(width, width != 0);
@@ -2369,14 +2380,14 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv);
 
     Console::SafeVMPtr pVM(mParent);
     if (FAILED(pVM.rc())) return pVM.rc();
 
     HRESULT rc = S_OK;
 
-    LogRelFlowFunc (("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc(("Sending SCREENSHOT request\n"));
 
     /* Release lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
@@ -2397,15 +2408,14 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not take a screenshot (%Rrc)"), vrc);
 
-    LogRelFlowFunc (("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%08X\n", rc));
     return rc;
 }
 
-STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG height,
-                                             ComSafeArrayOut(BYTE, aScreenData))
+STDMETHODIMP Display::TakeScreenShotToArray(ULONG aScreenId, ULONG width, ULONG height,
+                                            ComSafeArrayOut(BYTE, aScreenData))
 {
-    LogRelFlowFunc (("width=%d, height=%d\n",
-                  width, height));
+    LogRelFlowFunc(("width=%d, height=%d\n", width, height));
 
     CheckComArgOutSafeArrayPointerValid(aScreenData);
     CheckComArgExpr(width, width != 0);
@@ -2422,14 +2432,14 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv);
 
     Console::SafeVMPtr pVM(mParent);
     if (FAILED(pVM.rc())) return pVM.rc();
 
     HRESULT rc = S_OK;
 
-    LogRelFlowFunc (("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc(("Sending SCREENSHOT request\n"));
 
     /* Release lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
@@ -2461,7 +2471,7 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
             pu8 += 4;
         }
 
-        com::SafeArray<BYTE> screenData (cbData);
+        com::SafeArray<BYTE> screenData(cbData);
         screenData.initFrom(pu8Data, cbData);
         screenData.detachTo(ComSafeArrayOutArg(aScreenData));
     }
@@ -2474,15 +2484,14 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
 
     RTMemFree(pu8Data);
 
-    LogRelFlowFunc (("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%08X\n", rc));
     return rc;
 }
 
-STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, ULONG height,
-                                             ComSafeArrayOut(BYTE, aScreenData))
+STDMETHODIMP Display::TakeScreenShotPNGToArray(ULONG aScreenId, ULONG width, ULONG height,
+                                               ComSafeArrayOut(BYTE, aScreenData))
 {
-    LogRelFlowFunc (("width=%d, height=%d\n",
-                  width, height));
+    LogRelFlowFunc(("width=%d, height=%d\n", width, height));
 
     CheckComArgOutSafeArrayPointerValid(aScreenData);
     CheckComArgExpr(width, width != 0);
@@ -2499,14 +2508,14 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv);
 
     Console::SafeVMPtr pVM(mParent);
     if (FAILED(pVM.rc())) return pVM.rc();
 
     HRESULT rc = S_OK;
 
-    LogRelFlowFunc (("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc(("Sending SCREENSHOT request\n"));
 
     /* Release lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
@@ -2530,13 +2539,23 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
         uint32_t cxPNG = 0;
         uint32_t cyPNG = 0;
 
-        DisplayMakePNG(pu8Data, width, height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
+        vrc = DisplayMakePNG(pu8Data, width, height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
+        if (RT_SUCCESS(vrc))
+        {
+            com::SafeArray<BYTE> screenData(cbPNG);
+            screenData.initFrom(pu8PNG, cbPNG);
+            if (pu8PNG)
+                RTMemFree(pu8PNG);
 
-        com::SafeArray<BYTE> screenData (cbPNG);
-        screenData.initFrom(pu8PNG, cbPNG);
-        RTMemFree(pu8PNG);
-
-        screenData.detachTo(ComSafeArrayOutArg(aScreenData));
+            screenData.detachTo(ComSafeArrayOutArg(aScreenData));
+        }
+        else
+        {
+            if (pu8PNG)
+                RTMemFree(pu8PNG);
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          tr("Could not convert screenshot to PNG (%Rrc)"), vrc);
+        }
     }
     else if (vrc == VERR_NOT_IMPLEMENTED)
         rc = setError(E_NOTIMPL,
@@ -2547,7 +2566,7 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
 
     RTMemFree(pu8Data);
 
-    LogRelFlowFunc (("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%08X\n", rc));
     return rc;
 }
 
