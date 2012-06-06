@@ -17,16 +17,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <iprt/time.h>
+/* Qt includes: */
 #include <QTimer>
 
-/* Local includes */
+/* GUI includes: */
 #include "UIIndicatorsPool.h"
 #include "VBoxGlobal.h"
-#include "COMDefs.h"
 #include "UIMachineDefs.h"
 #include "QIWithRetranslateUI.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
+#include "CMachineDebugger.h"
+#include "CGuest.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CUSBController.h"
+#include "CUSBDevice.h"
+#include "CSharedFolder.h"
+#include "CVRDEServer.h"
+
+/* Other VBox includes: */
+#include <iprt/time.h>
 
 class UIIndicatorHardDisks : public QIWithRetranslateUI<QIStateIndicator>
 {

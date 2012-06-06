@@ -19,15 +19,14 @@
 #ifndef __VBoxMediaManagerDlg_h__
 #define __VBoxMediaManagerDlg_h__
 
-/* Local includes */
+/* GUI includes */
 #include "VBoxMediaManagerDlg.gen.h"
-#include "COMDefs.h"
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "VBoxDefs.h"
 #include "VBoxMediaComboBox.h"
 
-/* Local forwards */
+/* Forward declarations: */
 class MediaItem;
 class VBoxProgressBar;
 class UIToolBar;

@@ -15,39 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxGlobal.h"
-#include <VBox/vd.h>
-#include <VBox/version.h>
-
-#include "VBoxUtils.h"
-#include "VBoxDefs.h"
-#include "UISelectorWindow.h"
-#include "UIMessageCenter.h"
-#include "QIMessageBox.h"
-#include "QIDialogButtonBox.h"
-#include "UIIconPool.h"
-#include "UIActionPoolSelector.h"
-#include "UIActionPoolRuntime.h"
-#include "UIExtraDataEventHandler.h"
-#include "QIFileDialog.h"
-#include "UINetworkManager.h"
-#include "UIUpdateManager.h"
-
-#include "UIMachine.h"
-#include "UISession.h"
-#ifdef VBOX_WITH_REGISTRATION
-# include "UIRegistrationWzd.h"
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-# include "VBoxFBOverlay.h"
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
-#ifdef Q_WS_MAC
-# include "UIMachineWindowFullscreen.h"
-# include "UIMachineWindowSeamless.h"
-#endif /* Q_WS_MAC */
-
-/* Qt includes */
+/* Qt includes: */
 #include <QProgressDialog>
 #include <QLibraryInfo>
 #include <QFileDialog>
@@ -67,47 +35,87 @@
 #include <QLocale>
 #include <QNetworkProxy>
 
+#ifdef Q_WS_WIN
+# include <QEventLoop>
+#endif /* Q_WS_WIN */
+
+#ifdef Q_WS_X11
+# include <QTextBrowser>
+# include <QScrollBar>
+# include <QX11Info>
+#endif /* Q_WS_X11 */
+
 #ifdef VBOX_GUI_WITH_PIDFILE
 # include <QTextStream>
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
-#include <math.h>
+/* GUI includes: */
+#include "VBoxGlobal.h"
+#include "VBoxUtils.h"
+#include "VBoxDefs.h"
+#include "UISelectorWindow.h"
+#include "UIMessageCenter.h"
+#include "QIMessageBox.h"
+#include "QIDialogButtonBox.h"
+#include "UIIconPool.h"
+#include "UIActionPoolSelector.h"
+#include "UIActionPoolRuntime.h"
+#include "UIExtraDataEventHandler.h"
+#include "QIFileDialog.h"
+#include "UINetworkManager.h"
+#include "UIUpdateManager.h"
+#include "UIMachine.h"
+#include "UISession.h"
 
 #ifdef Q_WS_X11
 # include "UIHotKeyEditor.h"
 # ifndef VBOX_OSE
 #  include "VBoxLicenseViewer.h"
 # endif /* VBOX_OSE */
-# include <QTextBrowser>
-# include <QScrollBar>
-# include <QX11Info>
 # include "VBoxX11Helper.h"
-#endif
+#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
+# include "UIMachineWindowFullscreen.h"
+# include "UIMachineWindowSeamless.h"
 #endif /* Q_WS_MAC */
 
-#if defined (Q_WS_WIN)
-#include "shlobj.h"
-#include <QEventLoop>
-#endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# include "VBoxFBOverlay.h"
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#if defined (Q_WS_X11)
-#undef BOOL /* typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
-             * in COMDefs.h. A better fix would be to isolate X11-specific
-             * stuff by placing XX* helpers below to a separate source file. */
-#include <X11/X.h>
-#include <X11/Xmd.h>
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <X11/extensions/Xinerama.h>
-#define BOOL PRBool
-#endif
+#ifdef VBOX_WITH_REGISTRATION
+# include "UIRegistrationWzd.h"
+#endif /* VBOX_WITH_REGISTRATION */
 
-#include <VBox/sup.h>
-#include <VBox/com/Guid.h>
+#ifdef VBOX_GUI_WITH_SYSTRAY
+#include <iprt/process.h>
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+#define HOSTSUFF_EXE ".exe"
+#else /* !RT_OS_WINDOWS */
+#define HOSTSUFF_EXE ""
+#endif /* !RT_OS_WINDOWS */
+#endif /* VBOX_GUI_WITH_SYSTRAY */
 
+/* COM includes: */
+#include "CSystemProperties.h"
+#include "CUSBDevice.h"
+#include "CUSBDeviceFilter.h"
+#include "CBIOSSettings.h"
+#include "CVRDEServer.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CAudioAdapter.h"
+#include "CNetworkAdapter.h"
+#include "CSerialPort.h"
+#include "CParallelPort.h"
+#include "CUSBController.h"
+#include "CHostUSBDevice.h"
+#include "CMediumFormat.h"
+#include "CSharedFolder.h"
+
+/* Other VBox includes: */
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
@@ -117,21 +125,34 @@
 #include <iprt/ldr.h>
 #include <iprt/system.h>
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-#include <iprt/process.h>
-
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-#define HOSTSUFF_EXE ".exe"
-#else /* !RT_OS_WINDOWS */
-#define HOSTSUFF_EXE ""
-#endif /* !RT_OS_WINDOWS */
-#endif
-
-#if defined (Q_WS_X11)
-#include <iprt/mem.h>
-#endif
-
+#include <VBox/vd.h>
+#include <VBox/version.h>
+#include <VBox/sup.h>
+#include <VBox/com/Guid.h>
 #include <VBox/VBoxOGLTest.h>
+
+#ifdef Q_WS_X11
+#include <iprt/mem.h>
+#endif /* Q_WS_X11 */
+
+/* External includes: */
+#include <math.h>
+
+#ifdef Q_WS_WIN
+#include "shlobj.h"
+#endif /* Q_WS_WIN */
+
+#ifdef Q_WS_X11
+#undef BOOL /* typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
+             * in COMDefs.h. A better fix would be to isolate X11-specific
+             * stuff by placing XX* helpers below to a separate source file. */
+#include <X11/X.h>
+#include <X11/Xmd.h>
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/extensions/Xinerama.h>
+#define BOOL PRBool
+#endif /* Q_WS_X11 */
 
 //#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
 

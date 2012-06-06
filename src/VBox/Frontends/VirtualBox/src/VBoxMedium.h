@@ -19,14 +19,16 @@
 #ifndef __VBoxMedium_h__
 #define __VBoxMedium_h__
 
-/* Global includes */
+/* Qt includes: */
 #include <QPixmap>
 #include <QLinkedList>
 
-/* Local includes */
-#include "COMDefs.h"
-
+/* GUI includes: */
 #include <iprt/cpp/utils.h>
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMedium.h"
 
 /**
  * Cache used to override some attributes in the user-friendly "don't show diffs" mode.

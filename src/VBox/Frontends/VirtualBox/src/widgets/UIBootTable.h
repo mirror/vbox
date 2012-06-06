@@ -19,12 +19,14 @@
 #ifndef __UIBootTable_h__
 #define __UIBootTable_h__
 
-/* Local includes */
-#include <COMDefs.h>
+/* Qt includes: */
+#include <QListWidget>
+
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
-/* Global includes */
-#include <QListWidget>
+/* COM includes: */
+#include "COMEnums.h"
 
 class UIBootTableItem : public QListWidgetItem
 {

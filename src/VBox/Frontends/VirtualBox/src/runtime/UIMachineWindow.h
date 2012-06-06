@@ -19,13 +19,16 @@
 #ifndef __UIMachineWindow_h__
 #define __UIMachineWindow_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QMainWindow>
 
-/* Local includes: */
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIMachineDefs.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
 
 /* Forward declarations: */
 class QGridLayout;

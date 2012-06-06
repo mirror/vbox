@@ -17,15 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 #include <QLineEdit>
 #include <QCheckBox>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardCloneVMPageBasic1.h"
 #include "UIWizardCloneVM.h"
-#include "COMDefs.h"
 #include "QIRichTextLabel.h"
 
 UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName)

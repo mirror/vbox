@@ -2,39 +2,31 @@
 
 <!--
 /*
- *  A template to generate wrapper classes for [XP]COM interfaces (defined
- *  in XIDL) to use them in the main Qt-based GUI in platform-independent
- *  script-like manner.
- *
- *  The generated header requires COMDefs.h and must be included from there.
+ *  A template to generate wrapper classes for [XP]COM interfaces
+ *  (defined in XIDL) to use them in the main Qt-based GUI
+ *  in platform-independent script-like manner.
  */
 
 /*
-     Copyright (C) 2006-2008 Oracle Corporation
-
-     This file is part of VirtualBox Open Source Edition (OSE), as
-     available from http://www.virtualbox.org. This file is free software;
-     you can redistribute it and/or modify it under the terms of the GNU
-     General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
-     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *  Copyright (C) 2006-2012 Oracle Corporation
+ *
+ *  This file is part of VirtualBox Open Source Edition (OSE), as
+ *  available from http://www.virtualbox.org. This file is free software;
+ *  you can redistribute it and/or modify it under the terms of the GNU
+ *  General Public License (GPL) as published by the Free Software
+ *  Foundation, in version 2 as it comes in the "COPYING" file of the
+ *  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ *  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 -->
 
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method="text"/>
-
 <xsl:strip-space elements="*"/>
 
 
 <!--
-//  helper definitions
-/////////////////////////////////////////////////////////////////////////////
--->
-
-<!--
- *  capitalizes the first letter
+ *  Capitalizes the first letter:
 -->
 <xsl:template name="capitalize">
   <xsl:param name="str" select="."/>
@@ -47,8 +39,8 @@
 </xsl:template>
 
 <!--
- *  uncapitalizes the first letter only if the second one is not capital
- *  otherwise leaves the string unchanged
+ *  Uncapitalizes the first letter only if the second one is not capital
+ *  otherwise leaves the string unchanged:
 -->
 <xsl:template name="uncapitalize">
   <xsl:param name="str" select="."/>
@@ -67,8 +59,9 @@
   </xsl:choose>
 </xsl:template>
 
+
 <!--
- *  translates the string to uppercase
+ *  Translates the string to uppercase:
 -->
 <xsl:template name="uppercase">
   <xsl:param name="str" select="."/>
@@ -79,13 +72,24 @@
 
 
 <!--
-//  templates
-/////////////////////////////////////////////////////////////////////////////
+ *  File start bracket
 -->
+<xsl:template name="startFile">
+  <xsl:param name="file" />
+  <xsl:value-of select="concat('&#10;// ##### BEGINFILE &quot;', $file, '&quot;&#10;')" />
+</xsl:template>
+
+<!--
+ *  File end bracket
+-->
+<xsl:template name="endFile">
+  <xsl:param name="file" />
+  <xsl:value-of select="concat('&#10;// ##### ENDFILE &quot;', $file, '&quot;&#10;&#10;')" />
+</xsl:template>
 
 
 <!--
- *  shut down all implicit templates
+ *  Shut down all implicit templates
 -->
 <xsl:template match="*"/>
 <xsl:template match="*|/" mode="declare"/>
@@ -95,56 +99,16 @@
 
 
 <!--
- *  header
+ *  Main entry point (idl):
 -->
-<xsl:template match="/idl">
-
-<xsl:text>
-/*
- *  DO NOT EDIT! This is a generated file.
- *
- *  Qt-based wrapper classes for VirtualBox Main API (COM interfaces)
- *  generated from XIDL (XML interface definition).
- *
- *  Source    : src/VBox/Main/idl/VirtualBox.xidl
- *  Generator : src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl
- *
- *  Note: this header must be included from COMDefs.h, never directly.
- */
-</xsl:text>
-
-<!-- all enum declarations -->
-<xsl:text>
-// all enums
-
-</xsl:text>
-  <xsl:for-each select="*/enum">
-    <xsl:text>enum </xsl:text>
-    <xsl:value-of select="concat('K',@name)"/>
-    <xsl:text>&#x0A;{&#x0A;</xsl:text>
-    <xsl:for-each select="const">
-      <xsl:text>    </xsl:text>
-      <xsl:value-of select="concat('K',../@name,'_',@name)"/>
-      <xsl:text> = ::</xsl:text>
-      <xsl:value-of select="concat(../@name,'_',@name)"/>
-      <xsl:text>,&#x0A;</xsl:text>
-    </xsl:for-each>
-    <xsl:text>    </xsl:text>
-    <xsl:value-of select="concat('K',@name)"/>
-    <xsl:text>_Max&#x0A;</xsl:text>
-    <xsl:text>};&#x0A;&#x0A;Q_DECLARE_METATYPE(</xsl:text>
-    <xsl:value-of select="concat('K',@name)"/>
-    <xsl:text>)&#x0A;&#x0A;</xsl:text>
-  </xsl:for-each>
-  <xsl:text>&#x0A;&#x0A;</xsl:text>
-
+<xsl:template match="idl">
+  <!-- Apply underlying template (library): -->
   <xsl:apply-templates/>
-
 </xsl:template>
 
 
 <!--
- *  encloses |if| element's contents (unconditionally expanded by
+ *  Encloses |if| element's contents (unconditionally expanded by
  *  <apply-templates mode="define"/>) with #ifdef / #endif.
  *
  *  @note this can produce an empty #if/#endif block if |if|'s children
@@ -160,9 +124,8 @@
   </xsl:if>
 </xsl:template>
 
-
 <!--
- *  encloses |if| element's contents (unconditionally expanded by
+ *  Encloses |if| element's contents (unconditionally expanded by
  *  <apply-templates mode="declare"/>) with #ifdef / #endif.
  *
  *  @note this can produce an empty #if/#endif block if |if|'s children
@@ -177,7 +140,6 @@
     <xsl:text>&#x0A;</xsl:text>
   </xsl:if>
 </xsl:template>
-
 
 <!--
  *  |<if target="...">| element): begin and end.
@@ -217,84 +179,221 @@
 
 
 <!--
- *  libraries
+ *  Library
 -->
 <xsl:template match="library">
-  <!-- forward declarations -->
-  <xsl:text>// forward declarations&#x0A;&#x0A;</xsl:text>
-  <xsl:for-each select="interface">
-    <xsl:text>class C</xsl:text>
-    <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text>;&#x0A;</xsl:text>
-  </xsl:for-each>
-  <xsl:text>&#x0A;</xsl:text>
-  <!-- array typedefs -->
-  <xsl:text>// array typedefs&#x0A;&#x0A;</xsl:text>
-  <xsl:for-each select="interface[not(@internal='yes')]">
-    <xsl:if test="
-      (//attribute[@safearray='yes' and not(@internal='yes') and @type=current()/@name])
-      or
-      (//param[@safearray='yes' and not(../@internal='yes') and @type=current()/@name])
-    ">
-      <xsl:text>typedef QVector&lt;C</xsl:text>
-      <xsl:value-of select="substring(@name,2)"/>
-      <xsl:text>&gt; C</xsl:text>
-      <xsl:value-of select="substring(@name,2)"/>
-      <xsl:text>Vector;&#x0A;</xsl:text>
-    </xsl:if>
-  </xsl:for-each>
-  <xsl:text>&#x0A;</xsl:text>
-  <!-- wrapper declarations -->
-  <xsl:text>// wrapper declarations&#x0A;&#x0A;</xsl:text>
-  <xsl:apply-templates select="
-      if |
-      interface[not(@internal='yes')]
-    "
-    mode="declare"
-  />
-  <!-- wrapper definitions -->
-  <xsl:text>// wrapper definitions&#x0A;&#x0A;</xsl:text>
-  <xsl:apply-templates select="
-      if |
-      interface[not(@internal='yes')]
-    "
-    mode="define"
-  />
+    <!-- Declare enums: -->
+    <xsl:call-template name="declareEnums"/>
+
+    <!-- Declare interfaces: -->
+    <xsl:apply-templates select="if | interface[not(@internal='yes')]" mode="declare"/>
+
+    <!-- Define interfaces: -->
+    <xsl:call-template name="defineInterfaces"/>
 </xsl:template>
 
 
 <!--
- *  interface declarations
+ *  Declare enums:
+-->
+<xsl:template name="declareEnums">
+    <!-- Starting COMEnums.h file: -->
+    <xsl:call-template name="startFile">
+        <xsl:with-param name="file" select="'COMEnums.h'" />
+    </xsl:call-template>
+
+    <!-- Write down file header: -->
+    <xsl:text>/*&#x0A;</xsl:text>
+    <xsl:text> * DO NOT EDIT! This is a generated file.&#x0A;</xsl:text>
+    <xsl:text> *&#x0A;</xsl:text>
+    <xsl:text> * Qt-based wrappers for VirtualBox Main API (COM) enums.&#x0A;</xsl:text>
+    <xsl:text> * Generated from XIDL (XML interface definition).&#x0A;</xsl:text>
+    <xsl:text> *&#x0A;</xsl:text>
+    <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
+    <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl&#x0A;</xsl:text>
+    <xsl:text> */&#x0A;&#x0A;</xsl:text>
+    <xsl:text>#ifndef __COMEnums_h__&#x0A;</xsl:text>
+    <xsl:text>#define __COMEnums_h__&#x0A;&#x0A;</xsl:text>
+    <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
+    <xsl:text>#include "COMDefs.h"&#x0A;&#x0A;</xsl:text>
+
+    <!-- Enumerate all enums: -->
+    <xsl:for-each select="enum">
+        <xsl:text>/* </xsl:text>
+        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:text> enum: */&#x0A;</xsl:text>
+        <xsl:text>enum </xsl:text>
+        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:text>&#x0A;{&#x0A;</xsl:text>
+        <xsl:for-each select="const">
+            <xsl:text>    </xsl:text>
+            <xsl:value-of select="concat('K',../@name,'_',@name)"/>
+            <xsl:text> = ::</xsl:text>
+            <xsl:value-of select="concat(../@name,'_',@name)"/>
+            <xsl:text>,&#x0A;</xsl:text>
+        </xsl:for-each>
+        <xsl:text>    </xsl:text>
+        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:text>_Max&#x0A;</xsl:text>
+        <xsl:text>};&#x0A;&#x0A;</xsl:text>
+    </xsl:for-each>
+
+    <!-- Declare enums to QMetaObject: -->
+    <xsl:text>/* Let QMetaType know about generated enums: */&#x0A;</xsl:text>
+    <xsl:for-each select="enum">
+        <xsl:text>Q_DECLARE_METATYPE(</xsl:text>
+        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:text>)&#x0A;</xsl:text>
+    </xsl:for-each>
+    <xsl:text>&#x0A;</xsl:text>
+
+    <!-- Write down file footer: -->
+    <xsl:text>#endif /* __COMEnums_h__ */&#x0A;&#x0A;</xsl:text>
+
+    <!-- Finishing COMEnums.h file: -->
+    <xsl:call-template name="endFile">
+        <xsl:with-param name="file" select="'COMEnums.h'" />
+    </xsl:call-template>
+</xsl:template>
+
+
+<!--
+ *  Define interfaces:
+-->
+<xsl:template name="defineInterfaces">
+    <!-- Starting COMWrappers.cpp file: -->
+    <xsl:call-template name="startFile">
+        <xsl:with-param name="file" select="'COMWrappers.cpp'" />
+    </xsl:call-template>
+
+    <!-- Write down file header: -->
+    <xsl:text>/*&#x0A;</xsl:text>
+    <xsl:text> * DO NOT EDIT! This is a generated file.&#x0A;</xsl:text>
+    <xsl:text> *&#x0A;</xsl:text>
+    <xsl:text> * Qt-based wrappers definitions for VirtualBox Main API (COM) interfaces.&#x0A;</xsl:text>
+    <xsl:text> * Generated from XIDL (XML interface definition).&#x0A;</xsl:text>
+    <xsl:text> *&#x0A;</xsl:text>
+    <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
+    <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl&#x0A;</xsl:text>
+    <xsl:text> */&#x0A;&#x0A;</xsl:text>
+    <xsl:text>/* COM includes: */&#x0A;</xsl:text>
+    <xsl:text>#include "COMEnums.h"&#x0A;</xsl:text>
+
+    <!-- Enumerate all interface definitions: -->
+    <xsl:for-each select="interface[not(@internal='yes')]">
+        <xsl:text>#include "C</xsl:text>
+        <xsl:value-of select="substring(@name,2)"/>
+        <xsl:text>.h"&#x0A;</xsl:text>
+    </xsl:for-each>
+    <xsl:text>&#x0A;</xsl:text>
+    <xsl:apply-templates select="if | interface[not(@internal='yes')]" mode="define"/>
+
+    <!-- Finishing COMEnums.h file: -->
+    <xsl:call-template name="endFile">
+        <xsl:with-param name="file" select="'COMWrappers.cpp'" />
+    </xsl:call-template>
+</xsl:template>
+
+
+<!--
+ *  Declare interface:
 -->
 <xsl:template match="interface" mode="declare">
+    <!-- Starting file: -->
+    <xsl:call-template name="startFile">
+        <xsl:with-param name="file" select="concat('C', substring(@name,2), '.h')" />
+    </xsl:call-template>
 
-  <xsl:text>// </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> wrapper&#x0A;&#x0A;class C</xsl:text>
-  <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text> : public CInterface&lt;</xsl:text>
-  <xsl:value-of select="@name"/>
-  <!-- use the correct base if supportsErrorInfo -->
-  <xsl:call-template name="tryComposeFetchErrorInfo">
-    <xsl:with-param name="mode" select="'getBaseClassName'"/>
-  </xsl:call-template>
-  <xsl:text>&gt;&#x0A;{&#x0A;public:&#x0A;&#x0A;</xsl:text>
+    <!-- Write down file header: -->
+    <xsl:text>/*&#x0A;</xsl:text>
+    <xsl:text> * DO NOT EDIT! This is a generated file.&#x0A;</xsl:text>
+    <xsl:text> *&#x0A;</xsl:text>
+    <xsl:text> * Qt-based wrapper declaration for VirtualBox Main API (COM) interface.&#x0A;</xsl:text>
+    <xsl:text> * Generated from XIDL (XML interface definition).&#x0A;</xsl:text>
+    <xsl:text> *&#x0A;</xsl:text>
+    <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
+    <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl&#x0A;</xsl:text>
+    <xsl:text> */&#x0A;&#x0A;</xsl:text>
+    <xsl:text>#ifndef __C</xsl:text>
+    <xsl:value-of select="substring(@name,2)"/>
+    <xsl:text>_h__&#x0A;</xsl:text>
+    <xsl:text>#define __C</xsl:text>
+    <xsl:value-of select="substring(@name,2)"/>
+    <xsl:text>_h__&#x0A;&#x0A;</xsl:text>
+    <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
+    <xsl:text>#include "COMDefs.h"&#x0A;&#x0A;</xsl:text>
 
-  <!-- generate the Base typedef-->
-  <xsl:text>    typedef CInterface&lt;</xsl:text>
-  <xsl:value-of select="@name"/>
-  <!-- Use the correct base if supportsErrorInfo -->
-  <xsl:call-template name="tryComposeFetchErrorInfo">
-    <xsl:with-param name="mode" select="'getBaseClassName'"/>
-  </xsl:call-template>
-  <xsl:text>&gt; Base;&#x0A;&#x0A;</xsl:text>
+    <!-- Forward declarations: -->
+    <xsl:text>/* Forward declarations: */&#x0A;</xsl:text>
+    <xsl:for-each select="//interface[not(@internal='yes')]">
+        <xsl:text>class C</xsl:text>
+        <xsl:value-of select="substring(@name,2)"/>
+        <xsl:text>;&#x0A;</xsl:text>
+    </xsl:for-each>
+    <xsl:text>&#x0A;</xsl:text>
 
-  <xsl:if test="name()='interface'">
-    <xsl:call-template name="declareMembers"/>
-  </xsl:if>
+    <!-- Interface declaration: -->
+    <xsl:text>/* Interface declaration: */&#x0A;</xsl:text>
+    <xsl:text>class C</xsl:text>
+    <xsl:value-of select="substring(@name,2)"/>
+    <xsl:text> : public CInterface&lt;</xsl:text>
+    <xsl:value-of select="@name"/>
 
-  <xsl:text>};&#x0A;&#x0A;</xsl:text>
+    <!-- Use the correct base if supportsErrorInfo: -->
+    <xsl:call-template name="tryComposeFetchErrorInfo">
+        <xsl:with-param name="mode" select="'getBaseClassName'"/>
+    </xsl:call-template>
+    <xsl:text>&gt;&#x0A;{&#x0A;public:&#x0A;&#x0A;</xsl:text>
 
+    <!-- Generate the Base typedef: -->
+    <xsl:text>    typedef CInterface&lt;</xsl:text>
+    <xsl:value-of select="@name"/>
+
+    <!-- Use the correct base if supportsErrorInfo: -->
+    <xsl:call-template name="tryComposeFetchErrorInfo">
+        <xsl:with-param name="mode" select="'getBaseClassName'"/>
+    </xsl:call-template>
+    <xsl:text>&gt; Base;&#x0A;&#x0A;</xsl:text>
+
+    <!-- Generate member declarations: -->
+    <xsl:if test="name()='interface'">
+        <xsl:call-template name="declareMembers"/>
+    </xsl:if>
+
+    <!-- Interface declaration: -->
+    <xsl:text>};&#x0A;&#x0A;</xsl:text>
+
+    <!-- Declare metatype: -->
+    <xsl:text>/* Let QMetaType know about generated interface: */&#x0A;</xsl:text>
+    <xsl:text>Q_DECLARE_METATYPE(</xsl:text>
+    <xsl:value-of select="concat('C',substring(@name,2))"/>
+    <xsl:text>)&#x0A;&#x0A;</xsl:text>
+
+    <!-- Declare safe-array -->
+    <xsl:if test="
+        (name()='interface')
+        and
+        ((//attribute[@safearray='yes' and not(@internal='yes') and @type=current()/@name])
+         or
+         (//param[@safearray='yes' and not(../@internal='yes') and @type=current()/@name]))
+        ">
+            <xsl:text>/* Declare safe-array: */&#x0A;</xsl:text>
+            <xsl:text>typedef QVector&lt;C</xsl:text>
+            <xsl:value-of select="substring(@name,2)"/>
+            <xsl:text>&gt; C</xsl:text>
+            <xsl:value-of select="substring(@name,2)"/>
+            <xsl:text>Vector;&#x0A;&#x0A;</xsl:text>
+    </xsl:if>
+
+    <!-- Write down file footer: -->
+    <xsl:text>#endif /* __C</xsl:text>
+    <xsl:value-of select="substring(@name,2)"/>
+    <xsl:text>_h__ */&#x0A;&#x0A;</xsl:text>
+
+    <!-- Finishing file: -->
+    <xsl:call-template name="endFile">
+        <xsl:with-param name="file" select="concat('C', substring(@name,2), '.h')" />
+    </xsl:call-template>
 </xsl:template>
 
 <xsl:template name="declareAttributes">
@@ -385,16 +484,12 @@
 
 <xsl:text>    void SetExtraDataBool(const QString &amp;strKey, bool fValue);
     bool GetExtraDataBool(const QString &amp;strKey, bool fDef = true);
-
     void SetExtraDataInt(const QString &amp;strKey, int value);
     int GetExtraDataInt(const QString &amp;strKey, int def = 0);
-
     void SetExtraDataRect(const QString &amp;strKey, const QRect &amp;value);
     QRect GetExtraDataRect(const QString &amp;strKey, const QRect &amp;def = QRect());
-
     void SetExtraDataStringList(const QString &amp;strKey, const QStringList &amp;value);
     QStringList GetExtraDataStringList(const QString &amp;strKey, QStringList def = QStringList());
-
     void SetExtraDataIntList(const QString &amp;strKey, const QList&lt;int&gt; &amp;value);
     QList&lt;int&gt; GetExtraDataIntList(const QString &amp;strKey, QList&lt;int&gt; def = QList&lt;int&gt;());
 
@@ -404,8 +499,7 @@
 
 <xsl:template name="declareMembers">
 
-  <xsl:text>    // constructors and assignments taking CUnknown and </xsl:text>
-  <xsl:text>raw iface pointer&#x0A;&#x0A;</xsl:text>
+  <xsl:text>    /* Constructors and assignments taking CUnknown and raw iface pointer: */&#x0A;&#x0A;</xsl:text>
   <!-- default constructor -->
   <xsl:text>    C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
@@ -490,24 +584,24 @@
 </xsl:text>
   <xsl:text>&#x0A;</xsl:text>
 
-  <xsl:text>    // attributes (properties)&#x0A;&#x0A;</xsl:text>
+  <xsl:text>    /* Attributes (properties): */&#x0A;</xsl:text>
   <xsl:call-template name="declareAttributes">
     <xsl:with-param name="iface" select="."/>
   </xsl:call-template>
 
-  <xsl:text>    // methods&#x0A;&#x0A;</xsl:text>
+  <xsl:text>    /* Methods: */&#x0A;</xsl:text>
   <xsl:call-template name="declareMethods">
     <xsl:with-param name="iface" select="."/>
   </xsl:call-template>
 
   <xsl:if test="@name='IVirtualBox' or @name='IMachine'">
-    <xsl:text>    // ExtraData helpers&#x0A;&#x0A;</xsl:text>
+    <xsl:text>    /* ExtraData helpers: */&#x0A;</xsl:text>
     <xsl:call-template name="declareExtraDataHelpers">
       <xsl:with-param name="iface" select="."/>
     </xsl:call-template>
   </xsl:if>
 
-  <xsl:text>    // friend wrappers&#x0A;&#x0A;</xsl:text>
+  <xsl:text>    /* Friend wrappers: */&#x0A;</xsl:text>
   <xsl:text>    friend class CUnknown;&#x0A;</xsl:text>
   <xsl:variable name="name" select="@name"/>
   <xsl:variable name="parent" select=".."/>
@@ -843,7 +937,7 @@
     <xsl:with-param name="iface" select="."/>
   </xsl:call-template>
   <xsl:if test="@name='IVirtualBox' or @name='IMachine'">
-    <xsl:text>// ExtraData helpers&#x0A;&#x0A;</xsl:text>
+    <xsl:text>/* ExtraData helpers: */&#x0A;</xsl:text>
     <xsl:call-template name="defineExtraDataHelpers">
       <xsl:with-param name="iface" select="."/>
     </xsl:call-template>
@@ -932,7 +1026,7 @@
     <xsl:when test="not($return)">
       <xsl:choose>
         <xsl:when test="$define">
-          <xsl:text>inline </xsl:text>
+          <xsl:text></xsl:text>
         </xsl:when>
         <xsl:otherwise>
           <xsl:text>    </xsl:text>
@@ -965,7 +1059,7 @@
     <xsl:when test="count($return) = 1">
       <xsl:choose>
         <xsl:when test="$define">
-          <xsl:text>inline </xsl:text>
+          <xsl:text></xsl:text>
         </xsl:when>
         <xsl:otherwise>
           <xsl:text>    </xsl:text>

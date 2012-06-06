@@ -19,23 +19,22 @@
 #ifndef ___UIKeyboardHandler_h___
 #define ___UIKeyboardHandler_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QObject>
 #include <QMap>
 
-/* Local includes */
+/* GUI includes: */
 #include "UIMachineDefs.h"
-#include "COMDefs.h"
-
 #ifdef Q_WS_MAC
 # include <CoreFoundation/CFBase.h>
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
-/* Global forwards */
-class QWidget;
+/* COM includes: */
+#include "CKeyboard.h"
 
-/* Local forwards */
+/* Forward declarations: */
+class QWidget;
 class CSession;
 class UISession;
 class UIMachineLogic;
@@ -173,7 +172,7 @@ protected:
     bool m_bIsHostComboProcessed : 1;
     bool m_fPassCAD : 1;
     /** Whether the debugger is active.
-     * Currently only affects auto capturing. */ 
+     * Currently only affects auto capturing. */
     bool m_fDebuggerActive : 1;
 
 #if defined(Q_WS_WIN)

@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QDesktopWidget>
 #include <QMenu>
 #include <QTimer>
@@ -25,7 +25,7 @@
 # include <QMenuBar>
 #endif /* Q_WS_MAC */
 
-/* Local includes: */
+/* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
@@ -38,6 +38,9 @@
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
+
+/* COM includes: */
+#include "CSnapshot.h"
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

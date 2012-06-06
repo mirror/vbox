@@ -19,11 +19,13 @@
 #ifndef __VBoxTakeSnapshotDlg_h__
 #define __VBoxTakeSnapshotDlg_h__
 
-/* Local includes */
+/* GUI includes: */
 #include "VBoxTakeSnapshotDlg.gen.h"
 #include "QIWithRetranslateUI.h"
-#include "COMDefs.h"
 #include "QIDialog.h"
+
+/* Forward declarations: */
+class CMachine;
 
 class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QIDialog>, public Ui::VBoxTakeSnapshotDlg
 {

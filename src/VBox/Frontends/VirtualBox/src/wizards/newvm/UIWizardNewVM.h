@@ -19,9 +19,12 @@
 #ifndef __UIWizardNewVM_h__
 #define __UIWizardNewVM_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizard.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
 
 /* New Virtual Machine wizard: */
 class UIWizardNewVM : public UIWizard

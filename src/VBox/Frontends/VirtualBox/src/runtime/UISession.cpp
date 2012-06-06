@@ -17,12 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
 #include <QApplication>
 #include <QWidget>
 #include <QTimer>
 
-/* Local includes */
+/* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIMachine.h"
@@ -36,7 +36,7 @@
 #include "UIFrameBuffer.h"
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include "VBoxFBOverlay.h"
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -44,13 +44,25 @@
 # include <X11/Xutil.h>
 # ifndef VBOX_WITHOUT_XCURSOR
 #  include <X11/Xcursor/Xcursor.h>
-# endif
-#endif
+# endif /* VBOX_WITHOUT_XCURSOR */
+#endif /* Q_WS_X11 */
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 # include "UIKeyboardHandler.h"
 # include <signal.h>
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
+
+/* COM includes: */
+#include "CSystemProperties.h"
+#include "CMachineDebugger.h"
+#include "CGuest.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CDisplay.h"
+#include "CFramebuffer.h"
+#include "CNetworkAdapter.h"
+#include "CVRDEServer.h"
+#include "CUSBController.h"
 
 UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     : QObject(pMachine)

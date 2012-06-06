@@ -19,9 +19,12 @@
 #ifndef __UIWizardCloneVD_h__
 #define __UIWizardCloneVD_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizard.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMedium.h"
 
 /* Clone Virtual Hard Drive wizard: */
 class UIWizardCloneVD : public UIWizard

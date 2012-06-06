@@ -17,7 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* Qt includes: */
+#include <QDesktopWidget>
+#include <QMainWindow>
+#include <QTimer>
+
+/* GUI includes */
 #include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
@@ -29,10 +34,8 @@
 # include "UIFrameBufferQuartz2D.h"
 #endif /* VBOX_GUI_USE_QUARTZ2D */
 
-/* Global includes */
-#include <QDesktopWidget>
-#include <QMainWindow>
-#include <QTimer>
+/* COM includes: */
+#include "CDisplay.h"
 
 UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
                                        , ulong uScreenId

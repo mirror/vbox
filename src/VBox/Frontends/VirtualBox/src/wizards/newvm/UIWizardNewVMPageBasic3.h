@@ -19,12 +19,15 @@
 #ifndef __UIWizardNewVMPageBasic3_h__
 #define __UIWizardNewVMPageBasic3_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVariant>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMedium.h"
 
 /* Forward declarations: */
 class QRadioButton;

@@ -17,17 +17,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QIntValidator>
 #include <QVBoxLayout>
 #include <QGridLayout>
 #include <QSpacerItem>
 #include <QLabel>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
-#include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "VBoxGuestRAMSlider.h"
 #include "QILineEdit.h"

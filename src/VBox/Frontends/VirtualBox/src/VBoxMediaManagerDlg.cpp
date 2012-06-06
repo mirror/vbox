@@ -20,7 +20,8 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-/* Global includes */
+
+/* Qt includes: */
 #include <QCloseEvent>
 #include <QDir>
 #include <QDragEnterEvent>
@@ -33,7 +34,7 @@
 #include <QTimer>
 #include <QUrl>
 
-/* Local includes */
+/* GUI includes */
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
 //#include "UIWizardNewVD.h"
@@ -45,6 +46,12 @@
 #include "UIIconPool.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIMediumTypeChangeDialog.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef Q_WS_MAC

@@ -19,14 +19,18 @@
 #ifndef ___UIFrameBuffer_h___
 #define ___UIFrameBuffer_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QRegion>
 #include <QPaintEvent>
 
-/* Local includes */
-#include "COMDefs.h"
+/* GUI includes: */
+#include "VBoxDefs.h"
+#include "CFramebuffer.h"
+
+/* Other VBox includes: */
 #include <iprt/critsect.h>
 
+/* Forward declarations: */
 class UIMachineView;
 
 /**

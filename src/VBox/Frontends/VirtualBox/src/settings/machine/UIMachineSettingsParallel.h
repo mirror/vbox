@@ -19,11 +19,11 @@
 #ifndef __UIMachineSettingsParallel_h__
 #define __UIMachineSettingsParallel_h__
 
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsParallel.gen.h"
-#include "COMDefs.h"
 
-/* Forward declarations */
+/* Forward declarations: */
 class UIMachineSettingsParallelPage;
 class QITabWidget;
 

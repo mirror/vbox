@@ -19,15 +19,18 @@
 #ifndef __UIVMLogViewer_h__
 #define __UIVMLogViewer_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QMainWindow>
 #include <QMap>
 #include <QPair>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIVMLogViewer.gen.h"
 #include "QIWithRetranslateUI.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
 
 /* Forward declarations: */
 class QPushButton;

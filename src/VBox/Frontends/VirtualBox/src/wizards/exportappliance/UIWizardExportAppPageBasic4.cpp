@@ -17,16 +17,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardExportAppPageBasic4.h"
 #include "UIWizardExportApp.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
+
+/* COM includes: */
+#include "CAppliance.h"
 
 UIWizardExportAppPage4::UIWizardExportAppPage4()
 {

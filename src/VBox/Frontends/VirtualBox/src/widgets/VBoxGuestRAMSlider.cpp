@@ -17,9 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
+/* GUI includes: */
 #include "VBoxGuestRAMSlider.h"
 #include "VBoxGlobal.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 VBoxGuestRAMSlider::VBoxGuestRAMSlider (QWidget *aParent /* = 0 */)
   : QIAdvancedSlider (aParent)

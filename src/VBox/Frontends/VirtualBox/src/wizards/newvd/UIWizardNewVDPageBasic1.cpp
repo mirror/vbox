@@ -17,16 +17,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 #include <QButtonGroup>
 #include <QRadioButton>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardNewVDPageBasic1.h"
 #include "UIWizardNewVD.h"
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 UIWizardNewVDPage1::UIWizardNewVDPage1()
 {

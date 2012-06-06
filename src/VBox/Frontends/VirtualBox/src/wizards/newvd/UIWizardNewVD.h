@@ -19,9 +19,12 @@
 #ifndef __UIWizardNewVD_h__
 #define __UIWizardNewVD_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizard.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMedium.h"
 
 /* New Virtual Hard Drive wizard: */
 class UIWizardNewVD : public UIWizard

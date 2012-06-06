@@ -17,12 +17,32 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* GUI includes: */
 #include "UIMainEventListener.h"
 
-/* Global includes */
-//#include <iprt/thread.h>
-//#include <iprt/stream.h>
+/* COM includes: */
+#include "COMEnums.h"
+#include "CVirtualBoxErrorInfo.h"
+#include "CUSBDevice.h"
+#include "CEvent.h"
+#include "CMachineStateChangedEvent.h"
+#include "CMachineDataChangedEvent.h"
+#include "CExtraDataCanChangeEvent.h"
+#include "CExtraDataChangedEvent.h"
+#include "CMachineRegisteredEvent.h"
+#include "CSessionStateChangedEvent.h"
+#include "CSnapshotChangedEvent.h"
+#include "CMousePointerShapeChangedEvent.h"
+#include "CMouseCapabilityChangedEvent.h"
+#include "CKeyboardLedsChangedEvent.h"
+#include "CStateChangedEvent.h"
+#include "CNetworkAdapterChangedEvent.h"
+#include "CMediumChangedEvent.h"
+#include "CUSBDeviceStateChangedEvent.h"
+#include "CRuntimeErrorEvent.h"
+#include "CCanShowWindowEvent.h"
+#include "CShowWindowEvent.h"
+#include "CGuestMonitorChangedEvent.h"
 
 UIMainEventListener::UIMainEventListener()
   : QObject()

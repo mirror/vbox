@@ -20,13 +20,18 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-/* Global includes */
+
+/* Qt includes: */
 #include <QDir>
 
-/* Local includes */
+/* GUI includes */
 #include "VBoxMedium.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+
+/* COM includes: */
+#include "CSnapshot.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 QString VBoxMedium::mTable = QString ("<table>%1</table>");

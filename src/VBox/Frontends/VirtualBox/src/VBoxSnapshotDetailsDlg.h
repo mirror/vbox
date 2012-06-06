@@ -19,12 +19,14 @@
 #ifndef __VBoxSnapshotDetailsDlg_h__
 #define __VBoxSnapshotDetailsDlg_h__
 
-/* Local includes */
+/* GUI includes: */
 #include "VBoxSnapshotDetailsDlg.gen.h"
 #include "QIWithRetranslateUI.h"
-#include "COMDefs.h"
 
-/* Global forwards */
+/* COM includes: */
+#include "CSnapshot.h"
+
+/* Forward declarations: */
 class QScrollArea;
 
 class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI <QDialog>, public Ui::VBoxSnapshotDetailsDlg

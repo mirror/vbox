@@ -19,10 +19,12 @@
 #ifndef __UIMachineSettingsPortForwardingDlg_h__
 #define __UIMachineSettingsPortForwardingDlg_h__
 
-/* Local includes */
+/* GUI includes */
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
 
 /* Forward declarations: */
 class QITableView;

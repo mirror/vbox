@@ -17,10 +17,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
+/* GUI includes: */
 #include "UIApplianceExportEditorWidget.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+
+/* COM includes: */
+#include "CAppliance.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // ExportSortProxyModel

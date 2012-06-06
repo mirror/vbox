@@ -19,12 +19,11 @@
 #ifndef __UIWizardCloneVDPageBasic4_h__
 #define __UIWizardCloneVDPageBasic4_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVariant>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
 
 /* Forward declarations: */
 class CMediumFormat;

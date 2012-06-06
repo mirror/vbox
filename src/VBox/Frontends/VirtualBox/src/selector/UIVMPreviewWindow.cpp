@@ -17,17 +17,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QContextMenuEvent>
 #include <QMenu>
 #include <QPainter>
 #include <QTimer>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIVMPreviewWindow.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIImageTools.h"
 #include "VBoxGlobal.h"
+
+/* COM includes: */
+#include "CDisplay.h"
 
 /* Initialize map: */
 UpdateIntervalMap UpdateIntervalMapConstructor()

@@ -19,17 +19,22 @@
 #ifndef __UISettingsPage_h__
 #define __UISettingsPage_h__
 
-/* Qt includes */
+/* Qt includes: */
 #include <QWidget>
 #include <QVariant>
 
-/* Other includes */
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "COMDefs.h"
 #include "UISettingsDefs.h"
 #include "VBoxGlobalSettings.h"
 
-/* Forward declarations */
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CConsole.h"
+#include "CSystemProperties.h"
+
+/* Forward declarations: */
 class QIWidgetValidator;
 class QShowEvent;
 

@@ -19,20 +19,17 @@
 #ifndef ___UIMouseHandler_h___
 #define ___UIMouseHandler_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QObject>
 #include <QPoint>
 #include <QMap>
 #include <QRect>
 
-/* Local includes */
+/* GUI includes: */
 #include "UIMachineDefs.h"
 
-/* Global forwards */
+/* Forward declarations: */
 class QWidget;
-
-/* Local forwards */
-class CSession;
 class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
@@ -40,6 +37,7 @@ class UIMachineView;
 #ifdef Q_WS_X11
 typedef union  _XEvent XEvent;
 #endif /* Q_WS_X11 */
+class CSession;
 
 /* Delegate to control VM mouse functionality: */
 class UIMouseHandler : public QObject

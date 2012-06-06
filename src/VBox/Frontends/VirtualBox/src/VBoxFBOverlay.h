@@ -24,15 +24,22 @@
 
 //#define VBOXVHWADBG_RENDERCHECK
 
-#include "COMDefs.h"
+/* Qt includes: */
 #include <QGLWidget>
+
+/* GUI includes: */
+#include "VBoxFBOverlayCommon.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSession.h"
+
+/* Other VBox includes: */
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
-
 #include <VBox/VBoxGL2D.h>
-#include "VBoxFBOverlayCommon.h"
 
 #define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
 

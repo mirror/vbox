@@ -17,14 +17,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardFirstRunPageBasic.h"
 #include "UIWizardFirstRun.h"
-#include "COMDefs.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"

@@ -17,16 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local Includes */
-#include "QIWidgetValidator.h"
-#include "UIIconPool.h"
-#include "UIWizardNewVD.h"
-#include "VBoxGlobal.h"
-#include "QIFileDialog.h"
-#include "UIMessageCenter.h"
-#include "UIMachineSettingsStorage.h"
-
-/* Global Includes */
+/* Qt includes: */
 #include <QHeaderView>
 #include <QItemEditorFactory>
 #include <QMetaProperty>
@@ -35,6 +26,19 @@
 #include <QStylePainter>
 #include <QTimer>
 #include <QCommonStyle>
+
+/* GUI includes: */
+#include "QIWidgetValidator.h"
+#include "UIIconPool.h"
+#include "UIWizardNewVD.h"
+#include "VBoxGlobal.h"
+#include "QIFileDialog.h"
+#include "UIMessageCenter.h"
+#include "UIMachineSettingsStorage.h"
+
+/* COM includes: */
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
 
 QString compressText (const QString &aText)
 {

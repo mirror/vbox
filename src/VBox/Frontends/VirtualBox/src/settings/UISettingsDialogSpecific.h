@@ -19,9 +19,14 @@
 #ifndef __UISettingsDialogSpecific_h__
 #define __UISettingsDialogSpecific_h__
 
-/* Local includes */
-#include "COMDefs.h"
+/* GUI includes: */
 #include "UISettingsDialog.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSession.h"
+#include "CConsole.h"
+#include "CMachine.h"
 
 /* Dialog which encapsulate all the specific functionalities of the Global Settings */
 class UISettingsDialogGlobal : public UISettingsDialog

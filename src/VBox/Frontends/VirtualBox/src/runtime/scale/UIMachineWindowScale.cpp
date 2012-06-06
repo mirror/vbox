@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QDesktopWidget>
 #include <QMenu>
 #include <QTimer>
@@ -27,7 +27,7 @@
 # include <QMenuBar>
 #endif /* Q_WS_MAC */
 
-/* Local includes: */
+/* GUI includes: */
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindowScale.h"
@@ -39,6 +39,9 @@
 # include "VBoxGlobal.h"
 # include "UIImageTools.h"
 #endif /* Q_WS_MAC */
+
+/* COM includes: */
+#include "CMachine.h"
 
 UIMachineWindowScale::UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

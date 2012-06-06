@@ -19,23 +19,25 @@
 #ifndef ___UIMachineView_h___
 #define ___UIMachineView_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QAbstractScrollArea>
 #include <QEventLoop>
 
-/* Local includes */
-#include "COMDefs.h"
+/* GUI includes: */
 #include "UIMachineDefs.h"
-
 #ifdef Q_WS_MAC
 # include <CoreFoundation/CFBase.h>
 #endif /* Q_WS_MAC */
 
-/* Local forwards */
+/* COM includes: */
+#include "COMEnums.h"
+
+/* Forward declarations: */
 class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIFrameBuffer;
+class CSession;
 
 class UIMachineView : public QAbstractScrollArea
 {

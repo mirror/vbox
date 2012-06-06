@@ -19,16 +19,19 @@
 #ifndef __UIApplianceEditorWidget_h__
 #define __UIApplianceEditorWidget_h__
 
-/* VBox includes */
-#include "COMDefs.h"
-#include "UIApplianceEditorWidget.gen.h"
-#include "QIWithRetranslateUI.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QSortFilterProxyModel>
 #include <QItemDelegate>
 
-/* vbOX Forward declarations */
+/* GUI includes: */
+#include "UIApplianceEditorWidget.gen.h"
+#include "QIWithRetranslateUI.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CVirtualSystemDescription.h"
+
+/* Forward declarations: */
 class ModelItem;
 
 ////////////////////////////////////////////////////////////////////////////////

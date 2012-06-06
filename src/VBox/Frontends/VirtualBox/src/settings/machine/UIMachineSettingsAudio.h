@@ -19,9 +19,9 @@
 #ifndef __UIMachineSettingsAudio_h__
 #define __UIMachineSettingsAudio_h__
 
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsAudio.gen.h"
-#include "COMDefs.h"
 
 /* Machine settings / Audio page / Data: */
 struct UIDataSettingsMachineAudio

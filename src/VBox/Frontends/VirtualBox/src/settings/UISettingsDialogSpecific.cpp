@@ -17,14 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
 #include <QStackedWidget>
 #include <QThread>
 #include <QMutex>
 #include <QWaitCondition>
 #include <QTimer>
 
-/* Local includes */
+/* GUI includes: */
 #include "UISettingsDialogSpecific.h"
 #include "UISettingsDefs.h"
 #include "VBoxGlobal.h"
@@ -52,6 +52,9 @@
 #include "UIMachineSettingsParallel.h"
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsSF.h"
+
+/* COM includes: */
+#include "CUSBController.h"
 
 #if 0 /* Global USB filters are DISABLED now: */
 # define ENABLE_GLOBAL_USB

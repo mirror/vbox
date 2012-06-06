@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QDesktopWidget>
 #include <QMenu>
 #include <QTimer>
@@ -25,12 +25,16 @@
 # include <QMenuBar>
 #endif /* Q_WS_MAC */
 
-/* Local includes: */
+/* GUI includes: */
 #include "VBoxMiniToolBar.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
+
+/* COM includes: */
+#include "CMachine.h"
+#include "CSnapshot.h"
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

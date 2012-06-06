@@ -19,31 +19,34 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 #define LOG_GROUP LOG_GROUP_GUI
 
-#include "VBoxFBOverlay.h"
+/* Qt includes: */
+#include <QGLWidget>
+#include <QFile>
+#include <QTextStream>
 
+/* GUI includes: */
+#include "VBoxFBOverlay.h"
 #include "UIMessageCenter.h"
 #include "VBoxGlobal.h"
 
-#include <VBox/VBoxGL2D.h>
+/* COM includes: */
+#include "CDisplay.h"
 
-/* Qt includes */
-#include <QGLWidget>
-
+/* Other VBox includes: */
 #include <iprt/asm.h>
+#include <iprt/semaphore.h>
+#include <VBox/VBoxGL2D.h>
+#include <VBox/err.h>
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 #include <VBox/VBoxVideo.h>
 #include <VBox/types.h>
 #include <VBox/vmm/ssm.h>
-#endif
-#include <iprt/semaphore.h>
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#include <VBox/err.h>
-
-#include <QFile>
-#include <QTextStream>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef VBOXQGL_PROF_BASE

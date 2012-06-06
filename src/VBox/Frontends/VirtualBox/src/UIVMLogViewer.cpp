@@ -20,7 +20,8 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-/* Global includes: */
+
+/* Qt includes: */
 #include <QCheckBox>
 #include <QDateTime>
 #include <QDir>
@@ -30,7 +31,7 @@
 #include <QScrollBar>
 #include <QTextEdit>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIVMLogViewer.h"
 #include "QITabWidget.h"
 #include "UIIconPool.h"
@@ -38,6 +39,11 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "VBoxUtils.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSystemProperties.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* VM Log Viewer search panel: */

@@ -19,7 +19,7 @@
 #ifndef __UIMachineLogic_h__
 #define __UIMachineLogic_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMachineDefs.h"
 #include <QIWithRetranslateUI.h>
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -29,17 +29,17 @@
 /* Forward declarations: */
 class QAction;
 class QActionGroup;
-class CSession;
-class CMachine;
-class CSnapshot;
-class CUSBDevice;
-class CVirtualBoxErrorInfo;
 class UISession;
 class UIKeyboardHandler;
 class UIMouseHandler;
 class UIMachineWindow;
 class UIMachineView;
 class UIDockIconPreview;
+class CSession;
+class CMachine;
+class CSnapshot;
+class CUSBDevice;
+class CVirtualBoxErrorInfo;
 
 /* Machine logic interface: */
 class UIMachineLogic : public QIWithRetranslateUI3<QObject>

@@ -19,9 +19,12 @@
 #ifndef __UIMachineSettingsDisplay_h__
 #define __UIMachineSettingsDisplay_h__
 
-#include "COMDefs.h"
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsDisplay.gen.h"
+
+/* COM includes: */
+#include "CGuestOSType.h"
 
 /* Machine settings / Display page / Data: */
 struct UIDataSettingsMachineDisplay

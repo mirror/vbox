@@ -19,7 +19,7 @@
 #ifndef __UIApplianceImportEditorWidget_h__
 #define __UIApplianceImportEditorWidget_h__
 
-/* VBox includes */
+/* GUI includes: */
 #include "UIApplianceEditorWidget.h"
 
 class UIApplianceImportEditorWidget: public UIApplianceEditorWidget

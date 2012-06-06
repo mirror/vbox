@@ -19,9 +19,11 @@
 #ifndef __UIWizardCloneVMPageBasic3_h__
 #define __UIWizardCloneVMPageBasic3_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
 
 /* Forward declaration: */
 class QRadioButton;

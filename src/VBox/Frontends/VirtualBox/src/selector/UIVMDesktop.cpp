@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
 #include <QDir>
 #include <QLabel>
 #include <QScrollArea>
@@ -26,9 +26,7 @@
 #include <QToolButton>
 #include <QUrl>
 
-#include <iprt/assert.h>
-
-/* Local includes */
+/* GUI includes */
 #include "QILabel.h"
 #include "UIBar.h"
 #include "UIIconPool.h"
@@ -43,6 +41,21 @@
 #include "VBoxSnapshotsWgt.h"
 #include "UIToolBar.h"
 #include "VBoxUtils.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CVRDEServer.h"
+#include "CAudioAdapter.h"
+#include "CNetworkAdapter.h"
+#include "CSerialPort.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilter.h"
+#include "CSharedFolder.h"
+
+/* Other VBox includes: */
+#include <iprt/assert.h>
 
 /* Forward declarations: */
 class UIDetails;

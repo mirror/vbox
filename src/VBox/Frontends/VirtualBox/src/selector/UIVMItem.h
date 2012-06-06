@@ -19,12 +19,15 @@
 #ifndef __UIVMItem_h__
 #define __UIVMItem_h__
 
-/* Local includes */
-#include "VBoxGlobal.h"
-
-/* Global includes */
+/* Qt includes: */
 #include <QDateTime>
 #include <QMimeData>
+
+/* GUI includes: */
+#include "VBoxGlobal.h"
+
+/* COM includes: */
+#include "CVirtualBoxErrorInfo.h"
 
 class UIVMItem
 {

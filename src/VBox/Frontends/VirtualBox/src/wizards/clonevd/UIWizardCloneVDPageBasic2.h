@@ -19,9 +19,12 @@
 #ifndef __UIWizardCloneVDPageBasic2_h__
 #define __UIWizardCloneVDPageBasic2_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMediumFormat.h"
 
 /* Forward declarations: */
 class QVBoxLayout;

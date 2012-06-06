@@ -17,14 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QNetworkReply>
 #include <QTimer>
 #include <QDir>
 #include <QPointer>
 #include <VBox/version.h>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIUpdateDefs.h"
 #include "UIUpdateManager.h"
 #include "UINetworkManager.h"
@@ -35,6 +35,10 @@
 #include "UIDownloaderExtensionPack.h"
 #include "UIGlobalSettingsExtension.h"
 #include "VBoxDefs.h"
+
+/* COM includes: */
+#include "CExtPack.h"
+#include "CExtPackManager.h"
 
 /* Forward declarations: */
 class UIUpdateStep;
