@@ -58,6 +58,9 @@
 #include "CConsole.h"
 #include "CDisplay.h"
 #include "CFramebuffer.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "CGuest.h"
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* Other VBox includes: */
 #ifdef Q_WS_X11
