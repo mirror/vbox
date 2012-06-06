@@ -733,6 +733,7 @@ $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
 +| $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp: \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl \
+		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
 	$(QUIET)$(RM) -f COMWrappers* COMEnums.h C*.h
