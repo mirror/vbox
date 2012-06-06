@@ -62,6 +62,9 @@
 #include "CHostUSBDevice.h"
 #include "CUSBDevice.h"
 #include "CVRDEServer.h"
+#ifdef Q_WS_MAC
+# include "CGuest.h"
+#endif /* Q_WS_MAC */
 
 /* Other VBox includes: */
 #include <iprt/path.h>
