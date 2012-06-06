@@ -3675,6 +3675,22 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
 
     DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
+    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    {
+        /* Make sure that the primary screen is visible now.
+         * The guest can't use VBVA anymore, so only only the VGA device output works.
+         */
+        if (pFBInfo->fDisabled)
+        {
+            pFBInfo->fDisabled = false;
+            fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                         GuestMonitorChangedEventType_Enabled,
+                                         uScreenId,
+                                         pFBInfo->xOrigin, pFBInfo->yOrigin,
+                                         pFBInfo->w, pFBInfo->h);
+        }
+    }
+
     pFBInfo->fVBVAEnabled = false;
 
     vbvaSetMemoryFlagsHGSMI(uScreenId, 0, false, pFBInfo);
