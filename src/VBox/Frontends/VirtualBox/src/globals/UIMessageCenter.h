@@ -33,6 +33,9 @@
 /* Forward declarations: */
 class VBoxMedium;
 struct StorageSlot;
+#ifdef VBOX_WITH_DRAG_AND_DROP
+class CGuest;
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /**
  * The UIMessageCenter class is a central place to handle all problem/error

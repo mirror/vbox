@@ -58,6 +58,9 @@
 #include "CExtPackManager.h"
 #include "CExtPackFile.h"
 #include "CHostNetworkInterface.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "CGuest.h"
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* Other VBox includes: */
 #include <iprt/err.h>
