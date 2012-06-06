@@ -20,10 +20,11 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-/* Global includes */
+
+/* Qt includes: */
 #include <QPushButton>
 
-/* Local includes */
+/* GUI includes: */
 #include "VBoxTakeSnapshotDlg.h"
 #include "UIMessageCenter.h"
 #include "VBoxUtils.h"
@@ -31,6 +32,12 @@
 # include "UIMachineWindowNormal.h"
 # include "VBoxSnapshotsWgt.h"
 #endif /* Q_WS_MAC */
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CMedium.h"
+#include "CMediumAttachment.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 

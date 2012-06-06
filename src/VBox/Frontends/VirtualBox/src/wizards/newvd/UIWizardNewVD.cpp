@@ -17,10 +17,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVariant>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVDPageBasic1.h"
 #include "UIWizardNewVDPageBasic2.h"
@@ -28,6 +28,9 @@
 #include "UIWizardNewVDPageExpert.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+
+/* COM includes: */
+#include "CMediumFormat.h"
 
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
                              const QString &strDefaultName, const QString &strDefaultPath,

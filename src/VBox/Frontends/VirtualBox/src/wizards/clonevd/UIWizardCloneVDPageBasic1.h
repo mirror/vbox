@@ -19,9 +19,12 @@
 #ifndef __UIWizardCloneVDPageBasic1_h__
 #define __UIWizardCloneVDPageBasic1_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMedium.h"
 
 /* Forward declarations: */
 class VBoxMediaComboBox;

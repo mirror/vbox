@@ -19,9 +19,9 @@
 #ifndef __UIMachineSettingsGeneral_h__
 #define __UIMachineSettingsGeneral_h__
 
+/* Local includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsGeneral.gen.h"
-#include "COMDefs.h"
 
 /* Machine settings / General page / Data: */
 struct UIDataSettingsMachineGeneral

@@ -19,7 +19,7 @@
 #ifndef __UIMachineSettingsSystem_h__
 #define __UIMachineSettingsSystem_h__
 
-#include "COMDefs.h"
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsSystem.gen.h"
 

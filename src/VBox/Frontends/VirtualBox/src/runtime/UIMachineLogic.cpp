@@ -17,8 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
-#include "COMDefs.h"
+/* Qt includes: */
+#include <QDesktopWidget>
+#include <QDir>
+#include <QFileInfo>
+#include <QImageWriter>
+#include <QPainter>
+#include <QTimer>
+
+/* GUI includes: */
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
 #include "UINetworkManager.h"
@@ -45,24 +52,28 @@
 # include "UIExtraDataEventHandler.h"
 #endif /* Q_WS_MAC */
 
-/* Global includes */
-#include <iprt/path.h>
+/* COM includes: */
+#include "CVirtualBoxErrorInfo.h"
+#include "CMachineDebugger.h"
+#include "CSnapshot.h"
+#include "CDisplay.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CHostUSBDevice.h"
+#include "CUSBDevice.h"
+#include "CVRDEServer.h"
 
+/* Other VBox includes: */
+#include <iprt/path.h>
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <iprt/ldr.h>
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+/* External includes: */
 #ifdef Q_WS_X11
 # include <XKeyboard.h>
 # include <QX11Info>
 #endif /* Q_WS_X11 */
-
-#include <QDesktopWidget>
-#include <QDir>
-#include <QFileInfo>
-#include <QImageWriter>
-#include <QPainter>
-#include <QTimer>
 
 struct MediumTarget
 {

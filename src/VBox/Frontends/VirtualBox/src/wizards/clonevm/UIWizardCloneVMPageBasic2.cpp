@@ -17,15 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 #include <QRadioButton>
 #include <QButtonGroup>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardCloneVMPageBasic2.h"
 #include "UIWizardCloneVM.h"
-#include "COMDefs.h"
 #include "QIRichTextLabel.h"
 
 UIWizardCloneVMPage2::UIWizardCloneVMPage2(bool fAdditionalInfo)

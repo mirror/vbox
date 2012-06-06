@@ -19,8 +19,9 @@
 #ifndef __UIVirtualBoxEventHandler_h__
 #define __UIVirtualBoxEventHandler_h__
 
-/* Local includes */
-#include "COMDefs.h"
+/* COM includes: */
+#include "COMEnums.h"
+#include "CEventListener.h"
 
 class UIVirtualBoxEventHandler: public QObject
 {

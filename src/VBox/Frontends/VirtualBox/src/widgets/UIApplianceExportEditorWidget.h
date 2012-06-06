@@ -19,6 +19,7 @@
 #ifndef __UIApplianceExportEditorWidget_h__
 #define __UIApplianceExportEditorWidget_h__
 
+/* GUI includes: */
 #include "UIApplianceEditorWidget.h"
 
 class UIApplianceExportEditorWidget: public UIApplianceEditorWidget

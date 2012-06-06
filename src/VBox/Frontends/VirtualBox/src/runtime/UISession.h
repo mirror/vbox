@@ -19,15 +19,17 @@
 #ifndef ___UIConsole_h___
 #define ___UIConsole_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QObject>
 #include <QCursor>
 
-/* Local includes */
-#include "COMDefs.h"
+/* GUI includes: */
 #include "UIMachineDefs.h"
 
-/* Global forwards */
+/* COM includes: */
+#include "COMEnums.h"
+
+/* Forward declarations: */
 class QMenu;
 class QMenuBar;
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
@@ -39,12 +41,14 @@ struct siginfo;
 typedef struct siginfo siginfo_t;
 # endif /* !Q_WS_MAC */
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
-
-/* Local forwards */
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
 class UIMachineMenuBar;
+class CSession;
+class CUSBDevice;
+class CNetworkAdapter;
+class CMediumAttachment;
 
 /* CConsole callback event types: */
 enum UIConsoleEventType

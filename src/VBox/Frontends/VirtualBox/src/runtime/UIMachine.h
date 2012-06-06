@@ -19,17 +19,18 @@
 #ifndef __UIMachine_h__
 #define __UIMachine_h__
 
-/* Global includes */
+/* Qt includes: */
 #include <QObject>
 
-/* Local includes */
-#include "COMDefs.h"
+/* GUI includes:  */
 #include "UIMachineDefs.h"
 
-/* Global forwards: */
-class QWidget;
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSession.h"
 
-/* Local forwards */
+/* Forward declarations: */
+class QWidget;
 class UISession;
 class UIVisualState;
 class UIMachineLogic;

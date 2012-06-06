@@ -23,8 +23,8 @@
 #include <QPair>
 #include <QMap>
 
-/* VBox includes: */
-#include "COMDefs.h"
+/* COM includes: */
+#include "COMEnums.h"
 
 /* Settings dialog namespace: */
 namespace UISettingsDefs

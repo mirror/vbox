@@ -19,10 +19,15 @@
 #ifndef __UIConsoleEventHandler_h__
 #define __UIConsoleEventHandler_h__
 
-/* Local includes */
-#include "COMDefs.h"
+/* COM includes: */
+#include "COMEnums.h"
+#include "CVirtualBoxErrorInfo.h"
+#include "CEventListener.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CUSBDevice.h"
 
-/* Local forward declarations */
+/* Forward declarations: */
 class UISession;
 
 class UIConsoleEventHandler: public QObject

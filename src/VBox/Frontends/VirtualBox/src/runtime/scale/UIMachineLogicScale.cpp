@@ -17,8 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes: */
-#include "COMDefs.h"
+/* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UISession.h"

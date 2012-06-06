@@ -17,14 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
-#include "UIApplianceEditorWidget.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "VBoxOSTypeSelectorButton.h"
-#include "UILineTextEdit.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QItemDelegate>
 #include <QSortFilterProxyModel>
 #include <QHeaderView>
@@ -32,6 +25,16 @@
 #include <QTextEdit>
 #include <QSpinBox>
 #include <QComboBox>
+
+/* GUI includes: */
+#include "UIApplianceEditorWidget.h"
+#include "VBoxGlobal.h"
+#include "UIMessageCenter.h"
+#include "VBoxOSTypeSelectorButton.h"
+#include "UILineTextEdit.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // ModelItem

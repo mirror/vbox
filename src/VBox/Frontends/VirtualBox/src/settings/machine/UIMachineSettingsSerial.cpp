@@ -17,12 +17,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QDir>
+
+/* GUI includes: */
 #include "UIMachineSettingsSerial.h"
 #include "QIWidgetValidator.h"
 #include "VBoxGlobal.h"
 #include "QITabWidget.h"
 
-#include <QDir>
+/* COM includes: */
+#include "CSerialPort.h"
 
 /* UIMachineSettingsSerial stuff */
 UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pParent)

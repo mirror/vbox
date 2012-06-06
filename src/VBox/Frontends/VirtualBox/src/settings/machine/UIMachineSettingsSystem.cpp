@@ -17,15 +17,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* Qt includes: */
+#include <QHeaderView>
+
+/* GUI includes: */
 #include "QIWidgetValidator.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "UIMachineSettingsSystem.h"
 
-/* Global includes */
+/* COM includes: */
+#include "CBIOSSettings.h"
+
+/* Other VBox includes: */
 #include <iprt/cdefs.h>
-#include <QHeaderView>
 
 UIMachineSettingsSystem::UIMachineSettingsSystem()
     : mValidator(0)

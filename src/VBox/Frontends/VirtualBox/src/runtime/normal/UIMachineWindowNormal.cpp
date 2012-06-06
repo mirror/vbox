@@ -17,14 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QTimer>
 #include <QContextMenuEvent>
 #include <QResizeEvent>
 
-/* Local includes: */
+/* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
@@ -41,6 +41,10 @@
 # include "VBoxUtils.h"
 # include "UIImageTools.h"
 #endif /* Q_WS_MAC */
+
+/* COM includes: */
+#include "CMediumAttachment.h"
+#include "CUSBController.h"
 
 UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

@@ -19,10 +19,14 @@
 #ifndef __VBoxVMInformationDlg_h__
 #define __VBoxVMInformationDlg_h__
 
+/* Local includes: */
 #include "VBoxVMInformationDlg.gen.h"
 #include "QIMainDialog.h"
-#include "COMDefs.h"
 #include "QIWithRetranslateUI.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSession.h"
 
 class UIMachineWindow;
 class QTimer;

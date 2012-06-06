@@ -724,41 +724,20 @@ endif
 ## @todo This needs some cleaning up perhaps...
 ## @todo kBuild: Non-existing +| targets should be tried remade or what?
 VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
-VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers.h
-VirtualBox_CLEAN         += \
-	$(VirtualBox_0_OUTDIR)/include/COMWrappers \
-	$(VirtualBox_0_OUTDIR)/include/COMWrappers.tmp \
-	$(VirtualBox_0_OUTDIR)/include/COMWrappers.h \
-	$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
+VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMEnums.h
+VirtualBox_CLEAN         += $(wildcard $(VirtualBox_0_OUTDIR)/include/*)
 VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
 
 $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
-+| $$(VirtualBox_0_OUTDIR)/include/COMWrappers.h \
++| $$(VirtualBox_0_OUTDIR)/include/COMEnums.h \
 +| $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp: \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
-	$(QUIET)$(RM) -f $@ $@.tmp $@.h $@.cpp
+	$(QUIET)$(RM) -f COMWrappers* COMEnums.h C*.h
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl $<
-
-	$(QUIET)$(SED) -e '1,/\/\/ wrapper definitions/ !d' \
-		--output $@.tmp $@
-	$(QUIET)$(CP) --changed $@.tmp $@.h
-
-	$(QUIET)$(APPEND) -t -n $@.tmp \
-		'/*' \
-		' * DO NOT EDIT! This is a generated file, see COMWrappers.h for details.' \
-		' */' \
-		'' \
-		'#include "VBoxGlobal.h"' \
-		''
-	$(QUIET)$(SED) -e '/\/\/ wrapper definitions/,9999999 !d' \
-		-e 's/^inline //' \
-		--append $@.tmp $@
-	$(QUIET)$(CP) --changed $@.tmp $@.cpp
-	$(QUIET)$(RM) -f $@.tmp
-
+	$(QUIET)$(VBOX_FILESPLIT) $@ $(VirtualBox_0_OUTDIR)/include
 
 # alias for generating the COM Wrappers file.
 testwrappers:: $$(VirtualBox_0_OUTDIR)/include/COMWrappers.h

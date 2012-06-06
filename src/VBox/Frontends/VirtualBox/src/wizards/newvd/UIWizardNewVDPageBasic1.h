@@ -19,9 +19,12 @@
 #ifndef __UIWizardNewVDPageBasic1_h__
 #define __UIWizardNewVDPageBasic1_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMediumFormat.h"
 
 /* Forward declarations: */
 class QVBoxLayout;

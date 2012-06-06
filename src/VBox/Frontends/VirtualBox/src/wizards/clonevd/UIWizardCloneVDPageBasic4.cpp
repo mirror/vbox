@@ -17,22 +17,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QDir>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardCloneVDPageBasic4.h"
 #include "UIWizardCloneVD.h"
-#include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "QIFileDialog.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
+
+/* COM includes: */
+#include "CMediumFormat.h"
 
 UIWizardCloneVDPage4::UIWizardCloneVDPage4()
 {

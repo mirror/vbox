@@ -17,19 +17,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* Qt includes: */
+#include <QApplication>
+#include <QDesktopWidget>
+#include <QMap>
+#include <QMenu>
+
+/* GUI includes: */
 #include "UIMultiScreenLayout.h"
-#include "COMDefs.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
 #include "UISession.h"
 #include "UIMessageCenter.h"
 
-/* Global includes */
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QMap>
-#include <QMenu>
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSession.h"
+#include "CConsole.h"
+#include "CMachine.h"
+#include "CDisplay.h"
 
 UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)

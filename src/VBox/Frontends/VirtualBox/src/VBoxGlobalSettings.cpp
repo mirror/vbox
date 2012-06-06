@@ -20,14 +20,20 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-/* Qt includes */
+
+/* Qt includes: */
 #include <QString>
 #include <QRegExp>
 #include <QVariant>
 
+/* GUI includes: */
 #include "VBoxGlobalSettings.h"
 #include "UIHotKeyEditor.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CVirtualBox.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /** @class VBoxGlobalSettingsData

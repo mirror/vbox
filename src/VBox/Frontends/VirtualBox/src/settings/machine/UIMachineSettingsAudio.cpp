@@ -17,8 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* GUI includes: */
 #include "UIMachineSettingsAudio.h"
 #include "VBoxGlobal.h"
+
+/* COM includes: */
+#include "CAudioAdapter.h"
 
 UIMachineSettingsAudio::UIMachineSettingsAudio()
 {

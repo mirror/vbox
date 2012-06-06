@@ -19,10 +19,10 @@
 #ifndef __UIExtraDataEventHandler_h__
 #define __UIExtraDataEventHandler_h__
 
-/* Local includes */
-#include "COMDefs.h"
+/* COM includes: */
+#include "CEventListener.h"
 
-/* Local forward declarations */
+/* Forward declarations: */
 class UIExtraDataEventHandlerPrivate;
 
 class UIExtraDataEventHandler: public QObject

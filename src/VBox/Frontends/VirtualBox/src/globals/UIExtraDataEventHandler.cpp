@@ -17,16 +17,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* Qt includes: */
+#include <QMutex>
+
+/* GUI includes: */
 #include "UIExtraDataEventHandler.h"
 #include "UIMainEventListener.h"
 #include "VBoxGlobal.h"
 #include "VBoxGlobalSettings.h"
 
-/* Global includes */
-//#include <iprt/thread.h>
-//#include <iprt/stream.h>
-#include <QMutex>
+/* COM includes: */
+#include "COMEnums.h"
+#include "CEventSource.h"
 
 class UIExtraDataEventHandlerPrivate: public QObject
 {

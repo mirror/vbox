@@ -19,9 +19,8 @@
 #ifndef __UIWizardNewVDPageBasic3_h__
 #define __UIWizardNewVDPageBasic3_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
 
 /* Forward declarations: */
 class CMediumFormat;

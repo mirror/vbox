@@ -19,13 +19,7 @@
 #ifndef __VBoxGlobal_h__
 #define __VBoxGlobal_h__
 
-#include "COMDefs.h"
-#include "VBox/com/Guid.h"
-
-#include "VBoxGlobalSettings.h"
-#include "VBoxMedium.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QApplication>
 #include <QLayout>
 #include <QMenu>
@@ -34,10 +28,28 @@
 #include <QHash>
 #include <QFileIconProvider>
 
+/* GUI includes: */
+#include "VBoxGlobalSettings.h"
+#include "VBoxMedium.h"
+
+/* COM includes: */
+#include "VBox/com/Guid.h"
+#include "COMEnums.h"
+#include "CHost.h"
+#include "CVirtualBox.h"
+#include "CSession.h"
+#include "CConsole.h"
+#include "CMachine.h"
+#include "CMedium.h"
+#include "CGuestOSType.h"
+#include "CUSBDevice.h"
+
+/* Other VBox includes: */
 #ifdef Q_WS_X11
 # include <sys/wait.h>
-#endif
+#endif /* Q_WS_X11 */
 
+/* Forward declarations: */
 class QAction;
 class QLabel;
 class QToolButton;

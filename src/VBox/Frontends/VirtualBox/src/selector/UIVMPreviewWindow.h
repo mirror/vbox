@@ -19,13 +19,17 @@
 #ifndef __UIVMPreviewWindow_h__
 #define __UIVMPreviewWindow_h__
 
-/* Local includes */
-#include "QIWithRetranslateUI.h"
-#include "COMDefs.h"
-
-/* Global includes: */
+/* Qt includes: */
 #include <QWidget>
 #include <QHash>
+
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSession.h"
+#include "CMachine.h"
 
 /* Forward declarations: */
 class QAction;

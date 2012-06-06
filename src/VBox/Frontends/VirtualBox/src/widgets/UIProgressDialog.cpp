@@ -17,25 +17,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
-#include "UIProgressDialog.h"
-#include "COMDefs.h"
-#include "QIDialogButtonBox.h"
-#include "QILabel.h"
-#include "UISpecialControls.h"
-#include "VBoxGlobal.h"
-
-#ifdef Q_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif /* Q_WS_MAC */
-
-/* Qt includes */
+/* Qt includes: */
 #include <QCloseEvent>
 #include <QEventLoop>
 #include <QProgressBar>
 #include <QTime>
 #include <QTimer>
 #include <QVBoxLayout>
+
+/* GUI includes: */
+#include "UIProgressDialog.h"
+#include "QIDialogButtonBox.h"
+#include "QILabel.h"
+#include "UISpecialControls.h"
+#include "VBoxGlobal.h"
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
+
+/* COM includes: */
+#include "CProgress.h"
 
 const char *UIProgressDialog::m_spcszOpDescTpl = "%1 ... (%2/%3)";
 

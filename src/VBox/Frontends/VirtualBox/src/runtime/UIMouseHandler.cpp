@@ -17,11 +17,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
 #include <QDesktopWidget>
 #include <QMouseEvent>
 
-/* Local includes */
+/* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIKeyboardHandler.h"
@@ -53,6 +53,11 @@ const int XKeyRelease = KeyRelease;
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif /* Q_WS_MAC */
+
+/* COM includes: */
+#include "CMouse.h"
+#include "CFramebuffer.h"
+#include "CDisplay.h"
 
 /* Factory function to create mouse-handler: */
 UIMouseHandler* UIMouseHandler::create(UIMachineLogic *pMachineLogic,

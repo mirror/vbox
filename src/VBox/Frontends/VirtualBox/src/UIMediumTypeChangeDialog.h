@@ -19,10 +19,15 @@
 #ifndef __UIMediumTypeChangeDialog_h__
 #define __UIMediumTypeChangeDialog_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "COMDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CProgress.h"
+#include "CMediumFormat.h"
+#include "CMedium.h"
 
 /* Forward declarations: */
 class QVBoxLayout;

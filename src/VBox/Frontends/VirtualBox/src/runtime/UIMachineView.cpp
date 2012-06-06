@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
 #include <QDesktopWidget>
 #include <QMainWindow>
 #include <QTimer>
@@ -26,8 +26,11 @@
 #include <QMainWindow>
 #include <VBox/VBoxVideo.h>
 #include <iprt/asm.h>
+#ifdef Q_WS_X11
+# include <QX11Info>
+#endif /* Q_WS_X11 */
 
-/* Local includes */
+/* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIFrameBuffer.h"
@@ -48,10 +51,15 @@
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "UIDnDHandler.h"
-#endif
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
+/* COM includes: */
+#include "CSession.h"
+#include "CDisplay.h"
+#include "CFramebuffer.h"
+
+/* Other VBox includes: */
 #ifdef Q_WS_X11
-# include <QX11Info>
 # include <X11/XKBlib.h>
 # ifdef KeyPress
 const int XFocusOut = FocusOut;

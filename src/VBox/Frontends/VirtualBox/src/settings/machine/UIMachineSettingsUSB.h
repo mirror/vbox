@@ -19,10 +19,11 @@
 #ifndef __UIMachineSettingsUSB_h__
 #define __UIMachineSettingsUSB_h__
 
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsUSB.gen.h"
-#include "COMDefs.h"
 
+/* Forward declarations: */
 class VBoxUSBMenu;
 class UIToolBar;
 

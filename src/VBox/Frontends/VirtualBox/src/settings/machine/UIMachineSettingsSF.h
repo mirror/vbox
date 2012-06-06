@@ -19,11 +19,14 @@
 #ifndef __UIMachineSettingsSF_h__
 #define __UIMachineSettingsSF_h__
 
-/* Local includes */
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsSF.gen.h"
 
-/* Local forwards */
+/* COM includes: */
+#include "CSharedFolder.h"
+
+/* Forward declarations: */
 class SFTreeViewItem;
 
 enum UISharedFolderType { MachineType, ConsoleType };

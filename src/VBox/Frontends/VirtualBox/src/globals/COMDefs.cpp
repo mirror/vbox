@@ -17,27 +17,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* COM includes: */
 #include "COMDefs.h"
+#include "CVirtualBoxErrorInfo.h"
 
 #if !defined (VBOX_WITH_XPCOM)
 
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
-/* Qt includes */
+/* Qt includes: */
 #include <QObject>
 #include <QSocketNotifier>
 
-#include <nsEventQueueUtils.h>
-#include <nsIEventQueue.h>
-
-// for exception fetching
-#include <nsIExceptionService.h>
-
+/* Other VBox includes: */
 #include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
-#include <iprt/err.h>
+#include <nsEventQueueUtils.h>
+#include <nsIEventQueue.h>
+#include <nsIExceptionService.h>
 
 /* Mac OS X (Carbon mode) and OS/2 will notify the native queue
    internally in plevent.c. Because moc doesn't seems to respect

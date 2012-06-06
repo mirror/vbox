@@ -19,7 +19,7 @@
 #ifndef __UIMachineSettingsStorage_h__
 #define __UIMachineSettingsStorage_h__
 
-/* Global includes */
+/* Qt includes: */
 #include <QtGlobal> /* for Q_WS_MAC */
 #ifdef Q_WS_MAC
 /* Somewhere Carbon.h includes AssertMacros.h which defines the macro "check".
@@ -30,12 +30,11 @@
 #include <QItemDelegate>
 #include <QPointer>
 
-/* Local includes */
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsStorage.gen.h"
-#include "COMDefs.h"
 
-/* Local forwards */
+/* Forward declarations: */
 class AttachmentItem;
 class ControllerItem;
 class UIMediumIDHolder;

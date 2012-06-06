@@ -21,7 +21,11 @@
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local Includes */
+/* Qt includes: */
+#include <QTimer>
+#include <QScrollBar>
+
+/* GUI includes: */
 #include "UIIconPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
@@ -30,9 +34,16 @@
 #include "VBoxGlobal.h"
 #include "VBoxVMInformationDlg.h"
 
-/* Global Includes */
-#include <QTimer>
-#include <QScrollBar>
+/* COM includes: */
+#include "COMEnums.h"
+#include "CSystemProperties.h"
+#include "CMachineDebugger.h"
+#include "CDisplay.h"
+#include "CGuest.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CVRDEServerInfo.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 

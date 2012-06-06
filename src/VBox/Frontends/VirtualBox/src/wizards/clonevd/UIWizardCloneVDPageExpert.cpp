@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -27,13 +27,16 @@
 #include <QCheckBox>
 #include <QLineEdit>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardCloneVDPageExpert.h"
 #include "UIWizardCloneVD.h"
 #include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "VBoxMediaComboBox.h"
 #include "QIToolButton.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &sourceVirtualDisk)
 {

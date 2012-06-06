@@ -898,21 +898,6 @@ public:
     }
 };
 
-/////////////////////////////////////////////////////////////////////////////
-
-/* Include the generated header containing wrapper definitions: */
-#include "COMWrappers.h"
-
-/* Declare metatypes for particular wrappers: */
-Q_DECLARE_METATYPE(CProgress);
-Q_DECLARE_METATYPE(CHost);
-Q_DECLARE_METATYPE(CMachine);
-Q_DECLARE_METATYPE(CConsole);
-Q_DECLARE_METATYPE(CHostNetworkInterface);
-Q_DECLARE_METATYPE(CMedium);
-Q_DECLARE_METATYPE(CMediumFormat);
-Q_DECLARE_METATYPE(CGuestOSType);
-
 /** @} */
 
 #endif // __COMDefs_h__

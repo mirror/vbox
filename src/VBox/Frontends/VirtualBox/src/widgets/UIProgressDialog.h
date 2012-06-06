@@ -19,16 +19,14 @@
 #ifndef __UIProgressDialog_h__
 #define __UIProgressDialog_h__
 
-/* Qt includes */
+/* Qt includes: */
 #include "QIDialog.h"
 
-/* VBox forward declarations */
-class CProgress;
+/* Forward declarations: */
+class QProgressBar;
 class QILabel;
 class UIMiniCancelButton;
-
-/* Qt forward declarations */
-class QProgressBar;
+class CProgress;
 
 /**
  * A QProgressDialog enhancement that allows to:

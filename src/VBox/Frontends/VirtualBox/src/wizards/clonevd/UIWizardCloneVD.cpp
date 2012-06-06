@@ -17,10 +17,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVariant>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDPageBasic1.h"
 #include "UIWizardCloneVDPageBasic2.h"
@@ -29,6 +29,9 @@
 #include "UIWizardCloneVDPageExpert.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+
+/* COM includes: */
+#include "CMediumFormat.h"
 
 UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualDisk)
     : UIWizard(pParent, UIWizardType_CloneVD)

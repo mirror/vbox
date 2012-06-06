@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
@@ -26,6 +26,12 @@
 #include "VBoxDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+
+/* COM includes: */
+#include "CAudioAdapter.h"
+#include "CUSBController.h"
+#include "CExtPackManager.h"
+#include "CStorageController.h"
 
 /* Using declarations: */
 using namespace VBoxGlobalDefs;

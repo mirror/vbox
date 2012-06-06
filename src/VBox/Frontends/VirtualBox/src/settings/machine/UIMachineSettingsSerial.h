@@ -19,9 +19,9 @@
 #ifndef __UIMachineSettingsSerial_h__
 #define __UIMachineSettingsSerial_h__
 
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsSerial.gen.h"
-#include "COMDefs.h"
 
 /* Forward declarations */
 class UIMachineSettingsSerialPage;

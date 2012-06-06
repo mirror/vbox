@@ -17,12 +17,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QDesktopWidget>
+
+/* GUI includes: */
 #include "QIWidgetValidator.h"
 #include "UIMachineSettingsDisplay.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
-#include <QDesktopWidget>
+/* COM includes: */
+#include "CVRDEServer.h"
 
 /**
  *  Calculates a suitable page step size for the given max value. The returned

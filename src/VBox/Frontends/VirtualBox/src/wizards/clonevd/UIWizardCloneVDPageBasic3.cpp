@@ -17,17 +17,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 #include <QButtonGroup>
 #include <QRadioButton>
 #include <QCheckBox>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVD.h"
-#include "COMDefs.h"
 #include "QIRichTextLabel.h"
+
+/* COM includes: */
+#include "CMediumFormat.h"
 
 UIWizardCloneVDPage3::UIWizardCloneVDPage3()
 {

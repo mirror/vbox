@@ -19,15 +19,18 @@
 #ifndef __UIMessageCenter_h__
 #define __UIMessageCenter_h__
 
-/* Global includes */
+/* Qt includes: */
 #include <QObject>
 #include <QPointer>
 
-/* Local includes */
-#include "COMDefs.h"
+/* GUI includes: */
+#include "CProgress.h"
 #include "QIMessageBox.h"
 
-/* Forward declarations */
+/* COM includes: */
+#include "COMEnums.h"
+
+/* Forward declarations: */
 class VBoxMedium;
 struct StorageSlot;
 

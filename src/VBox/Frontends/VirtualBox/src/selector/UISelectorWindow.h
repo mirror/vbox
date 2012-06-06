@@ -19,17 +19,16 @@
 #ifndef __UISelectorWindow_h__
 #define __UISelectorWindow_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QMainWindow>
 #include <QUrl>
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include <QSystemTrayIcon>
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 
-/* Local includes: */
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "VBoxMedium.h"
-#include "COMDefs.h"
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */

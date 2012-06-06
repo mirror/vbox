@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
 #include <QDir>
 #include <QDesktopWidget>
 #include <QFileInfo>
@@ -25,13 +25,9 @@
 #include <QThread>
 #ifdef Q_WS_MAC
 # include <QPushButton>
-#endif
+#endif /* Q_WS_MAC */
 
-#include <iprt/err.h>
-#include <iprt/param.h>
-#include <iprt/path.h>
-
-/* Local includes */
+/* GUI includes: */
 #include "UIMessageCenter.h"
 #include "VBoxGlobal.h"
 #include "UISelectorWindow.h"
@@ -46,11 +42,25 @@
 #include "UIHotKeyEditor.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
-#endif
-
-#if defined (Q_WS_WIN32)
+#endif /* Q_WS_MAC */
+#ifdef Q_WS_WIN
 # include <Htmlhelp.h>
-#endif
+#endif /* Q_WS_WIN */
+
+/* COM includes: */
+#include "CSystemProperties.h"
+#include "CVirtualBoxErrorInfo.h"
+#include "CMediumAttachment.h"
+#include "CMediumFormat.h"
+#include "CAppliance.h"
+#include "CExtPackManager.h"
+#include "CExtPackFile.h"
+#include "CHostNetworkInterface.h"
+
+/* Other VBox includes: */
+#include <iprt/err.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
 
 bool UIMessageCenter::isAnyWarningShown()
 {

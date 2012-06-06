@@ -17,16 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QCloseEvent>
 #include <QTimer>
 #include <VBox/version.h>
-#ifdef VBOX_BLEEDING_EDGE
-# include <iprt/buildconfig.h>
-#endif /* VBOX_BLEEDING_EDGE */
 
-/* Local includes: */
-#include "COMDefs.h"
+/* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIKeyboardHandler.h"
@@ -43,6 +39,14 @@
 #ifdef Q_WS_X11
 # include <X11/Xlib.h>
 #endif /* Q_WS_X11 */
+
+/* COM includes: */
+#include "CSnapshot.h"
+
+/* Other VBox includes: */
+#ifdef VBOX_BLEEDING_EDGE
+# include <iprt/buildconfig.h>
+#endif /* VBOX_BLEEDING_EDGE */
 
 /* static */
 UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, ulong uScreenId)
