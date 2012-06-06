@@ -255,6 +255,20 @@ post:
 		;; OpenSolaris sets the status to 0Ah in some cases?
 ;		jmp	normal_post
 
+
+		;; routine to write the pointer in DX:AX to memory starting
+		;; at DS:BX (repeat CX times)
+		;; - modifies BX, CX
+set_int_vects	proc	near
+
+		mov	[bx], ax
+		mov	[bx+2], dx
+		add	bx, 4
+		loop	set_int_vects
+		ret
+
+set_int_vects	endp
+
 normal_post:
 		;; shutdown code 0: normal startup
 		cli
@@ -305,23 +319,21 @@ memory_cleared:
 
 		call	pmode_setup
 
-		;; set all interrupts to default handler
+		;; set all interrupts in 00h-5Fh range to default handler
 		xor	bx, bx
 		mov	ds, bx
-		mov	cx, 78h		; leave the rest as zeros
+		mov	cx, 60h		; leave the rest as zeros
 		mov	ax, dummy_iret
 		mov	dx, BIOSSEG
+		call	set_int_vects
 
-post_default_ints:
-		mov	[bx], ax
-		mov	[bx+2], dx
-		add	bx, 4
-		loop	post_default_ints
-
-		;; set vector 79h to zero
-		;; this is used by 'guardian angel' protection system
-		;; TODO: Really? Why?
-
+		;; also set 68h-77h to default handler; note that the
+		;; 60h-67h range must contain zeros for certain programs
+		;; to function correctly
+		mov	bx, 68h * 4
+		mov	cx, 10h
+		call	set_int_vects
+		
 		;; base memory in K to 40:13
 		mov	ax, BASE_MEM_IN_K
 		mov	ds:[413h], ax
