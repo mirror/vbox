@@ -35,6 +35,7 @@
 #endif /* VBOX_GUI_USE_QUARTZ2D */
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CDisplay.h"
 
 UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow

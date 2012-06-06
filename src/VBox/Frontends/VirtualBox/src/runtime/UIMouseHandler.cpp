@@ -55,6 +55,7 @@ const int XKeyRelease = KeyRelease;
 #endif /* Q_WS_MAC */
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CMouse.h"
 #include "CFramebuffer.h"
 #include "CDisplay.h"

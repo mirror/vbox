@@ -33,6 +33,7 @@
 #include "VBoxGlobal.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CDisplay.h"
 
 /* Other VBox includes: */

@@ -31,7 +31,6 @@
 #include <QSettings>
 #include <QTimer>
 #include <QDir>
-#include <QHelpEvent>
 #include <QLocale>
 #include <QNetworkProxy>
 
@@ -5459,112 +5458,6 @@ bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, CMachine &rMachine, const ch
  *
  *  Shortcut to the static VBoxGlobal::instance() method, for convenience.
  */
-
-/**
- *  USB Popup Menu class methods
- *  This class provides the list of USB devices attached to the host.
- */
-VBoxUSBMenu::VBoxUSBMenu (QWidget *aParent) : QMenu (aParent)
-{
-    connect (this, SIGNAL (aboutToShow()),
-             this, SLOT   (processAboutToShow()));
-//    connect (this, SIGNAL (hovered (QAction *)),
-//             this, SLOT   (processHighlighted (QAction *)));
-}
-
-const CUSBDevice& VBoxUSBMenu::getUSB (QAction *aAction)
-{
-    return mUSBDevicesMap [aAction];
-}
-
-void VBoxUSBMenu::setConsole (const CConsole &aConsole)
-{
-    mConsole = aConsole;
-}
-
-void VBoxUSBMenu::processAboutToShow()
-{
-    clear();
-    mUSBDevicesMap.clear();
-
-    CHost host = vboxGlobal().host();
-
-    bool isUSBEmpty = host.GetUSBDevices().size() == 0;
-    if (isUSBEmpty)
-    {
-        QAction *action = addAction (tr ("<no devices available>", "USB devices"));
-        action->setEnabled (false);
-        action->setToolTip (tr ("No supported devices connected to the host PC",
-                                "USB device tooltip"));
-    }
-    else
-    {
-        CHostUSBDeviceVector devvec = host.GetUSBDevices();
-        for (int i = 0; i < devvec.size(); ++i)
-        {
-            CHostUSBDevice dev = devvec[i];
-            CUSBDevice usb (dev);
-            QAction *action = addAction (vboxGlobal().details (usb));
-            action->setCheckable (true);
-            mUSBDevicesMap [action] = usb;
-            /* check if created item was already attached to this session */
-            if (!mConsole.isNull())
-            {
-                CUSBDevice attachedUSB =
-                    mConsole.FindUSBDeviceById (usb.GetId());
-                action->setChecked (!attachedUSB.isNull());
-                action->setEnabled (dev.GetState() !=
-                                    KUSBDeviceState_Unavailable);
-            }
-        }
-    }
-}
-
-bool VBoxUSBMenu::event(QEvent *aEvent)
-{
-    /* We provide dynamic tooltips for the usb devices */
-    if (aEvent->type() == QEvent::ToolTip)
-    {
-        QHelpEvent *helpEvent = static_cast<QHelpEvent *> (aEvent);
-        QAction *action = actionAt (helpEvent->pos());
-        if (action)
-        {
-            CUSBDevice usb = mUSBDevicesMap [action];
-            if (!usb.isNull())
-            {
-                QToolTip::showText (helpEvent->globalPos(), vboxGlobal().toolTip (usb));
-                return true;
-            }
-        }
-    }
-    return QMenu::event (aEvent);
-}
-
-/**
- *  Enable/Disable Menu class.
- *  This class provides enable/disable menu items.
- */
-VBoxSwitchMenu::VBoxSwitchMenu (QWidget *aParent, QAction *aAction,
-                                bool aInverted)
-    : QMenu (aParent), mAction (aAction), mInverted (aInverted)
-{
-    /* this menu works only with toggle action */
-    Assert (aAction->isCheckable());
-    addAction(aAction);
-    connect (this, SIGNAL (aboutToShow()),
-             this, SLOT   (processAboutToShow()));
-}
-
-void VBoxSwitchMenu::setToolTip (const QString &aTip)
-{
-    mAction->setToolTip (aTip);
-}
-
-void VBoxSwitchMenu::processAboutToShow()
-{
-    QString text = mAction->isChecked() ^ mInverted ? tr ("Disable") : tr ("Enable");
-    mAction->setText (text);
-}
 
 bool VBoxGlobal::switchToMachine(CMachine &machine)
 {

@@ -27,6 +27,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CSystemProperties.h"
 #include "CMachineDebugger.h"
 #include "CGuest.h"

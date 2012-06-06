@@ -36,6 +36,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CConsole.h"
 #include "CSystemProperties.h"
 #include "CMachineDebugger.h"
 #include "CDisplay.h"

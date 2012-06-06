@@ -19,6 +19,8 @@
 
 /* Qt includes: */
 #include <QHeaderView>
+#include <QHelpEvent>
+#include <QToolTip>
 
 /* GUI includes: */
 #include "QIWidgetValidator.h"
@@ -31,6 +33,7 @@
 #include "VBoxDefs.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CUSBController.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"
@@ -41,6 +44,100 @@
 
 /* Using declarations: */
 using namespace VBoxGlobalDefs;
+
+/**
+ *  USB popup menu class.
+ *  This class provides the list of USB devices attached to the host.
+ */
+class VBoxUSBMenu : public QMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    VBoxUSBMenu(QWidget *)
+    {
+        connect(this, SIGNAL(aboutToShow()), this, SLOT(processAboutToShow()));
+    }
+
+    /* Returns USB device related to passed action: */
+    const CUSBDevice& getUSB(QAction *pAction)
+    {
+        return m_usbDeviceMap[pAction];
+    }
+
+    /* Console setter: */
+    void setConsole(const CConsole &console)
+    {
+        m_console = console;
+    }
+
+private slots:
+
+    /* Prepare menu appearance: */
+    void processAboutToShow()
+    {
+        clear();
+        m_usbDeviceMap.clear();
+
+        CHost host = vboxGlobal().host();
+
+        bool fIsUSBEmpty = host.GetUSBDevices().size() == 0;
+        if (fIsUSBEmpty)
+        {
+            QAction *pAction = addAction(tr("<no devices available>", "USB devices"));
+            pAction->setEnabled(false);
+            pAction->setToolTip(tr("No supported devices connected to the host PC", "USB device tooltip"));
+        }
+        else
+        {
+            CHostUSBDeviceVector devvec = host.GetUSBDevices();
+            for (int i = 0; i < devvec.size(); ++i)
+            {
+                CHostUSBDevice dev = devvec[i];
+                CUSBDevice usb(dev);
+                QAction *pAction = addAction(vboxGlobal().details(usb));
+                pAction->setCheckable(true);
+                m_usbDeviceMap[pAction] = usb;
+                /* Check if created item was already attached to this session: */
+                if (!m_console.isNull())
+                {
+                    CUSBDevice attachedUSB = m_console.FindUSBDeviceById(usb.GetId());
+                    pAction->setChecked(!attachedUSB.isNull());
+                    pAction->setEnabled(dev.GetState() != KUSBDeviceState_Unavailable);
+                }
+            }
+        }
+    }
+
+private:
+
+    /* Event handler: */
+    bool event(QEvent *pEvent)
+    {
+        /* We provide dynamic tooltips for the usb devices: */
+        if (pEvent->type() == QEvent::ToolTip)
+        {
+            QHelpEvent *pHelpEvent = static_cast<QHelpEvent*>(pEvent);
+            QAction *pAction = actionAt(pHelpEvent->pos());
+            if (pAction)
+            {
+                CUSBDevice usb = m_usbDeviceMap[pAction];
+                if (!usb.isNull())
+                {
+                    QToolTip::showText(pHelpEvent->globalPos(), vboxGlobal().toolTip(usb));
+                    return true;
+                }
+            }
+        }
+        /* Call to base-class: */
+        return QMenu::event(pEvent);
+    }
+
+    QMap<QAction*, CUSBDevice> m_usbDeviceMap;
+    CConsole m_console;
+};
 
 UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     : UISettingsPage(type)
@@ -937,4 +1034,6 @@ void UIMachineSettingsUSB::polishPage()
     mUSBChild->setEnabled(isMachineInValidMode() && mGbUSB->isChecked());
     mCbUSB2->setEnabled(isMachineOffline() && mGbUSB->isChecked());
 }
+
+#include "UIMachineSettingsUSB.moc"
 

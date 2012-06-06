@@ -55,6 +55,7 @@
 
 /* COM includes: */
 #include "CSession.h"
+#include "CConsole.h"
 #include "CDisplay.h"
 #include "CFramebuffer.h"
 

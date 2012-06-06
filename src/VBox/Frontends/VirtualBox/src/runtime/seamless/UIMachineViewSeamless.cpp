@@ -35,6 +35,7 @@
 #include "UIFrameBuffer.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CDisplay.h"
 
 /* External includes: */

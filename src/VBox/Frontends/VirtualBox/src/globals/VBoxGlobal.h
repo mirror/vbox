@@ -37,7 +37,6 @@
 #include "CHost.h"
 #include "CVirtualBox.h"
 #include "CSession.h"
-#include "CConsole.h"
 #include "CMachine.h"
 #include "CMedium.h"
 #include "CGuestOSType.h"
@@ -889,60 +888,6 @@ private:
 };
 
 inline VBoxGlobal &vboxGlobal() { return VBoxGlobal::instance(); }
-
-// Helper classes
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  USB Popup Menu class.
- *  This class provides the list of USB devices attached to the host.
- */
-class VBoxUSBMenu : public QMenu
-{
-    Q_OBJECT
-
-public:
-
-    VBoxUSBMenu (QWidget *);
-
-    const CUSBDevice& getUSB (QAction *aAction);
-
-    void setConsole (const CConsole &);
-
-private slots:
-
-    void processAboutToShow();
-
-private:
-    bool event(QEvent *aEvent);
-
-    QMap <QAction *, CUSBDevice> mUSBDevicesMap;
-    CConsole mConsole;
-};
-
-/**
- *  Enable/Disable Menu class.
- *  This class provides enable/disable menu items.
- */
-class VBoxSwitchMenu : public QMenu
-{
-    Q_OBJECT
-
-public:
-
-    VBoxSwitchMenu (QWidget *, QAction *, bool aInverted = false);
-
-    void setToolTip (const QString &);
-
-private slots:
-
-    void processAboutToShow();
-
-private:
-
-    QAction *mAction;
-    bool     mInverted;
-};
 
 #endif /* __VBoxGlobal_h__ */
 

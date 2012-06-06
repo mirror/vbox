@@ -30,6 +30,7 @@
 #include "VBoxGlobal.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CDisplay.h"
 
 /* Initialize map: */

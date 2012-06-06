@@ -43,6 +43,7 @@
 #endif /* Q_WS_MAC */
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CMediumAttachment.h"
 #include "CUSBController.h"
 
