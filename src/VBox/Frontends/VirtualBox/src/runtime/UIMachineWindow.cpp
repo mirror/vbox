@@ -167,6 +167,11 @@ void UIMachineWindow::sltGuestMonitorChange(KGuestMonitorChangedEventType change
     /* Ignore KGuestMonitorChangedEventType_NewOrigin change event: */
     if (changeType == KGuestMonitorChangedEventType_NewOrigin)
         return;
+    /* Ignore KGuestMonitorChangedEventType_Disabled event if there is only one window visible: */
+    AssertMsg(uisession()->countOfVisibleWindows() > 0, ("All machine windows are hidden!"));
+    if ((changeType == KGuestMonitorChangedEventType_Disabled) &&
+        (uisession()->countOfVisibleWindows() == 1))
+        return;
 
     /* Process KGuestMonitorChangedEventType_Enabled change event: */
     if (isHidden() && changeType == KGuestMonitorChangedEventType_Enabled)

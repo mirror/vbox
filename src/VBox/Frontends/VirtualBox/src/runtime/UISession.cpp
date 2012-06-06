@@ -691,6 +691,9 @@ void UISession::prepareScreens()
             machine.QuerySavedGuestScreenInfo(i, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
             m_monitorVisibilityVector[i] = fEnabled;
         }
+        /* And make sure at least one of them is visible (primary if others are hidden): */
+        if (countOfVisibleWindows() < 1)
+            m_monitorVisibilityVector[0] = true;
     }
 }
 
@@ -1123,6 +1126,15 @@ void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
     Assert(uScreenId < (ulong)m_monitorVisibilityVector.size());
     if (uScreenId < (ulong)m_monitorVisibilityVector.size())
         m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
+}
+
+int UISession::countOfVisibleWindows()
+{
+    int cCountOfVisibleWindows = 0;
+    for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
+        if (m_monitorVisibilityVector[i])
+            ++cCountOfVisibleWindows;
+    return cCountOfVisibleWindows;
 }
 
 UIFrameBuffer* UISession::frameBuffer(ulong uScreenId) const
