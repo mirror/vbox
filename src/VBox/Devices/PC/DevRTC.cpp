@@ -43,7 +43,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEV_RTC
+#define LOG_GROUP LOG_GROUP_DEV_RTC 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/asm-math.h>
@@ -56,7 +56,6 @@
 #endif /* IN_RING3 */
 
 #include "VBoxDD.h"
-
 struct RTCState;
 typedef struct RTCState RTCState;
 
@@ -110,6 +109,10 @@ RT_C_DECLS_END
 #define REG_B_AIE 0x20
 #define REG_B_UIE 0x10
 
+#define CMOS_BANK_LOWER_LIMIT 0x0E
+#define CMOS_BANK_UPPER_LIMIT 0x7F
+#define CMOS_BANK2_LOWER_LIMIT 0x80
+#define CMOS_BANK2_UPPER_LIMIT 0xFF
 
 /** The saved state version. */
 #define RTC_SAVED_STATE_VERSION             4
@@ -274,6 +277,72 @@ DECLINLINE(int) from_bcd(RTCState *pThis, int a)
         return a;
     return ((a >> 4) * 10) + (a & 0x0f);
 }
+
+#ifdef IN_RING3
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV,
+ *      Dumps the cmos Bank Info.}
+ */
+static DECLCALLBACK(void) CMOSBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    const char *PChCMOSBank = "CMOS Bank Info 0x0E - 0x7F";
+    uint16_t u16ByteCount = 0;
+    uint8_t   u8CMOSByte;
+    pHlp->pfnPrintf(pHlp, "%s\n" ,PChCMOSBank);
+    for (u16ByteCount = CMOS_BANK_LOWER_LIMIT; u16ByteCount < CMOS_BANK_UPPER_LIMIT; u16ByteCount++)
+    {
+        u8CMOSByte  =  pThis->cmos_data[u16ByteCount];
+        pHlp->pfnPrintf(pHlp, "Off: 0x%02x Val: 0x%02x\n",u16ByteCount, u8CMOSByte);
+    }
+}
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV,
+ *      Dumps the cmos Bank2 Info.}
+ */
+static DECLCALLBACK(void) CMOSBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    const char *PChCMOSBank = "CMOS Bank2 Info 0x80 - 0xFF";
+    uint16_t u16ByteCount = 0;
+    uint8_t   u8CMOSByte;
+    pHlp->pfnPrintf(pHlp, "%s\n" ,PChCMOSBank);
+    for (u16ByteCount = CMOS_BANK2_LOWER_LIMIT; u16ByteCount < CMOS_BANK2_UPPER_LIMIT; u16ByteCount++)
+    {
+        u8CMOSByte  =  pThis->cmos_data[u16ByteCount];
+        pHlp->pfnPrintf(pHlp, "Off: 0x%02x Val: 0x%02x\n",u16ByteCount, u8CMOSByte);
+    }
+}
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV,
+ *      Dumps the cmos RTC Info.}
+ */
+static DECLCALLBACK(void) CMOSRTCInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    uint8_t u8Sec = 0;
+    uint8_t u8Min = 0;
+    uint8_t u8Hr = 0;
+    uint8_t u8Day = 0;
+    uint8_t u8Month = 0;
+    uint8_t u8Year = 0;
+    
+    u8Sec = from_bcd(pThis, pThis->cmos_data[RTC_SECONDS]);
+    u8Min = from_bcd(pThis, pThis->cmos_data[RTC_MINUTES]);
+    u8Hr = from_bcd(pThis, pThis->cmos_data[RTC_HOURS] & 0x7f);
+    if (   !(pThis->cmos_data[RTC_REG_B] & 0x02)
+        && (pThis->cmos_data[RTC_HOURS] & 0x80))
+        u8Hr += 12;
+    u8Day = from_bcd(pThis, pThis->cmos_data[RTC_DAY_OF_MONTH]);
+    u8Month = from_bcd(pThis, pThis->cmos_data[RTC_MONTH]) ;
+    u8Year = from_bcd(pThis, pThis->cmos_data[RTC_YEAR]);
+    pHlp->pfnPrintf(pHlp, "Time: Hr:%u Min:%u Sec:%u, Day:%u Month:%u Year:%u\n", u8Hr, u8Min, u8Sec, u8Day, u8Month, u8Year);
+}
+
+#endif
 
 
 static void rtc_set_time(RTCState *pThis)
@@ -1163,6 +1232,15 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Register debugger info callback.
+    */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos", "Display CMOS Bank 1 Info.. "
+                              "'cmos'. No argument.", CMOSBankInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info.. "
+                              "'cmos2'. No argument", CMOSBank2Info);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc", "Display CMOS RTC info "
+                              "'rtc'. No argument", CMOSRTCInfo); 
     return VINF_SUCCESS;
 }
 
