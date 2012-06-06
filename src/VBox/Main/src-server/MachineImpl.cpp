@@ -6043,9 +6043,9 @@ STDMETHODIMP Machine::ReadSavedThumbnailPNGToArray(ULONG aScreenId, ULONG *aWidt
     {
         if (pu8PNG)
             RTMemFree(pu8PNG);
-            return setError(VBOX_E_IPRT_ERROR,
-                            tr("Could not convert screenshot to PNG (%Rrc)"),
-                            vrc);
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Could not convert screenshot to PNG (%Rrc)"),
+                        vrc);
     }
 
     freeSavedDisplayScreenshot(pu8Data);
