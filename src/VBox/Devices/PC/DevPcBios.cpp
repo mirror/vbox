@@ -319,6 +319,7 @@ static DECLCALLBACK(void) CMOSRTCInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
     uint8_t u8Day = 0;
     uint8_t u8Month = 0;
     uint8_t u8Year = 0;
+    uint8_t u8RegB = 0;
     
     /*Don't move further if update is in progress*/
     if((pcbiosCmosRead(pDevIns, 0x0A) & 0x80 ))
