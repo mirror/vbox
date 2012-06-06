@@ -306,33 +306,46 @@ static DECLCALLBACK(void) CMOSBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     }
 }
 
-
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV,
  *      Dumps the cmos RTC Info.}
  */
 static DECLCALLBACK(void) CMOSRTCInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    uint8_t u8Sec;
-    uint8_t u8Min;
-    uint8_t u8Hr;
-    uint8_t u8Day;
-    uint8_t u8Month;
-    uint8_t u8Year;
-
-    u8Sec = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_SEC);
-    u8Min = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_MIN);
-    u8Min = bcd2bin(u8Min);
-    u8Hr  = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_HR);
+    const char * PCFailNotice = "Failed To Read Values. Time Update in Progress";
+    uint8_t u8Sec = 0;
+    uint8_t u8Min = 0;
+    uint8_t u8Hr = 0;
+    uint8_t u8Day = 0;
+    uint8_t u8Month = 0;
+    uint8_t u8Year = 0;
     
-    u8Day   = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_DAY);
-    u8Month = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_MONTH);
-    
-    u8Year  = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_YEAR);
-    u8Year = bcd2bin(u8Year);
-    pHlp->pfnPrintf(pHlp, "Day:%u Month:%u Year:%u, Time: Hr:%u Min:%u Sec%u\n",u8Day, u8Month, u8Year, u8Hr, u8Min, u8Sec);
+    /*Don't move further if update is in progress*/
+    if((pcbiosCmosRead(pDevIns, 0x0A) & 0x80 ))
+    {
+        pHlp->pfnPrintf(pHlp, " %s\n", PCFailNotice);
+    }
+    else
+    {
+        u8Sec = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_SEC);
+        u8Min = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_MIN);
+        u8Hr  = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_HR);
+        u8Day   = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_DAY);
+        u8Month = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_MONTH);
+        u8Year  = pcbiosCmosRead(pDevIns, CMOS_RTC_OFFSET_YEAR);
 
-          
+        u8RegB = pcbiosCmosRead(pDevIns, 0x0B);
+        if (!(u8RegB & 0x04))
+        {
+            u8Sec = (u8Sec & 0x0F) + ((u8Sec / 16) * 10);
+            u8Min = (u8Min & 0x0F) + ((u8Min / 16) * 10);
+            u8Hr = (u8Hr & 0x0F) + (( (u8Hr & 0x70) / 16) * 10) | (u8Hr & 0x80);
+            u8Day = (u8Day & 0x0F) + ((u8Day / 16) * 10);
+            u8Month = (u8Month & 0x0F) + ((u8Month / 16) * 10);
+            u8Year = (u8Year & 0x0F) + ((u8Year / 16) * 10);
+        }
+        pHlp->pfnPrintf(pHlp, " Time: Hr:%u Min:%u Sec:%u, Day:%u Month:%u Year:%u\n", u8Hr, u8Min, u8Sec, u8Day, u8Month, u8Year);
+    }
 }
 
 /* -=-=-=-=-=-=- based on code from pc.c -=-=-=-=-=-=- */
@@ -1010,6 +1023,15 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
+     * Register debugger info callback.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos", "Display CMOS Bank 1 Info.. "
+                              "'cmos'. No argument.", CMOSBankInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info.. "
+                              "'cmos2'. No argument", CMOSBank2Info);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc", "Display CMOS RTC info "
+                              "'rtc'. No argument", CMOSRTCInfo);
+    /*
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg,
@@ -1509,15 +1531,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->uBootDelay > 15)
         pThis->uBootDelay = 15;
      
-    /*
-     * Register debugger info callback.
-     */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos", "Display CMOS Bank 1 Info.. "
-                              "'cmos'. No argument.", CMOSBankInfo);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info.. "
-                              "'cmos2'. No argument", CMOSBank2Info);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc", "Display CMOS RTC info "
-                              "'rtc'. No argument", CMOSRTCInfo);
 
     /*
      * Call reset plant tables and shadow the PXE ROM.
