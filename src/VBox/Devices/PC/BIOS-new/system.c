@@ -564,7 +564,7 @@ void BIOSCALL int15_function(sys_regs_t r)
 undecoded:
     default:
         BX_INFO("*** int 15h function AX=%04x, BX=%04x not yet supported!\n",
-                (unsigned) AX, (unsigned) BX_APM);
+                (unsigned) AX, (unsigned) BX);
         SET_CF();
         SET_AH(UNSUPPORTED_FUNCTION);
         break;
