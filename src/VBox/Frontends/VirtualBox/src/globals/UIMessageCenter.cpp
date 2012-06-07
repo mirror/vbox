@@ -51,6 +51,7 @@
 
 /* COM includes: */
 #include "CConsole.h"
+#include "CMachine.h"
 #include "CSystemProperties.h"
 #include "CVirtualBoxErrorInfo.h"
 #include "CMediumAttachment.h"

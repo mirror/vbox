@@ -34,6 +34,7 @@
 
 /* COM includes: */
 #include "CConsole.h"
+#include "CMachine.h"
 #include "CDisplay.h"
 
 /* Other VBox includes: */

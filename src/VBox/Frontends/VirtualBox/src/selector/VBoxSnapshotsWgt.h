@@ -19,13 +19,16 @@
 #ifndef __VBoxSnapshotsWgt_h__
 #define __VBoxSnapshotsWgt_h__
 
-/* Global includes */
+/* Qt includes: */
 #include <QTimer>
 
-/* Local includes */
+/* GUI includes: */
 #include "VBoxSnapshotsWgt.gen.h"
 #include "VBoxGlobal.h"
 #include "QIWithRetranslateUI.h"
+
+/* COM includes: */
+#include "CMachine.h"
 
 /* Local forwards */
 class SnapshotWgtItem;
