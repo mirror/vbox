@@ -49,6 +49,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CMediumFormat.h"
 #include "CStorageController.h"
 #include "CMediumAttachment.h"
 

@@ -25,8 +25,6 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CProgress.h"
-#include "CMediumFormat.h"
 #include "CMedium.h"
 
 /* Forward declarations: */
