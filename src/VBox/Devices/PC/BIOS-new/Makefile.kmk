@@ -49,7 +49,6 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	segment _TEXT segaddr=0xF000 offset=0x1600 \
  	segment BIOS32 segaddr=0xF000 offset=0xDE00 \
  	segment BIOSSEG segaddr=0xF000 offset=0xE000 \
- 	library clibs.lib \
  	disable 1014, 1023, 2120
  TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS)
  TEMPLATE_VBoxBios_POST_CMDS = \
@@ -82,6 +81,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	ahci.c \
  	pciutil.c \
  	vds.c \
+ 	support.asm \
  	pcibio32.asm \
  	orgs.asm
 
