@@ -150,6 +150,44 @@ __U4M:
 
 
 ;;
+; 32-bit unsigned multiplication.
+;
+; @param    dx:ax   Factor 1.
+; @param    cx:bx   Factor 2.
+; @returns  dx:ax   Result.
+;
+__I4M:
+                pushf
+                push    eax
+                push    edx
+                push    ecx
+                push    ebx
+
+                rol     eax, 16
+                mov     ax, dx
+                ror     eax, 16
+                xor     edx, edx
+
+                shr     ecx, 16
+                mov     cx, bx
+
+                imul    ecx                 ; eax * ecx -> edx:eax
+
+                pop     ebx
+                pop     ecx
+
+                pop     edx
+                ror     eax, 16
+                mov     dx, ax
+                add     sp, 2
+                pop     ax
+                rol     eax, 16
+
+                popf
+                ret
+
+
+;;
 ; memset taking a far pointer.
 ;
 ; @returns  dx:ax unchanged.
