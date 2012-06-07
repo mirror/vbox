@@ -23,11 +23,10 @@
 #include <QDateTime>
 #include <QMimeData>
 
-/* GUI includes: */
-#include "VBoxGlobal.h"
-
 /* COM includes: */
+#include "COMEnums.h"
 #include "CVirtualBoxErrorInfo.h"
+#include "CMachine.h"
 
 class UIVMItem
 {
@@ -39,12 +38,12 @@ public:
     CMachine machine() const { return m_machine; }
 
     QString name() const { return m_strName; }
-    QIcon osIcon() const { return m_fAccessible ? vboxGlobal().vmGuestOSTypeIcon(m_strOSTypeId) : QPixmap(":/os_other.png"); }
+    QIcon osIcon() const;
     QString osTypeId() const { return m_strOSTypeId; }
     QString id() const { return m_strId; }
 
     QString machineStateName() const;
-    QIcon machineStateIcon() const { return m_fAccessible ? vboxGlobal().toIcon(m_machineState) : QPixmap(":/state_aborted_16px.png"); }
+    QIcon machineStateIcon() const;
 
     QString sessionStateName() const;
 

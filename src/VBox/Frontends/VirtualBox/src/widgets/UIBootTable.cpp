@@ -22,7 +22,7 @@
 
 /* Local includes */
 #include "UIBootTable.h"
-#include "VBoxGlobal.h"
+#include "COMEnumsWrapper.h"
 
 UIBootTableItem::UIBootTableItem(KDeviceType type)
   : m_type(type)
@@ -61,7 +61,7 @@ KDeviceType UIBootTableItem::type() const
 
 void UIBootTableItem::retranslateUi()
 {
-    setText(vboxGlobal().toString(m_type));
+    setText(gCOMenum->toString(m_type));
 }
 
 UIBootTable::UIBootTable(QWidget *pParent /* = 0 */)

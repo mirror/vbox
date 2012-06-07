@@ -274,6 +274,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/UIMessageCenter.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
+	src/globals/COMEnumsWrapper.h \
 	src/net/UINetworkManager.h \
 	src/net/UINetworkManagerDialog.h \
 	src/net/UINetworkManagerIndicator.h \
@@ -477,6 +478,7 @@ VirtualBox_SOURCES = \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/VBoxDefs.cpp \
 	src/globals/VBoxGlobal.cpp \
+	src/globals/COMEnumsWrapper.cpp \
 	src/main.cpp \
 	src/net/UINetworkManager.cpp \
 	src/net/UINetworkManagerDialog.cpp \

@@ -17,18 +17,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 #include <QGroupBox>
 #include <QRadioButton>
 #include <QPushButton>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIMediumTypeChangeDialog.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
+#include "COMEnumsWrapper.h"
 
 /* Constructor: */
 UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumId)
@@ -124,7 +125,7 @@ void UIMediumTypeChangeDialog::retranslateUi()
     /* Translate radio-buttons: */
     QList<QRadioButton*> buttons = findChildren<QRadioButton*>();
     for (int i = 0; i < buttons.size(); ++i)
-        buttons[i]->setText(vboxGlobal().toString(buttons[i]->property("mediumType").value<KMediumType>()));
+        buttons[i]->setText(gCOMenum->toString(buttons[i]->property("mediumType").value<KMediumType>()));
 }
 
 void UIMediumTypeChangeDialog::sltValidate()

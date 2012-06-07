@@ -35,6 +35,7 @@
 #include "QIFileDialog.h"
 #include "UIMessageCenter.h"
 #include "UIMachineSettingsStorage.h"
+#include "COMEnumsWrapper.h"
 
 /* COM includes: */
 #include "CStorageController.h"
@@ -548,8 +549,8 @@ QString ControllerItem::tip() const
                                  "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
                                  "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
                                  .arg (mCtrName)
-                                 .arg (vboxGlobal().toString (mCtrType->busType()))
-                                 .arg (vboxGlobal().toString (mCtrType->ctrType()));
+                                 .arg (gCOMenum->toString (mCtrType->busType()))
+                                 .arg (gCOMenum->toString (mCtrType->ctrType()));
 }
 
 QPixmap ControllerItem::pixmap (ItemState aState)
@@ -2151,7 +2152,7 @@ bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strT
         if (currentType[(KStorageBus)iStorageBusType] > maximumType[(KStorageBus)iStorageBusType])
         {
             QString strExcessiveRecord = QString("%1 (%2)");
-            strExcessiveRecord = strExcessiveRecord.arg(QString("<b>%1</b>").arg(vboxGlobal().toString((KStorageBus)iStorageBusType)));
+            strExcessiveRecord = strExcessiveRecord.arg(QString("<b>%1</b>").arg(gCOMenum->toString((KStorageBus)iStorageBusType)));
             strExcessiveRecord = strExcessiveRecord.arg(maximumType[(KStorageBus)iStorageBusType] == 1 ?
                                                         tr("at most one supported", "controller") :
                                                         tr("up to %1 supported", "controllers").arg(maximumType[(KStorageBus)iStorageBusType]));
@@ -2163,7 +2164,7 @@ bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strT
         strWarning = tr("you are currently using more storage controllers than a %1 chipset supports. "
                         "Please change the chipset type on the System settings page or reduce the number "
                         "of the following storage controllers on the Storage settings page: %2.")
-                        .arg(vboxGlobal().toString(mStorageModel->chipsetType()))
+                        .arg(gCOMenum->toString(mStorageModel->chipsetType()))
                         .arg(excessiveList.join(", "));
         return false;
     }
@@ -2429,9 +2430,9 @@ void UIMachineSettingsStorage::getInformation()
                 mCbType->clear();
                 ControllerTypeList controllerTypeList (mStorageModel->data (index, StorageModel::R_CtrTypes).value <ControllerTypeList>());
                 for (int i = 0; i < controllerTypeList.size(); ++ i)
-                    mCbType->insertItem (mCbType->count(), vboxGlobal().toString (controllerTypeList [i]));
+                    mCbType->insertItem (mCbType->count(), gCOMenum->toString (controllerTypeList [i]));
                 KStorageControllerType type = mStorageModel->data (index, StorageModel::R_CtrType).value <KStorageControllerType>();
-                int ctrPos = mCbType->findText (vboxGlobal().toString (type));
+                int ctrPos = mCbType->findText (gCOMenum->toString (type));
                 mCbType->setCurrentIndex (ctrPos == -1 ? 0 : ctrPos);
 
                 KStorageBus bus = mStorageModel->data (index, StorageModel::R_CtrBusType).value <KStorageBus>();
@@ -2549,7 +2550,7 @@ void UIMachineSettingsStorage::setInformation()
                 mStorageModel->setData (index, mLeName->text(), StorageModel::R_CtrName);
             /* Setting Controller Sub-Type */
             else if (sdr == mCbType)
-                mStorageModel->setData (index, QVariant::fromValue (vboxGlobal().toControllerType (mCbType->currentText())),
+                mStorageModel->setData (index, QVariant::fromValue (gCOMenum->toControllerType (mCbType->currentText())),
                                         StorageModel::R_CtrType);
             else if (sdr == mSbPortCount)
                 mStorageModel->setData (index, mSbPortCount->value(), StorageModel::R_CtrPortCount);

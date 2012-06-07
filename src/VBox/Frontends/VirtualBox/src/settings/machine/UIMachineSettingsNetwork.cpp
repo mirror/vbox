@@ -20,9 +20,10 @@
 /* GUI includes: */
 #include "QIWidgetValidator.h"
 #include "QIArrowButtonSwitch.h"
-#include "VBoxGlobal.h"
 #include "UIMachineSettingsNetwork.h"
 #include "QITabWidget.h"
+#include "VBoxGlobal.h"
+#include "COMEnumsWrapper.h"
 
 /* COM includes: */
 #include "CNetworkAdapter.h"
@@ -507,27 +508,27 @@ void UIMachineSettingsNetwork::populateComboboxes()
 
         /* Populate attachments: */
         int iAttachmentTypeIndex = 0;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_Null));
+        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gCOMenum->toString(KNetworkAttachmentType_Null));
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Null);
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_NAT));
+        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gCOMenum->toString(KNetworkAttachmentType_NAT));
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_NAT);
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_Bridged));
+        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gCOMenum->toString(KNetworkAttachmentType_Bridged));
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Bridged);
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_Internal));
+        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gCOMenum->toString(KNetworkAttachmentType_Internal));
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Internal);
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_HostOnly));
+        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gCOMenum->toString(KNetworkAttachmentType_HostOnly));
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_HostOnly);
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_Generic));
+        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gCOMenum->toString(KNetworkAttachmentType_Generic));
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Generic);
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
@@ -546,30 +547,30 @@ void UIMachineSettingsNetwork::populateComboboxes()
 
         /* Populate adapter types: */
         int iAdapterTypeIndex = 0;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, vboxGlobal().toString(KNetworkAdapterType_Am79C970A));
+        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gCOMenum->toString(KNetworkAdapterType_Am79C970A));
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_Am79C970A);
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
         ++iAdapterTypeIndex;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, vboxGlobal().toString(KNetworkAdapterType_Am79C973));
+        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gCOMenum->toString(KNetworkAdapterType_Am79C973));
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_Am79C973);
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
         ++iAdapterTypeIndex;
 #ifdef VBOX_WITH_E1000
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, vboxGlobal().toString(KNetworkAdapterType_I82540EM));
+        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gCOMenum->toString(KNetworkAdapterType_I82540EM));
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_I82540EM);
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
         ++iAdapterTypeIndex;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, vboxGlobal().toString(KNetworkAdapterType_I82543GC));
+        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gCOMenum->toString(KNetworkAdapterType_I82543GC));
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_I82543GC);
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
         ++iAdapterTypeIndex;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, vboxGlobal().toString(KNetworkAdapterType_I82545EM));
+        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gCOMenum->toString(KNetworkAdapterType_I82545EM));
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_I82545EM);
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
         ++iAdapterTypeIndex;
 #endif /* VBOX_WITH_E1000 */
 #ifdef VBOX_WITH_VIRTIO
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, vboxGlobal().toString(KNetworkAdapterType_Virtio));
+        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gCOMenum->toString(KNetworkAdapterType_Virtio));
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_Virtio);
         m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
         ++iAdapterTypeIndex;
@@ -589,15 +590,15 @@ void UIMachineSettingsNetwork::populateComboboxes()
 
         /* Populate promiscuous modes: */
         int iPromiscuousModeIndex = 0;
-        m_pPromiscuousModeCombo->insertItem(iPromiscuousModeIndex, vboxGlobal().toString(KNetworkAdapterPromiscModePolicy_Deny));
+        m_pPromiscuousModeCombo->insertItem(iPromiscuousModeIndex, gCOMenum->toString(KNetworkAdapterPromiscModePolicy_Deny));
         m_pPromiscuousModeCombo->setItemData(iPromiscuousModeIndex, KNetworkAdapterPromiscModePolicy_Deny);
         m_pPromiscuousModeCombo->setItemData(iPromiscuousModeIndex, m_pPromiscuousModeCombo->itemText(iPromiscuousModeIndex), Qt::ToolTipRole);
         ++iPromiscuousModeIndex;
-        m_pPromiscuousModeCombo->insertItem(iPromiscuousModeIndex, vboxGlobal().toString(KNetworkAdapterPromiscModePolicy_AllowNetwork));
+        m_pPromiscuousModeCombo->insertItem(iPromiscuousModeIndex, gCOMenum->toString(KNetworkAdapterPromiscModePolicy_AllowNetwork));
         m_pPromiscuousModeCombo->setItemData(iPromiscuousModeIndex, KNetworkAdapterPromiscModePolicy_AllowNetwork);
         m_pPromiscuousModeCombo->setItemData(iPromiscuousModeIndex, m_pPromiscuousModeCombo->itemText(iPromiscuousModeIndex), Qt::ToolTipRole);
         ++iPromiscuousModeIndex;
-        m_pPromiscuousModeCombo->insertItem(iPromiscuousModeIndex, vboxGlobal().toString(KNetworkAdapterPromiscModePolicy_AllowAll));
+        m_pPromiscuousModeCombo->insertItem(iPromiscuousModeIndex, gCOMenum->toString(KNetworkAdapterPromiscModePolicy_AllowAll));
         m_pPromiscuousModeCombo->setItemData(iPromiscuousModeIndex, KNetworkAdapterPromiscModePolicy_AllowAll);
         m_pPromiscuousModeCombo->setItemData(iPromiscuousModeIndex, m_pPromiscuousModeCombo->itemText(iPromiscuousModeIndex), Qt::ToolTipRole);
         ++iPromiscuousModeIndex;

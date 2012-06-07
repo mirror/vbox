@@ -25,6 +25,7 @@
 #include "UIMachineSettingsDisplay.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "COMEnumsWrapper.h"
 
 /* COM includes: */
 #include "CVRDEServer.h"
@@ -220,7 +221,7 @@ void UIMachineSettingsDisplay::getFromCache()
     {
         mCbVRDE->setChecked(displayData.m_fVRDEServerEnabled);
         mLeVRDEPort->setText(displayData.m_strVRDEPort);
-        mCbVRDEMethod->setCurrentIndex(mCbVRDEMethod->findText(vboxGlobal().toString(displayData.m_VRDEAuthType)));
+        mCbVRDEMethod->setCurrentIndex(mCbVRDEMethod->findText(gCOMenum->toString(displayData.m_VRDEAuthType)));
         mLeVRDETimeout->setText(QString::number(displayData.m_uVRDETimeout));
         mCbMultipleConn->setChecked(displayData.m_fMultipleConnectionsAllowed);
     }
@@ -251,7 +252,7 @@ void UIMachineSettingsDisplay::putToCache()
     {
         displayData.m_fVRDEServerEnabled = mCbVRDE->isChecked();
         displayData.m_strVRDEPort = mLeVRDEPort->text();
-        displayData.m_VRDEAuthType = vboxGlobal().toAuthType(mCbVRDEMethod->currentText());
+        displayData.m_VRDEAuthType = gCOMenum->toAuthType(mCbVRDEMethod->currentText());
         displayData.m_uVRDETimeout = mLeVRDETimeout->text().toULong();
         displayData.m_fMultipleConnectionsAllowed = mCbMultipleConn->isChecked();
     }
@@ -434,11 +435,11 @@ void UIMachineSettingsDisplay::retranslateUi()
     mLbMonitorsMax->setText (tr ("<qt>%1</qt>").arg (sys.GetMaxGuestMonitors()));
 
     mCbVRDEMethod->setItemText (0,
-        vboxGlobal().toString (KAuthType_Null));
+        gCOMenum->toString (KAuthType_Null));
     mCbVRDEMethod->setItemText (1,
-        vboxGlobal().toString (KAuthType_External));
+        gCOMenum->toString (KAuthType_External));
     mCbVRDEMethod->setItemText (2,
-        vboxGlobal().toString (KAuthType_Guest));
+        gCOMenum->toString (KAuthType_Guest));
 }
 
 void UIMachineSettingsDisplay::valueChangedVRAM (int aVal)

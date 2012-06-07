@@ -17,7 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
+#include <QHBoxLayout>
+#include <QMenu>
 #include <QAction>
 #include <QHeaderView>
 #include <QPushButton>
@@ -28,15 +30,19 @@
 #include <QSpinBox>
 #include <QTimer>
 
-/* Local includes */
+/* GUI includes: */
 #include "UIMachineSettingsPortForwardingDlg.h"
-#include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"
 #include "QITableView.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
+#include "COMEnumsWrapper.h"
+
+/* Other VBox includes: */
 #include <iprt/cidr.h>
+
+/* External includes: */
 #include <math.h>
 
 /* IP validator: */
@@ -104,8 +110,8 @@ public:
 
     ProtocolEditor(QWidget *pParent = 0) : QComboBox(pParent)
     {
-        addItem(vboxGlobal().toString(KNATProtocol_UDP), QVariant::fromValue(KNATProtocol_UDP));
-        addItem(vboxGlobal().toString(KNATProtocol_TCP), QVariant::fromValue(KNATProtocol_TCP));
+        addItem(gCOMenum->toString(KNATProtocol_UDP), QVariant::fromValue(KNATProtocol_UDP));
+        addItem(gCOMenum->toString(KNATProtocol_TCP), QVariant::fromValue(KNATProtocol_TCP));
     }
 
 private:
@@ -277,7 +283,7 @@ public:
                 switch (index.column())
                 {
                     case UIPortForwardingDataType_Name: return m_dataList[index.row()].name;
-                    case UIPortForwardingDataType_Protocol: return vboxGlobal().toString(m_dataList[index.row()].protocol);
+                    case UIPortForwardingDataType_Protocol: return gCOMenum->toString(m_dataList[index.row()].protocol);
                     case UIPortForwardingDataType_HostIp: return m_dataList[index.row()].hostIp;
                     case UIPortForwardingDataType_HostPort: return m_dataList[index.row()].hostPort.value();
                     case UIPortForwardingDataType_GuestIp: return m_dataList[index.row()].guestIp;
