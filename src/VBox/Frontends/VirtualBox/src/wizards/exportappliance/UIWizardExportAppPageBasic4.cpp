@@ -30,6 +30,7 @@
 
 /* COM includes: */
 #include "CAppliance.h"
+#include "CMachine.h"
 
 UIWizardExportAppPage4::UIWizardExportAppPage4()
 {

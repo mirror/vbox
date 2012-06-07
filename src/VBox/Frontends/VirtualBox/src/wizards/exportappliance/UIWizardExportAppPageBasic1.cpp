@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVBoxLayout>
 
 /* Local includes: */
@@ -28,6 +28,9 @@
 #include "UIMessageCenter.h"
 #include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
+
+/* COM includes: */
+#include "CMachine.h"
 
 UIWizardExportAppPage1::UIWizardExportAppPage1()
 {

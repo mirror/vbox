@@ -37,16 +37,16 @@
 #include "CHost.h"
 #include "CVirtualBox.h"
 #include "CSession.h"
-#include "CMachine.h"
-#include "CMedium.h"
 #include "CGuestOSType.h"
-#include "CUSBDevice.h"
 
 /* Forward declarations: */
 class QAction;
 class QLabel;
 class QToolButton;
 class UIMachine;
+class CMachine;
+class CMedium;
+class CUSBDevice;
 
 struct StorageSlot
 {

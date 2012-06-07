@@ -26,6 +26,9 @@
 #include "VBoxDefs.h"
 #include "VBoxMediaComboBox.h"
 
+/* COM includes: */
+#include "CMachine.h"
+
 /* Forward declarations: */
 class MediaItem;
 class VBoxProgressBar;

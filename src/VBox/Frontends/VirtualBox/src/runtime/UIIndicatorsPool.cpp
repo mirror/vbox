@@ -29,6 +29,7 @@
 
 /* COM includes: */
 #include "CConsole.h"
+#include "CMachine.h"
 #include "CSystemProperties.h"
 #include "CMachineDebugger.h"
 #include "CGuest.h"

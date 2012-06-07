@@ -100,6 +100,7 @@
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 
 /* COM includes: */
+#include "CMachine.h"
 #include "CSystemProperties.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"

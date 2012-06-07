@@ -31,6 +31,7 @@
 #include "COMEnumsWrapper.h"
 
 /* COM includes: */
+#include "CMachine.h"
 #include "CSnapshot.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
