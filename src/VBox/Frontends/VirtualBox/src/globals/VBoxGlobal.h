@@ -29,7 +29,7 @@
 
 /* GUI includes: */
 #include "VBoxGlobalSettings.h"
-#include "VBoxMedium.h"
+#include "UIMedium.h"
 
 /* COM includes: */
 #include "VBox/com/Guid.h"
@@ -285,28 +285,25 @@ public:
     /** Returns true if the media enumeration is in progress. */
     bool isMediaEnumerationStarted() const { return mMediaEnumThread != NULL; }
 
-    VBoxDefs::MediumType mediumTypeToLocal(KDeviceType globalType);
-    KDeviceType mediumTypeToGlobal(VBoxDefs::MediumType localType);
+    void addMedium (const UIMedium &);
+    void updateMedium (const UIMedium &);
+    void removeMedium (UIMediumType, const QString &);
 
-    void addMedium (const VBoxMedium &);
-    void updateMedium (const VBoxMedium &);
-    void removeMedium (VBoxDefs::MediumType, const QString &);
-
-    bool findMedium (const CMedium &, VBoxMedium &) const;
-    VBoxMedium findMedium (const QString &aMediumId) const;
+    bool findMedium (const CMedium &, UIMedium &) const;
+    UIMedium findMedium (const QString &aMediumId) const;
 
     /** Compact version of #findMediumTo(). Asserts if not found. */
-    VBoxMedium getMedium (const CMedium &aObj) const
+    UIMedium getMedium (const CMedium &aObj) const
     {
-        VBoxMedium medium;
+        UIMedium medium;
         if (!findMedium (aObj, medium))
             AssertFailed();
         return medium;
     }
 
-    QString openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent = 0,
+    QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
                                          const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
-    QString openMedium(VBoxDefs::MediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
+    QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
 
     /* Returns the number of current running Fe/Qt4 main windows. */
     int mainWindowCount();
@@ -427,7 +424,7 @@ signals:
      * Emitted when a new medium item from the list has updated its
      * accessibility state.
      */
-    void mediumEnumerated (const VBoxMedium &aMedum);
+    void mediumEnumerated (const UIMedium &aMedum);
 
     /**
      * Emitted at the end of the enumeration process started by
@@ -437,13 +434,13 @@ signals:
     void mediumEnumFinished (const VBoxMediaList &aList);
 
     /** Emitted when a new media is added using #addMedia(). */
-    void mediumAdded (const VBoxMedium &);
+    void mediumAdded (const UIMedium &);
 
     /** Emitted when the media is updated using #updateMedia(). */
-    void mediumUpdated (const VBoxMedium &);
+    void mediumUpdated (const UIMedium &);
 
     /** Emitted when the media is removed using #removeMedia(). */
-    void mediumRemoved (VBoxDefs::MediumType, const QString &);
+    void mediumRemoved (UIMediumType, const QString &);
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     void sigTrayIconShow(bool fEnabled);

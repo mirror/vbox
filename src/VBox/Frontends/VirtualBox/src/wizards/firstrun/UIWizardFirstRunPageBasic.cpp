@@ -68,7 +68,7 @@ UIWizardFirstRunPageBasic::UIWizardFirstRunPageBasic(const QString &strMachineId
             m_pMediaSelector = new VBoxMediaComboBox(this);
             {
                 m_pMediaSelector->setMachineId(strMachineId);
-                m_pMediaSelector->setType(VBoxDefs::MediumType_DVD);
+                m_pMediaSelector->setType(UIMediumType_DVD);
                 m_pMediaSelector->repopulate();
             }
             m_pSelectMediaButton = new QIToolButton(this);

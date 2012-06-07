@@ -25,7 +25,7 @@
 
 VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     : QComboBox (aParent)
-    , mType (VBoxDefs::MediumType_Invalid)
+    , mType (UIMediumType_Invalid)
     , mLastId (QString::null)
     , mShowDiffs (false)
     , mShowNullItem (false)
@@ -40,16 +40,16 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     /* Setup enumeration handlers */
     connect (&vboxGlobal(), SIGNAL (mediumEnumStarted()),
              this, SLOT (mediumEnumStarted()));
-    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const VBoxMedium &)),
-             this, SLOT (mediumEnumerated (const VBoxMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const UIMedium &)),
+             this, SLOT (mediumEnumerated (const UIMedium &)));
 
     /* Setup update handlers */
-    connect (&vboxGlobal(), SIGNAL (mediumAdded (const VBoxMedium &)),
-             this, SLOT (mediumAdded (const VBoxMedium &)));
-    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
-             this, SLOT (mediumUpdated (const VBoxMedium &)));
-    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediumType, const QString &)),
-             this, SLOT (mediumRemoved (VBoxDefs::MediumType, const QString &)));
+    connect (&vboxGlobal(), SIGNAL (mediumAdded (const UIMedium &)),
+             this, SLOT (mediumAdded (const UIMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const UIMedium &)),
+             this, SLOT (mediumUpdated (const UIMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (UIMediumType, const QString &)),
+             this, SLOT (mediumRemoved (UIMediumType, const QString &)));
 
     /* Setup other connections */
     connect (this, SIGNAL (activated (int)),
@@ -67,11 +67,11 @@ void VBoxMediaComboBox::refresh()
     clear(), mMedia.clear();
 
     VBoxMediaList list (vboxGlobal().currentMediaList());
-    foreach (VBoxMedium medium, list)
+    foreach (UIMedium medium, list)
         mediumAdded (medium);
 
     /* If at least one real medium present, process null medium */
-    if (count() > 1 && (!mShowNullItem || mType == VBoxDefs::MediumType_HardDisk))
+    if (count() > 1 && (!mShowNullItem || mType == UIMediumType_HardDisk))
     {
         removeItem (0);
         mMedia.erase (mMedia.begin());
@@ -128,7 +128,7 @@ void VBoxMediaComboBox::setCurrentItem (const QString &aId)
     }
 }
 
-void VBoxMediaComboBox::setType (VBoxDefs::MediumType aType)
+void VBoxMediaComboBox::setType (UIMediumType aType)
 {
     mType = aType;
 }
@@ -172,16 +172,16 @@ void VBoxMediaComboBox::mediumEnumStarted()
     refresh();
 }
 
-void VBoxMediaComboBox::mediumEnumerated (const VBoxMedium &aMedium)
+void VBoxMediaComboBox::mediumEnumerated (const UIMedium &aMedium)
 {
     mediumUpdated (aMedium);
 }
 
-void VBoxMediaComboBox::mediumAdded (const VBoxMedium &aMedium)
+void VBoxMediaComboBox::mediumAdded (const UIMedium &aMedium)
 {
     if (aMedium.isNull() || aMedium.type() == mType)
     {
-        if (!mShowDiffs && aMedium.type() == VBoxDefs::MediumType_HardDisk)
+        if (!mShowDiffs && aMedium.type() == UIMediumType_HardDisk)
         {
             if (aMedium.parent() != NULL)
             {
@@ -203,7 +203,7 @@ void VBoxMediaComboBox::mediumAdded (const VBoxMedium &aMedium)
     }
 }
 
-void VBoxMediaComboBox::mediumUpdated (const VBoxMedium &aMedium)
+void VBoxMediaComboBox::mediumUpdated (const UIMedium &aMedium)
 {
     if (aMedium.isNull() || aMedium.type() == mType)
     {
@@ -219,7 +219,7 @@ void VBoxMediaComboBox::mediumUpdated (const VBoxMedium &aMedium)
     }
 }
 
-void VBoxMediaComboBox::mediumRemoved (VBoxDefs::MediumType aType,
+void VBoxMediaComboBox::mediumRemoved (UIMediumType aType,
                                        const QString &aId)
 {
     if (mType != aType)
@@ -234,7 +234,7 @@ void VBoxMediaComboBox::mediumRemoved (VBoxDefs::MediumType aType,
 
     /* If no real medium left, add the null medium */
     if (count() == 0)
-        mediumAdded (VBoxMedium());
+        mediumAdded (UIMedium());
 
     /* Emit the signal to ensure the parent dialog handles the change of
      * the selected item */
@@ -268,7 +268,7 @@ void VBoxMediaComboBox::processOnItem (const QModelIndex &aIndex)
 }
 
 
-void VBoxMediaComboBox::appendItem (const VBoxMedium &aMedium)
+void VBoxMediaComboBox::appendItem (const UIMedium &aMedium)
 {
     if (!mShowDiffs && aMedium.parent() != NULL)
     {
@@ -291,19 +291,19 @@ void VBoxMediaComboBox::appendItem (const VBoxMedium &aMedium)
     }
 
     mMedia.append (Medium (aMedium.id(), aMedium.location(),
-                           aMedium.toolTipCheckRO (!mShowDiffs, mShowNullItem && mType != VBoxDefs::MediumType_HardDisk)));
+                           aMedium.toolTipCheckRO (!mShowDiffs, mShowNullItem && mType != UIMediumType_HardDisk)));
 
     insertItem (count(), aMedium.iconCheckRO (!mShowDiffs),
                 aMedium.details (!mShowDiffs));
 }
 
-void VBoxMediaComboBox::replaceItem (int aIndex, const VBoxMedium &aMedium)
+void VBoxMediaComboBox::replaceItem (int aIndex, const UIMedium &aMedium)
 {
     AssertReturnVoid (aIndex >= 0 && aIndex < mMedia.size());
 
     mMedia [aIndex].id = aMedium.id();
     mMedia [aIndex].location = aMedium.location();
-    mMedia [aIndex].toolTip = aMedium.toolTipCheckRO (!mShowDiffs, mShowNullItem && mType != VBoxDefs::MediumType_HardDisk);
+    mMedia [aIndex].toolTip = aMedium.toolTipCheckRO (!mShowDiffs, mShowNullItem && mType != UIMediumType_HardDisk);
 
     setItemText (aIndex, aMedium.details (!mShowDiffs));
     setItemIcon (aIndex, aMedium.iconCheckRO (!mShowDiffs));

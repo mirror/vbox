@@ -62,7 +62,7 @@ void UIWizardNewVMPage3::updateVirtualDiskSource()
 void UIWizardNewVMPage3::getWithFileOpenDialog()
 {
     /* Get opened medium id: */
-    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_HardDisk, thisImp());
+    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_HardDisk, thisImp());
     if (!strMediumId.isNull())
     {
         /* Update medium-combo if necessary: */
@@ -115,7 +115,7 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
 
     /* 3rd step: notify GUI about virtual-disk was deleted or show error if any: */
     if (fSuccess)
-        vboxGlobal().removeMedium(VBoxDefs::MediumType_HardDisk, strId);
+        vboxGlobal().removeMedium(UIMediumType_HardDisk, strId);
     else
         msgCenter().cannotDeleteHardDiskStorage(thisImp(), m_virtualDisk, progress);
 
@@ -140,7 +140,7 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
             pDiskLayout->setColumnMinimumWidth(0, iWidth);
             m_pDiskSelector = new VBoxMediaComboBox(this);
             {
-                m_pDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
+                m_pDiskSelector->setType(UIMediumType_HardDisk);
                 m_pDiskSelector->repopulate();
             }
             m_pVMMButton = new QIToolButton(this);

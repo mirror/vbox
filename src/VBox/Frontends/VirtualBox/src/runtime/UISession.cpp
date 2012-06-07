@@ -398,7 +398,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 
         if (!vbox.isOk())
         {
-            msgCenter().cannotOpenMedium(0, vbox, VBoxDefs::MediumType_DVD, strSource);
+            msgCenter().cannotOpenMedium(0, vbox, UIMediumType_DVD, strSource);
             return;
         }
 
@@ -432,8 +432,8 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 
         if (!strCntName.isNull())
         {
-            /* Create a new VBoxMedium: */
-            VBoxMedium vboxMedium(image, VBoxDefs::MediumType_DVD, KMediumState_Created);
+            /* Create a new UIMedium: */
+            UIMedium vboxMedium(image, UIMediumType_DVD, KMediumState_Created);
             /* Register it in GUI internal list: */
             vboxGlobal().addMedium(vboxMedium);
 

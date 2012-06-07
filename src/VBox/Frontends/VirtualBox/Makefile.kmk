@@ -147,6 +147,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/extensions \
 	./src/globals \
 	./src/net \
+	./src/medium \
 	./src/platform \
 	./src/platform/darwin \
 	./src/platform/win \
@@ -435,12 +436,12 @@ ifdef VBOX_WITH_XPCOM
 endif
 
 VirtualBox_SOURCES = \
+	src/main.cpp \
 	src/UIMediumTypeChangeDialog.cpp \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxLicenseViewer.cpp \
 	src/VBoxMediaManagerDlg.cpp \
-	src/VBoxMedium.cpp \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
@@ -479,7 +480,8 @@ VirtualBox_SOURCES = \
 	src/globals/VBoxDefs.cpp \
 	src/globals/VBoxGlobal.cpp \
 	src/globals/COMEnumsWrapper.cpp \
-	src/main.cpp \
+	src/medium/UIMediumDefs.cpp \
+	src/medium/UIMedium.cpp \
 	src/net/UINetworkManager.cpp \
 	src/net/UINetworkManagerDialog.cpp \
 	src/net/UINetworkManagerIndicator.cpp \

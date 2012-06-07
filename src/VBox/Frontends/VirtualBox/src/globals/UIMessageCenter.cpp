@@ -1357,7 +1357,7 @@ void UIMessageCenter::cannotChangeMediumType(QWidget *pParent,
 }
 
 bool UIMessageCenter::confirmReleaseMedium(QWidget *pParent,
-                                           const VBoxMedium &aMedium,
+                                           const UIMedium &aMedium,
                                            const QString &strUsage)
 {
     /** @todo (translation-related): the gender of "the" in translations
@@ -1375,7 +1375,7 @@ bool UIMessageCenter::confirmReleaseMedium(QWidget *pParent,
 }
 
 bool UIMessageCenter::confirmRemoveMedium(QWidget *pParent,
-                                          const VBoxMedium &aMedium)
+                                          const UIMedium &aMedium)
 {
     /** @todo (translation-related): the gender of "the" in translations
      * will depend on the gender of aMedium.type(). */
@@ -1385,7 +1385,7 @@ bool UIMessageCenter::confirmRemoveMedium(QWidget *pParent,
             .arg(mediumToAccusative(aMedium.type()))
             .arg(aMedium.location());
 
-    if (aMedium.type() == VBoxDefs::MediumType_HardDisk &&
+    if (aMedium.type() == UIMediumType_HardDisk &&
         aMedium.medium().GetMediumFormat().GetCapabilities() & MediumFormatCapabilities_File)
     {
         if (aMedium.state() == KMediumState_Inaccessible)
@@ -1530,26 +1530,26 @@ void UIMessageCenter::cannotCreateHardDiskStorage(QWidget *pParent,
 
 void UIMessageCenter::cannotDetachDevice(QWidget *pParent,
                                          const CMachine &machine,
-                                         VBoxDefs::MediumType type,
+                                         UIMediumType type,
                                          const QString &strLocation,
                                          const StorageSlot &storageSlot)
 {
     QString strMessage;
     switch (type)
     {
-        case VBoxDefs::MediumType_HardDisk:
+        case UIMediumType_HardDisk:
         {
             strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                            .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
-        case VBoxDefs::MediumType_DVD:
+        case UIMediumType_DVD:
         {
             strMessage = tr("Failed to detach the CD/DVD device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                            .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
-        case VBoxDefs::MediumType_Floppy:
+        case UIMediumType_Floppy:
         {
             strMessage = tr("Failed to detach the floppy device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                            .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
@@ -1563,7 +1563,7 @@ void UIMessageCenter::cannotDetachDevice(QWidget *pParent,
 
 int UIMessageCenter::cannotRemountMedium(QWidget *pParent,
                                          const CMachine &machine,
-                                         const VBoxMedium &aMedium,
+                                         const UIMedium &aMedium,
                                          bool fMount,
                                          bool fRetry)
 {
@@ -1602,7 +1602,7 @@ int UIMessageCenter::cannotRemountMedium(QWidget *pParent,
 
 void UIMessageCenter::cannotOpenMedium(QWidget *pParent,
                                        const CVirtualBox &vbox,
-                                       VBoxDefs::MediumType type,
+                                       UIMediumType type,
                                        const QString &strLocation)
 {
     /** @todo (translation-related): the gender of "the" in translations
@@ -1615,7 +1615,7 @@ void UIMessageCenter::cannotOpenMedium(QWidget *pParent,
 }
 
 void UIMessageCenter::cannotCloseMedium(QWidget *pParent,
-                                        const VBoxMedium &aMedium,
+                                        const UIMedium &aMedium,
                                         const COMResult &rc)
 {
     /** @todo (translation-related): the gender of "the" in translations
@@ -1659,7 +1659,7 @@ void UIMessageCenter::cannotOpenSession(const CVirtualBox &vbox,
     );
 }
 
-void UIMessageCenter::cannotGetMediaAccessibility(const VBoxMedium &aMedium)
+void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &aMedium)
 {
     message(qApp->activeWindow(), Error,
         tr("Failed to determine the accessibility state of the medium "
@@ -2753,18 +2753,18 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal,
 }
 
 /* static */
-QString UIMessageCenter::mediumToAccusative(VBoxDefs::MediumType type, bool fIsHostDrive /* = false */)
+QString UIMessageCenter::mediumToAccusative(UIMediumType type, bool fIsHostDrive /* = false */)
 {
     QString strType =
-        type == VBoxDefs::MediumType_HardDisk ?
+        type == UIMediumType_HardDisk ?
             tr("hard disk", "failed to mount ...") :
-        type == VBoxDefs::MediumType_DVD && fIsHostDrive ?
+        type == UIMediumType_DVD && fIsHostDrive ?
             tr("CD/DVD", "failed to mount ... host-drive") :
-        type == VBoxDefs::MediumType_DVD && !fIsHostDrive ?
+        type == UIMediumType_DVD && !fIsHostDrive ?
             tr("CD/DVD image", "failed to mount ...") :
-        type == VBoxDefs::MediumType_Floppy && fIsHostDrive ?
+        type == UIMediumType_Floppy && fIsHostDrive ?
             tr("floppy", "failed to mount ... host-drive") :
-        type == VBoxDefs::MediumType_Floppy && !fIsHostDrive ?
+        type == UIMediumType_Floppy && !fIsHostDrive ?
             tr("floppy image", "failed to mount ...") :
         QString::null;
 
@@ -2864,7 +2864,7 @@ void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const
         emit sigCannotRemoveHostInterface(progress, iface, pParent);
 }
 
-void UIMessageCenter::cannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0 */)
 {
@@ -3071,26 +3071,26 @@ void UIMessageCenter::sltCannotRemoveHostInterface(const CProgress &progress, co
             formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::sltCannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+void UIMessageCenter::sltCannotAttachDevice(const CMachine &machine, UIMediumType type,
                                             const QString &strLocation, const StorageSlot &storageSlot,
                                             QWidget *pParent)
 {
     QString strMessage;
     switch (type)
     {
-        case VBoxDefs::MediumType_HardDisk:
+        case UIMediumType_HardDisk:
         {
             strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                            .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
-        case VBoxDefs::MediumType_DVD:
+        case UIMediumType_DVD:
         {
             strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                            .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
-        case VBoxDefs::MediumType_Floppy:
+        case UIMediumType_Floppy:
         {
             strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                            .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
@@ -3210,7 +3210,7 @@ UIMessageCenter::UIMessageCenter()
     qRegisterMetaType<CMachine>();
     qRegisterMetaType<CConsole>();
     qRegisterMetaType<CHostNetworkInterface>();
-    qRegisterMetaType<VBoxDefs::MediumType>();
+    qRegisterMetaType<UIMediumType>();
     qRegisterMetaType<StorageSlot>();
 
     /* Prepare required connections: */
@@ -3226,8 +3226,8 @@ UIMessageCenter::UIMessageCenter()
     connect(this, SIGNAL(sigCannotRemoveHostInterface(const CProgress&, const CHostNetworkInterface&, QWidget*)),
             this, SLOT(sltCannotRemoveHostInterface(const CProgress&, const CHostNetworkInterface&, QWidget*)),
             Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotAttachDevice(const CMachine&, VBoxDefs::MediumType, const QString&, const StorageSlot&, QWidget*)),
-            this, SLOT(sltCannotAttachDevice(const CMachine&, VBoxDefs::MediumType, const QString&, const StorageSlot&, QWidget*)),
+    connect(this, SIGNAL(sigCannotAttachDevice(const CMachine&, UIMediumType, const QString&, const StorageSlot&, QWidget*)),
+            this, SLOT(sltCannotAttachDevice(const CMachine&, UIMediumType, const QString&, const StorageSlot&, QWidget*)),
             Qt::BlockingQueuedConnection);
     connect(this, SIGNAL(sigCannotCreateSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
             this, SLOT(sltCannotCreateSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
