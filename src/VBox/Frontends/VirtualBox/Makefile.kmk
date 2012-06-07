@@ -240,7 +240,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxGlobalSettings.h \
 	src/VBoxLicenseViewer.h \
-	src/VBoxMediaManagerDlg.h \
 	src/VBoxSnapshotDetailsDlg.h \
 	src/VBoxTakeSnapshotDlg.h \
 	src/VBoxVMInformationDlg.h \
@@ -287,6 +286,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/net/UIDownloaderAdditions.h \
 	src/net/UIDownloaderExtensionPack.h \
 	src/net/UIDownloaderUserManual.h \
+	src/medium/UIMediumManager.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -407,11 +407,11 @@ VirtualBox_QT_MOCHDRS.darwin += \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
-	src/VBoxMediaManagerDlg.cpp \
 	src/UIVMLogViewer.cpp \
 	src/extensions/QISplitter.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
+	src/medium/UIMediumManager.cpp \
 	src/net/UIUpdateManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -441,7 +441,6 @@ VirtualBox_SOURCES = \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxLicenseViewer.cpp \
-	src/VBoxMediaManagerDlg.cpp \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
@@ -482,6 +481,7 @@ VirtualBox_SOURCES = \
 	src/globals/COMEnumsWrapper.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMedium.cpp \
+	src/medium/UIMediumManager.cpp \
 	src/net/UINetworkManager.cpp \
 	src/net/UINetworkManagerDialog.cpp \
 	src/net/UINetworkManagerIndicator.cpp \

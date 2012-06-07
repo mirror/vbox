@@ -22,10 +22,10 @@ LANGUAGE	= C++
 
 FORMS = \
     src/VBoxVMInformationDlg.ui \
-    src/VBoxMediaManagerDlg.ui \
     src/VBoxSnapshotDetailsDlg.ui \
     src/VBoxTakeSnapshotDlg.ui \
     src/UIVMLogViewer.ui \
+    src/medium/UIMediumManager.ui \
     src/settings/UISettingsDialog.ui \
     src/settings/global/UIGlobalSettingsGeneral.ui \
     src/settings/global/UIGlobalSettingsInput.ui \

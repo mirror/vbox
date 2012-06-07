@@ -42,7 +42,7 @@
 #include "UIVMListView.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "VBoxGlobal.h"
-#include "VBoxMediaManagerDlg.h"
+#include "UIMediumManager.h"
 #include "UIMessageCenter.h"
 #include "UISelectorWindow.h"
 #include "UISettingsDialogSpecific.h"
@@ -205,7 +205,7 @@ void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
 void UISelectorWindow::sltShowMediumManager()
 {
     /* Show modeless Virtual Medium Manager: */
-    VBoxMediaManagerDlg::showModeless(this);
+    UIMediumManager::showModeless(this);
 }
 
 void UISelectorWindow::sltShowImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -1143,9 +1143,9 @@ void UISelectorWindow::sltMediumEnumFinished(const VBoxMediaList &list)
         if (QApplication::activeModalWidget())
             break;
 
-        /* Ignore the signal if a VBoxMediaManagerDlg window is active: */
+        /* Ignore the signal if a UIMediumManager window is active: */
         if (qApp->activeWindow() &&
-            !strcmp(qApp->activeWindow()->metaObject()->className(), "VBoxMediaManagerDlg"))
+            !strcmp(qApp->activeWindow()->metaObject()->className(), "UIMediumManager"))
             break;
 
         /* Look for at least one inaccessible media: */
@@ -1157,7 +1157,7 @@ void UISelectorWindow::sltMediumEnumFinished(const VBoxMediaList &list)
         if (it != list.end() && msgCenter().remindAboutInaccessibleMedia())
         {
             /* Show the VDM dialog but don't refresh once more after a just-finished refresh: */
-            VBoxMediaManagerDlg::showModeless(this, false /* aRefresh */);
+            UIMediumManager::showModeless(this, false /* aRefresh */);
         }
     }
     while (0);
