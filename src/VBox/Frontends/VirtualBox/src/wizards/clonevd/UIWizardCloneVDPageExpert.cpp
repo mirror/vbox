@@ -52,7 +52,7 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &sourceVirtua
                 m_pSourceDiskSelector = new VBoxMediaComboBox(m_pSourceDiskCnt);
                 {
                     m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-                    m_pSourceDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
+                    m_pSourceDiskSelector->setType(UIMediumType_HardDisk);
                     m_pSourceDiskSelector->setCurrentItem(sourceVirtualDisk.GetId());
                     m_pSourceDiskSelector->repopulate();
                 }

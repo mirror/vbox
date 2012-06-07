@@ -206,25 +206,25 @@ bool UIWizardNewVM::createVM()
             /* Boot virtual hard drive: */
             if (!strId.isNull())
             {
-                VBoxMedium vmedium = vboxGlobal().findMedium(strId);
+                UIMedium vmedium = vboxGlobal().findMedium(strId);
                 CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
                 machine.AttachDevice(strHdName, 0, 0, KDeviceType_HardDisk, medium);
                 if (!machine.isOk())
-                    msgCenter().cannotAttachDevice(machine, VBoxDefs::MediumType_HardDisk, field("virtualDiskLocation").toString(),
+                    msgCenter().cannotAttachDevice(machine, UIMediumType_HardDisk, field("virtualDiskLocation").toString(),
                                                    StorageSlot(ctrHdBus, 0, 0), this);
             }
 
             /* Attach empty CD/DVD ROM Device */
             machine.AttachDevice(strDvdName, 1, 0, KDeviceType_DVD, CMedium());
             if (!machine.isOk())
-                msgCenter().cannotAttachDevice(machine, VBoxDefs::MediumType_DVD, QString(), StorageSlot(strDvdBus, 1, 0), this);
+                msgCenter().cannotAttachDevice(machine, UIMediumType_DVD, QString(), StorageSlot(strDvdBus, 1, 0), this);
 
 
             /* Attach an empty floppy drive if recommended */
             if (type.GetRecommendedFloppy()) {
                 machine.AttachDevice(strFloppyName, 0, 0, KDeviceType_Floppy, CMedium());
                 if (!machine.isOk())
-                    msgCenter().cannotAttachDevice(machine, VBoxDefs::MediumType_Floppy, QString(),
+                    msgCenter().cannotAttachDevice(machine, UIMediumType_Floppy, QString(),
                                                    StorageSlot(KStorageBus_Floppy, 0, 0), this);
             }
 

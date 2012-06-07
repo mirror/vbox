@@ -175,7 +175,7 @@ class VBoxMediaEnumEvent : public QEvent
 public:
 
     /** Constructs a regular enum event */
-    VBoxMediaEnumEvent (const VBoxMedium &aMedium,
+    VBoxMediaEnumEvent (const UIMedium &aMedium,
                         VBoxMediaList::iterator &aIterator)
         : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
         , mMedium (aMedium), mIterator (aIterator), mLast (false)
@@ -187,7 +187,7 @@ public:
         {}
 
     /** Last enumerated medium (not valid when #last is true) */
-    const VBoxMedium mMedium;
+    const UIMedium mMedium;
     /** Opaque iterator provided by the event sender (guaranteed to be
      *  the same variable for all media in the single enumeration procedure) */
     VBoxMediaList::iterator &mIterator;
@@ -1236,7 +1236,7 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
 
 /**
  * Searches for the given hard disk in the list of known media descriptors and
- * calls VBoxMedium::details() on the found descriptor.
+ * calls UIMedium::details() on the found descriptor.
  *
  * If the requested hard disk is not found (for example, it's a new hard disk
  * for a new VM created outside our UI), then media enumeration is requested and
@@ -1247,12 +1247,12 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
  *       passed to this method disk gets removed before #startEnumeratingMedia()
  *       succeeds. This (unexpected object uninitialization) is a generic
  *       problem though and needs to be addressed using exceptions (see also the
- *       @todo in VBoxMedium::details()).
+ *       @todo in UIMedium::details()).
  */
 QString VBoxGlobal::details (const CMedium &aMedium, bool aPredictDiff)
 {
     CMedium cmedium (aMedium);
-    VBoxMedium medium;
+    UIMedium medium;
 
     if (!findMedium (cmedium, medium))
     {
@@ -1998,7 +1998,7 @@ CSession VBoxGlobal::openSession(const QString &aId, bool aExisting /* = false *
  */
 static void addNullMediumToList (VBoxMediaList &aList, VBoxMediaList::iterator aWhere)
 {
-    VBoxMedium medium;
+    UIMedium medium;
     aList.insert (aWhere, medium);
 }
 
@@ -2009,15 +2009,15 @@ static void addNullMediumToList (VBoxMediaList &aList, VBoxMediaList::iterator a
 static void addMediumsToList (const CMediumVector &aVector,
                               VBoxMediaList &aList,
                               VBoxMediaList::iterator aWhere,
-                              VBoxDefs::MediumType aType,
-                              VBoxMedium *aParent = 0)
+                              UIMediumType aType,
+                              UIMedium *aParent = 0)
 {
     VBoxMediaList::iterator first = aWhere;
 
     for (CMediumVector::ConstIterator it = aVector.begin(); it != aVector.end(); ++ it)
     {
         CMedium cmedium (*it);
-        VBoxMedium medium (cmedium, aType, aParent);
+        UIMedium medium (cmedium, aType, aParent);
 
         /* Search for a proper alphabetic position */
         VBoxMediaList::iterator jt = first;
@@ -2040,7 +2040,7 @@ static void addMediumsToList (const CMediumVector &aVector,
 static void addHardDisksToList (const CMediumVector &aVector,
                                 VBoxMediaList &aList,
                                 VBoxMediaList::iterator aWhere,
-                                VBoxMedium *aParent = 0)
+                                UIMedium *aParent = 0)
 {
     VBoxMediaList::iterator first = aWhere;
 
@@ -2048,7 +2048,7 @@ static void addHardDisksToList (const CMediumVector &aVector,
     for (CMediumVector::ConstIterator it = aVector.begin(); it != aVector.end(); ++ it)
     {
         CMedium cmedium (*it);
-        VBoxMedium medium (cmedium, VBoxDefs::MediumType_HardDisk, aParent);
+        UIMedium medium (cmedium, UIMediumType_HardDisk, aParent);
 
         /* Search for a proper alphabetic position */
         VBoxMediaList::iterator jt = first;
@@ -2067,7 +2067,7 @@ static void addHardDisksToList (const CMediumVector &aVector,
     for (VBoxMediaList::iterator it = first; it != aWhere;)
     {
         CMediumVector children = (*it).medium().GetChildren();
-        VBoxMedium *parent = &(*it);
+        UIMedium *parent = &(*it);
 
         ++ it; /* go to the next sibling before inserting children */
         addHardDisksToList (children, aList, it, parent);
@@ -2119,10 +2119,10 @@ void VBoxGlobal::startEnumeratingMedia()
     mMediaList.clear();
     addNullMediumToList (mMediaList, mMediaList.end());
     addHardDisksToList (mVBox.GetHardDisks(), mMediaList, mMediaList.end());
-    addMediumsToList (mHost.GetDVDDrives(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_DVD);
-    addMediumsToList (mVBox.GetDVDImages(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_DVD);
-    addMediumsToList (mHost.GetFloppyDrives(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_Floppy);
-    addMediumsToList (mVBox.GetFloppyImages(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_Floppy);
+    addMediumsToList (mHost.GetDVDDrives(), mMediaList, mMediaList.end(), UIMediumType_DVD);
+    addMediumsToList (mVBox.GetDVDImages(), mMediaList, mMediaList.end(), UIMediumType_DVD);
+    addMediumsToList (mHost.GetFloppyDrives(), mMediaList, mMediaList.end(), UIMediumType_Floppy);
+    addMediumsToList (mVBox.GetFloppyImages(), mMediaList, mMediaList.end(), UIMediumType_Floppy);
 
     /* enumeration thread class */
     class MediaEnumThread : public QThread
@@ -2166,7 +2166,7 @@ void VBoxGlobal::startEnumeratingMedia()
 
     private:
 
-        QVector <VBoxMedium> mVector;
+        QVector <UIMedium> mVector;
         VBoxMediaList::iterator mSavedIt;
     };
 
@@ -2197,51 +2197,19 @@ void VBoxGlobal::reloadProxySettings()
     }
 }
 
-VBoxDefs::MediumType VBoxGlobal::mediumTypeToLocal(KDeviceType globalType)
-{
-    switch (globalType)
-    {
-        case KDeviceType_HardDisk:
-            return VBoxDefs::MediumType_HardDisk;
-        case KDeviceType_DVD:
-            return VBoxDefs::MediumType_DVD;
-        case KDeviceType_Floppy:
-            return VBoxDefs::MediumType_Floppy;
-        default:
-            break;
-    }
-    return VBoxDefs::MediumType_Invalid;
-}
-
-KDeviceType VBoxGlobal::mediumTypeToGlobal(VBoxDefs::MediumType localType)
-{
-    switch (localType)
-    {
-        case VBoxDefs::MediumType_HardDisk:
-            return KDeviceType_HardDisk;
-        case VBoxDefs::MediumType_DVD:
-            return KDeviceType_DVD;
-        case VBoxDefs::MediumType_Floppy:
-            return KDeviceType_Floppy;
-        default:
-            break;
-    }
-    return KDeviceType_Null;
-}
-
 /**
  * Adds a new medium to the current media list and emits the #mediumAdded()
  * signal.
  *
  * @sa #currentMediaList()
  */
-void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
+void VBoxGlobal::addMedium (const UIMedium &aMedium)
 {
     /* Note that we maintain the same order here as #startEnumeratingMedia() */
 
     VBoxMediaList::iterator it = mMediaList.begin();
 
-    if (aMedium.type() == VBoxDefs::MediumType_HardDisk)
+    if (aMedium.type() == UIMediumType_HardDisk)
     {
         VBoxMediaList::iterator itParent = mMediaList.end();
 
@@ -2250,7 +2218,7 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
             /* skip null medium that come first */
             if ((*it).isNull()) continue;
 
-            if ((*it).type() != VBoxDefs::MediumType_HardDisk)
+            if ((*it).type() != UIMediumType_HardDisk)
                 break;
 
             if (aMedium.parent() != NULL && itParent == mMediaList.end())
@@ -2282,17 +2250,17 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
             if ((*it).isNull()) continue;
 
             /* skip HardDisks that come first */
-            if ((*it).type() == VBoxDefs::MediumType_HardDisk)
+            if ((*it).type() == UIMediumType_HardDisk)
                 continue;
 
             /* skip DVD when inserting Floppy */
-            if (aMedium.type() == VBoxDefs::MediumType_Floppy &&
-                (*it).type() == VBoxDefs::MediumType_DVD)
+            if (aMedium.type() == UIMediumType_Floppy &&
+                (*it).type() == UIMediumType_DVD)
                 continue;
 
             if ((*it).name().localeAwareCompare (aMedium.name()) > 0 ||
-                (aMedium.type() == VBoxDefs::MediumType_DVD &&
-                 (*it).type() == VBoxDefs::MediumType_Floppy))
+                (aMedium.type() == UIMediumType_DVD &&
+                 (*it).type() == UIMediumType_Floppy))
                 break;
         }
     }
@@ -2308,7 +2276,7 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
  *
  * @sa #currentMediaList()
  */
-void VBoxGlobal::updateMedium (const VBoxMedium &aMedium)
+void VBoxGlobal::updateMedium (const UIMedium &aMedium)
 {
     VBoxMediaList::Iterator it;
     for (it = mMediaList.begin(); it != mMediaList.end(); ++ it)
@@ -2329,7 +2297,7 @@ void VBoxGlobal::updateMedium (const VBoxMedium &aMedium)
  *
  * @sa #currentMediaList()
  */
-void VBoxGlobal::removeMedium (VBoxDefs::MediumType aType, const QString &aId)
+void VBoxGlobal::removeMedium (UIMediumType aType, const QString &aId)
 {
     VBoxMediaList::Iterator it;
     for (it = mMediaList.begin(); it != mMediaList.end(); ++ it)
@@ -2347,7 +2315,7 @@ void VBoxGlobal::removeMedium (VBoxDefs::MediumType aType, const QString &aId)
     }
 #endif
 
-    VBoxMedium *pParent = (*it).parent();
+    UIMedium *pParent = (*it).parent();
 
     /* remove the medium from the list to keep it in sync with the server "for
      * free" when the medium is deleted from one of our UIs */
@@ -2369,7 +2337,7 @@ void VBoxGlobal::removeMedium (VBoxDefs::MediumType aType, const QString &aId)
  *
  *  @return true if found and false otherwise.
  */
-bool VBoxGlobal::findMedium (const CMedium &aObj, VBoxMedium &aMedium) const
+bool VBoxGlobal::findMedium (const CMedium &aObj, UIMedium &aMedium) const
 {
     for (VBoxMediaList::ConstIterator it = mMediaList.begin(); it != mMediaList.end(); ++ it)
     {
@@ -2388,17 +2356,17 @@ bool VBoxGlobal::findMedium (const CMedium &aObj, VBoxMedium &aMedium) const
  *
  *  @return VBoxMedum if found which is invalid otherwise.
  */
-VBoxMedium VBoxGlobal::findMedium (const QString &aMediumId) const
+UIMedium VBoxGlobal::findMedium (const QString &aMediumId) const
 {
     for (VBoxMediaList::ConstIterator it = mMediaList.begin(); it != mMediaList.end(); ++ it)
         if ((*it).id() == aMediumId)
             return *it;
-    return VBoxMedium();
+    return UIMedium();
 }
 
 /* Open some external medium using file open dialog
  * and temporary cache (enumerate) it in GUI inner mediums cache: */
-QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent,
+QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent,
                                                  const QString &strDefaultFolder /* = QString() */,
                                                  bool fUseLastFolder /* = false */)
 {
@@ -2412,7 +2380,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
     QString strLastFolder;
     switch (mediumType)
     {
-        case VBoxDefs::MediumType_HardDisk:
+        case UIMediumType_HardDisk:
         {
             filters = vboxGlobal().HDDBackends();
             strTitle = tr("Please choose a virtual hard drive file");
@@ -2424,7 +2392,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
                 strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
             break;
         }
-        case VBoxDefs::MediumType_DVD:
+        case UIMediumType_DVD:
         {
             filters = vboxGlobal().DVDBackends();
             strTitle = tr("Please choose a virtual optical disk file");
@@ -2436,7 +2404,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
                 strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
             break;
         }
-        case VBoxDefs::MediumType_Floppy:
+        case UIMediumType_Floppy:
         {
             filters = vboxGlobal().FloppyBackends();
             strTitle = tr("Please choose a virtual floppy disk file");
@@ -2479,7 +2447,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
     return QString();
 }
 
-QString VBoxGlobal::openMedium(VBoxDefs::MediumType mediumType, QString strMediumLocation, QWidget *pParent /* = 0*/)
+QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent /* = 0*/)
 {
     /* Convert to native separators: */
     strMediumLocation = QDir::toNativeSeparators(strMediumLocation);
@@ -2488,16 +2456,16 @@ QString VBoxGlobal::openMedium(VBoxDefs::MediumType mediumType, QString strMediu
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Remember the path of the last chosen medium: */
-    QString strRecentFolderKey = mediumType == VBoxDefs::MediumType_HardDisk ? VBoxDefs::GUI_RecentFolderHD :
-                                 mediumType == VBoxDefs::MediumType_DVD ? VBoxDefs::GUI_RecentFolderCD :
-                                 mediumType == VBoxDefs::MediumType_Floppy ? VBoxDefs::GUI_RecentFolderFD :
+    QString strRecentFolderKey = mediumType == UIMediumType_HardDisk ? VBoxDefs::GUI_RecentFolderHD :
+                                 mediumType == UIMediumType_DVD ? VBoxDefs::GUI_RecentFolderCD :
+                                 mediumType == UIMediumType_Floppy ? VBoxDefs::GUI_RecentFolderFD :
                                  QString();
     vbox.SetExtraData(strRecentFolderKey, QFileInfo(strMediumLocation).absolutePath());
 
     /* Update recently used list: */
-    QString strRecentListKey = mediumType == VBoxDefs::MediumType_HardDisk ? VBoxDefs::GUI_RecentListHD :
-                               mediumType == VBoxDefs::MediumType_DVD ? VBoxDefs::GUI_RecentListCD :
-                               mediumType == VBoxDefs::MediumType_Floppy ? VBoxDefs::GUI_RecentListFD :
+    QString strRecentListKey = mediumType == UIMediumType_HardDisk ? VBoxDefs::GUI_RecentListHD :
+                               mediumType == UIMediumType_DVD ? VBoxDefs::GUI_RecentListCD :
+                               mediumType == UIMediumType_Floppy ? VBoxDefs::GUI_RecentListFD :
                                QString();
     QStringList recentMediumList = vbox.GetExtraData(strRecentListKey).split(';');
     if (recentMediumList.contains(strMediumLocation))
@@ -2512,13 +2480,13 @@ QString VBoxGlobal::openMedium(VBoxDefs::MediumType mediumType, QString strMediu
     if (vbox.isOk())
     {
         /* Prepare vbox medium wrapper: */
-        VBoxMedium vboxMedium;
+        UIMedium vboxMedium;
 
         /* First of all we should test if that medium already opened: */
         if (!vboxGlobal().findMedium(comMedium, vboxMedium))
         {
             /* And create new otherwise: */
-            vboxMedium = VBoxMedium(CMedium(comMedium), mediumType, KMediumState_Created);
+            vboxMedium = UIMedium(CMedium(comMedium), mediumType, KMediumState_Created);
             vboxGlobal().addMedium(vboxMedium);
         }
 
@@ -4698,7 +4666,7 @@ void VBoxGlobal::init()
 
     /* Cache IMedium data.
      * There could be no used mediums at all,
-     * but this method should be run anyway just to enumerate null VBoxMedium object,
+     * but this method should be run anyway just to enumerate null UIMedium object,
      * used by some VBox smart widgets, like VBoxMediaComboBox: */
     vboxGlobal().startEnumeratingMedia();
 

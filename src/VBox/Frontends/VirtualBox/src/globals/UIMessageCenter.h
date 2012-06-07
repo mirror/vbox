@@ -24,14 +24,15 @@
 #include <QPointer>
 
 /* GUI includes: */
-#include "CProgress.h"
 #include "QIMessageBox.h"
+#include "UIMediumDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CProgress.h"
 
 /* Forward declarations: */
-class VBoxMedium;
+class UIMedium;
 struct StorageSlot;
 #ifdef VBOX_WITH_DRAG_AND_DROP
 class CGuest;
@@ -258,10 +259,10 @@ public:
 
     void cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType);
 
-    bool confirmReleaseMedium(QWidget *pParent, const VBoxMedium &aMedium,
+    bool confirmReleaseMedium(QWidget *pParent, const UIMedium &aMedium,
                               const QString &strUsage);
 
-    bool confirmRemoveMedium(QWidget *pParent, const VBoxMedium &aMedium);
+    bool confirmRemoveMedium(QWidget *pParent, const UIMedium &aMedium);
 
     void sayCannotOverwriteHardDiskStorage(QWidget *pParent,
                                            const QString &strLocation);
@@ -281,19 +282,19 @@ public:
                                      const CMedium &medium,
                                      const CProgress &progress);
     void cannotDetachDevice(QWidget *pParent, const CMachine &machine,
-                            VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot);
+                            UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot);
 
-    int cannotRemountMedium(QWidget *pParent, const CMachine &machine, const VBoxMedium &aMedium, bool fMount, bool fRetry);
+    int cannotRemountMedium(QWidget *pParent, const CMachine &machine, const UIMedium &aMedium, bool fMount, bool fRetry);
     void cannotOpenMedium(QWidget *pParent, const CVirtualBox &vbox,
-                          VBoxDefs::MediumType type, const QString &strLocation);
-    void cannotCloseMedium(QWidget *pParent, const VBoxMedium &aMedium,
+                          UIMediumType type, const QString &strLocation);
+    void cannotCloseMedium(QWidget *pParent, const UIMedium &aMedium,
                            const COMResult &rc);
 
     void cannotOpenSession(const CSession &session);
     void cannotOpenSession(const CVirtualBox &vbox, const CMachine &machine,
                            const CProgress &progress = CProgress());
 
-    void cannotGetMediaAccessibility(const VBoxMedium &aMedium);
+    void cannotGetMediaAccessibility(const UIMedium &aMedium);
 
     int confirmDeletingHostInterface(const QString &strName, QWidget *pParent = 0);
 
@@ -390,7 +391,7 @@ public:
                           const QString &strErrorId,
                           const QString &strErrorMsg) const;
 
-    static QString mediumToAccusative(VBoxDefs::MediumType type, bool fIsHostDrive = false);
+    static QString mediumToAccusative(UIMediumType type, bool fIsHostDrive = false);
 
     static QString formatRC(HRESULT rc);
 
@@ -421,7 +422,7 @@ public:
     void cannotCreateHostInterface(const CProgress &progress, QWidget *pParent = 0);
     void cannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent = 0);
     void cannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent = 0);
-    void cannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+    void cannotAttachDevice(const CMachine &machine, UIMediumType type,
                             const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     void cannotCreateSharedFolder(const CMachine &machine, const QString &strName,
                                   const QString &strPath, QWidget *pParent = 0);
@@ -447,7 +448,7 @@ signals:
     void sigCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
     void sigCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent);
     void sigCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent);
-    void sigCannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+    void sigCannotAttachDevice(const CMachine &machine, UIMediumType type,
                                const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent);
     void sigCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
                                      const QString &strPath, QWidget *pParent);
@@ -475,7 +476,7 @@ private slots:
     void sltCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
     void sltCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent);
     void sltCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent);
-    void sltCannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+    void sltCannotAttachDevice(const CMachine &machine, UIMediumType type,
                                const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent);
     void sltCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
                                      const QString &strPath, QWidget *pParent);

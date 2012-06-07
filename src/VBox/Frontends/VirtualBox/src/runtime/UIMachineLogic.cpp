@@ -80,31 +80,31 @@
 
 struct MediumTarget
 {
-    MediumTarget() : name(QString("")), port(0), device(0), id(QString()), type(VBoxDefs::MediumType_Invalid) {}
+    MediumTarget() : name(QString("")), port(0), device(0), id(QString()), type(UIMediumType_Invalid) {}
     MediumTarget(const QString &strName, LONG iPort, LONG iDevice)
-        : name(strName), port(iPort), device(iDevice), id(QString()), type(VBoxDefs::MediumType_Invalid) {}
+        : name(strName), port(iPort), device(iDevice), id(QString()), type(UIMediumType_Invalid) {}
     MediumTarget(const QString &strName, LONG iPort, LONG iDevice, const QString &strId)
-        : name(strName), port(iPort), device(iDevice), id(strId), type(VBoxDefs::MediumType_Invalid) {}
-    MediumTarget(const QString &strName, LONG iPort, LONG iDevice, VBoxDefs::MediumType eType)
+        : name(strName), port(iPort), device(iDevice), id(strId), type(UIMediumType_Invalid) {}
+    MediumTarget(const QString &strName, LONG iPort, LONG iDevice, UIMediumType eType)
         : name(strName), port(iPort), device(iDevice), id(QString()), type(eType) {}
     QString name;
     LONG port;
     LONG device;
     QString id;
-    VBoxDefs::MediumType type;
+    UIMediumType type;
 };
 Q_DECLARE_METATYPE(MediumTarget);
 
 struct RecentMediumTarget
 {
-    RecentMediumTarget() : name(QString("")), port(0), device(0), location(QString()), type(VBoxDefs::MediumType_Invalid) {}
-    RecentMediumTarget(const QString &strName, LONG iPort, LONG iDevice, const QString &strLocation, VBoxDefs::MediumType eType)
+    RecentMediumTarget() : name(QString("")), port(0), device(0), location(QString()), type(UIMediumType_Invalid) {}
+    RecentMediumTarget(const QString &strName, LONG iPort, LONG iDevice, const QString &strLocation, UIMediumType eType)
         : name(strName), port(iPort), device(iDevice), location(strLocation), type(eType) {}
     QString name;
     LONG port;
     LONG device;
     QString location;
-    VBoxDefs::MediumType type;
+    UIMediumType type;
 };
 Q_DECLARE_METATYPE(RecentMediumTarget);
 
@@ -1122,11 +1122,11 @@ void UIMachineLogic::sltPrepareStorageMenu()
     QMenu *pFloppyDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices)->menu();
 
     /* Determine medium & device types: */
-    VBoxDefs::MediumType mediumType = pMenu == pOpticalDevicesMenu ? VBoxDefs::MediumType_DVD :
-                                      pMenu == pFloppyDevicesMenu  ? VBoxDefs::MediumType_Floppy :
-                                                                     VBoxDefs::MediumType_Invalid;
-    KDeviceType deviceType = vboxGlobal().mediumTypeToGlobal(mediumType);
-    AssertMsg(mediumType != VBoxDefs::MediumType_Invalid, ("Incorrect storage medium type!\n"));
+    UIMediumType mediumType = pMenu == pOpticalDevicesMenu ? UIMediumType_DVD :
+                                      pMenu == pFloppyDevicesMenu  ? UIMediumType_Floppy :
+                                                                     UIMediumType_Invalid;
+    KDeviceType deviceType = mediumTypeToGlobal(mediumType);
+    AssertMsg(mediumType != UIMediumType_Invalid, ("Incorrect storage medium type!\n"));
     AssertMsg(deviceType != KDeviceType_Null, ("Incorrect storage device type!\n"));
 
     /* Fill attachments menu: */
@@ -1183,11 +1183,11 @@ void UIMachineLogic::sltPrepareStorageMenu()
             QString strRecentMediumAddress;
             switch (mediumType)
             {
-                case VBoxDefs::MediumType_DVD:
+                case UIMediumType_DVD:
                     mediums = vboxGlobal().host().GetDVDDrives();
                     strRecentMediumAddress = VBoxDefs::GUI_RecentListCD;
                     break;
-                case VBoxDefs::MediumType_Floppy:
+                case UIMediumType_Floppy:
                     mediums = vboxGlobal().host().GetFloppyDrives();
                     strRecentMediumAddress = VBoxDefs::GUI_RecentListFD;
                     break;
@@ -1215,7 +1215,7 @@ void UIMachineLogic::sltPrepareStorageMenu()
                 }
                 if (!fIsHostDriveUsed)
                 {
-                    QAction *pChooseHostDriveAction = pAttachmentMenu->addAction(VBoxMedium(medium, mediumType).name(),
+                    QAction *pChooseHostDriveAction = pAttachmentMenu->addAction(UIMedium(medium, mediumType).name(),
                                                                                  this, SLOT(sltMountStorageMedium()));
                     pChooseHostDriveAction->setCheckable(true);
                     pChooseHostDriveAction->setChecked(!currentMedium.isNull() && medium.GetId() == strCurrentId);
@@ -1275,13 +1275,13 @@ void UIMachineLogic::sltPrepareStorageMenu()
             /* Switch CD/FD naming */
             switch (mediumType)
             {
-                case VBoxDefs::MediumType_DVD:
+                case UIMediumType_DVD:
                     pChooseExistingMediumAction->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual CD/DVD disk file..."));
                     unmountMediumAction->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
                     unmountMediumAction->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png",
                                                                      ":/cd_unmount_dis_16px.png"));
                     break;
-                case VBoxDefs::MediumType_Floppy:
+                case UIMediumType_Floppy:
                     pChooseExistingMediumAction->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual floppy disk file..."));
                     unmountMediumAction->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
                     unmountMediumAction->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png",
@@ -1301,11 +1301,11 @@ void UIMachineLogic::sltPrepareStorageMenu()
         pEmptyMenuAction->setEnabled(false);
         switch (mediumType)
         {
-            case VBoxDefs::MediumType_DVD:
+            case UIMediumType_DVD:
                 pEmptyMenuAction->setText(QApplication::translate("UIMachineLogic", "No CD/DVD Devices Attached"));
                 pEmptyMenuAction->setToolTip(QApplication::translate("UIMachineLogic", "No CD/DVD devices attached to that VM"));
                 break;
-            case VBoxDefs::MediumType_Floppy:
+            case UIMediumType_Floppy:
                 pEmptyMenuAction->setText(QApplication::translate("UIMachineLogic", "No Floppy Devices Attached"));
                 pEmptyMenuAction->setToolTip(QApplication::translate("UIMachineLogic", "No floppy devices attached to that VM"));
                 break;
@@ -1336,7 +1336,7 @@ void UIMachineLogic::sltMountStorageMedium()
 
     /* New mount-target attributes: */
     QString newId = QString("");
-    bool fSelectWithMediaManager = target.type != VBoxDefs::MediumType_Invalid;
+    bool fSelectWithMediaManager = target.type != UIMediumType_Invalid;
 
     /* Open Virtual Media Manager to select image id: */
     if (fSelectWithMediaManager)
@@ -1370,7 +1370,7 @@ void UIMachineLogic::sltMountStorageMedium()
 
     bool fMount = !newId.isEmpty();
 
-    VBoxMedium vmedium = vboxGlobal().findMedium(newId);
+    UIMedium vmedium = vboxGlobal().findMedium(newId);
     CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
 
     /* Remount medium to the predefined port/device: */
@@ -1427,7 +1427,7 @@ void UIMachineLogic::sltMountRecentStorageMedium()
         bool fMount = strNewId != strCurrentId;
 
         /* Prepare target medium: */
-        const VBoxMedium &vboxMedium = fMount ? vboxGlobal().findMedium(strNewId) : VBoxMedium();
+        const UIMedium &vboxMedium = fMount ? vboxGlobal().findMedium(strNewId) : UIMedium();
         const CMedium &comMedium = fMount ? vboxMedium.medium() : CMedium();
 
         /* 'Mounted' flag: */

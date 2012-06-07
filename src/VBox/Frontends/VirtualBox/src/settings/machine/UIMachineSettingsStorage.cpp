@@ -703,7 +703,7 @@ QString AttachmentItem::attUsage() const
 
 void AttachmentItem::cache()
 {
-    VBoxMedium medium = vboxGlobal().findMedium (mAttMediumId);
+    UIMedium medium = vboxGlobal().findMedium (mAttMediumId);
 
     /* Cache medium information */
     mAttName = medium.name (true);
@@ -1698,10 +1698,10 @@ public:
     QString id() const { return m_strId; }
     void setId(const QString &strId) { m_strId = strId; emit sigChanged(); }
 
-    VBoxDefs::MediumType type() const { return m_type; }
-    void setType(VBoxDefs::MediumType type) { m_type = type; }
+    UIMediumType type() const { return m_type; }
+    void setType(UIMediumType type) { m_type = type; }
 
-    bool isNull() const { return m_strId == VBoxMedium().id(); }
+    bool isNull() const { return m_strId == UIMedium().id(); }
 
 signals:
 
@@ -1710,7 +1710,7 @@ signals:
 private:
 
     QString m_strId;
-    VBoxDefs::MediumType m_type;
+    UIMediumType m_type;
 };
 
 /**
@@ -1831,12 +1831,12 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mLbUsageValue->setFullSizeSelection (true);
 
     /* Setup connections */
-    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const VBoxMedium &)),
-             this, SLOT (mediumUpdated (const VBoxMedium &)));
-    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
-             this, SLOT (mediumUpdated (const VBoxMedium &)));
-    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediumType, const QString &)),
-             this, SLOT (mediumRemoved (VBoxDefs::MediumType, const QString &)));
+    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const UIMedium &)),
+             this, SLOT (mediumUpdated (const UIMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const UIMedium &)),
+             this, SLOT (mediumUpdated (const UIMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (UIMediumType, const QString &)),
+             this, SLOT (mediumRemoved (UIMediumType, const QString &)));
     connect (mAddCtrAction, SIGNAL (triggered (bool)), this, SLOT (addController()));
     connect (mAddIDECtrAction, SIGNAL (triggered (bool)), this, SLOT (addIDEController()));
     connect (mAddSATACtrAction, SIGNAL (triggered (bool)), this, SLOT (addSATAController()));
@@ -1943,7 +1943,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     storageAttachmentData.m_fAttachmentTempEject = attachment.GetTemporaryEject();
                     storageAttachmentData.m_fAttachmentNonRotational = attachment.GetNonRotational();
                     CMedium comMedium(attachment.GetMedium());
-                    VBoxMedium vboxMedium;
+                    UIMedium vboxMedium;
                     vboxGlobal().findMedium(comMedium, vboxMedium);
                     storageAttachmentData.m_strAttachmentMediumId = vboxMedium.id();
                 }
@@ -2244,7 +2244,7 @@ void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
     UISettingsPageMachine::showEvent (aEvent);
 }
 
-void UIMachineSettingsStorage::mediumUpdated (const VBoxMedium &aMedium)
+void UIMachineSettingsStorage::mediumUpdated (const UIMedium &aMedium)
 {
     QModelIndex rootIndex = mStorageModel->root();
     for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
@@ -2263,7 +2263,7 @@ void UIMachineSettingsStorage::mediumUpdated (const VBoxMedium &aMedium)
     }
 }
 
-void UIMachineSettingsStorage::mediumRemoved (VBoxDefs::MediumType /* aType */, const QString &aMediumId)
+void UIMachineSettingsStorage::mediumRemoved (UIMediumType /* aType */, const QString &aMediumId)
 {
     QModelIndex rootIndex = mStorageModel->root();
     for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
@@ -2275,7 +2275,7 @@ void UIMachineSettingsStorage::mediumRemoved (VBoxDefs::MediumType /* aType */, 
             QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
             if (attMediumId == aMediumId)
             {
-                mStorageModel->setData (attIndex, VBoxMedium().id(), StorageModel::R_AttMediumId);
+                mStorageModel->setData (attIndex, UIMedium().id(), StorageModel::R_AttMediumId);
                 if (mValidator) mValidator->revalidate();
             }
         }
@@ -2490,7 +2490,7 @@ void UIMachineSettingsStorage::getInformation()
                     default:
                         break;
                 }
-                m_pMediumIdHolder->setType(vboxGlobal().mediumTypeToLocal(device));
+                m_pMediumIdHolder->setType(mediumTypeToLocal(device));
                 m_pMediumIdHolder->setId(mStorageModel->data(index, StorageModel::R_AttMediumId).toString());
                 mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
                 mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
@@ -2609,7 +2609,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
         /* Depending on current medium type: */
         switch (m_pMediumIdHolder->type())
         {
-            case VBoxDefs::MediumType_HardDisk:
+            case UIMediumType_HardDisk:
             {
                 /* Add "Create a new virtual hard disk" action: */
                 QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create a new hard disk..."));
@@ -2622,7 +2622,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 break;
             }
-            case VBoxDefs::MediumType_DVD:
+            case UIMediumType_DVD:
             {
                 /* Add "Choose a virtual CD/DVD disk file" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual CD/DVD disk file..."));
@@ -2639,7 +2639,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 connect(pEjectCurrentMedium, SIGNAL(triggered(bool)), this, SLOT(sltUnmountDevice()));
                 break;
             }
-            case VBoxDefs::MediumType_Floppy:
+            case UIMediumType_Floppy:
             {
                 /* Add "Choose a virtual floppy disk file" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual floppy disk file..."));
@@ -2671,7 +2671,7 @@ void UIMachineSettingsStorage::sltCreateNewHardDisk()
 
 void UIMachineSettingsStorage::sltUnmountDevice()
 {
-    m_pMediumIdHolder->setId(VBoxMedium().id());
+    m_pMediumIdHolder->setId(UIMedium().id());
 }
 
 void UIMachineSettingsStorage::sltChooseExistingMedium()
@@ -2700,7 +2700,7 @@ void UIMachineSettingsStorage::sltChooseRecentMedium()
     {
         /* Get recent medium type & name: */
         QStringList mediumInfoList = pChooseRecentMediumAction->data().toString().split(',');
-        VBoxDefs::MediumType mediumType = (VBoxDefs::MediumType)mediumInfoList[0].toUInt();
+        UIMediumType mediumType = (UIMediumType)mediumInfoList[0].toUInt();
         QString strMediumLocation = mediumInfoList[1];
         QString strMediumId = vboxGlobal().openMedium(mediumType, strMediumLocation, this);
         if (!strMediumId.isNull())
@@ -3037,14 +3037,14 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
             if (iAnswer == QIMessageBox::Yes)
                 strMediumId = getWithNewHDWizard();
             else if (iAnswer == QIMessageBox::No)
-                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_HardDisk, this, strMachineFolder);
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_HardDisk, this, strMachineFolder);
             break;
         }
         case KDeviceType_DVD:
         {
             int iAnswer = msgCenter().askAboutOpticalAttachmentCreation(this, strControllerName);
             if (iAnswer == QIMessageBox::Yes)
-                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_DVD, this, strMachineFolder);
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_DVD, this, strMachineFolder);
             else if (iAnswer == QIMessageBox::No)
                 strMediumId = vboxGlobal().findMedium(strMediumId).id();
             break;
@@ -3053,7 +3053,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         {
             int iAnswer = msgCenter().askAboutFloppyAttachmentCreation(this, strControllerName);
             if (iAnswer == QIMessageBox::Yes)
-                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_Floppy, this, strMachineFolder);
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_Floppy, this, strMachineFolder);
             else if (iAnswer == QIMessageBox::No)
                 strMediumId = vboxGlobal().findMedium(strMediumId).id();
             break;
@@ -3153,7 +3153,7 @@ void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
     VBoxMediaList::const_iterator it;
     for (it = mediums.begin(); it != mediums.end(); ++it)
     {
-        const VBoxMedium &medium = *it;
+        const UIMedium &medium = *it;
         if (medium.isHostDrive() && m_pMediumIdHolder->type() == medium.type())
         {
             QAction *pHostDriveAction = pOpenMediumMenu->addAction(medium.name());
@@ -3163,19 +3163,19 @@ void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
     }
 }
 
-void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, VBoxDefs::MediumType recentMediumType)
+void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType recentMediumType)
 {
     /* Compose recent-medium list address: */
     QString strRecentMediumAddress;
     switch (recentMediumType)
     {
-        case VBoxDefs::MediumType_HardDisk:
+        case UIMediumType_HardDisk:
             strRecentMediumAddress = VBoxDefs::GUI_RecentListHD;
             break;
-        case VBoxDefs::MediumType_DVD:
+        case UIMediumType_DVD:
             strRecentMediumAddress = VBoxDefs::GUI_RecentListCD;
             break;
-        case VBoxDefs::MediumType_Floppy:
+        case UIMediumType_Floppy:
             strRecentMediumAddress = VBoxDefs::GUI_RecentListFD;
             break;
         default:
@@ -3469,7 +3469,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
         bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
         bool fAttachmentNonRotational = attachmentData.m_fAttachmentNonRotational;
         /* Get GUI medium object: */
-        VBoxMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
+        UIMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
         /* Get COM medium object: */
         CMedium comMedium = vboxMedium.medium();
 
@@ -3511,7 +3511,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
             else
             {
                 /* Show error message: */
-                msgCenter().cannotAttachDevice(m_machine, vboxGlobal().mediumTypeToLocal(attachmentDeviceType),
+                msgCenter().cannotAttachDevice(m_machine, mediumTypeToLocal(attachmentDeviceType),
                                                  vboxMedium.location(),
                                                  StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
             }
@@ -3553,7 +3553,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
         if (fSuccess && !attachment.isNull())
         {
             /* Get GUI medium object: */
-            VBoxMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
+            UIMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
             /* Get COM medium object: */
             CMedium comMedium = vboxMedium.medium();
             /* Remount storage attachment: */
@@ -3590,7 +3590,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
             else
             {
                 /* Show error message: */
-                msgCenter().cannotAttachDevice(m_machine, vboxGlobal().mediumTypeToLocal(attachmentDeviceType),
+                msgCenter().cannotAttachDevice(m_machine, mediumTypeToLocal(attachmentDeviceType),
                                                  vboxMedium.location(),
                                                  StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
             }

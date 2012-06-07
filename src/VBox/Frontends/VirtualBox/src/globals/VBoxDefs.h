@@ -59,16 +59,6 @@ namespace VBoxGlobalDefs
 /** Common namespace for all enums */
 struct VBoxDefs
 {
-    /** Medium type. */
-    enum MediumType
-    {
-        MediumType_Invalid,
-        MediumType_HardDisk,
-        MediumType_DVD,
-        MediumType_Floppy,
-        MediumType_All
-    };
-
     /** VM display rendering mode. */
     enum RenderMode
     {
@@ -190,8 +180,6 @@ struct VBoxDefs
     static QStringList VBoxExtPackFileExts;
     static QStringList OVFFileExts;
 };
-
-Q_DECLARE_METATYPE(VBoxDefs::MediumType);
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)
 

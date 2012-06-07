@@ -39,10 +39,10 @@ public:
 
     QString id (int = -1) const;
     QString location (int = -1) const;
-    VBoxDefs::MediumType type() const { return mType; }
+    UIMediumType type() const { return mType; }
 
     void setCurrentItem (const QString &aItemId);
-    void setType (VBoxDefs::MediumType aMediumType);
+    void setType (UIMediumType aMediumType);
     void setMachineId (const QString &aMachineId = QString::null);
     void setNullItemPresent (bool aNullItemPresent);
 
@@ -52,11 +52,11 @@ public:
 protected slots:
 
     void mediumEnumStarted();
-    void mediumEnumerated (const VBoxMedium &);
+    void mediumEnumerated (const UIMedium &);
 
-    void mediumAdded (const VBoxMedium &);
-    void mediumUpdated (const VBoxMedium &);
-    void mediumRemoved (VBoxDefs::MediumType, const QString &);
+    void mediumAdded (const UIMedium &);
+    void mediumUpdated (const UIMedium &);
+    void mediumRemoved (UIMediumType, const QString &);
 
     void processActivated (int aIndex);
 //    void processIndexChanged (int aIndex);
@@ -67,14 +67,14 @@ protected:
 
     void updateToolTip (int);
 
-    void appendItem (const VBoxMedium &);
-    void replaceItem (int, const VBoxMedium &);
+    void appendItem (const UIMedium &);
+    void replaceItem (int, const UIMedium &);
 
     bool findMediaIndex (const QString &aId, int &aIndex);
 
-    VBoxDefs::MediumType mType;
+    UIMediumType mType;
 
-    /** Obtruncated VBoxMedium structure. */
+    /** Obtruncated UIMedium structure. */
     struct Medium
     {
         Medium() {}

@@ -95,7 +95,7 @@ bool UIWizardNewVD::createVirtualDisk()
     m_virtualDisk = virtualDisk;
 
     /* Inform everybody there is a new medium: */
-    vboxGlobal().addMedium(VBoxMedium(m_virtualDisk, VBoxDefs::MediumType_HardDisk, KMediumState_Created));
+    vboxGlobal().addMedium(UIMedium(m_virtualDisk, UIMediumType_HardDisk, KMediumState_Created));
 
     return true;
 }

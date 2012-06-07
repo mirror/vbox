@@ -681,8 +681,8 @@ protected:
 
 private slots:
 
-    void mediumUpdated (const VBoxMedium &aMedium);
-    void mediumRemoved (VBoxDefs::MediumType aType, const QString &aMediumId);
+    void mediumUpdated (const UIMedium &aMedium);
+    void mediumRemoved (UIMediumType aType, const QString &aMediumId);
 
     void addController();
     void addIDEController();
@@ -737,7 +737,7 @@ private:
 
     void addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName);
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
-    void addRecentMediumActions(QMenu *pOpenMediumMenu, VBoxDefs::MediumType recentMediumType);
+    void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType recentMediumType);
 
     bool updateStorageData();
     bool removeStorageController(const UICacheSettingsMachineStorageController &controllerCache);

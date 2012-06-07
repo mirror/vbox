@@ -109,7 +109,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
                 pDiskCntLayout->setColumnMinimumWidth(0, iWidth);
                 m_pDiskSelector = new VBoxMediaComboBox(m_pDiskCnt);
                 {
-                    m_pDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
+                    m_pDiskSelector->setType(UIMediumType_HardDisk);
                     m_pDiskSelector->repopulate();
                 }
                 m_pVMMButton = new QIToolButton(m_pDiskCnt);

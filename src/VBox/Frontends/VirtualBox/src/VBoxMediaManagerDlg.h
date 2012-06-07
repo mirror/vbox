@@ -49,7 +49,7 @@ public:
                          Qt::WindowFlags aFlags = Qt::Dialog);
     ~VBoxMediaManagerDlg();
 
-    void setup (VBoxDefs::MediumType aType, bool aDoSelect,
+    void setup (UIMediumType aType, bool aDoSelect,
                 bool aRefresh = true,
                 const CMachine &aSessionMachine = CMachine(),
                 const QString &aSelectId = QString::null,
@@ -76,12 +76,12 @@ protected:
 
 private slots:
 
-    void mediumAdded (const VBoxMedium &aMedium);
-    void mediumUpdated (const VBoxMedium &aMedium);
-    void mediumRemoved (VBoxDefs::MediumType aType, const QString &aId);
+    void mediumAdded (const UIMedium &aMedium);
+    void mediumUpdated (const UIMedium &aMedium);
+    void mediumRemoved (UIMediumType aType, const QString &aId);
 
     void mediumEnumStarted();
-    void mediumEnumerated (const VBoxMedium &aMedium);
+    void mediumEnumerated (const UIMedium &aMedium);
     void mediumEnumFinished (const VBoxMediaList &aList);
 
     void doNewMedium();
@@ -91,7 +91,7 @@ private slots:
     void doRemoveMedium();
     void doReleaseMedium();
 
-    bool releaseMediumFrom (const VBoxMedium &aMedium, const QString &aMachineId);
+    bool releaseMediumFrom (const UIMedium &aMedium, const QString &aMachineId);
 
     void processCurrentChanged (int index = -1);
     void processCurrentChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrevItem = 0);
@@ -105,8 +105,8 @@ private slots:
 
 private:
 
-    QTreeWidget* treeWidget (VBoxDefs::MediumType aType) const;
-    VBoxDefs::MediumType currentTreeWidgetType() const;
+    QTreeWidget* treeWidget (UIMediumType aType) const;
+    UIMediumType currentTreeWidgetType() const;
     QTreeWidget* currentTreeWidget() const;
 
     QTreeWidgetItem* selectedItem (const QTreeWidget *aTree) const;
@@ -114,9 +114,9 @@ private:
 
     void setCurrentItem (QTreeWidget *aTree, QTreeWidgetItem *aItem);
 
-    void addMediumToList (const QString &aLocation, VBoxDefs::MediumType aType);
+    void addMediumToList (const QString &aLocation, UIMediumType aType);
 
-    MediaItem* createHardDiskItem (QTreeWidget *aTree, const VBoxMedium &aMedium) const;
+    MediaItem* createHardDiskItem (QTreeWidget *aTree, const UIMedium &aMedium) const;
 
     void updateTabIcons (MediaItem *aItem, ItemAction aAction);
 
