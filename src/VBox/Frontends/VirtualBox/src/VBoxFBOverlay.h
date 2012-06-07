@@ -19,10 +19,11 @@
 #define __VBoxFBOverlay_h__
 #if defined (VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL)
 
+/* Defines: */
 //#define VBOXQGL_PROF_BASE 1
 //#define VBOXQGL_DBG_SURF 1
-
 //#define VBOXVHWADBG_RENDERCHECK
+#define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
 
 /* Qt includes: */
 #include <QGLWidget>
@@ -32,7 +33,6 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CSession.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -40,16 +40,16 @@
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <VBox/VBoxGL2D.h>
-
-#define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
+#ifdef VBOXVHWA_PROFILE_FPS
+# include <iprt/stream.h>
+#endif /* VBOXVHWA_PROFILE_FPS */
 
 #ifdef DEBUG_misha
 # define VBOXVHWA_PROFILE_FPS
-#endif
+#endif /* DEBUG_misha */
 
-#ifdef VBOXVHWA_PROFILE_FPS
-# include <iprt/stream.h>
-#endif
+/* Forward declarations: */
+class CSession;
 
 #ifdef DEBUG
 class VBoxVHWADbgTimer
@@ -70,7 +70,7 @@ private:
     uint32_t miPeriod;
 };
 
-#endif
+#endif /* DEBUG */
 
 class VBoxVHWASettings
 {
