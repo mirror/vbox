@@ -17,13 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "UIMachineSettingsGeneral.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "QIWidgetValidator.h"
-
+/* Qt includes: */
 #include <QDir>
 #include <QLineEdit>
+
+/* GUI includes: */
+#include "UIMachineSettingsGeneral.h"
+#include "UIMessageCenter.h"
+#include "QIWidgetValidator.h"
+#include "COMEnumsWrapper.h"
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : mValidator(0)
@@ -238,10 +240,10 @@ void UIMachineSettingsGeneral::retranslateUi()
                                    "space."));
 
     /* Shared Clipboard mode */
-    mCbClipboard->setItemText (0, vboxGlobal().toString (KClipboardMode_Disabled));
-    mCbClipboard->setItemText (1, vboxGlobal().toString (KClipboardMode_HostToGuest));
-    mCbClipboard->setItemText (2, vboxGlobal().toString (KClipboardMode_GuestToHost));
-    mCbClipboard->setItemText (3, vboxGlobal().toString (KClipboardMode_Bidirectional));
+    mCbClipboard->setItemText (0, gCOMenum->toString (KClipboardMode_Disabled));
+    mCbClipboard->setItemText (1, gCOMenum->toString (KClipboardMode_HostToGuest));
+    mCbClipboard->setItemText (2, gCOMenum->toString (KClipboardMode_GuestToHost));
+    mCbClipboard->setItemText (3, gCOMenum->toString (KClipboardMode_Bidirectional));
 }
 
 void UIMachineSettingsGeneral::polishPage()

@@ -25,6 +25,7 @@
 #include "VBoxGlobal.h"
 #include "UIMachineDefs.h"
 #include "QIWithRetranslateUI.h"
+#include "COMEnumsWrapper.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -325,7 +326,7 @@ public:
                 strFullData += QApplication::translate("UIIndicatorsPool",
                                "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg(uSlot + 1)
-                    .arg(vboxGlobal().toString(adapter.GetAttachmentType()))
+                    .arg(gCOMenum->toString(adapter.GetAttachmentType()))
                     .arg(strGuestIp.isEmpty() ? "" : "IP " + strGuestIp + ", ")
                     .arg(adapter.GetCableConnected() ?
                          QApplication::translate("UIIndicatorsPool", "connected", "Network adapters tooltip") :

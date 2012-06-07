@@ -31,6 +31,7 @@
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsUSBFilterDetails.h"
 #include "VBoxDefs.h"
+#include "COMEnumsWrapper.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -823,7 +824,7 @@ void UIMachineSettingsUSB::edtClicked()
         {
             case UISettingsPageType_Global:
             {
-                usbFilterData.m_action = vboxGlobal().toUSBDevFilterAction(dlgFilterDetails.mCbAction->currentText());
+                usbFilterData.m_action = gCOMenum->toUSBDevFilterAction(dlgFilterDetails.mCbAction->currentText());
                 break;
             }
             case UISettingsPageType_Machine:
@@ -1022,7 +1023,7 @@ QString UIMachineSettingsUSB::toolTipFor(const UIDataSettingsMachineUSBFilter &u
     if (usbFilterData.m_fHostUSBDevice)
     {
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>State: %1</nobr>", "USB filter tooltip")
-                                                          .arg(vboxGlobal().toString(usbFilterData.m_hostUSBDeviceState));
+                                                          .arg(gCOMenum->toString(usbFilterData.m_hostUSBDeviceState));
     }
 
     return strToolTip;

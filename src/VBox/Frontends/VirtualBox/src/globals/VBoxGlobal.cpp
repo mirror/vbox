@@ -66,6 +66,7 @@
 #include "UIUpdateManager.h"
 #include "UIMachine.h"
 #include "UISession.h"
+#include "COMEnumsWrapper.h"
 
 #ifdef Q_WS_X11
 # include "UIHotKeyEditor.h"
@@ -362,8 +363,6 @@ VBoxGlobal &VBoxGlobal::instance()
 VBoxGlobal::~VBoxGlobal()
 {
     qDeleteAll (mOsTypeIcons);
-    qDeleteAll (mVMStateIcons);
-    qDeleteAll (mVMStateColors);
 }
 
 /* static */
@@ -961,184 +960,6 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aTypeId) const
 }
 
 /**
- * Returns a string representation of the given channel number on the given storage bus.
- * Complementary to #toStorageChannel (KStorageBus, const QString &) const.
- */
-QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
-{
-    QString channel;
-
-    switch (aBus)
-    {
-        case KStorageBus_IDE:
-        {
-            if (aChannel == 0 || aChannel == 1)
-            {
-                channel = mStorageBusChannels [aChannel];
-                break;
-            }
-            AssertMsgFailed (("Invalid IDE channel %d\n", aChannel));
-            break;
-        }
-        case KStorageBus_SATA:
-        case KStorageBus_SCSI:
-        {
-            channel = mStorageBusChannels [2].arg (aChannel);
-            break;
-        }
-        case KStorageBus_Floppy:
-        {
-            AssertMsgFailed (("Floppy have no channels, only devices\n"));
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Invalid bus type %d\n", aBus));
-            break;
-        }
-    }
-
-    Assert (!channel.isNull());
-    return channel;
-}
-
-/**
- * Returns a channel number on the given storage bus corresponding to the given string representation.
- * Complementary to #toString (KStorageBus, LONG) const.
- */
-LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) const
-{
-    LONG channel = 0;
-
-    switch (aBus)
-    {
-        case KStorageBus_IDE:
-        {
-            QLongStringHash::const_iterator it = qFind (mStorageBusChannels.begin(), mStorageBusChannels.end(), aChannel);
-            AssertMsgBreak (it != mStorageBusChannels.end(), ("No value for {%s}\n", aChannel.toLatin1().constData()));
-            channel = it.key();
-            break;
-        }
-        case KStorageBus_SATA:
-        case KStorageBus_SCSI:
-        {
-            QString tpl = mStorageBusChannels [2].arg ("");
-            if (aChannel.startsWith (tpl))
-            {
-                channel = aChannel.right (aChannel.length() - tpl.length()).toLong();
-                break;
-            }
-            AssertMsgFailed (("Invalid channel {%s}\n", aChannel.toLatin1().constData()));
-            break;
-        }
-        case KStorageBus_Floppy:
-        {
-            channel = 0;
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Invalid bus type %d\n", aBus));
-            break;
-        }
-    }
-
-    return channel;
-}
-
-/**
- * Returns a string representation of the given device number of the given channel on the given storage bus.
- * Complementary to #toStorageDevice (KStorageBus, LONG, const QString &) const.
- */
-QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) const
-{
-    NOREF (aChannel);
-
-    QString device;
-
-    switch (aBus)
-    {
-        case KStorageBus_IDE:
-        {
-            if (aDevice == 0 || aDevice == 1)
-            {
-                device = mStorageBusDevices [aDevice];
-                break;
-            }
-            AssertMsgFailed (("Invalid device %d\n", aDevice));
-            break;
-        }
-        case KStorageBus_SATA:
-        case KStorageBus_SCSI:
-        {
-            AssertMsgFailed (("SATA & SCSI have no devices, only channels\n"));
-            break;
-        }
-        case KStorageBus_Floppy:
-        {
-            AssertMsgBreak (aChannel == 0, ("Invalid channel %d\n", aChannel));
-            device = mStorageBusDevices [2].arg (aDevice);
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Invalid bus type %d\n", aBus));
-            break;
-        }
-    }
-
-    Assert (!device.isNull());
-    return device;
-}
-
-/**
- * Returns a device number of the given channel on the given storage bus corresponding to the given string representation.
- * Complementary to #toString (KStorageBus, LONG, LONG) const.
- */
-LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel, const QString &aDevice) const
-{
-    NOREF (aChannel);
-
-    LONG device = 0;
-
-    switch (aBus)
-    {
-        case KStorageBus_IDE:
-        {
-            QLongStringHash::const_iterator it = qFind (mStorageBusDevices.begin(), mStorageBusDevices.end(), aDevice);
-            AssertMsgBreak (it != mStorageBusDevices.end(), ("No value for {%s}", aDevice.toLatin1().constData()));
-            device = it.key();
-            break;
-        }
-        case KStorageBus_SATA:
-        case KStorageBus_SCSI:
-        {
-            device = 0;
-            break;
-        }
-        case KStorageBus_Floppy:
-        {
-            AssertMsgBreak (aChannel == 0, ("Invalid channel %d\n", aChannel));
-            QString tpl = mStorageBusDevices [2].arg ("");
-            if (aDevice.startsWith (tpl))
-            {
-                device = aDevice.right (aDevice.length() - tpl.length()).toLong();
-                break;
-            }
-            AssertMsgFailed (("Invalid device {%s}\n", aDevice.toLatin1().constData()));
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Invalid bus type %d\n", aBus));
-            break;
-        }
-    }
-
-    return device;
-}
-
-/**
  * Returns a full string representation of the given device of the given channel on the given storage bus.
  * This method does not uses any separate string tags related to bus, channel, device, it has own
  * separately translated string tags allowing to translate a full slot name into human readable format
@@ -1281,37 +1102,6 @@ StorageSlot VBoxGlobal::toStorageSlot (const QString &aSlot) const
     return result;
 }
 
-QString VBoxGlobal::toString(KMediumVariant mediumVariant) const
-{
-    switch (mediumVariant)
-    {
-        case KMediumVariant_Standard:
-            return tr("Dynamically allocated storage");
-        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed):
-            return tr("Fixed size storage");
-        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkSplit2G):
-            return tr("Dynamically allocated storage split into files of less than 2GB");
-        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkSplit2G):
-            return tr("Fixed size storage split into files of less than 2GB");
-        default:
-            break;
-    }
-    return QString();
-}
-
-/**
- * Returns the list of all device types (VirtualBox::DeviceType COM enum).
- */
-QStringList VBoxGlobal::deviceTypeStrings() const
-{
-    static QStringList list;
-    if (list.empty())
-        for (QULongStringHash::const_iterator it = mDeviceTypes.begin();
-             it != mDeviceTypes.end(); ++ it)
-            list += it.value();
-    return list;
-}
-
 struct PortConfig
 {
     const char *name;
@@ -1337,6 +1127,20 @@ static const PortConfig kLptKnownPorts[] =
     /* must not contain an element with IRQ=0 and IOBase=0 used to cause
      * toLPTPortName() to return the "User-defined" string for these values. */
 };
+
+/**
+ * Similar to toString (KMediumType), but returns 'Differencing' for
+ * normal hard disks that have a parent.
+ */
+QString VBoxGlobal::mediumTypeString(const CMedium &medium) const
+{
+    if (!medium.GetParent().isNull())
+    {
+        Assert(medium.GetType() == KMediumType_Normal);
+        return mDiskTypes_Differencing;
+    }
+    return gCOMenum->toString(medium.GetType());
+}
 
 /**
  *  Returns the list of the standard COM port names (i.e. "COMx").
@@ -1520,7 +1324,7 @@ QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
     if (!hostDev.isNull())
     {
         tip += QString (tr ("<br><nobr>State: %1</nobr>", "USB device tooltip"))
-                        .arg (vboxGlobal().toString (hostDev.GetState()));
+                        .arg (gCOMenum->toString (hostDev.GetState()));
     }
 
     return tip;
@@ -1573,7 +1377,7 @@ QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
     if (!hostDev.isNull())
     {
         tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>State: %1</nobr>", "USB filter tooltip")
-                                                .arg (vboxGlobal().toString (hostDev.GetState()));
+                                                .arg (gCOMenum->toString (hostDev.GetState()));
     }
 
     return tip;
@@ -1644,10 +1448,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                 continue;
             if (!bootOrder.isEmpty())
                 bootOrder += ", ";
-            bootOrder += toString (device);
+            bootOrder += gCOMenum->toString (device);
         }
         if (bootOrder.isEmpty())
-            bootOrder = toString (KDeviceType_Null);
+            bootOrder = gCOMenum->toString (KDeviceType_Null);
 
         iRowCount += 1; /* Boot-order row. */
 
@@ -1857,10 +1661,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         if (audio.GetEnabled())
             item = QString (sSectionItemTpl2)
                    .arg (tr ("Host Driver", "details report (audio)"),
-                         toString (audio.GetAudioDriver())) +
+                         gCOMenum->toString (audio.GetAudioDriver())) +
                    QString (sSectionItemTpl2)
                    .arg (tr ("Controller", "details report (audio)"),
-                         toString (audio.GetAudioController()));
+                         gCOMenum->toString (audio.GetAudioController()));
         else
             item = QString (sSectionItemTpl1)
                    .arg (tr ("Disabled", "details report (audio)"));
@@ -1885,7 +1689,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             if (adapter.GetEnabled())
             {
                 KNetworkAttachmentType type = adapter.GetAttachmentType();
-                QString attType = toString (adapter.GetAdapterType())
+                QString attType = gCOMenum->toString (adapter.GetAdapterType())
                                   .replace (QRegExp ("\\s\\(.+\\)"), " (%1)");
                 /* don't use the adapter type string for types that have
                  * an additional symbolic network/interface name field, use
@@ -1903,7 +1707,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                     attType = attType.arg (tr ("Generic, '%1'",
                         "details report (network)").arg (adapter.GetGenericDriver()));
                 else
-                    attType = attType.arg (vboxGlobal().toString (type));
+                    attType = attType.arg (gCOMenum->toString (type));
 
                 item += QString (sSectionItemTpl2)
                         .arg (tr ("Adapter %1", "details report (network)")
@@ -1945,10 +1749,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                     mode == KPortMode_HostDevice ||
                     mode == KPortMode_RawFile)
                     data += QString ("%1 (<nobr>%2</nobr>)")
-                            .arg (vboxGlobal().toString (mode))
+                            .arg (gCOMenum->toString (mode))
                             .arg (QDir::toNativeSeparators (port.GetPath()));
                 else
-                    data += toString (mode);
+                    data += gCOMenum->toString (mode);
 
                 item += QString (sSectionItemTpl2)
                         .arg (tr ("Port %1", "details report (serial ports)")
@@ -2903,55 +2707,6 @@ QString VBoxGlobal::languageTranslators() const
  */
 void VBoxGlobal::retranslateUi()
 {
-    mMachineStates [KMachineState_PoweredOff] = tr ("Powered Off", "MachineState");
-    mMachineStates [KMachineState_Saved] =      tr ("Saved", "MachineState");
-    mMachineStates [KMachineState_Teleported] = tr ("Teleported", "MachineState");
-    mMachineStates [KMachineState_Aborted] =    tr ("Aborted", "MachineState");
-    mMachineStates [KMachineState_Running] =    tr ("Running", "MachineState");
-    mMachineStates [KMachineState_Paused] =     tr ("Paused", "MachineState");
-    mMachineStates [KMachineState_Stuck] =      tr ("Guru Meditation", "MachineState");
-    mMachineStates [KMachineState_Teleporting] = tr ("Teleporting", "MachineState");
-    mMachineStates [KMachineState_LiveSnapshotting] = tr ("Taking Live Snapshot", "MachineState");
-    mMachineStates [KMachineState_Starting] =   tr ("Starting", "MachineState");
-    mMachineStates [KMachineState_Stopping] =   tr ("Stopping", "MachineState");
-    mMachineStates [KMachineState_Saving] =     tr ("Saving", "MachineState");
-    mMachineStates [KMachineState_Restoring] =  tr ("Restoring", "MachineState");
-    mMachineStates [KMachineState_TeleportingPausedVM] = tr ("Teleporting Paused VM", "MachineState");
-    mMachineStates [KMachineState_TeleportingIn] = tr ("Teleporting", "MachineState");
-    mMachineStates [KMachineState_RestoringSnapshot] = tr ("Restoring Snapshot", "MachineState");
-    mMachineStates [KMachineState_DeletingSnapshot] = tr ("Deleting Snapshot", "MachineState");
-    mMachineStates [KMachineState_DeletingSnapshotOnline] = tr ("Deleting Snapshot", "MachineState");
-    mMachineStates [KMachineState_DeletingSnapshotPaused] = tr ("Deleting Snapshot", "MachineState");
-    mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
-    mMachineStates [KMachineState_FaultTolerantSyncing]   = tr ("Fault Tolerant Syncing", "MachineState");
-
-    mSessionStates [KSessionState_Unlocked] =   tr ("Unlocked", "SessionState");
-    mSessionStates [KSessionState_Locked] =     tr ("Locked", "SessionState");
-    mSessionStates [KSessionState_Spawning] =   tr ("Spawning", "SessionState");
-    mSessionStates [KSessionState_Unlocking] =  tr ("Unlocking", "SessionState");
-
-    mDeviceTypes [KDeviceType_Null] =           tr ("None", "DeviceType");
-    mDeviceTypes [KDeviceType_Floppy] =         tr ("Floppy", "DeviceType");
-    mDeviceTypes [KDeviceType_DVD] =            tr ("CD/DVD-ROM", "DeviceType");
-    mDeviceTypes [KDeviceType_HardDisk] =       tr ("Hard Disk", "DeviceType");
-    mDeviceTypes [KDeviceType_Network] =        tr ("Network", "DeviceType");
-    mDeviceTypes [KDeviceType_USB] =            tr ("USB", "DeviceType");
-    mDeviceTypes [KDeviceType_SharedFolder] =   tr ("Shared Folder", "DeviceType");
-
-    mStorageBuses [KStorageBus_IDE] =       tr ("IDE", "StorageBus");
-    mStorageBuses [KStorageBus_SATA] =      tr ("SATA", "StorageBus");
-    mStorageBuses [KStorageBus_SCSI] =      tr ("SCSI", "StorageBus");
-    mStorageBuses [KStorageBus_Floppy] =    tr ("Floppy", "StorageBus");
-    mStorageBuses [KStorageBus_SAS] =      tr ("SAS", "StorageBus");
-
-    mStorageBusChannels [0] = tr ("Primary", "StorageBusChannel");
-    mStorageBusChannels [1] = tr ("Secondary", "StorageBusChannel");
-    mStorageBusChannels [2] = tr ("Port %1", "StorageBusChannel");
-
-    mStorageBusDevices [0] = tr ("Master", "StorageBusDevice");
-    mStorageBusDevices [1] = tr ("Slave", "StorageBusDevice");
-    mStorageBusDevices [2] = tr ("Device %1", "StorageBusDevice");
-
     mSlotTemplates [0] = tr ("IDE Primary Master", "New Storage UI : Slot Name");
     mSlotTemplates [1] = tr ("IDE Primary Slave", "New Storage UI : Slot Name");
     mSlotTemplates [2] = tr ("IDE Secondary Master", "New Storage UI : Slot Name");
@@ -2961,135 +2716,7 @@ void VBoxGlobal::retranslateUi()
     mSlotTemplates [6] = tr ("SAS Port %1", "New Storage UI : Slot Name");
     mSlotTemplates [7] = tr ("Floppy Device %1", "New Storage UI : Slot Name");
 
-    mDiskTypes [KMediumType_Normal] =           tr ("Normal", "DiskType");
-    mDiskTypes [KMediumType_Immutable] =        tr ("Immutable", "DiskType");
-    mDiskTypes [KMediumType_Writethrough] =     tr ("Writethrough", "DiskType");
-    mDiskTypes [KMediumType_Shareable] =        tr ("Shareable", "DiskType");
-    mDiskTypes [KMediumType_Readonly] =         tr ("Readonly", "DiskType");
-    mDiskTypes [KMediumType_MultiAttach] =      tr ("Multi-attach", "DiskType");
     mDiskTypes_Differencing =                   tr ("Differencing", "DiskType");
-
-    mAuthTypes [KAuthType_Null] =       tr ("Null", "AuthType");
-    mAuthTypes [KAuthType_External] =   tr ("External", "AuthType");
-    mAuthTypes [KAuthType_Guest] =      tr ("Guest", "AuthType");
-
-    mPortModeTypes [KPortMode_Disconnected] =   tr ("Disconnected", "PortMode");
-    mPortModeTypes [KPortMode_HostPipe] =       tr ("Host Pipe", "PortMode");
-    mPortModeTypes [KPortMode_HostDevice] =     tr ("Host Device", "PortMode");
-    mPortModeTypes [KPortMode_RawFile] =        tr ("Raw File", "PortMode");
-
-    mUSBFilterActionTypes [KUSBDeviceFilterAction_Ignore] =
-        tr ("Ignore", "USBFilterActionType");
-    mUSBFilterActionTypes [KUSBDeviceFilterAction_Hold] =
-        tr ("Hold", "USBFilterActionType");
-
-    mAudioDriverTypes [KAudioDriverType_Null] =
-        tr ("Null Audio Driver", "AudioDriverType");
-    mAudioDriverTypes [KAudioDriverType_WinMM] =
-        tr ("Windows Multimedia", "AudioDriverType");
-    mAudioDriverTypes [KAudioDriverType_SolAudio] =
-        tr ("Solaris Audio", "AudioDriverType");
-    mAudioDriverTypes [KAudioDriverType_OSS] =
-        tr ("OSS Audio Driver", "AudioDriverType");
-    mAudioDriverTypes [KAudioDriverType_ALSA] =
-        tr ("ALSA Audio Driver", "AudioDriverType");
-    mAudioDriverTypes [KAudioDriverType_DirectSound] =
-        tr ("Windows DirectSound", "AudioDriverType");
-    mAudioDriverTypes [KAudioDriverType_CoreAudio] =
-        tr ("CoreAudio", "AudioDriverType");
-    mAudioDriverTypes [KAudioDriverType_Pulse] =
-        tr ("PulseAudio", "AudioDriverType");
-
-    mAudioControllerTypes [KAudioControllerType_AC97] =
-        tr ("ICH AC97", "AudioControllerType");
-    mAudioControllerTypes [KAudioControllerType_SB16] =
-        tr ("SoundBlaster 16", "AudioControllerType");
-    mAudioControllerTypes [KAudioControllerType_HDA] =
-    tr ("Intel HD Audio", "AudioControllerType");
-
-    mNetworkAdapterTypes [KNetworkAdapterType_Am79C970A] =
-        tr ("PCnet-PCI II (Am79C970A)", "NetworkAdapterType");
-    mNetworkAdapterTypes [KNetworkAdapterType_Am79C973] =
-        tr ("PCnet-FAST III (Am79C973)", "NetworkAdapterType");
-    mNetworkAdapterTypes [KNetworkAdapterType_I82540EM] =
-        tr ("Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
-    mNetworkAdapterTypes [KNetworkAdapterType_I82543GC] =
-        tr ("Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
-    mNetworkAdapterTypes [KNetworkAdapterType_I82545EM] =
-        tr ("Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
-#ifdef VBOX_WITH_VIRTIO
-    mNetworkAdapterTypes [KNetworkAdapterType_Virtio] =
-        tr ("Paravirtualized Network (virtio-net)", "NetworkAdapterType");
-#endif /* VBOX_WITH_VIRTIO */
-
-    mNetworkAttachmentTypes [KNetworkAttachmentType_Null] =
-        tr ("Not attached", "NetworkAttachmentType");
-    mNetworkAttachmentTypes [KNetworkAttachmentType_NAT] =
-        tr ("NAT", "NetworkAttachmentType");
-    mNetworkAttachmentTypes [KNetworkAttachmentType_Bridged] =
-        tr ("Bridged Adapter", "NetworkAttachmentType");
-    mNetworkAttachmentTypes [KNetworkAttachmentType_Internal] =
-        tr ("Internal Network", "NetworkAttachmentType");
-    mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =
-        tr ("Host-only Adapter", "NetworkAttachmentType");
-    mNetworkAttachmentTypes [KNetworkAttachmentType_Generic] =
-        tr ("Generic Driver", "NetworkAttachmentType");
-
-    mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_Deny] =
-        tr ("Deny", "NetworkAdapterPromiscModePolicyType");
-    mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_AllowNetwork] =
-        tr ("Allow VMs", "NetworkAdapterPromiscModePolicyType");
-    mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_AllowAll] =
-        tr ("Allow All", "NetworkAdapterPromiscModePolicyType");
-
-    mNATProtocolTypes [KNATProtocol_UDP] =
-        tr ("UDP", "NATProtocolType");
-    mNATProtocolTypes [KNATProtocol_TCP] =
-        tr ("TCP", "NATProtocolType");
-
-    mClipboardTypes [KClipboardMode_Disabled] =
-        tr ("Disabled", "ClipboardType");
-    mClipboardTypes [KClipboardMode_HostToGuest] =
-        tr ("Host To Guest", "ClipboardType");
-    mClipboardTypes [KClipboardMode_GuestToHost] =
-        tr ("Guest To Host", "ClipboardType");
-    mClipboardTypes [KClipboardMode_Bidirectional] =
-        tr ("Bidirectional", "ClipboardType");
-
-    mStorageControllerTypes [KStorageControllerType_PIIX3] =
-        tr ("PIIX3", "StorageControllerType");
-    mStorageControllerTypes [KStorageControllerType_PIIX4] =
-        tr ("PIIX4", "StorageControllerType");
-    mStorageControllerTypes [KStorageControllerType_ICH6] =
-        tr ("ICH6", "StorageControllerType");
-    mStorageControllerTypes [KStorageControllerType_IntelAhci] =
-        tr ("AHCI", "StorageControllerType");
-    mStorageControllerTypes [KStorageControllerType_LsiLogic] =
-        tr ("Lsilogic", "StorageControllerType");
-    mStorageControllerTypes [KStorageControllerType_BusLogic] =
-        tr ("BusLogic", "StorageControllerType");
-    mStorageControllerTypes [KStorageControllerType_I82078] =
-        tr ("I82078", "StorageControllerType");
-    mStorageControllerTypes [KStorageControllerType_LsiLogicSas] =
-        tr ("LsiLogic SAS", "StorageControllerType");
-
-    mUSBDeviceStates [KUSBDeviceState_NotSupported] =
-        tr ("Not supported", "USBDeviceState");
-    mUSBDeviceStates [KUSBDeviceState_Unavailable] =
-        tr ("Unavailable", "USBDeviceState");
-    mUSBDeviceStates [KUSBDeviceState_Busy] =
-        tr ("Busy", "USBDeviceState");
-    mUSBDeviceStates [KUSBDeviceState_Available] =
-        tr ("Available", "USBDeviceState");
-    mUSBDeviceStates [KUSBDeviceState_Held] =
-        tr ("Held", "USBDeviceState");
-    mUSBDeviceStates [KUSBDeviceState_Captured] =
-        tr ("Captured", "USBDeviceState");
-
-    mChipsetTypes [KChipsetType_PIIX3] =
-        tr ("PIIX3", "ChipsetType");
-    mChipsetTypes [KChipsetType_ICH9] =
-        tr ("ICH9", "ChipsetType");
 
     mUserDefinedPortName = tr ("User-defined", "serial port");
 
@@ -4977,65 +4604,6 @@ void VBoxGlobal::init()
             new QPixmap (kOSTypeIcons [n][1]));
     }
 
-    /* fill in VM state icon map */
-    static const struct
-    {
-        KMachineState state;
-        const char *name;
-    }
-    kVMStateIcons[] =
-    {
-        {KMachineState_Null, NULL},
-        {KMachineState_PoweredOff, ":/state_powered_off_16px.png"},
-        {KMachineState_Saved, ":/state_saved_16px.png"},
-        {KMachineState_Aborted, ":/state_aborted_16px.png"},
-        {KMachineState_Teleported, ":/state_saved_16px.png"},           /** @todo Live Migration: New icon? (not really important) */
-        {KMachineState_Running, ":/state_running_16px.png"},
-        {KMachineState_Paused, ":/state_paused_16px.png"},
-        {KMachineState_Teleporting, ":/state_running_16px.png"},        /** @todo Live Migration: New icon? (not really important) */
-        {KMachineState_LiveSnapshotting, ":/state_running_16px.png"},   /** @todo Live Migration: New icon? (not really important) */
-        {KMachineState_Stuck, ":/state_stuck_16px.png"},
-        {KMachineState_Starting, ":/state_running_16px.png"}, /// @todo (dmik) separate icon?
-        {KMachineState_Stopping, ":/state_running_16px.png"}, /// @todo (dmik) separate icon?
-        {KMachineState_Saving, ":/state_saving_16px.png"},
-        {KMachineState_Restoring, ":/state_restoring_16px.png"},
-        {KMachineState_TeleportingPausedVM, ":/state_saving_16px.png"}, /** @todo Live Migration: New icon? (not really important) */
-        {KMachineState_TeleportingIn, ":/state_restoring_16px.png"},    /** @todo Live Migration: New icon? (not really important) */
-        {KMachineState_RestoringSnapshot, ":/state_discarding_16px.png"},
-        {KMachineState_DeletingSnapshot, ":/state_discarding_16px.png"},
-        {KMachineState_DeletingSnapshotOnline, ":/state_discarding_16px.png"},  /// @todo live snapshot deletion: new icon?
-        {KMachineState_DeletingSnapshotPaused, ":/state_discarding_16px.png"},  /// @todo live snapshot deletion: new icon?
-        {KMachineState_SettingUp, ":/settings_16px.png"},
-    };
-    for (uint n = 0; n < SIZEOF_ARRAY (kVMStateIcons); n ++)
-    {
-        mVMStateIcons.insert (kVMStateIcons [n].state,
-            new QPixmap (kVMStateIcons [n].name));
-    }
-
-    /* initialize state colors map */
-    mVMStateColors.insert (KMachineState_Null,          new QColor (Qt::red));
-    mVMStateColors.insert (KMachineState_PoweredOff,    new QColor (Qt::gray));
-    mVMStateColors.insert (KMachineState_Saved,         new QColor (Qt::yellow));
-    mVMStateColors.insert (KMachineState_Aborted,       new QColor (Qt::darkRed));
-    mVMStateColors.insert (KMachineState_Teleported,    new QColor (Qt::red));
-    mVMStateColors.insert (KMachineState_Running,       new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_Paused,        new QColor (Qt::darkGreen));
-    mVMStateColors.insert (KMachineState_Stuck,         new QColor (Qt::darkMagenta));
-    mVMStateColors.insert (KMachineState_Teleporting,   new QColor (Qt::blue));
-    mVMStateColors.insert (KMachineState_LiveSnapshotting, new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_Starting,      new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_Stopping,      new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_Saving,        new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_Restoring,     new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_TeleportingPausedVM, new QColor (Qt::blue));
-    mVMStateColors.insert (KMachineState_TeleportingIn, new QColor (Qt::blue));
-    mVMStateColors.insert (KMachineState_RestoringSnapshot, new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_DeletingSnapshot, new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_DeletingSnapshotOnline, new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_DeletingSnapshotPaused, new QColor (Qt::darkGreen));
-    mVMStateColors.insert (KMachineState_SettingUp,     new QColor (Qt::green));
-
     /* online/offline snapshot icons */
     mOfflineSnapshotIcon = QPixmap (":/offline_snapshot_16px.png");
     mOnlineSnapshotIcon = QPixmap (":/online_snapshot_16px.png");
@@ -5223,6 +4791,9 @@ void VBoxGlobal::init()
 
     mValid = true;
 
+    /* Prepare COM enum extensions: */
+    COMEnumsWrapper::prepare();
+
     /* Cache IMedium data.
      * There could be no used mediums at all,
      * but this method should be run anyway just to enumerate null VBoxMedium object,
@@ -5267,6 +4838,9 @@ void VBoxGlobal::cleanup()
         UIActionPoolRuntime::destroy();
     else
         UIActionPoolSelector::destroy();
+
+    /* Cleanup COM enum extensions: */
+    COMEnumsWrapper::cleanup();
 
     /* sanity check */
     if (!sVBoxGlobalInCleanup)

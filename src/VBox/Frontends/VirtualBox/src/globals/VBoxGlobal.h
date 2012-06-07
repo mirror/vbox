@@ -81,7 +81,6 @@ class VBoxGlobal : public QObject
 public:
 
     typedef QHash <ulong, QString> QULongStringHash;
-    typedef QHash <long, QString> QLongStringHash;
 
     static VBoxGlobal &instance();
 
@@ -178,13 +177,6 @@ public:
                                 const QString &aFamilyId = QString::null) const;
     QString vmGuestOSTypeDescription (const QString &aTypeId) const;
 
-    QPixmap toIcon (KMachineState s) const
-    {
-        QPixmap *pm = mVMStateIcons.value (s);
-        AssertMsg (pm, ("Icon for VM state %d must be defined", s));
-        return pm ? *pm : QPixmap();
-    }
-
     static inline QString yearsToString (uint32_t cVal)
     {
         return tr("%n year(s)", "", cVal);
@@ -215,301 +207,16 @@ public:
         return tr("%n second(s)", "", cVal);
     }
 
-    const QColor &toColor (KMachineState s) const
-    {
-        static const QColor none;
-        AssertMsg (mVMStateColors.value (s), ("No color for %d", s));
-        return mVMStateColors.value (s) ? *mVMStateColors.value (s) : none;
-    }
-
-    QString toString (KMachineState s) const
-    {
-        AssertMsg (!mMachineStates.value (s).isNull(), ("No text for %d", s));
-        return mMachineStates.value (s);
-    }
-
-    QString toString (KSessionState s) const
-    {
-        AssertMsg (!mSessionStates.value (s).isNull(), ("No text for %d", s));
-        return mSessionStates.value (s);
-    }
-
-    /**
-     * Returns a string representation of the given KStorageBus enum value.
-     * Complementary to #toStorageBusType (const QString &) const.
-     */
-    QString toString (KStorageBus aBus) const
-    {
-        AssertMsg (!mStorageBuses.value (aBus).isNull(), ("No text for %d", aBus));
-        return mStorageBuses [aBus];
-    }
-
-    /**
-     * Returns a KStorageBus enum value corresponding to the given string
-     * representation. Complementary to #toString (KStorageBus) const.
-     */
-    KStorageBus toStorageBusType (const QString &aBus) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mStorageBuses.begin(), mStorageBuses.end(), aBus);
-        AssertMsg (it != mStorageBuses.end(), ("No value for {%s}",
-                                               aBus.toLatin1().constData()));
-        return KStorageBus (it.key());
-    }
-
-    KStorageBus toStorageBusType (KStorageControllerType aControllerType) const
-    {
-        KStorageBus sb = KStorageBus_Null;
-        switch (aControllerType)
-        {
-            case KStorageControllerType_Null: sb = KStorageBus_Null; break;
-            case KStorageControllerType_PIIX3:
-            case KStorageControllerType_PIIX4:
-            case KStorageControllerType_ICH6: sb = KStorageBus_IDE; break;
-            case KStorageControllerType_IntelAhci: sb = KStorageBus_SATA; break;
-            case KStorageControllerType_LsiLogic:
-            case KStorageControllerType_BusLogic: sb = KStorageBus_SCSI; break;
-            case KStorageControllerType_I82078: sb = KStorageBus_Floppy; break;
-            default:
-              AssertMsgFailed (("toStorageBusType: %d not handled\n", aControllerType)); break;
-        }
-        return sb;
-    }
-
-    QString toString (KStorageBus aBus, LONG aChannel) const;
-    LONG toStorageChannel (KStorageBus aBus, const QString &aChannel) const;
-
-    QString toString (KStorageBus aBus, LONG aChannel, LONG aDevice) const;
-    LONG toStorageDevice (KStorageBus aBus, LONG aChannel, const QString &aDevice) const;
-
     QString toString (StorageSlot aSlot) const;
     StorageSlot toStorageSlot (const QString &aSlot) const;
 
-    QString toString (KMediumType t) const
-    {
-        AssertMsg (!mDiskTypes.value (t).isNull(), ("No text for %d", t));
-        return mDiskTypes.value (t);
-    }
     QString differencingMediumTypeName() const { return mDiskTypes_Differencing; }
-
-    QString toString(KMediumVariant mediumVariant) const;
 
     /**
      * Similar to toString (KMediumType), but returns 'Differencing' for
      * normal hard disks that have a parent.
      */
-    QString mediumTypeString (const CMedium &aHD) const
-    {
-        if (!aHD.GetParent().isNull())
-        {
-            Assert (aHD.GetType() == KMediumType_Normal);
-            return mDiskTypes_Differencing;
-        }
-        return toString (aHD.GetType());
-    }
-
-    QString toString (KAuthType t) const
-    {
-        AssertMsg (!mAuthTypes.value (t).isNull(), ("No text for %d", t));
-        return mAuthTypes.value (t);
-    }
-
-    QString toString (KPortMode t) const
-    {
-        AssertMsg (!mPortModeTypes.value (t).isNull(), ("No text for %d", t));
-        return mPortModeTypes.value (t);
-    }
-
-    QString toString (KUSBDeviceFilterAction t) const
-    {
-        AssertMsg (!mUSBFilterActionTypes.value (t).isNull(), ("No text for %d", t));
-        return mUSBFilterActionTypes.value (t);
-    }
-
-    QString toString (KClipboardMode t) const
-    {
-        AssertMsg (!mClipboardTypes.value (t).isNull(), ("No text for %d", t));
-        return mClipboardTypes.value (t);
-    }
-
-    KClipboardMode toClipboardModeType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mClipboardTypes.begin(), mClipboardTypes.end(), s);
-        AssertMsg (it != mClipboardTypes.end(), ("No value for {%s}",
-                                                 s.toLatin1().constData()));
-        return KClipboardMode (it.key());
-    }
-
-    QString toString (KStorageControllerType t) const
-    {
-        AssertMsg (!mStorageControllerTypes.value (t).isNull(), ("No text for %d", t));
-        return mStorageControllerTypes.value (t);
-    }
-
-    KStorageControllerType toControllerType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mStorageControllerTypes.begin(), mStorageControllerTypes.end(), s);
-        AssertMsg (it != mStorageControllerTypes.end(), ("No value for {%s}",
-                                                         s.toLatin1().constData()));
-        return KStorageControllerType (it.key());
-    }
-
-    KAuthType toAuthType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mAuthTypes.begin(), mAuthTypes.end(), s);
-        AssertMsg (it != mAuthTypes.end(), ("No value for {%s}",
-                                                s.toLatin1().constData()));
-        return KAuthType (it.key());
-    }
-
-    KPortMode toPortMode (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mPortModeTypes.begin(), mPortModeTypes.end(), s);
-        AssertMsg (it != mPortModeTypes.end(), ("No value for {%s}",
-                                                s.toLatin1().constData()));
-        return KPortMode (it.key());
-    }
-
-    KUSBDeviceFilterAction toUSBDevFilterAction (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mUSBFilterActionTypes.begin(), mUSBFilterActionTypes.end(), s);
-        AssertMsg (it != mUSBFilterActionTypes.end(), ("No value for {%s}",
-                                                       s.toLatin1().constData()));
-        return KUSBDeviceFilterAction (it.key());
-    }
-
-    QString toString (KDeviceType t) const
-    {
-        AssertMsg (!mDeviceTypes.value (t).isNull(), ("No text for %d", t));
-        return mDeviceTypes.value (t);
-    }
-
-    KDeviceType toDeviceType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mDeviceTypes.begin(), mDeviceTypes.end(), s);
-        AssertMsg (it != mDeviceTypes.end(), ("No value for {%s}",
-                                              s.toLatin1().constData()));
-        return KDeviceType (it.key());
-    }
-
-    QStringList deviceTypeStrings() const;
-
-    QString toString (KAudioDriverType t) const
-    {
-        AssertMsg (!mAudioDriverTypes.value (t).isNull(), ("No text for %d", t));
-        return mAudioDriverTypes.value (t);
-    }
-
-    KAudioDriverType toAudioDriverType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mAudioDriverTypes.begin(), mAudioDriverTypes.end(), s);
-        AssertMsg (it != mAudioDriverTypes.end(), ("No value for {%s}",
-                                                   s.toLatin1().constData()));
-        return KAudioDriverType (it.key());
-    }
-
-    QString toString (KAudioControllerType t) const
-    {
-        AssertMsg (!mAudioControllerTypes.value (t).isNull(), ("No text for %d", t));
-        return mAudioControllerTypes.value (t);
-    }
-
-    KAudioControllerType toAudioControllerType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mAudioControllerTypes.begin(), mAudioControllerTypes.end(), s);
-        AssertMsg (it != mAudioControllerTypes.end(), ("No value for {%s}",
-                                                       s.toLatin1().constData()));
-        return KAudioControllerType (it.key());
-    }
-
-    QString toString (KNetworkAdapterType t) const
-    {
-        AssertMsg (!mNetworkAdapterTypes.value (t).isNull(), ("No text for %d", t));
-        return mNetworkAdapterTypes.value (t);
-    }
-
-    KNetworkAdapterType toNetworkAdapterType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mNetworkAdapterTypes.begin(), mNetworkAdapterTypes.end(), s);
-        AssertMsg (it != mNetworkAdapterTypes.end(), ("No value for {%s}",
-                                                      s.toLatin1().constData()));
-        return KNetworkAdapterType (it.key());
-    }
-
-    QString toString (KNetworkAttachmentType t) const
-    {
-        AssertMsg (!mNetworkAttachmentTypes.value (t).isNull(), ("No text for %d", t));
-        return mNetworkAttachmentTypes.value (t);
-    }
-
-    KNetworkAttachmentType toNetworkAttachmentType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mNetworkAttachmentTypes.begin(), mNetworkAttachmentTypes.end(), s);
-        AssertMsg (it != mNetworkAttachmentTypes.end(), ("No value for {%s}",
-                                                         s.toLatin1().constData()));
-        return KNetworkAttachmentType (it.key());
-    }
-
-    QString toString (KNetworkAdapterPromiscModePolicy t) const
-    {
-        AssertMsg (!mNetworkAdapterPromiscModePolicyTypes.value (t).isNull(), ("No text for %d", t));
-        return mNetworkAdapterPromiscModePolicyTypes.value (t);
-    }
-
-    KNetworkAdapterPromiscModePolicy toNetworkAdapterPromiscModePolicyType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mNetworkAdapterPromiscModePolicyTypes.begin(), mNetworkAdapterPromiscModePolicyTypes.end(), s);
-        AssertMsg (it != mNetworkAdapterPromiscModePolicyTypes.end(), ("No value for {%s}",
-                                                                       s.toLatin1().constData()));
-        return KNetworkAdapterPromiscModePolicy (it.key());
-    }
-
-    QString toString (KNATProtocol t) const
-    {
-        AssertMsg (!mNATProtocolTypes.value (t).isNull(), ("No text for %d", t));
-        return mNATProtocolTypes.value (t);
-    }
-
-    KNATProtocol toNATProtocolType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mNATProtocolTypes.begin(), mNATProtocolTypes.end(), s);
-        AssertMsg (it != mNATProtocolTypes.end(), ("No value for {%s}",
-                                                   s.toLatin1().constData()));
-        return KNATProtocol (it.key());
-    }
-
-    QString toString (KUSBDeviceState aState) const
-    {
-        AssertMsg (!mUSBDeviceStates.value (aState).isNull(), ("No text for %d", aState));
-        return mUSBDeviceStates.value (aState);
-    }
-
-    QString toString (KChipsetType t) const
-    {
-        AssertMsg (!mChipsetTypes.value (t).isNull(), ("No text for %d", t));
-        return mChipsetTypes.value (t);
-    }
-
-    KChipsetType toChipsetType (const QString &s) const
-    {
-        QULongStringHash::const_iterator it =
-            qFind (mChipsetTypes.begin(), mChipsetTypes.end(), s);
-        AssertMsg (it != mChipsetTypes.end(), ("No value for {%s}",
-                                               s.toLatin1().constData()));
-        return KChipsetType (it.key());
-    }
+    QString mediumTypeString(const CMedium &medium) const;
 
     QStringList COMPortNames() const;
     QString toCOMPortName (ulong aIRQ, ulong aIOBase) const;
@@ -843,36 +550,11 @@ private:
     QList <QList <CGuestOSType> > mTypes;
     QHash <QString, QPixmap *> mOsTypeIcons;
 
-    QHash <ulong, QPixmap *> mVMStateIcons;
-    QHash <ulong, QColor *> mVMStateColors;
-
     QPixmap mOfflineSnapshotIcon, mOnlineSnapshotIcon;
 
-    QULongStringHash mMachineStates;
-    QULongStringHash mSessionStates;
-    QULongStringHash mDeviceTypes;
-
-    QULongStringHash mStorageBuses;
-    QLongStringHash mStorageBusChannels;
-    QLongStringHash mStorageBusDevices;
     QULongStringHash mSlotTemplates;
 
-    QULongStringHash mDiskTypes;
     QString mDiskTypes_Differencing;
-
-    QULongStringHash mAuthTypes;
-    QULongStringHash mPortModeTypes;
-    QULongStringHash mUSBFilterActionTypes;
-    QULongStringHash mAudioDriverTypes;
-    QULongStringHash mAudioControllerTypes;
-    QULongStringHash mNetworkAdapterTypes;
-    QULongStringHash mNetworkAttachmentTypes;
-    QULongStringHash mNetworkAdapterPromiscModePolicyTypes;
-    QULongStringHash mNATProtocolTypes;
-    QULongStringHash mClipboardTypes;
-    QULongStringHash mStorageControllerTypes;
-    QULongStringHash mUSBDeviceStates;
-    QULongStringHash mChipsetTypes;
 
     QString mUserDefinedPortName;
 

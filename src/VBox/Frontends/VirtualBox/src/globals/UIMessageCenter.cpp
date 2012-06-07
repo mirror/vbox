@@ -35,6 +35,7 @@
 #include "UIProgressDialog.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerDialog.h"
+#include "COMEnumsWrapper.h"
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
 #endif /* VBOX_OSE */
@@ -1350,7 +1351,7 @@ void UIMessageCenter::cannotChangeMediumType(QWidget *pParent,
 {
     message(pParent ? pParent : mainWindowShown(), Error,
             tr("<p>Error changing medium type from <b>%1</b> to <b>%2</b>.</p>")
-                .arg(vboxGlobal().toString(oldMediumType)).arg(vboxGlobal().toString(newMediumType)),
+                .arg(gCOMenum->toString(oldMediumType)).arg(gCOMenum->toString(newMediumType)),
             formatErrorInfo(medium));
 }
 

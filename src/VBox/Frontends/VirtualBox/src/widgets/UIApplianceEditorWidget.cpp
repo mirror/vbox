@@ -32,6 +32,7 @@
 #include "UIMessageCenter.h"
 #include "VBoxOSTypeSelectorButton.h"
 #include "UILineTextEdit.h"
+#include "COMEnumsWrapper.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -237,8 +238,8 @@ QVariant HardwareItem::data(int column, int role) const
                     }
                     case KVirtualSystemDescriptionType_OS:             v = vboxGlobal().vmGuestOSTypeDescription(m_strConfigValue); break;
                     case KVirtualSystemDescriptionType_Memory:         v = m_strConfigValue + " " + VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"); break;
-                    case KVirtualSystemDescriptionType_SoundCard:      v = vboxGlobal().toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
-                    case KVirtualSystemDescriptionType_NetworkAdapter: v = vboxGlobal().toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
+                    case KVirtualSystemDescriptionType_SoundCard:      v = gCOMenum->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
+                    case KVirtualSystemDescriptionType_NetworkAdapter: v = gCOMenum->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
                     default:                                           v = m_strConfigValue; break;
                 }
             }
@@ -434,24 +435,24 @@ QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem
             case KVirtualSystemDescriptionType_SoundCard:
             {
                 QComboBox *e = new QComboBox(pParent);
-                e->addItem(vboxGlobal().toString(KAudioControllerType_AC97), KAudioControllerType_AC97);
-                e->addItem(vboxGlobal().toString(KAudioControllerType_SB16), KAudioControllerType_SB16);
-                e->addItem(vboxGlobal().toString(KAudioControllerType_HDA),  KAudioControllerType_HDA);
+                e->addItem(gCOMenum->toString(KAudioControllerType_AC97), KAudioControllerType_AC97);
+                e->addItem(gCOMenum->toString(KAudioControllerType_SB16), KAudioControllerType_SB16);
+                e->addItem(gCOMenum->toString(KAudioControllerType_HDA),  KAudioControllerType_HDA);
                 editor = e;
                 break;
             }
             case KVirtualSystemDescriptionType_NetworkAdapter:
             {
                 QComboBox *e = new QComboBox(pParent);
-                e->addItem(vboxGlobal().toString(KNetworkAdapterType_Am79C970A), KNetworkAdapterType_Am79C970A);
-                e->addItem(vboxGlobal().toString(KNetworkAdapterType_Am79C973), KNetworkAdapterType_Am79C973);
+                e->addItem(gCOMenum->toString(KNetworkAdapterType_Am79C970A), KNetworkAdapterType_Am79C970A);
+                e->addItem(gCOMenum->toString(KNetworkAdapterType_Am79C973), KNetworkAdapterType_Am79C973);
 #ifdef VBOX_WITH_E1000
-                e->addItem(vboxGlobal().toString(KNetworkAdapterType_I82540EM), KNetworkAdapterType_I82540EM);
-                e->addItem(vboxGlobal().toString(KNetworkAdapterType_I82543GC), KNetworkAdapterType_I82543GC);
-                e->addItem(vboxGlobal().toString(KNetworkAdapterType_I82545EM), KNetworkAdapterType_I82545EM);
+                e->addItem(gCOMenum->toString(KNetworkAdapterType_I82540EM), KNetworkAdapterType_I82540EM);
+                e->addItem(gCOMenum->toString(KNetworkAdapterType_I82543GC), KNetworkAdapterType_I82543GC);
+                e->addItem(gCOMenum->toString(KNetworkAdapterType_I82545EM), KNetworkAdapterType_I82545EM);
 #endif /* VBOX_WITH_E1000 */
 #ifdef VBOX_WITH_VIRTIO
-                e->addItem(vboxGlobal().toString(KNetworkAdapterType_Virtio), KNetworkAdapterType_Virtio);
+                e->addItem(gCOMenum->toString(KNetworkAdapterType_Virtio), KNetworkAdapterType_Virtio);
 #endif /* VBOX_WITH_VIRTIO */
                 editor = e;
                 break;
@@ -459,9 +460,9 @@ QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem
             case KVirtualSystemDescriptionType_HardDiskControllerIDE:
             {
                 QComboBox *e = new QComboBox(pParent);
-                e->addItem(vboxGlobal().toString(KStorageControllerType_PIIX3), "PIIX3");
-                e->addItem(vboxGlobal().toString(KStorageControllerType_PIIX4), "PIIX4");
-                e->addItem(vboxGlobal().toString(KStorageControllerType_ICH6),  "ICH6");
+                e->addItem(gCOMenum->toString(KStorageControllerType_PIIX3), "PIIX3");
+                e->addItem(gCOMenum->toString(KStorageControllerType_PIIX4), "PIIX4");
+                e->addItem(gCOMenum->toString(KStorageControllerType_ICH6),  "ICH6");
                 editor = e;
                 break;
             }
