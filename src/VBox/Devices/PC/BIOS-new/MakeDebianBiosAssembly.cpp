@@ -26,6 +26,7 @@
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/string.h>
@@ -59,6 +60,19 @@ typedef struct BIOSSEG
 } BIOSSEG;
 /** Pointer to a BIOS segment. */
 typedef BIOSSEG *PBIOSSEG;
+
+
+/**
+ * A BIOS object file.
+ */
+typedef struct BIOSOBJFILE
+{
+    RTLISTNODE  Node;
+    char       *pszSource;
+    char       *pszObject;
+} BIOSOBJFILE;
+/** A BIOS object file. */
+typedef BIOSOBJFILE *PBIOSOBJFILE;
 
 
 /**
@@ -100,6 +114,8 @@ static RTDBGMOD         g_hMapMod = NIL_RTDBGMOD;
 static uint32_t         g_cSegs = 0;
 /** Array of BIOS segments from the map file. */
 static BIOSSEG          g_aSegs[32];
+/** List of BIOSOBJFILE. */
+static RTLISTANCHOR     g_ObjList;
 
 /** The output stream. */
 static PRTSTREAM        g_hStrmOutput = NULL;
@@ -171,14 +187,91 @@ static bool disError(const char *pszFormat, ...)
  */
 static bool disFileHeader(void)
 {
-    return outputPrintf("; $Id$ \n"
-                        ";; @file\n"
-                        "; Auto Generated source file. Do not edit.\n"
-                        ";\n"
-                        "\n"
-                        "org 0xf000\n"
-                        "\n"
-                        );
+    bool fRc;
+    fRc = outputPrintf("; $Id$ \n"
+                       ";; @file\n"
+                       "; Auto Generated source file. Do not edit.\n"
+                       ";\n"
+                       );
+    if (!fRc)
+        return fRc;
+
+    /*
+     * List the header of each source file, up to and including the
+     * copyright notice.
+     */
+    PBIOSOBJFILE pObjFile;
+    RTListForEach(&g_ObjList, pObjFile, BIOSOBJFILE, Node)
+    {
+        PRTSTREAM hStrm;
+        int rc = RTStrmOpen(pObjFile->pszSource, "r", &hStrm);
+        if (RT_SUCCESS(rc))
+        {
+            fRc = outputPrintf("\n"
+                               ";\n"
+                               "; Source file: %Rbn\n"
+                               ";\n"
+                               , pObjFile->pszSource);
+            uint32_t    iLine           = 0;
+            bool        fSeenCopyright  = false;
+            char        szLine[4096];
+            while ((rc = RTStrmGetLine(hStrm, szLine, sizeof(szLine))) == VINF_SUCCESS)
+            {
+                iLine++;
+
+                /* Check if we're done. */
+                char *psz = RTStrStrip(szLine);
+                if (   fSeenCopyright
+                    && (   (psz[0] == '*' && psz[1] == '/')
+                        || psz[0] == '\0') )
+                    break;
+
+                /* Strip comment suffix. */
+                size_t cch = strlen(psz);
+                if (cch >= 2 && psz[cch - 1] == '/' && psz[cch - 2] == '*')
+                {
+                    psz[cch - 2] = '\0';
+                    RTStrStripR(psz);
+                }
+
+                /* Skip line prefix. */
+                if (psz[0] == '/' && psz[1] == '*')
+                    psz += 2;
+                else if (psz[0] == '*')
+                    psz += 1;
+                else
+                    while (*psz == ';')
+                        psz++;
+                if (RT_C_IS_SPACE(*psz))
+                    psz++;
+
+                /* Skip the doxygen file tag line. */
+                if (!strcmp(psz, "* @file") || !strcmp(psz, "@file"))
+                    continue;
+
+                /* Detect copyright section. */
+                if (    !fSeenCopyright
+                    && (   strstr(psz, "Copyright")
+                        || strstr(psz, "copyright")) )
+                    fSeenCopyright = true;
+
+                fRc = outputPrintf(";  %s\n", psz) && fRc;
+            }
+
+            RTStrmClose(hStrm);
+            if (rc != VINF_SUCCESS)
+                return disError("Error reading '%s': rc=%Rrc iLine=%u", pObjFile->pszSource, rc, iLine);
+        }
+    }
+
+    /*
+     * Set the org.
+     */
+    fRc = outputPrintf("\n"
+                       "\n"
+                       "\n"
+                       ) && fRc;
+    return fRc;
 }
 
 
@@ -972,7 +1065,7 @@ static bool disCodeSegment(uint32_t iSeg)
 
 static RTEXITCODE DisassembleBiosImage(void)
 {
-    if (!outputPrintf(""))
+    if (!disFileHeader())
         return RTEXITCODE_FAILURE;
 
     /*
@@ -1047,6 +1140,24 @@ static RTEXITCODE ParseSymFile(const char *pszBiosSym)
     RTMsgInfo("RTDbgModCreateFromImage -> %Rrc\n", rc);
 #endif
     return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Display an error with the mapfile name and current line, return false.
+ *
+ * @returns @c false.
+ * @param   pMap                The map file handle.
+ * @param   pszFormat           The format string.
+ * @param   ...                 Format arguments.
+ */
+static bool mapError(PBIOSMAP pMap, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTMsgError("%s:%d: %N", pMap->pszMapFile, pMap->iLine, pszFormat, va);
+    va_end(va);
+    return false;
 }
 
 
@@ -1575,44 +1686,70 @@ static bool mapParseSymbols(PBIOSMAP pMap)
         {
             if (!pMap->szLine[0])
                 return true;
-            RTMsgError("%s:%u: Malformed symbol line", pMap->pszMapFile, pMap->iLine);
-            return false;
+            return mapError(pMap, "Malformed symbol line");
         }
 
-        /* Skip the module name lines for now. */
         if (!strncmp(pMap->szLine, RT_STR_TUPLE("Module: ")))
-            continue;
+        {
+            /* Parse the module line. */
+            size_t offObj = sizeof("Module: ") - 1;
+            while (RT_C_IS_SPACE(pMap->szLine[offObj]))
+                offObj++;
+            size_t offSrc = offObj;
+            char ch;
+            while ((ch = pMap->szLine[offSrc]) != '(' && ch != '\0')
+                offSrc++;
+            size_t cchObj = offSrc - offObj;
 
-        /* Parse the segment line. */
-        char    szName[4096];
-        RTFAR16 Addr;
-        char   *psz = pMap->szLine;
-        if (!mapParseAddress(&psz, &Addr))
-            RTMsgError("%s:%u: Symbol address parser error", pMap->pszMapFile, pMap->iLine);
-        else if (!mapParseWord(&psz, szName, sizeof(szName)))
-            RTMsgError("%s:%u: Symbol name parser error", pMap->pszMapFile, pMap->iLine);
+            offSrc++;
+            size_t cchSrc = offSrc;
+            while ((ch = pMap->szLine[cchSrc]) != ')' && ch != '\0')
+                cchSrc++;
+            cchSrc -= offSrc;
+            if (ch != ')')
+                return mapError(pMap, "Symbol/Module line parse error");
+
+            PBIOSOBJFILE pObjFile = (PBIOSOBJFILE)RTMemAllocZ(sizeof(*pObjFile) + cchSrc + cchObj + 2);
+            if (!pObjFile)
+                return mapError(pMap, "Out of memory");
+            char *psz = (char *)(pObjFile + 1);
+            pObjFile->pszObject = psz;
+            memcpy(psz, &pMap->szLine[offObj], cchObj);
+            psz += cchObj;
+            *psz++ = '\0';
+            pObjFile->pszSource = psz;
+            memcpy(psz, &pMap->szLine[offSrc], cchSrc);
+            psz[cchSrc] = '\0';
+            RTListAppend(&g_ObjList, &pObjFile->Node);
+        }
         else
         {
-            uint32_t uFlatAddr = ((uint32_t)Addr.sel << 4) + Addr.off;
-            if (uFlatAddr == 0)
-                continue;
+            /* Parse the segment line. */
+            RTFAR16     Addr;
+            char       *psz = pMap->szLine;
+            if (!mapParseAddress(&psz, &Addr))
+                return mapError(pMap, "Symbol address parser error");
 
-            int rc = RTDbgModSymbolAdd(g_hMapMod, szName, RTDBGSEGIDX_RVA, uFlatAddr, 0 /*cb*/,  0 /*fFlags*/, NULL);
-            if (RT_SUCCESS(rc) || rc == VERR_DBG_ADDRESS_CONFLICT)
+            char        szName[4096];
+            if (!mapParseWord(&psz, szName, sizeof(szName)))
+                return mapError(pMap, "Symbol name parser error");
+
+            uint32_t    uFlatAddr = ((uint32_t)Addr.sel << 4) + Addr.off;
+            if (uFlatAddr != 0)
             {
+                int rc = RTDbgModSymbolAdd(g_hMapMod, szName, RTDBGSEGIDX_RVA, uFlatAddr, 0 /*cb*/,  0 /*fFlags*/, NULL);
+                if (RT_FAILURE(rc) && rc != VERR_DBG_ADDRESS_CONFLICT)
+                    return mapError(pMap, "RTDbgModSymbolAdd failed: %Rrc", rc);
 
                 if (g_cVerbose > 2)
                     RTStrmPrintf(g_pStdErr, "read symbol - %08x %s\n", uFlatAddr, szName);
                 while (RT_C_IS_SPACE(*psz))
                     psz++;
-                if (!*psz)
-                    continue;
-                RTMsgError("%s:%u: Junk at end of line", pMap->pszMapFile, pMap->iLine);
+                if (*psz)
+                    return mapError(pMap, "Junk at end of line");
             }
-            else
-                RTMsgError("%s:%u: RTDbgModSymbolAdd failed: %Rrc", pMap->pszMapFile, pMap->iLine, rc);
+
         }
-        return false;
     }
 }
 
@@ -1728,6 +1865,8 @@ int main(int argc, char **argv)
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
+
+    RTListInit(&g_ObjList);
 
     /*
      * Option config.
