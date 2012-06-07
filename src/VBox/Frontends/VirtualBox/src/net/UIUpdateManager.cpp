@@ -43,6 +43,7 @@
 
 /* Other VBox includes: */
 #include <iprt/path.h>
+#include <iprt/system.h>
 
 /* Forward declarations: */
 class UIUpdateStep;
