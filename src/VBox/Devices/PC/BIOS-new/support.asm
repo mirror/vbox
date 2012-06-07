@@ -34,14 +34,6 @@ _TEXT           segment public 'CODE' use16
                 assume cs:_TEXT
 
 
-;
-; A symbol the compiler uses to make sure it drags in the right clibs.
-;
-_small_code_:
-                cli
-                hlt
-
-
 ;;
 ; 32-bit unsigned division.
 ;
