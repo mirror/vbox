@@ -56,7 +56,6 @@
 #include "UIMessageCenter.h"
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
-#include "QIProcess.h"
 #include "UIIconPool.h"
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
@@ -1876,104 +1875,6 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     }
 
     return QString (sTableTpl). arg (report);
-}
-
-QString VBoxGlobal::platformInfo()
-{
-    QString platform;
-
-#if defined (Q_OS_WIN)
-    platform = "win";
-#elif defined (Q_OS_LINUX)
-    platform = "linux";
-#elif defined (Q_OS_MACX)
-    platform = "macosx";
-#elif defined (Q_OS_OS2)
-    platform = "os2";
-#elif defined (Q_OS_FREEBSD)
-    platform = "freebsd";
-#elif defined (Q_OS_SOLARIS)
-    platform = "solaris";
-#else
-    platform = "unknown";
-#endif
-
-    /* The format is <system>.<bitness> */
-    platform += QString (".%1").arg (ARCH_BITS);
-
-    /* Add more system information */
-#if defined (Q_OS_WIN)
-    OSVERSIONINFO versionInfo;
-    ZeroMemory (&versionInfo, sizeof (OSVERSIONINFO));
-    versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-    GetVersionEx (&versionInfo);
-    int major = versionInfo.dwMajorVersion;
-    int minor = versionInfo.dwMinorVersion;
-    int build = versionInfo.dwBuildNumber;
-    QString sp = QString::fromUtf16 ((ushort*)versionInfo.szCSDVersion);
-
-    QString distrib;
-    if (major == 6)
-        distrib = QString ("Windows Vista %1");
-    else if (major == 5)
-    {
-        if (minor == 2)
-            distrib = QString ("Windows Server 2003 %1");
-        else if (minor == 1)
-            distrib = QString ("Windows XP %1");
-        else if (minor == 0)
-            distrib = QString ("Windows 2000 %1");
-        else
-            distrib = QString ("Unknown %1");
-    }
-    else if (major == 4)
-    {
-        if (minor == 90)
-            distrib = QString ("Windows Me %1");
-        else if (minor == 10)
-            distrib = QString ("Windows 98 %1");
-        else if (minor == 0)
-            distrib = QString ("Windows 95 %1");
-        else
-            distrib = QString ("Unknown %1");
-    }
-    else /** @todo Windows Server 2008 == vista? Probably not... */
-        distrib = QString ("Unknown %1");
-    distrib = distrib.arg (sp);
-    QString version = QString ("%1.%2").arg (major).arg (minor);
-    QString kernel = QString ("%1").arg (build);
-    platform += QString (" [Distribution: %1 | Version: %2 | Build: %3]")
-        .arg (distrib).arg (version).arg (kernel);
-#elif defined (Q_OS_LINUX)
-    /* Get script path: */
-    char szAppPrivPath[RTPATH_MAX];
-    int rc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath)); NOREF(rc);
-    AssertRC(rc);
-    /* Run script: */
-    QByteArray result = QIProcess::singleShot(QString(szAppPrivPath) + "/VBoxSysInfo.sh");
-    if (!result.isNull())
-        platform += QString(" [%1]").arg(QString(result).trimmed());
-#else
-    /* Use RTSystemQueryOSInfo. */
-    char szTmp[256];
-    QStringList components;
-    int vrc = RTSystemQueryOSInfo (RTSYSOSINFO_PRODUCT, szTmp, sizeof (szTmp));
-    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-        components << QString ("Product: %1").arg (szTmp);
-    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szTmp, sizeof (szTmp));
-    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-        components << QString ("Release: %1").arg (szTmp);
-    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_VERSION, szTmp, sizeof (szTmp));
-    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-        components << QString ("Version: %1").arg (szTmp);
-    vrc = RTSystemQueryOSInfo (RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof (szTmp));
-    if ((RT_SUCCESS (vrc) || vrc == VERR_BUFFER_OVERFLOW) && szTmp[0] != '\0')
-        components << QString ("SP: %1").arg (szTmp);
-    if (!components.isEmpty())
-        platform += QString (" [%1]").arg (components.join (" | "));
-#endif
-
-    return platform;
 }
 
 #if defined(Q_WS_X11) && !defined(VBOX_OSE)
