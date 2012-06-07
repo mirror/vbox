@@ -255,8 +255,6 @@ public:
 
     QString detailsReport (const CMachine &aMachine, bool aWithLinks);
 
-    QString platformInfo();
-
     /* VirtualBox helpers */
 
 #if defined(Q_WS_X11) && !defined(VBOX_OSE)
