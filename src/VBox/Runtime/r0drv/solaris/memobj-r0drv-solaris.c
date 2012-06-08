@@ -150,7 +150,6 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr, size_t cbPage)
 
     KernelSeg.s_as = &kas;
     page_t *pPage = page_create_va(&g_PageVnode, offPage, cbPage, PG_WAIT | PG_NORELOC, &KernelSeg, virtAddr);
-
     if (RT_LIKELY(pPage))
     {
         /*
