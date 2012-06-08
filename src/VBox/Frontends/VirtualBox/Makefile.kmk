@@ -728,24 +728,23 @@ endif
 #
 # Generate the COM wrappers.
 #
-## @todo This needs some cleaning up perhaps...
-## @todo kBuild: Non-existing +| targets should be tried remade or what?
 VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
-VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMEnums.h
+VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers.ts
 VirtualBox_CLEAN         += $(wildcard $(VirtualBox_0_OUTDIR)/include/*)
 VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
 
+## @todo kmk doesn't remake optional outputs when they are missing...
 $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
-+ $$(VirtualBox_0_OUTDIR)/include/COMEnums.h \
-+ $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp: \
++| $$(VirtualBox_0_OUTDIR)/include/COMEnums.h \
++| $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp: \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
-	$(QUIET)$(RM) -f $(wildcard $(@D)/COMWrappers $(@D)/COMEnums.h $(@D)/C*.h)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VirtualBox_0_OUTDIR)/include
+	$(APPEND) -t "$@"
 
 # alias for generating the COM Wrappers file.
 testwrappers:: $$(VirtualBox_0_OUTDIR)/include/COMWrappers
