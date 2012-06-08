@@ -34,7 +34,7 @@
 
 RTDECL(bool) RTAssertShouldPanic(void)
 {
-#if 1 /* Enable this to not panic on assertions. (Make sure this code is used!) */
+#if 0 /* Enable this to not panic on assertions. (Make sure this code is used!) */
     return false;
 #else
     return RTAssertMayPanic();
