@@ -2246,7 +2246,7 @@ ifeq ($(KBUILD_HOST),darwin)
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_no_compact_linkedit    ?= $(call VBOX_GCC_CHECK_LD,-no_compact_linkedit,)'
 endif
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
-	$(CAT) $@
+	$(QUIET)$(CAT) $@
 	$(QUIET)$(ECHO) '=========== END OF $@ ========='
 
 include $(PATH_OUT)/GCCConfig.kmk
