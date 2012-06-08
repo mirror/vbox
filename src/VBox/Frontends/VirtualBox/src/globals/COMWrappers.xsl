@@ -210,10 +210,10 @@
     <xsl:text> * Generated from XIDL (XML interface definition).&#x0A;</xsl:text>
     <xsl:text> *&#x0A;</xsl:text>
     <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
-    <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl&#x0A;</xsl:text>
+    <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/src/globals/COMWrappers.xsl&#x0A;</xsl:text>
     <xsl:text> */&#x0A;&#x0A;</xsl:text>
-    <xsl:text>#ifndef __COMEnums_h__&#x0A;</xsl:text>
-    <xsl:text>#define __COMEnums_h__&#x0A;&#x0A;</xsl:text>
+    <xsl:text>#ifndef ___COMEnums_h___&#x0A;</xsl:text>
+    <xsl:text>#define ___COMEnums_h___&#x0A;&#x0A;</xsl:text>
     <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
     <xsl:text>#include "COMDefs.h"&#x0A;&#x0A;</xsl:text>
 
