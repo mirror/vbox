@@ -29,6 +29,14 @@
 #include <iprt/stdarg.h>
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#ifndef S_ISDIR
+# define S_ISDIR(a_fMode)       ( (S_IFMT & (a_fMode)) == S_IFDIR )
+#endif
+
+
 /**
  * Calculates the line number for a file position.
  *  
@@ -70,6 +78,71 @@ static int printErr(const char *pcszFormat, ...)
     va_end(va);
 
     return RTEXITCODE_FAILURE;
+}
+
+
+/**
+ * Opens the makefile list for writing. 
+ *  
+ * @returns Exit code.
+ * @param   pcszPath            The path to the file.
+ * @param   pcszVariableName    The make variable name.
+ * @param   ppFile              Where to return the file stream.
+ */
+static int openMakefileList(const char *pcszPath, const char *pcszVariableName, FILE **ppFile)
+{
+    *ppFile = NULL;
+
+    FILE *pFile= fopen(pcszPath, "w");
+    if (!pFile)
+        return printErr("Failed to open \"%s\" for writing the file list");
+
+    if (fprintf(pFile, "%s := \\\n", pcszVariableName) <= 0)
+    {
+        fclose(pFile);
+        return printErr("Error writing to the makefile list.\n");
+    }
+
+    *ppFile = pFile;
+    return 0;
+}
+
+
+/**
+ * Adds the given file to the makefile list. 
+ *  
+ * @returns Exit code.
+ * @param   pFile               The file stream of the makefile list.
+ * @param   pszFilename         The file name to add.
+ */
+static int addFileToMakefileList(FILE *pFile, char *pszFilename)
+{
+    if (pFile)
+    {
+        char *pszSlash = pszFilename;
+        while ((pszSlash = strchr(pszSlash, '\\')) != NULL)
+            *pszSlash++ = '/';
+
+        if (fprintf(pFile, "\t%s \\\n", pszFilename) <= 0)
+            return printErr("Error adding file to makefile list.\n");
+    }
+    return 0;
+}
+
+
+/**
+ * Closes the makefile list. 
+ *  
+ * @returns Exit code derived from @a rc.
+ * @param   pFile               The file stream of the makefile list.
+ * @param   rc                  The current exit code.
+ */
+static int closeMakefileList(FILE *pFile, int rc)
+{
+    fprintf(pFile, "\n\n");
+    if (fclose(pFile))
+        return printErr("Error closing the file list file: %s\n", strerror(errno));
+    return rc;
 }
 
 
@@ -188,9 +261,10 @@ static int writeSubFile(const char *pcszFilename, const char *pcszSubContent, si
  *  
  * @returns exit code.
  * @param   pcszOutDir      Path to the output directory.
- * @param   pcszContent     The content to split up.
+ * @param   pcszContent     The content to split up. 
+ * @param   pFileList       The file stream of the makefile list.  Can be NULL.
  */
-static int splitFile(const char *pcszOutDir, const char *pcszContent)
+static int splitFile(const char *pcszOutDir, const char *pcszContent, FILE *pFileList)
 {
     static char const   s_szBeginMarker[] = "\n// ##### BEGINFILE \"";
     static char const   s_szEndMarker[]   = "\n// ##### ENDFILE";
@@ -247,6 +321,9 @@ static int splitFile(const char *pcszOutDir, const char *pcszContent)
             cFilesWritten++;
         }
 
+        if (!rc)
+            rc = addFileToMakefileList(pFileList, pszFilename);
+
         free(pszFilename);
 
         pcszSearch = pcszEnd;
@@ -262,17 +339,25 @@ int main(int argc, char *argv[])
 {
     int rc = 0;
 
-    if (argc == 3)
+    if (argc == 3 || argc == 5)
     {
         struct stat DirStat;
-        if (stat(argv[2], &DirStat) == 0
+        if (   stat(argv[2], &DirStat) == 0
             && S_ISDIR(DirStat.st_mode))
         {
             char   *pszContent;
             rc = readFile(argv[1], &pszContent, NULL);
             if (!rc)
             {
-                rc = splitFile(argv[2], pszContent);
+                FILE *pFileList = NULL;
+                if (argc == 5)
+                    rc = openMakefileList(argv[3], argv[4], &pFileList);
+
+                if (argc < 4 || pFileList)
+                    rc = splitFile(argv[2], pszContent, pFileList);
+
+                if (pFileList)
+                    rc = closeMakefileList(pFileList, rc);
                 free(pszContent);
             }
         }
@@ -280,7 +365,6 @@ int main(int argc, char *argv[])
             rc = printErr("Given argument \"%s\" is not a valid directory.\n", argv[2]);
     }
     else
-        rc = printErr("Must be started with exactly two arguments,\n"
-                      "1) the input file and 2) the directory where to put the output files\n");
+        rc = printErr("Syntax error: usage: filesplitter <infile> <outdir> [<list.kmk> <kmkvar>]\n");
     return rc;
 }
