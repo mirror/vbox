@@ -150,6 +150,18 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr, size_t cbPage)
 
     KernelSeg.s_as = &kas;
     page_t *pPage = page_create_va(&g_PageVnode, offPage, cbPage, PG_WAIT | PG_NORELOC, &KernelSeg, virtAddr);
+
+    if (RT_LIKELY(pPage))
+    {
+        /*
+         * Lock this page into memory "long term" to prevent paging out of this page.
+         */
+        page_pp_lock(pPage, 0 /* COW */, 1 /* Kernel */);
+        page_io_unlock(pPage);
+        page_downgrade(pPage);
+        Assert(PAGE_LOCKED_SE(pPage, SE_SHARED));
+    }
+
     return pPage;
 }
 
@@ -199,22 +211,20 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
                 while (cTries > 0)
                 {
                     /*
-                     * Get a page from the free list locked exclusively. The page will be named (hashed in).
-                     * Hashing out the page has no real benefits. Downgrade the page to a shared lock to                                     .
-                     * prevent the page from being relocated.
+                     * Get a page from the free list locked exclusively. The page will be named (hashed in)
+                     * and we rely on it during free. Downgrade the page to a shared lock to prevent the page
+                     * from being relocated.
                      */
                     pPage = rtR0MemObjSolPageAlloc(virtAddr, PAGE_SIZE);
                     if (!pPage)
                         break;
 
-                    page_io_unlock(pPage);
-                    page_downgrade(pPage);
-                    Assert(PAGE_LOCKED_SE(pPage, SE_SHARED));
-
                     /*
                      * Check if the physical address backing the page is within the requested range if any.
                      * If it isn't, discard the page and try again.
                      */
+                    /** @todo Remove this constraint here, force all high-limit applicable cases
+                     *        through rtR0SolMemAlloc() */
                     if (uPhysHi != NIL_RTHCPHYS)
                     {
                         uint64_t uPhys = rtR0MemObjSolPagePhys(pPage);
@@ -236,8 +246,8 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
                     /*
                      * No pages found or found pages didn't meet requirements, release what was grabbed so far.
                      */
-                    while (--i >= 0)
-                        page_destroy(ppPages[i], 0 /* move it to the free list */);
+                    for (size_t k = 0; k <= i; k++)
+                        page_destroy(ppPages[k], 0 /* move it to the free list */);
                     kmem_free(ppPages, cbPages);
                     page_unresv(cPages);
                     return NULL;
@@ -287,6 +297,7 @@ static void rtR0MemObjSolPagesFree(page_t **ppPages, size_t cb)
                                                    &g_PageVnode, offPage, pFoundPage, pPage));
         }
         Assert(PAGE_LOCKED_SE(pPage, SE_EXCL));
+        page_pp_unlock(pPage, 0 /* COW */, 1 /* Kernel */);
         page_destroy(pPage, 0 /* move it to the free list */);
     }
     kmem_free(ppPages, cbPages);
@@ -295,9 +306,7 @@ static void rtR0MemObjSolPagesFree(page_t **ppPages, size_t cb)
 
 
 /**
- * Allocates one large page. There is currently no way on Solaris to request
- * a block larger than one page backed with physically contiguous memory, i.e.
- * PG_PHYSCONTIG is not yet supported.
+ * Allocates one large page.
  *
  * @param puPhys        Where to store the physical address of the allocated
  *                      page. Optional, can be NULL.
@@ -346,8 +355,10 @@ static page_t **rtR0MemObjSolLargePageAlloc(uint64_t *puPhys, size_t cbLargePage
                                                                  (int)pPage->p_szc, (int)pRootPage->p_szc));
 
                     /*
-                     * Lock the page into memory "long term". This prevents the pageout scanner (page_try_demote_pages()) from
-                     * demoting the large page into smaller pages while we temporarily release the exclusive lock (during free).
+                     * Lock the page into memory "long term". This prevents callers of page_try_demote_pages() (such as the
+                     * pageout scanner) from demoting the large page into smaller pages while we temporarily release the
+                     * exclusive lock (during free). We pass "0, 1" since we've already accounted for availrmem during
+                     * page_resv().
                      */
                     page_pp_lock(pPage, 0 /* COW */, 1 /* Kernel */);
 
@@ -414,6 +425,7 @@ static void rtR0MemObjSolLargePageFree(page_t **ppPages, size_t cbLargePage)
             page_unlock(pPage);
             page_t *pFoundPage = page_lookup(&g_LargePageVnode, offPage, SE_EXCL);
             AssertRelease(pFoundPage);
+
 #if 0
             /*
              * This can only be guaranteed if PG_NORELOC is used while allocating the pages.
@@ -424,15 +436,13 @@ static void rtR0MemObjSolLargePageFree(page_t **ppPages, size_t cbLargePage)
 #endif
 
             /*
-             * Check for page demotion (regardless of relocation). In VM1, the uncorrectable memory error scanner
-             * does -not- respect the long-term page lock we have, so it might have demoted the page to _4K pages
-             * while the page lock was dropped.
+             * Check for page demotion (regardless of relocation). Some places in Solaris (e.g. VM1 page_retire())
+             * could possibly demote the large page to _4K pages between our call to page_unlock() and page_lookup().
              */
             if (page_get_pagecnt(pFoundPage->p_szc) == 1)   /* Base size of only _4K associated with this page. */
                 fDemoted = true;
-
-            ppPages[iPage] = pFoundPage;
             pPage          = pFoundPage;
+            ppPages[iPage] = pFoundPage;
         }
         Assert(PAGE_LOCKED_SE(pPage, SE_EXCL));
         page_pp_unlock(pPage, 0 /* COW */, 1 /* Kernel */);
