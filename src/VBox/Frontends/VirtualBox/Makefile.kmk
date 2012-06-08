@@ -729,7 +729,7 @@ endif
 # Generate the COM wrappers.
 #
 VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
-VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers.ts
+VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers
 VirtualBox_CLEAN         += $(wildcard $(VirtualBox_0_OUTDIR)/include/*)
 VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
 
