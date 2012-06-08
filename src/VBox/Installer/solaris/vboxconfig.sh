@@ -40,6 +40,7 @@ BIN_DEVFSADM=/usr/sbin/devfsadm
 BIN_BOOTADM=/sbin/bootadm
 BIN_SVCADM=/usr/sbin/svcadm
 BIN_SVCCFG=/usr/sbin/svccfg
+BIN_SVCS=/usr/bin/svcs 
 BIN_IFCONFIG=/sbin/ifconfig
 BIN_SVCS=/usr/bin/svcs
 BIN_ID=/usr/bin/id
@@ -770,6 +771,49 @@ stop_process()
     fi
 }
 
+# start_service(servicename, shortFMRI pretty printing, full FMRI)
+# failure: non-fatal
+start_service()
+{
+    if test -z "$1" || test -z "$2" || test -z "$3"; then
+        errorprint "missing argument to enable_service()"
+        exit 1
+    fi
+
+    # Since S11 the way to import a manifest is via restarting manifest-import which is asynchronous and can
+    # take a while to complete, using disable/enable -s doesn't work either. So we restart it, and poll in
+    # 1 second intervals to see if our service has been successfully imported and timeout after 'cmax' seconds.
+    cmax=32
+    cslept=0
+    success=0
+
+    $BIN_SVCS "$3" >/dev/null 2>&1
+    while test $? -ne 0;
+    do
+        sleep 1
+        cslept=`expr $cslept + 1`
+        if test "$cslept" -eq "$cmax"; then
+            success=1
+            break
+        fi
+        $BIN_SVCS "$3" >/dev/null 2>&1
+    done
+    if test "$success" -eq 0; then
+        $BIN_SVCADM enable -s "$3"
+        if test "$?" -eq 0; then
+            subprint "Loaded: $1"
+            return 0
+        else
+            warnprint "Loading $1  ...FAILED."
+            warnprint "Refer /var/svc/log/application-virtualbox-zoneaccess:default.log for details."
+        fi
+    else
+        warnprint "Importing $1  ...FAILED."
+        warnprint "Refer /var/svc/log/system-manifest-import:default.log for details."
+    fi
+    return 1
+}
+
 
 # stop_service(servicename, shortFMRI-suitable for grep, full FMRI)
 # failure: non fatal
@@ -945,21 +989,16 @@ postinstall()
             fi
         fi
 
-        if test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-webservice.xml" || test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"; then
+        if     test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-webservice.xml" \
+            || test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml" \
+            || test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-balloonctrl.xml"; then
             infoprint "Configuring services..."
             if test "$REMOTEINST" -eq 1; then
                 subprint "Skipped for targetted installs."
             else
-                # Enable Zone access service for non-remote installs, other services (Webservice) are delivered disabled by the manifest class action
-                servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" | grep "disabled" 2>/dev/null`
-                if test ! -z "$servicefound"; then
-                    $BIN_SVCADM enable -s svc:/application/virtualbox/zoneaccess
-                    if test "$?" -eq 0; then
-                        subprint "Loaded: Zone access service"
-                    else
-                        subprint "Loading Zone access service  ...FAILED."
-                    fi
-                fi
+                # Start ZoneAccess service, other services are disabled by default.
+                $BIN_SVCADM restart svc:system/manifest-import:default
+                start_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default"
             fi
         fi
 
