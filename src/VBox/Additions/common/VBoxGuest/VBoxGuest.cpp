@@ -722,6 +722,9 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->MemBalloon.fUseKernelAPI = true;
     pDevExt->MemBalloon.paMemObj = NULL;
     pDevExt->MemBalloon.pOwner = NULL;
+    for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->cMouseFeatureUsage); ++i)
+        pDevExt->cMouseFeatureUsage[i] = 0;
+    pDevExt->fMouseStatus = 0;
 
     /*
      * If there is an MMIO region validate the version and size.
