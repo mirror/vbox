@@ -722,8 +722,8 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->MemBalloon.fUseKernelAPI = true;
     pDevExt->MemBalloon.paMemObj = NULL;
     pDevExt->MemBalloon.pOwner = NULL;
-    for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->cMouseFeatureUsage); ++i)
-        pDevExt->cMouseFeatureUsage[i] = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->acMouseFeatureUsage); ++i)
+        pDevExt->acMouseFeatureUsage[i] = 0;
     pDevExt->fMouseStatus = 0;
 
     /*
@@ -2230,12 +2230,12 @@ static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
         {
             if (   (RT_BIT_32(i) & fFeatures)
                 && !(RT_BIT_32(i) & pSession->fMouseStatus))
-                pDevExt->cMouseFeatureUsage[i]++;
+                pDevExt->acMouseFeatureUsage[i]++;
             else if (   !(RT_BIT_32(i) & fFeatures)
                      && (RT_BIT_32(i) & pSession->fMouseStatus))
-                pDevExt->cMouseFeatureUsage[i]--;
+                pDevExt->acMouseFeatureUsage[i]--;
         }
-        if (pDevExt->cMouseFeatureUsage[i] > 0)
+        if (pDevExt->acMouseFeatureUsage[i] > 0)
             fNewDevExtStatus |= RT_BIT_32(i);
     }
 
@@ -2285,7 +2285,7 @@ static void testSetMouseStatus(void)
         AssertMsg(   g_test_statusSetMouseStatus
                   == VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE,
                   ("Actual status: 0x%x\n", g_test_statusSetMouseStatus));
-        DevExt.cMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR) - 1] = 1;
+        DevExt.acMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR) - 1] = 1;
         rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
                                   &Session, &u32Data, sizeof(u32Data), NULL);
         AssertRCSuccess(rc);
@@ -2314,8 +2314,8 @@ static void testSetMouseStatus(void)
         AssertMsg(   g_test_statusSetMouseStatus
                   == VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR,
                   ("Actual status: 0x%x\n", g_test_statusSetMouseStatus));
-        AssertMsg(DevExt.cMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR) - 1] == 1,
-                  ("Actual value: %d\n", DevExt.cMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)]));
+        AssertMsg(DevExt.acMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR) - 1] == 1,
+                  ("Actual value: %d\n", DevExt.acMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)]));
         g_test_SetMouseStatusGRRC = VERR_UNRESOLVED_ERROR;
         /* This should succeed as the host request should not be made
          * since nothing has changed. */

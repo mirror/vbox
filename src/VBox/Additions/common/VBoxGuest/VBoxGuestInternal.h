@@ -162,7 +162,7 @@ typedef struct VBOXGUESTDEVEXT
      * requested it. */
     /** @todo can we programmatically determine the size of the array and
      * still get the following alignment right? */
-    uint32_t volatile           cMouseFeatureUsage[32];
+    uint32_t volatile           acMouseFeatureUsage[32];
     /** The mouse feature status matching the counts above.  These are updated
      * together inside the session spinlock. */
     uint32_t volatile           fMouseStatus;
