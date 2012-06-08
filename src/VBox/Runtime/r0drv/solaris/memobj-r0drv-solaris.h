@@ -40,6 +40,7 @@
 typedef struct SEGVBOX_CRARGS
 {
     uint64_t *paPhysAddrs;
+    size_t    cbPageSize;
     uint_t    fPageAccess;
 } SEGVBOX_CRARGS;
 typedef SEGVBOX_CRARGS *PSEGVBOX_CRARGS;
@@ -47,6 +48,7 @@ typedef SEGVBOX_CRARGS *PSEGVBOX_CRARGS;
 typedef struct SEGVBOX_DATA
 {
     uint_t    fPageAccess;
+    size_t    cbPageSize;
 } SEGVBOX_DATA;
 typedef SEGVBOX_DATA *PSEGVBOX_DATA;
 
@@ -64,8 +66,22 @@ DECLINLINE(int) rtR0SegVBoxSolCreate(seg_t *pSeg, void *pvArgs)
     AssertPtr(pArgs);
     AssertPtr(pData);
 
+    /*
+     * Currently we only map _4K pages but this segment driver can handle any size
+     * supported by the Solaris HAT layer.
+     */
+    size_t cbPageSize  = pArgs->cbPageSize;
+    size_t uPageShift  = 0;
+    switch (cbPageSize)
+    {
+        case _4K: uPageShift = 12; break;
+        case _2M: uPageShift = 21; break;
+        default:  AssertReleaseMsgFailed(("Unsupported page size for mapping cbPageSize=%llx\n", cbPageSize)); break;
+    }
+
     hat_map(pAddrSpace->a_hat, pSeg->s_base, pSeg->s_size, HAT_MAP);
     pData->fPageAccess = pArgs->fPageAccess | PROT_USER;
+    pData->cbPageSize  = cbPageSize;
 
     pSeg->s_ops  = &s_SegVBoxOps;
     pSeg->s_data = pData;
@@ -74,11 +90,11 @@ DECLINLINE(int) rtR0SegVBoxSolCreate(seg_t *pSeg, void *pvArgs)
      * Now load the locked mappings to the pages.
      */
     caddr_t virtAddr = pSeg->s_base;
-    pgcnt_t cPages   = (pSeg->s_size + PAGESIZE - 1) >> PAGESHIFT;
-    for (pgcnt_t iPage = 0; iPage < cPages; ++iPage, virtAddr += PAGESIZE)
+    pgcnt_t cPages   = (pSeg->s_size + cbPageSize - 1) >> uPageShift;
+    for (pgcnt_t iPage = 0; iPage < cPages; ++iPage, virtAddr += cbPageSize)
     {
-        hat_devload(pAddrSpace->a_hat, virtAddr, PAGESIZE, pArgs->paPhysAddrs[iPage] >> PAGESHIFT,
-                    pData->fPageAccess | HAT_UNORDERED_OK, HAT_LOAD | HAT_LOAD_LOCK);
+        hat_devload(pAddrSpace->a_hat, virtAddr, cbPageSize, pArgs->paPhysAddrs[iPage] >> uPageShift,
+                    pData->fPageAccess | HAT_UNORDERED_OK, HAT_LOAD_LOCK);
     }
 
     return 0;
@@ -97,6 +113,7 @@ static int rtR0SegVBoxSolDup(seg_t *pSrcSeg, seg_t *pDstSeg)
     AssertPtr(pSrcData);
 
     pDstData->fPageAccess  = pSrcData->fPageAccess;
+    pDstData->cbPageSize   = pSrcData->cbPageSize;
     pDstSeg->s_ops         = &s_SegVBoxOps;
     pDstSeg->s_data        = pDstData;
 
@@ -106,16 +123,21 @@ static int rtR0SegVBoxSolDup(seg_t *pSrcSeg, seg_t *pDstSeg)
 
 static int rtR0SegVBoxSolUnmap(seg_t *pSeg, caddr_t virtAddr, size_t cb)
 {
-    /** @todo make these into release assertions. */
-    if (   virtAddr < pSeg->s_base
-        || virtAddr + cb > pSeg->s_base + pSeg->s_size
-        || (cb & PAGEOFFSET) || ((uintptr_t)virtAddr & PAGEOFFSET))
-    {
-        panic("rtRt0SegVBoxSolUnmap");
-    }
+    PSEGVBOX_DATA pData = pSeg->s_data;
 
-    if (virtAddr != pSeg->s_base || cb != pSeg->s_size)
+    AssertRelease(pData);
+    AssertReleaseMsg(virtAddr >= pSeg->s_base, ("virtAddr=%p s_base=%p\n", virtAddr, pSeg->s_base));
+    AssertReleaseMsg(virtAddr + cb <= pSeg->s_base + pSeg->s_size, ("virtAddr=%p cb=%llu s_base=%p s_size=%llu\n", virtAddr,
+                                                                    cb, pSeg->s_base, pSeg->s_size));
+    size_t cbPageOffset = pData->cbPageSize - 1;
+    AssertRelease(!(cb & cbPageOffset));
+    AssertRelease(!((uintptr_t)virtAddr & cbPageOffset));
+
+    if (   virtAddr != pSeg->s_base
+        || cb       != pSeg->s_size)
+    {
         return ENOTSUP;
+    }
 
     hat_unload(pSeg->s_as->a_hat, virtAddr, cb, HAT_UNLOAD_UNMAP | HAT_UNLOAD_UNLOCK);
 
@@ -137,7 +159,7 @@ static int rtR0SegVBoxSolFault(struct hat *pHat, seg_t *pSeg, caddr_t virtAddr, 
     /*
      * We would demand fault if the (u)read() path would SEGOP_FAULT() on buffers mapped in via our
      * segment driver i.e. prefaults before DMA. Don't fail in such case where we're called directly,
-     * see #5047.
+     * see @bugref{5047}.
      */
     return 0;
 }
@@ -175,8 +197,12 @@ static int rtR0SegVBoxSolSync(seg_t *pSeg, caddr_t virtAddr, size_t cb, int Attr
 
 static size_t rtR0SegVBoxSolInCore(seg_t *pSeg, caddr_t virtAddr, size_t cb, char *pVec)
 {
-    size_t cbLen = (cb + PAGEOFFSET) & PAGEMASK;
-    for (virtAddr = 0; cbLen != 0; cbLen -= PAGESIZE, virtAddr += PAGESIZE)
+    PSEGVBOX_DATA pData = pSeg->s_data;
+    AssertRelease(pData);
+    size_t uPageOffset  = pData->cbPageSize - 1;
+    size_t uPageMask    = ~uPageOffset;
+    size_t cbLen        = (cb + uPageOffset) & uPageMask;
+    for (virtAddr = 0; cbLen != 0; cbLen -= pData->cbPageSize, virtAddr += pData->cbPageSize)
         *pVec++ = 1;
     return cbLen;
 }
@@ -293,5 +319,4 @@ static struct seg_ops s_SegVBoxOps =
 };
 
 #endif /* !___r0drv_solaris_memobj_r0drv_solaris_h */
-
 
