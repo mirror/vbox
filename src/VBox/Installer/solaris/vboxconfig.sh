@@ -775,7 +775,7 @@ stop_process()
 # failure: non-fatal
 start_service()
 {
-    if test -z "$1" || test -z "$2" || test -z "$3"; then
+    if test -z "$1" || test -z "$2" || test -z "$3" || test -z "$4"; then
         errorprint "missing argument to enable_service()"
         exit 1
     fi
@@ -805,7 +805,7 @@ start_service()
             return 0
         else
             warnprint "Loading $1  ...FAILED."
-            warnprint "Refer /var/svc/log/application-virtualbox-zoneaccess:default.log for details."
+            warnprint "Refer $4 for details."
         fi
     else
         warnprint "Importing $1  ...FAILED."
@@ -998,7 +998,8 @@ postinstall()
             else
                 # Start ZoneAccess service, other services are disabled by default.
                 $BIN_SVCADM restart svc:system/manifest-import:default
-                start_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default"
+                start_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default" \
+                                "/var/svc/log/application-virtualbox-zoneaccess:default.log"
             fi
         fi
 
