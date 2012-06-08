@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
- * File splitter: splits a text file according to ###### markers in it.
+ * File splitter - Splits a text file according to ###### markers in it.
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,172 +15,272 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*******************************************************************************
+*  Header Files                                                                *
+*******************************************************************************/
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
-static unsigned long lineNumber(const char *pStr, const char *pPos)
+#include <iprt/string.h>
+#include <iprt/stdarg.h>
+
+
+/**
+ * Calculates the line number for a file position.
+ *  
+ * @returns Line number.
+ * @param   pcszContent         The file content.
+ * @param   pcszPos             The current position.
+ */
+static unsigned long lineNumber(const char *pcszContent, const char *pcszPos)
 {
     unsigned long cLine = 0;
-    while (*pStr && pStr < pPos)
+    while (   *pcszContent 
+           && (uintptr_t)pcszContent < (uintptr_t)pcszPos)
     {
-        pStr = strchr(pStr, '\n');
-        if (!pStr)
+        pcszContent = strchr(pcszContent, '\n');
+        if (!pcszContent)
             break;
         ++cLine;
-        ++pStr;
+        ++pcszContent;
     }
 
     return cLine;
 }
 
-int main(int argc, char *argv[])
+
+/**
+ * Writes an error message. 
+ *  
+ * @returns RTEXITCODE_FAILURE.
+ * @param   pcszFormat          Error message.
+ * @param   ...                 Format argument referenced in the message.
+ */
+static int printErr(const char *pcszFormat, ...)
 {
+    va_list va;
+
+    fprintf(stderr, "filesplitter: ");
+    va_start(va, pcszFormat);
+    vfprintf(stderr, pcszFormat, va);
+    va_end(va);
+
+    return RTEXITCODE_FAILURE;
+}
+
+
+/**
+ * Reads in a file. 
+ *  
+ * @returns Exit code.
+ * @param   pcszFile            The path to the file.
+ * @param   ppszFile            Where to return the buffer.
+ * @param   pcchFile            Where to return the file size.
+ */
+static int readFile(const char *pcszFile, char **ppszFile, size_t *pcchFile)
+{
+    FILE          *pFile;
+    struct stat    FileStat;
+    int            rc;
+
+    if (stat(pcszFile, &FileStat))
+        return printErr("Failed to stat \"%s\": %s\n", pcszFile, strerror(errno));
+
+    pFile = fopen(pcszFile, "r");
+    if (!pFile)
+        return printErr("Failed to open \"%s\": %s\n", pcszFile, strerror(errno));
+
+    *ppszFile = (char *)malloc(FileStat.st_size + 1);
+    if (*ppszFile)
+    {
+        errno = 0;
+        size_t cbRead = fread(*ppszFile, 1, FileStat.st_size, pFile);
+        if (   cbRead <= (size_t)FileStat.st_size
+            && (cbRead > 0 || !ferror(pFile)) )
+        {
+            if (ftell(pFile) == FileStat.st_size) /* (\r\n vs \n in the DOS world) */
+            {
+                (*ppszFile)[cbRead] = '\0';
+                if (pcchFile)
+                    *pcchFile = (size_t)cbRead;
+
+                fclose(pFile);
+                return 0;
+            }
+        }
+
+        rc = printErr("Error reading \"%s\": %s\n", pcszFile, strerror(errno));
+        free(*ppszFile);
+        *ppszFile = NULL;
+    }
+    else
+        rc = printErr("Failed to allocate %lu bytes\n", (unsigned long)(FileStat.st_size + 1));
+    fclose(pFile);
+    return rc;
+}
+
+
+/**
+ * Checks whether the sub-file already exists and has the exact 
+ * same content. 
+ *  
+ * @returns @c true if the existing file matches exactly, otherwise @c false.
+ * @param   pcszFilename    The path to the file.
+ * @param   pcszSubContent  The content to write.
+ * @param   cchSubContent   The length of the content.
+ */
+static bool compareSubFile(const char *pcszFilename, const char *pcszSubContent, size_t cchSubContent)
+{
+    struct stat     FileStat;             
+    FILE           *pFile;
+    if (stat(pcszFilename, &FileStat))
+        return false;
+    if ((size_t)FileStat.st_size < cchSubContent)
+        return false;
+
+    size_t cchExisting;
+    char  *pszExisting;
+    int rc = readFile(pcszFilename, &pszExisting, &cchExisting);
+    if (rc)
+        return false;
+
+    bool fRc = cchExisting == cchSubContent
+            && !memcmp(pcszSubContent, pszExisting, cchSubContent);
+    free(pszExisting);
+
+    return fRc;
+}
+
+
+/**
+ * Writes out a sub-file. 
+ *  
+ * @returns exit code.
+ * @param   pcszFilename    The path to the sub-file.
+ * @param   pcszSubContent  The content of the file.
+ * @param   cchSubContent   The size of the content.
+ */
+static int writeSubFile(const char *pcszFilename, const char *pcszSubContent, size_t cchSubContent)
+{
+    FILE   *pFile = fopen(pcszFilename, "w");
+    if (!pFile)
+        return printErr("Failed to open \"%s\" for writing: %s\n", pcszFilename, strerror(errno));
+
+    errno = 0;
     int rc = 0;
-    const char *pcszBeginMarker = "\n// ##### BEGINFILE \"";
-    const char *pcszEndMarker = "\n// ##### ENDFILE";
-    const size_t cbBeginMarker = strlen(pcszBeginMarker);
-    FILE *pFileIn = NULL;
-    char *pBuffer = NULL;
+    if (fwrite(pcszSubContent, cchSubContent, 1, pFile) != 1)
+        rc = printErr("Error writing \"%s\": %s\n", pcszFilename, strerror(errno));
+
+    errno = 0;
+    int rc2 = fclose(pFile);
+    if (rc2 == EOF)
+        rc = printErr("Error closing \"%s\": %s\n", pcszFilename, strerror(errno));
+    return rc;
+}
+
+
+/**
+ * Does the actual file splitting.
+ *  
+ * @returns exit code.
+ * @param   pcszOutDir      Path to the output directory.
+ * @param   pcszContent     The content to split up.
+ */
+static int splitFile(const char *pcszOutDir, const char *pcszContent)
+{
+    static char const   s_szBeginMarker[] = "\n// ##### BEGINFILE \"";
+    static char const   s_szEndMarker[]   = "\n// ##### ENDFILE";
+    const size_t        cchBeginMarker    = sizeof(s_szBeginMarker) - 1;
+    const char         *pcszSearch        = pcszContent;
+    size_t const        cchOutDir         = strlen(pcszOutDir);
+    unsigned long       cFilesWritten     = 0;
+    unsigned long       cFilesUnchanged   = 0;
+    int                 rc                = 0;
 
     do
     {
-        if (argc != 3)
-        {
-            fprintf(stderr, "filesplitter: Must be started with exactly two arguments,\n"
-                            "1) the input file and 2) the directory where to put the output files\n");
-            rc = 2;
+        /* find begin marker */
+        const char *pcszBegin = strstr(pcszSearch, s_szBeginMarker);
+        if (!pcszBegin)
             break;
+
+        /* find line after begin marker */
+        const char *pcszLineAfterBegin = strchr(pcszBegin + cchBeginMarker, '\n');
+        if (!pcszLineAfterBegin)
+            return printErr("No newline after begin-file marker found.\n");
+        ++pcszLineAfterBegin;
+
+        /* find filename end quote in begin marker line */
+        const char *pcszStartFilename = pcszBegin + cchBeginMarker;
+        const char *pcszEndQuote = (const char *)memchr(pcszStartFilename, '\"', pcszLineAfterBegin - pcszStartFilename);
+        if (!pcszEndQuote)
+            return printErr("Can't parse filename after begin-file marker (line %lu).\n", 
+                            lineNumber(pcszContent, s_szBeginMarker));
+
+        /* find end marker */
+        const char *pcszEnd = strstr(pcszLineAfterBegin, s_szEndMarker);
+        if (!pcszEnd)
+            return printErr("No matching end-line marker for begin-file marker found (line %lu).\n", 
+                            lineNumber(pcszContent, s_szBeginMarker));
+
+        /* construct output filename */
+        size_t cchFilename = pcszEndQuote - pcszStartFilename;
+        char  *pszFilename = (char *)malloc(cchOutDir + 1 + cchFilename + 1);
+        if (!pszFilename)
+            return printErr("Can't allocate memory for filename.\n");
+
+        memcpy(pszFilename, pcszOutDir, cchOutDir);
+        pszFilename[cchOutDir] = '/';
+        memcpy(pszFilename + cchOutDir + 1, pcszStartFilename, cchFilename);
+        pszFilename[cchFilename + 1 + cchOutDir] = '\0';
+
+        /* Write the file only if necessary. */
+        if (compareSubFile(pszFilename, pcszLineAfterBegin, pcszEnd - pcszLineAfterBegin))
+            cFilesUnchanged++;
+        else
+        {
+            rc = writeSubFile(pszFilename, pcszLineAfterBegin, pcszEnd - pcszLineAfterBegin);
+            cFilesWritten++;
         }
 
-        struct stat lStat;
-        if (    stat(argv[2], &lStat) != 0
-            || (lStat.st_mode & S_IFDIR) != S_IFDIR)
+        free(pszFilename);
+
+        pcszSearch = pcszEnd;
+    } while (rc == 0 && pcszSearch);
+
+    printf("filesplitter: Out of %lu files: %lu rewritten, %lu unchanged. (%s)\n", 
+           cFilesWritten + cFilesUnchanged, cFilesWritten, cFilesUnchanged, pcszOutDir);
+    return rc;
+}
+
+
+int main(int argc, char *argv[])
+{
+    int rc = 0;
+
+    if (argc == 3)
+    {
+        struct stat DirStat;
+        if (stat(argv[2], &DirStat) == 0
+            && S_ISDIR(DirStat.st_mode))
         {
-            fprintf(stderr, "filesplitter: Given argument \"%s\" is not a valid directory.\n", argv[2]);
-            rc = 2;
-            break;
+            char   *pszContent;
+            rc = readFile(argv[1], &pszContent, NULL);
+            if (!rc)
+            {
+                rc = splitFile(argv[2], pszContent);
+                free(pszContent);
+            }
         }
-
-        if (    stat(argv[1], &lStat)
-            || !(pFileIn = fopen(argv[1], "r")))
-        {
-            fprintf(stderr, "filesplitter: Cannot open file \"%s\" for reading.\n", argv[1]);
-            rc = 2;
-            break;
-        }
-
-        if (!(pBuffer = (char*)malloc(lStat.st_size + 1)))
-        {
-            fprintf(stderr, "filesplitter: Failed to allocate %ld bytes.\n", (long)lStat.st_size);
-            rc = 2;
-            break;
-        }
-
-        if (fread(pBuffer, 1, lStat.st_size, pFileIn) != (size_t)lStat.st_size)
-        {
-            fprintf(stderr, "filesplitter: Failed to read %ld bytes from input file.\n", (long)lStat.st_size);
-            rc = 2;
-            break;
-        }
-        pBuffer[lStat.st_size] = '\0';
-
-        const char *pSearch = pBuffer;
-        unsigned long cFiles = 0;
-        size_t cbDirName = strlen(argv[2]);
-
-        do
-        {
-            /* find begin marker */
-            const char *pBegin = strstr(pSearch, pcszBeginMarker);
-            if (!pBegin)
-                break;
-
-            /* find line after begin marker */
-            const char *pLineAfterBegin = strchr(pBegin + cbBeginMarker, '\n');
-            if (!pLineAfterBegin)
-            {
-                fprintf(stderr, "filesplitter: No newline after begin-file marker found.\n");
-                rc = 2;
-                break;
-            }
-            ++pLineAfterBegin;
-
-            /* find second quote in begin marker line */
-            const char *pSecondQuote = strchr(pBegin + cbBeginMarker, '\"');
-            if (    !pSecondQuote
-                 || pSecondQuote >= pLineAfterBegin)
-            {
-                fprintf(stderr, "filesplitter: Can't parse filename after begin-file marker (line %lu).\n", lineNumber(pBuffer, pcszBeginMarker));
-                rc = 2;
-                break;
-            }
-
-            /* find end marker */
-            const char *pEnd = strstr(pLineAfterBegin, pcszEndMarker);
-            if (!pEnd)
-            {
-                fprintf(stderr, "filesplitter: No matching end-line marker for begin-file marker found (line %lu).\n", lineNumber(pBuffer, pcszBeginMarker));
-                rc = 2;
-                break;
-            }
-
-            /* construct output filename */
-            char *pszFilename;
-            size_t cbFilename;
-            cbFilename = pSecondQuote - (pBegin + cbBeginMarker);
-            if (!(pszFilename = (char*)malloc(cbDirName + 1 + cbFilename + 1)))
-            {
-                fprintf(stderr, "filesplitter: Can't allocate memory for filename.\n");
-                rc = 2;
-                break;
-            }
-            memcpy(pszFilename, argv[2], cbDirName);
-            pszFilename[cbDirName] = '/';
-            memcpy(pszFilename + cbDirName + 1, pBegin + cbBeginMarker, cbFilename);
-            pszFilename[cbFilename + 1 + cbDirName] = '\0';
-
-            /* create output file and write file contents */
-            FILE *pFileOut;
-            if (!(pFileOut = fopen(pszFilename, "w")))
-            {
-                fprintf(stderr, "filesplitter: Failed to open file \"%s\" for writing\n", pszFilename);
-                rc = 2;
-            }
-            else
-            {
-                size_t cbFile = pEnd - pLineAfterBegin;
-                if (fwrite(pLineAfterBegin, 1, cbFile, pFileOut) != cbFile)
-                {
-                    fprintf(stderr, "filesplitter: Failed to write %ld bytes to file \"%s\"\n", (long)cbFile, pszFilename);
-                    rc = 2;
-                }
-
-                fclose(pFileOut);
-
-                if (!rc)
-                {
-                    ++cFiles;
-                    pSearch = strchr(pEnd, '\n');
-                }
-            }
-
-            free(pszFilename);
-
-            if (rc)
-                break;
-
-        } while (pSearch);
-
-        printf("filesplitter: Created %lu files.\n", cFiles);
-    } while (0);
-
-    if (pBuffer)
-        free(pBuffer);
-    if (pFileIn)
-        fclose(pFileIn);
-
+        else
+            rc = printErr("Given argument \"%s\" is not a valid directory.\n", argv[2]);
+    }
+    else
+        rc = printErr("Must be started with exactly two arguments,\n"
+                      "1) the input file and 2) the directory where to put the output files\n");
     return rc;
 }
