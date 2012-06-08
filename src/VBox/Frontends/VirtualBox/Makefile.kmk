@@ -737,7 +737,7 @@ VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
 ## @todo kmk doesn't remake optional outputs when they are missing...
 $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
 + $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep \
-+| $(if defined(VirtualBox_VBOX_COMWRAPPERS) \
++| $(if-expr defined(VirtualBox_VBOX_COMWRAPPERS) \
 , $(VirtualBox_VBOX_COMWRAPPERS) \
 , $$(VirtualBox_0_OUTDIR)/include/COMEnums.h \
   $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp \
