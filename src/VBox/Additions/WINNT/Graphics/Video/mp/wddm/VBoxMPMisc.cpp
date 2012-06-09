@@ -2364,3 +2364,251 @@ NTSTATUS vboxWddmDrvCfgInit(PUNICODE_STRING pRegStr)
 
     return Status;
 }
+
+NTSTATUS vboxWddmThreadCreate(PKTHREAD * ppThread, PKSTART_ROUTINE pStartRoutine, PVOID pStartContext)
+{
+    NTSTATUS fStatus;
+    HANDLE hThread;
+    OBJECT_ATTRIBUTES fObjectAttributes;
+
+    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+    InitializeObjectAttributes(&fObjectAttributes, NULL, OBJ_KERNEL_HANDLE,
+                        NULL, NULL);
+
+    fStatus = PsCreateSystemThread(&hThread, THREAD_ALL_ACCESS,
+                        &fObjectAttributes, NULL, NULL,
+                        (PKSTART_ROUTINE) pStartRoutine, pStartContext);
+    if (!NT_SUCCESS(fStatus))
+      return fStatus;
+
+    ObReferenceObjectByHandle(hThread, THREAD_ALL_ACCESS, NULL,
+                        KernelMode, (PVOID*) ppThread, NULL);
+    ZwClose(hThread);
+    return STATUS_SUCCESS;
+}
+
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+static int vboxWddmWdProgram(PVBOXMP_DEVEXT pDevExt, uint32_t cMillis)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
+    if (pCmd)
+    {
+        pCmd->enmCtl = VBOXVDMA_CTL_TYPE_WATCHDOG;
+        pCmd->u32Offset = cMillis;
+        pCmd->i32Result = VERR_NOT_SUPPORTED;
+
+        const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
+        Assert(pHdr);
+        if (pHdr)
+        {
+            do
+            {
+                HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pHdr);
+                Assert(offCmd != HGSMIOFFSET_VOID);
+                if (offCmd != HGSMIOFFSET_VOID)
+                {
+                    VBoxVideoCmnPortWriteUlong(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port, offCmd);
+                    rc = VBoxSHGSMICommandDoneSynch(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pHdr);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = pCmd->i32Result;
+                        AssertRC(rc);
+                    }
+                    break;
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
+                /* fail to submit, cancel it */
+                VBoxSHGSMICommandCancelSynch(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pHdr);
+            } while (0);
+        }
+
+        VBoxSHGSMICommandFree (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
+    }
+    else
+    {
+        LOGREL(("HGSMIHeapAlloc failed"));
+        rc = VERR_OUT_OF_RESOURCES;
+    }
+    return rc;
+}
+
+static uint32_t g_VBoxWdTimeout = 4000;
+/* if null g_VBoxWdTimeout / 2 is used */
+static uint32_t g_VBoxWdTimerPeriod = 0;
+
+static VOID vboxWddmWdThread(PVOID pvUser)
+{
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvUser;
+    BOOLEAN bExit = FALSE;
+    int rc;
+    while (1)
+    {
+        if (!bExit)
+        {
+            rc = vboxWddmWdProgram(pDevExt, g_VBoxWdTimeout /* ms */);
+            AssertRC(rc);
+        }
+        else
+        {
+            rc = vboxWddmWdProgram(pDevExt, 0 /* to disable WatchDog */);
+            AssertRC(rc);
+            break;
+        }
+        LARGE_INTEGER Timeout;
+        uint32_t timerTimeOut = g_VBoxWdTimerPeriod ? g_VBoxWdTimerPeriod : g_VBoxWdTimeout / 2;
+        Timeout.QuadPart = 10000ULL * timerTimeOut /* ms */;
+        NTSTATUS Status = KeWaitForSingleObject(&pDevExt->WdEvent, Executive, KernelMode, FALSE, &Timeout);
+        if (Status != STATUS_TIMEOUT)
+            bExit = TRUE;
+    }
+}
+
+NTSTATUS vboxWddmWdInit(PVBOXMP_DEVEXT pDevExt)
+{
+    KeInitializeEvent(&pDevExt->WdEvent, NotificationEvent, FALSE);
+
+    NTSTATUS Status = vboxWddmThreadCreate(&pDevExt->pWdThread, vboxWddmWdThread, pDevExt);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxWddmThreadCreate failed, Status 0x%x", Status));
+        pDevExt->pWdThread = NULL;
+    }
+    return Status;
+}
+
+NTSTATUS vboxWddmWdTerm(PVBOXMP_DEVEXT pDevExt)
+{
+    if (!pDevExt->pWdThread)
+        return STATUS_SUCCESS;
+
+    KeSetEvent(&pDevExt->WdEvent, 0, FALSE);
+
+    KeWaitForSingleObject(pDevExt->pWdThread, Executive, KernelMode, FALSE, NULL);
+    ObDereferenceObject(pDevExt->pWdThread);
+    pDevExt->pWdThread = NULL;
+    return STATUS_SUCCESS;
+}
+#endif
+
+static int vboxWddmSlConfigure(PVBOXMP_DEVEXT pDevExt, uint32_t fFlags)
+{
+    PHGSMIGUESTCOMMANDCONTEXT pCtx = &VBoxCommonFromDeviceExt(pDevExt)->guestCtx;
+    VBVASCANLINECFG *pCfg;
+    int rc = VINF_SUCCESS;
+
+    /* Allocate the IO buffer. */
+    pCfg = (VBVASCANLINECFG *)VBoxHGSMIBufferAlloc(pCtx,
+                                       sizeof (VBVASCANLINECFG), HGSMI_CH_VBVA,
+                                       VBVA_SCANLINE_CFG);
+
+    if (pCfg)
+    {
+        /* Prepare data to be sent to the host. */
+        pCfg->rc    = VERR_NOT_IMPLEMENTED;
+        pCfg->fFlags = fFlags;
+        rc = VBoxHGSMIBufferSubmit(pCtx, pCfg);
+        if (RT_SUCCESS(rc))
+        {
+            AssertRC(pCfg->rc);
+            rc = pCfg->rc;
+        }
+        /* Free the IO buffer. */
+        VBoxHGSMIBufferFree(pCtx, pCfg);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+NTSTATUS VBoxWddmSlEnableVSyncNotification(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable)
+{
+    if (!fEnable)
+    {
+        KeCancelTimer(&pDevExt->VSyncTimer);
+    }
+    else
+    {
+        LARGE_INTEGER DueTime;
+        DueTime.QuadPart = -166666LL; /* 60 Hz */
+        KeSetTimerEx(&pDevExt->VSyncTimer, DueTime, 17, &pDevExt->VSyncDpc);
+    }
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGetScanLine)
+{
+    Assert((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays > pGetScanLine->VidPnTargetId);
+    VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[pGetScanLine->VidPnTargetId];
+    Assert(pTarget->HeightTotal);
+    Assert(pTarget->HeightVisible);
+    Assert(pTarget->HeightTotal > pTarget->HeightVisible);
+    Assert(pTarget->ScanLineState < pTarget->HeightTotal);
+    if (pTarget->HeightTotal)
+    {
+        uint32_t curScanLine = pTarget->ScanLineState;
+        ++pTarget->ScanLineState;
+        if (pTarget->ScanLineState >= pTarget->HeightTotal)
+            pTarget->ScanLineState = 0;
+
+
+        BOOL bVBlank = (!curScanLine || curScanLine > pTarget->HeightVisible);
+        pGetScanLine->ScanLine = curScanLine;
+        pGetScanLine->InVerticalBlank = bVBlank;
+    }
+    else
+    {
+        pGetScanLine->InVerticalBlank = TRUE;
+        pGetScanLine->ScanLine = 0;
+    }
+    return STATUS_SUCCESS;
+}
+
+static VOID vboxWddmSlVSyncDpc(
+  __in      struct _KDPC *Dpc,
+  __in_opt  PVOID DeferredContext,
+  __in_opt  PVOID SystemArgument1,
+  __in_opt  PVOID SystemArgument2
+)
+{
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)DeferredContext;
+    DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
+    BOOLEAN bNeedDpc = FALSE;
+    for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    {
+        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
+        PVBOXWDDM_ALLOCATION pPrimary = pSource->pPrimaryAllocation;
+        if (pPrimary && pPrimary->offVram != VBOXVIDEOOFFSET_VOID)
+        {
+            memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
+            notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
+            /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
+            notify.CrtcVsync.VidPnTargetId = i;
+            notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->offVram;
+            /* yes, we can report VSync at dispatch */
+            pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
+            bNeedDpc = TRUE;
+        }
+    }
+
+    if (bNeedDpc)
+    {
+        pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+    }
+}
+
+NTSTATUS VBoxWddmSlInit(PVBOXMP_DEVEXT pDevExt)
+{
+    KeInitializeTimer(&pDevExt->VSyncTimer);
+    KeInitializeDpc(&pDevExt->VSyncDpc, vboxWddmSlVSyncDpc, pDevExt);
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS VBoxWddmSlTerm(PVBOXMP_DEVEXT pDevExt)
+{
+    KeCancelTimer(&pDevExt->VSyncTimer);
+    return STATUS_SUCCESS;
+}

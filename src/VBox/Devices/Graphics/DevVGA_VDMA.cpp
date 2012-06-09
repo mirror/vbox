@@ -82,6 +82,9 @@ typedef struct VBOXVDMAHOST
 {
     PHGSMIINSTANCE pHgsmi;
     PVGASTATE pVGAState;
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+    PTMTIMERR3 WatchDogTimer;
+#endif
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
     VBOXVDMAPIPE Pipe;
     HGSMILIST PendingList;
@@ -1084,6 +1087,25 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD ThreadSelf, void *pvUser)
 }
 #endif
 
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+static DECLCALLBACK(void) vboxVDMAWatchDogTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+{
+    VBOXVDMAHOST *pVdma = (VBOXVDMAHOST *)pvUser;
+    PVGASTATE pVGAState = pVdma->pVGAState;
+    VBVARaiseIrq(pVGAState, HGSMIHOSTFLAGS_WATCHDOG);
+}
+
+static int vboxVDMAWatchDogCtl(struct VBOXVDMAHOST *pVdma, uint32_t cMillis)
+{
+    PPDMDEVINS pDevIns = pVdma->pVGAState->pDevInsR3;
+    if (cMillis)
+        TMTimerSetMillies(pVdma->WatchDogTimer, cMillis);
+    else
+        TMTimerStop(pVdma->WatchDogTimer);
+    return VINF_SUCCESS;
+}
+#endif
+
 int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 {
     int rc;
@@ -1097,6 +1119,13 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
     {
         pVdma->pHgsmi = pVGAState->pHGSMI;
         pVdma->pVGAState = pVGAState;
+
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+        rc = PDMDevHlpTMTimerCreate(pVGAState->pDevInsR3, TMCLOCK_REAL, vboxVDMAWatchDogTimer,
+                                    pVdma, TMTIMER_FLAGS_NO_CRIT_SECT,
+                                    "VDMA WatchDog Timer", &pVdma->WatchDogTimer);
+        AssertRC(rc);
+#endif
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
         hgsmiListInit(&pVdma->PendingList);
         rc = vboxVDMAPipeConstruct(&pVdma->Pipe);
@@ -1226,7 +1255,6 @@ int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
 #endif
 }
 
-
 void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd, uint32_t cbCmd)
 {
 #if 1
@@ -1243,6 +1271,11 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd, uint32_t cb
         case VBOXVDMA_CTL_TYPE_FLUSH:
             pCmd->i32Result = VINF_SUCCESS;
             break;
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+        case VBOXVDMA_CTL_TYPE_WATCHDOG:
+            pCmd->i32Result = vboxVDMAWatchDogCtl(pVdma, pCmd->u32Offset);
+            break;
+#endif
         default:
             AssertBreakpoint();
             pCmd->i32Result = VERR_NOT_SUPPORTED;

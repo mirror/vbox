@@ -1622,6 +1622,15 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags)
+{
+    PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
+    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+    HGSMISetHostGuestFlags(pVGAState->pHGSMI, HGSMIHOSTFLAGS_IRQ | fFlags);
+    PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+    PDMCritSectLeave(&pVGAState->lock);
+}
+
 /*
  *
  * New VBVA uses a new interface id: #define VBE_DISPI_ID_VBOX_VIDEO         0xBE01
@@ -1637,11 +1646,7 @@ static DECLCALLBACK(void) vbvaNotifyGuest (void *pvCallback)
 {
 #if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM))
     PVGASTATE pVGAState = (PVGASTATE)pvCallback;
-    PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
-    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
-    HGSMISetHostGuestFlags(pVGAState->pHGSMI, HGSMIHOSTFLAGS_IRQ);
-    PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
-    PDMCritSectLeave(&pVGAState->lock);
+    VBVARaiseIrq (pVGAState, 0);
 #else
     NOREF(pvCallback);
     /* Do nothing. Later the VMMDev/VGA IRQ can be used for the notification. */
@@ -1968,6 +1973,18 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             pCaps->rc = VINF_SUCCESS;
         } break;
 #endif
+        case VBVA_SCANLINE_CFG:
+        {
+            if (cbBuffer < sizeof (VBVASCANLINECFG))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            VBVASCANLINECFG *pCfg = (VBVASCANLINECFG*)pvBuffer;
+            pVGAState->fScanLineCfg = pCfg->fFlags;
+            pCfg->rc = VINF_SUCCESS;
+        } break;
         default:
             Log(("Unsupported VBVA guest command %d!!!\n",
                  u16ChannelInfo));

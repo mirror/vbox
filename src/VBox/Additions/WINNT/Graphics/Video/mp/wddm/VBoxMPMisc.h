@@ -199,4 +199,14 @@ void VBoxWddmVrTerm();
 
 NTSTATUS vboxWddmDrvCfgInit(PUNICODE_STRING pRegStr);
 
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+NTSTATUS vboxWddmWdInit(PVBOXMP_DEVEXT pDevExt);
+NTSTATUS vboxWddmWdTerm(PVBOXMP_DEVEXT pDevExt);
+#endif
+
+NTSTATUS VBoxWddmSlEnableVSyncNotification(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable);
+NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pSl);
+NTSTATUS VBoxWddmSlInit(PVBOXMP_DEVEXT pDevExt);
+NTSTATUS VBoxWddmSlTerm(PVBOXMP_DEVEXT pDevExt);
+
 #endif /* #ifndef ___VBoxMPMisc_h__ */
