@@ -49,9 +49,28 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
+static DWORD g_VBoxVDbgFIsModuleNameInited = 0;
+static char g_VBoxVDbgModuleName[MAX_PATH];
+
+char *vboxVDbgDoGetModuleName()
+{
+    if (!g_VBoxVDbgFIsModuleNameInited)
+    {
+        DWORD cName = GetModuleFileNameA(NULL, g_VBoxVDbgModuleName, RT_ELEMENTS(g_VBoxVDbgModuleName));
+        if (!cName)
+        {
+            DWORD winEr = GetLastError();
+            WARN(("GetModuleFileNameA failed, winEr %d", winEr));
+            return NULL;
+        }
+        g_VBoxVDbgFIsModuleNameInited = TRUE;
+    }
+    return g_VBoxVDbgModuleName;
+}
+
 static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, const char * szString, va_list pArgList)
 {
-    uint32_t cbWritten = sprintf(szBuffer, "[0x%x.0x%x] Disp: ", GetCurrentProcessId(), GetCurrentThreadId());
+    uint32_t cbWritten = sprintf(szBuffer, "['%s' 0x%x.0x%x] Disp: ", vboxVDbgDoGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
     if (cbWritten > cbBuffer)
     {
         AssertReleaseFailed();
@@ -89,9 +108,6 @@ DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate = 1;
 DWORD g_VBoxVDbgFLogRel = 1;
 DWORD g_VBoxVDbgFLog = 1;
 DWORD g_VBoxVDbgFLogFlow = 0;
-
-DWORD g_VBoxVDbgFIsModuleNameInited = 0;
-char g_VBoxVDbgModuleName[MAX_PATH];
 
 LONG g_VBoxVDbgFIsDwm = -1;
 
@@ -625,22 +641,6 @@ void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * p
     vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
 }
 
-char *vboxVDbgDoGetModuleName()
-{
-    if (!g_VBoxVDbgFIsModuleNameInited)
-    {
-        DWORD cName = GetModuleFileNameA(NULL, g_VBoxVDbgModuleName, RT_ELEMENTS(g_VBoxVDbgModuleName));
-        if (!cName)
-        {
-            DWORD winEr = GetLastError();
-            WARN(("GetModuleFileNameA failed, winEr %d", winEr));
-            return NULL;
-        }
-        g_VBoxVDbgFIsModuleNameInited = TRUE;
-    }
-    return g_VBoxVDbgModuleName;
-}
-
 BOOL vboxVDbgDoCheckExe(const char * pszName)
 {
     char *pszModule = vboxVDbgDoGetModuleName();
@@ -654,6 +654,37 @@ BOOL vboxVDbgDoCheckExe(const char * pszName)
     if (_stricmp(pszName, pszModule + (cbModule - cbName)))
         return FALSE;
     return TRUE;
+}
+
+static VOID CALLBACK vboxVDbgTimerCb(__in PVOID lpParameter, __in BOOLEAN TimerOrWaitFired)
+{
+    Assert(0);
+}
+
+HRESULT vboxVDbgTimerStart(HANDLE hTimerQueue, HANDLE *phTimer, DWORD msTimeout)
+{
+    if (!CreateTimerQueueTimer(phTimer, hTimerQueue,
+                               vboxVDbgTimerCb,
+                               NULL,
+                               msTimeout, /* ms*/
+                               0,
+                               WT_EXECUTEONLYONCE))
+    {
+        DWORD winEr = GetLastError();
+        AssertMsgFailed(("CreateTimerQueueTimer failed, winEr (%d)\n", winEr));
+        return E_FAIL;
+    }
+    return S_OK;
+}
+
+HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer)
+{
+    if (!DeleteTimerQueueTimer(hTimerQueue, hTimer, NULL))
+    {
+        DWORD winEr = GetLastError();
+        AssertMsg(winEr == ERROR_IO_PENDING, ("DeleteTimerQueueTimer failed, winEr (%d)\n", winEr));
+    }
+    return S_OK;
 }
 #endif
 

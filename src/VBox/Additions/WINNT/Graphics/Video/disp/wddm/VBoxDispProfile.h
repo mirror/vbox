@@ -18,16 +18,16 @@
 
 #ifndef ___VBoxDispProfile_h__
 #define ___VBoxDispProfile_h__
+#include "VBoxDispD3DCmn.h"
+
 #include <iprt/ctype.h>
 #include <iprt/time.h>
-
-#include "VBoxDispD3DCmn.h"
 
 #define VBOXDISPPROFILE_MAX_SETSIZE 512
 #define VBOXDISPPROFILE_GET_TIME_NANO() RTTimeNanoTS()
 #define VBOXDISPPROFILE_GET_TIME_MILLI() RTTimeMilliTS()
 #define VBOXDISPPROFILE_DUMP(_m) do {\
-        LogRel (_m); \
+        LOGREL_EXACT(_m); \
     } while (0)
 
 class VBoxDispProfileEntry
@@ -57,14 +57,31 @@ public:
         m_cTime = 0;
     }
 
-    void dump(const PVBOXWDDMDISP_DEVICE pDevice) const
+    uint64_t getTime() const
+    {
+        return m_cTime;
+    }
+
+    uint32_t getNumCalls() const
+    {
+        return m_cCalls;
+    }
+
+    const char* getName() const
+    {
+        return m_pName;
+    }
+
+    void dump(void *pvObj, uint64_t cTotalEntriesTime, uint64_t cTotalTime) const
     {
 //        VBOXDISPPROFILE_DUMP((pDevice, "Entry '%s': calls(%d), time: nanos(%I64u), micros(%I64u), millis(%I64u)\n",
 //                m_pName, m_cCalls,
 //                m_cTime, m_cTime/1000, m_cTime/1000000));
-        VBOXDISPPROFILE_DUMP(("%s\t%d\t%I64u\t%I64u\t%I64u\n",
-                m_pName, m_cCalls,
-                m_cTime, m_cTime/1000, m_cTime/1000000));
+        VBOXDISPPROFILE_DUMP(("'%s' [0x%p]: \t%d\t%u\t%u\t%u\t%u\t%u", m_pName, pvObj,
+                m_cCalls,
+                (uint32_t)m_cTime, (uint32_t)(m_cTime/1000), (uint32_t)(m_cTime/1000000),
+                (uint32_t)(((double)m_cTime)/cTotalEntriesTime),
+                (uint32_t)(((double)m_cTime)/cTotalTime)));
     }
 private:
     uint32_t m_cCalls;
@@ -77,8 +94,19 @@ class VBoxDispProfileSet
 public:
     VBoxDispProfileSet(const char *pName) :
         m_cEntries(0),
+        m_cIterations(0),
         m_pName(pName)
-    {}
+    {
+        m_cTime = VBOXDISPPROFILE_GET_TIME_NANO();
+    }
+
+    VBoxDispProfileSet() :
+        m_cEntries(0),
+        m_cIterations(0),
+        m_pName("global")
+    {
+        m_cTime = VBOXDISPPROFILE_GET_TIME_NANO();
+    }
 
     VBoxDispProfileEntry * alloc(const char *pName)
     {
@@ -92,28 +120,76 @@ public:
         return NULL;
     }
 
-    void resetEntries()
+    VBoxDispProfileEntry * get(uint32_t u32Entry, const char *pName)
     {
-        for (uint32_t i = 0; i < m_cEntries; ++i)
+        if (u32Entry < RT_ELEMENTS(m_Entries))
         {
-            m_Entries[i].reset();
+            VBoxDispProfileEntry * entry = &m_Entries[u32Entry];
+            if (entry->getName())
+                return entry;
+            ++m_cEntries;
+            *entry = VBoxDispProfileEntry(pName);
+            return entry;
         }
+        return NULL;
     }
 
-    void dump(const PVBOXWDDMDISP_DEVICE pDevice)
+    uint32_t reportIteration()
     {
-        VBOXDISPPROFILE_DUMP((">>>> Start of VBox Disp Dump '%s': num entries(%d) >>>>>\n", m_pName, m_cEntries));
-        VBOXDISPPROFILE_DUMP(("Name\tCalls\tNanos\tMicros\tMillis\n"));
-        for (uint32_t i = 0; i < m_cEntries; ++i)
-        {
-            m_Entries[i].dump(pDevice);
-        }
-        VBOXDISPPROFILE_DUMP(("<<<< Endi of VBox Disp Dump '%s' <<<<<\n", m_pName));
+        return ++m_cIterations;
+    }
+
+    uint32_t getNumIterations() const
+    {
+        return m_cIterations;
+    }
+
+    uint32_t getNumEntries() const
+    {
+        return m_cEntries;
+    }
+
+#define VBOXDISPPROFILESET_FOREACHENTRY(_op) \
+        for (uint32_t i = 0, e = 0; e < m_cEntries && i < RT_ELEMENTS(m_Entries); ++i) { \
+            if (m_Entries[i].getName()) { \
+                { \
+                _op  \
+                } \
+                ++e; \
+            } \
+        } \
+
+    void resetEntries()
+    {
+        VBOXDISPPROFILESET_FOREACHENTRY(  m_Entries[i].reset(); );
+        m_cTime = VBOXDISPPROFILE_GET_TIME_NANO();
+    }
+
+    void reset()
+    {
+        m_cEntries = 0;
+        m_cTime = VBOXDISPPROFILE_GET_TIME_NANO();
+    }
+
+    void dump(void *pvObj)
+    {
+        uint64_t cEntriesTime = 0;
+        VBOXDISPPROFILESET_FOREACHENTRY( cEntriesTime += m_Entries[i].getTime(); );
+
+        VBOXDISPPROFILE_DUMP((">>>> '%s' [0x%p]: Start of VBox Disp Dump: num entries(%d), et(%u), tt(%u) >>>>>", m_pName, pvObj, m_cEntries,
+                (uint32_t)(cEntriesTime / 1000000), (uint32_t)(m_cTime / 1000000)));
+        VBOXDISPPROFILE_DUMP(("Name\tCalls\tNanos\tMicros\tMillis\tentries_quota\ttotal_quota"));
+        VBOXDISPPROFILESET_FOREACHENTRY(
+                if (m_Entries[i].getNumCalls())
+                    m_Entries[i].dump(pvObj, cEntriesTime, m_cTime); );
+        VBOXDISPPROFILE_DUMP(("<<<< '%s' [0x%p]: End of VBox Disp Dump <<<<<", m_pName, pvObj));
     }
 
 private:
     VBoxDispProfileEntry m_Entries[VBOXDISPPROFILE_MAX_SETSIZE];
     uint32_t m_cEntries;
+    uint32_t m_cIterations;
+    uint64_t m_cTime;
     const char * m_pName;
 };
 
@@ -163,18 +239,50 @@ class VBoxDispProfileFpsCounter
 public:
     VBoxDispProfileFpsCounter(uint32_t cPeriods)
     {
+        init(cPeriods);
+    }
+
+    VBoxDispProfileFpsCounter()
+    {
         memset(&m_Data, 0, sizeof (m_Data));
-        m_Data.mcPeriods = cPeriods;
-        m_Data.mpaPeriods = (uint64_t *)RTMemAllocZ(sizeof (m_Data.mpaPeriods[0]) * cPeriods);
-        m_Data.mpaCalls = (uint32_t *)RTMemAllocZ(sizeof (m_Data.mpaCalls[0]) * cPeriods);
-        m_Data.mpaTimes = (uint64_t *)RTMemAllocZ(sizeof (m_Data.mpaTimes[0]) * cPeriods);
     }
 
     ~VBoxDispProfileFpsCounter()
     {
-        RTMemFree(m_Data.mpaPeriods);
-        RTMemFree(m_Data.mpaCalls);
-        RTMemFree(m_Data.mpaTimes);
+        term();
+    }
+
+    void term()
+    {
+        if (m_Data.mpaPeriods)
+        {
+            RTMemFree(m_Data.mpaPeriods);
+            m_Data.mpaPeriods = NULL;
+        }
+        if (m_Data.mpaCalls)
+        {
+            RTMemFree(m_Data.mpaCalls);
+            m_Data.mpaCalls = NULL;
+        }
+        if (m_Data.mpaTimes)
+        {
+            RTMemFree(m_Data.mpaTimes);
+            m_Data.mpaTimes = NULL;
+        }
+        m_Data.mcPeriods = 0;
+    }
+
+    /* to be called in case fps counter was created with default constructor */
+    void init(uint32_t cPeriods)
+    {
+        memset(&m_Data, 0, sizeof (m_Data));
+        m_Data.mcPeriods = cPeriods;
+        if (cPeriods)
+        {
+            m_Data.mpaPeriods = (uint64_t *)RTMemAllocZ(sizeof (m_Data.mpaPeriods[0]) * cPeriods);
+            m_Data.mpaCalls = (uint32_t *)RTMemAllocZ(sizeof (m_Data.mpaCalls[0]) * cPeriods);
+            m_Data.mpaTimes = (uint64_t *)RTMemAllocZ(sizeof (m_Data.mpaTimes[0]) * cPeriods);
+        }
     }
 
     void ReportFrame()
@@ -263,10 +371,20 @@ private:
         __vboxDispProfileFunctionLogger.logAndDisable();\
     } while (0)
 
-#define VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p)  \
+#ifdef VBOXDISPPROFILE_FUNCTION_LOGGER_GLOBAL_PROFILE
+# define VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p)  \
         static VBoxDispProfileEntry * __pVBoxDispProfileEntry = NULL; \
         if (!__pVBoxDispProfileEntry) { __pVBoxDispProfileEntry = _p.alloc(__FUNCTION__); } \
         VBoxDispProfileScopeLogger<VBoxDispProfileEntry> __vboxDispProfileFunctionLogger(__pVBoxDispProfileEntry);
+#else
+# ifndef VBOXDISPPROFILE_FUNCTION_LOGGER_INDEX_GEN
+#  error "VBOXDISPPROFILE_FUNCTION_LOGGER_INDEX_GEN should be fedined!"
+# endif
+# define VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p)  \
+        static uint32_t __u32VBoxDispProfileIndex = VBOXDISPPROFILE_FUNCTION_LOGGER_INDEX_GEN(); \
+        VBoxDispProfileEntry * __pVBoxDispProfileEntry = _p.get(__u32VBoxDispProfileIndex, __FUNCTION__); \
+        VBoxDispProfileScopeLogger<VBoxDispProfileEntry> __vboxDispProfileFunctionLogger(__pVBoxDispProfileEntry);
+#endif
 
 #define VBOXDISPPROFILE_STATISTIC_LOGGER_DISABLE_CURRENT() do { \
         __vboxDispProfileStatisticLogger.disable();\

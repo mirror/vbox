@@ -43,6 +43,10 @@
 //#  define VBOXWDDMDISP_DEBUG_VEHANDLER
 /* disable shared resource creation with wine */
 //#  define VBOXWDDMDISP_DEBUG_NOSHARED
+
+//#  define VBOXWDDMDISP_DEBUG_PRINT_SHARED_CREATE
+
+//#  define VBOXWDDMDISP_DEBUG_TIMER
 # endif
 
 /* debug config vars */
@@ -73,9 +77,6 @@ extern DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate;
 extern DWORD g_VBoxVDbgFLogRel;
 extern DWORD g_VBoxVDbgFLog;
 extern DWORD g_VBoxVDbgFLogFlow;
-
-extern DWORD g_VBoxVDbgFIsModuleNameInited;
-extern char g_VBoxVDbgModuleName[];
 
 extern LONG g_VBoxVDbgFIsDwm;
 
@@ -260,6 +261,9 @@ BOOL vboxVDbgDoCheckRectsMatch(const PVBOXWDDMDISP_RESOURCE pDstRc, uint32_t iDs
 BOOL vboxVDbgDoCheckExe(const char * pszName);
 
 VOID vboxVDbgDoPrintLopLastCmd(const char* pszDesc);
+
+HRESULT vboxVDbgTimerStart(HANDLE hTimerQueue, HANDLE *phTimer, DWORD msTimeout);
+HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
 
 extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_IS_PID(_pid) ((_pid) == (g_VBoxVDbgPid ? g_VBoxVDbgPid : (g_VBoxVDbgPid = GetCurrentProcessId())))
