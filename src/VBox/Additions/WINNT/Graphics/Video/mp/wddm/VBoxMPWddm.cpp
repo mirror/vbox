@@ -878,6 +878,9 @@ static void vboxWddmSetupDisplays(PVBOXMP_DEVEXT pDevExt)
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+            vboxWddmWdInit(pDevExt);
+#endif
             /* can enable it right away since the host does not need any screen/FB info
              * for basic DMA functionality */
             rc = vboxVdmaEnable(pDevExt, &pDevExt->u.primary.Vdma);
@@ -981,6 +984,9 @@ static int vboxWddmFreeDisplays(PVBOXMP_DEVEXT pDevExt)
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+        vboxWddmWdTerm(pDevExt);
+#endif
         rc = vboxVdmaDestroy(pDevExt, &pDevExt->u.primary.Vdma);
         AssertRC(rc);
     }
@@ -1114,6 +1120,13 @@ NTSTATUS DxgkDdiStartDevice(
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     vboxVhwaInit(pDevExt);
 #endif
+                    VBoxWddmSlInit(pDevExt);
+
+                    for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                    {
+                        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
+                        KeInitializeSpinLock(&pSource->AllocationLock);
+                    }
                 }
                 else
                 {
@@ -1158,6 +1171,8 @@ NTSTATUS DxgkDdiStopDevice(
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
     NTSTATUS Status = STATUS_SUCCESS;
+
+    VBoxWddmSlTerm(pDevExt);
 
     vboxVideoCmTerm(&pDevExt->CmMgr);
 
@@ -1401,14 +1416,44 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
         if (pDevExt->bNotifyDxDpc)
         {
-//            Assert(bNeedDpc == TRUE);
-//            pDevExt->bNotifyDxDpc = TRUE;
-//            pDevExt->bSetNotifyDxDpc = FALSE;
             bNeedDpc = TRUE;
         }
 
         if (bOur)
         {
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+            if (flags & HGSMIHOSTFLAGS_WATCHDOG)
+            {
+                Assert(0);
+            }
+#endif
+            if (flags & HGSMIHOSTFLAGS_VSYNC)
+            {
+                Assert(0);
+                DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
+                for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                {
+                    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
+                    PVBOXWDDM_ALLOCATION pPrimary = pSource->pPrimaryAllocation;
+                    if (pPrimary && pPrimary->offVram != VBOXVIDEOOFFSET_VOID)
+                    {
+                        memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
+                        notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
+                        /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
+                        notify.CrtcVsync.VidPnTargetId = i;
+                        notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->offVram;
+                        pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
+
+                        pDevExt->bNotifyDxDpc = TRUE;
+                    }
+                }
+            }
+
+            if (pDevExt->bNotifyDxDpc)
+            {
+                bNeedDpc = TRUE;
+            }
+
             VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pDevExt)->hostCtx);
 #if 0 //def DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
@@ -1492,8 +1537,8 @@ VOID DxgkDdiDpcRoutine(
             &bRet);
     Assert(Status == STATUS_SUCCESS);
 
-    if (context.data.bNotifyDpc)
-        pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+//    if (context.data.bNotifyDpc)
+    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
     if (!vboxVtListIsEmpty(&context.data.CtlList))
     {
@@ -1936,7 +1981,7 @@ void vboxWddmAllocationDeleteFromResource(PVBOXWDDM_RESOURCE pResource, PVBOXWDD
     }
 }
 
-VOID vboxWddmAllocationCleanup(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
+VOID vboxWddmAllocationCleanupAssignment(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
 {
     switch (pAllocation->enmType)
     {
@@ -1948,16 +1993,6 @@ VOID vboxWddmAllocationCleanup(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAll
                 /* @todo: do we need to notify host? */
                 vboxWddmAssignPrimary(pDevExt, &pDevExt->aSources[pAllocation->SurfDesc.VidPnSourceId], NULL, pAllocation->SurfDesc.VidPnSourceId);
             }
-
-#if 0
-            if (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
-            {
-                if (pAllocation->hSharedHandle)
-                {
-                    vboxShRcTreeRemove(pDevExt, pAllocation);
-                }
-            }
-#endif
             break;
         }
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
@@ -1972,6 +2007,29 @@ VOID vboxWddmAllocationCleanup(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAll
             break;
         }
 #endif
+        default:
+            break;
+    }
+}
+
+VOID vboxWddmAllocationCleanup(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
+{
+    switch (pAllocation->enmType)
+    {
+        case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE:
+        case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
+        {
+#if 0
+            if (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+            {
+                if (pAllocation->hSharedHandle)
+                {
+                    vboxShRcTreeRemove(pDevExt, pAllocation);
+                }
+            }
+#endif
+            break;
+        }
         case VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER:
         {
             if (pAllocation->pSynchEvent)
@@ -2309,6 +2367,7 @@ DxgkDdiDestroyAllocation(
     {
         PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pDestroyAllocation->pAllocationList[i];
         Assert(pAlloc->pResource == pRc);
+        vboxWddmAllocationCleanupAssignment(pDevExt, pAlloc);
         /* wait for all current allocation-related ops are completed */
         vboxWddmAllocationWaitDereference(pAlloc);
         vboxWddmAllocationCleanup(pDevExt, pAlloc);
@@ -3041,6 +3100,7 @@ DxgkDdiSubmitCommand(
         case VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP:
         {
             VBOXWDDM_DMA_PRIVATEDATA_FLIP *pFlip = (VBOXWDDM_DMA_PRIVATEDATA_FLIP*)pPrivateDataBase;
+            vboxWddmAllocUpdateAddress(pFlip->Flip.Alloc.pAlloc, pFlip->Flip.Alloc.segmentIdAlloc, pFlip->Flip.Alloc.offAlloc);
             PVBOXVDMAPIPE_CMD_DMACMD_FLIP pFlipCmd = (PVBOXVDMAPIPE_CMD_DMACMD_FLIP)vboxVdmaGgCmdCreate(pDevExt,
                     VBOXVDMAPIPE_CMD_TYPE_DMACMD, sizeof (VBOXVDMAPIPE_CMD_DMACMD_FLIP));
             Assert(pFlipCmd);
@@ -3068,6 +3128,7 @@ DxgkDdiSubmitCommand(
         case VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL:
         {
             PVBOXWDDM_DMA_PRIVATEDATA_CLRFILL pCF = (PVBOXWDDM_DMA_PRIVATEDATA_CLRFILL)pPrivateDataBase;
+            vboxWddmAllocUpdateAddress(pCF->ClrFill.Alloc.pAlloc, pCF->ClrFill.Alloc.segmentIdAlloc, pCF->ClrFill.Alloc.offAlloc);
             PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCFCmd = (PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL)vboxVdmaGgCmdCreate(pDevExt,
                     VBOXVDMAPIPE_CMD_TYPE_DMACMD, RT_OFFSETOF(VBOXVDMAPIPE_CMD_DMACMD_CLRFILL, ClrFill.Rects.aRects[pCF->ClrFill.Rects.cRects]));
             Assert(pCFCmd);
@@ -4852,33 +4913,15 @@ DxgkDdiGetScanLine(
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
 
-    Assert((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays > pGetScanLine->VidPnTargetId);
-    VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[pGetScanLine->VidPnTargetId];
-    Assert(pTarget->HeightTotal);
-    Assert(pTarget->HeightVisible);
-    Assert(pTarget->HeightTotal > pTarget->HeightVisible);
-    Assert(pTarget->ScanLineState < pTarget->HeightTotal);
-    if (pTarget->HeightTotal)
-    {
-        uint32_t curScanLine = pTarget->ScanLineState;
-        ++pTarget->ScanLineState;
-        if (pTarget->ScanLineState >= pTarget->HeightTotal)
-            pTarget->ScanLineState = 0;
+#ifdef DEBUG_misha
+    RT_BREAKPOINT();
+#endif
 
-
-        BOOL bVBlank = (!curScanLine || curScanLine > pTarget->HeightVisible);
-        pGetScanLine->ScanLine = curScanLine;
-        pGetScanLine->InVerticalBlank = bVBlank;
-    }
-    else
-    {
-        pGetScanLine->InVerticalBlank = TRUE;
-        pGetScanLine->ScanLine = 0;
-    }
+    NTSTATUS Status = VBoxWddmSlGetScanLine(pDevExt, pGetScanLine);
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 NTSTATUS
@@ -4906,12 +4949,31 @@ DxgkDdiControlInterrupt(
 {
     LOGF(("ENTER, hAdapter(0x%x)", hAdapter));
 
-//    AssertBreakpoint();
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
+
+    switch (InterruptType)
+    {
+        case DXGK_INTERRUPT_CRTC_VSYNC:
+        {
+            Status = VBoxWddmSlEnableVSyncNotification(pDevExt, Enable);
+            if (!NT_SUCCESS(Status))
+                WARN(("VSYNC Interrupt control failed Enable(%d), Status(0x%x)", Enable, Status));
+            break;
+        }
+        case DXGK_INTERRUPT_DMA_COMPLETED:
+        case DXGK_INTERRUPT_DMA_PREEMPTED:
+        case DXGK_INTERRUPT_DMA_FAULTED:
+            WARN(("Unexpected interrupt type! %d", InterruptType));
+            break;
+        default:
+            WARN(("UNSUPPORTED interrupt type! %d", InterruptType));
+            break;
+    }
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
-    /* @todo: STATUS_NOT_IMPLEMENTED ?? */
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 NTSTATUS

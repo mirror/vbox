@@ -229,66 +229,7 @@ DECLINLINE(bool) vboxWddmCmpSurfDescsBase(VBOXWDDM_SURFACE_DESC *pDesc1, VBOXWDD
     return true;
 }
 
-DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
-{
-    if (pSource->pShadowAllocation == pAllocation)
-    {
-        Assert(pAllocation->bAssigned);
-        return;
-    }
-
-    if (pSource->pShadowAllocation)
-    {
-        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pShadowAllocation;
-        /* clear the visibility info fo the current primary */
-        pOldAlloc->bVisible = FALSE;
-        pOldAlloc->bAssigned = FALSE;
-        Assert(pOldAlloc->SurfDesc.VidPnSourceId == srcId);
-        /* release the shadow surface */
-        pOldAlloc->SurfDesc.VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
-    }
-
-    if (pAllocation)
-    {
-        Assert(!pAllocation->bAssigned);
-        Assert(!pAllocation->bVisible);
-        pAllocation->bVisible = FALSE;
-        /* this check ensures the shadow is not used for other source simultaneously */
-        Assert(pAllocation->SurfDesc.VidPnSourceId == D3DDDI_ID_UNINITIALIZED);
-        pAllocation->SurfDesc.VidPnSourceId = srcId;
-        pAllocation->bAssigned = TRUE;
-        if (!vboxWddmCmpSurfDescsBase(&pSource->SurfDesc, &pAllocation->SurfDesc))
-            pSource->offVram = VBOXVIDEOOFFSET_VOID; /* force guest->host notification */
-        pSource->SurfDesc = pAllocation->SurfDesc;
-    }
-
-    pSource->pShadowAllocation = pAllocation;
-}
 #endif
-
-DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
-{
-    if (pSource->pPrimaryAllocation == pAllocation)
-        return;
-
-    if (pSource->pPrimaryAllocation)
-    {
-        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pPrimaryAllocation;
-        /* clear the visibility info fo the current primary */
-        pOldAlloc->bVisible = FALSE;
-        pOldAlloc->bAssigned = FALSE;
-        Assert(pOldAlloc->SurfDesc.VidPnSourceId == srcId);
-    }
-
-    if (pAllocation)
-    {
-        pAllocation->bVisible = FALSE;
-        Assert(pAllocation->SurfDesc.VidPnSourceId == srcId);
-        pAllocation->bAssigned = TRUE;
-    }
-
-    pSource->pPrimaryAllocation = pAllocation;
-}
 #endif /*VBOX_WDDM_MINIPORT*/
 
 #endif /*VBOXMPDEVEXT_H*/

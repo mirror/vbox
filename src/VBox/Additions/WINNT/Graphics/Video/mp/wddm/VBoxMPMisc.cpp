@@ -2534,7 +2534,7 @@ NTSTATUS VBoxWddmSlEnableVSyncNotification(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnab
     {
         LARGE_INTEGER DueTime;
         DueTime.QuadPart = -166666LL; /* 60 Hz */
-        KeSetTimerEx(&pDevExt->VSyncTimer, DueTime, 17, &pDevExt->VSyncDpc);
+        KeSetTimerEx(&pDevExt->VSyncTimer, DueTime, 16, &pDevExt->VSyncDpc);
     }
     return STATUS_SUCCESS;
 }
@@ -2580,18 +2580,31 @@ static VOID vboxWddmSlVSyncDpc(
     for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
-        PVBOXWDDM_ALLOCATION pPrimary = pSource->pPrimaryAllocation;
-        if (pPrimary && pPrimary->offVram != VBOXVIDEOOFFSET_VOID)
+        PVBOXWDDM_ALLOCATION pPrimary = vboxWddmAquirePrimary(pDevExt, pSource, i);
+        if (pPrimary)
         {
-            memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
-            notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
-            /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
-            notify.CrtcVsync.VidPnTargetId = i;
-            notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->offVram;
-            /* yes, we can report VSync at dispatch */
-            pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
-            bNeedDpc = TRUE;
+            VBOXVIDEOOFFSET offVram = pPrimary->offVram;
+            if (offVram != VBOXVIDEOOFFSET_VOID)
+            {
+                memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
+                notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
+                /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
+                notify.CrtcVsync.VidPnTargetId = i;
+                notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->offVram;
+                /* yes, we can report VSync at dispatch */
+                pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
+                bNeedDpc = TRUE;
+            }
+#ifdef DEBUG_misha
+            else
+                Assert(0);
+#endif
+            vboxWddmAllocationRelease(pPrimary);
         }
+#ifdef DEBUG_misha
+        else
+            Assert(0);
+#endif
     }
 
     if (bNeedDpc)
