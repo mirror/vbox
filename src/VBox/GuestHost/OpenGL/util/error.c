@@ -131,11 +131,6 @@ static void outputChromiumMessage( FILE *output, char *str )
             australia ? ", mate!" : ""
             );
     fflush( output );
-
-#if defined(DEBUG) && defined(WINDOWS) /* && (!defined(DEBUG_misha) || !defined(IN_GUEST) ) */
-    OutputDebugString(str);
-    OutputDebugString("\n");
-#endif
 }
 
 #ifdef WINDOWS
@@ -314,6 +309,19 @@ static DECLCALLBACK(void) crDebugBackdoorDispMp(char* pcszStr)
 }
 #endif
 
+
+#if defined(DEBUG) && defined(WINDOWS) /* && (!defined(DEBUG_misha) || !defined(IN_GUEST) ) */
+# define CR_DEBUG_DBGPRINT_ENABLE
+#endif
+
+#ifdef CR_DEBUG_DBGPRINT_ENABLE
+static void crDebugDbgPrint(const char *str)
+{
+    OutputDebugString(str);
+    OutputDebugString("\n");
+}
+#endif
+
 DECLEXPORT(void) crDebug(const char *format, ... )
 {
     va_list args;
@@ -329,6 +337,9 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     typedef DECLCALLBACK(void) FNCRGEDUGBACKDOOR(char* pcszStr);
     typedef FNCRGEDUGBACKDOOR *PFNCRGEDUGBACKDOOR;
     static PFNCRGEDUGBACKDOOR pfnLogBackdoor = NULL;
+#endif
+#ifdef CR_DEBUG_DBGPRINT_ENABLE
+    static int dbgPrintEnable = 0;
 #endif
 
     if (first_time)
@@ -347,6 +358,12 @@ DECLEXPORT(void) crDebug(const char *format, ... )
                 pfnLogBackdoor = crDebugBackdoorDispMp;
             else
                 pfnLogBackdoor = crDebugBackdoorRt;
+        }
+#endif
+#ifdef CR_DEBUG_DBGPRINT_ENABLE
+        if (crGetenv( "CR_DEBUG_DBGPRINT" ))
+        {
+            dbgPrintEnable = 1;
         }
 #endif
 
@@ -408,6 +425,9 @@ DECLEXPORT(void) crDebug(const char *format, ... )
 #ifdef CR_DEBUG_BACKDOOR_ENABLE
                     && !pfnLogBackdoor
 #endif
+#ifdef CR_DEBUG_DBGPRINT_ENABLE
+                    && !dbgPrintEnable
+#endif
                 )
             silent = 1;
 #endif
@@ -463,6 +483,12 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     if (pfnLogBackdoor)
     {
         pfnLogBackdoor(txt);
+    }
+#endif
+#ifdef CR_DEBUG_DBGPRINT_ENABLE
+    if (dbgPrintEnable)
+    {
+        crDebugDbgPrint(txt);
     }
 #endif
 #if defined(IN_GUEST)
