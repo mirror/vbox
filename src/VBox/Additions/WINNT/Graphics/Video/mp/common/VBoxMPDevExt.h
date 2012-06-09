@@ -115,6 +115,14 @@ typedef struct _VBOXMP_DEVEXT
 #endif
    BOOL bNotifyDxDpc;
 
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+   PKTHREAD pWdThread;
+   KEVENT WdEvent;
+#endif
+
+   KTIMER VSyncTimer;
+   KDPC VSyncDpc;
+
 #if 0
    FAST_MUTEX ShRcTreeMutex;
    AVLPVTREE ShRcTree;

@@ -849,7 +849,9 @@ typedef struct VBVABUFFER
 # define VBVA_VDMA_CTL   10 /* setup G<->H DMA channel info */
 # define VBVA_VDMA_CMD    11 /* G->H DMA command             */
 #endif
-#define VBVA_INFO_CAPS   12 /* informs host about HGSMI caps. see _VBVACAPS below */
+#define VBVA_INFO_CAPS   12 /* informs host about HGSMI caps. see VBVACAPS below */
+#define VBVA_SCANLINE_CFG    13 /* configures scanline, see VBVASCANLINECFG below */
+#define VBVA_SCANLINE_INFO   14 /* requests scanline info, see VBVASCANLINEINFO below */
 
 /* host->guest commands */
 #define VBVAHG_EVENT              1
@@ -1063,6 +1065,33 @@ typedef struct VBVACAPS
     uint32_t fCaps;
 } VBVACAPS;
 
+/* makes graphics device generate IRQ on VSYNC */
+#define VBVASCANLINECFG_ENABLE_VSYNC_IRQ        0x00000001
+/* guest driver may request the current scanline */
+#define VBVASCANLINECFG_ENABLE_SCANLINE_INFO    0x00000002
+/* request the current refresh period, returned in u32RefreshPeriodMs */
+#define VBVASCANLINECFG_QUERY_REFRESH_PERIOD    0x00000004
+/* set new refresh period specified in u32RefreshPeriodMs.
+ * if used with VBVASCANLINECFG_QUERY_REFRESH_PERIOD,
+ * u32RefreshPeriodMs is set to the previous refresh period on return */
+#define VBVASCANLINECFG_SET_REFRESH_PERIOD      0x00000008
+
+typedef struct VBVASCANLINECFG
+{
+    int32_t rc;
+    uint32_t fFlags;
+    uint32_t u32RefreshPeriodMs;
+    uint32_t u32Reserved;
+} VBVASCANLINECFG;
+
+typedef struct VBVASCANLINEINFO
+{
+    int32_t rc;
+    uint32_t u32ScreenId;
+    uint32_t u32InVBlank;
+    uint32_t u32ScanLine;
+} VBVASCANLINEINFO;
+
 #pragma pack()
 
 typedef uint64_t VBOXVIDEOOFFSET;
@@ -1153,7 +1182,8 @@ typedef enum
     VBOXVDMA_CTL_TYPE_NONE = 0,
     VBOXVDMA_CTL_TYPE_ENABLE,
     VBOXVDMA_CTL_TYPE_DISABLE,
-    VBOXVDMA_CTL_TYPE_FLUSH
+    VBOXVDMA_CTL_TYPE_FLUSH,
+    VBOXVDMA_CTL_TYPE_WATCHDOG
 } VBOXVDMA_CTL_TYPE;
 
 typedef struct VBOXVDMA_CTL

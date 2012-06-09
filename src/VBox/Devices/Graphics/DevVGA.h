@@ -412,8 +412,10 @@ typedef struct VGAState {
     /** Specifies guest driver caps, i.e. whether it can handle IRQs from the
      * adapter, the way it can handle async HGSMI command completion, etc. */
     uint32_t                    fGuestCaps;
+    uint32_t                    fScanLineCfg;
+    uint8_t                     Padding10[4];
 #  else
-    uint8_t                     Padding10[6];
+    uint8_t                     Padding10[14];
 #  endif
 # endif /* VBOX_WITH_HGSMI */
 #endif /* VBOX */
@@ -479,6 +481,8 @@ int      VBVAUpdateDisplay (PVGASTATE pVGAState);
 void     VBVAReset (PVGASTATE pVGAState);
 
 bool VBVAIsEnabled(PVGASTATE pVGAState);
+
+void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags);
 
 /* @return host-guest flags that were set on reset
  * this allows the caller to make further cleaning when needed,

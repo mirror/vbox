@@ -48,7 +48,9 @@ AssertCompileSize(HGSMIBUFFERLOCATION, 8);
 #ifdef VBOX_WITH_WDDM
 /* one or more guest commands is completed */
 # define HGSMIHOSTFLAGS_GCOMMAND_COMPLETED 0x4
+# define HGSMIHOSTFLAGS_WATCHDOG           0x8
 #endif
+#define HGSMIHOSTFLAGS_VSYNC               0x10
 
 typedef struct _HGSMIHOSTFLAGS
 {
