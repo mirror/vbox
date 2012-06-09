@@ -103,6 +103,7 @@ typedef struct VBOXWDDM_SOURCE
     LIST_ENTRY OverlayList;
     KSPIN_LOCK OverlayListLock;
 #endif
+    KSPIN_LOCK AllocationLock;
     POINT VScreenPos;
     VBOXWDDM_POINTER_INFO PointerInfo;
 } VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;

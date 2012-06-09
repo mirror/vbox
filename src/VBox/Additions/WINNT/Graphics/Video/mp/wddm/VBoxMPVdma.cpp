@@ -808,6 +808,9 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessFast(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
             PVBOXVDMAPIPE_CMD_DMACMD_FLIP pFlip = (PVBOXVDMAPIPE_CMD_DMACMD_FLIP)pDmaCmd;
             Assert(pFlip->Hdr.fFlags.fVisibleRegions);
             Assert(!pFlip->Hdr.fFlags.fRealOp);
+            PVBOXWDDM_ALLOCATION pAlloc = pFlip->Flip.Alloc.pAlloc;
+            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAlloc->SurfDesc.VidPnSourceId];
+            vboxWddmAssignPrimary(pDevExt, pSource, pAlloc, pAlloc->SurfDesc.VidPnSourceId);
             if (pFlip->Hdr.fFlags.fVisibleRegions)
             {
                 Status = STATUS_MORE_PROCESSING_REQUIRED;

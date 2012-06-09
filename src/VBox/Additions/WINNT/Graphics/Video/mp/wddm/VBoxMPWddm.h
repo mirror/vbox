@@ -74,6 +74,88 @@ DECLINLINE(VOID) vboxWddmAllocationRetain(PVBOXWDDM_ALLOCATION pAllocation)
     ASMAtomicIncU32(&pAllocation->cRefs);
 }
 
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+{
+    if (pSource->pShadowAllocation == pAllocation)
+    {
+        Assert(pAllocation->bAssigned);
+        return;
+    }
+
+    if (pSource->pShadowAllocation)
+    {
+        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pShadowAllocation;
+        /* clear the visibility info fo the current primary */
+        pOldAlloc->bVisible = FALSE;
+        pOldAlloc->bAssigned = FALSE;
+        Assert(pOldAlloc->SurfDesc.VidPnSourceId == srcId);
+        /* release the shadow surface */
+        pOldAlloc->SurfDesc.VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
+    }
+
+    if (pAllocation)
+    {
+        Assert(!pAllocation->bAssigned);
+        Assert(!pAllocation->bVisible);
+        pAllocation->bVisible = FALSE;
+        /* this check ensures the shadow is not used for other source simultaneously */
+        Assert(pAllocation->SurfDesc.VidPnSourceId == D3DDDI_ID_UNINITIALIZED);
+        pAllocation->SurfDesc.VidPnSourceId = srcId;
+        pAllocation->bAssigned = TRUE;
+        if (!vboxWddmCmpSurfDescsBase(&pSource->SurfDesc, &pAllocation->SurfDesc))
+            pSource->offVram = VBOXVIDEOOFFSET_VOID; /* force guest->host notification */
+        pSource->SurfDesc = pAllocation->SurfDesc;
+    }
+
+    pSource->pShadowAllocation = pAllocation;
+}
+#endif
+
+DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+{
+    /* vboxWddmAssignPrimary can not be run in reentrant order, so safely do a direct unlocked check here */
+    if (pSource->pPrimaryAllocation == pAllocation)
+        return;
+
+    if (pSource->pPrimaryAllocation)
+    {
+        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pPrimaryAllocation;
+        /* clear the visibility info fo the current primary */
+        pOldAlloc->bVisible = FALSE;
+        pOldAlloc->bAssigned = FALSE;
+        Assert(pOldAlloc->SurfDesc.VidPnSourceId == srcId);
+
+        vboxWddmAllocationRelease(pOldAlloc);
+    }
+
+    if (pAllocation)
+    {
+        pAllocation->bVisible = FALSE;
+        Assert(pAllocation->SurfDesc.VidPnSourceId == srcId);
+        pAllocation->bAssigned = TRUE;
+
+        vboxWddmAllocationRetain(pAllocation);
+    }
+
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSource->AllocationLock, &OldIrql);
+    pSource->pPrimaryAllocation = pAllocation;
+    KeReleaseSpinLock(&pSource->AllocationLock, OldIrql);
+}
+
+DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+{
+    PVBOXWDDM_ALLOCATION pPrimary;
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSource->AllocationLock, &OldIrql);
+    pPrimary = pSource->pPrimaryAllocation;
+    if (pPrimary)
+        vboxWddmAllocationRetain(pPrimary);
+    KeReleaseSpinLock(&pSource->AllocationLock, OldIrql);
+    return pPrimary;
+}
+
 
 #define VBOXWDDMENTRY_2_SWAPCHAIN(_pE) ((PVBOXWDDM_SWAPCHAIN)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_SWAPCHAIN, DevExtListEntry)))
 

@@ -1338,7 +1338,7 @@ stubInit(void)
 #ifdef DEBUG_misha
  /* debugging: this is to be able to catch first-chance notifications
   * for exceptions other than EXCEPTION_BREAKPOINT in kernel debugger */
-//# define VDBG_VEHANDLER
+# define VDBG_VEHANDLER
 #endif
 
 #ifdef VDBG_VEHANDLER
