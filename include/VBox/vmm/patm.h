@@ -237,7 +237,7 @@ VMMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR p
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
+VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /**
  * Checks if the int 3 was caused by a patched instruction

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * PATM - Dynamic Guest OS Patching Manager - Guest Context
+ * PATM - Dynamic Guest OS Patching Manager - Raw-mode Context.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,24 +20,24 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PATM
+#include <VBox/vmm/patm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/patm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
-#include <VBox/sup.h>
+#include <VBox/vmm/em.h>
+#ifdef VBOX_WITH_IEM
+# include <VBox/vmm/iem.h>
+#endif
+#include <VBox/vmm/selm.h>
 #include <VBox/vmm/mm.h>
-#include <VBox/param.h>
-#include <iprt/avl.h>
 #include "PATMInternal.h"
 #include "PATMA.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/dbg.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <VBox/vmm/em.h>
 #include <VBox/err.h>
-#include <VBox/vmm/selm.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -440,12 +440,16 @@ VMMDECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 /**
  * Checks if the int 3 was caused by a patched instruction
  *
- * @returns VBox status
+ * @returns Strict VBox status, includes all statuses that
+ *          EMInterpretInstructionDisasState and
+ * @retval  VINF_SUCCESS
+ * @retval  VINF_PATM_PATCH_INT3
+ * @retval  VINF_EM_RAW_EMULATE_INSTR
  *
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     PPATMPATCHREC pRec;
     int rc;
@@ -455,7 +459,7 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
     /* Int 3 in PATM generated code? (most common case) */
     if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))
     {
-        /* @note hardcoded assumption about it being a single byte int 3 instruction. */
+        /* Note! Hardcoded assumption about it being a single byte int 3 instruction. */
         pRegFrame->eip--;
         return VINF_PATM_PATCH_INT3;
     }
@@ -511,7 +515,15 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 AssertFailed();
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
-            rc = DISCoreOne(&cpu, (uintptr_t)&pRec->patch.aPrivInstr[0], &cbOp);
+
+#ifdef VBOX_WITH_IEM
+            VBOXSTRICTRC rcStrict;
+            rcStrict = IEMExecOneWithOpcodes(VMMGetCpu0(pVM), pRegFrame, pRec->patch.pPrivInstrGC,
+                                             pRec->patch.aPrivInstr, pRec->patch.cbPrivInstr);
+            rc = VBOXSTRICTRC_TODO(rcStrict);
+#else
+            rc = DISCoreOneEx((uintptr_t)&pRec->patch.aPrivInstr[0], cpu.mode, NULL /*pfnReadBytes*/, NULL /*pvUser*/,
+                              &cpu, &cbOp);
             if (RT_FAILURE(rc))
             {
                 Log(("DISCoreOne failed with %Rrc\n", rc));
@@ -522,14 +534,15 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
             rc = EMInterpretInstructionDisasState(VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */,
                                                   EMCODETYPE_SUPERVISOR);
-            if (rc != VINF_SUCCESS)
+#endif
+            if (RT_FAILURE(rc))
             {
                 Log(("EMInterpretInstructionCPU failed with %Rrc\n", rc));
                 PATM_STAT_FAULT_INC(&pRec->patch);
                 pRec->patch.cTraps++;
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
-            return VINF_SUCCESS;
+            return rc;
         }
     }
     return VERR_PATCH_NOT_FOUND;

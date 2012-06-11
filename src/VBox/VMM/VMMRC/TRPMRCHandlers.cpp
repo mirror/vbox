@@ -420,8 +420,11 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     if (    (pRegFrame->ss & X86_SEL_RPL) == 1
         &&  !pRegFrame->eflags.Bits.u1VM)
     {
-        rc = PATMHandleInt3PatchTrap(pVM, pRegFrame);
-        if (rc == VINF_SUCCESS || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PATM_PATCH_INT3 || rc == VINF_PATM_DUPLICATE_FUNCTION)
+        rc = PATMRCHandleInt3PatchTrap(pVM, pRegFrame);
+        if (   rc == VINF_SUCCESS
+            || rc == VINF_EM_RAW_EMULATE_INSTR
+            || rc == VINF_PATM_PATCH_INT3
+            || rc == VINF_PATM_DUPLICATE_FUNCTION)
         {
             rc = trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);
             Log6(("TRPMGC03: %Rrc (%04x:%08x) (PATM)\n", rc, pRegFrame->cs, pRegFrame->eip));
@@ -744,7 +747,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             if (pCpu->param1.parval == 3)
             {
                 /* Int 3 replacement patch? */
-                if (PATMHandleInt3PatchTrap(pVM, pRegFrame) == VINF_SUCCESS)
+                if (PATMRCHandleInt3PatchTrap(pVM, pRegFrame) == VINF_SUCCESS)
                 {
                     AssertFailed();
                     return trpmGCExitTrap(pVM, pVCpu, VINF_SUCCESS, pRegFrame);

@@ -203,12 +203,11 @@ static void DisasFunction(const char *pszName, PFNRT pv)
     DISCPUSTATE Cpu;
 
     memset(&Cpu, 0, sizeof(Cpu));
-    Cpu.mode = CPUMODE_32BIT;
     do
     {
         char        sz[256];
         uint32_t    cbInstr = 0;
-        if (RT_SUCCESS(DISInstr(&Cpu, uCur, 0, &cbInstr, sz)))
+        if (RT_SUCCESS(DISInstr(uCur, CPUMODE_32BIT, &Cpu, &cbInstr, sz)))
         {
             RTPrintf("tstBitFields: %s", sz);
             uCur += cbInstr;

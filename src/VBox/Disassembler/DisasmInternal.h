@@ -70,14 +70,6 @@
 #define IDX_ParseImmAddrF           40
 #define IDX_ParseMax                (IDX_ParseImmAddrF+1)
 
-#if defined(IN_RING0) || defined(IN_RC)
-#define DIS_THROW(a)                /* Not available. */
-#elif  __L4ENV__
-#define DIS_THROW(a)                longjmp(*pCpu->pJumpBuffer, a)
-#else
-#define DIS_THROW(a)                throw(a)
-#endif
-
 
 extern PFNDISPARSE  pfnFullDisasm[IDX_ParseMax];
 extern PFNDISPARSE  pfnCalcSize[IDX_ParseMax];
@@ -160,6 +152,7 @@ void disasmPrintDisp16(POP_PARAMETER pParam);
 
 
 /* Read functions */
+DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pCpu, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead);
 uint8_t  DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);

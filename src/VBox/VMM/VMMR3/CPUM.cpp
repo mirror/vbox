@@ -905,7 +905,7 @@ static int cpumR3CpuIdInit(PVM pVM)
         for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur); i++)
             pCPUM->aGuestCpuIdCentaur[i] = pCPUM->GuestCpuIdDef;
 
-    /* 
+    /*
      * Hypervisor identification.
      *
      * We only return minimal information, primarily ensuring that the
@@ -3524,24 +3524,15 @@ typedef struct CPUMDISASSTATE
 
 
 /**
- * Instruction reader.
- *
- * @returns VBox status code.
- * @param   PtrSrc      Address to read from.
- *                      In our case this is relative to the selector pointed to by the 2nd user argument of uDisCpu.
- * @param   pu8Dst      Where to store the bytes.
- * @param   cbRead      Number of bytes to read.
- * @param   uDisCpu     Pointer to the disassembler cpu state.
- *                      In this context it's always pointer to the Core of a DBGFDISASSTATE.
+ * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst, unsigned cbRead, void *uDisCpu)
+static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PDISCPUSTATE pCpu = (PDISCPUSTATE)uDisCpu;
-    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pCpu->apvUserData[0];
-    Assert(cbRead > 0);
+    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pDisState->apvUserData[0];
+    Assert(cbToRead > 0);
     for (;;)
     {
-        RTGCUINTPTR GCPtr = PtrSrc + pState->GCPtrSegBase;
+        RTGCUINTPTR GCPtr = uSrcAddr + pState->GCPtrSegBase;
 
         /* Need to update the page translation? */
         if (    !pState->pvPageR3
@@ -3574,7 +3565,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
         }
 
         /* check the segment limit */
-        if (!pState->f64Bits && PtrSrc > pState->cbSegLimit)
+        if (!pState->f64Bits && uSrcAddr > pState->cbSegLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 
         /* calc how much we can read */
@@ -3585,16 +3576,16 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
             if (cb > cbSeg && cbSeg)
                 cb = cbSeg;
         }
-        if (cb > cbRead)
-            cb = cbRead;
+        if (cb > cbToRead)
+            cb = cbToRead;
 
         /* read and advance */
-        memcpy(pu8Dst, (char *)pState->pvPageR3 + (GCPtr & PAGE_OFFSET_MASK), cb);
-        cbRead -= cb;
-        if (!cbRead)
+        memcpy(pbDst, (char *)pState->pvPageR3 + (GCPtr & PAGE_OFFSET_MASK), cb);
+        cbToRead -= cb;
+        if (!cbToRead)
             return VINF_SUCCESS;
-        pu8Dst += cb;
-        PtrSrc += cb;
+        pbDst    += cb;
+        uSrcAddr += cb;
     }
 }
 
@@ -3628,6 +3619,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     /*
      * Get selector information.
      */
+    DISCPUMODE enmDisCpuMode;
     if (    (pCtx->cr0 & X86_CR0_PE)
         &&   pCtx->eflags.Bits.u1VM == 0)
     {
@@ -3637,7 +3629,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
             State.GCPtrSegBase    = pCtx->csHid.u64Base;
             State.GCPtrSegEnd     = pCtx->csHid.u32Limit + 1 + (RTGCUINTPTR)pCtx->csHid.u64Base;
             State.cbSegLimit      = pCtx->csHid.u32Limit;
-            pCpu->mode            = (State.f64Bits)
+            enmDisCpuMode         = (State.f64Bits)
                                     ? CPUMODE_64BIT
                                     : pCtx->csHid.Attr.n.u1DefBig
                                     ? CPUMODE_32BIT
@@ -3666,13 +3658,13 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
             State.GCPtrSegBase    = SelInfo.GCPtrBase;
             State.GCPtrSegEnd     = SelInfo.cbLimit + 1 + (RTGCUINTPTR)SelInfo.GCPtrBase;
             State.cbSegLimit      = SelInfo.cbLimit;
-            pCpu->mode            = SelInfo.u.Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
+            enmDisCpuMode         = SelInfo.u.Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
         }
     }
     else
     {
         /* real or V86 mode */
-        pCpu->mode            = CPUMODE_16BIT;
+        enmDisCpuMode         = CPUMODE_16BIT;
         State.GCPtrSegBase    = pCtx->cs * 16;
         State.GCPtrSegEnd     = 0xFFFFFFFF;
         State.cbSegLimit      = 0xFFFFFFFF;
@@ -3681,17 +3673,14 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     /*
      * Disassemble the instruction.
      */
-    pCpu->pfnReadBytes    = cpumR3DisasInstrRead;
-    pCpu->apvUserData[0]  = &State;
-
     uint32_t cbInstr;
 #ifndef LOG_ENABLED
-    rc = DISInstr(pCpu, GCPtrPC, 0, &cbInstr, NULL);
+    rc = DISInstrWithReader(GCPtrPC, enmDisCpuMode, cpumR3DisasInstrRead, &State, pCpu, &cbInstr, NULL);
     if (RT_SUCCESS(rc))
     {
 #else
     char szOutput[160];
-    rc = DISInstr(pCpu, GCPtrPC, 0, &cbInstr, &szOutput[0]);
+    rc = DISInstrWithReader(GCPtrPC, enmDisCpuMode, cpumR3DisasInstrRead, &State, pCpu, &cbInstr, szOutput);
     if (RT_SUCCESS(rc))
     {
         /* log it */
