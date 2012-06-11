@@ -171,21 +171,51 @@ GLOBALNAME %1
 %endmacro
 
 ;;
+; Global marker which is DECLASM() compatible.
+%macro GLOBALNAME_EX 2,
+%ifndef ASM_FORMAT_BIN
+ %ifdef ASM_FORMAT_ELF
+global NAME(%1):%2
+ %else
+global NAME(%1)
+ %endif
+%endif
+NAME(%1):
+%endmacro
+
+;;
+; Global exported marker which is DECLASM() compatible.
+%macro EXPORTEDNAME_EX 2,
+ %ifdef ASM_FORMAT_PE
+  export %1=NAME(%1)
+ %endif
+ %ifdef __NASM__
+  %ifdef ASM_FORMAT_OMF
+   export NAME(%1) NAME(%1)
+  %endif
+%endif
+GLOBALNAME_EX %1, %2
+%endmacro
+
+;;
 ; Begins a C callable procedure.
 %macro BEGINPROC 1
-GLOBALNAME %1
+GLOBALNAME_EX %1, function hidden
 %endmacro
 
 ;;
 ; Begins a C callable exported procedure.
 %macro BEGINPROC_EXPORTED 1
-EXPORTEDNAME %1
+EXPORTEDNAME_EX %1, function
 %endmacro
 
 ;;
 ; Ends a C callable procedure.
 %macro ENDPROC 1
 GLOBALNAME %1_EndProc
+%ifdef ASM_FORMAT_ELF
+size NAME(%1) NAME(%1_EndProc) - NAME(%1)
+%endif
     db  0xCC, 0xCC, 0xCC, 0xCC
 %endmacro
 
