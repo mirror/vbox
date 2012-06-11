@@ -726,6 +726,9 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     for (i = 0; i < RT_ELEMENTS(pDevExt->acMouseFeatureUsage); ++i)
         pDevExt->acMouseFeatureUsage[i] = 0;
     pDevExt->fMouseStatus = 0;
+    pDevExt->MouseSetNotifyCallback.pfnNotify = NULL;
+    pDevExt->MouseSetNotifyCallback.pvNotify = NULL;
+    pDevExt->cISR = 0;
 
     /*
      * If there is an MMIO region validate the version and size.
@@ -1224,6 +1227,38 @@ static int VBoxGuestCommonIOCtl_GetVMMDevPort(PVBOXGUESTDEVEXT pDevExt, VBoxGues
         *pcbDataReturned = sizeof(*pInfo);
     return VINF_SUCCESS;
 }
+
+
+#ifndef RT_OS_WINDOWS
+/**
+ * Set the callback for the kernel mouse handler.
+ *
+ * returns IPRT status code.
+ * @param   pDevExt         The device extension.
+ * @param   pNotify         The new callback information.
+ * @note  This function takes the session spinlock to update the callback
+ *        information, but the interrupt handler will not do this.  To make
+ *        sure that the interrupt handler sees a consistent structure, we
+ *        set the function pointer to NULL before updating the data and only
+ *        set it to the correct value once the data is updated.  Since the
+ *        interrupt handler executes atomically this ensures that the data is
+ *        valid if the function pointer is non-NULL.
+ */
+int VBoxGuestCommonIOCtl_SetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGuestMouseSetNotifyCallback *pNotify)
+{
+    Log(("VBoxGuestCommonIOCtl: SET_MOUSE_NOTIFY_CALLBACK\n"));
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+    ASMAtomicWriteNullPtr(&pDevExt->MouseSetNotifyCallback.pfnNotify);
+    pDevExt->MouseSetNotifyCallback.pvNotify = pNotify->pvNotify;
+    ASMAtomicWritePtr(&pDevExt->MouseSetNotifyCallback.pfnNotify,
+                      pNotify->pfnNotify);
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    /* Make sure no one is referencing the old data - hacky but should be
+     * effective. */
+    while (pDevExt->cISR > 0);
+    return VINF_SUCCESS;
+}
+#endif
 
 
 /**
@@ -2503,6 +2538,15 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 rc = VBoxGuestCommonIOCtl_GetVMMDevPort(pDevExt, (VBoxGuestPortInfo *)pvData, pcbDataReturned);
                 break;
 
+#ifndef RT_OS_WINDOWS  /* Windows has its own implementation of this. */
+            case VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK:
+                CHECKRET_RING0("SET_MOUSE_NOTIFY_CALLBACK");
+                CHECKRET_SIZE("SET_MOUSE_NOTIFY_CALLBACK",
+                           sizeof(VBoxGuestMouseSetNotifyCallback));
+                rc = VBoxGuestCommonIOCtl_SetMouseNotifyCallback(pDevExt, (VBoxGuestMouseSetNotifyCallback *)pvData);
+                break;
+#endif
+
             case VBOXGUEST_IOCTL_WAITEVENT:
                 CHECKRET_MIN_SIZE("WAITEVENT", sizeof(VBoxGuestWaitEventInfo));
                 rc = VBoxGuestCommonIOCtl_WaitEvent(pDevExt, pSession, (VBoxGuestWaitEventInfo *)pvData,
@@ -2606,9 +2650,11 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
         return false;
 
     /*
-     * Enter the spinlock and check if it's our IRQ or not.
+     * Enter the spinlock, increase the ISR count and check if it's our IRQ or
+     * not.
      */
     RTSpinlockAcquire(pDevExt->EventSpinlock);
+    ASMAtomicIncU32(&pDevExt->cISR);
     fOurIrq = pDevExt->pVMMDevMemory->V.V1_04.fHaveEvents;
     if (fOurIrq)
     {
@@ -2712,8 +2758,13 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
     {
         ASMAtomicIncU32(&pDevExt->u32MousePosChangedSeq);
         VBoxGuestNativeISRMousePollEvent(pDevExt);
+#ifndef RT_OS_WINDOWS
+        if (pDevExt->MouseSetNotifyCallback.pfnNotify)
+            pDevExt->MouseSetNotifyCallback.pfnNotify(pDevExt->MouseSetNotifyCallback.pvNotify);
+#endif
     }
 
+    ASMAtomicDecU32(&pDevExt->cISR);
     Assert(rc == 0);
     return fOurIrq;
 }
