@@ -961,8 +961,7 @@ NTSTATUS vboxguestwinNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pIrp        Interrupt request packet.
  * @param   pContext    Context specific pointer.
  */
-void vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj,
-                            PIRP pIrp, PVOID pContext)
+void vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
     Log(("VBoxGuest::vboxguestwinGuestDpcHandler: pDevExt=0x%p\n", pDevExt));
@@ -970,19 +969,19 @@ void vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj,
     /* test & reset the counter */
     if (ASMAtomicXchgU32(&pDevExt->u32MousePosChangedSeq, 0))
     {
-        Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
         /* we need a lock here to avoid concurrency with the set event ioctl handler thread,
          * i.e. to prevent the event from destroyed while we're using it */
+        Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
         KeAcquireSpinLockAtDpcLevel(&pDevExt->win.s.MouseEventAccessLock);
-        if (pDevExt->win.s.pfnMouseNotify)
-        {
-            pDevExt->win.s.pfnMouseNotify(pDevExt->win.s.pvMouseNotify);
-        }
+
+        if (pDevExt->MouseNotifyCallback.pfnNotify)
+            pDevExt->MouseNotifyCallback.pfnNotify(pDevExt->MouseNotifyCallback.pvUser);
+
         KeReleaseSpinLockFromDpcLevel(&pDevExt->win.s.MouseEventAccessLock);
     }
 
     /* Process the wake-up list we were asked by the scheduling a DPC
-     *  in vboxguestwinIsrHandler(). */
+     * in vboxguestwinIsrHandler(). */
     VBoxGuestWaitDoWakeUps(pDevExt);
 }
 
