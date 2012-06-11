@@ -842,7 +842,7 @@ static NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
     switch (uCmd)
     {
-        case VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK:
+        case VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK:
         {
             PVOID pvBuf = pStack->Parameters.Others.Argument1;
             size_t cbData = (size_t)pStack->Parameters.Others.Argument2;

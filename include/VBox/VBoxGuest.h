@@ -311,9 +311,6 @@ AssertCompileSize(VBoxGuestChangeBalloonInfo, 16);
 /** IOCTL to VBoxGuest to write guest core. */
 #define VBOXGUEST_IOCTL_WRITE_CORE_DUMP             VBOXGUEST_IOCTL_CODE(9, sizeof(VBoxGuestWriteCoreDump))
 
-/** IOCTL to VBoxGuest to update the mouse status features. */
-# define VBOXGUEST_IOCTL_SET_MOUSE_STATUS         VBOXGUEST_IOCTL_CODE_(10, sizeof(uint32_t))
-
 /** Input and output buffer layout of the VBOXGUEST_IOCTL_WRITE_CORE
  *  request. */
 typedef struct VBoxGuestWriteCoreDump
@@ -323,6 +320,8 @@ typedef struct VBoxGuestWriteCoreDump
 } VBoxGuestWriteCoreDump;
 AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 
+/** IOCTL to VBoxGuest to update the mouse status features. */
+# define VBOXGUEST_IOCTL_SET_MOUSE_STATUS         VBOXGUEST_IOCTL_CODE_(10, sizeof(uint32_t))
 
 #ifdef VBOX_WITH_HGCM
 /** IOCTL to VBoxGuest to connect to a HGCM service. */
@@ -361,15 +360,22 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 
 #endif /* VBOX_WITH_HGCM */
 
-typedef DECLCALLBACK(void) FNVBOXMOUSENOTIFYCB(void *pvContext);
-typedef FNVBOXMOUSENOTIFYCB *PFNVBOXMOUSENOTIFYCB;
+/** IOCTL to for setting the mouse driver callback. (kernel only)  */
+#define VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE_(31, sizeof(VBoxGuestMouseSetNotifyCallback))
+
+/** Input buffer for VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK. */
 typedef struct VBoxGuestMouseSetNotifyCallback
 {
-    PFNVBOXMOUSENOTIFYCB pfnNotify;
-    void *pvNotify;
+    /**
+     * Mouse notification callback.
+     *
+     * @param   pvUser      The callback argument.
+     */
+    DECLR0CALLBACKMEMBER(void,  pfnNotify, (void *pvUser));
+    /** The callback argument*/
+    void                       *pvUser;
 } VBoxGuestMouseSetNotifyCallback;
 
-#define VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE_(31, sizeof(VBoxGuestMouseSetNotifyCallback))
 
 #ifdef RT_OS_OS2
 
