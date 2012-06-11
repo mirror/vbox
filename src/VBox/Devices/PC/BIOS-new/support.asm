@@ -85,7 +85,6 @@ __U4M:
                 push    eax
                 push    edx
                 push    ecx
-                push    ebx
 
                 rol     eax, 16
                 mov     ax, dx
@@ -97,7 +96,6 @@ __U4M:
 
                 mul     ecx                 ; eax * ecx -> edx:eax
 
-                pop     ebx
                 pop     ecx
 
                 pop     edx
@@ -114,16 +112,15 @@ __U4M:
 ;;
 ; memset taking a far pointer.
 ;
+; cx, es may be modified; di is preserved
+;
 ; @returns  dx:ax unchanged.
 ; @param    dx:ax   Pointer to the memory.
 ; @param    bl      The fill value.
 ; @param    cx      The number of bytes to fill.
 ;
 _fmemset_:
-                push    es
                 push    di
-                push    cx
-                pushf
 
                 mov     es, dx
                 mov     di, ax
@@ -131,15 +128,14 @@ _fmemset_:
                 rep stosb
                 xchg    al, bl
 
-                popf
-                pop     cx
                 pop     di
-                pop     es
                 ret
 
 
 ;;
 ; memset taking far pointers.
+;
+; cx, es may be modified; si, di are preserved
 ;
 ; @returns  dx:ax unchanged.
 ; @param    dx:ax   Pointer to the destination memory.
@@ -149,12 +145,9 @@ _fmemset_:
 _fmemcpy_:
                 push    bp
                 mov     bp, sp
-                push    es
                 push    di
                 push    ds
                 push    si
-                push    cx
-                popf
 
                 mov     es, dx
                 mov     di, ax
@@ -163,12 +156,9 @@ _fmemcpy_:
                 mov     cx, [bp + 4]
                 rep     movsb
 
-                pushf
-                pop     cx
                 pop     si
                 pop     ds
                 pop     di
-                pop     es
                 leave
                 ret
 
