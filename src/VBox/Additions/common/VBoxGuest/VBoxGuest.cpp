@@ -682,6 +682,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                         void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType, uint32_t fFixedEvents)
 {
     int rc, rc2;
+    unsigned i;
 
     /*
      * Adjust fFixedEvents.
@@ -722,7 +723,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->MemBalloon.fUseKernelAPI = true;
     pDevExt->MemBalloon.paMemObj = NULL;
     pDevExt->MemBalloon.pOwner = NULL;
-    for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->acMouseFeatureUsage); ++i)
+    for (i = 0; i < RT_ELEMENTS(pDevExt->acMouseFeatureUsage); ++i)
         pDevExt->acMouseFeatureUsage[i] = 0;
     pDevExt->fMouseStatus = 0;
 
