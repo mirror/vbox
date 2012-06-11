@@ -1,0 +1,321 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+     Copyright (C) 2006-2009 Oracle Corporation
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ </comment>
+ <class>UIMediumManager</class>
+ <widget class="QMainWindow" name="UIMediumManager" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>620</width>
+    <height>460</height>
+   </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>280</width>
+    <height>190</height>
+   </size>
+  </property>
+  <widget class="QWidget" name="mCentralWidget" >
+   <layout class="QVBoxLayout" >
+    <item>
+     <widget class="QITabWidget" name="mTabWidget" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <widget class="QWidget" name="mTabHD" >
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QITreeWidget" name="mTwHD" >
+          <property name="contextMenuPolicy" >
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="acceptDrops" >
+           <bool>true</bool>
+          </property>
+          <property name="horizontalScrollBarPolicy" >
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="alternatingRowColors" >
+           <bool>true</bool>
+          </property>
+          <property name="allColumnsShowFocus" >
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="mHDContainer" >
+          <property name="frameShape" >
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="frameShadow" >
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <layout class="QGridLayout" >
+           <property name="verticalSpacing" >
+            <number>0</number>
+           </property>
+           <property name="margin" >
+            <number>5</number>
+           </property>
+           <item row="0" column="0" >
+            <widget class="QLabel" name="m_pTypeLabel" />
+           </item>
+           <item row="0" column="1" >
+            <widget class="QILabel" name="m_pTypePane">
+             <property name="sizePolicy">
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" >
+            <widget class="QLabel" name="m_pLocationLabel" />
+           </item>
+           <item row="1" column="1" >
+            <widget class="QILabel" name="m_pLocationPane" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" >
+            <widget class="QLabel" name="m_pFormatLabel" />
+           </item>
+           <item row="2" column="1" >
+            <widget class="QILabel" name="m_pFormatPane" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0" >
+            <widget class="QLabel" name="m_pDetailsLabel" />
+           </item>
+           <item row="3" column="1" >
+            <widget class="QILabel" name="m_pDetailsPane" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" >
+            <widget class="QLabel" name="m_pUsageLabel" />
+           </item>
+           <item row="4" column="1" >
+            <widget class="QILabel" name="m_pUsagePane" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="mTabCD" >
+       <layout class="QVBoxLayout" >
+        <item>
+             <widget class="QITreeWidget" name="mTwCD" >
+          <property name="contextMenuPolicy" >
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="acceptDrops" >
+           <bool>true</bool>
+          </property>
+          <property name="horizontalScrollBarPolicy" >
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="alternatingRowColors" >
+           <bool>true</bool>
+          </property>
+          <property name="allColumnsShowFocus" >
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="mCDContainer" >
+          <property name="frameShape" >
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="frameShadow" >
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <layout class="QGridLayout" >
+           <property name="verticalSpacing" >
+            <number>0</number>
+           </property>
+           <property name="margin" >
+            <number>5</number>
+           </property>
+           <item row="0" column="0" >
+            <widget class="QLabel" name="mLbCD1" />
+           </item>
+           <item row="0" column="1" >
+            <widget class="QILabel" name="mIpCD1" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" >
+            <widget class="QLabel" name="mLbCD2" />
+           </item>
+           <item row="1" column="1" >
+            <widget class="QILabel" name="mIpCD2" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="mTabFD" >
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QITreeWidget" name="mTwFD" >
+          <property name="contextMenuPolicy" >
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="acceptDrops" >
+           <bool>true</bool>
+          </property>
+          <property name="horizontalScrollBarPolicy" >
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="alternatingRowColors" >
+           <bool>true</bool>
+          </property>
+          <property name="allColumnsShowFocus" >
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="mFDContainer" >
+          <property name="frameShape" >
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="frameShadow" >
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <layout class="QGridLayout" >
+           <property name="horizontalSpacing" >
+            <number>6</number>
+           </property>
+           <property name="verticalSpacing" >
+            <number>0</number>
+           </property>
+           <property name="margin" >
+            <number>5</number>
+           </property>
+           <item row="0" column="0" >
+            <widget class="QLabel" name="mLbFD1" />
+           </item>
+           <item row="0" column="1" >
+            <widget class="QILabel" name="mIpFD1" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" >
+            <widget class="QLabel" name="mLbFD2" />
+           </item>
+           <item row="1" column="1" >
+            <widget class="QILabel" name="mIpFD2" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QIDialogButtonBox" name="mButtonBox" >
+      <property name="standardButtons" >
+       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="mStatusBar" />
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QIDialogButtonBox</class>
+   <extends>QDialogButtonBox</extends>
+   <header>QIDialogButtonBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>QITreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>QITabWidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
