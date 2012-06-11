@@ -144,6 +144,18 @@ endif
 #
 # MakeDebianBiosAssembly - For distros without OpenWatcom.
 #
+ifdef TODO_LATER
+BLDPROGS += MakeDebianBiosAssembly
+MakeDebianBiosAssembly_TEMPLATE = VBoxAdvBldProg
+MakeDebianBiosAssembly_DEFS     = IN_DIS
+MakeDebianBiosAssembly_SOURCES  = MakeDebianBiosAssembly.cpp
+MakeDebianBiosAssembly_LIBS     = \
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+ifdef IPRT_WITH_KSTUFF
+MakeDebianBiosAssembly_LIBS    += \
+	$(PATH_STAGE_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
+endif
+else
 PROGRAMS += MakeDebianBiosAssembly ## TODO this is build program, really. later.
 MakeDebianBiosAssembly_TEMPLATE = VBOXR3EXE
 MakeDebianBiosAssembly_DEFS     = IN_DIS
@@ -151,7 +163,7 @@ MakeDebianBiosAssembly_SOURCES  = MakeDebianBiosAssembly.cpp
 MakeDebianBiosAssembly_LIBS     = \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME)
-
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
