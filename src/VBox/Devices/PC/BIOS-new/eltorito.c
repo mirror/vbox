@@ -365,7 +365,7 @@ uint16_t cdrom_boot(void)
     bios_dsk->drqp.nsect   = 1 + (nbsectors - 1) / 4;
     bios_dsk->drqp.sect_sz = 512;
 
-    bios_dsk->drqp.skip_a = 2048 - nbsectors * 512L % 2048;
+    bios_dsk->drqp.skip_a = 2048 - nbsectors * 512UL % 2048;
 
     if (device > BX_MAX_ATA_DEVICES)
         error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
@@ -551,7 +551,7 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         bios_dsk->drqp.sect_sz = 512;
 
         bios_dsk->drqp.skip_b = before * 512;
-        bios_dsk->drqp.skip_a = 2048 - nbsectors * 512L % 2048 - bios_dsk->drqp.skip_b;
+        bios_dsk->drqp.skip_a = 2048 - nbsectors * 512UL % 2048 - bios_dsk->drqp.skip_b;
 
         if (device > BX_MAX_ATA_DEVICES)
             status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
