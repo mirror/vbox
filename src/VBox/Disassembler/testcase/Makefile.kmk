@@ -59,6 +59,10 @@ VBOX_DISAS_TESTS_BINARIES += \
 	tstBin-6.bin
 #	$(PATH_STAGE_BIN)/testcase/tstDisasm-2$(SUFF_EXEC)
 endif
+VBOX_DISAS_TESTS_BINARIES_NOT_16BIT := \
+	tstBinFnstsw-1.bin
+VBOX_DISAS_TESTS_BINARIES_NOT_32BIT :=
+VBOX_DISAS_TESTS_BINARIES_NOT_64BIT :=
 
 
 #
@@ -194,8 +198,9 @@ $(eval $(def_vbox_disas_binary_rules))
 endef # def_vbox_disas_binary
 
 ## @todo 64-bit is problematic because of bugs like POP RDI ending up as POP EDI (incorrect default opmode).
-#$(foreach bits, 32 16 64, $(foreach binary, $(VBOX_DISAS_TESTS_BINARIES), $(evalvalctx def_vbox_disas_binary)))
-$(foreach bits, 32 16, $(foreach binary, $(VBOX_DISAS_TESTS_BINARIES), $(evalvalctx def_vbox_disas_binary)))
+#$(foreach bits, 64, $(foreach binary, $(VBOX_DISAS_TESTS_BINARIES), $(evalvalctx def_vbox_disas_binary)))
+$(foreach bits, 32 16, $(foreach binary, $(filter-out $(VBOX_DISAS_TESTS_BINARIES_NOT_$(bits)BIT), $(VBOX_DISAS_TESTS_BINARIES)) \
+	, $(evalvalctx def_vbox_disas_binary)))
 
 
 # Add the .tst to the clean up.

@@ -836,7 +836,8 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 /* disas */
                 uint32_t cbInstr = 0;
                 char szDisas[256];
-                if (RT_SUCCESS(DISInstr(&Cpu, (uintptr_t)pu8CodeR3 + offCode, uBase - (uintptr_t)pu8CodeR3, &cbInstr, szDisas)))
+                if (RT_SUCCESS(DISInstrWithOff(&Cpu, (uintptr_t)pu8CodeR3 + offCode, uBase - (uintptr_t)pu8CodeR3,
+                                               &cbInstr, szDisas)))
                     RTLogPrintf("  %04x: %s", offCode, szDisas); //for whatever reason szDisas includes '\n'.
                 else
                 {

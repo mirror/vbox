@@ -170,16 +170,16 @@ static bool MyDisasIsValidInstruction(DISCPUSTATE const *pCpu)
  * @todo This should check that the disassembler doesn't do unnecessary reads,
  *       however the current doesn't do this and is just complicated...
  */
-static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, uint32_t cbRead, void *pvDisCpu)
+static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PMYDISSTATE pState = (PMYDISSTATE)pvDisCpu;
+    PMYDISSTATE pState = (PMYDISSTATE)pDisState;
     if (RT_LIKELY(   pState->uNextAddr == uSrcAddr
-                  && pState->cbLeft >= cbRead))
+                  && pState->cbLeft >= cbToRead))
     {
         /*
          * Straight forward reading.
          */
-        if (cbRead == 1)
+        if (cbToRead == 1)
         {
             pState->cbLeft--;
             *pbDst = *pState->pbNext++;
@@ -187,10 +187,10 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
         }
         else
         {
-            memcpy(pbDst, pState->pbNext, cbRead);
-            pState->pbNext += cbRead;
-            pState->cbLeft -= cbRead;
-            pState->uNextAddr += cbRead;
+            memcpy(pbDst, pState->pbNext, cbToRead);
+            pState->pbNext += cbToRead;
+            pState->cbLeft -= cbToRead;
+            pState->uNextAddr += cbToRead;
         }
     }
     else
@@ -210,7 +210,7 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
                 pState->uNextAddr += pState->cbLeft;
                 pState->cbLeft = 0;
 
-                memset(pbDst, 0xcc, cbRead);
+                memset(pbDst, 0xcc, cbToRead);
                 pState->rc = VERR_EOF;
                 return VERR_EOF;
             }
@@ -226,12 +226,12 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
             pState->uNextAddr += offReq;
 
             /* do the reading. */
-            if (pState->cbLeft >= cbRead)
+            if (pState->cbLeft >= cbToRead)
             {
-                memcpy(pbDst, pState->pbNext, cbRead);
-                pState->cbLeft -= cbRead;
-                pState->pbNext += cbRead;
-                pState->uNextAddr += cbRead;
+                memcpy(pbDst, pState->pbNext, cbToRead);
+                pState->cbLeft -= cbToRead;
+                pState->pbNext += cbToRead;
+                pState->uNextAddr += cbToRead;
             }
             else
             {
@@ -239,12 +239,12 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
                 {
                     memcpy(pbDst, pState->pbNext, pState->cbLeft);
                     pbDst += pState->cbLeft;
-                    cbRead -= (uint32_t)pState->cbLeft;
+                    cbToRead -= (uint32_t)pState->cbLeft;
                     pState->pbNext += pState->cbLeft;
                     pState->uNextAddr += pState->cbLeft;
                     pState->cbLeft = 0;
                 }
-                memset(pbDst, 0xcc, cbRead);
+                memset(pbDst, 0xcc, cbToRead);
                 pState->rc = VERR_EOF;
                 return VERR_EOF;
             }
@@ -252,7 +252,7 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
         else
         {
             RTStrmPrintf(g_pStdErr, "Reading before current instruction!\n");
-            memset(pbDst, 0x90, cbRead);
+            memset(pbDst, 0x90, cbToRead);
             pState->rc = VERR_INTERNAL_ERROR;
             return VERR_INTERNAL_ERROR;
         }
@@ -285,8 +285,6 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
      * Initialize the CPU context.
      */
     MYDISSTATE State;
-    State.Cpu.mode = enmCpuMode;
-    State.Cpu.pfnReadBytes = MyDisasInstrRead;
     State.uAddress = uAddress;
     State.pbInstr = pbFile;
     State.cbInstr = 0;
@@ -330,7 +328,9 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
         State.uNextAddr = State.uAddress;
         State.pbNext = State.pbInstr;
 
-        int rc = DISInstr(&State.Cpu, State.uAddress, 0, &State.cbInstr, State.szLine);
+
+        int rc = DISInstrWithReader(State.uAddress, enmCpuMode, MyDisasInstrRead, &State,
+                                    &State.Cpu, &State.cbInstr, State.szLine);
         if (    RT_SUCCESS(rc)
             ||  (   (   rc == VERR_DIS_INVALID_OPCODE
                      || rc == VERR_DIS_GEN_FAILURE)
@@ -344,15 +344,15 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
                               && !MyDisasIsValidInstruction(&State.Cpu));
             if (State.fUndefOp && State.enmUndefOp == kUndefOp_DefineByte)
             {
-                RTPrintf("    db");
                 if (!State.cbInstr)
-                    State.cbInstr = 1;
-                for (unsigned off = 0; off < State.cbInstr; off++)
                 {
-                    uint8_t b;
-                    State.Cpu.pfnReadBytes(State.uAddress + off, &b, 1, &State.Cpu);
-                    RTPrintf(off ? ", %03xh" : " %03xh", b);
+                    State.Cpu.abInstr[0] = 0;
+                    State.Cpu.pfnReadBytes(&State.Cpu, &State.Cpu.abInstr[0], State.uAddress, 1);
+                    State.cbInstr = 1;
                 }
+                RTPrintf("    db");
+                for (unsigned off = 0; off < State.cbInstr; off++)
+                    RTPrintf(off ? ", %03xh" : " %03xh", State.Cpu.abInstr[off]);
                 RTPrintf("    ; %s\n", State.szLine);
             }
             else if (!State.fUndefOp && State.enmUndefOp == kUndefOp_All)
@@ -375,11 +375,7 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
                 {
                     RTPrintf("    db");
                     for (unsigned off = 0; off < State.cbInstr; off++)
-                    {
-                        uint8_t b;
-                        State.Cpu.pfnReadBytes(State.uAddress + off, &b, 1, &State.Cpu);
-                        RTPrintf(off ? ", %03xh" : " %03xh", b);
-                    }
+                        RTPrintf(off ? ", %03xh" : " %03xh", State.Cpu.abInstr[off]);
                     RTPrintf(" ; ");
                 }
 

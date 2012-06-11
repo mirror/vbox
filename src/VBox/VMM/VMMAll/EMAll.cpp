@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -281,19 +281,11 @@ VMMDECL(int) EMRemTryLock(PVM pVM)
 
 
 /**
- * Read callback for disassembly function; supports reading bytes that cross a page boundary
- *
- * @returns VBox status code.
- * @param   pSrc        GC source pointer
- * @param   pDest       HC destination pointer
- * @param   cb          Number of bytes to read
- * @param   dwUserdata  Callback specific user data (pDis)
- *
+ * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) emReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
+static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PDISCPUSTATE  pDis   = (PDISCPUSTATE)pvUserdata;
-    PEMDISSTATE   pState = (PEMDISSTATE)pDis->apvUserData[0];
+    PEMDISSTATE   pState = (PEMDISSTATE)pDisState->apvUserData[0];
 # ifndef IN_RING0
     PVM           pVM    = pState->pVM;
 # endif
@@ -303,47 +295,47 @@ static DECLCALLBACK(int) emReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb
     int rc;
 
     if (    pState->GCPtr
-        &&  pSrc + cb <= pState->GCPtr + sizeof(pState->aOpcode))
+        &&  uSrcAddr + cbToRead <= pState->GCPtr + sizeof(pState->aOpcode))
     {
-        unsigned offset = pSrc - pState->GCPtr;
-        Assert(pSrc >= pState->GCPtr);
+        unsigned offset = uSrcAddr - pState->GCPtr;
+        Assert(uSrcAddr >= pState->GCPtr);
 
-        for (unsigned i = 0; i < cb; i++)
-            pDest[i] = pState->aOpcode[offset + i];
+        for (unsigned i = 0; i < cbToRead; i++)
+            pbDst[i] = pState->aOpcode[offset + i];
         return VINF_SUCCESS;
     }
 
-    rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
-    AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for pSrc=%RGv cb=%x rc=%d\n", pSrc, cb, rc));
+    rc = PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
+    AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for uSrcAddr=%RTptr cbToRead=%x rc=%d\n", uSrcAddr, cbToRead, rc));
 # elif defined(IN_RING3)
-    if (!PATMIsPatchGCAddr(pVM, pSrc))
+    if (!PATMIsPatchGCAddr(pVM, uSrcAddr))
     {
-        int rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
         AssertRC(rc);
     }
     else
-        memcpy(pDest, PATMR3GCPtrToHCPtr(pVM, pSrc), cb);
+        memcpy(pbDst, PATMR3GCPtrToHCPtr(pVM, uSrcAddr), cbToRead);
 
 # elif defined(IN_RC)
-    if (!PATMIsPatchGCAddr(pVM, pSrc))
+    if (!PATMIsPatchGCAddr(pVM, uSrcAddr))
     {
-        int rc = MMGCRamRead(pVM, pDest, (void *)(uintptr_t)pSrc, cb);
+        int rc = MMGCRamRead(pVM, pbDst, (void *)(uintptr_t)uSrcAddr, cbToRead);
         if (rc == VERR_ACCESS_DENIED)
         {
             /* Recently flushed; access the data manually. */
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
             AssertRC(rc);
         }
     }
     else /* the hypervisor region is always present. */
-        memcpy(pDest, (RTRCPTR)(uintptr_t)pSrc, cb);
+        memcpy(pbDst, (RTRCPTR)(uintptr_t)uSrcAddr, cbToRead);
 
 # endif /* IN_RING3 */
     return VINF_SUCCESS;
 }
 
-
 #ifndef IN_RC
+
 DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
     EMDISSTATE State;
@@ -466,7 +458,8 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
     }
 #endif
 
-    rc = DISCoreOneEx(GCPtrInstr, SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
+    rc = DISCoreOneEx(GCPtrInstr,
+                      SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
                       emReadBytes, &State,
                       pDis, pcbInstr);
     if (RT_SUCCESS(rc))
@@ -658,7 +651,7 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
 
     Assert(!CPUMIsGuestIn64BitCode(pVCpu, pRegFrame));
     /** @todo Rainy day: Test what happens when VERR_EM_INTERPRETER is returned by
-     *        this function.  Faire that it may guru on us, thus not converted to
+     *        this function.  Fear that it may guru on us, thus not converted to
      *        IEM. */
 
     rc  = emRCStackRead(pVM, pVCpu, pRegFrame, &eip,      (RTGCPTR)pIretStack      , 4);

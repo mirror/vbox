@@ -272,7 +272,7 @@ typedef struct _PATCHINFO
     uint32_t                    opcode;
     /** Size of the patch jump in the guest code. */
     uint32_t                    cbPatchJump;
-    /* Only valid for PATMFL_JUMP_CONFLICT patches */
+    /** Only valid for PATMFL_JUMP_CONFLICT patches */
     RTRCPTR                     pPatchJumpDestGC;
     /** Offset of the patch code from the beginning of the patch memory area. */
     RTGCUINTPTR32               pPatchBlockOffset;
@@ -674,17 +674,7 @@ void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree);
 VMMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags);
 
 
-/**
- * Read callback for disassembly function; supports reading bytes that cross a page boundary
- *
- * @returns VBox status code.
- * @param   pSrc        GC source pointer
- * @param   pDest       HC destination pointer
- * @param   size        Number of bytes to read
- * @param   pvUserdata  Callback specific user data (pCpu)
- *
- */
-int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
+FNDISREADBYTES patmReadBytes;
 
 
 #ifndef IN_RC
@@ -705,9 +695,9 @@ typedef struct
     uint32_t             fReadFlags;
 } PATMDISASM, *PPATMDISASM;
 
-inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR InstrGC,
-                           uint8_t *InstrHC, uint32_t *pOpsize, char *pszOutput,
-                           uint32_t fReadFlags = PATMREAD_ORGCODE)
+DECLINLINE(bool) PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, PDISCPUSTATE pCpu, RTRCPTR InstrGC,
+                                uint8_t *InstrHC, uint32_t *pOpsize, char *pszOutput,
+                                uint32_t fReadFlags = PATMREAD_ORGCODE)
 {
     PATMDISASM disinfo;
     disinfo.pVM         = pVM;
@@ -717,7 +707,7 @@ inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPT
     disinfo.fReadFlags  = fReadFlags;
     (pCpu)->pfnReadBytes = patmReadBytes;
     (pCpu)->apvUserData[0] = &disinfo;
-    return RT_SUCCESS(DISInstr(pCpu, InstrGC, 0, pOpsize, pszOutput));
+    return RT_SUCCESS(DISInstrWithReader(InstrGC, pCpu->mode, patmReadBytes, &disinfo, pCpu, pOpsize, pszOutput));
 }
 #endif /* !IN_RC */
 

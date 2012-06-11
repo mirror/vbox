@@ -688,10 +688,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                      && (int8_t)pParam->disp16 == (int16_t)pParam->disp16)
                                 PUT_SZ("word ");
                             else if (   (pParam->flags & USE_DISPLACEMENT32)
-                                     && (int8_t)pParam->disp32 == (int32_t)pParam->disp32)
+                                     && (int16_t)pParam->disp32 == (int32_t)pParam->disp32) //??
                                 PUT_SZ("dword ");
                             else if (   (pParam->flags & USE_DISPLACEMENT64)
-                                     && (int8_t)pParam->disp64 == (int64_t)pParam->disp32)
+                                     && (pCpu->SIB.Bits.Base != 5 || pCpu->ModRM.Bits.Mod != 0)
+                                     && (int32_t)pParam->disp64 == (int64_t)pParam->disp64) //??
                                 PUT_SZ("qword ");
                         }
                         if (DIS_IS_EFFECTIVE_ADDR(pParam->flags))
@@ -1230,7 +1231,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     for (uint32_t offOpcode = 0; offOpcode < 32; offOpcode++)
     {
         uint32_t f;
-        switch (DISReadByte(pCpu, offOpcode + pCpu->opaddr))
+        switch (pCpu->abInstr[offOpcode])
         {
             case 0xf0:
                 f = PREFIX_LOCK;

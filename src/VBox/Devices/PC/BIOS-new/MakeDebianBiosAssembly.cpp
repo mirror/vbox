@@ -903,26 +903,22 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
 
 
 /**
- * Disassembler callback for reading opcode bytes.
+ * @callback_method_impl{FNDISREADBYTES}
  *
- * @returns VINF_SUCCESS.
- * @param   uFlatAddr           The address to read at.
- * @param   pbDst               Where to store them.
- * @param   cbToRead            How many to read.
- * @param   pvUser              Unused.
+ * @remarks @a uSrcAddr is the flat address.
  */
-static DECLCALLBACK(int) disReadOpcodeBytes(RTUINTPTR uFlatAddr, uint8_t *pbDst, unsigned cbToRead, void *pvUser)
+static DECLCALLBACK(int) disReadOpcodeBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    if (uFlatAddr + cbToRead >= VBOX_BIOS_BASE + _64K)
+    if (uSrcAddr + cbToRead >= VBOX_BIOS_BASE + _64K)
     {
         RT_BZERO(pbDst, cbToRead);
-        if (uFlatAddr >= VBOX_BIOS_BASE + _64K)
+        if (uSrcAddr >= VBOX_BIOS_BASE + _64K)
             cbToRead = 0;
         else
-            cbToRead = VBOX_BIOS_BASE + _64K - uFlatAddr;
+            cbToRead = VBOX_BIOS_BASE + _64K - uSrcAddr;
     }
-    memcpy(pbDst, &g_pbImg[uFlatAddr - VBOX_BIOS_BASE], cbToRead);
-    NOREF(pvUser);
+    memcpy(pbDst, &g_pbImg[uSrcAddr - VBOX_BIOS_BASE], cbToRead);
+    NOREF(pDisState);
     return VINF_SUCCESS;
 }
 

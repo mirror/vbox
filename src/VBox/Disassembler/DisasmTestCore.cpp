@@ -38,8 +38,7 @@ int main(int argc, char **argv)
 
         unsigned    cb;
         DISCPUSTATE cpu;
-        cpu.mode = CPUMODE_32BIT;
-        if (DISCoreOne(&cpu, (uintptr_t)&DISCoreOne, &cb))
+        if (DISCoreOneEx((uintptr_t)&DISCoreOneEx, CPUMODE_32BIT, NULL /*pfnReadBytes*/, NULL /*pvUser*/, &cpu, &cb))
             printf("ok %d\n", cpu.addrmode);
         else
         {

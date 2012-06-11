@@ -653,9 +653,9 @@ static const REMPARMDESC g_aArgsDBGFR3AddrFromFlat[] =
 };
 static const REMPARMDESC g_aArgsDISInstr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTUINTPTR),          NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(DISCPUMODE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PDISCPUSTATE),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL }
 };

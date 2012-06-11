@@ -47,11 +47,9 @@ int main(int argc, char **argv)
         {
             unsigned    cb;
             DISCPUSTATE cpu;
-            char         szOutput[256];
+            char        szOutput[256];
 
-            memset(&cpu, 0, sizeof(cpu));
-            cpu.mode = CPUMODE_32BIT;
-            if (RT_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
+            if (RT_SUCCESS(DISInstr(pInstr, CPUMODE_32BIT, &cpu, &cb, szOutput)))
             {
                 printf("%s", szOutput);
             }
@@ -72,11 +70,9 @@ int main(int argc, char **argv)
         {
             unsigned    cb;
             DISCPUSTATE cpu;
-            char         szOutput[256];
+            char        szOutput[256];
 
-            memset(&cpu, 0, sizeof(cpu));
-            cpu.mode = CPUMODE_64BIT;
-            if (RT_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
+            if (RT_SUCCESS(DISInstr(pInstr, CPUMODE_64BIT, &cpu, &cb, szOutput)))
                 printf("%s", szOutput);
             else
             {

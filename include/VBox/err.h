@@ -1931,6 +1931,14 @@
 #define VERR_DIS_INVALID_OPCODE                     (-4200)
 /** Generic failure during disassembly. */
 #define VERR_DIS_GEN_FAILURE                        (-4201)
+/** No read callback. */
+#define VERR_DIS_NO_READ_CALLBACK                   (-4202)
+/** Invalid Mod/RM. */
+#define VERR_DIS_INVALID_MODRM                      (-4203)
+/** Invalid parameter index. */
+#define VERR_DIS_INVALID_PARAMETER                  (-4204)
+/** Reading opcode bytes failed. */
+#define VERR_DIS_MEM_READ                           (-4205)
 /** @} */
 
 

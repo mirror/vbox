@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -369,18 +369,14 @@ typedef enum
  */
 typedef struct OP_PARAMETER
 {
-    /** @todo switch param and parval and move disp64 and flags up here with the other 64-bit vars to get more natural alignment and save space. */
-    int             param;
     uint64_t        parval;
-#ifndef DIS_SEPARATE_FORMATTER
-    char            szParam[32];
-#endif
-
-    int32_t         disp8, disp16, disp32;
-    uint32_t        size;
-
-    int64_t         disp64;
     uint64_t        flags;
+    int64_t         disp64;
+    int32_t         disp32;
+    int32_t         disp16;
+    int32_t         disp8;
+    uint32_t        size;
+    int32_t         param;
 
     union
     {
@@ -408,6 +404,9 @@ typedef struct OP_PARAMETER
     /** 2, 4 or 8. */
     uint32_t scale;
 
+#ifndef DIS_SEPARATE_FORMATTER
+    char            szParam[32];
+#endif
 } OP_PARAMETER;
 /** Pointer to opcode parameter. */
 typedef OP_PARAMETER *POP_PARAMETER;
@@ -420,8 +419,20 @@ typedef struct OPCODE *POPCODE;
 /** Pointer to const opcode. */
 typedef const struct OPCODE *PCOPCODE;
 
-typedef DECLCALLBACK(int) FN_DIS_READBYTES(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
-typedef FN_DIS_READBYTES *PFN_DIS_READBYTES;
+/**
+ * Callback for reading opcode bytes.
+ *
+ * @param   pDisState       Pointer to the CPU state.  The primary user argument
+ *                          can be retrived from DISCPUSTATE::apvUserData[0]. If
+ *                          more is required these can be passed in the
+ *                          subsequent slots.
+ * @param   pbDst           Pointer to output buffer.
+ * @param   uSrcAddr        The address to start reading at.
+ * @param   cbToRead        The number of bytes to read.
+ */
+typedef DECLCALLBACK(int) FNDISREADBYTES(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead);
+/** Pointer to a opcode byte reader. */
+typedef FNDISREADBYTES *PFNDISREADBYTES;
 
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal (really, I'm too lazy to update all the functions). */
@@ -430,10 +441,10 @@ typedef FNDISPARSE *PFNDISPARSE;
 
 typedef struct DISCPUSTATE
 {
-    /* Global setting */
+    /** Global setting. */
     DISCPUMODE      mode;
 
-    /* Per instruction prefix settings */
+    /** Per instruction prefix settings. */
     uint32_t        prefix;
     /** segment prefix value. */
     DIS_SELREG      enmPrefixSeg;
@@ -451,59 +462,68 @@ typedef struct DISCPUSTATE
     /** ModRM fields. */
     union
     {
-        /* Bitfield view */
+        /** Bitfield view */
         struct
         {
             unsigned        Rm  : 4;
             unsigned        Reg : 4;
             unsigned        Mod : 2;
         } Bits;
-        /* unsigned view */
+        /** unsigned view */
         unsigned            u;
     } ModRM;
 
     /** SIB fields. */
     union
     {
-        /* Bitfield view */
+        /** Bitfield view */
         struct
         {
             unsigned        Base  : 4;
             unsigned        Index : 4;
             unsigned        Scale : 2;
         } Bits;
-        /* unsigned view */
+        /** unsigned view */
         unsigned            u;
     } SIB;
+    int32_t         i32SibDisp;
 
-    int32_t         disp;
+    /** The instruction size. */
+    uint32_t        opsize;
+    /** The address of the instruction. */
+    RTUINTPTR       uInstrAddr;
+    /** The offsetted address of the instruction. */
+    RTUINTPTR       opaddr;
+    /** The size of the prefix bytes. */
+    uint8_t         cbPrefix;
 
     /** First opcode byte of instruction. */
     uint8_t         opcode;
-    /** Last prefix byte (for SSE2 extension tables) */
+    /** Last prefix byte (for SSE2 extension tables). */
     uint8_t         lastprefix;
-    RTUINTPTR       opaddr;
-    uint32_t        opsize;
-#ifndef DIS_CORE_ONLY
-    /** Opcode format string for current instruction. */
-    const char      *pszOpcode;
-#endif
+    /** The instruction bytes. */
+    uint8_t         abInstr[16];
 
     /** Internal: pointer to disassembly function table */
     PFNDISPARSE    *pfnDisasmFnTable;
     /** Internal: instruction filter */
     uint32_t        uFilter;
+    /** Return code set by a worker function like the opcode bytes readers. */
+    int32_t         rc;
 
     /** Pointer to the current instruction. */
     PCOPCODE        pCurInstr;
-
-    void           *apvUserData[3];
+#ifndef DIS_CORE_ONLY
+    /** Opcode format string for current instruction. */
+    const char      *pszOpcode;
+#endif
 
     /** Optional read function */
-    PFN_DIS_READBYTES pfnReadBytes;
-#ifdef __L4ENV__
-    jmp_buf *pJumpBuffer;
-#endif /* __L4ENV__ */
+    PFNDISREADBYTES pfnReadBytes;
+    /** User data slots for the read callback.  The first entry is used for the
+     *  pvUser argument, the rest are up for grabs.
+     * @remarks This must come last so that we can memset everything before this. */
+    void           *apvUserData[3];
 } DISCPUSTATE;
 
 /** The storage padding sufficient to hold the largest DISCPUSTATE in all
@@ -530,109 +550,22 @@ typedef struct OPCODE
 #pragma pack()
 
 
-/**
- * Disassembles a code block.
- *
- * @returns VBox error code
- * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
- *                          set correctly.
- * @param   pvCodeBlock     Pointer to the structure to disassemble.
- * @param   cbMax           Maximum number of bytes to disassemble.
- * @param   pcbSize         Where to store the size of the instruction.
- *                          NULL is allowed.
- *
- *
- * @todo    Define output callback.
- * @todo    Using signed integers as sizes is a bit odd. There are still
- *          some GCC warnings about mixing signed and unsigned integers.
- * @todo    Need to extend this interface to include a code address so we
- *          can disassemble GC code. Perhaps a new function is better...
- * @remark  cbMax isn't respected as a boundary. DISInstr() will read beyond cbMax.
- *          This means *pcbSize >= cbMax sometimes.
- */
-DISDECL(int) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, unsigned cbMax, unsigned *pSize);
+DISDECL(int) DISInstr(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbSize, char *pszOutput);
+DISDECL(int) DISInstrWithOff(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, RTUINTPTR offRealAddr, uint32_t *pcbSize, char *pszOutput);
+DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                PDISCPUSTATE pCpu, uint32_t *pcbSize, char *pszOutput);
+DISDECL(int) DISInstrEx(RTUINTPTR uInstrAddr, RTUINTPTR offRealAddr, DISCPUMODE enmCpuMode,
+                        PFNDISREADBYTES pfnReadBytes, void *pvUser, uint32_t uFilter,
+                        PDISCPUSTATE pCpu, uint32_t *pcbSize, char *pszOutput);
 
-/**
- * Disassembles one instruction
- *
- * @returns VBox error code
- * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
- *                          set correctly.
- * @param   pu8Instruction  Pointer to the instrunction to disassemble.
- * @param   u32EipOffset    Offset to add to instruction address to get the real virtual address
- * @param   pcbSize         Where to store the size of the instruction.
- *                          NULL is allowed.
- * @param   pszOutput       Storage for disassembled instruction
- *
- * @todo    Define output callback.
- */
-DISDECL(int) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32EipOffset, unsigned *pcbSize, char *pszOutput);
-
-/**
- * Disassembles one instruction
- *
- * @returns VBox error code
- * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
- *                          set correctly.
- * @param   pu8Instruction  Pointer to the structure to disassemble.
- * @param   u32EipOffset    Offset to add to instruction address to get the real virtual address
- * @param   pcbSize         Where to store the size of the instruction.
- *                          NULL is allowed.
- * @param   pszOutput       Storage for disassembled instruction
- * @param   uFilter         Instruction type filter
- *
- * @todo    Define output callback.
- */
-DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32EipOffset, uint32_t *pcbSize,
-                         char *pszOutput, unsigned uFilter);
-
-/**
- * Parses one instruction.
- * The result is found in pCpu.
- *
- * @returns VBox error code
- * @param   pCpu            Pointer to cpu structure which has DISCPUSTATE::mode set correctly.
- * @param   InstructionAddr Pointer to the instruction to parse.
- * @param   pcbInstruction  Where to store the size of the instruction.
- *                          NULL is allowed.
- */
-DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction);
-
-/**
- * Parses one guest instruction.
- * The result is found in pCpu and pcbInstruction.
- *
- * @returns VBox status code.
- * @param   InstructionAddr Address of the instruction to decode. What this means
- *                          is left to the pfnReadBytes function.
- * @param   enmCpuMode      The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
- * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
- * @param   pCpu            Pointer to cpu structure. Will be initialized.
- * @param   pcbInstruction  Where to store the size of the instruction.
- *                          NULL is allowed.
- */
-DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_DIS_READBYTES pfnReadBytes, void *pvUser,
-                          PDISCPUSTATE pCpu, unsigned *pcbInstruction);
+DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, uint32_t *pcbInstruction);
+DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                          PDISCPUSTATE pCpu, uint32_t *pcbInstruction);
 
 DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
 DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
 DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 
-/**
- * Returns the value of the parameter in pParam
- *
- * @returns VBox error code
- * @param   pCtx            Exception structure pointer
- * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
- *                          set correctly.
- * @param   pParam          Pointer to the parameter to parse
- * @param   pParamVal       Pointer to parameter value (OUT)
- * @param   parmtype        Parameter type
- *
- * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
- *
- */
 DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
 DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, void **ppReg, size_t *pcbSize);
 

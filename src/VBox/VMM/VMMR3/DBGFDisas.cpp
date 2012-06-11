@@ -81,7 +81,7 @@ typedef struct
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR pSrc, uint8_t *pDest, uint32_t size, void *pvUserdata);
+static FNDISREADBYTES dbgfR3DisasInstrRead;
 
 
 
@@ -198,23 +198,18 @@ static void dbgfR3DisasInstrDone(PDBGFDISASSTATE pState)
 
 
 /**
- * Instruction reader.
+ * @callback_method_impl{FNDISREADBYTES}
  *
- * @returns VBox status code. (Why this is a int32_t and not just an int is also beyond me.)
- * @param   PtrSrc      Address to read from.
- *                      In our case this is relative to the selector pointed to by the 2nd user argument of uDisCpu.
- * @param   pu8Dst      Where to store the bytes.
- * @param   cbRead      Number of bytes to read.
- * @param   uDisCpu     Pointer to the disassembler cpu state. (Why this is a VBOXHUINTPTR is beyond me...)
- *                      In this context it's always pointer to the Core of a DBGFDISASSTATE.
+ * @remarks @a uSrcAddr is relative to the base address indicated by
+ *          DBGFDISASSTATE::GCPtrSegBase.
  */
-static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst, uint32_t cbRead, void *pvDisCpu)
+static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pvDisCpu;
-    Assert(cbRead > 0);
+    PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pDisState;
+    Assert(cbToRead > 0);
     for (;;)
     {
-        RTGCUINTPTR GCPtr = PtrSrc + pState->GCPtrSegBase;
+        RTGCUINTPTR GCPtr = uSrcAddr + pState->GCPtrSegBase;
 
         /* Need to update the page translation? */
         if (    !pState->pvPageR3
@@ -249,7 +244,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
         }
 
         /* check the segment limit */
-        if (!pState->f64Bits && PtrSrc > pState->cbSegLimit)
+        if (!pState->f64Bits && uSrcAddr > pState->cbSegLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 
         /* calc how much we can read */
@@ -260,16 +255,16 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
             if (cb > cbSeg && cbSeg)
                 cb = cbSeg;
         }
-        if (cb > cbRead)
-            cb = cbRead;
+        if (cb > cbToRead)
+            cb = cbToRead;
 
         /* read and advance */
-        memcpy(pu8Dst, (char *)pState->pvPageR3 + (GCPtr & PAGE_OFFSET_MASK), cb);
-        cbRead -= cb;
-        if (!cbRead)
+        memcpy(pbDst, (char *)pState->pvPageR3 + (GCPtr & PAGE_OFFSET_MASK), cb);
+        cbToRead -= cb;
+        if (!cbToRead)
             return VINF_SUCCESS;
-        pu8Dst += cb;
-        PtrSrc += cb;
+        pbDst    += cb;
+        uSrcAddr += cb;
     }
 }
 
@@ -506,7 +501,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     {
         uint32_t cbBits = State.Cpu.opsize;
         uint8_t *pau8Bits = (uint8_t *)alloca(cbBits);
-        rc = dbgfR3DisasInstrRead(GCPtr, pau8Bits, cbBits, &State);
+        rc = dbgfR3DisasInstrRead(&State.Cpu, pau8Bits, GCPtr, cbBits);
         AssertRC(rc);
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
             RTStrPrintf(pszOutput, cbOutput, "%.*Rhxs%*s %s",

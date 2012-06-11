@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox disassembler:
- * Core components
+ * VBox Disassembler - Core Components.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -44,7 +43,8 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction);
+static int disCoreParseInstr(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, const OPCODE *paOneByteMap,
+                             unsigned *pcbInstruction);
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 static void disasmAddString(char *psz, const char *pszString);
 static void disasmAddStringF(char *psz, const char *pszFormat, ...);
@@ -159,51 +159,13 @@ PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
     ParseImmAddrF_SizeOnly
 };
 
-/**
- * Parses one instruction.
- * The result is found in pCpu.
- *
- * @returns Success indicator.
- * @param   pCpu            Pointer to cpu structure which has DISCPUSTATE::mode set correctly.
- * @param   InstructionAddr Pointer to the instruction to parse.
- * @param   pcbInstruction  Where to store the size of the instruction.
- *                          NULL is allowed.
- */
-DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction)
-{
-    /*
-     * Reset instruction settings
-     */
-    pCpu->prefix        = PREFIX_NONE;
-    pCpu->enmPrefixSeg  = DIS_SELREG_DS;
-    pCpu->lastprefix    = 0;
-    pCpu->ModRM.u       = 0;
-    pCpu->SIB.u         = 0;
-    pCpu->param1.parval = 0;
-    pCpu->param2.parval = 0;
-    pCpu->param3.parval = 0;
-    pCpu->param1.szParam[0] = '\0';
-    pCpu->param2.szParam[0] = '\0';
-    pCpu->param3.szParam[0] = '\0';
-    pCpu->param1.flags  = 0;
-    pCpu->param2.flags  = 0;
-    pCpu->param3.flags  = 0;
-    pCpu->param1.size   = 0;
-    pCpu->param2.size   = 0;
-    pCpu->param3.size   = 0;
-    pCpu->pfnReadBytes  = 0;
-    pCpu->uFilter       = OPTYPE_ALL;
-    pCpu->pfnDisasmFnTable = pfnFullDisasm;
-
-    return RT_SUCCESS(disCoreOne(pCpu, InstructionAddr, pcbInstruction));
-}
 
 /**
  * Parses one guest instruction.
  * The result is found in pCpu and pcbInstruction.
  *
  * @returns VBox status code.
- * @param   InstructionAddr Address of the instruction to decode. What this means
+ * @param   uInstrAddr      Address of the instruction to decode. What this means
  *                          is left to the pfnReadBytes function.
  * @param   enmCpuMode      The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
@@ -212,36 +174,40 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
  * @param   pcbInstruction  Where to store the size of the instruction.
  *                          NULL is allowed.
  */
-DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_DIS_READBYTES pfnReadBytes, void *pvUser,
+DISDECL(int) DISCoreOneEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
                           PDISCPUSTATE pCpu, unsigned *pcbInstruction)
 {
+    const OPCODE *paOneByteMap;
+
     /*
-     * Reset instruction settings
+     * Initialize the CPU state.
+     * Note! The RT_BZERO make ASSUMPTIONS about the placement of apvUserData.
      */
+    RT_BZERO(pCpu, RT_OFFSETOF(DISCPUSTATE, apvUserData));
+
+    pCpu->mode              = enmCpuMode;
+    if (enmCpuMode == CPUMODE_64BIT)
+    {
+        paOneByteMap        = g_aOneByteMapX64;
+        pCpu->addrmode      = CPUMODE_64BIT;
+        pCpu->opmode        = CPUMODE_32BIT;
+    }
+    else
+    {
+        paOneByteMap        = g_aOneByteMapX86;
+        pCpu->addrmode      = enmCpuMode;
+        pCpu->opmode        = enmCpuMode;
+    }
     pCpu->prefix            = PREFIX_NONE;
     pCpu->enmPrefixSeg      = DIS_SELREG_DS;
-    pCpu->lastprefix        = 0;
-    pCpu->mode              = enmCpuMode;
-    pCpu->ModRM.u           = 0;
-    pCpu->SIB.u             = 0;
-    pCpu->param1.parval     = 0;
-    pCpu->param2.parval     = 0;
-    pCpu->param3.parval     = 0;
-    pCpu->param1.szParam[0] = '\0';
-    pCpu->param2.szParam[0] = '\0';
-    pCpu->param3.szParam[0] = '\0';
-    pCpu->param1.flags      = 0;
-    pCpu->param2.flags      = 0;
-    pCpu->param3.flags      = 0;
-    pCpu->param1.size       = 0;
-    pCpu->param2.size       = 0;
-    pCpu->param3.size       = 0;
-    pCpu->pfnReadBytes      = pfnReadBytes;
-    pCpu->apvUserData[0]    = pvUser;
-    pCpu->uFilter           = OPTYPE_ALL;
+    pCpu->uInstrAddr        = uInstrAddr;
     pCpu->pfnDisasmFnTable  = pfnFullDisasm;
+    pCpu->uFilter           = OPTYPE_ALL;
+    pCpu->rc                = VINF_SUCCESS;
+    pCpu->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
+    pCpu->apvUserData[0]    = pvUser;
 
-    return disCoreOne(pCpu, InstructionAddr, pcbInstruction);
+    return disCoreParseInstr(pCpu, uInstrAddr, paOneByteMap, pcbInstruction);
 }
 
 /**
@@ -249,155 +215,119 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_
  *
  * @returns VBox status code.
  * @param   pCpu            Initialized cpu state.
- * @param   InstructionAddr Instruction address.
+ * @param   paOneByteMap    The one byte opcode map to use.
+ * @param   uInstrAddr      Instruction address.
  * @param   pcbInstruction  Where to store the instruction size. Can be NULL.
  */
-static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction)
+static int disCoreParseInstr(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, const OPCODE *paOneByteMap, unsigned *pcbInstruction)
 {
-    const OPCODE *paOneByteMap;
-
     /*
      * Parse byte by byte.
      */
     unsigned  iByte = 0;
     unsigned  cbInc;
+    for (;;)
+    {
+        uint8_t codebyte = DISReadByte(pCpu, uInstrAddr+iByte);
+        uint8_t opcode   = paOneByteMap[codebyte].opcode;
 
-    if (pCpu->mode == CPUMODE_64BIT)
-    {
-        paOneByteMap     = g_aOneByteMapX64;
-        pCpu->addrmode   = CPUMODE_64BIT;
-        pCpu->opmode     = CPUMODE_32BIT;
-    }
-    else
-    {
-        paOneByteMap     = g_aOneByteMapX86;
-        pCpu->addrmode   = pCpu->mode;
-        pCpu->opmode     = pCpu->mode;
-    }
-
-#ifdef IN_RING3
-# ifndef __L4ENV__  /* Unfortunately, we have no exception handling in l4env */
-    try
-# else
-    pCpu->pJumpBuffer = &jumpbuffer;
-    if (setjmp(jumpbuffer) == 0)
-# endif
-#endif
-    {
-        while(1)
+        /* Hardcoded assumption about OP_* values!! */
+        if (opcode <= OP_LAST_PREFIX)
         {
-            uint8_t codebyte = DISReadByte(pCpu, InstructionAddr+iByte);
-            uint8_t opcode   = paOneByteMap[codebyte].opcode;
-
-            /* Hardcoded assumption about OP_* values!! */
-            if (opcode <= OP_LAST_PREFIX)
+            /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
+            if (opcode != OP_REX)
             {
-                /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
-                if (opcode != OP_REX)
-                {
-                    /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
-                    pCpu->lastprefix = opcode;
-                    pCpu->prefix &= ~PREFIX_REX;
-                }
-
-                switch (opcode)
-                {
-                case OP_INVALID:
-#if 0
-                    AssertMsgFailed(("Invalid opcode!!\n"));
-#endif
-                    return VERR_DIS_INVALID_OPCODE;
-
-                // segment override prefix byte
-                case OP_SEG:
-                    pCpu->enmPrefixSeg = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
-                    /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
-                    if (   pCpu->mode != CPUMODE_64BIT
-                        || pCpu->enmPrefixSeg >= DIS_SELREG_FS)
-                    {
-                        pCpu->prefix    |= PREFIX_SEG;
-                    }
-                    iByte += sizeof(uint8_t);
-                    continue;   //fetch the next byte
-
-                // lock prefix byte
-                case OP_LOCK:
-                    pCpu->prefix |= PREFIX_LOCK;
-                    iByte       += sizeof(uint8_t);
-                    continue;   //fetch the next byte
-
-                // address size override prefix byte
-                case OP_ADDRSIZE:
-                    pCpu->prefix |= PREFIX_ADDRSIZE;
-                    if (pCpu->mode == CPUMODE_16BIT)
-                        pCpu->addrmode = CPUMODE_32BIT;
-                    else
-                    if (pCpu->mode == CPUMODE_32BIT)
-                        pCpu->addrmode = CPUMODE_16BIT;
-                    else
-                        pCpu->addrmode = CPUMODE_32BIT;     /* 64 bits */
-
-                    iByte        += sizeof(uint8_t);
-                    continue;   //fetch the next byte
-
-                // operand size override prefix byte
-                case OP_OPSIZE:
-                    pCpu->prefix |= PREFIX_OPSIZE;
-                    if (pCpu->mode == CPUMODE_16BIT)
-                        pCpu->opmode = CPUMODE_32BIT;
-                    else
-                        pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
-
-                    iByte        += sizeof(uint8_t);
-                    continue;   //fetch the next byte
-
-                // rep and repne are not really prefixes, but we'll treat them as such
-                case OP_REPE:
-                    pCpu->prefix |= PREFIX_REP;
-                    iByte       += sizeof(uint8_t);
-                    continue;   //fetch the next byte
-
-                case OP_REPNE:
-                    pCpu->prefix |= PREFIX_REPNE;
-                    iByte       += sizeof(uint8_t);
-                    continue;   //fetch the next byte
-
-                case OP_REX:
-                    Assert(pCpu->mode == CPUMODE_64BIT);
-                    /* REX prefix byte */
-                    pCpu->prefix    |= PREFIX_REX;
-                    pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
-                    iByte           += sizeof(uint8_t);
-
-                    if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
-                        pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
-                    continue;   //fetch the next byte
-                }
+                /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
+                pCpu->lastprefix = opcode;
+                pCpu->prefix &= ~PREFIX_REX;
             }
 
-            unsigned uIdx = iByte;
-            iByte += sizeof(uint8_t); //first opcode byte
+            switch (opcode)
+            {
+            case OP_INVALID:
+                if (pcbInstruction)
+                    *pcbInstruction = iByte + 1;
+                return pCpu->rc = VERR_DIS_INVALID_OPCODE;
 
-            pCpu->opaddr = InstructionAddr;
-            pCpu->opcode = codebyte;
+            // segment override prefix byte
+            case OP_SEG:
+                pCpu->enmPrefixSeg = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
+                /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
+                if (   pCpu->mode != CPUMODE_64BIT
+                    || pCpu->enmPrefixSeg >= DIS_SELREG_FS)
+                {
+                    pCpu->prefix    |= PREFIX_SEG;
+                }
+                iByte += sizeof(uint8_t);
+                continue;   //fetch the next byte
 
-            cbInc = ParseInstruction(InstructionAddr + iByte, &paOneByteMap[pCpu->opcode], pCpu);
-            iByte += cbInc;
-            break;
+            // lock prefix byte
+            case OP_LOCK:
+                pCpu->prefix |= PREFIX_LOCK;
+                iByte       += sizeof(uint8_t);
+                continue;   //fetch the next byte
+
+            // address size override prefix byte
+            case OP_ADDRSIZE:
+                pCpu->prefix |= PREFIX_ADDRSIZE;
+                if (pCpu->mode == CPUMODE_16BIT)
+                    pCpu->addrmode = CPUMODE_32BIT;
+                else
+                if (pCpu->mode == CPUMODE_32BIT)
+                    pCpu->addrmode = CPUMODE_16BIT;
+                else
+                    pCpu->addrmode = CPUMODE_32BIT;     /* 64 bits */
+
+                iByte        += sizeof(uint8_t);
+                continue;   //fetch the next byte
+
+            // operand size override prefix byte
+            case OP_OPSIZE:
+                pCpu->prefix |= PREFIX_OPSIZE;
+                if (pCpu->mode == CPUMODE_16BIT)
+                    pCpu->opmode = CPUMODE_32BIT;
+                else
+                    pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
+
+                iByte        += sizeof(uint8_t);
+                continue;   //fetch the next byte
+
+            // rep and repne are not really prefixes, but we'll treat them as such
+            case OP_REPE:
+                pCpu->prefix |= PREFIX_REP;
+                iByte       += sizeof(uint8_t);
+                continue;   //fetch the next byte
+
+            case OP_REPNE:
+                pCpu->prefix |= PREFIX_REPNE;
+                iByte       += sizeof(uint8_t);
+                continue;   //fetch the next byte
+
+            case OP_REX:
+                Assert(pCpu->mode == CPUMODE_64BIT);
+                /* REX prefix byte */
+                pCpu->prefix    |= PREFIX_REX;
+                pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
+                iByte           += sizeof(uint8_t);
+
+                if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
+                    pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
+                continue;   //fetch the next byte
+            }
         }
-    }
-#ifdef IN_RING3
-# ifndef __L4ENV__
-    catch(...)
-# else
-    else  /* setjmp has returned a non-zero value: an exception occurred */
-# endif
-    {
-        pCpu->opsize = 0;
-        return VERR_DIS_GEN_FAILURE;
-    }
-#endif
 
+        unsigned uIdx = iByte;
+        iByte += sizeof(uint8_t); //first opcode byte
+
+        pCpu->opaddr = uInstrAddr;
+        pCpu->opcode = codebyte;
+
+        cbInc = ParseInstruction(uInstrAddr + iByte, &paOneByteMap[pCpu->opcode], pCpu);
+        iByte += cbInc;
+        break;
+    }
+
+    AssertMsg(pCpu->opsize == iByte || RT_FAILURE_NP(pCpu->rc), ("%u %u\n", pCpu->opsize, iByte));
     pCpu->opsize = iByte;
     if (pcbInstruction)
         *pcbInstruction = iByte;
@@ -405,7 +335,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
     if (pCpu->prefix & PREFIX_LOCK)
         disValidateLockSequence(pCpu);
 
-    return VINF_SUCCESS;
+    return pCpu->rc;
 }
 //*****************************************************************************
 //*****************************************************************************
@@ -618,14 +548,14 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
         if (pCpu->addrmode == CPUMODE_32BIT)
         {
             pParam->flags |= USE_DISPLACEMENT32;
-            pParam->disp32 = pCpu->disp;
+            pParam->disp32 = pCpu->i32SibDisp;
             disasmAddChar(pParam->szParam, '+');
             disasmPrintDisp32(pParam);
         }
         else
         {   /* sign-extend to 64 bits */
             pParam->flags |= USE_DISPLACEMENT64;
-            pParam->disp64 = pCpu->disp;
+            pParam->disp64 = pCpu->i32SibDisp;
             disasmAddChar(pParam->szParam, '+');
             disasmPrintDisp64(pParam);
         }
@@ -665,7 +595,7 @@ unsigned ParseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
         &&  pCpu->ModRM.Bits.Mod == 0)
     {
         /* Additional 32 bits displacement. No change in long mode. */
-        pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
+        pCpu->i32SibDisp = DISReadDWord(pCpu, lpszCodeBlock);
         size += sizeof(int32_t);
     }
     return size;
@@ -806,13 +736,13 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 if (pCpu->mode != CPUMODE_64BIT)
                 {
                     pParam->flags |= USE_DISPLACEMENT32;
-                    pParam->disp32 = pCpu->disp;
+                    pParam->disp32 = pCpu->i32SibDisp;
                     disasmPrintDisp32(pParam);
                 }
                 else
                 {
                     pParam->flags |= USE_RIPDISPLACEMENT32;
-                    pParam->disp32 = pCpu->disp;
+                    pParam->disp32 = pCpu->i32SibDisp;
                     disasmAddString(pParam->szParam, "RIP+");
                     disasmPrintDisp32(pParam);
                 }
@@ -835,7 +765,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 pParam->flags |= USE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
-            pParam->disp8 = pCpu->disp;
+            pParam->disp8 = pCpu->i32SibDisp;
             pParam->flags |= USE_DISPLACEMENT8;
 
             if (pParam->disp8 != 0)
@@ -858,7 +788,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 pParam->flags |= USE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
-            pParam->disp32 = pCpu->disp;
+            pParam->disp32 = pCpu->i32SibDisp;
             pParam->flags |= USE_DISPLACEMENT32;
 
             if (pParam->disp32 != 0)
@@ -883,7 +813,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmAddChar(pParam->szParam, '[');
             if (rm == 6)
             {//16 bits displacement
-                pParam->disp16 = pCpu->disp;
+                pParam->disp16 = pCpu->i32SibDisp;
                 pParam->flags |= USE_DISPLACEMENT16;
                 disasmPrintDisp16(pParam);
             }
@@ -899,7 +829,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
             disasmModRMReg16(pCpu, pOp, rm, pParam);
-            pParam->disp8 = pCpu->disp;
+            pParam->disp8 = pCpu->i32SibDisp;
             pParam->flags |= USE_BASE | USE_DISPLACEMENT8;
 
             if (pParam->disp8 != 0)
@@ -915,7 +845,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
             disasmModRMReg16(pCpu, pOp, rm, pParam);
-            pParam->disp16 = pCpu->disp;
+            pParam->disp16 = pCpu->i32SibDisp;
             pParam->flags |= USE_BASE | USE_DISPLACEMENT16;
 
             if (pParam->disp16 != 0)
@@ -967,19 +897,19 @@ unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         {
         case 0: /* Effective address */
             if (rm == 5) {  /* 32 bits displacement */
-                pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
+                pCpu->i32SibDisp = DISReadDWord(pCpu, lpszCodeBlock);
                 size += sizeof(int32_t);
             }
             /* else register address */
             break;
 
         case 1: /* Effective address + 8 bits displacement */
-            pCpu->disp = (int8_t)DISReadByte(pCpu, lpszCodeBlock);
+            pCpu->i32SibDisp = (int8_t)DISReadByte(pCpu, lpszCodeBlock);
             size += sizeof(char);
             break;
 
         case 2: /* Effective address + 32 bits displacement */
-            pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
+            pCpu->i32SibDisp = DISReadDWord(pCpu, lpszCodeBlock);
             size += sizeof(int32_t);
             break;
 
@@ -994,19 +924,19 @@ unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         {
         case 0: /* Effective address */
             if (rm == 6) {
-                pCpu->disp = DISReadWord(pCpu, lpszCodeBlock);
+                pCpu->i32SibDisp = DISReadWord(pCpu, lpszCodeBlock);
                 size += sizeof(uint16_t);
             }
             /* else register address */
             break;
 
         case 1: /* Effective address + 8 bits displacement */
-            pCpu->disp = (int8_t)DISReadByte(pCpu, lpszCodeBlock);
+            pCpu->i32SibDisp = (int8_t)DISReadByte(pCpu, lpszCodeBlock);
             size += sizeof(char);
             break;
 
         case 2: /* Effective address + 32 bits displacement */
-            pCpu->disp = (int16_t)DISReadWord(pCpu, lpszCodeBlock);
+            pCpu->i32SibDisp = (int16_t)DISReadWord(pCpu, lpszCodeBlock);
             size += sizeof(uint16_t);
             break;
 
@@ -2472,12 +2402,8 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER
         break;
 
     default:
-#ifdef IN_RING3
         Log(("disasmModRMReg %x:%x failed!!\n", type, subtype));
-        DIS_THROW(ExceptionInvalidModRM);
-#else
-        AssertMsgFailed(("Oops!\n"));
-#endif
+        pCpu->rc = VERR_DIS_INVALID_MODRM;
         break;
     }
 }
@@ -2499,19 +2425,14 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMET
 //*****************************************************************************
 void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER pParam)
 {
-    NOREF(pCpu); NOREF(pOp);
-#if 0 //def DEBUG_Sander
-    AssertMsg(idx < RT_ELEMENTS(szModRMSegReg), ("idx=%d\n", idx));
-#endif
-#ifdef IN_RING3
+    NOREF(pOp);
     if (idx >= RT_ELEMENTS(szModRMSegReg))
     {
         Log(("disasmModRMSReg %d failed!!\n", idx));
-        DIS_THROW(ExceptionInvalidParameter);
+        pCpu->rc = VERR_DIS_INVALID_PARAMETER;
+        return;
     }
-#endif
 
-    idx = RT_MIN(idx, RT_ELEMENTS(szModRMSegReg)-1);
     disasmAddString(pParam->szParam, szModRMSegReg[idx]);
     pParam->flags |= USE_REG_SEG;
     pParam->base.reg_seg = (DIS_SELREG)idx;
@@ -2609,103 +2530,195 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
     if (pCpu->prefix & PREFIX_SEG)
         disasmAddStringF1(pParam->szParam, "%s:", szModRMSegReg[pCpu->enmPrefixSeg]);
 }
+
+
+/**
+ * Slow path for storing instruction bytes.
+ *
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ * @param   pbSrc               The bytes.
+ * @param   cbSrc               The number of bytes.
+ */
+DECL_NO_INLINE(static, void)
+disStoreInstrBytesSlow(PDISCPUSTATE pCpu, RTUINTPTR uAddress, const uint8_t *pbSrc, size_t cbSrc)
+{
+    /*
+     * Figure out which case it is.
+     */
+    uint32_t  cbInstr = pCpu->opsize;
+    RTUINTPTR off     = uAddress - pCpu->uInstrAddr;
+    if (off < cbInstr)
+    {
+        if (off + cbSrc <= cbInstr)
+        {
+            AssertMsg(memcmp(&pCpu->abInstr[off], pbSrc, cbSrc) == 0,
+                      ("%RTptr LB %zx off=%RTptr (%.*Rhxs)", uAddress, cbSrc, off, cbInstr, pCpu->abInstr));
+            return; /* fully re-reading old stuff. */
+        }
+
+        /* Only partially re-reading stuff, skip ahead and add the rest. */
+        uint32_t cbAlreadyRead = cbInstr - (uint32_t)off;
+        Assert(memcmp(&pCpu->abInstr[off], pbSrc, cbAlreadyRead) == 0);
+        uAddress += cbAlreadyRead;
+        pbSrc    += cbAlreadyRead;
+        cbSrc    -= cbAlreadyRead;
+    }
+
+    if (off >= sizeof(cbInstr))
+    {
+        /* The instruction is too long! This shouldn't happen. */
+        AssertMsgFailed(("%RTptr LB %zx off=%RTptr (%.*Rhxs)", uAddress, cbSrc, off, cbInstr, pCpu->abInstr));
+        return;
+    }
+    else if (off > cbInstr)
+    {
+        /* Mind the gap - this shouldn't happen, but read the gap bytes if it does. */
+        AssertMsgFailed(("%RTptr LB %zx off=%RTptr (%.16Rhxs)", uAddress, cbSrc, off, cbInstr, pCpu->abInstr));
+        uint32_t cbGap = off - cbInstr;
+        int rc = pCpu->pfnReadBytes(pCpu, &pCpu->abInstr[cbInstr], uAddress - cbGap, cbGap);
+        if (RT_FAILURE(rc))
+        {
+            pCpu->rc = VERR_DIS_MEM_READ;
+            RT_BZERO(&pCpu->abInstr[cbInstr], cbGap);
+        }
+        pCpu->opsize = cbInstr = off;
+    }
+
+    /*
+     * Copy the bytes.
+     */
+    if (off + cbSrc <= sizeof(pCpu->abInstr))
+    {
+        memcpy(&pCpu->abInstr[cbInstr], pbSrc, cbSrc);
+        pCpu->opsize = cbInstr + cbSrc;
+    }
+    else
+    {
+        uint32_t cbToCopy = sizeof(pCpu->abInstr) - off;
+        memcpy(&pCpu->abInstr[cbInstr], pbSrc, cbToCopy);
+        pCpu->opsize = sizeof(pCpu->abInstr);
+        AssertMsgFailed(("%RTptr LB %zx off=%RTptr (%.*Rhxs)", uAddress, cbSrc, off, sizeof(pCpu->abInstr), pCpu->abInstr));
+    }
+}
+
+DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pCpu, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
+{
+#ifdef IN_RING0
+    AssertMsgFailed(("DISReadWord with no read callback in ring 0!!\n"));
+    RT_BZERO(pbDst, cbToRead);
+    return VERR_DIS_NO_READ_CALLBACK;
+#else
+    memcpy(pbDst, (void const *)(uintptr_t)uSrcAddr, cbToRead);
+    return VINF_SUCCESS;
+#endif
+}
+
 //*****************************************************************************
 /* Read functions for getting the opcode bytes */
 //*****************************************************************************
-uint8_t DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
+uint8_t DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    if (pCpu->pfnReadBytes)
+    uint8_t bTemp = 0;
+    int rc = pCpu->pfnReadBytes(pCpu, &bTemp, uAddress, sizeof(bTemp));
+    if (RT_FAILURE(rc))
     {
-         uint8_t temp = 0;
-         int     rc;
-
-         rc = pCpu->pfnReadBytes(pAddress, &temp, sizeof(temp), pCpu);
-         if (RT_FAILURE(rc))
-         {
-             Log(("DISReadByte failed!!\n"));
-             DIS_THROW(ExceptionMemRead);
-         }
-         return temp;
+        Log(("DISReadByte failed!!\n"));
+        pCpu->rc = VERR_DIS_MEM_READ;
     }
-#ifdef IN_RING0
-    AssertMsgFailed(("DISReadByte with no read callback in ring 0!!\n"));
-    return 0;
-#else
-    return *(uint8_t *)(uintptr_t)pAddress;
-#endif
+
+/** @todo change this into reading directly into abInstr and use it as a
+ *        cache. */
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
+                  && pCpu->opsize + sizeof(bTemp) < sizeof(pCpu->abInstr)))
+        pCpu->abInstr[pCpu->opsize++] = bTemp;
+    else
+        disStoreInstrBytesSlow(pCpu, uAddress, &bTemp, sizeof(bTemp));
+
+    return bTemp;
 }
 //*****************************************************************************
 //*****************************************************************************
-uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
+uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    if (pCpu->pfnReadBytes)
+    RTUINT16U uTemp;
+    uTemp.u = 0;
+    int rc = pCpu->pfnReadBytes(pCpu, uTemp.au8, uAddress, sizeof(uTemp));
+    if (RT_FAILURE(rc))
     {
-         uint16_t temp = 0;
-         int     rc;
-
-         rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if (RT_FAILURE(rc))
-         {
-             Log(("DISReadWord failed!!\n"));
-             DIS_THROW(ExceptionMemRead);
-         }
-         return temp;
+        Log(("DISReadWord failed!!\n"));
+        pCpu->rc = VERR_DIS_MEM_READ;
     }
-#ifdef IN_RING0
-    AssertMsgFailed(("DISReadWord with no read callback in ring 0!!\n"));
-    return 0;
-#else
-    return *(uint16_t *)(uintptr_t)pAddress;
-#endif
+
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
+                  && pCpu->opsize + sizeof(uTemp) < sizeof(pCpu->abInstr)))
+    {
+        pCpu->abInstr[pCpu->opsize    ] = uTemp.au8[0];
+        pCpu->abInstr[pCpu->opsize + 1] = uTemp.au8[1];
+        pCpu->opsize += 2;
+    }
+    else
+        disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
+
+    return uTemp.u;
 }
 //*****************************************************************************
 //*****************************************************************************
-uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
+uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    if (pCpu->pfnReadBytes)
+    RTUINT32U uTemp;
+    uTemp.u = 0;
+    int rc = pCpu->pfnReadBytes(pCpu, uTemp.au8, uAddress, sizeof(uTemp));
+    if (RT_FAILURE(rc))
     {
-         uint32_t temp = 0;
-         int     rc;
-
-         rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if (RT_FAILURE(rc))
-         {
-             Log(("DISReadDWord failed!!\n"));
-             DIS_THROW(ExceptionMemRead);
-         }
-         return temp;
+        Log(("DISReadDWord failed!!\n"));
+        pCpu->rc = VERR_DIS_MEM_READ;
     }
-#ifdef IN_RING0
-    AssertMsgFailed(("DISReadDWord with no read callback in ring 0!!\n"));
-    return 0;
-#else
-    return *(uint32_t *)(uintptr_t)pAddress;
-#endif
+
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
+                  && pCpu->opsize + sizeof(uTemp) < sizeof(pCpu->abInstr)))
+    {
+        pCpu->abInstr[pCpu->opsize    ] = uTemp.au8[0];
+        pCpu->abInstr[pCpu->opsize + 1] = uTemp.au8[1];
+        pCpu->abInstr[pCpu->opsize + 2] = uTemp.au8[2];
+        pCpu->abInstr[pCpu->opsize + 3] = uTemp.au8[3];
+        pCpu->opsize += 4;
+    }
+    else
+        disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
+
+    return uTemp.u;
 }
 //*****************************************************************************
 //*****************************************************************************
-uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
+uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    if (pCpu->pfnReadBytes)
+    RTUINT64U uTemp;
+    uTemp.u = 0;
+    int rc = pCpu->pfnReadBytes(pCpu, uTemp.au8, uAddress, sizeof(uTemp));
+    if (RT_FAILURE(rc))
     {
-         uint64_t temp = 0;
-         int     rc;
-
-         rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if (RT_FAILURE(rc))
-         {
-             Log(("DISReadQWord %x failed!!\n", pAddress));
-             DIS_THROW(ExceptionMemRead);
-         }
-
-         return temp;
+        Log(("DISReadQWord %x failed!!\n", uAddress));
+        pCpu->rc = VERR_DIS_MEM_READ;
     }
-#ifdef IN_RING0
-    AssertMsgFailed(("DISReadQWord with no read callback in ring 0!!\n"));
-    return 0;
-#else
-    return *(uint64_t *)(uintptr_t)pAddress;
-#endif
+
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
+                  && pCpu->opsize + sizeof(uTemp) < sizeof(pCpu->abInstr)))
+    {
+        pCpu->abInstr[pCpu->opsize    ] = uTemp.au8[0];
+        pCpu->abInstr[pCpu->opsize + 1] = uTemp.au8[1];
+        pCpu->abInstr[pCpu->opsize + 2] = uTemp.au8[2];
+        pCpu->abInstr[pCpu->opsize + 3] = uTemp.au8[3];
+        pCpu->abInstr[pCpu->opsize + 4] = uTemp.au8[4];
+        pCpu->abInstr[pCpu->opsize + 5] = uTemp.au8[5];
+        pCpu->abInstr[pCpu->opsize + 6] = uTemp.au8[6];
+        pCpu->abInstr[pCpu->opsize + 7] = uTemp.au8[7];
+        pCpu->opsize += 4;
+    }
+    else
+        disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
+
+    return uTemp.u;
 }
 
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)

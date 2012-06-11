@@ -723,70 +723,55 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
 }
 
 /**
- * Read callback for disassembly function; supports reading bytes that cross a page boundary
- *
- * @returns VBox status code.
- * @param   pSrc        GC source pointer
- * @param   pDest       HC destination pointer
- * @param   size        Number of bytes to read
- * @param   dwUserdata  Callback specific user data (pCpu)
- *
+ * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) CSAMR3ReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata)
+static DECLCALLBACK(int) CSAMR3ReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
-    PVM           pVM      = (PVM)pCpu->apvUserData[0];
-    RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pCpu->apvUserData[1];
-    RTGCUINTPTR32 pInstrGC = (uintptr_t)pCpu->apvUserData[2];
-    int           orgsize  = size;
-    Assert(pVM->cCpus == 1);
-    PVMCPU        pVCpu = VMMGetCpu0(pVM);
+    PVM           pVM      = (PVM)pDisState->apvUserData[0];
+    RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pDisState->apvUserData[1];
+    RTGCUINTPTR32 pInstrGC = pDisState->uInstrAddr;
+    int           orgsize  = cbToRead;
+    PVMCPU        pVCpu    = VMMGetCpu0(pVM);
 
-    /* We are not interested in patched instructions, so read the original opcode bytes. */
-    /** @note single instruction patches (int3) are checked in CSAMR3AnalyseCallback */
-    for (int i=0;i<orgsize;i++)
+    /* We are not interested in patched instructions, so read the original opcode bytes.
+       Note! single instruction patches (int3) are checked in CSAMR3AnalyseCallback */
+    for (int i = 0; i < orgsize; i++)
     {
-        int rc = PATMR3QueryOpcode(pVM, (RTRCPTR)pSrc, pDest);
-        if (RT_SUCCESS(rc))
-        {
-            pSrc++;
-            pDest++;
-            size--;
-        }
-        else
+        int rc = PATMR3QueryOpcode(pVM, (RTRCPTR)uSrcAddr, pbDst);
+        if (RT_FAILURE(rc))
             break;
+        uSrcAddr++;
+        pbDst++;
+        cbToRead--;
     }
-    if (size == 0)
+    if (cbToRead == 0)
         return VINF_SUCCESS;
 
-    if (PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(pSrc + size - 1) && !PATMIsPatchGCAddr(pVM, pSrc))
-    {
-        return PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, size);
-    }
-    else
-    {
-        Assert(pInstrHC);
+    if (PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(uSrcAddr + cbToRead - 1) && !PATMIsPatchGCAddr(pVM, uSrcAddr))
+        return PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
 
-        /* pInstrHC is the base address; adjust according to the GC pointer. */
-        pInstrHC = pInstrHC + (pSrc - pInstrGC);
+    Assert(pInstrHC);
 
-        memcpy(pDest, (void *)pInstrHC, size);
-    }
+    /* pInstrHC is the base address; adjust according to the GC pointer. */
+    pInstrHC = pInstrHC + (uSrcAddr - pInstrGC);
+
+    memcpy(pbDst, (void *)pInstrHC, cbToRead);
 
     return VINF_SUCCESS;
 }
 
-inline int CSAMR3DISInstr(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR InstrGC, uint8_t *InstrHC, uint32_t *pOpsize, char *pszOutput)
+DECLINLINE(int) CSAMR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCPUMODE enmCpuMode,
+                               PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput)
 {
-    (pCpu)->pfnReadBytes  = CSAMR3ReadBytes;
-    (pCpu)->apvUserData[0] = pVM;
     (pCpu)->apvUserData[1] = InstrHC;
     (pCpu)->apvUserData[2] = (void *)(uintptr_t)InstrGC; Assert(sizeof(InstrGC) <= sizeof(pCpu->apvUserData[0]));
 #ifdef DEBUG
-    return DISInstrEx(pCpu, InstrGC, 0, pOpsize, pszOutput, OPTYPE_ALL);
+    return DISInstrEx(InstrGC, 0, enmCpuMode, CSAMR3ReadBytes, pVM, OPTYPE_ALL,
+                      pCpu, pcbInstr, pszOutput);
 #else
     /* We are interested in everything except harmless stuff */
-    return DISInstrEx(pCpu, InstrGC, 0, pOpsize, pszOutput, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK));
+    return DISInstrEx(InstrGC, 0, enmCpuMode, CSAMR3ReadBytes, pVM, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK),
+                      pCpu, pcbInstr, pszOutput);
 #endif
 }
 
@@ -882,8 +867,8 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 }
                 Assert(VALID_PTR(pCurInstrHC));
 
-                cpu.mode = (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-                rc = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
+                rc = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                    &cpu, &opsize, NULL);
             }
             AssertRC(rc);
             if (RT_FAILURE(rc))
@@ -1053,7 +1038,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
              *   - lea genregX, [genregX (+ 0)]
              * - push ebp after the filler (can extend this later); aligned at at least a 4 byte boundary
              */
-            for (int j=0;j<16;j++)
+            for (int j = 0; j < 16; j++)
             {
                 uint8_t *pCurInstrHC = (uint8_t *)CSAMGCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
                 if (pCurInstrHC == NULL)
@@ -1063,13 +1048,14 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 }
                 Assert(VALID_PTR(pCurInstrHC));
 
-                cpu.mode = (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
                 STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
-                rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, szOutput);
+                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                     &cpu, &opsize, szOutput);
                 if (RT_SUCCESS(rc2)) Log(("CSAM Call Analysis: %s", szOutput));
 #else
-                rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
+                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                     &cpu, &opsize, NULL);
 #endif
                 STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
                 if (RT_FAILURE(rc2))
@@ -1275,13 +1261,14 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             }
             Assert(VALID_PTR(pCurInstrHC));
 
-            cpu.mode = (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
             STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
-            rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, szOutput);
+            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                 &cpu, &opsize, szOutput);
             if (RT_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
-            rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
+            rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                 &cpu, &opsize, NULL);
 #endif
             STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
         }

@@ -79,16 +79,20 @@ static const uint8_t g_ab32BitCode[] =
 };
 
 
-DECLCALLBACK(int) DisasmTest1ReadCode(RTUINTPTR SrcAddr, uint8_t *pbDst, uint32_t cb, void *pvUser)
+/**
+ * @callback_method_impl{FNDISREADBYTES}
+ */
+static DECLCALLBACK(int) DisasmTest1ReadCode(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    NOREF(pvUser);
-    while (cb > 0)
+    NOREF(pDisState);
+    while (cbToRead > 0)
     {
-        *pbDst = g_ab32BitCode[SrcAddr];
+        *pbDst = g_ab32BitCode[uSrcAddr];
+
         /* next */
         pbDst++;
-        SrcAddr++;
-        cb--;
+        uSrcAddr++;
+        cbToRead--;
     }
     return 0;
 }

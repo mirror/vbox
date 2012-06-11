@@ -516,24 +516,13 @@ VMMR3DECL(int) PATMR3Reset(PVM pVM)
     return rc;
 }
 
-/**
- * Read callback for disassembly function; supports reading bytes that cross a page boundary
- *
- * @returns VBox status code.
- * @param   pSrc        GC source pointer
- * @param   pDest       HC destination pointer
- * @param   size        Number of bytes to read
- * @param   pvUserdata  Callback specific user data (pCpu)
- *
- */
-int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata)
+DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
-    PATMDISASM   *pDisInfo = (PATMDISASM *)pCpu->apvUserData[0];
-    int           orgsize  = size;
+    PATMDISASM   *pDisInfo = (PATMDISASM *)pDisState->apvUserData[0];
+    int           orgsize  = cbToRead;
 
-    Assert(size);
-    if (size == 0)
+    Assert(cbToRead);
+    if (cbToRead == 0)
         return VERR_INVALID_PARAMETER;
 
     /*
@@ -543,49 +532,45 @@ int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdat
     /** @todo could change in the future! */
     if (pDisInfo->fReadFlags & PATMREAD_ORGCODE)
     {
-        for (int i=0;i<orgsize;i++)
+        for (int i = 0; i < orgsize; i++)
         {
-            int rc = PATMR3QueryOpcode(pDisInfo->pVM, (RTRCPTR)pSrc, pDest);
-            if (RT_SUCCESS(rc))
-            {
-                pSrc++;
-                pDest++;
-                size--;
-            }
-            else break;
+            int rc = PATMR3QueryOpcode(pDisInfo->pVM, (RTRCPTR)uSrcAddr, pbDst);
+            if (RT_FAILURE(rc))
+                break;
+            uSrcAddr++;
+            pbDst++;
+            cbToRead--;
         }
-        if (size == 0)
+        if (cbToRead == 0)
             return VINF_SUCCESS;
 #ifdef VBOX_STRICT
         if (    !(pDisInfo->pPatchInfo->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER))
             &&  !(pDisInfo->fReadFlags & PATMREAD_NOCHECK))
         {
-            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, pSrc, NULL) == false);
-            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, pSrc+size-1, NULL) == false);
+            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, uSrcAddr, NULL) == false);
+            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, uSrcAddr+cbToRead-1, NULL) == false);
         }
 #endif
     }
 
     if (    !pDisInfo->pInstrHC
-        ||  (   PAGE_ADDRESS(pDisInfo->pInstrGC) != PAGE_ADDRESS(pSrc + size - 1)
-             && !PATMIsPatchGCAddr(pDisInfo->pVM, pSrc)))
+        ||  (   PAGE_ADDRESS(pDisInfo->pInstrGC) != PAGE_ADDRESS(uSrcAddr + cbToRead - 1)
+             && !PATMIsPatchGCAddr(pDisInfo->pVM, uSrcAddr)))
     {
-        Assert(!PATMIsPatchGCAddr(pDisInfo->pVM, pSrc));
-        return PGMPhysSimpleReadGCPtr(&pDisInfo->pVM->aCpus[0], pDest, pSrc, size);
+        Assert(!PATMIsPatchGCAddr(pDisInfo->pVM, uSrcAddr));
+        return PGMPhysSimpleReadGCPtr(&pDisInfo->pVM->aCpus[0], pbDst, uSrcAddr, cbToRead);
     }
-    else
-    {
-        Assert(pDisInfo->pInstrHC);
 
-        uint8_t *pInstrHC = pDisInfo->pInstrHC;
+    Assert(pDisInfo->pInstrHC);
 
-        Assert(pInstrHC);
+    uint8_t *pInstrHC = pDisInfo->pInstrHC;
 
-        /* pInstrHC is the base address; adjust according to the GC pointer. */
-        pInstrHC = pInstrHC + (pSrc - pDisInfo->pInstrGC);
+    Assert(pInstrHC);
 
-        memcpy(pDest, (void *)pInstrHC, size);
-    }
+    /* pInstrHC is the base address; adjust according to the GC pointer. */
+    pInstrHC = pInstrHC + (uSrcAddr - pDisInfo->pInstrGC);
+
+    memcpy(pbDst, (void *)pInstrHC, cbToRead);
 
     return VINF_SUCCESS;
 }
@@ -2836,7 +2821,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
 
     if (pPatch->flags & PATMFL_INT3_REPLACEMENT_BLOCK)
     {
-        /*uint8_t ASMInt3 = 0xCC; - unused */
+        /*uint8_t bASMInt3 = 0xCC; - unused */
 
         Log(("PATMR3PatchBlock %RRv -> int 3 callable patch.\n", pPatch->pPrivInstrGC));
         /* Replace first opcode byte with 'int 3'. */
@@ -3785,17 +3770,17 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
  */
 static int patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
 {
-    uint8_t ASMInt3 = 0xCC;
+    uint8_t bASMInt3 = 0xCC;
     int     rc;
 
     Assert(pPatch->flags & (PATMFL_INT3_REPLACEMENT|PATMFL_INT3_REPLACEMENT_BLOCK));
     Assert(pPatch->uState != PATCH_ENABLED);
 
     /* Replace first opcode byte with 'int 3'. */
-    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pPatch->pPrivInstrGC, &ASMInt3, sizeof(ASMInt3));
+    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pPatch->pPrivInstrGC, &bASMInt3, sizeof(bASMInt3));
     AssertRC(rc);
 
-    pPatch->cbPatchJump = sizeof(ASMInt3);
+    pPatch->cbPatchJump = sizeof(bASMInt3);
 
     return rc;
 }
@@ -3822,7 +3807,8 @@ static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
 }
 
 /**
- * Replace an instruction with a breakpoint (0xCC), that is handled dynamically in the guest context.
+ * Replace an instruction with a breakpoint (0xCC), that is handled dynamically
+ * in the raw-mode context.
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
@@ -3834,9 +3820,10 @@ static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
  * @note    returns failure if patching is not allowed or possible
  *
  */
-VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch)
+VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu,
+                                    PPATCHINFO pPatch)
 {
-    uint8_t ASMInt3 = 0xCC;
+    uint8_t bASMInt3 = 0xCC;
     int rc;
 
     /* Note: Do not use patch memory here! It might called during patch installation too. */
@@ -3854,7 +3841,7 @@ VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t
     /* Save the original instruction. */
     rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
     AssertRC(rc);
-    pPatch->cbPatchJump = sizeof(ASMInt3);  /* bit of a misnomer in this case; size of replacement instruction. */
+    pPatch->cbPatchJump = sizeof(bASMInt3);  /* bit of a misnomer in this case; size of replacement instruction. */
 
     pPatch->flags |= PATMFL_INT3_REPLACEMENT;
 

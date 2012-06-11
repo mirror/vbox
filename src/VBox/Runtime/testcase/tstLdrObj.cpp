@@ -97,9 +97,7 @@ extern "C" DECLEXPORT(void *) SomeExportFunction4(void)
 {
     static unsigned cb;
     DISCPUSTATE Cpu;
-    memset(&Cpu, 0, sizeof(Cpu));
-    Cpu.mode = CPUMODE_32BIT;
-    DISCoreOne(&Cpu, (uintptr_t)SomeExportFunction3, &cb);
+    DISCoreOneEx((uintptr_t)SomeExportFunction3, CPUMODE_32BIT, NULL /*pfnReadBytes*/, NULL /*pvUser*/, &Cpu, &cb);
     return (void *)(uintptr_t)&SomeExportFunction1;
 }
 
