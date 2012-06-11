@@ -253,7 +253,7 @@ post:
 
 		;; any other shutdown status values are ignored
 		;; OpenSolaris sets the status to 0Ah in some cases?
-;		jmp	normal_post
+		jmp	normal_post
 
 
 		;; routine to write the pointer in DX:AX to memory starting
