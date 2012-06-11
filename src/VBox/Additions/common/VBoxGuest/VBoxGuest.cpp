@@ -1252,7 +1252,7 @@ int VBoxGuestCommonIOCtl_SetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGu
     pDevExt->MouseNotifyCallback = *pNotify;
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
 
-    /* Make sure an active ISR is referencing the old data - hacky but should be
+    /* Make sure no active ISR is referencing the old data - hacky but should be
      * effective. */
     while (pDevExt->cISR > 0)
         ASMNopPause();
