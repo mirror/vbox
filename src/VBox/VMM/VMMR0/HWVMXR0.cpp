@@ -5341,6 +5341,11 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     /* Disable interrupts. */
     uOldEFlags = ASMIntDisableFlags();
 
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    RTCPUID idHostCpu = RTMpCpuId();
+    CPUMR0SetLApic(pVM, idHostCpu);
+#endif
+
     pCpu = HWACCMR0GetCurrentCpu();
     HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
 
