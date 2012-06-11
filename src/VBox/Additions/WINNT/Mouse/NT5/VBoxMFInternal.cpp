@@ -149,7 +149,7 @@ static NTSTATUS vboxNewProtRegisterMouseEventCb(BOOLEAN fRegister)
     VBoxGuestMouseSetNotifyCallback CbInfo = {};
     CbInfo.pfnNotify = fRegister ? vboxNewProtMouseEventCb : NULL;
 
-    NTSTATUS Status = vboxGdcSubmit(VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK, &CbInfo, sizeof (CbInfo));
+    NTSTATUS Status = vboxGdcSubmit(VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK, &CbInfo, sizeof (CbInfo));
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxGdcSubmit failed Status(0x%x)", Status));

@@ -726,8 +726,8 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     for (i = 0; i < RT_ELEMENTS(pDevExt->acMouseFeatureUsage); ++i)
         pDevExt->acMouseFeatureUsage[i] = 0;
     pDevExt->fMouseStatus = 0;
-    pDevExt->MouseSetNotifyCallback.pfnNotify = NULL;
-    pDevExt->MouseSetNotifyCallback.pvNotify = NULL;
+    pDevExt->MouseNotifyCallback.pfnNotify = NULL;
+    pDevExt->MouseNotifyCallback.pvUser = NULL;
     pDevExt->cISR = 0;
 
     /*
@@ -1247,15 +1247,16 @@ static int VBoxGuestCommonIOCtl_GetVMMDevPort(PVBOXGUESTDEVEXT pDevExt, VBoxGues
 int VBoxGuestCommonIOCtl_SetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGuestMouseSetNotifyCallback *pNotify)
 {
     Log(("VBoxGuestCommonIOCtl: SET_MOUSE_NOTIFY_CALLBACK\n"));
-    RTSpinlockAcquire(pDevExt->SessionSpinlock);
-    ASMAtomicWriteNullPtr(&pDevExt->MouseSetNotifyCallback.pfnNotify);
-    pDevExt->MouseSetNotifyCallback.pvNotify = pNotify->pvNotify;
-    ASMAtomicWritePtr(&pDevExt->MouseSetNotifyCallback.pfnNotify,
-                      pNotify->pfnNotify);
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
-    /* Make sure no one is referencing the old data - hacky but should be
+
+    RTSpinlockAcquire(pDevExt->EventSpinlock);
+    pDevExt->MouseNotifyCallback = *pNotify;
+    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+
+    /* Make sure an active ISR is referencing the old data - hacky but should be
      * effective. */
-    while (pDevExt->cISR > 0);
+    while (pDevExt->cISR > 0)
+        ASMNopPause();
+
     return VINF_SUCCESS;
 }
 #endif
@@ -2539,10 +2540,9 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 break;
 
 #ifndef RT_OS_WINDOWS  /* Windows has its own implementation of this. */
-            case VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK:
+            case VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK:
                 CHECKRET_RING0("SET_MOUSE_NOTIFY_CALLBACK");
-                CHECKRET_SIZE("SET_MOUSE_NOTIFY_CALLBACK",
-                           sizeof(VBoxGuestMouseSetNotifyCallback));
+                CHECKRET_SIZE("SET_MOUSE_NOTIFY_CALLBACK", sizeof(VBoxGuestMouseSetNotifyCallback));
                 rc = VBoxGuestCommonIOCtl_SetMouseNotifyCallback(pDevExt, (VBoxGuestMouseSetNotifyCallback *)pvData);
                 break;
 #endif
@@ -2638,10 +2638,13 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
  */
 bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
 {
-    bool                    fMousePositionChanged = false;
-    VMMDevEvents volatile  *pReq                  = pDevExt->pIrqAckEvents;
-    int                     rc                    = 0;
-    bool                    fOurIrq;
+#ifndef RT_OS_WINDOWS
+    VBoxGuestMouseSetNotifyCallback MouseNotifyCallback   = { NULL, NULL };
+#endif
+    bool                            fMousePositionChanged = false;
+    VMMDevEvents volatile          *pReq                  = pDevExt->pIrqAckEvents;
+    int                             rc                    = 0;
+    bool                            fOurIrq;
 
     /*
      * Make sure we've initialized the device extension.
@@ -2680,6 +2683,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
              */
             if (fEvents & VMMDEV_EVENT_MOUSE_POSITION_CHANGED)
             {
+                MouseNotifyCallback = pDevExt->MouseNotifyCallback;
                 fMousePositionChanged = true;
                 fEvents &= ~VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
             }
@@ -2759,8 +2763,8 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
         ASMAtomicIncU32(&pDevExt->u32MousePosChangedSeq);
         VBoxGuestNativeISRMousePollEvent(pDevExt);
 #ifndef RT_OS_WINDOWS
-        if (pDevExt->MouseSetNotifyCallback.pfnNotify)
-            pDevExt->MouseSetNotifyCallback.pfnNotify(pDevExt->MouseSetNotifyCallback.pvNotify);
+        if (MouseNotifyCallback.pfnNotify)
+            MouseNotifyCallback.pfnNotify(MouseNotifyCallback.pvUser);
 #endif
     }
 
