@@ -67,6 +67,9 @@ typedef struct RTR0MEMOBJSOL
     /** Set if large pages are involved in an RTR0MEMOBJTYPE_PHYS
      *  allocation. */
     bool                fLargePage;
+    /** Whether we have individual pages or a kernel-mapped virtual memory block in
+     *  an RTR0MEMOBJTYPE_PHYS_NC allocation. */
+    bool                fIndivPages;
 } RTR0MEMOBJSOL, *PRTR0MEMOBJSOL;
 
 
@@ -153,7 +156,8 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr, size_t cbPage)
     if (RT_LIKELY(pPage))
     {
         /*
-         * Lock this page into memory "long term" to prevent paging out of this page.
+         * Lock this page into memory "long term" to prevent paging out of this page
+         * when we drop the page lock temporarily (during free).
          */
         page_pp_lock(pPage, 0 /* COW */, 1 /* Kernel */);
         page_io_unlock(pPage);
@@ -168,14 +172,13 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr, size_t cbPage)
 /**
  * Allocates physical, non-contiguous memory of pages.
  *
- * @param uPhysHi   The upper physical address limit (inclusive).
  * @param puPhys    Where to store the physical address of first page. Optional,
  *                  can be NULL.
  * @param cb        The size of the allocation.
  *
  * @return Array of allocated pages, NULL on failure.
  */
-static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size_t cb)
+static page_t **rtR0MemObjSolPagesAlloc(uint64_t *puPhys, size_t cb)
 {
     /*
      * VM1:
@@ -190,7 +193,7 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
     /*
      * Non-pageable memory reservation request for _4K pages, don't sleep.
      */
-    pgcnt_t cPages = (cb + PAGE_SIZE - 1) >> PAGE_SHIFT;
+    size_t cPages = (cb + PAGE_SIZE - 1) >> PAGE_SHIFT;
     int rc = page_resv(cPages, KM_NOSLEEP);
     if (rc)
     {
@@ -202,44 +205,15 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
              * Get pages from kseg, the 'virtAddr' here is only for colouring but unfortunately
              * we don't yet have the 'virtAddr' to which this memory may be mapped.
              */
-            caddr_t virtAddr = NULL;
+            caddr_t virtAddr = 0;
             for (size_t i = 0; i < cPages; i++, virtAddr += PAGE_SIZE)
             {
-                uint32_t cTries = 3;
-                page_t *pPage   = NULL;
-                while (cTries > 0)
-                {
-                    /*
-                     * Get a page from the free list locked exclusively. The page will be named (hashed in)
-                     * and we rely on it during free. Downgrade the page to a shared lock to prevent the page
-                     * from being relocated.
-                     */
-                    pPage = rtR0MemObjSolPageAlloc(virtAddr, PAGE_SIZE);
-                    if (!pPage)
-                        break;
-
-                    /*
-                     * Check if the physical address backing the page is within the requested range if any.
-                     * If it isn't, discard the page and try again.
-                     */
-                    /** @todo Remove this constraint here, force all high-limit applicable cases
-                     *        through rtR0SolMemAlloc() */
-                    if (uPhysHi != NIL_RTHCPHYS)
-                    {
-                        uint64_t uPhys = rtR0MemObjSolPagePhys(pPage);
-                        if (uPhys > uPhysHi)
-                        {
-                            page_destroy(pPage, 0 /* move it to the free list */);
-                            pPage = NULL;
-                            --cTries;
-                            continue;
-                        }
-                    }
-
-                    ppPages[i] = pPage;
-                    break;
-                }
-
+                /*
+                 * Get a page from the free list locked exclusively. The page will be named (hashed in)
+                 * and we rely on it during free. Downgrade the page to a shared lock to prevent the page
+                 * from being relocated.
+                 */
+                page_t *pPage = rtR0MemObjSolPageAlloc(virtAddr, PAGE_SIZE);
                 if (RT_UNLIKELY(!pPage))
                 {
                     /*
@@ -251,6 +225,8 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
                     page_unresv(cPages);
                     return NULL;
                 }
+
+                ppPages[i] = pPage;
             }
 
             if (puPhys)
@@ -594,7 +570,10 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_PHYS_NC:
-            rtR0MemObjSolPagesFree(pMemSolaris->pvHandle, pMemSolaris->Core.cb);
+            if (pMemSolaris->fIndivPages)
+                rtR0MemObjSolPagesFree(pMemSolaris->pvHandle, pMemSolaris->Core.cb);
+            else
+                rtR0SolMemFree(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
             break;
 
         case RTR0MEMOBJTYPE_PAGE:
@@ -687,21 +666,48 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t c
     if (RT_UNLIKELY(!pMemSolaris))
         return VERR_NO_MEMORY;
 
-    uint64_t PhysAddr = UINT64_MAX;
-    void *pvPages = rtR0MemObjSolPagesAlloc((uint64_t)PhysHighest, &PhysAddr, cb);
-    if (!pvPages)
+    if (PhysHighest == NIL_RTHCPHYS)
     {
-        LogRel(("rtR0MemObjNativeAllocPhysNC: rtR0MemObjSolPagesAlloc failed for cb=%u.\n", cb));
-        rtR0MemObjDelete(&pMemSolaris->Core);
-        return VERR_NO_MEMORY;
-    }
-    pMemSolaris->Core.pv   = NULL;
-    pMemSolaris->pvHandle  = pvPages;
+        uint64_t PhysAddr = UINT64_MAX;
+        void *pvPages = rtR0MemObjSolPagesAlloc(&PhysAddr, cb);
+        if (!pvPages)
+        {
+            LogRel(("rtR0MemObjNativeAllocPhysNC: rtR0MemObjSolPagesAlloc failed for cb=%u.\n", cb));
+            rtR0MemObjDelete(&pMemSolaris->Core);
+            return VERR_NO_MEMORY;
+        }
+        Assert(PhysAddr != UINT64_MAX);
+        Assert(!(PhysAddr & PAGE_OFFSET_MASK));
 
-    Assert(PhysAddr != UINT64_MAX);
-    Assert(!(PhysAddr & PAGE_OFFSET_MASK));
-    *ppMem = &pMemSolaris->Core;
-    return VINF_SUCCESS;
+        pMemSolaris->Core.pv     = NULL;
+        pMemSolaris->pvHandle    = pvPages;
+        pMemSolaris->fIndivPages = true;
+        *ppMem = &pMemSolaris->Core;
+        return VINF_SUCCESS;
+    }
+    else
+    {
+        /*
+         * If we must satisfy an upper limit constraint, it isn't feasible to grab individual pages.
+         * We fall back to using contig_alloc().
+         */
+        uint64_t PhysAddr = UINT64_MAX;
+        void *pvMem = rtR0SolMemAlloc(PhysHighest, &PhysAddr, cb, PAGE_SIZE, false /* fContig */);
+        if (!pvMem)
+        {
+            LogRel(("rtR0MemObjNativeAllocPhysNC: rtR0SolMemAlloc failed for cb=%u PhysHighest=%RHp.\n", cb, PhysHighest));
+            rtR0MemObjDelete(&pMemSolaris->Core);
+            return VERR_NO_MEMORY;
+        }
+        Assert(PhysAddr != UINT64_MAX);
+        Assert(!(PhysAddr & PAGE_OFFSET_MASK));
+
+        pMemSolaris->Core.pv     = pvMem;
+        pMemSolaris->pvHandle    = NULL;
+        pMemSolaris->fIndivPages = false;
+        *ppMem = &pMemSolaris->Core;
+        return VINF_SUCCESS;
+    }
 
 #else /* 32 bit: */
     return VERR_NOT_SUPPORTED; /* see the RTR0MemObjAllocPhysNC specs */
@@ -1000,9 +1006,11 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJI
         /*
          * Prepare the pages for mapping according to type.
          */
-        if (pMemToMapSolaris->Core.enmType == RTR0MEMOBJTYPE_PHYS_NC)
+        if (   pMemToMapSolaris->Core.enmType == RTR0MEMOBJTYPE_PHYS_NC
+            && pMemToMapSolaris->fIndivPages)
         {
             page_t **ppPages = pMemToMapSolaris->pvHandle;
+            AssertPtr(ppPages);
             for (size_t iPage = 0; iPage < cPages; iPage++)
                 paPhysAddrs[iPage] = rtR0MemObjSolPagePhys(ppPages[iPage]);
         }
@@ -1085,7 +1093,8 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
     switch (pMemSolaris->Core.enmType)
     {
         case RTR0MEMOBJTYPE_PHYS_NC:
-            if (pMemSolaris->Core.u.Phys.fAllocated)
+            if (   pMemSolaris->Core.u.Phys.fAllocated
+                || !pMemSolaris->fIndivPages)
             {
                 uint8_t *pb = (uint8_t *)pMemSolaris->Core.pv + ((size_t)iPage << PAGE_SHIFT);
                 return rtR0MemObjSolVirtToPhys(pb);
