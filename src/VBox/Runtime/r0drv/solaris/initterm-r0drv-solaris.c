@@ -175,21 +175,6 @@ DECLHIDDEN(int) rtR0InitNative(void)
         RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "cyclic_reprogram", (void **)&g_pfnrtR0Sol_cyclic_reprogram);
 
         /*
-         * Optional: Kernel page freelist (kflt)
-         *
-         * Only applicable to 64-bit Solaris kernels. Use kflt flags to get pages from kernel page freelists
-         * while allocating physical pages, once the userpages are exhausted. snv_161+, see @bugref{5632}.
-         */
-        rc = RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "kflt_init", NULL /* ppvSymbol */);
-        if (RT_SUCCESS(rc))
-        {
-            int *pKfltDisable = NULL;
-            rc = RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "kflt_disable", (void **)&pKfltDisable);
-            if (RT_SUCCESS(rc) && pKfltDisable && *pKfltDisable == 0)
-                g_frtSolUseKflt = true;
-        }
-
-        /*
          * Weak binding failures: contig_free
          */
         if (g_pfnrtR0Sol_contig_free == NULL)
