@@ -212,7 +212,7 @@ EXPORTEDNAME_EX %1, function
 ;;
 ; Ends a C callable procedure.
 %macro ENDPROC 1
-GLOBALNAME %1_EndProc
+GLOBALNAME_EX %1_EndProc, hidden
 %ifdef ASM_FORMAT_ELF
 size NAME(%1) NAME(%1_EndProc) - NAME(%1)
 %endif
