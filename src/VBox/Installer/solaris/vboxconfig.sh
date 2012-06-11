@@ -771,7 +771,7 @@ stop_process()
     fi
 }
 
-# start_service(servicename, shortFMRI pretty printing, full FMRI)
+# start_service(servicename, shortFMRI pretty printing, full FMRI, log-file path)
 # failure: non-fatal
 start_service()
 {
