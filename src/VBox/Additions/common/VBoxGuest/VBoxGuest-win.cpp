@@ -854,12 +854,12 @@ static NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 break;
             }
 
-            KIRQL OldIrql;
             VBoxGuestMouseSetNotifyCallback *pInfo = (VBoxGuestMouseSetNotifyCallback*)pvBuf;
+
             /* we need a lock here to avoid concurrency with the set event functionality */
+            KIRQL OldIrql;
             KeAcquireSpinLock(&pDevExt->win.s.MouseEventAccessLock, &OldIrql);
-            pDevExt->win.s.pfnMouseNotify =  pInfo->pfnNotify;
-            pDevExt->win.s.pvMouseNotify =  pInfo->pvNotify;
+            pDevExt->MouseNotifyCallback = *pInfo;
             KeReleaseSpinLock(&pDevExt->win.s.MouseEventAccessLock, OldIrql);
 
             Status = STATUS_SUCCESS;
