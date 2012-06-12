@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
- * VBox disassembler - Tables for AMD64 (long mode).
+ * VBox disassembler - Tables for AMD64 (64-bit mode).
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,29 +19,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef USING_VISUAL_STUDIO
-# include <stdafx.h>
-#endif
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 #include "DisasmTables.h"
 #include "DisasmInternal.h"
 
-
-/** @def O
- * Wrapper which initializes an OPCODE.
- * We must use this so that we can exclude unused fields in order
- * to save precious bytes in the GC version.
- *
- * @internal
- */
-#ifndef DIS_CORE_ONLY
-# define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
-    { pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype }
-#else
-# define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
-    { idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype }
-#endif
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //TODO: Verify tables for correctness

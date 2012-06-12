@@ -522,8 +522,7 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                                              pRec->patch.aPrivInstr, pRec->patch.cbPrivInstr);
             rc = VBOXSTRICTRC_TODO(rcStrict);
 #else
-            rc = DISCoreOneEx((uintptr_t)&pRec->patch.aPrivInstr[0], cpu.mode, NULL /*pfnReadBytes*/, NULL /*pvUser*/,
-                              &cpu, &cbOp);
+            rc = DISCoreOne((uintptr_t)&pRec->patch.aPrivInstr[0], cpu.mode, &cpu, &cbOp);
             if (RT_FAILURE(rc))
             {
                 Log(("DISCoreOne failed with %Rrc\n", rc));
