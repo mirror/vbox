@@ -692,7 +692,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     if (fIndirect)
     {
         Log(("patmPatchGenIndirectCall\n"));
-        Assert(pCpu->param1.size == 4);
+        Assert(pCpu->param1.cb == 4);
         Assert(OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J);
 
         /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
@@ -788,7 +788,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     /* 2: We must push the target address onto the stack before appending the indirect call code. */
 
     Log(("patmPatchGenIndirectJump\n"));
-    Assert(pCpu->param1.size == 4);
+    Assert(pCpu->param1.cb == 4);
     Assert(OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J);
 
     /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
