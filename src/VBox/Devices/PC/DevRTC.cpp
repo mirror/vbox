@@ -287,15 +287,22 @@ DECLINLINE(int) from_bcd(RTCState *pThis, int a)
 static DECLCALLBACK(void) CMOSBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
-    const char *PChCMOSBank = "CMOS Bank Info 0x0E - 0x7F";
     uint16_t u16ByteCount = 0;
-    uint8_t   u8CMOSByte;
-    pHlp->pfnPrintf(pHlp, "%s\n" ,PChCMOSBank);
-    for (u16ByteCount = CMOS_BANK_LOWER_LIMIT; u16ByteCount < CMOS_BANK_UPPER_LIMIT; u16ByteCount++)
+
+    pHlp->pfnPrintf(pHlp, "First CMOS bank, offsets 0x0E - 0x7F");
+    pHlp->pfnPrintf(pHlp, "\nOffset %02x : --- use 'info rtc' to show CMOS clock ---", 0);
+    for (u16ByteCount = CMOS_BANK_LOWER_LIMIT; u16ByteCount <= CMOS_BANK_UPPER_LIMIT; u16ByteCount++)
     {
-        u8CMOSByte  =  pThis->cmos_data[u16ByteCount];
-        pHlp->pfnPrintf(pHlp, "Off: 0x%02x Val: 0x%02x\n",u16ByteCount, u8CMOSByte);
+        if ((u16ByteCount & 15) == 0) {
+            pHlp->pfnPrintf(pHlp, "\nOffset %02x : ", u16ByteCount);
+        } else if ((u16ByteCount & 15) == 8) {
+            pHlp->pfnPrintf(pHlp, "-");
+        } else {
+            pHlp->pfnPrintf(pHlp, " ");
+        }
+        pHlp->pfnPrintf(pHlp, "%02x", pThis->cmos_data[u16ByteCount]);
     }
+    pHlp->pfnPrintf(pHlp, "\n");
 }
 
 /**
@@ -305,15 +312,21 @@ static DECLCALLBACK(void) CMOSBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 static DECLCALLBACK(void) CMOSBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
-    const char *PChCMOSBank = "CMOS Bank2 Info 0x80 - 0xFF";
     uint16_t u16ByteCount = 0;
-    uint8_t   u8CMOSByte;
-    pHlp->pfnPrintf(pHlp, "%s\n" ,PChCMOSBank);
-    for (u16ByteCount = CMOS_BANK2_LOWER_LIMIT; u16ByteCount < CMOS_BANK2_UPPER_LIMIT; u16ByteCount++)
+
+    pHlp->pfnPrintf(pHlp, "Second CMOS bank, offsets 0x80 - 0xFF");
+    for (u16ByteCount = CMOS_BANK2_LOWER_LIMIT; u16ByteCount <= CMOS_BANK2_UPPER_LIMIT; u16ByteCount++)
     {
-        u8CMOSByte  =  pThis->cmos_data[u16ByteCount];
-        pHlp->pfnPrintf(pHlp, "Off: 0x%02x Val: 0x%02x\n",u16ByteCount, u8CMOSByte);
+        if ((u16ByteCount & 15) == 0) {
+            pHlp->pfnPrintf(pHlp, "\nOffset %02x : ", u16ByteCount);
+        } else if ((u16ByteCount & 15) == 8) {
+            pHlp->pfnPrintf(pHlp, "-");
+        } else {
+            pHlp->pfnPrintf(pHlp, " ");
+        }
+        pHlp->pfnPrintf(pHlp, "%02x", pThis->cmos_data[u16ByteCount]);
     }
+    pHlp->pfnPrintf(pHlp, "\n");
 }
 
 /**
