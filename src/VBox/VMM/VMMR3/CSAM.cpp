@@ -761,17 +761,20 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst,
 }
 
 DECLINLINE(int) CSAMR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCPUMODE enmCpuMode,
-                               PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput)
+                               PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 {
     (pCpu)->apvUserData[1] = InstrHC;
     (pCpu)->apvUserData[2] = (void *)(uintptr_t)InstrGC; Assert(sizeof(InstrGC) <= sizeof(pCpu->apvUserData[0]));
 #ifdef DEBUG
-    return DISInstrEx(InstrGC, 0, enmCpuMode, CSAMR3ReadBytes, pVM, OPTYPE_ALL,
-                      pCpu, pcbInstr, pszOutput);
+    return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, OPTYPE_ALL,
+                           pCpu, pcbInstr, pszOutput, cbOutput);
 #else
     /* We are interested in everything except harmless stuff */
-    return DISInstrEx(InstrGC, 0, enmCpuMode, CSAMR3ReadBytes, pVM, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK),
-                      pCpu, pcbInstr, pszOutput);
+    if (pszOutput)
+        return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK),
+                               pCpu, pcbInstr, pszOutput, cbOutput);
+    return DISCoreOneExEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK),
+                          pCpu, pcbInstr);
 #endif
 }
 
@@ -868,7 +871,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 Assert(VALID_PTR(pCurInstrHC));
 
                 rc = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
-                                    &cpu, &opsize, NULL);
+                                    &cpu, &opsize, NULL, 0);
             }
             AssertRC(rc);
             if (RT_FAILURE(rc))
@@ -1051,11 +1054,11 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
                 rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
-                                     &cpu, &opsize, szOutput);
+                                     &cpu, &opsize, szOutput, sizeof(szOutput));
                 if (RT_SUCCESS(rc2)) Log(("CSAM Call Analysis: %s", szOutput));
 #else
                 rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
-                                     &cpu, &opsize, NULL);
+                                     &cpu, &opsize, NULL, 0);
 #endif
                 STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
                 if (RT_FAILURE(rc2))
@@ -1264,11 +1267,11 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
             rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? CPUMODE_32BIT : CPUMODE_16BIT,
-                                 &cpu, &opsize, szOutput);
+                                 &cpu, &opsize, szOutput, sizeof(szOutput));
             if (RT_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
             rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? CPUMODE_32BIT : CPUMODE_16BIT,
-                                 &cpu, &opsize, NULL);
+                                 &cpu, &opsize, NULL, 0);
 #endif
             STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
         }

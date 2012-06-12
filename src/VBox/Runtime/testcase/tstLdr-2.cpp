@@ -38,14 +38,15 @@
 #include <iprt/string.h>
 
 
-bool MyDisBlock(PDISCPUSTATE pCpu, RTHCUINTPTR pvCodeBlock, int32_t cbMax, RTUINTPTR off)
+bool MyDisBlock(uint8_t const *pbCodeBlock, int32_t cbMax)
 {
+    DISCPUSTATE Cpu;
     int32_t i = 0;
     while (i < cbMax)
     {
         char        szOutput[256];
         uint32_t    cbInstr;
-        if (RT_FAILURE(DISInstrWithOff(pCpu, pvCodeBlock + i, off, &cbInstr, szOutput)))
+        if (RT_FAILURE(DISInstrToStr(pbCodeBlock + i, CPUMODE_32BIT, &Cpu, &cbInstr, szOutput, sizeof(szOutput))))
             return false;
 
         RTPrintf("%s", szOutput);
@@ -117,17 +118,13 @@ static int testLdrOne(const char *pszFilename)
                     unsigned off = Value - Addr;
                     if (off < cb)
                     {
-                        DISCPUSTATE Cpu;
-
-                        memset(&Cpu, 0, sizeof(Cpu));
-                        Cpu.mode = CPUMODE_32BIT;
-                        if (MyDisBlock(&Cpu, (uintptr_t)pvBits + off, 200, Addr - (uintptr_t)pvBits))
+                        if (MyDisBlock((uint8_t *)pvBits + off, Addr - (uintptr_t)pvBits))
                         {
                             RTUINTPTR Addr2 = 0xd0000000;
                             rc = RTLdrRelocate(hLdrMod, pvBits, Addr2, Addr, testGetImport, NULL);
                             if (RT_SUCCESS(rc))
                             {
-                                if (MyDisBlock(&Cpu, (uintptr_t)pvBits + off, 200, Addr2 - (uintptr_t)pvBits))
+                                if (MyDisBlock((uint8_t *)pvBits + off, Addr2 - (uintptr_t)pvBits))
                                     rcRet = 0;
                                 else
                                     RTPrintf("tstLdr: Disassembly failed!\n");
