@@ -102,7 +102,7 @@ static void MyDisasYasmFormatter(PMYDISSTATE pState)
     szTmp[cch] = '\0';
 #endif
 
-    RTPrintf("    %s ; %08llu %s", szTmp, pState->uAddress, pState->szLine);
+    RTPrintf("    %s ; %s", szTmp, pState->szLine);
 }
 
 

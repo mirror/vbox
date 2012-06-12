@@ -104,7 +104,7 @@ static DECLCALLBACK(int) DisasmTest1ReadCode(PDISCPUSTATE pDisState, uint8_t *pb
 inline int MyDisasm(uintptr_t CodeIndex, PDISCPUSTATE pCpu, uint32_t *pcb)
 {
     uint32_t cb;
-    int rc = DISCoreOneEx(CodeIndex, CPUMODE_32BIT, DisasmTest1ReadCode, 0, pCpu, &cb);
+    int rc = DISCoreOneWithReader(CodeIndex, CPUMODE_32BIT, DisasmTest1ReadCode, 0, pCpu, &cb);
     *pcb = cb;
     MY_PRINTF(("DISCoreOneEx -> rc=%d cb=%d  Cpu: opcode=%#x pCurInstr=%p (42=%d)\n", \
                rc, cb, pCpu->opcode, pCpu->pCurInstr, 42)); \

@@ -967,8 +967,8 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
         {
             unsigned    cbInstr;
             DISCPUSTATE CpuState;
-            int rc = DISCoreOneEx(uFlatAddr, fIs16Bit ? CPUMODE_16BIT : CPUMODE_32BIT,
-                                  disReadOpcodeBytes, NULL, &CpuState, &cbInstr);
+            int rc = DISCoreOneWithReader(uFlatAddr, fIs16Bit ? CPUMODE_16BIT : CPUMODE_32BIT,
+                                          disReadOpcodeBytes, NULL, &CpuState, &cbInstr);
             if (   RT_SUCCESS(rc)
                 && cbInstr <= cb)
             {

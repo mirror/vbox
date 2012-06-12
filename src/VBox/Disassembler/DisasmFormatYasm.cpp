@@ -347,10 +347,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
     if (fFlags & DIS_FMT_FLAGS_ADDR_LEFT)
     {
 #if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
-        if (pCpu->opaddr >= _4G)
-            PUT_NUM(9, "%08x`", (uint32_t)(pCpu->opaddr >> 32));
+        if (pCpu->uInstrAddr >= _4G)
+            PUT_NUM(9, "%08x`", (uint32_t)(pCpu->uInstrAddr >> 32));
 #endif
-        PUT_NUM(8, "%08x", (uint32_t)pCpu->opaddr);
+        PUT_NUM(8, "%08x", (uint32_t)pCpu->uInstrAddr);
         PUT_C(' ');
     }
 
@@ -895,7 +895,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
                             PUT_SZ(" (");
 
-                        RTUINTPTR uTrgAddr = pCpu->opaddr + pCpu->opsize + offDisplacement;
+                        RTUINTPTR uTrgAddr = pCpu->uInstrAddr + pCpu->opsize + offDisplacement;
                         if (pCpu->mode == CPUMODE_16BIT)
                             PUT_NUM_16(uTrgAddr);
                         else if (pCpu->mode == CPUMODE_32BIT)
@@ -1131,10 +1131,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         {
             PUT_C(' ');
 #if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
-            if (pCpu->opaddr >= _4G)
-                PUT_NUM(9, "%08x`", (uint32_t)(pCpu->opaddr >> 32));
+            if (pCpu->uInstrAddr >= _4G)
+                PUT_NUM(9, "%08x`", (uint32_t)(pCpu->uInstrAddr >> 32));
 #endif
-            PUT_NUM(8, "%08x", (uint32_t)pCpu->opaddr);
+            PUT_NUM(8, "%08x", (uint32_t)pCpu->uInstrAddr);
         }
 
         /*

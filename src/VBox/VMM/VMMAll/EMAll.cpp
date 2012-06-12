@@ -363,7 +363,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
         }
         State.GCPtr = NIL_RTGCPTR;
     }
-    return DISCoreOneEx(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
+    return DISCoreOneWithReader(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #else /* IN_RC */
@@ -376,7 +376,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
     State.pVCpu = pVCpu;
     State.GCPtr = InstrGC;
 
-    return DISCoreOneEx(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
+    return DISCoreOneWithReader(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #endif /* IN_RC */
@@ -458,10 +458,8 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
     }
 #endif
 
-    rc = DISCoreOneEx(GCPtrInstr,
-                      SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
-                      emReadBytes, &State,
-                      pDis, pcbInstr);
+    DISCPUMODE enmCpuMode = SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid);
+    rc = DISCoreOneWithReader(GCPtrInstr, enmCpuMode, emReadBytes, &State, pDis, pcbInstr);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     AssertMsgFailed(("DISCoreOne failed to GCPtrInstr=%RGv rc=%Rrc\n", GCPtrInstr, rc));

@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox disassembler:
- * Tables.header
+ * VBox disassembler - Tables Header.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __disasmtable_h__
-#define __disasmtable_h__
+#ifndef ___disasmtable_h___
+#define ___disasmtable_h___
 
 #include <VBox/dis.h>
 
@@ -98,5 +97,20 @@ extern PCOPCODE     g_paMapX86_FP_Low[8];
 extern PCOPCODE     g_paMapX86_FP_High[8];
 /** @} */
 
-#endif /* !__disasmtable_h__ */
+/** @def OP
+ * Wrapper which initializes an OPCODE.
+ * We must use this so that we can exclude unused fields in order
+ * to save precious bytes in the GC version.
+ *
+ * @internal
+ */
+#ifndef DIS_CORE_ONLY
+# define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
+    { pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype }
+#else
+# define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
+    { idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype }
+#endif
+
+#endif
 

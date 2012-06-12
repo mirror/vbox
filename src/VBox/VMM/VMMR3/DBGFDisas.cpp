@@ -139,12 +139,12 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     }
 
     uint32_t cbInstr;
-    int rc = DISCoreOneEx(GCPtr,
-                          enmCpuMode,
-                          dbgfR3DisasInstrRead,
-                          &pState->Cpu,
-                          &pState->Cpu,
-                          &cbInstr);
+    int rc = DISCoreOneWithReader(GCPtr,
+                                  enmCpuMode,
+                                  dbgfR3DisasInstrRead,
+                                  &pState->Cpu,
+                                  &pState->Cpu,
+                                  &cbInstr);
     if (RT_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;

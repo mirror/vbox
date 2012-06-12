@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox disassembler:
- * Core components
+ * VBox disassembler- Register Info Helpers.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,10 +20,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DIS
-#ifdef USING_VISUAL_STUDIO
-# include <stdafx.h>
-#endif
-
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 #include <VBox/err.h>
@@ -35,11 +30,6 @@
 #include <iprt/stdarg.h>
 #include "DisasmInternal.h"
 #include "DisasmTables.h"
-
-#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
-# include <stdlib.h>
-# include <stdio.h>
-#endif
 
 
 /*******************************************************************************
@@ -824,5 +814,4 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
     }
     return VERR_INVALID_PARAMETER;
 }
-//*****************************************************************************
-//*****************************************************************************
+

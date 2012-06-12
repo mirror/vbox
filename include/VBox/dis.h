@@ -30,9 +30,6 @@
 #include <VBox/types.h>
 #include <VBox/disopcode.h>
 
-#if defined(__L4ENV__)
-# include <setjmp.h>
-#endif
 
 RT_C_DECLS_BEGIN
 
@@ -411,10 +408,6 @@ typedef struct OP_PARAMETER
     uint8_t         scale;
     /** Parameter size. */
     uint8_t         cb;
-
-#ifndef DIS_SEPARATE_FORMATTER
-    char            szParam[32];
-#endif
 } OP_PARAMETER;
 /** Pointer to opcode parameter. */
 typedef OP_PARAMETER *POP_PARAMETER;
@@ -453,11 +446,11 @@ typedef struct DISCPUSTATE
     DISCPUMODE      mode;
 
     /** Per instruction prefix settings. */
-    uint32_t        prefix;
+    uint32_t        prefix;  /**< @todo change to uint8_t */
     /** segment prefix value. */
     DIS_SELREG      enmPrefixSeg;
     /** rex prefix value (64 bits only */
-    uint32_t        prefix_rex;
+    uint32_t        prefix_rex; /**< @todo change to uint8_t */
     /** addressing mode (16 or 32 bits). (CPUMODE_*) */
     DISCPUMODE      addrmode;
     /** operand mode (16 or 32 bits). (CPUMODE_*) */
@@ -500,8 +493,6 @@ typedef struct DISCPUSTATE
     uint32_t        opsize;
     /** The address of the instruction. */
     RTUINTPTR       uInstrAddr;
-    /** The offsetted address of the instruction. */
-    RTUINTPTR       opaddr;
     /** The size of the prefix bytes. */
     uint8_t         cbPrefix;
 
@@ -558,17 +549,20 @@ typedef struct OPCODE
 #pragma pack()
 
 
-DISDECL(int) DISInstr(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbSize, char *pszOutput);
-DISDECL(int) DISInstrWithOff(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, RTUINTPTR offRealAddr, uint32_t *pcbSize, char *pszOutput);
+DISDECL(int) DISInstr(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput);
+DISDECL(int) DISInstrWithOff(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, RTUINTPTR offRealAddr, uint32_t *pcbInstr, char *pszOutput);
 DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                PDISCPUSTATE pCpu, uint32_t *pcbSize, char *pszOutput);
+                                PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput);
 DISDECL(int) DISInstrEx(RTUINTPTR uInstrAddr, RTUINTPTR offRealAddr, DISCPUMODE enmCpuMode,
                         PFNDISREADBYTES pfnReadBytes, void *pvUser, uint32_t uFilter,
-                        PDISCPUSTATE pCpu, uint32_t *pcbSize, char *pszOutput);
+                        PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput);
 
-DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, uint32_t *pcbInstruction);
-DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                          PDISCPUSTATE pCpu, uint32_t *pcbInstruction);
+DISDECL(int) DISCoreOne(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+DISDECL(int) DISCoreOneWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                  PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+DISDECL(int) DISCoreOneExEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
+                            PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                            PDISCPUSTATE pCpu, uint32_t *pcbInstr);
 
 DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
 DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
