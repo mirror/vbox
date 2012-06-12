@@ -651,13 +651,14 @@ static const REMPARMDESC g_aArgsDBGFR3AddrFromFlat[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PDBGFADDRESS),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTGCUINTPTR),        NULL }
 };
-static const REMPARMDESC g_aArgsDISInstr[] =
+static const REMPARMDESC g_aArgsDISInstrToStr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINTPTR),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t const *),    NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(DISCPUMODE),         NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PDISCPUSTATE),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsEMR3FatalError[] =
 {
@@ -1232,7 +1233,7 @@ static REMFNDESC g_aVMMImports[] =
     { "DBGFR3InfoLogRelHlp",                    VMM_FN(DBGFR3InfoLogRelHlp),            NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "DBGFR3AsSymbolByAddr",                   VMM_FN(DBGFR3AsSymbolByAddr),           &g_aArgsDBGFR3AsSymbolByAddr[0],            RT_ELEMENTS(g_aArgsDBGFR3AsSymbolByAddr),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3AddrFromFlat",                     VMM_FN(DBGFR3AddrFromFlat),             &g_aArgsDBGFR3AddrFromFlat[0],              RT_ELEMENTS(g_aArgsDBGFR3AddrFromFlat),                REMFNDESC_FLAGS_RET_INT,    sizeof(PDBGFADDRESS),       NULL },
-    { "DISInstr",                               VMM_FN(DISInstr),                       &g_aArgsDISInstr[0],                        RT_ELEMENTS(g_aArgsDISInstr),                          REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
+    { "DISInstrToStr",                          VMM_FN(DISInstrToStr),                  &g_aArgsDISInstrToStr[0],                   RT_ELEMENTS(g_aArgsDISInstrToStr),                     REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "EMR3FatalError",                         VMM_FN(EMR3FatalError),                 &g_aArgsEMR3FatalError[0],                  RT_ELEMENTS(g_aArgsEMR3FatalError),                    REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "EMRemLock",                              VMM_FN(EMRemLock),                      &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "EMRemUnlock",                            VMM_FN(EMRemUnlock),                    &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
