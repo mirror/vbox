@@ -548,14 +548,14 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
         if (pCpu->addrmode == CPUMODE_32BIT)
         {
             pParam->flags |= USE_DISPLACEMENT32;
-            pParam->disp32 = pCpu->i32SibDisp;
+            pParam->uDisp.i32 = pCpu->i32SibDisp;
             disasmAddChar(pParam->szParam, '+');
             disasmPrintDisp32(pParam);
         }
         else
         {   /* sign-extend to 64 bits */
             pParam->flags |= USE_DISPLACEMENT64;
-            pParam->disp64 = pCpu->i32SibDisp;
+            pParam->uDisp.i64 = pCpu->i32SibDisp;
             disasmAddChar(pParam->szParam, '+');
             disasmPrintDisp64(pParam);
         }
@@ -736,18 +736,19 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 if (pCpu->mode != CPUMODE_64BIT)
                 {
                     pParam->flags |= USE_DISPLACEMENT32;
-                    pParam->disp32 = pCpu->i32SibDisp;
+                    pParam->uDisp.i32 = pCpu->i32SibDisp;
                     disasmPrintDisp32(pParam);
                 }
                 else
                 {
                     pParam->flags |= USE_RIPDISPLACEMENT32;
-                    pParam->disp32 = pCpu->i32SibDisp;
+                    pParam->uDisp.i32 = pCpu->i32SibDisp;
                     disasmAddString(pParam->szParam, "RIP+");
                     disasmPrintDisp32(pParam);
                 }
             }
-            else {//register address
+            else
+            {   //register address
                 pParam->flags |= USE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
@@ -765,12 +766,12 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 pParam->flags |= USE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
-            pParam->disp8 = pCpu->i32SibDisp;
+            pParam->uDisp.i8 = pCpu->i32SibDisp;
             pParam->flags |= USE_DISPLACEMENT8;
 
-            if (pParam->disp8 != 0)
+            if (pParam->uDisp.i8 != 0)
             {
-                if (pParam->disp8 > 0)
+                if (pParam->uDisp.i8 > 0)
                     disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp8(pParam);
             }
@@ -788,10 +789,10 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 pParam->flags |= USE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
-            pParam->disp32 = pCpu->i32SibDisp;
+            pParam->uDisp.i32 = pCpu->i32SibDisp;
             pParam->flags |= USE_DISPLACEMENT32;
 
-            if (pParam->disp32 != 0)
+            if (pParam->uDisp.i32 != 0)
             {
                 disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp32(pParam);
@@ -813,7 +814,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmAddChar(pParam->szParam, '[');
             if (rm == 6)
             {//16 bits displacement
-                pParam->disp16 = pCpu->i32SibDisp;
+                pParam->uDisp.i16 = pCpu->i32SibDisp;
                 pParam->flags |= USE_DISPLACEMENT16;
                 disasmPrintDisp16(pParam);
             }
@@ -829,12 +830,12 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
             disasmModRMReg16(pCpu, pOp, rm, pParam);
-            pParam->disp8 = pCpu->i32SibDisp;
+            pParam->uDisp.i8 = pCpu->i32SibDisp;
             pParam->flags |= USE_BASE | USE_DISPLACEMENT8;
 
-            if (pParam->disp8 != 0)
+            if (pParam->uDisp.i8 != 0)
             {
-                if (pParam->disp8 > 0)
+                if (pParam->uDisp.i8 > 0)
                     disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp8(pParam);
             }
@@ -845,10 +846,10 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
             disasmModRMReg16(pCpu, pOp, rm, pParam);
-            pParam->disp16 = pCpu->i32SibDisp;
+            pParam->uDisp.i16 = pCpu->i32SibDisp;
             pParam->flags |= USE_BASE | USE_DISPLACEMENT16;
 
-            if (pParam->disp16 != 0)
+            if (pParam->uDisp.i16 != 0)
             {
                 disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp16(pParam);
@@ -1427,11 +1428,11 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
              * Note: used only in "mov al|ax|eax, [Addr]" and "mov [Addr], al|ax|eax"
              * so we treat it like displacement.
              */
-            pParam->disp32 = DISReadDWord(pCpu, lpszCodeBlock);
+            pParam->uDisp.i32 = DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_DISPLACEMENT32;
             pParam->size   = sizeof(uint32_t);
 
-            disasmAddStringF1(pParam->szParam, "[0%08Xh]", pParam->disp32);
+            disasmAddStringF1(pParam->szParam, "[0%08Xh]", pParam->uDisp.i32);
             return sizeof(uint32_t);
         }
     }
@@ -1444,11 +1445,11 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
          * Note: used only in "mov al|ax|eax, [Addr]" and "mov [Addr], al|ax|eax"
          * so we treat it like displacement.
          */
-        pParam->disp64 = DISReadQWord(pCpu, lpszCodeBlock);
+        pParam->uDisp.i64 = DISReadQWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_DISPLACEMENT64;
         pParam->size   = sizeof(uint64_t);
 
-        disasmAddStringF2(pParam->szParam, "[0%08X%08Xh]", (uint32_t)(pParam->disp64 >> 32), (uint32_t)pParam->disp64);
+        disasmAddStringF2(pParam->szParam, "[0%08X%08Xh]", (uint32_t)(pParam->uDisp.i64 >> 32), (uint32_t)pParam->uDisp.i64);
         return sizeof(uint64_t);
     }
     else
@@ -1468,11 +1469,11 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
              * Note: used only in "mov al|ax|eax, [Addr]" and "mov [Addr], al|ax|eax"
              * so we treat it like displacement.
              */
-            pParam->disp16 = DISReadWord(pCpu, lpszCodeBlock);
+            pParam->uDisp.i16 = DISReadWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_DISPLACEMENT16;
             pParam->size   = sizeof(uint16_t);
 
-            disasmAddStringF1(pParam->szParam, "[0%04Xh]", (uint32_t)pParam->disp16);
+            disasmAddStringF1(pParam->szParam, "[0%04Xh]", (uint32_t)pParam->uDisp.i16);
             return sizeof(uint16_t);
         }
     }
@@ -2441,31 +2442,31 @@ void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETE
 //*****************************************************************************
 void disasmPrintAbs32(POP_PARAMETER pParam)
 {
-    disasmAddStringF1(pParam->szParam, "%08Xh", pParam->disp32); NOREF(pParam);
+    disasmAddStringF1(pParam->szParam, "%08Xh", pParam->uDisp.i32); NOREF(pParam);
 }
 //*****************************************************************************
 //*****************************************************************************
 void disasmPrintDisp32(POP_PARAMETER pParam)
 {
-    disasmAddStringF1(pParam->szParam, "%08Xh", pParam->disp32); NOREF(pParam);
+    disasmAddStringF1(pParam->szParam, "%08Xh", pParam->uDisp.i32); NOREF(pParam);
 }
 //*****************************************************************************
 //*****************************************************************************
 void disasmPrintDisp64(POP_PARAMETER pParam)
 {
-    disasmAddStringF1(pParam->szParam, "%16RX64h", pParam->disp64); NOREF(pParam);
+    disasmAddStringF1(pParam->szParam, "%16RX64h", pParam->uDisp.i64); NOREF(pParam);
 }
 //*****************************************************************************
 //*****************************************************************************
 void disasmPrintDisp8(POP_PARAMETER pParam)
 {
-    disasmAddStringF1(pParam->szParam, "%d", pParam->disp8); NOREF(pParam);
+    disasmAddStringF1(pParam->szParam, "%d", pParam->uDisp.i8); NOREF(pParam);
 }
 //*****************************************************************************
 //*****************************************************************************
 void disasmPrintDisp16(POP_PARAMETER pParam)
 {
-    disasmAddStringF1(pParam->szParam, "%04Xh", pParam->disp16); NOREF(pParam);
+    disasmAddStringF1(pParam->szParam, "%04Xh", pParam->uDisp.i16); NOREF(pParam);
 }
 //*****************************************************************************
 //*****************************************************************************
