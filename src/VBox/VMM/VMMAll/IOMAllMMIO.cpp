@@ -669,7 +669,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
     /*
      * We do not support segment prefixes or REPNE.
      */
-    if (pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE))
+    if (pCpu->prefix & (DISPREFIX_SEG | DISPREFIX_REPNE))
         return VINF_IOM_R3_MMIO_READ_WRITE; /** @todo -> interpret whatever. */
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
@@ -678,7 +678,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
      * Get bytes/words/dwords/qword count to copy.
      */
     uint32_t cTransfers = 1;
-    if (pCpu->prefix & PREFIX_REP)
+    if (pCpu->prefix & DISPREFIX_REP)
     {
 #ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVCpu, pRegFrame)
@@ -687,7 +687,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
 #endif
 
         cTransfers = pRegFrame->ecx;
-        if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
+        if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == DISCPUMODE_16BIT)
             cTransfers &= 0xffff;
 
         if (!cTransfers)
@@ -766,7 +766,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
             MMGCRamDeregisterTrapHandler(pVM);
 #endif
             /* Update ecx. */
-            if (pCpu->prefix & PREFIX_REP)
+            if (pCpu->prefix & DISPREFIX_REP)
                 pRegFrame->ecx = cTransfers;
         }
         else
@@ -874,7 +874,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
         }
 
         /* Update ecx on exit. */
-        if (pCpu->prefix & PREFIX_REP)
+        if (pCpu->prefix & DISPREFIX_REP)
             pRegFrame->ecx = cTransfers;
     }
 
@@ -897,9 +897,9 @@ static uint64_t iomDisModeToMask(DISCPUMODE enmCpuMode)
 {
     switch (enmCpuMode)
     {
-        case CPUMODE_16BIT: return UINT16_MAX;
-        case CPUMODE_32BIT: return UINT32_MAX;
-        case CPUMODE_64BIT: return UINT64_MAX;
+        case DISCPUMODE_16BIT: return UINT16_MAX;
+        case DISCPUMODE_32BIT: return UINT32_MAX;
+        case DISCPUMODE_64BIT: return UINT64_MAX;
         default:
             AssertFailedReturn(UINT32_MAX);
     }
@@ -927,7 +927,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * We do not support segment prefixes or REPNE..
      */
-    if (pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE))
+    if (pCpu->prefix & (DISPREFIX_SEG | DISPREFIX_REPNE))
         return VINF_IOM_R3_MMIO_READ_WRITE; /** @todo -> REM instead of HC */
 
     /*
@@ -935,7 +935,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
      */
     uint64_t const fAddrMask = iomDisModeToMask(pCpu->addrmode);
     RTGCUINTREG cTransfers = 1;
-    if (pCpu->prefix & PREFIX_REP)
+    if (pCpu->prefix & DISPREFIX_REP)
     {
 #ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(VMMGetCpu(pVM), pRegFrame)
@@ -982,7 +982,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
                 /* Update registers. */
                 pRegFrame->rdi = ((pRegFrame->rdi + (cTransfers << SIZE_2_SHIFT(cb))) & fAddrMask)
                                | (pRegFrame->rdi & ~fAddrMask);
-                if (pCpu->prefix & PREFIX_REP)
+                if (pCpu->prefix & DISPREFIX_REP)
                     pRegFrame->rcx &= ~fAddrMask;
             }
         }
@@ -997,7 +997,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
                 /* Update registers. */
                 pRegFrame->rdi = ((pRegFrame->rdi - (cTransfers << SIZE_2_SHIFT(cb))) & fAddrMask)
                                | (pRegFrame->rdi & ~fAddrMask);
-                if (pCpu->prefix & PREFIX_REP)
+                if (pCpu->prefix & DISPREFIX_REP)
                     pRegFrame->rcx &= ~fAddrMask;
             }
         }
@@ -1024,7 +1024,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         } while (cTransfers);
 
         /* Update rcx on exit. */
-        if (pCpu->prefix & PREFIX_REP)
+        if (pCpu->prefix & DISPREFIX_REP)
             pRegFrame->rcx = (cTransfers & fAddrMask)
                            | (pRegFrame->rcx & ~fAddrMask);
     }
@@ -1061,7 +1061,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * We do not support segment prefixes or REP*.
      */
-    if (pCpu->prefix & (PREFIX_SEG | PREFIX_REP | PREFIX_REPNE))
+    if (pCpu->prefix & (DISPREFIX_SEG | DISPREFIX_REP | DISPREFIX_REPNE))
         return VINF_IOM_R3_MMIO_READ_WRITE; /** @todo -> REM instead of HC */
 
     /*
@@ -2029,7 +2029,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
      * We do not support REPNE or decrementing destination
      * pointer. Segment prefixes are deliberately ignored, as per the instruction specification.
      */
-    if (   (uPrefix & PREFIX_REPNE)
+    if (   (uPrefix & DISPREFIX_REPNE)
         || pRegFrame->eflags.Bits.u1DF)
         return VINF_EM_RAW_EMULATE_INSTR;
 
@@ -2040,7 +2040,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
      */
     uint64_t const fAddrMask = iomDisModeToMask(enmAddrMode);
     RTGCUINTREG cTransfers = 1;
-    if (uPrefix & PREFIX_REP)
+    if (uPrefix & DISPREFIX_REP)
     {
 #ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVCpu, pRegFrame)
@@ -2107,7 +2107,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
 #endif
 
     /* Update rcx on exit. */
-    if (uPrefix & PREFIX_REP)
+    if (uPrefix & DISPREFIX_REP)
         pRegFrame->rcx = (cTransfers & fAddrMask)
                        | (pRegFrame->rcx & ~fAddrMask);
 
@@ -2146,7 +2146,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
     if (pCpu->pCurInstr->opcode == OP_INSB)
         cb = 1;
     else
-        cb = (pCpu->opmode == CPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
+        cb = (pCpu->opmode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
     VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
@@ -2191,7 +2191,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
      * We do not support segment prefixes, REPNE or
      * decrementing source pointer.
      */
-    if (   (uPrefix & (PREFIX_SEG | PREFIX_REPNE))
+    if (   (uPrefix & (DISPREFIX_SEG | DISPREFIX_REPNE))
         || pRegFrame->eflags.Bits.u1DF)
         return VINF_EM_RAW_EMULATE_INSTR;
 
@@ -2202,7 +2202,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
      */
     uint64_t const fAddrMask = iomDisModeToMask(enmAddrMode);
     RTGCUINTREG cTransfers = 1;
-    if (uPrefix & PREFIX_REP)
+    if (uPrefix & DISPREFIX_REP)
     {
 #ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVCpu, pRegFrame)
@@ -2274,7 +2274,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
 #endif
 
     /* Update rcx on exit. */
-    if (uPrefix & PREFIX_REP)
+    if (uPrefix & DISPREFIX_REP)
         pRegFrame->rcx = (cTransfers & fAddrMask)
                        | (pRegFrame->rcx & ~fAddrMask);
 
@@ -2315,7 +2315,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
     if (pCpu->pCurInstr->opcode == OP_OUTSB)
         cb = 1;
     else
-        cb = (pCpu->opmode == CPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
+        cb = (pCpu->opmode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
     VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))

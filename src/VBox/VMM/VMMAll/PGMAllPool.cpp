@@ -792,11 +792,11 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
             return true;
         case OP_MOVSWD:
         case OP_STOSWD:
-            if (    pDis->prefix == (PREFIX_REP|PREFIX_REX)
+            if (    pDis->prefix == (DISPREFIX_REP|DISPREFIX_REX)
                 &&  pRegFrame->rcx >= 0x40
                )
             {
-                Assert(pDis->mode == CPUMODE_64BIT);
+                Assert(pDis->mode == DISCPUMODE_64BIT);
 
                 Log(("pgmPoolMonitorIsReused: OP_STOSQ\n"));
                 return true;
@@ -889,11 +889,11 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     unsigned uIncrement = pDis->param1.cb;
     NOREF(pVM);
 
-    Assert(pDis->mode == CPUMODE_32BIT || pDis->mode == CPUMODE_64BIT);
+    Assert(pDis->mode == DISCPUMODE_32BIT || pDis->mode == DISCPUMODE_64BIT);
     Assert(pRegFrame->rcx <= 0x20);
 
 #ifdef VBOX_STRICT
-    if (pDis->opmode == CPUMODE_32BIT)
+    if (pDis->opmode == DISCPUMODE_32BIT)
         Assert(uIncrement == 4);
     else
         Assert(uIncrement == 8);
@@ -1154,7 +1154,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         /*
          * Simple instructions, no REP prefix.
          */
-        if (!(pDis->prefix & (PREFIX_REP | PREFIX_REPNE)))
+        if (!(pDis->prefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
             rc = pgmPoolAccessHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault, &fReused);
             if (fReused)
@@ -1202,8 +1202,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         {
             bool fValidStosd = false;
 
-            if (    pDis->mode == CPUMODE_32BIT
-                &&  pDis->prefix == PREFIX_REP
+            if (    pDis->mode == DISCPUMODE_32BIT
+                &&  pDis->prefix == DISPREFIX_REP
                 &&  pRegFrame->ecx <= 0x20
                 &&  pRegFrame->ecx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 3)
@@ -1214,8 +1214,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
                 pRegFrame->rcx &= 0xffffffff;   /* paranoia */
             }
             else
-            if (    pDis->mode == CPUMODE_64BIT
-                &&  pDis->prefix == (PREFIX_REP | PREFIX_REX)
+            if (    pDis->mode == DISCPUMODE_64BIT
+                &&  pDis->prefix == (DISPREFIX_REP | DISPREFIX_REX)
                 &&  pRegFrame->rcx <= 0x20
                 &&  pRegFrame->rcx * 8 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 7)

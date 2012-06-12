@@ -788,8 +788,8 @@ static const char *emGetMnemonic(PDISCPUSTATE pDis)
         case OP_BTC:        return "Btc";
         case OP_LMSW:       return "Lmsw";
         case OP_SMSW:       return "Smsw";
-        case OP_CMPXCHG:    return pDis->prefix & PREFIX_LOCK ? "Lock CmpXchg"   : "CmpXchg";
-        case OP_CMPXCHG8B:  return pDis->prefix & PREFIX_LOCK ? "Lock CmpXchg8b" : "CmpXchg8b";
+        case OP_CMPXCHG:    return pDis->prefix & DISPREFIX_LOCK ? "Lock CmpXchg"   : "CmpXchg";
+        case OP_CMPXCHG8B:  return pDis->prefix & DISPREFIX_LOCK ? "Lock CmpXchg8b" : "CmpXchg8b";
 
         default:
             Log(("Unknown opcode %d\n", pDis->pCurInstr->opcode));
@@ -1008,7 +1008,7 @@ static int emInterpretIncDec(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
  */
 static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDis->mode != DISCPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
     NOREF(pvFault);
 
@@ -1027,7 +1027,7 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
             RTGCPTR pStackVal;
 
             /* Read stack value first */
-            if (SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == CPUMODE_16BIT)
+            if (SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == DISCPUMODE_16BIT)
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */
@@ -1560,7 +1560,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
-            if (pDis->mode == CPUMODE_64BIT)
+            if (pDis->mode == DISCPUMODE_64BIT)
                 LogFlow(("EMInterpretInstruction at %RGv: OP_MOV %RGv <- %RX64 (%d) &val64=%RHv\n", (RTGCPTR)pRegFrame->rip, pDest, val64, param2.size, &val64));
             else
                 LogFlow(("EMInterpretInstruction at %08RX64: OP_MOV %RGv <- %08X  (%d) &val64=%RHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
@@ -1623,7 +1623,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
-            if (pDis->mode == CPUMODE_64BIT)
+            if (pDis->mode == DISCPUMODE_64BIT)
                 LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %RX64 (%d)\n", pSrc, val64, param1.size));
             else
                 LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %08X (%d)\n", pSrc, (uint32_t)val64, param1.size));
@@ -1651,20 +1651,20 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
     NOREF(pvFault);
 
     /* Don't support any but these three prefix bytes. */
-    if ((pDis->prefix & ~(PREFIX_ADDRSIZE|PREFIX_OPSIZE|PREFIX_REP|PREFIX_REX)))
+    if ((pDis->prefix & ~(DISPREFIX_ADDRSIZE|DISPREFIX_OPSIZE|DISPREFIX_REP|DISPREFIX_REX)))
         return VERR_EM_INTERPRETER;
 
     switch (pDis->addrmode)
     {
-    case CPUMODE_16BIT:
+    case DISCPUMODE_16BIT:
         GCOffset   = pRegFrame->di;
         cTransfers = pRegFrame->cx;
         break;
-    case CPUMODE_32BIT:
+    case DISCPUMODE_32BIT:
         GCOffset   = pRegFrame->edi;
         cTransfers = pRegFrame->ecx;
         break;
-    case CPUMODE_64BIT:
+    case DISCPUMODE_64BIT:
         GCOffset   = pRegFrame->rdi;
         cTransfers = pRegFrame->rcx;
         break;
@@ -1676,13 +1676,13 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
     GCDest = SELMToFlat(pVM, DIS_SELREG_ES, pRegFrame, GCOffset);
     switch (pDis->opmode)
     {
-    case CPUMODE_16BIT:
+    case DISCPUMODE_16BIT:
         cbSize = 2;
         break;
-    case CPUMODE_32BIT:
+    case DISCPUMODE_32BIT:
         cbSize = 4;
         break;
-    case CPUMODE_64BIT:
+    case DISCPUMODE_64BIT:
         cbSize = 8;
         break;
     default:
@@ -1692,7 +1692,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
 
     offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cbSize : (signed)cbSize;
 
-    if (!(pDis->prefix & PREFIX_REP))
+    if (!(pDis->prefix & DISPREFIX_REP))
     {
         LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize));
 
@@ -1704,13 +1704,13 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
         /* Update (e/r)di. */
         switch (pDis->addrmode)
         {
-        case CPUMODE_16BIT:
+        case DISCPUMODE_16BIT:
             pRegFrame->di  += offIncrement;
             break;
-        case CPUMODE_32BIT:
+        case DISCPUMODE_32BIT:
             pRegFrame->edi += offIncrement;
             break;
-        case CPUMODE_64BIT:
+        case DISCPUMODE_64BIT:
             pRegFrame->rdi += offIncrement;
             break;
         default:
@@ -1769,15 +1769,15 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
         /* Update the registers. */
         switch (pDis->addrmode)
         {
-        case CPUMODE_16BIT:
+        case DISCPUMODE_16BIT:
             pRegFrame->di = GCOffset;
             pRegFrame->cx = cTransfers;
             break;
-        case CPUMODE_32BIT:
+        case DISCPUMODE_32BIT:
             pRegFrame->edi = GCOffset;
             pRegFrame->ecx = cTransfers;
             break;
-        case CPUMODE_64BIT:
+        case DISCPUMODE_64BIT:
             pRegFrame->rdi = GCOffset;
             pRegFrame->rcx = cTransfers;
             break;
@@ -1847,7 +1847,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
 
     LogFlow(("%s %RGv rax=%RX64 %RX64\n", emGetMnemonic(pDis), GCPtrPar1, pRegFrame->rax, valpar));
 
-    if (pDis->prefix & PREFIX_LOCK)
+    if (pDis->prefix & DISPREFIX_LOCK)
         eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->param2.cb);
     else
         eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->param2.cb);
@@ -1869,7 +1869,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
  */
 static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDis->mode != DISCPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
     NOREF(pvFault);
 
@@ -1900,7 +1900,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
 
     LogFlow(("%s %RGv=%08x eax=%08x\n", emGetMnemonic(pDis), pvParam1, pRegFrame->eax));
 
-    if (pDis->prefix & PREFIX_LOCK)
+    if (pDis->prefix & DISPREFIX_LOCK)
         eflags = EMEmulateLockCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
     else
         eflags = EMEmulateCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
@@ -1923,7 +1923,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
  */
 static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDis->mode != DISCPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
     void *pvParamReg2;
     size_t cbParamReg2;
@@ -1969,7 +1969,7 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 
             LogFlow(("XAdd %RGv=%p reg=%08llx\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2));
 
-            if (pDis->prefix & PREFIX_LOCK)
+            if (pDis->prefix & DISPREFIX_LOCK)
                 eflags = EMEmulateLockXAdd(pvParam1, pvParamReg2, cbParamReg2);
             else
                 eflags = EMEmulateXAdd(pvParam1, pvParamReg2, cbParamReg2);
@@ -2653,7 +2653,7 @@ static int emInterpretLIGdt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
     rc = emRamRead(pVM, pVCpu, pRegFrame, &dtr32, pParam1, sizeof(dtr32));
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 
-    if (!(pDis->prefix & PREFIX_OPSIZE))
+    if (!(pDis->prefix & DISPREFIX_OPSIZE))
         dtr32.uAddr &= 0xffffff; /* 16 bits operand size */
 
     if (pDis->pCurInstr->opcode == OP_LIDT)
@@ -3029,7 +3029,7 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 {
     /* Note: The Intel manual claims there's a REX version of RDMSR that's slightly
              different, so we play safe by completely disassembling the instruction. */
-    Assert(!(pDis->prefix & PREFIX_REX));
+    Assert(!(pDis->prefix & DISPREFIX_REX));
     NOREF(pDis); NOREF(pvFault); NOREF(pcbSize);
     return EMInterpretRdmsr(pVM, pVCpu, pRegFrame);
 }
@@ -3103,8 +3103,8 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
         Log2(("emInterpretInstructionCPU allowed to interpret user-level code!!\n"));
 
 #ifdef IN_RC
-    if (    (pDis->prefix & (PREFIX_REPNE | PREFIX_REP))
-        ||  (   (pDis->prefix & PREFIX_LOCK)
+    if (    (pDis->prefix & (DISPREFIX_REPNE | DISPREFIX_REP))
+        ||  (   (pDis->prefix & DISPREFIX_LOCK)
              && pDis->pCurInstr->opcode != OP_CMPXCHG
              && pDis->pCurInstr->opcode != OP_CMPXCHG8B
              && pDis->pCurInstr->opcode != OP_XADD
@@ -3115,11 +3115,11 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
             )
        )
 #else
-    if (    (pDis->prefix & PREFIX_REPNE)
-        ||  (   (pDis->prefix & PREFIX_REP)
+    if (    (pDis->prefix & DISPREFIX_REPNE)
+        ||  (   (pDis->prefix & DISPREFIX_REP)
              && pDis->pCurInstr->opcode != OP_STOSWD
             )
-        ||  (   (pDis->prefix & PREFIX_LOCK)
+        ||  (   (pDis->prefix & DISPREFIX_LOCK)
              && pDis->pCurInstr->opcode != OP_OR
              && pDis->pCurInstr->opcode != OP_AND
              && pDis->pCurInstr->opcode != OP_XOR
@@ -3227,7 +3227,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
          */
 # define INTERPRET_CASE_EX_LOCK_PARAM3(opcode, Instr, InstrFn, pfnEmulate, pfnEmulateLock) \
         case opcode:\
-            if (pDis->prefix & PREFIX_LOCK) \
+            if (pDis->prefix & DISPREFIX_LOCK) \
                 rc = emInterpretLock##InstrFn(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize, pfnEmulateLock); \
             else \
                 rc = emInterpret##InstrFn(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize, pfnEmulate); \

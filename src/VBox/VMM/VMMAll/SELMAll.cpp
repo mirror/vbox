@@ -910,7 +910,7 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, PVMCPU pVCpu, RTSEL Sel)
         PX86DESC   paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
-    return (Desc.Gen.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    return (Desc.Gen.u1DefBig) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
 }
 #endif /* !IN_RING0 */
 
@@ -937,17 +937,17 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVMCPU pVCpu, X86EFLAGS eflags, R
          */
         if (    eflags.Bits.u1VM
             ||  CPUMIsGuestInRealMode(pVCpu))
-            return CPUMODE_16BIT;
+            return DISCPUMODE_16BIT;
 
         return selmGetCpuModeFromSelector(pVCpu->CTX_SUFF(pVM), pVCpu, Sel);
     }
 #endif /* !IN_RING0 */
     if (    pHiddenSel->Attr.n.u1Long
         &&  CPUMIsGuestInLongMode(pVCpu))
-        return CPUMODE_64BIT;
+        return DISCPUMODE_64BIT;
 
     /* Else compatibility or 32 bits mode. */
-    return pHiddenSel->Attr.n.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
+    return pHiddenSel->Attr.n.u1DefBig ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
 }
 
 

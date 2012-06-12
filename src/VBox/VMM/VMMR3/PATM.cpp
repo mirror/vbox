@@ -603,7 +603,7 @@ DECLINLINE(bool) patmR3DisInstrToStr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 Instr
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
     return RT_SUCCESS(DISInstrToStrWithReader(InstrGCPtr32,
-                                              (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                              (pPatch->flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                               patmReadBytes, &disinfo,
                                               pCpu, pcbInstr, pszOutput, cbOutput));
 }
@@ -619,7 +619,7 @@ DECLINLINE(bool) patmR3DisInstr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 InstrGCPtr
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
     return RT_SUCCESS(DISInstrWithReader(InstrGCPtr32,
-                                         (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                         (pPatch->flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                          patmReadBytes, &disinfo,
                                          pCpu, pcbInstr));
 }
@@ -1653,7 +1653,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
          * no need to record this instruction as it's glue code that never crashes (it had better not!)
          */
         Log(("patmRecompileCallback: jump to code we've recompiled before %RRv!\n", pCurInstrGC));
-        return patmPatchGenRelJump(pVM, pPatch, pCurInstrGC, OP_JMP, !!(pCpu->prefix & PREFIX_OPSIZE));
+        return patmPatchGenRelJump(pVM, pPatch, pCurInstrGC, OP_JMP, !!(pCpu->prefix & DISPREFIX_OPSIZE));
     }
 
     if (pPatch->flags & (PATMFL_DUPLICATE_FUNCTION))
@@ -1712,7 +1712,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 goto end;
         }
         else
-            rc = patmPatchGenRelJump(pVM, pPatch, pTargetGC, pCpu->pCurInstr->opcode, !!(pCpu->prefix & PREFIX_OPSIZE));
+            rc = patmPatchGenRelJump(pVM, pPatch, pTargetGC, pCpu->pCurInstr->opcode, !!(pCpu->prefix & DISPREFIX_OPSIZE));
 
         if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
@@ -1854,7 +1854,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_DUPLICATE_FUNCTION))
             fGenerateJmpBack = false;
 
-        rc = patmPatchGenPopf(pVM, pPatch, pCurInstrGC + pCpu->opsize, !!(pCpu->prefix & PREFIX_OPSIZE), fGenerateJmpBack);
+        rc = patmPatchGenPopf(pVM, pPatch, pCurInstrGC + pCpu->opsize, !!(pCpu->prefix & DISPREFIX_OPSIZE), fGenerateJmpBack);
         if (RT_SUCCESS(rc))
         {
             if (fGenerateJmpBack == false)
@@ -1872,7 +1872,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     }
 
     case OP_PUSHF:
-        rc = patmPatchGenPushf(pVM, pPatch, !!(pCpu->prefix & PREFIX_OPSIZE));
+        rc = patmPatchGenPushf(pVM, pPatch, !!(pCpu->prefix & DISPREFIX_OPSIZE));
         if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
         break;
@@ -1889,7 +1889,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
     case OP_IRET:
         Log(("IRET at %RRv\n", pCurInstrGC));
-        rc = patmPatchGenIret(pVM, pPatch, pCurInstrGC, !!(pCpu->prefix & PREFIX_OPSIZE));
+        rc = patmPatchGenIret(pVM, pPatch, pCurInstrGC, !!(pCpu->prefix & DISPREFIX_OPSIZE));
         if (RT_SUCCESS(rc))
         {
             pPatch->flags |= PATMFL_FOUND_PATCHEND;
@@ -3216,7 +3216,7 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
     pPatch->pPatchBlockOffset = pVM->patm.s.offPatchMem;
     pPatch->uCurPatchOffset   = 0;
 
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
 
     /* Note: Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
     rc = patmPatchGenSetPIF(pVM, pPatch, pInstrGC);
@@ -4211,7 +4211,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
 
     pPatchRec->patch.pPrivInstrGC = pInstrGC;
     pPatchRec->patch.flags   = flags;
-    pPatchRec->patch.uOpMode = (flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    pPatchRec->patch.uOpMode = (flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
     pPatchRec->patch.pTrampolinePatchesHead = NULL;
 
     pPatchRec->patch.pInstrGCLowest  = pInstrGC;
@@ -6456,7 +6456,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
 
         if (disret && (cpu.pCurInstr->opcode == OP_SYSEXIT || cpu.pCurInstr->opcode == OP_HLT || cpu.pCurInstr->opcode == OP_INT3))
         {
-            cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
+            cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
             disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_RAWCODE,
                                     &cpu, &opsize);
             if (cacheRec.Lock.pvMap)

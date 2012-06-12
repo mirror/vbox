@@ -121,20 +121,20 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
             AssertFailed();
         case DBGF_DISAS_FLAGS_DEFAULT_MODE:
             enmCpuMode   = pState->f64Bits
-                         ? CPUMODE_64BIT
+                         ? DISCPUMODE_64BIT
                          : pSelInfo->u.Raw.Gen.u1DefBig
-                         ? CPUMODE_32BIT
-                         : CPUMODE_16BIT;
+                         ? DISCPUMODE_32BIT
+                         : DISCPUMODE_16BIT;
             break;
         case DBGF_DISAS_FLAGS_16BIT_MODE:
         case DBGF_DISAS_FLAGS_16BIT_REAL_MODE:
-            enmCpuMode = CPUMODE_16BIT;
+            enmCpuMode = DISCPUMODE_16BIT;
             break;
         case DBGF_DISAS_FLAGS_32BIT_MODE:
-            enmCpuMode = CPUMODE_32BIT;
+            enmCpuMode = DISCPUMODE_32BIT;
             break;
         case DBGF_DISAS_FLAGS_64BIT_MODE:
-            enmCpuMode = CPUMODE_64BIT;
+            enmCpuMode = DISCPUMODE_64BIT;
             break;
     }
 

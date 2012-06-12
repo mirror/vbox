@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_disasm_h
-#define ___VBox_disasm_h
+#ifndef ___VBox_dis_h
+#define ___VBox_dis_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -39,32 +39,32 @@ RT_C_DECLS_BEGIN
  */
 typedef enum DISCPUMODE
 {
-    CPUMODE_INVALID = 0,
-    CPUMODE_16BIT,
-    CPUMODE_32BIT,
-    CPUMODE_64BIT,
+    DISCPUMODE_INVALID = 0,
+    DISCPUMODE_16BIT,
+    DISCPUMODE_32BIT,
+    DISCPUMODE_64BIT,
     /** hack forcing the size of the enum to 32-bits. */
-    CPUMODE_MAKE_32BIT_HACK = 0x7fffffff
+    DISCPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;
 
 /** @name Prefix byte flags
  * @{
  */
-#define PREFIX_NONE                     0
+#define DISPREFIX_NONE                  UINT8_C(0x00)
 /** non-default address size. */
-#define PREFIX_ADDRSIZE                 UINT8_C(0x00)
+#define DISPREFIX_ADDRSIZE              UINT8_C(0x01)
 /** non-default operand size. */
-#define PREFIX_OPSIZE                   UINT8_C(0x01)
+#define DISPREFIX_OPSIZE                UINT8_C(0x02)
 /** lock prefix. */
-#define PREFIX_LOCK                     UINT8_C(0x02)
+#define DISPREFIX_LOCK                  UINT8_C(0x04)
 /** segment prefix. */
-#define PREFIX_SEG                      UINT8_C(0x04)
+#define DISPREFIX_SEG                   UINT8_C(0x08)
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
-#define PREFIX_REP                      UINT8_C(0x08)
+#define DISPREFIX_REP                   UINT8_C(0x10)
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
-#define PREFIX_REPNE                    UINT8_C(0x10)
+#define DISPREFIX_REPNE                 UINT8_C(0x20)
 /** REX prefix (64 bits) */
-#define PREFIX_REX                      UINT8_C(0x20)
+#define DISPREFIX_REX                   UINT8_C(0x40)
 /** @} */
 
 /** @name 64 bits prefix byte flags

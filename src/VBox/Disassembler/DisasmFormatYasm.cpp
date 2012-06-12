@@ -205,7 +205,7 @@ static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER p
 {
     switch (pCpu->addrmode)
     {
-        case CPUMODE_16BIT:
+        case DISCPUMODE_16BIT:
         {
             Assert(pParam->index.reg_gen < RT_ELEMENTS(g_aszYasmRegGen16));
             const char *psz = g_aszYasmRegGen16[pParam->index.reg_gen];
@@ -213,7 +213,7 @@ static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER p
             return psz;
         }
 
-        case CPUMODE_32BIT:
+        case DISCPUMODE_32BIT:
         {
             Assert(pParam->index.reg_gen < RT_ELEMENTS(g_aszYasmRegGen32));
             const char *psz = g_aszYasmRegGen32[pParam->index.reg_gen];
@@ -221,7 +221,7 @@ static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER p
             return psz;
         }
 
-        case CPUMODE_64BIT:
+        case DISCPUMODE_64BIT:
         {
             Assert(pParam->index.reg_gen < RT_ELEMENTS(g_aszYasmRegGen64));
             const char *psz = g_aszYasmRegGen64[pParam->index.reg_gen];
@@ -391,7 +391,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
     size_t const offInstruction = cchOutput;
     if (    pOp->opcode == OP_INVALID
         ||  (   pOp->opcode == OP_ILLUD2
-             && (pCpu->prefix & PREFIX_LOCK)))
+             && (pCpu->prefix & DISPREFIX_LOCK)))
     {
 
     }
@@ -400,11 +400,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         /*
          * Prefixes
          */
-        if (pCpu->prefix & PREFIX_LOCK)
+        if (pCpu->prefix & DISPREFIX_LOCK)
             PUT_SZ("lock ");
-        if(pCpu->prefix & PREFIX_REP)
+        if(pCpu->prefix & DISPREFIX_REP)
             PUT_SZ("rep ");
-        else if(pCpu->prefix & PREFIX_REPNE)
+        else if(pCpu->prefix & DISPREFIX_REPNE)
             PUT_SZ("repne ");
 
         /*
@@ -416,67 +416,67 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         switch (pOp->opcode)
         {
             case OP_JECXZ:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "jcxz %Jb" : pCpu->opmode == CPUMODE_32BIT ? "jecxz %Jb"   : "jrcxz %Jb";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "jcxz %Jb" : pCpu->opmode == DISCPUMODE_32BIT ? "jecxz %Jb"   : "jrcxz %Jb";
                 break;
             case OP_PUSHF:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "pushfw"   : pCpu->opmode == CPUMODE_32BIT ? "pushfd"      : "pushfq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "pushfw"   : pCpu->opmode == DISCPUMODE_32BIT ? "pushfd"      : "pushfq";
                 break;
             case OP_POPF:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "popfw"    : pCpu->opmode == CPUMODE_32BIT ? "popfd"       : "popfq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "popfw"    : pCpu->opmode == DISCPUMODE_32BIT ? "popfd"       : "popfq";
                 break;
             case OP_PUSHA:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "pushaw"   : "pushad";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "pushaw"   : "pushad";
                 break;
             case OP_POPA:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "popaw"    : "popad";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "popaw"    : "popad";
                 break;
             case OP_INSB:
                 pszFmt = "insb";
                 break;
             case OP_INSWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "insw"     : pCpu->opmode == CPUMODE_32BIT ? "insd"  : "insq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "insw"     : pCpu->opmode == DISCPUMODE_32BIT ? "insd"  : "insq";
                 break;
             case OP_OUTSB:
                 pszFmt = "outsb";
                 break;
             case OP_OUTSWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "outsw"    : pCpu->opmode == CPUMODE_32BIT ? "outsd" : "outsq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "outsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "outsd" : "outsq";
                 break;
             case OP_MOVSB:
                 pszFmt = "movsb";
                 break;
             case OP_MOVSWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "movsw"    : pCpu->opmode == CPUMODE_32BIT ? "movsd" : "movsq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "movsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "movsd" : "movsq";
                 break;
             case OP_CMPSB:
                 pszFmt = "cmpsb";
                 break;
             case OP_CMPWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "cmpsw"    : pCpu->opmode == CPUMODE_32BIT ? "cmpsd" : "cmpsq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "cmpsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "cmpsd" : "cmpsq";
                 break;
             case OP_SCASB:
                 pszFmt = "scasb";
                 break;
             case OP_SCASWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "scasw"    : pCpu->opmode == CPUMODE_32BIT ? "scasd" : "scasq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "scasw"    : pCpu->opmode == DISCPUMODE_32BIT ? "scasd" : "scasq";
                 break;
             case OP_LODSB:
                 pszFmt = "lodsb";
                 break;
             case OP_LODSWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "lodsw"    : pCpu->opmode == CPUMODE_32BIT ? "lodsd" : "lodsq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "lodsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "lodsd" : "lodsq";
                 break;
             case OP_STOSB:
                 pszFmt = "stosb";
                 break;
             case OP_STOSWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "stosw"    : pCpu->opmode == CPUMODE_32BIT ? "stosd" : "stosq";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "stosw"    : pCpu->opmode == DISCPUMODE_32BIT ? "stosd" : "stosq";
                 break;
             case OP_CBW:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "cbw"      : pCpu->opmode == CPUMODE_32BIT ? "cwde"  : "cdqe";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "cbw"      : pCpu->opmode == DISCPUMODE_32BIT ? "cwde"  : "cdqe";
                 break;
             case OP_CWD:
-                pszFmt = pCpu->opmode == CPUMODE_16BIT ? "cwd"      : pCpu->opmode == CPUMODE_32BIT ? "cdq"   : "cqo";
+                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "cwd"      : pCpu->opmode == DISCPUMODE_32BIT ? "cdq"   : "cqo";
                 break;
             case OP_SHL:
                 Assert(pszFmt[3] == '/');
@@ -575,9 +575,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     case OP_PARM_v: \
                         switch (pCpu->opmode) \
                         { \
-                            case CPUMODE_16BIT: PUT_SZ("word "); break; \
-                            case CPUMODE_32BIT: PUT_SZ("dword "); break; \
-                            case CPUMODE_64BIT: PUT_SZ("qword "); break; \
+                            case DISCPUMODE_16BIT: PUT_SZ("word "); break; \
+                            case DISCPUMODE_32BIT: PUT_SZ("dword "); break; \
+                            case DISCPUMODE_64BIT: PUT_SZ("qword "); break; \
                             default: break; \
                         } \
                         break; \
@@ -603,7 +603,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         static const char s_szSegPrefix[6][4] = { "es:", "cs:", "ss:", "ds:", "fs:", "gs:" };
 #define PUT_SEGMENT_OVERRIDE() \
         do { \
-            if (pCpu->prefix & PREFIX_SEG) \
+            if (pCpu->prefix & DISPREFIX_SEG) \
                 PUT_STR(s_szSegPrefix[pCpu->enmPrefixSeg], 3); \
         } while (0)
 
@@ -611,7 +611,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         /*
          * Segment prefixing for instructions that doesn't do memory access.
          */
-        if (    (pCpu->prefix & PREFIX_SEG)
+        if (    (pCpu->prefix & DISPREFIX_SEG)
             &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param1.flags)
             &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param2.flags)
             &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param3.flags))
@@ -811,7 +811,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
 
                             case USE_IMMEDIATE32:
-                                if (    pCpu->opmode != (pCpu->mode == CPUMODE_16BIT ? CPUMODE_16BIT : CPUMODE_32BIT) /* not perfect */
+                                if (    pCpu->opmode != (pCpu->mode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->parval == (int32_t)pParam->parval
                                              || (pOp->param1 >= OP_PARM_REG_GEN32_START && pOp->param1 <= OP_PARM_REG_GEN32_END)
@@ -896,9 +896,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             PUT_SZ(" (");
 
                         RTUINTPTR uTrgAddr = pCpu->uInstrAddr + pCpu->opsize + offDisplacement;
-                        if (pCpu->mode == CPUMODE_16BIT)
+                        if (pCpu->mode == DISCPUMODE_16BIT)
                             PUT_NUM_16(uTrgAddr);
-                        else if (pCpu->mode == CPUMODE_32BIT)
+                        else if (pCpu->mode == DISCPUMODE_32BIT)
                             PUT_NUM_32(uTrgAddr);
                         else
                             PUT_NUM_64(uTrgAddr);
@@ -1201,7 +1201,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /*
      * Mod rm + SIB: Check for duplicate EBP encodings that yasm won't use for very good reasons.
      */
-    if (    pCpu->addrmode != CPUMODE_16BIT ///@todo correct?
+    if (    pCpu->addrmode != DISCPUMODE_16BIT ///@todo correct?
         &&  pCpu->ModRM.Bits.Rm == 4
         &&  pCpu->ModRM.Bits.Mod != 3)
     {
@@ -1234,12 +1234,12 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
         switch (pCpu->abInstr[offOpcode])
         {
             case 0xf0:
-                f = PREFIX_LOCK;
+                f = DISPREFIX_LOCK;
                 break;
 
             case 0xf2:
             case 0xf3:
-                f = PREFIX_REP; /* yes, both */
+                f = DISPREFIX_REP; /* yes, both */
                 break;
 
             case 0x2e:
@@ -1248,20 +1248,20 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
             case 0x36:
             case 0x64:
             case 0x65:
-                f = PREFIX_SEG;
+                f = DISPREFIX_SEG;
                 break;
 
             case 0x66:
-                f = PREFIX_OPSIZE;
+                f = DISPREFIX_OPSIZE;
                 break;
 
             case 0x67:
-                f = PREFIX_ADDRSIZE;
+                f = DISPREFIX_ADDRSIZE;
                 break;
 
             case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47:
             case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
-                f = pCpu->mode == CPUMODE_64BIT ? PREFIX_REX : 0;
+                f = pCpu->mode == DISCPUMODE_64BIT ? DISPREFIX_REX : 0;
                 break;
 
             default:
@@ -1276,10 +1276,10 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     }
 
     /* segment overrides are fun */
-    if (fPrefixes & PREFIX_SEG)
+    if (fPrefixes & DISPREFIX_SEG)
     {
         /* no effective address which it may apply to. */
-        Assert((pCpu->prefix & PREFIX_SEG) || pCpu->mode == CPUMODE_64BIT);
+        Assert((pCpu->prefix & DISPREFIX_SEG) || pCpu->mode == DISCPUMODE_64BIT);
         if (    !DIS_IS_EFFECTIVE_ADDR(pCpu->param1.flags)
             &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param2.flags)
             &&  !DIS_IS_EFFECTIVE_ADDR(pCpu->param3.flags))
@@ -1287,9 +1287,9 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     }
 
     /* fixed register + addr override doesn't go down all that well. */
-    if (fPrefixes & PREFIX_ADDRSIZE)
+    if (fPrefixes & DISPREFIX_ADDRSIZE)
     {
-        Assert(pCpu->prefix & PREFIX_ADDRSIZE);
+        Assert(pCpu->prefix & DISPREFIX_ADDRSIZE);
         if (    pCpu->pCurInstr->param3 == OP_PARM_NONE
             &&  pCpu->pCurInstr->param2 == OP_PARM_NONE
             &&  (   pCpu->pCurInstr->param1 >= OP_PARM_REG_GEN32_START
@@ -1334,7 +1334,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     }
 
     /* All but the segment prefix is bad news. */
-    if (fPrefixes & ~PREFIX_SEG)
+    if (fPrefixes & ~DISPREFIX_SEG)
     {
         switch (pCpu->pCurInstr->opcode)
         {
@@ -1343,7 +1343,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
                 if (    pCpu->pCurInstr->param1 >= OP_PARM_REG_SEG_START
                     &&  pCpu->pCurInstr->param1 <= OP_PARM_REG_SEG_END)
                     return true;
-                if (    (fPrefixes & ~PREFIX_OPSIZE)
+                if (    (fPrefixes & ~DISPREFIX_OPSIZE)
                     &&  pCpu->pCurInstr->param1 >= OP_PARM_REG_GEN32_START
                     &&  pCpu->pCurInstr->param1 <= OP_PARM_REG_GEN32_END)
                     return true;
@@ -1353,14 +1353,14 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
             case OP_POPF:
             case OP_PUSHA:
             case OP_PUSHF:
-                if (fPrefixes & ~PREFIX_OPSIZE)
+                if (fPrefixes & ~DISPREFIX_OPSIZE)
                     return true;
                 break;
         }
     }
 
     /* Implicit 8-bit register instructions doesn't mix with operand size. */
-    if (    (fPrefixes & PREFIX_OPSIZE)
+    if (    (fPrefixes & DISPREFIX_OPSIZE)
         &&  (   (   pCpu->pCurInstr->param1 == OP_PARM_Gb /* r8 */
                  && pCpu->pCurInstr->param2 == OP_PARM_Eb /* r8/mem8 */)
              || (   pCpu->pCurInstr->param2 == OP_PARM_Gb /* r8 */
@@ -1505,7 +1505,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
      */
     if (    pCpu->pCurInstr->opcode == OP_MOVZX
         &&  pCpu->opcode == 0xB7
-        &&  (pCpu->mode == CPUMODE_16BIT) != !!(fPrefixes & PREFIX_OPSIZE))
+        &&  (pCpu->mode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
         return true;
 
     return false;

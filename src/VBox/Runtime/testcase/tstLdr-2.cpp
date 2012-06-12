@@ -46,7 +46,7 @@ bool MyDisBlock(uint8_t const *pbCodeBlock, int32_t cbMax)
     {
         char        szOutput[256];
         uint32_t    cbInstr;
-        if (RT_FAILURE(DISInstrToStr(pbCodeBlock + i, CPUMODE_32BIT, &Cpu, &cbInstr, szOutput, sizeof(szOutput))))
+        if (RT_FAILURE(DISInstrToStr(pbCodeBlock + i, DISCPUMODE_32BIT, &Cpu, &cbInstr, szOutput, sizeof(szOutput))))
             return false;
 
         RTPrintf("%s", szOutput);

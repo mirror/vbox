@@ -302,7 +302,7 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
             break;
 
         case kAsmStyle_yasm:
-            RTPrintf("    BITS %d\n", enmCpuMode == CPUMODE_16BIT ? 16 : enmCpuMode == CPUMODE_32BIT ? 32 : 64);
+            RTPrintf("    BITS %d\n", enmCpuMode == DISCPUMODE_16BIT ? 16 : enmCpuMode == DISCPUMODE_32BIT ? 32 : 64);
             pfnFormatter = MyDisasYasmFormatter;
             break;
 
@@ -491,7 +491,7 @@ int main(int argc, char **argv)
     ASMSTYLE enmStyle = kAsmStyle_Default;
     UNDEFOPHANDLING enmUndefOp = kUndefOp_Fail;
     bool fListing = true;
-    DISCPUMODE enmCpuMode = CPUMODE_32BIT;
+    DISCPUMODE enmCpuMode = DISCPUMODE_32BIT;
     RTFOFF off = 0;
     RTFOFF cbMax = _1G;
     bool fHexBytes = false;
@@ -531,11 +531,11 @@ int main(int argc, char **argv)
 
             case 'c':
                 if (ValueUnion.u32 == 16)
-                    enmCpuMode = CPUMODE_16BIT;
+                    enmCpuMode = DISCPUMODE_16BIT;
                 else if (ValueUnion.u32 == 32)
-                    enmCpuMode = CPUMODE_32BIT;
+                    enmCpuMode = DISCPUMODE_32BIT;
                 else if (ValueUnion.u32 == 64)
-                    enmCpuMode = CPUMODE_64BIT;
+                    enmCpuMode = DISCPUMODE_64BIT;
                 else
                 {
                     RTStrmPrintf(g_pStdErr, "%s: Invalid CPU mode value %RU32\n", argv0, ValueUnion.u32);

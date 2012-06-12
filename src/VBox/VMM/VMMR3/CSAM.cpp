@@ -869,7 +869,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 }
                 Assert(VALID_PTR(pCurInstrHC));
 
-                rc = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                rc = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                     &cpu, &opsize, NULL, 0);
             }
             AssertRC(rc);
@@ -1052,11 +1052,11 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
 
                 STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
-                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                      &cpu, &opsize, szOutput, sizeof(szOutput));
                 if (RT_SUCCESS(rc2)) Log(("CSAM Call Analysis: %s", szOutput));
 #else
-                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                      &cpu, &opsize, NULL, 0);
 #endif
                 STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
@@ -1265,11 +1265,11 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
             STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
-            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? CPUMODE_32BIT : CPUMODE_16BIT,
+            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                  &cpu, &opsize, szOutput, sizeof(szOutput));
             if (RT_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
-            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? CPUMODE_32BIT : CPUMODE_16BIT,
+            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                  &cpu, &opsize, NULL, 0);
 #endif
             STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
@@ -2260,7 +2260,7 @@ VMMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrG
     if (CSAMIsEnabled(pVM))
     {
         /* Assuming 32 bits code for now. */
-        Assert(SELMGetCpuModeFromSelector(VMMGetCpu0(pVM), pCtxCore->eflags, pCtxCore->cs, &pCtxCore->csHid) == CPUMODE_32BIT);
+        Assert(SELMGetCpuModeFromSelector(VMMGetCpu0(pVM), pCtxCore->eflags, pCtxCore->cs, &pCtxCore->csHid) == DISCPUMODE_32BIT);
 
         pInstrGC = SELMToFlat(pVM, DIS_SELREG_CS, pCtxCore, pInstrGC);
         return CSAMR3CheckCode(pVM, pInstrGC);
