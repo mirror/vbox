@@ -156,7 +156,11 @@ if [ "$system" = "debian" ]; then
 fi
 
 if [ "$system" = "gentoo" ]; then
-    . /sbin/functions.sh
+    if [ -f /sbin/functions.sh ]; then
+        . /sbin/functions.sh
+    elif [ -f /etc/init.d/functions.sh ]; then
+        . /etc/init.d/functions.sh
+    fi
     start_daemon() {
         usr="$1"
         shift
