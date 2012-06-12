@@ -700,14 +700,14 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
          */
         offset = 0;
         /* include prefix byte to make sure we don't use the incorrect selector register. */
-        if (pCpu->prefix & PREFIX_SEG)
+        if (pCpu->prefix & DISPREFIX_SEG)
             pPB[offset++] = DISQuerySegPrefixByte(pCpu);
         pPB[offset++] = 0xFF;              // push r/m32
         pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, 6 /* group 5 */, pCpu->ModRM.Bits.Rm);
         i = 2;  /* standard offset of modrm bytes */
-        if (pCpu->prefix & PREFIX_OPSIZE)
+        if (pCpu->prefix & DISPREFIX_OPSIZE)
             i++;    //skip operand prefix
-        if (pCpu->prefix & PREFIX_SEG)
+        if (pCpu->prefix & DISPREFIX_SEG)
             i++;    //skip segment prefix
 
         rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
@@ -796,15 +796,15 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
      */
     offset = 0;
     /* include prefix byte to make sure we don't use the incorrect selector register. */
-    if (pCpu->prefix & PREFIX_SEG)
+    if (pCpu->prefix & DISPREFIX_SEG)
         pPB[offset++] = DISQuerySegPrefixByte(pCpu);
 
     pPB[offset++] = 0xFF;              // push r/m32
     pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, 6 /* group 5 */, pCpu->ModRM.Bits.Rm);
     i = 2;  /* standard offset of modrm bytes */
-    if (pCpu->prefix & PREFIX_OPSIZE)
+    if (pCpu->prefix & DISPREFIX_OPSIZE)
         i++;    //skip operand prefix
-    if (pCpu->prefix & PREFIX_SEG)
+    if (pCpu->prefix & DISPREFIX_SEG)
         i++;    //skip segment prefix
 
     rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
@@ -1275,7 +1275,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
     /* push ss */
     PATCHGEN_PROLOG_NODEF(pVM, pPatch);
     offset = 0;
-    if (pCpu->prefix & PREFIX_OPSIZE)
+    if (pCpu->prefix & DISPREFIX_OPSIZE)
         pPB[offset++] = 0x66;       /* size override -> 16 bits push */
     pPB[offset++] = 0x16;
     PATCHGEN_EPILOG(pPatch, offset);
@@ -1288,7 +1288,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
     /* pop general purpose register */
     PATCHGEN_PROLOG_NODEF(pVM, pPatch);
     offset = 0;
-    if (pCpu->prefix & PREFIX_OPSIZE)
+    if (pCpu->prefix & DISPREFIX_OPSIZE)
         pPB[offset++] = 0x66; /* size override -> 16 bits pop */
     pPB[offset++] = 0x58 + pCpu->param1.base.reg_gen;
     PATCHGEN_EPILOG(pPatch, offset);
@@ -1319,7 +1319,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
     uint32_t i;
 
     /** @todo segment prefix (untested) */
-    Assert(pCpu->prefix == PREFIX_NONE || pCpu->prefix == PREFIX_OPSIZE);
+    Assert(pCpu->prefix == DISPREFIX_NONE || pCpu->prefix == DISPREFIX_OPSIZE);
 
     PATCHGEN_PROLOG(pVM, pPatch);
 
@@ -1328,7 +1328,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
         /* Register operand */
         // 8B 15 [32 bits addr]   mov edx, CPUMCTX.tr/ldtr
 
-        if (pCpu->prefix == PREFIX_OPSIZE)
+        if (pCpu->prefix == DISPREFIX_OPSIZE)
             pPB[offset++] = 0x66;
 
         pPB[offset++] = 0x8B;              // mov       destreg, CPUMCTX.tr/ldtr
@@ -1359,7 +1359,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
         pPB[offset++] = 0x50;              // push      eax
         pPB[offset++] = 0x52;              // push      edx
 
-        if (pCpu->prefix == PREFIX_SEG)
+        if (pCpu->prefix == DISPREFIX_SEG)
         {
             pPB[offset++] = DISQuerySegPrefixByte(pCpu);
         }
@@ -1368,9 +1368,9 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
         pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, USE_REG_EDX, pCpu->ModRM.Bits.Rm);
 
         i = 3;  /* standard offset of modrm bytes */
-        if (pCpu->prefix == PREFIX_OPSIZE)
+        if (pCpu->prefix == DISPREFIX_OPSIZE)
             i++;    //skip operand prefix
-        if (pCpu->prefix == PREFIX_SEG)
+        if (pCpu->prefix == DISPREFIX_SEG)
             i++;    //skip segment prefix
 
         rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
@@ -1419,7 +1419,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     uint32_t i;
 
     /* @todo segment prefix (untested) */
-    Assert(pCpu->prefix == PREFIX_NONE);
+    Assert(pCpu->prefix == DISPREFIX_NONE);
 
     // sgdt %Ms
     // sidt %Ms
@@ -1454,7 +1454,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     pPB[offset++] = 0x50;              // push      eax
     pPB[offset++] = 0x52;              // push      edx
 
-    if (pCpu->prefix == PREFIX_SEG)
+    if (pCpu->prefix == DISPREFIX_SEG)
     {
         pPB[offset++] = DISQuerySegPrefixByte(pCpu);
     }
@@ -1463,9 +1463,9 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, USE_REG_EDX, pCpu->ModRM.Bits.Rm);
 
     i = 3;  /* standard offset of modrm bytes */
-    if (pCpu->prefix == PREFIX_OPSIZE)
+    if (pCpu->prefix == DISPREFIX_OPSIZE)
         i++;    //skip operand prefix
-    if (pCpu->prefix == PREFIX_SEG)
+    if (pCpu->prefix == DISPREFIX_SEG)
         i++;    //skip segment prefix
     rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
     AssertRCReturn(rc, rc);

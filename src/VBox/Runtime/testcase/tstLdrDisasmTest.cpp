@@ -104,7 +104,7 @@ static DECLCALLBACK(int) DisasmTest1ReadCode(PDISCPUSTATE pDisState, uint8_t *pb
 inline int MyDisasm(uintptr_t CodeIndex, PDISCPUSTATE pCpu, uint32_t *pcb)
 {
     uint32_t cb;
-    int rc = DISInstrWithReader(CodeIndex, CPUMODE_32BIT, DisasmTest1ReadCode, 0, pCpu, &cb);
+    int rc = DISInstrWithReader(CodeIndex, DISCPUMODE_32BIT, DisasmTest1ReadCode, 0, pCpu, &cb);
     *pcb = cb;
     MY_PRINTF(("DISCoreOneEx -> rc=%d cb=%d  Cpu: opcode=%#x pCurInstr=%p (42=%d)\n", \
                rc, cb, pCpu->opcode, pCpu->pCurInstr, 42)); \
@@ -121,7 +121,7 @@ extern "C" DECLEXPORT(int) DisasmTest1(void)
     MY_PRINTF(("DisasmTest1: %p\n", &DisasmTest1));
 
     memset(&Cpu, 0, sizeof(Cpu));
-    Cpu.mode = CPUMODE_32BIT;
+    Cpu.mode = DISCPUMODE_32BIT;
 
 #define DISAS_AND_CHECK(cbInstr, enmOp) \
         do { \

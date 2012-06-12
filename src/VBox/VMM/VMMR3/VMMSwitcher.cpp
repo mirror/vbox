@@ -834,7 +834,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 uint32_t    cbInstr = 0;
                 DISCPUSTATE Cpu;
                 char        szDisas[256];
-                int rc = DISInstr(pu8CodeR3 + offCode, CPUMODE_32BIT, &Cpu, &cbInstr);
+                int rc = DISInstr(pu8CodeR3 + offCode, DISCPUMODE_32BIT, &Cpu, &cbInstr);
                 if (RT_SUCCESS(rc))
                 {
                     Cpu.uInstrAddr += uBase - (uintptr_t)pu8CodeR3;

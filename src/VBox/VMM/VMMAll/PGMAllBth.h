@@ -917,7 +917,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     /* For now we'll restrict this to rep movsw/d instructions */
                     if (    rc == VINF_SUCCESS
                         &&  pDis->pCurInstr->opcode == OP_MOVSWD
-                        &&  (pDis->prefix & PREFIX_REP))
+                        &&  (pDis->prefix & DISPREFIX_REP))
                     {
                         CSAMMarkPossibleCodePage(pVM, pvFault);
                     }

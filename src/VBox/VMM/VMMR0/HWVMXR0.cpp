@@ -3584,7 +3584,7 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        if (pDis->prefix & PREFIX_OPSIZE)
+                        if (pDis->prefix & DISPREFIX_OPSIZE)
                         {
                             cbParm = 4;
                             uMask  = 0xffffffff;
@@ -3626,7 +3626,7 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        if (pDis->prefix & PREFIX_OPSIZE)
+                        if (pDis->prefix & DISPREFIX_OPSIZE)
                         {
                             cbParm = 4;
                             uMask  = 0xffffffff;
@@ -3668,7 +3668,7 @@ ResumeExecution:
                         uint32_t  uMask = 0xffff;
                         uint16_t  aIretFrame[3];
 
-                        if (pDis->prefix & (PREFIX_OPSIZE | PREFIX_ADDRSIZE))
+                        if (pDis->prefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
                         {
                             rc = VERR_EM_INTERPRETER;
                             break;

@@ -427,7 +427,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     {
         VBOXSTRICTRC rcStrict = VINF_EM_RAW_EMULATE_INSTR;
 
-        if (!(Cpu.prefix & (PREFIX_REP | PREFIX_REPNE)))
+        if (!(Cpu.prefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
             switch (Cpu.pCurInstr->opcode)
             {
@@ -446,7 +446,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 }
             }
         }
-        else if (Cpu.prefix & PREFIX_REP)
+        else if (Cpu.prefix & DISPREFIX_REP)
         {
             switch (Cpu.pCurInstr->opcode)
             {
@@ -683,7 +683,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
             if (pCtx->SysEnter.cs != 0)
             {
                 rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
-                                        (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
+                                        (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == DISCPUMODE_32BIT) ? PATMFL_CODE32 : 0);
                 if (RT_SUCCESS(rc))
                 {
                     DBGFR3DisasInstrCurrentLog(pVCpu, "Patched sysenter instruction");
@@ -933,7 +933,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
             int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
-                                        (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
+                                        (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == DISCPUMODE_32BIT) ? PATMFL_CODE32 : 0);
             if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
@@ -1040,7 +1040,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 #endif /* VBOX_WITH_STATISTICS */
         if (    (pCtx->ss & X86_SEL_RPL) == 0
             &&  !pCtx->eflags.Bits.u1VM
-            &&  SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT)
+            &&  SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == DISCPUMODE_32BIT)
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatPrivEmu, a);
             switch (Cpu.pCurInstr->opcode)

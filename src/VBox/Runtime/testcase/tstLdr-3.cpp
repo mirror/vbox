@@ -246,9 +246,9 @@ static int testDisasNear(uint64_t uAddr)
         DISCPUSTATE Cpu;
         memset(&Cpu, 0, sizeof(Cpu));
 #ifdef RT_ARCH_X86 /** @todo select according to the module type. */
-        Cpu.mode = CPUMODE_32BIT;
+        Cpu.mode = DISCPUMODE_32BIT;
 #else
-        Cpu.mode = CPUMODE_64BIT;
+        Cpu.mode = DISCPUMODE_64BIT;
 #endif
         uint8_t *pbCode = (uint8_t *)g_pvBits + (NearSym.aSyms[0].Value - g_uLoadAddr);
         MyDisBlock(&Cpu, (uintptr_t)pbCode,

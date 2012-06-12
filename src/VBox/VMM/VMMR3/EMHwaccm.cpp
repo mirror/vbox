@@ -306,7 +306,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     {
         rcStrict = VINF_EM_RAW_EMULATE_INSTR;
 
-        if (!(Cpu.prefix & (PREFIX_REP | PREFIX_REPNE)))
+        if (!(Cpu.prefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
             switch (Cpu.pCurInstr->opcode)
             {
@@ -325,7 +325,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 }
             }
         }
-        else if (Cpu.prefix & PREFIX_REP)
+        else if (Cpu.prefix & DISPREFIX_REP)
         {
             switch (Cpu.pCurInstr->opcode)
             {

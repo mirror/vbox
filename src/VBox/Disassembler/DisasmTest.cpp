@@ -49,7 +49,7 @@ int main(int argc, char **argv)
             DISCPUSTATE cpu;
             char        szOutput[256];
 
-            if (RT_SUCCESS(DISInstrToStr(pbInstr, CPUMODE_32BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
+            if (RT_SUCCESS(DISInstrToStr(pbInstr, DISCPUMODE_32BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
             {
                 printf("%s", szOutput);
             }
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
             DISCPUSTATE cpu;
             char        szOutput[256];
 
-            if (RT_SUCCESS(DISInstrToStr(pbInstr, CPUMODE_64BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
+            if (RT_SUCCESS(DISInstrToStr(pbInstr, DISCPUMODE_64BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
                 printf("%s", szOutput);
             else
             {

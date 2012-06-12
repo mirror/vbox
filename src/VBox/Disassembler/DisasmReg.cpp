@@ -209,13 +209,13 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
     {
         switch(pCpu->opmode)
         {
-        case CPUMODE_32BIT:
+        case DISCPUMODE_32BIT:
             subtype = OP_PARM_d;
             break;
-        case CPUMODE_64BIT:
+        case DISCPUMODE_64BIT:
             subtype = OP_PARM_q;
             break;
-        case CPUMODE_16BIT:
+        case DISCPUMODE_16BIT:
             subtype = OP_PARM_w;
             break;
         default:
@@ -240,10 +240,10 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
         return 8;
 
     case OP_PARM_p: /* far pointer */
-        if (pCpu->addrmode == CPUMODE_32BIT)
+        if (pCpu->addrmode == DISCPUMODE_32BIT)
             return 6;   /* 16:32 */
         else
-        if (pCpu->addrmode == CPUMODE_64BIT)
+        if (pCpu->addrmode == DISCPUMODE_64BIT)
             return 12;  /* 16:64 */
         else
             return 4;   /* 16:16 */
@@ -259,7 +259,7 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 //*****************************************************************************
 DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 {
-    if (pCpu->prefix & PREFIX_SEG)
+    if (pCpu->prefix & DISPREFIX_SEG)
     {
         /* Use specified SEG: prefix. */
         return pCpu->enmPrefixSeg;
@@ -284,7 +284,7 @@ DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 //*****************************************************************************
 DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
 {
-    Assert(pCpu->prefix & PREFIX_SEG);
+    Assert(pCpu->prefix & DISPREFIX_SEG);
     switch(pCpu->enmPrefixSeg)
     {
     case DIS_SELREG_ES:
@@ -591,10 +591,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
 
         if (pParam->flags & USE_DISPLACEMENT8)
         {
-            if (pCpu->mode == CPUMODE_32BIT)
+            if (pCpu->mode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->uDisp.i8;
             else
-            if (pCpu->mode == CPUMODE_64BIT)
+            if (pCpu->mode == DISCPUMODE_64BIT)
                 pParamVal->val.val64 += (int64_t)pParam->uDisp.i8;
             else
                 pParamVal->val.val16 += (int16_t)pParam->uDisp.i8;
@@ -602,10 +602,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         else
         if (pParam->flags & USE_DISPLACEMENT16)
         {
-            if (pCpu->mode == CPUMODE_32BIT)
+            if (pCpu->mode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->uDisp.i16;
             else
-            if (pCpu->mode == CPUMODE_64BIT)
+            if (pCpu->mode == DISCPUMODE_64BIT)
                 pParamVal->val.val64 += (int64_t)pParam->uDisp.i16;
             else
                 pParamVal->val.val16 += pParam->uDisp.i16;
@@ -613,7 +613,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         else
         if (pParam->flags & USE_DISPLACEMENT32)
         {
-            if (pCpu->mode == CPUMODE_32BIT)
+            if (pCpu->mode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += pParam->uDisp.i32;
             else
                 pParamVal->val.val64 += pParam->uDisp.i32;
@@ -621,13 +621,13 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         else
         if (pParam->flags & USE_DISPLACEMENT64)
         {
-            Assert(pCpu->mode == CPUMODE_64BIT);
+            Assert(pCpu->mode == DISCPUMODE_64BIT);
             pParamVal->val.val64 += pParam->uDisp.i64;
         }
         else
         if (pParam->flags & USE_RIPDISPLACEMENT32)
         {
-            Assert(pCpu->mode == CPUMODE_64BIT);
+            Assert(pCpu->mode == DISCPUMODE_64BIT);
             /* Relative to the RIP of the next instruction. */
             pParamVal->val.val64 += pParam->uDisp.i32 + pCtx->rip + pCpu->opsize;
         }

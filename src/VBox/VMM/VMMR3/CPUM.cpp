@@ -3630,10 +3630,10 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
             State.GCPtrSegEnd     = pCtx->csHid.u32Limit + 1 + (RTGCUINTPTR)pCtx->csHid.u64Base;
             State.cbSegLimit      = pCtx->csHid.u32Limit;
             enmDisCpuMode         = (State.f64Bits)
-                                    ? CPUMODE_64BIT
+                                    ? DISCPUMODE_64BIT
                                     : pCtx->csHid.Attr.n.u1DefBig
-                                    ? CPUMODE_32BIT
-                                    : CPUMODE_16BIT;
+                                    ? DISCPUMODE_32BIT
+                                    : DISCPUMODE_16BIT;
         }
         else
         {
@@ -3658,13 +3658,13 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
             State.GCPtrSegBase    = SelInfo.GCPtrBase;
             State.GCPtrSegEnd     = SelInfo.cbLimit + 1 + (RTGCUINTPTR)SelInfo.GCPtrBase;
             State.cbSegLimit      = SelInfo.cbLimit;
-            enmDisCpuMode         = SelInfo.u.Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
+            enmDisCpuMode         = SelInfo.u.Raw.Gen.u1DefBig ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
         }
     }
     else
     {
         /* real or V86 mode */
-        enmDisCpuMode         = CPUMODE_16BIT;
+        enmDisCpuMode         = DISCPUMODE_16BIT;
         State.GCPtrSegBase    = pCtx->cs * 16;
         State.GCPtrSegEnd     = 0xFFFFFFFF;
         State.cbSegLimit      = 0xFFFFFFFF;

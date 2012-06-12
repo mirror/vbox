@@ -541,7 +541,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         /*
          * Speed up dtrace and don't entrust invalid lock sequences to the recompiler.
          */
-        else if (Cpu.prefix & PREFIX_LOCK)
+        else if (Cpu.prefix & DISPREFIX_LOCK)
         {
             Log(("TRPMGCTrap06Handler: pc=%08x op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
 #ifdef DTRACE_EXPERIMENT /** @todo fix/remove/permanent-enable this when DIS/PATM handles invalid lock sequences. */

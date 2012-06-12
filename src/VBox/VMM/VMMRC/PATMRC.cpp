@@ -510,7 +510,7 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
             }
 
             cpu.mode = SELMGetCpuModeFromSelector(VMMGetCpu0(pVM), pRegFrame->eflags, pRegFrame->cs, 0);
-            if (cpu.mode != CPUMODE_32BIT)
+            if (cpu.mode != DISCPUMODE_32BIT)
             {
                 AssertFailed();
                 return VINF_EM_RAW_EMULATE_INSTR;
