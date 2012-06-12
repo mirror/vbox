@@ -1263,11 +1263,11 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
             STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
-            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? CPUMODE_32BIT : CPUMODE_16BIT,
                                  &cpu, &opsize, szOutput);
             if (RT_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
-            rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? CPUMODE_32BIT : CPUMODE_16BIT,
                                  &cpu, &opsize, NULL);
 #endif
             STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
