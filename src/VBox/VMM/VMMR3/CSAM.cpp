@@ -773,7 +773,7 @@ DECLINLINE(int) CSAMR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCP
     if (pszOutput)
         return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK),
                                pCpu, pcbInstr, pszOutput, cbOutput);
-    return DISCoreOneExEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK),
+    return DISCoreOneExEx(InstrGC, enmCpuMode, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK), CSAMR3ReadBytes, pVM,
                           pCpu, pcbInstr);
 #endif
 }
