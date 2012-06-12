@@ -100,6 +100,7 @@ static void rtR0MemObjLinuxFreePages(PRTR0MEMOBJLNX pMemLnx);
 static struct task_struct *rtR0ProcessToLinuxTask(RTR0PROCESS R0Process)
 {
     /** @todo fix rtR0ProcessToLinuxTask!! */
+    /** @todo many (all?) callers currently assume that we return 'current'! */
     return R0Process == RTR0ProcHandleSelf() ? current : NULL;
 }
 
@@ -165,6 +166,107 @@ static pgprot_t rtR0MemObjLinuxConvertProt(unsigned fProt, bool fKernel)
         case RTMEM_PROT_WRITE | RTMEM_PROT_EXEC | RTMEM_PROT_READ:
             return fKernel ? MY_PAGE_KERNEL_EXEC    : PAGE_SHARED_EXEC;
     }
+}
+
+
+/**
+ * Worker for rtR0MemObjNativeReserveUser and rtR0MemObjNativerMapUser that creates
+ * an empty user space mapping.
+ *
+ * We acquire the mmap_sem of the task!
+ *
+ * @returns Pointer to the mapping.
+ *          (void *)-1 on failure.
+ * @param   R3PtrFixed  (RTR3PTR)-1 if anywhere, otherwise a specific location.
+ * @param   cb          The size of the mapping.
+ * @param   uAlignment  The alignment of the mapping.
+ * @param   pTask       The Linux task to create this mapping in.
+ * @param   fProt       The RTMEM_PROT_* mask.
+ */
+static void *rtR0MemObjLinuxDoMmap(RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, struct task_struct *pTask, unsigned fProt)
+{
+    unsigned fLnxProt;
+    unsigned long ulAddr;
+
+    Assert((pTask == current)); /* do_mmap */
+
+    /*
+     * Convert from IPRT protection to mman.h PROT_ and call do_mmap.
+     */
+    fProt &= (RTMEM_PROT_NONE | RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
+    if (fProt == RTMEM_PROT_NONE)
+        fLnxProt = PROT_NONE;
+    else
+    {
+        fLnxProt = 0;
+        if (fProt & RTMEM_PROT_READ)
+            fLnxProt |= PROT_READ;
+        if (fProt & RTMEM_PROT_WRITE)
+            fLnxProt |= PROT_WRITE;
+        if (fProt & RTMEM_PROT_EXEC)
+            fLnxProt |= PROT_EXEC;
+    }
+
+    if (R3PtrFixed != (RTR3PTR)-1)
+    {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+        ulAddr = vm_mmap(NULL, R3PtrFixed, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED, 0);
+#else
+        down_write(&pTask->mm->mmap_sem);
+        ulAddr = do_mmap(NULL, R3PtrFixed, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED, 0);
+        up_write(&pTask->mm->mmap_sem);
+#endif
+    }
+    else
+    {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+        ulAddr = vm_mmap(NULL, 0, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS, 0);
+#else
+        down_write(&pTask->mm->mmap_sem);
+        ulAddr = do_mmap(NULL, 0, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS, 0);
+        up_write(&pTask->mm->mmap_sem);
+#endif
+        if (    !(ulAddr & ~PAGE_MASK)
+            &&  (ulAddr & (uAlignment - 1)))
+        {
+            /** @todo implement uAlignment properly... We'll probably need to make some dummy mappings to fill
+             * up alignment gaps. This is of course complicated by fragmentation (which we might have cause
+             * ourselves) and further by there begin two mmap strategies (top / bottom). */
+            /* For now, just ignore uAlignment requirements... */
+        }
+    }
+
+
+    if (ulAddr & ~PAGE_MASK) /* ~PAGE_MASK == PAGE_OFFSET_MASK */
+        return (void *)-1;
+    return (void *)ulAddr;
+}
+
+
+/**
+ * Worker that destroys a user space mapping.
+ * Undoes what rtR0MemObjLinuxDoMmap did.
+ *
+ * We acquire the mmap_sem of the task!
+ *
+ * @param   pv          The ring-3 mapping.
+ * @param   cb          The size of the mapping.
+ * @param   pTask       The Linux task to destroy this mapping in.
+ */
+static void rtR0MemObjLinuxDoMunmap(void *pv, size_t cb, struct task_struct *pTask)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    Assert(pTask == current);
+    vm_munmap((unsigned long)pv, cb);
+#elif defined(USE_RHEL4_MUNMAP)
+    down_write(&pTask->mm->mmap_sem);
+    do_munmap(pTask->mm, (unsigned long)pv, cb, 0); /* should it be 1 or 0? */
+    up_write(&pTask->mm->mmap_sem);
+#else
+    down_write(&pTask->mm->mmap_sem);
+    do_munmap(pTask->mm, (unsigned long)pv, cb);
+    up_write(&pTask->mm->mmap_sem);
+#endif
 }
 
 
@@ -423,7 +525,7 @@ static int rtR0MemObjLinuxVMap(PRTR0MEMOBJLNX pMemLnx, bool fExecutable)
 
 
 /**
- * Undos what rtR0MemObjLinuxVMap() did.
+ * Undoes what rtR0MemObjLinuxVMap() did.
  *
  * @param   pMemLnx     The linux memory object.
  */
@@ -491,11 +593,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 struct task_struct *pTask = rtR0ProcessToLinuxTask(pMemLnx->Core.u.Lock.R0Process);
                 Assert(pTask);
                 if (pTask && pTask->mm)
-                {
-                    down_write(&pTask->mm->mmap_sem);
-                    MY_DO_MUNMAP(pTask->mm, (unsigned long)pMemLnx->Core.pv, pMemLnx->Core.cb);
-                    up_write(&pTask->mm->mmap_sem);
-                }
+                    rtR0MemObjLinuxDoMunmap(pMemLnx->Core.pv, pMemLnx->Core.cb, pTask);
             }
             else
             {
@@ -516,11 +614,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 struct task_struct *pTask = rtR0ProcessToLinuxTask(pMemLnx->Core.u.Lock.R0Process);
                 Assert(pTask);
                 if (pTask && pTask->mm)
-                {
-                    down_write(&pTask->mm->mmap_sem);
-                    MY_DO_MUNMAP(pTask->mm, (unsigned long)pMemLnx->Core.pv, pMemLnx->Core.cb);
-                    up_write(&pTask->mm->mmap_sem);
-                }
+                    rtR0MemObjLinuxDoMunmap(pMemLnx->Core.pv, pMemLnx->Core.cb, pTask);
             }
             else
                 vunmap(pMemLnx->Core.pv);
@@ -1119,62 +1213,6 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *
 }
 
 
-/**
- * Worker for rtR0MemObjNativeReserveUser and rtR0MemObjNativerMapUser that creates
- * an empty user space mapping.
- *
- * The caller takes care of acquiring the mmap_sem of the task.
- *
- * @returns Pointer to the mapping.
- *          (void *)-1 on failure.
- * @param   R3PtrFixed  (RTR3PTR)-1 if anywhere, otherwise a specific location.
- * @param   cb          The size of the mapping.
- * @param   uAlignment  The alignment of the mapping.
- * @param   pTask       The Linux task to create this mapping in.
- * @param   fProt       The RTMEM_PROT_* mask.
- */
-static void *rtR0MemObjLinuxDoMmap(RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, struct task_struct *pTask, unsigned fProt)
-{
-    unsigned fLnxProt;
-    unsigned long ulAddr;
-
-    /*
-     * Convert from IPRT protection to mman.h PROT_ and call do_mmap.
-     */
-    fProt &= (RTMEM_PROT_NONE | RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
-    if (fProt == RTMEM_PROT_NONE)
-        fLnxProt = PROT_NONE;
-    else
-    {
-        fLnxProt = 0;
-        if (fProt & RTMEM_PROT_READ)
-            fLnxProt |= PROT_READ;
-        if (fProt & RTMEM_PROT_WRITE)
-            fLnxProt |= PROT_WRITE;
-        if (fProt & RTMEM_PROT_EXEC)
-            fLnxProt |= PROT_EXEC;
-    }
-
-    if (R3PtrFixed != (RTR3PTR)-1)
-        ulAddr = do_mmap(NULL, R3PtrFixed, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED, 0);
-    else
-    {
-        ulAddr = do_mmap(NULL, 0, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS, 0);
-        if (    !(ulAddr & ~PAGE_MASK)
-            &&  (ulAddr & (uAlignment - 1)))
-        {
-            /** @todo implement uAlignment properly... We'll probably need to make some dummy mappings to fill
-             * up alignment gaps. This is of course complicated by fragmentation (which we might have cause
-             * ourselves) and further by there begin two mmap strategies (top / bottom). */
-            /* For now, just ignore uAlignment requirements... */
-        }
-    }
-    if (ulAddr & ~PAGE_MASK) /* ~PAGE_MASK == PAGE_OFFSET_MASK */
-        return (void *)-1;
-    return (void *)ulAddr;
-}
-
-
 DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
     PRTR0MEMOBJLNX      pMemLnx;
@@ -1192,18 +1230,14 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR 
     /*
      * Let rtR0MemObjLinuxDoMmap do the difficult bits.
      */
-    down_write(&pTask->mm->mmap_sem);
     pv = rtR0MemObjLinuxDoMmap(R3PtrFixed, cb, uAlignment, pTask, RTMEM_PROT_NONE);
-    up_write(&pTask->mm->mmap_sem);
     if (pv == (void *)-1)
         return VERR_NO_MEMORY;
 
     pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(sizeof(*pMemLnx), RTR0MEMOBJTYPE_RES_VIRT, pv, cb);
     if (!pMemLnx)
     {
-        down_write(&pTask->mm->mmap_sem);
-        MY_DO_MUNMAP(pTask->mm, (unsigned long)pv, cb);
-        up_write(&pTask->mm->mmap_sem);
+        rtR0MemObjLinuxDoMunmap(pv, cb, pTask);
         return VERR_NO_MEMORY;
     }
 
@@ -1390,7 +1424,6 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
          * Allocate user space mapping.
          */
         void *pv;
-        down_write(&pTask->mm->mmap_sem);
         pv = rtR0MemObjLinuxDoMmap(R3PtrFixed, pMemLnxToMap->Core.cb, uAlignment, pTask, fProt);
         if (pv != (void *)-1)
         {
@@ -1403,7 +1436,9 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
             const size_t    cPages = pMemLnxToMap->Core.cb >> PAGE_SHIFT;
             size_t          iPage;
 
-            rc = 0;
+            down_write(&pTask->mm->mmap_sem);
+
+            rc = VINF_SUCCESS;
             if (pMemLnxToMap->cPages)
             {
                 for (iPage = 0; iPage < cPages; iPage++, ulAddrCur += PAGE_SIZE)
@@ -1485,13 +1520,14 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                     }
                 }
             }
-            if (!rc)
+
+            up_write(&pTask->mm->mmap_sem);
+
+            if (RT_SUCCESS(rc))
             {
-                up_write(&pTask->mm->mmap_sem);
 #ifdef VBOX_USE_PAE_HACK
                 __free_page(pDummyPage);
 #endif
-
                 pMemLnx->Core.pv = pv;
                 pMemLnx->Core.u.Mapping.R0Process = R0Process;
                 *ppMem = &pMemLnx->Core;
@@ -1501,9 +1537,8 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
             /*
              * Bail out.
              */
-            MY_DO_MUNMAP(pTask->mm, (unsigned long)pv, pMemLnxToMap->Core.cb);
+            rtR0MemObjLinuxDoMunmap(pv, pMemLnxToMap->Core.cb, pTask);
         }
-        up_write(&pTask->mm->mmap_sem);
         rtR0MemObjDelete(&pMemLnx->Core);
     }
 #ifdef VBOX_USE_PAE_HACK
