@@ -47,7 +47,7 @@ typedef enum DISCPUMODE
     DISCPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;
 
-/** @name Prefix byte flags
+/** @name Prefix byte flags (DISCPUSTATE::prefix_rex).
  * @{
  */
 #define DISPREFIX_NONE                  UINT8_C(0x00)
@@ -67,105 +67,128 @@ typedef enum DISCPUMODE
 #define DISPREFIX_REX                   UINT8_C(0x40)
 /** @} */
 
-/** @name 64 bits prefix byte flags
+/** @name 64 bits prefix byte flags (DISCPUSTATE::prefix_rex).
+ * Requires VBox/disopcode.h.
  * @{
  */
-#define PREFIX_REX_OP_2_FLAGS(a)        (a - OP_PARM_REX_START)
-#define PREFIX_REX_FLAGS                PREFIX_REX_OP_2_FLAGS(OP_PARM_REX)
-#define PREFIX_REX_FLAGS_B              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_B)
-#define PREFIX_REX_FLAGS_X              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_X)
-#define PREFIX_REX_FLAGS_XB             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_XB)
-#define PREFIX_REX_FLAGS_R              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_R)
-#define PREFIX_REX_FLAGS_RB             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RB)
-#define PREFIX_REX_FLAGS_RX             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RX)
-#define PREFIX_REX_FLAGS_RXB            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RXB)
-#define PREFIX_REX_FLAGS_W              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_W)
-#define PREFIX_REX_FLAGS_WB             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WB)
-#define PREFIX_REX_FLAGS_WX             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WX)
-#define PREFIX_REX_FLAGS_WXB            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WXB)
-#define PREFIX_REX_FLAGS_WR             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WR)
-#define PREFIX_REX_FLAGS_WRB            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRB)
-#define PREFIX_REX_FLAGS_WRX            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRX)
-#define PREFIX_REX_FLAGS_WRXB           PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRXB)
+#define DISPREFIX_REX_OP_2_FLAGS(a)     (a - OP_PARM_REX_START)
+#define DISPREFIX_REX_FLAGS             DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX)
+#define DISPREFIX_REX_FLAGS_B           DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_B)
+#define DISPREFIX_REX_FLAGS_X           DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_X)
+#define DISPREFIX_REX_FLAGS_XB          DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_XB)
+#define DISPREFIX_REX_FLAGS_R           DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_R)
+#define DISPREFIX_REX_FLAGS_RB          DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RB)
+#define DISPREFIX_REX_FLAGS_RX          DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RX)
+#define DISPREFIX_REX_FLAGS_RXB         DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RXB)
+#define DISPREFIX_REX_FLAGS_W           DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_W)
+#define DISPREFIX_REX_FLAGS_WB          DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WB)
+#define DISPREFIX_REX_FLAGS_WX          DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WX)
+#define DISPREFIX_REX_FLAGS_WXB         DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WXB)
+#define DISPREFIX_REX_FLAGS_WR          DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WR)
+#define DISPREFIX_REX_FLAGS_WRB         DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRB)
+#define DISPREFIX_REX_FLAGS_WRX         DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRX)
+#define DISPREFIX_REX_FLAGS_WRXB        DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRXB)
 /** @} */
 
 /** @name Operand type.
  * @{
  */
-#define OPTYPE_INVALID                  RT_BIT(0)
-#define OPTYPE_HARMLESS                 RT_BIT(1)
-#define OPTYPE_CONTROLFLOW              RT_BIT(2)
-#define OPTYPE_POTENTIALLY_DANGEROUS    RT_BIT(3)
-#define OPTYPE_DANGEROUS                RT_BIT(4)
-#define OPTYPE_PORTIO                   RT_BIT(5)
-#define OPTYPE_PRIVILEGED               RT_BIT(6)
-#define OPTYPE_PRIVILEGED_NOTRAP        RT_BIT(7)
-#define OPTYPE_UNCOND_CONTROLFLOW       RT_BIT(8)
-#define OPTYPE_RELATIVE_CONTROLFLOW     RT_BIT(9)
-#define OPTYPE_COND_CONTROLFLOW         RT_BIT(10)
-#define OPTYPE_INTERRUPT                RT_BIT(11)
-#define OPTYPE_ILLEGAL                  RT_BIT(12)
-#define OPTYPE_RRM_DANGEROUS            RT_BIT(14)  /**< Some additional dangerous ones when recompiling raw r0. */
-#define OPTYPE_RRM_DANGEROUS_16         RT_BIT(15)  /**< Some additional dangerous ones when recompiling 16-bit raw r0. */
-#define OPTYPE_RRM_MASK                 (OPTYPE_RRM_DANGEROUS | OPTYPE_RRM_DANGEROUS_16)
-#define OPTYPE_INHIBIT_IRQS             RT_BIT(16)  /**< Will or can inhibit irqs (sti, pop ss, mov ss) */
-#define OPTYPE_PORTIO_READ              RT_BIT(17)
-#define OPTYPE_PORTIO_WRITE             RT_BIT(18)
-#define OPTYPE_INVALID_64               RT_BIT(19)  /**< Invalid in 64 bits mode */
-#define OPTYPE_ONLY_64                  RT_BIT(20)  /**< Only valid in 64 bits mode */
-#define OPTYPE_DEFAULT_64_OP_SIZE       RT_BIT(21)  /**< Default 64 bits operand size */
-#define OPTYPE_FORCED_64_OP_SIZE        RT_BIT(22)  /**< Forced 64 bits operand size; regardless of prefix bytes */
-#define OPTYPE_REXB_EXTENDS_OPREG       RT_BIT(23)  /**< REX.B extends the register field in the opcode byte */
-#define OPTYPE_MOD_FIXED_11             RT_BIT(24)  /**< modrm.mod is always 11b */
-#define OPTYPE_FORCED_32_OP_SIZE_X86    RT_BIT(25)  /**< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
-#define OPTYPE_ALL                      UINT32_C(0xffffffff)
+#define DISOPTYPE_INVALID                  RT_BIT_32(0)
+#define DISOPTYPE_HARMLESS                 RT_BIT_32(1)
+#define DISOPTYPE_CONTROLFLOW              RT_BIT_32(2)
+#define DISOPTYPE_POTENTIALLY_DANGEROUS    RT_BIT_32(3)
+#define DISOPTYPE_DANGEROUS                RT_BIT_32(4)
+#define DISOPTYPE_PORTIO                   RT_BIT_32(5)
+#define DISOPTYPE_PRIVILEGED               RT_BIT_32(6)
+#define DISOPTYPE_PRIVILEGED_NOTRAP        RT_BIT_32(7)
+#define DISOPTYPE_UNCOND_CONTROLFLOW       RT_BIT_32(8)
+#define DISOPTYPE_RELATIVE_CONTROLFLOW     RT_BIT_32(9)
+#define DISOPTYPE_COND_CONTROLFLOW         RT_BIT_32(10)
+#define DISOPTYPE_INTERRUPT                RT_BIT_32(11)
+#define DISOPTYPE_ILLEGAL                  RT_BIT_32(12)
+#define DISOPTYPE_RRM_DANGEROUS            RT_BIT_32(14)  /**< Some additional dangerous ones when recompiling raw r0. */
+#define DISOPTYPE_RRM_DANGEROUS_16         RT_BIT_32(15)  /**< Some additional dangerous ones when recompiling 16-bit raw r0. */
+#define DISOPTYPE_RRM_MASK                 (DISOPTYPE_RRM_DANGEROUS | DISOPTYPE_RRM_DANGEROUS_16)
+#define DISOPTYPE_INHIBIT_IRQS             RT_BIT_32(16)  /**< Will or can inhibit irqs (sti, pop ss, mov ss) */
+#define DISOPTYPE_PORTIO_READ              RT_BIT_32(17)
+#define DISOPTYPE_PORTIO_WRITE             RT_BIT_32(18)
+#define DISOPTYPE_INVALID_64               RT_BIT_32(19)  /**< Invalid in 64 bits mode */
+#define DISOPTYPE_ONLY_64                  RT_BIT_32(20)  /**< Only valid in 64 bits mode */
+#define DISOPTYPE_DEFAULT_64_OP_SIZE       RT_BIT_32(21)  /**< Default 64 bits operand size */
+#define DISOPTYPE_FORCED_64_OP_SIZE        RT_BIT_32(22)  /**< Forced 64 bits operand size; regardless of prefix bytes */
+#define DISOPTYPE_REXB_EXTENDS_OPREG       RT_BIT_32(23)  /**< REX.B extends the register field in the opcode byte */
+#define DISOPTYPE_MOD_FIXED_11             RT_BIT_32(24)  /**< modrm.mod is always 11b */
+#define DISOPTYPE_FORCED_32_OP_SIZE_X86    RT_BIT_32(25)  /**< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
+#define DISOPTYPE_ALL                      UINT32_C(0xffffffff)
 /** @}  */
 
 /** @name Parameter usage flags.
  * @{
  */
-#define USE_BASE                        RT_BIT_64(0)
-#define USE_INDEX                       RT_BIT_64(1)
-#define USE_SCALE                       RT_BIT_64(2)
-#define USE_REG_GEN8                    RT_BIT_64(3)
-#define USE_REG_GEN16                   RT_BIT_64(4)
-#define USE_REG_GEN32                   RT_BIT_64(5)
-#define USE_REG_GEN64                   RT_BIT_64(6)
-#define USE_REG_FP                      RT_BIT_64(7)
-#define USE_REG_MMX                     RT_BIT_64(8)
-#define USE_REG_XMM                     RT_BIT_64(9)
-#define USE_REG_CR                      RT_BIT_64(10)
-#define USE_REG_DBG                     RT_BIT_64(11)
-#define USE_REG_SEG                     RT_BIT_64(12)
-#define USE_REG_TEST                    RT_BIT_64(13)
-#define USE_DISPLACEMENT8               RT_BIT_64(14)
-#define USE_DISPLACEMENT16              RT_BIT_64(15)
-#define USE_DISPLACEMENT32              RT_BIT_64(16)
-#define USE_DISPLACEMENT64              RT_BIT_64(17)
-#define USE_RIPDISPLACEMENT32           RT_BIT_64(18)
-#define USE_IMMEDIATE8                  RT_BIT_64(19)
-#define USE_IMMEDIATE8_REL              RT_BIT_64(20)
-#define USE_IMMEDIATE16                 RT_BIT_64(21)
-#define USE_IMMEDIATE16_REL             RT_BIT_64(22)
-#define USE_IMMEDIATE32                 RT_BIT_64(23)
-#define USE_IMMEDIATE32_REL             RT_BIT_64(24)
-#define USE_IMMEDIATE64                 RT_BIT_64(25)
-#define USE_IMMEDIATE64_REL             RT_BIT_64(26)
-#define USE_IMMEDIATE_ADDR_0_32         RT_BIT_64(27)
-#define USE_IMMEDIATE_ADDR_16_32        RT_BIT_64(28)
-#define USE_IMMEDIATE_ADDR_0_16         RT_BIT_64(29)
-#define USE_IMMEDIATE_ADDR_16_16        RT_BIT_64(30)
+#define DISUSE_BASE                        RT_BIT_64(0)
+#define DISUSE_INDEX                       RT_BIT_64(1)
+#define DISUSE_SCALE                       RT_BIT_64(2)
+#define DISUSE_REG_GEN8                    RT_BIT_64(3)
+#define DISUSE_REG_GEN16                   RT_BIT_64(4)
+#define DISUSE_REG_GEN32                   RT_BIT_64(5)
+#define DISUSE_REG_GEN64                   RT_BIT_64(6)
+#define DISUSE_REG_FP                      RT_BIT_64(7)
+#define DISUSE_REG_MMX                     RT_BIT_64(8)
+#define DISUSE_REG_XMM                     RT_BIT_64(9)
+#define DISUSE_REG_CR                      RT_BIT_64(10)
+#define DISUSE_REG_DBG                     RT_BIT_64(11)
+#define DISUSE_REG_SEG                     RT_BIT_64(12)
+#define DISUSE_REG_TEST                    RT_BIT_64(13)
+#define DISUSE_DISPLACEMENT8               RT_BIT_64(14)
+#define DISUSE_DISPLACEMENT16              RT_BIT_64(15)
+#define DISUSE_DISPLACEMENT32              RT_BIT_64(16)
+#define DISUSE_DISPLACEMENT64              RT_BIT_64(17)
+#define DISUSE_RIPDISPLACEMENT32           RT_BIT_64(18)
+#define DISUSE_IMMEDIATE8                  RT_BIT_64(19)
+#define DISUSE_IMMEDIATE8_REL              RT_BIT_64(20)
+#define DISUSE_IMMEDIATE16                 RT_BIT_64(21)
+#define DISUSE_IMMEDIATE16_REL             RT_BIT_64(22)
+#define DISUSE_IMMEDIATE32                 RT_BIT_64(23)
+#define DISUSE_IMMEDIATE32_REL             RT_BIT_64(24)
+#define DISUSE_IMMEDIATE64                 RT_BIT_64(25)
+#define DISUSE_IMMEDIATE64_REL             RT_BIT_64(26)
+#define DISUSE_IMMEDIATE_ADDR_0_32         RT_BIT_64(27)
+#define DISUSE_IMMEDIATE_ADDR_16_32        RT_BIT_64(28)
+#define DISUSE_IMMEDIATE_ADDR_0_16         RT_BIT_64(29)
+#define DISUSE_IMMEDIATE_ADDR_16_16        RT_BIT_64(30)
 /** DS:ESI */
-#define USE_POINTER_DS_BASED            RT_BIT_64(31)
+#define DISUSE_POINTER_DS_BASED            RT_BIT_64(31)
 /** ES:EDI */
-#define USE_POINTER_ES_BASED            RT_BIT_64(32)
-#define USE_IMMEDIATE16_SX8             RT_BIT_64(33)
-#define USE_IMMEDIATE32_SX8             RT_BIT_64(34)
-#define USE_IMMEDIATE64_SX8             RT_BIT_64(36)
+#define DISUSE_POINTER_ES_BASED            RT_BIT_64(32)
+#define DISUSE_IMMEDIATE16_SX8             RT_BIT_64(33)
+#define DISUSE_IMMEDIATE32_SX8             RT_BIT_64(34)
+#define DISUSE_IMMEDIATE64_SX8             RT_BIT_64(36)
 
-#define USE_IMMEDIATE                   (USE_IMMEDIATE8|USE_IMMEDIATE16|USE_IMMEDIATE32|USE_IMMEDIATE64|USE_IMMEDIATE8_REL|USE_IMMEDIATE16_REL|USE_IMMEDIATE32_REL|USE_IMMEDIATE64_REL|USE_IMMEDIATE_ADDR_0_32|USE_IMMEDIATE_ADDR_16_32|USE_IMMEDIATE_ADDR_0_16|USE_IMMEDIATE_ADDR_16_16|USE_IMMEDIATE16_SX8|USE_IMMEDIATE32_SX8|USE_IMMEDIATE64_SX8)
-
-#define DIS_IS_EFFECTIVE_ADDR(flags)    !!((flags) & (USE_BASE|USE_INDEX|USE_DISPLACEMENT32|USE_DISPLACEMENT64|USE_DISPLACEMENT16|USE_DISPLACEMENT8|USE_RIPDISPLACEMENT32))
+/** Mask of immediate use flags. */
+#define DISUSE_IMMEDIATE                   ( DISUSE_IMMEDIATE8 \
+                                           | DISUSE_IMMEDIATE16 \
+                                           | DISUSE_IMMEDIATE32 \
+                                           | DISUSE_IMMEDIATE64 \
+                                           | DISUSE_IMMEDIATE8_REL \
+                                           | DISUSE_IMMEDIATE16_REL \
+                                           | DISUSE_IMMEDIATE32_REL \
+                                           | DISUSE_IMMEDIATE64_REL \
+                                           | DISUSE_IMMEDIATE_ADDR_0_32 \
+                                           | DISUSE_IMMEDIATE_ADDR_16_32 \
+                                           | DISUSE_IMMEDIATE_ADDR_0_16 \
+                                           | DISUSE_IMMEDIATE_ADDR_16_16 \
+                                           | DISUSE_IMMEDIATE16_SX8 \
+                                           | DISUSE_IMMEDIATE32_SX8 \
+                                           | DISUSE_IMMEDIATE64_SX8)
+/** Check if the use flags indicates an effective address. */
+#define DISUSE_IS_EFFECTIVE_ADDR(a_fUseFlags) (!!(  (a_fUseFlags) \
+                                                  & (  DISUSE_BASE  \
+                                                     | DISUSE_INDEX \
+                                                     | DISUSE_DISPLACEMENT32 \
+                                                     | DISUSE_DISPLACEMENT64 \
+                                                     | DISUSE_DISPLACEMENT16 \
+                                                     | DISUSE_DISPLACEMENT8 \
+                                                     | DISUSE_RIPDISPLACEMENT32) ))
 /** @} */
 
 /** index in {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"}
@@ -208,8 +231,8 @@ typedef enum DISCPUMODE
 #define USE_REG_R13D                    13
 #define USE_REG_R14D                    14
 #define USE_REG_R15D                    15
-
 /** @} */
+
 /** index in {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"}
  * @{
  */
@@ -315,6 +338,7 @@ typedef enum
 #define USE_REG_XMM5                    5
 #define USE_REG_XMM6                    6
 #define USE_REG_XMM7                    7
+/** @todo missing XMM8-XMM15 */
 
 /** Used by DISQueryParamVal & EMIQueryParamVal
  * @{

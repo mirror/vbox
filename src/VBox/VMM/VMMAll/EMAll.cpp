@@ -1048,8 +1048,8 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
 
                 /* pop [esp+xx] uses esp after the actual pop! */
                 AssertCompile(USE_REG_ESP == USE_REG_SP);
-                if (    (pDis->param1.flags & USE_BASE)
-                    &&  (pDis->param1.flags & (USE_REG_GEN16|USE_REG_GEN32))
+                if (    (pDis->param1.flags & DISUSE_BASE)
+                    &&  (pDis->param1.flags & (DISUSE_REG_GEN16|DISUSE_REG_GEN32))
                     &&  pDis->param1.base.reg_gen == USE_REG_ESP
                    )
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
@@ -2134,7 +2134,7 @@ static int emInterpretCpuId(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
- * @param   SrcRegCRx   CRx register index (USE_REG_CR*)
+ * @param   SrcRegCRx   CRx register index (DISUSE_REG_CR*)
  *
  */
 VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
@@ -2193,7 +2193,7 @@ static int emInterpretClts(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
  * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
- * @param   DestRegCRx  CRx register index (USE_REG_CR*)
+ * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
  * @param   val         New CRx value
  *
  */
@@ -2332,7 +2332,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
  * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
- * @param   DestRegCRx  CRx register index (USE_REG_CR*)
+ * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
@@ -2467,10 +2467,10 @@ static int emInterpretSmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 static int emInterpretMovCRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     NOREF(pvFault); NOREF(pcbSize);
-    if ((pDis->param1.flags == USE_REG_GEN32 || pDis->param1.flags == USE_REG_GEN64) && pDis->param2.flags == USE_REG_CR)
+    if ((pDis->param1.flags == DISUSE_REG_GEN32 || pDis->param1.flags == DISUSE_REG_GEN64) && pDis->param2.flags == DISUSE_REG_CR)
         return EMInterpretCRxRead(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_gen, pDis->param2.base.reg_ctrl);
 
-    if (pDis->param1.flags == USE_REG_CR && (pDis->param2.flags == USE_REG_GEN32 || pDis->param2.flags == USE_REG_GEN64))
+    if (pDis->param1.flags == DISUSE_REG_CR && (pDis->param2.flags == DISUSE_REG_GEN32 || pDis->param2.flags == DISUSE_REG_GEN64))
         return EMInterpretCRxWrite(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_ctrl, pDis->param2.base.reg_gen);
 
     AssertMsgFailedReturn(("Unexpected control register move\n"), VERR_EM_INTERPRETER);
@@ -2557,12 +2557,12 @@ static int emInterpretMovDRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
     int rc = VERR_EM_INTERPRETER;
     NOREF(pvFault); NOREF(pcbSize);
 
-    if((pDis->param1.flags == USE_REG_GEN32 || pDis->param1.flags == USE_REG_GEN64) && pDis->param2.flags == USE_REG_DBG)
+    if((pDis->param1.flags == DISUSE_REG_GEN32 || pDis->param1.flags == DISUSE_REG_GEN64) && pDis->param2.flags == DISUSE_REG_DBG)
     {
         rc = EMInterpretDRxRead(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_gen, pDis->param2.base.reg_dbg);
     }
     else
-    if(pDis->param1.flags == USE_REG_DBG && (pDis->param2.flags == USE_REG_GEN32 || pDis->param2.flags == USE_REG_GEN64))
+    if(pDis->param1.flags == DISUSE_REG_DBG && (pDis->param2.flags == DISUSE_REG_GEN32 || pDis->param2.flags == DISUSE_REG_GEN64))
     {
         rc = EMInterpretDRxWrite(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_dbg, pDis->param2.base.reg_gen);
     }

@@ -1394,7 +1394,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     else
     {
         /* No unconditional jumps or calls without fixed displacements. */
-        if (    (pCpu->pCurInstr->optype & OPTYPE_CONTROLFLOW)
+        if (    (pCpu->pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
              && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
            )
         {
@@ -1501,7 +1501,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         break;
 
     default:
-        if (pCpu->pCurInstr->optype & (OPTYPE_PRIVILEGED_NOTRAP))
+        if (pCpu->pCurInstr->optype & (DISOPTYPE_PRIVILEGED_NOTRAP))
         {
             patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
             return VINF_SUCCESS;    /* exit point */
@@ -1510,7 +1510,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     }
 
     /* If single instruction patch, we've copied enough instructions *and* the current instruction is not a relative jump. */
-    if ((pPatch->flags & PATMFL_CHECK_SIZE) && pPatch->cbPatchBlockSize > SIZEOF_NEARJUMP32 && !(pCpu->pCurInstr->optype & OPTYPE_RELATIVE_CONTROLFLOW))
+    if ((pPatch->flags & PATMFL_CHECK_SIZE) && pPatch->cbPatchBlockSize > SIZEOF_NEARJUMP32 && !(pCpu->pCurInstr->optype & DISOPTYPE_RELATIVE_CONTROLFLOW))
     {
         /* The end marker for this kind of patch is any instruction at a location outside our patch jump. */
         Log(("End of block at %RRv size %d\n", pCurInstrGC, pCpu->opsize));
@@ -1553,7 +1553,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     else
     {
         // no unconditional jumps or calls without fixed displacements
-        if (    (pCpu->pCurInstr->optype & OPTYPE_CONTROLFLOW)
+        if (    (pCpu->pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
              && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
            )
         {
@@ -1582,7 +1582,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
 
     #if 0
         ///@todo we can handle certain in/out and privileged instructions in the guest context
-        if (pCpu->pCurInstr->optype & OPTYPE_PRIVILEGED && pCpu->pCurInstr->opcode != OP_STI)
+        if (pCpu->pCurInstr->optype & DISOPTYPE_PRIVILEGED && pCpu->pCurInstr->opcode != OP_STI)
         {
             Log(("Illegal instructions for function patch!!\n"));
             return VERR_PATCHING_REFUSED;
@@ -1615,7 +1615,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     case OP_STI:
         return VWRN_CONTINUE_ANALYSIS;
     default:
-        if (pCpu->pCurInstr->optype & (OPTYPE_PRIVILEGED_NOTRAP))
+        if (pCpu->pCurInstr->optype & (DISOPTYPE_PRIVILEGED_NOTRAP))
         {
             patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
             return VINF_SUCCESS;    /* exit point */
@@ -1693,7 +1693,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     /* For our first attempt, we'll handle only simple relative jumps (immediate offset coded in instruction).
      * Indirect calls are handled below.
      */
-    if (   (pCpu->pCurInstr->optype & OPTYPE_CONTROLFLOW)
+    if (   (pCpu->pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
         && (pCpu->pCurInstr->opcode != OP_CALL || (pPatch->flags & PATMFL_SUPPORT_CALLS))
         && (OP_PARM_VTYPE(pCpu->pCurInstr->param1) == OP_PARM_J))
     {
@@ -1744,10 +1744,10 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     }
 
     case OP_MOV:
-        if (pCpu->pCurInstr->optype & OPTYPE_POTENTIALLY_DANGEROUS)
+        if (pCpu->pCurInstr->optype & DISOPTYPE_POTENTIALLY_DANGEROUS)
         {
             /* mov ss, src? */
-            if (    (pCpu->param1.flags & USE_REG_SEG)
+            if (    (pCpu->param1.flags & DISUSE_REG_SEG)
                 &&  (pCpu->param1.base.reg_seg == DIS_SELREG_SS))
             {
                 Log(("Force recompilation of next instruction for OP_MOV at %RRv\n", pCurInstrGC));
@@ -1756,9 +1756,9 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             }
 #if 0 /* necessary for Haiku */
             else
-            if (    (pCpu->param2.flags & USE_REG_SEG)
+            if (    (pCpu->param2.flags & DISUSE_REG_SEG)
                 &&  (pCpu->param2.base.reg_seg == USE_REG_SS)
-                &&  (pCpu->param1.flags & (USE_REG_GEN32|USE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
+                &&  (pCpu->param1.flags & (DISUSE_REG_GEN32|DISUSE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
             {
                 /* mov GPR, ss */
                 rc = patmPatchGenMovFromSS(pVM, pPatch, pCpu, pCurInstrGC);
@@ -1773,7 +1773,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     case OP_POP:
         if (pCpu->pCurInstr->param1 == OP_PARM_REG_SS)
         {
-            Assert(pCpu->pCurInstr->optype & OPTYPE_INHIBIT_IRQS);
+            Assert(pCpu->pCurInstr->optype & DISOPTYPE_INHIBIT_IRQS);
 
             Log(("Force recompilation of next instruction for OP_MOV at %RRv\n", pCurInstrGC));
             pPatch->flags |= PATMFL_RECOMPILE_NEXT;
@@ -1999,7 +1999,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         goto duplicate_instr;
 
     default:
-        if (pCpu->pCurInstr->optype & (OPTYPE_CONTROLFLOW | OPTYPE_PRIVILEGED_NOTRAP))
+        if (pCpu->pCurInstr->optype & (DISOPTYPE_CONTROLFLOW | DISOPTYPE_PRIVILEGED_NOTRAP))
         {
 gen_illegal_instr:
             rc = patmPatchGenIllegalInstr(pVM, pPatch);
@@ -2048,7 +2048,7 @@ end:
         // If single instruction patch, we've copied enough instructions *and* the current instruction is not a relative jump
         if (    (pPatch->flags & PATMFL_CHECK_SIZE)
              &&  pCurInstrGC + pCpu->opsize - pInstrGC >= SIZEOF_NEARJUMP32
-             &&  !(pCpu->pCurInstr->optype & OPTYPE_RELATIVE_CONTROLFLOW)
+             &&  !(pCpu->pCurInstr->optype & DISOPTYPE_RELATIVE_CONTROLFLOW)
              &&  !(pPatch->flags & PATMFL_RECOMPILE_NEXT) /* do not do this when the next instruction *must* be executed! */
            )
         {
@@ -2232,7 +2232,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
         }
 
         /* For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction) */
-        if (   (cpu.pCurInstr->optype & OPTYPE_CONTROLFLOW)
+        if (   (cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
             && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J)
             &&  cpu.pCurInstr->opcode != OP_CALL /* complete functions are replaced; don't bother here. */
            )
@@ -2419,7 +2419,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                     break; /* recompile these */
 
                 default:
-                    if (cpunext.pCurInstr->optype & OPTYPE_CONTROLFLOW)
+                    if (cpunext.pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
                     {
                         Log(("Unexpected control flow instruction after inhibit irq instruction\n"));
 
@@ -2453,7 +2453,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
 
 
         /* For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction). */
-        if (   (cpu.pCurInstr->optype & OPTYPE_CONTROLFLOW)
+        if (   (cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
             && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J)
             &&  cpu.pCurInstr->opcode != OP_CALL /* complete functions are replaced; don't bother here. */
            )
@@ -2469,7 +2469,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
             Log(("Jump encountered target %RRv\n", addr));
 
             /* We don't check if the branch target lies in a valid page as we've already done that in the analysis phase. */
-            if (!(cpu.pCurInstr->optype & OPTYPE_UNCOND_CONTROLFLOW))
+            if (!(cpu.pCurInstr->optype & DISOPTYPE_UNCOND_CONTROLFLOW))
             {
                 Log(("patmRecompileCodeStream continue passed conditional jump\n"));
                 /* First we need to finish this linear code stream until the next exit point. */
@@ -2517,7 +2517,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
             goto end;
         }
         else
-        if (cpu.pCurInstr->optype & OPTYPE_UNCOND_CONTROLFLOW)
+        if (cpu.pCurInstr->optype & DISOPTYPE_UNCOND_CONTROLFLOW)
         {
             rc = VINF_SUCCESS;
             goto end;
@@ -3679,7 +3679,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
     if (!pVM->patm.s.mmio.pCachedData)
         goto failure;
 
-    if (pCpu->param2.flags != USE_DISPLACEMENT32)
+    if (pCpu->param2.flags != DISUSE_DISPLACEMENT32)
         goto failure;
 
     pPB = PATMGCVirtToHCVirt(pVM, pCacheRec, pPatch->pPrivInstrGC);
@@ -3758,7 +3758,7 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
     AssertMsg(opsize <= MAX_INSTR_SIZE, ("privileged instruction too big %d!!\n", opsize));
     if (opsize > MAX_INSTR_SIZE)
         return VERR_PATCHING_REFUSED;
-    if (cpu.param2.flags != USE_DISPLACEMENT32)
+    if (cpu.param2.flags != DISUSE_DISPLACEMENT32)
         return VERR_PATCHING_REFUSED;
 
     /* Add relocation record for cached data access. */
@@ -3920,8 +3920,8 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
     case OP_JNLE:
     case OP_JMP:
         Assert(pPatch->flags & PATMFL_JUMP_CONFLICT);
-        Assert(pCpu->param1.flags & USE_IMMEDIATE32_REL);
-        if (!(pCpu->param1.flags & USE_IMMEDIATE32_REL))
+        Assert(pCpu->param1.flags & DISUSE_IMMEDIATE32_REL);
+        if (!(pCpu->param1.flags & DISUSE_IMMEDIATE32_REL))
             goto failure;
 
         Assert(pCpu->opsize == SIZEOF_NEARJUMP32 || pCpu->opsize == SIZEOF_NEAR_COND_JUMP32);
@@ -5204,8 +5204,8 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
      */
     if (    disret == true
         && (pConflictPatch->flags & PATMFL_CODE32)
-        && (cpu.pCurInstr->opcode == OP_JMP || (cpu.pCurInstr->optype & OPTYPE_COND_CONTROLFLOW))
-        && (cpu.param1.flags & USE_IMMEDIATE32_REL))
+        && (cpu.pCurInstr->opcode == OP_JMP || (cpu.pCurInstr->optype & DISOPTYPE_COND_CONTROLFLOW))
+        && (cpu.param1.flags & DISUSE_IMMEDIATE32_REL))
     {
         /* Hint patches must be enabled first. */
         if (pConflictPatch->flags & PATMFL_INSTR_HINT)
@@ -6020,7 +6020,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         /* Only harmless instructions are acceptable. */
         rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCurPatchInstrGC, &CpuOld, 0);
         if (    RT_FAILURE(rc)
-            ||  !(CpuOld.pCurInstr->optype & OPTYPE_HARMLESS))
+            ||  !(CpuOld.pCurInstr->optype & DISOPTYPE_HARMLESS))
         {
             if (RT_SUCCESS(rc))
                 cbDirty += CpuOld.opsize;
@@ -6056,7 +6056,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     }
 
     if (    RT_SUCCESS(rc)
-        &&  (CpuOld.pCurInstr->optype & OPTYPE_HARMLESS)
+        &&  (CpuOld.pCurInstr->optype & DISOPTYPE_HARMLESS)
        )
     {
         uint32_t cbLeft;
@@ -6071,9 +6071,9 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
             rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCurInstrGC, &CpuNew, 0);
 
-            fValidInstr = !!(CpuNew.pCurInstr->optype & OPTYPE_HARMLESS);
+            fValidInstr = !!(CpuNew.pCurInstr->optype & DISOPTYPE_HARMLESS);
             if (    !fValidInstr
-                &&  (CpuNew.pCurInstr->optype & OPTYPE_RELATIVE_CONTROLFLOW)
+                &&  (CpuNew.pCurInstr->optype & DISOPTYPE_RELATIVE_CONTROLFLOW)
                )
             {
                 RTRCPTR pTargetGC = PATMResolveBranch(&CpuNew, pCurInstrGC);

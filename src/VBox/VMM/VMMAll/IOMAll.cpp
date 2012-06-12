@@ -67,7 +67,7 @@ VMMDECL(bool) IOMIsLockOwner(PVM pVM)
 bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize)
 {
     NOREF(pCpu);
-    if (pParam->flags & (USE_BASE | USE_INDEX | USE_SCALE | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32))
+    if (pParam->flags & (DISUSE_BASE | DISUSE_INDEX | DISUSE_SCALE | DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32))
     {
         *pcbSize  = 0;
         *pu64Data = 0;
@@ -75,65 +75,65 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
     }
 
     /* divide and conquer */
-    if (pParam->flags & (USE_REG_GEN64 | USE_REG_GEN32 | USE_REG_GEN16 | USE_REG_GEN8))
+    if (pParam->flags & (DISUSE_REG_GEN64 | DISUSE_REG_GEN32 | DISUSE_REG_GEN16 | DISUSE_REG_GEN8))
     {
-        if (pParam->flags & USE_REG_GEN32)
+        if (pParam->flags & DISUSE_REG_GEN32)
         {
             *pcbSize  = 4;
             DISFetchReg32(pRegFrame, pParam->base.reg_gen, (uint32_t *)pu64Data);
             return true;
         }
 
-        if (pParam->flags & USE_REG_GEN16)
+        if (pParam->flags & DISUSE_REG_GEN16)
         {
             *pcbSize  = 2;
             DISFetchReg16(pRegFrame, pParam->base.reg_gen, (uint16_t *)pu64Data);
             return true;
         }
 
-        if (pParam->flags & USE_REG_GEN8)
+        if (pParam->flags & DISUSE_REG_GEN8)
         {
             *pcbSize  = 1;
             DISFetchReg8(pRegFrame, pParam->base.reg_gen, (uint8_t *)pu64Data);
             return true;
         }
 
-        Assert(pParam->flags & USE_REG_GEN64);
+        Assert(pParam->flags & DISUSE_REG_GEN64);
         *pcbSize  = 8;
         DISFetchReg64(pRegFrame, pParam->base.reg_gen, pu64Data);
         return true;
     }
     else
     {
-        if (pParam->flags & (USE_IMMEDIATE64 | USE_IMMEDIATE64_SX8))
+        if (pParam->flags & (DISUSE_IMMEDIATE64 | DISUSE_IMMEDIATE64_SX8))
         {
             *pcbSize  = 8;
             *pu64Data = pParam->parval;
             return true;
         }
 
-        if (pParam->flags & (USE_IMMEDIATE32 | USE_IMMEDIATE32_SX8))
+        if (pParam->flags & (DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE32_SX8))
         {
             *pcbSize  = 4;
             *pu64Data = (uint32_t)pParam->parval;
             return true;
         }
 
-        if (pParam->flags & (USE_IMMEDIATE16 | USE_IMMEDIATE16_SX8))
+        if (pParam->flags & (DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE16_SX8))
         {
             *pcbSize  = 2;
             *pu64Data = (uint16_t)pParam->parval;
             return true;
         }
 
-        if (pParam->flags & USE_IMMEDIATE8)
+        if (pParam->flags & DISUSE_IMMEDIATE8)
         {
             *pcbSize  = 1;
             *pu64Data = (uint8_t)pParam->parval;
             return true;
         }
 
-        if (pParam->flags & USE_REG_SEG)
+        if (pParam->flags & DISUSE_REG_SEG)
         {
             *pcbSize  = 2;
             DISFetchRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL *)pu64Data);
@@ -161,36 +161,36 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
 bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t u64Data)
 {
     NOREF(pCpu);
-    if (pParam->flags & (USE_BASE | USE_INDEX | USE_SCALE | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_DISPLACEMENT64 | USE_IMMEDIATE8 | USE_IMMEDIATE16 | USE_IMMEDIATE32 | USE_IMMEDIATE32_SX8 | USE_IMMEDIATE16_SX8))
+    if (pParam->flags & (DISUSE_BASE | DISUSE_INDEX | DISUSE_SCALE | DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT64 | DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE32_SX8 | DISUSE_IMMEDIATE16_SX8))
     {
         return false;
     }
 
-    if (pParam->flags & USE_REG_GEN32)
+    if (pParam->flags & DISUSE_REG_GEN32)
     {
         DISWriteReg32(pRegFrame, pParam->base.reg_gen, (uint32_t)u64Data);
         return true;
     }
 
-    if (pParam->flags & USE_REG_GEN64)
+    if (pParam->flags & DISUSE_REG_GEN64)
     {
         DISWriteReg64(pRegFrame, pParam->base.reg_gen, u64Data);
         return true;
     }
 
-    if (pParam->flags & USE_REG_GEN16)
+    if (pParam->flags & DISUSE_REG_GEN16)
     {
         DISWriteReg16(pRegFrame, pParam->base.reg_gen, (uint16_t)u64Data);
         return true;
     }
 
-    if (pParam->flags & USE_REG_GEN8)
+    if (pParam->flags & DISUSE_REG_GEN8)
     {
         DISWriteReg8(pRegFrame, pParam->base.reg_gen, (uint8_t)u64Data);
         return true;
     }
 
-    if (pParam->flags & USE_REG_SEG)
+    if (pParam->flags & DISUSE_REG_SEG)
     {
         DISWriteRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL)u64Data);
         return true;

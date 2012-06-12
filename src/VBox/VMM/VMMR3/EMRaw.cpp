@@ -621,7 +621,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
         DISCPUSTATE cpu;
         rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &cpu, "Guest Trap: ");
         if (    RT_SUCCESS(rc)
-            &&  (cpu.pCurInstr->optype & OPTYPE_PORTIO))
+            &&  (cpu.pCurInstr->optype & DISOPTYPE_PORTIO))
         {
             /*
              * We should really check the TSS for the IO bitmap, but it's not like this
@@ -989,17 +989,17 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                 break;
 
             case OP_MOV_CR:
-                if (Cpu.param1.flags & USE_REG_GEN32)
+                if (Cpu.param1.flags & DISUSE_REG_GEN32)
                 {
                     //read
-                    Assert(Cpu.param2.flags & USE_REG_CR);
+                    Assert(Cpu.param2.flags & DISUSE_REG_CR);
                     Assert(Cpu.param2.base.reg_ctrl <= USE_REG_CR4);
                     STAM_COUNTER_INC(&pStats->StatMovReadCR[Cpu.param2.base.reg_ctrl]);
                 }
                 else
                 {
                     //write
-                    Assert(Cpu.param1.flags & USE_REG_CR);
+                    Assert(Cpu.param1.flags & DISUSE_REG_CR);
                     Assert(Cpu.param1.base.reg_ctrl <= USE_REG_CR4);
                     STAM_COUNTER_INC(&pStats->StatMovWriteCR[Cpu.param1.base.reg_ctrl]);
                 }
@@ -1099,7 +1099,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                         STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
 
                         if (    Cpu.pCurInstr->opcode == OP_MOV_CR
-                            &&  Cpu.param1.flags == USE_REG_CR /* write */
+                            &&  Cpu.param1.flags == DISUSE_REG_CR /* write */
                            )
                         {
                             /* Deal with CR0 updates inside patch code that force
