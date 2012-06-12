@@ -602,44 +602,44 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         if (pParam->flags & USE_DISPLACEMENT8)
         {
             if (pCpu->mode == CPUMODE_32BIT)
-                pParamVal->val.val32 += (int32_t)pParam->disp8;
+                pParamVal->val.val32 += (int32_t)pParam->uDisp.i8;
             else
             if (pCpu->mode == CPUMODE_64BIT)
-                pParamVal->val.val64 += (int64_t)pParam->disp8;
+                pParamVal->val.val64 += (int64_t)pParam->uDisp.i8;
             else
-                pParamVal->val.val16 += (int16_t)pParam->disp8;
+                pParamVal->val.val16 += (int16_t)pParam->uDisp.i8;
         }
         else
         if (pParam->flags & USE_DISPLACEMENT16)
         {
             if (pCpu->mode == CPUMODE_32BIT)
-                pParamVal->val.val32 += (int32_t)pParam->disp16;
+                pParamVal->val.val32 += (int32_t)pParam->uDisp.i16;
             else
             if (pCpu->mode == CPUMODE_64BIT)
-                pParamVal->val.val64 += (int64_t)pParam->disp16;
+                pParamVal->val.val64 += (int64_t)pParam->uDisp.i16;
             else
-                pParamVal->val.val16 += pParam->disp16;
+                pParamVal->val.val16 += pParam->uDisp.i16;
         }
         else
         if (pParam->flags & USE_DISPLACEMENT32)
         {
             if (pCpu->mode == CPUMODE_32BIT)
-                pParamVal->val.val32 += pParam->disp32;
+                pParamVal->val.val32 += pParam->uDisp.i32;
             else
-                pParamVal->val.val64 += pParam->disp32;
+                pParamVal->val.val64 += pParam->uDisp.i32;
         }
         else
         if (pParam->flags & USE_DISPLACEMENT64)
         {
             Assert(pCpu->mode == CPUMODE_64BIT);
-            pParamVal->val.val64 += (int64_t)pParam->disp64;
+            pParamVal->val.val64 += pParam->uDisp.i64;
         }
         else
         if (pParam->flags & USE_RIPDISPLACEMENT32)
         {
             Assert(pCpu->mode == CPUMODE_64BIT);
             /* Relative to the RIP of the next instruction. */
-            pParamVal->val.val64 += pParam->disp32 + pCtx->rip + pCpu->opsize;
+            pParamVal->val.val64 += pParam->uDisp.i32 + pCtx->rip + pCpu->opsize;
         }
         return VINF_SUCCESS;
     }

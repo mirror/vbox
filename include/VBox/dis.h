@@ -371,10 +371,17 @@ typedef struct OP_PARAMETER
 {
     uint64_t        parval;
     uint64_t        flags;
-    int64_t         disp64;
-    int32_t         disp32;
-    int32_t         disp16;
-    int32_t         disp8;
+    union
+    {
+        int64_t     i64;
+        int32_t     i32;
+        int32_t     i16;
+        int32_t     i8;
+        uint64_t    u64;
+        uint32_t    u32;
+        uint32_t    u16;
+        uint32_t    u8;
+    } uDisp;
     uint32_t        size;
     int32_t         param;
 
