@@ -68,6 +68,23 @@ typedef struct PATMREFRESHPATCH
 } PATMREFRESHPATCH, *PPATMREFRESHPATCH;
 
 
+#define PATMREAD_RAWCODE        1  /* read code as-is */
+#define PATMREAD_ORGCODE        2  /* read original guest opcode bytes; not the patched bytes */
+#define PATMREAD_NOCHECK        4  /* don't check for patch conflicts */
+
+/*
+ * Private structure used during disassembly
+ */
+typedef struct
+{
+    PVM                  pVM;
+    PPATCHINFO           pPatchInfo;
+    R3PTRTYPE(uint8_t *) pInstrHC;
+    RTRCPTR              pInstrGC;
+    uint32_t             fReadFlags;
+} PATMDISASM, *PPATMDISASM;
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -575,6 +592,89 @@ DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPT
     return VINF_SUCCESS;
 }
 
+
+DECLINLINE(bool) patmR3DisInstrToStr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 InstrGCPtr32, uint8_t *pbInstrHC, uint32_t fReadFlags,
+                                     PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
+{
+    PATMDISASM disinfo;
+    disinfo.pVM         = pVM;
+    disinfo.pPatchInfo  = pPatch;
+    disinfo.pInstrHC    = pbInstrHC;
+    disinfo.pInstrGC    = InstrGCPtr32;
+    disinfo.fReadFlags  = fReadFlags;
+    (pCpu)->pfnReadBytes = patmReadBytes;
+    (pCpu)->apvUserData[0] = &disinfo;
+    return RT_SUCCESS(DISInstrToStrWithReader(InstrGCPtr32,
+                                              (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                              patmReadBytes, &disinfo,
+                                              pCpu, pcbInstr, pszOutput, cbOutput));
+}
+
+
+DECLINLINE(bool) patmR3DisInstr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 InstrGCPtr32, uint8_t *pbInstrHC, uint32_t fReadFlags,
+                                PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+{
+    PATMDISASM disinfo;
+    disinfo.pVM         = pVM;
+    disinfo.pPatchInfo  = pPatch;
+    disinfo.pInstrHC    = pbInstrHC;
+    disinfo.pInstrGC    = InstrGCPtr32;
+    disinfo.fReadFlags  = fReadFlags;
+    (pCpu)->pfnReadBytes = patmReadBytes;
+    (pCpu)->apvUserData[0] = &disinfo;
+    return RT_SUCCESS(DISCoreOneWithReader(InstrGCPtr32,
+                                           (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                           patmReadBytes, &disinfo,
+                                           pCpu, pcbInstr));
+}
+
+
+DECLINLINE(bool) patmR3DisInstrNoStrOpMode(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 InstrGCPtr32, uint8_t *pbInstrHC,
+                                           uint32_t fReadFlags,
+                                           PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+{
+    PATMDISASM disinfo;
+    disinfo.pVM         = pVM;
+    disinfo.pPatchInfo  = pPatch;
+    disinfo.pInstrHC    = pbInstrHC;
+    disinfo.pInstrGC    = InstrGCPtr32;
+    disinfo.fReadFlags  = fReadFlags;
+    (pCpu)->pfnReadBytes = patmReadBytes;
+    (pCpu)->apvUserData[0] = &disinfo;
+    return RT_SUCCESS(DISCoreOneWithReader(InstrGCPtr32, pPatch->uOpMode, patmReadBytes, &disinfo,
+                                           pCpu, pcbInstr));
+}
+
+#ifdef LOG_ENABLED
+# define PATM_LOG_ORG_PATCH_INSTR(a_pVM, a_pPatch, a_szComment) \
+    PATM_LOG_PATCH_INSTR(a_pVM, a_pPatch, PATMREAD_ORGCODE, a_szComment, " patch:")
+# define PATM_LOG_RAW_PATCH_INSTR(a_pVM, a_pPatch, a_szComment) \
+    PATM_LOG_PATCH_INSTR(a_pVM, a_pPatch, PATMREAD_RAWCODE, a_szComment, " patch:")
+
+# define PATM_LOG_PATCH_INSTR(a_pVM, a_pPatch, a_fFlags, a_szComment1, a_szComment2) \
+    do { \
+        if (LogIsEnabled()) \
+            patmLogRawPatchInstr(a_pVM, a_pPatch, a_fFlags, a_szComment1, a_szComment2); \
+    } while (0)
+
+static void patmLogRawPatchInstr(PVM pVM, PPATCHINFO pPatch, uint32_t fFlags,
+                                 const char *pszComment1, const char *pszComment2)
+{
+    DISCPUSTATE DisState;
+    char szOutput[128];
+    szOutput[0] = '\0';
+    patmR3DisInstrToStr(pVM, pPatch, pPatch->pPrivInstrGC, NULL, fFlags,
+                        &DisState, NULL, szOutput, sizeof(szOutput));
+    Log(("%s%s %s", pszComment1, pszComment2, szOutput));
+}
+
+#else
+# define PATM_LOG_ORG_PATCH_INSTR(a_pVM, a_pPatch, a_szComment)                         do { } while (0)
+# define PATM_LOG_RAW_PATCH_INSTR(a_pVM, a_pPatch, a_szComment)                         do { } while (0)
+# define PATM_LOG_PATCH_INSTR(a_pVM, a_pPatch, a_fFlags, a_szComment1, a_szComment2)    do { } while (0)
+#endif
+
+
 /**
  * Callback function for RTAvloU32DoWithAll
  *
@@ -589,26 +689,14 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
     PPATMPATCHREC   pPatch = (PPATMPATCHREC)pNode;
     PVM             pVM = (PVM)pParam;
     RTRCINTPTR      delta;
-#ifdef LOG_ENABLED
-    DISCPUSTATE     cpu;
-    char            szOutput[256];
-    uint32_t        opsize;
-    bool            disret;
-#endif
     int             rc;
 
     /* Nothing to do if the patch is not active. */
     if (pPatch->patch.uState == PATCH_REFUSED)
         return 0;
 
-#ifdef LOG_ENABLED
     if (pPatch->patch.flags & PATMFL_PATCHED_GUEST_CODE)
-    {
-        cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, &pPatch->patch, &cpu, pPatch->patch.pPrivInstrGC, NULL, &opsize, szOutput, PATMREAD_RAWCODE);
-        Log(("Org patch jump: %s", szOutput));
-    }
-#endif
+        PATM_LOG_PATCH_INSTR(pVM, &pPatch->patch, PATMREAD_RAWCODE, "Org patch jump:", "");
 
     Log(("Nr of fixups %d\n", pPatch->patch.nrFixups));
     delta = (RTRCINTPTR)pVM->patm.s.deltaReloc;
@@ -785,14 +873,8 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
         }
     }
 
-#ifdef LOG_ENABLED
     if (pPatch->patch.flags & PATMFL_PATCHED_GUEST_CODE)
-    {
-        cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, &pPatch->patch, &cpu, pPatch->patch.pPrivInstrGC, NULL, &opsize, szOutput, PATMREAD_RAWCODE);
-        Log(("Rel patch jump: %s", szOutput));
-    }
-#endif
+        PATM_LOG_PATCH_INSTR(pVM, &pPatch->patch, PATMREAD_RAWCODE, "Rel patch jump:", "");
     return 0;
 }
 
@@ -1737,7 +1819,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 }
 
                 // Disassemble the next instruction
-                disret = PATMR3DISInstr(pVM, pPatch, &cpu, pNextInstrGC, pNextInstrHC, &opsize, NULL);
+                disret = patmR3DisInstr(pVM, pPatch, pNextInstrGC, pNextInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
             }
             if (disret == false)
             {
@@ -2051,13 +2133,12 @@ int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstr
         RTRCPTR     pOrgJumpGC;
         uint32_t    dummy;
 
-        cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
         pOrgJumpGC = patmPatchGCPtr2GuestGCPtr(pVM, pPatch, pCurInstrGC);
 
         {   /* Force pOrgJumpHC out of scope after using it */
             uint8_t *pOrgJumpHC = PATMGCVirtToHCVirt(pVM, pCacheRec, pOrgJumpGC);
 
-            bool disret = PATMR3DISInstr(pVM, pPatch, &cpu, pOrgJumpGC, pOrgJumpHC, &dummy, NULL);
+            bool disret = patmR3DisInstr(pVM, pPatch, pOrgJumpGC, pOrgJumpHC, PATMREAD_ORGCODE, &cpu, NULL);
             if (!disret || cpu.pCurInstr->opcode != OP_CALL || cpu.param1.cb != 4 /* only near calls */)
                 return VINF_SUCCESS;
         }
@@ -2114,10 +2195,8 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
     /* We need this to determine branch targets (and for disassembling). */
     delta = pVM->patm.s.pPatchMemGC - (uintptr_t)pVM->patm.s.pPatchMemHC;
 
-    while(rc == VWRN_CONTINUE_ANALYSIS)
+    while (rc == VWRN_CONTINUE_ANALYSIS)
     {
-        cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-
         pCurInstrHC = PATMGCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
         if (pCurInstrHC == NULL)
         {
@@ -2125,7 +2204,8 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
             goto end;
         }
 
-        disret = PATMR3DISInstr(pVM, pPatch, &cpu, pCurInstrGC, pCurInstrHC, &opsize, szOutput, PATMREAD_RAWCODE);
+        disret = patmR3DisInstrToStr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_RAWCODE,
+                                     &cpu, &opsize, szOutput, sizeof(szOutput));
         if (PATMIsPatchGCAddr(pVM, pCurInstrGC))
         {
             RTRCPTR pOrgInstrGC = patmPatchGCPtr2GuestGCPtr(pVM, pPatch, pCurInstrGC);
@@ -2284,8 +2364,6 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
 
     while (rc == VWRN_CONTINUE_RECOMPILE)
     {
-        cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-
         pCurInstrHC = PATMGCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
         if (pCurInstrHC == NULL)
         {
@@ -2293,10 +2371,11 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
             goto end;
         }
 #ifdef LOG_ENABLED
-        disret = PATMR3DISInstr(pVM, pPatch, &cpu, pCurInstrGC, pCurInstrHC, &opsize, szOutput);
+        disret = patmR3DisInstrToStr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE,
+                                     &cpu, &opsize, szOutput, sizeof(szOutput));
         Log(("Recompile: %s", szOutput));
 #else
-        disret = PATMR3DISInstr(pVM, pPatch, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
+        disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
 #endif
         if (disret == false)
         {
@@ -2332,8 +2411,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                     rc = VERR_PATCHING_REFUSED;   /* fatal in this case */
                     goto end;
                 }
-                cpunext.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-                disret = PATMR3DISInstr(pVM, pPatch, &cpunext, pNextInstrGC, pNextInstrHC, &opsizenext, NULL);
+                disret = patmR3DisInstr(pVM, pPatch, pNextInstrGC, pNextInstrHC, PATMREAD_ORGCODE, &cpunext, &opsizenext);
                 if (disret == false)
                 {
                     rc = VERR_PATCHING_REFUSED;   /* fatal in this case */
@@ -2564,8 +2642,8 @@ static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
 
     while (i < pPatch->cbPrivInstr)
     {
-        cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC + i, NULL, &opsize, szOutput);
+        disret = patmR3DisInstrToStr(pVM, pPatch, pPatch->pPrivInstrGC + i, NULL, PATMREAD_ORGCODE,
+                                     &cpu, &opsize, szOutput, sizeof(szOutput));
         if (disret == false)
             break;
 
@@ -2581,10 +2659,10 @@ static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
     if (rc == VINF_SUCCESS)
     {
         i = 0;
-        while(i < pPatch->cbPrivInstr)
+        while (i < pPatch->cbPrivInstr)
         {
-            cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-            disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC + i, NULL, &opsize, szOutput);
+            disret = patmR3DisInstrToStr(pVM, pPatch, pPatch->pPrivInstrGC + i, NULL, PATMREAD_ORGCODE,
+                                         &cpu, &opsize, szOutput, sizeof(szOutput));
             if (disret == false)
                 break;
 
@@ -2660,15 +2738,9 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
-    DISCPUSTATE cpu;
     uint32_t orgOffsetPatchMem = ~0;
     RTRCPTR pInstrStart;
     bool fInserted;
-#ifdef LOG_ENABLED
-    uint32_t opsize;
-    char szOutput[256];
-    bool disret;
-#endif
     NOREF(pInstrHC); NOREF(uOpSize);
 
     /* Save original offset (in case of failures later on) */
@@ -2719,8 +2791,6 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
 
     pPatch->pPatchBlockOffset = pVM->patm.s.offPatchMem;
     pPatch->uCurPatchOffset = 0;
-
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
 
     if ((pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT|PATMFL_SYSENTER)) == PATMFL_IDTHANDLER)
     {
@@ -2847,11 +2917,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
 
     }
 
-#ifdef LOG_ENABLED
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC, NULL, &opsize, szOutput, PATMREAD_RAWCODE);
-    Log(("%s patch: %s", patmGetInstructionString(pPatch->opcode, pPatch->flags), szOutput));
-#endif
+    PATM_LOG_RAW_PATCH_INSTR(pVM, pPatch, patmGetInstructionString(pPatch->opcode, pPatch->flags));
 
     patmEmptyTree(pVM, &pPatch->pTempInfo->IllegalInstrTree);
     pPatch->pTempInfo->nrIllegalInstr = 0;
@@ -2916,8 +2982,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
      * and then jump to a common entrypoint. In order not to waste a lot of memory, we will check for this
      * condition here and only patch the common entypoint once.
      */
-    cpuPush.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpuPush, pCurInstrGC, pCurInstrHC, &opsize, NULL);
+    disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuPush, &opsize);
     Assert(disret);
     if (disret && cpuPush.pCurInstr->opcode == OP_PUSH)
     {
@@ -2925,8 +2990,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
         int      rc;
         pCurInstrGC += opsize;
 
-        cpuJmp.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, pPatch, &cpuJmp, pCurInstrGC, pCurInstrHC, &opsize, NULL);
+        disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuJmp, &opsize);
         if (   disret
             && cpuJmp.pCurInstr->opcode == OP_JMP
             && (pJmpInstrGC = PATMResolveBranch(&cpuJmp, pCurInstrGC))
@@ -3033,12 +3097,6 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
     int rc = VERR_PATCHING_REFUSED;
     uint32_t orgOffsetPatchMem = ~0;
     bool fInserted;
-#ifdef LOG_ENABLED
-    bool disret;
-    DISCPUSTATE cpu;
-    uint32_t opsize;
-    char szOutput[256];
-#endif
 
     // save original offset (in case of failures later on)
     orgOffsetPatchMem = pVM->patm.s.offPatchMem;
@@ -3073,12 +3131,7 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
     patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmr3DisasmCallback, pCacheRec);
     Log(("Patch code ends -----------------------------------------------------\n"));
 #endif
-
-#ifdef LOG_ENABLED
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC, NULL, &opsize, szOutput);
-    Log(("TRAP handler patch: %s", szOutput));
-#endif
+    PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "TRAP handler");
     Log(("Successfully installed Trap Trampoline patch at %RRv\n", pInstrGC));
 
     /*
@@ -3560,8 +3613,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
             if (pTmpInstrHC == 0)
                 break;
 
-            cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-            disret = PATMR3DISInstr(pVM, pPatch, &cpu, pTargetGC, pTmpInstrHC, &opsize, NULL);
+            disret = patmR3DisInstr(pVM, pPatch, pTargetGC, pTmpInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
             if (disret == false || cpu.pCurInstr->opcode != OP_JMP)
                 break;
 
@@ -3597,12 +3649,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     /* Lowest and highest address for write monitoring. */
     pPatch->pInstrGCLowest  = pInstrGC;
     pPatch->pInstrGCHighest = pInstrGC + pCpu->opsize;
-
-#ifdef LOG_ENABLED
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC, NULL, &opsize, szOutput);
-    Log(("Call patch: %s", szOutput));
-#endif
+    PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "Call");
 
     Log(("Successfully installed function replacement patch at %RRv\n", pInstrGC));
 
@@ -3633,12 +3680,6 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
     PPATCHINFO    pPatch = (PPATCHINFO)pCacheRec->pPatch;
     uint8_t      *pPB;
     int           rc = VERR_PATCHING_REFUSED;
-#ifdef LOG_ENABLED
-    DISCPUSTATE   cpu;
-    uint32_t      opsize;
-    bool          disret;
-    char          szOutput[256];
-#endif
 
     Assert(pVM->patm.s.mmio.pCachedData);
     if (!pVM->patm.s.mmio.pCachedData)
@@ -3657,11 +3698,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
         Log(("Relocation failed for cached mmio address!!\n"));
         return VERR_PATCHING_REFUSED;
     }
-#ifdef LOG_ENABLED
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC, NULL, &opsize, szOutput);
-    Log(("MMIO patch old instruction: %s", szOutput));
-#endif
+    PATM_LOG_PATCH_INSTR(pVM, pPatch, PATMREAD_ORGCODE, "MMIO patch old instruction:", "");
 
     /* Save original instruction. */
     rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
@@ -3677,11 +3714,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
         goto failure;
     }
 
-#ifdef LOG_ENABLED
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC, NULL, &opsize, szOutput);
-    Log(("MMIO patch: %s", szOutput));
-#endif
+    PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "MMIO");
     pVM->patm.s.mmio.pCachedData = 0;
     pVM->patm.s.mmio.GCPhys = 0;
     pPatch->uState = PATCH_ENABLED;
@@ -3712,9 +3745,6 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
     uint32_t      opsize;
     bool          disret;
     uint8_t      *pInstrHC;
-#ifdef LOG_ENABLED
-    char          szOutput[256];
-#endif
 
     AssertReturn(pVM->patm.s.mmio.pCachedData, VERR_INVALID_PARAMETER);
 
@@ -3723,8 +3753,8 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
     AssertReturn(pInstrHC, VERR_PATCHING_REFUSED);
 
     /* Disassemble mmio instruction. */
-    cpu.mode = pPatch->uOpMode;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pInstrGC, pInstrHC, &opsize, NULL);
+    disret = patmR3DisInstrNoStrOpMode(pVM, pPatch, pInstrGC, pInstrHC, PATMREAD_ORGCODE,
+                                       &cpu, &opsize);
     if (disret == false)
     {
         Log(("Disassembly failed (probably page not present) -> return to caller\n"));
@@ -3750,12 +3780,7 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
     pPatch->pInstrGCLowest  = pInstrGC;
     pPatch->pInstrGCHighest = pInstrGC + cpu.opsize;
 
-#ifdef LOG_ENABLED
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pInstrGC, pInstrHC, &opsize, szOutput);
-    Log(("MMIO patch: %s", szOutput));
-#endif
-
+    PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "MMIO");
     pVM->patm.s.mmio.pCachedData = 0;
     pVM->patm.s.mmio.GCPhys = 0;
     return VINF_SUCCESS;
@@ -3827,16 +3852,7 @@ VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t
     int rc;
 
     /* Note: Do not use patch memory here! It might called during patch installation too. */
-
-#ifdef LOG_ENABLED
-    DISCPUSTATE   cpu;
-    char          szOutput[256];
-    uint32_t      opsize;
-
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    PATMR3DISInstr(pVM, pPatch, &cpu, pInstrGC, pInstrHC, &opsize, szOutput);
-    Log(("PATMR3PatchInstrInt3: %s", szOutput));
-#endif
+    PATM_LOG_PATCH_INSTR(pVM, pPatch, PATMREAD_ORGCODE, "PATMR3PatchInstrInt3:", "");
 
     /* Save the original instruction. */
     rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
@@ -3880,12 +3896,6 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
-#ifdef LOG_ENABLED
-    bool disret;
-    DISCPUSTATE cpu;
-    uint32_t opsize;
-    char szOutput[256];
-#endif
 
     pPatch->pPatchBlockOffset = 0;  /* doesn't use patch memory */
     pPatch->uCurPatchOffset   = 0;
@@ -3973,12 +3983,7 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
 
     pPatch->flags |= PATMFL_MUST_INSTALL_PATCHJMP;
 
-#ifdef LOG_ENABLED
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC, NULL, &opsize, szOutput);
-    Log(("%s patch: %s", patmGetInstructionString(pPatch->opcode, pPatch->flags), szOutput));
-#endif
-
+    PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, patmGetInstructionString(pPatch->opcode, pPatch->flags));
     Log(("Successfully installed %s patch at %RRv\n", patmGetInstructionString(pPatch->opcode, pPatch->flags), pInstrGC));
 
     STAM_COUNTER_INC(&pVM->patm.s.StatInstalledJump);
@@ -4246,8 +4251,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         return VERR_NO_MEMORY;
     }
 
-    cpu.mode = pPatchRec->patch.uOpMode;
-    disret = PATMR3DISInstr(pVM, &pPatchRec->patch, &cpu, pInstrGC, NULL, &opsize, NULL);
+    disret = patmR3DisInstrNoStrOpMode(pVM, &pPatchRec->patch, pInstrGC, NULL, PATMREAD_ORGCODE, &cpu, &opsize);
     if (disret == false)
     {
         Log(("Disassembly failed (probably page not present) -> return to caller\n"));
@@ -4500,8 +4504,7 @@ static uint32_t patmGetInstrSize(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
         bool        disret;
         uint32_t    opsize;
 
-        cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, pPatch, &cpu, pInstrGC, pInstrHC, &opsize, NULL, PATMREAD_ORGCODE | PATMREAD_NOCHECK);
+        disret = patmR3DisInstr(pVM, pPatch, pInstrGC, pInstrHC, PATMREAD_ORGCODE | PATMREAD_NOCHECK, &cpu, &opsize);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
         if (disret)
             return opsize;
@@ -5199,8 +5202,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
 
     RT_ZERO(patch);
     pInstrHC = PATMGCVirtToHCVirt(pVM, &patch, pInstrGC);
-    cpu.mode = (pConflictPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-    disret = PATMR3DISInstr(pVM, &patch, &cpu, pInstrGC, pInstrHC, &opsize, NULL);
+    disret = patmR3DisInstr(pVM, &patch, pInstrGC, pInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
     /*
      * If it's a 5 byte relative jump, then we can work around the problem by replacing the 32 bits relative offset
      * with one that jumps right into the conflict patch.
@@ -5342,13 +5344,13 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
                     {
                         DISCPUSTATE cpu;
                         char szOutput[256];
-                        uint32_t opsize, i = 0;
+                        uint32_t opsize;
+                        uint32_t i = 0;
                         bool disret;
-                        i = 0;
                         while(i < pPatch->cbPatchJump)
                         {
-                            cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-                            disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC + i, NULL, &opsize, szOutput);
+                            disret = patmR3DisInstrToStr(pVM, pPatch, pPatch->pPrivInstrGC + i, NULL, PATMREAD_ORGCODE,
+                                                         &cpu, &opsize, szOutput, sizeof(szOutput));
                             Log(("Renewed patch instr: %s", szOutput));
                             i += opsize;
                         }
@@ -6414,8 +6416,8 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         RT_ZERO(cacheRec);
         cacheRec.pPatch = &pPatch->patch;
 
-        cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, &pPatch->patch, &cpu, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), &opsize, NULL, PATMREAD_RAWCODE);
+        disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_RAWCODE,
+                                &cpu, &opsize);
         if (cacheRec.Lock.pvMap)
             PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 
@@ -6453,15 +6455,16 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         RT_ZERO(cacheRec);
         cacheRec.pPatch = &pPatch->patch;
 
-        cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-        disret = PATMR3DISInstr(pVM, &pPatch->patch, &cpu, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), &opsize, NULL, PATMREAD_ORGCODE);
+        disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_ORGCODE,
+                                &cpu, &opsize);
         if (cacheRec.Lock.pvMap)
             PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 
         if (disret && (cpu.pCurInstr->opcode == OP_SYSEXIT || cpu.pCurInstr->opcode == OP_HLT || cpu.pCurInstr->opcode == OP_INT3))
         {
             cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
-            disret = PATMR3DISInstr(pVM, &pPatch->patch, &cpu, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), &opsize, NULL, PATMREAD_RAWCODE);
+            disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_RAWCODE,
+                                    &cpu, &opsize);
             if (cacheRec.Lock.pvMap)
                 PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 

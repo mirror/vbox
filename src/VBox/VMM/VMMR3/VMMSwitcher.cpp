@@ -813,10 +813,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
              * Disassemble it.
              */
             RTLogPrintf("  %s: offCode=%#x cbCode=%#x\n", pszDesc, offCode, cbCode);
-            DISCPUSTATE Cpu;
 
-            memset(&Cpu, 0, sizeof(Cpu));
-            Cpu.mode = CPUMODE_32BIT;
             while (cbCode > 0)
             {
                 /* try label it */
@@ -834,15 +831,24 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                     RTLogPrintf(" *GCGuestToHostAsmGuestCtx:\n");
 
                 /* disas */
-                uint32_t cbInstr = 0;
-                char szDisas[256];
-                if (RT_SUCCESS(DISInstrWithOff(&Cpu, (uintptr_t)pu8CodeR3 + offCode, uBase - (uintptr_t)pu8CodeR3,
-                                               &cbInstr, szDisas)))
-                    RTLogPrintf("  %04x: %s", offCode, szDisas); //for whatever reason szDisas includes '\n'.
+                uint32_t    cbInstr = 0;
+                DISCPUSTATE Cpu;
+                char        szDisas[256];
+                int rc = DISCoreOne((uintptr_t)pu8CodeR3 + offCode, CPUMODE_32BIT, &Cpu, &cbInstr);
+                if (RT_SUCCESS(rc))
+                {
+                    Cpu.uInstrAddr += uBase - (uintptr_t)pu8CodeR3;
+                    rc = DISFormatYasmEx(&Cpu, szDisas, sizeof(szDisas),
+                                         DIS_FMT_FLAGS_ADDR_LEFT | DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_SPACED
+                                         | DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                                         NULL, NULL);
+                }
+                if (RT_SUCCESS(rc))
+                    RTLogPrintf("  %04x: %s\n", offCode, szDisas);
                 else
                 {
-                    RTLogPrintf("  %04x: %02x '%c'\n",
-                                offCode, pu8CodeR3[offCode], RT_C_IS_PRINT(pu8CodeR3[offCode]) ? pu8CodeR3[offCode] : ' ');
+                    RTLogPrintf("  %04x: %02x '%c' (rc=%Rrc\n",
+                                offCode, pu8CodeR3[offCode], RT_C_IS_PRINT(pu8CodeR3[offCode]) ? pu8CodeR3[offCode] : ' ', rc);
                     cbInstr = 1;
                 }
                 offCode += cbInstr;
