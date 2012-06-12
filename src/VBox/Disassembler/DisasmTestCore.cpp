@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
         unsigned    cb;
         DISCPUSTATE cpu;
-        if (DISCoreOne((uintptr_t)&DISCoreOne, CPUMODE_32BIT, &cpu, &cb))
+        if (DISInstr((void *)(uintptr_t)&DISInstr, CPUMODE_32BIT, &cpu, &cb))
             printf("ok %d\n", cpu.addrmode);
         else
         {

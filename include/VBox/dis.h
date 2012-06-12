@@ -34,40 +34,40 @@
 RT_C_DECLS_BEGIN
 
 
-/** CPU mode flags (DISCPUSTATE::mode).
- * @{
+/**
+ * CPU mode flags (DISCPUSTATE::mode).
  */
-typedef enum
+typedef enum DISCPUMODE
 {
-    CPUMODE_16BIT = 1,
-    CPUMODE_32BIT = 2,
-    CPUMODE_64BIT = 3,
+    CPUMODE_INVALID = 0,
+    CPUMODE_16BIT,
+    CPUMODE_32BIT,
+    CPUMODE_64BIT,
     /** hack forcing the size of the enum to 32-bits. */
     CPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;
-/** @} */
 
-/** Prefix byte flags
+/** @name Prefix byte flags
  * @{
  */
 #define PREFIX_NONE                     0
 /** non-default address size. */
-#define PREFIX_ADDRSIZE                 RT_BIT(0)
+#define PREFIX_ADDRSIZE                 UINT8_C(0x00)
 /** non-default operand size. */
-#define PREFIX_OPSIZE                   RT_BIT(1)
+#define PREFIX_OPSIZE                   UINT8_C(0x01)
 /** lock prefix. */
-#define PREFIX_LOCK                     RT_BIT(2)
+#define PREFIX_LOCK                     UINT8_C(0x02)
 /** segment prefix. */
-#define PREFIX_SEG                      RT_BIT(3)
+#define PREFIX_SEG                      UINT8_C(0x04)
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
-#define PREFIX_REP                      RT_BIT(4)
+#define PREFIX_REP                      UINT8_C(0x08)
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
-#define PREFIX_REPNE                    RT_BIT(5)
+#define PREFIX_REPNE                    UINT8_C(0x10)
 /** REX prefix (64 bits) */
-#define PREFIX_REX                      RT_BIT(6)
+#define PREFIX_REX                      UINT8_C(0x20)
 /** @} */
 
-/** 64 bits prefix byte flags
+/** @name 64 bits prefix byte flags
  * @{
  */
 #define PREFIX_REX_OP_2_FLAGS(a)        (a - OP_PARM_REX_START)
@@ -89,8 +89,8 @@ typedef enum
 #define PREFIX_REX_FLAGS_WRXB           PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRXB)
 /** @} */
 
-/**
- * Operand type.
+/** @name Operand type.
+ * @{
  */
 #define OPTYPE_INVALID                  RT_BIT(0)
 #define OPTYPE_HARMLESS                 RT_BIT(1)
@@ -118,9 +118,10 @@ typedef enum
 #define OPTYPE_REXB_EXTENDS_OPREG       RT_BIT(23)  /**< REX.B extends the register field in the opcode byte */
 #define OPTYPE_MOD_FIXED_11             RT_BIT(24)  /**< modrm.mod is always 11b */
 #define OPTYPE_FORCED_32_OP_SIZE_X86    RT_BIT(25)  /**< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
-#define OPTYPE_ALL                      (0xffffffff)
+#define OPTYPE_ALL                      UINT32_C(0xffffffff)
+/** @}  */
 
-/** Parameter usage flags.
+/** @name Parameter usage flags.
  * @{
  */
 #define USE_BASE                        RT_BIT_64(0)
@@ -506,7 +507,7 @@ typedef struct DISCPUSTATE
     /** Internal: pointer to disassembly function table */
     PFNDISPARSE    *pfnDisasmFnTable;
     /** Internal: instruction filter */
-    uint32_t        uFilter;
+    uint32_t        fFilter;
     /** Return code set by a worker function like the opcode bytes readers. */
     int32_t         rc;
 
@@ -557,12 +558,12 @@ DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
                              PFNDISREADBYTES pfnReadBytes, void *pvUser, uint32_t uFilter,
                              PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
 
-DISDECL(int) DISCoreOne(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr);
-DISDECL(int) DISCoreOneWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                  PDISCPUSTATE pCpu, uint32_t *pcbInstr);
-DISDECL(int) DISCoreOneExEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
-                            PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                            PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+DISDECL(int) DISInstr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
+                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                       PDISCPUSTATE pCpu, uint32_t *pcbInstr);
 
 DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
 DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam);

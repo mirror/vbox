@@ -602,8 +602,6 @@ DECLINLINE(bool) patmR3DisInstrToStr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 Instr
     disinfo.pInstrHC    = pbInstrHC;
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
-    (pCpu)->pfnReadBytes = patmReadBytes;
-    (pCpu)->apvUserData[0] = &disinfo;
     return RT_SUCCESS(DISInstrToStrWithReader(InstrGCPtr32,
                                               (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT,
                                               patmReadBytes, &disinfo,
@@ -620,12 +618,10 @@ DECLINLINE(bool) patmR3DisInstr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 InstrGCPtr
     disinfo.pInstrHC    = pbInstrHC;
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
-    (pCpu)->pfnReadBytes = patmReadBytes;
-    (pCpu)->apvUserData[0] = &disinfo;
-    return RT_SUCCESS(DISCoreOneWithReader(InstrGCPtr32,
-                                           (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT,
-                                           patmReadBytes, &disinfo,
-                                           pCpu, pcbInstr));
+    return RT_SUCCESS(DISInstrWithReader(InstrGCPtr32,
+                                         (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT,
+                                         patmReadBytes, &disinfo,
+                                         pCpu, pcbInstr));
 }
 
 
@@ -639,10 +635,8 @@ DECLINLINE(bool) patmR3DisInstrNoStrOpMode(PVM pVM, PPATCHINFO pPatch, RTGCPTR32
     disinfo.pInstrHC    = pbInstrHC;
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
-    (pCpu)->pfnReadBytes = patmReadBytes;
-    (pCpu)->apvUserData[0] = &disinfo;
-    return RT_SUCCESS(DISCoreOneWithReader(InstrGCPtr32, pPatch->uOpMode, patmReadBytes, &disinfo,
-                                           pCpu, pcbInstr));
+    return RT_SUCCESS(DISInstrWithReader(InstrGCPtr32, pPatch->uOpMode, patmReadBytes, &disinfo,
+                                         pCpu, pcbInstr));
 }
 
 #ifdef LOG_ENABLED

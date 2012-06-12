@@ -211,10 +211,10 @@ PFNDISPARSE  g_apfnCalcSize[IDX_ParseMax] =
  * The result is found in pCpu and pcbInstr.
  *
  * @returns VBox status code.
- * @param   uInstrAddr      Address of the instruction to decode.  This is a
+ * @param   pvInstr         Address of the instruction to decode.  This is a
  *                          real address in the current context that can be
- *                          derefferenced.  (Consider DISCoreOneWithReader if
- *                          this isn't the case.)
+ *                          accessed without faulting.  (Consider
+ *                          DISInstrWithReader if this isn't the case.)
  * @param   enmCpuMode      The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
  * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
@@ -223,9 +223,9 @@ PFNDISPARSE  g_apfnCalcSize[IDX_ParseMax] =
  *                          NULL is allowed.  This is also stored in
  *                          PDISCPUSTATE::opsize.
  */
-DISDECL(int) DISCoreOne(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+DISDECL(int) DISInstr(const void *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr)
 {
-    return DISCoreOneExEx(uInstrAddr, enmCpuMode, OPTYPE_ALL, NULL /*pfnReadBytes*/, NULL /*pvUser*/, pCpu, pcbInstr);
+    return DISInstEx((uintptr_t)pvInstr, enmCpuMode, OPTYPE_ALL, NULL /*pfnReadBytes*/, NULL /*pvUser*/, pCpu, pcbInstr);
 }
 
 
@@ -245,33 +245,34 @@ DISDECL(int) DISCoreOne(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTAT
  *                          NULL is allowed.  This is also stored in
  *                          PDISCPUSTATE::opsize.
  */
-DISDECL(int) DISCoreOneWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                  PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                PDISCPUSTATE pCpu, uint32_t *pcbInstr)
 {
-    return DISCoreOneExEx(uInstrAddr, enmCpuMode, OPTYPE_ALL, pfnReadBytes, pvUser, pCpu, pcbInstr);
+    return DISInstEx(uInstrAddr, enmCpuMode, OPTYPE_ALL, pfnReadBytes, pvUser, pCpu, pcbInstr);
 }
 
 
 /**
- * Parses one guest instruction.
- *
- * The result is found in pCpu and pcbInstr.
+ * Disassembles on instruction, details in @a pCpu and length in @a pcbInstr.
  *
  * @returns VBox status code.
  * @param   uInstrAddr      Address of the instruction to decode. What this means
  *                          is left to the pfnReadBytes function.
  * @param   enmCpuMode      The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   uFilter         Instruction type filter.
+ * @param   fFilter         Instruction type filter.
  * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
- * @param   pCpu            Pointer to cpu structure. Will be initialized.
- * @param   pcbInstr        Where to store the size of the instruction.
- *                          NULL is allowed.  This is also stored in
- *                          PDISCPUSTATE::opsize.
+ * @param   pCpu            Pointer to CPU structure. With the exception of
+ *                          DISCPUSTATE::apvUserData[1] and
+ *                          DISCPUSTATE::apvUserData[2], the structure will be
+ *                          completely initialized by this API, i.e. no input is
+ *                          taken from it.
+ * @param   pcbInstr        Where to store the size of the instruction.  (This
+ *                          is also stored in PDISCPUSTATE::opsize.)  Optional.
  */
-DISDECL(int) DISCoreOneExEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
-                            PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                            PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                       PDISCPUSTATE pCpu, uint32_t *pcbInstr)
 {
     const OPCODE *paOneByteMap;
 
@@ -298,7 +299,7 @@ DISDECL(int) DISCoreOneExEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_
     pCpu->enmPrefixSeg      = DIS_SELREG_DS;
     pCpu->uInstrAddr        = uInstrAddr;
     pCpu->pfnDisasmFnTable  = g_apfnFullDisasm;
-    pCpu->uFilter           = uFilter;
+    pCpu->fFilter           = fFilter;
     pCpu->rc                = VINF_SUCCESS;
     pCpu->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
     pCpu->apvUserData[0]    = pvUser;
@@ -450,9 +451,9 @@ unsigned ParseInstruction(RTUINTPTR uCodePtr, PCOPCODE pOp, PDISCPUSTATE pCpu)
 
     /*
      * Apply filter to instruction type to determine if a full disassembly is required.
-     * @note Multibyte opcodes are always marked harmless until the final byte.
+     * Note! Multibyte opcodes are always marked harmless until the final byte.
      */
-    if ((pOp->optype & pCpu->uFilter) == 0)
+    if ((pOp->optype & pCpu->fFilter) == 0)
     {
         fFiltered = true;
         pCpu->pfnDisasmFnTable = g_apfnCalcSize;
@@ -540,7 +541,7 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDIS
      * Apply filter to instruction type to determine if a full disassembly is required.
      * @note Multibyte opcodes are always marked harmless until the final byte.
      */
-    if ((fpop->optype & pCpu->uFilter) == 0)
+    if ((fpop->optype & pCpu->fFilter) == 0)
         pCpu->pfnDisasmFnTable = g_apfnCalcSize;
     else
         /* Not filtered out -> full disassembly */
