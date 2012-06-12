@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        RTUINTPTR pInstr = (uintptr_t)TestProc;
+        uint8_t const *pbInstr = (uint8_t const *)(uintptr_t)TestProc;
 
         for (int i=0;i<50;i++)
         {
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
             DISCPUSTATE cpu;
             char        szOutput[256];
 
-            if (RT_SUCCESS(DISInstr(pInstr, CPUMODE_32BIT, &cpu, &cb, szOutput)))
+            if (RT_SUCCESS(DISInstrToStr(pbInstr, CPUMODE_32BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
             {
                 printf("%s", szOutput);
             }
@@ -58,12 +58,12 @@ int main(int argc, char **argv)
                 printf("DISOne failed!\n");
                 return 1;
             }
-            pInstr += cb;
+            pbInstr += cb;
         }
 
 #ifndef RT_OS_OS2
         printf("\n64 bits disassembly\n");
-        pInstr = (uintptr_t)TestProc64;
+        pbInstr = (uint8_t const *)(uintptr_t)TestProc64;
 
 ////__debugbreak();
         for (int i=0;i<50;i++)
@@ -72,14 +72,14 @@ int main(int argc, char **argv)
             DISCPUSTATE cpu;
             char        szOutput[256];
 
-            if (RT_SUCCESS(DISInstr(pInstr, CPUMODE_64BIT, &cpu, &cb, szOutput)))
+            if (RT_SUCCESS(DISInstrToStr(pbInstr, CPUMODE_64BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
                 printf("%s", szOutput);
             else
             {
                 printf("DISOne failed!\n");
                 return 1;
             }
-            pInstr += cb;
+            pbInstr += cb;
         }
 #endif
     }

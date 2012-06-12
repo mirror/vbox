@@ -4080,7 +4080,8 @@ void disas(FILE *phFile, void *pvCode, unsigned long cb)
         while (off < cb)
         {
             uint32_t cbInstr;
-            int rc = DISInstr((uintptr_t)pvCode + off, enmCpuMode, &Cpu, &cbInstr, szOutput);
+            int rc = DISInstrToStr((uint8_t const *)pvCode + off, enmCpuMode,
+                                   &Cpu, &cbInstr, szOutput, sizeof(szOutput));
             if (RT_SUCCESS(rc))
                 RTLogPrintf("%s", szOutput);
             else

@@ -549,7 +549,8 @@ typedef struct OPCODE
 #pragma pack()
 
 
-DISDECL(int) DISInstr(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput);
+DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode,
+                           PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
 DISDECL(int) DISInstrWithOff(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, RTUINTPTR offRealAddr, uint32_t *pcbInstr, char *pszOutput);
 DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
                                 PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput);

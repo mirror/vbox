@@ -198,26 +198,25 @@ X86PTEPAE64 Return64BitStruct(PX86PTEPAE64 paPT)
 static void DisasFunction(const char *pszName, PFNRT pv)
 {
     RTPrintf("tstBitFields: Disassembly of %s:\n", pszName);
-    RTUINTPTR uCur = (uintptr_t)pv;
-    RTUINTPTR uCurMax = uCur + 256;
-    DISCPUSTATE Cpu;
+    uint8_t const *pbCur    = (uint8_t const *)(uintptr_t)pv;
+    uint8_t const *pbCurMax = pbCur + 256;
+    DISCPUSTATE    Cpu;
 
-    memset(&Cpu, 0, sizeof(Cpu));
     do
     {
         char        sz[256];
         uint32_t    cbInstr = 0;
-        if (RT_SUCCESS(DISInstr(uCur, CPUMODE_32BIT, &Cpu, &cbInstr, sz)))
+        if (RT_SUCCESS(DISInstrToStr(pbCur, CPUMODE_32BIT, &Cpu, &cbInstr, sz, sizeof(sz))))
         {
             RTPrintf("tstBitFields: %s", sz);
-            uCur += cbInstr;
+            pbCur += cbInstr;
         }
         else
         {
-            RTPrintf("tstBitFields: %p: %02x - DISInstr failed!\n", uCur, *(uint8_t *)(uintptr_t)uCur);
-            uCur += 1;
+            RTPrintf("tstBitFields: %p: %02x - DISInstr failed!\n", pbCur, *pbCur);
+            pbCur += 1;
         }
-    } while (Cpu.pCurInstr->opcode != OP_RETN || uCur > uCurMax);
+    } while (Cpu.pCurInstr->opcode != OP_RETN || (uintptr_t)pbCur > (uintptr_t)pbCurMax);
 }
 
 
