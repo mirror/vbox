@@ -382,7 +382,6 @@ typedef struct OP_PARAMETER
         uint32_t    u16;
         uint32_t    u8;
     } uDisp;
-    uint32_t        size;
     int32_t         param;
 
     union
@@ -409,7 +408,9 @@ typedef struct OP_PARAMETER
     } index;
 
     /** 2, 4 or 8. */
-    uint32_t scale;
+    uint8_t         scale;
+    /** Parameter size. */
+    uint8_t         cb;
 
 #ifndef DIS_SEPARATE_FORMATTER
     char            szParam[32];

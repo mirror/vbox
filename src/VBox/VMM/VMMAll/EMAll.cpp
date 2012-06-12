@@ -827,7 +827,7 @@ static int emInterpretXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
             RTGCPTR pParam1 = 0, pParam2 = 0;
             uint64_t valpar1, valpar2;
 
-            AssertReturn(pDis->param1.size == pDis->param2.size, VERR_EM_INTERPRETER);
+            AssertReturn(pDis->param1.cb == pDis->param2.cb, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_IMMEDIATE: /* register type is translated to this one too */
@@ -1113,15 +1113,15 @@ static int emInterpretOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCT
             RTGCPTR  pParam1;
             uint64_t valpar1, valpar2;
 
-            if (pDis->param1.size != pDis->param2.size)
+            if (pDis->param1.cb != pDis->param2.cb)
             {
-                if (pDis->param1.size < pDis->param2.size)
+                if (pDis->param1.cb < pDis->param2.cb)
                 {
-                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDis), (RTGCPTR)pRegFrame->rip, pDis->param1.size, pDis->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDis), (RTGCPTR)pRegFrame->rip, pDis->param1.cb, pDis->param2.cb)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pDis->param2.size = pDis->param1.size;
+                pDis->param2.cb = pDis->param1.cb;
                 param2.size     = param1.size;
             }
 
@@ -1194,7 +1194,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
     NOREF(pvFault);
 
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0)
-    Assert(pDis->param1.size <= 4);
+    Assert(pDis->param1.cb <= 4);
 #endif
 
     int rc = DISQueryParamVal(pRegFrame, pDis, &pDis->param1, &param1, PARAM_DEST);
@@ -1205,14 +1205,14 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    if (pDis->param1.size != pDis->param2.size)
+    if (pDis->param1.cb != pDis->param2.cb)
     {
-        AssertMsgReturn(pDis->param1.size >= pDis->param2.size, /* should never happen! */
-                        ("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDis), (RTGCPTR)pRegFrame->rip, pDis->param1.size, pDis->param2.size),
+        AssertMsgReturn(pDis->param1.cb >= pDis->param2.cb, /* should never happen! */
+                        ("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDis), (RTGCPTR)pRegFrame->rip, pDis->param1.cb, pDis->param2.cb),
                         VERR_EM_INTERPRETER);
 
         /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-        pDis->param2.size = pDis->param1.size;
+        pDis->param2.cb = pDis->param1.cb;
         param2.size       = param1.size;
     }
 
@@ -1237,14 +1237,14 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 
     /* Try emulate it with a one-shot #PF handler in place. (RC) */
-    Log2(("%s %RGv imm%d=%RX64\n", emGetMnemonic(pDis), GCPtrPar1, pDis->param2.size*8, ValPar2));
+    Log2(("%s %RGv imm%d=%RX64\n", emGetMnemonic(pDis), GCPtrPar1, pDis->param2.cb*8, ValPar2));
 
     RTGCUINTREG32 eflags = 0;
-    rc = pfnEmulate(pvParam1, ValPar2, pDis->param2.size, &eflags);
+    rc = pfnEmulate(pvParam1, ValPar2, pDis->param2.cb, &eflags);
     PGMPhysReleasePageMappingLock(pVM, &Lock);
     if (RT_FAILURE(rc))
     {
-        Log(("%s %RGv imm%d=%RX64-> emulation failed due to page fault!\n", emGetMnemonic(pDis), GCPtrPar1, pDis->param2.size*8, ValPar2));
+        Log(("%s %RGv imm%d=%RX64-> emulation failed due to page fault!\n", emGetMnemonic(pDis), GCPtrPar1, pDis->param2.cb*8, ValPar2));
         return VERR_EM_INTERPRETER;
     }
 
@@ -1282,15 +1282,15 @@ static int emInterpretAddSub(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
             RTGCPTR  pParam1;
             uint64_t valpar1, valpar2;
 
-            if (pDis->param1.size != pDis->param2.size)
+            if (pDis->param1.cb != pDis->param2.cb)
             {
-                if (pDis->param1.size < pDis->param2.size)
+                if (pDis->param1.cb < pDis->param2.cb)
                 {
-                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDis), (RTGCPTR)pRegFrame->rip, pDis->param1.size, pDis->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDis), (RTGCPTR)pRegFrame->rip, pDis->param1.cb, pDis->param2.cb)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pDis->param2.size = pDis->param1.size;
+                pDis->param2.cb = pDis->param1.cb;
                 param2.size     = param1.size;
             }
 
@@ -1491,7 +1491,7 @@ static int emInterpretLockBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPU
     if (RT_FAILURE(rc))
     {
         Log(("emInterpretLockBitTest %s: %RGv imm%d=%RX64 -> emulation failed due to page fault!\n",
-             emGetMnemonic(pDis), GCPtrPar1, pDis->param2.size*8, ValPar2));
+             emGetMnemonic(pDis), GCPtrPar1, pDis->param2.cb*8, ValPar2));
         return VERR_EM_INTERPRETER;
     }
 
@@ -1804,7 +1804,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
     NOREF(pvFault);
 
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0)
-    Assert(pDis->param1.size <= 4);
+    Assert(pDis->param1.cb <= 4);
 #endif
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
@@ -1832,7 +1832,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
     void    *pvParam1;
     uint64_t eflags;
 
-    AssertReturn(pDis->param1.size == pDis->param2.size, VERR_EM_INTERPRETER);
+    AssertReturn(pDis->param1.cb == pDis->param2.cb, VERR_EM_INTERPRETER);
     switch(param1.type)
     {
     case PARMTYPE_ADDRESS:
@@ -1850,9 +1850,9 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
     LogFlow(("%s %RGv rax=%RX64 %RX64\n", emGetMnemonic(pDis), GCPtrPar1, pRegFrame->rax, valpar));
 
     if (pDis->prefix & PREFIX_LOCK)
-        eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->param2.size);
+        eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->param2.cb);
     else
-        eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->param2.size);
+        eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->param2.cb);
 
     LogFlow(("%s %RGv rax=%RX64 %RX64 ZF=%d\n", emGetMnemonic(pDis), GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
 
@@ -1885,7 +1885,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
     uint64_t eflags;
     PGMPAGEMAPLOCK Lock;
 
-    AssertReturn(pDis->param1.size == 8, VERR_EM_INTERPRETER);
+    AssertReturn(pDis->param1.cb == 8, VERR_EM_INTERPRETER);
     switch(param1.type)
     {
     case PARMTYPE_ADDRESS:
@@ -1952,7 +1952,7 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
             uint32_t        eflags;
             PGMPAGEMAPLOCK  Lock;
 
-            AssertReturn(pDis->param1.size == pDis->param2.size, VERR_EM_INTERPRETER);
+            AssertReturn(pDis->param1.cb == pDis->param2.cb, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
@@ -3142,7 +3142,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
      * Unable to emulate most >4 bytes accesses in 32 bits mode.
      * Whitelisted instructions are safe.
      */
-    if (    pDis->param1.size > 4
+    if (    pDis->param1.cb > 4
         &&  CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
     {
         uint32_t uOpCode = pDis->pCurInstr->opcode;

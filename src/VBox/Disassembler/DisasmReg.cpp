@@ -259,8 +259,8 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
             return 4;   /* 16:16 */
 
     default:
-        if (pParam->size)
-            return pParam->size;
+        if (pParam->cb)
+            return pParam->cb;
         else //@todo dangerous!!!
             return 4;
     }
@@ -522,7 +522,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
     {
         // Effective address
         pParamVal->type = PARMTYPE_ADDRESS;
-        pParamVal->size = pParam->size;
+        pParamVal->size = pParam->cb;
 
         if (pParam->flags & USE_BASE)
         {
@@ -650,7 +650,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         {
             // Caller needs to interpret the register according to the instruction (source/target, special value etc)
             pParamVal->type = PARMTYPE_REGISTER;
-            pParamVal->size = pParam->size;
+            pParamVal->size = pParam->cb;
             return VINF_SUCCESS;
         }
         //else PARAM_SOURCE
@@ -699,7 +699,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         if (pParam->flags & (USE_IMMEDIATE8|USE_IMMEDIATE8_REL))
         {
             pParamVal->flags |= PARAM_VAL8;
-            if (pParam->size == 2)
+            if (pParam->cb == 2)
             {
                 pParamVal->size   = sizeof(uint16_t);
                 pParamVal->val.val16 = (uint8_t)pParam->parval;
@@ -716,7 +716,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             pParamVal->flags |= PARAM_VAL16;
             pParamVal->size   = sizeof(uint16_t);
             pParamVal->val.val16 = (uint16_t)pParam->parval;
-            AssertMsg(pParamVal->size == pParam->size || ((pParam->size == 1) && (pParam->flags & USE_IMMEDIATE16_SX8)), ("pParamVal->size %d vs %d EIP=%RX32\n", pParamVal->size, pParam->size, pCtx->eip) );
+            AssertMsg(pParamVal->size == pParam->cb || ((pParam->cb == 1) && (pParam->flags & USE_IMMEDIATE16_SX8)), ("pParamVal->size %d vs %d EIP=%RX32\n", pParamVal->size, pParam->cb, pCtx->eip) );
         }
         else
         if (pParam->flags & (USE_IMMEDIATE32|USE_IMMEDIATE32_REL|USE_IMMEDIATE_ADDR_0_32|USE_IMMEDIATE32_SX8))
@@ -724,7 +724,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             pParamVal->flags |= PARAM_VAL32;
             pParamVal->size   = sizeof(uint32_t);
             pParamVal->val.val32 = (uint32_t)pParam->parval;
-            Assert(pParamVal->size == pParam->size || ((pParam->size == 1) && (pParam->flags & USE_IMMEDIATE32_SX8)) );
+            Assert(pParamVal->size == pParam->cb || ((pParam->cb == 1) && (pParam->flags & USE_IMMEDIATE32_SX8)) );
         }
         else
         if (pParam->flags & (USE_IMMEDIATE64 | USE_IMMEDIATE64_REL | USE_IMMEDIATE64_SX8))
@@ -732,7 +732,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             pParamVal->flags |= PARAM_VAL64;
             pParamVal->size   = sizeof(uint64_t);
             pParamVal->val.val64 = pParam->parval;
-            Assert(pParamVal->size == pParam->size || ((pParam->size == 1) && (pParam->flags & USE_IMMEDIATE64_SX8)) );
+            Assert(pParamVal->size == pParam->cb || ((pParam->cb == 1) && (pParam->flags & USE_IMMEDIATE64_SX8)) );
         }
         else
         if (pParam->flags & (USE_IMMEDIATE_ADDR_16_16))
@@ -741,7 +741,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             pParamVal->size   = sizeof(uint16_t)*2;
             pParamVal->val.farptr.sel    = (uint16_t)RT_LOWORD(pParam->parval >> 16);
             pParamVal->val.farptr.offset = (uint32_t)RT_LOWORD(pParam->parval);
-            Assert(pParamVal->size == pParam->size);
+            Assert(pParamVal->size == pParam->cb);
         }
         else
         if (pParam->flags & (USE_IMMEDIATE_ADDR_16_32))
@@ -750,7 +750,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             pParamVal->size   = sizeof(uint16_t) + sizeof(uint32_t);
             pParamVal->val.farptr.sel    = (uint16_t)RT_LOWORD(pParam->parval >> 32);
             pParamVal->val.farptr.offset = (uint32_t)(pParam->parval & 0xFFFFFFFF);
-            Assert(pParam->size == 8);
+            Assert(pParam->cb == 8);
         }
     }
     return VINF_SUCCESS;

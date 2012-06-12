@@ -886,7 +886,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
 DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
                                           PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-    unsigned uIncrement = pDis->param1.size;
+    unsigned uIncrement = pDis->param1.cb;
     NOREF(pVM);
 
     Assert(pDis->mode == CPUMODE_32BIT || pDis->mode == CPUMODE_64BIT);
@@ -1122,7 +1122,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     pVCpu->pgm.s.cPoolAccessHandler++;
     if (    pPage->GCPtrLastAccessHandlerRip >= pRegFrame->rip - 0x40      /* observed loops in Windows 7 x64 */
         &&  pPage->GCPtrLastAccessHandlerRip <  pRegFrame->rip + 0x40
-        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->param1.size)
+        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->param1.cb)
         &&  pVCpu->pgm.s.cPoolAccessHandler == pPage->cLastAccessHandler + 1)
     {
         Log(("Possible page reuse cMods=%d -> %d (locked=%d type=%s)\n", pPage->cModifications, pPage->cModifications * 2, pgmPoolIsPageLocked(pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
