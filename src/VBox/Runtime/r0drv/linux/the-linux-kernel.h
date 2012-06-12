@@ -242,7 +242,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 /* accounting. */
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 #  ifdef VM_ACCOUNT
-#   define MY_DO_MUNMAP(a,b,c) do_munmap(a, b, c, 0) /* should it be 1 or 0? */
+#   define USE_RHEL4_MUNMAP
 #  endif
 # endif
 
@@ -268,10 +268,6 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
     } while (0)
 # endif  /* !RT_ARCH_AMD64 */
 #endif /* !NO_REDHAT_HACKS */
-
-#ifndef MY_DO_MUNMAP
-# define MY_DO_MUNMAP(a,b,c) do_munmap(a, b, c)
-#endif
 
 #ifndef MY_CHANGE_PAGE_ATTR
 # ifdef RT_ARCH_AMD64 /** @todo This is a cheap hack, but it'll get around that 'else BUG();' in __change_page_attr().  */
