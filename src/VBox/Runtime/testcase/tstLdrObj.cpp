@@ -97,7 +97,7 @@ extern "C" DECLEXPORT(void *) SomeExportFunction4(void)
 {
     static unsigned cb;
     DISCPUSTATE Cpu;
-    DISCoreOne((uintptr_t)SomeExportFunction3, CPUMODE_32BIT, &Cpu, &cb);
+    DISInstr((void *)(uintptr_t)SomeExportFunction3, CPUMODE_32BIT, &Cpu, &cb);
     return (void *)(uintptr_t)&SomeExportFunction1;
 }
 

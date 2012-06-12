@@ -3675,7 +3675,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
      */
     uint32_t cbInstr;
 #ifndef LOG_ENABLED
-    rc = DISCoreOneWithReader(GCPtrPC, enmDisCpuMode, cpumR3DisasInstrRead, &State, pCpu, &cbInstr);
+    rc = DISInstrWithReader(GCPtrPC, enmDisCpuMode, cpumR3DisasInstrRead, &State, pCpu, &cbInstr);
     if (RT_SUCCESS(rc))
     {
 #else

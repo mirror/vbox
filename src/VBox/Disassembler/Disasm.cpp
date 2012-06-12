@@ -95,7 +95,7 @@ DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
                              PFNDISREADBYTES pfnReadBytes, void *pvUser, uint32_t uFilter,
                              PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 {
-    int rc = DISCoreOneExEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pCpu, pcbInstr);
+    int rc = DISInstEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pCpu, pcbInstr);
     if (RT_SUCCESS(rc) && pszOutput && cbOutput)
     {
         rc = DISFormatYasmEx(pCpu, pszOutput, cbOutput,
