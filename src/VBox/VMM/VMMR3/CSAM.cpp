@@ -765,14 +765,14 @@ DECLINLINE(int) CSAMR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCP
 {
     (pCpu)->apvUserData[1] = InstrHC;
 #ifdef DEBUG
-    return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, OPTYPE_ALL,
+    return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, DISOPTYPE_ALL,
                            pCpu, pcbInstr, pszOutput, cbOutput);
 #else
     /* We are interested in everything except harmless stuff */
     if (pszOutput)
-        return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK),
+        return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
                                pCpu, pcbInstr, pszOutput, cbOutput);
-    return DISInstEx(InstrGC, enmCpuMode, ~(OPTYPE_INVALID | OPTYPE_HARMLESS | OPTYPE_RRM_MASK), CSAMR3ReadBytes, pVM,
+    return DISInstEx(InstrGC, enmCpuMode, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK), CSAMR3ReadBytes, pVM,
                      pCpu, pcbInstr);
 #endif
 }
@@ -799,7 +799,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     switch (pCpu->pCurInstr->opcode)
     {
     case OP_INT:
-        Assert(pCpu->param1.flags & USE_IMMEDIATE8);
+        Assert(pCpu->param1.flags & DISUSE_IMMEDIATE8);
         if (pCpu->param1.parval == 3)
         {
             //two byte int 3
@@ -1096,10 +1096,10 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                      * lea esi, [esi+0]
                      * Any register is allowed as long as source and destination are identical.
                      */
-                    if (    cpu.param1.flags != USE_REG_GEN32
-                        ||  (   cpu.param2.flags != USE_REG_GEN32
-                             && (   !(cpu.param2.flags & USE_REG_GEN32)
-                                 || !(cpu.param2.flags & (USE_DISPLACEMENT8|USE_DISPLACEMENT16|USE_DISPLACEMENT32))
+                    if (    cpu.param1.flags != DISUSE_REG_GEN32
+                        ||  (   cpu.param2.flags != DISUSE_REG_GEN32
+                             && (   !(cpu.param2.flags & DISUSE_REG_GEN32)
+                                 || !(cpu.param2.flags & (DISUSE_DISPLACEMENT8|DISUSE_DISPLACEMENT16|DISUSE_DISPLACEMENT32))
                                  ||  cpu.param2.parval != 0
                                 )
                             )
@@ -1114,7 +1114,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 case OP_PUSH:
                 {
                     if (    (pCurInstrGC & 0x3) != 0
-                        ||  cpu.param1.flags != USE_REG_GEN32
+                        ||  cpu.param1.flags != DISUSE_REG_GEN32
                         ||  cpu.param1.base.reg_gen32 != USE_REG_EBP
                        )
                     {
@@ -1140,7 +1140,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 case OP_SUB:
                 {
                     if (    (pCurInstrGC & 0x3) != 0
-                        ||  cpu.param1.flags != USE_REG_GEN32
+                        ||  cpu.param1.flags != DISUSE_REG_GEN32
                         ||  cpu.param1.base.reg_gen32 != USE_REG_ESP
                        )
                     {
@@ -1303,7 +1303,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
         /*
          * If it's harmless, then don't bother checking it (the disasm tables had better be accurate!)
          */
-        if ((cpu.pCurInstr->optype & ~OPTYPE_RRM_MASK) == OPTYPE_HARMLESS)
+        if ((cpu.pCurInstr->optype & ~DISOPTYPE_RRM_MASK) == DISOPTYPE_HARMLESS)
         {
             AssertMsg(pfnCSAMR3Analyse(pVM, &cpu, pInstrGC, pCurInstrGC, pCacheRec, (void *)pPage) == VWRN_CONTINUE_ANALYSIS, ("Instruction incorrectly marked harmless?!?!?\n"));
             rc = VWRN_CONTINUE_ANALYSIS;
@@ -1326,12 +1326,12 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             goto done;
 
         // For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction)
-        if (    ((cpu.pCurInstr->optype & OPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
-            ||  (cpu.pCurInstr->opcode == OP_CALL && cpu.param1.flags == USE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
+        if (    ((cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
+            ||  (cpu.pCurInstr->opcode == OP_CALL && cpu.param1.flags == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
         {
             /* We need to parse 'call dword ptr [address]' type of calls to catch cpuid instructions in some recent Linux distributions (e.g. OpenSuse 10.3) */
             if (    cpu.pCurInstr->opcode == OP_CALL
-                &&  cpu.param1.flags == USE_DISPLACEMENT32)
+                &&  cpu.param1.flags == DISUSE_DISPLACEMENT32)
             {
                 addr = 0;
                 PGMPhysSimpleReadGCPtr(pVCpu, &addr, (RTRCUINTPTR)cpu.param1.uDisp.i32, sizeof(addr));
@@ -1394,11 +1394,11 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             }
 
             rc = VWRN_CONTINUE_ANALYSIS;
-        } //if ((cpu.pCurInstr->optype & OPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
+        } //if ((cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
 #ifdef CSAM_SCAN_JUMP_TABLE
         else
         if (    cpu.pCurInstr->opcode == OP_JMP
-            &&  (cpu.param1.flags & (USE_DISPLACEMENT32|USE_INDEX|USE_SCALE)) == (USE_DISPLACEMENT32|USE_INDEX|USE_SCALE)
+            &&  (cpu.param1.flags & (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)) == (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)
            )
         {
             RTRCPTR  pJumpTableGC = (RTRCPTR)cpu.param1.disp32;
