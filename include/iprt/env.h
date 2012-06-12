@@ -54,7 +54,11 @@ RTDECL(int) RTEnvCreate(PRTENV pEnv);
  * Creates an environment block and fill it with variables from the given
  * environment array.
  *
- * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
+ * @returns IPRT status code. Typical error is VERR_NO_MEMORY. Another
+ * possible return code is VWRN_NO_TRANSLATION if EnvToClone is RTENV_DEFAULT
+ * and there was no translation available for one environment variable. In
+ * that case, the resulting environment will contain fewer elements than the
+ * original environment.
  *
  * @param   pEnv        Where to store the handle of the new environment block.
  * @param   EnvToClone  The environment to clone.

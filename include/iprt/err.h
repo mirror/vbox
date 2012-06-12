@@ -756,6 +756,8 @@ RT_C_DECLS_END
 #define VWRN_NEGATIVE_UNSIGNED              57
 /** Error while characters translation (unicode and so). */
 #define VERR_NO_TRANSLATION                 (-58)
+/** Error while characters translation (unicode and so). */
+#define VWRN_NO_TRANSLATION                 58
 /** Encountered unicode code point which is reserved for use as endian indicator (0xffff or 0xfffe). */
 #define VERR_CODE_POINT_ENDIAN_INDICATOR    (-59)
 /** Encountered unicode code point in the surrogate range (0xd800 to 0xdfff). */
