@@ -83,6 +83,7 @@ static u_offset_t               g_offPage;
 static vnode_t                  g_LargePageVnode;
 static kmutex_t                 g_LargePageOffsetMtx;
 static u_offset_t               g_offLargePage;
+static bool                     g_fLargePageNoReloc;
 
 
 /**
@@ -290,6 +291,22 @@ static void rtR0MemObjSolPagesFree(page_t **ppPages, size_t cb)
 static page_t **rtR0MemObjSolLargePageAlloc(uint64_t *puPhys, size_t cbLargePage)
 {
     /*
+     * Check PG_NORELOC support for large pages. Using this helps prevent _1G page
+     * fragementation on systems that support it.
+     */
+    static bool fPageNoRelocChecked = false;
+    if (fPageNoRelocChecked == false)
+    {
+        fPageNoRelocChecked = true;
+        g_fLargePageNoReloc = false;
+        if (   g_pfnrtR0Sol_page_noreloc_supported
+            && g_pfnrtR0Sol_page_noreloc_supported(cbLargePage))
+        {
+            g_fLargePageNoReloc = true;
+        }
+    }
+
+    /*
      * Non-pageable memory reservation request for _4K pages, don't sleep.
      */
     size_t cPages       = (cbLargePage + PAGE_SIZE - 1) >> PAGE_SHIFT;
@@ -310,7 +327,8 @@ static page_t **rtR0MemObjSolLargePageAlloc(uint64_t *puPhys, size_t cbLargePage
             seg_t KernelSeg;
             KernelSeg.s_as = &kas;
             page_t *pRootPage = page_create_va_large(&g_LargePageVnode, offPage, cbLargePage,
-                                                     PG_EXCL, &KernelSeg, 0 /* vaddr */, NULL /* locality group */);
+                                                     PG_EXCL | (g_fLargePageNoReloc ? PG_NORELOC : 0), &KernelSeg,
+                                                     0 /* vaddr */,NULL /* locality group */);
             if (pRootPage)
             {
                 /*
@@ -398,14 +416,15 @@ static void rtR0MemObjSolLargePageFree(page_t **ppPages, size_t cbLargePage)
             page_t *pFoundPage = page_lookup(&g_LargePageVnode, offPage, SE_EXCL);
             AssertRelease(pFoundPage);
 
-#if 0
-            /*
-             * This can only be guaranteed if PG_NORELOC is used while allocating the pages.
-             */
-            AssertReleaseMsg(pFoundPage == pPage,
+            if (g_fLargePageNoReloc)
+            {
+                /*
+                 * This can only be guaranteed if PG_NORELOC is used while allocating the pages.
+                 */
+                AssertReleaseMsg(pFoundPage == pPage,
                              ("lookup failed %p:%llu returned %p, expected %p\n", &g_LargePageVnode, offPage,
                               pFoundPage, pPage));
-#endif
+            }
 
             /*
              * Check for page demotion (regardless of relocation). Some places in Solaris (e.g. VM1 page_retire())
