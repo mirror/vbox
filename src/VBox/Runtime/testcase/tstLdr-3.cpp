@@ -163,7 +163,7 @@ static bool MyDisBlock(PDISCPUSTATE pCpu, RTHCUINTPTR pvCodeBlock, int32_t cbMax
         bool        fMayPanic = RTAssertSetMayPanic(false);
         char        szOutput[256];
         unsigned    cbInstr;
-        int rc = DISInstrWithReader(uNearAddr + i, pCpu->mode,
+        int rc = DISInstrWithReader(uNearAddr + i, (DISCPUMODE)pCpu->mode,
                                     MyReadBytes, (uint8_t *)pvCodeBlock - (uintptr_t)uNearAddr,
                                     pCpu, &cbInstr);
         RTAssertSetMayPanic(fMayPanic);

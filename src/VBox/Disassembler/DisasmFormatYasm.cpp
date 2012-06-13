@@ -171,7 +171,7 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER pP
 
         case DISUSE_REG_SEG:
         {
-            Assert(pParam->base.reg_seg < (DIS_SELREG)RT_ELEMENTS(g_aszYasmRegCRx));
+            Assert(pParam->base.reg_seg < RT_ELEMENTS(g_aszYasmRegCRx));
             const char *psz = g_aszYasmRegSeg[pParam->base.reg_seg];
             *pcchReg = 2;
             return psz;
@@ -604,7 +604,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 #define PUT_SEGMENT_OVERRIDE() \
         do { \
             if (pCpu->prefix & DISPREFIX_SEG) \
-                PUT_STR(s_szSegPrefix[pCpu->enmPrefixSeg], 3); \
+                PUT_STR(s_szSegPrefix[pCpu->idxSegPrefix], 3); \
         } while (0)
 
 
@@ -616,7 +616,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param2.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param3.fUse))
         {
-            PUT_STR(s_szSegPrefix[pCpu->enmPrefixSeg], 2);
+            PUT_STR(s_szSegPrefix[pCpu->idxSegPrefix], 2);
             PUT_C(' ');
         }
 

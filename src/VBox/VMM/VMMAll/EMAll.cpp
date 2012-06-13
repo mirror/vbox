@@ -363,7 +363,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
         }
         State.GCPtr = NIL_RTGCPTR;
     }
-    return DISInstrWithReader(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
+    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->mode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #else /* IN_RC */
@@ -376,7 +376,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
     State.pVCpu = pVCpu;
     State.GCPtr = InstrGC;
 
-    return DISInstrWithReader(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
+    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->mode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #endif /* IN_RC */
@@ -732,7 +732,7 @@ DECLINLINE(int) emRamWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR
 
 
 /** Convert sel:addr to a flat GC address. */
-DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, POP_PARAMETER pParam, RTGCPTR pvAddr)
+DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, PDISOPPARAM pParam, RTGCPTR pvAddr)
 {
     DIS_SELREG enmPrefixSeg = DISDetectSegReg(pDis, pParam);
     return SELMToFlat(pVM, enmPrefixSeg, pRegFrame, pvAddr);

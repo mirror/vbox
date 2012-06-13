@@ -933,7 +933,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * Get bytes/words/dwords/qwords count to copy.
      */
-    uint64_t const fAddrMask = iomDisModeToMask(pCpu->addrmode);
+    uint64_t const fAddrMask = iomDisModeToMask((DISCPUMODE)pCpu->addrmode);
     RTGCUINTREG cTransfers = 1;
     if (pCpu->prefix & DISPREFIX_REP)
     {
@@ -1077,7 +1077,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     int rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &pRegFrame->rax, cb);
     if (rc == VINF_SUCCESS)
     {
-        uint64_t const fAddrMask = iomDisModeToMask(pCpu->addrmode);
+        uint64_t const fAddrMask = iomDisModeToMask((DISCPUMODE)pCpu->addrmode);
         pRegFrame->rsi = ((pRegFrame->rsi + offIncrement) & fAddrMask)
                        | (pRegFrame->rsi & ~fAddrMask);
     }
@@ -2155,7 +2155,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
         return rcStrict;
     }
 
-    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->prefix, pCpu->addrmode, cb);
+    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->prefix, (DISCPUMODE)pCpu->addrmode, cb);
 }
 
 
@@ -2324,7 +2324,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
         return rcStrict;
     }
 
-    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, pCpu->addrmode, cb);
+    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, (DISCPUMODE)pCpu->addrmode, cb);
 }
 
 #ifndef IN_RC

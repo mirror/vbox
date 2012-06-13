@@ -748,15 +748,8 @@ typedef struct HWACCMCPU
     } TlbShootdown;
 
     /** For saving stack space, the disassembler state is allocated here instead of
-     * on the stack.
-     * @note The DISCPUSTATE structure is not R3/R0/RZ clean!  */
-    union
-    {
-        /** The disassembler scratch space. */
-        DISCPUSTATE         DisState;
-        /** Padding. */
-        uint8_t             abDisStatePadding[DISCPUSTATE_PADDING_SIZE];
-    };
+     * on the stack. */
+    DISCPUSTATE             DisState;
 
     uint32_t                padding2[1];
 

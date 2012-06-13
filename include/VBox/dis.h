@@ -26,9 +26,9 @@
 #ifndef ___VBox_dis_h
 #define ___VBox_dis_h
 
-#include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/disopcode.h>
+#include <iprt/assert.h>
 
 
 RT_C_DECLS_BEGIN
@@ -389,7 +389,7 @@ typedef enum
 /**
  * Operand Parameter.
  */
-typedef struct OP_PARAMETER
+typedef struct DISOPPARAM
 {
     uint64_t        parval;
     /** A combination of DISUSE_XXX. */
@@ -409,36 +409,37 @@ typedef struct OP_PARAMETER
 
     union
     {
-        uint32_t    reg_gen;
+        uint8_t     reg_gen;
         /** ST(0) - ST(7) */
-        uint32_t    reg_fp;
+        uint8_t     reg_fp;
         /** MMX0 - MMX7 */
-        uint32_t    reg_mmx;
+        uint8_t     reg_mmx;
         /** XMM0 - XMM7 */
-        uint32_t    reg_xmm;
-        /** {ES, CS, SS, DS, FS, GS} */
-        DIS_SELREG  reg_seg;
+        uint8_t     reg_xmm;
+        /** {ES, CS, SS, DS, FS, GS} (DIS_SELREG). */
+        uint8_t     reg_seg;
         /** TR0-TR7 (?) */
-        uint32_t    reg_test;
+        uint8_t     reg_test;
         /** CR0-CR4 */
-        uint32_t    reg_ctrl;
+        uint8_t     reg_ctrl;
         /** DR0-DR7 */
-        uint32_t    reg_dbg;
+        uint8_t     reg_dbg;
     } base;
     union
     {
-        uint32_t    reg_gen;
+        uint8_t     reg_gen;
     } index;
 
     /** 2, 4 or 8. */
     uint8_t         scale;
     /** Parameter size. */
     uint8_t         cb;
-} OP_PARAMETER;
+} DISOPPARAM;
+AssertCompileSize(DISOPPARAM, 32);
 /** Pointer to opcode parameter. */
-typedef OP_PARAMETER *POP_PARAMETER;
+typedef DISOPPARAM *PDISOPPARAM;
 /** Pointer to opcode parameter. */
-typedef const OP_PARAMETER *PCOP_PARAMETER;
+typedef const DISOPPARAM *PCOP_PARAMETER;
 
 
 /** Pointer to const opcode. */
@@ -461,30 +462,20 @@ typedef FNDISREADBYTES *PFNDISREADBYTES;
 
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal (really, I'm too lazy to update all the functions). */
-typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCDISOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
+typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu);
 typedef FNDISPARSE *PFNDISPARSE;
+typedef PFNDISPARSE const *PCPFNDISPARSE;
 
 typedef struct DISCPUSTATE
 {
-    /** Global setting. */
-    DISCPUMODE      mode;
+    /* Because of apvUserData[1] and apvUserData[2], put the less frequently
+       used bits at the top for now.  (Might be better off in the middle?) */
+    DISOPPARAM      param3;
+    DISOPPARAM      param2;
+    DISOPPARAM      param1;
 
-    /** Per instruction prefix settings. */
-    uint32_t        prefix;  /**< @todo change to uint8_t */
-    /** segment prefix value. */
-    DIS_SELREG      enmPrefixSeg;
-    /** rex prefix value (64 bits only */
-    uint32_t        prefix_rex; /**< @todo change to uint8_t */
-    /** addressing mode (16 or 32 bits). (CPUMODE_*) */
-    DISCPUMODE      addrmode;
-    /** operand mode (16 or 32 bits). (CPUMODE_*) */
-    DISCPUMODE      opmode;
-
-    OP_PARAMETER    param1;
-    OP_PARAMETER    param2;
-    OP_PARAMETER    param3;
-
-    /** ModRM fields. */
+    /* off: 0x060 (96) */
+    /** ModRM fields. */                
     union
     {
         /** Bitfield view */
@@ -497,7 +488,6 @@ typedef struct DISCPUSTATE
         /** unsigned view */
         unsigned            u;
     } ModRM;
-
     /** SIB fields. */
     union
     {
@@ -511,42 +501,68 @@ typedef struct DISCPUSTATE
         /** unsigned view */
         unsigned            u;
     } SIB;
-    int32_t         i32SibDisp;
+    int32_t         i32SibDisp;         
 
-    /** The instruction size. */
-    uint32_t        opsize;
-    /** The address of the instruction. */
-    RTUINTPTR       uInstrAddr;
-    /** The size of the prefix bytes. */
-    uint8_t         cbPrefix;
-
-    /** First opcode byte of instruction. */
-    uint8_t         opcode;
+    /* off: 0x06c (108) */
+    /** The CPU mode (DISCPUMODE). */
+    uint8_t         mode;               
+    /** The addressing mode (DISCPUMODE). */
+    uint8_t         addrmode;
+    /** The operand mode (DISCPUMODE). */
+    uint8_t         opmode;
+    /** Per instruction prefix settings. */
+    uint8_t         prefix;  
+    /* off: 0x070 (112) */
+    /** REX prefix value (64 bits only). */
+    uint8_t         prefix_rex;         
+    /** Segment prefix value (DIS_SELREG). */
+    uint8_t         idxSegPrefix;
     /** Last prefix byte (for SSE2 extension tables). */
     uint8_t         lastprefix;
-    /** The instruction bytes. */
-    uint8_t         abInstr[16];
-
-    /** Internal: pointer to disassembly function table */
-    PFNDISPARSE    *pfnDisasmFnTable;
-    /** Internal: instruction filter */
-    uint32_t        fFilter;
+    /** First opcode byte of instruction. */
+    uint8_t         opcode;
+    /* off: 0x074 (116) */
+    /** The size of the prefix bytes. */
+    uint8_t         cbPrefix;           
+    /** The instruction size. */
+    uint8_t         opsize;
+    uint8_t         abUnused[2];
+    /* off: 0x078 (120) */
     /** Return code set by a worker function like the opcode bytes readers. */
     int32_t         rc;
-
+    /** Internal: instruction filter */
+    uint32_t        fFilter;
+    /* off: 0x080 (128) */
+    /** Internal: pointer to disassembly function table */
+    PCPFNDISPARSE   pfnDisasmFnTable;
+#if ARCH_BITS == 32
+    uint32_t        uPtrPadding1;
+#endif
     /** Pointer to the current instruction. */
     PCDISOPCODE     pCurInstr;
-#ifndef DIS_CORE_ONLY
-    /** Opcode format string for current instruction. */
-    const char      *pszOpcode;
+#if ARCH_BITS == 32
+    uint32_t        uPtrPadding2;
 #endif
-
+    /* off: 0x090 (144) */
+    /** The address of the instruction. */
+    RTUINTPTR       uInstrAddr;
+    /* off: 0x098 (152) */
     /** Optional read function */
     PFNDISREADBYTES pfnReadBytes;
+#if ARCH_BITS == 32
+    uint32_t        uPadding3;
+#endif
+    /* off: 0x0a0 (160) */
+    /** The instruction bytes. */
+    uint8_t         abInstr[16];
+    /* off: 0x0b0 (176) */
     /** User data slots for the read callback.  The first entry is used for the
      *  pvUser argument, the rest are up for grabs.
      * @remarks This must come last so that we can memset everything before this. */
     void           *apvUserData[3];
+#if ARCH_BITS == 32
+    uint32_t        auPadding4[3];
+#endif
 } DISCPUSTATE;
 
 /** The storage padding sufficient to hold the largest DISCPUSTATE in all
@@ -567,7 +583,6 @@ typedef struct DISOPCODE
     uint16_t    param1;
     uint16_t    param2;
     uint16_t    param3;
-
     uint32_t    optype;
 } DISOPCODE;
 #pragma pack()
@@ -588,12 +603,12 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFi
                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
                        PDISCPUSTATE pCpu, uint32_t *pcbInstr);
 
-DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
-DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam);
+DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
+DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
 DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, void **ppReg, size_t *pcbSize);
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
 
 DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);

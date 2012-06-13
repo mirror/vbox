@@ -663,7 +663,7 @@ const DISOPCODE g_aTwoByteMapX86[256] =
     INVALID_OPCODE,
 };
 
-/* Two byte opcode map with prefix 0x66 */
+/** Two byte opcode map with prefix 0x66 */
 const DISOPCODE g_aTwoByteMapX86_PF66[256] =
 {
     /* 0 */
