@@ -1832,17 +1832,17 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
 
         pPatch->cbOp     = cbOp;
 
-        if (pDis->param1.flags == DISUSE_DISPLACEMENT32)
+        if (pDis->param1.fUse == DISUSE_DISPLACEMENT32)
         {
             /* write. */
-            if (pDis->param2.flags == DISUSE_REG_GEN32)
+            if (pDis->param2.fUse == DISUSE_REG_GEN32)
             {
                 pPatch->enmType     = HWACCMTPRINSTR_WRITE_REG;
                 pPatch->uSrcOperand = pDis->param2.base.reg_gen;
             }
             else
             {
-                Assert(pDis->param2.flags == DISUSE_IMMEDIATE32);
+                Assert(pDis->param2.fUse == DISUSE_IMMEDIATE32);
                 pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
                 pPatch->uSrcOperand = pDis->param2.parval;
             }
@@ -1859,7 +1859,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
             uint32_t uMmioReg = pDis->param1.base.reg_gen;
 
             /* read */
-            Assert(pDis->param1.flags == DISUSE_REG_GEN32);
+            Assert(pDis->param1.fUse == DISUSE_REG_GEN32);
 
             /* Found:
              *   mov eax, dword [fffe0080]        (5 bytes)
@@ -1871,9 +1871,9 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
             pCtx->rip = oldrip;
             if (    rc == VINF_SUCCESS
                 &&  pDis->pCurInstr->opcode == OP_SHR
-                &&  pDis->param1.flags == DISUSE_REG_GEN32
+                &&  pDis->param1.fUse == DISUSE_REG_GEN32
                 &&  pDis->param1.base.reg_gen == uMmioReg
-                &&  pDis->param2.flags == DISUSE_IMMEDIATE8
+                &&  pDis->param2.fUse == DISUSE_IMMEDIATE8
                 &&  pDis->param2.parval == 4
                 &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.aPatches[idx].aOpcode))
             {
@@ -2007,7 +2007,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
         pPatch->cbOp    = cbOp;
         pPatch->enmType = HWACCMTPRINSTR_JUMP_REPLACEMENT;
 
-        if (pDis->param1.flags == DISUSE_DISPLACEMENT32)
+        if (pDis->param1.fUse == DISUSE_DISPLACEMENT32)
         {
             /*
                 * TPR write:
@@ -2027,7 +2027,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                 * jmp return_address            [E9 return_address]
                 *
                 */
-            bool fUsesEax = (pDis->param2.flags == DISUSE_REG_GEN32 && pDis->param2.base.reg_gen == USE_REG_EAX);
+            bool fUsesEax = (pDis->param2.fUse == DISUSE_REG_GEN32 && pDis->param2.base.reg_gen == USE_REG_EAX);
 
             aPatch[off++] = 0x51;    /* push ecx */
             aPatch[off++] = 0x52;    /* push edx */
@@ -2035,7 +2035,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                 aPatch[off++] = 0x50;    /* push eax */
             aPatch[off++] = 0x31;    /* xor edx, edx */
             aPatch[off++] = 0xD2;
-            if (pDis->param2.flags == DISUSE_REG_GEN32)
+            if (pDis->param2.fUse == DISUSE_REG_GEN32)
             {
                 if (!fUsesEax)
                 {
@@ -2045,7 +2045,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             }
             else
             {
-                Assert(pDis->param2.flags == DISUSE_IMMEDIATE32);
+                Assert(pDis->param2.fUse == DISUSE_IMMEDIATE32);
                 aPatch[off++] = 0xB8;    /* mov eax, immediate */
                 *(uint32_t *)&aPatch[off] = pDis->param2.parval;
                 off += sizeof(uint32_t);
@@ -2078,7 +2078,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                 * jmp return_address            [E9 return_address]
                 *
                 */
-            Assert(pDis->param1.flags == DISUSE_REG_GEN32);
+            Assert(pDis->param1.fUse == DISUSE_REG_GEN32);
 
             if (pDis->param1.base.reg_gen != USE_REG_ECX)
                 aPatch[off++] = 0x51;    /* push ecx */

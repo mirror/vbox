@@ -392,7 +392,8 @@ typedef enum
 typedef struct OP_PARAMETER
 {
     uint64_t        parval;
-    uint64_t        flags;
+    /** A combination of DISUSE_XXX. */
+    uint64_t        fUse;
     union
     {
         int64_t     i64;

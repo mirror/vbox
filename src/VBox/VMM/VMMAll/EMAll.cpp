@@ -1048,8 +1048,8 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
 
                 /* pop [esp+xx] uses esp after the actual pop! */
                 AssertCompile(USE_REG_ESP == USE_REG_SP);
-                if (    (pDis->param1.flags & DISUSE_BASE)
-                    &&  (pDis->param1.flags & (DISUSE_REG_GEN16|DISUSE_REG_GEN32))
+                if (    (pDis->param1.fUse & DISUSE_BASE)
+                    &&  (pDis->param1.fUse & (DISUSE_REG_GEN16|DISUSE_REG_GEN32))
                     &&  pDis->param1.base.reg_gen == USE_REG_ESP
                    )
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
@@ -1535,7 +1535,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
             switch(param1.type)
             {
             case PARMTYPE_IMMEDIATE:
-                if(!(param1.flags & (PARAM_VAL32|PARAM_VAL64)))
+                if(!(param1.flags  & (PARAM_VAL32|PARAM_VAL64)))
                     return VERR_EM_INTERPRETER;
                 /* fallthru */
 
@@ -2061,7 +2061,7 @@ static VBOXSTRICTRC emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, 
     {
     case PARMTYPE_IMMEDIATE:
     case PARMTYPE_ADDRESS:
-        if(!(param1.flags & (PARAM_VAL32|PARAM_VAL64)))
+        if(!(param1.flags  & (PARAM_VAL32|PARAM_VAL64)))
             return VERR_EM_INTERPRETER;
         addr = (RTGCPTR)param1.val.val64;
         break;
@@ -2396,7 +2396,7 @@ static int emInterpretLmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
     {
     case PARMTYPE_IMMEDIATE:
     case PARMTYPE_ADDRESS:
-        if(!(param1.flags & PARAM_VAL16))
+        if(!(param1.flags  & PARAM_VAL16))
             return VERR_EM_INTERPRETER;
         val = param1.val.val32;
         break;
@@ -2467,10 +2467,10 @@ static int emInterpretSmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 static int emInterpretMovCRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     NOREF(pvFault); NOREF(pcbSize);
-    if ((pDis->param1.flags == DISUSE_REG_GEN32 || pDis->param1.flags == DISUSE_REG_GEN64) && pDis->param2.flags == DISUSE_REG_CR)
+    if ((pDis->param1.fUse == DISUSE_REG_GEN32 || pDis->param1.fUse == DISUSE_REG_GEN64) && pDis->param2.fUse == DISUSE_REG_CR)
         return EMInterpretCRxRead(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_gen, pDis->param2.base.reg_ctrl);
 
-    if (pDis->param1.flags == DISUSE_REG_CR && (pDis->param2.flags == DISUSE_REG_GEN32 || pDis->param2.flags == DISUSE_REG_GEN64))
+    if (pDis->param1.fUse == DISUSE_REG_CR && (pDis->param2.fUse == DISUSE_REG_GEN32 || pDis->param2.fUse == DISUSE_REG_GEN64))
         return EMInterpretCRxWrite(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_ctrl, pDis->param2.base.reg_gen);
 
     AssertMsgFailedReturn(("Unexpected control register move\n"), VERR_EM_INTERPRETER);
@@ -2557,12 +2557,12 @@ static int emInterpretMovDRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
     int rc = VERR_EM_INTERPRETER;
     NOREF(pvFault); NOREF(pcbSize);
 
-    if((pDis->param1.flags == DISUSE_REG_GEN32 || pDis->param1.flags == DISUSE_REG_GEN64) && pDis->param2.flags == DISUSE_REG_DBG)
+    if((pDis->param1.fUse == DISUSE_REG_GEN32 || pDis->param1.fUse == DISUSE_REG_GEN64) && pDis->param2.fUse == DISUSE_REG_DBG)
     {
         rc = EMInterpretDRxRead(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_gen, pDis->param2.base.reg_dbg);
     }
     else
-    if(pDis->param1.flags == DISUSE_REG_DBG && (pDis->param2.flags == DISUSE_REG_GEN32 || pDis->param2.flags == DISUSE_REG_GEN64))
+    if(pDis->param1.fUse == DISUSE_REG_DBG && (pDis->param2.fUse == DISUSE_REG_GEN32 || pDis->param2.fUse == DISUSE_REG_GEN64))
     {
         rc = EMInterpretDRxWrite(pVM, pVCpu, pRegFrame, pDis->param1.base.reg_dbg, pDis->param2.base.reg_gen);
     }
@@ -2592,7 +2592,7 @@ static int emInterpretLLdt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
         return VERR_EM_INTERPRETER; //feeling lazy right now
 
     case PARMTYPE_IMMEDIATE:
-        if(!(param1.flags & PARAM_VAL16))
+        if(!(param1.flags  & PARAM_VAL16))
             return VERR_EM_INTERPRETER;
         sel = (RTSEL)param1.val.val16;
         break;

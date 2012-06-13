@@ -1534,10 +1534,10 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
         case OP_MOVSX:
         {
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstMov, b);
-            AssertMsg(uErrorCode == UINT32_MAX || DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.flags) == !!(uErrorCode & X86_TRAP_PF_RW), ("flags1=%#llx/%RTbool flags2=%#llx/%RTbool ErrCd=%#x\n", pDis->param1.flags, DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.flags), pDis->param2.flags, DISUSE_IS_EFFECTIVE_ADDR(pDis->param2.flags), uErrorCode));
+            AssertMsg(uErrorCode == UINT32_MAX || DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.fUse) == !!(uErrorCode & X86_TRAP_PF_RW), ("flags1=%#llx/%RTbool flags2=%#llx/%RTbool ErrCd=%#x\n", pDis->param1.fUse, DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.fUse), pDis->param2.fUse, DISUSE_IS_EFFECTIVE_ADDR(pDis->param2.fUse), uErrorCode));
             if (uErrorCode != UINT32_MAX    /* EPT+MMIO optimization */
                 ? uErrorCode & X86_TRAP_PF_RW
-                : DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.flags))
+                : DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.fUse))
                 rc = iomInterpretMOVxXWrite(pVM, pCtxCore, pDis, pRange, GCPhysFault);
             else
                 rc = iomInterpretMOVxXRead(pVM, pCtxCore, pDis, pRange, GCPhysFault);

@@ -615,12 +615,12 @@ void UseSIB(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE
 
     if (ppszSIBIndexReg[index])
     {
-         pParam->flags |= DISUSE_INDEX | regtype;
+         pParam->fUse |= DISUSE_INDEX | regtype;
          pParam->index.reg_gen = index;
 
          if (scale != 0)
          {
-             pParam->flags |= DISUSE_SCALE;
+             pParam->fUse |= DISUSE_SCALE;
              pParam->scale  = (1<<scale);
          }
     }
@@ -630,18 +630,18 @@ void UseSIB(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE
         // [scaled index] + disp32
         if (pCpu->addrmode == DISCPUMODE_32BIT)
         {
-            pParam->flags |= DISUSE_DISPLACEMENT32;
+            pParam->fUse |= DISUSE_DISPLACEMENT32;
             pParam->uDisp.i32 = pCpu->i32SibDisp;
         }
         else
         {   /* sign-extend to 64 bits */
-            pParam->flags |= DISUSE_DISPLACEMENT64;
+            pParam->fUse |= DISUSE_DISPLACEMENT64;
             pParam->uDisp.i64 = pCpu->i32SibDisp;
         }
     }
     else
     {
-        pParam->flags |= DISUSE_BASE | regtype;
+        pParam->fUse |= DISUSE_BASE | regtype;
         pParam->base.reg_gen = base;
     }
     return;   /* Already fetched everything in ParseSIB; no size returned */
@@ -734,7 +734,7 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
             switch (vtype)
             {
             case OP_PARM_C: //control register
-                pParam->flags |= DISUSE_REG_CR;
+                pParam->fUse |= DISUSE_REG_CR;
 
                 if (    pCpu->pCurInstr->opcode == OP_MOV_CR
                     &&  pCpu->opmode == DISCPUMODE_32BIT
@@ -748,25 +748,25 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
                 return 0;
 
             case OP_PARM_D: //debug register
-                pParam->flags |= DISUSE_REG_DBG;
+                pParam->fUse |= DISUSE_REG_DBG;
                 pParam->base.reg_dbg = reg;
                 return 0;
 
             case OP_PARM_P: //MMX register
                 reg &= 7;   /* REX.R has no effect here */
-                pParam->flags |= DISUSE_REG_MMX;
+                pParam->fUse |= DISUSE_REG_MMX;
                 pParam->base.reg_mmx = reg;
                 return 0;
 
             case OP_PARM_S: //segment register
                 reg &= 7;   /* REX.R has no effect here */
                 disasmModRMSReg(pCpu, pOp, reg, pParam);
-                pParam->flags |= DISUSE_REG_SEG;
+                pParam->fUse |= DISUSE_REG_SEG;
                 return 0;
 
             case OP_PARM_T: //test register
                 reg &= 7;   /* REX.R has no effect here */
-                pParam->flags |= DISUSE_REG_TEST;
+                pParam->fUse |= DISUSE_REG_TEST;
                 pParam->base.reg_test = reg;
                 return 0;
 
@@ -777,7 +777,7 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
                 /* else no break */
 
             case OP_PARM_V: //XMM register
-                pParam->flags |= DISUSE_REG_XMM;
+                pParam->fUse |= DISUSE_REG_XMM;
                 pParam->base.reg_xmm = reg;
                 return 0;
             }
@@ -806,18 +806,18 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
                 /* 32 bits displacement */
                 if (pCpu->mode != DISCPUMODE_64BIT)
                 {
-                    pParam->flags |= DISUSE_DISPLACEMENT32;
+                    pParam->fUse |= DISUSE_DISPLACEMENT32;
                     pParam->uDisp.i32 = pCpu->i32SibDisp;
                 }
                 else
                 {
-                    pParam->flags |= DISUSE_RIPDISPLACEMENT32;
+                    pParam->fUse |= DISUSE_RIPDISPLACEMENT32;
                     pParam->uDisp.i32 = pCpu->i32SibDisp;
                 }
             }
             else
             {   //register address
-                pParam->flags |= DISUSE_BASE;
+                pParam->fUse |= DISUSE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
             break;
@@ -828,11 +828,11 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
             }
             else
             {
-                pParam->flags |= DISUSE_BASE;
+                pParam->fUse |= DISUSE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
             pParam->uDisp.i8 = pCpu->i32SibDisp;
-            pParam->flags |= DISUSE_DISPLACEMENT8;
+            pParam->fUse |= DISUSE_DISPLACEMENT8;
             break;
 
         case 2: //effective address + 32 bits displacement
@@ -841,11 +841,11 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
             }
             else
             {
-                pParam->flags |= DISUSE_BASE;
+                pParam->fUse |= DISUSE_BASE;
                 disasmModRMReg(pCpu, pOp, rm, pParam, 1);
             }
             pParam->uDisp.i32 = pCpu->i32SibDisp;
-            pParam->flags |= DISUSE_DISPLACEMENT32;
+            pParam->fUse |= DISUSE_DISPLACEMENT32;
             break;
 
         case 3: //registers
@@ -861,11 +861,11 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
             if (rm == 6)
             {//16 bits displacement
                 pParam->uDisp.i16 = pCpu->i32SibDisp;
-                pParam->flags |= DISUSE_DISPLACEMENT16;
+                pParam->fUse |= DISUSE_DISPLACEMENT16;
             }
             else
             {
-                pParam->flags |= DISUSE_BASE;
+                pParam->fUse |= DISUSE_BASE;
                 disasmModRMReg16(pCpu, pOp, rm, pParam);
             }
             break;
@@ -873,13 +873,13 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCP
         case 1: //effective address + 8 bits displacement
             disasmModRMReg16(pCpu, pOp, rm, pParam);
             pParam->uDisp.i8 = pCpu->i32SibDisp;
-            pParam->flags |= DISUSE_BASE | DISUSE_DISPLACEMENT8;
+            pParam->fUse |= DISUSE_BASE | DISUSE_DISPLACEMENT8;
             break;
 
         case 2: //effective address + 16 bits displacement
             disasmModRMReg16(pCpu, pOp, rm, pParam);
             pParam->uDisp.i16 = pCpu->i32SibDisp;
-            pParam->flags |= DISUSE_BASE | DISUSE_DISPLACEMENT16;
+            pParam->fUse |= DISUSE_BASE | DISUSE_DISPLACEMENT16;
             break;
 
         case 3: //registers
@@ -1164,7 +1164,7 @@ unsigned ParseImmByte(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
 {
     NOREF(pOp);
     pParam->parval = DISReadByte(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE8;
+    pParam->fUse  |= DISUSE_IMMEDIATE8;
     pParam->cb     = sizeof(uint8_t);
     return sizeof(uint8_t);
 }
@@ -1183,20 +1183,20 @@ unsigned ParseImmByteSX(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, 
     if (pCpu->opmode == DISCPUMODE_32BIT)
     {
         pParam->parval = (uint32_t)(int8_t)DISReadByte(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE32_SX8;
+        pParam->fUse  |= DISUSE_IMMEDIATE32_SX8;
         pParam->cb     = sizeof(uint32_t);
     }
     else
     if (pCpu->opmode == DISCPUMODE_64BIT)
     {
         pParam->parval = (uint64_t)(int8_t)DISReadByte(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE64_SX8;
+        pParam->fUse  |= DISUSE_IMMEDIATE64_SX8;
         pParam->cb     = sizeof(uint64_t);
     }
     else
     {
         pParam->parval = (uint16_t)(int8_t)DISReadByte(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE16_SX8;
+        pParam->fUse  |= DISUSE_IMMEDIATE16_SX8;
         pParam->cb     = sizeof(uint16_t);
     }
     return sizeof(uint8_t);
@@ -1214,7 +1214,7 @@ unsigned ParseImmUshort(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, 
 {
     NOREF(pOp);
     pParam->parval = DISReadWord(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE16;
+    pParam->fUse  |= DISUSE_IMMEDIATE16;
     pParam->cb     = sizeof(uint16_t);
     return sizeof(uint16_t);
 }
@@ -1231,7 +1231,7 @@ unsigned ParseImmUlong(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
 {
     NOREF(pOp);
     pParam->parval = DISReadDWord(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE32;
+    pParam->fUse  |= DISUSE_IMMEDIATE32;
     pParam->cb     = sizeof(uint32_t);
     return sizeof(uint32_t);
 }
@@ -1248,7 +1248,7 @@ unsigned ParseImmQword(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
 {
     NOREF(pOp);
     pParam->parval = DISReadQWord(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE64;
+    pParam->fUse  |= DISUSE_IMMEDIATE64;
     pParam->cb     = sizeof(uint64_t);
     return sizeof(uint64_t);
 }
@@ -1267,7 +1267,7 @@ unsigned ParseImmV(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISC
     if (pCpu->opmode == DISCPUMODE_32BIT)
     {
         pParam->parval = DISReadDWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE32;
+        pParam->fUse  |= DISUSE_IMMEDIATE32;
         pParam->cb     = sizeof(uint32_t);
         return sizeof(uint32_t);
     }
@@ -1275,13 +1275,13 @@ unsigned ParseImmV(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISC
     if (pCpu->opmode == DISCPUMODE_64BIT)
     {
         pParam->parval = DISReadQWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE64;
+        pParam->fUse  |= DISUSE_IMMEDIATE64;
         pParam->cb     = sizeof(uint64_t);
         return sizeof(uint64_t);
     }
 
     pParam->parval = DISReadWord(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE16;
+    pParam->fUse  |= DISUSE_IMMEDIATE16;
     pParam->cb     = sizeof(uint16_t);
     return sizeof(uint16_t);
 }
@@ -1305,7 +1305,7 @@ unsigned ParseImmZ(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISC
     if (pCpu->opmode == DISCPUMODE_16BIT)
     {
         pParam->parval = DISReadWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE16;
+        pParam->fUse  |= DISUSE_IMMEDIATE16;
         pParam->cb     = sizeof(uint16_t);
         return sizeof(uint16_t);
     }
@@ -1314,13 +1314,13 @@ unsigned ParseImmZ(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISC
     if (pCpu->opmode == DISCPUMODE_64BIT)
     {
         pParam->parval = (uint64_t)(int32_t)DISReadDWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE64;
+        pParam->fUse  |= DISUSE_IMMEDIATE64;
         pParam->cb     = sizeof(uint64_t);
     }
     else
     {
         pParam->parval = DISReadDWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE32;
+        pParam->fUse  |= DISUSE_IMMEDIATE32;
         pParam->cb     = sizeof(uint32_t);
     }
     return sizeof(uint32_t);
@@ -1343,7 +1343,7 @@ unsigned ParseImmBRel(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
 {
     NOREF(pOp);
     pParam->parval = DISReadByte(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE8_REL;
+    pParam->fUse  |= DISUSE_IMMEDIATE8_REL;
     pParam->cb     = sizeof(uint8_t);
     return sizeof(char);
 }
@@ -1364,7 +1364,7 @@ unsigned ParseImmVRel(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
     if (pCpu->opmode == DISCPUMODE_32BIT)
     {
         pParam->parval = DISReadDWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE32_REL;
+        pParam->fUse  |= DISUSE_IMMEDIATE32_REL;
         pParam->cb     = sizeof(int32_t);
         return sizeof(int32_t);
     }
@@ -1373,13 +1373,13 @@ unsigned ParseImmVRel(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
     {
         /* 32 bits relative immediate sign extended to 64 bits. */
         pParam->parval = (uint64_t)(int32_t)DISReadDWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE64_REL;
+        pParam->fUse  |= DISUSE_IMMEDIATE64_REL;
         pParam->cb     = sizeof(int64_t);
         return sizeof(int32_t);
     }
 
     pParam->parval = DISReadWord(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE16_REL;
+    pParam->fUse  |= DISUSE_IMMEDIATE16_REL;
     pParam->cb     = sizeof(int16_t);
     return sizeof(int16_t);
 }
@@ -1405,7 +1405,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
             /* far 16:32 pointer */
             pParam->parval = DISReadDWord(pCpu, uCodePtr);
             *((uint32_t*)&pParam->parval+1) = DISReadWord(pCpu, uCodePtr+sizeof(uint32_t));
-            pParam->flags  |= DISUSE_IMMEDIATE_ADDR_16_32;
+            pParam->fUse   |= DISUSE_IMMEDIATE_ADDR_16_32;
             pParam->cb     = sizeof(uint16_t) + sizeof(uint32_t);
             return sizeof(uint32_t) + sizeof(uint16_t);
         }
@@ -1417,7 +1417,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
          * so we treat it like displacement.
          */
         pParam->uDisp.i32 = DISReadDWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_DISPLACEMENT32;
+        pParam->fUse  |= DISUSE_DISPLACEMENT32;
         pParam->cb     = sizeof(uint32_t);
         return sizeof(uint32_t);
     }
@@ -1432,7 +1432,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
          * so we treat it like displacement.
          */
         pParam->uDisp.i64 = DISReadQWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_DISPLACEMENT64;
+        pParam->fUse  |= DISUSE_DISPLACEMENT64;
         pParam->cb     = sizeof(uint64_t);
         return sizeof(uint64_t);
     }
@@ -1440,7 +1440,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
     {
         /* far 16:16 pointer */
         pParam->parval = DISReadDWord(pCpu, uCodePtr);
-        pParam->flags |= DISUSE_IMMEDIATE_ADDR_16_16;
+        pParam->fUse  |= DISUSE_IMMEDIATE_ADDR_16_16;
         pParam->cb     = 2*sizeof(uint16_t);
         return sizeof(uint32_t);
     }
@@ -1452,7 +1452,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PD
      * so we treat it like displacement.
      */
     pParam->uDisp.i16 = DISReadWord(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_DISPLACEMENT16;
+    pParam->fUse  |= DISUSE_DISPLACEMENT16;
     pParam->cb     = sizeof(uint16_t);
     return sizeof(uint16_t);
 }
@@ -1501,14 +1501,14 @@ unsigned ParseImmAddrF(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
         // far 16:32 pointer
         pParam->parval = DISReadDWord(pCpu, uCodePtr);
         *((uint32_t*)&pParam->parval+1) = DISReadWord(pCpu, uCodePtr+sizeof(uint32_t));
-        pParam->flags  |= DISUSE_IMMEDIATE_ADDR_16_32;
+        pParam->fUse   |= DISUSE_IMMEDIATE_ADDR_16_32;
         pParam->cb     = sizeof(uint16_t) + sizeof(uint32_t);
         return sizeof(uint32_t) + sizeof(uint16_t);
     }
 
     // far 16:16 pointer
     pParam->parval = DISReadDWord(pCpu, uCodePtr);
-    pParam->flags |= DISUSE_IMMEDIATE_ADDR_16_16;
+    pParam->fUse  |= DISUSE_IMMEDIATE_ADDR_16_16;
     pParam->cb     = 2*sizeof(uint16_t);
     return sizeof(uint32_t);
 }
@@ -1559,7 +1559,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
         {
             /* Use 32-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
-            pParam->flags |= DISUSE_REG_GEN32;
+            pParam->fUse  |= DISUSE_REG_GEN32;
             pParam->cb     = 4;
         }
         else
@@ -1573,14 +1573,14 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
                 &&  (pCpu->prefix_rex & DISPREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;
 
-            pParam->flags |= DISUSE_REG_GEN64;
+            pParam->fUse  |= DISUSE_REG_GEN64;
             pParam->cb     = 8;
         }
         else
         {
             /* Use 16-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
-            pParam->flags |= DISUSE_REG_GEN16;
+            pParam->fUse  |= DISUSE_REG_GEN16;
             pParam->cb     = 2;
             pParam->param = pParam->param - OP_PARM_REG_GEN32_START + OP_PARM_REG_GEN16_START;
         }
@@ -1590,7 +1590,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
     {
         /* Segment ES..GS registers. */
         pParam->base.reg_seg = (DIS_SELREG)(pParam->param - OP_PARM_REG_SEG_START);
-        pParam->flags |= DISUSE_REG_SEG;
+        pParam->fUse  |= DISUSE_REG_SEG;
         pParam->cb     = 2;
     }
     else
@@ -1598,7 +1598,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
     {
         /* 16-bit AX..DI registers. */
         pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN16_START;
-        pParam->flags |= DISUSE_REG_GEN16;
+        pParam->fUse  |= DISUSE_REG_GEN16;
         pParam->cb     = 2;
     }
     else
@@ -1606,7 +1606,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
     {
         /* 8-bit AL..DL, AH..DH registers. */
         pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN8_START;
-        pParam->flags |= DISUSE_REG_GEN8;
+        pParam->fUse  |= DISUSE_REG_GEN8;
         pParam->cb     = 1;
 
         if (pCpu->opmode == DISCPUMODE_64BIT)
@@ -1623,7 +1623,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, P
     {
         /* FPU registers. */
         pParam->base.reg_fp = pParam->param - OP_PARM_REG_FP_START;
-        pParam->flags |= DISUSE_REG_FP;
+        pParam->fUse  |= DISUSE_REG_FP;
         pParam->cb     = 10;
     }
     Assert(!(pParam->param >= OP_PARM_REG_GEN64_START && pParam->param <= OP_PARM_REG_GEN64_END));
@@ -1638,22 +1638,22 @@ unsigned ParseXv(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
 {
     NOREF(uCodePtr);
 
-    pParam->flags |= DISUSE_POINTER_DS_BASED;
+    pParam->fUse |= DISUSE_POINTER_DS_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = USE_REG_ESI;
-        pParam->flags |= DISUSE_REG_GEN32;
+        pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = USE_REG_RSI;
-        pParam->flags |= DISUSE_REG_GEN64;
+        pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
         pParam->base.reg_gen = USE_REG_SI;
-        pParam->flags |= DISUSE_REG_GEN16;
+        pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
 }
@@ -1663,22 +1663,22 @@ unsigned ParseXb(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
 {
     NOREF(uCodePtr); NOREF(pOp);
 
-    pParam->flags |= DISUSE_POINTER_DS_BASED;
+    pParam->fUse |= DISUSE_POINTER_DS_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = USE_REG_ESI;
-        pParam->flags |= DISUSE_REG_GEN32;
+        pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = USE_REG_RSI;
-        pParam->flags |= DISUSE_REG_GEN64;
+        pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
         pParam->base.reg_gen = USE_REG_SI;
-        pParam->flags |= DISUSE_REG_GEN16;
+        pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
 }
@@ -1688,22 +1688,22 @@ unsigned ParseYv(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
 {
     NOREF(uCodePtr);
 
-    pParam->flags |= DISUSE_POINTER_ES_BASED;
+    pParam->fUse |= DISUSE_POINTER_ES_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = USE_REG_EDI;
-        pParam->flags |= DISUSE_REG_GEN32;
+        pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = USE_REG_RDI;
-        pParam->flags |= DISUSE_REG_GEN64;
+        pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
         pParam->base.reg_gen = USE_REG_DI;
-        pParam->flags |= DISUSE_REG_GEN16;
+        pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
 }
@@ -1713,22 +1713,22 @@ unsigned ParseYb(RTUINTPTR uCodePtr, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
 {
     NOREF(uCodePtr); NOREF(pOp);
 
-    pParam->flags |= DISUSE_POINTER_ES_BASED;
+    pParam->fUse |= DISUSE_POINTER_ES_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = USE_REG_EDI;
-        pParam->flags |= DISUSE_REG_GEN32;
+        pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = USE_REG_RDI;
-        pParam->flags |= DISUSE_REG_GEN64;
+        pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
         pParam->base.reg_gen = USE_REG_DI;
-        pParam->flags |= DISUSE_REG_GEN16;
+        pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
 }
@@ -2340,26 +2340,26 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PA
             idx += (USE_REG_SPL - USE_REG_AH);
         }
 
-        pParam->flags |= DISUSE_REG_GEN8;
+        pParam->fUse |= DISUSE_REG_GEN8;
         pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_w:
         Assert(idx < (pCpu->prefix & DISPREFIX_REX) ? 16 : 8);
 
-        pParam->flags |= DISUSE_REG_GEN16;
+        pParam->fUse |= DISUSE_REG_GEN16;
         pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_d:
         Assert(idx < (pCpu->prefix & DISPREFIX_REX) ? 16 : 8);
 
-        pParam->flags |= DISUSE_REG_GEN32;
+        pParam->fUse |= DISUSE_REG_GEN32;
         pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_q:
-        pParam->flags |= DISUSE_REG_GEN64;
+        pParam->fUse |= DISUSE_REG_GEN64;
         pParam->base.reg_gen = idx;
         break;
 
@@ -2374,11 +2374,11 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PA
 static void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER pParam)
 {
     NOREF(pCpu); NOREF(pOp);
-    pParam->flags |= DISUSE_REG_GEN16;
+    pParam->fUse |= DISUSE_REG_GEN16;
     pParam->base.reg_gen = BaseModRMReg16[idx];
     if (idx < 4)
     {
-        pParam->flags |= DISUSE_INDEX;
+        pParam->fUse |= DISUSE_INDEX;
         pParam->index.reg_gen = IndexModRMReg16[idx];
     }
 }
@@ -2394,7 +2394,7 @@ static void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_P
         return;
     }
 
-    pParam->flags |= DISUSE_REG_SEG;
+    pParam->fUse |= DISUSE_REG_SEG;
     pParam->base.reg_seg = (DIS_SELREG)idx;
 }
 
@@ -2654,7 +2654,8 @@ void disValidateLockSequence(PDISCPUSTATE pCpu)
         case OP_SUB:
         case OP_XCHG:
         case OP_XOR:
-            if (pCpu->param1.flags & (DISUSE_BASE | DISUSE_INDEX | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT8 | DISUSE_RIPDISPLACEMENT32))
+            if (pCpu->param1.fUse & (DISUSE_BASE | DISUSE_INDEX | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32
+                                     | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT8 | DISUSE_RIPDISPLACEMENT32))
                 return;
             break;
 

@@ -1162,8 +1162,8 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
         // mov DRx, GPR
         pPB[0] = 0x89;      //mov disp32, GPR
-        Assert(pCpu->param1.flags & DISUSE_REG_DBG);
-        Assert(pCpu->param2.flags & DISUSE_REG_GEN32);
+        Assert(pCpu->param1.fUse & DISUSE_REG_DBG);
+        Assert(pCpu->param2.fUse & DISUSE_REG_GEN32);
 
         dbgreg = pCpu->param1.base.reg_dbg;
         reg    = pCpu->param2.base.reg_gen;
@@ -1171,8 +1171,8 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
     else
     {
         // mov GPR, DRx
-        Assert(pCpu->param1.flags & DISUSE_REG_GEN32);
-        Assert(pCpu->param2.flags & DISUSE_REG_DBG);
+        Assert(pCpu->param1.fUse & DISUSE_REG_GEN32);
+        Assert(pCpu->param2.fUse & DISUSE_REG_DBG);
 
         pPB[0] = 0x8B;      // mov GPR, disp32
         reg    = pCpu->param1.base.reg_gen;
@@ -1214,14 +1214,14 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         pPB[0] = 0x89;      //mov disp32, GPR
         ctrlreg = pCpu->param1.base.reg_ctrl;
         reg     = pCpu->param2.base.reg_gen;
-        Assert(pCpu->param1.flags & DISUSE_REG_CR);
-        Assert(pCpu->param2.flags & DISUSE_REG_GEN32);
+        Assert(pCpu->param1.fUse & DISUSE_REG_CR);
+        Assert(pCpu->param2.fUse & DISUSE_REG_GEN32);
     }
     else
     {
         // mov GPR, DRx
-        Assert(pCpu->param1.flags & DISUSE_REG_GEN32);
-        Assert(pCpu->param2.flags & DISUSE_REG_CR);
+        Assert(pCpu->param1.fUse & DISUSE_REG_GEN32);
+        Assert(pCpu->param2.fUse & DISUSE_REG_CR);
 
         pPB[0]  = 0x8B;      // mov GPR, disp32
         reg     = pCpu->param1.base.reg_gen;
@@ -1323,7 +1323,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
 
     PATCHGEN_PROLOG(pVM, pPatch);
 
-    if (pCpu->param1.flags == DISUSE_REG_GEN32 || pCpu->param1.flags == DISUSE_REG_GEN16)
+    if (pCpu->param1.fUse == DISUSE_REG_GEN32 || pCpu->param1.fUse == DISUSE_REG_GEN16)
     {
         /* Register operand */
         // 8B 15 [32 bits addr]   mov edx, CPUMCTX.tr/ldtr

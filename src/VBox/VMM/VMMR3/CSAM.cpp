@@ -799,7 +799,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     switch (pCpu->pCurInstr->opcode)
     {
     case OP_INT:
-        Assert(pCpu->param1.flags & DISUSE_IMMEDIATE8);
+        Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE8);
         if (pCpu->param1.parval == 3)
         {
             //two byte int 3
@@ -1096,7 +1096,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                      * lea esi, [esi+0]
                      * Any register is allowed as long as source and destination are identical.
                      */
-                    if (    cpu.param1.flags != DISUSE_REG_GEN32
+                    if (    cpu.param1.fUse != DISUSE_REG_GEN32
                         ||  (   cpu.param2.flags != DISUSE_REG_GEN32
                              && (   !(cpu.param2.flags & DISUSE_REG_GEN32)
                                  || !(cpu.param2.flags & (DISUSE_DISPLACEMENT8|DISUSE_DISPLACEMENT16|DISUSE_DISPLACEMENT32))
@@ -1114,7 +1114,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 case OP_PUSH:
                 {
                     if (    (pCurInstrGC & 0x3) != 0
-                        ||  cpu.param1.flags != DISUSE_REG_GEN32
+                        ||  cpu.param1.fUse != DISUSE_REG_GEN32
                         ||  cpu.param1.base.reg_gen32 != USE_REG_EBP
                        )
                     {
@@ -1140,7 +1140,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 case OP_SUB:
                 {
                     if (    (pCurInstrGC & 0x3) != 0
-                        ||  cpu.param1.flags != DISUSE_REG_GEN32
+                        ||  cpu.param1.fUse != DISUSE_REG_GEN32
                         ||  cpu.param1.base.reg_gen32 != USE_REG_ESP
                        )
                     {
@@ -1327,11 +1327,11 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
         // For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction)
         if (    ((cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
-            ||  (cpu.pCurInstr->opcode == OP_CALL && cpu.param1.flags == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
+            ||  (cpu.pCurInstr->opcode == OP_CALL && cpu.param1.fUse == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
         {
             /* We need to parse 'call dword ptr [address]' type of calls to catch cpuid instructions in some recent Linux distributions (e.g. OpenSuse 10.3) */
             if (    cpu.pCurInstr->opcode == OP_CALL
-                &&  cpu.param1.flags == DISUSE_DISPLACEMENT32)
+                &&  cpu.param1.fUse == DISUSE_DISPLACEMENT32)
             {
                 addr = 0;
                 PGMPhysSimpleReadGCPtr(pVCpu, &addr, (RTRCUINTPTR)cpu.param1.uDisp.i32, sizeof(addr));
@@ -1341,7 +1341,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
             if (addr == 0)
             {
-                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.flags));
+                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.fUse));
                 rc = VINF_SUCCESS;
                 break;
             }
@@ -1398,7 +1398,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 #ifdef CSAM_SCAN_JUMP_TABLE
         else
         if (    cpu.pCurInstr->opcode == OP_JMP
-            &&  (cpu.param1.flags & (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)) == (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)
+            &&  (cpu.param1.fUse & (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)) == (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)
            )
         {
             RTRCPTR  pJumpTableGC = (RTRCPTR)cpu.param1.disp32;
