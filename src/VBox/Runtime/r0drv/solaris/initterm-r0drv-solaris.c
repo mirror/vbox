@@ -43,33 +43,35 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Kernel debug info handle. */
-RTDBGKRNLINFO               g_hKrnlDbgInfo;
+RTDBGKRNLINFO                   g_hKrnlDbgInfo;
 /** Indicates that the spl routines (and therefore a bunch of other ones too)
  * will set EFLAGS::IF and break code that disables interrupts.  */
-bool g_frtSolSplSetsEIF                                    = false;
+bool g_frtSolSplSetsEIF = false;
 /** timeout_generic address. */
-PFNSOL_timeout_generic      g_pfnrtR0Sol_timeout_generic   = NULL;
+PFNSOL_timeout_generic          g_pfnrtR0Sol_timeout_generic = NULL;
 /** untimeout_generic address. */
-PFNSOL_untimeout_generic    g_pfnrtR0Sol_untimeout_generic = NULL;
+PFNSOL_untimeout_generic        g_pfnrtR0Sol_untimeout_generic = NULL;
 /** cyclic_reprogram address. */
-PFNSOL_cyclic_reprogram     g_pfnrtR0Sol_cyclic_reprogram  = NULL;
+PFNSOL_cyclic_reprogram         g_pfnrtR0Sol_cyclic_reprogram = NULL;
+/** page_noreloc_supported address. */
+PFNSOL_page_noreloc_supported   g_pfnrtR0Sol_page_noreloc_supported = NULL;
 /** Whether to use the kernel page freelist. */
-bool                        g_frtSolUseKflt                = false;
+bool                            g_frtSolUseKflt = false;
 /** Whether we've completed R0 initialization. */
-bool                        g_frtSolInitDone               = false;
+bool                            g_frtSolInitDone = false;
 /** Whether to use old-style xc_call interface. */
-bool                        g_frtSolOldIPI                 = false;
+bool                            g_frtSolOldIPI = false;
 /** Whether to use old-style xc_call interface using one ulong_t as the CPU set
  *  representation. */
-bool                        g_frtSolOldIPIUlong            = false;
+bool                            g_frtSolOldIPIUlong = false;
 /** The xc_call callout table structure. */
-RTR0FNSOLXCCALL             g_rtSolXcCall;
+RTR0FNSOLXCCALL                 g_rtSolXcCall;
 /** Thread preemption offset. */
-size_t                      g_offrtSolThreadPreempt;
+size_t                          g_offrtSolThreadPreempt;
 /** Host scheduler preemption offset. */
-size_t                      g_offrtSolCpuPreempt;
+size_t                          g_offrtSolCpuPreempt;
 /** Host scheduler force preemption offset. */
-size_t                      g_offrtSolCpuForceKernelPreempt;
+size_t                          g_offrtSolCpuForceKernelPreempt;
 /* Resolve using dl_lookup (remove if no longer relevant for supported S10 versions) */
 extern void contig_free(void *addr, size_t size);
 #pragma weak contig_free
