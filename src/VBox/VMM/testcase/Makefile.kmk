@@ -43,7 +43,6 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  ifdef VBOX_WITH_TESTCASES
   PROGRAMS  += \
   	tstCFGM \
-  	tstCompiler \
   	tstCompressionBenchmark \
 	tstIEMCheckMc \
   	tstMMHyperHeap \
@@ -245,10 +244,6 @@ tstVMREQ_LIBS           = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstAnimate_TEMPLATE     = VBOXR3EXE
 tstAnimate_SOURCES      = tstAnimate.cpp
 tstAnimate_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
-
-tstCompiler_TEMPLATE    = VBOXR3TSTEXE
-tstCompiler_SOURCES     = tstCompiler.cpp
-tstCompiler_LIBS        = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstX86-1_TEMPLATE       = VBOXR3TSTEXE
 tstX86-1_SOURCES        = tstX86-1.cpp tstX86-1A.asm
