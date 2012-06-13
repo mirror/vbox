@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1700,7 +1700,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         RCPTRTYPE(uint8_t *) pTargetGC = PATMResolveBranch(pCpu, pCurInstrGC);
         if (pTargetGC == 0)
         {
-            Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.flags));
+            Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.fUse));
             return VERR_PATCHING_REFUSED;
         }
 
@@ -1747,7 +1747,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pCpu->pCurInstr->optype & DISOPTYPE_POTENTIALLY_DANGEROUS)
         {
             /* mov ss, src? */
-            if (    (pCpu->param1.flags & DISUSE_REG_SEG)
+            if (    (pCpu->param1.fUse & DISUSE_REG_SEG)
                 &&  (pCpu->param1.base.reg_seg == DIS_SELREG_SS))
             {
                 Log(("Force recompilation of next instruction for OP_MOV at %RRv\n", pCurInstrGC));
@@ -1756,9 +1756,9 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             }
 #if 0 /* necessary for Haiku */
             else
-            if (    (pCpu->param2.flags & DISUSE_REG_SEG)
+            if (    (pCpu->param2.fUse & DISUSE_REG_SEG)
                 &&  (pCpu->param2.base.reg_seg == USE_REG_SS)
-                &&  (pCpu->param1.flags & (DISUSE_REG_GEN32|DISUSE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
+                &&  (pCpu->param1.fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
             {
                 /* mov GPR, ss */
                 rc = patmPatchGenMovFromSS(pVM, pPatch, pCpu, pCurInstrGC);
@@ -2242,7 +2242,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
 
             if (pTargetGC == 0)
             {
-                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.flags));
+                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.fUse));
                 rc = VERR_PATCHING_REFUSED;
                 break;
             }
@@ -2461,7 +2461,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
             RCPTRTYPE(uint8_t *) addr = PATMResolveBranch(&cpu, pCurInstrGC);
             if (addr == 0)
             {
-                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.flags));
+                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.fUse));
                 rc = VERR_PATCHING_REFUSED;
                 break;
             }
@@ -3587,7 +3587,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     pTargetGC = PATMResolveBranch(pCpu, pInstrGC);
     if (pTargetGC == 0)
     {
-        Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.flags));
+        Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.fUse));
         rc = VERR_PATCHING_REFUSED;
         goto failure;
     }
@@ -3679,7 +3679,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
     if (!pVM->patm.s.mmio.pCachedData)
         goto failure;
 
-    if (pCpu->param2.flags != DISUSE_DISPLACEMENT32)
+    if (pCpu->param2.fUse != DISUSE_DISPLACEMENT32)
         goto failure;
 
     pPB = PATMGCVirtToHCVirt(pVM, pCacheRec, pPatch->pPrivInstrGC);
@@ -3758,7 +3758,7 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
     AssertMsg(opsize <= MAX_INSTR_SIZE, ("privileged instruction too big %d!!\n", opsize));
     if (opsize > MAX_INSTR_SIZE)
         return VERR_PATCHING_REFUSED;
-    if (cpu.param2.flags != DISUSE_DISPLACEMENT32)
+    if (cpu.param2.fUse != DISUSE_DISPLACEMENT32)
         return VERR_PATCHING_REFUSED;
 
     /* Add relocation record for cached data access. */
@@ -3920,8 +3920,8 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
     case OP_JNLE:
     case OP_JMP:
         Assert(pPatch->flags & PATMFL_JUMP_CONFLICT);
-        Assert(pCpu->param1.flags & DISUSE_IMMEDIATE32_REL);
-        if (!(pCpu->param1.flags & DISUSE_IMMEDIATE32_REL))
+        Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE32_REL);
+        if (!(pCpu->param1.fUse & DISUSE_IMMEDIATE32_REL))
             goto failure;
 
         Assert(pCpu->opsize == SIZEOF_NEARJUMP32 || pCpu->opsize == SIZEOF_NEAR_COND_JUMP32);
@@ -5205,7 +5205,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
     if (    disret == true
         && (pConflictPatch->flags & PATMFL_CODE32)
         && (cpu.pCurInstr->opcode == OP_JMP || (cpu.pCurInstr->optype & DISOPTYPE_COND_CONTROLFLOW))
-        && (cpu.param1.flags & DISUSE_IMMEDIATE32_REL))
+        && (cpu.param1.fUse & DISUSE_IMMEDIATE32_REL))
     {
         /* Hint patches must be enabled first. */
         if (pConflictPatch->flags & PATMFL_INSTR_HINT)

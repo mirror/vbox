@@ -737,12 +737,12 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             /*
              * Little hack to make the code below not fail
              */
-            pCpu->param1.flags  = DISUSE_IMMEDIATE8;
+            pCpu->param1.fUse  = DISUSE_IMMEDIATE8;
             pCpu->param1.parval = 3;
             /* fallthru */
         case OP_INT:
         {
-            Assert(pCpu->param1.flags & DISUSE_IMMEDIATE8);
+            Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE8);
             Assert(!(PATMIsPatchGCAddr(pVM, PC)));
             if (pCpu->param1.parval == 3)
             {
@@ -839,12 +839,12 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             /*
              * Little hack to make the code below not fail
              */
-            pCpu->param1.flags  = DISUSE_IMMEDIATE8;
+            pCpu->param1.fUse  = DISUSE_IMMEDIATE8;
             pCpu->param1.parval = 3;
             /* fall thru */
         case OP_INT:
         {
-            Assert(pCpu->param1.flags & DISUSE_IMMEDIATE8);
+            Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE8);
             rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->opsize, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
             if (RT_SUCCESS(rc) && rc != VINF_EM_RAW_GUEST_TRAP)
                 return trpmGCExitTrap(pVM, pVCpu, VINF_SUCCESS, pRegFrame);
