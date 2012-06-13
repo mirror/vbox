@@ -2125,7 +2125,6 @@ int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstr
         /* Could be an int3 inserted in a call patch. Check to be sure */
         DISCPUSTATE cpu;
         RTRCPTR     pOrgJumpGC;
-        uint32_t    dummy;
 
         pOrgJumpGC = patmPatchGCPtr2GuestGCPtr(pVM, pPatch, pCurInstrGC);
 
@@ -3571,9 +3570,6 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     PPATMPATCHREC pPatchFunction;
     uint32_t      opsize;
     bool          disret;
-#ifdef LOG_ENABLED
-    char          szOutput[256];
-#endif
 
     Assert(pPatch->flags & PATMFL_REPLACE_FUNCTION_CALL);
     Assert((pCpu->pCurInstr->opcode == OP_CALL || pCpu->pCurInstr->opcode == OP_JMP) && pCpu->opsize == SIZEOF_NEARJUMP32);
