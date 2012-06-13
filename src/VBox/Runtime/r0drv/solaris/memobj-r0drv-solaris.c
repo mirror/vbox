@@ -134,29 +134,26 @@ static inline uint64_t rtR0MemObjSolPagePhys(page_t *pPage)
  *
  * @param virtAddr       The virtual address to which this page maybe mapped in
  *                       the future.
- * @param cbPage         The size of the page.
  *
  * @returns Pointer to the allocated page, NULL on failure.
  */
-static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr, size_t cbPage)
+static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr)
 {
-    Assert(cbPage == PAGE_SIZE);
-
-    u_offset_t offPage;
-    seg_t      KernelSeg;
+    u_offset_t      offPage;
+    seg_t           KernelSeg;
 
     mutex_enter(&g_OffsetMtx);
     AssertCompileSize(u_offset_t, sizeof(uint64_t)); NOREF(RTASSERTVAR);
-    g_offPage = RT_ALIGN_64(g_offPage, cbPage) + cbPage;
+    g_offPage = RT_ALIGN_64(g_offPage, PAGE_SIZE) + PAGE_SIZE;
     offPage   = g_offPage;
     mutex_exit(&g_OffsetMtx);
 
     KernelSeg.s_as = &kas;
-    page_t *pPage = page_create_va(&g_PageVnode, offPage, cbPage, PG_WAIT | PG_NORELOC, &KernelSeg, virtAddr);
+    page_t *pPage = page_create_va(&g_PageVnode, offPage, PAGE_SIZE, PG_WAIT | PG_NORELOC, &KernelSeg, virtAddr);
     if (RT_LIKELY(pPage))
     {
         /*
-         * Lock this page into memory "long term" to prevent paging out of this page
+         * Lock this page into memory "long term" to prevent this page from being paged out
          * when we drop the page lock temporarily (during free).
          */
         page_pp_lock(pPage, 0 /* COW */, 1 /* Kernel */);
@@ -213,11 +210,11 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t *puPhys, size_t cb)
                  * and we rely on it during free. Downgrade the page to a shared lock to prevent the page
                  * from being relocated.
                  */
-                page_t *pPage = rtR0MemObjSolPageAlloc(virtAddr, PAGE_SIZE);
+                page_t *pPage = rtR0MemObjSolPageAlloc(virtAddr);
                 if (RT_UNLIKELY(!pPage))
                 {
                     /*
-                     * No pages found or found pages didn't meet requirements, release what was grabbed so far.
+                     * No page found, release whatever pages we grabbed so far.
                      */
                     for (size_t k = 0; k < i; k++)
                         page_destroy(ppPages[k], 0 /* move it to the free list */);
