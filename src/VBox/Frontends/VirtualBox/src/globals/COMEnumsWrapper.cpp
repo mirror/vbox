@@ -121,6 +121,7 @@ QString COMEnumsWrapper::toString(KMediumType type) const
 /* KMediumVariant => QString: */
 QString COMEnumsWrapper::toString(KMediumVariant variant) const
 {
+    /* note: KMediumVariant_Diff and KMediumVariant_Fixed are so far mutually exclusive */
     switch (variant)
     {
         case KMediumVariant_Standard:
@@ -129,16 +130,18 @@ QString COMEnumsWrapper::toString(KMediumVariant variant) const
             return m_mediumVariantNames[1];
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed):
             return m_mediumVariantNames[2];
-        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_Diff):
-            return m_mediumVariantNames[3];
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkSplit2G):
-            return m_mediumVariantNames[4];
+            return m_mediumVariantNames[3];
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkSplit2G | KMediumVariant_Diff):
-            return m_mediumVariantNames[5];
+            return m_mediumVariantNames[4];
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkSplit2G):
+            return m_mediumVariantNames[5];
+        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkStreamOptimized):
             return m_mediumVariantNames[6];
-        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkSplit2G | KMediumVariant_Diff):
+        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkStreamOptimized | KMediumVariant_Diff):
             return m_mediumVariantNames[7];
+        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkESX):
+            return m_mediumVariantNames[8];
         default:
             AssertMsgFailed(("No text for %d", variant));
             break;
@@ -648,11 +651,12 @@ void COMEnumsWrapper::retranslateUi()
     m_mediumVariantNames[0] = QApplication::translate("VBoxGlobal", "Dynamically allocated storage", "MediumVariant");
     m_mediumVariantNames[1] = QApplication::translate("VBoxGlobal", "Dynamically allocated differencing storage", "MediumVariant");
     m_mediumVariantNames[2] = QApplication::translate("VBoxGlobal", "Fixed size storage", "MediumVariant");
-    m_mediumVariantNames[3] = QApplication::translate("VBoxGlobal", "Fixed size differencing storage", "MediumVariant");
-    m_mediumVariantNames[4] = QApplication::translate("VBoxGlobal", "Dynamically allocated storage split into files of less than 2GB", "MediumVariant");
-    m_mediumVariantNames[5] = QApplication::translate("VBoxGlobal", "Dynamically allocated differencing storage split into files of less than 2GB", "MediumVariant");
-    m_mediumVariantNames[6] = QApplication::translate("VBoxGlobal", "Fixed size storage split into files of less than 2GB", "MediumVariant");
-    m_mediumVariantNames[7] = QApplication::translate("VBoxGlobal", "Fixed size differencing storage split into files of less than 2GB", "MediumVariant");
+    m_mediumVariantNames[3] = QApplication::translate("VBoxGlobal", "Dynamically allocated storage split into files of less than 2GB", "MediumVariant");
+    m_mediumVariantNames[4] = QApplication::translate("VBoxGlobal", "Dynamically allocated differencing storage split into files of less than 2GB", "MediumVariant");
+    m_mediumVariantNames[5] = QApplication::translate("VBoxGlobal", "Fixed size storage split into files of less than 2GB", "MediumVariant");
+    m_mediumVariantNames[6] = QApplication::translate("VBoxGlobal", "Dynamically allocated compressed storage", "MediumVariant");
+    m_mediumVariantNames[7] = QApplication::translate("VBoxGlobal", "Dynamically allocated differencing compressed storage", "MediumVariant");
+    m_mediumVariantNames[8] = QApplication::translate("VBoxGlobal", "Fixed size ESX storage", "MediumVariant");
 
     /* KNetworkAttachmentType => QString: */
     m_networkAttachmentTypeNames[KNetworkAttachmentType_Null] =     QApplication::translate("VBoxGlobal", "Not attached", "NetworkAttachmentType");
