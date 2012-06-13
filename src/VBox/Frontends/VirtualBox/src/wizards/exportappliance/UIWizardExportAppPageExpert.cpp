@@ -231,7 +231,7 @@ bool UIWizardExportAppPageExpert::isComplete() const
     if (fResult)
     {
         const QString &strFile = m_pFileSelector->path().toLower();
-        fResult = VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::OVFFileExts);
+        fResult = VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts);
         if (fResult)
         {
             StorageType st = storageType();

@@ -17,18 +17,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QObject>
+#include <QSocketNotifier>
+
 /* COM includes: */
 #include "COMDefs.h"
+#include "UIDefs.h"
 #include "CVirtualBoxErrorInfo.h"
 
 #if !defined (VBOX_WITH_XPCOM)
 
-
 #else /* !defined (VBOX_WITH_XPCOM) */
-
-/* Qt includes: */
-#include <QObject>
-#include <QSocketNotifier>
 
 /* Other VBox includes: */
 #include <iprt/env.h>

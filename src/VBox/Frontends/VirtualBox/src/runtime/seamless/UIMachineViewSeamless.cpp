@@ -100,7 +100,7 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
 {
     switch (pEvent->type())
     {
-        case VBoxDefs::SetRegionEventType:
+        case SetRegionEventType:
         {
             /* Get region-update event: */
             UISetRegionEvent *pSetRegionEvent = static_cast<UISetRegionEvent*>(pEvent);
@@ -114,7 +114,7 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             return true;
         }
 
-        case VBoxDefs::ResizeEventType:
+        case ResizeEventType:
         {
             return guestResizeEvent(pEvent, true);
         }

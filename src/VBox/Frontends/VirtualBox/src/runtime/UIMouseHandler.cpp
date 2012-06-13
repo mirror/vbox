@@ -770,7 +770,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
     else /* !uisession()->isMouseCaptured() */
     {
 #if 0 // TODO: Move that to fullscreen event-handler:
-        if (vboxGlobal().vmRenderMode() != VBoxDefs::SDLMode)
+        if (vboxGlobal().vmRenderMode() != SDLMode)
         {
             /* try to automatically scroll the guest canvas if the
              * mouse is on the screen border */
@@ -797,7 +797,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             int iCw = m_views[uScreenId]->contentsWidth(), iCh = m_views[uScreenId]->contentsHeight();
             int iVw = m_views[uScreenId]->visibleWidth(), iVh = m_views[uScreenId]->visibleHeight();
 
-            if (vboxGlobal().vmRenderMode() != VBoxDefs::SDLMode)
+            if (vboxGlobal().vmRenderMode() != SDLMode)
             {
                 /* Try to automatically scroll the guest canvas if the
                  * mouse goes outside its visible part: */

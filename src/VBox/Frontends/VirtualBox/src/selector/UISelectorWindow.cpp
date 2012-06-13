@@ -145,8 +145,8 @@ void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
 {
     /* Load toolbar/statusbar availability settings: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strToolbar = vbox.GetExtraData(VBoxDefs::GUI_Toolbar);
-    QString strStatusbar = vbox.GetExtraData(VBoxDefs::GUI_Statusbar);
+    QString strToolbar = vbox.GetExtraData(GUI_Toolbar);
+    QString strStatusbar = vbox.GetExtraData(GUI_Statusbar);
     bool fToolbar = strToolbar.isEmpty() || strToolbar == "true";
     bool fStatusbar = strStatusbar.isEmpty() || strStatusbar == "true";
 
@@ -175,7 +175,7 @@ void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
 #else /* Q_WS_MAC */
             m_pBar->show();
 #endif /* !Q_WS_MAC */
-            vbox.SetExtraData(VBoxDefs::GUI_Toolbar, "true");
+            vbox.SetExtraData(GUI_Toolbar, "true");
         }
         else
         {
@@ -184,7 +184,7 @@ void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
 #else /* Q_WS_MAC */
             m_pBar->hide();
 #endif /* !Q_WS_MAC */
-            vbox.SetExtraData(VBoxDefs::GUI_Toolbar, "false");
+            vbox.SetExtraData(GUI_Toolbar, "false");
         }
     }
     else if (pResult == pShowStatusBar)
@@ -192,12 +192,12 @@ void UISelectorWindow::sltShowSelectorContextMenu(const QPoint &pos)
         if (pResult->isChecked())
         {
             statusBar()->show();
-            vbox.SetExtraData(VBoxDefs::GUI_Statusbar, "true");
+            vbox.SetExtraData(GUI_Statusbar, "true");
         }
         else
         {
             statusBar()->hide();
-            vbox.SetExtraData(VBoxDefs::GUI_Statusbar, "false");
+            vbox.SetExtraData(GUI_Statusbar, "false");
         }
     }
 }
@@ -290,8 +290,8 @@ void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = Q
         QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
         QString strTitle = tr("Select a virtual machine file");
         QStringList extensions;
-        for (int i = 0; i < VBoxDefs::VBoxFileExts.size(); ++i)
-            extensions << QString("*.%1").arg(VBoxDefs::VBoxFileExts[i]);
+        for (int i = 0; i < VBoxFileExts.size(); ++i)
+            extensions << QString("*.%1").arg(VBoxFileExts[i]);
         QString strFilter = tr("Virtual machine files (%1)").arg(extensions.join(" "));
         /* Create open file dialog: */
         QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
@@ -791,7 +791,7 @@ void UISelectorWindow::sltRefreshVMList()
     for (CMachineVector::ConstIterator m = machines.begin(); m != machines.end(); ++m)
         m_pVMModel->addItem(*m);
     /* Apply the saved sort order. */
-    m_pVMModel->sortByIdList(vbox.GetExtraDataStringList(VBoxDefs::GUI_SelectorVMPositions));
+    m_pVMModel->sortByIdList(vbox.GetExtraDataStringList(GUI_SelectorVMPositions));
     /* Update details page. */
     sltCurrentVMItemChanged();
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -961,7 +961,7 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
 #endif /* !Q_WS_MAC */
         if (!strFile.isEmpty() && QFile::exists(strFile))
         {
-            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::VBoxFileExts))
+            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
             {
                 /* VBox config files. */
                 CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -976,13 +976,13 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
                 else
                     sltShowAddMachineDialog(strFile);
             }
-            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::OVFFileExts))
+            else if (VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
             {
                 /* OVF/OVA. Only one file at the time. */
                 sltShowImportApplianceWizard(strFile);
                 break;
             }
-            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::VBoxExtPackFileExts))
+            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxExtPackFileExts))
             {
                 UIGlobalSettingsExtension::doInstallation(strFile, QString(), this, NULL);
             }
@@ -1262,7 +1262,7 @@ bool UISelectorWindow::event(QEvent *pEvent)
             CVirtualBox vbox = vboxGlobal().virtualBox();
             /* We have to invert the isVisible check one time, cause this event
              * is sent *before* the real toggle is done. Really intuitive Trolls. */
-            vbox.SetExtraData(VBoxDefs::GUI_Toolbar, !::darwinIsToolbarVisible(mVMToolBar) ? "true" : "false");
+            vbox.SetExtraData(GUI_Toolbar, !::darwinIsToolbarVisible(mVMToolBar) ? "true" : "false");
             break;
         }
 #endif /* Q_WS_MAC */
@@ -1683,7 +1683,7 @@ void UISelectorWindow::loadSettings()
 
     /* Restore window position: */
     {
-        QString strWinPos = vbox.GetExtraData(VBoxDefs::GUI_LastWindowPosition);
+        QString strWinPos = vbox.GetExtraData(GUI_LastSelectorWindowPosition);
 
         bool ok = false, max = false;
         int x = 0, y = 0, w = 0, h = 0;
@@ -1695,7 +1695,7 @@ void UISelectorWindow::loadSettings()
         if (ok)
             h = strWinPos.section(',', 3, 3).toInt(&ok);
         if (ok)
-            max = strWinPos.section(',', 4, 4) == VBoxDefs::GUI_LastWindowState_Max;
+            max = strWinPos.section(',', 4, 4) == GUI_LastWindowState_Max;
 
         QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
                         QApplication::desktop()->availableGeometry(this);
@@ -1726,14 +1726,14 @@ void UISelectorWindow::loadSettings()
 
     /* Restore selected VM(s): */
     {
-        QString strPrevVMId = vbox.GetExtraData(VBoxDefs::GUI_LastVMSelected);
+        QString strPrevVMId = vbox.GetExtraData(GUI_LastVMSelected);
 
         m_pVMListView->selectItemById(strPrevVMId);
     }
 
     /* Restore splitter handle position: */
     {
-        QList<int> sizes = vbox.GetExtraDataIntList(VBoxDefs::GUI_SplitterSizes);
+        QList<int> sizes = vbox.GetExtraDataIntList(GUI_SplitterSizes);
 
         if (sizes.size() == 2)
             m_pSplitter->setSizes(sizes);
@@ -1741,8 +1741,8 @@ void UISelectorWindow::loadSettings()
 
     /* Restore toolbar and statusbar visibility: */
     {
-        QString strToolbar = vbox.GetExtraData(VBoxDefs::GUI_Toolbar);
-        QString strStatusbar = vbox.GetExtraData(VBoxDefs::GUI_Statusbar);
+        QString strToolbar = vbox.GetExtraData(GUI_Toolbar);
+        QString strStatusbar = vbox.GetExtraData(GUI_Statusbar);
 
 #ifdef Q_WS_MAC
         mVMToolBar->setVisible(strToolbar.isEmpty() || strToolbar == "true");
@@ -1774,22 +1774,22 @@ void UISelectorWindow::saveSettings()
 #else /* Q_WS_MAC */
         if (isMaximized())
 #endif /* !Q_WS_MAC */
-            strWinPos += QString(",%1").arg(VBoxDefs::GUI_LastWindowState_Max);
+            strWinPos += QString(",%1").arg(GUI_LastWindowState_Max);
 
-        vbox.SetExtraData(VBoxDefs::GUI_LastWindowPosition, strWinPos);
+        vbox.SetExtraData(GUI_LastSelectorWindowPosition, strWinPos);
     }
 
     /* Save selected VM(s): */
     {
         UIVMItem *pItem = m_pVMListView->currentItem();
         QString strCurrentVMId = pItem ? QString(pItem->id()) : QString();
-        vbox.SetExtraData(VBoxDefs::GUI_LastVMSelected, strCurrentVMId);
-        vbox.SetExtraDataStringList(VBoxDefs::GUI_SelectorVMPositions, m_pVMModel->idList());
+        vbox.SetExtraData(GUI_LastVMSelected, strCurrentVMId);
+        vbox.SetExtraDataStringList(GUI_SelectorVMPositions, m_pVMModel->idList());
     }
 
     /* Save splitter handle position: */
     {
-        vbox.SetExtraDataIntList(VBoxDefs::GUI_SplitterSizes, m_pSplitter->sizes());
+        vbox.SetExtraDataIntList(GUI_SplitterSizes, m_pSplitter->sizes());
     }
 }
 

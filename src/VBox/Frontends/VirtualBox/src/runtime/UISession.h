@@ -22,6 +22,7 @@
 /* Qt includes: */
 #include <QObject>
 #include <QCursor>
+#include <QEvent>
 
 /* GUI includes: */
 #include "UIMachineDefs.h"

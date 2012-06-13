@@ -208,7 +208,7 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
     if (   fEnabled
         && m_pScreenLayout->isHostTaskbarCovert())
     {
-        QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
+        QString testStr = vboxGlobal().virtualBox().GetExtraData(GUI_PresentationModeEnabled).toLower();
         /* Default to false if it is an empty value */
         if (testStr.isEmpty() || testStr == "false")
             SetSystemUIMode(kUIModeAllHidden, 0);

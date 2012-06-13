@@ -17,18 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "QIListView.h"
-#include "VBoxDefs.h"
-
 #if MAC_LEOPARD_STYLE
-/* Qt includes */
+/* Qt includes: */
 # include <QPainter>
 # include <QApplication>
 # include <qmacstyle_mac.h>
 #endif /* MAC_LEOPARD_STYLE */
 
-
-/* QIListView class */
+/* GUI includes: */
+#include "QIListView.h"
 
 QIListView::QIListView (QWidget *aParent /* = 0 */)
     :QListView (aParent)

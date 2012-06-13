@@ -81,7 +81,7 @@ UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
     m_pUpdateTimerMenu->insertSeparator(m_actions[static_cast<UpdateInterval>(UpdateInterval_500ms)]);
 
     /* Load preview update interval: */
-    QString strInterval = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PreviewUpdate);
+    QString strInterval = vboxGlobal().virtualBox().GetExtraData(GUI_PreviewUpdate);
     /* Parse loaded value: */
     UpdateInterval interval = m_intervals.key(strInterval, UpdateInterval_1000ms);
     /* Initialize with the new update interval: */
@@ -374,7 +374,7 @@ void UIVMPreviewWindow::setUpdateInterval(UpdateInterval interval, bool fSave)
         case UpdateInterval_Max: break;
     }
     if (fSave && m_intervals.contains(interval))
-        vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, m_intervals[interval]);
+        vboxGlobal().virtualBox().SetExtraData(GUI_PreviewUpdate, m_intervals[interval]);
 }
 
 void UIVMPreviewWindow::restart()

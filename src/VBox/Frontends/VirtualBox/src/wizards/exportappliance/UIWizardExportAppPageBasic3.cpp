@@ -41,9 +41,9 @@ void UIWizardExportAppPage3::chooseDefaultSettings()
 {
     /* Select default settings: */
 #if 0
-    m_pUsernameEditor->setText(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_Export_Username));
-    m_pHostnameEditor->setText(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_Export_Hostname));
-    m_pBucketEditor->setText(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_Export_Bucket));
+    m_pUsernameEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Username));
+    m_pHostnameEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Hostname));
+    m_pBucketEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Bucket));
 #else
     /* Do nothing for now... */
 #endif
@@ -306,7 +306,7 @@ bool UIWizardExportAppPageBasic3::isComplete() const
     if (fResult)
     {
         const QString &strFile = m_pFileSelector->path().toLower();
-        fResult = VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::OVFFileExts);
+        fResult = VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts);
         if (fResult)
         {
             StorageType storageType = field("storageType").value<StorageType>();

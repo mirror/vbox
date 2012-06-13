@@ -107,9 +107,6 @@ class XPCOMEventQSocketListener;
     #include <VirtualBox_XPCOM.h>
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
-#include "VBoxDefs.h"
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 class CVirtualBoxErrorInfo;

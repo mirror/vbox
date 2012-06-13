@@ -142,14 +142,14 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
     CMachine m = machine();
 
     /* Make sure mini-toolbar is necessary: */
-    bool fIsActive = m.GetExtraData(VBoxDefs::GUI_ShowMiniToolBar) != "no";
+    bool fIsActive = m.GetExtraData(GUI_ShowMiniToolBar) != "no";
     if (!fIsActive)
         return;
 
     /* Get the mini-toolbar alignment: */
-    bool fIsAtTop = m.GetExtraData(VBoxDefs::GUI_MiniToolBarAlignment) == "top";
+    bool fIsAtTop = m.GetExtraData(GUI_MiniToolBarAlignment) == "top";
     /* Get the mini-toolbar auto-hide feature availability: */
-    bool fIsAutoHide = m.GetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide) != "off";
+    bool fIsAutoHide = m.GetExtraData(GUI_MiniToolBarAutoHide) != "off";
     m_pMiniToolBar = new VBoxMiniToolBar(centralWidget(),
                                          fIsAtTop ? VBoxMiniToolBar::AlignTop : VBoxMiniToolBar::AlignBottom,
                                          true, fIsAutoHide);
@@ -191,7 +191,7 @@ void UIMachineWindowSeamless::cleanupMiniToolbar()
         return;
 
     /* Save mini-toolbar settings: */
-    machine().SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
+    machine().SetExtraData(GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
@@ -347,7 +347,7 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
     m_prevRegion = region;
 #elif defined (Q_WS_MAC)
 # if defined (VBOX_GUI_USE_QUARTZ2D)
-    if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
+    if (vboxGlobal().vmRenderMode() == Quartz2DMode)
     {
         /* If we are using the Quartz2D backend we have to trigger
          * an repaint only. All the magic clipping stuff is done

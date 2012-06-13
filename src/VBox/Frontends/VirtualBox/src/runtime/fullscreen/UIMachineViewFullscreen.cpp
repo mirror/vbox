@@ -96,7 +96,7 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
 {
     switch (pEvent->type())
     {
-        case VBoxDefs::ResizeEventType:
+        case ResizeEventType:
         {
             return guestResizeEvent(pEvent, true);
         }
@@ -200,7 +200,7 @@ void UIMachineViewFullscreen::maybeRestrictMinimumSize()
      * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
      * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
      * In all other modes, or when auto-resize is in force, this function does nothing. */
-    if (vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode)
+    if (vboxGlobal().vmRenderMode() == SDLMode)
     {
         if (!uisession()->isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
             setMinimumSize(sizeHint());

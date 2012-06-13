@@ -128,7 +128,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt:
     mStatTimer->start (5000);
 
     /* Preload dialog attributes for this vm */
-    QString dlgsize = mSession.GetMachine().GetExtraData (VBoxDefs::GUI_InfoDlgState);
+    QString dlgsize = mSession.GetMachine().GetExtraData(GUI_InfoDlgState);
     if (dlgsize.isEmpty())
     {
         mWidth = 400;
@@ -150,8 +150,8 @@ VBoxVMInformationDlg::~VBoxVMInformationDlg()
 {
     /* Save dialog attributes for this vm */
     QString dlgsize ("%1,%2,%3");
-    mSession.GetMachine().SetExtraData (VBoxDefs::GUI_InfoDlgState,
-        dlgsize.arg (mWidth).arg (mHeight).arg (isMaximized() ? "max" : "normal"));
+    mSession.GetMachine().SetExtraData(GUI_InfoDlgState,
+                                       dlgsize.arg(mWidth).arg(mHeight).arg(isMaximized() ? "max" : "normal"));
 
     if (!mSession.isNull() && !mSession.GetMachine().isNull())
         mSelfArray.remove (mSession.GetMachine().GetName());

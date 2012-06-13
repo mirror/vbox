@@ -283,7 +283,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             CMachine m = machine();
 
             /* Check if there is a close hock script defined. */
-            const QString& strScript = m.GetExtraData(VBoxDefs::GUI_CloseActionHook);
+            const QString& strScript = m.GetExtraData(GUI_CloseActionHook);
             if (!strScript.isEmpty())
             {
                 QProcess::startDetached(strScript, QStringList() << m.GetId());
@@ -297,7 +297,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             dlg.pmIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m.GetOSTypeId()));
 
             /* Check which close actions are disallowed: */
-            QStringList restictedActionsList = m.GetExtraData(VBoxDefs::GUI_RestrictedCloseActions).split(',');
+            QStringList restictedActionsList = m.GetExtraData(GUI_RestrictedCloseActions).split(',');
             bool fIsStateSavingAllowed = !restictedActionsList.contains("SaveState", Qt::CaseInsensitive);
             bool fIsACPIShutdownAllowed = !restictedActionsList.contains("Shutdown", Qt::CaseInsensitive);
             bool fIsPowerOffAllowed = !restictedActionsList.contains("PowerOff", Qt::CaseInsensitive);
@@ -332,7 +332,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             QString strDiscardCurState("discardCurState");
 
             /* Read the last user's choice for the given VM: */
-            QStringList lastAction = m.GetExtraData(VBoxDefs::GUI_LastCloseAction).split(',');
+            QStringList lastAction = m.GetExtraData(GUI_LastCloseAction).split(',');
 
             /* Check which button should be initially chosen: */
             QRadioButton *pRadioButton = 0;
@@ -472,7 +472,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                     if (fSuccess)
                     {
                         /* Read the last user's choice for the given VM: */
-                        QStringList prevAction = m.GetExtraData(VBoxDefs::GUI_LastCloseAction).split(',');
+                        QStringList prevAction = m.GetExtraData(GUI_LastCloseAction).split(',');
                         /* Memorize the last user's choice for the given VM: */
                         QString lastAction = strPowerOff;
                         if (dlg.mRbSave->isChecked())
@@ -486,7 +486,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                             AssertFailed();
                         if (dlg.mCbDiscardCurState->isChecked())
                             (lastAction += ",") += strDiscardCurState;
-                        m.SetExtraData(VBoxDefs::GUI_LastCloseAction, lastAction);
+                        m.SetExtraData(GUI_LastCloseAction, lastAction);
                     }
                 }
 

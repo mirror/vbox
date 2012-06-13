@@ -28,6 +28,7 @@
 #include <QFileIconProvider>
 
 /* GUI includes: */
+#include "UIDefs.h"
 #include "VBoxGlobalSettings.h"
 #include "UIMedium.h"
 
@@ -141,7 +142,7 @@ public:
     QString managedVMUuid() const { return vmUuid; }
     QList<QUrl> &argUrlList() { return m_ArgUrlList; }
 
-    VBoxDefs::RenderMode vmRenderMode() const { return vm_render_mode; }
+    RenderMode vmRenderMode() const { return vm_render_mode; }
     const char *vmRenderModeStr() const { return vm_render_mode_str; }
     bool isKWinManaged() const { return mIsKWinManaged; }
 
@@ -346,8 +347,7 @@ public:
     static QString toHumanReadableList(const QStringList &list);
 
     static quint64 parseSize (const QString &);
-    static QString formatSize (quint64 aSize, uint aDecimal = 2,
-                               VBoxDefs::FormatSize aMode = VBoxDefs::FormatSize_Round);
+    static QString formatSize (quint64 aSize, uint aDecimal = 2, FormatSize aMode = FormatSize_Round);
 
     static quint64 requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
 
@@ -500,7 +500,7 @@ private:
     QThread *mMediaEnumThread;
     VBoxMediaList mMediaList;
 
-    VBoxDefs::RenderMode vm_render_mode;
+    RenderMode vm_render_mode;
     const char * vm_render_mode_str;
     bool mIsKWinManaged;
 

@@ -61,7 +61,7 @@ void UIWizard::sltCustomButtonClicked(int iId)
         /* Compose wizard's name: */
         QString strWizardName = nameForType(m_type);
         /* Load mode settings: */
-        QStringList wizards = vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_HideDescriptionForWizards);
+        QStringList wizards = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_HideDescriptionForWizards);
 
         /* Switch mode: */
         switch (m_mode)
@@ -88,7 +88,7 @@ void UIWizard::sltCustomButtonClicked(int iId)
         }
 
         /* Save mode settings: */
-        vboxGlobal().virtualBox().SetExtraDataStringList(VBoxDefs::GUI_HideDescriptionForWizards, wizards);
+        vboxGlobal().virtualBox().SetExtraDataStringList(GUI_HideDescriptionForWizards, wizards);
 
         /* Prepare: */
         prepare();
@@ -550,7 +550,7 @@ UIWizardMode UIWizard::loadModeForType(UIWizardType type)
     if (type == UIWizardType_FirstRun)
         return UIWizardMode_Basic;
     /* Get mode from extra-data: */
-    QStringList wizards = vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_HideDescriptionForWizards);
+    QStringList wizards = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_HideDescriptionForWizards);
     if (wizards.contains(nameForType(type)))
         return UIWizardMode_Expert;
     /* Return mode: */

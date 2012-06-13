@@ -30,7 +30,6 @@
 #include "UIToolBar.h"
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsUSBFilterDetails.h"
-#include "VBoxDefs.h"
 #include "COMEnumsWrapper.h"
 
 /* COM includes: */
@@ -42,9 +41,6 @@
 #include "CHostUSBDeviceFilter.h"
 #include "CExtPackManager.h"
 #include "CExtPack.h"
-
-/* Using declarations: */
-using namespace VBoxGlobalDefs;
 
 /**
  *  USB popup menu class.
@@ -419,7 +415,7 @@ void UIMachineSettingsUSB::putToCache()
             /* USB 1.0 (OHCI): */
             usbData.m_fUSBEnabled = mGbUSB->isChecked();
             /* USB 2.0 (EHCI): */
-            CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(UI_ExtPackName);
+            CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
             usbData.m_fEHCIEnabled = extPack.isNull() || !extPack.GetUsable() ? false : mCbUSB2->isChecked();
 
             /* Update USB cache: */
@@ -578,7 +574,7 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
     /* USB 2.0 Extension Pack presence test: */
     NOREF(strWarningText);
 #ifdef VBOX_WITH_EXTPACK
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(UI_ExtPackName);
+    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     if (mGbUSB->isChecked() && mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
     {
         strWarningText = tr("USB 2.0 is currently enabled for this virtual machine. "
@@ -586,8 +582,8 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
                             "Please install the Extension Pack from the VirtualBox download site. "
                             "After this you will be able to re-enable USB 2.0. "
                             "It will be disabled in the meantime unless you cancel the current settings changes.")
-                            .arg(UI_ExtPackName);
-        msgCenter().remindAboutUnsupportedUSB2(UI_ExtPackName, this);
+                            .arg(GUI_ExtPackName);
+        msgCenter().remindAboutUnsupportedUSB2(GUI_ExtPackName, this);
         return true;
     }
 #endif

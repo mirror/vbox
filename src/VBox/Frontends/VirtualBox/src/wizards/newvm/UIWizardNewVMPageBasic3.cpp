@@ -26,7 +26,6 @@
 /* Local includes: */
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVM.h"
-#include "VBoxDefs.h"
 #include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "VBoxMediaComboBox.h"

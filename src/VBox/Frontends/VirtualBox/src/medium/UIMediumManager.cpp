@@ -64,7 +64,7 @@ class AddVDMUrlsEvent: public QEvent
 public:
 
     AddVDMUrlsEvent (const QList <QUrl> &aUrls)
-        : QEvent (static_cast <QEvent::Type> (VBoxDefs::AddVDMUrlsEventType))
+        : QEvent (static_cast <QEvent::Type> (AddVDMUrlsEventType))
         , mUrls (aUrls)
     {}
 
@@ -747,7 +747,7 @@ bool UIMediumManager::eventFilter (QObject *aObject, QEvent *aEvent)
             return true;
             break;
         }
-        case VBoxDefs::AddVDMUrlsEventType:
+        case AddVDMUrlsEventType:
         {
             if (aObject == currentTreeWidget())
             {

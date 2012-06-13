@@ -86,8 +86,7 @@ VBoxTrayIcon::~VBoxTrayIcon ()
     /* Erase dialog handle in config file. */
     if (mActive)
     {
-        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_TrayIconWinID,
-                                                QString::null);
+        vboxGlobal().virtualBox().SetExtraData(GUI_TrayIconWinID, QString::null);
         hide();
     }
 }

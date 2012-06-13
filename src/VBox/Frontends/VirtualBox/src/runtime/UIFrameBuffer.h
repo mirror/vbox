@@ -24,7 +24,9 @@
 #include <QPaintEvent>
 
 /* GUI includes: */
-#include "VBoxDefs.h"
+#include "UIDefs.h"
+
+/* COM includes: */
 #include "CFramebuffer.h"
 
 /* Other VBox includes: */
@@ -43,7 +45,7 @@ public:
     UIResizeEvent(ulong uPixelFormat, uchar *pVRAM,
                   ulong uBitsPerPixel, ulong uBytesPerLine,
                   ulong uWidth, ulong uHeight)
-        : QEvent((QEvent::Type)VBoxDefs::ResizeEventType)
+        : QEvent((QEvent::Type)ResizeEventType)
         , m_uPixelFormat(uPixelFormat), m_pVRAM(pVRAM), m_uBitsPerPixel(uBitsPerPixel)
         , m_uBytesPerLine(uBytesPerLine), m_uWidth(uWidth), m_uHeight(uHeight) {}
     ulong pixelFormat() { return m_uPixelFormat; }
@@ -71,7 +73,7 @@ class UIRepaintEvent : public QEvent
 public:
 
     UIRepaintEvent(int iX, int iY, int iW, int iH)
-        : QEvent((QEvent::Type)VBoxDefs::RepaintEventType)
+        : QEvent((QEvent::Type)RepaintEventType)
         , m_iX(iX), m_iY(iY), m_iW(iW), m_iH(iH) {}
     int x() { return m_iX; }
     int y() { return m_iY; }
@@ -91,7 +93,7 @@ class UISetRegionEvent : public QEvent
 public:
 
     UISetRegionEvent(const QRegion &region)
-        : QEvent((QEvent::Type)VBoxDefs::SetRegionEventType)
+        : QEvent((QEvent::Type)SetRegionEventType)
         , m_region(region) {}
     QRegion region() { return m_region; }
 

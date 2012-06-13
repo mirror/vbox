@@ -91,7 +91,7 @@ void UIWizardImportAppPageExpert::initializePage()
 bool UIWizardImportAppPageExpert::isComplete() const
 {
     /* Make sure appliance file has allowed extension and exists and appliance widget is valid: */
-    return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), VBoxDefs::OVFFileExts) &&
+    return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts) &&
            QFileInfo(m_pFileSelector->path()).exists() &&
            m_pApplianceWidget->isValid();
 }

@@ -23,7 +23,6 @@
 #include "UIMediumManager.gen.h"
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "VBoxDefs.h"
 #include "VBoxMediaComboBox.h"
 
 /* COM includes: */

@@ -209,7 +209,7 @@ class VBoxVHWACommandProcessEvent : public QEvent
 {
 public:
     VBoxVHWACommandProcessEvent ()
-        : QEvent ((QEvent::Type) VBoxDefs::VHWACommandProcessType)
+        : QEvent ((QEvent::Type) VHWACommandProcessType)
     {
 #ifdef DEBUG_misha
         g_EventCounter.inc();
@@ -5773,21 +5773,21 @@ VBoxVHWASettings::VBoxVHWASettings (CSession &session)
 {
     CMachine machine = session.GetMachine();
 
-    QString str = machine.GetExtraData (VBoxDefs::GUI_Accelerate2D_StretchLinear);
+    QString str = machine.GetExtraData (GUI_Accelerate2D_StretchLinear);
     mStretchLinearEnabled = str != "off";
 
     uint32_t aFourccs[VBOXVHWA_NUMFOURCC];
     int num = 0;
-    str = machine.GetExtraData (VBoxDefs::GUI_Accelerate2D_PixformatAYUV);
+    str = machine.GetExtraData (GUI_Accelerate2D_PixformatAYUV);
     if (str != "off")
         aFourccs[num++] = FOURCC_AYUV;
-    str = machine.GetExtraData (VBoxDefs::GUI_Accelerate2D_PixformatUYVY);
+    str = machine.GetExtraData (GUI_Accelerate2D_PixformatUYVY);
     if (str != "off")
         aFourccs[num++] = FOURCC_UYVY;
-    str = machine.GetExtraData (VBoxDefs::GUI_Accelerate2D_PixformatYUY2);
+    str = machine.GetExtraData (GUI_Accelerate2D_PixformatYUY2);
     if (str != "off")
         aFourccs[num++] = FOURCC_YUY2;
-    str = machine.GetExtraData (VBoxDefs::GUI_Accelerate2D_PixformatYV12);
+    str = machine.GetExtraData (GUI_Accelerate2D_PixformatYV12);
     if (str != "off")
         aFourccs[num++] = FOURCC_YV12;
 

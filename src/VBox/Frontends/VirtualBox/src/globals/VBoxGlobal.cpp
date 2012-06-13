@@ -51,7 +51,6 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "VBoxUtils.h"
-#include "VBoxDefs.h"
 #include "UISelectorWindow.h"
 #include "UIMessageCenter.h"
 #include "QIMessageBox.h"
@@ -177,12 +176,12 @@ public:
     /** Constructs a regular enum event */
     VBoxMediaEnumEvent (const UIMedium &aMedium,
                         VBoxMediaList::iterator &aIterator)
-        : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
+        : QEvent ((QEvent::Type) MediaEnumEventType)
         , mMedium (aMedium), mIterator (aIterator), mLast (false)
         {}
     /** Constructs the last enum event */
     VBoxMediaEnumEvent (VBoxMediaList::iterator &aIterator)
-        : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
+        : QEvent ((QEvent::Type) MediaEnumEventType)
         , mIterator (aIterator), mLast (true)
         {}
 
@@ -220,25 +219,25 @@ static void vboxGlobalCleanup()
  *  Determines the rendering mode from the argument. Sets the appropriate
  *  default rendering mode if the argument is NULL.
  */
-static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
+static RenderMode vboxGetRenderMode (const char *aModeStr)
 {
-    VBoxDefs::RenderMode mode = VBoxDefs::InvalidRenderMode;
+    RenderMode mode = InvalidRenderMode;
 
 #if defined (Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
-    mode = VBoxDefs::Quartz2DMode;
+    mode = Quartz2DMode;
 # ifdef RT_ARCH_X86
     /* Quartz2DMode doesn't refresh correctly on 32-bit Snow Leopard, use image mode. */
 //    char szRelease[80];
 //    if (    RT_SUCCESS (RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szRelease, sizeof (szRelease)))
 //        &&  !strncmp (szRelease, "10.", 3))
-//        mode = VBoxDefs::QImageMode;
+//        mode = QImageMode;
 # endif
 #elif (defined (Q_WS_WIN32) || defined (Q_WS_PM) || defined (Q_WS_X11)) && defined (VBOX_GUI_USE_QIMAGE)
-    mode = VBoxDefs::QImageMode;
+    mode = QImageMode;
 #elif defined (Q_WS_X11) && defined (VBOX_GUI_USE_SDL)
-    mode = VBoxDefs::SDLMode;
+    mode = SDLMode;
 #elif defined (VBOX_GUI_USE_QIMAGE)
-    mode = VBoxDefs::QImageMode;
+    mode = QImageMode;
 #else
 # error "Cannot determine the default render mode!"
 #endif
@@ -248,27 +247,27 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
         if (0) ;
 #if defined (VBOX_GUI_USE_QIMAGE)
         else if (::strcmp (aModeStr, "image") == 0)
-            mode = VBoxDefs::QImageMode;
+            mode = QImageMode;
 #endif
 #if defined (VBOX_GUI_USE_SDL)
         else if (::strcmp (aModeStr, "sdl") == 0)
-            mode = VBoxDefs::SDLMode;
+            mode = SDLMode;
 #endif
 #if defined (VBOX_GUI_USE_DDRAW)
         else if (::strcmp (aModeStr, "ddraw") == 0)
-            mode = VBoxDefs::DDRAWMode;
+            mode = DDRAWMode;
 #endif
 #if defined (VBOX_GUI_USE_QUARTZ2D)
         else if (::strcmp (aModeStr, "quartz2d") == 0)
-            mode = VBoxDefs::Quartz2DMode;
+            mode = Quartz2DMode;
 #endif
 #if defined (VBOX_GUI_USE_QGLFB)
         else if (::strcmp (aModeStr, "qgl") == 0)
-            mode = VBoxDefs::QGLMode;
+            mode = QGLMode;
 #endif
 //#if defined (VBOX_GUI_USE_QGL)
 //        else if (::strcmp (aModeStr, "qgloverlay") == 0)
-//            mode = VBoxDefs::QGLOverlayMode;
+//            mode = QGLOverlayMode;
 //#endif
 
     }
@@ -584,15 +583,15 @@ void VBoxGlobal::trayIconShowSelector()
 bool VBoxGlobal::trayIconInstall()
 {
     int rc = 0;
-    QString strTrayWinID = mVBox.GetExtraData(VBoxDefs::GUI_TrayIconWinID);
+    QString strTrayWinID = mVBox.GetExtraData(GUI_TrayIconWinID);
     if (false == strTrayWinID.isEmpty())
     {
         /* Check if current tray icon is alive by writing some bogus value. */
-        mVBox.SetExtraData(VBoxDefs::GUI_TrayIconWinID, "0");
+        mVBox.SetExtraData(GUI_TrayIconWinID, "0");
         if (mVBox.isOk())
         {
             /* Current tray icon died - clean up. */
-            mVBox.SetExtraData(VBoxDefs::GUI_TrayIconWinID, NULL);
+            mVBox.SetExtraData(GUI_TrayIconWinID, NULL);
             strTrayWinID.clear();
         }
     }
@@ -627,7 +626,7 @@ bool VBoxGlobal::trayIconInstall()
     if (mIsTrayMenu)
     {
         // Use this selector for displaying the tray icon
-        mVBox.SetExtraData(VBoxDefs::GUI_TrayIconWinID,
+        mVBox.SetExtraData(GUI_TrayIconWinID,
                            QString("%1").arg((qulonglong)vboxGlobal().mainWindow()->winId()));
 
         /* The first process which can grab this "mutex" will win ->
@@ -1932,7 +1931,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
     QString latestFilePath = docDir.absoluteFilePath (licenseFile);
 
     /* check for the agreed license version */
-    QStringList strList =  virtualBox().GetExtraData (VBoxDefs::GUI_LicenseKey).split(",");
+    QStringList strList =  virtualBox().GetExtraData (GUI_LicenseKey).split(",");
     for (int i=0; i < strList.size(); ++i)
         if (strList.at(i) == latestVersion)
             return true;
@@ -1940,7 +1939,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
     VBoxLicenseViewer licenseDialog;
     bool result = licenseDialog.showLicenseFromFile(latestFilePath) == QDialog::Accepted;
     if (result)
-        virtualBox().SetExtraData (VBoxDefs::GUI_LicenseKey, (strList << latestVersion).join(","));
+        virtualBox().SetExtraData (GUI_LicenseKey, (strList << latestVersion).join(","));
     return result;
 }
 #endif /* defined(Q_WS_X11) && !defined(VBOX_OSE) */
@@ -2385,11 +2384,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
             filters = vboxGlobal().HDDBackends();
             strTitle = tr("Please choose a virtual hard drive file");
             allType = tr("All virtual hard drive files (%1)");
-            strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
+            strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderHD);
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
+                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderCD);
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
+                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderFD);
             break;
         }
         case UIMediumType_DVD:
@@ -2397,11 +2396,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
             filters = vboxGlobal().DVDBackends();
             strTitle = tr("Please choose a virtual optical disk file");
             allType = tr("All virtual optical disk files (%1)");
-            strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
+            strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderCD);
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
+                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderHD);
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
+                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderFD);
             break;
         }
         case UIMediumType_Floppy:
@@ -2409,11 +2408,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
             filters = vboxGlobal().FloppyBackends();
             strTitle = tr("Please choose a virtual floppy disk file");
             allType = tr("All virtual floppy disk files (%1)");
-            strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
+            strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderFD);
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
+                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderCD);
             if (strLastFolder.isEmpty())
-                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
+                strLastFolder = virtualBox().GetExtraData(GUI_RecentFolderHD);
             break;
         }
         default:
@@ -2456,16 +2455,16 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Remember the path of the last chosen medium: */
-    QString strRecentFolderKey = mediumType == UIMediumType_HardDisk ? VBoxDefs::GUI_RecentFolderHD :
-                                 mediumType == UIMediumType_DVD ? VBoxDefs::GUI_RecentFolderCD :
-                                 mediumType == UIMediumType_Floppy ? VBoxDefs::GUI_RecentFolderFD :
+    QString strRecentFolderKey = mediumType == UIMediumType_HardDisk ? GUI_RecentFolderHD :
+                                 mediumType == UIMediumType_DVD ? GUI_RecentFolderCD :
+                                 mediumType == UIMediumType_Floppy ? GUI_RecentFolderFD :
                                  QString();
     vbox.SetExtraData(strRecentFolderKey, QFileInfo(strMediumLocation).absolutePath());
 
     /* Update recently used list: */
-    QString strRecentListKey = mediumType == UIMediumType_HardDisk ? VBoxDefs::GUI_RecentListHD :
-                               mediumType == UIMediumType_DVD ? VBoxDefs::GUI_RecentListCD :
-                               mediumType == UIMediumType_Floppy ? VBoxDefs::GUI_RecentListFD :
+    QString strRecentListKey = mediumType == UIMediumType_HardDisk ? GUI_RecentListHD :
+                               mediumType == UIMediumType_DVD ? GUI_RecentListCD :
+                               mediumType == UIMediumType_Floppy ? GUI_RecentListFD :
                                QString();
     QStringList recentMediumList = vbox.GetExtraData(strRecentListKey).split(';');
     if (recentMediumList.contains(strMediumLocation))
@@ -2507,7 +2506,7 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
  */
 int VBoxGlobal::mainWindowCount ()
 {
-    return mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt();
+    return mVBox.GetExtraData (GUI_MainWindowCount).toInt();
 }
 #endif
 
@@ -3267,7 +3266,7 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
  */
 /* static */
 QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
-                                VBoxDefs::FormatSize aMode /* = FormatSize_Round */)
+                                FormatSize aMode /* = FormatSize_Round */)
 {
     static QString Suffixes [7];
     Suffixes[0] = tr ("B", "size suffix Bytes");
@@ -3325,10 +3324,10 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
         {
             decm *= mult;
             /* not greater */
-            if (aMode == VBoxDefs::FormatSize_RoundDown)
+            if (aMode == FormatSize_RoundDown)
                 decm = decm / denom;
             /* not less */
-            else if (aMode == VBoxDefs::FormatSize_RoundUp)
+            else if (aMode == FormatSize_RoundUp)
                 decm = (decm + denom - 1) / denom;
             /* nearest */
             else decm = (decm + denom / 2) / denom;
@@ -4129,7 +4128,7 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
          * data item acts like an inter-process mutex, so the first process
          * that attempts to set it will win, the rest will get a failure from
          * the SetExtraData() call. */
-        mVBox.SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
+        mVBox.SetExtraData (GUI_RegistrationDlgWinID,
                             QString ("%1").arg ((qulonglong) mMainWindow->winId()));
 
         if (mVBox.isOk())
@@ -4162,7 +4161,7 @@ bool VBoxGlobal::event (QEvent *e)
 {
     switch (e->type())
     {
-        case VBoxDefs::MediaEnumEventType:
+        case MediaEnumEventType:
         {
             VBoxMediaEnumEvent *ev = (VBoxMediaEnumEvent*) e;
 
@@ -4220,22 +4219,22 @@ bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
 
 bool VBoxGlobal::isDebuggerEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgEnabled, aMachine, VBoxDefs::GUI_DbgEnabled);
+    return isDebuggerWorker(&mDbgEnabled, aMachine, GUI_DbgEnabled);
 }
 
 bool VBoxGlobal::isDebuggerAutoShowEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgAutoShow, aMachine, VBoxDefs::GUI_DbgAutoShow);
+    return isDebuggerWorker(&mDbgAutoShow, aMachine, GUI_DbgAutoShow);
 }
 
 bool VBoxGlobal::isDebuggerAutoShowCommandLineEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgAutoShowCommandLine, aMachine, VBoxDefs::GUI_DbgAutoShow);
+    return isDebuggerWorker(&mDbgAutoShowCommandLine, aMachine, GUI_DbgAutoShow);
 }
 
 bool VBoxGlobal::isDebuggerAutoShowStatisticsEnabled(CMachine &aMachine)
 {
-    return isDebuggerWorker(&mDbgAutoShowStatistics, aMachine, VBoxDefs::GUI_DbgAutoShow);
+    return isDebuggerWorker(&mDbgAutoShowStatistics, aMachine, GUI_DbgAutoShow);
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -4268,7 +4267,7 @@ bool VBoxGlobal::processArgs()
         for (int i = 0; i < list.size(); ++i)
         {
             const QString& strFile = list.at(i).toLocalFile();
-            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::VBoxFileExts))
+            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
             {
                 CVirtualBox vbox = vboxGlobal().virtualBox();
                 CMachine machine = vbox.FindMachine(strFile);
@@ -4350,10 +4349,10 @@ void VBoxGlobal::init()
 #ifdef VBOX_GUI_WITH_SYSTRAY
     {
         /* Increase open Fe/Qt4 windows reference count. */
-        int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() + 1;
+        int c = mVBox.GetExtraData (GUI_MainWindowCount).toInt() + 1;
         AssertMsgReturnVoid ((c >= 0) || (mVBox.isOk()),
             ("Something went wrong with the window reference count!"));
-        mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, QString ("%1").arg (c));
+        mVBox.SetExtraData (GUI_MainWindowCount, QString ("%1").arg (c));
         mIncreasedWindowCounter = mVBox.isOk();
         AssertReturnVoid (mIncreasedWindowCounter);
     }
@@ -4486,7 +4485,7 @@ void VBoxGlobal::init()
     bool bForceFullscreen = false;
 
     vm_render_mode_str = RTStrDup (virtualBox()
-            .GetExtraData (VBoxDefs::GUI_RenderMode).toAscii().constData());
+            .GetExtraData (GUI_RenderMode).toAscii().constData());
 
 #ifdef Q_WS_X11
     mIsKWinManaged = X11IsWindowManagerKWin();
@@ -4494,11 +4493,11 @@ void VBoxGlobal::init()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # ifdef VBOX_WITH_DEBUGGER_GUI_MENU
-    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", VBoxDefs::GUI_DbgEnabled, true);
+    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_DbgEnabled, true);
 # else
-    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", VBoxDefs::GUI_DbgEnabled, false);
+    initDebuggerVar(&mDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_DbgEnabled, false);
 # endif
-    initDebuggerVar(&mDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", VBoxDefs::GUI_DbgAutoShow, false);
+    initDebuggerVar(&mDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_DbgAutoShow, false);
     mDbgAutoShowCommandLine = mDbgAutoShowStatistics = mDbgAutoShow;
     mStartPaused = false;
 #endif
@@ -4632,11 +4631,11 @@ void VBoxGlobal::init()
 
     if (bForceSeamless && !vmUuid.isEmpty())
     {
-        mVBox.FindMachine(vmUuid).SetExtraData(VBoxDefs::GUI_Seamless, "on");
+        mVBox.FindMachine(vmUuid).SetExtraData(GUI_Seamless, "on");
     }
     else if (bForceFullscreen && !vmUuid.isEmpty())
     {
-        mVBox.FindMachine(vmUuid).SetExtraData(VBoxDefs::GUI_Fullscreen, "on");
+        mVBox.FindMachine(vmUuid).SetExtraData(GUI_Fullscreen, "on");
     }
 
     vm_render_mode = vboxGetRenderMode (vm_render_mode_str);
@@ -4723,17 +4722,17 @@ void VBoxGlobal::cleanup()
     if (mIncreasedWindowCounter)
     {
         /* Decrease open Fe/Qt4 windows reference count. */
-        int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() - 1;
+        int c = mVBox.GetExtraData (GUI_MainWindowCount).toInt() - 1;
         AssertMsg ((c >= 0) || (mVBox.isOk()),
             ("Something went wrong with the window reference count!"));
         if (c < 0)
             c = 0;   /* Clean up the mess. */
-        mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount,
+        mVBox.SetExtraData (GUI_MainWindowCount,
                             (c > 0) ? QString ("%1").arg (c) : NULL);
         AssertWrapperOk (mVBox);
         if (c == 0)
         {
-            mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
+            mVBox.SetExtraData (GUI_TrayIconWinID, NULL);
             AssertWrapperOk (mVBox);
         }
     }

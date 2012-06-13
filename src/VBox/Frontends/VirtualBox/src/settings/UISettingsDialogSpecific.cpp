@@ -844,7 +844,7 @@ void UISettingsDialogMachine::saveData()
         /* Clear the "GUI_FirstRun" extra data key in case if
          * the boot order or disk configuration were changed: */
         if (m_fResetFirstRunFlag)
-            m_machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString::null);
+            m_machine.SetExtraData(GUI_FirstRun, QString::null);
 
         /* Save settings finally: */
         m_machine.SaveSettings();

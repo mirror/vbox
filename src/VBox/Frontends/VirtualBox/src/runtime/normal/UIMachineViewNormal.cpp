@@ -96,7 +96,7 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 {
     switch (pEvent->type())
     {
-        case VBoxDefs::ResizeEventType:
+        case ResizeEventType:
         {
             return guestResizeEvent(pEvent, false);
         }
@@ -197,8 +197,7 @@ void UIMachineViewNormal::maybeResendResizeHint()
 
         /* We send a guest size hint if needed to reverse a transition
          * to fullscreen or seamless. */
-        QString strKey = makeExtraDataKeyPerMonitor
-                             (VBoxDefs::GUI_LastGuestSizeHintWasFullscreen);
+        QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHintWasFullscreen);
         QString strHintSent = machine.GetExtraData(strKey);
         if (!strHintSent.isEmpty())
         {
@@ -269,7 +268,7 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
             /* Get just a simple available rectangle */
             availableGeo = dwt->availableGeometry(pTopLevelWidget->pos());
 
-        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo, vboxGlobal().vmRenderMode() != VBoxDefs::SDLMode /* can resize? */);
+        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo, vboxGlobal().vmRenderMode() != SDLMode /* can resize? */);
     }
 
 #if 0
@@ -313,7 +312,7 @@ void UIMachineViewNormal::maybeRestrictMinimumSize()
      * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
      * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
      * In all other modes, or when auto-resize is in force, this function does nothing. */
-    if (vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode)
+    if (vboxGlobal().vmRenderMode() == SDLMode)
     {
         if (!uisession()->isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
             setMinimumSize(sizeHint());

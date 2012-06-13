@@ -28,6 +28,7 @@
 #endif /* Q_WS_MAC */
 
 /* GUI includes: */
+#include "UIDefs.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindowScale.h"
@@ -109,8 +110,8 @@ void UIMachineWindowScale::loadSettings()
 
     /* Load extra-data settings: */
     {
-        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastScaleWindowPosition) :
-                                     QString("%1%2").arg(VBoxDefs::GUI_LastScaleWindowPosition).arg(m_uScreenId);
+        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(GUI_LastScaleWindowPosition) :
+                                     QString("%1%2").arg(GUI_LastScaleWindowPosition).arg(m_uScreenId);
         QStringList strPositionSettings = m.GetExtraDataStringList(strPositionAddress);
 
         bool ok = !strPositionSettings.isEmpty(), max = false;
@@ -129,7 +130,7 @@ void UIMachineWindowScale::loadSettings()
             h = strPositionSettings[3].toInt(&ok);
         else ok = false;
         if (ok && strPositionSettings.size() > 4)
-            max = strPositionSettings[4] == VBoxDefs::GUI_LastWindowState_Max;
+            max = strPositionSettings[4] == GUI_LastWindowState_Max;
 
         QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
                         QApplication::desktop()->availableGeometry(this);
@@ -168,9 +169,9 @@ void UIMachineWindowScale::saveSettings()
                                     .arg(m_normalGeometry.x()).arg(m_normalGeometry.y())
                                     .arg(m_normalGeometry.width()).arg(m_normalGeometry.height());
         if (isMaximizedChecked())
-            strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowState_Max);
-        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastScaleWindowPosition) :
-                                     QString("%1%2").arg(VBoxDefs::GUI_LastScaleWindowPosition).arg(m_uScreenId);
+            strWindowPosition += QString(",%1").arg(GUI_LastWindowState_Max);
+        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(GUI_LastScaleWindowPosition) :
+                                     QString("%1%2").arg(GUI_LastScaleWindowPosition).arg(m_uScreenId);
         m.SetExtraData(strPositionAddress, strWindowPosition);
     }
 

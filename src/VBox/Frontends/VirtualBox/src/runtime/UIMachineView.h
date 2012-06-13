@@ -24,6 +24,7 @@
 #include <QEventLoop>
 
 /* GUI includes: */
+#include "UIDefs.h"
 #include "UIMachineDefs.h"
 #ifdef Q_WS_MAC
 # include <CoreFoundation/CFBase.h>
@@ -182,7 +183,7 @@ protected:
     QString makeExtraDataKeyPerMonitor(QString base) const;
     /** Returns the current rendering mode.
      * @note contains special case logic for scale mode. */
-    VBoxDefs::RenderMode getRenderMode() const;
+    RenderMode getRenderMode() const;
 
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
