@@ -56,13 +56,13 @@ static char SZINVALID_OPCODE[] = "Invalid Opcode";
     INVALID_OPCODE,
 
 /* Invalid opcode */
-const OPCODE g_InvalidOpcode[1] =
+const DISOPCODE g_InvalidOpcode[1] =
 {
     INVALID_OPCODE
 };
 
 /* Tables for the elegant Intel X86 instruction set */
-const OPCODE g_aOneByteMapX86[256] =
+const DISOPCODE g_aOneByteMapX86[256] =
 {
     /* 0 */
     OP("add %Eb,%Gb",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_ADD,     OP_PARM_Eb,         OP_PARM_Gb ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -364,7 +364,7 @@ const OPCODE g_aOneByteMapX86[256] =
 };
 
 
-const OPCODE g_aTwoByteMapX86[256] =
+const DISOPCODE g_aTwoByteMapX86[256] =
 {
     /* 0 */
     OP("Grp6",               IDX_ParseGrp6,     0,              0,          OP_GRP6,            OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -664,7 +664,7 @@ const OPCODE g_aTwoByteMapX86[256] =
 };
 
 /* Two byte opcode map with prefix 0x66 */
-const OPCODE g_aTwoByteMapX86_PF66[256] =
+const DISOPCODE g_aTwoByteMapX86_PF66[256] =
 {
     /* 0 */
     INVALID_OPCODE_BLOCK
@@ -866,7 +866,7 @@ const OPCODE g_aTwoByteMapX86_PF66[256] =
 };
 
 /* Two byte opcode map with prefix 0xF2 */
-const OPCODE g_aTwoByteMapX86_PFF2[256] =
+const DISOPCODE g_aTwoByteMapX86_PFF2[256] =
 {
     /* 0 */
     INVALID_OPCODE_BLOCK
@@ -1039,7 +1039,7 @@ const OPCODE g_aTwoByteMapX86_PFF2[256] =
 
 
 /* Two byte opcode map with prefix 0xF3 */
-const OPCODE g_aTwoByteMapX86_PFF3[256] =
+const DISOPCODE g_aTwoByteMapX86_PFF3[256] =
 {
     /* 0 */
     INVALID_OPCODE_BLOCK
@@ -1212,7 +1212,7 @@ const OPCODE g_aTwoByteMapX86_PFF3[256] =
 };
 
 /** Three byte opcode map (0xF 0x38 0x0x) */
-const OPCODE g_aThreeByteMapX86_0F38_0[16] =
+const DISOPCODE g_aThreeByteMapX86_0F38_0[16] =
 {
     /* 0 */
     OP("pshufb %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSHUFB,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1234,7 +1234,7 @@ const OPCODE g_aThreeByteMapX86_0F38_0[16] =
 };
 
 /** Three byte opcode map (0x0F 0x38 0x1x) */
-const OPCODE g_aThreeByteMapX86_0F38_1[16] =
+const DISOPCODE g_aThreeByteMapX86_0F38_1[16] =
 {
     /* 1 */
     INVALID_OPCODE,
@@ -1255,8 +1255,8 @@ const OPCODE g_aThreeByteMapX86_0F38_1[16] =
     INVALID_OPCODE,
 };
 
-/* These tables are mostly sparse, so use another level of indirection to save space. */
-const OPCODE *g_apThreeByteMapX86_0F38[16] =
+/** These tables are mostly sparse, so use another level of indirection to save space. */
+PCDISOPCODE const g_apThreeByteMapX86_0F38[16] =
 {
     /* 0 */
     &g_aThreeByteMapX86_0F38_0[0],
@@ -1308,7 +1308,7 @@ const OPCODE *g_apThreeByteMapX86_0F38[16] =
 };
 
 /** Three byte opcode map (0x66 0x0F 0x38 0x0x) */
-const OPCODE g_aThreeByteMapX86_660F38_0[16] =
+const DISOPCODE g_aThreeByteMapX86_660F38_0[16] =
 {
     /* 0 */
     OP("pshufb %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSHUFB,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1330,7 +1330,7 @@ const OPCODE g_aThreeByteMapX86_660F38_0[16] =
 };
 
 /** Three byte opcode map (0x66 0x0F 0x38 0x1x) */
-const OPCODE g_aThreeByteMapX86_660F38_1[16] =
+const DISOPCODE g_aThreeByteMapX86_660F38_1[16] =
 {
     /* 1 */
     OP("pblendvb %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PBLENDVB,    OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1354,7 +1354,7 @@ const OPCODE g_aThreeByteMapX86_660F38_1[16] =
 /** @todo remainder missing (too lazy now) */
 
 /** Three byte opcode map (0x66 0x0F 0x38 0x8x) */
-const OPCODE g_aThreeByteMapX86_660F38_8[16] =
+const DISOPCODE g_aThreeByteMapX86_660F38_8[16] =
 {
     /* 8 */
     OP("invept %Gd,%Mdq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_INVEPT,      OP_PARM_Gd,          OP_PARM_Mdq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1376,7 +1376,7 @@ const OPCODE g_aThreeByteMapX86_660F38_8[16] =
 };
 
 /** Three byte opcode map with prefix 0x66 (0xF 0x38) */
-const OPCODE *g_apThreeByteMapX86_660F38[16] =
+PCDISOPCODE const g_apThreeByteMapX86_660F38[16] =
 {
     /* 0 */
     &g_aThreeByteMapX86_660F38_0[0],
@@ -1429,7 +1429,7 @@ const OPCODE *g_apThreeByteMapX86_660F38[16] =
 
 /** Three byte opcode map with prefix 0xF2 (0xF 0x38) */
 /** @todo remainder missing (too lazy now) */
-const OPCODE *g_apThreeByteMapX86_F20F38[16] =
+PCDISOPCODE const g_apThreeByteMapX86_F20F38[16] =
 {
     /* 0 */
     NULL,
@@ -1482,7 +1482,7 @@ const OPCODE *g_apThreeByteMapX86_F20F38[16] =
 
 /** Three byte opcode map with prefix 0x66 (0xF 0x3A) */
 /** @todo remainder missing (too lazy now) */
-const OPCODE *g_apThreeByteMapX86_660F3A[16] =
+PCDISOPCODE const g_apThreeByteMapX86_660F3A[16] =
 {
     /* 0 */
     NULL,
@@ -1534,7 +1534,7 @@ const OPCODE *g_apThreeByteMapX86_660F3A[16] =
 };
 
 /* 3DNow! map (0x0F 0x0F prefix) */
-const OPCODE g_aTwoByteMapX86_3DNow[256] =
+const DISOPCODE g_aTwoByteMapX86_3DNow[256] =
 {
     /* 0 */
     INVALID_OPCODE,
@@ -1676,7 +1676,7 @@ const OPCODE g_aTwoByteMapX86_3DNow[256] =
 
 
 /* Floating point opcode starting with escape byte 0xD8 (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF0_Low[8] =
+const DISOPCODE g_aMapX86_EscF0_Low[8] =
 {
     /* 0 */
     OP("fadd %Md",           IDX_ParseModRM,     0,          0,          OP_FADD,    OP_PARM_Md,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1690,7 +1690,7 @@ const OPCODE g_aMapX86_EscF0_Low[8] =
 };
 
 /* Floating point opcode starting with escape byte 0xD8 (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF0_High[16*4] =
+const DISOPCODE g_aMapX86_EscF0_High[16*4] =
 {
     /* c */
     OP("fadd ST(0),ST(0)",   0,              0,          0,          OP_FADD,    OP_PARM_REGFP_0,    OP_PARM_REGFP_0,OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1767,7 +1767,7 @@ const OPCODE g_aMapX86_EscF0_High[16*4] =
 };
 
 /* Floating point opcode starting with escape byte 0xD9 (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF1_Low[8] =
+const DISOPCODE g_aMapX86_EscF1_Low[8] =
 {
     /* 0 */
     OP("fld %Md",            IDX_ParseModRM,     0,          0,          OP_FLD,     OP_PARM_Md,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1784,7 +1784,7 @@ const OPCODE g_aMapX86_EscF1_Low[8] =
 
 
 /* Floating point opcode starting with escape byte 0xD9 (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF1_High[16*4] =
+const DISOPCODE g_aMapX86_EscF1_High[16*4] =
 {
     /* c */
     OP("fld ST(0),ST(0)",    0,              0,          0,          OP_FLD,     OP_PARM_REGFP_0,    OP_PARM_REGFP_0,OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1862,7 +1862,7 @@ const OPCODE g_aMapX86_EscF1_High[16*4] =
 
 
 /* Floating point opcode starting with escape byte 0xDA (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF2_Low[8] =
+const DISOPCODE g_aMapX86_EscF2_Low[8] =
 {
     /* 0 */
     OP("fiadd %Md",          IDX_ParseModRM,     0,          0,          OP_FIADD,   OP_PARM_Md,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1877,7 +1877,7 @@ const OPCODE g_aMapX86_EscF2_Low[8] =
 
 
 /* Floating point opcode starting with escape byte 0xD9 (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF2_High[16*4] =
+const DISOPCODE g_aMapX86_EscF2_High[16*4] =
 {
     /* c */
     OP("fcmovb ST(0),ST(0)", 0,              0,          0,          OP_FCMOVB,  OP_PARM_REGFP_0,    OP_PARM_REGFP_0,OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1939,7 +1939,7 @@ const OPCODE g_aMapX86_EscF2_High[16*4] =
 
 
 /* Floating point opcode starting with escape byte 0xDB (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF3_Low[8] =
+const DISOPCODE g_aMapX86_EscF3_Low[8] =
 {
     /* 0 */
     OP("fild %Md",           IDX_ParseModRM,     0,          0,          OP_FILD,    OP_PARM_Md,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -1954,7 +1954,7 @@ const OPCODE g_aMapX86_EscF3_Low[8] =
 
 
 /* Floating point opcode starting with escape byte 0xDB (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF3_High[16*4] =
+const DISOPCODE g_aMapX86_EscF3_High[16*4] =
 {
     /* c */
     OP("fcmovnb ST(0),ST(0)",0,              0,          0,          OP_FCMOVNB, OP_PARM_REGFP_0,    OP_PARM_REGFP_0,OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2032,7 +2032,7 @@ const OPCODE g_aMapX86_EscF3_High[16*4] =
 
 
 /* Floating point opcode starting with escape byte 0xDC (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF4_Low[8] =
+const DISOPCODE g_aMapX86_EscF4_Low[8] =
 {
     /* 0 */
     OP("fadd %Mq",           IDX_ParseModRM,     0,          0,          OP_FADD,    OP_PARM_Mq,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2047,7 +2047,7 @@ const OPCODE g_aMapX86_EscF4_Low[8] =
 
 
 /* Floating point opcode starting with escape byte 0xDC (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF4_High[16*4] =
+const DISOPCODE g_aMapX86_EscF4_High[16*4] =
 {
     /* c */
     OP("fadd ST(0),ST(0)",   0,              0,          0,          OP_FADD,    OP_PARM_REGFP_0,    OP_PARM_REGFP_0,OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2110,7 +2110,7 @@ const OPCODE g_aMapX86_EscF4_High[16*4] =
 
 
 /* Floating point opcode starting with escape byte 0xDD (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF5_Low[8] =
+const DISOPCODE g_aMapX86_EscF5_Low[8] =
 {
     /* 0 */
     OP("fld %Mq",            IDX_ParseModRM,     0,          0,          OP_FLD,     OP_PARM_Mq,         OP_PARM_NONE,   OP_PARM_NONE, DISOPTYPE_HARMLESS /* fixme: wasn't initialized! */),
@@ -2125,7 +2125,7 @@ const OPCODE g_aMapX86_EscF5_Low[8] =
 
 
 /* Floating point opcode starting with escape byte 0xDD (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF5_High[16*4] =
+const DISOPCODE g_aMapX86_EscF5_High[16*4] =
 {
     /* c */
     OP("ffree ST(0)",        0,              0,          0,          OP_FFREE,   OP_PARM_REGFP_0,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2189,7 +2189,7 @@ const OPCODE g_aMapX86_EscF5_High[16*4] =
 
 
 /* Floating point opcode starting with escape byte 0xDE (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF6_Low[8] =
+const DISOPCODE g_aMapX86_EscF6_Low[8] =
 {
     /* 0 */
     OP("fiadd %Mw",          IDX_ParseModRM,     0,          0,          OP_FIADD,   OP_PARM_Mw,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2204,7 +2204,7 @@ const OPCODE g_aMapX86_EscF6_Low[8] =
 
 
 /* Floating point opcode starting with escape byte 0xDE (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF6_High[16*4] =
+const DISOPCODE g_aMapX86_EscF6_High[16*4] =
 {
     /* c */
     OP("faddp ST(0),ST(0)",  0,              0,          0,          OP_FADDP,   OP_PARM_REGFP_0,    OP_PARM_REGFP_0,OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2281,7 +2281,7 @@ const OPCODE g_aMapX86_EscF6_High[16*4] =
 };
 
 /* Floating point opcode starting with escape byte 0xDF (values 0-0xBF)*/
-const OPCODE g_aMapX86_EscF7_Low[8] =
+const DISOPCODE g_aMapX86_EscF7_Low[8] =
 {
     /* 0 */
     OP("fild %Mw",           IDX_ParseModRM,     0,          0,          OP_FILD,    OP_PARM_Mw,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2296,7 +2296,7 @@ const OPCODE g_aMapX86_EscF7_Low[8] =
 
 
 /* Floating point opcode starting with escape byte 0xDF (outside 0-0xBF)*/
-const OPCODE g_aMapX86_EscF7_High[16*4] =
+const DISOPCODE g_aMapX86_EscF7_High[16*4] =
 {
     /* c */
     INVALID_OPCODE_BLOCK
@@ -2342,7 +2342,7 @@ const OPCODE g_aMapX86_EscF7_High[16*4] =
 };
 
 
-PCOPCODE g_paMapX86_FP_Low[8] =
+PCDISOPCODE g_paMapX86_FP_Low[8] =
 {
     g_aMapX86_EscF0_Low,
     g_aMapX86_EscF1_Low,
@@ -2354,7 +2354,7 @@ PCOPCODE g_paMapX86_FP_Low[8] =
     g_aMapX86_EscF7_Low
 };
 
-PCOPCODE g_paMapX86_FP_High[8] =
+PCDISOPCODE g_paMapX86_FP_High[8] =
 {
     g_aMapX86_EscF0_High,
     g_aMapX86_EscF1_High,
@@ -2367,7 +2367,7 @@ PCOPCODE g_paMapX86_FP_High[8] =
 };
 
 /* Opcode extensions (Group tables) */
-const OPCODE g_aMapX86_Group1[8*4] =
+const DISOPCODE g_aMapX86_Group1[8*4] =
 {
     /* 80 */
     OP("add %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,0,         OP_ADD, OP_PARM_Eb,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2410,7 +2410,7 @@ const OPCODE g_aMapX86_Group1[8*4] =
     OP("cmp %Ev,%Ib",        IDX_ParseModRM,     IDX_ParseImmByteSX,0,         OP_CMP, OP_PARM_Ev,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
 
-const OPCODE g_aMapX86_Group2[8*6] =
+const DISOPCODE g_aMapX86_Group2[8*6] =
 {
     /* C0 */
     OP("rol %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,0,         OP_ROL,     OP_PARM_Eb,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2475,7 +2475,7 @@ const OPCODE g_aMapX86_Group2[8*6] =
 };
 
 
-const OPCODE g_aMapX86_Group3[8*2] =
+const DISOPCODE g_aMapX86_Group3[8*2] =
 {
     /* F6 */
     OP("test %Eb,%Ib",       IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_TEST,   OP_PARM_Eb,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2500,7 +2500,7 @@ const OPCODE g_aMapX86_Group3[8*2] =
     OP("idiv %Ev",           IDX_ParseModRM,     0,          0,          OP_IDIV,    OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
 
-const OPCODE g_aMapX86_Group4[8] =
+const DISOPCODE g_aMapX86_Group4[8] =
 {
     /* FE */
     OP("inc %Eb",            IDX_ParseModRM,     0,          0,          OP_INC,     OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2513,7 +2513,7 @@ const OPCODE g_aMapX86_Group4[8] =
     INVALID_OPCODE,
 };
 
-const OPCODE g_aMapX86_Group5[8] =
+const DISOPCODE g_aMapX86_Group5[8] =
 {
     /* FF */
     OP("inc %Ev",            IDX_ParseModRM,     0,          0,          OP_INC,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2527,7 +2527,7 @@ const OPCODE g_aMapX86_Group5[8] =
 };
 
 
-const OPCODE g_aMapX86_Group6[8] =
+const DISOPCODE g_aMapX86_Group6[8] =
 {
     /* 0F 00 */
     OP("sldt %Ew",           IDX_ParseModRM,     0,          0,          OP_SLDT,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
@@ -2540,7 +2540,7 @@ const OPCODE g_aMapX86_Group6[8] =
     INVALID_OPCODE,
 };
 
-const OPCODE g_aMapX86_Group7_mem[8] =
+const DISOPCODE g_aMapX86_Group7_mem[8] =
 {
     /* 0F 01 */
     OP("sgdt %Ms",           IDX_ParseModRM,     0,          0,          OP_SGDT,    OP_PARM_Ms,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
@@ -2553,7 +2553,7 @@ const OPCODE g_aMapX86_Group7_mem[8] =
     OP("invlpg %Mb",         IDX_ParseModRM,     0,          0,          OP_INVLPG,  OP_PARM_Mb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
 };
 
-const OPCODE g_aMapX86_Group7_mod11_rm000[8] =
+const DISOPCODE g_aMapX86_Group7_mod11_rm000[8] =
 {
     /* 0F 01 MOD=11b */
     INVALID_OPCODE,
@@ -2566,7 +2566,7 @@ const OPCODE g_aMapX86_Group7_mod11_rm000[8] =
     OP("swapgs",             0,                  0,          0,          OP_SWAPGS,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS )
 };
 
-const OPCODE g_aMapX86_Group7_mod11_rm001[8] =
+const DISOPCODE g_aMapX86_Group7_mod11_rm001[8] =
 {
     /* 0F 01 MOD=11b */
     OP("vmcall",             0,                  0,          0,          OP_VMCALL,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
@@ -2579,7 +2579,7 @@ const OPCODE g_aMapX86_Group7_mod11_rm001[8] =
     INVALID_OPCODE,
 };
 
-const OPCODE g_aMapX86_Group8[8] =
+const DISOPCODE g_aMapX86_Group8[8] =
 {
     /* 0F BA */
     INVALID_OPCODE,
@@ -2592,7 +2592,7 @@ const OPCODE g_aMapX86_Group8[8] =
     OP("btc %Ev,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,       0,          OP_BTC,     OP_PARM_Ev,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
 
-const OPCODE g_aMapX86_Group9[8] =
+const DISOPCODE g_aMapX86_Group9[8] =
 {
     /* 0F C7 */
     INVALID_OPCODE,
@@ -2605,7 +2605,7 @@ const OPCODE g_aMapX86_Group9[8] =
     INVALID_OPCODE,
 };
 
-const OPCODE g_aMapX86_Group10[8] =
+const DISOPCODE g_aMapX86_Group10[8] =
 {
     /* 0F B9 */
     INVALID_OPCODE,
@@ -2619,7 +2619,7 @@ const OPCODE g_aMapX86_Group10[8] =
 };
 
 
-const OPCODE g_aMapX86_Group11[8*2] =
+const DISOPCODE g_aMapX86_Group11[8*2] =
 {
     /* 0F C6 */
     OP("mov %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,       0,          OP_MOV,     OP_PARM_Eb,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2643,7 +2643,7 @@ const OPCODE g_aMapX86_Group11[8*2] =
 
 
 /* 0xF 0x71 */
-const OPCODE g_aMapX86_Group12[8*2] =
+const DISOPCODE g_aMapX86_Group12[8*2] =
 {
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -2666,7 +2666,7 @@ const OPCODE g_aMapX86_Group12[8*2] =
 };
 
 /* 0xF 0x72 */
-const OPCODE g_aMapX86_Group13[8*2] =
+const DISOPCODE g_aMapX86_Group13[8*2] =
 {
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -2689,7 +2689,7 @@ const OPCODE g_aMapX86_Group13[8*2] =
 };
 
 /* 0xF 0x73 */
-const OPCODE g_aMapX86_Group14[8*2] =
+const DISOPCODE g_aMapX86_Group14[8*2] =
 {
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -2713,7 +2713,7 @@ const OPCODE g_aMapX86_Group14[8*2] =
 
 
 /* 0xF 0xAE */
-const OPCODE g_aMapX86_Group15_mem[8] =
+const DISOPCODE g_aMapX86_Group15_mem[8] =
 {
     OP("fxsave %M",          IDX_ParseModRM,     0,          0,          OP_FXSAVE,  OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("fxrstor %M",         IDX_ParseModRM,     0,          0,          OP_FXRSTOR, OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2726,7 +2726,7 @@ const OPCODE g_aMapX86_Group15_mem[8] =
 };
 
 /* 0xF 0xAE */
-const OPCODE g_aMapX86_Group15_mod11_rm000[8] =
+const DISOPCODE g_aMapX86_Group15_mod11_rm000[8] =
 {
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -2739,7 +2739,7 @@ const OPCODE g_aMapX86_Group15_mod11_rm000[8] =
 };
 
 /* 0xF 0x18 */
-const OPCODE g_aMapX86_Group16[8] =
+const DISOPCODE g_aMapX86_Group16[8] =
 {
     OP("prefetchnta %Mb",  IDX_ParseModRM, 0,          0,          OP_PREFETCH,OP_PARM_Mb,        OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("prefetcht0 %Mb",   IDX_ParseModRM, 0,          0,          OP_PREFETCH,OP_PARM_Mb,        OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2752,7 +2752,7 @@ const OPCODE g_aMapX86_Group16[8] =
 };
 
 /* 0x90 or 0xF3 0x90 */
-const OPCODE g_aMapX86_NopPause[2] =
+const DISOPCODE g_aMapX86_NopPause[2] =
 {
     OP("nop",                0,              0,          0,       OP_NOP,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pause",              0,              0,          0,       OP_PAUSE,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),

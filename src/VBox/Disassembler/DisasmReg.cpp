@@ -29,7 +29,6 @@
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
 #include "DisasmInternal.h"
-#include "DisasmTables.h"
 
 
 /*******************************************************************************

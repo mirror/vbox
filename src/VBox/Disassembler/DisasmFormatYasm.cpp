@@ -266,7 +266,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
     if (fFlags & DIS_FMT_FLAGS_BYTES_COMMENT)
         fFlags = (fFlags & ~DIS_FMT_FLAGS_BYTES_LEFT) | DIS_FMT_FLAGS_BYTES_RIGHT;
 
-    PCOPCODE const  pOp = pCpu->pCurInstr;
+    PCDISOPCODE const pOp = pCpu->pCurInstr;
 
     /*
      * Output macros

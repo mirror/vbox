@@ -21,7 +21,6 @@
 *******************************************************************************/
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include "DisasmTables.h"
 #include "DisasmInternal.h"
 
 
@@ -31,11 +30,11 @@
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifndef DIS_CORE_ONLY
-static char SZINVALID_OPCODE[] = "Invalid Opcode";
+static char g_szInvalidOpcode[] = "Invalid Opcode";
 #endif
 
 #define INVALID_OPCODE  \
-    OP(SZINVALID_OPCODE,     0,              0,          0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_INVALID)
+    OP(g_szInvalidOpcode,    0,              0,          0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_INVALID)
 
 #define INVALID_OPCODE_BLOCK \
     INVALID_OPCODE,\
@@ -57,7 +56,7 @@ static char SZINVALID_OPCODE[] = "Invalid Opcode";
 
 /* Tables for the elegant Intel X64 instruction set */
 
-const OPCODE g_aOneByteMapX64[256] =
+const DISOPCODE g_aOneByteMapX64[256] =
 {
     /* 0 */
     OP("add %Eb,%Gb",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_ADD,     OP_PARM_Eb,         OP_PARM_Gb ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
