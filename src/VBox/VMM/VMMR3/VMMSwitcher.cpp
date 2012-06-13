@@ -838,10 +838,10 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 if (RT_SUCCESS(rc))
                 {
                     Cpu.uInstrAddr += uBase - (uintptr_t)pu8CodeR3;
-                    rc = DISFormatYasmEx(&Cpu, szDisas, sizeof(szDisas),
-                                         DIS_FMT_FLAGS_ADDR_LEFT | DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_SPACED
-                                         | DIS_FMT_FLAGS_RELATIVE_BRANCH,
-                                         NULL, NULL);
+                    DISFormatYasmEx(&Cpu, szDisas, sizeof(szDisas),
+                                    DIS_FMT_FLAGS_ADDR_LEFT | DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_SPACED
+                                    | DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                                    NULL, NULL);
                 }
                 if (RT_SUCCESS(rc))
                     RTLogPrintf("  %04x: %s\n", offCode, szDisas);
