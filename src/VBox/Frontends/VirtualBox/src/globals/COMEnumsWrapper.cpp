@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "COMEnumsWrapper.h"
+#include "UIDefs.h"
 
 /* static */
 COMEnumsWrapper* COMEnumsWrapper::m_spInstance = 0;

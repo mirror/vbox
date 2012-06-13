@@ -503,7 +503,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 {
                     /* Allow to prevent this message */
                     QString str = vboxGlobal().virtualBox().
-                        GetExtraData (VBoxDefs::GUI_PreventBetaWarning);
+                        GetExtraData(GUI_PreventBetaWarning);
                     if (str != vboxVersion)
                         msgCenter().showBETAWarning();
                 }

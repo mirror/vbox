@@ -3170,13 +3170,13 @@ void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, UI
     switch (recentMediumType)
     {
         case UIMediumType_HardDisk:
-            strRecentMediumAddress = VBoxDefs::GUI_RecentListHD;
+            strRecentMediumAddress = GUI_RecentListHD;
             break;
         case UIMediumType_DVD:
-            strRecentMediumAddress = VBoxDefs::GUI_RecentListCD;
+            strRecentMediumAddress = GUI_RecentListCD;
             break;
         case UIMediumType_Floppy:
-            strRecentMediumAddress = VBoxDefs::GUI_RecentListFD;
+            strRecentMediumAddress = GUI_RecentListFD;
             break;
         default:
             break;

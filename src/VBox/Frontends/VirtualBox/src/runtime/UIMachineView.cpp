@@ -178,8 +178,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
     /* And track whether we have had a "normal" resize since the last
      * fullscreen resize hint was sent: */
-    QString strKey = makeExtraDataKeyPerMonitor
-                         (VBoxDefs::GUI_LastGuestSizeHintWasFullscreen);
+    QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHintWasFullscreen);
     machine.SetExtraData(strKey, isFullscreenOrSeamless() ? "true" : "");
 }
 
@@ -192,7 +191,7 @@ void UIMachineView::sltMachineStateChanged()
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
         {
-            if (   vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode
+            if (   vboxGlobal().vmRenderMode() != TimerMode
                 && m_pFrameBuffer
                 &&
                 (   state           != KMachineState_TeleportingPausedVM
@@ -221,7 +220,7 @@ void UIMachineView::sltMachineStateChanged()
                 || m_previousState == KMachineState_TeleportingPausedVM
                 || m_previousState == KMachineState_Restoring)
             {
-                if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode && m_pFrameBuffer)
+                if (vboxGlobal().vmRenderMode() != TimerMode && m_pFrameBuffer)
                 {
                     /* Reset the pixmap to free memory: */
                     resetPauseShot();
@@ -270,7 +269,7 @@ void UIMachineView::prepareViewport()
     QWidget *pViewport = 0;
     switch (vboxGlobal().vmRenderMode())
     {
-        case VBoxDefs::QGLMode:
+        case QGLMode:
             pViewport = new VBoxGLWidget(session().GetConsole(), this, NULL);
             break;
         default:
@@ -288,7 +287,7 @@ void UIMachineView::prepareFrameBuffer()
     switch (getRenderMode())
     {
 #ifdef VBOX_GUI_USE_QIMAGE
-        case VBoxDefs::QImageMode:
+        case QImageMode:
         {
             UIFrameBuffer* pFrameBuffer = uisession()->frameBuffer(screenId());
             if (pFrameBuffer)
@@ -315,15 +314,15 @@ void UIMachineView::prepareFrameBuffer()
         }
 #endif /* VBOX_GUI_USE_QIMAGE */
 #ifdef VBOX_GUI_USE_QGLFB
-        case VBoxDefs::QGLMode:
+        case QGLMode:
             m_pFrameBuffer = new UIFrameBufferQGL(this);
             break;
-//        case VBoxDefs::QGLOverlayMode:
+//        case QGLOverlayMode:
 //            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
 //            break;
 #endif /* VBOX_GUI_USE_QGLFB */
 #ifdef VBOX_GUI_USE_SDL
-        case VBoxDefs::SDLMode:
+        case SDLMode:
         {
             /* Indicate that we are doing all drawing stuff ourself: */
             // TODO_NEW_CORE
@@ -361,20 +360,20 @@ void UIMachineView::prepareFrameBuffer()
 #endif /* VBOX_GUI_USE_SDL */
 #if 0 // TODO: Enable DDraw frame buffer!
 #ifdef VBOX_GUI_USE_DDRAW
-        case VBoxDefs::DDRAWMode:
+        case DDRAWMode:
             m_pFrameBuffer = new UIDDRAWFrameBuffer(this);
             if (!m_pFrameBuffer || m_pFrameBuffer->address() == NULL)
             {
                 if (m_pFrameBuffer)
                     delete m_pFrameBuffer;
-                m_mode = VBoxDefs::QImageMode;
+                m_mode = QImageMode;
                 m_pFrameBuffer = new UIFrameBufferQImage(this);
             }
             break;
 #endif /* VBOX_GUI_USE_DDRAW */
 #endif
 #ifdef VBOX_GUI_USE_QUARTZ2D
-        case VBoxDefs::Quartz2DMode:
+        case Quartz2DMode:
         {
             /* Indicate that we are doing all drawing stuff ourself: */
             viewport()->setAttribute(Qt::WA_PaintOnScreen);
@@ -526,16 +525,16 @@ void UIMachineView::cleanupFrameBuffer()
     if (m_pFrameBuffer)
     {
         /* Process pending frame-buffer resize events: */
-        QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
+        QApplication::sendPostedEvents(this, ResizeEventType);
         if (   0
 #ifdef VBOX_GUI_USE_QIMAGE
-            || vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode
+            || vboxGlobal().vmRenderMode() == QImageMode
 #endif
 #ifdef VBOX_GUI_USE_SDL
-            || vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode
+            || vboxGlobal().vmRenderMode() == SDLMode
 #endif
 #ifdef VBOX_GUI_USE_QUARTZ2D
-            || vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode
+            || vboxGlobal().vmRenderMode() == Quartz2DMode
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
             || m_fAccelerate2DVideo
@@ -673,8 +672,7 @@ QSize UIMachineView::guestSizeHint()
     CMachine machine = session().GetMachine();
 
     /* Load machine view hint: */
-    QString strKey = makeExtraDataKeyPerMonitor
-                         (VBoxDefs::GUI_LastGuestSizeHint);
+    QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHint);
     QString strValue = machine.GetExtraData(strKey);
 
     bool ok = true;
@@ -705,8 +703,7 @@ void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
     CMachine machine = session().GetMachine();
 
     /* Save machine view hint: */
-    QString strKey = makeExtraDataKeyPerMonitor
-                         (VBoxDefs::GUI_LastGuestSizeHint);
+    QString strKey = makeExtraDataKeyPerMonitor(GUI_LastGuestSizeHint);
     QString strValue = QString("%1,%2").arg(sizeHint.width()).arg(sizeHint.height());
     machine.SetExtraData(strKey, strValue);
 }
@@ -837,7 +834,7 @@ CGImageRef UIMachineView::vmContentImage()
     else
     {
 # ifdef VBOX_GUI_USE_QUARTZ2D
-        if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
+        if (vboxGlobal().vmRenderMode() == Quartz2DMode)
         {
             /* If the render mode is Quartz2D we could use the CGImageRef
              * of the framebuffer for the dock icon creation. This saves
@@ -950,7 +947,7 @@ QString UIMachineView::makeExtraDataKeyPerMonitor(QString base) const
                             : QString("%1%2").arg(base).arg(m_uScreenId);
 }
 
-VBoxDefs::RenderMode UIMachineView::getRenderMode() const
+RenderMode UIMachineView::getRenderMode() const
 {
     if (visualStateType() != UIVisualStateType_Scale)
         return vboxGlobal().vmRenderMode();
@@ -963,13 +960,13 @@ VBoxDefs::RenderMode UIMachineView::getRenderMode() const
     switch (vboxGlobal().vmRenderMode())
     {
 #ifdef VBOX_GUI_USE_QUARTZ2D
-        case VBoxDefs::Quartz2DMode:
-            return VBoxDefs::Quartz2DMode;
+        case Quartz2DMode:
+            return Quartz2DMode;
 #endif /* VBOX_GUI_USE_QUARTZ2D */
         default:
 #ifdef VBOX_GUI_USE_QIMAGE
-        case VBoxDefs::QImageMode:
-            return VBoxDefs::QImageMode;
+        case QImageMode:
+            return QImageMode;
 #endif /* VBOX_GUI_USE_QIMAGE */
         break;
     }
@@ -981,7 +978,7 @@ bool UIMachineView::event(QEvent *pEvent)
 {
     switch (pEvent->type())
     {
-        case VBoxDefs::RepaintEventType:
+        case RepaintEventType:
         {
             UIRepaintEvent *pPaintEvent = static_cast<UIRepaintEvent*>(pEvent);
             viewport()->update(pPaintEvent->x() - contentsX(), pPaintEvent->y() - contentsY(),
@@ -991,7 +988,7 @@ bool UIMachineView::event(QEvent *pEvent)
 
 #ifdef Q_WS_MAC
         /* Event posted OnShowWindow: */
-        case VBoxDefs::ShowWindowEventType:
+        case ShowWindowEventType:
         {
             /* Dunno what Qt3 thinks a window that has minimized to the dock should be - it is not hidden,
              * neither is it minimized. OTOH it is marked shown and visible, but not activated.
@@ -1005,7 +1002,7 @@ bool UIMachineView::event(QEvent *pEvent)
 #endif /* Q_WS_MAC */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        case VBoxDefs::VHWACommandProcessType:
+        case VHWACommandProcessType:
         {
             m_pFrameBuffer->doProcessVHWACommand(pEvent);
             return true;
@@ -1102,7 +1099,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     }
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
-    if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode && m_pFrameBuffer)
+    if (vboxGlobal().vmRenderMode() == Quartz2DMode && m_pFrameBuffer)
     {
         m_pFrameBuffer->paintEvent(pPaintEvent);
         updateDockIcon();

@@ -197,7 +197,7 @@
 # include "VBoxCocoaHelper.h"
 # include "VBoxCocoaSpecialControls.h"
 #endif
-#include "VBoxDefs.h"
+#include "UIDefs.h"
 #include "VBoxDownloaderWgt.h"
 #include "UIApplianceExportEditorWidget.h"
 #include "VBoxExportApplianceWzd.h"
@@ -320,7 +320,7 @@ RT_C_DECLS_END                          /* rhel3 build hack */
 #endif
 
 #ifdef Q_WS_MAC
-# if MAC_LEOPARD_STYLE /* This is defined by VBoxDefs.h and must come after it was included */
+# if MAC_LEOPARD_STYLE /* This is defined by UIDefs.h and must come after it was included */
 #  include <qmacstyle_mac.h>
 # endif
 #endif

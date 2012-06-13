@@ -34,7 +34,7 @@ class ActivateActionEvent : public QEvent
 public:
 
     ActivateActionEvent(QAction *pAction)
-        : QEvent((QEvent::Type)VBoxDefs::ActivateActionEventType)
+        : QEvent((QEvent::Type)ActivateActionEventType)
         , m_pAction(pAction) {}
     QAction* action() const { return m_pAction; }
 
@@ -382,7 +382,7 @@ public:
         : UISimpleAction(pParent, ":/register_16px.png", ":/register_disabled_16px.png")
     {
         setEnabled(vboxGlobal().virtualBox().
-                   GetExtraData(VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
+                   GetExtraData(GUI_RegistrationDlgWinID).isEmpty());
         switch (gActionPool->type())
         {
             case UIActionPoolType_Selector:
@@ -615,7 +615,7 @@ bool UIActionPool::event(QEvent *pEvent)
     /* Depending on event-type: */
     switch (pEvent->type())
     {
-        case VBoxDefs::ActivateActionEventType:
+        case ActivateActionEventType:
         {
             /* Process specific event: */
             ActivateActionEvent *pActionEvent = static_cast<ActivateActionEvent*>(pEvent);

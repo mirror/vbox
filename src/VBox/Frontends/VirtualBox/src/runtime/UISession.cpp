@@ -719,17 +719,17 @@ void UISession::loadSessionSettings()
         QString strSettings;
 
         /* Is there should be First RUN Wizard? */
-        strSettings = machine.GetExtraData(VBoxDefs::GUI_FirstRun);
+        strSettings = machine.GetExtraData(GUI_FirstRun);
         if (strSettings == "yes")
             m_fIsFirstTimeStarted = true;
 
         /* Ignore mediums mounted at runtime? */
-        strSettings = machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
+        strSettings = machine.GetExtraData(GUI_SaveMountedAtRuntime);
         if (strSettings == "no")
             m_fIsIgnoreRuntimeMediumsChanging = true;
 
         /* Should guest autoresize? */
-        strSettings = machine.GetExtraData(VBoxDefs::GUI_AutoresizeGuest);
+        strSettings = machine.GetExtraData(GUI_AutoresizeGuest);
         QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
 
@@ -751,10 +751,10 @@ void UISession::saveSessionSettings()
     /* Save extra-data settings: */
     {
         /* Disable First RUN Wizard for the since now: */
-        machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString());
+        machine.SetExtraData(GUI_FirstRun, QString());
 
         /* Remember if guest should autoresize: */
-        machine.SetExtraData(VBoxDefs::GUI_AutoresizeGuest,
+        machine.SetExtraData(GUI_AutoresizeGuest,
                              gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked() ?
                              QString() : "off");
 

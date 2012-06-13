@@ -333,8 +333,8 @@ void UIGlobalSettingsExtension::sltInstallPackage()
     }
     QString strTitle = tr("Select an extension package file");
     QStringList extensions;
-    for (int i = 0; i < VBoxDefs::VBoxExtPackFileExts.size(); ++i)
-        extensions << QString("*.%1").arg(VBoxDefs::VBoxExtPackFileExts[i]);
+    for (int i = 0; i < VBoxExtPackFileExts.size(); ++i)
+        extensions << QString("*.%1").arg(VBoxExtPackFileExts[i]);
     QString strFilter = tr("Extension package files (%1)").arg(extensions.join(" "));
 
     QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);

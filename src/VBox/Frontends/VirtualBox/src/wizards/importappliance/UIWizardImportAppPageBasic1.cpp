@@ -76,7 +76,7 @@ void UIWizardImportAppPageBasic1::initializePage()
 bool UIWizardImportAppPageBasic1::isComplete() const
 {
     /* Make sure appliance file has allowed extension and exists: */
-    return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), VBoxDefs::OVFFileExts) &&
+    return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts) &&
            QFileInfo(m_pFileSelector->path()).exists();
 }
 

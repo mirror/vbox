@@ -522,7 +522,7 @@ void UIMachine::loadMachineSettings()
         if (!fIsSomeExtendedModeChosen)
         {
             /* Test 'scale' flag: */
-            QString strScaleSettings = machine.GetExtraData(VBoxDefs::GUI_Scale);
+            QString strScaleSettings = machine.GetExtraData(GUI_Scale);
             if (strScaleSettings == "on")
             {
                 fIsSomeExtendedModeChosen = true;
@@ -534,7 +534,7 @@ void UIMachine::loadMachineSettings()
         if (!fIsSomeExtendedModeChosen)
         {
             /* Test 'seamless' flag: */
-            QString strSeamlessSettings = machine.GetExtraData(VBoxDefs::GUI_Seamless);
+            QString strSeamlessSettings = machine.GetExtraData(GUI_Seamless);
             if (strSeamlessSettings == "on")
             {
                 fIsSomeExtendedModeChosen = true;
@@ -547,7 +547,7 @@ void UIMachine::loadMachineSettings()
         if (!fIsSomeExtendedModeChosen)
         {
             /* Test 'fullscreen' flag: */
-            QString strFullscreenSettings = machine.GetExtraData(VBoxDefs::GUI_Fullscreen);
+            QString strFullscreenSettings = machine.GetExtraData(GUI_Fullscreen);
             if (strFullscreenSettings == "on")
             {
                 fIsSomeExtendedModeChosen = true;
@@ -566,15 +566,15 @@ void UIMachine::saveMachineSettings()
     /* Save extra-data settings: */
     {
         /* Set 'scale' flag: */
-        machine.SetExtraData(VBoxDefs::GUI_Scale, m_pVisualState &&
+        machine.SetExtraData(GUI_Scale, m_pVisualState &&
                              m_pVisualState->visualStateType() == UIVisualStateType_Scale ? "on" : QString());
 
         /* Set 'seamless' flag: */
-        machine.SetExtraData(VBoxDefs::GUI_Seamless, m_pVisualState &&
+        machine.SetExtraData(GUI_Seamless, m_pVisualState &&
                              m_pVisualState->visualStateType() == UIVisualStateType_Seamless ? "on" : QString());
 
         /* Set 'fullscreen' flag: */
-        machine.SetExtraData(VBoxDefs::GUI_Fullscreen, m_pVisualState &&
+        machine.SetExtraData(GUI_Fullscreen, m_pVisualState &&
                              m_pVisualState->visualStateType() == UIVisualStateType_Fullscreen ? "on" : QString());
     }
 }

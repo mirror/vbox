@@ -89,11 +89,11 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Gather general data: */
     generalData.m_strName = m_machine.GetName();
     generalData.m_strGuestOsTypeId = m_machine.GetOSTypeId();
-    QString strSaveMountedAtRuntime = m_machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
+    QString strSaveMountedAtRuntime = m_machine.GetExtraData(GUI_SaveMountedAtRuntime);
     generalData.m_fSaveMountedAtRuntime = strSaveMountedAtRuntime != "no";
-    QString strShowMiniToolBar = m_machine.GetExtraData(VBoxDefs::GUI_ShowMiniToolBar);
+    QString strShowMiniToolBar = m_machine.GetExtraData(GUI_ShowMiniToolBar);
     generalData.m_fShowMiniToolBar = strShowMiniToolBar != "no";
-    QString strMiniToolBarAlignment = m_machine.GetExtraData(VBoxDefs::GUI_MiniToolBarAlignment);
+    QString strMiniToolBarAlignment = m_machine.GetExtraData(GUI_MiniToolBarAlignment);
     generalData.m_fMiniToolBarAtTop = strMiniToolBarAlignment == "top";
     generalData.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
     generalData.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
@@ -173,9 +173,9 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
         {
             /* Advanced tab: */
             m_machine.SetClipboardMode(generalData.m_clipboardMode);
-            m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, generalData.m_fSaveMountedAtRuntime ? "yes" : "no");
-            m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, generalData.m_fShowMiniToolBar ? "yes" : "no");
-            m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, generalData.m_fMiniToolBarAtTop ? "top" : "bottom");
+            m_machine.SetExtraData(GUI_SaveMountedAtRuntime, generalData.m_fSaveMountedAtRuntime ? "yes" : "no");
+            m_machine.SetExtraData(GUI_ShowMiniToolBar, generalData.m_fShowMiniToolBar ? "yes" : "no");
+            m_machine.SetExtraData(GUI_MiniToolBarAlignment, generalData.m_fMiniToolBarAtTop ? "top" : "bottom");
             /* Description tab: */
             m_machine.SetDescription(generalData.m_strDescription);
         }

@@ -29,6 +29,7 @@
 #include <QGLWidget>
 
 /* GUI includes: */
+#include "UIDefs.h"
 #include "VBoxFBOverlayCommon.h"
 
 /* COM includes: */

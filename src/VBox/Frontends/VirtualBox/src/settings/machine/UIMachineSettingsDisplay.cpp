@@ -349,7 +349,7 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString & /* strT
             strWarning = tr("you have assigned less than <b>%1</b> of video memory which is "
                             "the minimum amount required to switch the virtual machine to "
                             "fullscreen or seamless mode.")
-                            .arg(vboxGlobal().formatSize(uNeedBytes, 0, VBoxDefs::FormatSize_RoundUp));
+                            .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
             return true;
         }
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -361,7 +361,7 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString & /* strT
             {
                 strWarning = tr("you have assigned less than <b>%1</b> of video memory which is "
                                 "the minimum amount required for HD Video to be played efficiently.")
-                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, VBoxDefs::FormatSize_RoundUp));
+                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 return true;
             }
         }
@@ -378,7 +378,7 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString & /* strT
             {
                 strWarning = tr("you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. "
                                 "For maximal performance set the guest VRAM to at least <b>%1</b>.")
-                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, VBoxDefs::FormatSize_RoundUp));
+                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 return true;
             }
         }

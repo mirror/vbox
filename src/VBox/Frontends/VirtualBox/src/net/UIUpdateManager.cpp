@@ -34,7 +34,6 @@
 #include "VBoxUtils.h"
 #include "UIDownloaderExtensionPack.h"
 #include "UIGlobalSettingsExtension.h"
-#include "VBoxDefs.h"
 #include "QIProcess.h"
 
 /* COM includes: */
@@ -47,9 +46,6 @@
 
 /* Forward declarations: */
 class UIUpdateStep;
-
-/* Using declarations: */
-using namespace VBoxGlobalDefs;
 
 /* Queue for processing update-steps: */
 class UIUpdateQueue : public QObject
@@ -165,7 +161,7 @@ private:
     {
         /* Calculate the count of checks left: */
         int cCount = 1;
-        QString strCount = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateCheckCount);
+        QString strCount = vboxGlobal().virtualBox().GetExtraData(GUI_UpdateCheckCount);
         if (!strCount.isEmpty())
         {
             bool ok = false;
@@ -192,7 +188,7 @@ private:
                                                         .arg(vboxGlobal().virtualBox().GetRevision()));
         }
         url.addQueryItem("count", QString::number(cCount));
-        url.addQueryItem("branch", VBoxUpdateData(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateDate)).branchName());
+        url.addQueryItem("branch", VBoxUpdateData(vboxGlobal().virtualBox().GetExtraData(GUI_UpdateDate)).branchName());
         QString strUserAgent(QString("VirtualBox %1 <%2>").arg(vboxGlobal().virtualBox().GetVersion()).arg(platformInfo()));
 
         /* Send GET request: */
@@ -230,14 +226,14 @@ private:
 
         /* Save left count of checks: */
         int cCount = 1;
-        QString strCount = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateCheckCount);
+        QString strCount = vboxGlobal().virtualBox().GetExtraData(GUI_UpdateCheckCount);
         if (!strCount.isEmpty())
         {
             bool ok = false;
             int c = strCount.toLongLong(&ok);
             if (ok) cCount = c;
         }
-        vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_UpdateCheckCount, QString("%1").arg((qulonglong)cCount + 1));
+        vboxGlobal().virtualBox().SetExtraData(GUI_UpdateCheckCount, QString("%1").arg((qulonglong)cCount + 1));
 
         /* Notify about step completion: */
         emit sigStepComplete();
@@ -375,7 +371,7 @@ private slots:
         }
 
         /* Get extension pack: */
-        CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(UI_ExtPackName);
+        CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
         /* Return if extension pack is NOT installed: */
         if (extPack.isNull())
         {
@@ -409,14 +405,14 @@ private slots:
         if (strExtPackEdition.contains("ENTERPRISE"))
         {
             /* Inform the user that he should update the extension pack: */
-            msgCenter().requestUserDownloadExtensionPack(UI_ExtPackName, strExtPackVersion, strVBoxVersion);
+            msgCenter().requestUserDownloadExtensionPack(GUI_ExtPackName, strExtPackVersion, strVBoxVersion);
             /* Never try to download for ENTERPRISE version: */
             emit sigStepComplete();
             return;
         }
 
         /* Ask the user about extension pack downloading: */
-        if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName, strExtPackVersion))
+        if (!msgCenter().proposeDownloadExtensionPack(GUI_ExtPackName, strExtPackVersion))
         {
             emit sigStepComplete();
             return;
@@ -437,7 +433,7 @@ private slots:
     void sltHandleDownloadedExtensionPack(const QString &strSource, const QString &strTarget, QString strDigest)
     {
         /* Warn the user about extension pack was downloaded and saved, propose to install it: */
-        if (msgCenter().proposeInstallExtentionPack(UI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
+        if (msgCenter().proposeInstallExtentionPack(GUI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
             UIGlobalSettingsExtension::doInstallation(strTarget, strDigest, msgCenter().mainWindowShown(), NULL);
     }
 };
@@ -517,7 +513,7 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
     m_fIsRunning = true;
 
     /* Load/decode curent update data: */
-    VBoxUpdateData currentData(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateDate));
+    VBoxUpdateData currentData(vboxGlobal().virtualBox().GetExtraData(GUI_UpdateDate));
 
     /* If update is really necessary: */
     if (fForceCall || currentData.isNeedToCheck())
@@ -535,10 +531,10 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
 void UIUpdateManager::sltHandleUpdateFinishing()
 {
     /* Load/decode curent update data: */
-    VBoxUpdateData currentData(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateDate));
+    VBoxUpdateData currentData(vboxGlobal().virtualBox().GetExtraData(GUI_UpdateDate));
     /* Encode/save new update data: */
     VBoxUpdateData newData(currentData.periodIndex(), currentData.branchIndex());
-    vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_UpdateDate, newData.data());
+    vboxGlobal().virtualBox().SetExtraData(GUI_UpdateDate, newData.data());
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the next time: */

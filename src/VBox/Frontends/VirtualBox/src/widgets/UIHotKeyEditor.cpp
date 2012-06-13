@@ -19,7 +19,6 @@
 
 /* Local includes */
 #include "UIHotKeyEditor.h"
-#include "VBoxDefs.h"
 #include "VBoxGlobal.h"
 
 /* Global includes */

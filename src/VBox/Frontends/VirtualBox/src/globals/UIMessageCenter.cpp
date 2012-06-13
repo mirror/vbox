@@ -172,7 +172,7 @@ int UIMessageCenter::message(QWidget *pParent, Type type, const QString &strMess
     if (pcszAutoConfirmId)
     {
         vbox = vboxGlobal().virtualBox();
-        msgs = vbox.GetExtraData(VBoxDefs::GUI_SuppressMessages).split(',');
+        msgs = vbox.GetExtraData(GUI_SuppressMessages).split(',');
         if (msgs.contains(pcszAutoConfirmId))
         {
             int rc = AutoConfirmed;
@@ -248,7 +248,7 @@ int UIMessageCenter::message(QWidget *pParent, Type type, const QString &strMess
         if (box && box->isFlagChecked())
         {
             msgs << pcszAutoConfirmId;
-            vbox.SetExtraData(VBoxDefs::GUI_SuppressMessages, msgs.join(","));
+            vbox.SetExtraData(GUI_SuppressMessages, msgs.join(","));
         }
     }
 
@@ -1055,7 +1055,7 @@ int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, b
                                 "if you do not do this the current state will be permanently lost. Do you wish to proceed?</p>")
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
-                             !vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_InvertMessageOption).contains("askAboutSnapshotRestoring"),
+                             !vboxGlobal().virtualBox().GetExtraDataStringList(GUI_InvertMessageOption).contains("askAboutSnapshotRestoring"),
                              QString::null /* details */,
                              QIMessageBox::Ok, QIMessageBox::Cancel, 0 /* 3rd button */,
                              tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */) :
@@ -1284,7 +1284,7 @@ int UIMessageCenter::confirmMachineDeletion(const QList<CMachine> &machines)
         {
             /* Get VM name: */
             QFileInfo fi(machine.GetSettingsFilePath());
-            strMachineName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxDefs::VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
+            strMachineName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
             /* Increment inacessible VM count: */
             ++cInacessibleVMCount;
         }
@@ -3019,7 +3019,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
 void UIMessageCenter::sltResetSuppressedMessages()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    vbox.SetExtraData(VBoxDefs::GUI_SuppressMessages, QString::null);
+    vbox.SetExtraData(GUI_SuppressMessages, QString::null);
 }
 
 void UIMessageCenter::sltShowUserManual(const QString &strLocation)

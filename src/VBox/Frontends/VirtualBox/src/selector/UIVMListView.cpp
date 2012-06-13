@@ -516,7 +516,7 @@ void UIVMListView::checkDragEvent(QDragMoveEvent *pEvent)
     {
         QList<QUrl> list = pEvent->mimeData()->urls();
         QString file = list.at(0).toLocalFile();
-        if (VBoxGlobal::hasAllowedExtension(file, VBoxDefs::VBoxFileExts))
+        if (VBoxGlobal::hasAllowedExtension(file, VBoxFileExts))
         {
             Qt::DropAction action = Qt::IgnoreAction;
             if (pEvent->possibleActions().testFlag(Qt::LinkAction))
@@ -528,12 +528,12 @@ void UIVMListView::checkDragEvent(QDragMoveEvent *pEvent)
                 pEvent->setDropAction(action);
                 pEvent->accept();
             }
-        }else if (   VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts)
+        }else if (   VBoxGlobal::hasAllowedExtension(file, OVFFileExts)
                   && pEvent->possibleActions().testFlag(Qt::CopyAction))
         {
             pEvent->setDropAction(Qt::CopyAction);
             pEvent->accept();
-        }else if (   VBoxGlobal::hasAllowedExtension(file, VBoxDefs::VBoxExtPackFileExts)
+        }else if (   VBoxGlobal::hasAllowedExtension(file, VBoxExtPackFileExts)
                   && pEvent->possibleActions().testFlag(Qt::CopyAction))
         {
             pEvent->setDropAction(Qt::CopyAction);

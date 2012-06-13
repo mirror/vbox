@@ -708,7 +708,7 @@ void UIKeyboardHandler::loadSettings()
     /* Extra data settings: */
     {
         /* CAD settings: */
-        QString passCAD = session().GetConsole().GetMachine().GetExtraData(VBoxDefs::GUI_PassCAD);
+        QString passCAD = session().GetConsole().GetMachine().GetExtraData(GUI_PassCAD);
         if (!passCAD.isEmpty() && passCAD != "false" && passCAD != "no")
             m_fPassCAD = true;
     }

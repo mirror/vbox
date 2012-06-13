@@ -26,6 +26,7 @@
 #endif /* Q_WS_MAC */
 
 /* GUI includes: */
+#include "UIDefs.h"
 #include "VBoxMiniToolBar.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
@@ -110,14 +111,14 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
     CMachine m = machine();
 
     /* Make sure mini-toolbar is necessary: */
-    bool fIsActive = m.GetExtraData(VBoxDefs::GUI_ShowMiniToolBar) != "no";
+    bool fIsActive = m.GetExtraData(GUI_ShowMiniToolBar) != "no";
     if (!fIsActive)
         return;
 
     /* Get the mini-toolbar alignment: */
-    bool fIsAtTop = m.GetExtraData(VBoxDefs::GUI_MiniToolBarAlignment) == "top";
+    bool fIsAtTop = m.GetExtraData(GUI_MiniToolBarAlignment) == "top";
     /* Get the mini-toolbar auto-hide feature availability: */
-    bool fIsAutoHide = m.GetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide) != "off";
+    bool fIsAutoHide = m.GetExtraData(GUI_MiniToolBarAutoHide) != "off";
     m_pMiniToolBar = new VBoxMiniToolBar(centralWidget(),
                                          fIsAtTop ? VBoxMiniToolBar::AlignTop : VBoxMiniToolBar::AlignBottom,
                                          true, fIsAutoHide);
@@ -141,7 +142,7 @@ void UIMachineWindowFullscreen::cleanupMiniToolbar()
         return;
 
     /* Save mini-toolbar settings: */
-    machine().SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
+    machine().SetExtraData(GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;

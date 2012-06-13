@@ -707,7 +707,7 @@ void UIMachineLogic::prepareDock()
     if (cGuestScreens > 1)
     {
         pDockSettingsMenu->addSeparator();
-        m_DockIconPreviewMonitor = qMin(session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), cGuestScreens - 1);
+        m_DockIconPreviewMonitor = qMin(session().GetMachine().GetExtraData(GUI_RealtimeDockIconUpdateMonitor).toInt(), cGuestScreens - 1);
         m_pDockPreviewSelectMonitorGroup = new QActionGroup(this);
         for (int i = 0; i < cGuestScreens; ++i)
         {
@@ -731,7 +731,7 @@ void UIMachineLogic::prepareDock()
     QString osTypeId = session().GetConsole().GetGuest().GetOSTypeId();
     m_pDockIconPreview = new UIDockIconPreview(uisession(), vboxGlobal().vmGuestOSTypeIcon(osTypeId));
 
-    QString strTest = session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    QString strTest = session().GetMachine().GetExtraData(GUI_RealtimeDockIconUpdateEnabled).toLower();
     /* Default to true if it is an empty value */
     bool f = (strTest.isEmpty() || strTest == "true");
     if (f)
@@ -1185,11 +1185,11 @@ void UIMachineLogic::sltPrepareStorageMenu()
             {
                 case UIMediumType_DVD:
                     mediums = vboxGlobal().host().GetDVDDrives();
-                    strRecentMediumAddress = VBoxDefs::GUI_RecentListCD;
+                    strRecentMediumAddress = GUI_RecentListCD;
                     break;
                 case UIMediumType_Floppy:
                     mediums = vboxGlobal().host().GetFloppyDrives();
-                    strRecentMediumAddress = VBoxDefs::GUI_RecentListFD;
+                    strRecentMediumAddress = GUI_RecentListFD;
                     break;
                 default:
                     break;
@@ -1697,7 +1697,7 @@ void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
         if (pAction == gActionPool->action(UIActionIndexRuntime_Toggle_DockDisableMonitor))
             fEnabled = false;
 
-        machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, fEnabled ? "true" : "false");
+        machine.SetExtraData(GUI_RealtimeDockIconUpdateEnabled, fEnabled ? "true" : "false");
         updateDockOverlay();
     }
 }
@@ -1708,7 +1708,7 @@ void UIMachineLogic::sltDockPreviewMonitorChanged(QAction *pAction)
     if (!machine.isNull())
     {
         int monitor = pAction->data().toInt();
-        machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor, QString::number(monitor));
+        machine.SetExtraData(GUI_RealtimeDockIconUpdateMonitor, QString::number(monitor));
         updateDockOverlay();
     }
 }
@@ -1722,7 +1722,7 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
         {
             m_pDockPreviewSelectMonitorGroup->setEnabled(fEnabled);
             CMachine machine = session().GetMachine();
-            m_DockIconPreviewMonitor = qMin(machine.GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
+            m_DockIconPreviewMonitor = qMin(machine.GetExtraData(GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
         }
         /* Resize the dock icon in the case the preview monitor has changed. */
         QSize size = machineWindows().at(m_DockIconPreviewMonitor)->machineView()->size();

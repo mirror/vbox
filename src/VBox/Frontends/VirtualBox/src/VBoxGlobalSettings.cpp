@@ -27,6 +27,7 @@
 #include <QVariant>
 
 /* GUI includes: */
+#include "UIDefs.h"
 #include "VBoxGlobalSettings.h"
 #include "UIHotKeyEditor.h"
 
@@ -126,7 +127,7 @@ gPropertyMap[] =
     { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
     { "GUI/TrayIcon/Enabled",                      "trayIconEnabled",         "true|false", true },
 #ifdef Q_WS_MAC
-    { VBoxDefs::GUI_PresentationModeEnabled,       "presentationModeEnabled", "true|false", true },
+    { GUI_PresentationModeEnabled,                 "presentationModeEnabled", "true|false", true },
 #endif /* Q_WS_MAC */
     { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled", "true|false", true }
 };

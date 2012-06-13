@@ -1653,7 +1653,7 @@ void UIDetailsPagePrivate::prepareDetailsPage()
     }
 
     /* Load section configuration from extra data: */
-    QStringList values = vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_DetailsPageBoxes,
+    QStringList values = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_DetailsPageBoxes,
                                                                           /* Default keys: */
                                                                           QStringList()
                                                                           << m_sectionNames.value(Section_General)
@@ -1715,7 +1715,7 @@ void UIDetailsPagePrivate::cleanupDetailsPage()
         m_sectionSettings[section] = strSectionSetting;
     }
     /* Save section configuration to extra data: */
-    vboxGlobal().virtualBox().SetExtraDataStringList(VBoxDefs::GUI_DetailsPageBoxes, m_sectionSettings.values());
+    vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, m_sectionSettings.values());
 }
 
 void UIDetailsPagePrivate::prepareTextPage()

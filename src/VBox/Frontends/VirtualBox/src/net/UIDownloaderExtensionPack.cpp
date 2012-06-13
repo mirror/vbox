@@ -28,10 +28,6 @@
 #include "QIFileDialog.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-#include "VBoxDefs.h"
-
-/* Using declarations: */
-using namespace VBoxGlobalDefs;
 
 /* static */
 UIDownloaderExtensionPack* UIDownloaderExtensionPack::m_spInstance = 0;
@@ -60,7 +56,7 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
     setDescription(tr("VirtualBox Extension Pack"));
 
     /* Prepare source/target: */
-    QString strExtPackUnderscoredName(QString(UI_ExtPackName).replace(' ', '_'));
+    QString strExtPackUnderscoredName(QString(GUI_ExtPackName).replace(' ', '_'));
     QString strTemplateSourcePath("http://download.virtualbox.org/virtualbox/%1/");
     QString strTemplateSourceName(QString("%1-%2.vbox-extpack").arg(strExtPackUnderscoredName));
     QString strSourcePath(strTemplateSourcePath.arg(vboxGlobal().vboxVersionStringNormalized()));
@@ -84,7 +80,7 @@ UIDownloaderExtensionPack::~UIDownloaderExtensionPack()
 
 bool UIDownloaderExtensionPack::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
-    return msgCenter().confirmDownloadExtensionPack(UI_ExtPackName, source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadExtensionPack(GUI_ExtPackName, source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
@@ -119,12 +115,12 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
         }
 
         /* Warn the user about extension-pack was downloaded but was NOT saved: */
-        msgCenter().warnAboutExtentionPackCantBeSaved(UI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
+        msgCenter().warnAboutExtentionPackCantBeSaved(GUI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
 
         /* Ask the user for another location for the extension-pack file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
                                                                msgCenter().networkManagerOrMainWindowShown(),
-                                                               tr("Select folder to save %1 to").arg(UI_ExtPackName), true);
+                                                               tr("Select folder to save %1 to").arg(GUI_ExtPackName), true);
 
         /* Check if user had really set a new target: */
         if (!strTarget.isNull())
