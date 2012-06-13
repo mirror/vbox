@@ -26,7 +26,6 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include "DisasmInternal.h"
-#include "DisasmTables.h"
 
 
 /**

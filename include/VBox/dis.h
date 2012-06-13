@@ -441,10 +441,8 @@ typedef OP_PARAMETER *POP_PARAMETER;
 typedef const OP_PARAMETER *PCOP_PARAMETER;
 
 
-/** Pointer to opcode. */
-typedef struct OPCODE *POPCODE;
 /** Pointer to const opcode. */
-typedef const struct OPCODE *PCOPCODE;
+typedef const struct DISOPCODE *PCDISOPCODE;
 
 /**
  * Callback for reading opcode bytes.
@@ -463,7 +461,7 @@ typedef FNDISREADBYTES *PFNDISREADBYTES;
 
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal (really, I'm too lazy to update all the functions). */
-typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
+typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCDISOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 typedef FNDISPARSE *PFNDISPARSE;
 
 typedef struct DISCPUSTATE
@@ -537,7 +535,7 @@ typedef struct DISCPUSTATE
     int32_t         rc;
 
     /** Pointer to the current instruction. */
-    PCOPCODE        pCurInstr;
+    PCDISOPCODE     pCurInstr;
 #ifndef DIS_CORE_ONLY
     /** Opcode format string for current instruction. */
     const char      *pszOpcode;
@@ -557,7 +555,7 @@ typedef struct DISCPUSTATE
 
 /** Opcode. */
 #pragma pack(4)
-typedef struct OPCODE
+typedef struct DISOPCODE
 {
 #ifndef DIS_CORE_ONLY
     const char  *pszOpcode;
@@ -570,8 +568,8 @@ typedef struct OPCODE
     uint16_t    param2;
     uint16_t    param3;
 
-    unsigned    optype;
-} OPCODE;
+    uint32_t    optype;
+} DISOPCODE;
 #pragma pack()
 
 
