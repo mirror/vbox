@@ -107,7 +107,7 @@
 
 
 /*******************************************************************************
-*   Kernel Entry Hook                                                          *
+*   Kernel Entry Hooks                                                         *
 *******************************************************************************/
 int VBoxUSBSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred);
 int VBoxUSBSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred);
@@ -316,7 +316,8 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
 LOCAL inline void vboxUSBSolarisConcatMsg(vboxusb_urb_t *pUrb);
 LOCAL inline void vboxUSBSolarisDeQueueURB(vboxusb_urb_t *pUrb, int URBStatus);
 LOCAL inline void vboxUSBSolarisNotifyComplete(vboxusb_state_t *pState);
-LOCAL int vboxUSBSolarisProcessIOCtl(int iFunction, void *pvState, int Mode, PVBOXUSBREQ pUSBReq, void *pvBuf, size_t *pcbDataOut);
+LOCAL int vboxUSBSolarisProcessIOCtl(int iFunction, void *pvState, int Mode, PVBOXUSBREQ pUSBReq, void *pvBuf,
+                                     size_t *pcbDataOut);
 LOCAL bool vboxUSBSolarisIsUSBDevice(dev_info_t *pDip);
 
 /** Device Operation Hooks */
@@ -554,24 +555,24 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                     bzero(&pState->ClientInfo, sizeof(pState->ClientInfo));
                                                     char szDevicePath[MAXPATHLEN];
                                                     ddi_pathname(pState->pDip, szDevicePath);
-                                                    RTStrPrintf(pState->ClientInfo.szClientPath, sizeof(pState->ClientInfo.szClientPath),
-                                                                "/devices%s:%s",
-                                                                szDevicePath,
-                                                                DEVICE_NAME);
+                                                    RTStrPrintf(pState->ClientInfo.szClientPath,
+                                                                sizeof(pState->ClientInfo.szClientPath),
+                                                                "/devices%s:%s", szDevicePath,DEVICE_NAME);
                                                     RTPathStripFilename(szDevicePath);
-                                                    RTStrPrintf(pState->ClientInfo.szDeviceIdent, sizeof(pState->ClientInfo.szDeviceIdent),
+                                                    RTStrPrintf(pState->ClientInfo.szDeviceIdent,
+                                                                sizeof(pState->ClientInfo.szDeviceIdent),
                                                                 "%#x:%#x:%d:%s",
                                                                 pState->pDevDesc->dev_descr->idVendor,
                                                                 pState->pDevDesc->dev_descr->idProduct,
-                                                                pState->pDevDesc->dev_descr->bcdDevice,
-                                                                szDevicePath);
+                                                                pState->pDevDesc->dev_descr->bcdDevice, szDevicePath);
                                                     pState->ClientInfo.Instance = instance;
                                                     pState->ClientInfo.pfnSetConsumerCredentials = &vboxUSBSolarisSetConsumerCredentials;
                                                     rc = VBoxUSBMonSolarisRegisterClient(pState->pDip, &pState->ClientInfo);
                                                     if (RT_SUCCESS(rc))
                                                     {
                                                         LogRel((DEVICE_NAME ": Captured %s %#x:%#x:%d:%s\n",
-                                                                pState->pDevDesc->dev_product ? pState->pDevDesc->dev_product : "<Unnamed USB device>",
+                                                                pState->pDevDesc->dev_product ? pState->pDevDesc->dev_product
+                                                                    : "<Unnamed USB device>",
                                                                 pState->pDevDesc->dev_descr->idVendor,
                                                                 pState->pDevDesc->dev_descr->idProduct,
                                                                 pState->pDevDesc->dev_descr->bcdDevice,
@@ -581,28 +582,42 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                     }
                                                     else
                                                     {
-                                                        LogRel((DEVICE_NAME ":VBoxUSBMonSolarisRegisterClient failed! rc=%d path=%s instance=%d\n",
-                                                                rc, pState->ClientInfo.szClientPath, instance));
+                                                        LogRel((DEVICE_NAME ":VBoxUSBMonSolarisRegisterClient failed! rc=%d "
+                                                                "path=%s instance=%d\n", rc, pState->ClientInfo.szClientPath,
+                                                                instance));
                                                     }
 
                                                     usb_unregister_event_cbs(pState->pDip, &g_VBoxUSBSolarisEvents);
                                                 }
                                                 else
-                                                    LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach failed to register hotplug callbacks! rc=%d\n", rc));
+                                                    LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach failed to register hotplug "
+                                                            "callbacks! rc=%d\n", rc));
 
                                                 ddi_remove_minor_node(pState->pDip, NULL);
                                             }
                                             else
-                                                LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach ddi_create_minor_node failed! rc=%d\n", rc));
+                                            {
+                                                LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach ddi_create_minor_node failed! rc=%d\n",
+                                                        rc));
+                                            }
                                         }
                                         else
-                                            LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach failed to initialize power management! rc=%d\n", rc));
+                                        {
+                                            LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach failed to initialize power management! "
+                                                    "rc=%d\n", rc));
+                                        }
                                     }
                                     else
-                                        LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach vboxUSBSolarisInitAllEndPoints failed! rc=%d\n"));
+                                    {
+                                        LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach vboxUSBSolarisInitAllEndPoints failed! "
+                                                "rc=%d\n"));
+                                    }
                                 }
                                 else
-                                    LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach usb_pipe_get_max_bulk_transfer_size failed! rc=%d\n", rc));
+                                {
+                                    LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach usb_pipe_get_max_bulk_transfer_size failed! "
+                                            "rc=%d\n", rc));
+                                }
 
                                 usb_fini_serialization(pState->StateMulti);
                                 mutex_destroy(&pState->Mtx);
@@ -617,7 +632,10 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                             LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach usb_client_attach failed! rc=%d\n", rc));
                     }
                     else
-                        Log((DEVICE_NAME ":VBoxUSBSolarisAttach not a USB device.\n")); /* This would appear on every boot if it were Rel */
+                    {
+                        /* This would appear on every boot if it were LogRel() */
+                        Log((DEVICE_NAME ":VBoxUSBSolarisAttach not a USB device.\n"));
+                    }
                 }
                 else
                     LogRel((DEVICE_NAME ":VBoxUSBSolarisAttach failed to get soft state\n", sizeof(*pState)));
@@ -849,7 +867,8 @@ LOCAL int vboxUSBSolarisSetConsumerCredentials(RTPROCESS Process, int Instance, 
         pState->Process = Process;
     else
     {
-        LogRel((DEVICE_NAME ":vboxUSBSolarisSetConsumerCredentials failed! Process %u already has client open.\n", pState->Process));
+        LogRel((DEVICE_NAME ":vboxUSBSolarisSetConsumerCredentials failed! Process %u already has client open.\n",
+                pState->Process));
         rc = VERR_RESOURCE_BUSY;
     }
 
@@ -890,7 +909,7 @@ int VBoxUSBSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         if (pState->Process == NIL_RTPROCESS)
             LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen No prior information about authorized process.\n"));
         else
-            LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen Process %d is already using this device instance.\n", pState->Process));
+            LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen Process %u is already using this device instance.\n", pState->Process));
 
         mutex_exit(&pState->Mtx);
         return EPERM;
@@ -1090,7 +1109,8 @@ int VBoxUSBSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCr
     VBOXUSBREQ ReqWrap;
     if (IOCPARM_LEN(Cmd) != sizeof(ReqWrap))
     {
-        LogRel((DEVICE_NAME ": VBoxUSBSolarisIOCtl: bad request %#x size=%d expected=%d\n", Cmd, IOCPARM_LEN(Cmd), sizeof(ReqWrap)));
+        LogRel((DEVICE_NAME ": VBoxUSBSolarisIOCtl: bad request %#x size=%d expected=%d\n", Cmd, IOCPARM_LEN(Cmd),
+                sizeof(ReqWrap)));
         return ENOTTY;
     }
 
@@ -1148,7 +1168,8 @@ int VBoxUSBSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCr
 
     if (RT_UNLIKELY(cbDataOut > ReqWrap.cbData))
     {
-        LogRel((DEVICE_NAME ":VBoxUSBSolarisIOCtl: too much output data %d expected %d Truncating!\n", cbDataOut, ReqWrap.cbData));
+        LogRel((DEVICE_NAME ":VBoxUSBSolarisIOCtl: too much output data %d expected %d Truncating!\n", cbDataOut,
+                ReqWrap.cbData));
         cbDataOut = ReqWrap.cbData;
     }
 
@@ -1168,14 +1189,16 @@ int VBoxUSBSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCr
             rc = ddi_copyout(pvBuf, (void *)(uintptr_t)ReqWrap.pvDataR3, cbDataOut, Mode);
             if (RT_UNLIKELY(rc))
             {
-                LogRel((DEVICE_NAME ":VBoxUSBSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
+                LogRel((DEVICE_NAME ":VBoxUSBSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg,
+                        Cmd, rc));
                 rc = EFAULT;
             }
         }
     }
     else
     {
-        LogRel((DEVICE_NAME ":VBoxUSBSolarisIOCtl: ddi_copyout(1)failed; pReqWrap=%p pArg=%p Cmd=%d. rc=%d\n", &ReqWrap, pArg, Cmd, rc));
+        LogRel((DEVICE_NAME ":VBoxUSBSolarisIOCtl: ddi_copyout(1)failed; pReqWrap=%p pArg=%p Cmd=%d. rc=%d\n", &ReqWrap, pArg,
+                Cmd, rc));
         rc = EFAULT;
     }
 
@@ -1559,7 +1582,8 @@ LOCAL bool vboxUSBSolarisIsUSBDevice(dev_info_t *pDip)
             Log((DEVICE_NAME ":vboxUSBSolarisIsUSBDevice compatible[%d]=%s\n", cCompatible, ppszCompatible[cCompatible]));
             if (!strncmp(ppszCompatible[cCompatible], "usb", 3))
             {
-                Log((DEVICE_NAME ":vboxUSBSolarisIsUSBDevice verified device as USB. pszCompatible=%s\n", ppszCompatible[cCompatible]));
+                Log((DEVICE_NAME ":vboxUSBSolarisIsUSBDevice verified device as USB. pszCompatible=%s\n",
+                     ppszCompatible[cCompatible]));
                 ddi_prop_free(ppszCompatible);
                 return true;
             }
@@ -1577,12 +1601,14 @@ LOCAL bool vboxUSBSolarisIsUSBDevice(dev_info_t *pDip)
     dev_info_t *pParentDip = ddi_get_parent(pDip);
     if (pParentDip)
     {
-        rc = ddi_prop_lookup_string_array(DDI_DEV_T_ANY, pParentDip, DDI_PROP_DONTPASS, "compatible", &ppszCompatible, &cCompatible);
+        rc = ddi_prop_lookup_string_array(DDI_DEV_T_ANY, pParentDip, DDI_PROP_DONTPASS, "compatible", &ppszCompatible,
+                                          &cCompatible);
         if (RT_LIKELY(rc == DDI_PROP_SUCCESS))
         {
             while (cCompatible--)
             {
-                Log((DEVICE_NAME ":vboxUSBSolarisIsUSBDevice parent compatible[%d]=%s\n", cCompatible, ppszCompatible[cCompatible]));
+                Log((DEVICE_NAME ":vboxUSBSolarisIsUSBDevice parent compatible[%d]=%s\n", cCompatible,
+                     ppszCompatible[cCompatible]));
                 if (!strncmp(ppszCompatible[cCompatible], "usb", 3))
                 {
                     Log((DEVICE_NAME ":vboxUSBSolarisIsUSBDevice verified device as USB. parent pszCompatible=%s\n",
@@ -1609,7 +1635,7 @@ LOCAL bool vboxUSBSolarisIsUSBDevice(dev_info_t *pDip)
  * Submit a URB.
  *
  * @param   pState          The USB device instance.
- * @param   pUrb            Pointer to the VBox USB URB.
+ * @param   pUrbReq         Pointer to the VBox USB URB.
  * @param   Mode            The IOCtl mode.
  *
  * @returns VBox error code.
@@ -1672,8 +1698,9 @@ LOCAL int vboxUSBSolarisSendURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
         {
             mutex_exit(&pState->Mtx);
             freemsg(pMsg);
-            LogRel((DEVICE_NAME ":vboxUSBSolarisSendUrb OpenPipe failed. pState=%p pUrbReq=%p bEndpoint=%#x enmDir=%#x enmType=%#x cbData=%d pvData=%p rc=%d\n",
-                    pState, pUrbReq, pUrbReq->bEndpoint, pUrbReq->enmDir, pUrbReq->enmType, pUrbReq->cbData, pUrbReq->pvData, rc));
+            LogRel((DEVICE_NAME ":vboxUSBSolarisSendUrb OpenPipe failed. pState=%p pUrbReq=%p bEndpoint=%#x enmDir=%#x "
+                    "enmType=%#x cbData=%d pvData=%p rc=%d\n", pState, pUrbReq, pUrbReq->bEndpoint, pUrbReq->enmDir,
+                    pUrbReq->enmType, pUrbReq->cbData, pUrbReq->pvData, rc));
             return VERR_BAD_PIPE;
         }
 
@@ -1723,6 +1750,10 @@ LOCAL int vboxUSBSolarisSendURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
 
             if (RT_FAILURE(rc))
             {
+                /** @todo We share the state mutex for protecting concurrent accesses to both
+                 *        the inflight URB list as well as pUrb->pMsg (data). Probably make this
+                 *        more fine grained later by having a different mutex for the URB if
+                 *        it's really worth the trouble. */
                 mutex_enter(&pState->Mtx);
                 if (pUrb->pMsg)
                 {
@@ -1795,6 +1826,11 @@ LOCAL int vboxUSBSolarisReapURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
     if (RT_SUCCESS(rc))
     {
         vboxusb_urb_t *pUrb = list_remove_head(&pState->hLandedUrbs);
+
+        /*
+         * It is safe to access pUrb->pMsg outside the state mutex because this is from the landed URB list
+         * and not the inflight URB list.
+         */
         mutex_exit(&pState->Mtx);
         if (pUrb)
         {
@@ -1855,7 +1891,8 @@ LOCAL int vboxUSBSolarisReapURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
                         }
                     }
 
-                    Log((DEVICE_NAME ":vboxUSBSolarisReapUrb pvUrbR3=%p pvDataR3=%p cbData=%d\n", pUrbReq->pvUrbR3, pUrbReq->pvData, pUrbReq->cbData));
+                    Log((DEVICE_NAME ":vboxUSBSolarisReapUrb pvUrbR3=%p pvDataR3=%p cbData=%d\n", pUrbReq->pvUrbR3,
+                         pUrbReq->pvData, pUrbReq->cbData));
                 }
                 else
                 {
@@ -1992,13 +2029,15 @@ LOCAL int vboxUSBSolarisClearEndPoint(vboxusb_state_t *pState, uint8_t bEndpoint
             }
             else
             {
-                Log((DEVICE_NAME ":vboxUSBSolarisClearEndPoint not opened to be cleared. Faking success. bEndpoint=%#x.\n", bEndpoint));
+                Log((DEVICE_NAME ":vboxUSBSolarisClearEndPoint not opened to be cleared. Faking success. bEndpoint=%#x.\n",
+                     bEndpoint));
                 rc = VINF_SUCCESS;
             }
         }
         else
         {
-            LogRel((DEVICE_NAME ":vboxUSBSolarisClearEndPoint Endpoint missing!! bEndpoint=%#x EndPtIndex=%d.\n", bEndpoint, EndPtIndex));
+            LogRel((DEVICE_NAME ":vboxUSBSolarisClearEndPoint Endpoint missing!! bEndpoint=%#x EndPtIndex=%d.\n", bEndpoint,
+                    EndPtIndex));
             rc = VERR_GENERAL_FAILURE;
         }
     }
@@ -2389,7 +2428,8 @@ LOCAL int vboxUSBSolarisInitAllEndPoints(vboxusb_state_t *pState)
             rc = vboxUSBSolarisInitEndPointsForConfig(pState, uCfgIndex);
             if (RT_FAILURE(rc))
             {
-                LogRel((DEVICE_NAME ":vboxUSBSolarisInitAllEndPoints: vboxUSBSolarisInitEndPoints uCfgIndex=%d failed. rc=%d\n", uCfgIndex, rc));
+                LogRel((DEVICE_NAME ":vboxUSBSolarisInitAllEndPoints: vboxUSBSolarisInitEndPoints uCfgIndex=%d failed. rc=%d\n",
+                        uCfgIndex, rc));
                 return rc;
             }
         }
@@ -2430,8 +2470,8 @@ LOCAL int vboxUSBSolarisInitEndPointsForConfig(vboxusb_state_t *pState, uint8_t 
                 int rc = vboxUSBSolarisInitEndPoint(pState, pEpData, uCfgValue, uInterface, uAlt);
                 if (RT_FAILURE(rc))
                 {
-                    LogRel((DEVICE_NAME ":vboxUSBSolarisInitEndPointsForConfig: vboxUSBSolarisInitEndPoint failed! pEp=%p uCfgValue=%u uCfgIndex=%u uInterface=%u, uAlt=%u\n",
-                                uCfgValue, uCfgIndex, uInterface, uAlt));
+                    LogRel((DEVICE_NAME ":vboxUSBSolarisInitEndPointsForConfig: vboxUSBSolarisInitEndPoint failed! pEp=%p "
+                            "uCfgValue=%u uCfgIndex=%u uInterface=%u, uAlt=%u\n", uCfgValue, uCfgIndex, uInterface, uAlt));
                     return rc;
                 }
             }
@@ -2452,7 +2492,8 @@ LOCAL int vboxUSBSolarisInitEndPointsForConfig(vboxusb_state_t *pState, uint8_t 
  */
 LOCAL int vboxUSBSolarisInitEndPointsForInterfaceAlt(vboxusb_state_t *pState, uint8_t uInterface, uint8_t uAlt)
 {
-    LogFunc((DEVICE_NAME ":vboxUSBSolarisInitEndPointsForInterfaceAlt pState=%p uInterface=%d uAlt=%d\n", pState, uInterface, uAlt));
+    LogFunc((DEVICE_NAME ":vboxUSBSolarisInitEndPointsForInterfaceAlt pState=%p uInterface=%d uAlt=%d\n", pState, uInterface,
+             uAlt));
 
     /* Doesn't hurt to be paranoid */
     uint_t uCfgIndex = usb_get_current_cfgidx(pState->pDip);
@@ -2478,8 +2519,8 @@ LOCAL int vboxUSBSolarisInitEndPointsForInterfaceAlt(vboxusb_state_t *pState, ui
                 rc = vboxUSBSolarisInitEndPoint(pState, pEpData, uCfgValue, uInterface, uAlt);
                 if (RT_FAILURE(rc))
                 {
-                    LogRel((DEVICE_NAME ":vboxUSBSolarisInitEndPointsForInterfaceAlt: vboxUSBSolarisInitEndPoint failed! pEp=%p uCfgValue=%u uCfgIndex=%u uInterface=%u, uAlt=%u\n",
-                                uCfgValue, uCfgIndex, uInterface, uAlt));
+                    LogRel((DEVICE_NAME ":vboxUSBSolarisInitEndPointsForInterfaceAlt: vboxUSBSolarisInitEndPoint failed! pEp=%p "
+                            "uCfgValue=%u uCfgIndex=%u uInterface=%u, uAlt=%u\n", uCfgValue, uCfgIndex, uInterface, uAlt));
                     return rc;
                 }
             }
@@ -2505,12 +2546,14 @@ LOCAL int vboxUSBSolarisInitEndPointsForInterfaceAlt(vboxusb_state_t *pState, ui
  * Destroy all Endpoint Xfer structures.
  *
  * @param   pState          The USB device instance.
- * @remarks Requires the state mutex to be held!!
+ * @remarks Requires the state mutex to be held.
  *          Call only from Detach() or similar as callbacks
  */
 LOCAL void vboxUSBSolarisDestroyAllEndPoints(vboxusb_state_t *pState)
 {
     LogFunc((DEVICE_NAME ":vboxUSBSolarisDestroyAllEndPoints pState=%p\n", pState));
+
+    Assert(mutex_owned(&pState->Mtx));
     for (unsigned i = 0; i < VBOXUSB_MAX_ENDPOINTS; i++)
     {
         vboxusb_ep_t *pEp = &pState->aEps[i];
@@ -2528,11 +2571,13 @@ LOCAL void vboxUSBSolarisDestroyAllEndPoints(vboxusb_state_t *pState)
  *
  * @param   pState          The USB device instance.
  * @param   pEp             The Endpoint.
+ * @remarks Requires the state mutex to be held.
  */
 LOCAL void vboxUSBSolarisDestroyEndPoint(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
 {
     LogFunc((DEVICE_NAME ":vboxUSBSolarisDestroyEndPoint pState=%p pEp=%p\n", pState, pEp));
 
+    Assert(mutex_owned(&pState->Mtx));
     if (pEp->fInitialized == VBOXUSB_EP_INITIALIZED)
     {
         vboxusb_urb_t *pUrb = list_remove_head(&pEp->hIsocInUrbs);
@@ -2601,12 +2646,15 @@ LOCAL void vboxUSBSolarisCloseAllPipes(vboxusb_state_t *pState, bool fDefault)
  *
  * @param   pState          The USB device instance.
  * @param   pEp             The Endpoint.
+ * @remarks Requires the device state mutex to be held.
  *
  * @returns VBox status code.
  */
 LOCAL int vboxUSBSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
 {
 //    LogFunc((DEVICE_NAME ":vboxUSBSolarisOpenPipe pState=%p pEp=%p\n", pState, pEp));
+
+    Assert(mutex_owned(&pState->Mtx));
 
     /*
      * Make sure the Endpoint isn't open already.
@@ -2628,7 +2676,9 @@ LOCAL int vboxUSBSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
     /*
      * Open the non-default pipe for the Endpoint.
      */
+    mutex_exit(&pState->Mtx);
     int rc = usb_pipe_open(pState->pDip, &pEp->EpDesc, &pEp->PipePolicy, USB_FLAGS_NOSLEEP, &pEp->pPipe);
+    mutex_enter(&pState->Mtx);
     if (rc == USB_SUCCESS)
     {
         usb_pipe_set_private(pEp->pPipe, (usb_opaque_t)pEp);
@@ -2714,7 +2764,8 @@ LOCAL void vboxUSBSolarisClosePipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
             /*
              * Non-default pipe: close it.
              */
-            Log((DEVICE_NAME ":vboxUSBSolarisClosePipe pipe bmAttributes=%#x bEndpointAddress=%#x\n", pEp->EpDesc.bmAttributes, pEp->EpDesc.bEndpointAddress));
+            Log((DEVICE_NAME ":vboxUSBSolarisClosePipe pipe bmAttributes=%#x bEndpointAddress=%#x\n", pEp->EpDesc.bmAttributes,
+                 pEp->EpDesc.bEndpointAddress));
             mutex_exit(&pState->Mtx);
             usb_pipe_close(pState->pDip, pEp->pPipe, USB_FLAGS_SLEEP, NULL /* callback */, NULL /* callback arg. */);
             mutex_enter(&pState->Mtx);
@@ -2805,7 +2856,7 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisGetIsocInURB(vboxusb_state_t *pState, PVBOXUS
  * @param   pUrbReq         Opaque pointer to the complete request.
  * @param   pMsg            Pointer to the allocated request data.
  *
- * @returns The allocated URB to be used.
+ * @returns The allocated URB to be used, or NULL upon failure.
  */
 LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq, mblk_t *pMsg)
 {
@@ -2835,13 +2886,14 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
         || (   pUrb
             && pUrb->enmState != VBOXUSB_URB_STATE_FREE))
     {
+        mutex_exit(&pState->Mtx);
         pUrb = RTMemAllocZ(sizeof(vboxusb_urb_t));
         if (RT_UNLIKELY(!pUrb))
         {
-            mutex_exit(&pState->Mtx);
             LogRel((DEVICE_NAME ":vboxUSBSolarisQueueURB failed to alloc %d bytes.\n", sizeof(vboxusb_urb_t)));
             return NULL;
         }
+        mutex_enter(&pState->Mtx);
     }
     else
     {
@@ -2849,6 +2901,7 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
          * Remove from head and move to tail so that when several URBs are reaped continuously we get to use
          * up each one free 'head'.
          */
+        Assert(pUrb && pUrb->enmState == VBOXUSB_URB_STATE_FREE);
         list_remove_head(&pState->hUrbs);
     }
 
@@ -2954,7 +3007,7 @@ LOCAL inline void vboxUSBSolarisConcatMsg(vboxusb_urb_t *pUrb)
  * User process poll wake up wrapper for asynchronous URB completion.
  *
  * @param   pState          The USB device instance.
- * @remarks Requires the device state mutex to be held!!
+ * @remarks Requires the device state mutex to be held.
  */
 LOCAL inline void vboxUSBSolarisNotifyComplete(vboxusb_state_t *pState)
 {
@@ -3000,7 +3053,8 @@ LOCAL inline void vboxUSBSolarisNotifyHotplug(vboxusb_state_t *pState)
  */
 LOCAL int vboxUSBSolarisCtrlXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vboxusb_urb_t *pUrb)
 {
-    LogFunc((DEVICE_NAME ":vboxUSBSolarisCtrlXfer pState=%p pEp=%p pUrb=%p enmDir=%d cbData=%d\n", pState, pEp, pUrb, pUrb->enmDir, pUrb->cbDataR3));
+    LogFunc((DEVICE_NAME ":vboxUSBSolarisCtrlXfer pState=%p pEp=%p pUrb=%p enmDir=%d cbData=%d\n", pState, pEp, pUrb,
+             pUrb->enmDir, pUrb->cbDataR3));
 
     AssertPtrReturn(pUrb->pMsg, VERR_INVALID_PARAMETER);
     uchar_t *pSetupData = pUrb->pMsg->b_rptr;
@@ -3105,6 +3159,10 @@ LOCAL void vboxUSBSolarisCtrlXferCompleted(usb_pipe_handle_t pPipe, usb_ctrl_req
             bcopy(&SetupData, pSetupMsg->b_wptr, sizeof(VUSBSETUP));
             pSetupMsg->b_wptr += sizeof(VUSBSETUP);
 
+            /*
+             * Should be safe to update pMsg here without the state mutex, see vboxUSBSolarisSendURB()
+             * and vboxUSBSolarisQueueUURB() as the URB state is (still) not VBOXUSB_URB_STATE_FREE.
+             */
             pUrb->pMsg = pSetupMsg;
             pUrb->pMsg->b_cont = pReq->ctrl_data;
             pReq->ctrl_data = NULL;
@@ -3114,8 +3172,8 @@ LOCAL void vboxUSBSolarisCtrlXferCompleted(usb_pipe_handle_t pPipe, usb_ctrl_req
             if (   pUrb->pMsg
                 && pUrb->pMsg->b_cont == NULL)  /* Concat succeeded */
             {
-                Log((DEVICE_NAME ":vboxUSBSolarisCtrlXferCompleted prepended header rc=%d cbData=%d.\n", pReq->ctrl_completion_reason,
-                        MBLKL(pUrb->pMsg)));
+                Log((DEVICE_NAME ":vboxUSBSolarisCtrlXferCompleted prepended header rc=%d cbData=%d.\n",
+                     pReq->ctrl_completion_reason, MBLKL(pUrb->pMsg)));
                 Log((DEVICE_NAME ":%.*Rhxd\n", MBLKL(pUrb->pMsg), pUrb->pMsg->b_rptr));
             }
 #endif
@@ -3128,7 +3186,10 @@ LOCAL void vboxUSBSolarisCtrlXferCompleted(usb_pipe_handle_t pPipe, usb_ctrl_req
             return;
         }
         else
-            LogRel((DEVICE_NAME ":vboxUSBSolarisCtrlXferCompleted failed to alloc %d bytes for Setup Header.\n", sizeof(VUSBSETUP)));
+        {
+            LogRel((DEVICE_NAME ":vboxUSBSolarisCtrlXferCompleted failed to alloc %d bytes for Setup Header.\n",
+                    sizeof(VUSBSETUP)));
+        }
     }
     else
         LogRel((DEVICE_NAME ":vboxUSBSolarisCtrlXferCompleted Extreme error! missing private data.\n"));
@@ -3149,13 +3210,15 @@ LOCAL void vboxUSBSolarisCtrlXferCompleted(usb_pipe_handle_t pPipe, usb_ctrl_req
  */
 LOCAL int vboxUSBSolarisBulkXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vboxusb_urb_t *pUrb)
 {
-    LogFunc((DEVICE_NAME ":vboxUSBSolarisBulkXfer pState=%p pEp=%p pUrb=%p enmDir=%d cbData=%d\n", pState, pEp, pUrb, pUrb->enmDir, pUrb->cbDataR3));
+    LogFunc((DEVICE_NAME ":vboxUSBSolarisBulkXfer pState=%p pEp=%p pUrb=%p enmDir=%d cbData=%d\n", pState, pEp, pUrb,
+             pUrb->enmDir, pUrb->cbDataR3));
 
     /*
      * Allocate a wrapper request.
      */
     int rc = VINF_SUCCESS;
-    usb_bulk_req_t *pReq = usb_alloc_bulk_req(pState->pDip, pUrb->enmDir == VUSBDIRECTION_IN ? pUrb->cbDataR3 : 0, USB_FLAGS_NOSLEEP);
+    usb_bulk_req_t *pReq = usb_alloc_bulk_req(pState->pDip, pUrb->enmDir == VUSBDIRECTION_IN ? pUrb->cbDataR3 : 0,
+                                              USB_FLAGS_NOSLEEP);
     if (RT_LIKELY(pReq))
     {
         /*
@@ -3187,7 +3250,8 @@ LOCAL int vboxUSBSolarisBulkXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vbo
             return VINF_SUCCESS;
         else
         {
-            LogRel((DEVICE_NAME ":vboxUSBSolarisBulkXfer usb_pipe_bulk_xfer enmDir=%#x Ep=%#x failed! rc=%d\n", pUrb->enmDir, pUrb->bEndpoint, rc));
+            LogRel((DEVICE_NAME ":vboxUSBSolarisBulkXfer usb_pipe_bulk_xfer enmDir=%#x Ep=%#x failed! rc=%d\n", pUrb->enmDir,
+                    pUrb->bEndpoint, rc));
             rc = VERR_PIPE_IO_ERROR;
         }
 
@@ -3267,7 +3331,8 @@ LOCAL void vboxUSBSolarisBulkXferCompleted(usb_pipe_handle_t pPipe, usb_bulk_req
  */
 LOCAL int vboxUSBSolarisIntrXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vboxusb_urb_t *pUrb)
 {
-    LogFunc((DEVICE_NAME ":vboxUSBSolarisIntrXfer pState=%p pEp=%p pUrb=%p enmDir=%d cbData=%d\n", pState, pEp, pUrb, pUrb->enmDir, pUrb->cbDataR3));
+    LogFunc((DEVICE_NAME ":vboxUSBSolarisIntrXfer pState=%p pEp=%p pUrb=%p enmDir=%d cbData=%d\n", pState, pEp, pUrb,
+             pUrb->enmDir, pUrb->cbDataR3));
 
     int rc = VINF_SUCCESS;
     usb_intr_req_t *pReq = usb_alloc_intr_req(pState->pDip, 0 /* length */, USB_FLAGS_NOSLEEP);
@@ -3346,8 +3411,8 @@ LOCAL void vboxUSBSolarisIntrXferCompleted(usb_pipe_handle_t pPipe, usb_intr_req
                 }
             }
 
-            Log((DEVICE_NAME ":vboxUSBSolarisIntrXferCompleted rc=%d pMsg=%p enmDir=%#x\n", pReq->intr_completion_reason, pUrb->pMsg,
-                    pUrb->enmDir));
+            Log((DEVICE_NAME ":vboxUSBSolarisIntrXferCompleted rc=%d pMsg=%p enmDir=%#x\n", pReq->intr_completion_reason,
+                 pUrb->pMsg, pUrb->enmDir));
 
             /*
              * Update the URB and move to landed list for reaping.
@@ -3532,7 +3597,8 @@ LOCAL void vboxUSBSolarisIsocInXferCompleted(usb_pipe_handle_t pPipe, usb_isoc_r
 
             if (RT_LIKELY(pReq->isoc_data))
             {
-                Log((DEVICE_NAME ":vboxUSBSolarisIsocInXferCompleted cIsocInUrbs=%d cbIsocInLandedReqs=%d\n", pEp->cIsocInUrbs, pEp->cbIsocInLandedReqs));
+                Log((DEVICE_NAME ":vboxUSBSolarisIsocInXferCompleted cIsocInUrbs=%d cbIsocInLandedReqs=%d\n", pEp->cIsocInUrbs,
+                     pEp->cbIsocInLandedReqs));
 
                 mutex_enter(&pState->Mtx);
 
@@ -3547,15 +3613,13 @@ LOCAL void vboxUSBSolarisIsocInXferCompleted(usb_pipe_handle_t pPipe, usb_isoc_r
                     {
                         --pEp->cIsocInUrbs;
                         mutex_exit(&pState->Mtx);
-#if 0
+
                         for (unsigned i = 0; i < pReq->isoc_pkts_count; i++)
                         {
                             pUrb->aIsocPkts[i].cbActPkt = pReq->isoc_pkt_descr[i].isoc_pkt_actual_length;
                             pUrb->aIsocPkts[i].enmStatus = vboxUSBSolarisGetUrbStatus(pReq->isoc_pkt_descr[i].isoc_pkt_status);
                         }
-#else
-                        bcopy(pReq->isoc_pkt_descr, pUrb->aIsocPkts, sizeof(VUSBISOC_PKT_DESC) * pReq->isoc_pkts_count);
-#endif
+
                         pUrb->pMsg = pReq->isoc_data;
                         pReq->isoc_data = NULL;
 
@@ -3568,7 +3632,8 @@ LOCAL void vboxUSBSolarisIsocInXferCompleted(usb_pipe_handle_t pPipe, usb_isoc_r
                     }
                     else
                     {
-                        /* Huh!? cIsocInUrbs is wrong then! Should never happen unless we decide to decrement cIsocInUrbs in Reap time */
+                        /* Huh!? cIsocInUrbs is wrong then! Should never happen unless we decide to decrement cIsocInUrbs in
+                           Reap time */
                         pEp->cIsocInUrbs = 0;
                         LogRel((DEVICE_NAME ":vboxUSBSolarisIsocInXferCompleted Extreme error! Isoc. counter b0rked!\n"));
                     }
@@ -3724,7 +3789,8 @@ LOCAL void vboxUSBSolarisIsocInXferError(usb_pipe_handle_t pPipe, usb_isoc_req_t
              */
             mutex_exit(&pState->Mtx);
             usb_pipe_isoc_xfer(pPipe, pReq, USB_FLAGS_NOSLEEP);
-            Log((DEVICE_NAME ":vboxUSBSolarisIsocInXferError resubmitted Isoc. IN request due to immediately unavailable resources.\n"));
+            Log((DEVICE_NAME ":vboxUSBSolarisIsocInXferError resubmitted Isoc. IN request due to immediately unavailable "
+                 "resources.\n"));
 
             return;
         }
@@ -3740,7 +3806,8 @@ LOCAL void vboxUSBSolarisIsocInXferError(usb_pipe_handle_t pPipe, usb_isoc_req_t
 
         default:
         {
-            Log((DEVICE_NAME ":vboxUSBSolarisIsocInXferError stopping Isoc. In. polling due to rc=%d\n", pReq->isoc_completion_reason));
+            Log((DEVICE_NAME ":vboxUSBSolarisIsocInXferError stopping Isoc. In. polling due to rc=%d\n",
+                 pReq->isoc_completion_reason));
             pEp->fIsocPolling = false;
             mutex_exit(&pState->Mtx);
             usb_pipe_stop_isoc_polling(pPipe, USB_FLAGS_NOSLEEP);
@@ -3792,7 +3859,8 @@ LOCAL void vboxUSBSolarisIsocOutXferCompleted(usb_pipe_handle_t pPipe, usb_isoc_
                 pUrb->aIsocPkts[i].enmStatus = vboxUSBSolarisGetUrbStatus(pReq->isoc_pkt_descr[i].isoc_pkt_status);
             }
 
-            Log((DEVICE_NAME ":vboxUSBSolarisIsocOutXferCompleted cIsocPkts=%d cbData=%d cbActPkt=%d\n", pUrb->cIsocPkts, pUrb->cbDataR3, cbActPkt));
+            Log((DEVICE_NAME ":vboxUSBSolarisIsocOutXferCompleted cIsocPkts=%d cbData=%d cbActPkt=%d\n", pUrb->cIsocPkts,
+                 pUrb->cbDataR3, cbActPkt));
 
             if (pReq->isoc_completion_reason == USB_CR_OK)
             {
