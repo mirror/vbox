@@ -81,20 +81,21 @@ typedef callout_id_t (*PFNSOL_timeout_generic)(int type, void (*func)(void *),
 typedef hrtime_t     (*PFNSOL_untimeout_generic)(callout_id_t id, int nowait);
 typedef int          (*PFNSOL_cyclic_reprogram)(cyclic_id_t id, hrtime_t expiration);
 typedef void         (*PFNSOL_contig_free)(void *addr, size_t size);
+typedef int          (*PFNSOL_page_noreloc_supported)(size_t cbPageSize);
 
 /* IPRT globals. */
-extern bool                     g_frtSolSplSetsEIF;
-extern RTCPUSET                 g_rtMpSolCpuSet;
-extern PFNSOL_timeout_generic   g_pfnrtR0Sol_timeout_generic;
-extern PFNSOL_untimeout_generic g_pfnrtR0Sol_untimeout_generic;
-extern PFNSOL_cyclic_reprogram  g_pfnrtR0Sol_cyclic_reprogram;
-extern PFNSOL_contig_free       g_pfnrtR0Sol_contig_free;
-extern bool                     g_frtSolUseKflt;
-extern size_t                   g_offrtSolThreadPreempt;
-extern size_t                   g_offrtSolCpuPreempt;
-extern size_t                   g_offrtSolCpuForceKernelPreempt;
-extern bool                     g_frtSolInitDone;
-extern RTDBGKRNLINFO            g_hKrnlDbgInfo;
+extern bool                            g_frtSolSplSetsEIF;
+extern RTCPUSET                        g_rtMpSolCpuSet;
+extern PFNSOL_timeout_generic          g_pfnrtR0Sol_timeout_generic;
+extern PFNSOL_untimeout_generic        g_pfnrtR0Sol_untimeout_generic;
+extern PFNSOL_cyclic_reprogram         g_pfnrtR0Sol_cyclic_reprogram;
+extern PFNSOL_contig_free              g_pfnrtR0Sol_contig_free;
+extern PFNSOL_page_noreloc_supported   g_pfnrtR0Sol_page_noreloc_supported;
+extern size_t                          g_offrtSolThreadPreempt;
+extern size_t                          g_offrtSolCpuPreempt;
+extern size_t                          g_offrtSolCpuForceKernelPreempt;
+extern bool                            g_frtSolInitDone;
+extern RTDBGKRNLINFO                   g_hKrnlDbgInfo;
 
 /*
  * Workarounds for running on old versions of solaris with different cross call

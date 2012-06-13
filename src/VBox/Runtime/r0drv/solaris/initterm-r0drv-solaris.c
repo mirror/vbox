@@ -153,7 +153,8 @@ DECLHIDDEN(int) rtR0InitNative(void)
             }
             else if (max_cpuid + 1 != IPRT_SOL_NCPUS)
             {
-                cmn_err(CE_NOTE, "rtR0InitNative: cpuset_t size mismatch! max_cpuid=%d IPRT_SOL_NCPUS=%d\n", max_cpuid, IPRT_SOL_NCPUS);
+                cmn_err(CE_NOTE, "rtR0InitNative: cpuset_t size mismatch! max_cpuid=%d IPRT_SOL_NCPUS=%d\n", max_cpuid,
+                        IPRT_SOL_NCPUS);
                 rc = VERR_NOT_SUPPORTED;
                 goto errorbail;
             }
@@ -162,8 +163,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
         /*
          * Optional: Timeout hooks.
          */
-        RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "timeout_generic", (void **)&g_pfnrtR0Sol_timeout_generic);
-        RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "untimeout_generic", (void **)&g_pfnrtR0Sol_untimeout_generic);
+        RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "timeout_generic",
+                                   (void **)&g_pfnrtR0Sol_timeout_generic);
+        RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "untimeout_generic",
+                                   (void **)&g_pfnrtR0Sol_untimeout_generic);
         if ((g_pfnrtR0Sol_timeout_generic == NULL) != (g_pfnrtR0Sol_untimeout_generic == NULL))
         {
             static const char *s_apszFn[2] = { "timeout_generic", "untimeout_generic" };
@@ -172,7 +175,14 @@ DECLHIDDEN(int) rtR0InitNative(void)
             g_pfnrtR0Sol_timeout_generic   = NULL;
             g_pfnrtR0Sol_untimeout_generic = NULL;
         }
-        RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "cyclic_reprogram", (void **)&g_pfnrtR0Sol_cyclic_reprogram);
+        RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "cyclic_reprogram",
+                                   (void **)&g_pfnrtR0Sol_cyclic_reprogram);
+
+        /*
+         * Optional: Querying page no-relocation support.
+         */
+        RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /*pszModule */, "page_noreloc_supported",
+                                   (void **)&g_pfnrtR0Sol_page_noreloc_supported);
 
         /*
          * Weak binding failures: contig_free
