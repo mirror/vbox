@@ -420,9 +420,10 @@ int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTY
     int rc = VINF_SUCCESS;
     PATCHGEN_PROLOG(pVM, pPatch);
 
-    rc = patmPatchReadBytes(pVM, pPB, pCurInstrGC, pCpu->opsize);
+    uint32_t const cbInstrShutUpGcc = pCpu->opsize;
+    rc = patmPatchReadBytes(pVM, pPB, pCurInstrGC, cbInstrShutUpGcc);
     AssertRC(rc);
-    PATCHGEN_EPILOG(pPatch, pCpu->opsize);
+    PATCHGEN_EPILOG(pPatch, cbInstrShutUpGcc); 
     return rc;
 }
 

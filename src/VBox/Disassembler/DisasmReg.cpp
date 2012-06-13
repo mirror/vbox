@@ -200,7 +200,7 @@ static const unsigned g_aRegHidSegIndex[] =
 
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
+DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 {
     int subtype = OP_PARM_VSUBTYPE(pParam->param);
 
@@ -256,35 +256,31 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 }
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
+DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 {
     if (pCpu->prefix & DISPREFIX_SEG)
-    {
         /* Use specified SEG: prefix. */
-        return pCpu->enmPrefixSeg;
-    }
-    else
+        return (DIS_SELREG)pCpu->idxSegPrefix;
+
+    /* Guess segment register by parameter type. */
+    if (pParam->fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN64|DISUSE_REG_GEN16))
     {
-        /* Guess segment register by parameter type. */
-        if (pParam->fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN64|DISUSE_REG_GEN16))
-        {
-            AssertCompile(USE_REG_ESP == USE_REG_RSP);
-            AssertCompile(USE_REG_EBP == USE_REG_RBP);
-            AssertCompile(USE_REG_ESP == USE_REG_SP);
-            AssertCompile(USE_REG_EBP == USE_REG_BP);
-            if (pParam->base.reg_gen == USE_REG_ESP || pParam->base.reg_gen == USE_REG_EBP)
-                return DIS_SELREG_SS;
-        }
-        /* Default is use DS: for data access. */
-        return DIS_SELREG_DS;
+        AssertCompile(USE_REG_ESP == USE_REG_RSP);
+        AssertCompile(USE_REG_EBP == USE_REG_RBP);
+        AssertCompile(USE_REG_ESP == USE_REG_SP);
+        AssertCompile(USE_REG_EBP == USE_REG_BP);
+        if (pParam->base.reg_gen == USE_REG_ESP || pParam->base.reg_gen == USE_REG_EBP)
+            return DIS_SELREG_SS;
     }
+    /* Default is use DS: for data access. */
+    return DIS_SELREG_DS;
 }
 //*****************************************************************************
 //*****************************************************************************
 DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
 {
     Assert(pCpu->prefix & DISPREFIX_SEG);
-    switch(pCpu->enmPrefixSeg)
+    switch (pCpu->idxSegPrefix)
     {
     case DIS_SELREG_ES:
         return 0x26;
@@ -503,7 +499,7 @@ DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL val)
  * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
  *
  */
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype)
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype)
 {
     memset(pParamVal, 0, sizeof(*pParamVal));
 
@@ -762,7 +758,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
  * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
  *
  */
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, void **ppReg, size_t *pcbSize)
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, void **ppReg, size_t *pcbSize)
 {
     NOREF(pCpu);
     if (pParam->fUse & (DISUSE_REG_GEN8|DISUSE_REG_GEN16|DISUSE_REG_GEN32|DISUSE_REG_FP|DISUSE_REG_MMX|DISUSE_REG_XMM|DISUSE_REG_CR|DISUSE_REG_DBG|DISUSE_REG_SEG|DISUSE_REG_TEST))
