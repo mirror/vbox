@@ -97,11 +97,10 @@ DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
     int rc = DISInstEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pCpu, pcbInstr);
     if (RT_SUCCESS(rc) && pszOutput && cbOutput)
     {
-        rc = DISFormatYasmEx(pCpu, pszOutput, cbOutput,
-                             DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_BRACKETS | DIS_FMT_FLAGS_BYTES_SPACED
-                             | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_ADDR_LEFT,
-                             NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-        size_t cch = strlen(pszOutput);
+        size_t cch = DISFormatYasmEx(pCpu, pszOutput, cbOutput,
+                                     DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_BRACKETS | DIS_FMT_FLAGS_BYTES_SPACED
+                                     | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_ADDR_LEFT,
+                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
         if (cch < cbOutput)
         {
             pszOutput[cch++] = '\n';
