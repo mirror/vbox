@@ -486,11 +486,30 @@ AssertCompileSize(DISOPPARAM, 32);
 /** Pointer to opcode parameter. */
 typedef DISOPPARAM *PDISOPPARAM;
 /** Pointer to opcode parameter. */
-typedef const DISOPPARAM *PCOP_PARAMETER;
+typedef const DISOPPARAM *PCDISOPPARAM;
 
 
+/**
+ * Opcode descriptor.
+ */
+typedef struct DISOPCODE
+{
+#ifndef DIS_CORE_ONLY
+    const char  *pszOpcode;
+#endif
+    uint8_t     idxParse1;
+    uint8_t     idxParse2;
+    uint8_t     idxParse3;
+    uint8_t     uUnused;
+    uint16_t    opcode;
+    uint16_t    param1;
+    uint16_t    param2;
+    uint16_t    param3;
+    uint32_t    optype;
+} DISOPCODE;
 /** Pointer to const opcode. */
 typedef const struct DISOPCODE *PCDISOPCODE;
+
 
 /**
  * Callback for reading opcode bytes.
@@ -510,9 +529,14 @@ typedef FNDISREADBYTES *PFNDISREADBYTES;
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal (really, I'm too lazy to update all the functions). */
 typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu);
+/** Pointer to a disassembler parser function. */
 typedef FNDISPARSE *PFNDISPARSE;
+/** Pointer to a const disassembler parser function pointer. */
 typedef PFNDISPARSE const *PCPFNDISPARSE;
 
+/**
+ * The diassembler state and result.
+ */
 typedef struct DISCPUSTATE
 {
     /* Because of apvUserData[1] and apvUserData[2], put the less frequently
@@ -612,25 +636,6 @@ typedef struct DISCPUSTATE
 #endif
 } DISCPUSTATE;
 
-
-/**
- * Opcode descriptor.
- */
-typedef struct DISOPCODE
-{
-#ifndef DIS_CORE_ONLY
-    const char  *pszOpcode;
-#endif
-    uint8_t     idxParse1;
-    uint8_t     idxParse2;
-    uint8_t     idxParse3;
-    uint8_t     uUnused;
-    uint16_t    opcode;
-    uint16_t    param1;
-    uint16_t    param2;
-    uint16_t    param3;
-    uint32_t    optype;
-} DISOPCODE;
 
 
 DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode,
