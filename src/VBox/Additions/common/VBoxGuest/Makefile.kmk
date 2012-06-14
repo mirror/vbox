@@ -52,10 +52,10 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
  VBoxGuest_INCS.freebsd  = $(VBoxGuest_0_OUTDIR) $(PATH_STAGE)/gen-sys-hdrs
  VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
  ifeq ($(KBUILD_HOST),solaris)
-  VBoxGuest_LDFLAGS.solaris += -N misc/ctf
+  VBoxGuest_LDFLAGS.solaris       += -N misc/ctf
  else
-  VBoxGuest_SOURCES.solaris = solaris/deps.s
-  solaris/deps.s_ASFLAGS    = -f bin -g null
+  VBoxGuest_SOURCES.solaris        = solaris/deps.s
+  VBoxGuest_solaris/deps.s_ASFLAGS = -f bin -g null
  endif
  ifneq ($(KBUILD_TARGET),os2)
   ifeq ($(KBUILD_TARGET),win)
