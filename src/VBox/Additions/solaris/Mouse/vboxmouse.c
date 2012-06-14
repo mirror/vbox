@@ -13,6 +13,15 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
  */
 
 
@@ -24,7 +33,6 @@
 # include <sys/conf.h>
 # include <sys/modctl.h>
 # include <sys/msio.h>
-# include <sys/mutex.h>
 # include <sys/pci.h>
 # include <sys/stat.h>
 # include <sys/ddi.h>
@@ -43,7 +51,9 @@
 # define IN_RING0
 #endif  /* TESTCASE */
 
-#include "VBoxGuestInternal.h"
+#include "../../common/VBoxGuestLib/SysHlp.h"
+#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <iprt/assert.h>
@@ -65,25 +75,19 @@
 ******************************************************************************/
 
 /** The module name. */
-#define DEVICE_NAME              "vboxguest"
+#define DEVICE_NAME              "vboxmouse"
 /** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "VirtualBox GstDrv"
-/** The maximum number of open device nodes we support. */
-#define MAX_OPEN_NODES           4096
+#define DEVICE_DESC              "VirtualBox MouInt"
 
 
 /******************************************************************************
 *   Internal functions used in global structures                              *
 ******************************************************************************/
 
-static int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag,
+static int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag,
                                 int fMode, cred_t *pCred);
-static int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred);
-static int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk);
-
-static int vbgr0SolGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
-static int vbgr0SolAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
-static int vbgr0SolDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
+static int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred);
+static int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk);
 
 
 /******************************************************************************
@@ -95,10 +99,10 @@ static int vbgr0SolDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 /*
  * mod_info: STREAMS module information.
  */
-static struct module_info g_vbgr0SolModInfo =
+static struct module_info g_vbmsSolModInfo =
 {
     0x0ffff,                /* module id number */
-    "vboxguest",
+    "vboxmouse",
     0,                      /* minimum packet size */
     INFPSZ,                 /* maximum packet size accepted */
     512,                    /* high water mark for data flow control */
@@ -110,14 +114,14 @@ static struct module_info g_vbgr0SolModInfo =
  * our case this means the host and the virtual hardware, so we do not need
  * the put and service procedures.
  */
-static struct qinit g_vbgr0SolRInit =
+static struct qinit g_vbmsSolRInit =
 {
     NULL,                /* put */
     NULL,                /* service thread procedure */
-    vbgr0SolOpen,
-    vbgr0SolClose,
+    vbmsSolOpen,
+    vbmsSolClose,
     NULL,                /* reserved */
-    &g_vbgr0SolModInfo,
+    &g_vbmsSolModInfo,
     NULL                 /* module statistics structure */
 };
 
@@ -128,90 +132,59 @@ static struct qinit g_vbgr0SolRInit =
  * through at least the "consms" console mouse streams module which multiplexes
  * hardware pointer drivers to a single virtual pointer.
  */
-static struct qinit g_vbgr0SolWInit =
+static struct qinit g_vbmsSolWInit =
 {
-    vbgr0SolWPut,
+    vbmsSolWPut,
     NULL,                   /* service thread procedure */
     NULL,                   /* open */
     NULL,                   /* close */
     NULL,                   /* reserved */
-    &g_vbgr0SolModInfo,
+    &g_vbmsSolModInfo,
     NULL                    /* module statistics structure */
 };
 
 /**
  * streamtab: for drivers that support char/block entry points.
  */
-static struct streamtab g_vbgr0SolStreamTab =
+static struct streamtab g_vbmsSolStreamTab =
 {
-    &g_vbgr0SolRInit,
-    &g_vbgr0SolWInit,
+    &g_vbmsSolRInit,
+    &g_vbmsSolWInit,
     NULL,                   /* MUX rinit */
     NULL                    /* MUX winit */
 };
 
 /**
- * cb_ops: for drivers that support char/block entry points.
+ * fmodsw: loadable module wrapper for streams drivers.
  */
-static struct cb_ops g_vbgr0SolCbOps =
-{
-    nulldev,                /* open */
-    nulldev,                /* close */
-    nulldev,                /* b strategy */
-    nulldev,                /* b dump */
-    nulldev,                /* b print */
-    nulldev,                /* c read */
-    nulldev,                /* c write */
-    nulldev,                /* c ioctl */
-    nulldev,                /* c devmap */
-    nulldev,                /* c mmap */
-    nulldev,                /* c segmap */
-    nochpoll,               /* c poll */
-    ddi_prop_op,            /* property ops */
-    &g_vbgr0SolStreamTab,
-    D_NEW | D_MP,           /* compat. flag */
+static struct fmodsw g_vbmsSolStrWrapper = {
+    "vboxmouse",
+    &g_vbmsSolStreamTab,
+    D_MP | D_MTPERMOD
 };
 
 /**
- * dev_ops: for driver device operations.
+ * modlstrmod: export stream modules specifics to the kernel.
  */
-static struct dev_ops g_vbgr0SolDevOps =
+static struct modlstrmod g_vbmsSolModule =
 {
-    DEVO_REV,               /* driver build revision */
-    0,                      /* ref count */
-    vbgr0SolGetInfo,
-    nulldev,                /* identify */
-    nulldev,                /* probe */
-    vbgr0SolAttach,
-    vbgr0SolDetach,
-    nodev,                  /* reset */
-    &g_vbgr0SolCbOps,
-    (struct bus_ops *)0,
-    nodev                   /* power */
-};
-
-/**
- * modldrv: export driver specifics to the kernel.
- */
-static struct modldrv g_vbgr0SolModule =
-{
-    &mod_driverops,         /* extern from kernel */
+    &mod_strmodops,         /* extern from kernel */
     DEVICE_DESC " " VBOX_VERSION_STRING "r" RT_XSTR(VBOX_SVN_REV),
-    &g_vbgr0SolDevOps
+    &g_vbmsSolStrWrapper
 };
 
 /**
  * modlinkage: export install/remove/info to the kernel.
  */
-static struct modlinkage g_vbgr0SolModLinkage =
+static struct modlinkage g_vbmsSolModLinkage =
 {
     MODREV_1,               /* loadable module system revision */
-    &g_vbgr0SolModule,
+    &g_vbmsSolModule,
     NULL                    /* terminate array of linkage structures */
 };
 
 #else  /* TESTCASE */
-static void *g_vbgr0SolModLinkage;
+static void *g_vbmsSolModLinkage;
 #endif  /* TESTCASE */
 
 /**
@@ -219,8 +192,8 @@ static void *g_vbgr0SolModLinkage;
  */
 typedef struct
 {
-    /** Pointer to the session handle. */
-    PVBOXGUESTSESSION  pSession;
+    /** Pointer to the Guest Library handle for the main driver. */
+    VBGLDRIVER         Driver;
     /** The STREAMS write queue which we need for sending messages up to
      * user-space. */
     queue_t           *pWriteQueue;
@@ -232,45 +205,15 @@ typedef struct
      * absolute mouse position reporting.
      */
     int                cMaxScreenY;
-} VBGR0STATE, *PVBGR0STATE;
+} VBMSSTATE, *PVBMSSTATE;
 
 
 /******************************************************************************
 *   Global Variables                                                          *
 ******************************************************************************/
 
-/** Device handle (we support only one instance). */
-static dev_info_t          *g_pDip = NULL;
-/** Array of state structures for open device nodes.  I don't care about
- * wasting a few K of memory. */
-static VBGR0STATE           g_aOpenNodeStates[MAX_OPEN_NODES] /* = { 0 } */;
-/** Mutex to protect the queue pointers in the node states from being unset
- * during an IRQ. */
-static kmutex_t             g_StateMutex;
-/** Device extention & session data association structure. */
-static VBOXGUESTDEVEXT      g_DevExt;
-/** IO port handle. */
-static ddi_acc_handle_t     g_PciIOHandle;
-/** MMIO handle. */
-static ddi_acc_handle_t     g_PciMMIOHandle;
-/** IO Port. */
-static uint16_t             g_uIOPortBase;
-/** Address of the MMIO region.*/
-static char                *g_pMMIOBase;  /* Actually caddr_t. */
-/** Size of the MMIO region. */
-static off_t                g_cbMMIO;
-/** Pointer to the interrupt handle vector */
-static ddi_intr_handle_t   *g_pIntr;
-/** Number of actually allocated interrupt handles */
-static size_t               g_cIntrAllocated;
-/** The IRQ Mutex */
-static kmutex_t             g_IrqMutex;
-/** Layered device handle for kernel keep-attached opens */
-static ldi_handle_t         g_LdiHandle = NULL;
-/** Ref counting for IDCOpen calls */
-static uint64_t             g_cLdiOpens = 0;
-/** The Mutex protecting the LDI handle in IDC opens */
-static kmutex_t             g_LdiMtx;
+/** Global driver state.  Actually this could be allocated dynamically. */
+static VBMSSTATE            g_OpenNodeState /* = { 0 } */;
 
 
 /******************************************************************************
@@ -283,35 +226,22 @@ int _init(void)
     /*
      * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
      */
-    int rc = RTR0Init(0);
+    int rc = VbglInit();
     if (RT_SUCCESS(rc))
     {
-        PRTLOGGER pRelLogger;
-        static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-        modctl_t *pModCtl;
-
-        rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
-                         "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                           RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER
-                         | RTLOGDEST_USER, NULL);
-        if (RT_SUCCESS(rc))
-            RTLogRelSetDefaultInstance(pRelLogger);
-        else
-            cmn_err(CE_NOTE, "failed to initialize driver logging rc=%d!\n", rc);
-
         /*
          * Prevent module autounloading.
          */
-        pModCtl = mod_getctl(&g_vbgr0SolModLinkage);
+        modctl_t *pModCtl = mod_getctl(&g_vbmsSolModLinkage);
         if (pModCtl)
             pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
         else
             LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
-        rc = mod_install(&g_vbgr0SolModLinkage);
+        rc = mod_install(&g_vbmsSolModLinkage);
     }
     else
     {
-        cmn_err(CE_NOTE, "_init: RTR0Init failed. rc=%d\n", rc);
+        cmn_err(CE_NOTE, "_init: VbglInit failed. rc=%d\n", rc);
         return EINVAL;
     }
 
@@ -336,8 +266,7 @@ int _fini(void)
     int rc;
 
     LogRelFlow((DEVICE_NAME ":_fini\n"));
-    rc = mod_remove(&g_vbgr0SolModLinkage);
-    mutex_destroy(&g_StateMutex);
+    rc = mod_remove(&g_vbmsSolModLinkage);
 
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
@@ -351,7 +280,7 @@ int _fini(void)
 int _info(struct modinfo *pModInfo)
 {
     LogFlow((DEVICE_NAME ":_info\n"));
-    return mod_info(&g_vbgr0SolModLinkage, pModInfo);
+    return mod_info(&g_vbmsSolModLinkage, pModInfo);
 }
 
 
@@ -361,36 +290,30 @@ int _info(struct modinfo *pModInfo)
 
 /** Calls the kernel IOCtl to report mouse status to the host on behalf of
  * an open session. */
-static int vbgr0SolSetMouseStatus(PVBOXGUESTSESSION pSession, uint32_t fStatus)
+static int vbmsSolSetMouseStatus(VBGLDRIVER *pDriver, uint32_t fStatus)
 {
-    return VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &g_DevExt,
-                                pSession, &fStatus, sizeof(fStatus), NULL);
+    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &fStatus,
+                           sizeof(fStatus));
 }
 
-/** Resets (zeroes) a member in our open node state array in an IRQ-safe way.
- */
-static void vbgr0SolResetSoftState(PVBGR0STATE pState)
-{
-    mutex_enter(&g_StateMutex);
-    RT_ZERO(*pState);
-    mutex_exit(&g_StateMutex);
-}
 
 /******************************************************************************
 *   Main code                                                                 *
 ******************************************************************************/
 
+static void vbmsSolNotify(void *pvState);
+static void vbmsSolVUIDPutAbsEvent(PVBMSSTATE pState, ushort_t cEvent,
+                                   int cValue);
+
 /**
  * Open callback for the read queue, which we use as a generic device open
  * handler.
  */
-int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
+int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
                  cred_t *pCred)
 {
     int                 rc;
-    PVBOXGUESTSESSION   pSession = NULL;
-    PVBGR0STATE pState = NULL;
-    unsigned cInstance;
+    PVBMSSTATE pState = NULL;
 
     NOREF(fFlag);
     NOREF(pCred);
@@ -398,9 +321,7 @@ int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
 
     /*
      * Sanity check on the mode parameter - only open as a driver, not a
-     * module, and we do cloning ourselves.  Note that we start at 1, as minor
-     * zero was allocated to the file system device node in vbgr0SolAttach
-     * (see https://blogs.oracle.com/timatworkhomeandinbetween/entry/using_makedevice_in_a_drivers).
+     * module, and we do cloning ourselves.
      */
     if (fMode)
     {
@@ -408,39 +329,38 @@ int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
         return EINVAL;
     }
 
-    for (cInstance = 1; cInstance < MAX_OPEN_NODES; cInstance++)
+    if (!ASMAtomicCmpXchgPtr(&g_OpenNodeState.pWriteQueue,
+                             WR(pReadQueue), NULL))
     {
-        if (ASMAtomicCmpXchgPtr(&g_aOpenNodeStates[cInstance].pWriteQueue,
-                                WR(pReadQueue), NULL))
-        {
-            pState = &g_aOpenNodeStates[cInstance];
-            break;
-        }
-    }
-    if (!pState)
-    {
-        LogRelFlow((DEVICE_NAME "::Open: too many open instances."));
+        LogRelFlow((DEVICE_NAME "::Open: only one instance allowed."));
         return ENXIO;
     }
+    pState = &g_OpenNodeState;
 
     /*
      * Create a new session.
      */
-    rc = VBoxGuestCreateUserSession(&g_DevExt, &pSession);
+    rc = vbglDriverOpen(&pState->Driver);
     if (RT_SUCCESS(rc))
     {
-        pState->pSession = pSession;
-        *pDev = makedevice(getmajor(*pDev), cInstance);
+        VBoxGuestMouseSetNotifyCallback NotifyCallback;
+
         /* Initialise user data for the queues to our state and vice-versa. */
         WR(pReadQueue)->q_ptr = (char *)pState;
         pReadQueue->q_ptr = (char *)pState;
+        /* Enable our IRQ handler. */
+        NotifyCallback.pfnNotify = vbmsSolNotify;
+        NotifyCallback.pvUser    = (void *)pState;
+        vbglDriverIOCtl(&pState->Driver,
+                        VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK,
+                        &NotifyCallback, sizeof(NotifyCallback));
         qprocson(pReadQueue);
-        LogRel((DEVICE_NAME "::Open: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
+        LogRel((DEVICE_NAME "::Open\n"));
         return 0;
     }
 
     /* Failed, clean up. */
-    vbgr0SolResetSoftState(pState);
+    ASMAtomicWriteNullPtr(&pState->pWriteQueue);
 
     LogRel((DEVICE_NAME "::Open: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
     return EFAULT;
@@ -448,15 +368,79 @@ int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
 
 
 /**
+ * Notification callback, called when the VBoxGuest mouse pointer is moved. 
+ * We send a VUID event up to user space.  We may send a miscalculated event
+ * if a resolution change is half-way through, but that is pretty much to be
+ * expected, so we won't worry about it.
+ */
+void vbmsSolNotify(void *pvState)
+{
+    PVBMSSTATE pState = (PVBMSSTATE)pvState;
+    VMMDevReqMouseStatus *pReq;
+    int rc;
+    LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
+
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq),
+                     VMMDevReq_GetMouseStatus);
+    if (RT_FAILURE(rc))
+        return;  /* If kernel memory is short a missed event is acceptable! */
+    pReq->mouseFeatures = 0;
+    pReq->pointerXPos = 0;
+    pReq->pointerYPos = 0;
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_SUCCESS(rc))
+    {
+        int cMaxScreenX  = pState->cMaxScreenX;
+        int cMaxScreenY  = pState->cMaxScreenY;
+
+        if (cMaxScreenX && cMaxScreenY)
+        {
+            vbmsSolVUIDPutAbsEvent(pState, LOC_X_ABSOLUTE,
+                                     pReq->pointerXPos * cMaxScreenX
+                                   / VMMDEV_MOUSE_RANGE_MAX);
+            vbmsSolVUIDPutAbsEvent(pState, LOC_Y_ABSOLUTE,
+                                     pReq->pointerYPos * cMaxScreenY
+                                   / VMMDEV_MOUSE_RANGE_MAX);
+        }
+    }
+    VbglGRFree(&pReq->header);
+}
+
+
+void vbmsSolVUIDPutAbsEvent(PVBMSSTATE pState, ushort_t cEvent,
+                            int cValue)
+{
+    queue_t *pReadQueue = RD(pState->pWriteQueue);
+    mblk_t *pMBlk = allocb(sizeof(Firm_event), BPRI_HI);
+    Firm_event *pEvent;
+    AssertReturnVoid(cEvent == LOC_X_ABSOLUTE || cEvent == LOC_Y_ABSOLUTE);
+    if (!pMBlk)
+        return;  /* If kernel memory is short a missed event is acceptable! */
+    pEvent = (Firm_event *)pMBlk->b_wptr;
+    pEvent->id        = cEvent;
+    pEvent->pair_type = FE_PAIR_DELTA;
+    pEvent->pair      = cEvent == LOC_X_ABSOLUTE ? LOC_X_DELTA : LOC_Y_DELTA;
+    pEvent->value     = cValue;
+    uniqtime32(&pEvent->time);
+    pMBlk->b_wptr += sizeof(Firm_event);
+    /* Put the message on the queue immediately if it is not blocked. */
+    if (canput(pReadQueue->q_next))
+        putnext(pReadQueue, pMBlk);
+    else
+        putbq(pReadQueue, pMBlk);
+}
+
+
+/**
  * Close callback for the read queue, which we use as a generic device close
  * handler.
  */
-int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
+int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
 {
-    PVBOXGUESTSESSION pSession = NULL;
-    PVBGR0STATE pState = (PVBGR0STATE)pReadQueue->q_ptr;
+    PVBMSSTATE pState = (PVBMSSTATE)pReadQueue->q_ptr;
+    VBoxGuestMouseSetNotifyCallback NotifyCallback;
 
-    LogFlow((DEVICE_NAME "::Close pid=%d\n", (int)RTProcSelf()));
+    LogFlow((DEVICE_NAME "::Close\n"));
     NOREF(fFlag);
     NOREF(pCred);
 
@@ -465,59 +449,52 @@ int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
         Log((DEVICE_NAME "::Close: failed to get pState.\n"));
         return EFAULT;
     }
-    qprocsoff(pReadQueue);
-    pSession = pState->pSession;
-    vbgr0SolResetSoftState(pState);
-    pReadQueue->q_ptr = NULL;
 
-    Log((DEVICE_NAME "::Close: pSession=%p pState=%p\n", pSession, pState));
-    if (!pSession)
-    {
-        Log((DEVICE_NAME "::Close: failed to get pSession.\n"));
-        return EFAULT;
-    }
+    /* Disable our IRQ handler. */
+    RT_ZERO(NotifyCallback);
+    vbglDriverIOCtl(&pState->Driver,
+                    VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK,
+                    &NotifyCallback, sizeof(NotifyCallback));
+    qprocsoff(pReadQueue);
 
     /*
      * Close the session.
      */
-    VBoxGuestCloseSession(&g_DevExt, pSession);
+    vbglDriverClose(&pState->Driver);
+    ASMAtomicWriteNullPtr(&pState->pWriteQueue);
+    pReadQueue->q_ptr = NULL;
     return 0;
 }
 
 
 #ifdef TESTCASE
-/** Simple test of vbgr0SolOpen and vbgr0SolClose. */
+/** Simple test of vbmsSolOpen and vbmsSolClose. */
 static void testOpenClose(RTTEST hTest)
 {
-    queue_t aQueues[4];
+    queue_t aQueues[2];
     dev_t device = 0;
     int rc;
 
-    RTTestSub(hTest, "Testing vbgr0SolOpen and vbgr0SolClose");
-    RT_ZERO(g_aOpenNodeStates);
+    RTTestSub(hTest, "Testing vbmsSolOpen and vbmsSolClose");
+    RT_ZERO(g_OpenNodeState);
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
-    doInitQueues(&aQueues[2]);
-    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    rc = vbmsSolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
     RTTEST_CHECK(hTest, rc == 0);
-    RTTEST_CHECK(hTest, g_aOpenNodeStates[1].pWriteQueue == WR(&aQueues[0]));
-    rc = vbgr0SolOpen(RD(&aQueues[2]), &device, 0, 0, NULL);
-    RTTEST_CHECK(hTest, rc == 0);
-    RTTEST_CHECK(hTest, g_aOpenNodeStates[2].pWriteQueue == WR(&aQueues[2]));
-    vbgr0SolClose(RD(&aQueues[0]), 0, NULL);
-    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    RTTEST_CHECK(hTest, g_OpenNodeState.pWriteQueue == WR(&aQueues[0]));
+    vbmsSolClose(RD(&aQueues[0]), 0, NULL);
 }
 #endif
 
 
-/* Helper for vbgr0SolWPut. */
-static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk);
+/* Helper for vbmsSolWPut. */
+static int vbmsSolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk);
 
 /**
  * Handler for messages sent from above (user-space and upper modules) which
  * land in our write queue.
  */
-int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
+int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
     LogRelFlowFunc((DEVICE_NAME "::\n"));
     switch (pMBlk->b_datap->db_type)
@@ -539,7 +516,7 @@ int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
         case M_IOCTL:
         case M_IOCDATA:
         {
-            int err = vbgr0SolDispatchIOCtl(pWriteQueue, pMBlk);
+            int err = vbmsSolDispatchIOCtl(pWriteQueue, pMBlk);
             if (!err)
                 qreply(pWriteQueue, pMBlk);
             else
@@ -563,7 +540,7 @@ static const Ms_screen_resolution g_TestResolution = { 640, 480 };
 static inline bool testSetResolution(RTTEST hTest, queue_t *pWriteQueue,
                                      struct msgb *pMBlk)
 {
-    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
+    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
     RTTEST_CHECK_MSG_RET(hTest,    pState->cMaxScreenX
                                == g_TestResolution.width - 1,
                          (hTest, "pState->cMaxScreenX=%d\n",
@@ -622,7 +599,7 @@ static void testWPut(RTTEST hTest)
 {
     unsigned i;
 
-    RTTestSub(hTest, "Testing vbgr0WPut");
+    RTTestSub(hTest, "Testing vbmsWPut");
     for (i = 0; i < RT_ELEMENTS(g_asTestWPut); ++i)
     {
         AssertReturnVoid(g_asTestWPut[i].cbDataIn <= g_asTestWPut[i].cbData);
@@ -655,9 +632,9 @@ void testWPutStreams(RTTEST hTest, unsigned i)
     AssertReturnVoidStmt(pMBlkCont, freemsg(pMBlk));
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
-    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    rc = vbmsSolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
     RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
-    RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
+    RTTEST_CHECK_MSG(hTest,    g_OpenNodeState.pWriteQueue
                             == WR(&aQueues[0]), (hTest, "i=%u\n", i));
     pMBlk->b_datap->db_type = M_IOCTL;
     pIOCBlk->ioc_cmd = g_asTestWPut[i].iIOCCmd;
@@ -666,7 +643,7 @@ void testWPutStreams(RTTEST hTest, unsigned i)
     memcpy(pMBlkCont->b_rptr, g_asTestWPut[i].pvDataIn,
            g_asTestWPut[i].cbDataIn);
     pMBlk->b_cont = pMBlkCont;
-    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    rc = vbmsSolWPut(WR(&aQueues[0]), pMBlk);
     RTTEST_CHECK_MSG(hTest, pIOCBlk->ioc_error == g_asTestWPut[i].rcExp,
                      (hTest, "i=%u, IOCBlk.ioc_error=%d\n", i,
                       pIOCBlk->ioc_error));
@@ -686,7 +663,7 @@ void testWPutStreams(RTTEST hTest, unsigned i)
         if (!g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), pMBlk))
             RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Called from %s.\n",
                          __PRETTY_FUNCTION__);
-    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    vbmsSolClose(RD(&aQueues[1]), 0, NULL);
     freemsg(pMBlk);
 }
 
@@ -711,16 +688,16 @@ void testWPutTransparent(RTTEST hTest, unsigned i)
     AssertReturnVoidStmt(pMBlkCont, freemsg(pMBlk));
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
-    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    rc = vbmsSolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
     RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
-    RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
+    RTTEST_CHECK_MSG(hTest,    g_OpenNodeState.pWriteQueue
                             == WR(&aQueues[0]), (hTest, "i=%u\n", i));
     pMBlk->b_datap->db_type = M_IOCTL;
     pIOCBlk->ioc_cmd = g_asTestWPut[i].iIOCCmd;
     pIOCBlk->ioc_count = TRANSPARENT;
     *(void **)pMBlkCont->b_rptr = (void *)USER_ADDRESS;
     pMBlk->b_cont = pMBlkCont;
-    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    rc = vbmsSolWPut(WR(&aQueues[0]), pMBlk);
     pCopyReq = (struct copyreq *)pMBlk->b_rptr;
     RTTEST_CHECK_MSG(hTest, (   (   g_asTestWPut[i].cbDataIn
                                  && (pMBlk->b_datap->db_type == M_COPYIN))
@@ -766,7 +743,7 @@ void testWPutTransparent(RTTEST hTest, unsigned i)
         if (!g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), pMBlk))
             RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Called from %s.\n",
                          __PRETTY_FUNCTION__);
-    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    vbmsSolClose(RD(&aQueues[1]), 0, NULL);
     freemsg(pMBlk);
 }
 
@@ -792,9 +769,9 @@ void testWPutIOCDataIn(RTTEST hTest, unsigned i)
     AssertReturnVoidStmt(g_asTestWPut[i].cbDataIn, freemsg(pMBlk));
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
-    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    rc = vbmsSolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
     RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
-    RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
+    RTTEST_CHECK_MSG(hTest,    g_OpenNodeState.pWriteQueue
                             == WR(&aQueues[0]), (hTest, "i=%u\n", i));
     pMBlk->b_datap->db_type = M_IOCDATA;
     pCopyResp->cp_cmd = g_asTestWPut[i].iIOCCmd;
@@ -803,7 +780,7 @@ void testWPutIOCDataIn(RTTEST hTest, unsigned i)
     AssertReturnVoid(g_asTestWPut[i].cbData <= MSG_DATA_SIZE);
     memcpy(pMBlkCont->b_rptr, g_asTestWPut[i].pvDataIn, g_asTestWPut[i].cbDataIn);
     pMBlk->b_cont = pMBlkCont;
-    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    rc = vbmsSolWPut(WR(&aQueues[0]), pMBlk);
     pCopyReq = (struct copyreq *)pMBlk->b_rptr;
     RTTEST_CHECK_MSG(hTest, (   (   g_asTestWPut[i].cbDataOut
                                  && (pMBlk->b_datap->db_type == M_COPYOUT))
@@ -833,7 +810,7 @@ void testWPutIOCDataIn(RTTEST hTest, unsigned i)
         if (!g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), pMBlk))
             RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Called from %s.\n",
                          __PRETTY_FUNCTION__);
-    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    vbmsSolClose(RD(&aQueues[1]), 0, NULL);
     freemsg(pMBlk);
 }
 
@@ -855,20 +832,20 @@ void testWPutIOCDataOut(RTTEST hTest, unsigned i)
                  i);
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
-    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    rc = vbmsSolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
     RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
-    RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
+    RTTEST_CHECK_MSG(hTest,    g_OpenNodeState.pWriteQueue
                             == WR(&aQueues[0]), (hTest, "i=%u\n", i));
     pMBlk->b_datap->db_type = M_IOCDATA;
     pCopyResp->cp_cmd = g_asTestWPut[i].iIOCCmd;
-    rc = vbgr0SolWPut(WR(&aQueues[0]), pMBlk);
+    rc = vbmsSolWPut(WR(&aQueues[0]), pMBlk);
     RTTEST_CHECK_MSG(hTest, pMBlk->b_datap->db_type == M_IOCACK,
                      (hTest, "i=%u, db_type=%u\n", i,
                       (unsigned) pMBlk->b_datap->db_type));
     if (!g_asTestWPut[i].rcExp)
         RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first == pMBlk,
                          (hTest, "i=%u\n", i));
-    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    vbmsSolClose(RD(&aQueues[1]), 0, NULL);
     freemsg(pMBlk);
 }
 #endif
@@ -902,19 +879,17 @@ enum IOCTLDIRECTION
  *                  used for IOCtls without data for convenience of
  *                  implemention.
  */
-typedef int FNVBGR0SOLIOCTL(PVBGR0STATE pState, int iCmd, void *pvData,
+typedef int FNVBMSSOLIOCTL(PVBMSSTATE pState, int iCmd, void *pvData,
                             size_t cbBuffer, size_t *pcbData, int *prc);
-typedef FNVBGR0SOLIOCTL *PFNVBGR0SOLIOCTL;
+typedef FNVBMSSOLIOCTL *PFNVBMSSOLIOCTL;
 
-/* Helpers for vbgr0SolDispatchIOCtl. */
-static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                               PFNVBGR0SOLIOCTL pfnHandler,
+/* Helpers for vbmsSolDispatchIOCtl. */
+static int vbmsSolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                               PFNVBMSSOLIOCTL pfnHandler,
                                int iCmd, size_t cbTransparent,
                                enum IOCTLDIRECTION enmDirection);
-static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
+static int vbmsSolVUIDIOCtl(PVBMSSTATE pState, int iCmd, void *pvData,
                              size_t cbBuffer, size_t *pcbData, int *prc);
-static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
-                              size_t cbBuffer, size_t *pcbData, int *prc);
 
 /** Table of supported VUID IOCtls. */
 struct
@@ -952,7 +927,7 @@ struct
  * @param  pWriteQueue  pointer to the STREAMS write queue structure.
  * @param  pMBlk        pointer to the STREAMS message block structure.
  */
-static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
+static int vbmsSolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
     int iCmd = pIOCBlk->ioc_cmd, iCmdType = iCmd & (0xff << 8);
@@ -973,35 +948,31 @@ static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
                 {
                     cbBuffer     = g_aVUIDIOCtlDescriptions[i].cbBuffer;
                     enmDirection = g_aVUIDIOCtlDescriptions[i].enmDirection;
-                    return vbgr0SolHandleIOCtl(pWriteQueue, pMBlk,
-                                               vbgr0SolVUIDIOCtl, iCmd,
+                    return vbmsSolHandleIOCtl(pWriteQueue, pMBlk,
+                                               vbmsSolVUIDIOCtl, iCmd,
                                                cbBuffer, enmDirection);
                 }
             return EINVAL;
         }
-        case 'V' << 8:
-            return ENOTTY;
-            return vbgr0SolHandleIOCtl(pWriteQueue, pMBlk, vbgr0SolGuestIOCtl,
-                                       iCmd, 0, UNSPECIFIED);
         default:
             return ENOTTY;
     }
 }
 
 
-/* Helpers for vbgr0SolHandleIOCtl. */
-static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
+/* Helpers for vbmsSolHandleIOCtl. */
+static int vbmsSolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd,
                                    size_t cbTransparent,
                                    enum IOCTLDIRECTION enmDirection);
 
-static int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                          PFNVBGR0SOLIOCTL pfnHandler,
+static int vbmsSolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                          PFNVBMSSOLIOCTL pfnHandler,
                                           int iCmd, size_t cbTransparent,
                                           enum IOCTLDIRECTION enmDirection);
 
-static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd);
+static int vbmsSolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd);
 
 /**
  * Generic code for handling STREAMS-specific IOCtl logic and boilerplate.  It
@@ -1024,40 +995,40 @@ static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  *                        no argument.
  * @param  enmDirection   data transfer direction of the IOCtl.
  */
-static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                               PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
+static int vbmsSolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                               PFNVBMSSOLIOCTL pfnHandler, int iCmd,
                                size_t cbTransparent,
                                enum IOCTLDIRECTION enmDirection)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
 
     if (pMBlk->b_datap->db_type == M_IOCDATA)
-        return vbgr0SolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, iCmd,
+        return vbmsSolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, iCmd,
                                        cbTransparent, enmDirection);
     else if (   pMBlk->b_datap->db_type == M_IOCTL
              && pIOCBlk->ioc_count == TRANSPARENT)
-        return vbgr0SolHandleTransparentIOCtl(pWriteQueue, pMBlk, pfnHandler,
+        return vbmsSolHandleTransparentIOCtl(pWriteQueue, pMBlk, pfnHandler,
                                               iCmd, cbTransparent,
                                               enmDirection);
     else if (pMBlk->b_datap->db_type == M_IOCTL)
-        return vbgr0SolHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler, iCmd);
+        return vbmsSolHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler, iCmd);
     return EINVAL;
 }
 
 
 /**
- * Helper for vbgr0SolHandleIOCtl.  This rather complicated-looking
+ * Helper for vbmsSolHandleIOCtl.  This rather complicated-looking
  * code is basically the standard boilerplate for handling any streams IOCtl
  * additional data, which we currently only use for transparent IOCtls.
- * @copydoc vbgr0SolHandleIOCtl
+ * @copydoc vbmsSolHandleIOCtl
  */
-static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
+static int vbmsSolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd,
                                    size_t cbTransparent,
                                    enum IOCTLDIRECTION enmDirection)
 {
     struct copyresp *pCopyResp = (struct copyresp *)pMBlk->b_rptr;
-    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
+    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
 
     if (pCopyResp->cp_rval)  /* cp_rval is a pointer used as a boolean. */
     {
@@ -1091,19 +1062,19 @@ static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
 }
 
 /**
- * Helper for vbgr0SolHandleIOCtl.  This rather complicated-looking
+ * Helper for vbmsSolHandleIOCtl.  This rather complicated-looking
  * code is basically the standard boilerplate for handling transparent IOCtls,
  * that is, IOCtls which are not re-packed inside STREAMS IOCtls.
- * @copydoc vbgr0SolHandleIOCtl
+ * @copydoc vbmsSolHandleIOCtl
  */
-int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
+int vbmsSolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd,
                                    size_t cbTransparent,
                                    enum IOCTLDIRECTION enmDirection)
 {
     int err = 0, rc = 0;
     size_t cbData = 0;
-    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
+    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
 
     if (   (enmDirection != NONE && !pMBlk->b_cont)
         || enmDirection == UNSPECIFIED)
@@ -1141,15 +1112,15 @@ int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
 }
                  
 /**
- * Helper for vbgr0SolHandleIOCtl.  This rather complicated-looking
+ * Helper for vbmsSolHandleIOCtl.  This rather complicated-looking
  * code is basically the standard boilerplate for handling any streams IOCtl.
- * @copydoc vbgr0SolHandleIOCtl
+ * @copydoc vbmsSolHandleIOCtl
  */
-static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd)
+static int vbmsSolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
-    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
+    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
     uint_t cbBuffer = pIOCBlk->ioc_count;
     void *pvData = NULL;
     int err, rc = 0;
@@ -1174,9 +1145,9 @@ static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
 
 /**
  * Handle a VUID input device IOCtl.
- * @copydoc FNVBGR0SOLIOCTL
+ * @copydoc FNVBMSSOLIOCTL
  */
-static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
+static int vbmsSolVUIDIOCtl(PVBMSSTATE pState, int iCmd, void *pvData,
                              size_t cbBuffer, size_t *pcbData, int *prc)
 {
     LogFlowFunc((DEVICE_NAME ":: " /* no '\n' */));
@@ -1226,9 +1197,9 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
             pState->cMaxScreenX = pResolution->width  - 1;
             pState->cMaxScreenY = pResolution->height - 1;
             /* Note: we don't disable this again until session close. */
-            rc = vbgr0SolSetMouseStatus(pState->pSession,
-                                          VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                        | VMMDEV_MOUSE_NEW_PROTOCOL);
+            rc = vbmsSolSetMouseStatus(&pState->Driver,
+                                         VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                       | VMMDEV_MOUSE_NEW_PROTOCOL);
             if (RT_SUCCESS(rc))
                 return 0;
             pState->cMaxScreenX = 0;
@@ -1264,454 +1235,6 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
     }
 }
 
-
-/**
- * Handle a VBoxGuest IOCtl.
- * @copydoc FNVBGR0SOLIOCTL
- */
-static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
-                              size_t cbBuffer, size_t *pcbData, int *prc)
-{
-    int rc = VBoxGuestCommonIOCtl(iCmd, &g_DevExt, pState->pSession, pvData, cbBuffer, pcbData);
-    if (RT_SUCCESS(rc))
-    {
-        *prc = rc;
-        return 0;
-    }
-    else
-    {
-        /*
-         * We Log() instead of LogRel() here because VBOXGUEST_IOCTL_WAITEVENT can return VERR_TIMEOUT,
-         * VBOXGUEST_IOCTL_CANCEL_ALL_EVENTS can return VERR_INTERRUPTED and possibly more in the future;
-         * which are not really failures that require logging.
-         */
-        Log((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. Cmd=%#x rc=%d\n", iCmd, rc));
-        rc = RTErrConvertToErrno(rc);
-        return rc;
-    }
-}
-
-
-/**
- * Info entry point, called by solaris kernel for obtaining driver info.
- *
- * @param   pDip            The module structure instance (do not use).
- * @param   enmCmd          Information request type.
- * @param   pvArg           Type specific argument.
- * @param   ppvResult       Where to store the requested info.
- *
- * @return  corresponding solaris error code.
- */
-int vbgr0SolGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg,
-                    void **ppvResult)
-{
-    int rc = DDI_SUCCESS;
-
-    LogFlow((DEVICE_NAME "::GetInfo\n"));
-    switch (enmCmd)
-    {
-        case DDI_INFO_DEVT2DEVINFO:
-            *ppvResult = (void *)g_pDip;
-            break;
-
-        case DDI_INFO_DEVT2INSTANCE:
-            *ppvResult = (void *)(uintptr_t)ddi_get_instance(g_pDip);
-            break;
-
-        default:
-            rc = DDI_FAILURE;
-            break;
-    }
-
-    NOREF(pvArg);
-    return rc;
-}
-
-
-/* Helpers for vbgr0SolAttach and vbgr0SolDetach. */
-static int vbgr0SolAddIRQ(dev_info_t *pDip);
-static void vbgr0SolRemoveIRQ(dev_info_t *pDip);
-
-/**
- * Attach entry point, to attach a device to the system or resume it.
- *
- * @param   pDip            The module structure instance.
- * @param   enmCmd          Attach type (ddi_attach_cmd_t)
- *
- * @return  corresponding solaris error code.
- */
-int vbgr0SolAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
-{
-    LogFlow((DEVICE_NAME "::Attach\n"));
-    switch (enmCmd)
-    {
-        case DDI_ATTACH:
-        {
-            int instance, rc;
-            ddi_acc_handle_t PciHandle;
-
-            if (g_pDip)
-            {
-                LogRel((DEVICE_NAME "::Attach: Only one instance supported.\n"));
-                return DDI_FAILURE;
-            }
-            instance = ddi_get_instance(pDip);
-
-            /*
-             * Enable resources for PCI access.
-             */
-            rc = pci_config_setup(pDip, &PciHandle);
-            if (rc == DDI_SUCCESS)
-            {
-                /*
-                 * Map the register address space.
-                 */
-                char *baseAddr;  /* Actually caddr_t. */
-                ddi_device_acc_attr_t deviceAttr;
-                deviceAttr.devacc_attr_version = DDI_DEVICE_ATTR_V0;
-                deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
-                deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
-                deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
-                rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, 0, &deviceAttr, &g_PciIOHandle);
-                if (rc == DDI_SUCCESS)
-                {
-                    /*
-                     * Read size of the MMIO region.
-                     */
-                    g_uIOPortBase = (uintptr_t)baseAddr;
-                    rc = ddi_dev_regsize(pDip, 2, &g_cbMMIO);
-                    if (rc == DDI_SUCCESS)
-                    {
-                        rc = ddi_regs_map_setup(pDip, 2, &g_pMMIOBase, 0, g_cbMMIO, &deviceAttr,
-                                        &g_PciMMIOHandle);
-                        if (rc == DDI_SUCCESS)
-                        {
-                            /*
-                             * Add IRQ of VMMDev.
-                             */
-                            rc = vbgr0SolAddIRQ(pDip);
-                            if (rc == DDI_SUCCESS)
-                            {
-                                /*
-                                 * Call the common device extension initializer.
-                                 */
-#if ARCH_BITS == 64
-# define VBOXGUEST_OS_TYPE VBOXOSTYPE_Solaris_x64
-#else
-# define VBOXGUEST_OS_TYPE VBOXOSTYPE_Solaris
-#endif
-                                rc = VBoxGuestInitDevExt(&g_DevExt,
-                                                         g_uIOPortBase,
-                                                         g_pMMIOBase, g_cbMMIO,
-                                                         VBOXGUEST_OS_TYPE,
-                                          VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
-#undef VBOXGUEST_OS_TYPE
-                                if (RT_SUCCESS(rc))
-                                {
-                                    rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
-                                    if (rc == DDI_SUCCESS)
-                                    {
-                                        g_pDip = pDip;
-                                        pci_config_teardown(&PciHandle);
-                                        return DDI_SUCCESS;
-                                    }
-
-                                    LogRel((DEVICE_NAME "::Attach: ddi_create_minor_node failed.\n"));
-                                    VBoxGuestDeleteDevExt(&g_DevExt);
-                                }
-                                else
-                                    LogRel((DEVICE_NAME "::Attach: VBoxGuestInitDevExt failed.\n"));
-                                vbgr0SolRemoveIRQ(pDip);
-                            }
-                            else
-                                LogRel((DEVICE_NAME "::Attach: vbgr0SolAddIRQ failed.\n"));
-                            ddi_regs_map_free(&g_PciMMIOHandle);
-                        }
-                        else
-                            LogRel((DEVICE_NAME "::Attach: ddi_regs_map_setup for MMIO region failed.\n"));
-                    }
-                    else
-                        LogRel((DEVICE_NAME "::Attach: ddi_dev_regsize for MMIO region failed.\n"));
-                    ddi_regs_map_free(&g_PciIOHandle);
-                }
-                else
-                    LogRel((DEVICE_NAME "::Attach: ddi_regs_map_setup for IOport failed.\n"));
-                pci_config_teardown(&PciHandle);
-            }
-            else
-                LogRel((DEVICE_NAME "::Attach: pci_config_setup failed rc=%d.\n", rc));
-            return DDI_FAILURE;
-        }
-
-        case DDI_RESUME:
-        {
-            /** @todo implement resume for guest driver. */
-            return DDI_SUCCESS;
-        }
-
-        default:
-            return DDI_FAILURE;
-    }
-}
-
-
-/**
- * Detach entry point, to detach a device to the system or suspend it.
- *
- * @param   pDip            The module structure instance.
- * @param   enmCmd          Attach type (ddi_attach_cmd_t)
- *
- * @return  corresponding solaris error code.
- */
-int vbgr0SolDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
-{
-    LogFlow((DEVICE_NAME "::Detach\n"));
-    switch (enmCmd)
-    {
-        case DDI_DETACH:
-        {
-            vbgr0SolRemoveIRQ(pDip);
-            ddi_regs_map_free(&g_PciIOHandle);
-            ddi_regs_map_free(&g_PciMMIOHandle);
-            ddi_remove_minor_node(pDip, NULL);
-            VBoxGuestDeleteDevExt(&g_DevExt);
-            g_pDip = NULL;
-            return DDI_SUCCESS;
-        }
-
-        case DDI_SUSPEND:
-        {
-            /** @todo implement suspend for guest driver. */
-            return DDI_SUCCESS;
-        }
-
-        default:
-            return DDI_FAILURE;
-    }
-}
-
-
-/* Interrupt service routine installed by vbgr0SolAddIRQ. */
-static uint_t vbgr0SolISR(char *Arg /* Actually caddr_t. */);
-
-/**
- * Sets IRQ for VMMDev.
- *
- * @returns Solaris error code.
- * @param   pDip     Pointer to the device info structure.
- */
-static int vbgr0SolAddIRQ(dev_info_t *pDip)
-{
-    int IntrType = 0, rc;
-
-    LogFlow((DEVICE_NAME "::AddIRQ: pDip=%p\n", pDip));
-    rc = ddi_intr_get_supported_types(pDip, &IntrType);
-    if (rc == DDI_SUCCESS)
-    {
-        /* We won't need to bother about MSIs. */
-        if (IntrType & DDI_INTR_TYPE_FIXED)
-        {
-            int IntrCount = 0;
-            rc = ddi_intr_get_nintrs(pDip, IntrType, &IntrCount);
-            if (   rc == DDI_SUCCESS
-                && IntrCount > 0)
-            {
-                int IntrAvail = 0;
-                rc = ddi_intr_get_navail(pDip, IntrType, &IntrAvail);
-                if (   rc == DDI_SUCCESS
-                    && IntrAvail > 0)
-                {
-                    /* Allocated kernel memory for the interrupt handles. The allocation size is stored internally. */
-                    g_pIntr = RTMemAlloc(IntrCount * sizeof(ddi_intr_handle_t));
-                    if (g_pIntr)
-                    {
-                        int IntrAllocated;
-                        unsigned i;
-                        rc = ddi_intr_alloc(pDip, g_pIntr, IntrType, 0, IntrCount, &IntrAllocated, DDI_INTR_ALLOC_NORMAL);
-                        if (   rc == DDI_SUCCESS
-                            && IntrAllocated > 0)
-                        {
-                            uint_t uIntrPriority;
-                            g_cIntrAllocated = IntrAllocated;
-                            rc = ddi_intr_get_pri(g_pIntr[0], &uIntrPriority);
-                            if (rc == DDI_SUCCESS)
-                            {
-                                /* Initialize the mutex. */
-                                mutex_init(&g_IrqMutex, NULL, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
-
-                                /* Initialise the node state mutex.  This will
-                                 * be taken in the ISR. */
-                                mutex_init(&g_StateMutex, NULL, MUTEX_DRIVER,
-                                           DDI_INTR_PRI(uIntrPriority));
-                                /* Assign interrupt handler functions and enable interrupts. */
-                                for (i = 0; i < IntrAllocated; i++)
-                                {
-                                    rc = ddi_intr_add_handler(g_pIntr[i], (ddi_intr_handler_t *)vbgr0SolISR,
-                                                            NULL /* No Private Data */, NULL);
-                                    if (rc == DDI_SUCCESS)
-                                        rc = ddi_intr_enable(g_pIntr[i]);
-                                    if (rc != DDI_SUCCESS)
-                                    {
-                                        /* Changing local IntrAllocated to hold so-far allocated handles for freeing. */
-                                        IntrAllocated = i;
-                                        break;
-                                    }
-                                }
-                                if (rc == DDI_SUCCESS)
-                                    return rc;
-
-                                /* Remove any assigned handlers */
-                                LogRel((DEVICE_NAME ":failed to assign IRQs allocated=%d\n", IntrAllocated));
-                                for (i = 0; i < IntrAllocated; i++)
-                                    ddi_intr_remove_handler(g_pIntr[i]);
-                            }
-                            else
-                                LogRel((DEVICE_NAME "::AddIRQ: failed to get priority of interrupt. rc=%d\n", rc));
-
-                            /* Remove allocated IRQs, too bad we can free only one handle at a time. */
-                            for (i = 0; i < g_cIntrAllocated; i++)
-                                ddi_intr_free(g_pIntr[i]);
-                        }
-                        else
-                            LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
-                        RTMemFree(g_pIntr);
-                    }
-                    else
-                        LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
-                }
-                else
-                    LogRel((DEVICE_NAME "::AddIRQ: failed to get or insufficient available IRQs. rc=%d IntrAvail=%d\n", rc, IntrAvail));
-            }
-            else
-                LogRel((DEVICE_NAME "::AddIRQ: failed to get or insufficient number of IRQs. rc=%d IntrCount=%d\n", rc, IntrCount));
-        }
-        else
-            LogRel((DEVICE_NAME "::AddIRQ: invalid irq type. IntrType=%#x\n", IntrType));
-    }
-    else
-        LogRel((DEVICE_NAME "::AddIRQ: failed to get supported interrupt types\n"));
-    return rc;
-}
-
-
-/**
- * Removes IRQ for VMMDev.
- *
- * @param   pDip     Pointer to the device info structure.
- */
-static void vbgr0SolRemoveIRQ(dev_info_t *pDip)
-{
-    unsigned i;
-
-    LogFlow((DEVICE_NAME "::RemoveIRQ:\n"));
-    for (i = 0; i < g_cIntrAllocated; i++)
-    {
-        int rc = ddi_intr_disable(g_pIntr[i]);
-        if (rc == DDI_SUCCESS)
-        {
-            rc = ddi_intr_remove_handler(g_pIntr[i]);
-            if (rc == DDI_SUCCESS)
-                ddi_intr_free(g_pIntr[i]);
-        }
-    }
-    RTMemFree(g_pIntr);
-    mutex_destroy(&g_IrqMutex);
-}
-
-
-/**
- * Interrupt Service Routine for VMMDev.
- *
- * @param   Arg     Private data (unused, will be NULL).
- * @returns DDI_INTR_CLAIMED if it's our interrupt, DDI_INTR_UNCLAIMED if it isn't.
- */
-static uint_t vbgr0SolISR(char *Arg /* Actually caddr_t. */)
-{
-    bool fOurIRQ;
-
-    LogFlow((DEVICE_NAME "::ISR:\n"));
-    mutex_enter(&g_IrqMutex);
-    fOurIRQ = VBoxGuestCommonISR(&g_DevExt);
-    mutex_exit(&g_IrqMutex);
-    return fOurIRQ ? DDI_INTR_CLAIMED : DDI_INTR_UNCLAIMED;
-}
-
-
-/* Helper for VBoxGuestNativeISRMousePollEvent. */
-static void vbgr0SolVUIDPutAbsEvent(PVBGR0STATE pState, ushort_t cEvent,
-                                    int cValue);
-
-/**
- * Native part of the IRQ service routine, called when the VBoxGuest mouse
- * pointer is moved.  We send a VUID event up to user space.
- */
-void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
-{
-    VMMDevReqMouseStatus *pReq;
-    int rc;
-    LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
-
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq),
-                     VMMDevReq_GetMouseStatus);
-    if (RT_FAILURE(rc))
-        return;  /* If kernel memory is short a missed event is acceptable! */
-    pReq->mouseFeatures = 0;
-    pReq->pointerXPos = 0;
-    pReq->pointerYPos = 0;
-    rc = VbglGRPerform(&pReq->header);
-    if (RT_SUCCESS(rc))
-    {
-        unsigned i;
-
-        mutex_enter(&g_StateMutex);
-        for (i = 1; i < MAX_OPEN_NODES; ++i)
-        {
-            int cMaxScreenX  = g_aOpenNodeStates[i].cMaxScreenX;
-            int cMaxScreenY  = g_aOpenNodeStates[i].cMaxScreenY;
-
-            if (!cMaxScreenX || !cMaxScreenY)
-                continue;
-            vbgr0SolVUIDPutAbsEvent(&g_aOpenNodeStates[i], LOC_X_ABSOLUTE,
-                                       pReq->pointerXPos * cMaxScreenX
-                                     / VMMDEV_MOUSE_RANGE_MAX);
-            vbgr0SolVUIDPutAbsEvent(&g_aOpenNodeStates[i], LOC_Y_ABSOLUTE,
-                                       pReq->pointerYPos * cMaxScreenY
-                                     / VMMDEV_MOUSE_RANGE_MAX);
-        }
-        mutex_exit(&g_StateMutex);
-    }
-    VbglGRFree(&pReq->header);
-}
-
-
-void vbgr0SolVUIDPutAbsEvent(PVBGR0STATE pState, ushort_t cEvent,
-                              int cValue)
-{
-    queue_t *pReadQueue = RD(pState->pWriteQueue);
-    mblk_t *pMBlk = allocb(sizeof(Firm_event), BPRI_HI);
-    Firm_event *pEvent;
-    AssertReturnVoid(cEvent == LOC_X_ABSOLUTE || cEvent == LOC_Y_ABSOLUTE);
-    if (!pMBlk)
-        return;  /* If kernel memory is short a missed event is acceptable! */
-    pEvent = (Firm_event *)pMBlk->b_wptr;
-    pEvent->id        = cEvent;
-    pEvent->pair_type = FE_PAIR_DELTA;
-    pEvent->pair      = cEvent == LOC_X_ABSOLUTE ? LOC_X_DELTA : LOC_Y_DELTA;
-    pEvent->value     = cValue;
-    uniqtime32(&pEvent->time);
-    pMBlk->b_wptr += sizeof(Firm_event);
-    /* Put the message on the queue immediately if it is not blocked. */
-    if (canput(pReadQueue->q_next))
-        putnext(pReadQueue, pMBlk);
-    else
-        putbq(pReadQueue, pMBlk);
-}
-
-
-/* Common code that depends on g_DevExt. */
-#ifndef TESTCASE
-# include "VBoxGuestIDC-unix.c.h"
-#endif
 
 #ifdef TESTCASE
 int main(void)
