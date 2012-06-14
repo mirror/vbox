@@ -20,9 +20,9 @@
 *******************************************************************************/
 #include <VBox/dis.h>
 #include <iprt/test.h>
-#include <iprt/asm.h>
+#include <iprt/ctype.h>
 #include <iprt/string.h>
-#include <VBox/err.h>
+#include <iprt/err.h>
 
 
 DECLASM(int) TestProc32(void);
@@ -45,15 +45,31 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         char            szOutput[256] = {0};
         int rc = DISInstrToStr(&pabInstrs[off], enmDisCpuMode, &Cpu, &cb, szOutput, sizeof(szOutput));
 
-
         RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
         RTTESTI_CHECK(cb == Cpu.opsize);
         RTTESTI_CHECK(cb > 0);
         RTTESTI_CHECK(cb <= 16);
+        RTStrStripR(szOutput);
+        RTTESTI_CHECK(szOutput[0]);
+        if (szOutput[0])
+        {
+            char *pszBytes = strchr(szOutput, '[');
+            RTTESTI_CHECK(pszBytes);
+            if (pszBytes)
+            {
+                RTTESTI_CHECK(pszBytes[-1] == ' ');
+                RTTESTI_CHECK(RT_C_IS_XDIGIT(pszBytes[1]));
+                RTTESTI_CHECK(pszBytes[cb * 3] == ']');
+                RTTESTI_CHECK(pszBytes[cb * 3 + 1] == ' ');
+
+                size_t cch = strlen(szOutput);
+                RTTESTI_CHECK(szOutput[cch - 1] != ',');
+            }
+        }
         if (cErrBefore != RTTestIErrorCount())
-            RTTestIFailureDetails("rc=%Rrc, off=%#x (%u) cbInstr=%u enmDisCpuMode=%d",
+            RTTestIFailureDetails("rc=%Rrc, off=%#x (%u) cbInstr=%u enmDisCpuMode=%d\n",
                                   rc, off, Cpu.opsize, enmDisCpuMode);
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", szOutput);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s\n", szOutput);
         off += cb;
     }
 
