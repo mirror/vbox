@@ -1999,6 +1999,143 @@ static DECLCALLBACK(void) pciIrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     }
 }
 
+static void printIndent(PCDBGFINFOHLP pHlp, int iIndent)
+{
+    for (int i = 0; i < iIndent; i++)
+    {
+        pHlp->pfnPrintf(pHlp, "    ");
+    }
+}
+
+static void pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegisters)
+{
+    for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->devices); iDev++)
+    {
+        PPCIDEVICE pPciDev = pBus->devices[iDev];
+        if (pPciDev != NULL)
+        {
+            printIndent(pHlp, iIndent);
+
+            /*
+             * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
+             * as host driver handles real devices interrupts.
+             */
+            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s%s: %04x-%04x%s%s",
+                            pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
+                            pPciDev->name,
+                            pciDevIsPassthrough(pPciDev) ? " (PASSTHROUGH)" : "",
+                            PCIDevGetWord(pPciDev, VBOX_PCI_VENDOR_ID), PCIDevGetWord(pPciDev, VBOX_PCI_DEVICE_ID),
+                            pciDevIsMsiCapable(pPciDev)  ? " MSI" : "",
+                            pciDevIsMsixCapable(pPciDev) ? " MSI-X" : ""
+                            );
+            if (PCIDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN) != 0)
+                pHlp->pfnPrintf(pHlp, " IRQ%d", PCIDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE));
+
+            pHlp->pfnPrintf(pHlp, "\n");
+
+            uint16_t iCmd = PCIDevGetWord(pPciDev, VBOX_PCI_COMMAND);
+            if ((iCmd & (VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY)) != 0)
+            {
+                for (int iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
+                {
+                    PCIIORegion* pRegion = &pPciDev->Int.s.aIORegions[iRegion];
+                    uint64_t  iRegionSize = pRegion->size;
+
+                    if (iRegionSize == 0)
+                        continue;
+
+                    uint32_t u32Addr = PCIDevGetDWord(pPciDev, PCIDevGetRegionReg(iRegion));
+                    const char * pszDesc;
+                    char szDescBuf[128];
+
+                    bool f64Bit = !!(pRegion->type & PCI_ADDRESS_SPACE_BAR64);
+                    if (pRegion->type & PCI_ADDRESS_SPACE_IO)
+                    {
+                        pszDesc = "IO";
+                        u32Addr &= ~0x3;
+                    }
+                    else
+                    {
+                        RTStrPrintf(szDescBuf, sizeof(szDescBuf), "MMIO%s%s",
+                                    f64Bit ? "64" : "32",
+                                    (pRegion->type & PCI_ADDRESS_SPACE_MEM_PREFETCH) ? " PREFETCH" : "");
+                        pszDesc = szDescBuf;
+                        u32Addr &= ~0xf;
+                    }
+
+                    printIndent(pHlp, iIndent + 2);
+                    pHlp->pfnPrintf(pHlp, "%s region #%d: %x..%x\n",
+                                    pszDesc, iRegion, u32Addr, u32Addr+iRegionSize);
+                    if (f64Bit)
+                        iRegion++;
+                }
+            }
+
+            printIndent(pHlp, iIndent + 2);
+            uint16_t iStatus = PCIDevGetWord(pPciDev, VBOX_PCI_STATUS);
+            pHlp->pfnPrintf(pHlp, "Command: %.*Rhxs, Status: %.*Rhxs\n",
+                            sizeof(uint16_t), &iCmd, sizeof(uint16_t), &iStatus);
+            printIndent(pHlp, iIndent + 2);
+            pHlp->pfnPrintf(pHlp, "Bus master: %s\n",
+                            iCmd & VBOX_PCI_COMMAND_MASTER ? "Yes" : "No");
+
+            if (fRegisters)
+            {
+                printIndent(pHlp, iIndent + 2);
+                pHlp->pfnPrintf(pHlp, "PCI registers:\n");
+                for (int iReg = 0; iReg < 0x100; )
+                {
+                    int iPerLine = 0x10;
+                    Assert (0x100 % iPerLine == 0);
+                    printIndent(pHlp, iIndent + 3);
+
+                    while (iPerLine-- > 0)
+                    {
+                        pHlp->pfnPrintf(pHlp, "%02x ", PCIDevGetByte(pPciDev, iReg++));
+                    }
+                    pHlp->pfnPrintf(pHlp, "\n");
+                }
+            }
+        }
+    }
+
+    if (pBus->cBridges > 0)
+    {
+        printIndent(pHlp, iIndent);
+        pHlp->pfnPrintf(pHlp, "Registered %d bridges, subordinate buses info follows\n", pBus->cBridges);
+        for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
+        {
+            PPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->pDevIns, PPCIBUS);
+            pciBusInfo(pBusSub, pHlp, iIndent + 1, fRegisters);
+        }
+    }
+}
+
+/**
+ * Info handler, device version.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PPCIBUS pBus = DEVINS_2_PCIBUS(pDevIns);
+
+    if (pszArgs == NULL || !strcmp(pszArgs, "basic"))
+    {
+        pciBusInfo(pBus, pHlp, 0, false);
+    }
+    else if (!strcmp(pszArgs, "verbose"))
+    {
+        pciBusInfo(pBus, pHlp, 0, true);
+    }
+    else
+    {
+        pHlp->pfnPrintf(pHlp, "Invalid argument. Recognized arguments are 'basic', 'verbose'.\n");
+    }
+}
+
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
@@ -2175,6 +2312,9 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 NULL, pciR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
+
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. Recognizes 'basic' or 'verbose' "
+                                              "as arguments, defaults to 'basic'.", pciInfo);
 
     PDMDevHlpDBGFInfoRegister(pDevIns, "pciirq", "Display PCI IRQ routing state. (no arguments)", pciIrqInfo);
 
