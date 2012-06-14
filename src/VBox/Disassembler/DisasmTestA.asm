@@ -29,7 +29,7 @@ BITS 32
 BEGINCODE
 
 align 16
-BEGINPROC   TestProc
+BEGINPROC   TestProc32
     xor eax, eax
     mov al, 4
     lea edx, [4]
@@ -81,7 +81,7 @@ BEGINPROC   TestProc
 
       pause
 
-ENDPROC   TestProc
+ENDPROC   TestProc32
 
 %ifndef RT_OS_OS2
 BITS 64
