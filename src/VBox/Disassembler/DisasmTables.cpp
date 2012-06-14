@@ -2342,7 +2342,7 @@ const DISOPCODE g_aMapX86_EscF7_High[16*4] =
 };
 
 
-PCDISOPCODE g_paMapX86_FP_Low[8] =
+const PCDISOPCODE g_apMapX86_FP_Low[8] =
 {
     g_aMapX86_EscF0_Low,
     g_aMapX86_EscF1_Low,
@@ -2354,7 +2354,7 @@ PCDISOPCODE g_paMapX86_FP_Low[8] =
     g_aMapX86_EscF7_Low
 };
 
-PCDISOPCODE g_paMapX86_FP_High[8] =
+const PCDISOPCODE g_apMapX86_FP_High[8] =
 {
     g_aMapX86_EscF0_High,
     g_aMapX86_EscF1_High,
