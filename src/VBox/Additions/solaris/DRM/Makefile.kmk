@@ -47,10 +47,10 @@ vboxvideo_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 ifeq ($(KBUILD_HOST),solaris)
- vboxvideo_LDFLAGS       += -N misc/drm
+ vboxvideo_LDFLAGS         += -N misc/drm
 else
- vboxvideo_SOURCES       += deps.s
- vboxvideo_deps.s_ASFLAGS = -f bin -g null
+ vboxvideo_SOURCES         += deps.asm
+ vboxvideo_deps.asm_ASFLAGS = -f bin -g null
 endif
 
 
