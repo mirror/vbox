@@ -226,7 +226,7 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
  *                          DISInstrWithReader if this isn't the case.)
  * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
  * @param   pCpu            Pointer to cpu structure. Will be initialized.
  * @param   pcbInstr        Where to store the size of the instruction.
  *                          NULL is allowed.  This is also stored in
@@ -248,7 +248,7 @@ DISDECL(int) DISInstr(const void *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE p
  *                          is left to the pfnReadBytes function.
  * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
  * @param   pCpu            Pointer to cpu structure. Will be initialized.
  * @param   pcbInstr        Where to store the size of the instruction.
  *                          NULL is allowed.  This is also stored in
@@ -270,10 +270,9 @@ DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFN
  * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
  * @param   fFilter         Instruction type filter.
- * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
  * @param   pCpu            Pointer to CPU structure. With the exception of
- *                          DISCPUSTATE::apvUserData[1] and
- *                          DISCPUSTATE::apvUserData[2], the structure will be
+ *                          DISCPUSTATE::pvUser2, the structure will be
  *                          completely initialized by this API, i.e. no input is
  *                          taken from it.
  * @param   pcbInstr        Where to store the size of the instruction.  (This
@@ -287,9 +286,9 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
 
     /*
      * Initialize the CPU state.
-     * Note! The RT_BZERO make ASSUMPTIONS about the placement of apvUserData.
+     * Note! The RT_BZERO make ASSUMPTIONS about the placement of pvUser2.
      */
-    RT_BZERO(pCpu, RT_OFFSETOF(DISCPUSTATE, apvUserData));
+    RT_BZERO(pCpu, RT_OFFSETOF(DISCPUSTATE, pvUser2));
 
     pCpu->mode              = enmCpuMode;
     if (enmCpuMode == DISCPUMODE_64BIT)
@@ -311,7 +310,7 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
     pCpu->fFilter           = fFilter;
     pCpu->rc                = VINF_SUCCESS;
     pCpu->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
-    pCpu->apvUserData[0]    = pvUser;
+    pCpu->pvUser    = pvUser;
 
     return disInstrWorker(pCpu, uInstrAddr, paOneByteMap, pcbInstr);
 }

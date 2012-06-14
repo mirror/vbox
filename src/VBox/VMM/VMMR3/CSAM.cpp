@@ -727,8 +727,8 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
  */
 static DECLCALLBACK(int) CSAMR3ReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PVM           pVM      = (PVM)pDisState->apvUserData[0];
-    RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pDisState->apvUserData[1];
+    PVM           pVM      = (PVM)pDisState->pvUser;
+    RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pDisState->pvUser2;
     RTGCUINTPTR32 pInstrGC = pDisState->uInstrAddr;
     int           orgsize  = cbToRead;
     PVMCPU        pVCpu    = VMMGetCpu0(pVM);
@@ -763,7 +763,7 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst,
 DECLINLINE(int) CSAMR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCPUMODE enmCpuMode,
                                PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 {
-    (pCpu)->apvUserData[1] = InstrHC;
+    pCpu->pvUser2 = InstrHC;
 #ifdef DEBUG
     return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, DISOPTYPE_ALL,
                            pCpu, pcbInstr, pszOutput, cbOutput);

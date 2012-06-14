@@ -148,7 +148,7 @@ static DECLCALLBACK(int) MyGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINT
  */
 static DECLCALLBACK(int) MyReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    memcpy(pbDst, (uint8_t const *)((uintptr_t)uSrcAddr + (uintptr_t)pDisState->apvUserData[0]), cbToRead);
+    memcpy(pbDst, (uint8_t const *)((uintptr_t)uSrcAddr + (uintptr_t)pDisState->pvUser), cbToRead);
     return VINF_SUCCESS;
 }
 
