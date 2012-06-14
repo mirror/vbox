@@ -993,14 +993,14 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                 {
                     //read
                     Assert(Cpu.param2.fUse & DISUSE_REG_CR);
-                    Assert(Cpu.param2.base.reg_ctrl <= USE_REG_CR4);
+                    Assert(Cpu.param2.base.reg_ctrl <= DISCREG_CR4);
                     STAM_COUNTER_INC(&pStats->StatMovReadCR[Cpu.param2.base.reg_ctrl]);
                 }
                 else
                 {
                     //write
                     Assert(Cpu.param1.fUse & DISUSE_REG_CR);
-                    Assert(Cpu.param1.base.reg_ctrl <= USE_REG_CR4);
+                    Assert(Cpu.param1.base.reg_ctrl <= DISCREG_CR4);
                     STAM_COUNTER_INC(&pStats->StatMovWriteCR[Cpu.param1.base.reg_ctrl]);
                 }
                 break;

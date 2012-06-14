@@ -1150,7 +1150,7 @@ int patmPatchGenStats(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 {
     int rc = VINF_SUCCESS;
-    int reg, mod, rm, dbgreg;
+    unsigned reg, mod, rm, dbgreg;
     uint32_t offset;
 
     PATCHGEN_PROLOG(pVM, pPatch);
@@ -1182,7 +1182,7 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
     pPB[1] = MAKE_MODRM(mod, reg, rm);
 
-    AssertReturn(dbgreg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    AssertReturn(dbgreg <= DISDREG_DR7, VERR_INVALID_PARAMETER);
     offset = RT_OFFSETOF(CPUMCTX, dr[dbgreg]);
 
     *(RTRCPTR *)&pPB[2] = pVM->patm.s.pCPUMCtxGC + offset;
@@ -1234,16 +1234,16 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
     /// @todo: make this an array in the context structure
     switch (ctrlreg)
     {
-    case USE_REG_CR0:
+    case DISCREG_CR0:
         offset = RT_OFFSETOF(CPUMCTX, cr0);
         break;
-    case USE_REG_CR2:
+    case DISCREG_CR2:
         offset = RT_OFFSETOF(CPUMCTX, cr2);
         break;
-    case USE_REG_CR3:
+    case DISCREG_CR3:
         offset = RT_OFFSETOF(CPUMCTX, cr3);
         break;
-    case USE_REG_CR4:
+    case DISCREG_CR4:
         offset = RT_OFFSETOF(CPUMCTX, cr4);
         break;
     default: /* Shut up compiler warning. */

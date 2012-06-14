@@ -4168,7 +4168,7 @@ ResumeExecution:
 
                 Assert(   !pVM->hwaccm.s.fNestedPaging
                        || !CPUMIsGuestInPagedProtectedModeEx(pCtx)
-                       || VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != USE_REG_CR3);
+                       || VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != DISCREG_CR3);
 
                 /* CR8 reads only cause an exit when the TPR shadow feature isn't present. */
                 Assert(   VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8

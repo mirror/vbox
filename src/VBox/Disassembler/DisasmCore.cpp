@@ -742,7 +742,7 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
                     &&  (pCpu->prefix & DISPREFIX_LOCK))
                 {
                     pCpu->prefix &= ~DISPREFIX_LOCK;
-                    pParam->base.reg_ctrl = USE_REG_CR8;
+                    pParam->base.reg_ctrl = DISCREG_CR8;
                 }
                 else
                     pParam->base.reg_ctrl = reg;

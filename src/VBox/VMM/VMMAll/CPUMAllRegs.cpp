@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1264,7 +1264,7 @@ VMMDECL(uint64_t) CPUMGetGuestCR4(PVMCPU pVCpu)
 VMMDECL(uint64_t) CPUMGetGuestCR8(PVMCPU pVCpu)
 {
     uint64_t u64;
-    int rc = CPUMGetGuestCRx(pVCpu, USE_REG_CR8, &u64);
+    int rc = CPUMGetGuestCRx(pVCpu, DISCREG_CR8, &u64);
     if (RT_FAILURE(rc))
         u64 = 0;
     return u64;
@@ -1347,23 +1347,23 @@ VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
 {
     switch (iReg)
     {
-        case USE_REG_CR0:
+        case DISCREG_CR0:
             *pValue = pVCpu->cpum.s.Guest.cr0;
             break;
 
-        case USE_REG_CR2:
+        case DISCREG_CR2:
             *pValue = pVCpu->cpum.s.Guest.cr2;
             break;
 
-        case USE_REG_CR3:
+        case DISCREG_CR3:
             *pValue = pVCpu->cpum.s.Guest.cr3;
             break;
 
-        case USE_REG_CR4:
+        case DISCREG_CR4:
             *pValue = pVCpu->cpum.s.Guest.cr4;
             break;
 
-        case USE_REG_CR8:
+        case DISCREG_CR8:
         {
             uint8_t u8Tpr;
             int rc = PDMApicGetTPR(pVCpu, &u8Tpr, NULL /*pfPending*/);
@@ -1422,7 +1422,7 @@ VMMDECL(uint64_t) CPUMGetGuestDR7(PVMCPU pVCpu)
 
 VMMDECL(int) CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue)
 {
-    AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    AssertReturn(iReg <= DISDREG_DR7, VERR_INVALID_PARAMETER);
     /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
     if (iReg == 4 || iReg == 5)
         iReg += 2;
@@ -1969,7 +1969,7 @@ VMMDECL(int) CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7)
 
 VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
 {
-    AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    AssertReturn(iReg <= DISDREG_DR7, VERR_INVALID_PARAMETER);
     /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
     if (iReg == 4 || iReg == 5)
         iReg += 2;

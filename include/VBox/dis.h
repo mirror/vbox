@@ -308,49 +308,78 @@ typedef enum
 } DISSELREG;
 /** @} */
 
-#define USE_REG_FP0                     0
-#define USE_REG_FP1                     1
-#define USE_REG_FP2                     2
-#define USE_REG_FP3                     3
-#define USE_REG_FP4                     4
-#define USE_REG_FP5                     5
-#define USE_REG_FP6                     6
-#define USE_REG_FP7                     7
+/** @name FPU register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_fp.
+ * @{
+ */
+#define DISFPREG_ST0                    UINT8_C(0)
+#define DISFPREG_ST1                    UINT8_C(1)
+#define DISFPREG_ST2                    UINT8_C(2)
+#define DISFPREG_ST3                    UINT8_C(3)
+#define DISFPREG_ST4                    UINT8_C(4)
+#define DISFPREG_ST5                    UINT8_C(5)
+#define DISFPREG_ST6                    UINT8_C(6)
+#define DISFPREG_ST7                    UINT8_C(7)
+/** @}  */
 
-#define USE_REG_CR0                     0
-#define USE_REG_CR1                     1
-#define USE_REG_CR2                     2
-#define USE_REG_CR3                     3
-#define USE_REG_CR4                     4
-#define USE_REG_CR8                     8
+/** @name Control register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_ctrl.
+ * @{
+ */
+#define DISCREG_CR0                     UINT8_C(0)
+#define DISCREG_CR1                     UINT8_C(1)
+#define DISCREG_CR2                     UINT8_C(2)
+#define DISCREG_CR3                     UINT8_C(3)
+#define DISCREG_CR4                     UINT8_C(4)
+#define DISCREG_CR8                     UINT8_C(8)
+/** @}  */
 
-#define USE_REG_DR0                     0
-#define USE_REG_DR1                     1
-#define USE_REG_DR2                     2
-#define USE_REG_DR3                     3
-#define USE_REG_DR4                     4
-#define USE_REG_DR5                     5
-#define USE_REG_DR6                     6
-#define USE_REG_DR7                     7
+/** @name Debug register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_dbg.
+ * @{
+ */
+#define DISDREG_DR0                     UINT8_C(0)
+#define DISDREG_DR1                     UINT8_C(1)
+#define DISDREG_DR2                     UINT8_C(2)
+#define DISDREG_DR3                     UINT8_C(3)
+#define DISDREG_DR4                     UINT8_C(4)
+#define DISDREG_DR5                     UINT8_C(5)
+#define DISDREG_DR6                     UINT8_C(6)
+#define DISDREG_DR7                     UINT8_C(7)
+/** @}  */
 
-#define USE_REG_MMX0                    0
-#define USE_REG_MMX1                    1
-#define USE_REG_MMX2                    2
-#define USE_REG_MMX3                    3
-#define USE_REG_MMX4                    4
-#define USE_REG_MMX5                    5
-#define USE_REG_MMX6                    6
-#define USE_REG_MMX7                    7
+/** @name MMX register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_mmx.
+ * @{
+ */
+#define DISMREG_MMX0                    UINT8_C(0)
+#define DISMREG_MMX1                    UINT8_C(1)
+#define DISMREG_MMX2                    UINT8_C(2)
+#define DISMREG_MMX3                    UINT8_C(3)
+#define DISMREG_MMX4                    UINT8_C(4)
+#define DISMREG_MMX5                    UINT8_C(5)
+#define DISMREG_MMX6                    UINT8_C(6)
+#define DISMREG_MMX7                    UINT8_C(7)
+/** @}  */
 
-#define USE_REG_XMM0                    0
-#define USE_REG_XMM1                    1
-#define USE_REG_XMM2                    2
-#define USE_REG_XMM3                    3
-#define USE_REG_XMM4                    4
-#define USE_REG_XMM5                    5
-#define USE_REG_XMM6                    6
-#define USE_REG_XMM7                    7
-/** @todo missing XMM8-XMM15 */
+/** @name SSE register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_xmm.
+ * @{
+ */
+#define DISXREG_XMM0                    UINT8_C(0)
+#define DISXREG_XMM1                    UINT8_C(1)
+#define DISXREG_XMM2                    UINT8_C(2)
+#define DISXREG_XMM3                    UINT8_C(3)
+#define DISXREG_XMM4                    UINT8_C(4)
+#define DISXREG_XMM5                    UINT8_C(5)
+#define DISXREG_XMM6                    UINT8_C(6)
+#define DISXREG_XMM7                    UINT8_C(7)
+/** @}  */
 
 /** Used by DISQueryParamVal & EMIQueryParamVal
  * @{
@@ -423,19 +452,19 @@ typedef struct DISOPPARAM
     {
         /** DISGREG_XXX. */
         uint8_t     reg_gen;
-        /** ST(0) - ST(7) */
+        /** DISFPREG_XXX */
         uint8_t     reg_fp;
-        /** MMX0 - MMX7 */
+        /** DISMREG_XXX. */
         uint8_t     reg_mmx;
-        /** XMM0 - XMM7 */
+        /** DISXREG_XXX. */
         uint8_t     reg_xmm;
-        /** {ES, CS, SS, DS, FS, GS} (DISSELREG). */
+        /** DISSELREG_XXX. */
         uint8_t     reg_seg;
-        /** TR0-TR7 (?) */
+        /** TR0-TR7  (no defines for these). */
         uint8_t     reg_test;
-        /** CR0-CR4 */
+        /** DISCREG_XXX */
         uint8_t     reg_ctrl;
-        /** DR0-DR7 */
+        /** DISDREG_XXX */
         uint8_t     reg_dbg;
     } base;
     union

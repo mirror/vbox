@@ -2208,7 +2208,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
     LogFlow(("EMInterpretCRxWrite at %RGv CR%d <- %RX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
     switch (DestRegCrx)
     {
-    case USE_REG_CR0:
+    case DISCREG_CR0:
         oldval = CPUMGetGuestCR0(pVCpu);
 #ifdef IN_RC
         /* CR0.WP and CR0.AM changes require a reschedule run in ring 3. */
@@ -2261,11 +2261,11 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
         rc2 = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;
 
-    case USE_REG_CR2:
+    case DISCREG_CR2:
         rc = CPUMSetGuestCR2(pVCpu, val); AssertRC(rc);
         return VINF_SUCCESS;
 
-    case USE_REG_CR3:
+    case DISCREG_CR3:
         /* Reloading the current CR3 means the guest just wants to flush the TLBs */
         rc = CPUMSetGuestCR3(pVCpu, val); AssertRC(rc);
         if (CPUMGetGuestCR0(pVCpu) & X86_CR0_PG)
@@ -2276,7 +2276,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
         }
         return rc;
 
-    case USE_REG_CR4:
+    case DISCREG_CR4:
         oldval = CPUMGetGuestCR4(pVCpu);
         rc = CPUMSetGuestCR4(pVCpu, val); AssertRC(rc);
         val = CPUMGetGuestCR4(pVCpu);
@@ -2314,12 +2314,12 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
         rc2 = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;
 
-    case USE_REG_CR8:
+    case DISCREG_CR8:
         return PDMApicSetTPR(pVCpu, val << 4);  /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
 
     default:
         AssertFailed();
-    case USE_REG_CR1: /* illegal op */
+    case DISCREG_CR1: /* illegal op */
         break;
     }
     return VERR_EM_INTERPRETER;
@@ -2376,7 +2376,7 @@ VMMDECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint
     uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
                     | (u16Data &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
 
-    return emUpdateCRx(pVM, pVCpu, pRegFrame, USE_REG_CR0, NewCr0);
+    return emUpdateCRx(pVM, pVCpu, pRegFrame, DISCREG_CR0, NewCr0);
 }
 
 /**

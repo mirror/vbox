@@ -271,8 +271,8 @@ typedef struct EMSTATS
     STAMCOUNTER             StatOut;
     STAMCOUNTER             StatInvlpg;
     STAMCOUNTER             StatHlt;
-    STAMCOUNTER             StatMovReadCR[USE_REG_CR4 + 1];
-    STAMCOUNTER             StatMovWriteCR[USE_REG_CR4 + 1];
+    STAMCOUNTER             StatMovReadCR[DISCREG_CR4 + 1];
+    STAMCOUNTER             StatMovWriteCR[DISCREG_CR4 + 1];
     STAMCOUNTER             StatMovDRx;
     STAMCOUNTER             StatIret;
     STAMCOUNTER             StatMovLgdt;
