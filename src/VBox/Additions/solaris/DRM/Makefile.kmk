@@ -46,7 +46,12 @@ vboxvideo_SOURCES       = \
 vboxvideo_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-vboxvideo_LDFLAGS      += -N misc/drm
+ifeq ($(KBUILD_HOST),solaris)
+ vboxvideo_LDFLAGS       += -N misc/drm
+else
+ vboxvideo_SOURCES       += deps.s
+ vboxvideo_deps.s_ASFLAGS = -f bin -g null
+endif
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
