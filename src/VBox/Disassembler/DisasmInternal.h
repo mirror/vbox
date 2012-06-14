@@ -163,10 +163,10 @@ extern PCDISOPCODE     g_paMapX86_FP_High[8];
  */
 #ifndef DIS_CORE_ONLY
 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
-    { pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype }
+    { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, optype }
 #else
 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
-    { idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype }
+    { idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, optype }
 #endif
 
 

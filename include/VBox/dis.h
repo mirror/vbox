@@ -565,12 +565,10 @@ typedef struct DISCPUSTATE
 #endif
 } DISCPUSTATE;
 
-/** The storage padding sufficient to hold the largest DISCPUSTATE in all
- * contexts (R3, R0 and RC). Used various places in the VMM internals.   */
-#define DISCPUSTATE_PADDING_SIZE    (HC_ARCH_BITS == 64 ? 0x1a0 : 0x180)
 
-/** Opcode. */
-#pragma pack(4)
+/** 
+ * Opcode descriptor. 
+ */ 
 typedef struct DISOPCODE
 {
 #ifndef DIS_CORE_ONLY
@@ -579,13 +577,13 @@ typedef struct DISOPCODE
     uint8_t     idxParse1;
     uint8_t     idxParse2;
     uint8_t     idxParse3;
+    uint8_t     uUnused;
     uint16_t    opcode;
     uint16_t    param1;
     uint16_t    param2;
     uint16_t    param3;
     uint32_t    optype;
 } DISOPCODE;
-#pragma pack()
 
 
 DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode,
