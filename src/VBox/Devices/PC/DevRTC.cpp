@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,7 +43,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEV_RTC 
+#define LOG_GROUP LOG_GROUP_DEV_RTC
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/asm-math.h>
@@ -56,6 +56,7 @@
 #endif /* IN_RING3 */
 
 #include "VBoxDD.h"
+
 struct RTCState;
 typedef struct RTCState RTCState;
 
@@ -109,10 +110,10 @@ RT_C_DECLS_END
 #define REG_B_AIE 0x20
 #define REG_B_UIE 0x10
 
-#define CMOS_BANK_LOWER_LIMIT 0x0E
-#define CMOS_BANK_UPPER_LIMIT 0x7F
-#define CMOS_BANK2_LOWER_LIMIT 0x80
-#define CMOS_BANK2_UPPER_LIMIT 0xFF
+#define CMOS_BANK_LOWER_LIMIT   0x0E
+#define CMOS_BANK_UPPER_LIMIT   0x7F
+#define CMOS_BANK2_LOWER_LIMIT  0x80
+#define CMOS_BANK2_UPPER_LIMIT  0xFF
 
 /** The saved state version. */
 #define RTC_SAVED_STATE_VERSION             4
@@ -284,78 +285,66 @@ DECLINLINE(int) from_bcd(RTCState *pThis, int a)
  * @callback_method_impl{FNDBGFHANDLERDEV,
  *      Dumps the cmos Bank Info.}
  */
-static DECLCALLBACK(void) CMOSBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) rtcCmosBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
-    uint16_t u16ByteCount = 0;
 
-    pHlp->pfnPrintf(pHlp, "First CMOS bank, offsets 0x0E - 0x7F");
-    pHlp->pfnPrintf(pHlp, "\nOffset %02x : --- use 'info rtc' to show CMOS clock ---", 0);
-    for (u16ByteCount = CMOS_BANK_LOWER_LIMIT; u16ByteCount <= CMOS_BANK_UPPER_LIMIT; u16ByteCount++)
+    pHlp->pfnPrintf(pHlp, "First CMOS bank, offsets 0x0E - 0x7F\n"
+                          "Offset %02x : --- use 'info rtc' to show CMOS clock ---\n", 0);
+    for (unsigned iCmos = CMOS_BANK_LOWER_LIMIT; iCmos <= CMOS_BANK_UPPER_LIMIT; iCmos++)
     {
-        if ((u16ByteCount & 15) == 0) {
-            pHlp->pfnPrintf(pHlp, "\nOffset %02x : ", u16ByteCount);
-        } else if ((u16ByteCount & 15) == 8) {
+        if ((iCmos & 15) == 0) 
+            pHlp->pfnPrintf(pHlp, "Offset %02x : ", iCmos);
+        else if ((iCmos & 15) == 8) 
             pHlp->pfnPrintf(pHlp, "-");
-        } else {
+        else 
             pHlp->pfnPrintf(pHlp, " ");
-        }
-        pHlp->pfnPrintf(pHlp, "%02x", pThis->cmos_data[u16ByteCount]);
+        pHlp->pfnPrintf(pHlp, "%02x\n", pThis->cmos_data[iCmos]);
     }
-    pHlp->pfnPrintf(pHlp, "\n");
 }
 
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV,
  *      Dumps the cmos Bank2 Info.}
  */
-static DECLCALLBACK(void) CMOSBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) rtcCmosBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
-    uint16_t u16ByteCount = 0;
 
-    pHlp->pfnPrintf(pHlp, "Second CMOS bank, offsets 0x80 - 0xFF");
-    for (u16ByteCount = CMOS_BANK2_LOWER_LIMIT; u16ByteCount <= CMOS_BANK2_UPPER_LIMIT; u16ByteCount++)
+    pHlp->pfnPrintf(pHlp, "Second CMOS bank, offsets 0x80 - 0xFF\n");
+    for (uint16_t iCmos = CMOS_BANK2_LOWER_LIMIT; iCmos <= CMOS_BANK2_UPPER_LIMIT; iCmos++)
     {
-        if ((u16ByteCount & 15) == 0) {
-            pHlp->pfnPrintf(pHlp, "\nOffset %02x : ", u16ByteCount);
-        } else if ((u16ByteCount & 15) == 8) {
+        if ((iCmos & 15) == 0) 
+            pHlp->pfnPrintf(pHlp, "Offset %02x : ", iCmos);
+        else if ((iCmos & 15) == 8) 
             pHlp->pfnPrintf(pHlp, "-");
-        } else {
+        else 
             pHlp->pfnPrintf(pHlp, " ");
-        }
-        pHlp->pfnPrintf(pHlp, "%02x", pThis->cmos_data[u16ByteCount]);
+        pHlp->pfnPrintf(pHlp, "%02x\n", pThis->cmos_data[iCmos]);
     }
-    pHlp->pfnPrintf(pHlp, "\n");
 }
 
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV,
  *      Dumps the cmos RTC Info.}
  */
-static DECLCALLBACK(void) CMOSRTCInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
-    uint8_t u8Sec = 0;
-    uint8_t u8Min = 0;
-    uint8_t u8Hr = 0;
-    uint8_t u8Day = 0;
-    uint8_t u8Month = 0;
-    uint8_t u8Year = 0;
-    
-    u8Sec = from_bcd(pThis, pThis->cmos_data[RTC_SECONDS]);
-    u8Min = from_bcd(pThis, pThis->cmos_data[RTC_MINUTES]);
-    u8Hr = from_bcd(pThis, pThis->cmos_data[RTC_HOURS] & 0x7f);
+    uint8_t u8Sec   = from_bcd(pThis, pThis->cmos_data[RTC_SECONDS]);
+    uint8_t u8Min   = from_bcd(pThis, pThis->cmos_data[RTC_MINUTES]);
+    uint8_t u8Hr    = from_bcd(pThis, pThis->cmos_data[RTC_HOURS] & 0x7f);
     if (   !(pThis->cmos_data[RTC_REG_B] & 0x02)
         && (pThis->cmos_data[RTC_HOURS] & 0x80))
         u8Hr += 12;
-    u8Day = from_bcd(pThis, pThis->cmos_data[RTC_DAY_OF_MONTH]);
-    u8Month = from_bcd(pThis, pThis->cmos_data[RTC_MONTH]) ;
-    u8Year = from_bcd(pThis, pThis->cmos_data[RTC_YEAR]);
+    uint8_t u8Day   = from_bcd(pThis, pThis->cmos_data[RTC_DAY_OF_MONTH]);
+    uint8_t u8Month = from_bcd(pThis, pThis->cmos_data[RTC_MONTH]) ;
+    uint8_t u8Year  = from_bcd(pThis, pThis->cmos_data[RTC_YEAR]);
     pHlp->pfnPrintf(pHlp, "Time: Hr:%u Min:%u Sec:%u, Day:%u Month:%u Year:%u\n", u8Hr, u8Min, u8Sec, u8Day, u8Month, u8Year);
+    /** @todo r=bird: missing REG A-D. */
 }
 
-#endif
+#endif /* IN_RING3 */
 
 
 static void rtc_set_time(RTCState *pThis)
@@ -1247,13 +1236,10 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     /*
      * Register debugger info callback.
-    */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos", "Display CMOS Bank 1 Info.. "
-                              "'cmos'. No argument.", CMOSBankInfo);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info.. "
-                              "'cmos2'. No argument", CMOSBank2Info);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc", "Display CMOS RTC info "
-                              "'rtc'. No argument", CMOSRTCInfo); 
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos1", "Display CMOS Bank 1 Info (0x0e-0x7f). No arguments. See also rtc.", rtcCmosBankInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info (0x0e-0x7f). No arguments.", rtcCmosBank2Info);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc",   "Display CMOS RTC (0x00-0x0d). No arguments. See also cmos1 & cmos2", rtcCmosClockInfo); 
     return VINF_SUCCESS;
 }
 
