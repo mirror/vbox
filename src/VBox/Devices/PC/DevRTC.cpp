@@ -478,18 +478,18 @@ static DECLCALLBACK(void) rtcCmosBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
-    pHlp->pfnPrintf(pHlp, 
+    pHlp->pfnPrintf(pHlp,
                     "First CMOS bank, offsets 0x0E - 0x7F\n"
                     "Offset %02x : --- use 'info rtc' to show CMOS clock ---", 0);
     for (unsigned iCmos = CMOS_BANK_LOWER_LIMIT; iCmos <= CMOS_BANK_UPPER_LIMIT; iCmos++)
     {
-        if ((iCmos & 15) == 0) 
+        if ((iCmos & 15) == 0)
             pHlp->pfnPrintf(pHlp, "Offset %02x : %02x", iCmos, pThis->cmos_data[iCmos]);
-        else if ((iCmos & 15) == 8) 
+        else if ((iCmos & 15) == 8)
             pHlp->pfnPrintf(pHlp, "-%02x", pThis->cmos_data[iCmos]);
-        else if ((iCmos & 15) == 15) 
+        else if ((iCmos & 15) == 15)
             pHlp->pfnPrintf(pHlp, " %02x\n", pThis->cmos_data[iCmos]);
-        else 
+        else
             pHlp->pfnPrintf(pHlp, " %02x", pThis->cmos_data[iCmos]);
     }
 }
@@ -505,13 +505,13 @@ static DECLCALLBACK(void) rtcCmosBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
     pHlp->pfnPrintf(pHlp, "Second CMOS bank, offsets 0x80 - 0xFF\n");
     for (uint16_t iCmos = CMOS_BANK2_LOWER_LIMIT; iCmos <= CMOS_BANK2_UPPER_LIMIT; iCmos++)
     {
-        if ((iCmos & 15) == 0) 
+        if ((iCmos & 15) == 0)
             pHlp->pfnPrintf(pHlp, "Offset %02x : %02x", iCmos, pThis->cmos_data[iCmos]);
-        else if ((iCmos & 15) == 8) 
+        else if ((iCmos & 15) == 8)
             pHlp->pfnPrintf(pHlp, "-%02x", pThis->cmos_data[iCmos]);
-        else if ((iCmos & 15) == 15) 
+        else if ((iCmos & 15) == 15)
             pHlp->pfnPrintf(pHlp, " %02x\n", pThis->cmos_data[iCmos]);
-        else 
+        else
             pHlp->pfnPrintf(pHlp, " %02x", pThis->cmos_data[iCmos]);
     }
 }
@@ -532,9 +532,11 @@ static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
     uint8_t u8Day   = from_bcd(pThis, pThis->cmos_data[RTC_DAY_OF_MONTH]);
     uint8_t u8Month = from_bcd(pThis, pThis->cmos_data[RTC_MONTH]) ;
     uint8_t u8Year  = from_bcd(pThis, pThis->cmos_data[RTC_YEAR]);
-    pHlp->pfnPrintf(pHlp, "Time: %02u:%02u:%02u  Date:%02u-%02u-%02u\n", 
+    pHlp->pfnPrintf(pHlp, "Time: %02u:%02u:%02u  Date: %02u-%02u-%02u\n",
                     u8Hr, u8Min, u8Sec, u8Year, u8Month, u8Day);
-    /** @todo r=bird: missing REG A-D. */
+    pHlp->pfnPrintf(pHlp, "REG A=%02x B=%02x C=%02x D=%02x\n",
+                    pThis->cmos_data[RTC_REG_A], pThis->cmos_data[RTC_REG_B],
+                    pThis->cmos_data[RTC_REG_C], pThis->cmos_data[RTC_REG_D]);
 }
 
 
@@ -1243,7 +1245,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     PDMDevHlpDBGFInfoRegister(pDevIns, "cmos1", "Display CMOS Bank 1 Info (0x0e-0x7f). No arguments. See also rtc.", rtcCmosBankInfo);
     PDMDevHlpDBGFInfoRegister(pDevIns, "cmos2", "Display CMOS Bank 2 Info (0x0e-0x7f). No arguments.", rtcCmosBank2Info);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc",   "Display CMOS RTC (0x00-0x0d). No arguments. See also cmos1 & cmos2", rtcCmosClockInfo); 
+    PDMDevHlpDBGFInfoRegister(pDevIns, "rtc",   "Display CMOS RTC (0x00-0x0d). No arguments. See also cmos1 & cmos2", rtcCmosClockInfo);
     return VINF_SUCCESS;
 }
 
