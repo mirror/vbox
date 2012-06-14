@@ -2269,13 +2269,13 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
 
             pHlp->pfnPrintf(pHlp, "\n");
 
-            int iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
+            uint16_t iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
             if ((iCmd & (VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY)) != 0)
             {
                 for (int iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
                 {
                     PCIIORegion* pRegion = &pPciDev->Int.s.aIORegions[iRegion];
-                    int32_t  iRegionSize = pRegion->size;
+                    uint64_t  iRegionSize = pRegion->size;
 
                     if (iRegionSize == 0)
                         continue;
@@ -2300,17 +2300,25 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
                     }
 
                     printIndent(pHlp, iIndent + 2);
-                    pHlp->pfnPrintf(pHlp, "  %s region #%d: %x..%x\n",
+                    pHlp->pfnPrintf(pHlp, "%s region #%d: %x..%x\n",
                                     pszDesc, iRegion, u32Addr, u32Addr+iRegionSize);
                     if (f64Bit)
                         iRegion++;
                 }
             }
 
+            printIndent(pHlp, iIndent + 2);
+            uint16_t iStatus = ich9pciGetWord(pPciDev, VBOX_PCI_STATUS);
+            pHlp->pfnPrintf(pHlp, "Command: %.*Rhxs, Status: %.*Rhxs\n",
+                            sizeof(uint16_t), &iCmd, sizeof(uint16_t), &iStatus);
+            printIndent(pHlp, iIndent + 2);
+            pHlp->pfnPrintf(pHlp, "Bus master: %s\n",
+                            iCmd & VBOX_PCI_COMMAND_MASTER ? "Yes" : "No");
+
             if (fRegisters)
             {
                 printIndent(pHlp, iIndent + 2);
-                pHlp->pfnPrintf(pHlp, "  PCI registers:\n");
+                pHlp->pfnPrintf(pHlp, "PCI registers:\n");
                 for (int iReg = 0; iReg < 0x100; )
                 {
                     int iPerLine = 0x10;
