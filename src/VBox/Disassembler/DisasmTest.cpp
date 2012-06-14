@@ -19,69 +19,59 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/dis.h>
-#include <VBox/err.h>
-#include <stdio.h>
-#include <iprt/string.h>
+#include <iprt/test.h>
 #include <iprt/asm.h>
+#include <iprt/string.h>
+#include <VBox/err.h>
 
-DECLASM(int) TestProc();
+
+DECLASM(int) TestProc32(void);
+char TestProc32_End;
 #ifndef RT_OS_OS2
-DECLASM(int) TestProc64();
+DECLASM(int) TestProc64(void);
+char TestProc64_End;
 #endif
 //uint8_t aCode16[] = { 0x66, 0x67, 0x89, 0x07 };
 
+static void testDisas(uint8_t const *pabInstrs, size_t cbInstrs, DISCPUMODE enmDisCpuMode)
+{
+    for (size_t off = 0; off < cbInstrs; off++)
+    {
+        uint32_t const  cErrBefore = RTTestIErrorCount();
+        uint32_t        cb = 1;
+        DISCPUSTATE     Cpu;
+        char            szOutput[256] = {0};
+        int rc = DISInstrToStr(&pabInstrs[off], enmDisCpuMode, &Cpu, &cb, szOutput, sizeof(szOutput));
+
+
+        RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+        RTTESTI_CHECK(cb == Cpu.opsize);
+        RTTESTI_CHECK(cb > 0);
+        RTTESTI_CHECK(cb <= 16);
+        if (cErrBefore != RTTestIErrorCount())
+            RTTestIFailureDetails("rc=%Rrc, off=%#x (%u) cbInstr=%u enmDisCpuMode=%d",
+                                  rc, off, Cpu.opsize, enmDisCpuMode);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", szOutput);
+        off += cb;
+    }
+
+}
+
+
 int main(int argc, char **argv)
 {
-    printf("VBox Disassembler Test\n");
-    if (argc != 1)
-    {
-        //printf("DisasmBlock on printf:\n");
-        //DisasmBlock((uint8_t *)printf, 256);
-    }
-    else
-    {
-        uint8_t const *pbInstr = (uint8_t const *)(uintptr_t)TestProc;
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstDisasm", &hTest);
+    if (rcExit)
+        return rcExit;
+    RTTestBanner(hTest);
 
-        for (int i=0;i<50;i++)
-        {
-            unsigned    cb;
-            DISCPUSTATE cpu;
-            char        szOutput[256];
 
-            if (RT_SUCCESS(DISInstrToStr(pbInstr, DISCPUMODE_32BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
-            {
-                printf("%s", szOutput);
-            }
-            else
-            {
-                printf("DISOne failed!\n");
-                return 1;
-            }
-            pbInstr += cb;
-        }
-
+    testDisas((uint8_t const *)(uintptr_t)TestProc32, (uintptr_t)&TestProc32_End - (uintptr_t)TestProc32, DISCPUMODE_32BIT);
 #ifndef RT_OS_OS2
-        printf("\n64 bits disassembly\n");
-        pbInstr = (uint8_t const *)(uintptr_t)TestProc64;
-
-////__debugbreak();
-        for (int i=0;i<50;i++)
-        {
-            unsigned    cb;
-            DISCPUSTATE cpu;
-            char        szOutput[256];
-
-            if (RT_SUCCESS(DISInstrToStr(pbInstr, DISCPUMODE_64BIT, &cpu, &cb, szOutput, sizeof(szOutput))))
-                printf("%s", szOutput);
-            else
-            {
-                printf("DISOne failed!\n");
-                return 1;
-            }
-            pbInstr += cb;
-        }
+    testDisas((uint8_t const *)(uintptr_t)TestProc64, (uintptr_t)&TestProc64_End - (uintptr_t)TestProc64, DISCPUMODE_64BIT);
 #endif
-    }
-    return 0;
+
+    return RTTestSummaryAndDestroy(hTest);
 }
 
