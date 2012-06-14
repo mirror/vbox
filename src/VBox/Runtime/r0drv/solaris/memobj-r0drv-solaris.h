@@ -87,7 +87,7 @@ DECLINLINE(int) rtR0SegVBoxSolCreate(seg_t *pSeg, void *pvArgs)
     pSeg->s_data = pData;
 
     /*
-     * Now load the locked mappings to the pages.
+     * Now load and lock down the mappings to the physical addresses.
      */
     caddr_t virtAddr = pSeg->s_base;
     pgcnt_t cPages   = (pSeg->s_size + cbPageSize - 1) >> uPageShift;
