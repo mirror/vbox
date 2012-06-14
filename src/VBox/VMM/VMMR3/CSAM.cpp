@@ -834,9 +834,9 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
     case OP_CLI:
     {
-        uint32_t     cbInstr = 0;
-        uint32_t     opsize  = pCpu->opsize;
-        bool         fCode32 = pPage->fCode32;
+        uint32_t     cbInstrs   = 0;
+        uint32_t     cbCurInstr = pCpu->cbInstr;
+        bool         fCode32    = pPage->fCode32;
 
         Assert(fCode32);
 
@@ -847,17 +847,17 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         {
             DISCPUSTATE  cpu;
 
-            if (cbInstr + opsize >= SIZEOF_NEARJUMP32)
+            if (cbInstrs + cbCurInstr >= SIZEOF_NEARJUMP32)
                 break;
 
-            if (csamIsCodeScanned(pVM, pCurInstrGC + opsize, &pPage) == true)
+            if (csamIsCodeScanned(pVM, pCurInstrGC + cbCurInstr, &pPage) == true)
             {
                 /* We've scanned the next instruction(s) already. This means we've followed a branch that ended up there before -> dangerous!! */
-                PATMR3DetectConflict(pVM, pCurInstrGC, pCurInstrGC + opsize);
+                PATMR3DetectConflict(pVM, pCurInstrGC, pCurInstrGC + cbCurInstr);
                 break;
             }
-            pCurInstrGC += opsize;
-            cbInstr     += opsize;
+            pCurInstrGC += cbCurInstr;
+            cbInstrs    += cbCurInstr;
 
             {   /* Force pCurInstrHC out of scope after we stop using it (page lock!) */
                 uint8_t       *pCurInstrHC = 0;
@@ -870,7 +870,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 Assert(VALID_PTR(pCurInstrHC));
 
                 rc = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
-                                    &cpu, &opsize, NULL, 0);
+                                    &cpu, &cbCurInstr, NULL, 0);
             }
             AssertRC(rc);
             if (RT_FAILURE(rc))
@@ -1017,7 +1017,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
         if (csamIsCodeScanned(pVM, pCurInstrGC, &pPage) == false)
         {
             DISCPUSTATE  cpu;
-            uint32_t     opsize;
+            uint32_t     cbInstr;
             int          rc2;
 #ifdef DEBUG
             char szOutput[256];
@@ -1053,11 +1053,11 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
                 rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
-                                     &cpu, &opsize, szOutput, sizeof(szOutput));
+                                     &cpu, &cbInstr, szOutput, sizeof(szOutput));
                 if (RT_SUCCESS(rc2)) Log(("CSAM Call Analysis: %s", szOutput));
 #else
                 rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
-                                     &cpu, &opsize, NULL, 0);
+                                     &cpu, &cbInstr, NULL, 0);
 #endif
                 STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
                 if (RT_FAILURE(rc2))
@@ -1066,21 +1066,21 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                     goto done;
                 }
 
-                STAM_COUNTER_ADD(&pVM->csam.s.StatNrBytesRead, opsize);
+                STAM_COUNTER_ADD(&pVM->csam.s.StatNrBytesRead, cbInstr);
 
                 RCPTRTYPE(uint8_t *) addr = 0;
                 PCSAMPAGE pJmpPage = NULL;
 
-                if (PAGE_ADDRESS(pCurInstrGC) != PAGE_ADDRESS(pCurInstrGC + opsize - 1))
+                if (PAGE_ADDRESS(pCurInstrGC) != PAGE_ADDRESS(pCurInstrGC + cbInstr - 1))
                 {
-                    if (!PGMGstIsPagePresent(pVM, pCurInstrGC + opsize - 1))
+                    if (!PGMGstIsPagePresent(pVM, pCurInstrGC + cbInstr - 1))
                     {
                         /// @todo fault in the page
                         Log(("Page for current instruction %RRv is not present!!\n", pCurInstrGC));
                         goto done;
                     }
                     //all is fine, let's continue
-                    csamR3CheckPageRecord(pVM, pCurInstrGC + opsize - 1);
+                    csamR3CheckPageRecord(pVM, pCurInstrGC + cbInstr - 1);
                 }
 
                 switch (cpu.pCurInstr->opcode)
@@ -1168,8 +1168,8 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                    goto next_function;
                 }
                 /* Mark it as scanned. */
-                csamMarkCode(pVM, pPage, pCurInstrGC, opsize, true);
-                pCurInstrGC += opsize;
+                csamMarkCode(pVM, pPage, pCurInstrGC, cbInstr, true);
+                pCurInstrGC += cbInstr;
             } /* for at most 16 instructions */
 next_function:
             ; /* MSVC complains otherwise */
@@ -1201,7 +1201,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
     DISCPUSTATE cpu;
     PCSAMPAGE pPage = (PCSAMPAGE)pUserData;
     int rc = VWRN_CONTINUE_ANALYSIS;
-    uint32_t opsize;
+    uint32_t cbInstr;
     int rc2;
     Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
@@ -1266,11 +1266,11 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
             rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
-                                 &cpu, &opsize, szOutput, sizeof(szOutput));
+                                 &cpu, &cbInstr, szOutput, sizeof(szOutput));
             if (RT_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
             rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
-                                 &cpu, &opsize, NULL, 0);
+                                 &cpu, &cbInstr, NULL, 0);
 #endif
             STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
         }
@@ -1281,16 +1281,16 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             goto done;
         }
 
-        STAM_COUNTER_ADD(&pVM->csam.s.StatNrBytesRead, opsize);
+        STAM_COUNTER_ADD(&pVM->csam.s.StatNrBytesRead, cbInstr);
 
-        csamMarkCode(pVM, pPage, pCurInstrGC, opsize, true);
+        csamMarkCode(pVM, pPage, pCurInstrGC, cbInstr, true);
 
         RCPTRTYPE(uint8_t *) addr = 0;
         PCSAMPAGE pJmpPage = NULL;
 
-        if (PAGE_ADDRESS(pCurInstrGC) != PAGE_ADDRESS(pCurInstrGC + opsize - 1))
+        if (PAGE_ADDRESS(pCurInstrGC) != PAGE_ADDRESS(pCurInstrGC + cbInstr - 1))
         {
-            if (!PGMGstIsPagePresent(pVCpu, pCurInstrGC + opsize - 1))
+            if (!PGMGstIsPagePresent(pVCpu, pCurInstrGC + cbInstr - 1))
             {
                 /// @todo fault in the page
                 Log(("Page for current instruction %RRv is not present!!\n", pCurInstrGC));
@@ -1298,7 +1298,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                 goto next_please;
             }
             //all is fine, let's continue
-            csamR3CheckPageRecord(pVM, pCurInstrGC + opsize - 1);
+            csamR3CheckPageRecord(pVM, pCurInstrGC + cbInstr - 1);
         }
         /*
          * If it's harmless, then don't bother checking it (the disasm tables had better be accurate!)
@@ -1316,7 +1316,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             &&  cpu.pCurInstr->opcode == OP_RETN
             &&  pCacheRec->pCallExitRec->cInstrAfterRet < CSAM_MAX_CALLEXIT_RET)
         {
-            pCacheRec->pCallExitRec->pInstrAfterRetGC[pCacheRec->pCallExitRec->cInstrAfterRet] = pCurInstrGC + opsize;
+            pCacheRec->pCallExitRec->pInstrAfterRetGC[pCacheRec->pCallExitRec->cInstrAfterRet] = pCurInstrGC + cbInstr;
             pCacheRec->pCallExitRec->cInstrAfterRet++;
         }
 #endif
@@ -1462,7 +1462,7 @@ next_please:
             rc = VINF_SUCCESS;
             goto done;
         }
-        pCurInstrGC += opsize;
+        pCurInstrGC += cbInstr;
     }
 done:
     pCacheRec->depth--;
@@ -2180,12 +2180,12 @@ bool csamIsCodeScanned(PVM pVM, RTRCPTR pInstr, PCSAMPAGE *pPage)
  * @param   pVM         The VM to operate on.
  * @param   pPage       Patch structure pointer
  * @param   pInstr      Instruction pointer
- * @param   opsize      Instruction size
+ * @param   cbInstr      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t opsize, bool fScanned)
+static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t cbInstr, bool fScanned)
 {
-    LogFlow(("csamMarkCodeAsScanned %RRv opsize=%d\n", pInstr, opsize));
+    LogFlow(("csamMarkCodeAsScanned %RRv cbInstr=%d\n", pInstr, cbInstr));
     CSAMMarkPage(pVM, pInstr, fScanned);
 
     /** @todo should recreate empty bitmap if !fScanned */
@@ -2197,7 +2197,7 @@ static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t opsi
         // retn instructions can be scanned more than once
         if (ASMBitTest(pPage->pBitmap, pInstr & PAGE_OFFSET_MASK) == 0)
         {
-            pPage->uSize += opsize;
+            pPage->uSize += cbInstr;
             STAM_COUNTER_ADD(&pVM->csam.s.StatNrInstr, 1);
         }
         if (pPage->uSize >= PAGE_SIZE)
@@ -2219,10 +2219,10 @@ static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t opsi
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pInstr      Instruction pointer
- * @param   opsize      Instruction size
+ * @param   cbInstr      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fScanned)
+VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fScanned)
 {
     PCSAMPAGE pPage = 0;
 
@@ -2235,8 +2235,8 @@ VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fSc
         return VINF_SUCCESS;
     }
 
-    Log(("CSAMR3MarkCode: %RRv size=%d fScanned=%d\n", pInstr, opsize, fScanned));
-    csamMarkCode(pVM, pPage, pInstr, opsize, fScanned);
+    Log(("CSAMR3MarkCode: %RRv size=%d fScanned=%d\n", pInstr, cbInstr, fScanned));
+    csamMarkCode(pVM, pPage, pInstr, cbInstr, fScanned);
     return VINF_SUCCESS;
 }
 

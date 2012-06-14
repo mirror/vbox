@@ -2986,7 +2986,7 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
             Assert(RT_FAILURE(rc) || pDis->pCurInstr->opcode == OP_INVLPG);
             if (RT_SUCCESS(rc) && pDis->pCurInstr->opcode == OP_INVLPG)
             {
-                Assert(cbOp == pDis->opsize);
+                Assert(cbOp == pDis->cbInstr);
                 rc = hmR0svmInterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
                 if (RT_SUCCESS(rc))
                     pRegFrame->rip += cbOp; /* Move on to the next instruction. */

@@ -1413,7 +1413,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         if (pPatch->opcode == OP_CLI && pCpu->pCurInstr->opcode == OP_JMP)
         {
             if (   pCurInstrGC > pPatch->pPrivInstrGC
-                && pCurInstrGC + pCpu->opsize < pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32) /* hardcoded patch jump size; cbPatchJump is still zero */
+                && pCurInstrGC + pCpu->cbInstr < pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32) /* hardcoded patch jump size; cbPatchJump is still zero */
             {
                 Log(("Dangerous unconditional jump ends in our generated patch jump!! (%x vs %x)\n", pCurInstrGC, pPatch->pPrivInstrGC));
                 /* We turn this one into a int 3 callable patch. */
@@ -1448,7 +1448,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         }
     }
 
-    pPatch->cbPatchBlockSize += pCpu->opsize;
+    pPatch->cbPatchBlockSize += pCpu->cbInstr;
 
     /* Illegal instruction -> end of analysis phase for this code block */
     if (fIllegalInstr || patmIsIllegalInstr(pPatch, pCurInstrGC))
@@ -1513,7 +1513,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     if ((pPatch->flags & PATMFL_CHECK_SIZE) && pPatch->cbPatchBlockSize > SIZEOF_NEARJUMP32 && !(pCpu->pCurInstr->optype & DISOPTYPE_RELATIVE_CONTROLFLOW))
     {
         /* The end marker for this kind of patch is any instruction at a location outside our patch jump. */
-        Log(("End of block at %RRv size %d\n", pCurInstrGC, pCpu->opsize));
+        Log(("End of block at %RRv size %d\n", pCurInstrGC, pCpu->cbInstr));
         return VINF_SUCCESS;
     }
 
@@ -1590,7 +1590,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     #endif
     }
 
-    pPatch->cbPatchBlockSize += pCpu->opsize;
+    pPatch->cbPatchBlockSize += pCpu->cbInstr;
 
     /* Illegal instruction -> end of analysis phase for this code block */
     if (fIllegalInstr || patmIsIllegalInstr(pPatch, pCurInstrGC))
@@ -1680,7 +1680,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         pPatch->pInstrGCLowest = pCurInstrGC;
     else
     if (pCurInstrGC > pPatch->pInstrGCHighest)
-        pPatch->pInstrGCHighest = pCurInstrGC + pCpu->opsize;
+        pPatch->pInstrGCHighest = pCurInstrGC + pCpu->cbInstr;
 
     /* Illegal instruction -> end of recompile phase for this code block. */
     if (patmIsIllegalInstr(pPatch, pCurInstrGC))
@@ -1789,7 +1789,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         {
             pPatch->flags   |= PATMFL_INHIBIT_IRQS | PATMFL_GENERATE_JUMPTOGUEST;
             fInhibitIRQInstr = true;
-            pNextInstrGC     = pCurInstrGC + pCpu->opsize;
+            pNextInstrGC     = pCurInstrGC + pCpu->cbInstr;
             Log(("Inhibit irqs for instruction OP_STI at %RRv\n", pCurInstrGC));
         }
         rc = patmPatchGenSti(pVM, pPatch, pCurInstrGC, pNextInstrGC);
@@ -1797,13 +1797,13 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (RT_SUCCESS(rc))
         {
             DISCPUSTATE cpu = *pCpu;
-            unsigned    opsize;
+            unsigned    cbInstr;
             int         disret;
             RCPTRTYPE(uint8_t *) pReturnInstrGC;
 
             pPatch->flags |= PATMFL_FOUND_PATCHEND;
 
-            pNextInstrGC = pCurInstrGC + pCpu->opsize;
+            pNextInstrGC = pCurInstrGC + pCpu->cbInstr;
             {   /* Force pNextInstrHC out of scope after using it */
                 uint8_t *pNextInstrHC = PATMGCVirtToHCVirt(pVM, pCacheRec, pNextInstrGC);
                 if (pNextInstrHC == NULL)
@@ -1813,14 +1813,14 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 }
 
                 // Disassemble the next instruction
-                disret = patmR3DisInstr(pVM, pPatch, pNextInstrGC, pNextInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
+                disret = patmR3DisInstr(pVM, pPatch, pNextInstrGC, pNextInstrHC, PATMREAD_ORGCODE, &cpu, &cbInstr);
             }
             if (disret == false)
             {
                 AssertMsgFailed(("STI: Disassembly failed (probably page not present) -> return to caller\n"));
                 return VERR_PATCHING_REFUSED;
             }
-            pReturnInstrGC = pNextInstrGC + opsize;
+            pReturnInstrGC = pNextInstrGC + cbInstr;
 
             if (   (pPatch->flags & (PATMFL_DUPLICATE_FUNCTION))
                 ||  pReturnInstrGC <= pInstrGC
@@ -1847,14 +1847,14 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
     case OP_POPF:
     {
-        bool fGenerateJmpBack = (pCurInstrGC + pCpu->opsize - pInstrGC >= SIZEOF_NEARJUMP32);
+        bool fGenerateJmpBack = (pCurInstrGC + pCpu->cbInstr - pInstrGC >= SIZEOF_NEARJUMP32);
 
         /* Not an exit point for IDT handler or function replacement patches */
         /* Note: keep IOPL in mind when changing any of this!! (see comments in PATMA.asm, PATMPopf32Replacement) */
         if (pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_DUPLICATE_FUNCTION))
             fGenerateJmpBack = false;
 
-        rc = patmPatchGenPopf(pVM, pPatch, pCurInstrGC + pCpu->opsize, !!(pCpu->prefix & DISPREFIX_OPSIZE), fGenerateJmpBack);
+        rc = patmPatchGenPopf(pVM, pPatch, pCurInstrGC + pCpu->cbInstr, !!(pCpu->prefix & DISPREFIX_OPSIZE), fGenerateJmpBack);
         if (RT_SUCCESS(rc))
         {
             if (fGenerateJmpBack == false)
@@ -2023,7 +2023,7 @@ end:
         && (pPatch->flags & PATMFL_INHIBIT_IRQS))
     {
         int     rc2;
-        RTRCPTR pNextInstrGC = pCurInstrGC + pCpu->opsize;
+        RTRCPTR pNextInstrGC = pCurInstrGC + pCpu->cbInstr;
 
         pPatch->flags &= ~PATMFL_INHIBIT_IRQS;
         Log(("Clear inhibit IRQ flag at %RRv\n", pCurInstrGC));
@@ -2047,15 +2047,15 @@ end:
     {
         // If single instruction patch, we've copied enough instructions *and* the current instruction is not a relative jump
         if (    (pPatch->flags & PATMFL_CHECK_SIZE)
-             &&  pCurInstrGC + pCpu->opsize - pInstrGC >= SIZEOF_NEARJUMP32
+             &&  pCurInstrGC + pCpu->cbInstr - pInstrGC >= SIZEOF_NEARJUMP32
              &&  !(pCpu->pCurInstr->optype & DISOPTYPE_RELATIVE_CONTROLFLOW)
              &&  !(pPatch->flags & PATMFL_RECOMPILE_NEXT) /* do not do this when the next instruction *must* be executed! */
            )
         {
-            RTRCPTR pNextInstrGC = pCurInstrGC + pCpu->opsize;
+            RTRCPTR pNextInstrGC = pCurInstrGC + pCpu->cbInstr;
 
             // The end marker for this kind of patch is any instruction at a location outside our patch jump
-            Log(("patmRecompileCallback: end found for single instruction patch at %RRv opsize %d\n", pNextInstrGC, pCpu->opsize));
+            Log(("patmRecompileCallback: end found for single instruction patch at %RRv cbInstr %d\n", pNextInstrGC, pCpu->cbInstr));
 
             rc = patmPatchGenJumpToGuest(pVM, pPatch, pNextInstrGC);
             AssertRC(rc);
@@ -2178,7 +2178,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
     DISCPUSTATE cpu;
     PPATCHINFO pPatch = (PPATCHINFO)pCacheRec->pPatch;
     int rc = VWRN_CONTINUE_ANALYSIS;
-    uint32_t opsize, delta;
+    uint32_t cbInstr, delta;
     R3PTRTYPE(uint8_t *) pCurInstrHC = 0;
     bool disret;
     char szOutput[256];
@@ -2198,7 +2198,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
         }
 
         disret = patmR3DisInstrToStr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_RAWCODE,
-                                     &cpu, &opsize, szOutput, sizeof(szOutput));
+                                     &cpu, &cbInstr, szOutput, sizeof(szOutput));
         if (PATMIsPatchGCAddr(pVM, pCurInstrGC))
         {
             RTRCPTR pOrgInstrGC = patmPatchGCPtr2GuestGCPtr(pVM, pPatch, pCurInstrGC);
@@ -2282,7 +2282,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
 
             rc = VWRN_CONTINUE_ANALYSIS;
         }
-        pCurInstrGC += opsize;
+        pCurInstrGC += cbInstr;
     }
 end:
     return rc;
@@ -2348,7 +2348,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
     DISCPUSTATE cpu;
     PPATCHINFO pPatch = (PPATCHINFO)pCacheRec->pPatch;
     int rc = VWRN_CONTINUE_ANALYSIS;
-    uint32_t opsize;
+    uint32_t cbInstr;
     R3PTRTYPE(uint8_t *) pCurInstrHC = 0;
     bool disret;
 #ifdef LOG_ENABLED
@@ -2365,10 +2365,10 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
         }
 #ifdef LOG_ENABLED
         disret = patmR3DisInstrToStr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE,
-                                     &cpu, &opsize, szOutput, sizeof(szOutput));
+                                     &cpu, &cbInstr, szOutput, sizeof(szOutput));
         Log(("Recompile: %s", szOutput));
 #else
-        disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
+        disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpu, &cbInstr);
 #endif
         if (disret == false)
         {
@@ -2391,7 +2391,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                 DISCPUSTATE cpunext;
                 uint32_t    opsizenext;
                 uint8_t *pNextInstrHC;
-                RTRCPTR  pNextInstrGC = pCurInstrGC + opsize;
+                RTRCPTR  pNextInstrGC = pCurInstrGC + cbInstr;
 
                 Log(("patmRecompileCodeStream: irqs inhibited by instruction %RRv\n", pNextInstrGC));
 
@@ -2472,7 +2472,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
             {
                 Log(("patmRecompileCodeStream continue passed conditional jump\n"));
                 /* First we need to finish this linear code stream until the next exit point. */
-                rc = patmRecompileCodeStream(pVM, pInstrGC, pCurInstrGC+opsize, pfnPATMR3Recompile, pCacheRec);
+                rc = patmRecompileCodeStream(pVM, pInstrGC, pCurInstrGC+cbInstr, pfnPATMR3Recompile, pCacheRec);
                 if (RT_FAILURE(rc))
                 {
                     Log(("patmRecompileCodeStream fatal error %d\n", rc));
@@ -2521,7 +2521,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
             rc = VINF_SUCCESS;
             goto end;
         }
-        pCurInstrGC += opsize;
+        pCurInstrGC += cbInstr;
     }
 end:
     Assert(!(pPatch->flags & PATMFL_RECOMPILE_NEXT));
@@ -2630,19 +2630,19 @@ static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
 #ifdef DEBUG
     DISCPUSTATE cpu;
     char szOutput[256];
-    uint32_t opsize, i = 0;
+    uint32_t cbInstr, i = 0;
     bool disret;
 
     while (i < pPatch->cbPrivInstr)
     {
         disret = patmR3DisInstrToStr(pVM, pPatch, pPatch->pPrivInstrGC + i, NULL, PATMREAD_ORGCODE,
-                                     &cpu, &opsize, szOutput, sizeof(szOutput));
+                                     &cpu, &cbInstr, szOutput, sizeof(szOutput));
         if (disret == false)
             break;
 
         Log(("Org patch jump: %s", szOutput));
-        Assert(opsize);
-        i += opsize;
+        Assert(cbInstr);
+        i += cbInstr;
     }
 #endif
 
@@ -2655,13 +2655,13 @@ static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
         while (i < pPatch->cbPrivInstr)
         {
             disret = patmR3DisInstrToStr(pVM, pPatch, pPatch->pPrivInstrGC + i, NULL, PATMREAD_ORGCODE,
-                                         &cpu, &opsize, szOutput, sizeof(szOutput));
+                                         &cpu, &cbInstr, szOutput, sizeof(szOutput));
             if (disret == false)
                 break;
 
             Log(("Org instr: %s", szOutput));
-            Assert(opsize);
-            i += opsize;
+            Assert(cbInstr);
+            i += cbInstr;
         }
     }
 #endif
@@ -2962,7 +2962,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
     PPATCHINFO pPatch = &pPatchRec->patch;
     bool disret;
     DISCPUSTATE cpuPush, cpuJmp;
-    uint32_t opsize;
+    uint32_t cbInstr;
     RTRCPTR  pCurInstrGC = pInstrGC;
     uint8_t *pCurInstrHC, *pInstrHC;
     uint32_t orgOffsetPatchMem = ~0;
@@ -2975,15 +2975,15 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
      * and then jump to a common entrypoint. In order not to waste a lot of memory, we will check for this
      * condition here and only patch the common entypoint once.
      */
-    disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuPush, &opsize);
+    disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuPush, &cbInstr);
     Assert(disret);
     if (disret && cpuPush.pCurInstr->opcode == OP_PUSH)
     {
         RTRCPTR  pJmpInstrGC;
         int      rc;
-        pCurInstrGC += opsize;
+        pCurInstrGC += cbInstr;
 
-        disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuJmp, &opsize);
+        disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuJmp, &cbInstr);
         if (   disret
             && cpuJmp.pCurInstr->opcode == OP_JMP
             && (pJmpInstrGC = PATMResolveBranch(&cpuJmp, pCurInstrGC))
@@ -3568,13 +3568,13 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     DISCPUSTATE   cpu;
     RTRCPTR       pTargetGC;
     PPATMPATCHREC pPatchFunction;
-    uint32_t      opsize;
+    uint32_t      cbInstr;
     bool          disret;
 
     Assert(pPatch->flags & PATMFL_REPLACE_FUNCTION_CALL);
-    Assert((pCpu->pCurInstr->opcode == OP_CALL || pCpu->pCurInstr->opcode == OP_JMP) && pCpu->opsize == SIZEOF_NEARJUMP32);
+    Assert((pCpu->pCurInstr->opcode == OP_CALL || pCpu->pCurInstr->opcode == OP_JMP) && pCpu->cbInstr == SIZEOF_NEARJUMP32);
 
-    if ((pCpu->pCurInstr->opcode != OP_CALL && pCpu->pCurInstr->opcode != OP_JMP) || pCpu->opsize != SIZEOF_NEARJUMP32)
+    if ((pCpu->pCurInstr->opcode != OP_CALL && pCpu->pCurInstr->opcode != OP_JMP) || pCpu->cbInstr != SIZEOF_NEARJUMP32)
     {
         rc = VERR_PATCHING_REFUSED;
         goto failure;
@@ -3603,7 +3603,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
             if (pTmpInstrHC == 0)
                 break;
 
-            disret = patmR3DisInstr(pVM, pPatch, pTargetGC, pTmpInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
+            disret = patmR3DisInstr(pVM, pPatch, pTargetGC, pTmpInstrHC, PATMREAD_ORGCODE, &cpu, &cbInstr);
             if (disret == false || cpu.pCurInstr->opcode != OP_JMP)
                 break;
 
@@ -3638,7 +3638,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
 
     /* Lowest and highest address for write monitoring. */
     pPatch->pInstrGCLowest  = pInstrGC;
-    pPatch->pInstrGCHighest = pInstrGC + pCpu->opsize;
+    pPatch->pInstrGCHighest = pInstrGC + pCpu->cbInstr;
     PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "Call");
 
     Log(("Successfully installed function replacement patch at %RRv\n", pInstrGC));
@@ -3683,7 +3683,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
         goto failure;
 
     /* Add relocation record for cached data access. */
-    if (patmPatchAddReloc32(pVM, pPatch, &pPB[pCpu->opsize - sizeof(RTRCPTR)], FIXUP_ABSOLUTE, pPatch->pPrivInstrGC, pVM->patm.s.mmio.pCachedData) != VINF_SUCCESS)
+    if (patmPatchAddReloc32(pVM, pPatch, &pPB[pCpu->cbInstr - sizeof(RTRCPTR)], FIXUP_ABSOLUTE, pPatch->pPrivInstrGC, pVM->patm.s.mmio.pCachedData) != VINF_SUCCESS)
     {
         Log(("Relocation failed for cached mmio address!!\n"));
         return VERR_PATCHING_REFUSED;
@@ -3697,7 +3697,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
     pPatch->cbPatchJump = pPatch->cbPrivInstr;  /* bit of a misnomer in this case; size of replacement instruction. */
 
     /* Replace address with that of the cached item. */
-    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pInstrGC + pCpu->opsize - sizeof(RTRCPTR), &pVM->patm.s.mmio.pCachedData, sizeof(RTRCPTR));
+    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pInstrGC + pCpu->cbInstr - sizeof(RTRCPTR), &pVM->patm.s.mmio.pCachedData, sizeof(RTRCPTR));
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
@@ -3732,7 +3732,7 @@ failure:
 static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
 {
     DISCPUSTATE   cpu;
-    uint32_t      opsize;
+    uint32_t      cbInstr;
     bool          disret;
     uint8_t      *pInstrHC;
 
@@ -3744,31 +3744,31 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
 
     /* Disassemble mmio instruction. */
     disret = patmR3DisInstrNoStrOpMode(pVM, pPatch, pInstrGC, pInstrHC, PATMREAD_ORGCODE,
-                                       &cpu, &opsize);
+                                       &cpu, &cbInstr);
     if (disret == false)
     {
         Log(("Disassembly failed (probably page not present) -> return to caller\n"));
         return VERR_PATCHING_REFUSED;
     }
 
-    AssertMsg(opsize <= MAX_INSTR_SIZE, ("privileged instruction too big %d!!\n", opsize));
-    if (opsize > MAX_INSTR_SIZE)
+    AssertMsg(cbInstr <= MAX_INSTR_SIZE, ("privileged instruction too big %d!!\n", cbInstr));
+    if (cbInstr > MAX_INSTR_SIZE)
         return VERR_PATCHING_REFUSED;
     if (cpu.param2.fUse != DISUSE_DISPLACEMENT32)
         return VERR_PATCHING_REFUSED;
 
     /* Add relocation record for cached data access. */
-    if (patmPatchAddReloc32(pVM, pPatch, &pInstrHC[cpu.opsize - sizeof(RTRCPTR)], FIXUP_ABSOLUTE) != VINF_SUCCESS)
+    if (patmPatchAddReloc32(pVM, pPatch, &pInstrHC[cpu.cbInstr - sizeof(RTRCPTR)], FIXUP_ABSOLUTE) != VINF_SUCCESS)
     {
         Log(("Relocation failed for cached mmio address!!\n"));
         return VERR_PATCHING_REFUSED;
     }
     /* Replace address with that of the cached item. */
-    *(RTRCPTR *)&pInstrHC[cpu.opsize - sizeof(RTRCPTR)] = pVM->patm.s.mmio.pCachedData;
+    *(RTRCPTR *)&pInstrHC[cpu.cbInstr - sizeof(RTRCPTR)] = pVM->patm.s.mmio.pCachedData;
 
     /* Lowest and highest address for write monitoring. */
     pPatch->pInstrGCLowest  = pInstrGC;
-    pPatch->pInstrGCHighest = pInstrGC + cpu.opsize;
+    pPatch->pInstrGCHighest = pInstrGC + cpu.cbInstr;
 
     PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "MMIO");
     pVM->patm.s.mmio.pCachedData = 0;
@@ -3858,7 +3858,7 @@ VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t
 
     /* Lowest and highest address for write monitoring. */
     pPatch->pInstrGCLowest  = pInstrGC;
-    pPatch->pInstrGCHighest = pInstrGC + pCpu->opsize;
+    pPatch->pInstrGCHighest = pInstrGC + pCpu->cbInstr;
 
     pPatch->uState = PATCH_ENABLED;
     return VINF_SUCCESS;
@@ -3920,11 +3920,11 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
         if (!(pCpu->param1.fUse & DISUSE_IMMEDIATE32_REL))
             goto failure;
 
-        Assert(pCpu->opsize == SIZEOF_NEARJUMP32 || pCpu->opsize == SIZEOF_NEAR_COND_JUMP32);
-        if (pCpu->opsize != SIZEOF_NEARJUMP32 && pCpu->opsize != SIZEOF_NEAR_COND_JUMP32)
+        Assert(pCpu->cbInstr == SIZEOF_NEARJUMP32 || pCpu->cbInstr == SIZEOF_NEAR_COND_JUMP32);
+        if (pCpu->cbInstr != SIZEOF_NEARJUMP32 && pCpu->cbInstr != SIZEOF_NEAR_COND_JUMP32)
             goto failure;
 
-        if (PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(pInstrGC + pCpu->opsize))
+        if (PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(pInstrGC + pCpu->cbInstr))
         {
             STAM_COUNTER_INC(&pVM->patm.s.StatPageBoundaryCrossed);
             AssertMsgFailed(("Patch jump would cross page boundary -> refuse!!\n"));
@@ -3939,9 +3939,9 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
     }
 
     // make a copy of the guest code bytes that will be overwritten
-    Assert(pCpu->opsize <= sizeof(pPatch->aPrivInstr));
-    Assert(pCpu->opsize >= SIZEOF_NEARJUMP32);
-    pPatch->cbPatchJump = pCpu->opsize;
+    Assert(pCpu->cbInstr <= sizeof(pPatch->aPrivInstr));
+    Assert(pCpu->cbInstr >= SIZEOF_NEARJUMP32);
+    pPatch->cbPatchJump = pCpu->cbInstr;
 
     rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
     AssertRC(rc);
@@ -3951,9 +3951,9 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
      * A conflict jump patch needs to be treated differently; we'll just replace the relative jump address with one that
      * references the target instruction in the conflict patch.
      */
-    RTRCPTR pJmpDest = PATMR3GuestGCPtrToPatchGCPtr(pVM, pInstrGC + pCpu->opsize + (int32_t)pCpu->param1.parval);
+    RTRCPTR pJmpDest = PATMR3GuestGCPtrToPatchGCPtr(pVM, pInstrGC + pCpu->cbInstr + (int32_t)pCpu->param1.parval);
 
-    AssertMsg(pJmpDest, ("PATMR3GuestGCPtrToPatchGCPtr failed for %RRv\n", pInstrGC + pCpu->opsize + (int32_t)pCpu->param1.parval));
+    AssertMsg(pJmpDest, ("PATMR3GuestGCPtrToPatchGCPtr failed for %RRv\n", pInstrGC + pCpu->cbInstr + (int32_t)pCpu->param1.parval));
     pPatch->pPatchJumpDestGC = pJmpDest;
 
     PATMP2GLOOKUPREC cacheRec;
@@ -4025,7 +4025,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
 {
     DISCPUSTATE cpu;
     R3PTRTYPE(uint8_t *) pInstrHC;
-    uint32_t opsize;
+    uint32_t cbInstr;
     PPATMPATCHREC pPatchRec;
     PCPUMCTX pCtx = 0;
     bool disret;
@@ -4241,18 +4241,18 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         return VERR_NO_MEMORY;
     }
 
-    disret = patmR3DisInstrNoStrOpMode(pVM, &pPatchRec->patch, pInstrGC, NULL, PATMREAD_ORGCODE, &cpu, &opsize);
+    disret = patmR3DisInstrNoStrOpMode(pVM, &pPatchRec->patch, pInstrGC, NULL, PATMREAD_ORGCODE, &cpu, &cbInstr);
     if (disret == false)
     {
         Log(("Disassembly failed (probably page not present) -> return to caller\n"));
         return VERR_PATCHING_REFUSED;
     }
 
-    AssertMsg(opsize <= MAX_INSTR_SIZE, ("privileged instruction too big %d!!\n", opsize));
-    if (opsize > MAX_INSTR_SIZE)
+    AssertMsg(cbInstr <= MAX_INSTR_SIZE, ("privileged instruction too big %d!!\n", cbInstr));
+    if (cbInstr > MAX_INSTR_SIZE)
         return VERR_PATCHING_REFUSED;
 
-    pPatchRec->patch.cbPrivInstr = opsize;
+    pPatchRec->patch.cbPrivInstr = cbInstr;
     pPatchRec->patch.opcode      = cpu.pCurInstr->opcode;
 
     /* Restricted hinting for now. */
@@ -4307,7 +4307,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         if (pPatchRec->patch.flags & PATMFL_SYSENTER)
             pPatchRec->patch.flags |= PATMFL_IDTHANDLER;    /* we treat a sysenter handler as an IDT handler */
 
-        rc = patmIdtHandler(pVM, pInstrGC, opsize, pPatchRec, &cacheRec);
+        rc = patmIdtHandler(pVM, pInstrGC, cbInstr, pPatchRec, &cacheRec);
 #ifdef VBOX_WITH_STATISTICS
         if (    rc == VINF_SUCCESS
             &&  (pPatchRec->patch.flags & PATMFL_SYSENTER))
@@ -4383,7 +4383,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         case OP_PUSHF:
         case OP_CLI:
             Log(("PATMR3InstallPatch %s %RRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
-            rc = PATMR3PatchBlock(pVM, pInstrGC, pInstrHC, cpu.pCurInstr->opcode, opsize, pPatchRec);
+            rc = PATMR3PatchBlock(pVM, pInstrGC, pInstrHC, cpu.pCurInstr->opcode, cbInstr, pPatchRec);
             break;
 
         case OP_STR:
@@ -4492,12 +4492,12 @@ static uint32_t patmGetInstrSize(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
     {
         DISCPUSTATE cpu;
         bool        disret;
-        uint32_t    opsize;
+        uint32_t    cbInstr;
 
-        disret = patmR3DisInstr(pVM, pPatch, pInstrGC, pInstrHC, PATMREAD_ORGCODE | PATMREAD_NOCHECK, &cpu, &opsize);
+        disret = patmR3DisInstr(pVM, pPatch, pInstrGC, pInstrHC, PATMREAD_ORGCODE | PATMREAD_NOCHECK, &cpu, &cbInstr);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
         if (disret)
-            return opsize;
+            return cbInstr;
     }
     return 0;
 }
@@ -5186,13 +5186,13 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
     PATCHINFO            patch;
     DISCPUSTATE          cpu;
     R3PTRTYPE(uint8_t *) pInstrHC;
-    uint32_t             opsize;
+    uint32_t             cbInstr;
     bool                 disret;
     int                  rc;
 
     RT_ZERO(patch);
     pInstrHC = PATMGCVirtToHCVirt(pVM, &patch, pInstrGC);
-    disret = patmR3DisInstr(pVM, &patch, pInstrGC, pInstrHC, PATMREAD_ORGCODE, &cpu, &opsize);
+    disret = patmR3DisInstr(pVM, &patch, pInstrGC, pInstrHC, PATMREAD_ORGCODE, &cpu, &cbInstr);
     /*
      * If it's a 5 byte relative jump, then we can work around the problem by replacing the 32 bits relative offset
      * with one that jumps right into the conflict patch.
@@ -5334,15 +5334,15 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
                     {
                         DISCPUSTATE cpu;
                         char szOutput[256];
-                        uint32_t opsize;
+                        uint32_t cbInstr;
                         uint32_t i = 0;
                         bool disret;
                         while(i < pPatch->cbPatchJump)
                         {
                             disret = patmR3DisInstrToStr(pVM, pPatch, pPatch->pPrivInstrGC + i, NULL, PATMREAD_ORGCODE,
-                                                         &cpu, &opsize, szOutput, sizeof(szOutput));
+                                                         &cpu, &cbInstr, szOutput, sizeof(szOutput));
                             Log(("Renewed patch instr: %s", szOutput));
-                            i += opsize;
+                            i += cbInstr;
                         }
                     }
 #endif
@@ -6019,7 +6019,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             ||  !(CpuOld.pCurInstr->optype & DISOPTYPE_HARMLESS))
         {
             if (RT_SUCCESS(rc))
-                cbDirty += CpuOld.opsize;
+                cbDirty += CpuOld.cbInstr;
             else
             if (!cbDirty)
                 cbDirty = 1;
@@ -6039,8 +6039,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         patmr3RemoveP2GLookupRecord(pVM, &pPatch->patch, pCurPatchInstrGC);
         pPatchToGuestRec = NULL;
 
-        pCurPatchInstrGC += CpuOld.opsize;
-        cbDirty          += CpuOld.opsize;
+        pCurPatchInstrGC += CpuOld.cbInstr;
+        cbDirty          += CpuOld.cbInstr;
 
         /* Let's see if there's another dirty instruction right after. */
         pRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->patch.Patch2GuestAddrTree, pCurPatchInstrGC - pVM->patm.s.pPatchMemGC, true);
@@ -6085,7 +6085,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
             /* If the instruction is completely harmless (which implies a 1:1 patch copy). */
             if (    rc == VINF_SUCCESS
-                &&  CpuNew.opsize <= cbLeft /* must still fit */
+                &&  CpuNew.cbInstr <= cbLeft /* must still fit */
                 &&  fValidInstr
                )
             {
@@ -6097,7 +6097,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 #endif
 
                 /* Copy the new instruction. */
-                rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), pCurPatchInstrHC, pCurInstrGC, CpuNew.opsize);
+                rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), pCurPatchInstrHC, pCurInstrGC, CpuNew.cbInstr);
                 AssertRC(rc);
 
                 /* Add a new lookup record for the duplicated instruction. */
@@ -6118,10 +6118,10 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                 rc = VERR_PATCHING_REFUSED;
                 break;
             }
-            pCurInstrGC      += CpuNew.opsize;
-            pCurPatchInstrHC += CpuNew.opsize;
-            pCurPatchInstrGC += CpuNew.opsize;
-            cbLeft           -= CpuNew.opsize;
+            pCurInstrGC      += CpuNew.cbInstr;
+            pCurPatchInstrHC += CpuNew.cbInstr;
+            pCurPatchInstrGC += CpuNew.cbInstr;
+            cbLeft           -= CpuNew.cbInstr;
 
             /* Check if we expanded a complex guest instruction into a patch stream (e.g. call) */
             if (!cbLeft)
@@ -6401,13 +6401,13 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     {
         DISCPUSTATE cpu;
         bool        disret;
-        uint32_t    opsize;
+        uint32_t    cbInstr;
         PATMP2GLOOKUPREC cacheRec;
         RT_ZERO(cacheRec);
         cacheRec.pPatch = &pPatch->patch;
 
         disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_RAWCODE,
-                                &cpu, &opsize);
+                                &cpu, &cbInstr);
         if (cacheRec.Lock.pvMap)
             PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 
@@ -6440,13 +6440,13 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
 #ifdef VBOX_STRICT
         DISCPUSTATE cpu;
         bool        disret;
-        uint32_t    opsize;
+        uint32_t    cbInstr;
         PATMP2GLOOKUPREC cacheRec;
         RT_ZERO(cacheRec);
         cacheRec.pPatch = &pPatch->patch;
 
         disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_ORGCODE,
-                                &cpu, &opsize);
+                                &cpu, &cbInstr);
         if (cacheRec.Lock.pvMap)
             PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 
@@ -6454,7 +6454,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         {
             cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
             disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_RAWCODE,
-                                    &cpu, &opsize);
+                                    &cpu, &cbInstr);
             if (cacheRec.Lock.pvMap)
                 PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 

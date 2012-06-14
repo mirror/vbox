@@ -474,7 +474,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
          */
         if (IOM_SUCCESS(rcStrict))
         {
-            pCtx->rip += Cpu.opsize;
+            pCtx->rip += Cpu.cbInstr;
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
             return VBOXSTRICTRC_TODO(rcStrict);
         }
@@ -1047,16 +1047,16 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             {
                 case OP_CLI:
                     pCtx->eflags.u32 &= ~X86_EFL_IF;
-                    Assert(Cpu.opsize == 1);
-                    pCtx->rip += Cpu.opsize;
+                    Assert(Cpu.cbInstr == 1);
+                    pCtx->rip += Cpu.cbInstr;
                     STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
                     return VINF_EM_RESCHEDULE_REM; /* must go to the recompiler now! */
 
                 case OP_STI:
                     pCtx->eflags.u32 |= X86_EFL_IF;
-                    EMSetInhibitInterruptsPC(pVCpu, pCtx->rip + Cpu.opsize);
-                    Assert(Cpu.opsize == 1);
-                    pCtx->rip += Cpu.opsize;
+                    EMSetInhibitInterruptsPC(pVCpu, pCtx->rip + Cpu.cbInstr);
+                    Assert(Cpu.cbInstr == 1);
+                    pCtx->rip += Cpu.cbInstr;
                     STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
                     return VINF_SUCCESS;
 

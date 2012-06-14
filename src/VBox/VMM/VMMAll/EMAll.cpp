@@ -506,7 +506,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
-            Assert(cbOp == pDis->opsize);
+            Assert(cbOp == pDis->cbInstr);
             uint32_t cbIgnored;
             rc = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbIgnored);
             if (RT_SUCCESS(rc))
@@ -560,7 +560,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
-            Assert(cbOp == pDis->opsize);
+            Assert(cbOp == pDis->cbInstr);
             rc = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbWritten);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
@@ -616,7 +616,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTAT
     uint32_t cbIgnored;
     VBOXSTRICTRC rc = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
     if (RT_SUCCESS(rc))
-        pRegFrame->rip += pDis->opsize; /* Move on to the next instruction. */
+        pRegFrame->rip += pDis->cbInstr; /* Move on to the next instruction. */
     return rc;
 #endif
 }
@@ -2687,7 +2687,7 @@ static int emInterpretSti(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
     Assert(pRegFrame->eflags.u32 & X86_EFL_IF);
     Assert(pvFault == SELMToFlat(pVM, DISSELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->rip));
 
-    pVCpu->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pDis->opsize;
+    pVCpu->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pDis->cbInstr;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     return VINF_SUCCESS;

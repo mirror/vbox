@@ -935,7 +935,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
         pRegFrame->rdi += uIncrement;
         pRegFrame->rcx--;
     }
-    pRegFrame->rip += pDis->opsize;
+    pRegFrame->rip += pDis->cbInstr;
 
     LogFlow(("pgmPoolAccessHandlerSTOSD: returns\n"));
     return VINF_SUCCESS;

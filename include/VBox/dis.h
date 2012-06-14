@@ -547,7 +547,7 @@ typedef struct DISCPUSTATE
     /** The size of the prefix bytes. */
     uint8_t         cbPrefix;
     /** The instruction size. */
-    uint8_t         opsize;
+    uint8_t         cbInstr;
     uint8_t         abUnused[2];
     /* off: 0x078 (120) */
     /** Return code set by a worker function like the opcode bytes readers. */

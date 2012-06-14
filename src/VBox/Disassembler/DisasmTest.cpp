@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox disassembler - Test application 
+ * VBox disassembler - Test application
  */
 
 /*
@@ -46,7 +46,7 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         int rc = DISInstrToStr(&pabInstrs[off], enmDisCpuMode, &Cpu, &cb, szOutput, sizeof(szOutput));
 
         RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
-        RTTESTI_CHECK(cb == Cpu.opsize);
+        RTTESTI_CHECK(cb == Cpu.cbInstr);
         RTTESTI_CHECK(cb > 0);
         RTTESTI_CHECK(cb <= 16);
         RTStrStripR(szOutput);
@@ -68,7 +68,7 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         }
         if (cErrBefore != RTTestIErrorCount())
             RTTestIFailureDetails("rc=%Rrc, off=%#x (%u) cbInstr=%u enmDisCpuMode=%d\n",
-                                  rc, off, Cpu.opsize, enmDisCpuMode);
+                                  rc, off, Cpu.cbInstr, enmDisCpuMode);
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s\n", szOutput);
         off += cb;
     }

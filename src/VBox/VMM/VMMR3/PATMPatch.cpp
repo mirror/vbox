@@ -420,7 +420,7 @@ int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTY
     int rc = VINF_SUCCESS;
     PATCHGEN_PROLOG(pVM, pPatch);
 
-    uint32_t const cbInstrShutUpGcc = pCpu->opsize;
+    uint32_t const cbInstrShutUpGcc = pCpu->cbInstr;
     rc = patmPatchReadBytes(pVM, pPB, pCurInstrGC, cbInstrShutUpGcc);
     AssertRC(rc);
     PATCHGEN_EPILOG(pPatch, cbInstrShutUpGcc);
@@ -711,9 +711,9 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
         if (pCpu->prefix & DISPREFIX_SEG)
             i++;    //skip segment prefix
 
-        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->cbInstr - i);
         AssertRCReturn(rc, rc);
-        offset += (pCpu->opsize - i);
+        offset += (pCpu->cbInstr - i);
     }
     else
     {
@@ -724,7 +724,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
         /** @todo wasting memory as the complex search is overkill and we need only one lookup slot... */
 
         /* Relative call to patch code (patch to patch -> no fixup). */
-        Log(("PatchGenCall from %RRv (next=%RRv) to %RRv\n", pCurInstrGC, pCurInstrGC + pCpu->opsize, pTargetGC));
+        Log(("PatchGenCall from %RRv (next=%RRv) to %RRv\n", pCurInstrGC, pCurInstrGC + pCpu->cbInstr, pTargetGC));
 
         /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
          * a page fault. The assembly code restores the stack afterwards.
@@ -748,7 +748,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
 
     /* 3: Generate code to lookup address in our local cache; call hypervisor PATM code if it can't be located. */
     PATCHGEN_PROLOG_NODEF(pVM, pPatch);
-    callInfo.pReturnGC      = pCurInstrGC + pCpu->opsize;
+    callInfo.pReturnGC      = pCurInstrGC + pCpu->cbInstr;
     callInfo.pTargetGC      = (fIndirect) ? 0xDEADBEEF : pTargetGC;
     size = patmPatchGenCode(pVM, pPatch, pPB, (fIndirect) ? &PATMCallIndirectRecord : &PATMCallRecord, 0, false, &callInfo);
     PATCHGEN_EPILOG(pPatch, size);
@@ -808,9 +808,9 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     if (pCpu->prefix & DISPREFIX_SEG)
         i++;    //skip segment prefix
 
-    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->cbInstr - i);
     AssertRCReturn(rc, rc);
-    offset += (pCpu->opsize - i);
+    offset += (pCpu->cbInstr - i);
 
     /* align this block properly to make sure the jump table will not be misaligned. */
     size = (RTHCUINTPTR)&pPB[offset] & 3;
@@ -825,7 +825,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
 
     /* 3: Generate code to lookup address in our local cache; call hypervisor PATM code if it can't be located. */
     PATCHGEN_PROLOG_NODEF(pVM, pPatch);
-    callInfo.pReturnGC      = pCurInstrGC + pCpu->opsize;
+    callInfo.pReturnGC      = pCurInstrGC + pCpu->cbInstr;
     callInfo.pTargetGC      = 0xDEADBEEF;
     size = patmPatchGenCode(pVM, pPatch, pPB, &PATMJumpIndirectRecord, 0, false, &callInfo);
     PATCHGEN_EPILOG(pPatch, size);
@@ -1374,9 +1374,9 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
         if (pCpu->prefix == DISPREFIX_SEG)
             i++;    //skip segment prefix
 
-        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+        rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->cbInstr - i);
         AssertRCReturn(rc, rc);
-        offset += (pCpu->opsize - i);
+        offset += (pCpu->cbInstr - i);
 
         pPB[offset++] = 0x66;              // mov       ax, CPUMCTX.tr/ldtr
         pPB[offset++] = 0xA1;
@@ -1468,9 +1468,9 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
         i++;    //skip operand prefix
     if (pCpu->prefix == DISPREFIX_SEG)
         i++;    //skip segment prefix
-    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->opsize - i);
+    rc = patmPatchReadBytes(pVM, &pPB[offset], (RTRCPTR)((RTGCUINTPTR32)pCurInstrGC + i), pCpu->cbInstr - i);
     AssertRCReturn(rc, rc);
-    offset += (pCpu->opsize - i);
+    offset += (pCpu->cbInstr - i);
 
     pPB[offset++] = 0x66;              // mov       ax, CPUMCTX.gdtr.limit
     pPB[offset++] = 0xA1;
