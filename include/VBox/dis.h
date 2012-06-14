@@ -191,109 +191,121 @@ typedef enum DISCPUMODE
                                                      | DISUSE_RIPDISPLACEMENT32) ))
 /** @} */
 
-/** index in {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"}
+/** @name 64-bit general register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
+ * @note  Safe to assume same values as the 16-bit and 32-bit general registers.
  * @{
  */
-#define USE_REG_RAX                     0
-#define USE_REG_RCX                     1
-#define USE_REG_RDX                     2
-#define USE_REG_RBX                     3
-#define USE_REG_RSP                     4
-#define USE_REG_RBP                     5
-#define USE_REG_RSI                     6
-#define USE_REG_RDI                     7
-#define USE_REG_R8                      8
-#define USE_REG_R9                      9
-#define USE_REG_R10                     10
-#define USE_REG_R11                     11
-#define USE_REG_R12                     12
-#define USE_REG_R13                     13
-#define USE_REG_R14                     14
-#define USE_REG_R15                     15
+#define DISGREG_RAX                     UINT8_C(0)
+#define DISGREG_RCX                     UINT8_C(1)
+#define DISGREG_RDX                     UINT8_C(2)
+#define DISGREG_RBX                     UINT8_C(3)
+#define DISGREG_RSP                     UINT8_C(4)
+#define DISGREG_RBP                     UINT8_C(5)
+#define DISGREG_RSI                     UINT8_C(6)
+#define DISGREG_RDI                     UINT8_C(7)
+#define DISGREG_R8                      UINT8_C(8)
+#define DISGREG_R9                      UINT8_C(9)
+#define DISGREG_R10                     UINT8_C(10)
+#define DISGREG_R11                     UINT8_C(11)
+#define DISGREG_R12                     UINT8_C(12)
+#define DISGREG_R13                     UINT8_C(13)
+#define DISGREG_R14                     UINT8_C(14)
+#define DISGREG_R15                     UINT8_C(15)
 /** @} */
 
-/** index in {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D"}
+/** @name 32-bit general register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
+ * @note  Safe to assume same values as the 16-bit and 64-bit general registers.
  * @{
  */
-#define USE_REG_EAX                     0
-#define USE_REG_ECX                     1
-#define USE_REG_EDX                     2
-#define USE_REG_EBX                     3
-#define USE_REG_ESP                     4
-#define USE_REG_EBP                     5
-#define USE_REG_ESI                     6
-#define USE_REG_EDI                     7
-#define USE_REG_R8D                     8
-#define USE_REG_R9D                     9
-#define USE_REG_R10D                    10
-#define USE_REG_R11D                    11
-#define USE_REG_R12D                    12
-#define USE_REG_R13D                    13
-#define USE_REG_R14D                    14
-#define USE_REG_R15D                    15
+#define DISGREG_EAX                     UINT8_C(0)
+#define DISGREG_ECX                     UINT8_C(1)
+#define DISGREG_EDX                     UINT8_C(2)
+#define DISGREG_EBX                     UINT8_C(3)
+#define DISGREG_ESP                     UINT8_C(4)
+#define DISGREG_EBP                     UINT8_C(5)
+#define DISGREG_ESI                     UINT8_C(6)
+#define DISGREG_EDI                     UINT8_C(7)
+#define DISGREG_R8D                     UINT8_C(8)
+#define DISGREG_R9D                     UINT8_C(9)
+#define DISGREG_R10D                    UINT8_C(10)
+#define DISGREG_R11D                    UINT8_C(11)
+#define DISGREG_R12D                    UINT8_C(12)
+#define DISGREG_R13D                    UINT8_C(13)
+#define DISGREG_R14D                    UINT8_C(14)
+#define DISGREG_R15D                    UINT8_C(15)
 /** @} */
 
-/** index in {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"}
+/** @name 16-bit general register indexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
+ * @note  Safe to assume same values as the 32-bit and 64-bit general registers.
  * @{
  */
-#define USE_REG_AX                      0
-#define USE_REG_CX                      1
-#define USE_REG_DX                      2
-#define USE_REG_BX                      3
-#define USE_REG_SP                      4
-#define USE_REG_BP                      5
-#define USE_REG_SI                      6
-#define USE_REG_DI                      7
-#define USE_REG_R8W                     8
-#define USE_REG_R9W                     9
-#define USE_REG_R10W                    10
-#define USE_REG_R11W                    11
-#define USE_REG_R12W                    12
-#define USE_REG_R13W                    13
-#define USE_REG_R14W                    14
-#define USE_REG_R15W                    15
+#define DISGREG_AX                      UINT8_C(0)
+#define DISGREG_CX                      UINT8_C(1)
+#define DISGREG_DX                      UINT8_C(2)
+#define DISGREG_BX                      UINT8_C(3)
+#define DISGREG_SP                      UINT8_C(4)
+#define DISGREG_BP                      UINT8_C(5)
+#define DISGREG_SI                      UINT8_C(6)
+#define DISGREG_DI                      UINT8_C(7)
+#define DISGREG_R8W                     UINT8_C(8)
+#define DISGREG_R9W                     UINT8_C(9)
+#define DISGREG_R10W                    UINT8_C(10)
+#define DISGREG_R11W                    UINT8_C(11)
+#define DISGREG_R12W                    UINT8_C(12)
+#define DISGREG_R13W                    UINT8_C(13)
+#define DISGREG_R14W                    UINT8_C(14)
+#define DISGREG_R15W                    UINT8_C(15)
 /** @} */
 
-/** index in {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B", "SPL", "BPL", "SIL", "DIL"}
+/** @name 8-bit general register indexes.
+ * This mostly (?) matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
  * @{
  */
-#define USE_REG_AL                      0
-#define USE_REG_CL                      1
-#define USE_REG_DL                      2
-#define USE_REG_BL                      3
-#define USE_REG_AH                      4
-#define USE_REG_CH                      5
-#define USE_REG_DH                      6
-#define USE_REG_BH                      7
-#define USE_REG_R8B                     8
-#define USE_REG_R9B                     9
-#define USE_REG_R10B                    10
-#define USE_REG_R11B                    11
-#define USE_REG_R12B                    12
-#define USE_REG_R13B                    13
-#define USE_REG_R14B                    14
-#define USE_REG_R15B                    15
-#define USE_REG_SPL                     16
-#define USE_REG_BPL                     17
-#define USE_REG_SIL                     18
-#define USE_REG_DIL                     19
-
+#define DISGREG_AL                      UINT8_C(0)
+#define DISGREG_CL                      UINT8_C(1)
+#define DISGREG_DL                      UINT8_C(2)
+#define DISGREG_BL                      UINT8_C(3)
+#define DISGREG_AH                      UINT8_C(4)
+#define DISGREG_CH                      UINT8_C(5)
+#define DISGREG_DH                      UINT8_C(6)
+#define DISGREG_BH                      UINT8_C(7)
+#define DISGREG_R8B                     UINT8_C(8)
+#define DISGREG_R9B                     UINT8_C(9)
+#define DISGREG_R10B                    UINT8_C(10)
+#define DISGREG_R11B                    UINT8_C(11)
+#define DISGREG_R12B                    UINT8_C(12)
+#define DISGREG_R13B                    UINT8_C(13)
+#define DISGREG_R14B                    UINT8_C(14)
+#define DISGREG_R15B                    UINT8_C(15)
+#define DISGREG_SPL                     UINT8_C(16)
+#define DISGREG_BPL                     UINT8_C(17)
+#define DISGREG_SIL                     UINT8_C(18)
+#define DISGREG_DIL                     UINT8_C(19)
 /** @} */
 
-/** index in {ES, CS, SS, DS, FS, GS}
+/** @name Segment registerindexes.
+ * This matches the AMD64 register encoding.  It is found used in
+ * DISOPPARAM::base.reg_seg.
  * @{
  */
 typedef enum
 {
-    DIS_SELREG_ES = 0,
-    DIS_SELREG_CS = 1,
-    DIS_SELREG_SS = 2,
-    DIS_SELREG_DS = 3,
-    DIS_SELREG_FS = 4,
-    DIS_SELREG_GS = 5,
+    DISSELREG_ES = 0,
+    DISSELREG_CS = 1,
+    DISSELREG_SS = 2,
+    DISSELREG_DS = 3,
+    DISSELREG_FS = 4,
+    DISSELREG_GS = 5,
     /** The usual 32-bit paranoia. */
     DIS_SEGREG_32BIT_HACK = 0x7fffffff
-} DIS_SELREG;
+} DISSELREG;
 /** @} */
 
 #define USE_REG_FP0                     0
@@ -409,6 +421,7 @@ typedef struct DISOPPARAM
 
     union
     {
+        /** DISGREG_XXX. */
         uint8_t     reg_gen;
         /** ST(0) - ST(7) */
         uint8_t     reg_fp;
@@ -416,7 +429,7 @@ typedef struct DISOPPARAM
         uint8_t     reg_mmx;
         /** XMM0 - XMM7 */
         uint8_t     reg_xmm;
-        /** {ES, CS, SS, DS, FS, GS} (DIS_SELREG). */
+        /** {ES, CS, SS, DS, FS, GS} (DISSELREG). */
         uint8_t     reg_seg;
         /** TR0-TR7 (?) */
         uint8_t     reg_test;
@@ -427,6 +440,7 @@ typedef struct DISOPPARAM
     } base;
     union
     {
+        /** DISGREG_XXX. */
         uint8_t     reg_gen;
     } index;
 
@@ -475,7 +489,7 @@ typedef struct DISCPUSTATE
     DISOPPARAM      param1;
 
     /* off: 0x060 (96) */
-    /** ModRM fields. */                
+    /** ModRM fields. */
     union
     {
         /** Bitfield view */
@@ -501,21 +515,21 @@ typedef struct DISCPUSTATE
         /** unsigned view */
         unsigned            u;
     } SIB;
-    int32_t         i32SibDisp;         
+    int32_t         i32SibDisp;
 
     /* off: 0x06c (108) */
     /** The CPU mode (DISCPUMODE). */
-    uint8_t         mode;               
+    uint8_t         mode;
     /** The addressing mode (DISCPUMODE). */
     uint8_t         addrmode;
     /** The operand mode (DISCPUMODE). */
     uint8_t         opmode;
     /** Per instruction prefix settings. */
-    uint8_t         prefix;  
+    uint8_t         prefix;
     /* off: 0x070 (112) */
     /** REX prefix value (64 bits only). */
-    uint8_t         prefix_rex;         
-    /** Segment prefix value (DIS_SELREG). */
+    uint8_t         prefix_rex;
+    /** Segment prefix value (DISSELREG). */
     uint8_t         idxSegPrefix;
     /** Last prefix byte (for SSE2 extension tables). */
     uint8_t         lastprefix;
@@ -523,7 +537,7 @@ typedef struct DISCPUSTATE
     uint8_t         opcode;
     /* off: 0x074 (116) */
     /** The size of the prefix bytes. */
-    uint8_t         cbPrefix;           
+    uint8_t         cbPrefix;
     /** The instruction size. */
     uint8_t         opsize;
     uint8_t         abUnused[2];
@@ -566,9 +580,9 @@ typedef struct DISCPUSTATE
 } DISCPUSTATE;
 
 
-/** 
- * Opcode descriptor. 
- */ 
+/**
+ * Opcode descriptor.
+ */
 typedef struct DISOPCODE
 {
 #ifndef DIS_CORE_ONLY
@@ -602,7 +616,7 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFi
                        PDISCPUSTATE pCpu, uint32_t *pcbInstr);
 
 DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
-DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
+DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
 DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 
 DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
@@ -612,13 +626,13 @@ DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
 DISDECL(int) DISFetchReg32(PCCPUMCTXCORE pCtx, unsigned reg32, uint32_t *pVal);
 DISDECL(int) DISFetchReg64(PCCPUMCTXCORE pCtx, unsigned reg64, uint64_t *pVal);
-DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal);
-DISDECL(int) DISFetchRegSegEx(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
+DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DISSELREG sel, RTSEL *pVal);
+DISDECL(int) DISFetchRegSegEx(PCCPUMCTXCORE pCtx, DISSELREG sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
 DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, unsigned reg8, uint8_t val8);
 DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, unsigned reg32, uint16_t val16);
 DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, unsigned reg32, uint32_t val32);
 DISDECL(int) DISWriteReg64(PCPUMCTXCORE pRegFrame, unsigned reg64, uint64_t val64);
-DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL val);
+DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DISSELREG sel, RTSEL val);
 DISDECL(int) DISPtrReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t **ppReg);
 DISDECL(int) DISPtrReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t **ppReg);
 DISDECL(int) DISPtrReg32(PCPUMCTXCORE pCtx, unsigned reg32, uint32_t **ppReg);

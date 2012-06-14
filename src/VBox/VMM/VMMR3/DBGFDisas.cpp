@@ -282,7 +282,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
     int             rc;
 
     if (   DIS_FMT_SEL_IS_REG(u32Sel)
-        ?  DIS_FMT_SEL_GET_REG(u32Sel) == DIS_SELREG_CS
+        ?  DIS_FMT_SEL_GET_REG(u32Sel) == DISSELREG_CS
         :  pSelInfo->Sel == DIS_FMT_SEL_GET_VALUE(u32Sel))
     {
         rc = DBGFR3AddrFromSelInfoOff(pState->pVM, &Addr, pSelInfo, uAddress);

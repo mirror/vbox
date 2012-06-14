@@ -2027,7 +2027,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                 * jmp return_address            [E9 return_address]
                 *
                 */
-            bool fUsesEax = (pDis->param2.fUse == DISUSE_REG_GEN32 && pDis->param2.base.reg_gen == USE_REG_EAX);
+            bool fUsesEax = (pDis->param2.fUse == DISUSE_REG_GEN32 && pDis->param2.base.reg_gen == DISGREG_EAX);
 
             aPatch[off++] = 0x51;    /* push ecx */
             aPatch[off++] = 0x52;    /* push edx */
@@ -2040,7 +2040,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                 if (!fUsesEax)
                 {
                     aPatch[off++] = 0x89;    /* mov eax, src_reg */
-                    aPatch[off++] = MAKE_MODRM(3, pDis->param2.base.reg_gen, USE_REG_EAX);
+                    aPatch[off++] = MAKE_MODRM(3, pDis->param2.base.reg_gen, DISGREG_EAX);
                 }
             }
             else
@@ -2080,11 +2080,11 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                 */
             Assert(pDis->param1.fUse == DISUSE_REG_GEN32);
 
-            if (pDis->param1.base.reg_gen != USE_REG_ECX)
+            if (pDis->param1.base.reg_gen != DISGREG_ECX)
                 aPatch[off++] = 0x51;    /* push ecx */
-            if (pDis->param1.base.reg_gen != USE_REG_EDX)
+            if (pDis->param1.base.reg_gen != DISGREG_EDX )
                 aPatch[off++] = 0x52;    /* push edx */
-            if (pDis->param1.base.reg_gen != USE_REG_EAX)
+            if (pDis->param1.base.reg_gen != DISGREG_EAX)
                 aPatch[off++] = 0x50;    /* push eax */
 
             aPatch[off++] = 0x31;    /* xor edx, edx */
@@ -2097,17 +2097,17 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             aPatch[off++] = 0x0F;    /* rdmsr */
             aPatch[off++] = 0x32;
 
-            if (pDis->param1.base.reg_gen != USE_REG_EAX)
+            if (pDis->param1.base.reg_gen != DISGREG_EAX)
             {
                 aPatch[off++] = 0x89;    /* mov dst_reg, eax */
-                aPatch[off++] = MAKE_MODRM(3, USE_REG_EAX, pDis->param1.base.reg_gen);
+                aPatch[off++] = MAKE_MODRM(3, DISGREG_EAX, pDis->param1.base.reg_gen);
             }
 
-            if (pDis->param1.base.reg_gen != USE_REG_EAX)
+            if (pDis->param1.base.reg_gen != DISGREG_EAX)
                 aPatch[off++] = 0x58;    /* pop eax */
-            if (pDis->param1.base.reg_gen != USE_REG_EDX)
+            if (pDis->param1.base.reg_gen != DISGREG_EDX )
                 aPatch[off++] = 0x5A;    /* pop edx */
-            if (pDis->param1.base.reg_gen != USE_REG_ECX)
+            if (pDis->param1.base.reg_gen != DISGREG_ECX)
                 aPatch[off++] = 0x59;    /* pop ecx */
         }
         aPatch[off++] = 0xE9;    /* jmp return_address */

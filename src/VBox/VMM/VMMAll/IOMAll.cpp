@@ -136,7 +136,7 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
         if (pParam->fUse & DISUSE_REG_SEG)
         {
             *pcbSize  = 2;
-            DISFetchRegSeg(pRegFrame, (DIS_SELREG)pParam->base.reg_seg, (RTSEL *)pu64Data);
+            DISFetchRegSeg(pRegFrame, (DISSELREG)pParam->base.reg_seg, (RTSEL *)pu64Data);
             return true;
         } /* Else - error. */
 
@@ -192,7 +192,7 @@ bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
 
     if (pParam->fUse & DISUSE_REG_SEG)
     {
-        DISWriteRegSeg(pRegFrame, (DIS_SELREG)pParam->base.reg_seg, (RTSEL)u64Data);
+        DISWriteRegSeg(pRegFrame, (DISSELREG)pParam->base.reg_seg, (RTSEL)u64Data);
         return true;
     }
 

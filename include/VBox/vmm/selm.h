@@ -49,7 +49,7 @@ VMMDECL(RTSEL)      SELMGetHyperTSS(PVM pVM);
 VMMDECL(RTSEL)      SELMGetHyperTSSTrap08(PVM pVM);
 VMMDECL(RTRCPTR)    SELMGetHyperGDT(PVM pVM);
 VMMDECL(int)        SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
-VMMDECL(RTGCPTR)    SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
+VMMDECL(RTGCPTR)    SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
 VMMDECL(RTGCPTR)    SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
 VMMDECL(void)       SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 
@@ -73,7 +73,7 @@ VMMDECL(void)       SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 #define SELMTOFLAT_FLAGS_HYPER      RT_BIT(10)
 /** @} */
 
-VMMDECL(int)        SELMToFlatEx(PVMCPU pVCpu, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC);
+VMMDECL(int)        SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC);
 VMMDECL(int)        SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, PCCPUMSELREGHID pHiddenSel,
                                       uint32_t fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
 VMMDECL(int)        SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS,

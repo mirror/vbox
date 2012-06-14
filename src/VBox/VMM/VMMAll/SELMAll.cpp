@@ -81,7 +81,7 @@ VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
  */
-VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
+VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
 {
     PCPUMSELREGHID pHiddenSel;
     RTSEL          Sel;
@@ -118,8 +118,8 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
     {
         switch (SelReg)
         {
-            case DIS_SELREG_FS:
-            case DIS_SELREG_GS:
+            case DISSELREG_FS:
+            case DISSELREG_GS:
                 return (RTGCPTR)(pHiddenSel->u64Base + Addr);
 
             default:
@@ -147,7 +147,7 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
  *                      GDT entires are valid.
  * @param   ppvGC       Where to store the GC flat address.
  */
-VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
+VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
 {
     /*
      * Fetch the selector first.
@@ -201,8 +201,8 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCor
             fCheckLimit = false;
             switch (SelReg)
             {
-                case DIS_SELREG_FS:
-                case DIS_SELREG_GS:
+                case DISSELREG_FS:
+                case DISSELREG_GS:
                     pvFlat = (pHiddenSel->u64Base + Addr);
                     break;
 

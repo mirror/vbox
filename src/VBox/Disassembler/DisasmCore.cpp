@@ -305,7 +305,7 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
         pCpu->opmode        = enmCpuMode;
     }
     pCpu->prefix            = DISPREFIX_NONE;
-    pCpu->idxSegPrefix      = DIS_SELREG_DS;
+    pCpu->idxSegPrefix      = DISSELREG_DS;
     pCpu->uInstrAddr        = uInstrAddr;
     pCpu->pfnDisasmFnTable  = g_apfnFullDisasm;
     pCpu->fFilter           = fFilter;
@@ -358,10 +358,10 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
 
             // segment override prefix byte
             case OP_SEG:
-                pCpu->idxSegPrefix = (DIS_SELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
+                pCpu->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
                 /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                 if (   pCpu->mode != DISCPUMODE_64BIT
-                    || pCpu->idxSegPrefix >= DIS_SELREG_FS)
+                    || pCpu->idxSegPrefix >= DISSELREG_FS)
                 {
                     pCpu->prefix    |= DISPREFIX_SEG;
                 }
@@ -1590,7 +1590,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
     if (pParam->param <= OP_PARM_REG_SEG_END)
     {
         /* Segment ES..GS registers. */
-        pParam->base.reg_seg = (DIS_SELREG)(pParam->param - OP_PARM_REG_SEG_START);
+        pParam->base.reg_seg = (DISSELREG)(pParam->param - OP_PARM_REG_SEG_START);
         pParam->fUse  |= DISUSE_REG_SEG;
         pParam->cb     = 2;
     }
@@ -1642,18 +1642,18 @@ unsigned ParseXv(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
-        pParam->base.reg_gen = USE_REG_ESI;
+        pParam->base.reg_gen = DISGREG_ESI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
-        pParam->base.reg_gen = USE_REG_RSI;
+        pParam->base.reg_gen = DISGREG_RSI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->base.reg_gen = USE_REG_SI;
+        pParam->base.reg_gen = DISGREG_SI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -1667,18 +1667,18 @@ unsigned ParseXb(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
-        pParam->base.reg_gen = USE_REG_ESI;
+        pParam->base.reg_gen = DISGREG_ESI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
-        pParam->base.reg_gen = USE_REG_RSI;
+        pParam->base.reg_gen = DISGREG_RSI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->base.reg_gen = USE_REG_SI;
+        pParam->base.reg_gen = DISGREG_SI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -1692,18 +1692,18 @@ unsigned ParseYv(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
-        pParam->base.reg_gen = USE_REG_EDI;
+        pParam->base.reg_gen = DISGREG_EDI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
-        pParam->base.reg_gen = USE_REG_RDI;
+        pParam->base.reg_gen = DISGREG_RDI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->base.reg_gen = USE_REG_DI;
+        pParam->base.reg_gen = DISGREG_DI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -1717,18 +1717,18 @@ unsigned ParseYb(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
     if (pCpu->addrmode == DISCPUMODE_32BIT)
     {
-        pParam->base.reg_gen = USE_REG_EDI;
+        pParam->base.reg_gen = DISGREG_EDI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
     if (pCpu->addrmode == DISCPUMODE_64BIT)
     {
-        pParam->base.reg_gen = USE_REG_RDI;
+        pParam->base.reg_gen = DISGREG_RDI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->base.reg_gen = USE_REG_DI;
+        pParam->base.reg_gen = DISGREG_DI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -2293,8 +2293,8 @@ static const char *szModRMReg64[]     = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP
 static const char *szModRMReg1616[8]  = {"BX+SI", "BX+DI", "BP+SI", "BP+DI", "SI", "DI", "BP", "BX"};
 #endif
 static const char *szModRMSegReg[6]   = {"ES", "CS", "SS", "DS", "FS", "GS"};
-static const int   BaseModRMReg16[8]  = { USE_REG_BX, USE_REG_BX, USE_REG_BP, USE_REG_BP, USE_REG_SI, USE_REG_DI, USE_REG_BP, USE_REG_BX};
-static const int   IndexModRMReg16[4] = { USE_REG_SI, USE_REG_DI, USE_REG_SI, USE_REG_DI};
+static const int   BaseModRMReg16[8]  = { DISGREG_BX, DISGREG_BX, DISGREG_BP, DISGREG_BP, DISGREG_SI, DISGREG_DI, DISGREG_BP, DISGREG_BX};
+static const int   IndexModRMReg16[4] = { DISGREG_SI, DISGREG_DI, DISGREG_SI, DISGREG_DI};
 //*****************************************************************************
 static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr)
 {
@@ -2335,10 +2335,10 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDI
         /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
         /* Intel® 64 and IA-32 Architectures Software Developer’s Manual: 3.4.1.1 */
         if (    (pCpu->prefix & DISPREFIX_REX)
-            &&  idx >= USE_REG_AH
-            &&  idx <= USE_REG_BH)
+            &&  idx >= DISGREG_AH
+            &&  idx <= DISGREG_BH)
         {
-            idx += (USE_REG_SPL - USE_REG_AH);
+            idx += (DISGREG_SPL - DISGREG_AH);
         }
 
         pParam->fUse |= DISUSE_REG_GEN8;
@@ -2396,7 +2396,7 @@ static void disasmModRMSReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PD
     }
 
     pParam->fUse |= DISUSE_REG_SEG;
-    pParam->base.reg_seg = (DIS_SELREG)idx;
+    pParam->base.reg_seg = (DISSELREG)idx;
 }
 
 

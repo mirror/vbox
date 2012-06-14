@@ -41,22 +41,22 @@
  */
 static const unsigned g_aReg64Index[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, rax),        /* USE_REG_RAX */
-    RT_OFFSETOF(CPUMCTXCORE, rcx),        /* USE_REG_RCX */
-    RT_OFFSETOF(CPUMCTXCORE, rdx),        /* USE_REG_RDX */
-    RT_OFFSETOF(CPUMCTXCORE, rbx),        /* USE_REG_RBX */
-    RT_OFFSETOF(CPUMCTXCORE, rsp),        /* USE_REG_RSP */
-    RT_OFFSETOF(CPUMCTXCORE, rbp),        /* USE_REG_RBP */
-    RT_OFFSETOF(CPUMCTXCORE, rsi),        /* USE_REG_RSI */
-    RT_OFFSETOF(CPUMCTXCORE, rdi),        /* USE_REG_RDI */
-    RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8  */
-    RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9  */
-    RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10 */
-    RT_OFFSETOF(CPUMCTXCORE, r11),        /* USE_REG_R11 */
-    RT_OFFSETOF(CPUMCTXCORE, r12),        /* USE_REG_R12 */
-    RT_OFFSETOF(CPUMCTXCORE, r13),        /* USE_REG_R13 */
-    RT_OFFSETOF(CPUMCTXCORE, r14),        /* USE_REG_R14 */
-    RT_OFFSETOF(CPUMCTXCORE, r15)         /* USE_REG_R15 */
+    RT_OFFSETOF(CPUMCTXCORE, rax),        /* DISGREG_RAX */
+    RT_OFFSETOF(CPUMCTXCORE, rcx),        /* DISGREG_RCX */
+    RT_OFFSETOF(CPUMCTXCORE, rdx),        /* DISGREG_RDX */
+    RT_OFFSETOF(CPUMCTXCORE, rbx),        /* DISGREG_RBX */
+    RT_OFFSETOF(CPUMCTXCORE, rsp),        /* DISGREG_RSP */
+    RT_OFFSETOF(CPUMCTXCORE, rbp),        /* DISGREG_RBP */
+    RT_OFFSETOF(CPUMCTXCORE, rsi),        /* DISGREG_RSI */
+    RT_OFFSETOF(CPUMCTXCORE, rdi),        /* DISGREG_RDI */
+    RT_OFFSETOF(CPUMCTXCORE, r8),         /* DISGREG_R8  */
+    RT_OFFSETOF(CPUMCTXCORE, r9),         /* DISGREG_R9  */
+    RT_OFFSETOF(CPUMCTXCORE, r10),        /* DISGREG_R10 */
+    RT_OFFSETOF(CPUMCTXCORE, r11),        /* DISGREG_R11 */
+    RT_OFFSETOF(CPUMCTXCORE, r12),        /* DISGREG_R12 */
+    RT_OFFSETOF(CPUMCTXCORE, r13),        /* DISGREG_R13 */
+    RT_OFFSETOF(CPUMCTXCORE, r14),        /* DISGREG_R14 */
+    RT_OFFSETOF(CPUMCTXCORE, r15)         /* DISGREG_R15 */
 };
 
 /**
@@ -72,22 +72,22 @@ static const unsigned g_aReg64Index[] =
  */
 static const unsigned g_aReg32Index[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_EAX */
-    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_ECX */
-    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_EDX */
-    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_EBX */
-    RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_ESP */
-    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_EBP */
-    RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_ESI */
-    RT_OFFSETOF(CPUMCTXCORE, edi),        /* USE_REG_EDI */
-    RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8D */
-    RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9D */
-    RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10D */
-    RT_OFFSETOF(CPUMCTXCORE, r11),        /* USE_REG_R11D */
-    RT_OFFSETOF(CPUMCTXCORE, r12),        /* USE_REG_R12D */
-    RT_OFFSETOF(CPUMCTXCORE, r13),        /* USE_REG_R13D */
-    RT_OFFSETOF(CPUMCTXCORE, r14),        /* USE_REG_R14D */
-    RT_OFFSETOF(CPUMCTXCORE, r15)         /* USE_REG_R15D */
+    RT_OFFSETOF(CPUMCTXCORE, eax),        /* DISGREG_EAX */
+    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* DISGREG_ECX */
+    RT_OFFSETOF(CPUMCTXCORE, edx),        /* DISGREG_EDX  */
+    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* DISGREG_EBX  */
+    RT_OFFSETOF(CPUMCTXCORE, esp),        /* DISGREG_ESP */
+    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* DISGREG_EBP */
+    RT_OFFSETOF(CPUMCTXCORE, esi),        /* DISGREG_ESI */
+    RT_OFFSETOF(CPUMCTXCORE, edi),        /* DISGREG_EDI */
+    RT_OFFSETOF(CPUMCTXCORE, r8),         /* DISGREG_R8D */
+    RT_OFFSETOF(CPUMCTXCORE, r9),         /* DISGREG_R9D */
+    RT_OFFSETOF(CPUMCTXCORE, r10),        /* DISGREG_R1D  */
+    RT_OFFSETOF(CPUMCTXCORE, r11),        /* DISGREG_R11D */
+    RT_OFFSETOF(CPUMCTXCORE, r12),        /* DISGREG_R12D */
+    RT_OFFSETOF(CPUMCTXCORE, r13),        /* DISGREG_R13D */
+    RT_OFFSETOF(CPUMCTXCORE, r14),        /* DISGREG_R14D */
+    RT_OFFSETOF(CPUMCTXCORE, r15)         /* DISGREG_R15D */
 };
 
 /**
@@ -108,22 +108,22 @@ static const unsigned g_aReg32Index[] =
  */
 static const unsigned g_aReg16Index[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AX */
-    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CX */
-    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_DX */
-    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_BX */
-    RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_SP */
-    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_BP */
-    RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_SI */
-    RT_OFFSETOF(CPUMCTXCORE, edi),        /* USE_REG_DI */
-    RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8W */
-    RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9W */
-    RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10W */
-    RT_OFFSETOF(CPUMCTXCORE, r11),        /* USE_REG_R11W */
-    RT_OFFSETOF(CPUMCTXCORE, r12),        /* USE_REG_R12W */
-    RT_OFFSETOF(CPUMCTXCORE, r13),        /* USE_REG_R13W */
-    RT_OFFSETOF(CPUMCTXCORE, r14),        /* USE_REG_R14W */
-    RT_OFFSETOF(CPUMCTXCORE, r15)         /* USE_REG_R15W */
+    RT_OFFSETOF(CPUMCTXCORE, eax),        /* DISGREG_AX */
+    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* DISGREG_CX */
+    RT_OFFSETOF(CPUMCTXCORE, edx),        /* DISGREG_DX */
+    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* DISGREG_BX */
+    RT_OFFSETOF(CPUMCTXCORE, esp),        /* DISGREG_SP */
+    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* DISGREG_BP */
+    RT_OFFSETOF(CPUMCTXCORE, esi),        /* DISGREG_SI */
+    RT_OFFSETOF(CPUMCTXCORE, edi),        /* DISGREG_DI */
+    RT_OFFSETOF(CPUMCTXCORE, r8),         /* DISGREG_R8W */
+    RT_OFFSETOF(CPUMCTXCORE, r9),         /* DISGREG_R9W */
+    RT_OFFSETOF(CPUMCTXCORE, r10),        /* DISGREG_R10W */
+    RT_OFFSETOF(CPUMCTXCORE, r11),        /* DISGREG_R11W */
+    RT_OFFSETOF(CPUMCTXCORE, r12),        /* DISGREG_R12W */
+    RT_OFFSETOF(CPUMCTXCORE, r13),        /* DISGREG_R13W */
+    RT_OFFSETOF(CPUMCTXCORE, r14),        /* DISGREG_R14W */
+    RT_OFFSETOF(CPUMCTXCORE, r15)         /* DISGREG_R15W */
 };
 
 /**
@@ -139,26 +139,26 @@ static const unsigned g_aReg16Index[] =
  */
 static const unsigned g_aReg8Index[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AL */
-    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CL */
-    RT_OFFSETOF(CPUMCTXCORE, edx),        /* USE_REG_DL */
-    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* USE_REG_BL */
-    RT_OFFSETOF_ADD(CPUMCTXCORE, eax, 1), /* USE_REG_AH */
-    RT_OFFSETOF_ADD(CPUMCTXCORE, ecx, 1), /* USE_REG_CH */
-    RT_OFFSETOF_ADD(CPUMCTXCORE, edx, 1), /* USE_REG_DH */
-    RT_OFFSETOF_ADD(CPUMCTXCORE, ebx, 1), /* USE_REG_BH */
-    RT_OFFSETOF(CPUMCTXCORE, r8),         /* USE_REG_R8B */
-    RT_OFFSETOF(CPUMCTXCORE, r9),         /* USE_REG_R9B */
-    RT_OFFSETOF(CPUMCTXCORE, r10),        /* USE_REG_R10B*/
-    RT_OFFSETOF(CPUMCTXCORE, r11),        /* USE_REG_R11B */
-    RT_OFFSETOF(CPUMCTXCORE, r12),        /* USE_REG_R12B */
-    RT_OFFSETOF(CPUMCTXCORE, r13),        /* USE_REG_R13B */
-    RT_OFFSETOF(CPUMCTXCORE, r14),        /* USE_REG_R14B */
-    RT_OFFSETOF(CPUMCTXCORE, r15),        /* USE_REG_R15B */
-    RT_OFFSETOF(CPUMCTXCORE, esp),        /* USE_REG_SPL; with REX prefix only */
-    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* USE_REG_BPL; with REX prefix only */
-    RT_OFFSETOF(CPUMCTXCORE, esi),        /* USE_REG_SIL; with REX prefix only */
-    RT_OFFSETOF(CPUMCTXCORE, edi)         /* USE_REG_DIL; with REX prefix only */
+    RT_OFFSETOF(CPUMCTXCORE, eax),        /* DISGREG_AL */
+    RT_OFFSETOF(CPUMCTXCORE, ecx),        /* DISGREG_CL */
+    RT_OFFSETOF(CPUMCTXCORE, edx),        /* DISGREG_DL */
+    RT_OFFSETOF(CPUMCTXCORE, ebx),        /* DISGREG_BL */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, eax, 1), /* DISGREG_AH */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, ecx, 1), /* DISGREG_CH */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, edx, 1), /* DISGREG_DH */
+    RT_OFFSETOF_ADD(CPUMCTXCORE, ebx, 1), /* DISGREG_BH */
+    RT_OFFSETOF(CPUMCTXCORE, r8),         /* DISGREG_R8B */
+    RT_OFFSETOF(CPUMCTXCORE, r9),         /* DISGREG_R9B */
+    RT_OFFSETOF(CPUMCTXCORE, r10),        /* DISGREG_R10B*/
+    RT_OFFSETOF(CPUMCTXCORE, r11),        /* DISGREG_R11B */
+    RT_OFFSETOF(CPUMCTXCORE, r12),        /* DISGREG_R12B */
+    RT_OFFSETOF(CPUMCTXCORE, r13),        /* DISGREG_R13B */
+    RT_OFFSETOF(CPUMCTXCORE, r14),        /* DISGREG_R14B */
+    RT_OFFSETOF(CPUMCTXCORE, r15),        /* DISGREG_R15B */
+    RT_OFFSETOF(CPUMCTXCORE, esp),        /* DISGREG_SPL; with REX prefix only */
+    RT_OFFSETOF(CPUMCTXCORE, ebp),        /* DISGREG_BPL; with REX prefix only */
+    RT_OFFSETOF(CPUMCTXCORE, esi),        /* DISGREG_SIL; with REX prefix only */
+    RT_OFFSETOF(CPUMCTXCORE, edi)         /* DISGREG_DIL; with REX prefix only */
 };
 
 /**
@@ -174,22 +174,22 @@ static const unsigned g_aReg8Index[] =
  */
 static const unsigned g_aRegSegIndex[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, es),         /* DIS_SELREG_ES */
-    RT_OFFSETOF(CPUMCTXCORE, cs),         /* DIS_SELREG_CS */
-    RT_OFFSETOF(CPUMCTXCORE, ss),         /* DIS_SELREG_SS */
-    RT_OFFSETOF(CPUMCTXCORE, ds),         /* DIS_SELREG_DS */
-    RT_OFFSETOF(CPUMCTXCORE, fs),         /* DIS_SELREG_FS */
-    RT_OFFSETOF(CPUMCTXCORE, gs)          /* DIS_SELREG_GS */
+    RT_OFFSETOF(CPUMCTXCORE, es),         /* DISSELREG_ES */
+    RT_OFFSETOF(CPUMCTXCORE, cs),         /* DISSELREG_CS */
+    RT_OFFSETOF(CPUMCTXCORE, ss),         /* DISSELREG_SS */
+    RT_OFFSETOF(CPUMCTXCORE, ds),         /* DISSELREG_DS */
+    RT_OFFSETOF(CPUMCTXCORE, fs),         /* DISSELREG_FS */
+    RT_OFFSETOF(CPUMCTXCORE, gs)          /* DISSELREG_GS */
 };
 
 static const unsigned g_aRegHidSegIndex[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, esHid),         /* DIS_SELREG_ES */
-    RT_OFFSETOF(CPUMCTXCORE, csHid),         /* DIS_SELREG_CS */
-    RT_OFFSETOF(CPUMCTXCORE, ssHid),         /* DIS_SELREG_SS */
-    RT_OFFSETOF(CPUMCTXCORE, dsHid),         /* DIS_SELREG_DS */
-    RT_OFFSETOF(CPUMCTXCORE, fsHid),         /* DIS_SELREG_FS */
-    RT_OFFSETOF(CPUMCTXCORE, gsHid)          /* DIS_SELREG_GS */
+    RT_OFFSETOF(CPUMCTXCORE, esHid),         /* DISSELREG_ES */
+    RT_OFFSETOF(CPUMCTXCORE, csHid),         /* DISSELREG_CS */
+    RT_OFFSETOF(CPUMCTXCORE, ssHid),         /* DISSELREG_SS */
+    RT_OFFSETOF(CPUMCTXCORE, dsHid),         /* DISSELREG_DS */
+    RT_OFFSETOF(CPUMCTXCORE, fsHid),         /* DISSELREG_FS */
+    RT_OFFSETOF(CPUMCTXCORE, gsHid)          /* DISSELREG_GS */
 };
 
 /**
@@ -256,24 +256,24 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 }
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(DIS_SELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
+DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 {
     if (pCpu->prefix & DISPREFIX_SEG)
         /* Use specified SEG: prefix. */
-        return (DIS_SELREG)pCpu->idxSegPrefix;
+        return (DISSELREG)pCpu->idxSegPrefix;
 
     /* Guess segment register by parameter type. */
     if (pParam->fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN64|DISUSE_REG_GEN16))
     {
-        AssertCompile(USE_REG_ESP == USE_REG_RSP);
-        AssertCompile(USE_REG_EBP == USE_REG_RBP);
-        AssertCompile(USE_REG_ESP == USE_REG_SP);
-        AssertCompile(USE_REG_EBP == USE_REG_BP);
-        if (pParam->base.reg_gen == USE_REG_ESP || pParam->base.reg_gen == USE_REG_EBP)
-            return DIS_SELREG_SS;
+        AssertCompile(DISGREG_ESP == DISGREG_RSP);
+        AssertCompile(DISGREG_EBP == DISGREG_RBP);
+        AssertCompile(DISGREG_ESP == DISGREG_SP);
+        AssertCompile(DISGREG_EBP == DISGREG_BP);
+        if (pParam->base.reg_gen == DISGREG_ESP || pParam->base.reg_gen == DISGREG_EBP)
+            return DISSELREG_SS;
     }
     /* Default is use DS: for data access. */
-    return DIS_SELREG_DS;
+    return DISSELREG_DS;
 }
 //*****************************************************************************
 //*****************************************************************************
@@ -282,17 +282,17 @@ DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
     Assert(pCpu->prefix & DISPREFIX_SEG);
     switch (pCpu->idxSegPrefix)
     {
-    case DIS_SELREG_ES:
+    case DISSELREG_ES:
         return 0x26;
-    case DIS_SELREG_CS:
+    case DISSELREG_CS:
         return 0x2E;
-    case DIS_SELREG_SS:
+    case DISSELREG_SS:
         return 0x36;
-    case DIS_SELREG_DS:
+    case DISSELREG_DS:
         return 0x3E;
-    case DIS_SELREG_FS:
+    case DISSELREG_FS:
         return 0x64;
-    case DIS_SELREG_GS:
+    case DISSELREG_GS:
         return 0x65;
     default:
         AssertFailed();
@@ -401,7 +401,7 @@ DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg)
  * Returns the value of the specified segment register
  *
  */
-DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal)
+DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DISSELREG sel, RTSEL *pVal)
 {
     AssertReturn((unsigned)sel < RT_ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
@@ -414,7 +414,7 @@ DISDECL(int) DISFetchRegSeg(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal)
  * Returns the value of the specified segment register including a pointer to the hidden register in the supplied cpu context
  *
  */
-DISDECL(int) DISFetchRegSegEx(PCCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg)
+DISDECL(int) DISFetchRegSegEx(PCCPUMCTXCORE pCtx, DISSELREG sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg)
 {
     AssertReturn((unsigned)sel < RT_ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
@@ -476,7 +476,7 @@ DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, unsigned reg8, uint8_t val8)
  * Updates the specified segment register
  *
  */
-DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DIS_SELREG sel, RTSEL val)
+DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DISSELREG sel, RTSEL val)
 {
     AssertReturn((unsigned)sel < RT_ELEMENTS(g_aRegSegIndex), VERR_INVALID_PARAMETER);
 
