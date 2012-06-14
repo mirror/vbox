@@ -78,6 +78,8 @@ BEGINPROC   TestProc32
         out 64h, eax
 
         movss xmm0, xmm1
+        movss xmm3, [eax]
+        movss [eax], xmm4
         movsd xmm6, xmm1
 
         pause
