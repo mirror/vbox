@@ -90,7 +90,7 @@ static const char g_aszYasmRegTRx[16][5] =
  * @param   pParam      The parameter.
  * @param   pcchReg     Where to store the length of the name.
  */
-static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER pParam, size_t *pcchReg)
+static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, size_t *pcchReg)
 {
     switch (pParam->fUse & (  DISUSE_REG_GEN8 | DISUSE_REG_GEN16 | DISUSE_REG_GEN32 | DISUSE_REG_GEN64
                             | DISUSE_REG_FP   | DISUSE_REG_MMX   | DISUSE_REG_XMM   | DISUSE_REG_CR
@@ -201,7 +201,7 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER pP
  * @param   pParam      The parameter.
  * @param   pcchReg     Where to store the length of the name.
  */
-static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCOP_PARAMETER pParam, size_t *pcchReg)
+static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, size_t *pcchReg)
 {
     switch (pCpu->addrmode)
     {
@@ -553,7 +553,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         /*
          * Formatting context and associated macros.
          */
-        PCOP_PARAMETER pParam = &pCpu->param1;
+        PCDISOPPARAM pParam = &pCpu->param1;
         int iParam = 1;
 
 #define PUT_FAR() \

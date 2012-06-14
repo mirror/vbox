@@ -64,7 +64,7 @@ VMMDECL(bool) IOMIsLockOwner(PVM pVM)
  * @param   pu64Data            Where to store retrieved data.
  * @param   pcbSize             Where to store the size of data (1, 2, 4, 8).
  */
-bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize)
+bool iomGetRegImmData(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize)
 {
     NOREF(pCpu);
     if (pParam->fUse & (DISUSE_BASE | DISUSE_INDEX | DISUSE_SCALE | DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32))
@@ -158,7 +158,7 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
  * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
  * @param   u64Data             8/16/32/64 bit data to store.
  */
-bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t u64Data)
+bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegFrame, uint64_t u64Data)
 {
     NOREF(pCpu);
     if (pParam->fUse & (DISUSE_BASE | DISUSE_INDEX | DISUSE_SCALE | DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT64 | DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE32_SX8 | DISUSE_IMMEDIATE16_SX8))
