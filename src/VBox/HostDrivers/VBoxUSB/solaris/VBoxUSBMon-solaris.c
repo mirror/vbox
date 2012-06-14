@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -13,6 +13,15 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
  */
 
 /*******************************************************************************
@@ -407,13 +416,13 @@ static int VBoxUSBMonSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCre
     LogFunc((DEVICE_NAME ":VBoxUSBMonSolarisOpen\n"));
 
     /*
-     * Verify we are being opened as a character device
+     * Verify we are being opened as a character device.
      */
     if (fType != OTYP_CHR)
         return EINVAL;
 
     /*
-     * Verify that we're called after attach
+     * Verify that we're called after attach.
      */
     if (!g_pDip)
     {
@@ -1052,3 +1061,4 @@ int VBoxUSBMonSolarisElectDriver(usb_dev_descr_t *pDevDesc, usb_dev_str_t *pDevS
                     pDevDesc->idVendor, pDevDesc->idProduct, pszDevicePath));
     return USB_SUCCESS;
 }
+
