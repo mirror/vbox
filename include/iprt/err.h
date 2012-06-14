@@ -1505,6 +1505,9 @@ RT_C_DECLS_END
 #define VERR_ENV_VAR_NOT_FOUND                  (-750)
 /** The specified environment variable was not found. (RTEnvUnsetEx) */
 #define VINF_ENV_VAR_NOT_FOUND                  (750)
+/** Unable to translate all the variables in the default environment due to
+ * codeset issues (LANG / LC_ALL / LC_CTYPE). */
+#define VWRN_ENV_NOT_FULLY_TRANSLATED           (751)
 /** @} */
 
 /** @name Multiprocessor Status Codes.
