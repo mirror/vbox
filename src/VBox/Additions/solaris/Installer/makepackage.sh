@@ -30,6 +30,11 @@ if test -z "$3"; then
     echo "Usage: $0 installdir packagename svnrev"
     exit 1
 fi
+ostype=`uname -s`
+if test "$ostype" != "Linux" && test "$ostype" != "SunOS" ; then
+  echo "Linux/Solaris not detected."
+  exit 1
+fi
 
 VBOX_BASEPKG_DIR=$1
 VBOX_INSTALLED_DIR="$VBOX_BASEPKG_DIR"/opt/VirtualBoxAdditions
@@ -38,7 +43,16 @@ VBOX_SVN_REV=$3
 
 VBOX_PKGNAME=SUNWvboxguest
 VBOX_AWK=/usr/bin/awk
-VBOX_GGREP=/usr/sfw/bin/ggrep
+case "$ostype" in
+"SunOS")
+  VBOX_GGREP=/usr/sfw/bin/ggrep
+  VBOX_SOL_PKG_DEV=/var/spool/pkg
+  ;;
+*)
+  VBOX_GGREP=`which grep`
+  VBOX_SOL_PKG_DEV=$4
+  ;;
+esac
 VBOX_AWK=/usr/bin/awk
 
 # check for GNU grep we use which might not ship with all Solaris
@@ -117,11 +131,11 @@ echo " --- end of prototype --- "
 VBOXPKG_TIMESTAMP=vboxguest`date '+%Y%m%d%H%M%S'`_r$VBOX_SVN_REV
 
 # create the package instance
-pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
+pkgmk -d $VBOX_SOL_PKG_DEV -p $VBOXPKG_TIMESTAMP -o -r .
 
 # translate into package datastream
-pkgtrans -s -o /var/spool/pkg `pwd`/$VBOX_PKGFILENAME "$VBOX_PKGNAME"
+pkgtrans -s -o "$VBOX_SOL_PKG_DEV" `pwd`/$VBOX_PKGFILENAME "$VBOX_PKGNAME"
 
-rm -rf "/var/spool/pkg/$VBOX_PKGNAME"
+rm -rf "$VBOX_SOL_PKG_DEV/$VBOX_PKGNAME"
 exit $?
 
