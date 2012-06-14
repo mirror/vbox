@@ -381,26 +381,26 @@ typedef enum
 #define DISXREG_XMM7                    UINT8_C(7)
 /** @}  */
 
-/** Used by DISQueryParamVal & EMIQueryParamVal
+/** @name Flags returned by DISQueryParamVal (DISQPVPARAMVAL::flags).
  * @{
  */
-#define PARAM_VAL8             RT_BIT(0)
-#define PARAM_VAL16            RT_BIT(1)
-#define PARAM_VAL32            RT_BIT(2)
-#define PARAM_VAL64            RT_BIT(3)
-#define PARAM_VALFARPTR16      RT_BIT(4)
-#define PARAM_VALFARPTR32      RT_BIT(5)
+#define DISQPV_FLAG_8                   UINT8_C(0x01)
+#define DISQPV_FLAG_16                  UINT8_C(0x02)
+#define DISQPV_FLAG_32                  UINT8_C(0x04)
+#define DISQPV_FLAG_64                  UINT8_C(0x08)
+#define DISQPV_FLAG_FARPTR16            UINT8_C(0x10)
+#define DISQPV_FLAG_FARPTR32            UINT8_C(0x20)
+/** @}  */
 
-#define PARMTYPE_REGISTER      1
-#define PARMTYPE_ADDRESS       2
-#define PARMTYPE_IMMEDIATE     3
+/** @name Types returned by DISQueryParamVal (DISQPVPARAMVAL::flags).
+ * @{ */
+#define DISQPV_TYPE_REGISTER            UINT8_C(1)
+#define DISQPV_TYPE_ADDRESS             UINT8_C(2)
+#define DISQPV_TYPE_IMMEDIATE           UINT8_C(3)
+/** @}  */
 
 typedef struct
 {
-    uint32_t        type;
-    uint32_t        size;
-    uint64_t        flags;
-
     union
     {
         uint8_t     val8;
@@ -415,17 +415,21 @@ typedef struct
         } farptr;
     } val;
 
-} OP_PARAMVAL;
+    uint8_t         type;
+    uint8_t         size;
+    uint8_t         flags;
+} DISQPVPARAMVAL;
 /** Pointer to opcode parameter value. */
-typedef OP_PARAMVAL *POP_PARAMVAL;
+typedef DISQPVPARAMVAL *PDISQPVPARAMVAL;
 
-typedef enum
+/** Indicates which parameter DISQueryParamVal should operate on. */
+typedef enum DISQPVWHICH
 {
-    PARAM_DEST,
-    PARAM_SOURCE
-} PARAM_TYPE;
+    DISQPVWHICH_DST = 1,
+    DISQPVWHICH_SRC,
+    DISQPVWHAT_32_BIT_HACK = 0x7fffffff
+} DISQPVWHICH;
 
-/** @} */
 
 /**
  * Operand Parameter.
@@ -648,7 +652,7 @@ DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
 DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
 DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype);
 DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
 
 DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
