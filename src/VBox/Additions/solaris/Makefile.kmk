@@ -33,6 +33,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_TARGET),solaris)
  include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Mouse/Makefile.kmk
  include $(PATH_SUB_CURRENT)/DRM/Makefile.kmk
 endif
 

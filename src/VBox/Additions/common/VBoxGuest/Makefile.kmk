@@ -212,18 +212,5 @@ VBoxGuestInst_TEMPLATE= VBOXGUESTR3EXE
 VBoxGuestInst_SOURCES = win/VBoxGuestInst.cpp
 endif
 
-
-if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
- ifn1of ($(KBUILD_TARGET), solaris win)  # No variadic macros in Visual C++ 2002; Unresolved RTR0AssertPanicSystem on Solaris 11 / gcc 4.5.2.
-  PROGRAMS += tstVBoxGuest-solaris
-  tstVBoxGuest-solaris_TEMPLATE = VBOXR3TSTEXE
-  tstVBoxGuest-solaris_SOURCES  = \
-  	VBoxGuest-solaris-streams.c \
-  	testcase/tstVBoxGuest-solaris.c
-  tstVBoxGuest-solaris_DEFS     = TESTCASE
-  tstVBoxGuest-solaris_LIBS     = $(LIB_RUNTIME)
- endif
-endif
-
 include $(FILE_KBUILD_SUB_FOOTER)
 
