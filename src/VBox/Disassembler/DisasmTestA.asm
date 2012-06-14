@@ -18,13 +18,14 @@
 ;*******************************************************************************
 ;* Header Files                                                                *
 ;*******************************************************************************
-%include "VBox/nasm.mac"
-%include "VBox/vmm/vm.mac"
-%include "VBox/err.mac"
-%include "VBox/vmm/stam.mac"
-%include "iprt/x86.mac"
+%include "iprt/asmdefs.mac"
+;%include "VBox/vmm/vm.mac"
+;%include "VBox/err.mac"
+;%include "VBox/vmm/stam.mac"
+;%include "iprt/x86.mac"
 
 BITS 32
+
 
 BEGINCODE
 
@@ -80,8 +81,8 @@ BEGINPROC   TestProc32
       movsd xmm6, xmm1
 
       pause
-
 ENDPROC   TestProc32
+
 
 %ifndef RT_OS_OS2
 BITS 64
@@ -168,4 +169,5 @@ BEGINPROC TestProc64
 
       ret
 ENDPROC   TestProc64
-%endif
+%endif ; !OS2
+

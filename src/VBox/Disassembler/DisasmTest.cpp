@@ -26,15 +26,17 @@
 
 
 DECLASM(int) TestProc32(void);
-char TestProc32_End;
+DECLASM(int) TestProc32_EndProc(void);
 #ifndef RT_OS_OS2
 DECLASM(int) TestProc64(void);
-char TestProc64_End;
+DECLASM(int) TestProc64_EndProc(void);
 #endif
 //uint8_t aCode16[] = { 0x66, 0x67, 0x89, 0x07 };
 
-static void testDisas(uint8_t const *pabInstrs, size_t cbInstrs, DISCPUMODE enmDisCpuMode)
+static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uEndPtr, DISCPUMODE enmDisCpuMode)
 {
+    RTTestISub(pszSub);
+    size_t const cbInstrs = uEndPtr - (uintptr_t)pabInstrs;
     for (size_t off = 0; off < cbInstrs; off++)
     {
         uint32_t const  cErrBefore = RTTestIErrorCount();
@@ -66,10 +68,9 @@ int main(int argc, char **argv)
         return rcExit;
     RTTestBanner(hTest);
 
-
-    testDisas((uint8_t const *)(uintptr_t)TestProc32, (uintptr_t)&TestProc32_End - (uintptr_t)TestProc32, DISCPUMODE_32BIT);
+    testDisas("32-bit", (uint8_t const *)(uintptr_t)TestProc32, (uintptr_t)&TestProc32_EndProc, DISCPUMODE_32BIT);
 #ifndef RT_OS_OS2
-    testDisas((uint8_t const *)(uintptr_t)TestProc64, (uintptr_t)&TestProc64_End - (uintptr_t)TestProc64, DISCPUMODE_64BIT);
+    testDisas("64-bit", (uint8_t const *)(uintptr_t)TestProc64, (uintptr_t)&TestProc64_EndProc, DISCPUMODE_64BIT);
 #endif
 
     return RTTestSummaryAndDestroy(hTest);
