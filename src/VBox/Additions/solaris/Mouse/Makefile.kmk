@@ -49,6 +49,7 @@ else
 endif
 
 
+if 0 # Broken - unresolved externals: vbglDriver*, RTR0AssertPanicSystem.
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
  PROGRAMS += tstVBoxMouse-solaris
  tstVBoxMouse-solaris_TEMPLATE = VBOXR3TSTEXE
@@ -57,6 +58,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  	testcase/tstVBoxMouse-solaris.c
  tstVBoxMouse-solaris_DEFS     = TESTCASE
  tstVBoxMouse-solaris_LIBS     = $(LIB_RUNTIME)
+endif
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
