@@ -807,6 +807,11 @@ DECLINLINE(void) PCIDevSetBaseAddress(PPCIDEVICE pPciDev, uint8_t iReg, bool fIO
     PCIDevSetDWord(pPciDev, iReg, u32Addr);
 }
 
+DECLINLINE(uint32_t) PCIDevGetRegionReg(int iRegion)
+{
+    return (iRegion == VBOX_PCI_ROM_SLOT) ?
+            VBOX_PCI_ROM_ADDRESS : (VBOX_PCI_BASE_ADDRESS_0 + iRegion * 4);
+}
 
 /**
  * Sets the sub-system vendor id config register.
