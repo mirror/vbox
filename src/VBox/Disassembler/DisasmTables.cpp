@@ -1260,49 +1260,34 @@ PCDISOPCODE const g_apThreeByteMapX86_0F38[16] =
 {
     /* 0 */
     &g_aThreeByteMapX86_0F38_0[0],
-
     /* 1 */
     &g_aThreeByteMapX86_0F38_1[0],
-
     /* 2 */
     NULL,
-
     /* 3 */
     NULL,
-
     /* 4 */
     NULL,
-
     /* 5 */
     NULL,
-
     /* 6 */
     NULL,
-
     /* 7 */
     NULL,
-
     /* 8 */
     NULL,
-
     /* 9 */
     NULL,
-
     /* a */
     NULL,
-
     /* b */
     NULL,
-
     /* c */
     NULL,
-
     /* d */
     NULL,
-
     /* e */
     NULL,
-
     /* f */
     NULL,
 };
@@ -1380,49 +1365,34 @@ PCDISOPCODE const g_apThreeByteMapX86_660F38[16] =
 {
     /* 0 */
     &g_aThreeByteMapX86_660F38_0[0],
-
     /* 1 */
     &g_aThreeByteMapX86_660F38_1[0],
-
     /* 2 */
     NULL,
-
     /* 3 */
     NULL,
-
     /* 4 */
     NULL,
-
     /* 5 */
     NULL,
-
     /* 6 */
     NULL,
-
     /* 7 */
     NULL,
-
     /* 8 */
     &g_aThreeByteMapX86_660F38_8[0],
-
     /* 9 */
     NULL,
-
     /* a */
     NULL,
-
     /* b */
     NULL,
-
     /* c */
     NULL,
-
     /* d */
     NULL,
-
     /* e */
     NULL,
-
     /* f */
     NULL,
 };
@@ -1433,49 +1403,34 @@ PCDISOPCODE const g_apThreeByteMapX86_F20F38[16] =
 {
     /* 0 */
     NULL,
-
     /* 1 */
     NULL,
-
     /* 2 */
     NULL,
-
     /* 3 */
     NULL,
-
     /* 4 */
     NULL,
-
     /* 5 */
     NULL,
-
     /* 6 */
     NULL,
-
     /* 7 */
     NULL,
-
     /* 8 */
     NULL,
-
     /* 9 */
     NULL,
-
     /* a */
     NULL,
-
     /* b */
     NULL,
-
     /* c */
     NULL,
-
     /* d */
     NULL,
-
     /* e */
     NULL,
-
     /* f */
     NULL,
 };
@@ -1486,49 +1441,34 @@ PCDISOPCODE const g_apThreeByteMapX86_660F3A[16] =
 {
     /* 0 */
     NULL,
-
     /* 1 */
     NULL,
-
     /* 2 */
     NULL,
-
     /* 3 */
     NULL,
-
     /* 4 */
     NULL,
-
     /* 5 */
     NULL,
-
     /* 6 */
     NULL,
-
     /* 7 */
     NULL,
-
     /* 8 */
     NULL,
-
     /* 9 */
     NULL,
-
     /* a */
     NULL,
-
     /* b */
     NULL,
-
     /* c */
     NULL,
-
     /* d */
     NULL,
-
     /* e */
     NULL,
-
     /* f */
     NULL,
 };
