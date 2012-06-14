@@ -186,7 +186,7 @@ VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
         if (rc == VINF_SUCCESS)
         {
             /* Just ignore the write. */
-            pRegFrame->eip += Cpu.opsize;
+            pRegFrame->eip += Cpu.cbInstr;
             return VINF_SUCCESS;
         }
     }

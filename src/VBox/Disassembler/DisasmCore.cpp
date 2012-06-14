@@ -230,7 +230,7 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
  * @param   pCpu            Pointer to cpu structure. Will be initialized.
  * @param   pcbInstr        Where to store the size of the instruction.
  *                          NULL is allowed.  This is also stored in
- *                          PDISCPUSTATE::opsize.
+ *                          PDISCPUSTATE::cbInstr.
  */
 DISDECL(int) DISInstr(const void *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr)
 {
@@ -252,7 +252,7 @@ DISDECL(int) DISInstr(const void *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE p
  * @param   pCpu            Pointer to cpu structure. Will be initialized.
  * @param   pcbInstr        Where to store the size of the instruction.
  *                          NULL is allowed.  This is also stored in
- *                          PDISCPUSTATE::opsize.
+ *                          PDISCPUSTATE::cbInstr.
  */
 DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
                                 PDISCPUSTATE pCpu, uint32_t *pcbInstr)
@@ -276,7 +276,7 @@ DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFN
  *                          completely initialized by this API, i.e. no input is
  *                          taken from it.
  * @param   pcbInstr        Where to store the size of the instruction.  (This
- *                          is also stored in PDISCPUSTATE::opsize.)  Optional.
+ *                          is also stored in PDISCPUSTATE::cbInstr.)  Optional.
  */
 DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
@@ -432,8 +432,8 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
         break;
     }
 
-    AssertMsg(pCpu->opsize == iByte || RT_FAILURE_NP(pCpu->rc), ("%u %u\n", pCpu->opsize, iByte));
-    pCpu->opsize = iByte;
+    AssertMsg(pCpu->cbInstr == iByte || RT_FAILURE_NP(pCpu->rc), ("%u %u\n", pCpu->cbInstr, iByte));
+    pCpu->cbInstr = iByte;
     if (pcbInstr)
         *pcbInstr = iByte;
 
@@ -2413,7 +2413,7 @@ disStoreInstrBytesSlow(PDISCPUSTATE pCpu, RTUINTPTR uAddress, const uint8_t *pbS
     /*
      * Figure out which case it is.
      */
-    uint32_t  cbInstr = pCpu->opsize;
+    uint32_t  cbInstr = pCpu->cbInstr;
     RTUINTPTR off     = uAddress - pCpu->uInstrAddr;
     if (off < cbInstr)
     {
@@ -2449,7 +2449,7 @@ disStoreInstrBytesSlow(PDISCPUSTATE pCpu, RTUINTPTR uAddress, const uint8_t *pbS
             pCpu->rc = VERR_DIS_MEM_READ;
             RT_BZERO(&pCpu->abInstr[cbInstr], cbGap);
         }
-        pCpu->opsize = cbInstr = off;
+        pCpu->cbInstr = cbInstr = off;
     }
 
     /*
@@ -2458,13 +2458,13 @@ disStoreInstrBytesSlow(PDISCPUSTATE pCpu, RTUINTPTR uAddress, const uint8_t *pbS
     if (off + cbSrc <= sizeof(pCpu->abInstr))
     {
         memcpy(&pCpu->abInstr[cbInstr], pbSrc, cbSrc);
-        pCpu->opsize = cbInstr + (uint32_t)cbSrc;
+        pCpu->cbInstr = cbInstr + (uint32_t)cbSrc;
     }
     else
     {
         size_t cbToCopy = sizeof(pCpu->abInstr) - off;
         memcpy(&pCpu->abInstr[cbInstr], pbSrc, cbToCopy);
-        pCpu->opsize = sizeof(pCpu->abInstr);
+        pCpu->cbInstr = sizeof(pCpu->abInstr);
         AssertMsgFailed(("%RTptr LB %zx off=%RTptr (%.*Rhxs)", uAddress, cbSrc, off, sizeof(pCpu->abInstr), pCpu->abInstr));
     }
 }
@@ -2496,9 +2496,9 @@ uint8_t disReadByte(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 
 /** @todo change this into reading directly into abInstr and use it as a
  *        cache. */
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
-                  && pCpu->opsize + sizeof(bTemp) < sizeof(pCpu->abInstr)))
-        pCpu->abInstr[pCpu->opsize++] = bTemp;
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
+                  && pCpu->cbInstr + sizeof(bTemp) < sizeof(pCpu->abInstr)))
+        pCpu->abInstr[pCpu->cbInstr++] = bTemp;
     else
         disStoreInstrBytesSlow(pCpu, uAddress, &bTemp, sizeof(bTemp));
 
@@ -2517,12 +2517,12 @@ uint16_t disReadWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
         pCpu->rc = VERR_DIS_MEM_READ;
     }
 
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
-                  && pCpu->opsize + sizeof(uTemp) < sizeof(pCpu->abInstr)))
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
+                  && pCpu->cbInstr + sizeof(uTemp) < sizeof(pCpu->abInstr)))
     {
-        pCpu->abInstr[pCpu->opsize    ] = uTemp.au8[0];
-        pCpu->abInstr[pCpu->opsize + 1] = uTemp.au8[1];
-        pCpu->opsize += 2;
+        pCpu->abInstr[pCpu->cbInstr    ] = uTemp.au8[0];
+        pCpu->abInstr[pCpu->cbInstr + 1] = uTemp.au8[1];
+        pCpu->cbInstr += 2;
     }
     else
         disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
@@ -2542,14 +2542,14 @@ uint32_t disReadDWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
         pCpu->rc = VERR_DIS_MEM_READ;
     }
 
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
-                  && pCpu->opsize + sizeof(uTemp) < sizeof(pCpu->abInstr)))
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
+                  && pCpu->cbInstr + sizeof(uTemp) < sizeof(pCpu->abInstr)))
     {
-        pCpu->abInstr[pCpu->opsize    ] = uTemp.au8[0];
-        pCpu->abInstr[pCpu->opsize + 1] = uTemp.au8[1];
-        pCpu->abInstr[pCpu->opsize + 2] = uTemp.au8[2];
-        pCpu->abInstr[pCpu->opsize + 3] = uTemp.au8[3];
-        pCpu->opsize += 4;
+        pCpu->abInstr[pCpu->cbInstr    ] = uTemp.au8[0];
+        pCpu->abInstr[pCpu->cbInstr + 1] = uTemp.au8[1];
+        pCpu->abInstr[pCpu->cbInstr + 2] = uTemp.au8[2];
+        pCpu->abInstr[pCpu->cbInstr + 3] = uTemp.au8[3];
+        pCpu->cbInstr += 4;
     }
     else
         disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
@@ -2569,18 +2569,18 @@ uint64_t disReadQWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
         pCpu->rc = VERR_DIS_MEM_READ;
     }
 
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->opsize == uAddress
-                  && pCpu->opsize + sizeof(uTemp) < sizeof(pCpu->abInstr)))
+    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
+                  && pCpu->cbInstr + sizeof(uTemp) < sizeof(pCpu->abInstr)))
     {
-        pCpu->abInstr[pCpu->opsize    ] = uTemp.au8[0];
-        pCpu->abInstr[pCpu->opsize + 1] = uTemp.au8[1];
-        pCpu->abInstr[pCpu->opsize + 2] = uTemp.au8[2];
-        pCpu->abInstr[pCpu->opsize + 3] = uTemp.au8[3];
-        pCpu->abInstr[pCpu->opsize + 4] = uTemp.au8[4];
-        pCpu->abInstr[pCpu->opsize + 5] = uTemp.au8[5];
-        pCpu->abInstr[pCpu->opsize + 6] = uTemp.au8[6];
-        pCpu->abInstr[pCpu->opsize + 7] = uTemp.au8[7];
-        pCpu->opsize += 8;
+        pCpu->abInstr[pCpu->cbInstr    ] = uTemp.au8[0];
+        pCpu->abInstr[pCpu->cbInstr + 1] = uTemp.au8[1];
+        pCpu->abInstr[pCpu->cbInstr + 2] = uTemp.au8[2];
+        pCpu->abInstr[pCpu->cbInstr + 3] = uTemp.au8[3];
+        pCpu->abInstr[pCpu->cbInstr + 4] = uTemp.au8[4];
+        pCpu->abInstr[pCpu->cbInstr + 5] = uTemp.au8[5];
+        pCpu->abInstr[pCpu->cbInstr + 6] = uTemp.au8[6];
+        pCpu->abInstr[pCpu->cbInstr + 7] = uTemp.au8[7];
+        pCpu->cbInstr += 8;
     }
     else
         disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));

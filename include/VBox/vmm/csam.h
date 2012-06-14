@@ -242,10 +242,10 @@ VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pInstr      Instruction pointer
- * @param   opsize      Instruction size
+ * @param   cbInstr      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fScanned);
+VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fScanned);
 
 /**
  * Perform any pending actions

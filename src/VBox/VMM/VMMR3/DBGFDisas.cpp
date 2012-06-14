@@ -499,7 +499,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     }
     else
     {
-        uint32_t cbBits = State.Cpu.opsize;
+        uint32_t cbBits = State.Cpu.cbInstr;
         uint8_t *pau8Bits = (uint8_t *)alloca(cbBits);
         rc = dbgfR3DisasInstrRead(&State.Cpu, pau8Bits, GCPtr, cbBits);
         AssertRC(rc);
@@ -541,7 +541,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     }
 
     if (pcbInstr)
-        *pcbInstr = State.Cpu.opsize;
+        *pcbInstr = State.Cpu.cbInstr;
 
     dbgfR3DisasInstrDone(&State);
     return VINF_SUCCESS;

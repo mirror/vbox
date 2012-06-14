@@ -753,7 +753,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
                     return trpmGCExitTrap(pVM, pVCpu, VINF_SUCCESS, pRegFrame);
                 }
             }
-            rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->opsize, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
+            rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->cbInstr, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
             if (RT_SUCCESS(rc) && rc != VINF_EM_RAW_GUEST_TRAP)
                 return trpmGCExitTrap(pVM, pVCpu, VINF_SUCCESS, pRegFrame);
 
@@ -774,7 +774,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             if (PATMIsPatchGCAddr(pVM, PC))
                 break;
 
-            pRegFrame->eip += pCpu->opsize;
+            pRegFrame->eip += pCpu->cbInstr;
             return trpmGCExitTrap(pVM, pVCpu, VINF_EM_HALT, pRegFrame);
 
 
@@ -845,7 +845,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_INT:
         {
             Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE8);
-            rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->opsize, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
+            rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)pCpu->param1.parval, pCpu->cbInstr, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
             if (RT_SUCCESS(rc) && rc != VINF_EM_RAW_GUEST_TRAP)
                 return trpmGCExitTrap(pVM, pVCpu, VINF_SUCCESS, pRegFrame);
 

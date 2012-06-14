@@ -38,7 +38,7 @@
 size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t fFlags)
 {
     size_t      cchOutput = 0;
-    uint32_t    cb        = pCpu->opsize;
+    uint32_t    cb        = pCpu->cbInstr;
     AssertStmt(cb <= 16, cb = 16);
 
 #define PUT_C(ch) \

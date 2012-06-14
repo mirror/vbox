@@ -270,9 +270,9 @@ inline RTRCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
         return 0;
     }
 #ifdef IN_RC
-    return (RTRCPTR)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
+    return (RTRCPTR)((uint8_t *)pBranchInstrGC + pCpu->cbInstr + disp);
 #else
-    return pBranchInstrGC + pCpu->opsize + disp;
+    return pBranchInstrGC + pCpu->cbInstr + disp;
 #endif
 }
 
