@@ -805,7 +805,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     }
     if (    (    (pDis->param1.fUse & DISUSE_REG_GEN32)
              ||  (pDis->param1.fUse & DISUSE_REG_GEN64))
-        &&  (pDis->param1.base.reg_gen == USE_REG_ESP))
+        &&  (pDis->param1.base.reg_gen == DISGREG_ESP))
     {
         Log4(("pgmPoolMonitorIsReused: ESP\n"));
         return true;

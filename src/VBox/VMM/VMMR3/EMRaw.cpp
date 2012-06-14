@@ -682,7 +682,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
         {
             if (pCtx->SysEnter.cs != 0)
             {
-                rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
+                rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
                                         (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == DISCPUMODE_32BIT) ? PATMFL_CODE32 : 0);
                 if (RT_SUCCESS(rc))
                 {
@@ -932,7 +932,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             && !pCtx->eflags.Bits.u1VM
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
-            int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
+            int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
                                         (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == DISCPUMODE_32BIT) ? PATMFL_CODE32 : 0);
             if (RT_SUCCESS(rc))
             {
@@ -1276,9 +1276,9 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Prefetch pages for EIP and ESP. */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
-        rc = PGMPrefetchPage(pVCpu, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->rip));
+        rc = PGMPrefetchPage(pVCpu, SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pCtx->rip));
         if (rc == VINF_SUCCESS)
-            rc = PGMPrefetchPage(pVCpu, SELMToFlat(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), pCtx->rsp));
+            rc = PGMPrefetchPage(pVCpu, SELMToFlat(pVM, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->rsp));
         if (rc != VINF_SUCCESS)
         {
             if (rc != VINF_PGM_SYNC_CR3)

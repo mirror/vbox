@@ -423,7 +423,7 @@ int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTY
     uint32_t const cbInstrShutUpGcc = pCpu->opsize;
     rc = patmPatchReadBytes(pVM, pPB, pCurInstrGC, cbInstrShutUpGcc);
     AssertRC(rc);
-    PATCHGEN_EPILOG(pPatch, cbInstrShutUpGcc); 
+    PATCHGEN_EPILOG(pPatch, cbInstrShutUpGcc);
     return rc;
 }
 
@@ -1366,7 +1366,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
         }
         pPB[offset++] = 0x8D;              // lea       edx, dword ptr [dest]
         // duplicate and modify modrm byte and additional bytes if present (e.g. direct address)
-        pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, USE_REG_EDX, pCpu->ModRM.Bits.Rm);
+        pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, DISGREG_EDX , pCpu->ModRM.Bits.Rm);
 
         i = 3;  /* standard offset of modrm bytes */
         if (pCpu->prefix == DISPREFIX_OPSIZE)
@@ -1461,7 +1461,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     }
     pPB[offset++] = 0x8D;              // lea       edx, dword ptr [dest]
     // duplicate and modify modrm byte and additional bytes if present (e.g. direct address)
-    pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, USE_REG_EDX, pCpu->ModRM.Bits.Rm);
+    pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, DISGREG_EDX , pCpu->ModRM.Bits.Rm);
 
     i = 3;  /* standard offset of modrm bytes */
     if (pCpu->prefix == DISPREFIX_OPSIZE)

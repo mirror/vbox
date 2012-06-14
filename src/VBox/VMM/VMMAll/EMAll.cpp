@@ -398,7 +398,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
 VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
     RTGCPTR GCPtrInstr;
-    int rc = SELMToFlatEx(pVCpu, DIS_SELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
+    int rc = SELMToFlatEx(pVCpu, DISSELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
     if (RT_FAILURE(rc))
     {
         Log(("EMInterpretDisasOne: Failed to convert %RTsel:%RGv (cpl=%d) - rc=%Rrc !!\n",
@@ -497,7 +497,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     return rc;
 #else
     RTGCPTR pbCode;
-    VBOXSTRICTRC rc = SELMToFlatEx(pVCpu, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    VBOXSTRICTRC rc = SELMToFlatEx(pVCpu, DISSELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
     if (RT_SUCCESS(rc))
     {
         uint32_t     cbOp;
@@ -551,7 +551,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
     return rc;
 #else
     RTGCPTR pbCode;
-    VBOXSTRICTRC rc = SELMToFlatEx(pVCpu, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    VBOXSTRICTRC rc = SELMToFlatEx(pVCpu, DISSELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
     if (RT_SUCCESS(rc))
     {
         uint32_t     cbOp;
@@ -734,7 +734,7 @@ DECLINLINE(int) emRamWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR
 /** Convert sel:addr to a flat GC address. */
 DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, PDISOPPARAM pParam, RTGCPTR pvAddr)
 {
-    DIS_SELREG enmPrefixSeg = DISDetectSegReg(pDis, pParam);
+    DISSELREG enmPrefixSeg = DISDetectSegReg(pDis, pParam);
     return SELMToFlat(pVM, enmPrefixSeg, pRegFrame, pvAddr);
 }
 
@@ -1031,7 +1031,7 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */
-            pStackVal = SELMToFlat(pVM, DIS_SELREG_SS, pRegFrame, (RTGCPTR)pRegFrame->esp);
+            pStackVal = SELMToFlat(pVM, DISSELREG_SS, pRegFrame, (RTGCPTR)pRegFrame->esp);
             if (pStackVal == 0)
                 return VERR_EM_INTERPRETER;
 
@@ -1047,10 +1047,10 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
                 pParam1 = (RTGCPTR)param1.val.val64;
 
                 /* pop [esp+xx] uses esp after the actual pop! */
-                AssertCompile(USE_REG_ESP == USE_REG_SP);
+                AssertCompile(DISGREG_ESP == DISGREG_SP);
                 if (    (pDis->param1.fUse & DISUSE_BASE)
                     &&  (pDis->param1.fUse & (DISUSE_REG_GEN16|DISUSE_REG_GEN32))
-                    &&  pDis->param1.base.reg_gen == USE_REG_ESP
+                    &&  pDis->param1.base.reg_gen == DISGREG_ESP
                    )
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
 
@@ -1673,7 +1673,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
         return VERR_EM_INTERPRETER;
     }
 
-    GCDest = SELMToFlat(pVM, DIS_SELREG_ES, pRegFrame, GCOffset);
+    GCDest = SELMToFlat(pVM, DISSELREG_ES, pRegFrame, GCOffset);
     switch (pDis->opmode)
     {
     case DISCPUMODE_16BIT:
@@ -2685,7 +2685,7 @@ static int emInterpretSti(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
     pGCState->uVMFlags |= X86_EFL_IF;
 
     Assert(pRegFrame->eflags.u32 & X86_EFL_IF);
-    Assert(pvFault == SELMToFlat(pVM, DIS_SELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->rip));
+    Assert(pvFault == SELMToFlat(pVM, DISSELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->rip));
 
     pVCpu->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pDis->opsize;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);

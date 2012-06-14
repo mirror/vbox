@@ -727,7 +727,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
 
         /* Convert source address ds:esi. */
         RTGCUINTPTR pu8Virt;
-        rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
+        rc = SELMToFlatEx(pVM, DISSELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           (PRTGCPTR)&pu8Virt);
         if (RT_SUCCESS(rc))
@@ -786,7 +786,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
 
         /* Convert destination address. */
         RTGCUINTPTR pu8Virt;
-        rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
+        rc = SELMToFlatEx(pVM, DISSELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           (RTGCPTR *)&pu8Virt);
         if (RT_FAILURE(rc))
@@ -2054,7 +2054,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    int rc2 = SELMToFlatEx(pVCpu, DIS_SELREG_ES, pRegFrame, pRegFrame->rdi & fAddrMask,
+    int rc2 = SELMToFlatEx(pVCpu, DISSELREG_ES, pRegFrame, pRegFrame->rdi & fAddrMask,
                            SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                            &GCPtrDst);
     if (RT_FAILURE(rc2))
@@ -2216,7 +2216,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
 
     /* Convert source address ds:esi. */
     RTGCPTR GCPtrSrc;
-    int rc2 = SELMToFlatEx(pVCpu, DIS_SELREG_DS, pRegFrame, pRegFrame->rsi & fAddrMask,
+    int rc2 = SELMToFlatEx(pVCpu, DISSELREG_DS, pRegFrame, pRegFrame->rsi & fAddrMask,
                            SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                            &GCPtrSrc);
     if (RT_FAILURE(rc2))
