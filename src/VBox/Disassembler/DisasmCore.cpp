@@ -2330,7 +2330,7 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDI
     switch (subtype)
     {
     case OP_PARM_b:
-        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16 : 8));
+        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16U : 8U));
 
         /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
         /* Intel® 64 and IA-32 Architectures Software Developer’s Manual: 3.4.1.1 */
@@ -2346,14 +2346,14 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDI
         break;
 
     case OP_PARM_w:
-        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16 : 8));
+        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16U : 8U));
 
         pParam->fUse |= DISUSE_REG_GEN16;
         pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_d:
-        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16 : 8));
+        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16U : 8U));
 
         pParam->fUse |= DISUSE_REG_GEN32;
         pParam->base.reg_gen = idx;
