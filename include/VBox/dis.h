@@ -381,55 +381,6 @@ typedef enum
 #define DISXREG_XMM7                    UINT8_C(7)
 /** @}  */
 
-/** @name Flags returned by DISQueryParamVal (DISQPVPARAMVAL::flags).
- * @{
- */
-#define DISQPV_FLAG_8                   UINT8_C(0x01)
-#define DISQPV_FLAG_16                  UINT8_C(0x02)
-#define DISQPV_FLAG_32                  UINT8_C(0x04)
-#define DISQPV_FLAG_64                  UINT8_C(0x08)
-#define DISQPV_FLAG_FARPTR16            UINT8_C(0x10)
-#define DISQPV_FLAG_FARPTR32            UINT8_C(0x20)
-/** @}  */
-
-/** @name Types returned by DISQueryParamVal (DISQPVPARAMVAL::flags).
- * @{ */
-#define DISQPV_TYPE_REGISTER            UINT8_C(1)
-#define DISQPV_TYPE_ADDRESS             UINT8_C(2)
-#define DISQPV_TYPE_IMMEDIATE           UINT8_C(3)
-/** @}  */
-
-typedef struct
-{
-    union
-    {
-        uint8_t     val8;
-        uint16_t    val16;
-        uint32_t    val32;
-        uint64_t    val64;
-
-        struct
-        {
-            uint16_t sel;
-            uint32_t offset;
-        } farptr;
-    } val;
-
-    uint8_t         type;
-    uint8_t         size;
-    uint8_t         flags;
-} DISQPVPARAMVAL;
-/** Pointer to opcode parameter value. */
-typedef DISQPVPARAMVAL *PDISQPVPARAMVAL;
-
-/** Indicates which parameter DISQueryParamVal should operate on. */
-typedef enum DISQPVWHICH
-{
-    DISQPVWHICH_DST = 1,
-    DISQPVWHICH_SRC,
-    DISQPVWHAT_32_BIT_HACK = 0x7fffffff
-} DISQPVWHICH;
-
 
 /**
  * Operand Parameter.
@@ -515,7 +466,7 @@ typedef const struct DISOPCODE *PCDISOPCODE;
  * Callback for reading opcode bytes.
  *
  * @param   pDisState       Pointer to the CPU state.  The primary user argument
- *                          can be retrived from DISCPUSTATE::apvUserData[0]. If
+ *                          can be retrived from DISCPUSTATE::pvUser. If
  *                          more is required these can be passed in the
  *                          subsequent slots.
  * @param   pbDst           Pointer to output buffer.
@@ -539,8 +490,8 @@ typedef PFNDISPARSE const *PCPFNDISPARSE;
  */
 typedef struct DISCPUSTATE
 {
-    /* Because of apvUserData[1] and apvUserData[2], put the less frequently
-       used bits at the top for now.  (Might be better off in the middle?) */
+    /* Because of pvUser2, put the less frequently used bits at the top for
+       now. (Might be better off in the middle?) */
     DISOPPARAM      param3;
     DISOPPARAM      param2;
     DISOPPARAM      param1;
@@ -627,12 +578,16 @@ typedef struct DISCPUSTATE
     /** The instruction bytes. */
     uint8_t         abInstr[16];
     /* off: 0x0b0 (176) */
-    /** User data slots for the read callback.  The first entry is used for the
-     *  pvUser argument, the rest are up for grabs.
-     * @remarks This must come last so that we can memset everything before this. */
-    void           *apvUserData[3];
+    /** User data supplied as an argument to the APIs. */
+    void           *pvUser;
 #if ARCH_BITS == 32
-    uint32_t        auPadding4[3];
+    uint32_t        uPadding4;
+#endif
+    /** User data that can be set prior to calling the API.
+     * @deprecated Please don't use this any more. */
+    void           *pvUser2;
+#if ARCH_BITS == 32
+    uint32_t        uPadding5;
 #endif
 } DISCPUSTATE;
 
@@ -654,12 +609,62 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFi
                        PDISCPUSTATE pCpu, uint32_t *pcbInstr);
 
 DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
-DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
+DISDECL(DISSELREG)  DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
 DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype);
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
 
+
+/** @name Flags returned by DISQueryParamVal (DISQPVPARAMVAL::flags).
+ * @{
+ */
+#define DISQPV_FLAG_8                   UINT8_C(0x01)
+#define DISQPV_FLAG_16                  UINT8_C(0x02)
+#define DISQPV_FLAG_32                  UINT8_C(0x04)
+#define DISQPV_FLAG_64                  UINT8_C(0x08)
+#define DISQPV_FLAG_FARPTR16            UINT8_C(0x10)
+#define DISQPV_FLAG_FARPTR32            UINT8_C(0x20)
+/** @}  */
+
+/** @name Types returned by DISQueryParamVal (DISQPVPARAMVAL::flags).
+ * @{ */
+#define DISQPV_TYPE_REGISTER            UINT8_C(1)
+#define DISQPV_TYPE_ADDRESS             UINT8_C(2)
+#define DISQPV_TYPE_IMMEDIATE           UINT8_C(3)
+/** @}  */
+
+typedef struct
+{
+    union
+    {
+        uint8_t     val8;
+        uint16_t    val16;
+        uint32_t    val32;
+        uint64_t    val64;
+
+        struct
+        {
+            uint16_t sel;
+            uint32_t offset;
+        } farptr;
+    } val;
+
+    uint8_t         type;
+    uint8_t         size;
+    uint8_t         flags;
+} DISQPVPARAMVAL;
+/** Pointer to opcode parameter value. */
+typedef DISQPVPARAMVAL *PDISQPVPARAMVAL;
+
+/** Indicates which parameter DISQueryParamVal should operate on. */
+typedef enum DISQPVWHICH
+{
+    DISQPVWHICH_DST = 1,
+    DISQPVWHICH_SRC,
+    DISQPVWHAT_32_BIT_HACK = 0x7fffffff
+} DISQPVWHICH;
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype);
+
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
 DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
 DISDECL(int) DISFetchReg32(PCCPUMCTXCORE pCtx, unsigned reg32, uint32_t *pVal);

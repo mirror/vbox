@@ -535,7 +535,7 @@ VMMR3DECL(int) PATMR3Reset(PVM pVM)
 
 DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PATMDISASM   *pDisInfo = (PATMDISASM *)pDisState->apvUserData[0];
+    PATMDISASM   *pDisInfo = (PATMDISASM *)pDisState->pvUser;
     int           orgsize  = cbToRead;
 
     Assert(cbToRead);

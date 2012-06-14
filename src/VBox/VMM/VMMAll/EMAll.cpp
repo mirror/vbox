@@ -285,7 +285,7 @@ VMMDECL(int) EMRemTryLock(PVM pVM)
  */
 static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PEMDISSTATE   pState = (PEMDISSTATE)pDisState->apvUserData[0];
+    PEMDISSTATE   pState = (PEMDISSTATE)pDisState->pvUser;
 # ifndef IN_RING0
     PVM           pVM    = pState->pVM;
 # endif

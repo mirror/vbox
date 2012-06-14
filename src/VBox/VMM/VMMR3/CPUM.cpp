@@ -3528,7 +3528,7 @@ typedef struct CPUMDISASSTATE
  */
 static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
-    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pDisState->apvUserData[0];
+    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pDisState->pvUser;
     Assert(cbToRead > 0);
     for (;;)
     {

@@ -57,7 +57,7 @@ DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUST
  * @param   enmCpuMode      The CPU mode.
  * @param   pfnCallback     The byte fetcher callback.
  * @param   pvUser          The user argument (found in
- *                          DISCPUSTATE::apvUserData[0]).
+ *                          DISCPUSTATE::pvUser).
  * @param   pCpu            Where to return the disassembled instruction.
  * @param   pcbInstr        Where to store the size of the instruction. NULL is
  *                          allowed.
