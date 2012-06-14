@@ -43,9 +43,10 @@ vboxmouse_SOURCES    = \
 vboxmouse_LIBS       = \
 	$(VBOX_LIB_VBGL_R0)
 ifeq ($(KBUILD_HOST),solaris)
- vboxmouse_LDFLAGS   += -N drv/vboxguest -N misc/ctf
+ vboxmouse_LDFLAGS       += -N drv/vboxguest -N misc/ctf
 else
- vboxmouse_SOURCES   += deps.s
+ vboxmouse_SOURCES       += deps.s
+ vboxmouse_deps.s_ASFLAGS = -f bin -g null
 endif
 
 
