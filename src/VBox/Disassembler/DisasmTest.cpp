@@ -33,7 +33,7 @@ DECLASM(int) TestProc64_EndProc(void);
 #endif
 //uint8_t aCode16[] = { 0x66, 0x67, 0x89, 0x07 };
 
-static void testDisasp(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uEndPtr, DISCPUMODE enmDisCpuMode)
+static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uEndPtr, DISCPUMODE enmDisCpuMode)
 {
     RTTestISub(pszSub);
     size_t const cbInstrs = uEndPtr - (uintptr_t)pabInstrs;
