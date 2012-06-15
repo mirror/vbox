@@ -23,8 +23,13 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 if defined(VBOX_WITH_INTEL_PXE) || defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
-else if defined(VBOX_WITH_PXE_ROM) && !defined(VBOX_WITHOUT_ETHERBOOT)
- include $(PATH_SUB_CURRENT)/PC/Etherboot-src/Makefile.kmk
+else if defined(VBOX_WITH_PXE_ROM)
+ if !defined(VBOX_WITHOUT_ETHERBOOT)
+  include $(PATH_SUB_CURRENT)/PC/Etherboot-src/Makefile.kmk
+ endif
+ if !defined(VBOX_WITHOUT_IPXE)
+  include $(PATH_SUB_CURRENT)/PC/ipxe/Makefile.kmk
+ endif
 endif
 if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_NEW_BIOS
@@ -253,7 +258,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES        += \
  	Graphics/DevVGA_VDMA.cpp
  endif
- 
+
  ifdef VBOX_VDMA_WITH_WATCHDOG
   VBoxDD_DEFS           += VBOX_VDMA_WITH_WATCHDOG
  endif
@@ -902,7 +907,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
- 	$(if $(VBOX_WITH_PXE_ROM),$(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),) \
+ 	$(if $(VBOX_WITH_PXE_ROM),$(if $(VBOX_WITHOUT_IPXE),(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
  ifeq ($(KBUILD_TARGET),l4)
