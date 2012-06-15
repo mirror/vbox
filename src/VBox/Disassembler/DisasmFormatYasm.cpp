@@ -542,11 +542,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
              */
             case OP_FLD:
                 if (pCpu->bOpCode == 0xdb) /* m80fp workaround. */
-                    *(int *)&pCpu->Param1.param &= ~0x1f; /* make it pure OP_PARM_M */
+                    *(int *)&pCpu->Param1.fParam &= ~0x1f; /* make it pure OP_PARM_M */
                 break;
             case OP_LAR: /* hack w -> v, probably not correct. */
-                *(int *)&pCpu->Param2.param &= ~0x1f;
-                *(int *)&pCpu->Param2.param |= OP_PARM_v;
+                *(int *)&pCpu->Param2.fParam &= ~0x1f;
+                *(int *)&pCpu->Param2.fParam |= OP_PARM_v;
                 break;
         }
 
@@ -558,7 +558,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 
 #define PUT_FAR() \
             do { \
-                if (    OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p \
+                if (    OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p \
                     &&  pOp->uOpcode != OP_LDS /* table bugs? */ \
                     &&  pOp->uOpcode != OP_LES \
                     &&  pOp->uOpcode != OP_LFS \
@@ -570,7 +570,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         /** @todo drop the work/dword/qword override when the src/dst is a register (except for movsx/movzx). */
 #define PUT_SIZE_OVERRIDE() \
             do { \
-                switch (OP_PARM_VSUBTYPE(pParam->param)) \
+                switch (OP_PARM_VSUBTYPE(pParam->fParam)) \
                 { \
                     case OP_PARM_v: \
                         switch (pCpu->uOpMode) \
@@ -586,14 +586,14 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     case OP_PARM_d: PUT_SZ("dword "); break; \
                     case OP_PARM_q: PUT_SZ("qword "); break; \
                     case OP_PARM_dq: \
-                        if (OP_PARM_VTYPE(pParam->param) != OP_PARM_W) /* these are 128 bit, pray they are all unambiguous.. */ \
+                        if (OP_PARM_VTYPE(pParam->fParam) != OP_PARM_W) /* these are 128 bit, pray they are all unambiguous.. */ \
                             PUT_SZ("qword "); \
                         break; \
                     case OP_PARM_p: break; /* see PUT_FAR */ \
                     case OP_PARM_s: if (pParam->fUse & DISUSE_REG_FP) PUT_SZ("tword "); break; /* ?? */ \
                     case OP_PARM_z: break; \
                     case OP_PARM_NONE: \
-                        if (    OP_PARM_VTYPE(pParam->param) == OP_PARM_M \
+                        if (    OP_PARM_VTYPE(pParam->fParam) == OP_PARM_M \
                             &&  ((pParam->fUse & DISUSE_REG_FP) || pOp->uOpcode == OP_FLD)) \
                             PUT_SZ("tword "); \
                         break; \
@@ -672,7 +672,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         {
                             /* Work around mov seg,[mem16]  and mov [mem16],seg as these always make a 16-bit mem
                                while the register variants deals with 16, 32 & 64 in the normal fashion. */
-                            if (    pParam->param != OP_PARM_Ev
+                            if (    pParam->fParam != OP_PARM_Ev
                                 ||  pOp->uOpcode != OP_MOV
                                 ||  (   pOp->fParam1 != OP_PARM_Sw
                                      && pOp->fParam2 != OP_PARM_Sw))
@@ -807,10 +807,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                         )
                                    )
                                 {
-                                    if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
+                                    if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_b)
                                         PUT_SZ_STRICT("strict byte ", "byte ");
-                                    else if (   OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v
-                                             || OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_z)
+                                    else if (   OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_v
+                                             || OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_z)
                                         PUT_SZ_STRICT("strict word ", "word ");
                                 }
                                 PUT_NUM_16(pParam->parval);
@@ -830,10 +830,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                         )
                                     )
                                 {
-                                    if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_b)
+                                    if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_b)
                                         PUT_SZ_STRICT("strict byte ", "byte ");
-                                    else if (   OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_v
-                                             || OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_z)
+                                    else if (   OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_v
+                                             || OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_z)
                                         PUT_SZ_STRICT("strict dword ", "dword ");
                                 }
                                 PUT_NUM_32(pParam->parval);

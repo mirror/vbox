@@ -470,9 +470,9 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
     }
 
     // Should contain the parameter type on input
-    pCpu->Param1.param = pOp->fParam1;
-    pCpu->Param2.param = pOp->fParam2;
-    pCpu->Param3.param = pOp->fParam3;
+    pCpu->Param1.fParam = pOp->fParam1;
+    pCpu->Param2.fParam = pOp->fParam2;
+    pCpu->Param3.fParam = pOp->fParam3;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
     if (pCpu->uCpuMode == DISCPUMODE_64BIT)
@@ -533,8 +533,8 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
         pCpu->pCurInstr = (PCDISOPCODE)fpop;
 
         // Should contain the parameter type on input
-        pCpu->Param1.param = fpop->fParam1;
-        pCpu->Param2.param = fpop->fParam2;
+        pCpu->Param1.fParam = fpop->fParam1;
+        pCpu->Param2.fParam = fpop->fParam2;
     }
     else
     {
@@ -717,7 +717,7 @@ unsigned ParseSIB_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPar
 //*****************************************************************************
 unsigned UseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    int      vtype = OP_PARM_VTYPE(pParam->param);
+    unsigned vtype = OP_PARM_VTYPE(pParam->fParam);
     unsigned reg = pCpu->ModRM.Bits.Reg;
     unsigned mod = pCpu->ModRM.Bits.Mod;
     unsigned rm  = pCpu->ModRM.Bits.Rm;
@@ -1400,7 +1400,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 {
     if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
-        if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
         {
             /* far 16:32 pointer */
             pParam->parval = disReadDWord(pCpu, uCodePtr);
@@ -1424,7 +1424,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 
     if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
-        Assert(OP_PARM_VSUBTYPE(pParam->param) != OP_PARM_p);
+        Assert(OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_p);
         /*
          * near 64 bits pointer
          *
@@ -1436,7 +1436,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
         pParam->cb     = sizeof(uint64_t);
         return sizeof(uint64_t);
     }
-    if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+    if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
     {
         /* far 16:16 pointer */
         pParam->parval = disReadDWord(pCpu, uCodePtr);
@@ -1463,7 +1463,7 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM 
     NOREF(uCodePtr); NOREF(pOp);
     if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
-        if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
         {// far 16:32 pointer
             return sizeof(uint32_t) + sizeof(uint16_t);
         }
@@ -1474,12 +1474,12 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM 
     }
     if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
-        Assert(OP_PARM_VSUBTYPE(pParam->param) != OP_PARM_p);
+        Assert(OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_p);
         return sizeof(uint64_t);
     }
     else
     {
-        if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
         {// far 16:16 pointer
             return sizeof(uint32_t);
         }
@@ -1495,7 +1495,7 @@ unsigned ParseImmAddrF(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
 {
     // immediate far pointers - only 16:16 or 16:32; determined by operand, *not* address size!
     Assert(pCpu->uOpMode == DISCPUMODE_16BIT || pCpu->uOpMode == DISCPUMODE_32BIT);
-    Assert(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p);
+    Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p);
     if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         // far 16:32 pointer
@@ -1519,7 +1519,7 @@ unsigned ParseImmAddrF_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM
     NOREF(uCodePtr); NOREF(pOp);
     // immediate far pointers - only 16:16 or 16:32
     Assert(pCpu->uOpMode == DISCPUMODE_16BIT || pCpu->uOpMode == DISCPUMODE_32BIT);
-    Assert(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p);
+    Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p);
     if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         // far 16:32 pointer
@@ -1541,7 +1541,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
      * Sets up flags for stored in OPC fixed registers.
      */
 
-    if (pParam->param == OP_PARM_NONE)
+    if (pParam->fParam == OP_PARM_NONE)
     {
         /* No parameter at all. */
         return 0;
@@ -1552,13 +1552,13 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
     AssertCompile(OP_PARM_REG_GEN16_END < OP_PARM_REG_GEN8_END);
     AssertCompile(OP_PARM_REG_GEN8_END < OP_PARM_REG_FP_END);
 
-    if (pParam->param <= OP_PARM_REG_GEN32_END)
+    if (pParam->fParam <= OP_PARM_REG_GEN32_END)
     {
         /* 32-bit EAX..EDI registers. */
         if (pCpu->uOpMode == DISCPUMODE_32BIT)
         {
             /* Use 32-bit registers. */
-            pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
+            pParam->base.reg_gen = pParam->fParam - OP_PARM_REG_GEN32_START;
             pParam->fUse  |= DISUSE_REG_GEN32;
             pParam->cb     = 4;
         }
@@ -1566,7 +1566,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
         if (pCpu->uOpMode == DISCPUMODE_64BIT)
         {
             /* Use 64-bit registers. */
-            pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
+            pParam->base.reg_gen = pParam->fParam - OP_PARM_REG_GEN32_START;
             if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->Param1             /* ugly assumption that it only applies to the first parameter */
                 &&  (pCpu->fPrefix & DISPREFIX_REX)
@@ -1579,33 +1579,33 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
         else
         {
             /* Use 16-bit registers. */
-            pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
+            pParam->base.reg_gen = pParam->fParam - OP_PARM_REG_GEN32_START;
             pParam->fUse  |= DISUSE_REG_GEN16;
             pParam->cb     = 2;
-            pParam->param = pParam->param - OP_PARM_REG_GEN32_START + OP_PARM_REG_GEN16_START;
+            pParam->fParam = pParam->fParam - OP_PARM_REG_GEN32_START + OP_PARM_REG_GEN16_START;
         }
     }
     else
-    if (pParam->param <= OP_PARM_REG_SEG_END)
+    if (pParam->fParam <= OP_PARM_REG_SEG_END)
     {
         /* Segment ES..GS registers. */
-        pParam->base.reg_seg = (DISSELREG)(pParam->param - OP_PARM_REG_SEG_START);
+        pParam->base.reg_seg = (DISSELREG)(pParam->fParam - OP_PARM_REG_SEG_START);
         pParam->fUse  |= DISUSE_REG_SEG;
         pParam->cb     = 2;
     }
     else
-    if (pParam->param <= OP_PARM_REG_GEN16_END)
+    if (pParam->fParam <= OP_PARM_REG_GEN16_END)
     {
         /* 16-bit AX..DI registers. */
-        pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN16_START;
+        pParam->base.reg_gen = pParam->fParam - OP_PARM_REG_GEN16_START;
         pParam->fUse  |= DISUSE_REG_GEN16;
         pParam->cb     = 2;
     }
     else
-    if (pParam->param <= OP_PARM_REG_GEN8_END)
+    if (pParam->fParam <= OP_PARM_REG_GEN8_END)
     {
         /* 8-bit AL..DL, AH..DH registers. */
-        pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN8_START;
+        pParam->base.reg_gen = pParam->fParam - OP_PARM_REG_GEN8_START;
         pParam->fUse  |= DISUSE_REG_GEN8;
         pParam->cb     = 1;
 
@@ -1619,14 +1619,14 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
         }
     }
     else
-    if (pParam->param <= OP_PARM_REG_FP_END)
+    if (pParam->fParam <= OP_PARM_REG_FP_END)
     {
         /* FPU registers. */
-        pParam->base.reg_fp = pParam->param - OP_PARM_REG_FP_START;
+        pParam->base.reg_fp = pParam->fParam - OP_PARM_REG_FP_START;
         pParam->fUse  |= DISUSE_REG_FP;
         pParam->cb     = 10;
     }
-    Assert(!(pParam->param >= OP_PARM_REG_GEN64_START && pParam->param <= OP_PARM_REG_GEN64_END));
+    Assert(!(pParam->fParam >= OP_PARM_REG_GEN64_START && pParam->fParam <= OP_PARM_REG_GEN64_END));
 
     /* else - not supported for now registers. */
 
@@ -2297,13 +2297,12 @@ static const int   IndexModRMReg16[4] = { DISGREG_SI, DISGREG_DI, DISGREG_SI, DI
 //*****************************************************************************
 static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr)
 {
-    int subtype, type, mod;
     NOREF(pOp); NOREF(pCpu);
 
-    mod     = pCpu->ModRM.Bits.Mod;
+    unsigned mod     = pCpu->ModRM.Bits.Mod;
 
-    type    = OP_PARM_VTYPE(pParam->param);
-    subtype = OP_PARM_VSUBTYPE(pParam->param);
+    unsigned type    = OP_PARM_VTYPE(pParam->fParam);
+    unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
     if (fRegAddr)
         subtype = (pCpu->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
     else

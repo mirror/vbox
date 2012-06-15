@@ -401,7 +401,9 @@ typedef struct DISOPPARAM
         uint32_t    u16;
         uint32_t    u8;
     } uDisp;
-    int32_t         param;
+    /** Copy of the corresponding DISOPCODE::fParam1 / DISOPCODE::fParam2 /
+     *  DISOPCODE::fParam3. */
+    uint32_t        fParam;
 
     union
     {
