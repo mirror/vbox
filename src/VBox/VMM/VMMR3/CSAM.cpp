@@ -725,66 +725,80 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) CSAMR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+static DECLCALLBACK(int) csamR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     PVM pVM = (PVM)pDis->pvUser;
-    int rc  = VINF_SUCCESS;
 
-/** @todo Optimize this code to read more when possible! Add a new PATM call for
- *        reading more than one byte. */
-
-    /* We are not interested in patched instructions, so read the original opcode bytes.
-       Note! single instruction patches (int3) are checked in CSAMR3AnalyseCallback */
-    while (cbMinRead > 0)
+    /*
+     * We are not interested in patched instructions, so read the original opcode bytes.
+     *
+     * Note! single instruction patches (int3) are checked in CSAMR3AnalyseCallback
+     *
+     * Since we're decoding one instruction at the time, we don't need to be
+     * concerned about any patched instructions following the first one.  We
+     * could in fact probably skip this PATM call for offInstr != 0.
+     */
+    size_t      cbRead   = cbMaxRead;
+    RTUINTPTR   uSrcAddr = pDis->uInstrAddr + offInstr;
+    int rc = PATMR3ReadOrgInstr(pVM, pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr], cbRead, &cbRead);
+    if (RT_SUCCESS(rc))
     {
-        int rc2 = PATMR3QueryOpcode(pVM, (RTRCPTR)pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr]);
-        if (RT_FAILURE(rc2))
-            break;
-        offInstr++;
-        cbMinRead--;
-        cbMaxRead--;
+        if (cbRead >= cbMinRead)
+        {
+            pDis->cbCachedInstr = offInstr + cbRead;
+            return rc;
+        }
+
+        cbMinRead -= cbRead;
+        cbMaxRead -= cbRead;
+        offInstr  += cbRead;
+        uSrcAddr  += cbRead;
     }
-    if (cbMinRead > 0)
+
+    /*
+     * The current byte isn't a patch instruction byte.
+     */
+    uint8_t const  *pbSrcInstr = (uint8_t const *)pDis->pvUser2; AssertPtr(pbSrcInstr);
+    if ((pDis->uInstrAddr >> PAGE_SHIFT) == ((uSrcAddr + cbMaxRead - 1) >> PAGE_SHIFT))
     {
-        /*
-         * The current byte isn't a patch instruction byte...
-         */
-        uint8_t const  *pbInstr  = (uint8_t const *)pDis->pvUser2;
-        RTUINTPTR       uSrcAddr = pDis->uInstrAddr + offInstr;
-        if (   PAGE_ADDRESS(pDis->uInstrAddr) != PAGE_ADDRESS(uSrcAddr + cbMinRead - 1)
-            && !PATMIsPatchGCAddr(pVM, uSrcAddr)) /** @todo does CSAM actually analyze patch code, or is this just a copy&past check? */
-        {
-            /* Crossed page boundrary, pbInstr is no good.. */
-            PVMCPU      pVCpu    = VMMGetCpu0(pVM);
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbMinRead);
-            offInstr += cbMinRead;
-        }
-        else
-        {
-            /* pbInstr is eqvivalent to uInstrAddr. */
-            AssertPtr(pbInstr);
-            memcpy(&pDis->abInstr[offInstr], &pbInstr[offInstr], cbMinRead);
-            offInstr += cbMinRead;
-        }
+        memcpy(&pDis->abInstr[offInstr], &pbSrcInstr[offInstr], cbMaxRead);
+        offInstr += cbMaxRead;
+        rc = VINF_SUCCESS;
+    }
+    else if (   (pDis->uInstrAddr >> PAGE_SHIFT) == ((uSrcAddr + cbMinRead - 1) >> PAGE_SHIFT)
+             || PATMIsPatchGCAddr(pVM, uSrcAddr) /** @todo does CSAM actually analyze patch code, or is this just a copy&past check? */
+            )
+    {
+        memcpy(&pDis->abInstr[offInstr], &pbSrcInstr[offInstr], cbMaxRead);
+        offInstr += cbMinRead;
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        /* Crossed page boundrary, pbSrcInstr is no good... */
+        rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), &pDis->abInstr[offInstr], uSrcAddr, cbMinRead);
+        offInstr += cbMinRead;
     }
 
     pDis->cbCachedInstr = offInstr;
     return rc;
 }
 
-DECLINLINE(int) CSAMR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCPUMODE enmCpuMode,
+DECLINLINE(int) csamR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCPUMODE enmCpuMode,
                                PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 {
+    /** @todo Put pVM and pbInstrHC in a stack structure and pass it to
+     *        csamR3ReadBytes via pvUser. This is the last pvUser2 usage. */
     pCpu->pvUser2 = InstrHC;
 #ifdef DEBUG
-    return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, DISOPTYPE_ALL,
+    return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, pVM, DISOPTYPE_ALL,
                            pCpu, pcbInstr, pszOutput, cbOutput);
 #else
     /* We are interested in everything except harmless stuff */
     if (pszOutput)
-        return DISInstrToStrEx(InstrGC, enmCpuMode, CSAMR3ReadBytes, pVM, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
+        return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, pVM, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
                                pCpu, pcbInstr, pszOutput, cbOutput);
-    return DISInstEx(InstrGC, enmCpuMode, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK), CSAMR3ReadBytes, pVM,
+    return DISInstEx(InstrGC, enmCpuMode, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK), csamR3ReadBytes, pVM,
                      pCpu, pcbInstr);
 #endif
 }
@@ -881,7 +895,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 }
                 Assert(VALID_PTR(pCurInstrHC));
 
-                rc = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
+                rc = csamR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                     &cpu, &cbCurInstr, NULL, 0);
             }
             AssertRC(rc);
@@ -1064,11 +1078,11 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
 
                 STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
-                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
+                rc2 = csamR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                      &cpu, &cbInstr, szOutput, sizeof(szOutput));
                 if (RT_SUCCESS(rc2)) Log(("CSAM Call Analysis: %s", szOutput));
 #else
-                rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
+                rc2 = csamR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, (fCode32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                      &cpu, &cbInstr, NULL, 0);
 #endif
                 STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
@@ -1277,11 +1291,11 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
             STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
-            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
+            rc2 = csamR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                  &cpu, &cbInstr, szOutput, sizeof(szOutput));
             if (RT_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
-            rc2 = CSAMR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
+            rc2 = csamR3DISInstr(pVM, pCurInstrGC, pCurInstrHC, fCode32 ? DISCPUMODE_32BIT : DISCPUMODE_16BIT,
                                  &cpu, &cbInstr, NULL, 0);
 #endif
             STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
