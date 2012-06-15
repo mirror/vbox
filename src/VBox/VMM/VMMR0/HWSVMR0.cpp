@@ -2983,8 +2983,8 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
 
             pDis->uCpuMode = enmMode;
             rc = EMInterpretDisasOneEx(pVM, pVCpu, pbCode, pRegFrame, pDis, &cbOp);
-            Assert(RT_FAILURE(rc) || pDis->pCurInstr->opcode == OP_INVLPG);
-            if (RT_SUCCESS(rc) && pDis->pCurInstr->opcode == OP_INVLPG)
+            Assert(RT_FAILURE(rc) || pDis->pCurInstr->uOpcode == OP_INVLPG);
+            if (RT_SUCCESS(rc) && pDis->pCurInstr->uOpcode == OP_INVLPG)
             {
                 Assert(cbOp == pDis->cbInstr);
                 rc = hmR0svmInterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);

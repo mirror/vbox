@@ -429,7 +429,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 
         if (!(Cpu.fPrefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
-            switch (Cpu.pCurInstr->opcode)
+            switch (Cpu.pCurInstr->uOpcode)
             {
                 case OP_IN:
                 {
@@ -448,7 +448,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         }
         else if (Cpu.fPrefix & DISPREFIX_REP)
         {
-            switch (Cpu.pCurInstr->opcode)
+            switch (Cpu.pCurInstr->uOpcode)
             {
                 case OP_INSB:
                 case OP_INSWD:
@@ -595,7 +595,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
         DISCPUSTATE cpu;
         rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &cpu, "Guest Trap (#UD): ");
         if (    RT_SUCCESS(rc)
-            && (cpu.pCurInstr->opcode == OP_MONITOR || cpu.pCurInstr->opcode == OP_MWAIT))
+            && (cpu.pCurInstr->uOpcode == OP_MONITOR || cpu.pCurInstr->uOpcode == OP_MWAIT))
         {
             uint32_t u32Dummy, u32Features, u32ExtFeatures;
             CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Features);
@@ -678,7 +678,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
     rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "RSWITCH: ");
     if (RT_SUCCESS(rc))
     {
-        if (Cpu.pCurInstr->opcode == OP_SYSENTER)
+        if (Cpu.pCurInstr->uOpcode == OP_SYSENTER)
         {
             if (pCtx->SysEnter.cs != 0)
             {
@@ -693,7 +693,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
         }
 
 #ifdef VBOX_WITH_STATISTICS
-        switch (Cpu.pCurInstr->opcode)
+        switch (Cpu.pCurInstr->uOpcode)
         {
             case OP_SYSENTER:
                 STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatSysEnter);
@@ -775,7 +775,7 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
         DISCPUSTATE Cpu;
         rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->eip, &Cpu, "Patch code: ");
         if (    RT_SUCCESS(rc)
-            &&  Cpu.pCurInstr->opcode == OP_IRET)
+            &&  Cpu.pCurInstr->uOpcode == OP_IRET)
         {
             uint32_t eip, selCS, uEFlags;
 
@@ -964,7 +964,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
     {
 #ifdef VBOX_WITH_STATISTICS
         PEMSTATS pStats = pVCpu->em.s.CTX_SUFF(pStats);
-        switch (Cpu.pCurInstr->opcode)
+        switch (Cpu.pCurInstr->uOpcode)
         {
             case OP_INVLPG:
                 STAM_COUNTER_INC(&pStats->StatInvlpg);
@@ -1034,7 +1034,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                 break;
             default:
                 STAM_COUNTER_INC(&pStats->StatMisc);
-                Log4(("emR3RawPrivileged: opcode=%d\n", Cpu.pCurInstr->opcode));
+                Log4(("emR3RawPrivileged: opcode=%d\n", Cpu.pCurInstr->uOpcode));
                 break;
         }
 #endif /* VBOX_WITH_STATISTICS */
@@ -1043,7 +1043,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             &&  SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == DISCPUMODE_32BIT)
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatPrivEmu, a);
-            switch (Cpu.pCurInstr->opcode)
+            switch (Cpu.pCurInstr->uOpcode)
             {
                 case OP_CLI:
                     pCtx->eflags.u32 &= ~X86_EFL_IF;
@@ -1098,7 +1098,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                     {
                         STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
 
-                        if (    Cpu.pCurInstr->opcode == OP_MOV_CR
+                        if (    Cpu.pCurInstr->uOpcode == OP_MOV_CR
                             &&  Cpu.param1.fUse == DISUSE_REG_CR /* write */
                            )
                         {

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,9 +36,13 @@
 #define SIB_BASE(a)     (a&0x7)
 
 
-/** Full Intel X86 opcode list
+/** @defgroup grp_dis_opcodes Opcodes (DISOPCODE::uOpCode)
+ * @ingroup grp_dis
  * @{
  */
+
+/** @name  Full Intel X86 opcode list
+ * @{ */
 #define OP_INVALID      0
 #define OP_OPSIZE       1
 #define OP_ADDRSIZE     2
@@ -438,7 +442,7 @@
 #define OP_CVTDQ2PD     412
 /** @} */
 
-/** Floating point ops
+/** @name Floating point ops
  * @{
  */
 #define OP_FADD         413
@@ -527,7 +531,7 @@
 #define OP_FUCOMIP      507
 /** @} */
 
-/** 3DNow!
+/** @name 3DNow!
  * @{
  */
 #define OP_PI2FW        508
@@ -600,7 +604,8 @@
 
 #define OP_SWAPGS       610
 
-/* VT-x instructions */
+/** @name VT-x instructions
+ * @{ */
 #define OP_VMREAD       650
 #define OP_VMWRITE      651
 #define OP_VMCALL       652
@@ -613,14 +618,17 @@
 #define OP_VMPTRST      659
 #define OP_INVEPT       660
 #define OP_INVVPID      661
+/** @}  */
 
-/* 64 bits instruction */
+/** @name 64 bits instruction
+ * @{ */
 #define OP_MOVSXD       700
+/** @}  */
 
 /** @} */
 
 
-/** Opcode parameters
+/** @name Opcode parameters
  * @{
  */
 /* NOTE: Register order is important for translations!! */

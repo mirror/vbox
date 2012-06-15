@@ -3553,7 +3553,7 @@ ResumeExecution:
 
                     rc = VINF_SUCCESS;
                     Assert(cbOp == pDis->cbInstr);
-                    switch (pDis->pCurInstr->opcode)
+                    switch (pDis->pCurInstr->uOpcode)
                     {
                     case OP_CLI:
                         pCtx->eflags.Bits.u1IF = 0;

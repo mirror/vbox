@@ -1819,7 +1819,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
     int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
-        &&  pDis->pCurInstr->opcode == OP_MOV
+        &&  pDis->pCurInstr->uOpcode == OP_MOV
         &&  cbOp >= 3)
     {
         uint8_t         aVMMCall[3] = { 0xf, 0x1, 0xd9};
@@ -1870,7 +1870,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
             rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
             pCtx->rip = oldrip;
             if (    rc == VINF_SUCCESS
-                &&  pDis->pCurInstr->opcode == OP_SHR
+                &&  pDis->pCurInstr->uOpcode == OP_SHR
                 &&  pDis->param1.fUse == DISUSE_REG_GEN32
                 &&  pDis->param1.base.reg_gen == uMmioReg
                 &&  pDis->param2.fUse == DISUSE_IMMEDIATE8
@@ -1985,7 +1985,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
     rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
-        &&  pDis->pCurInstr->opcode == OP_MOV
+        &&  pDis->pCurInstr->uOpcode == OP_MOV
         &&  cbOp >= 5)
     {
         uint32_t        idx = pVM->hwaccm.s.cPatches;

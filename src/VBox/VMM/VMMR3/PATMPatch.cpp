@@ -858,7 +858,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     if (    pPatch->pTempInfo->pPatchRetInstrGC
         &&  pPatch->pTempInfo->uPatchRetParam1 == (uint32_t)pCpu->param1.parval) /* nr of bytes popped off the stack should be identical of course! */
     {
-        Assert(pCpu->pCurInstr->opcode == OP_RETN);
+        Assert(pCpu->pCurInstr->uOpcode == OP_RETN);
         STAM_COUNTER_INC(&pVM->patm.s.StatGenRetReused);
 
         return patmPatchGenPatchJump(pVM, pPatch, pCurInstrGC, pPatch->pTempInfo->pPatchRetInstrGC);
@@ -1335,7 +1335,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
         pPB[offset++] = 0x8B;              // mov       destreg, CPUMCTX.tr/ldtr
         /* Modify REG part according to destination of original instruction */
         pPB[offset++] = MAKE_MODRM(0, pCpu->param1.base.reg_gen, 5);
-        if (pCpu->pCurInstr->opcode == OP_STR)
+        if (pCpu->pCurInstr->uOpcode == OP_STR)
         {
             *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
         }
@@ -1380,7 +1380,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
 
         pPB[offset++] = 0x66;              // mov       ax, CPUMCTX.tr/ldtr
         pPB[offset++] = 0xA1;
-        if (pCpu->pCurInstr->opcode == OP_STR)
+        if (pCpu->pCurInstr->uOpcode == OP_STR)
         {
             *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
         }
@@ -1425,7 +1425,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     // sgdt %Ms
     // sidt %Ms
 
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_SGDT:
         offset_base  = RT_OFFSETOF(CPUMCTX, gdtr.pGdt);

@@ -66,7 +66,7 @@
  */
 VMMRCDECL(VBOXSTRICTRC) IOMRCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
         case OP_IN:
             return IOMInterpretIN(pVM, pRegFrame, pCpu);
@@ -86,7 +86,7 @@ VMMRCDECL(VBOXSTRICTRC) IOMRCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDIS
          * The opcode wasn't know to us, freak out.
          */
         default:
-            AssertMsgFailed(("Unknown I/O port access opcode %d.\n", pCpu->pCurInstr->opcode));
+            AssertMsgFailed(("Unknown I/O port access opcode %d.\n", pCpu->pCurInstr->uOpcode));
             return VERR_IOM_IOPORT_UNKNOWN_OPCODE;
     }
 }

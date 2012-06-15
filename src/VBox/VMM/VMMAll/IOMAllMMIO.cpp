@@ -548,7 +548,7 @@ static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE p
          * Do sign extension for MOVSX.
          */
         /** @todo checkup MOVSX implementation! */
-        if (pCpu->pCurInstr->opcode == OP_MOVSX)
+        if (pCpu->pCurInstr->uOpcode == OP_MOVSX)
         {
             if (cb == 1)
             {
@@ -1176,11 +1176,11 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
 #ifdef LOG_ENABLED
     const char *pszInstr;
 
-    if (pCpu->pCurInstr->opcode == OP_XOR)
+    if (pCpu->pCurInstr->uOpcode == OP_XOR)
         pszInstr = "Xor";
-    else if (pCpu->pCurInstr->opcode == OP_OR)
+    else if (pCpu->pCurInstr->uOpcode == OP_OR)
         pszInstr = "Or";
-    else if (pCpu->pCurInstr->opcode == OP_AND)
+    else if (pCpu->pCurInstr->uOpcode == OP_AND)
         pszInstr = "And";
     else
         pszInstr = "OrXorAnd??";
@@ -1527,7 +1527,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
         PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
         return rc;
     }
-    switch (pDis->pCurInstr->opcode)
+    switch (pDis->pCurInstr->uOpcode)
     {
         case OP_MOV:
         case OP_MOVZX:
@@ -2143,7 +2143,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
      */
     RTIOPORT    Port = pRegFrame->edx & 0xffff;
     unsigned    cb = 0;
-    if (pCpu->pCurInstr->opcode == OP_INSB)
+    if (pCpu->pCurInstr->uOpcode == OP_INSB)
         cb = 1;
     else
         cb = (pCpu->uOpMode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
@@ -2312,7 +2312,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
     unsigned    cb = 0;
     bool fRc = iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &Port, &cb);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
-    if (pCpu->pCurInstr->opcode == OP_OUTSB)
+    if (pCpu->pCurInstr->uOpcode == OP_OUTSB)
         cb = 1;
     else
         cb = (pCpu->uOpMode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */

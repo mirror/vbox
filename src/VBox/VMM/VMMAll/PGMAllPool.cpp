@@ -720,7 +720,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsi
      *      copy_process
      *      do_fork
      */
-    if (    pDis->pCurInstr->opcode == OP_BTR
+    if (    pDis->pCurInstr->uOpcode == OP_BTR
         &&  !(offFault & 4)
         /** @todo Validate that the bit index is X86_PTE_RW. */
             )
@@ -760,13 +760,13 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     NOREF(pVM); NOREF(pvFault);
 #endif
 
-    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->opcode, pvFault, pDis->param1.fUse,  pDis->param1.base.reg_gen));
+    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->param1.fUse,  pDis->param1.base.reg_gen));
 
     /* Non-supervisor mode write means it's used for something else. */
     if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
         return true;
 
-    switch (pDis->pCurInstr->opcode)
+    switch (pDis->pCurInstr->uOpcode)
     {
         /* call implies the actual push of the return address faulted */
         case OP_CALL:
@@ -989,7 +989,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
     else if (rc == VERR_EM_INTERPRETER)
     {
         LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for %04x:%RGv - opcode=%d\n",
-                  pRegFrame->cs, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->opcode));
+                  pRegFrame->cs, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->uOpcode));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,EmulateInstr));
     }
@@ -1165,7 +1165,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
              */
             if (   rc == VINF_SUCCESS
                 && !pPage->cLocked                      /* only applies to unlocked pages as we can't free locked ones (e.g. cr3 root). */
-                && pDis->pCurInstr->opcode == OP_MOV
+                && pDis->pCurInstr->uOpcode == OP_MOV
                 && (pvFault & PAGE_OFFSET_MASK) == 0)
             {
                 pPage->GCPtrLastAccessHandlerFault = pvFault;
@@ -1195,7 +1195,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
          * Windows is frequently doing small memset() operations (netio test 4k+).
          * We have to deal with these or we'll kill the cache and performance.
          */
-        if (    pDis->pCurInstr->opcode == OP_STOSWD
+        if (    pDis->pCurInstr->uOpcode == OP_STOSWD
             &&  !pRegFrame->eflags.Bits.u1DF
             &&  pDis->uOpMode == pDis->uCpuMode
             &&  pDis->uAddrMode == pDis->uCpuMode)
@@ -1237,7 +1237,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         /* REP prefix, don't bother. */
         STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,RepPrefix));
         Log4(("pgmPoolAccessHandler: eax=%#x ecx=%#x edi=%#x esi=%#x rip=%RGv opcode=%d prefix=%#x\n",
-              pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->opcode, pDis->fPrefix));
+              pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->uOpcode, pDis->fPrefix));
         fNotReusedNotForking = true;
     }
 

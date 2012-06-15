@@ -520,7 +520,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
          * UD2 in a patch?
          * Note! PATMGCHandleIllegalInstrTrap doesn't always return.
          */
-        if (    Cpu.pCurInstr->opcode == OP_ILLUD2
+        if (    Cpu.pCurInstr->uOpcode == OP_ILLUD2
             &&  PATMIsPatchGCAddr(pVM, pRegFrame->eip))
         {
             LogFlow(("TRPMGCTrap06Handler: -> PATMRCHandleIllegalInstrTrap\n"));
@@ -543,7 +543,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
          */
         else if (Cpu.fPrefix & DISPREFIX_LOCK)
         {
-            Log(("TRPMGCTrap06Handler: pc=%08x op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
+            Log(("TRPMGCTrap06Handler: pc=%08x op=%d\n", pRegFrame->eip, Cpu.pCurInstr->uOpcode));
 #ifdef DTRACE_EXPERIMENT /** @todo fix/remove/permanent-enable this when DIS/PATM handles invalid lock sequences. */
             Assert(!PATMIsPatchGCAddr(pVM, pRegFrame->eip));
             rc = TRPMForwardTrap(pVCpu, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
@@ -555,7 +555,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         /*
          * Handle MONITOR - it causes an #UD exception instead of #GP when not executed in ring 0.
          */
-        else if (Cpu.pCurInstr->opcode == OP_MONITOR)
+        else if (Cpu.pCurInstr->uOpcode == OP_MONITOR)
         {
             LogFlow(("TRPMGCTrap06Handler: -> EMInterpretInstructionCPU\n"));
             rc = EMInterpretInstructionDisasState(pVCpu, &Cpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
@@ -731,7 +731,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     /*
      * Try handle it here, if not return to HC and emulate/interpret it there.
      */
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
         case OP_INT3:
             /*
@@ -829,7 +829,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     int     rc;
     Assert(!pRegFrame->eflags.Bits.u1VM);
 
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
         /*
          * INT3 and INT xx are ring-switching.
@@ -984,7 +984,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
      *
      * Note: it's no longer safe to access the instruction opcode directly due to possible stale code TLB entries
      */
-    if (Cpu.pCurInstr->opcode == OP_RDTSC)
+    if (Cpu.pCurInstr->uOpcode == OP_RDTSC)
         return trpmGCTrap0dHandlerRdTsc(pVM, pVCpu, pRegFrame);
 
     /*

@@ -389,8 +389,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
      * treatment. UD2 is an exception and should be handled normally.
      */
     size_t const offInstruction = cchOutput;
-    if (    pOp->opcode == OP_INVALID
-        ||  (   pOp->opcode == OP_ILLUD2
+    if (    pOp->uOpcode == OP_INVALID
+        ||  (   pOp->uOpcode == OP_ILLUD2
              && (pCpu->fPrefix & DISPREFIX_LOCK)))
     {
 
@@ -413,7 +413,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
          */
         char szTmpFmt[48];
         const char *pszFmt = pOp->pszOpcode;
-        switch (pOp->opcode)
+        switch (pOp->uOpcode)
         {
             case OP_JECXZ:
                 pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "jcxz %Jb" : pCpu->uOpMode == DISCPUMODE_32BIT ? "jecxz %Jb"   : "jrcxz %Jb";
@@ -559,11 +559,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 #define PUT_FAR() \
             do { \
                 if (    OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p \
-                    &&  pOp->opcode != OP_LDS /* table bugs? */ \
-                    &&  pOp->opcode != OP_LES \
-                    &&  pOp->opcode != OP_LFS \
-                    &&  pOp->opcode != OP_LGS \
-                    &&  pOp->opcode != OP_LSS ) \
+                    &&  pOp->uOpcode != OP_LDS /* table bugs? */ \
+                    &&  pOp->uOpcode != OP_LES \
+                    &&  pOp->uOpcode != OP_LFS \
+                    &&  pOp->uOpcode != OP_LGS \
+                    &&  pOp->uOpcode != OP_LSS ) \
                     PUT_SZ("far "); \
             } while (0)
         /** @todo mov ah,ch ends up with a byte 'override'... - check if this wasn't fixed. */
@@ -594,7 +594,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     case OP_PARM_z: break; \
                     case OP_PARM_NONE: \
                         if (    OP_PARM_VTYPE(pParam->param) == OP_PARM_M \
-                            &&  ((pParam->fUse & DISUSE_REG_FP) || pOp->opcode == OP_FLD)) \
+                            &&  ((pParam->fUse & DISUSE_REG_FP) || pOp->uOpcode == OP_FLD)) \
                             PUT_SZ("tword "); \
                         break; \
                     default:        break; /*no pointer type specified/necessary*/ \
@@ -673,7 +673,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             /* Work around mov seg,[mem16]  and mov [mem16],seg as these always make a 16-bit mem
                                while the register variants deals with 16, 32 & 64 in the normal fashion. */
                             if (    pParam->param != OP_PARM_Ev
-                                ||  pOp->opcode != OP_MOV
+                                ||  pOp->uOpcode != OP_MOV
                                 ||  (   pOp->param1 != OP_PARM_Sw
                                      && pOp->param2 != OP_PARM_Sw))
                                 PUT_SIZE_OVERRIDE();
@@ -864,12 +864,12 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         int32_t offDisplacement;
                         Assert(iParam == 1);
                         bool fPrefix = (fFlags & DIS_FMT_FLAGS_STRICT)
-                                    && pOp->opcode != OP_CALL
-                                    && pOp->opcode != OP_LOOP
-                                    && pOp->opcode != OP_LOOPE
-                                    && pOp->opcode != OP_LOOPNE
-                                    && pOp->opcode != OP_JECXZ;
-                        if (pOp->opcode == OP_CALL)
+                                    && pOp->uOpcode != OP_CALL
+                                    && pOp->uOpcode != OP_LOOP
+                                    && pOp->uOpcode != OP_LOOPE
+                                    && pOp->uOpcode != OP_LOOPNE
+                                    && pOp->uOpcode != OP_JECXZ;
+                        if (pOp->uOpcode == OP_CALL)
                             fFlags &= ~DIS_FMT_FLAGS_RELATIVE_BRANCH;
 
                         if (pParam->fUse & DISUSE_IMMEDIATE8_REL)
@@ -1231,7 +1231,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /*
      * Seems to be an instruction alias here, but I cannot find any docs on it... hrmpf!
      */
-    if (    pCpu->pCurInstr->opcode == OP_SHL
+    if (    pCpu->pCurInstr->uOpcode == OP_SHL
         &&  pCpu->ModRM.Bits.Reg == 6)
         return true;
 
@@ -1311,7 +1311,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /* Almost all prefixes are bad. */
     if (fPrefixes)
     {
-        switch (pCpu->pCurInstr->opcode)
+        switch (pCpu->pCurInstr->uOpcode)
         {
             /* nop w/ prefix(es). */
             case OP_NOP:
@@ -1347,7 +1347,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /* All but the segment prefix is bad news. */
     if (fPrefixes & ~DISPREFIX_SEG)
     {
-        switch (pCpu->pCurInstr->opcode)
+        switch (pCpu->pCurInstr->uOpcode)
         {
             case OP_POP:
             case OP_PUSH:
@@ -1378,7 +1378,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
                  && pCpu->pCurInstr->param1 == OP_PARM_Eb /* r8/mem8 */))
        )
     {
-        switch (pCpu->pCurInstr->opcode)
+        switch (pCpu->pCurInstr->uOpcode)
         {
             case OP_ADD:
             case OP_OR:
@@ -1404,7 +1404,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
      */
     if (pCpu->ModRM.Bits.Mod == 3 /* reg,reg */)
     {
-        switch (pCpu->pCurInstr->opcode)
+        switch (pCpu->pCurInstr->uOpcode)
         {
             case OP_ADD:
             case OP_OR:
@@ -1450,7 +1450,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     if (    pCpu->pCurInstr->param2 == OP_PARM_Ib
         &&  (uint8_t)pCpu->param2.parval == 1)
     {
-        switch (pCpu->pCurInstr->opcode)
+        switch (pCpu->pCurInstr->uOpcode)
         {
             case OP_SHL:
             case OP_SHR:
@@ -1466,7 +1466,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /* And some more - see table A-6. */
     if (pCpu->bOpCode == 0x82)
     {
-        switch (pCpu->pCurInstr->opcode)
+        switch (pCpu->pCurInstr->uOpcode)
         {
             case OP_ADD:
             case OP_OR:
@@ -1486,7 +1486,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
     /* Yasm encodes setnbe al with /2 instead of /0 like the AMD manual
        says (intel doesn't appear to care). */
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
         case OP_SETO:
         case OP_SETNO:
@@ -1514,7 +1514,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
      * The MOVZX reg32,mem16 instruction without an operand size prefix
      * doesn't quite make sense...
      */
-    if (    pCpu->pCurInstr->opcode == OP_MOVZX
+    if (    pCpu->pCurInstr->uOpcode == OP_MOVZX
         &&  pCpu->bOpCode == 0xB7
         &&  (pCpu->uCpuMode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
         return true;

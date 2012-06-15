@@ -1395,12 +1395,12 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     {
         /* No unconditional jumps or calls without fixed displacements. */
         if (    (pCpu->pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
-             && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
+             && (pCpu->pCurInstr->uOpcode == OP_JMP || pCpu->pCurInstr->uOpcode == OP_CALL)
            )
         {
             Assert(pCpu->param1.cb <= 4 || pCpu->param1.cb == 6);
             if (    pCpu->param1.cb == 6 /* far call/jmp */
-                ||  (pCpu->pCurInstr->opcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
+                ||  (pCpu->pCurInstr->uOpcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
                 ||  (OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J && !(pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS))
                )
             {
@@ -1410,7 +1410,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         }
 
         /* An unconditional (short) jump right after a cli is a potential problem; we will overwrite whichever function comes afterwards */
-        if (pPatch->opcode == OP_CLI && pCpu->pCurInstr->opcode == OP_JMP)
+        if (pPatch->opcode == OP_CLI && pCpu->pCurInstr->uOpcode == OP_JMP)
         {
             if (   pCurInstrGC > pPatch->pPrivInstrGC
                 && pCurInstrGC + pCpu->cbInstr < pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32) /* hardcoded patch jump size; cbPatchJump is still zero */
@@ -1424,7 +1424,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         /* no nested pushfs just yet; nested cli is allowed for cli patches though. */
         if (pPatch->opcode == OP_PUSHF)
         {
-            if (pCurInstrGC != pInstrGC && pCpu->pCurInstr->opcode == OP_PUSHF)
+            if (pCurInstrGC != pInstrGC && pCpu->pCurInstr->uOpcode == OP_PUSHF)
             {
                 fIllegalInstr = true;
                 patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
@@ -1432,15 +1432,15 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         }
 
         /* no far returns */
-        if (pCpu->pCurInstr->opcode == OP_RETF)
+        if (pCpu->pCurInstr->uOpcode == OP_RETF)
         {
             pPatch->pTempInfo->nrRetInstr++;
             fIllegalInstr = true;
             patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
         }
-        else if (   pCpu->pCurInstr->opcode == OP_INT3
-                 || pCpu->pCurInstr->opcode == OP_INT
-                 || pCpu->pCurInstr->opcode == OP_INTO)
+        else if (   pCpu->pCurInstr->uOpcode == OP_INT3
+                 || pCpu->pCurInstr->uOpcode == OP_INT
+                 || pCpu->pCurInstr->uOpcode == OP_INTO)
         {
             /* No int xx or into either. */
             fIllegalInstr = true;
@@ -1455,7 +1455,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         return VINF_SUCCESS;
 
     /* Check for exit points. */
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_SYSEXIT:
         return VINF_SUCCESS; /* duplicate it; will fault or emulated in GC. */
@@ -1477,7 +1477,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
         }
         if (pPatch->opcode == OP_PUSHF)
         {
-            if (pCpu->pCurInstr->opcode == OP_POPF)
+            if (pCpu->pCurInstr->uOpcode == OP_POPF)
             {
                 if (pPatch->cbPatchBlockSize >= SIZEOF_NEARJUMP32)
                     return VINF_SUCCESS;
@@ -1554,12 +1554,12 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     {
         // no unconditional jumps or calls without fixed displacements
         if (    (pCpu->pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
-             && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
+             && (pCpu->pCurInstr->uOpcode == OP_JMP || pCpu->pCurInstr->uOpcode == OP_CALL)
            )
         {
             Assert(pCpu->param1.cb <= 4 || pCpu->param1.cb == 6);
             if (    pCpu->param1.cb == 6 /* far call/jmp */
-                ||  (pCpu->pCurInstr->opcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
+                ||  (pCpu->pCurInstr->uOpcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
                 ||  (OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J && !(pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS))
                )
             {
@@ -1568,13 +1568,13 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
             }
         }
         else /* no far returns */
-        if (pCpu->pCurInstr->opcode == OP_RETF)
+        if (pCpu->pCurInstr->uOpcode == OP_RETF)
         {
             patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
             fIllegalInstr = true;
         }
         else /* no int xx or into either */
-        if (pCpu->pCurInstr->opcode == OP_INT3 || pCpu->pCurInstr->opcode == OP_INT || pCpu->pCurInstr->opcode == OP_INTO)
+        if (pCpu->pCurInstr->uOpcode == OP_INT3 || pCpu->pCurInstr->uOpcode == OP_INT || pCpu->pCurInstr->uOpcode == OP_INTO)
         {
             patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
             fIllegalInstr = true;
@@ -1582,7 +1582,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
 
     #if 0
         ///@todo we can handle certain in/out and privileged instructions in the guest context
-        if (pCpu->pCurInstr->optype & DISOPTYPE_PRIVILEGED && pCpu->pCurInstr->opcode != OP_STI)
+        if (pCpu->pCurInstr->optype & DISOPTYPE_PRIVILEGED && pCpu->pCurInstr->uOpcode != OP_STI)
         {
             Log(("Illegal instructions for function patch!!\n"));
             return VERR_PATCHING_REFUSED;
@@ -1599,7 +1599,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     }
 
     // Check for exit points
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_ILLUD2:
         //This appears to be some kind of kernel panic in Linux 2.4; no point to analyse more
@@ -1694,7 +1694,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
      * Indirect calls are handled below.
      */
     if (   (pCpu->pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
-        && (pCpu->pCurInstr->opcode != OP_CALL || (pPatch->flags & PATMFL_SUPPORT_CALLS))
+        && (pCpu->pCurInstr->uOpcode != OP_CALL || (pPatch->flags & PATMFL_SUPPORT_CALLS))
         && (OP_PARM_VTYPE(pCpu->pCurInstr->param1) == OP_PARM_J))
     {
         RCPTRTYPE(uint8_t *) pTargetGC = PATMResolveBranch(pCpu, pCurInstrGC);
@@ -1704,7 +1704,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             return VERR_PATCHING_REFUSED;
         }
 
-        if (pCpu->pCurInstr->opcode == OP_CALL)
+        if (pCpu->pCurInstr->uOpcode == OP_CALL)
         {
             Assert(!PATMIsPatchGCAddr(pVM, pTargetGC));
             rc = patmPatchGenCall(pVM, pPatch, pCpu, pCurInstrGC, pTargetGC, false);
@@ -1712,7 +1712,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 goto end;
         }
         else
-            rc = patmPatchGenRelJump(pVM, pPatch, pTargetGC, pCpu->pCurInstr->opcode, !!(pCpu->fPrefix & DISPREFIX_OPSIZE));
+            rc = patmPatchGenRelJump(pVM, pPatch, pTargetGC, pCpu->pCurInstr->uOpcode, !!(pCpu->fPrefix & DISPREFIX_OPSIZE));
 
         if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
@@ -1720,7 +1720,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         goto end;
     }
 
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_CLI:
     {
@@ -2120,7 +2120,7 @@ int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstr
     PPATCHINFO pPatch = (PPATCHINFO)pCacheRec->pPatch;
     NOREF(pInstrGC);
 
-    if (pCpu->pCurInstr->opcode == OP_INT3)
+    if (pCpu->pCurInstr->uOpcode == OP_INT3)
     {
         /* Could be an int3 inserted in a call patch. Check to be sure */
         DISCPUSTATE cpu;
@@ -2132,30 +2132,30 @@ int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstr
             uint8_t *pOrgJumpHC = PATMGCVirtToHCVirt(pVM, pCacheRec, pOrgJumpGC);
 
             bool disret = patmR3DisInstr(pVM, pPatch, pOrgJumpGC, pOrgJumpHC, PATMREAD_ORGCODE, &cpu, NULL);
-            if (!disret || cpu.pCurInstr->opcode != OP_CALL || cpu.param1.cb != 4 /* only near calls */)
+            if (!disret || cpu.pCurInstr->uOpcode != OP_CALL || cpu.param1.cb != 4 /* only near calls */)
                 return VINF_SUCCESS;
         }
         return VWRN_CONTINUE_ANALYSIS;
     }
 
-    if (    pCpu->pCurInstr->opcode == OP_ILLUD2
+    if (    pCpu->pCurInstr->uOpcode == OP_ILLUD2
         &&  PATMIsPatchGCAddr(pVM, pCurInstrGC))
     {
         /* the indirect call patch contains an 0xF/0xB illegal instr to call for assistance; check for this and continue */
         return VWRN_CONTINUE_ANALYSIS;
     }
 
-    if (   (pCpu->pCurInstr->opcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
-        || pCpu->pCurInstr->opcode == OP_INT
-        || pCpu->pCurInstr->opcode == OP_IRET
-        || pCpu->pCurInstr->opcode == OP_RETN
-        || pCpu->pCurInstr->opcode == OP_RETF
+    if (   (pCpu->pCurInstr->uOpcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
+        || pCpu->pCurInstr->uOpcode == OP_INT
+        || pCpu->pCurInstr->uOpcode == OP_IRET
+        || pCpu->pCurInstr->uOpcode == OP_RETN
+        || pCpu->pCurInstr->uOpcode == OP_RETF
        )
     {
         return VINF_SUCCESS;
     }
 
-    if (pCpu->pCurInstr->opcode == OP_ILLUD2)
+    if (pCpu->pCurInstr->uOpcode == OP_ILLUD2)
         return VINF_SUCCESS;
 
     return VWRN_CONTINUE_ANALYSIS;
@@ -2233,7 +2233,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
         /* For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction) */
         if (   (cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
             && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J)
-            &&  cpu.pCurInstr->opcode != OP_CALL /* complete functions are replaced; don't bother here. */
+            &&  cpu.pCurInstr->uOpcode != OP_CALL /* complete functions are replaced; don't bother here. */
            )
         {
             RTRCPTR pTargetGC = PATMResolveBranch(&cpu, pCurInstrGC);
@@ -2265,15 +2265,15 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
                 /* New jump, let's check it. */
                 patmPatchAddDisasmJump(pVM, pPatch, pTargetGC);
 
-                if (cpu.pCurInstr->opcode == OP_CALL)  pPatch->pTempInfo->nrCalls++;
+                if (cpu.pCurInstr->uOpcode == OP_CALL)  pPatch->pTempInfo->nrCalls++;
                 rc = patmr3DisasmCode(pVM, pInstrGC, pTargetGC, pfnPATMR3Disasm, pCacheRec);
-                if (cpu.pCurInstr->opcode == OP_CALL)  pPatch->pTempInfo->nrCalls--;
+                if (cpu.pCurInstr->uOpcode == OP_CALL)  pPatch->pTempInfo->nrCalls--;
 
                 if (rc != VINF_SUCCESS) {
                     break; //done!
                 }
             }
-            if (cpu.pCurInstr->opcode == OP_JMP)
+            if (cpu.pCurInstr->uOpcode == OP_JMP)
             {
                 /* Unconditional jump; return to caller. */
                 rc = VINF_SUCCESS;
@@ -2410,7 +2410,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                     rc = VERR_PATCHING_REFUSED;   /* fatal in this case */
                     goto end;
                 }
-                switch(cpunext.pCurInstr->opcode)
+                switch(cpunext.pCurInstr->uOpcode)
                 {
                 case OP_IRET:       /* inhibit cleared in generated code */
                 case OP_SYSEXIT:    /* faults; inhibit should be cleared in HC handling */
@@ -2431,7 +2431,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                 }
 
                 /* Note: after a cli we must continue to a proper exit point */
-                if (cpunext.pCurInstr->opcode != OP_CLI)
+                if (cpunext.pCurInstr->uOpcode != OP_CLI)
                 {
                     rc = pfnPATMR3Recompile(pVM, &cpunext, pInstrGC, pNextInstrGC, pCacheRec);
                     if (RT_SUCCESS(rc))
@@ -2454,7 +2454,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
         /* For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction). */
         if (   (cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW)
             && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J)
-            &&  cpu.pCurInstr->opcode != OP_CALL /* complete functions are replaced; don't bother here. */
+            &&  cpu.pCurInstr->uOpcode != OP_CALL /* complete functions are replaced; don't bother here. */
            )
         {
             RCPTRTYPE(uint8_t *) addr = PATMResolveBranch(&cpu, pCurInstrGC);
@@ -2498,9 +2498,9 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                     PATMR3DisablePatch(pVM, pTargetPatch->pPrivInstrGC);
                 }
 
-                if (cpu.pCurInstr->opcode == OP_CALL)  pPatch->pTempInfo->nrCalls++;
+                if (cpu.pCurInstr->uOpcode == OP_CALL)  pPatch->pTempInfo->nrCalls++;
                 rc = patmRecompileCodeStream(pVM, pInstrGC, addr, pfnPATMR3Recompile, pCacheRec);
-                if (cpu.pCurInstr->opcode == OP_CALL)  pPatch->pTempInfo->nrCalls--;
+                if (cpu.pCurInstr->uOpcode == OP_CALL)  pPatch->pTempInfo->nrCalls--;
 
                 if(pTargetPatch)
                     PATMR3EnablePatch(pVM, pTargetPatch->pPrivInstrGC);
@@ -2977,7 +2977,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
      */
     disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuPush, &cbInstr);
     Assert(disret);
-    if (disret && cpuPush.pCurInstr->opcode == OP_PUSH)
+    if (disret && cpuPush.pCurInstr->uOpcode == OP_PUSH)
     {
         RTRCPTR  pJmpInstrGC;
         int      rc;
@@ -2985,7 +2985,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
 
         disret = patmR3DisInstr(pVM, pPatch, pCurInstrGC, pCurInstrHC, PATMREAD_ORGCODE, &cpuJmp, &cbInstr);
         if (   disret
-            && cpuJmp.pCurInstr->opcode == OP_JMP
+            && cpuJmp.pCurInstr->uOpcode == OP_JMP
             && (pJmpInstrGC = PATMResolveBranch(&cpuJmp, pCurInstrGC))
            )
         {
@@ -3569,9 +3569,9 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     bool          disret;
 
     Assert(pPatch->flags & PATMFL_REPLACE_FUNCTION_CALL);
-    Assert((pCpu->pCurInstr->opcode == OP_CALL || pCpu->pCurInstr->opcode == OP_JMP) && pCpu->cbInstr == SIZEOF_NEARJUMP32);
+    Assert((pCpu->pCurInstr->uOpcode == OP_CALL || pCpu->pCurInstr->uOpcode == OP_JMP) && pCpu->cbInstr == SIZEOF_NEARJUMP32);
 
-    if ((pCpu->pCurInstr->opcode != OP_CALL && pCpu->pCurInstr->opcode != OP_JMP) || pCpu->cbInstr != SIZEOF_NEARJUMP32)
+    if ((pCpu->pCurInstr->uOpcode != OP_CALL && pCpu->pCurInstr->uOpcode != OP_JMP) || pCpu->cbInstr != SIZEOF_NEARJUMP32)
     {
         rc = VERR_PATCHING_REFUSED;
         goto failure;
@@ -3601,7 +3601,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
                 break;
 
             disret = patmR3DisInstr(pVM, pPatch, pTargetGC, pTmpInstrHC, PATMREAD_ORGCODE, &cpu, &cbInstr);
-            if (disret == false || cpu.pCurInstr->opcode != OP_JMP)
+            if (disret == false || cpu.pCurInstr->uOpcode != OP_JMP)
                 break;
 
             pTargetGC = PATMResolveBranch(&cpu, pTargetGC);
@@ -3893,7 +3893,7 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
      * Instruction replacements such as these should never be interrupted. I've added code to EM.cpp to
      * make sure this never happens. (unless a trap is triggered (intentionally or not))
      */
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_JO:
     case OP_JNO:
@@ -4250,10 +4250,10 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         return VERR_PATCHING_REFUSED;
 
     pPatchRec->patch.cbPrivInstr = cbInstr;
-    pPatchRec->patch.opcode      = cpu.pCurInstr->opcode;
+    pPatchRec->patch.opcode      = cpu.pCurInstr->uOpcode;
 
     /* Restricted hinting for now. */
-    Assert(!(flags & PATMFL_INSTR_HINT) || cpu.pCurInstr->opcode == OP_CLI);
+    Assert(!(flags & PATMFL_INSTR_HINT) || cpu.pCurInstr->uOpcode == OP_CLI);
 
     /* Initialize cache record patch pointer. */
     cacheRec.pPatch = &pPatchRec->patch;
@@ -4316,7 +4316,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     else
     if (pPatchRec->patch.flags & PATMFL_GUEST_SPECIFIC)
     {
-        switch (cpu.pCurInstr->opcode)
+        switch (cpu.pCurInstr->uOpcode)
         {
         case OP_SYSENTER:
         case OP_PUSH:
@@ -4336,7 +4336,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     }
     else
     {
-        switch (cpu.pCurInstr->opcode)
+        switch (cpu.pCurInstr->uOpcode)
         {
         case OP_SYSENTER:
             rc = PATMInstallGuestSpecificPatch(pVM, &cpu, pInstrGC, pInstrHC, pPatchRec);
@@ -4380,7 +4380,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         case OP_PUSHF:
         case OP_CLI:
             Log(("PATMR3InstallPatch %s %RRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
-            rc = PATMR3PatchBlock(pVM, pInstrGC, pInstrHC, cpu.pCurInstr->opcode, cbInstr, pPatchRec);
+            rc = PATMR3PatchBlock(pVM, pInstrGC, pInstrHC, cpu.pCurInstr->uOpcode, cbInstr, pPatchRec);
             break;
 
         case OP_STR:
@@ -5197,7 +5197,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
      */
     if (    disret == true
         && (pConflictPatch->flags & PATMFL_CODE32)
-        && (cpu.pCurInstr->opcode == OP_JMP || (cpu.pCurInstr->optype & DISOPTYPE_COND_CONTROLFLOW))
+        && (cpu.pCurInstr->uOpcode == OP_JMP || (cpu.pCurInstr->optype & DISOPTYPE_COND_CONTROLFLOW))
         && (cpu.param1.fUse & DISUSE_IMMEDIATE32_REL))
     {
         /* Hint patches must be enabled first. */
@@ -6279,16 +6279,16 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         AssertRC(rc);
 
         if (    rc == VINF_SUCCESS
-            &&  (   Cpu.pCurInstr->opcode == OP_PUSHF
-                 || Cpu.pCurInstr->opcode == OP_PUSH
-                 || Cpu.pCurInstr->opcode == OP_CALL)
+            &&  (   Cpu.pCurInstr->uOpcode == OP_PUSHF
+                 || Cpu.pCurInstr->uOpcode == OP_PUSH
+                 || Cpu.pCurInstr->uOpcode == OP_CALL)
            )
         {
             uint64_t fFlags;
 
             STAM_COUNTER_INC(&pVM->patm.s.StatPushTrap);
 
-            if (Cpu.pCurInstr->opcode == OP_PUSH)
+            if (Cpu.pCurInstr->uOpcode == OP_PUSH)
             {
                 rc = PGMShwGetPage(pVCpu, pCtx->esp, &fFlags, NULL);
                 if (    rc == VINF_SUCCESS
@@ -6408,7 +6408,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         if (cacheRec.Lock.pvMap)
             PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 
-        if (disret && cpu.pCurInstr->opcode == OP_RETN)
+        if (disret && cpu.pCurInstr->uOpcode == OP_RETN)
         {
             RTRCPTR retaddr;
             PCPUMCTX pCtx2;
@@ -6447,14 +6447,14 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         if (cacheRec.Lock.pvMap)
             PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 
-        if (disret && (cpu.pCurInstr->opcode == OP_SYSEXIT || cpu.pCurInstr->opcode == OP_HLT || cpu.pCurInstr->opcode == OP_INT3))
+        if (disret && (cpu.pCurInstr->uOpcode == OP_SYSEXIT || cpu.pCurInstr->uOpcode == OP_HLT || cpu.pCurInstr->uOpcode == OP_INT3))
         {
             disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_RAWCODE,
                                     &cpu, &cbInstr);
             if (cacheRec.Lock.pvMap)
                 PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
 
-            Assert(cpu.pCurInstr->opcode == OP_SYSEXIT || cpu.pCurInstr->opcode == OP_HLT || cpu.pCurInstr->opcode == OP_IRET);
+            Assert(cpu.pCurInstr->uOpcode == OP_SYSEXIT || cpu.pCurInstr->uOpcode == OP_HLT || cpu.pCurInstr->uOpcode == OP_IRET);
         }
 #endif
         EMSetInhibitInterruptsPC(pVCpu, pNewEip);

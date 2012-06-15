@@ -214,7 +214,7 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
     int rc;
 
     /** @todo might have to check if the patch crosses a page boundary. Currently not necessary, but that might change in the future!! */
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_SYSENTER:
         pPatchRec->patch.flags |= PATMFL_SYSENTER_XP | PATMFL_USER_MODE | PATMFL_GUEST_SPECIFIC;
@@ -240,7 +240,7 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
         return VERR_PATCHING_REFUSED;
 
     default:
-        AssertMsgFailed(("PATMInstallGuestSpecificPatch: unknown opcode %d\n", pCpu->pCurInstr->opcode));
+        AssertMsgFailed(("PATMInstallGuestSpecificPatch: unknown opcode %d\n", pCpu->pCurInstr->uOpcode));
         return VERR_PATCHING_REFUSED;
     }
     return VERR_PATCHING_REFUSED;

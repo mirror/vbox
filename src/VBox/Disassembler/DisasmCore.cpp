@@ -335,7 +335,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
     for (;;)
     {
         uint8_t codebyte = disReadByte(pCpu, uInstrAddr+iByte);
-        uint8_t opcode   = paOneByteMap[codebyte].opcode;
+        uint8_t opcode   = paOneByteMap[codebyte].uOpcode;
 
         /* Hardcoded assumption about OP_* values!! */
         if (opcode <= OP_LAST_PREFIX)
@@ -736,7 +736,7 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
             case OP_PARM_C: //control register
                 pParam->fUse |= DISUSE_REG_CR;
 
-                if (    pCpu->pCurInstr->opcode == OP_MOV_CR
+                if (    pCpu->pCurInstr->uOpcode == OP_MOV_CR
                     &&  pCpu->uOpMode == DISCPUMODE_32BIT
                     &&  (pCpu->fPrefix & DISPREFIX_LOCK))
                 {
@@ -1753,7 +1753,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
         switch (pCpu->bLastPrefix)
         {
         case OP_OPSIZE: /* 0x66 */
-            if (g_aTwoByteMapX86_PF66[pCpu->bOpCode].opcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PF66[pCpu->bOpCode].uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
                 pOpcode = &g_aTwoByteMapX86_PF66[pCpu->bOpCode];
@@ -1765,7 +1765,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
             break;
 
         case OP_REPNE:   /* 0xF2 */
-            if (g_aTwoByteMapX86_PFF2[pCpu->bOpCode].opcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PFF2[pCpu->bOpCode].uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
                 pOpcode = &g_aTwoByteMapX86_PFF2[pCpu->bOpCode];
@@ -1776,7 +1776,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
             break;
 
         case OP_REPE:  /* 0xF3 */
-            if (g_aTwoByteMapX86_PFF3[pCpu->bOpCode].opcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PFF3[pCpu->bOpCode].uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
                 pOpcode = &g_aTwoByteMapX86_PFF3[pCpu->bOpCode];
@@ -1821,7 +1821,7 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
             pOpcode = g_apThreeByteMapX86_660F38[pCpu->bOpCode >> 4];
             pOpcode = &pOpcode[pCpu->bOpCode & 0xf];
 
-            if (pOpcode->opcode != OP_INVALID)
+            if (pOpcode->uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
 
@@ -1838,7 +1838,7 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
             pOpcode = g_apThreeByteMapX86_F20F38[pCpu->bOpCode >> 4];
             pOpcode = &pOpcode[pCpu->bOpCode & 0xf];
 
-            if (pOpcode->opcode != OP_INVALID)
+            if (pOpcode->uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
 
@@ -1872,7 +1872,7 @@ unsigned ParseThreeByteEsc5(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
         pOpcode = g_apThreeByteMapX86_660F3A[pCpu->bOpCode >> 4];
         pOpcode = &pOpcode[pCpu->bOpCode & 0xf];
 
-        if (pOpcode->opcode != OP_INVALID)
+        if (pOpcode->uOpcode != OP_INVALID)
         {
             /* Table entry is valid, so use the extension table. */
 
@@ -2622,7 +2622,7 @@ static void disValidateLockSequence(PDISCPUSTATE pCpu)
     /*
      * Filter out the valid lock sequences.
      */
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
         /* simple: no variations */
         case OP_CMPXCHG8B: /* == OP_CMPXCHG16B? */
@@ -2667,6 +2667,6 @@ static void disValidateLockSequence(PDISCPUSTATE pCpu)
      * Invalid lock sequence, make it a OP_ILLUD2.
      */
     pCpu->pCurInstr = &g_aTwoByteMapX86[11];
-    Assert(pCpu->pCurInstr->opcode == OP_ILLUD2);
+    Assert(pCpu->pCurInstr->uOpcode == OP_ILLUD2);
 }
 
