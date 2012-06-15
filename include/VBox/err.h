@@ -1939,6 +1939,8 @@
 #define VERR_DIS_INVALID_PARAMETER                  (-4204)
 /** Reading opcode bytes failed. */
 #define VERR_DIS_MEM_READ                           (-4205)
+/** The instruction is too long. */
+#define VERR_DIS_TOO_LONG_INSTR                     (-4206)
 /** @} */
 
 
