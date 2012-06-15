@@ -1748,7 +1748,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         {
             /* mov ss, src? */
             if (    (pCpu->Param1.fUse & DISUSE_REG_SEG)
-                &&  (pCpu->Param1.base.reg_seg == DISSELREG_SS))
+                &&  (pCpu->Param1.Base.idxSegReg == DISSELREG_SS))
             {
                 Log(("Force recompilation of next instruction for OP_MOV at %RRv\n", pCurInstrGC));
                 pPatch->flags |= PATMFL_RECOMPILE_NEXT;
@@ -1757,7 +1757,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 #if 0 /* necessary for Haiku */
             else
             if (    (pCpu->Param2.fUse & DISUSE_REG_SEG)
-                &&  (pCpu->Param2.base.reg_seg == USE_REG_SS)
+                &&  (pCpu->Param2.Base.idxSegReg == USE_REG_SS)
                 &&  (pCpu->Param1.fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
             {
                 /* mov GPR, ss */

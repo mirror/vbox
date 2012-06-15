@@ -1166,8 +1166,8 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         Assert(pCpu->Param1.fUse & DISUSE_REG_DBG);
         Assert(pCpu->Param2.fUse & DISUSE_REG_GEN32);
 
-        dbgreg = pCpu->Param1.base.reg_dbg;
-        reg    = pCpu->Param2.base.reg_gen;
+        dbgreg = pCpu->Param1.Base.idxDbgReg;
+        reg    = pCpu->Param2.Base.idxGenReg;
     }
     else
     {
@@ -1176,8 +1176,8 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         Assert(pCpu->Param2.fUse & DISUSE_REG_DBG);
 
         pPB[0] = 0x8B;      // mov GPR, disp32
-        reg    = pCpu->Param1.base.reg_gen;
-        dbgreg = pCpu->Param2.base.reg_dbg;
+        reg    = pCpu->Param1.Base.idxGenReg;
+        dbgreg = pCpu->Param2.Base.idxDbgReg;
     }
 
     pPB[1] = MAKE_MODRM(mod, reg, rm);
@@ -1213,8 +1213,8 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
         // mov CRx, GPR
         pPB[0] = 0x89;      //mov disp32, GPR
-        ctrlreg = pCpu->Param1.base.reg_ctrl;
-        reg     = pCpu->Param2.base.reg_gen;
+        ctrlreg = pCpu->Param1.Base.idxCtrlReg;
+        reg     = pCpu->Param2.Base.idxGenReg;
         Assert(pCpu->Param1.fUse & DISUSE_REG_CR);
         Assert(pCpu->Param2.fUse & DISUSE_REG_GEN32);
     }
@@ -1225,8 +1225,8 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         Assert(pCpu->Param2.fUse & DISUSE_REG_CR);
 
         pPB[0]  = 0x8B;      // mov GPR, disp32
-        reg     = pCpu->Param1.base.reg_gen;
-        ctrlreg = pCpu->Param2.base.reg_ctrl;
+        reg     = pCpu->Param1.Base.idxGenReg;
+        ctrlreg = pCpu->Param2.Base.idxCtrlReg;
     }
 
     pPB[1] = MAKE_MODRM(mod, reg, rm);
@@ -1291,7 +1291,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
     offset = 0;
     if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         pPB[offset++] = 0x66; /* size override -> 16 bits pop */
-    pPB[offset++] = 0x58 + pCpu->Param1.base.reg_gen;
+    pPB[offset++] = 0x58 + pCpu->Param1.Base.idxGenReg;
     PATCHGEN_EPILOG(pPatch, offset);
 
 
@@ -1334,7 +1334,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
 
         pPB[offset++] = 0x8B;              // mov       destreg, CPUMCTX.tr/ldtr
         /* Modify REG part according to destination of original instruction */
-        pPB[offset++] = MAKE_MODRM(0, pCpu->Param1.base.reg_gen, 5);
+        pPB[offset++] = MAKE_MODRM(0, pCpu->Param1.Base.idxGenReg, 5);
         if (pCpu->pCurInstr->uOpcode == OP_STR)
         {
             *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
