@@ -153,25 +153,26 @@ static DECLCALLBACK(int) MyReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTU
 }
 
 
-static bool MyDisBlock(PDISCPUSTATE pCpu, RTHCUINTPTR pvCodeBlock, int32_t cbMax, RTUINTPTR off,
+static bool MyDisBlock(DISCPUMODE enmCpuMode, RTHCUINTPTR pvCodeBlock, int32_t cbMax, RTUINTPTR off,
                        RTUINTPTR uNearAddr, RTUINTPTR uSearchAddr)
 {
-    int32_t i = 0;
+    DISCPUSTATE Cpu;
+    int32_t     i = 0;
     while (i < cbMax)
     {
         bool        fQuiet    = RTAssertSetQuiet(true);
         bool        fMayPanic = RTAssertSetMayPanic(false);
         char        szOutput[256];
         unsigned    cbInstr;
-        int rc = DISInstrWithReader(uNearAddr + i, (DISCPUMODE)pCpu->mode,
+        int rc = DISInstrWithReader(uNearAddr + i, enmCpuMode,
                                     MyReadBytes, (uint8_t *)pvCodeBlock - (uintptr_t)uNearAddr,
-                                    pCpu, &cbInstr);
+                                    &Cpu, &cbInstr);
         RTAssertSetMayPanic(fMayPanic);
         RTAssertSetQuiet(fQuiet);
         if (RT_FAILURE(rc))
             return false;
 
-        DISFormatYasmEx(pCpu, szOutput, sizeof(szOutput),
+        DISFormatYasmEx(&Cpu, szOutput, sizeof(szOutput),
                         DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_ADDR_LEFT  | DIS_FMT_FLAGS_BYTES_SPACED,
                         MyGetSymbol, NULL);
 
@@ -243,15 +244,13 @@ static int testDisasNear(uint64_t uAddr)
              NearSym.aSyms[1].Value, NearSym.aSyms[1].szName, NearSym.aSyms[1].uSymbol);
     if (NearSym.Addr - NearSym.aSyms[0].Value < 0x10000)
     {
-        DISCPUSTATE Cpu;
-        memset(&Cpu, 0, sizeof(Cpu));
 #ifdef RT_ARCH_X86 /** @todo select according to the module type. */
-        Cpu.mode = DISCPUMODE_32BIT;
+        DISCPUMODE enmDisCpuMode = DISCPUMODE_32BIT;
 #else
-        Cpu.mode = DISCPUMODE_64BIT;
+        DISCPUMODE enmDisCpuMode = DISCPUMODE_64BIT;
 #endif
         uint8_t *pbCode = (uint8_t *)g_pvBits + (NearSym.aSyms[0].Value - g_uLoadAddr);
-        MyDisBlock(&Cpu, (uintptr_t)pbCode,
+        MyDisBlock(enmDisCpuMode, (uintptr_t)pbCode,
                    RT_MAX(NearSym.aSyms[1].Value - NearSym.aSyms[0].Value, 0x20000),
                    NearSym.aSyms[0].Value - (RTUINTPTR)pbCode,
                    NearSym.aSyms[0].Value,

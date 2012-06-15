@@ -796,7 +796,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                 &&  pRegFrame->rcx >= 0x40
                )
             {
-                Assert(pDis->mode == DISCPUMODE_64BIT);
+                Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
 
                 Log(("pgmPoolMonitorIsReused: OP_STOSQ\n"));
                 return true;
@@ -889,7 +889,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     unsigned uIncrement = pDis->param1.cb;
     NOREF(pVM);
 
-    Assert(pDis->mode == DISCPUMODE_32BIT || pDis->mode == DISCPUMODE_64BIT);
+    Assert(pDis->uCpuMode == DISCPUMODE_32BIT || pDis->uCpuMode == DISCPUMODE_64BIT);
     Assert(pRegFrame->rcx <= 0x20);
 
 #ifdef VBOX_STRICT
@@ -1197,12 +1197,12 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
          */
         if (    pDis->pCurInstr->opcode == OP_STOSWD
             &&  !pRegFrame->eflags.Bits.u1DF
-            &&  pDis->uOpMode == pDis->mode
-            &&  pDis->uAddrMode == pDis->mode)
+            &&  pDis->uOpMode == pDis->uCpuMode
+            &&  pDis->uAddrMode == pDis->uCpuMode)
         {
             bool fValidStosd = false;
 
-            if (    pDis->mode == DISCPUMODE_32BIT
+            if (    pDis->uCpuMode == DISCPUMODE_32BIT
                 &&  pDis->fPrefix == DISPREFIX_REP
                 &&  pRegFrame->ecx <= 0x20
                 &&  pRegFrame->ecx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
@@ -1214,7 +1214,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
                 pRegFrame->rcx &= 0xffffffff;   /* paranoia */
             }
             else
-            if (    pDis->mode == DISCPUMODE_64BIT
+            if (    pDis->uCpuMode == DISCPUMODE_64BIT
                 &&  pDis->fPrefix == (DISPREFIX_REP | DISPREFIX_REX)
                 &&  pRegFrame->rcx <= 0x20
                 &&  pRegFrame->rcx * 8 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)

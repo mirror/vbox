@@ -799,7 +799,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
 
                             case DISUSE_IMMEDIATE16:
-                                if (    pCpu->mode != pCpu->uOpMode
+                                if (    pCpu->uCpuMode != pCpu->uOpMode
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->parval == (int16_t)pParam->parval
                                              || (pOp->param1 >= OP_PARM_REG_GEN16_START && pOp->param1 <= OP_PARM_REG_GEN16_END)
@@ -822,7 +822,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
 
                             case DISUSE_IMMEDIATE32:
-                                if (    pCpu->uOpMode != (pCpu->mode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
+                                if (    pCpu->uOpMode != (pCpu->uCpuMode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->parval == (int32_t)pParam->parval
                                              || (pOp->param1 >= OP_PARM_REG_GEN32_START && pOp->param1 <= OP_PARM_REG_GEN32_END)
@@ -907,9 +907,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             PUT_SZ(" (");
 
                         RTUINTPTR uTrgAddr = pCpu->uInstrAddr + pCpu->cbInstr + offDisplacement;
-                        if (pCpu->mode == DISCPUMODE_16BIT)
+                        if (pCpu->uCpuMode == DISCPUMODE_16BIT)
                             PUT_NUM_16(uTrgAddr);
-                        else if (pCpu->mode == DISCPUMODE_32BIT)
+                        else if (pCpu->uCpuMode == DISCPUMODE_32BIT)
                             PUT_NUM_32(uTrgAddr);
                         else
                             PUT_NUM_64(uTrgAddr);
@@ -1272,7 +1272,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
             case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47:
             case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
-                f = pCpu->mode == DISCPUMODE_64BIT ? DISPREFIX_REX : 0;
+                f = pCpu->uCpuMode == DISCPUMODE_64BIT ? DISPREFIX_REX : 0;
                 break;
 
             default:
@@ -1290,7 +1290,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     if (fPrefixes & DISPREFIX_SEG)
     {
         /* no effective address which it may apply to. */
-        Assert((pCpu->fPrefix & DISPREFIX_SEG) || pCpu->mode == DISCPUMODE_64BIT);
+        Assert((pCpu->fPrefix & DISPREFIX_SEG) || pCpu->uCpuMode == DISCPUMODE_64BIT);
         if (    !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param1.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param2.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param3.fUse))
@@ -1516,7 +1516,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
      */
     if (    pCpu->pCurInstr->opcode == OP_MOVZX
         &&  pCpu->bOpCode == 0xB7
-        &&  (pCpu->mode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
+        &&  (pCpu->uCpuMode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
         return true;
 
     return false;

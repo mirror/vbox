@@ -2981,7 +2981,7 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
             uint32_t     cbOp;
             PDISCPUSTATE pDis = &pVCpu->hwaccm.s.DisState;
 
-            pDis->mode = enmMode;
+            pDis->uCpuMode = enmMode;
             rc = EMInterpretDisasOneEx(pVM, pVCpu, pbCode, pRegFrame, pDis, &cbOp);
             Assert(RT_FAILURE(rc) || pDis->pCurInstr->opcode == OP_INVLPG);
             if (RT_SUCCESS(rc) && pDis->pCurInstr->opcode == OP_INVLPG)

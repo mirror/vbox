@@ -3188,7 +3188,6 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
-    DISCPUSTATE cpu;
     uint32_t orgOffsetPatchMem = ~0;
     bool fInserted;
 
@@ -3214,8 +3213,6 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
     pPatch->nrPatch2GuestRecs = 0;
     pPatch->pPatchBlockOffset = pVM->patm.s.offPatchMem;
     pPatch->uCurPatchOffset   = 0;
-
-    cpu.mode = (pPatch->flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
 
     /* Note: Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
     rc = patmPatchGenSetPIF(pVM, pPatch, pInstrGC);
@@ -6452,7 +6449,6 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
 
         if (disret && (cpu.pCurInstr->opcode == OP_SYSEXIT || cpu.pCurInstr->opcode == OP_HLT || cpu.pCurInstr->opcode == OP_INT3))
         {
-            cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
             disret = patmR3DisInstr(pVM, &pPatch->patch, pNewEip, PATMGCVirtToHCVirt(pVM, &cacheRec, pNewEip), PATMREAD_RAWCODE,
                                     &cpu, &cbInstr);
             if (cacheRec.Lock.pvMap)

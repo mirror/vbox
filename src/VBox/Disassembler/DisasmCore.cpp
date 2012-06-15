@@ -290,7 +290,7 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
      */
     RT_BZERO(pCpu, RT_OFFSETOF(DISCPUSTATE, pvUser2));
 
-    pCpu->mode              = enmCpuMode;
+    pCpu->uCpuMode          = enmCpuMode;
     if (enmCpuMode == DISCPUMODE_64BIT)
     {
         paOneByteMap        = g_aOneByteMapX64;
@@ -359,7 +359,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
             case OP_SEG:
                 pCpu->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
                 /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
-                if (   pCpu->mode != DISCPUMODE_64BIT
+                if (   pCpu->uCpuMode != DISCPUMODE_64BIT
                     || pCpu->idxSegPrefix >= DISSELREG_FS)
                 {
                     pCpu->fPrefix   |= DISPREFIX_SEG;
@@ -376,10 +376,10 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
             // address size override prefix byte
             case OP_ADDRSIZE:
                 pCpu->fPrefix |= DISPREFIX_ADDRSIZE;
-                if (pCpu->mode == DISCPUMODE_16BIT)
+                if (pCpu->uCpuMode == DISCPUMODE_16BIT)
                     pCpu->uAddrMode = DISCPUMODE_32BIT;
                 else
-                if (pCpu->mode == DISCPUMODE_32BIT)
+                if (pCpu->uCpuMode == DISCPUMODE_32BIT)
                     pCpu->uAddrMode = DISCPUMODE_16BIT;
                 else
                     pCpu->uAddrMode = DISCPUMODE_32BIT;     /* 64 bits */
@@ -390,7 +390,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
             // operand size override prefix byte
             case OP_OPSIZE:
                 pCpu->fPrefix |= DISPREFIX_OPSIZE;
-                if (pCpu->mode == DISCPUMODE_16BIT)
+                if (pCpu->uCpuMode == DISCPUMODE_16BIT)
                     pCpu->uOpMode = DISCPUMODE_32BIT;
                 else
                     pCpu->uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
@@ -410,7 +410,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
                 continue;   //fetch the next byte
 
             case OP_REX:
-                Assert(pCpu->mode == DISCPUMODE_64BIT);
+                Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
                 /* REX prefix byte */
                 pCpu->fPrefix   |= DISPREFIX_REX;
                 pCpu->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
@@ -475,7 +475,7 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
     pCpu->param3.param = pOp->param3;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    if (pCpu->mode == DISCPUMODE_64BIT)
+    if (pCpu->uCpuMode == DISCPUMODE_64BIT)
     {
         if (pOp->optype & DISOPTYPE_FORCED_64_OP_SIZE)
             pCpu->uOpMode = DISCPUMODE_64BIT;
@@ -488,7 +488,7 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
     if (pOp->optype & DISOPTYPE_FORCED_32_OP_SIZE_X86)
     {
         /* Forced 32 bits operand size for certain instructions (mov crx, mov drx). */
-        Assert(pCpu->mode != DISCPUMODE_64BIT);
+        Assert(pCpu->uCpuMode != DISCPUMODE_64BIT);
         pCpu->uOpMode = DISCPUMODE_32BIT;
     }
 
@@ -553,7 +553,7 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
         pCpu->pfnDisasmFnTable = g_apfnFullDisasm;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    if (pCpu->mode == DISCPUMODE_64BIT)
+    if (pCpu->uCpuMode == DISCPUMODE_64BIT)
     {
         /* Note: redundant, but just in case this ever changes */
         if (fpop->optype & DISOPTYPE_FORCED_64_OP_SIZE)
@@ -804,7 +804,7 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
             if (rm == 5)
             {
                 /* 32 bits displacement */
-                if (pCpu->mode != DISCPUMODE_64BIT)
+                if (pCpu->uCpuMode != DISCPUMODE_64BIT)
                 {
                     pParam->fUse |= DISUSE_DISPLACEMENT32;
                     pParam->uDisp.i32 = pCpu->i32SibDisp;
@@ -1081,7 +1081,7 @@ unsigned ParseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
 
     if (pCpu->fPrefix & DISPREFIX_REX)
     {
-        Assert(pCpu->mode == DISCPUMODE_64BIT);
+        Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
 
         /* REX.R extends the Reg field. */
         pCpu->ModRM.Bits.Reg |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
@@ -1127,7 +1127,7 @@ unsigned ParseModRM_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pP
 
     if (pCpu->fPrefix & DISPREFIX_REX)
     {
-        Assert(pCpu->mode == DISCPUMODE_64BIT);
+        Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
 
         /* REX.R extends the Reg field. */
         pCpu->ModRM.Bits.Reg |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
@@ -1760,7 +1760,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
 
                 /* Cancel prefix changes. */
                 pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
-                pCpu->uOpMode  = pCpu->mode;
+                pCpu->uOpMode  = pCpu->uCpuMode;
             }
             break;
 
@@ -1827,7 +1827,7 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
 
                 /* Cancel prefix changes. */
                 pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
-                pCpu->uOpMode  = pCpu->mode;
+                pCpu->uOpMode  = pCpu->uCpuMode;
             }
         }
         break;
@@ -1878,7 +1878,7 @@ unsigned ParseThreeByteEsc5(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
 
             /* Cancel prefix changes. */
             pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
-            pCpu->uOpMode  = pCpu->mode;
+            pCpu->uOpMode  = pCpu->uCpuMode;
         }
     }
     else
