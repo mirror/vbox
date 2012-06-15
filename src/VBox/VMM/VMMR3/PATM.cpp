@@ -1653,7 +1653,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
          * no need to record this instruction as it's glue code that never crashes (it had better not!)
          */
         Log(("patmRecompileCallback: jump to code we've recompiled before %RRv!\n", pCurInstrGC));
-        return patmPatchGenRelJump(pVM, pPatch, pCurInstrGC, OP_JMP, !!(pCpu->prefix & DISPREFIX_OPSIZE));
+        return patmPatchGenRelJump(pVM, pPatch, pCurInstrGC, OP_JMP, !!(pCpu->fPrefix & DISPREFIX_OPSIZE));
     }
 
     if (pPatch->flags & (PATMFL_DUPLICATE_FUNCTION))
@@ -1712,7 +1712,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 goto end;
         }
         else
-            rc = patmPatchGenRelJump(pVM, pPatch, pTargetGC, pCpu->pCurInstr->opcode, !!(pCpu->prefix & DISPREFIX_OPSIZE));
+            rc = patmPatchGenRelJump(pVM, pPatch, pTargetGC, pCpu->pCurInstr->opcode, !!(pCpu->fPrefix & DISPREFIX_OPSIZE));
 
         if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
@@ -1854,7 +1854,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_DUPLICATE_FUNCTION))
             fGenerateJmpBack = false;
 
-        rc = patmPatchGenPopf(pVM, pPatch, pCurInstrGC + pCpu->cbInstr, !!(pCpu->prefix & DISPREFIX_OPSIZE), fGenerateJmpBack);
+        rc = patmPatchGenPopf(pVM, pPatch, pCurInstrGC + pCpu->cbInstr, !!(pCpu->fPrefix & DISPREFIX_OPSIZE), fGenerateJmpBack);
         if (RT_SUCCESS(rc))
         {
             if (fGenerateJmpBack == false)
@@ -1872,7 +1872,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     }
 
     case OP_PUSHF:
-        rc = patmPatchGenPushf(pVM, pPatch, !!(pCpu->prefix & DISPREFIX_OPSIZE));
+        rc = patmPatchGenPushf(pVM, pPatch, !!(pCpu->fPrefix & DISPREFIX_OPSIZE));
         if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
         break;
@@ -1889,7 +1889,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
     case OP_IRET:
         Log(("IRET at %RRv\n", pCurInstrGC));
-        rc = patmPatchGenIret(pVM, pPatch, pCurInstrGC, !!(pCpu->prefix & DISPREFIX_OPSIZE));
+        rc = patmPatchGenIret(pVM, pPatch, pCurInstrGC, !!(pCpu->fPrefix & DISPREFIX_OPSIZE));
         if (RT_SUCCESS(rc))
         {
             pPatch->flags |= PATMFL_FOUND_PATCHEND;

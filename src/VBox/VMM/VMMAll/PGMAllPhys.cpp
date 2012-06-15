@@ -107,7 +107,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
             rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, &cbOp);
             if (     RT_SUCCESS(rc)
                 &&   pDis->mode == DISCPUMODE_32BIT  /** @todo why does this matter? */
-                &&  !(pDis->prefix & (DISPREFIX_REPNE | DISPREFIX_REP | DISPREFIX_SEG)))
+                &&  !(pDis->fPrefix & (DISPREFIX_REPNE | DISPREFIX_REP | DISPREFIX_SEG)))
             {
                 switch (pDis->bOpCode)
                 {

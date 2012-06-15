@@ -3584,7 +3584,7 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        if (pDis->prefix & DISPREFIX_OPSIZE)
+                        if (pDis->fPrefix & DISPREFIX_OPSIZE)
                         {
                             cbParm = 4;
                             uMask  = 0xffffffff;
@@ -3626,7 +3626,7 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        if (pDis->prefix & DISPREFIX_OPSIZE)
+                        if (pDis->fPrefix & DISPREFIX_OPSIZE)
                         {
                             cbParm = 4;
                             uMask  = 0xffffffff;
@@ -3668,7 +3668,7 @@ ResumeExecution:
                         uint32_t  uMask = 0xffff;
                         uint16_t  aIretFrame[3];
 
-                        if (pDis->prefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
+                        if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
                         {
                             rc = VERR_EM_INTERPRETER;
                             break;
@@ -4320,13 +4320,13 @@ ResumeExecution:
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, (DISCPUMODE)pDis->addrmode, cbSize);
+                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->fPrefix, (DISCPUMODE)pDis->addrmode, cbSize);
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, (DISCPUMODE)pDis->addrmode, cbSize);
+                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->fPrefix, (DISCPUMODE)pDis->addrmode, cbSize);
                 }
             }
             else

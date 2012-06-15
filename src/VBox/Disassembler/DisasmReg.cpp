@@ -258,7 +258,7 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 //*****************************************************************************
 DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 {
-    if (pCpu->prefix & DISPREFIX_SEG)
+    if (pCpu->fPrefix & DISPREFIX_SEG)
         /* Use specified SEG: prefix. */
         return (DISSELREG)pCpu->idxSegPrefix;
 
@@ -279,7 +279,7 @@ DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 //*****************************************************************************
 DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
 {
-    Assert(pCpu->prefix & DISPREFIX_SEG);
+    Assert(pCpu->fPrefix & DISPREFIX_SEG);
     switch (pCpu->idxSegPrefix)
     {
     case DISSELREG_ES:

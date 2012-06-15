@@ -303,7 +303,7 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
         pCpu->addrmode      = enmCpuMode;
         pCpu->opmode        = enmCpuMode;
     }
-    pCpu->prefix            = DISPREFIX_NONE;
+    pCpu->fPrefix           = DISPREFIX_NONE;
     pCpu->idxSegPrefix      = DISSELREG_DS;
     pCpu->uInstrAddr        = uInstrAddr;
     pCpu->pfnDisasmFnTable  = g_apfnFullDisasm;
@@ -345,7 +345,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
             {
                 /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
                 pCpu->bLastPrefix = opcode;
-                pCpu->prefix &= ~DISPREFIX_REX;
+                pCpu->fPrefix &= ~DISPREFIX_REX;
             }
 
             switch (opcode)
@@ -362,20 +362,20 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
                 if (   pCpu->mode != DISCPUMODE_64BIT
                     || pCpu->idxSegPrefix >= DISSELREG_FS)
                 {
-                    pCpu->prefix    |= DISPREFIX_SEG;
+                    pCpu->fPrefix   |= DISPREFIX_SEG;
                 }
                 iByte += sizeof(uint8_t);
                 continue;   //fetch the next byte
 
             // lock prefix byte
             case OP_LOCK:
-                pCpu->prefix |= DISPREFIX_LOCK;
+                pCpu->fPrefix |= DISPREFIX_LOCK;
                 iByte       += sizeof(uint8_t);
                 continue;   //fetch the next byte
 
             // address size override prefix byte
             case OP_ADDRSIZE:
-                pCpu->prefix |= DISPREFIX_ADDRSIZE;
+                pCpu->fPrefix |= DISPREFIX_ADDRSIZE;
                 if (pCpu->mode == DISCPUMODE_16BIT)
                     pCpu->addrmode = DISCPUMODE_32BIT;
                 else
@@ -389,7 +389,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
 
             // operand size override prefix byte
             case OP_OPSIZE:
-                pCpu->prefix |= DISPREFIX_OPSIZE;
+                pCpu->fPrefix |= DISPREFIX_OPSIZE;
                 if (pCpu->mode == DISCPUMODE_16BIT)
                     pCpu->opmode = DISCPUMODE_32BIT;
                 else
@@ -400,19 +400,19 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
 
             // rep and repne are not really prefixes, but we'll treat them as such
             case OP_REPE:
-                pCpu->prefix |= DISPREFIX_REP;
+                pCpu->fPrefix |= DISPREFIX_REP;
                 iByte       += sizeof(uint8_t);
                 continue;   //fetch the next byte
 
             case OP_REPNE:
-                pCpu->prefix |= DISPREFIX_REPNE;
+                pCpu->fPrefix |= DISPREFIX_REPNE;
                 iByte       += sizeof(uint8_t);
                 continue;   //fetch the next byte
 
             case OP_REX:
                 Assert(pCpu->mode == DISCPUMODE_64BIT);
                 /* REX prefix byte */
-                pCpu->prefix    |= DISPREFIX_REX;
+                pCpu->fPrefix   |= DISPREFIX_REX;
                 pCpu->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
                 iByte           += sizeof(uint8_t);
 
@@ -437,7 +437,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
     if (pcbInstr)
         *pcbInstr = iByte;
 
-    if (pCpu->prefix & DISPREFIX_LOCK)
+    if (pCpu->fPrefix & DISPREFIX_LOCK)
         disValidateLockSequence(pCpu);
 
     return pCpu->rc;
@@ -481,7 +481,7 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
             pCpu->opmode = DISCPUMODE_64BIT;
         else
         if (    (pOp->optype & DISOPTYPE_DEFAULT_64_OP_SIZE)
-            &&  !(pCpu->prefix & DISPREFIX_OPSIZE))
+            &&  !(pCpu->fPrefix & DISPREFIX_OPSIZE))
             pCpu->opmode = DISCPUMODE_64BIT;
     }
     else
@@ -560,7 +560,7 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
             pCpu->opmode = DISCPUMODE_64BIT;
         else
         if (    (fpop->optype & DISOPTYPE_DEFAULT_64_OP_SIZE)
-            &&  !(pCpu->prefix & DISPREFIX_OPSIZE))
+            &&  !(pCpu->fPrefix & DISPREFIX_OPSIZE))
             pCpu->opmode = DISCPUMODE_64BIT;
     }
 
@@ -661,7 +661,7 @@ unsigned ParseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
     pCpu->SIB.Bits.Index = SIB_INDEX(SIB);
     pCpu->SIB.Bits.Scale = SIB_SCALE(SIB);
 
-    if (pCpu->prefix & DISPREFIX_REX)
+    if (pCpu->fPrefix & DISPREFIX_REX)
     {
         /* REX.B extends the Base field if not scaled index + disp32 */
         if (!(pCpu->SIB.Bits.Base == 5 && pCpu->ModRM.Bits.Mod == 0))
@@ -694,7 +694,7 @@ unsigned ParseSIB_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPar
     pCpu->SIB.Bits.Index = SIB_INDEX(SIB);
     pCpu->SIB.Bits.Scale = SIB_SCALE(SIB);
 
-    if (pCpu->prefix & DISPREFIX_REX)
+    if (pCpu->fPrefix & DISPREFIX_REX)
     {
         /* REX.B extends the Base field. */
         pCpu->SIB.Bits.Base  |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
@@ -738,9 +738,9 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
 
                 if (    pCpu->pCurInstr->opcode == OP_MOV_CR
                     &&  pCpu->opmode == DISCPUMODE_32BIT
-                    &&  (pCpu->prefix & DISPREFIX_LOCK))
+                    &&  (pCpu->fPrefix & DISPREFIX_LOCK))
                 {
-                    pCpu->prefix &= ~DISPREFIX_LOCK;
+                    pCpu->fPrefix &= ~DISPREFIX_LOCK;
                     pParam->base.reg_ctrl = DISCREG_CR8;
                 }
                 else
@@ -1079,7 +1079,7 @@ unsigned ParseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     if (pOp->optype & DISOPTYPE_MOD_FIXED_11)
         pCpu->ModRM.Bits.Mod = 3;
 
-    if (pCpu->prefix & DISPREFIX_REX)
+    if (pCpu->fPrefix & DISPREFIX_REX)
     {
         Assert(pCpu->mode == DISCPUMODE_64BIT);
 
@@ -1125,7 +1125,7 @@ unsigned ParseModRM_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pP
     if (pOp->optype & DISOPTYPE_MOD_FIXED_11)
         pCpu->ModRM.Bits.Mod = 3;
 
-    if (pCpu->prefix & DISPREFIX_REX)
+    if (pCpu->fPrefix & DISPREFIX_REX)
     {
         Assert(pCpu->mode == DISCPUMODE_64BIT);
 
@@ -1569,7 +1569,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
             if (    (pOp->optype & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
-                &&  (pCpu->prefix & DISPREFIX_REX)
+                &&  (pCpu->fPrefix & DISPREFIX_REX)
                 &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;
 
@@ -1613,7 +1613,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
         {
             if (    (pOp->optype & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
-                &&  (pCpu->prefix & DISPREFIX_REX)
+                &&  (pCpu->fPrefix & DISPREFIX_REX)
                 &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;              /* least significant byte of R8-R15 */
         }
@@ -1759,7 +1759,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
                 pOpcode = &g_aTwoByteMapX86_PF66[pCpu->bOpCode];
 
                 /* Cancel prefix changes. */
-                pCpu->prefix &= ~DISPREFIX_OPSIZE;
+                pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
                 pCpu->opmode  = pCpu->mode;
             }
             break;
@@ -1771,7 +1771,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
                 pOpcode = &g_aTwoByteMapX86_PFF2[pCpu->bOpCode];
 
                 /* Cancel prefix changes. */
-                pCpu->prefix &= ~DISPREFIX_REPNE;
+                pCpu->fPrefix &= ~DISPREFIX_REPNE;
             }
             break;
 
@@ -1782,7 +1782,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
                 pOpcode = &g_aTwoByteMapX86_PFF3[pCpu->bOpCode];
 
                 /* Cancel prefix changes. */
-                pCpu->prefix &= ~DISPREFIX_REP;
+                pCpu->fPrefix &= ~DISPREFIX_REP;
             }
             break;
         }
@@ -1826,7 +1826,7 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
                 /* Table entry is valid, so use the extension table. */
 
                 /* Cancel prefix changes. */
-                pCpu->prefix &= ~DISPREFIX_OPSIZE;
+                pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
                 pCpu->opmode  = pCpu->mode;
             }
         }
@@ -1843,7 +1843,7 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
                 /* Table entry is valid, so use the extension table. */
 
                 /* Cancel prefix changes. */
-                pCpu->prefix &= ~DISPREFIX_REPNE;
+                pCpu->fPrefix &= ~DISPREFIX_REPNE;
             }
         }
         break;
@@ -1877,7 +1877,7 @@ unsigned ParseThreeByteEsc5(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
             /* Table entry is valid, so use the extension table. */
 
             /* Cancel prefix changes. */
-            pCpu->prefix &= ~DISPREFIX_OPSIZE;
+            pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
             pCpu->opmode  = pCpu->mode;
         }
     }
@@ -1894,10 +1894,10 @@ unsigned ParseNopPause(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
     unsigned size = 0;
     NOREF(pParam);
 
-    if (pCpu->prefix & DISPREFIX_REP)
+    if (pCpu->fPrefix & DISPREFIX_REP)
     {
         pOp = &g_aMapX86_NopPause[1]; /* PAUSE */
-        pCpu->prefix &= ~DISPREFIX_REP;
+        pCpu->fPrefix &= ~DISPREFIX_REP;
     }
     else
         pOp = &g_aMapX86_NopPause[0]; /* NOP */
@@ -2184,7 +2184,7 @@ unsigned ParseGrp12(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     modrm = disReadByte(pCpu, uCodePtr);
     reg   = MODRM_REG(modrm);
 
-    if (pCpu->prefix & DISPREFIX_OPSIZE)
+    if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group12[reg];
@@ -2205,7 +2205,7 @@ unsigned ParseGrp13(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
 
     modrm = disReadByte(pCpu, uCodePtr);
     reg   = MODRM_REG(modrm);
-    if (pCpu->prefix & DISPREFIX_OPSIZE)
+    if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group13[reg];
@@ -2227,7 +2227,7 @@ unsigned ParseGrp14(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
 
     modrm = disReadByte(pCpu, uCodePtr);
     reg   = MODRM_REG(modrm);
-    if (pCpu->prefix & DISPREFIX_OPSIZE)
+    if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group14[reg];
@@ -2329,11 +2329,11 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDI
     switch (subtype)
     {
     case OP_PARM_b:
-        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16U : 8U));
+        Assert(idx < (pCpu->fPrefix & DISPREFIX_REX ? 16U : 8U));
 
         /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
         /* Intel® 64 and IA-32 Architectures Software Developer’s Manual: 3.4.1.1 */
-        if (    (pCpu->prefix & DISPREFIX_REX)
+        if (    (pCpu->fPrefix & DISPREFIX_REX)
             &&  idx >= DISGREG_AH
             &&  idx <= DISGREG_BH)
         {
@@ -2345,14 +2345,14 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDI
         break;
 
     case OP_PARM_w:
-        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16U : 8U));
+        Assert(idx < (pCpu->fPrefix & DISPREFIX_REX ? 16U : 8U));
 
         pParam->fUse |= DISUSE_REG_GEN16;
         pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_d:
-        Assert(idx < (pCpu->prefix & DISPREFIX_REX ? 16U : 8U));
+        Assert(idx < (pCpu->fPrefix & DISPREFIX_REX ? 16U : 8U));
 
         pParam->fUse |= DISUSE_REG_GEN32;
         pParam->base.reg_gen = idx;
@@ -2617,7 +2617,7 @@ uint64_t disReadQWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
  */
 static void disValidateLockSequence(PDISCPUSTATE pCpu)
 {
-    Assert(pCpu->prefix & DISPREFIX_LOCK);
+    Assert(pCpu->fPrefix & DISPREFIX_LOCK);
 
     /*
      * Filter out the valid lock sequences.

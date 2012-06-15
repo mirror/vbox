@@ -792,7 +792,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
             return true;
         case OP_MOVSWD:
         case OP_STOSWD:
-            if (    pDis->prefix == (DISPREFIX_REP|DISPREFIX_REX)
+            if (    pDis->fPrefix == (DISPREFIX_REP|DISPREFIX_REX)
                 &&  pRegFrame->rcx >= 0x40
                )
             {
@@ -1154,7 +1154,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         /*
          * Simple instructions, no REP prefix.
          */
-        if (!(pDis->prefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
+        if (!(pDis->fPrefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
             rc = pgmPoolAccessHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault, &fReused);
             if (fReused)
@@ -1203,7 +1203,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             bool fValidStosd = false;
 
             if (    pDis->mode == DISCPUMODE_32BIT
-                &&  pDis->prefix == DISPREFIX_REP
+                &&  pDis->fPrefix == DISPREFIX_REP
                 &&  pRegFrame->ecx <= 0x20
                 &&  pRegFrame->ecx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 3)
@@ -1215,7 +1215,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             }
             else
             if (    pDis->mode == DISCPUMODE_64BIT
-                &&  pDis->prefix == (DISPREFIX_REP | DISPREFIX_REX)
+                &&  pDis->fPrefix == (DISPREFIX_REP | DISPREFIX_REX)
                 &&  pRegFrame->rcx <= 0x20
                 &&  pRegFrame->rcx * 8 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 7)
@@ -1237,7 +1237,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         /* REP prefix, don't bother. */
         STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,RepPrefix));
         Log4(("pgmPoolAccessHandler: eax=%#x ecx=%#x edi=%#x esi=%#x rip=%RGv opcode=%d prefix=%#x\n",
-              pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->opcode, pDis->prefix));
+              pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->opcode, pDis->fPrefix));
         fNotReusedNotForking = true;
     }
 
