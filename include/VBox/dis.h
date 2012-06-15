@@ -47,7 +47,7 @@ typedef enum DISCPUMODE
     DISCPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;
 
-/** @name Prefix byte flags (DISCPUSTATE::prefix_rex).
+/** @name Prefix byte flags (DISCPUSTATE::fRexPrefix).
  * @{
  */
 #define DISPREFIX_NONE                  UINT8_C(0x00)
@@ -67,7 +67,7 @@ typedef enum DISCPUMODE
 #define DISPREFIX_REX                   UINT8_C(0x40)
 /** @} */
 
-/** @name 64 bits prefix byte flags (DISCPUSTATE::prefix_rex).
+/** @name 64 bits prefix byte flags (DISCPUSTATE::fRexPrefix).
  * Requires VBox/disopcode.h.
  * @{
  */
@@ -536,13 +536,13 @@ typedef struct DISCPUSTATE
     uint8_t         prefix;
     /* off: 0x070 (112) */
     /** REX prefix value (64 bits only). */
-    uint8_t         prefix_rex;
+    uint8_t         fRexPrefix;
     /** Segment prefix value (DISSELREG). */
     uint8_t         idxSegPrefix;
     /** Last prefix byte (for SSE2 extension tables). */
-    uint8_t         lastprefix;
+    uint8_t         bLastPrefix;
     /** First opcode byte of instruction. */
-    uint8_t         opcode;
+    uint8_t         bOpCode;
     /* off: 0x074 (116) */
     /** The size of the prefix bytes. */
     uint8_t         cbPrefix;

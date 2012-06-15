@@ -143,15 +143,15 @@ static bool MyDisasIsValidInstruction(DISCPUSTATE const *pCpu)
 
          /* The 0x8f /0 variant of this instruction doesn't get its /r value verified. */
         case OP_POP:
-            if (    pCpu->opcode == 0x8f
+            if (    pCpu->bOpCode == 0x8f
                 &&  pCpu->ModRM.Bits.Reg != 0)
                 return false;
             break;
 
         /* The 0xc6 /0 and 0xc7 /0 variants of this instruction don't get their /r values verified. */
         case OP_MOV:
-            if (    (   pCpu->opcode == 0xc6
-                     || pCpu->opcode == 0xc7)
+            if (    (   pCpu->bOpCode == 0xc6
+                     || pCpu->bOpCode == 0xc7)
                 &&  pCpu->ModRM.Bits.Reg != 0)
                 return false;
             break;

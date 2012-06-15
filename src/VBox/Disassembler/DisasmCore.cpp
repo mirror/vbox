@@ -344,7 +344,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
             if (opcode != OP_REX)
             {
                 /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
-                pCpu->lastprefix = opcode;
+                pCpu->bLastPrefix = opcode;
                 pCpu->prefix &= ~DISPREFIX_REX;
             }
 
@@ -413,10 +413,10 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
                 Assert(pCpu->mode == DISCPUMODE_64BIT);
                 /* REX prefix byte */
                 pCpu->prefix    |= DISPREFIX_REX;
-                pCpu->prefix_rex = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
+                pCpu->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
                 iByte           += sizeof(uint8_t);
 
-                if (pCpu->prefix_rex & DISPREFIX_REX_FLAGS_W)
+                if (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_W)
                     pCpu->opmode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
                 continue;   //fetch the next byte
             }
@@ -425,9 +425,9 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
         unsigned uIdx = iByte;
         iByte += sizeof(uint8_t); //first opcode byte
 
-        pCpu->opcode = codebyte;
+        pCpu->bOpCode = codebyte;
 
-        cbInc = disParseInstruction(uInstrAddr + iByte, &paOneByteMap[pCpu->opcode], pCpu);
+        cbInc = disParseInstruction(uInstrAddr + iByte, &paOneByteMap[pCpu->bOpCode], pCpu);
         iByte += cbInc;
         break;
     }
@@ -526,7 +526,7 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
 
     ModRM = disReadByte(pCpu, uCodePtr);
 
-    index = pCpu->opcode - 0xD8;
+    index = pCpu->bOpCode - 0xD8;
     if (ModRM <= 0xBF)
     {
         fpop            = &(g_apMapX86_FP_Low[index])[MODRM_REG(ModRM)];
@@ -665,9 +665,9 @@ unsigned ParseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
     {
         /* REX.B extends the Base field if not scaled index + disp32 */
         if (!(pCpu->SIB.Bits.Base == 5 && pCpu->ModRM.Bits.Mod == 0))
-            pCpu->SIB.Bits.Base  |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_B)) << 3);
+            pCpu->SIB.Bits.Base  |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
 
-        pCpu->SIB.Bits.Index |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_X)) << 3);
+        pCpu->SIB.Bits.Index |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3);
     }
 
     if (    pCpu->SIB.Bits.Base == 5
@@ -697,9 +697,9 @@ unsigned ParseSIB_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPar
     if (pCpu->prefix & DISPREFIX_REX)
     {
         /* REX.B extends the Base field. */
-        pCpu->SIB.Bits.Base  |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_B)) << 3);
+        pCpu->SIB.Bits.Base  |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
         /* REX.X extends the Index field. */
-        pCpu->SIB.Bits.Index |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_X)) << 3);
+        pCpu->SIB.Bits.Index |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3);
     }
 
     if (    pCpu->SIB.Bits.Base == 5
@@ -1084,7 +1084,7 @@ unsigned ParseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
         Assert(pCpu->mode == DISCPUMODE_64BIT);
 
         /* REX.R extends the Reg field. */
-        pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_R)) << 3);
+        pCpu->ModRM.Bits.Reg |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
 
         /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
         if (!(    pCpu->ModRM.Bits.Mod != 3
@@ -1093,7 +1093,7 @@ unsigned ParseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
             !(    pCpu->ModRM.Bits.Mod == 0
               &&  pCpu->ModRM.Bits.Rm  == 5))
         {
-            pCpu->ModRM.Bits.Rm |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_B)) << 3);
+            pCpu->ModRM.Bits.Rm |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
         }
     }
     size += QueryModRM(uCodePtr, pOp, pParam, pCpu, &sibinc);
@@ -1130,7 +1130,7 @@ unsigned ParseModRM_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pP
         Assert(pCpu->mode == DISCPUMODE_64BIT);
 
         /* REX.R extends the Reg field. */
-        pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_R)) << 3);
+        pCpu->ModRM.Bits.Reg |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
 
         /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
         if (!(    pCpu->ModRM.Bits.Mod != 3
@@ -1139,7 +1139,7 @@ unsigned ParseModRM_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pP
             !(    pCpu->ModRM.Bits.Mod == 0
               &&  pCpu->ModRM.Bits.Rm  == 5))
         {
-            pCpu->ModRM.Bits.Rm |= ((!!(pCpu->prefix_rex & DISPREFIX_REX_FLAGS_B)) << 3);
+            pCpu->ModRM.Bits.Rm |= ((!!(pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
         }
     }
 
@@ -1570,7 +1570,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
             if (    (pOp->optype & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
                 &&  (pCpu->prefix & DISPREFIX_REX)
-                &&  (pCpu->prefix_rex & DISPREFIX_REX_FLAGS))
+                &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;
 
             pParam->fUse  |= DISUSE_REG_GEN64;
@@ -1614,7 +1614,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
             if (    (pOp->optype & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
                 &&  (pCpu->prefix & DISPREFIX_REX)
-                &&  (pCpu->prefix_rex & DISPREFIX_REX_FLAGS))
+                &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;              /* least significant byte of R8-R15 */
         }
     }
@@ -1741,22 +1741,22 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
     NOREF(pOp); NOREF(pParam);
 
     /* 2nd byte */
-    pCpu->opcode = disReadByte(pCpu, uCodePtr);
+    pCpu->bOpCode = disReadByte(pCpu, uCodePtr);
 
     /* default to the non-prefixed table. */
-    pOpcode      = &g_aTwoByteMapX86[pCpu->opcode];
+    pOpcode      = &g_aTwoByteMapX86[pCpu->bOpCode];
 
     /* Handle opcode table extensions that rely on the address, repe or repne prefix byte.  */
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
-    if (pCpu->lastprefix)
+    if (pCpu->bLastPrefix)
     {
-        switch (pCpu->lastprefix)
+        switch (pCpu->bLastPrefix)
         {
         case OP_OPSIZE: /* 0x66 */
-            if (g_aTwoByteMapX86_PF66[pCpu->opcode].opcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PF66[pCpu->bOpCode].opcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
-                pOpcode = &g_aTwoByteMapX86_PF66[pCpu->opcode];
+                pOpcode = &g_aTwoByteMapX86_PF66[pCpu->bOpCode];
 
                 /* Cancel prefix changes. */
                 pCpu->prefix &= ~DISPREFIX_OPSIZE;
@@ -1765,10 +1765,10 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
             break;
 
         case OP_REPNE:   /* 0xF2 */
-            if (g_aTwoByteMapX86_PFF2[pCpu->opcode].opcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PFF2[pCpu->bOpCode].opcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
-                pOpcode = &g_aTwoByteMapX86_PFF2[pCpu->opcode];
+                pOpcode = &g_aTwoByteMapX86_PFF2[pCpu->bOpCode];
 
                 /* Cancel prefix changes. */
                 pCpu->prefix &= ~DISPREFIX_REPNE;
@@ -1776,10 +1776,10 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
             break;
 
         case OP_REPE:  /* 0xF3 */
-            if (g_aTwoByteMapX86_PFF3[pCpu->opcode].opcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PFF3[pCpu->bOpCode].opcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
-                pOpcode = &g_aTwoByteMapX86_PFF3[pCpu->opcode];
+                pOpcode = &g_aTwoByteMapX86_PFF3[pCpu->bOpCode];
 
                 /* Cancel prefix changes. */
                 pCpu->prefix &= ~DISPREFIX_REP;
@@ -1800,26 +1800,26 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
     NOREF(pOp); NOREF(pParam);
 
     /* 3rd byte */
-    pCpu->opcode = disReadByte(pCpu, uCodePtr);
+    pCpu->bOpCode = disReadByte(pCpu, uCodePtr);
 
     /* default to the non-prefixed table. */
-    if (g_apThreeByteMapX86_0F38[pCpu->opcode >> 4])
+    if (g_apThreeByteMapX86_0F38[pCpu->bOpCode >> 4])
     {
-        pOpcode = g_apThreeByteMapX86_0F38[pCpu->opcode >> 4];
-        pOpcode = &pOpcode[pCpu->opcode & 0xf];
+        pOpcode = g_apThreeByteMapX86_0F38[pCpu->bOpCode >> 4];
+        pOpcode = &pOpcode[pCpu->bOpCode & 0xf];
     }
     else
         pOpcode = &g_InvalidOpcode[0];
 
     /* Handle opcode table extensions that rely on the address, repne prefix byte.  */
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
-    switch (pCpu->lastprefix)
+    switch (pCpu->bLastPrefix)
     {
     case OP_OPSIZE: /* 0x66 */
-        if (g_apThreeByteMapX86_660F38[pCpu->opcode >> 4])
+        if (g_apThreeByteMapX86_660F38[pCpu->bOpCode >> 4])
         {
-            pOpcode = g_apThreeByteMapX86_660F38[pCpu->opcode >> 4];
-            pOpcode = &pOpcode[pCpu->opcode & 0xf];
+            pOpcode = g_apThreeByteMapX86_660F38[pCpu->bOpCode >> 4];
+            pOpcode = &pOpcode[pCpu->bOpCode & 0xf];
 
             if (pOpcode->opcode != OP_INVALID)
             {
@@ -1833,10 +1833,10 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
         break;
 
     case OP_REPNE:   /* 0xF2 */
-        if (g_apThreeByteMapX86_F20F38[pCpu->opcode >> 4])
+        if (g_apThreeByteMapX86_F20F38[pCpu->bOpCode >> 4])
         {
-            pOpcode = g_apThreeByteMapX86_F20F38[pCpu->opcode >> 4];
-            pOpcode = &pOpcode[pCpu->opcode & 0xf];
+            pOpcode = g_apThreeByteMapX86_F20F38[pCpu->bOpCode >> 4];
+            pOpcode = &pOpcode[pCpu->bOpCode & 0xf];
 
             if (pOpcode->opcode != OP_INVALID)
             {
@@ -1861,16 +1861,16 @@ unsigned ParseThreeByteEsc5(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
     NOREF(pOp); NOREF(pParam);
 
     /* 3rd byte */
-    pCpu->opcode = disReadByte(pCpu, uCodePtr);
+    pCpu->bOpCode = disReadByte(pCpu, uCodePtr);
 
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
-    Assert(pCpu->lastprefix == OP_OPSIZE);
+    Assert(pCpu->bLastPrefix == OP_OPSIZE);
 
     /* default to the non-prefixed table. */
-    if (g_apThreeByteMapX86_660F3A[pCpu->opcode >> 4])
+    if (g_apThreeByteMapX86_660F3A[pCpu->bOpCode >> 4])
     {
-        pOpcode = g_apThreeByteMapX86_660F3A[pCpu->opcode >> 4];
-        pOpcode = &pOpcode[pCpu->opcode & 0xf];
+        pOpcode = g_apThreeByteMapX86_660F3A[pCpu->bOpCode >> 4];
+        pOpcode = &pOpcode[pCpu->bOpCode & 0xf];
 
         if (pOpcode->opcode != OP_INVALID)
         {
@@ -1909,7 +1909,7 @@ unsigned ParseNopPause(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
 //*****************************************************************************
 unsigned ParseImmGrpl(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    int idx = (pCpu->opcode - 0x80) * 8;
+    int idx = (pCpu->bOpCode - 0x80) * 8;
     unsigned size = 0, modrm, reg;
     NOREF(pParam);
 
@@ -1933,18 +1933,18 @@ unsigned ParseShiftGrp2(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam,
     unsigned size = 0, modrm, reg;
     NOREF(pParam);
 
-    switch (pCpu->opcode)
+    switch (pCpu->bOpCode)
     {
     case 0xC0:
     case 0xC1:
-        idx = (pCpu->opcode - 0xC0)*8;
+        idx = (pCpu->bOpCode - 0xC0)*8;
         break;
 
     case 0xD0:
     case 0xD1:
     case 0xD2:
     case 0xD3:
-        idx = (pCpu->opcode - 0xD0 + 2)*8;
+        idx = (pCpu->bOpCode - 0xD0 + 2)*8;
         break;
 
     default:
@@ -1969,7 +1969,7 @@ unsigned ParseShiftGrp2(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam,
 //*****************************************************************************
 unsigned ParseGrp3(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    int idx = (pCpu->opcode - 0xF6) * 8;
+    int idx = (pCpu->bOpCode - 0xF6) * 8;
     unsigned size = 0, modrm, reg;
     NOREF(pParam);
 

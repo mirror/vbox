@@ -493,11 +493,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
              * Don't know how to tell yasm to generate complicated nop stuff, so 'db' it.
              */
             case OP_NOP:
-                if (pCpu->opcode == 0x90)
+                if (pCpu->bOpCode == 0x90)
                     /* fine, fine */;
                 else if (pszFmt[sizeof("nop %Ev") - 1] == '/' && pszFmt[sizeof("nop %Ev")] == 'p')
                     pszFmt = "prefetch %Eb";
-                else if (pCpu->opcode == 0x1f)
+                else if (pCpu->bOpCode == 0x1f)
                 {
                     Assert(pCpu->cbInstr >= 3);
                     PUT_SZ("db 00fh, 01fh,");
@@ -541,7 +541,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
              * Horrible hacks.
              */
             case OP_FLD:
-                if (pCpu->opcode == 0xdb) /* m80fp workaround. */
+                if (pCpu->bOpCode == 0xdb) /* m80fp workaround. */
                     *(int *)&pCpu->param1.param &= ~0x1f; /* make it pure OP_PARM_M */
                 break;
             case OP_LAR: /* hack w -> v, probably not correct. */
@@ -1421,7 +1421,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
                     return true;
 
                 /* 82 (see table A-6). */
-                if (pCpu->opcode == 0x82)
+                if (pCpu->bOpCode == 0x82)
                     return true;
                 break;
 
@@ -1432,12 +1432,12 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
             case OP_POP:
             case OP_PUSH:
-                Assert(pCpu->opcode == 0x8f);
+                Assert(pCpu->bOpCode == 0x8f);
                 return true;
 
             case OP_MOV:
-                if (   pCpu->opcode == 0x8a
-                    || pCpu->opcode == 0x8b)
+                if (   pCpu->bOpCode == 0x8a
+                    || pCpu->bOpCode == 0x8b)
                     return true;
                 break;
 
@@ -1464,7 +1464,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     }
 
     /* And some more - see table A-6. */
-    if (pCpu->opcode == 0x82)
+    if (pCpu->bOpCode == 0x82)
     {
         switch (pCpu->pCurInstr->opcode)
         {
@@ -1504,7 +1504,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
         case OP_SETNL:
         case OP_SETLE:
         case OP_SETNLE:
-            AssertMsg(pCpu->opcode >= 0x90 && pCpu->opcode <= 0x9f, ("%#x\n", pCpu->opcode));
+            AssertMsg(pCpu->bOpCode >= 0x90 && pCpu->bOpCode <= 0x9f, ("%#x\n", pCpu->bOpCode));
             if (pCpu->ModRM.Bits.Reg != 2)
                 return true;
             break;
@@ -1515,7 +1515,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
      * doesn't quite make sense...
      */
     if (    pCpu->pCurInstr->opcode == OP_MOVZX
-        &&  pCpu->opcode == 0xB7
+        &&  pCpu->bOpCode == 0xB7
         &&  (pCpu->mode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
         return true;
 
