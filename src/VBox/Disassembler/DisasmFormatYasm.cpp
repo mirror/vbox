@@ -391,7 +391,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
     size_t const offInstruction = cchOutput;
     if (    pOp->opcode == OP_INVALID
         ||  (   pOp->opcode == OP_ILLUD2
-             && (pCpu->prefix & DISPREFIX_LOCK)))
+             && (pCpu->fPrefix & DISPREFIX_LOCK)))
     {
 
     }
@@ -400,11 +400,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         /*
          * Prefixes
          */
-        if (pCpu->prefix & DISPREFIX_LOCK)
+        if (pCpu->fPrefix & DISPREFIX_LOCK)
             PUT_SZ("lock ");
-        if(pCpu->prefix & DISPREFIX_REP)
+        if(pCpu->fPrefix & DISPREFIX_REP)
             PUT_SZ("rep ");
-        else if(pCpu->prefix & DISPREFIX_REPNE)
+        else if(pCpu->fPrefix & DISPREFIX_REPNE)
             PUT_SZ("repne ");
 
         /*
@@ -603,7 +603,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         static const char s_szSegPrefix[6][4] = { "es:", "cs:", "ss:", "ds:", "fs:", "gs:" };
 #define PUT_SEGMENT_OVERRIDE() \
         do { \
-            if (pCpu->prefix & DISPREFIX_SEG) \
+            if (pCpu->fPrefix & DISPREFIX_SEG) \
                 PUT_STR(s_szSegPrefix[pCpu->idxSegPrefix], 3); \
         } while (0)
 
@@ -611,7 +611,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         /*
          * Segment prefixing for instructions that doesn't do memory access.
          */
-        if (    (pCpu->prefix & DISPREFIX_SEG)
+        if (    (pCpu->fPrefix & DISPREFIX_SEG)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param1.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param2.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param3.fUse))
@@ -1290,7 +1290,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     if (fPrefixes & DISPREFIX_SEG)
     {
         /* no effective address which it may apply to. */
-        Assert((pCpu->prefix & DISPREFIX_SEG) || pCpu->mode == DISCPUMODE_64BIT);
+        Assert((pCpu->fPrefix & DISPREFIX_SEG) || pCpu->mode == DISCPUMODE_64BIT);
         if (    !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param1.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param2.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param3.fUse))
@@ -1300,7 +1300,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /* fixed register + addr override doesn't go down all that well. */
     if (fPrefixes & DISPREFIX_ADDRSIZE)
     {
-        Assert(pCpu->prefix & DISPREFIX_ADDRSIZE);
+        Assert(pCpu->fPrefix & DISPREFIX_ADDRSIZE);
         if (    pCpu->pCurInstr->param3 == OP_PARM_NONE
             &&  pCpu->pCurInstr->param2 == OP_PARM_NONE
             &&  (   pCpu->pCurInstr->param1 >= OP_PARM_REG_GEN32_START

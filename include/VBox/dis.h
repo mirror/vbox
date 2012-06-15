@@ -47,7 +47,7 @@ typedef enum DISCPUMODE
     DISCPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;
 
-/** @name Prefix byte flags (DISCPUSTATE::fRexPrefix).
+/** @name Prefix byte flags (DISCPUSTATE::fPrefix).
  * @{
  */
 #define DISPREFIX_NONE                  UINT8_C(0x00)
@@ -533,7 +533,7 @@ typedef struct DISCPUSTATE
     /** The operand mode (DISCPUMODE). */
     uint8_t         opmode;
     /** Per instruction prefix settings. */
-    uint8_t         prefix;
+    uint8_t         fPrefix;
     /* off: 0x070 (112) */
     /** REX prefix value (64 bits only). */
     uint8_t         fRexPrefix;

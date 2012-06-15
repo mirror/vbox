@@ -832,21 +832,21 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
     /** @todo Group 1a and 11 seems to be disassembled incorrectly when
      *        modrm.reg != 0. Those encodings should be invalid AFAICT. */
 
-    if (   (   pCpuState->opcode  == 0x8f            /* group 1a */
-            || pCpuState->opcode  == 0xc7            /* group 11 */
-            || pCpuState->opcode  == 0xc6            /* group 11 - not verified */
+    if (   (   pCpuState->bOpCode  == 0x8f            /* group 1a */
+            || pCpuState->bOpCode  == 0xc7            /* group 11 */
+            || pCpuState->bOpCode  == 0xc6            /* group 11 - not verified */
            )
         && pCpuState->ModRM.Bits.Reg != 0)
         fDifferent = true;
     /** @todo "TEST Eb,Ib" (f6 0f 08) ends up with no mnemonic as well as
      *        wrong length (2 instead of 3)! */
-    else if (   pCpuState->opcode == 0xf6
+    else if (   pCpuState->bOpCode == 0xf6
              && pb[1] == 0x0f
              && pb[2] == 0x08
              && RT_C_IS_SPACE(*pszBuf) )
         fDifferent = true;
     /** @todo "INSB Yb,DX" (6c) ends up with no mnemonic here. */
-    else if (pCpuState->opcode == 0x6c && RT_C_IS_SPACE(*pszBuf))
+    else if (pCpuState->bOpCode == 0x6c && RT_C_IS_SPACE(*pszBuf))
         fDifferent = true;
     /*
      * Check these out and consider adding them to DISFormatYasmIsOddEncoding.

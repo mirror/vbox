@@ -669,7 +669,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
     /*
      * We do not support segment prefixes or REPNE.
      */
-    if (pCpu->prefix & (DISPREFIX_SEG | DISPREFIX_REPNE))
+    if (pCpu->fPrefix & (DISPREFIX_SEG | DISPREFIX_REPNE))
         return VINF_IOM_R3_MMIO_READ_WRITE; /** @todo -> interpret whatever. */
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
@@ -678,7 +678,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
      * Get bytes/words/dwords/qword count to copy.
      */
     uint32_t cTransfers = 1;
-    if (pCpu->prefix & DISPREFIX_REP)
+    if (pCpu->fPrefix & DISPREFIX_REP)
     {
 #ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVCpu, pRegFrame)
@@ -766,7 +766,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
             MMGCRamDeregisterTrapHandler(pVM);
 #endif
             /* Update ecx. */
-            if (pCpu->prefix & DISPREFIX_REP)
+            if (pCpu->fPrefix & DISPREFIX_REP)
                 pRegFrame->ecx = cTransfers;
         }
         else
@@ -874,7 +874,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
         }
 
         /* Update ecx on exit. */
-        if (pCpu->prefix & DISPREFIX_REP)
+        if (pCpu->fPrefix & DISPREFIX_REP)
             pRegFrame->ecx = cTransfers;
     }
 
@@ -927,7 +927,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * We do not support segment prefixes or REPNE..
      */
-    if (pCpu->prefix & (DISPREFIX_SEG | DISPREFIX_REPNE))
+    if (pCpu->fPrefix & (DISPREFIX_SEG | DISPREFIX_REPNE))
         return VINF_IOM_R3_MMIO_READ_WRITE; /** @todo -> REM instead of HC */
 
     /*
@@ -935,7 +935,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
      */
     uint64_t const fAddrMask = iomDisModeToMask((DISCPUMODE)pCpu->addrmode);
     RTGCUINTREG cTransfers = 1;
-    if (pCpu->prefix & DISPREFIX_REP)
+    if (pCpu->fPrefix & DISPREFIX_REP)
     {
 #ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(VMMGetCpu(pVM), pRegFrame)
@@ -982,7 +982,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
                 /* Update registers. */
                 pRegFrame->rdi = ((pRegFrame->rdi + (cTransfers << SIZE_2_SHIFT(cb))) & fAddrMask)
                                | (pRegFrame->rdi & ~fAddrMask);
-                if (pCpu->prefix & DISPREFIX_REP)
+                if (pCpu->fPrefix & DISPREFIX_REP)
                     pRegFrame->rcx &= ~fAddrMask;
             }
         }
@@ -997,7 +997,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
                 /* Update registers. */
                 pRegFrame->rdi = ((pRegFrame->rdi - (cTransfers << SIZE_2_SHIFT(cb))) & fAddrMask)
                                | (pRegFrame->rdi & ~fAddrMask);
-                if (pCpu->prefix & DISPREFIX_REP)
+                if (pCpu->fPrefix & DISPREFIX_REP)
                     pRegFrame->rcx &= ~fAddrMask;
             }
         }
@@ -1024,7 +1024,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         } while (cTransfers);
 
         /* Update rcx on exit. */
-        if (pCpu->prefix & DISPREFIX_REP)
+        if (pCpu->fPrefix & DISPREFIX_REP)
             pRegFrame->rcx = (cTransfers & fAddrMask)
                            | (pRegFrame->rcx & ~fAddrMask);
     }
@@ -1061,7 +1061,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * We do not support segment prefixes or REP*.
      */
-    if (pCpu->prefix & (DISPREFIX_SEG | DISPREFIX_REP | DISPREFIX_REPNE))
+    if (pCpu->fPrefix & (DISPREFIX_SEG | DISPREFIX_REP | DISPREFIX_REPNE))
         return VINF_IOM_R3_MMIO_READ_WRITE; /** @todo -> REM instead of HC */
 
     /*
@@ -2155,7 +2155,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
         return rcStrict;
     }
 
-    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->prefix, (DISCPUMODE)pCpu->addrmode, cb);
+    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->addrmode, cb);
 }
 
 
@@ -2324,7 +2324,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
         return rcStrict;
     }
 
-    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, (DISCPUMODE)pCpu->addrmode, cb);
+    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->addrmode, cb);
 }
 
 #ifndef IN_RC
