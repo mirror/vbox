@@ -3581,11 +3581,8 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
             if (cb > cbSeg && cbSeg)
                 cb = cbSeg;
         }
-        /** @todo read more later. */
-        //if (cb > cbMaxRead) - later
-        //    cb = cbMaxRead;
-        if (cb > cbMinRead)
-            cb = cbMinRead;
+        if (cb > cbMaxRead)
+            cb = cbMaxRead;
 
         /*
          * Read and advance or exit.
@@ -3716,25 +3713,6 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
 }
 
 #ifdef DEBUG
-
-/**
- * Disassemble an instruction and dump it to the log
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle
- * @param   pVCpu       VMCPU Handle
- * @param   pCtx        CPU context
- * @param   pc          GC instruction pointer
- * @param   pszPrefix   String prefix for logging
- *
- * @deprecated  Use DBGFR3DisasInstrCurrentLog().
- */
-VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix)
-{
-    DISCPUSTATE Cpu;
-    CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pc, &Cpu, pszPrefix);
-}
-
 
 /**
  * Debug helper - Saves guest context on raw mode entry (for fatal dump)
