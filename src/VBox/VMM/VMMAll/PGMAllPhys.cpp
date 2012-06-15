@@ -109,7 +109,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
                 &&   pDis->mode == DISCPUMODE_32BIT  /** @todo why does this matter? */
                 &&  !(pDis->prefix & (DISPREFIX_REPNE | DISPREFIX_REP | DISPREFIX_SEG)))
             {
-                switch (pDis->opcode)
+                switch (pDis->bOpCode)
                 {
                     /** @todo Find other instructions we can safely skip, possibly
                      * adding this kind of detection to DIS or EM. */
