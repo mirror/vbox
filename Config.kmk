@@ -2187,8 +2187,10 @@ $(PATH_OUT)/GCCConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-int-to-pointer-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-int-to-pointer-cast,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-variadic-macros   ?= $(call VBOX_GCC_CHECK_CXX,-Wno-variadic-macros,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-invalid-offsetof  ?= $(call VBOX_GCC_CHECK_CXX,-Wno-invalid-offsetof,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-address           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-address,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fdiagnostics-show-option ?= $(call VBOX_GCC_CHECK_CC,-fdiagnostics-show-option,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
 # Produce code optimized for the most common IA32/AMD64/EM64T processors. Introduced with gcc version 4.2.
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_as_needed              ?= $(call VBOX_GCC_CHECK_LD,--as-needed,)'
