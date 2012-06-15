@@ -31,6 +31,18 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** This must be less or equal to DISCPUSTATE::abInstr. */
+#define DIS_MAX_INSTR_LENGTH 16
+
+/** Whether we can do unaligned access. */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# define DIS_HOST_UNALIGNED_ACCESS_OK
+#endif
+
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int      disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr);
@@ -432,7 +444,6 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
         break;
     }
 
-    AssertMsg(pCpu->cbInstr == iByte || RT_FAILURE_NP(pCpu->rc), ("%u %u\n", pCpu->cbInstr, iByte));
     pCpu->cbInstr = iByte;
     if (pcbInstr)
         *pcbInstr = iByte;
@@ -2373,75 +2384,10 @@ static void disasmModRMSReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PD
 }
 
 
-/**
- * Slow path for storing instruction bytes.
- *
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- * @param   pbSrc               The bytes.
- * @param   cbSrc               The number of bytes.
- */
-DECL_NO_INLINE(static, void)
-disStoreInstrBytesSlow(PDISCPUSTATE pCpu, RTUINTPTR uAddress, const uint8_t *pbSrc, size_t cbSrc)
-{
-    /*
-     * Figure out which case it is.
-     */
-    uint32_t  cbInstr = pCpu->cbInstr;
-    RTUINTPTR off     = uAddress - pCpu->uInstrAddr;
-    if (off < cbInstr)
-    {
-        if (off + cbSrc <= cbInstr)
-        {
-            AssertMsg(memcmp(&pCpu->abInstr[off], pbSrc, cbSrc) == 0,
-                      ("%RTptr LB %zx off=%RTptr (%.*Rhxs)", uAddress, cbSrc, off, cbInstr, pCpu->abInstr));
-            return; /* fully re-reading old stuff. */
-        }
+//*****************************************************************************
+/* Read functions for getting the opcode bytes */
+//*****************************************************************************
 
-        /* Only partially re-reading stuff, skip ahead and add the rest. */
-        uint32_t cbAlreadyRead = cbInstr - (uint32_t)off;
-        Assert(memcmp(&pCpu->abInstr[off], pbSrc, cbAlreadyRead) == 0);
-        uAddress += cbAlreadyRead;
-        pbSrc    += cbAlreadyRead;
-        cbSrc    -= cbAlreadyRead;
-    }
-
-    if (off >= sizeof(pCpu->abInstr))
-    {
-        /* The instruction is too long! This shouldn't happen. */
-        AssertMsgFailed(("%RTptr LB %zx off=%RTptr (%.*Rhxs)", uAddress, cbSrc, off, cbInstr, pCpu->abInstr));
-        return;
-    }
-    else if (off > cbInstr)
-    {
-        /* Mind the gap - this shouldn't happen, but read the gap bytes if it does. */
-        AssertMsgFailed(("%RTptr LB %zx off=%RTptr (%.16Rhxs)", uAddress, cbSrc, off, cbInstr, pCpu->abInstr));
-        uint32_t cbGap = off - cbInstr;
-        int rc = pCpu->pfnReadBytes(pCpu, &pCpu->abInstr[cbInstr], uAddress - cbGap, cbGap);
-        if (RT_FAILURE(rc))
-        {
-            pCpu->rc = VERR_DIS_MEM_READ;
-            RT_BZERO(&pCpu->abInstr[cbInstr], cbGap);
-        }
-        pCpu->cbInstr = cbInstr = off;
-    }
-
-    /*
-     * Copy the bytes.
-     */
-    if (off + cbSrc <= sizeof(pCpu->abInstr))
-    {
-        memcpy(&pCpu->abInstr[cbInstr], pbSrc, cbSrc);
-        pCpu->cbInstr = cbInstr + (uint32_t)cbSrc;
-    }
-    else
-    {
-        size_t cbToCopy = sizeof(pCpu->abInstr) - off;
-        memcpy(&pCpu->abInstr[cbInstr], pbSrc, cbToCopy);
-        pCpu->cbInstr = sizeof(pCpu->abInstr);
-        AssertMsgFailed(("%RTptr LB %zx off=%RTptr (%.*Rhxs)", uAddress, cbSrc, off, sizeof(pCpu->abInstr), pCpu->abInstr));
-    }
-}
 
 static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pCpu, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
 {
@@ -2455,112 +2401,240 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pCpu, uint8_t *pbDst, 
 #endif
 }
 
-//*****************************************************************************
-/* Read functions for getting the opcode bytes */
-//*****************************************************************************
+
+/**
+ * Read more bytes into the DISCPUSTATE::abInstr buffer, advance
+ * DISCPUSTATE::cbCachedInstr.
+ *
+ * Will set DISCPUSTATE::rc on failure, but still advance cbCachedInstr.
+ *
+ * The caller shall fend off reads beyond the DISCPUSTATE::abInstr buffer.
+ *
+ * @param   pCpu                The disassembler state.
+ * @param   off                 The offset of the read request.
+ * @param   cbMin               The size of the read request that needs to be
+ *                              satisfied.
+ */
+DECL_NO_INLINE(static, void) disReadMore(PDISCPUSTATE pCpu, uint8_t off, uint8_t cbMin)
+{
+    Assert(cbMin + off <= sizeof(pCpu->abInstr));
+
+    /*
+     * Adjust the incoming request to not overlap with bytes that has already
+     * been read and to make sure we don't leave unread gaps.
+     */
+    if (off < pCpu->cbCachedInstr)
+    {
+        Assert(off + cbMin > pCpu->cbCachedInstr);
+        cbMin -= pCpu->cbCachedInstr - off;
+        off = pCpu->cbCachedInstr;
+    }
+    else if (off > pCpu->cbCachedInstr)
+    {
+        cbMin += off - pCpu->cbCachedInstr;
+        off = pCpu->cbCachedInstr;
+    }
+
+    /*
+     * Do the read.  No need to zero anything, abInstr is already zeroed by the
+     * DISInstrEx API.
+     */
+    /** @todo Change the callback API so it can read more, thus avoid lots of
+     *        calls or it doing its own caching. */
+    int rc = pCpu->pfnReadBytes(pCpu, &pCpu->abInstr[off], pCpu->uInstrAddr + off, cbMin);
+    if (RT_FAILURE(rc))
+    {
+        Log(("disReadMore failed with rc=%Rrc!!\n", rc));
+        pCpu->rc = VERR_DIS_MEM_READ;
+    }
+    pCpu->cbCachedInstr = off + cbMin;
+}
+
+
+/**
+ * Function for handling a 8-bit read beyond the max instruction length.
+ *
+ * @returns 0
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_NO_INLINE(static, uint8_t) disReadByteBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    Log(("disReadByte: too long instruction...\n"));
+    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+    return 0;
+}
+
+
+/**
+ * Read a byte (8-bit) instruction byte.
+ *
+ * @returns The requested byte.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
 static uint8_t disReadByte(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    uint8_t bTemp = 0;
-    int rc = pCpu->pfnReadBytes(pCpu, &bTemp, uAddress, sizeof(bTemp));
-    if (RT_FAILURE(rc))
-    {
-        Log(("disReadByte failed!!\n"));
-        pCpu->rc = VERR_DIS_MEM_READ;
-    }
+    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
+    if (RT_UNLIKELY(off + 1 > DIS_MAX_INSTR_LENGTH))
+        return disReadByteBad(pCpu, uAddress);
 
-/** @todo change this into reading directly into abInstr and use it as a
- *        cache. */
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
-                  && pCpu->cbInstr + sizeof(bTemp) < sizeof(pCpu->abInstr)))
-        pCpu->abInstr[pCpu->cbInstr++] = bTemp;
-    else
-        disStoreInstrBytesSlow(pCpu, uAddress, &bTemp, sizeof(bTemp));
-
-    return bTemp;
+    if (off + 1 > pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 1);
+    return pCpu->abInstr[off];
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Function for handling a 16-bit read beyond the max instruction length.
+ *
+ * @returns 0
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_NO_INLINE(static, uint16_t) disReadWordBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    Log(("disReadWord: too long instruction...\n"));
+    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
+    if (off < DIS_MAX_INSTR_LENGTH)
+        return pCpu->abInstr[off];
+    return 0;
+}
+
+
+/**
+ * Read a word (16-bit) instruction byte.
+ *
+ * @returns The requested byte.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
 static uint16_t disReadWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    RTUINT16U uTemp;
-    uTemp.u = 0;
-    int rc = pCpu->pfnReadBytes(pCpu, uTemp.au8, uAddress, sizeof(uTemp));
-    if (RT_FAILURE(rc))
-    {
-        Log(("disReadWord failed!!\n"));
-        pCpu->rc = VERR_DIS_MEM_READ;
-    }
+    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
+    if (RT_UNLIKELY(off + 2 > DIS_MAX_INSTR_LENGTH))
+        return disReadWordBad(pCpu, uAddress);
 
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
-                  && pCpu->cbInstr + sizeof(uTemp) < sizeof(pCpu->abInstr)))
-    {
-        pCpu->abInstr[pCpu->cbInstr    ] = uTemp.au8[0];
-        pCpu->abInstr[pCpu->cbInstr + 1] = uTemp.au8[1];
-        pCpu->cbInstr += 2;
-    }
-    else
-        disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
-
-    return uTemp.u;
+    if (off + 2 > pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 2);
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint16_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U16(pCpu->abInstr[off], pCpu->abInstr[off + 1]);
+#endif
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Function for handling a 32-bit read beyond the max instruction length.
+ *
+ * @returns 0
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_NO_INLINE(static, uint32_t) disReadDWordBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    Log(("disReadDWord: too long instruction...\n"));
+    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
+    switch ((RTUINTPTR)DIS_MAX_INSTR_LENGTH - off)
+    {
+        case 1:
+            return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], 0, 0, 0);
+        case 2:
+            return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], 0, 0);
+        case 3:
+            return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], 0);
+        default:
+            return 0;
+    }
+    return 0;
+}
+
+
+/**
+ * Read a word (32-bit) instruction byte.
+ *
+ * @returns The requested byte.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
 static uint32_t disReadDWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    RTUINT32U uTemp;
-    uTemp.u = 0;
-    int rc = pCpu->pfnReadBytes(pCpu, uTemp.au8, uAddress, sizeof(uTemp));
-    if (RT_FAILURE(rc))
-    {
-        Log(("disReadDWord failed!!\n"));
-        pCpu->rc = VERR_DIS_MEM_READ;
-    }
+    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
+    if (RT_UNLIKELY(off + 4 > DIS_MAX_INSTR_LENGTH))
+        return disReadDWordBad(pCpu, uAddress);
 
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
-                  && pCpu->cbInstr + sizeof(uTemp) < sizeof(pCpu->abInstr)))
-    {
-        pCpu->abInstr[pCpu->cbInstr    ] = uTemp.au8[0];
-        pCpu->abInstr[pCpu->cbInstr + 1] = uTemp.au8[1];
-        pCpu->abInstr[pCpu->cbInstr + 2] = uTemp.au8[2];
-        pCpu->abInstr[pCpu->cbInstr + 3] = uTemp.au8[3];
-        pCpu->cbInstr += 4;
-    }
-    else
-        disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
-
-    return uTemp.u;
+    if (off + 4 > pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 4);
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint32_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3]);
+#endif
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Function for handling a 64-bit read beyond the max instruction length.
+ *
+ * @returns 0
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_NO_INLINE(static, uint64_t) disReadQWordBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    Log(("disReadQWord: too long instruction...\n"));
+    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
+    switch ((RTUINTPTR)DIS_MAX_INSTR_LENGTH - off)
+    {
+        case 1:
+            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], 0, 0, 0,   0, 0, 0, 0);
+        case 2:
+            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], 0, 0,   0, 0, 0, 0);
+        case 3:
+            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], 0,   0, 0, 0, 0);
+        case 4:
+            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                                       pCpu->abInstr[off + 4], 0, 0, 0);
+        case 5:
+            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                                       pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], 0, 0);
+        case 6:
+            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                                       pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], pCpu->abInstr[off + 6], 0);
+        default:
+            return 0;
+    }
+    return 0;
+}
+
+
+/**
+ * Read a word (64-bit) instruction byte.
+ *
+ * @returns The requested byte.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
 static uint64_t disReadQWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
 {
-    RTUINT64U uTemp;
-    uTemp.u = 0;
-    int rc = pCpu->pfnReadBytes(pCpu, uTemp.au8, uAddress, sizeof(uTemp));
-    if (RT_FAILURE(rc))
-    {
-        Log(("disReadQWord %x failed!!\n", uAddress));
-        pCpu->rc = VERR_DIS_MEM_READ;
-    }
+    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
+    if (RT_UNLIKELY(off + 8 > DIS_MAX_INSTR_LENGTH))
+        return disReadQWordBad(pCpu, uAddress);
 
-    if (RT_LIKELY(   pCpu->uInstrAddr + pCpu->cbInstr == uAddress
-                  && pCpu->cbInstr + sizeof(uTemp) < sizeof(pCpu->abInstr)))
-    {
-        pCpu->abInstr[pCpu->cbInstr    ] = uTemp.au8[0];
-        pCpu->abInstr[pCpu->cbInstr + 1] = uTemp.au8[1];
-        pCpu->abInstr[pCpu->cbInstr + 2] = uTemp.au8[2];
-        pCpu->abInstr[pCpu->cbInstr + 3] = uTemp.au8[3];
-        pCpu->abInstr[pCpu->cbInstr + 4] = uTemp.au8[4];
-        pCpu->abInstr[pCpu->cbInstr + 5] = uTemp.au8[5];
-        pCpu->abInstr[pCpu->cbInstr + 6] = uTemp.au8[6];
-        pCpu->abInstr[pCpu->cbInstr + 7] = uTemp.au8[7];
-        pCpu->cbInstr += 8;
-    }
-    else
-        disStoreInstrBytesSlow(pCpu, uAddress, uTemp.au8, sizeof(uTemp));
-
-    return uTemp.u;
+    if (off + 8 > pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 8);
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint64_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off    ], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                               pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], pCpu->abInstr[off + 6], pCpu->abInstr[off + 7]);
+#endif
 }
+
 
 
 /**
