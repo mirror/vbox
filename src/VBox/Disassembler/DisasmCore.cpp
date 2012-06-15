@@ -64,7 +64,7 @@ static uint8_t  disReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 static uint16_t disReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 static uint32_t disReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 static uint64_t disReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
-static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pCpu, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead);
+static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead);
 
 
 /** @name Parsers
@@ -2389,14 +2389,16 @@ static void disasmModRMSReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PD
 //*****************************************************************************
 
 
-static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pCpu, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
+static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
 #ifdef IN_RING0
     AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
-    RT_BZERO(pbDst, cbToRead);
+    RT_BZERO(&pDis->abInstr[offInstr], cbMaxRead);
+    pDis->cbCachedInstr = offInstr + cbMaxRead;
     return VERR_DIS_NO_READ_CALLBACK;
 #else
-    memcpy(pbDst, (void const *)(uintptr_t)uSrcAddr, cbToRead);
+    memcpy(&pDis->abInstr[offInstr], (uint8_t const *)(uintptr_t)pDis->uInstrAddr + offInstr, cbMaxRead);
+    pDis->cbCachedInstr = offInstr + cbMaxRead;
     return VINF_SUCCESS;
 #endif
 }
@@ -2436,18 +2438,21 @@ DECL_NO_INLINE(static, void) disReadMore(PDISCPUSTATE pCpu, uint8_t off, uint8_t
     }
 
     /*
-     * Do the read.  No need to zero anything, abInstr is already zeroed by the
-     * DISInstrEx API.
+     * Do the read.
+     * (No need to zero anything on failure as abInstr is already zeroed by the
+     * DISInstrEx API.)
      */
-    /** @todo Change the callback API so it can read more, thus avoid lots of
-     *        calls or it doing its own caching. */
-    int rc = pCpu->pfnReadBytes(pCpu, &pCpu->abInstr[off], pCpu->uInstrAddr + off, cbMin);
-    if (RT_FAILURE(rc))
+    int rc = pCpu->pfnReadBytes(pCpu, off, cbMin, sizeof(pCpu->abInstr) - off);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pCpu->cbCachedInstr >= off + cbMin);
+        Assert(pCpu->cbCachedInstr <= sizeof(pCpu->abInstr));
+    }
+    else
     {
         Log(("disReadMore failed with rc=%Rrc!!\n", rc));
         pCpu->rc = VERR_DIS_MEM_READ;
     }
-    pCpu->cbCachedInstr = off + cbMin;
 }
 
 

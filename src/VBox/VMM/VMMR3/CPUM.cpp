@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -3526,17 +3526,18 @@ typedef struct CPUMDISASSTATE
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
+static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pDisState->pvUser;
-    Assert(cbToRead > 0);
+    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pDis->pvUser;
     for (;;)
     {
-        RTGCUINTPTR GCPtr = uSrcAddr + pState->GCPtrSegBase;
+        RTGCUINTPTR GCPtr = pDis->uInstrAddr + offInstr + pState->GCPtrSegBase;
 
-        /* Need to update the page translation? */
-        if (    !pState->pvPageR3
-            ||  (GCPtr >> PAGE_SHIFT) != (pState->pvPageGC >> PAGE_SHIFT))
+        /*
+         * Need to update the page translation?
+         */
+        if (   !pState->pvPageR3
+            || (GCPtr >> PAGE_SHIFT) != (pState->pvPageGC >> PAGE_SHIFT))
         {
             int rc = VINF_SUCCESS;
 
@@ -3564,11 +3565,15 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDisState, uint8_t *p
             }
         }
 
-        /* check the segment limit */
-        if (!pState->f64Bits && uSrcAddr > pState->cbSegLimit)
+        /*
+         * Check the segment limit.
+         */
+        if (!pState->f64Bits && pDis->uInstrAddr + offInstr > pState->cbSegLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 
-        /* calc how much we can read */
+        /*
+         * Calc how much we can read.
+         */
         uint32_t cb = PAGE_SIZE - (GCPtr & PAGE_OFFSET_MASK);
         if (!pState->f64Bits)
         {
@@ -3576,16 +3581,24 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDisState, uint8_t *p
             if (cb > cbSeg && cbSeg)
                 cb = cbSeg;
         }
-        if (cb > cbToRead)
-            cb = cbToRead;
+        /** @todo read more later. */
+        //if (cb > cbMaxRead) - later
+        //    cb = cbMaxRead;
+        if (cb > cbMinRead)
+            cb = cbMinRead;
 
-        /* read and advance */
-        memcpy(pbDst, (char *)pState->pvPageR3 + (GCPtr & PAGE_OFFSET_MASK), cb);
-        cbToRead -= cb;
-        if (!cbToRead)
+        /*
+         * Read and advance or exit.
+         */
+        memcpy(&pDis->abInstr[offInstr], (uint8_t *)pState->pvPageR3 + (GCPtr & PAGE_OFFSET_MASK), cb);
+        offInstr  += (uint8_t)cb;
+        if (cb >= cbMinRead)
+        {
+            pDis->cbCachedInstr = offInstr;
             return VINF_SUCCESS;
-        pbDst    += cb;
-        uSrcAddr += cb;
+        }
+        cbMinRead -= (uint8_t)cb;
+        cbMaxRead -= (uint8_t)cb;
     }
 }
 

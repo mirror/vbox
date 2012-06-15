@@ -166,99 +166,55 @@ static bool MyDisasIsValidInstruction(DISCPUSTATE const *pCpu)
 
 /**
  * Callback for reading bytes.
- *
- * @todo This should check that the disassembler doesn't do unnecessary reads,
- *       however the current doesn't do this and is just complicated...
  */
-static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
+static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PMYDISSTATE pState = (PMYDISSTATE)pDisState;
+    PMYDISSTATE pState   = (PMYDISSTATE)pDis;
+    RTUINTPTR   uSrcAddr = pState->Cpu.uInstrAddr + offInstr;
     if (RT_LIKELY(   pState->uNextAddr == uSrcAddr
-                  && pState->cbLeft >= cbToRead))
+                  && pState->cbLeft >= cbMinRead))
     {
         /*
          * Straight forward reading.
          */
-        if (cbToRead == 1)
+        //size_t cbToRead    = cbMaxRead;
+        size_t cbToRead    = cbMinRead;
+        memcpy(&pState->Cpu.abInstr[offInstr], pState->pbNext, cbToRead);
+        pState->Cpu.cbCachedInstr = offInstr + cbToRead;
+        pState->pbNext    += cbToRead;
+        pState->cbLeft    -= cbToRead;
+        pState->uNextAddr += cbToRead;
+        return VINF_SUCCESS;
+    }
+
+    if (pState->uNextAddr == uSrcAddr)
+    {
+        /*
+         * Reading too much.
+         */
+        if (pState->cbLeft > 0)
         {
-            pState->cbLeft--;
-            *pbDst = *pState->pbNext++;
-            pState->uNextAddr++;
+            memcpy(&pState->Cpu.abInstr[offInstr], pState->pbNext, pState->cbLeft);
+            offInstr          += (uint8_t)pState->cbLeft;
+            cbMinRead         -= (uint8_t)pState->cbLeft;
+            pState->pbNext    += pState->cbLeft;
+            pState->uNextAddr += pState->cbLeft;
+            pState->cbLeft     = 0;
         }
-        else
-        {
-            memcpy(pbDst, pState->pbNext, cbToRead);
-            pState->pbNext += cbToRead;
-            pState->cbLeft -= cbToRead;
-            pState->uNextAddr += cbToRead;
-        }
+        memset(&pState->Cpu.abInstr[offInstr], 0xcc, cbMinRead);
+        pState->rc = VERR_EOF;
     }
     else
     {
         /*
-         * Jumping up the stream.
-         * This occurs when the byte sequence is added to the output string.
+         * Non-sequential read, that's an error.
          */
-        uint64_t offReq64 = uSrcAddr - pState->uAddress;
-        if (offReq64 < 32)
-        {
-            uint32_t offReq = offReq64;
-            uintptr_t off = pState->pbNext - pState->pbInstr;
-            if (off + pState->cbLeft <= offReq)
-            {
-                pState->pbNext += pState->cbLeft;
-                pState->uNextAddr += pState->cbLeft;
-                pState->cbLeft = 0;
-
-                memset(pbDst, 0xcc, cbToRead);
-                pState->rc = VERR_EOF;
-                return VERR_EOF;
-            }
-
-            /* reset the stream. */
-            pState->cbLeft += off;
-            pState->pbNext = pState->pbInstr;
-            pState->uNextAddr = pState->uAddress;
-
-            /* skip ahead. */
-            pState->cbLeft -= offReq;
-            pState->pbNext += offReq;
-            pState->uNextAddr += offReq;
-
-            /* do the reading. */
-            if (pState->cbLeft >= cbToRead)
-            {
-                memcpy(pbDst, pState->pbNext, cbToRead);
-                pState->cbLeft -= cbToRead;
-                pState->pbNext += cbToRead;
-                pState->uNextAddr += cbToRead;
-            }
-            else
-            {
-                if (pState->cbLeft > 0)
-                {
-                    memcpy(pbDst, pState->pbNext, pState->cbLeft);
-                    pbDst += pState->cbLeft;
-                    cbToRead -= (uint32_t)pState->cbLeft;
-                    pState->pbNext += pState->cbLeft;
-                    pState->uNextAddr += pState->cbLeft;
-                    pState->cbLeft = 0;
-                }
-                memset(pbDst, 0xcc, cbToRead);
-                pState->rc = VERR_EOF;
-                return VERR_EOF;
-            }
-        }
-        else
-        {
-            RTStrmPrintf(g_pStdErr, "Reading before current instruction!\n");
-            memset(pbDst, 0x90, cbToRead);
-            pState->rc = VERR_INTERNAL_ERROR;
-            return VERR_INTERNAL_ERROR;
-        }
+        RTStrmPrintf(g_pStdErr, "Reading before current instruction!\n");
+        memset(&pState->Cpu.abInstr[offInstr], 0x90, cbMinRead);
+        pState->rc = VERR_INTERNAL_ERROR;
     }
-
-    return VINF_SUCCESS;
+    pState->Cpu.cbCachedInstr = offInstr + cbMinRead;
+    return pState->rc;
 }
 
 
@@ -339,14 +295,14 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
                           || rc == VERR_DIS_GEN_FAILURE
                           || State.Cpu.pCurInstr->uOpcode == OP_INVALID
                           || State.Cpu.pCurInstr->uOpcode == OP_ILLUD2
-                          || (    State.enmUndefOp == kUndefOp_DefineByte
+                          || (   State.enmUndefOp == kUndefOp_DefineByte
                               && !MyDisasIsValidInstruction(&State.Cpu));
             if (State.fUndefOp && State.enmUndefOp == kUndefOp_DefineByte)
             {
                 if (!State.cbInstr)
                 {
                     State.Cpu.abInstr[0] = 0;
-                    State.Cpu.pfnReadBytes(&State.Cpu, &State.Cpu.abInstr[0], State.uAddress, 1);
+                    State.Cpu.pfnReadBytes(&State.Cpu, 0, 1, 1);
                     State.cbInstr = 1;
                 }
                 RTPrintf("    db");
