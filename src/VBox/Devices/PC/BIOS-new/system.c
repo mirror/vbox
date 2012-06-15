@@ -133,11 +133,15 @@ void pm_exit(void);
     "lidt   fword ptr cs:rmode_IDT" \
     modify nomemory;
 
+/* Restore stack and reload segment registers in real mode to ensure
+ * real mode compatible selector+base.
+ */
 void pm_stack_restore(void);
 #pragma aux pm_stack_restore =  \
     ".386"                      \
     "xor    ax, ax"             \
     "mov    ds, ax"             \
+    "mov    es, ax"             \
     "lss    sp, ds:[467h]"      \
     "pop    eax"                \
     "pop    ds"                 \
