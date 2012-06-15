@@ -88,7 +88,7 @@ static DECLCALLBACK(int) DisasmTest1ReadCode(PDISCPUSTATE pDis, uint8_t offInstr
     if (cb + pDis->uInstrAddr + offInstr > sizeof(g_ab32BitCode))
         cb = cbMinRead;
     memcpy(&pDis->abInstr[offInstr], &g_ab32BitCode[pDis->uInstrAddr + offInstr], cb);
-    pDis->cbCachedInstr = offInstr + cb;
+    pDis->cbCachedInstr = offInstr + (uint8_t)cb;
     return VINF_SUCCESS;
 }
 
