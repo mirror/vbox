@@ -234,7 +234,7 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
          *  push esi
          *  cli
          */
-        if (pCpu->pCurInstr->param1 == OP_PARM_REG_CS)
+        if (pCpu->pCurInstr->fParam1 == OP_PARM_REG_CS)
             return PATMPatchOpenBSDHandlerPrefix(pVM, pCpu, pInstrGC, pInstrHC, pPatchRec);
 
         return VERR_PATCHING_REFUSED;

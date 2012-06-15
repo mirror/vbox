@@ -674,8 +674,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                while the register variants deals with 16, 32 & 64 in the normal fashion. */
                             if (    pParam->param != OP_PARM_Ev
                                 ||  pOp->uOpcode != OP_MOV
-                                ||  (   pOp->param1 != OP_PARM_Sw
-                                     && pOp->param2 != OP_PARM_Sw))
+                                ||  (   pOp->fParam1 != OP_PARM_Sw
+                                     && pOp->fParam2 != OP_PARM_Sw))
                                 PUT_SIZE_OVERRIDE();
                             PUT_C('[');
                         }
@@ -791,8 +791,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         {
                             case DISUSE_IMMEDIATE8:
                                 if (    (fFlags & DIS_FMT_FLAGS_STRICT)
-                                    &&  (   (pOp->param1 >= OP_PARM_REG_GEN8_START && pOp->param1 <= OP_PARM_REG_GEN8_END)
-                                         || (pOp->param2 >= OP_PARM_REG_GEN8_START && pOp->param2 <= OP_PARM_REG_GEN8_END))
+                                    &&  (   (pOp->fParam1 >= OP_PARM_REG_GEN8_START && pOp->fParam1 <= OP_PARM_REG_GEN8_END)
+                                         || (pOp->fParam2 >= OP_PARM_REG_GEN8_START && pOp->fParam2 <= OP_PARM_REG_GEN8_END))
                                    )
                                     PUT_SZ("strict byte ");
                                 PUT_NUM_8(pParam->parval);
@@ -802,8 +802,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 if (    pCpu->uCpuMode != pCpu->uOpMode
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->parval == (int16_t)pParam->parval
-                                             || (pOp->param1 >= OP_PARM_REG_GEN16_START && pOp->param1 <= OP_PARM_REG_GEN16_END)
-                                             || (pOp->param2 >= OP_PARM_REG_GEN16_START && pOp->param2 <= OP_PARM_REG_GEN16_END))
+                                             || (pOp->fParam1 >= OP_PARM_REG_GEN16_START && pOp->fParam1 <= OP_PARM_REG_GEN16_END)
+                                             || (pOp->fParam2 >= OP_PARM_REG_GEN16_START && pOp->fParam2 <= OP_PARM_REG_GEN16_END))
                                         )
                                    )
                                 {
@@ -825,8 +825,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 if (    pCpu->uOpMode != (pCpu->uCpuMode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->parval == (int32_t)pParam->parval
-                                             || (pOp->param1 >= OP_PARM_REG_GEN32_START && pOp->param1 <= OP_PARM_REG_GEN32_END)
-                                             || (pOp->param2 >= OP_PARM_REG_GEN32_START && pOp->param2 <= OP_PARM_REG_GEN32_END))
+                                             || (pOp->fParam1 >= OP_PARM_REG_GEN32_START && pOp->fParam1 <= OP_PARM_REG_GEN32_END)
+                                             || (pOp->fParam2 >= OP_PARM_REG_GEN32_START && pOp->fParam2 <= OP_PARM_REG_GEN32_END))
                                         )
                                     )
                                 {
@@ -1301,10 +1301,10 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     if (fPrefixes & DISPREFIX_ADDRSIZE)
     {
         Assert(pCpu->fPrefix & DISPREFIX_ADDRSIZE);
-        if (    pCpu->pCurInstr->param3 == OP_PARM_NONE
-            &&  pCpu->pCurInstr->param2 == OP_PARM_NONE
-            &&  (   pCpu->pCurInstr->param1 >= OP_PARM_REG_GEN32_START
-                 && pCpu->pCurInstr->param1 <= OP_PARM_REG_GEN32_END))
+        if (    pCpu->pCurInstr->fParam3 == OP_PARM_NONE
+            &&  pCpu->pCurInstr->fParam2 == OP_PARM_NONE
+            &&  (   pCpu->pCurInstr->fParam1 >= OP_PARM_REG_GEN32_START
+                 && pCpu->pCurInstr->fParam1 <= OP_PARM_REG_GEN32_END))
             return true;
     }
 
@@ -1318,8 +1318,8 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
                 return true;
 
             case OP_JMP:
-                if (    pCpu->pCurInstr->param1 != OP_PARM_Jb
-                    &&  pCpu->pCurInstr->param1 != OP_PARM_Jv)
+                if (    pCpu->pCurInstr->fParam1 != OP_PARM_Jb
+                    &&  pCpu->pCurInstr->fParam1 != OP_PARM_Jv)
                     break;
                 /* fall thru */
             case OP_JO:
@@ -1351,12 +1351,12 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
         {
             case OP_POP:
             case OP_PUSH:
-                if (    pCpu->pCurInstr->param1 >= OP_PARM_REG_SEG_START
-                    &&  pCpu->pCurInstr->param1 <= OP_PARM_REG_SEG_END)
+                if (    pCpu->pCurInstr->fParam1 >= OP_PARM_REG_SEG_START
+                    &&  pCpu->pCurInstr->fParam1 <= OP_PARM_REG_SEG_END)
                     return true;
                 if (    (fPrefixes & ~DISPREFIX_OPSIZE)
-                    &&  pCpu->pCurInstr->param1 >= OP_PARM_REG_GEN32_START
-                    &&  pCpu->pCurInstr->param1 <= OP_PARM_REG_GEN32_END)
+                    &&  pCpu->pCurInstr->fParam1 >= OP_PARM_REG_GEN32_START
+                    &&  pCpu->pCurInstr->fParam1 <= OP_PARM_REG_GEN32_END)
                     return true;
                 break;
 
@@ -1372,10 +1372,10 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
     /* Implicit 8-bit register instructions doesn't mix with operand size. */
     if (    (fPrefixes & DISPREFIX_OPSIZE)
-        &&  (   (   pCpu->pCurInstr->param1 == OP_PARM_Gb /* r8 */
-                 && pCpu->pCurInstr->param2 == OP_PARM_Eb /* r8/mem8 */)
-             || (   pCpu->pCurInstr->param2 == OP_PARM_Gb /* r8 */
-                 && pCpu->pCurInstr->param1 == OP_PARM_Eb /* r8/mem8 */))
+        &&  (   (   pCpu->pCurInstr->fParam1 == OP_PARM_Gb /* r8 */
+                 && pCpu->pCurInstr->fParam2 == OP_PARM_Eb /* r8/mem8 */)
+             || (   pCpu->pCurInstr->fParam2 == OP_PARM_Gb /* r8 */
+                 && pCpu->pCurInstr->fParam1 == OP_PARM_Eb /* r8/mem8 */))
        )
     {
         switch (pCpu->pCurInstr->uOpcode)
@@ -1414,10 +1414,10 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
             case OP_SUB:
             case OP_XOR:
             case OP_CMP:
-                if (    (    pCpu->pCurInstr->param1 == OP_PARM_Gb /* r8 */
-                         && pCpu->pCurInstr->param2 == OP_PARM_Eb /* r8/mem8 */)
-                    ||  (    pCpu->pCurInstr->param1 == OP_PARM_Gv /* rX */
-                         && pCpu->pCurInstr->param2 == OP_PARM_Ev /* rX/memX */))
+                if (    (    pCpu->pCurInstr->fParam1 == OP_PARM_Gb /* r8 */
+                         && pCpu->pCurInstr->fParam2 == OP_PARM_Eb /* r8/mem8 */)
+                    ||  (    pCpu->pCurInstr->fParam1 == OP_PARM_Gv /* rX */
+                         && pCpu->pCurInstr->fParam2 == OP_PARM_Ev /* rX/memX */))
                     return true;
 
                 /* 82 (see table A-6). */
@@ -1447,7 +1447,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     }
 
     /* shl eax,1 will be assembled to the form without the immediate byte. */
-    if (    pCpu->pCurInstr->param2 == OP_PARM_Ib
+    if (    pCpu->pCurInstr->fParam2 == OP_PARM_Ib
         &&  (uint8_t)pCpu->param2.parval == 1)
     {
         switch (pCpu->pCurInstr->uOpcode)

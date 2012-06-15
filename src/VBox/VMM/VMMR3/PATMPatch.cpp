@@ -694,7 +694,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     {
         Log(("patmPatchGenIndirectCall\n"));
         Assert(pCpu->param1.cb == 4);
-        Assert(OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J);
+        Assert(OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) != OP_PARM_J);
 
         /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
          * a page fault. The assembly code restores the stack afterwards.
@@ -719,7 +719,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     {
         AssertMsg(PATMIsPatchGCAddr(pVM, pTargetGC) == false, ("Target is already a patch address (%RRv)?!?\n", pTargetGC));
         Assert(pTargetGC);
-        Assert(OP_PARM_VTYPE(pCpu->pCurInstr->param1) == OP_PARM_J);
+        Assert(OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) == OP_PARM_J);
 
         /** @todo wasting memory as the complex search is overkill and we need only one lookup slot... */
 
@@ -790,7 +790,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
 
     Log(("patmPatchGenIndirectJump\n"));
     Assert(pCpu->param1.cb == 4);
-    Assert(OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J);
+    Assert(OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) != OP_PARM_J);
 
     /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
      * a page fault. The assembly code restores the stack afterwards.
@@ -1157,7 +1157,7 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
     mod = 0;            //effective address (only)
     rm  = 5;            //disp32
-    if (pCpu->pCurInstr->param1 == OP_PARM_Dd)
+    if (pCpu->pCurInstr->fParam1 == OP_PARM_Dd)
     {
         Assert(0);  // You not come here. Illegal!
 
@@ -1207,7 +1207,7 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
     mod = 0;            //effective address (only)
     rm  = 5;            //disp32
-    if (pCpu->pCurInstr->param1 == OP_PARM_Cd)
+    if (pCpu->pCurInstr->fParam1 == OP_PARM_Cd)
     {
         Assert(0);  // You not come here. Illegal!
 

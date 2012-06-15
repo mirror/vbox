@@ -357,7 +357,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
 
             // segment override prefix byte
             case OP_SEG:
-                pCpu->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START);
+                pCpu->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].fParam1 - OP_PARM_REG_SEG_START);
                 /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                 if (   pCpu->uCpuMode != DISCPUMODE_64BIT
                     || pCpu->idxSegPrefix >= DISSELREG_FS)
@@ -413,7 +413,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
                 Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
                 /* REX prefix byte */
                 pCpu->fPrefix   |= DISPREFIX_REX;
-                pCpu->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
+                pCpu->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].fParam1);
                 iByte           += sizeof(uint8_t);
 
                 if (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_W)
@@ -458,7 +458,7 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
      * Apply filter to instruction type to determine if a full disassembly is required.
      * Note! Multibyte opcodes are always marked harmless until the final byte.
      */
-    if ((pOp->optype & pCpu->fFilter) == 0)
+    if ((pOp->fOpType & pCpu->fFilter) == 0)
     {
         fFiltered = true;
         pCpu->pfnDisasmFnTable = g_apfnCalcSize;
@@ -470,22 +470,22 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
     }
 
     // Should contain the parameter type on input
-    pCpu->param1.param = pOp->param1;
-    pCpu->param2.param = pOp->param2;
-    pCpu->param3.param = pOp->param3;
+    pCpu->param1.param = pOp->fParam1;
+    pCpu->param2.param = pOp->fParam2;
+    pCpu->param3.param = pOp->fParam3;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
     if (pCpu->uCpuMode == DISCPUMODE_64BIT)
     {
-        if (pOp->optype & DISOPTYPE_FORCED_64_OP_SIZE)
+        if (pOp->fOpType & DISOPTYPE_FORCED_64_OP_SIZE)
             pCpu->uOpMode = DISCPUMODE_64BIT;
         else
-        if (    (pOp->optype & DISOPTYPE_DEFAULT_64_OP_SIZE)
+        if (    (pOp->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
             &&  !(pCpu->fPrefix & DISPREFIX_OPSIZE))
             pCpu->uOpMode = DISCPUMODE_64BIT;
     }
     else
-    if (pOp->optype & DISOPTYPE_FORCED_32_OP_SIZE_X86)
+    if (pOp->fOpType & DISOPTYPE_FORCED_32_OP_SIZE_X86)
     {
         /* Forced 32 bits operand size for certain instructions (mov crx, mov drx). */
         Assert(pCpu->uCpuMode != DISCPUMODE_64BIT);
@@ -533,8 +533,8 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
         pCpu->pCurInstr = (PCDISOPCODE)fpop;
 
         // Should contain the parameter type on input
-        pCpu->param1.param = fpop->param1;
-        pCpu->param2.param = fpop->param2;
+        pCpu->param1.param = fpop->fParam1;
+        pCpu->param2.param = fpop->fParam2;
     }
     else
     {
@@ -546,7 +546,7 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
      * Apply filter to instruction type to determine if a full disassembly is required.
      * @note Multibyte opcodes are always marked harmless until the final byte.
      */
-    if ((fpop->optype & pCpu->fFilter) == 0)
+    if ((fpop->fOpType & pCpu->fFilter) == 0)
         pCpu->pfnDisasmFnTable = g_apfnCalcSize;
     else
         /* Not filtered out -> full disassembly */
@@ -556,10 +556,10 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     if (pCpu->uCpuMode == DISCPUMODE_64BIT)
     {
         /* Note: redundant, but just in case this ever changes */
-        if (fpop->optype & DISOPTYPE_FORCED_64_OP_SIZE)
+        if (fpop->fOpType & DISOPTYPE_FORCED_64_OP_SIZE)
             pCpu->uOpMode = DISCPUMODE_64BIT;
         else
-        if (    (fpop->optype & DISOPTYPE_DEFAULT_64_OP_SIZE)
+        if (    (fpop->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
             &&  !(pCpu->fPrefix & DISPREFIX_OPSIZE))
             pCpu->uOpMode = DISCPUMODE_64BIT;
     }
@@ -1076,7 +1076,7 @@ unsigned ParseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
      * This instruction is always treated as a register-to-register (MOD = 11) instruction, regardless of the
      * encoding of the MOD field in the MODR/M byte.
      */
-    if (pOp->optype & DISOPTYPE_MOD_FIXED_11)
+    if (pOp->fOpType & DISOPTYPE_MOD_FIXED_11)
         pCpu->ModRM.Bits.Mod = 3;
 
     if (pCpu->fPrefix & DISPREFIX_REX)
@@ -1122,7 +1122,7 @@ unsigned ParseModRM_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pP
      * This instruction is always treated as a register-to-register (MOD = 11) instruction, regardless of the
      * encoding of the MOD field in the MODR/M byte.
      */
-    if (pOp->optype & DISOPTYPE_MOD_FIXED_11)
+    if (pOp->fOpType & DISOPTYPE_MOD_FIXED_11)
         pCpu->ModRM.Bits.Mod = 3;
 
     if (pCpu->fPrefix & DISPREFIX_REX)
@@ -1567,7 +1567,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
         {
             /* Use 64-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
-            if (    (pOp->optype & DISOPTYPE_REXB_EXTENDS_OPREG)
+            if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
                 &&  (pCpu->fPrefix & DISPREFIX_REX)
                 &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))
@@ -1611,7 +1611,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
 
         if (pCpu->uOpMode == DISCPUMODE_64BIT)
         {
-            if (    (pOp->optype & DISOPTYPE_REXB_EXTENDS_OPREG)
+            if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
                 &&  (pCpu->fPrefix & DISPREFIX_REX)
                 &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))

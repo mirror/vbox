@@ -628,9 +628,12 @@
 /** @} */
 
 
-/** @name Opcode parameters
+/** @defgroup grp_dis_opparam Opcode parameters (DISOPCODE::fParam1,
+ *            DISOPCODE::fParam2, DISOPCODE::fParam3)
+ * @ingroup grp_dis
  * @{
  */
+
 /* NOTE: Register order is important for translations!! */
 #define OP_PARM_NONE            0
 #define OP_PARM_REG_EAX         1
