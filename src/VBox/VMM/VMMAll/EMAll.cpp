@@ -65,14 +65,6 @@
 # define EM_ASSERT_FAULT_RETURN(expr, rc) do { } while (0)
 #endif
 
-/** Used to pass information during instruction disassembly. */
-typedef struct
-{
-    PVM         pVM;
-    PVMCPU      pVCpu;
-    RTGCPTR     GCPtr;
-    uint8_t     aOpcode[8];
-} EMDISSTATE, *PEMDISSTATE;
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -285,109 +277,90 @@ VMMDECL(int) EMRemTryLock(PVM pVM)
  */
 static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PEMDISSTATE   pState = (PEMDISSTATE)pDis->pvUser;
-# ifndef IN_RING0
-    PVM           pVM    = pState->pVM;
+    PVMCPU      pVCpu    = (PVMCPU)pDis->pvUser;
+#if defined(IN_RC) || defined(IN_RING3)
+    PVM         pVM      = pVCpu->CTX_SUFF(pVM);
+#endif
+    RTUINTPTR   uSrcAddr = pDis->uInstrAddr + offInstr;
+    int         rc;
+
+    /*
+     * Figure how much we can or must read.
+     */
+    size_t      cbToRead = PAGE_SIZE - (uSrcAddr & PAGE_OFFSET_MASK);
+    if (cbToRead > cbMaxRead)
+        cbToRead = cbMaxRead;
+    else if (cbToRead < cbMinRead)
+        cbToRead = cbMinRead;
+
+#if defined(IN_RC) || defined(IN_RING3)
+    /*
+     * We might be called upon to interpret an instruction in a patch.
+     */
+    if (PATMIsPatchGCAddr(pVCpu->CTX_SUFF(pVM), uSrcAddr))
+    {
+# ifdef IN_RC
+        memcpy(&pDis->abInstr[offInstr], (void *)(uintptr_t)uSrcAddr, cbToRead);
+# else
+        memcpy(&pDis->abInstr[offInstr], PATMR3GCPtrToHCPtr(pVCpu->CTX_SUFF(pVM), uSrcAddr), cbToRead);
 # endif
-    PVMCPU        pVCpu  = pState->pVCpu;
-    /** @todo Rewrite this to make full use of the abInstr buffer and drop our extra
-     *        caching buffer.  Just playing safe at first... */
-    uint8_t      *pbDst    = &pDis->abInstr[offInstr];
-    RTUINTPTR     uSrcAddr = pDis->uInstrAddr + offInstr;
-    size_t        cbToRead = cbMinRead;
-
-# ifdef IN_RING0
-    int           rc;
-
-    if (    pState->GCPtr
-        &&  uSrcAddr + cbToRead <= pState->GCPtr + sizeof(pState->aOpcode))
-    {
-        unsigned offset = uSrcAddr - pState->GCPtr;
-        Assert(uSrcAddr >= pState->GCPtr);
-
-        for (unsigned i = 0; i < cbToRead; i++)
-            pbDst[i] = pState->aOpcode[offset + i];
-        pDis->cbCachedInstr = offInstr + cbToRead;
-        return VINF_SUCCESS;
-    }
-
-    rc = PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
-    AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for uSrcAddr=%RTptr cbToRead=%x rc=%d\n", uSrcAddr, cbToRead, rc));
-
-# elif defined(IN_RING3)
-    if (!PATMIsPatchGCAddr(pVM, uSrcAddr))
-    {
-        int rc = PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
-        AssertRC(rc);
+        rc = VINF_SUCCESS;
     }
     else
-        memcpy(pbDst, PATMR3GCPtrToHCPtr(pVM, uSrcAddr), cbToRead);
-
-# elif defined(IN_RC)
-    if (!PATMIsPatchGCAddr(pVM, uSrcAddr))
+#endif
     {
-        int rc = MMGCRamRead(pVM, pbDst, (void *)(uintptr_t)uSrcAddr, cbToRead);
+# ifdef IN_RC
+        /*
+         * Try access it thru the shadow page tables first. Fall back on the
+         * slower PGM method if it fails because the TLB or page table was
+         * modified recently.
+         */
+        rc = MMGCRamRead(pVCpu->pVMRC, &pDis->abInstr[offInstr], (void *)(uintptr_t)uSrcAddr, cbToRead);
+        if (rc == VERR_ACCESS_DENIED && cbToRead > cbMinRead)
+        {
+            cbToRead = cbMinRead;
+            rc = MMGCRamRead(pVCpu->pVMRC, &pDis->abInstr[offInstr], (void *)(uintptr_t)uSrcAddr, cbToRead);
+        }
         if (rc == VERR_ACCESS_DENIED)
+#endif
         {
-            /* Recently flushed; access the data manually. */
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
-            AssertRC(rc);
-        }
-    }
-    else /* the hypervisor region is always present. */
-        memcpy(pbDst, (RTRCPTR)(uintptr_t)uSrcAddr, cbToRead);
-
-# endif /* IN_RING3 */
-    pDis->cbCachedInstr = offInstr + cbToRead;
-    return VINF_SUCCESS;
-}
-
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbToRead);
+            if (RT_FAILURE(rc))
+            {
+                if (cbToRead > cbMinRead)
+                {
+                    cbToRead = cbMinRead;
+                    rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbToRead);
+                }
+                if (RT_FAILURE(rc))
+                {
 #ifndef IN_RC
-
-DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
-{
-    EMDISSTATE State;
-
-    State.pVM   = pVM;
-    State.pVCpu = pVCpu;
-    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &State.aOpcode, InstrGC, sizeof(State.aOpcode));
-    if (RT_SUCCESS(rc))
-    {
-        State.GCPtr = InstrGC;
-    }
-    else
-    {
-        if (PAGE_ADDRESS(InstrGC) == PAGE_ADDRESS(InstrGC + sizeof(State.aOpcode) - 1))
-        {
-            /*
-             * If we fail to find the page via the guest's page tables we invalidate the page
-             * in the host TLB (pertaining to the guest in the NestedPaging case). See #6043
-             */
-            if (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
-                HWACCMInvalidatePage(pVCpu, InstrGC);
-
-           Log(("emDisCoreOne: read failed with %d\n", rc));
-           return rc;
+                    /*
+                     * If we fail to find the page via the guest's page tables
+                     * we invalidate the page in the host TLB (pertaining to
+                     * the guest in the NestedPaging case). See #6043.
+                     */
+                    if (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
+                    {
+                        HWACCMInvalidatePage(pVCpu, uSrcAddr);
+                        if (((uSrcAddr + cbToRead - 1) >> PAGE_SHIFT) !=  (uSrcAddr >> PAGE_SHIFT))
+                            HWACCMInvalidatePage(pVCpu, uSrcAddr + cbToRead - 1);
+                    }
+#endif
+                }
+            }
         }
-        State.GCPtr = NIL_RTGCPTR;
     }
-    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->uCpuMode, emReadBytes, &State, pDis, pOpsize);
+
+    pDis->cbCachedInstr = offInstr + cbToRead;
+    return rc;
 }
 
-#else /* IN_RC */
 
 DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
-    EMDISSTATE State;
-
-    State.pVM   = pVM;
-    State.pVCpu = pVCpu;
-    State.GCPtr = InstrGC;
-
-    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->uCpuMode, emReadBytes, &State, pDis, pOpsize);
+    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->uCpuMode, emReadBytes, pVCpu, pDis, pOpsize);
 }
-
-#endif /* IN_RC */
 
 
 /**
@@ -434,40 +407,8 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
  */
 VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
-    int        rc;
-    EMDISSTATE State;
-
-    State.pVM   = pVM;
-    State.pVCpu = pVCpu;
-
-#ifdef IN_RC
-    State.GCPtr = GCPtrInstr;
-#else /* ring 0/3 */
-    rc = PGMPhysSimpleReadGCPtr(pVCpu, &State.aOpcode, GCPtrInstr, sizeof(State.aOpcode));
-    if (RT_SUCCESS(rc))
-    {
-        State.GCPtr = GCPtrInstr;
-    }
-    else
-    {
-        if (PAGE_ADDRESS(GCPtrInstr) == PAGE_ADDRESS(GCPtrInstr + sizeof(State.aOpcode) - 1))
-        {
-            /*
-             * If we fail to find the page via the guest's page tables we invalidate the page
-             * in the host TLB (pertaining to the guest in the NestedPaging case). See #6043
-             */
-            if (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
-                HWACCMInvalidatePage(pVCpu, GCPtrInstr);
-
-           Log(("EMInterpretDisasOneEx: read failed with %d\n", rc));
-           return rc;
-        }
-        State.GCPtr = NIL_RTGCPTR;
-    }
-#endif
-
     DISCPUMODE enmCpuMode = SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid);
-    rc = DISInstrWithReader(GCPtrInstr, enmCpuMode, emReadBytes, &State, pDis, pcbInstr);
+    int rc = DISInstrWithReader(GCPtrInstr, enmCpuMode, emReadBytes, pVCpu, pDis, pcbInstr);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     AssertMsgFailed(("DISCoreOne failed to GCPtrInstr=%RGv rc=%Rrc\n", GCPtrInstr, rc));
