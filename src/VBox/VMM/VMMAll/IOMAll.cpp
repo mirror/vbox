@@ -80,27 +80,27 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegF
         if (pParam->fUse & DISUSE_REG_GEN32)
         {
             *pcbSize  = 4;
-            DISFetchReg32(pRegFrame, pParam->base.reg_gen, (uint32_t *)pu64Data);
+            DISFetchReg32(pRegFrame, pParam->Base.idxGenReg, (uint32_t *)pu64Data);
             return true;
         }
 
         if (pParam->fUse & DISUSE_REG_GEN16)
         {
             *pcbSize  = 2;
-            DISFetchReg16(pRegFrame, pParam->base.reg_gen, (uint16_t *)pu64Data);
+            DISFetchReg16(pRegFrame, pParam->Base.idxGenReg, (uint16_t *)pu64Data);
             return true;
         }
 
         if (pParam->fUse & DISUSE_REG_GEN8)
         {
             *pcbSize  = 1;
-            DISFetchReg8(pRegFrame, pParam->base.reg_gen, (uint8_t *)pu64Data);
+            DISFetchReg8(pRegFrame, pParam->Base.idxGenReg, (uint8_t *)pu64Data);
             return true;
         }
 
         Assert(pParam->fUse & DISUSE_REG_GEN64);
         *pcbSize  = 8;
-        DISFetchReg64(pRegFrame, pParam->base.reg_gen, pu64Data);
+        DISFetchReg64(pRegFrame, pParam->Base.idxGenReg, pu64Data);
         return true;
     }
     else
@@ -136,7 +136,7 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegF
         if (pParam->fUse & DISUSE_REG_SEG)
         {
             *pcbSize  = 2;
-            DISFetchRegSeg(pRegFrame, (DISSELREG)pParam->base.reg_seg, (RTSEL *)pu64Data);
+            DISFetchRegSeg(pRegFrame, (DISSELREG)pParam->Base.idxSegReg, (RTSEL *)pu64Data);
             return true;
         } /* Else - error. */
 
@@ -168,31 +168,31 @@ bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegF
 
     if (pParam->fUse & DISUSE_REG_GEN32)
     {
-        DISWriteReg32(pRegFrame, pParam->base.reg_gen, (uint32_t)u64Data);
+        DISWriteReg32(pRegFrame, pParam->Base.idxGenReg, (uint32_t)u64Data);
         return true;
     }
 
     if (pParam->fUse & DISUSE_REG_GEN64)
     {
-        DISWriteReg64(pRegFrame, pParam->base.reg_gen, u64Data);
+        DISWriteReg64(pRegFrame, pParam->Base.idxGenReg, u64Data);
         return true;
     }
 
     if (pParam->fUse & DISUSE_REG_GEN16)
     {
-        DISWriteReg16(pRegFrame, pParam->base.reg_gen, (uint16_t)u64Data);
+        DISWriteReg16(pRegFrame, pParam->Base.idxGenReg, (uint16_t)u64Data);
         return true;
     }
 
     if (pParam->fUse & DISUSE_REG_GEN8)
     {
-        DISWriteReg8(pRegFrame, pParam->base.reg_gen, (uint8_t)u64Data);
+        DISWriteReg8(pRegFrame, pParam->Base.idxGenReg, (uint8_t)u64Data);
         return true;
     }
 
     if (pParam->fUse & DISUSE_REG_SEG)
     {
-        DISWriteRegSeg(pRegFrame, (DISSELREG)pParam->base.reg_seg, (RTSEL)u64Data);
+        DISWriteRegSeg(pRegFrame, (DISSELREG)pParam->Base.idxSegReg, (RTSEL)u64Data);
         return true;
     }
 

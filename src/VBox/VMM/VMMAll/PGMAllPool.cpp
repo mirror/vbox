@@ -760,7 +760,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     NOREF(pVM); NOREF(pvFault);
 #endif
 
-    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->Param1.fUse,  pDis->Param1.base.reg_gen));
+    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->Param1.fUse,  pDis->Param1.Base.idxGenReg));
 
     /* Non-supervisor mode write means it's used for something else. */
     if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
@@ -805,7 +805,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     }
     if (    (    (pDis->Param1.fUse & DISUSE_REG_GEN32)
              ||  (pDis->Param1.fUse & DISUSE_REG_GEN64))
-        &&  (pDis->Param1.base.reg_gen == DISGREG_ESP))
+        &&  (pDis->Param1.Base.idxGenReg == DISGREG_ESP))
     {
         Log4(("pgmPoolMonitorIsReused: ESP\n"));
         return true;

@@ -878,10 +878,10 @@ static int emInterpretXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
                 switch(param1.size)
                 {
                 case 1: //special case for AH etc
-                        rc = DISWriteReg8(pRegFrame, pDis->Param1.base.reg_gen,  (uint8_t )valpar2); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pDis->Param1.base.reg_gen, (uint16_t)valpar2); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pDis->Param1.base.reg_gen, (uint32_t)valpar2); break;
-                case 8: rc = DISWriteReg64(pRegFrame, pDis->Param1.base.reg_gen, valpar2); break;
+                        rc = DISWriteReg8(pRegFrame, pDis->Param1.Base.idxGenReg,  (uint8_t )valpar2); break;
+                case 2: rc = DISWriteReg16(pRegFrame, pDis->Param1.Base.idxGenReg, (uint16_t)valpar2); break;
+                case 4: rc = DISWriteReg32(pRegFrame, pDis->Param1.Base.idxGenReg, (uint32_t)valpar2); break;
+                case 8: rc = DISWriteReg64(pRegFrame, pDis->Param1.Base.idxGenReg, valpar2); break;
                 default: AssertFailedReturn(VERR_EM_INTERPRETER);
                 }
                 if (RT_FAILURE(rc))
@@ -904,10 +904,10 @@ static int emInterpretXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
                 switch(param2.size)
                 {
                 case 1: //special case for AH etc
-                        rc = DISWriteReg8(pRegFrame, pDis->Param2.base.reg_gen,  (uint8_t )valpar1);    break;
-                case 2: rc = DISWriteReg16(pRegFrame, pDis->Param2.base.reg_gen, (uint16_t)valpar1);    break;
-                case 4: rc = DISWriteReg32(pRegFrame, pDis->Param2.base.reg_gen, (uint32_t)valpar1);    break;
-                case 8: rc = DISWriteReg64(pRegFrame, pDis->Param2.base.reg_gen, valpar1);              break;
+                        rc = DISWriteReg8(pRegFrame, pDis->Param2.Base.idxGenReg,  (uint8_t )valpar1);    break;
+                case 2: rc = DISWriteReg16(pRegFrame, pDis->Param2.Base.idxGenReg, (uint16_t)valpar1);    break;
+                case 4: rc = DISWriteReg32(pRegFrame, pDis->Param2.Base.idxGenReg, (uint32_t)valpar1);    break;
+                case 8: rc = DISWriteReg64(pRegFrame, pDis->Param2.Base.idxGenReg, valpar1);              break;
                 default: AssertFailedReturn(VERR_EM_INTERPRETER);
                 }
                 if (RT_FAILURE(rc))
@@ -1050,7 +1050,7 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
                 AssertCompile(DISGREG_ESP == DISGREG_SP);
                 if (    (pDis->Param1.fUse & DISUSE_BASE)
                     &&  (pDis->Param1.fUse & (DISUSE_REG_GEN16|DISUSE_REG_GEN32))
-                    &&  pDis->Param1.base.reg_gen == DISGREG_ESP
+                    &&  pDis->Param1.Base.idxGenReg == DISGREG_ESP
                    )
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
 
@@ -1608,10 +1608,10 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
             case DISQPV_TYPE_REGISTER:
                 switch(param1.size)
                 {
-                case 1: rc = DISWriteReg8(pRegFrame, pDis->Param1.base.reg_gen,  (uint8_t) val64); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pDis->Param1.base.reg_gen, (uint16_t)val64); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pDis->Param1.base.reg_gen, (uint32_t)val64); break;
-                case 8: rc = DISWriteReg64(pRegFrame, pDis->Param1.base.reg_gen, val64); break;
+                case 1: rc = DISWriteReg8(pRegFrame, pDis->Param1.Base.idxGenReg,  (uint8_t) val64); break;
+                case 2: rc = DISWriteReg16(pRegFrame, pDis->Param1.Base.idxGenReg, (uint16_t)val64); break;
+                case 4: rc = DISWriteReg32(pRegFrame, pDis->Param1.Base.idxGenReg, (uint32_t)val64); break;
+                case 8: rc = DISWriteReg64(pRegFrame, pDis->Param1.Base.idxGenReg, val64); break;
                 default:
                     return VERR_EM_INTERPRETER;
                 }
@@ -2427,8 +2427,8 @@ static int emInterpretSmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
     case DISQPV_TYPE_IMMEDIATE:
         if(param1.size != sizeof(uint16_t))
             return VERR_EM_INTERPRETER;
-        LogFlow(("emInterpretSmsw %d <- cr0 (%x)\n", pDis->Param1.base.reg_gen, cr0));
-        rc = DISWriteReg16(pRegFrame, pDis->Param1.base.reg_gen, cr0);
+        LogFlow(("emInterpretSmsw %d <- cr0 (%x)\n", pDis->Param1.Base.idxGenReg, cr0));
+        rc = DISWriteReg16(pRegFrame, pDis->Param1.Base.idxGenReg, cr0);
         break;
 
     case DISQPV_TYPE_ADDRESS:
@@ -2468,10 +2468,10 @@ static int emInterpretMovCRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
 {
     NOREF(pvFault); NOREF(pcbSize);
     if ((pDis->Param1.fUse == DISUSE_REG_GEN32 || pDis->Param1.fUse == DISUSE_REG_GEN64) && pDis->Param2.fUse == DISUSE_REG_CR)
-        return EMInterpretCRxRead(pVM, pVCpu, pRegFrame, pDis->Param1.base.reg_gen, pDis->Param2.base.reg_ctrl);
+        return EMInterpretCRxRead(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxGenReg, pDis->Param2.Base.idxCtrlReg);
 
     if (pDis->Param1.fUse == DISUSE_REG_CR && (pDis->Param2.fUse == DISUSE_REG_GEN32 || pDis->Param2.fUse == DISUSE_REG_GEN64))
-        return EMInterpretCRxWrite(pVM, pVCpu, pRegFrame, pDis->Param1.base.reg_ctrl, pDis->Param2.base.reg_gen);
+        return EMInterpretCRxWrite(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxCtrlReg, pDis->Param2.Base.idxGenReg);
 
     AssertMsgFailedReturn(("Unexpected control register move\n"), VERR_EM_INTERPRETER);
 }
@@ -2559,12 +2559,12 @@ static int emInterpretMovDRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
 
     if((pDis->Param1.fUse == DISUSE_REG_GEN32 || pDis->Param1.fUse == DISUSE_REG_GEN64) && pDis->Param2.fUse == DISUSE_REG_DBG)
     {
-        rc = EMInterpretDRxRead(pVM, pVCpu, pRegFrame, pDis->Param1.base.reg_gen, pDis->Param2.base.reg_dbg);
+        rc = EMInterpretDRxRead(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxGenReg, pDis->Param2.Base.idxDbgReg);
     }
     else
     if(pDis->Param1.fUse == DISUSE_REG_DBG && (pDis->Param2.fUse == DISUSE_REG_GEN32 || pDis->Param2.fUse == DISUSE_REG_GEN64))
     {
-        rc = EMInterpretDRxWrite(pVM, pVCpu, pRegFrame, pDis->Param1.base.reg_dbg, pDis->Param2.base.reg_gen);
+        rc = EMInterpretDRxWrite(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxDbgReg, pDis->Param2.Base.idxGenReg);
     }
     else
         AssertMsgFailed(("Unexpected debug register move\n"));

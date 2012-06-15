@@ -99,88 +99,88 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pPar
     {
         case DISUSE_REG_GEN8:
         {
-            Assert(pParam->base.reg_gen < RT_ELEMENTS(g_aszYasmRegGen8));
-            const char *psz = g_aszYasmRegGen8[pParam->base.reg_gen];
+            Assert(pParam->Base.idxGenReg < RT_ELEMENTS(g_aszYasmRegGen8));
+            const char *psz = g_aszYasmRegGen8[pParam->Base.idxGenReg];
             *pcchReg = 2 + !!psz[2] + !!psz[3];
             return psz;
         }
 
         case DISUSE_REG_GEN16:
         {
-            Assert(pParam->base.reg_gen < RT_ELEMENTS(g_aszYasmRegGen16));
-            const char *psz = g_aszYasmRegGen16[pParam->base.reg_gen];
+            Assert(pParam->Base.idxGenReg < RT_ELEMENTS(g_aszYasmRegGen16));
+            const char *psz = g_aszYasmRegGen16[pParam->Base.idxGenReg];
             *pcchReg = 2 + !!psz[2] + !!psz[3];
             return psz;
         }
 
         case DISUSE_REG_GEN32:
         {
-            Assert(pParam->base.reg_gen < RT_ELEMENTS(g_aszYasmRegGen32));
-            const char *psz = g_aszYasmRegGen32[pParam->base.reg_gen];
+            Assert(pParam->Base.idxGenReg < RT_ELEMENTS(g_aszYasmRegGen32));
+            const char *psz = g_aszYasmRegGen32[pParam->Base.idxGenReg];
             *pcchReg = 2 + !!psz[2] + !!psz[3];
             return psz;
         }
 
         case DISUSE_REG_GEN64:
         {
-            Assert(pParam->base.reg_gen < RT_ELEMENTS(g_aszYasmRegGen64));
-            const char *psz = g_aszYasmRegGen64[pParam->base.reg_gen];
+            Assert(pParam->Base.idxGenReg < RT_ELEMENTS(g_aszYasmRegGen64));
+            const char *psz = g_aszYasmRegGen64[pParam->Base.idxGenReg];
             *pcchReg = 2 + !!psz[2] + !!psz[3];
             return psz;
         }
 
         case DISUSE_REG_FP:
         {
-            Assert(pParam->base.reg_fp < RT_ELEMENTS(g_aszYasmRegFP));
-            const char *psz = g_aszYasmRegFP[pParam->base.reg_fp];
+            Assert(pParam->Base.idxFpuReg < RT_ELEMENTS(g_aszYasmRegFP));
+            const char *psz = g_aszYasmRegFP[pParam->Base.idxFpuReg];
             *pcchReg = 3;
             return psz;
         }
 
         case DISUSE_REG_MMX:
         {
-            Assert(pParam->base.reg_mmx < RT_ELEMENTS(g_aszYasmRegMMX));
-            const char *psz = g_aszYasmRegMMX[pParam->base.reg_mmx];
+            Assert(pParam->Base.idxMmxReg < RT_ELEMENTS(g_aszYasmRegMMX));
+            const char *psz = g_aszYasmRegMMX[pParam->Base.idxMmxReg];
             *pcchReg = 3;
             return psz;
         }
 
         case DISUSE_REG_XMM:
         {
-            Assert(pParam->base.reg_xmm < RT_ELEMENTS(g_aszYasmRegXMM));
-            const char *psz = g_aszYasmRegXMM[pParam->base.reg_mmx];
+            Assert(pParam->Base.idxXmmReg < RT_ELEMENTS(g_aszYasmRegXMM));
+            const char *psz = g_aszYasmRegXMM[pParam->Base.idxMmxReg];
             *pcchReg = 4 + !!psz[4];
             return psz;
         }
 
         case DISUSE_REG_CR:
         {
-            Assert(pParam->base.reg_ctrl < RT_ELEMENTS(g_aszYasmRegCRx));
-            const char *psz = g_aszYasmRegCRx[pParam->base.reg_ctrl];
+            Assert(pParam->Base.idxCtrlReg < RT_ELEMENTS(g_aszYasmRegCRx));
+            const char *psz = g_aszYasmRegCRx[pParam->Base.idxCtrlReg];
             *pcchReg = 3;
             return psz;
         }
 
         case DISUSE_REG_DBG:
         {
-            Assert(pParam->base.reg_dbg < RT_ELEMENTS(g_aszYasmRegDRx));
-            const char *psz = g_aszYasmRegDRx[pParam->base.reg_dbg];
+            Assert(pParam->Base.idxDbgReg < RT_ELEMENTS(g_aszYasmRegDRx));
+            const char *psz = g_aszYasmRegDRx[pParam->Base.idxDbgReg];
             *pcchReg = 3;
             return psz;
         }
 
         case DISUSE_REG_SEG:
         {
-            Assert(pParam->base.reg_seg < RT_ELEMENTS(g_aszYasmRegCRx));
-            const char *psz = g_aszYasmRegSeg[pParam->base.reg_seg];
+            Assert(pParam->Base.idxSegReg < RT_ELEMENTS(g_aszYasmRegCRx));
+            const char *psz = g_aszYasmRegSeg[pParam->Base.idxSegReg];
             *pcchReg = 2;
             return psz;
         }
 
         case DISUSE_REG_TEST:
         {
-            Assert(pParam->base.reg_test < RT_ELEMENTS(g_aszYasmRegTRx));
-            const char *psz = g_aszYasmRegTRx[pParam->base.reg_test];
+            Assert(pParam->Base.idxTestReg < RT_ELEMENTS(g_aszYasmRegTRx));
+            const char *psz = g_aszYasmRegTRx[pParam->Base.idxTestReg];
             *pcchReg = 3;
             return psz;
         }

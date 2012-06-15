@@ -193,7 +193,7 @@ typedef enum DISCPUMODE
 
 /** @name 64-bit general register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
+ * DISOPPARAM::Base.idxGenReg and DISOPPARAM::Index.idxGenReg.
  * @note  Safe to assume same values as the 16-bit and 32-bit general registers.
  * @{
  */
@@ -217,7 +217,7 @@ typedef enum DISCPUMODE
 
 /** @name 32-bit general register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
+ * DISOPPARAM::Base.idxGenReg and DISOPPARAM::Index.idxGenReg.
  * @note  Safe to assume same values as the 16-bit and 64-bit general registers.
  * @{
  */
@@ -241,7 +241,7 @@ typedef enum DISCPUMODE
 
 /** @name 16-bit general register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
+ * DISOPPARAM::Base.idxGenReg and DISOPPARAM::Index.idxGenReg.
  * @note  Safe to assume same values as the 32-bit and 64-bit general registers.
  * @{
  */
@@ -265,7 +265,7 @@ typedef enum DISCPUMODE
 
 /** @name 8-bit general register indexes.
  * This mostly (?) matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
+ * DISOPPARAM::Base.idxGenReg and DISOPPARAM::Index.idxGenReg.
  * @{
  */
 #define DISGREG_AL                      UINT8_C(0)
@@ -292,7 +292,7 @@ typedef enum DISCPUMODE
 
 /** @name Segment registerindexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_seg.
+ * DISOPPARAM::Base.idxSegReg.
  * @{
  */
 typedef enum
@@ -310,7 +310,7 @@ typedef enum
 
 /** @name FPU register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_fp.
+ * DISOPPARAM::Base.idxFpuReg.
  * @{
  */
 #define DISFPREG_ST0                    UINT8_C(0)
@@ -325,7 +325,7 @@ typedef enum
 
 /** @name Control register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_ctrl.
+ * DISOPPARAM::Base.idxCtrlReg.
  * @{
  */
 #define DISCREG_CR0                     UINT8_C(0)
@@ -338,7 +338,7 @@ typedef enum
 
 /** @name Debug register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_dbg.
+ * DISOPPARAM::Base.idxDbgReg.
  * @{
  */
 #define DISDREG_DR0                     UINT8_C(0)
@@ -353,7 +353,7 @@ typedef enum
 
 /** @name MMX register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_mmx.
+ * DISOPPARAM::Base.idxMmxReg.
  * @{
  */
 #define DISMREG_MMX0                    UINT8_C(0)
@@ -368,7 +368,7 @@ typedef enum
 
 /** @name SSE register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_xmm.
+ * DISOPPARAM::Base.idxXmmReg.
  * @{
  */
 #define DISXREG_XMM0                    UINT8_C(0)
@@ -379,7 +379,7 @@ typedef enum
 #define DISXREG_XMM5                    UINT8_C(5)
 #define DISXREG_XMM6                    UINT8_C(6)
 #define DISXREG_XMM7                    UINT8_C(7)
-/** @}  */
+/** @} */
 
 
 /**
@@ -387,44 +387,57 @@ typedef enum
  */
 typedef struct DISOPPARAM
 {
-    /** Immediate value or address, if used. */
-    uint64_t        uValue;
     /** A combination of DISUSE_XXX. */
     uint64_t        fUse;
+    /** Immediate value or address, applicable if any of the flags included in
+     * DISUSE_IMMEDIATE are set in fUse. */
+    uint64_t        uValue;
+    /** Disposition.  */
     union
     {
+        /** 64-bit displacement, applicable if DISUSE_DISPLACEMENT64 is set in fUse.  */
         int64_t     i64;
-        int32_t     i32;
-        int32_t     i16;
-        int32_t     i8;
         uint64_t    u64;
+        /** 32-bit displacement, applicable if DISUSE_DISPLACEMENT32 or
+         * DISUSE_RIPDISPLACEMENT32  is set in fUse. */
+        int32_t     i32;
         uint32_t    u32;
+        /** 16-bit displacement, applicable if DISUSE_DISPLACEMENT16 is set in fUse.  */
+        int32_t     i16;
         uint32_t    u16;
+        /** 8-bit displacement, applicable if DISUSE_DISPLACEMENT8 is set in fUse.  */
+        int32_t     i8;
         uint32_t    u8;
     } uDisp;
-    /** Copy of the corresponding DISOPCODE::fParam1 / DISOPCODE::fParam2 /
-     *  DISOPCODE::fParam3. */
-    uint32_t        fParam;
-
+    /** The base register from ModR/M or SIB, applicable if DISUSE_BASE is
+     * set in fUse. */
     union
     {
-        /** DISGREG_XXX. */
-        uint8_t     reg_gen;
-        /** DISFPREG_XXX */
-        uint8_t     reg_fp;
-        /** DISMREG_XXX. */
-        uint8_t     reg_mmx;
-        /** DISXREG_XXX. */
-        uint8_t     reg_xmm;
-        /** DISSELREG_XXX. */
-        uint8_t     reg_seg;
-        /** TR0-TR7  (no defines for these). */
-        uint8_t     reg_test;
-        /** DISCREG_XXX */
-        uint8_t     reg_ctrl;
-        /** DISDREG_XXX */
-        uint8_t     reg_dbg;
-    } base;
+        /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN8,
+         * DISUSE_REG_GEN16, DISUSE_REG_GEN32 or DISUSE_REG_GEN64 is set in fUse. */
+        uint8_t     idxGenReg;
+        /** FPU stack register index (DISFPREG_XXX), applicable if DISUSE_REG_FP is
+         * set in fUse.  1:1 indexes. */
+        uint8_t     idxFpuReg;
+        /** MMX register index (DISMREG_XXX), applicable if DISUSE_REG_MMX is
+         * set in fUse.  1:1 indexes. */
+        uint8_t     idxMmxReg;
+        /** SSE register index (DISXREG_XXX), applicable if DISUSE_REG_XMM is
+         * set in fUse.  1:1 indexes. */
+        uint8_t     idxXmmReg;
+        /** Segment register index (DISSELREG_XXX), applicable if DISUSE_REG_SEG is
+         * set in fUse. */
+        uint8_t     idxSegReg;
+        /** Test register, TR0-TR7, present on early IA32 CPUs, applicable if
+         * DISUSE_REG_TEST is set in fUse.  No index defines for these. */
+        uint8_t     idxTestReg;
+        /** Control register index (DISCREG_XXX), applicable if DISUSE_REG_CR is
+         * set in fUse.  1:1 indexes. */
+        uint8_t     idxCtrlReg;
+        /** Debug register index (DISDREG_XXX), applicable if DISUSE_REG_DBG is
+         * set in fUse.  1:1 indexes. */
+        uint8_t     idxDbgReg;
+    } Base;
     /** The SIB index register meaning, applicable if DISUSE_INDEX is
      * set in fUse. */
     union
@@ -437,6 +450,9 @@ typedef struct DISOPPARAM
     uint8_t         uScale;
     /** Parameter size. */
     uint8_t         cb;
+    /** Copy of the corresponding DISOPCODE::fParam1 / DISOPCODE::fParam2 /
+     * DISOPCODE::fParam3. */
+    uint32_t        fParam;
 } DISOPPARAM;
 AssertCompileSize(DISOPPARAM, 32);
 /** Pointer to opcode parameter. */
