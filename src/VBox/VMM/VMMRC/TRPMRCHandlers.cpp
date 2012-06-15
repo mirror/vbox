@@ -991,7 +991,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
      * Deal with I/O port access.
      */
     if (    pVCpu->trpm.s.uActiveErrorCode == 0
-        &&  (Cpu.pCurInstr->optype & DISOPTYPE_PORTIO))
+        &&  (Cpu.pCurInstr->fOpType & DISOPTYPE_PORTIO))
     {
         VBOXSTRICTRC rcStrict = IOMRCIOPortHandler(pVM, pRegFrame, &Cpu);
         if (IOM_SUCCESS(rcStrict))

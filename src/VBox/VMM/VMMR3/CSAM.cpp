@@ -880,7 +880,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     }
 
     case OP_PUSH:
-        if (pCpu->pCurInstr->param1 != OP_PARM_REG_CS)
+        if (pCpu->pCurInstr->fParam1 != OP_PARM_REG_CS)
             break;
 
         /* no break */
@@ -955,7 +955,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     case OP_CALL:
     {
         // return or jump/call through a jump table
-        if (OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J)
+        if (OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) != OP_PARM_J)
         {
 #ifdef DEBUG
             switch(pCpu->pCurInstr->uOpcode)
@@ -1303,7 +1303,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
         /*
          * If it's harmless, then don't bother checking it (the disasm tables had better be accurate!)
          */
-        if ((cpu.pCurInstr->optype & ~DISOPTYPE_RRM_MASK) == DISOPTYPE_HARMLESS)
+        if ((cpu.pCurInstr->fOpType & ~DISOPTYPE_RRM_MASK) == DISOPTYPE_HARMLESS)
         {
             AssertMsg(pfnCSAMR3Analyse(pVM, &cpu, pInstrGC, pCurInstrGC, pCacheRec, (void *)pPage) == VWRN_CONTINUE_ANALYSIS, ("Instruction incorrectly marked harmless?!?!?\n"));
             rc = VWRN_CONTINUE_ANALYSIS;
@@ -1326,7 +1326,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             goto done;
 
         // For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction)
-        if (    ((cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
+        if (    ((cpu.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->fParam1) == OP_PARM_J))
             ||  (cpu.pCurInstr->uOpcode == OP_CALL && cpu.param1.fUse == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
         {
             /* We need to parse 'call dword ptr [address]' type of calls to catch cpuid instructions in some recent Linux distributions (e.g. OpenSuse 10.3) */
@@ -1394,7 +1394,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             }
 
             rc = VWRN_CONTINUE_ANALYSIS;
-        } //if ((cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
+        } //if ((cpu.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->fParam1) == OP_PARM_J))
 #ifdef CSAM_SCAN_JUMP_TABLE
         else
         if (    cpu.pCurInstr->uOpcode == OP_JMP
@@ -2566,7 +2566,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                     rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pHandler - aOpenBsdPushCSOffset[i], &cpu, NULL);
                     if (    rc == VINF_SUCCESS
                         &&  cpu.pCurInstr->uOpcode == OP_PUSH
-                        &&  cpu.pCurInstr->param1 == OP_PARM_REG_CS)
+                        &&  cpu.pCurInstr->fParam1 == OP_PARM_REG_CS)
                     {
                         rc = PATMR3InstallPatch(pVM, pHandler - aOpenBsdPushCSOffset[i], PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
                         if (RT_SUCCESS(rc))

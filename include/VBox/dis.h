@@ -90,7 +90,7 @@ typedef enum DISCPUMODE
 #define DISPREFIX_REX_FLAGS_WRXB        DISPREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRXB)
 /** @} */
 
-/** @name Operand type.
+/** @name Operand type (DISOPCODE::fOpType).
  * @{
  */
 #define DISOPTYPE_INVALID                  RT_BIT_32(0)
@@ -448,17 +448,25 @@ typedef struct DISOPCODE
 #ifndef DIS_CORE_ONLY
     const char  *pszOpcode;
 #endif
+    /** Parameter \#1 parser index. */
     uint8_t     idxParse1;
+    /** Parameter \#2 parser index. */
     uint8_t     idxParse2;
+    /** Parameter \#3 parser index. */
     uint8_t     idxParse3;
+    /** Unused padding.  */
     uint8_t     uUnused;
     /** The opcode identifier. This DIS specific, @see grp_dis_opcodes and
      * VBox/disopcode.h. */
     uint16_t    uOpcode;
-    uint16_t    param1;
-    uint16_t    param2;
-    uint16_t    param3;
-    uint32_t    optype;
+    /** Parameter \#1 info, @see grp_dis_opparam. */
+    uint16_t    fParam1;
+    /** Parameter \#2 info, @see grp_dis_opparam. */
+    uint16_t    fParam2;
+    /** Parameter \#3 info, @see grp_dis_opparam. */
+    uint16_t    fParam3;
+    /** Operand type flags, DISOPTYPE_XXX. */
+    uint32_t    fOpType;
 } DISOPCODE;
 /** Pointer to const opcode. */
 typedef const struct DISOPCODE *PCDISOPCODE;
