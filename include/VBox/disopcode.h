@@ -734,8 +734,8 @@
 #define OP_PARM_REG_GEN64_END   OP_PARM_REG_R15
 
 
-#define OP_PARM_VTYPE(a)        ((int)a & 0xFE0)
-#define OP_PARM_VSUBTYPE(a)     ((int)a & 0x01F)
+#define OP_PARM_VTYPE(a)        ((unsigned)a & 0xFE0)
+#define OP_PARM_VSUBTYPE(a)     ((unsigned)a & 0x01F)
 
 #define OP_PARM_A               0x100
 #define OP_PARM_VARIABLE        OP_PARM_A
