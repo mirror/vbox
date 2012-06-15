@@ -294,14 +294,14 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
     if (enmCpuMode == DISCPUMODE_64BIT)
     {
         paOneByteMap        = g_aOneByteMapX64;
-        pCpu->addrmode      = DISCPUMODE_64BIT;
-        pCpu->opmode        = DISCPUMODE_32BIT;
+        pCpu->uAddrMode     = DISCPUMODE_64BIT;
+        pCpu->uOpMode       = DISCPUMODE_32BIT;
     }
     else
     {
         paOneByteMap        = g_aOneByteMapX86;
-        pCpu->addrmode      = enmCpuMode;
-        pCpu->opmode        = enmCpuMode;
+        pCpu->uAddrMode     = enmCpuMode;
+        pCpu->uOpMode       = enmCpuMode;
     }
     pCpu->fPrefix           = DISPREFIX_NONE;
     pCpu->idxSegPrefix      = DISSELREG_DS;
@@ -377,12 +377,12 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
             case OP_ADDRSIZE:
                 pCpu->fPrefix |= DISPREFIX_ADDRSIZE;
                 if (pCpu->mode == DISCPUMODE_16BIT)
-                    pCpu->addrmode = DISCPUMODE_32BIT;
+                    pCpu->uAddrMode = DISCPUMODE_32BIT;
                 else
                 if (pCpu->mode == DISCPUMODE_32BIT)
-                    pCpu->addrmode = DISCPUMODE_16BIT;
+                    pCpu->uAddrMode = DISCPUMODE_16BIT;
                 else
-                    pCpu->addrmode = DISCPUMODE_32BIT;     /* 64 bits */
+                    pCpu->uAddrMode = DISCPUMODE_32BIT;     /* 64 bits */
 
                 iByte        += sizeof(uint8_t);
                 continue;   //fetch the next byte
@@ -391,9 +391,9 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
             case OP_OPSIZE:
                 pCpu->fPrefix |= DISPREFIX_OPSIZE;
                 if (pCpu->mode == DISCPUMODE_16BIT)
-                    pCpu->opmode = DISCPUMODE_32BIT;
+                    pCpu->uOpMode = DISCPUMODE_32BIT;
                 else
-                    pCpu->opmode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
+                    pCpu->uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
 
                 iByte        += sizeof(uint8_t);
                 continue;   //fetch the next byte
@@ -417,7 +417,7 @@ static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE p
                 iByte           += sizeof(uint8_t);
 
                 if (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_W)
-                    pCpu->opmode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
+                    pCpu->uOpMode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
                 continue;   //fetch the next byte
             }
         }
@@ -478,18 +478,18 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
     if (pCpu->mode == DISCPUMODE_64BIT)
     {
         if (pOp->optype & DISOPTYPE_FORCED_64_OP_SIZE)
-            pCpu->opmode = DISCPUMODE_64BIT;
+            pCpu->uOpMode = DISCPUMODE_64BIT;
         else
         if (    (pOp->optype & DISOPTYPE_DEFAULT_64_OP_SIZE)
             &&  !(pCpu->fPrefix & DISPREFIX_OPSIZE))
-            pCpu->opmode = DISCPUMODE_64BIT;
+            pCpu->uOpMode = DISCPUMODE_64BIT;
     }
     else
     if (pOp->optype & DISOPTYPE_FORCED_32_OP_SIZE_X86)
     {
         /* Forced 32 bits operand size for certain instructions (mov crx, mov drx). */
         Assert(pCpu->mode != DISCPUMODE_64BIT);
-        pCpu->opmode = DISCPUMODE_32BIT;
+        pCpu->uOpMode = DISCPUMODE_32BIT;
     }
 
     if (pOp->idxParse1 != IDX_ParseNop)
@@ -557,11 +557,11 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     {
         /* Note: redundant, but just in case this ever changes */
         if (fpop->optype & DISOPTYPE_FORCED_64_OP_SIZE)
-            pCpu->opmode = DISCPUMODE_64BIT;
+            pCpu->uOpMode = DISCPUMODE_64BIT;
         else
         if (    (fpop->optype & DISOPTYPE_DEFAULT_64_OP_SIZE)
             &&  !(pCpu->fPrefix & DISPREFIX_OPSIZE))
-            pCpu->opmode = DISCPUMODE_64BIT;
+            pCpu->uOpMode = DISCPUMODE_64BIT;
     }
 
     // Little hack to make sure the ModRM byte is included in the returned size
@@ -600,7 +600,7 @@ void UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTAT
     base  = pCpu->SIB.Bits.Base;
     index = pCpu->SIB.Bits.Index;
 
-    if (pCpu->addrmode == DISCPUMODE_32BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
         ppszSIBIndexReg = szSIBIndexReg;
         ppszSIBBaseReg  = szSIBBaseReg;
@@ -628,7 +628,7 @@ void UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTAT
     if (base == 5 && pCpu->ModRM.Bits.Mod == 0)
     {
         // [scaled index] + disp32
-        if (pCpu->addrmode == DISCPUMODE_32BIT)
+        if (pCpu->uAddrMode == DISCPUMODE_32BIT)
         {
             pParam->fUse |= DISUSE_DISPLACEMENT32;
             pParam->uDisp.i32 = pCpu->i32SibDisp;
@@ -737,7 +737,7 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
                 pParam->fUse |= DISUSE_REG_CR;
 
                 if (    pCpu->pCurInstr->opcode == OP_MOV_CR
-                    &&  pCpu->opmode == DISCPUMODE_32BIT
+                    &&  pCpu->uOpMode == DISCPUMODE_32BIT
                     &&  (pCpu->fPrefix & DISPREFIX_LOCK))
                 {
                     pCpu->fPrefix &= ~DISPREFIX_LOCK;
@@ -786,9 +786,9 @@ unsigned UseModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISC
 
     /* @todo bound */
 
-    if (pCpu->addrmode != DISCPUMODE_16BIT)
+    if (pCpu->uAddrMode != DISCPUMODE_16BIT)
     {
-        Assert(pCpu->addrmode == DISCPUMODE_32BIT || pCpu->addrmode == DISCPUMODE_64BIT);
+        Assert(pCpu->uAddrMode == DISCPUMODE_32BIT || pCpu->uAddrMode == DISCPUMODE_64BIT);
 
         /*
          * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
@@ -905,9 +905,9 @@ unsigned QueryModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
 
     *pSibInc = 0;
 
-    if (pCpu->addrmode != DISCPUMODE_16BIT)
+    if (pCpu->uAddrMode != DISCPUMODE_16BIT)
     {
-        Assert(pCpu->addrmode == DISCPUMODE_32BIT || pCpu->addrmode == DISCPUMODE_64BIT);
+        Assert(pCpu->uAddrMode == DISCPUMODE_32BIT || pCpu->uAddrMode == DISCPUMODE_64BIT);
 
         /*
          * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
@@ -988,9 +988,9 @@ unsigned QueryModRM_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pP
 
     *pSibInc = 0;
 
-    if (pCpu->addrmode != DISCPUMODE_16BIT)
+    if (pCpu->uAddrMode != DISCPUMODE_16BIT)
     {
-        Assert(pCpu->addrmode == DISCPUMODE_32BIT || pCpu->addrmode == DISCPUMODE_64BIT);
+        Assert(pCpu->uAddrMode == DISCPUMODE_32BIT || pCpu->uAddrMode == DISCPUMODE_64BIT);
         /*
          * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
          */
@@ -1180,14 +1180,14 @@ unsigned ParseImmByte_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM 
 unsigned ParseImmByteSX(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    if (pCpu->opmode == DISCPUMODE_32BIT)
+    if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         pParam->parval = (uint32_t)(int8_t)disReadByte(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE32_SX8;
         pParam->cb     = sizeof(uint32_t);
     }
     else
-    if (pCpu->opmode == DISCPUMODE_64BIT)
+    if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
         pParam->parval = (uint64_t)(int8_t)disReadByte(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE64_SX8;
@@ -1264,7 +1264,7 @@ unsigned ParseImmQword_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM
 unsigned ParseImmV(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    if (pCpu->opmode == DISCPUMODE_32BIT)
+    if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         pParam->parval = disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE32;
@@ -1272,7 +1272,7 @@ unsigned ParseImmV(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
         return sizeof(uint32_t);
     }
 
-    if (pCpu->opmode == DISCPUMODE_64BIT)
+    if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
         pParam->parval = disReadQWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE64;
@@ -1290,9 +1290,9 @@ unsigned ParseImmV(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
 unsigned ParseImmV_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(uCodePtr); NOREF(pOp); NOREF(pParam);
-    if (pCpu->opmode == DISCPUMODE_32BIT)
+    if (pCpu->uOpMode == DISCPUMODE_32BIT)
         return sizeof(uint32_t);
-    if (pCpu->opmode == DISCPUMODE_64BIT)
+    if (pCpu->uOpMode == DISCPUMODE_64BIT)
         return sizeof(uint64_t);
     return sizeof(uint16_t);
 }
@@ -1302,7 +1302,7 @@ unsigned ParseImmZ(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
 {
     NOREF(pOp);
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
-    if (pCpu->opmode == DISCPUMODE_16BIT)
+    if (pCpu->uOpMode == DISCPUMODE_16BIT)
     {
         pParam->parval = disReadWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE16;
@@ -1311,7 +1311,7 @@ unsigned ParseImmZ(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
     }
 
     /* 64 bits op mode means *sign* extend to 64 bits. */
-    if (pCpu->opmode == DISCPUMODE_64BIT)
+    if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
         pParam->parval = (uint64_t)(int32_t)disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE64;
@@ -1331,7 +1331,7 @@ unsigned ParseImmZ_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
 {
     NOREF(uCodePtr); NOREF(pOp); NOREF(pParam);
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
-    if (pCpu->opmode == DISCPUMODE_16BIT)
+    if (pCpu->uOpMode == DISCPUMODE_16BIT)
         return sizeof(uint16_t);
     return sizeof(uint32_t);
 }
@@ -1361,7 +1361,7 @@ unsigned ParseImmBRel_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM 
 unsigned ParseImmVRel(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    if (pCpu->opmode == DISCPUMODE_32BIT)
+    if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         pParam->parval = disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE32_REL;
@@ -1369,7 +1369,7 @@ unsigned ParseImmVRel(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
         return sizeof(int32_t);
     }
 
-    if (pCpu->opmode == DISCPUMODE_64BIT)
+    if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
         /* 32 bits relative immediate sign extended to 64 bits. */
         pParam->parval = (uint64_t)(int32_t)disReadDWord(pCpu, uCodePtr);
@@ -1389,7 +1389,7 @@ unsigned ParseImmVRel(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 unsigned ParseImmVRel_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(uCodePtr); NOREF(pOp); NOREF(pParam);
-    if (pCpu->opmode == DISCPUMODE_16BIT)
+    if (pCpu->uOpMode == DISCPUMODE_16BIT)
         return sizeof(int16_t);
     /* Both 32 & 64 bits mode use 32 bits relative immediates. */
     return sizeof(int32_t);
@@ -1398,7 +1398,7 @@ unsigned ParseImmVRel_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM 
 //*****************************************************************************
 unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    if (pCpu->addrmode == DISCPUMODE_32BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
         if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
         {
@@ -1422,7 +1422,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
         return sizeof(uint32_t);
     }
 
-    if (pCpu->addrmode == DISCPUMODE_64BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
         Assert(OP_PARM_VSUBTYPE(pParam->param) != OP_PARM_p);
         /*
@@ -1461,7 +1461,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 unsigned ParseImmAddr_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(uCodePtr); NOREF(pOp);
-    if (pCpu->addrmode == DISCPUMODE_32BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
         if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
         {// far 16:32 pointer
@@ -1472,7 +1472,7 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM 
             return sizeof(uint32_t);
         }
     }
-    if (pCpu->addrmode == DISCPUMODE_64BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
         Assert(OP_PARM_VSUBTYPE(pParam->param) != OP_PARM_p);
         return sizeof(uint64_t);
@@ -1494,9 +1494,9 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM 
 unsigned ParseImmAddrF(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     // immediate far pointers - only 16:16 or 16:32; determined by operand, *not* address size!
-    Assert(pCpu->opmode == DISCPUMODE_16BIT || pCpu->opmode == DISCPUMODE_32BIT);
+    Assert(pCpu->uOpMode == DISCPUMODE_16BIT || pCpu->uOpMode == DISCPUMODE_32BIT);
     Assert(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p);
-    if (pCpu->opmode == DISCPUMODE_32BIT)
+    if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         // far 16:32 pointer
         pParam->parval = disReadDWord(pCpu, uCodePtr);
@@ -1518,9 +1518,9 @@ unsigned ParseImmAddrF_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM
 {
     NOREF(uCodePtr); NOREF(pOp);
     // immediate far pointers - only 16:16 or 16:32
-    Assert(pCpu->opmode == DISCPUMODE_16BIT || pCpu->opmode == DISCPUMODE_32BIT);
+    Assert(pCpu->uOpMode == DISCPUMODE_16BIT || pCpu->uOpMode == DISCPUMODE_32BIT);
     Assert(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p);
-    if (pCpu->opmode == DISCPUMODE_32BIT)
+    if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         // far 16:32 pointer
         return sizeof(uint32_t) + sizeof(uint16_t);
@@ -1555,7 +1555,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
     if (pParam->param <= OP_PARM_REG_GEN32_END)
     {
         /* 32-bit EAX..EDI registers. */
-        if (pCpu->opmode == DISCPUMODE_32BIT)
+        if (pCpu->uOpMode == DISCPUMODE_32BIT)
         {
             /* Use 32-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
@@ -1563,7 +1563,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
             pParam->cb     = 4;
         }
         else
-        if (pCpu->opmode == DISCPUMODE_64BIT)
+        if (pCpu->uOpMode == DISCPUMODE_64BIT)
         {
             /* Use 64-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
@@ -1609,7 +1609,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
         pParam->fUse  |= DISUSE_REG_GEN8;
         pParam->cb     = 1;
 
-        if (pCpu->opmode == DISCPUMODE_64BIT)
+        if (pCpu->uOpMode == DISCPUMODE_64BIT)
         {
             if (    (pOp->optype & DISOPTYPE_REXB_EXTENDS_OPREG)
                 &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
@@ -1639,13 +1639,13 @@ unsigned ParseXv(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     NOREF(uCodePtr);
 
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
-    if (pCpu->addrmode == DISCPUMODE_32BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = DISGREG_ESI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pCpu->addrmode == DISCPUMODE_64BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = DISGREG_RSI;
         pParam->fUse |= DISUSE_REG_GEN64;
@@ -1664,13 +1664,13 @@ unsigned ParseXb(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     NOREF(uCodePtr); NOREF(pOp);
 
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
-    if (pCpu->addrmode == DISCPUMODE_32BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = DISGREG_ESI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pCpu->addrmode == DISCPUMODE_64BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = DISGREG_RSI;
         pParam->fUse |= DISUSE_REG_GEN64;
@@ -1689,13 +1689,13 @@ unsigned ParseYv(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     NOREF(uCodePtr);
 
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
-    if (pCpu->addrmode == DISCPUMODE_32BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = DISGREG_EDI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pCpu->addrmode == DISCPUMODE_64BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = DISGREG_RDI;
         pParam->fUse |= DISUSE_REG_GEN64;
@@ -1714,13 +1714,13 @@ unsigned ParseYb(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCP
     NOREF(uCodePtr); NOREF(pOp);
 
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
-    if (pCpu->addrmode == DISCPUMODE_32BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
         pParam->base.reg_gen = DISGREG_EDI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pCpu->addrmode == DISCPUMODE_64BIT)
+    if (pCpu->uAddrMode == DISCPUMODE_64BIT)
     {
         pParam->base.reg_gen = DISGREG_RDI;
         pParam->fUse |= DISUSE_REG_GEN64;
@@ -1760,7 +1760,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam
 
                 /* Cancel prefix changes. */
                 pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
-                pCpu->opmode  = pCpu->mode;
+                pCpu->uOpMode  = pCpu->mode;
             }
             break;
 
@@ -1827,7 +1827,7 @@ unsigned ParseThreeByteEsc4(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
 
                 /* Cancel prefix changes. */
                 pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
-                pCpu->opmode  = pCpu->mode;
+                pCpu->uOpMode  = pCpu->mode;
             }
         }
         break;
@@ -1878,7 +1878,7 @@ unsigned ParseThreeByteEsc5(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
 
             /* Cancel prefix changes. */
             pCpu->fPrefix &= ~DISPREFIX_OPSIZE;
-            pCpu->opmode  = pCpu->mode;
+            pCpu->uOpMode  = pCpu->mode;
         }
     }
     else
@@ -2305,11 +2305,11 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDI
     type    = OP_PARM_VTYPE(pParam->param);
     subtype = OP_PARM_VSUBTYPE(pParam->param);
     if (fRegAddr)
-        subtype = (pCpu->addrmode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
+        subtype = (pCpu->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
     else
     if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
     {
-        switch(pCpu->opmode)
+        switch (pCpu->uOpMode)
         {
         case DISCPUMODE_32BIT:
             subtype = OP_PARM_d;

@@ -1654,7 +1654,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
     if ((pDis->fPrefix & ~(DISPREFIX_ADDRSIZE|DISPREFIX_OPSIZE|DISPREFIX_REP|DISPREFIX_REX)))
         return VERR_EM_INTERPRETER;
 
-    switch (pDis->addrmode)
+    switch (pDis->uAddrMode)
     {
     case DISCPUMODE_16BIT:
         GCOffset   = pRegFrame->di;
@@ -1674,7 +1674,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
     }
 
     GCDest = SELMToFlat(pVM, DISSELREG_ES, pRegFrame, GCOffset);
-    switch (pDis->opmode)
+    switch (pDis->uOpMode)
     {
     case DISCPUMODE_16BIT:
         cbSize = 2;
@@ -1702,7 +1702,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
         Assert(rc == VINF_SUCCESS);
 
         /* Update (e/r)di. */
-        switch (pDis->addrmode)
+        switch (pDis->uAddrMode)
         {
         case DISCPUMODE_16BIT:
             pRegFrame->di  += offIncrement;
@@ -1767,7 +1767,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
         }
 
         /* Update the registers. */
-        switch (pDis->addrmode)
+        switch (pDis->uAddrMode)
         {
         case DISCPUMODE_16BIT:
             pRegFrame->di = GCOffset;

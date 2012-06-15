@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox disassembler - Test application for core. 
+ * VBox disassembler - Test application for core.
  */
 
 /*
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
         unsigned    cb;
         DISCPUSTATE cpu;
         if (DISInstr((void *)(uintptr_t)&DISInstr, DISCPUMODE_32BIT, &cpu, &cb))
-            printf("ok %d\n", cpu.addrmode);
+            printf("ok %d\n", cpu.uAddrMode);
         else
         {
             printf("DISOne failed!\n");

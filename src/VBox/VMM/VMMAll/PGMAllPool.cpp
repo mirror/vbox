@@ -893,7 +893,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     Assert(pRegFrame->rcx <= 0x20);
 
 #ifdef VBOX_STRICT
-    if (pDis->opmode == DISCPUMODE_32BIT)
+    if (pDis->uOpMode == DISCPUMODE_32BIT)
         Assert(uIncrement == 4);
     else
         Assert(uIncrement == 8);
@@ -1197,8 +1197,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
          */
         if (    pDis->pCurInstr->opcode == OP_STOSWD
             &&  !pRegFrame->eflags.Bits.u1DF
-            &&  pDis->opmode == pDis->mode
-            &&  pDis->addrmode == pDis->mode)
+            &&  pDis->uOpMode == pDis->mode
+            &&  pDis->uAddrMode == pDis->mode)
         {
             bool fValidStosd = false;
 

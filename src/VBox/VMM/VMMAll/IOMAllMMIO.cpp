@@ -933,7 +933,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * Get bytes/words/dwords/qwords count to copy.
      */
-    uint64_t const fAddrMask = iomDisModeToMask((DISCPUMODE)pCpu->addrmode);
+    uint64_t const fAddrMask = iomDisModeToMask((DISCPUMODE)pCpu->uAddrMode);
     RTGCUINTREG cTransfers = 1;
     if (pCpu->fPrefix & DISPREFIX_REP)
     {
@@ -1077,7 +1077,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     int rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &pRegFrame->rax, cb);
     if (rc == VINF_SUCCESS)
     {
-        uint64_t const fAddrMask = iomDisModeToMask((DISCPUMODE)pCpu->addrmode);
+        uint64_t const fAddrMask = iomDisModeToMask((DISCPUMODE)pCpu->uAddrMode);
         pRegFrame->rsi = ((pRegFrame->rsi + offIncrement) & fAddrMask)
                        | (pRegFrame->rsi & ~fAddrMask);
     }
@@ -2146,7 +2146,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
     if (pCpu->pCurInstr->opcode == OP_INSB)
         cb = 1;
     else
-        cb = (pCpu->opmode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
+        cb = (pCpu->uOpMode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
     VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
@@ -2155,7 +2155,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
         return rcStrict;
     }
 
-    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->addrmode, cb);
+    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->uAddrMode, cb);
 }
 
 
@@ -2315,7 +2315,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
     if (pCpu->pCurInstr->opcode == OP_OUTSB)
         cb = 1;
     else
-        cb = (pCpu->opmode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
+        cb = (pCpu->uOpMode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
     VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
@@ -2324,7 +2324,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
         return rcStrict;
     }
 
-    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->addrmode, cb);
+    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->uAddrMode, cb);
 }
 
 #ifndef IN_RC

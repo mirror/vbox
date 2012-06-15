@@ -206,7 +206,7 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 
     if (subtype == OP_PARM_v)
     {
-        switch(pCpu->opmode)
+        switch (pCpu->uOpMode)
         {
         case DISCPUMODE_32BIT:
             subtype = OP_PARM_d;
@@ -239,10 +239,10 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
         return 8;
 
     case OP_PARM_p: /* far pointer */
-        if (pCpu->addrmode == DISCPUMODE_32BIT)
+        if (pCpu->uAddrMode == DISCPUMODE_32BIT)
             return 6;   /* 16:32 */
         else
-        if (pCpu->addrmode == DISCPUMODE_64BIT)
+        if (pCpu->uAddrMode == DISCPUMODE_64BIT)
             return 12;  /* 16:64 */
         else
             return 4;   /* 16:16 */

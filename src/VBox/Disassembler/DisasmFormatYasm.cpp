@@ -203,7 +203,7 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pPar
  */
 static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, size_t *pcchReg)
 {
-    switch (pCpu->addrmode)
+    switch (pCpu->uAddrMode)
     {
         case DISCPUMODE_16BIT:
         {
@@ -230,7 +230,7 @@ static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pPa
         }
 
         default:
-            AssertMsgFailed(("%#x %#x\n", pParam->fUse, pCpu->addrmode));
+            AssertMsgFailed(("%#x %#x\n", pParam->fUse, pCpu->uAddrMode));
             *pcchReg = 3;
             return "r??";
     }
@@ -416,67 +416,67 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         switch (pOp->opcode)
         {
             case OP_JECXZ:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "jcxz %Jb" : pCpu->opmode == DISCPUMODE_32BIT ? "jecxz %Jb"   : "jrcxz %Jb";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "jcxz %Jb" : pCpu->uOpMode == DISCPUMODE_32BIT ? "jecxz %Jb"   : "jrcxz %Jb";
                 break;
             case OP_PUSHF:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "pushfw"   : pCpu->opmode == DISCPUMODE_32BIT ? "pushfd"      : "pushfq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "pushfw"   : pCpu->uOpMode == DISCPUMODE_32BIT ? "pushfd"      : "pushfq";
                 break;
             case OP_POPF:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "popfw"    : pCpu->opmode == DISCPUMODE_32BIT ? "popfd"       : "popfq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "popfw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "popfd"       : "popfq";
                 break;
             case OP_PUSHA:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "pushaw"   : "pushad";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "pushaw"   : "pushad";
                 break;
             case OP_POPA:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "popaw"    : "popad";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "popaw"    : "popad";
                 break;
             case OP_INSB:
                 pszFmt = "insb";
                 break;
             case OP_INSWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "insw"     : pCpu->opmode == DISCPUMODE_32BIT ? "insd"  : "insq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "insw"     : pCpu->uOpMode == DISCPUMODE_32BIT ? "insd"  : "insq";
                 break;
             case OP_OUTSB:
                 pszFmt = "outsb";
                 break;
             case OP_OUTSWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "outsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "outsd" : "outsq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "outsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "outsd" : "outsq";
                 break;
             case OP_MOVSB:
                 pszFmt = "movsb";
                 break;
             case OP_MOVSWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "movsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "movsd" : "movsq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "movsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "movsd" : "movsq";
                 break;
             case OP_CMPSB:
                 pszFmt = "cmpsb";
                 break;
             case OP_CMPWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "cmpsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "cmpsd" : "cmpsq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "cmpsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "cmpsd" : "cmpsq";
                 break;
             case OP_SCASB:
                 pszFmt = "scasb";
                 break;
             case OP_SCASWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "scasw"    : pCpu->opmode == DISCPUMODE_32BIT ? "scasd" : "scasq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "scasw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "scasd" : "scasq";
                 break;
             case OP_LODSB:
                 pszFmt = "lodsb";
                 break;
             case OP_LODSWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "lodsw"    : pCpu->opmode == DISCPUMODE_32BIT ? "lodsd" : "lodsq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "lodsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "lodsd" : "lodsq";
                 break;
             case OP_STOSB:
                 pszFmt = "stosb";
                 break;
             case OP_STOSWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "stosw"    : pCpu->opmode == DISCPUMODE_32BIT ? "stosd" : "stosq";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "stosw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "stosd" : "stosq";
                 break;
             case OP_CBW:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "cbw"      : pCpu->opmode == DISCPUMODE_32BIT ? "cwde"  : "cdqe";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "cbw"      : pCpu->uOpMode == DISCPUMODE_32BIT ? "cwde"  : "cdqe";
                 break;
             case OP_CWD:
-                pszFmt = pCpu->opmode == DISCPUMODE_16BIT ? "cwd"      : pCpu->opmode == DISCPUMODE_32BIT ? "cdq"   : "cqo";
+                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "cwd"      : pCpu->uOpMode == DISCPUMODE_32BIT ? "cdq"   : "cqo";
                 break;
             case OP_SHL:
                 Assert(pszFmt[3] == '/');
@@ -573,7 +573,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                 switch (OP_PARM_VSUBTYPE(pParam->param)) \
                 { \
                     case OP_PARM_v: \
-                        switch (pCpu->opmode) \
+                        switch (pCpu->uOpMode) \
                         { \
                             case DISCPUMODE_16BIT: PUT_SZ("word "); break; \
                             case DISCPUMODE_32BIT: PUT_SZ("dword "); break; \
@@ -799,7 +799,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
 
                             case DISUSE_IMMEDIATE16:
-                                if (    pCpu->mode != pCpu->opmode
+                                if (    pCpu->mode != pCpu->uOpMode
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->parval == (int16_t)pParam->parval
                                              || (pOp->param1 >= OP_PARM_REG_GEN16_START && pOp->param1 <= OP_PARM_REG_GEN16_END)
@@ -822,7 +822,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
 
                             case DISUSE_IMMEDIATE32:
-                                if (    pCpu->opmode != (pCpu->mode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
+                                if (    pCpu->uOpMode != (pCpu->mode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->parval == (int32_t)pParam->parval
                                              || (pOp->param1 >= OP_PARM_REG_GEN32_START && pOp->param1 <= OP_PARM_REG_GEN32_END)
@@ -1212,7 +1212,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /*
      * Mod rm + SIB: Check for duplicate EBP encodings that yasm won't use for very good reasons.
      */
-    if (    pCpu->addrmode != DISCPUMODE_16BIT ///@todo correct?
+    if (    pCpu->uAddrMode != DISCPUMODE_16BIT ///@todo correct?
         &&  pCpu->ModRM.Bits.Rm == 4
         &&  pCpu->ModRM.Bits.Mod != 3)
     {
