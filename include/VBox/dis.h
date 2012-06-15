@@ -518,6 +518,9 @@ typedef PFNDISPARSE const *PCPFNDISPARSE;
 
 /**
  * The diassembler state and result.
+ *
+ * @todo ModRM and SIB could be joined and 6 bytes would be saved, only it
+ *       doesn't make any sense right now because of structure alignment.
  */
 typedef struct DISCPUSTATE
 {
@@ -554,6 +557,7 @@ typedef struct DISCPUSTATE
         /** unsigned view */
         unsigned            u;
     } SIB;
+    /** SIB displacment. */
     int32_t         i32SibDisp;
 
     /* off: 0x06c (108) */
@@ -579,7 +583,11 @@ typedef struct DISCPUSTATE
     uint8_t         cbPrefix;
     /** The instruction size. */
     uint8_t         cbInstr;
-    uint8_t         abUnused[2];
+    /** The number of valid bytes in abInstr.
+     * @todo Implement caching and read-ahead tomorrow. */
+    uint8_t         cbCachedInstr;
+    /** Unused byte. */
+    uint8_t         abUnused[1];
     /* off: 0x078 (120) */
     /** Return code set by a worker function like the opcode bytes readers. */
     int32_t         rc;
