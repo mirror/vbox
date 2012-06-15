@@ -563,7 +563,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
                 if (RT_FAILURE(DISFetchReg32(pCtx, pParam->index.reg_gen, &val32))) return VERR_INVALID_PARAMETER;
 
                 if (pParam->fUse & DISUSE_SCALE)
-                    val32 *= pParam->scale;
+                    val32 *= pParam->uScale;
 
                 pParamVal->val.val32 += val32;
             }
@@ -576,7 +576,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
                 if (RT_FAILURE(DISFetchReg64(pCtx, pParam->index.reg_gen, &val64))) return VERR_INVALID_PARAMETER;
 
                 if (pParam->fUse & DISUSE_SCALE)
-                    val64 *= pParam->scale;
+                    val64 *= pParam->uScale;
 
                 pParamVal->val.val64 += val64;
             }
