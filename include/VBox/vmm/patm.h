@@ -557,6 +557,7 @@ VMMR3DECL(RTRCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, RCPTRTYPE(uint8_t*) pIn
  *
  */
 VMMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTRCPTR pInstrGC, uint8_t *pByte);
+VMMR3DECL(int) PATMR3ReadOrgInstr(PVM pVM, RTGCPTR32 GCPtrInstr, uint8_t *pbDst, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Disable patch for privileged instruction at specified location

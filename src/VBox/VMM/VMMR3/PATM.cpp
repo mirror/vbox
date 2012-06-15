@@ -5025,6 +5025,64 @@ VMMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTRCPTR pInstrGC, uint8_t *pByte)
 }
 
 /**
+ * Read instruction bytes of the original code that was overwritten by the 5
+ * bytes patch jump.
+ *
+ * @returns VINF_SUCCESS or VERR_PATCH_NOT_FOUND.
+ * @param   pVM         The VM to operate on.
+ * @param   GCPtrInstr  GC address of instr
+ * @param   pbDst       The output buffer.
+ * @param   cbToRead    The maximum number bytes to read.
+ * @param   pcbRead     Where to return the acutal number of bytes read.
+ */
+VMMR3DECL(int) PATMR3ReadOrgInstr(PVM pVM, RTGCPTR32 GCPtrInstr, uint8_t *pbDst, size_t cbToRead, size_t *pcbRead)
+{
+    /* Shortcut. */
+    if (  !PATMIsEnabled(pVM)
+        || GCPtrInstr < pVM->patm.s.pPatchedInstrGCLowest
+        || GCPtrInstr > pVM->patm.s.pPatchedInstrGCHighest)
+        return VERR_PATCH_NOT_FOUND;
+
+    /** @todo this will not work for aliased pages! (never has, but so far not a problem for us) */
+
+    /*
+     * If the patch is enabled and the pointer lies within 5 bytes of this
+     * priv instr ptr, then we've got a hit!
+     */
+    RTGCPTR32     off;
+    PPATMPATCHREC pPatchRec = (PPATMPATCHREC)RTAvloU32GetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTree,
+                                                                 GCPtrInstr, false /*fAbove*/);
+    if (   pPatchRec
+        && pPatchRec->patch.uState == PATCH_ENABLED
+        && (off = GCPtrInstr - pPatchRec->patch.pPrivInstrGC) < pPatchRec->patch.cbPatchJump)
+    {
+        uint8_t const  *pbSrc = &pPatchRec->patch.aPrivInstr[off];
+        uint32_t const  cbMax = pPatchRec->patch.cbPatchJump - off;
+        if (cbToRead > cbMax)
+            cbToRead = cbMax;
+        switch (cbToRead)
+        {
+            case 5: pbDst[4] = pbSrc[4];
+            case 4: pbDst[3] = pbSrc[3];
+            case 3: pbDst[2] = pbSrc[2];
+            case 2: pbDst[1] = pbSrc[1];
+            case 1: pbDst[0] = pbSrc[0];
+                break;
+            default:
+                memcpy(pbDst, pbSrc, cbToRead);
+        }
+        *pcbRead = cbToRead;
+
+        if (pPatchRec->patch.cbPatchJump == 1)
+            Log(("PATMR3ReadOrgInstr: returning opcode %.*Rhxs for instruction at %RX32\n", cbToRead, pbSrc, GCPtrInstr));
+        STAM_COUNTER_ADD(&pVM->patm.s.StatNrOpcodeRead, 1);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_PATCH_NOT_FOUND;
+}
+
+/**
  * Disable patch for privileged instruction at specified location
  *
  * @returns VBox status code.
