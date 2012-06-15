@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -168,11 +168,14 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
 
     RTGETOPTSTATE               GetState;
     RTGETOPTUNION               ValueUnion;
+
+    /** @todo Put short options into enum / defines! */
     static const RTGETOPTDEF    s_aOptions[] =
     {
-        { "--release",      'r', RTGETOPT_REQ_NOTHING },
+        { "--debug",        'd', RTGETOPT_REQ_NOTHING },
+        { "--release",      'r', RTGETOPT_REQ_NOTHING }
     };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
@@ -187,7 +190,10 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
                 fRelease = false;
                 break;
 
-            case VINF_GETOPT_NOT_OPTION:
+            /* Because log strings can start with "-" (like "-all+dev_foo")
+             * we have to take everything we got as a setting and apply it.
+             * IPRT will take care of the validation afterwards. */
+            default:
                 if (strSettings.length() == 0)
                     strSettings = ValueUnion.psz;
                 else
@@ -196,9 +202,6 @@ static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDe
                     strSettings.append(ValueUnion.psz);
                 }
                 break;
-
-            default:
-                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
         }
     }
 
