@@ -796,7 +796,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     int rc;
     NOREF(pInstrGC);
 
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_INT:
         Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE8);
@@ -820,7 +820,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     }
 
     // Check for exit points
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
     /* It's not a good idea to patch pushf instructions:
      * - increases the chance of conflicts (code jumping to the next instruction)
@@ -896,7 +896,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     case OP_CPUID:
     case OP_IRET:
 #ifdef DEBUG
-        switch(pCpu->pCurInstr->opcode)
+        switch(pCpu->pCurInstr->uOpcode)
         {
         case OP_STR:
             Log(("Privileged instruction at %RRv: str!!\n", pCurInstrGC));
@@ -946,7 +946,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
                 return VWRN_CONTINUE_ANALYSIS;
             }
         }
-        if (pCpu->pCurInstr->opcode == OP_IRET)
+        if (pCpu->pCurInstr->uOpcode == OP_IRET)
             return VINF_SUCCESS;    /* Look no further in this branch. */
 
         return VWRN_CONTINUE_ANALYSIS;
@@ -958,7 +958,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J)
         {
 #ifdef DEBUG
-            switch(pCpu->pCurInstr->opcode)
+            switch(pCpu->pCurInstr->uOpcode)
             {
             case OP_JMP:
                 Log(("Control Flow instruction at %RRv: jmp!!\n", pCurInstrGC));
@@ -1083,7 +1083,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                     csamR3CheckPageRecord(pVM, pCurInstrGC + cbInstr - 1);
                 }
 
-                switch (cpu.pCurInstr->opcode)
+                switch (cpu.pCurInstr->uOpcode)
                 {
                 case OP_NOP:
                 case OP_INT3:
@@ -1313,7 +1313,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 #ifdef CSAM_ANALYSE_BEYOND_RET
         /* Remember the address of the instruction following the ret in case the parent instruction was a call. */
         if (    pCacheRec->pCallExitRec
-            &&  cpu.pCurInstr->opcode == OP_RETN
+            &&  cpu.pCurInstr->uOpcode == OP_RETN
             &&  pCacheRec->pCallExitRec->cInstrAfterRet < CSAM_MAX_CALLEXIT_RET)
         {
             pCacheRec->pCallExitRec->pInstrAfterRetGC[pCacheRec->pCallExitRec->cInstrAfterRet] = pCurInstrGC + cbInstr;
@@ -1327,10 +1327,10 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
         // For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction)
         if (    ((cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
-            ||  (cpu.pCurInstr->opcode == OP_CALL && cpu.param1.fUse == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
+            ||  (cpu.pCurInstr->uOpcode == OP_CALL && cpu.param1.fUse == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
         {
             /* We need to parse 'call dword ptr [address]' type of calls to catch cpuid instructions in some recent Linux distributions (e.g. OpenSuse 10.3) */
-            if (    cpu.pCurInstr->opcode == OP_CALL
+            if (    cpu.pCurInstr->uOpcode == OP_CALL
                 &&  cpu.param1.fUse == DISUSE_DISPLACEMENT32)
             {
                 addr = 0;
@@ -1378,7 +1378,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                     }
                     Assert(pPage);
                 }
-                if (cpu.pCurInstr->opcode == OP_CALL)
+                if (cpu.pCurInstr->uOpcode == OP_CALL)
                     rc = csamAnalyseCallCodeStream(pVM, pInstrGC, addr, fCode32, pfnCSAMR3Analyse, (void *)pJmpPage, pCacheRec);
                 else
                     rc = csamAnalyseCodeStream(pVM, pInstrGC, addr, fCode32, pfnCSAMR3Analyse, (void *)pJmpPage, pCacheRec);
@@ -1387,7 +1387,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                     goto done;
                 }
             }
-            if (cpu.pCurInstr->opcode == OP_JMP)
+            if (cpu.pCurInstr->uOpcode == OP_JMP)
             {//unconditional jump; return to caller
                 rc = VINF_SUCCESS;
                 goto done;
@@ -1397,7 +1397,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
         } //if ((cpu.pCurInstr->optype & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
 #ifdef CSAM_SCAN_JUMP_TABLE
         else
-        if (    cpu.pCurInstr->opcode == OP_JMP
+        if (    cpu.pCurInstr->uOpcode == OP_JMP
             &&  (cpu.param1.fUse & (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)) == (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)
            )
         {
@@ -1457,7 +1457,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             break; //done!
         }
 next_please:
-        if (cpu.pCurInstr->opcode == OP_JMP)
+        if (cpu.pCurInstr->uOpcode == OP_JMP)
         {
             rc = VINF_SUCCESS;
             goto done;
@@ -2565,7 +2565,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                 {
                     rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pHandler - aOpenBsdPushCSOffset[i], &cpu, NULL);
                     if (    rc == VINF_SUCCESS
-                        &&  cpu.pCurInstr->opcode == OP_PUSH
+                        &&  cpu.pCurInstr->uOpcode == OP_PUSH
                         &&  cpu.pCurInstr->param1 == OP_PARM_REG_CS)
                     {
                         rc = PATMR3InstallPatch(pVM, pHandler - aOpenBsdPushCSOffset[i], PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);

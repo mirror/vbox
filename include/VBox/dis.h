@@ -452,7 +452,9 @@ typedef struct DISOPCODE
     uint8_t     idxParse2;
     uint8_t     idxParse3;
     uint8_t     uUnused;
-    uint16_t    opcode;
+    /** The opcode identifier. This DIS specific, @see grp_dis_opcodes and
+     * VBox/disopcode.h. */
+    uint16_t    uOpcode;
     uint16_t    param1;
     uint16_t    param2;
     uint16_t    param3;

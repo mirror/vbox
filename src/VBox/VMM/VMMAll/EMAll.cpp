@@ -748,7 +748,7 @@ DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPU
  */
 static const char *emGetMnemonic(PDISCPUSTATE pDis)
 {
-    switch (pDis->pCurInstr->opcode)
+    switch (pDis->pCurInstr->uOpcode)
     {
         case OP_XCHG:       return "Xchg";
         case OP_DEC:        return "Dec";
@@ -792,7 +792,7 @@ static const char *emGetMnemonic(PDISCPUSTATE pDis)
         case OP_CMPXCHG8B:  return pDis->fPrefix & DISPREFIX_LOCK ? "Lock CmpXchg8b" : "CmpXchg8b";
 
         default:
-            Log(("Unknown opcode %d\n", pDis->pCurInstr->opcode));
+            Log(("Unknown opcode %d\n", pDis->pCurInstr->uOpcode));
             return "???";
     }
 }
@@ -2656,7 +2656,7 @@ static int emInterpretLIGdt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
     if (!(pDis->fPrefix & DISPREFIX_OPSIZE))
         dtr32.uAddr &= 0xffffff; /* 16 bits operand size */
 
-    if (pDis->pCurInstr->opcode == OP_LIDT)
+    if (pDis->pCurInstr->uOpcode == OP_LIDT)
         CPUMSetGuestIDTR(pVCpu, dtr32.uAddr, dtr32.cb);
     else
         CPUMSetGuestGDTR(pVCpu, dtr32.uAddr, dtr32.cb);
@@ -3092,7 +3092,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
         /* Get the current privilege level. */
         uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
         if (    cpl != 0
-            &&  pDis->pCurInstr->opcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
+            &&  pDis->pCurInstr->uOpcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
         {
             Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
             STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
@@ -3105,27 +3105,27 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
 #ifdef IN_RC
     if (    (pDis->fPrefix & (DISPREFIX_REPNE | DISPREFIX_REP))
         ||  (   (pDis->fPrefix & DISPREFIX_LOCK)
-             && pDis->pCurInstr->opcode != OP_CMPXCHG
-             && pDis->pCurInstr->opcode != OP_CMPXCHG8B
-             && pDis->pCurInstr->opcode != OP_XADD
-             && pDis->pCurInstr->opcode != OP_OR
-             && pDis->pCurInstr->opcode != OP_AND
-             && pDis->pCurInstr->opcode != OP_XOR
-             && pDis->pCurInstr->opcode != OP_BTR
+             && pDis->pCurInstr->uOpcode != OP_CMPXCHG
+             && pDis->pCurInstr->uOpcode != OP_CMPXCHG8B
+             && pDis->pCurInstr->uOpcode != OP_XADD
+             && pDis->pCurInstr->uOpcode != OP_OR
+             && pDis->pCurInstr->uOpcode != OP_AND
+             && pDis->pCurInstr->uOpcode != OP_XOR
+             && pDis->pCurInstr->uOpcode != OP_BTR
             )
        )
 #else
     if (    (pDis->fPrefix & DISPREFIX_REPNE)
         ||  (   (pDis->fPrefix & DISPREFIX_REP)
-             && pDis->pCurInstr->opcode != OP_STOSWD
+             && pDis->pCurInstr->uOpcode != OP_STOSWD
             )
         ||  (   (pDis->fPrefix & DISPREFIX_LOCK)
-             && pDis->pCurInstr->opcode != OP_OR
-             && pDis->pCurInstr->opcode != OP_AND
-             && pDis->pCurInstr->opcode != OP_XOR
-             && pDis->pCurInstr->opcode != OP_BTR
-             && pDis->pCurInstr->opcode != OP_CMPXCHG
-             && pDis->pCurInstr->opcode != OP_CMPXCHG8B
+             && pDis->pCurInstr->uOpcode != OP_OR
+             && pDis->pCurInstr->uOpcode != OP_AND
+             && pDis->pCurInstr->uOpcode != OP_XOR
+             && pDis->pCurInstr->uOpcode != OP_BTR
+             && pDis->pCurInstr->uOpcode != OP_CMPXCHG
+             && pDis->pCurInstr->uOpcode != OP_CMPXCHG8B
             )
        )
 #endif
@@ -3143,7 +3143,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
     if (    pDis->param1.cb > 4
         &&  CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
     {
-        uint32_t uOpCode = pDis->pCurInstr->opcode;
+        uint32_t uOpCode = pDis->pCurInstr->uOpcode;
         if (    uOpCode != OP_STOSWD
             &&  uOpCode != OP_MOV
             &&  uOpCode != OP_CMPXCHG8B
@@ -3164,7 +3164,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
             )
         {
 # ifdef VBOX_WITH_STATISTICS
-            switch (pDis->pCurInstr->opcode)
+            switch (pDis->pCurInstr->uOpcode)
             {
 #  define INTERPRET_FAILED_CASE(opcode, Instr) \
                 case opcode: STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); break;
@@ -3220,7 +3220,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
 #if (defined(VBOX_STRICT) || defined(LOG_ENABLED))
     LogFlow(("emInterpretInstructionCPU %s\n", emGetMnemonic(pDis)));
 #endif
-    switch (pDis->pCurInstr->opcode)
+    switch (pDis->pCurInstr->uOpcode)
     {
         /*
          * Macros for generating the right case statements.
@@ -3328,7 +3328,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
 #endif
 
         default:
-            Log3(("emInterpretInstructionCPU: opcode=%d\n", pDis->pCurInstr->opcode));
+            Log3(("emInterpretInstructionCPU: opcode=%d\n", pDis->pCurInstr->uOpcode));
             STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedMisc));
             return VERR_EM_INTERPRETER;
 

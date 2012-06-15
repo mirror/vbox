@@ -380,7 +380,7 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM));
 
-    if (pCpu->pCurInstr->opcode == OP_SYSENTER)
+    if (pCpu->pCurInstr->uOpcode == OP_SYSENTER)
     {
         if (    pCtx->SysEnter.cs == 0
             ||  pRegFrame->eflags.Bits.u1VM
@@ -408,7 +408,7 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
         return VINF_SUCCESS;
     }
     else
-    if (pCpu->pCurInstr->opcode == OP_SYSEXIT)
+    if (pCpu->pCurInstr->uOpcode == OP_SYSEXIT)
     {
         if (    pCtx->SysEnter.cs == 0
             ||  (pRegFrame->cs & X86_SEL_RPL) != 1
@@ -428,12 +428,12 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
         return VINF_SUCCESS;
     }
     else
-    if (pCpu->pCurInstr->opcode == OP_SYSCALL)
+    if (pCpu->pCurInstr->uOpcode == OP_SYSCALL)
     {
         /** @todo implement syscall */
     }
     else
-    if (pCpu->pCurInstr->opcode == OP_SYSRET)
+    if (pCpu->pCurInstr->uOpcode == OP_SYSRET)
     {
         /** @todo implement sysret */
     }

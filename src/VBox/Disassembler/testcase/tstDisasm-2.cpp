@@ -131,7 +131,7 @@ static void MyDisasMasmFormatter(PMYDISSTATE pState)
  */
 static bool MyDisasIsValidInstruction(DISCPUSTATE const *pCpu)
 {
-    switch (pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->uOpcode)
     {
         /* These doesn't take memory operands. */
         case OP_MOV_CR:
@@ -337,8 +337,8 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
         {
             State.fUndefOp = rc == VERR_DIS_INVALID_OPCODE
                           || rc == VERR_DIS_GEN_FAILURE
-                          || State.Cpu.pCurInstr->opcode == OP_INVALID
-                          || State.Cpu.pCurInstr->opcode == OP_ILLUD2
+                          || State.Cpu.pCurInstr->uOpcode == OP_INVALID
+                          || State.Cpu.pCurInstr->uOpcode == OP_ILLUD2
                           || (    State.enmUndefOp == kUndefOp_DefineByte
                               && !MyDisasIsValidInstruction(&State.Cpu));
             if (State.fUndefOp && State.enmUndefOp == kUndefOp_DefineByte)
@@ -356,13 +356,13 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
             }
             else if (!State.fUndefOp && State.enmUndefOp == kUndefOp_All)
             {
-                RTPrintf("%s: error at %#RX64: unexpected valid instruction (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->opcode);
+                RTPrintf("%s: error at %#RX64: unexpected valid instruction (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->uOpcode);
                 pfnFormatter(&State);
                 rcRet = VERR_GENERAL_FAILURE;
             }
             else if (State.fUndefOp && State.enmUndefOp == kUndefOp_Fail)
             {
-                RTPrintf("%s: error at %#RX64: undefined opcode (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->opcode);
+                RTPrintf("%s: error at %#RX64: undefined opcode (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->uOpcode);
                 pfnFormatter(&State);
                 rcRet = VERR_GENERAL_FAILURE;
             }

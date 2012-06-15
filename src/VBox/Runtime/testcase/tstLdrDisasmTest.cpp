@@ -127,7 +127,7 @@ extern "C" DECLEXPORT(int) DisasmTest1(void)
             rc = MyDisasm(CodeIndex, &Cpu, &cb); \
             if (RT_FAILURE(rc)) \
                 return CodeIndex | 0xf000; \
-            if (Cpu.pCurInstr->opcode != (enmOp)) \
+            if (Cpu.pCurInstr->uOpcode != (enmOp)) \
                 return CodeIndex| 0xe000; \
             if (cb != (cbInstr)) \
                 return CodeIndex | 0xd000; \

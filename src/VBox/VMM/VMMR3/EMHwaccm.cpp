@@ -200,7 +200,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "GEN EMU");
     if (RT_SUCCESS(rc))
     {
-        switch (Cpu.pCurInstr->opcode)
+        switch (Cpu.pCurInstr->uOpcode)
         {
         /* @todo we can do more now */
         case OP_MOV:
@@ -308,7 +308,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 
         if (!(Cpu.fPrefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
-            switch (Cpu.pCurInstr->opcode)
+            switch (Cpu.pCurInstr->uOpcode)
             {
                 case OP_IN:
                 {
@@ -327,7 +327,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         }
         else if (Cpu.fPrefix & DISPREFIX_REP)
         {
-            switch (Cpu.pCurInstr->opcode)
+            switch (Cpu.pCurInstr->uOpcode)
             {
                 case OP_INSB:
                 case OP_INSWD:
