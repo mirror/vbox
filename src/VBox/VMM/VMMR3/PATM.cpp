@@ -548,19 +548,21 @@ static DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint
     /** @todo could change in the future! */
     if (pDisInfo->fReadFlags & PATMREAD_ORGCODE)
     {
-        for (;;)
+        size_t      cbRead   = cbMaxRead;
+        RTUINTPTR   uSrcAddr = pDis->uInstrAddr + offInstr;
+        int rc = PATMR3ReadOrgInstr(pDisInfo->pVM, pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr], cbRead, &cbRead);
+        if (RT_SUCCESS(rc))
         {
-            int rc = PATMR3QueryOpcode(pDisInfo->pVM, (RTGCPTR32)pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr]);
-            if (RT_FAILURE(rc))
-                break; /* VERR_PATCH_NOT_FOUND */
-            offInstr++;
-            cbMinRead--;
-            if (cbMinRead == 0)
+            if (cbRead >= cbMinRead)
             {
-                pDis->cbCachedInstr = offInstr;
+                pDis->cbCachedInstr = offInstr + cbRead;
                 return VINF_SUCCESS;
             }
-            cbMaxRead--;
+
+            cbMinRead -= cbRead;
+            cbMaxRead -= cbRead;
+            offInstr  += cbRead;
+            uSrcAddr  += cbRead;
         }
 
 #ifdef VBOX_STRICT
@@ -585,12 +587,25 @@ static DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint
     }
     else
     {
-        /* pbInstrHC is the base address; adjust according to the GC pointer. */
+        /*
+         * pbInstrHC is the base address; adjust according to the GC pointer.
+         *
+         * Try read the max number of bytes here.  Since the disassembler only
+         * ever uses these bytes for the current instruction, it doesn't matter
+         * much if we accidentally read the start of the next instruction even
+         * if it happens to be a patch jump or int3.
+         */
         uint8_t const *pbInstrHC = pDisInfo->pbInstrHC; AssertPtr(pbInstrHC);
         pbInstrHC += uSrcAddr - pDisInfo->pInstrGC;
 
-        memcpy(&pDis->abInstr[offInstr], pbInstrHC, cbMinRead);
-        offInstr += cbMinRead;
+        size_t cbMaxRead1 = PAGE_SIZE - (uSrcAddr & PAGE_OFFSET_MASK);
+        size_t cbMaxRead2 = PAGE_SIZE - ((uintptr_t)pbInstrHC & PAGE_OFFSET_MASK);
+        size_t cbToRead   = RT_MIN(cbMaxRead1, RT_MAX(cbMaxRead2, cbMinRead));
+        if (cbToRead > cbMaxRead)
+            cbToRead = cbMaxRead;
+
+        memcpy(&pDis->abInstr[offInstr], pbInstrHC, cbToRead);
+        offInstr += (uint8_t)cbToRead;
     }
 
     pDis->cbCachedInstr = offInstr;
