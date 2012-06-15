@@ -78,18 +78,49 @@ VMMRCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   pDst        Where to store the read data.
  * @param   pSrc        Pointer to the data to read.
- * @param   cb          Size of data to read, only 1/2/4/8 is valid.
+ * @param   cb          Size of data to read.
  */
 VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
 {
     int    rc;
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
-    TRPMSaveTrap(pVCpu);  /* save the current trap info, because it will get trashed if our access failed. */
+    /*
+     * Save the current trap info, because it will get trashed if our access failed.
+     */
+    TRPMSaveTrap(pVCpu);
 
+    /*
+     * Need to serve the request in a silly loop because the assembly code wasn't
+     * written for abrbitrary sizes, only 1/2/4/8.
+     */
     MMGCRamRegisterTrapHandler(pVM);
-    rc = MMGCRamReadNoTrapHandler(pDst, pSrc, cb);
+    for (;;)
+    {
+        size_t cbThisRead;
+        switch (cb)
+        {
+            case 1: cbThisRead = 1; break;
+            case 2: cbThisRead = 2; break;
+            case 3: cbThisRead = 2; break;
+            case 4: cbThisRead = 4; break;
+            case 5: cbThisRead = 4; break;
+            case 6: cbThisRead = 4; break;
+            case 7: cbThisRead = 4; break;
+            default:
+            case 8: cbThisRead = 8; break;
+        }
+        rc = MMGCRamReadNoTrapHandler(pDst, pSrc, cbThisRead);
+        if (RT_FAILURE(rc) || cbThisRead == cb)
+            break;
+
+        /* advance */
+        cb   -= cbThisRead;
+        pDst  = (uint8_t *)pDst + cbThisRead;
+        pSrc  = (uint8_t *)pSrc + cbThisRead;
+    }
     MMGCRamDeregisterTrapHandler(pVM);
+
     if (RT_FAILURE(rc))
         TRPMRestoreTrap(pVCpu);
 
