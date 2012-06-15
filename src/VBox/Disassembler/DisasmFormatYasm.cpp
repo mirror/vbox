@@ -542,18 +542,18 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
              */
             case OP_FLD:
                 if (pCpu->bOpCode == 0xdb) /* m80fp workaround. */
-                    *(int *)&pCpu->param1.param &= ~0x1f; /* make it pure OP_PARM_M */
+                    *(int *)&pCpu->Param1.param &= ~0x1f; /* make it pure OP_PARM_M */
                 break;
             case OP_LAR: /* hack w -> v, probably not correct. */
-                *(int *)&pCpu->param2.param &= ~0x1f;
-                *(int *)&pCpu->param2.param |= OP_PARM_v;
+                *(int *)&pCpu->Param2.param &= ~0x1f;
+                *(int *)&pCpu->Param2.param |= OP_PARM_v;
                 break;
         }
 
         /*
          * Formatting context and associated macros.
          */
-        PCDISOPPARAM pParam = &pCpu->param1;
+        PCDISOPPARAM pParam = &pCpu->Param1;
         int iParam = 1;
 
 #define PUT_FAR() \
@@ -612,9 +612,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
          * Segment prefixing for instructions that doesn't do memory access.
          */
         if (    (pCpu->fPrefix & DISPREFIX_SEG)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param1.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param2.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param3.fUse))
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param1.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param2.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param3.fUse))
         {
             PUT_STR(s_szSegPrefix[pCpu->idxSegPrefix], 2);
             PUT_C(' ');
@@ -1112,8 +1112,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     PUT_C(' ');
                     switch (++iParam)
                     {
-                        case 2: pParam = &pCpu->param2; break;
-                        case 3: pParam = &pCpu->param3; break;
+                        case 2: pParam = &pCpu->Param2; break;
+                        case 3: pParam = &pCpu->Param3; break;
                         default: pParam = NULL; break;
                     }
                 }
@@ -1291,9 +1291,9 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     {
         /* no effective address which it may apply to. */
         Assert((pCpu->fPrefix & DISPREFIX_SEG) || pCpu->uCpuMode == DISCPUMODE_64BIT);
-        if (    !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param1.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param2.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->param3.fUse))
+        if (    !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param1.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param2.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param3.fUse))
             return true;
     }
 
@@ -1448,7 +1448,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
     /* shl eax,1 will be assembled to the form without the immediate byte. */
     if (    pCpu->pCurInstr->fParam2 == OP_PARM_Ib
-        &&  (uint8_t)pCpu->param2.parval == 1)
+        &&  (uint8_t)pCpu->Param2.parval == 1)
     {
         switch (pCpu->pCurInstr->uOpcode)
         {

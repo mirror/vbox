@@ -2922,7 +2922,7 @@ static int hmR0svmInterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE 
     RTGCPTR     addr;
     NOREF(uASID);
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, DISQPVWHICH_SRC);
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->Param1, &param1, DISQPVWHICH_SRC);
     if (RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 

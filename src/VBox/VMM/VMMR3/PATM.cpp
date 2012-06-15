@@ -1398,8 +1398,8 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
              && (pCpu->pCurInstr->uOpcode == OP_JMP || pCpu->pCurInstr->uOpcode == OP_CALL)
            )
         {
-            Assert(pCpu->param1.cb <= 4 || pCpu->param1.cb == 6);
-            if (    pCpu->param1.cb == 6 /* far call/jmp */
+            Assert(pCpu->Param1.cb <= 4 || pCpu->Param1.cb == 6);
+            if (    pCpu->Param1.cb == 6 /* far call/jmp */
                 ||  (pCpu->pCurInstr->uOpcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
                 ||  (OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) != OP_PARM_J && !(pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS))
                )
@@ -1557,8 +1557,8 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
              && (pCpu->pCurInstr->uOpcode == OP_JMP || pCpu->pCurInstr->uOpcode == OP_CALL)
            )
         {
-            Assert(pCpu->param1.cb <= 4 || pCpu->param1.cb == 6);
-            if (    pCpu->param1.cb == 6 /* far call/jmp */
+            Assert(pCpu->Param1.cb <= 4 || pCpu->Param1.cb == 6);
+            if (    pCpu->Param1.cb == 6 /* far call/jmp */
                 ||  (pCpu->pCurInstr->uOpcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
                 ||  (OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) != OP_PARM_J && !(pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS))
                )
@@ -1700,7 +1700,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         RCPTRTYPE(uint8_t *) pTargetGC = PATMResolveBranch(pCpu, pCurInstrGC);
         if (pTargetGC == 0)
         {
-            Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.fUse));
+            Log(("We don't support far jumps here!! (%08X)\n", pCpu->Param1.fUse));
             return VERR_PATCHING_REFUSED;
         }
 
@@ -1747,8 +1747,8 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pCpu->pCurInstr->fOpType & DISOPTYPE_POTENTIALLY_DANGEROUS)
         {
             /* mov ss, src? */
-            if (    (pCpu->param1.fUse & DISUSE_REG_SEG)
-                &&  (pCpu->param1.base.reg_seg == DISSELREG_SS))
+            if (    (pCpu->Param1.fUse & DISUSE_REG_SEG)
+                &&  (pCpu->Param1.base.reg_seg == DISSELREG_SS))
             {
                 Log(("Force recompilation of next instruction for OP_MOV at %RRv\n", pCurInstrGC));
                 pPatch->flags |= PATMFL_RECOMPILE_NEXT;
@@ -1756,9 +1756,9 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             }
 #if 0 /* necessary for Haiku */
             else
-            if (    (pCpu->param2.fUse & DISUSE_REG_SEG)
-                &&  (pCpu->param2.base.reg_seg == USE_REG_SS)
-                &&  (pCpu->param1.fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
+            if (    (pCpu->Param2.fUse & DISUSE_REG_SEG)
+                &&  (pCpu->Param2.base.reg_seg == USE_REG_SS)
+                &&  (pCpu->Param1.fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN16)))     /** @todo memory operand must in theory be handled too */
             {
                 /* mov GPR, ss */
                 rc = patmPatchGenMovFromSS(pVM, pPatch, pCpu, pCurInstrGC);
@@ -1944,8 +1944,8 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         /* In interrupt gate handlers it's possible to encounter jumps or calls when IF has been enabled again.
          * In that case we'll jump to the original instruction and continue from there. Otherwise an int 3 is executed.
          */
-        Assert(pCpu->param1.cb == 4 || pCpu->param1.cb == 6);
-        if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->param1.cb == 4 /* no far calls! */)
+        Assert(pCpu->Param1.cb == 4 || pCpu->Param1.cb == 6);
+        if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->Param1.cb == 4 /* no far calls! */)
         {
             rc = patmPatchGenCall(pVM, pPatch, pCpu, pCurInstrGC, (RTRCPTR)0xDEADBEEF, true);
             if (RT_SUCCESS(rc))
@@ -1961,8 +1961,8 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         /* In interrupt gate handlers it's possible to encounter jumps or calls when IF has been enabled again.
          * In that case we'll jump to the original instruction and continue from there. Otherwise an int 3 is executed.
          */
-        Assert(pCpu->param1.cb == 4 || pCpu->param1.cb == 6);
-        if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->param1.cb == 4 /* no far jumps! */)
+        Assert(pCpu->Param1.cb == 4 || pCpu->Param1.cb == 6);
+        if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->Param1.cb == 4 /* no far jumps! */)
         {
             rc = patmPatchGenJump(pVM, pPatch, pCpu, pCurInstrGC);
             if (RT_SUCCESS(rc))
@@ -2132,7 +2132,7 @@ int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstr
             uint8_t *pOrgJumpHC = PATMGCVirtToHCVirt(pVM, pCacheRec, pOrgJumpGC);
 
             bool disret = patmR3DisInstr(pVM, pPatch, pOrgJumpGC, pOrgJumpHC, PATMREAD_ORGCODE, &cpu, NULL);
-            if (!disret || cpu.pCurInstr->uOpcode != OP_CALL || cpu.param1.cb != 4 /* only near calls */)
+            if (!disret || cpu.pCurInstr->uOpcode != OP_CALL || cpu.Param1.cb != 4 /* only near calls */)
                 return VINF_SUCCESS;
         }
         return VWRN_CONTINUE_ANALYSIS;
@@ -2241,7 +2241,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
 
             if (pTargetGC == 0)
             {
-                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.fUse));
+                Log(("We don't support far jumps here!! (%08X)\n", cpu.Param1.fUse));
                 rc = VERR_PATCHING_REFUSED;
                 break;
             }
@@ -2460,7 +2460,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
             RCPTRTYPE(uint8_t *) addr = PATMResolveBranch(&cpu, pCurInstrGC);
             if (addr == 0)
             {
-                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.fUse));
+                Log(("We don't support far jumps here!! (%08X)\n", cpu.Param1.fUse));
                 rc = VERR_PATCHING_REFUSED;
                 break;
             }
@@ -3580,7 +3580,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     pTargetGC = PATMResolveBranch(pCpu, pInstrGC);
     if (pTargetGC == 0)
     {
-        Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.fUse));
+        Log(("We don't support far jumps here!! (%08X)\n", pCpu->Param1.fUse));
         rc = VERR_PATCHING_REFUSED;
         goto failure;
     }
@@ -3672,7 +3672,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
     if (!pVM->patm.s.mmio.pCachedData)
         goto failure;
 
-    if (pCpu->param2.fUse != DISUSE_DISPLACEMENT32)
+    if (pCpu->Param2.fUse != DISUSE_DISPLACEMENT32)
         goto failure;
 
     pPB = PATMGCVirtToHCVirt(pVM, pCacheRec, pPatch->pPrivInstrGC);
@@ -3751,7 +3751,7 @@ static int patmPatchPATMMMIOInstr(PVM pVM, RTRCPTR pInstrGC, PPATCHINFO pPatch)
     AssertMsg(cbInstr <= MAX_INSTR_SIZE, ("privileged instruction too big %d!!\n", cbInstr));
     if (cbInstr > MAX_INSTR_SIZE)
         return VERR_PATCHING_REFUSED;
-    if (cpu.param2.fUse != DISUSE_DISPLACEMENT32)
+    if (cpu.Param2.fUse != DISUSE_DISPLACEMENT32)
         return VERR_PATCHING_REFUSED;
 
     /* Add relocation record for cached data access. */
@@ -3913,8 +3913,8 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
     case OP_JNLE:
     case OP_JMP:
         Assert(pPatch->flags & PATMFL_JUMP_CONFLICT);
-        Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE32_REL);
-        if (!(pCpu->param1.fUse & DISUSE_IMMEDIATE32_REL))
+        Assert(pCpu->Param1.fUse & DISUSE_IMMEDIATE32_REL);
+        if (!(pCpu->Param1.fUse & DISUSE_IMMEDIATE32_REL))
             goto failure;
 
         Assert(pCpu->cbInstr == SIZEOF_NEARJUMP32 || pCpu->cbInstr == SIZEOF_NEAR_COND_JUMP32);
@@ -3948,9 +3948,9 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
      * A conflict jump patch needs to be treated differently; we'll just replace the relative jump address with one that
      * references the target instruction in the conflict patch.
      */
-    RTRCPTR pJmpDest = PATMR3GuestGCPtrToPatchGCPtr(pVM, pInstrGC + pCpu->cbInstr + (int32_t)pCpu->param1.parval);
+    RTRCPTR pJmpDest = PATMR3GuestGCPtrToPatchGCPtr(pVM, pInstrGC + pCpu->cbInstr + (int32_t)pCpu->Param1.parval);
 
-    AssertMsg(pJmpDest, ("PATMR3GuestGCPtrToPatchGCPtr failed for %RRv\n", pInstrGC + pCpu->cbInstr + (int32_t)pCpu->param1.parval));
+    AssertMsg(pJmpDest, ("PATMR3GuestGCPtrToPatchGCPtr failed for %RRv\n", pInstrGC + pCpu->cbInstr + (int32_t)pCpu->Param1.parval));
     pPatch->pPatchJumpDestGC = pJmpDest;
 
     PATMP2GLOOKUPREC cacheRec;
@@ -5198,7 +5198,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
     if (    disret == true
         && (pConflictPatch->flags & PATMFL_CODE32)
         && (cpu.pCurInstr->uOpcode == OP_JMP || (cpu.pCurInstr->fOpType & DISOPTYPE_COND_CONTROLFLOW))
-        && (cpu.param1.fUse & DISUSE_IMMEDIATE32_REL))
+        && (cpu.Param1.fUse & DISUSE_IMMEDIATE32_REL))
     {
         /* Hint patches must be enabled first. */
         if (pConflictPatch->flags & PATMFL_INSTR_HINT)

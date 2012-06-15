@@ -760,7 +760,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     NOREF(pVM); NOREF(pvFault);
 #endif
 
-    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->param1.fUse,  pDis->param1.base.reg_gen));
+    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->Param1.fUse,  pDis->Param1.base.reg_gen));
 
     /* Non-supervisor mode write means it's used for something else. */
     if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
@@ -803,9 +803,9 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
             }
             return false;
     }
-    if (    (    (pDis->param1.fUse & DISUSE_REG_GEN32)
-             ||  (pDis->param1.fUse & DISUSE_REG_GEN64))
-        &&  (pDis->param1.base.reg_gen == DISGREG_ESP))
+    if (    (    (pDis->Param1.fUse & DISUSE_REG_GEN32)
+             ||  (pDis->Param1.fUse & DISUSE_REG_GEN64))
+        &&  (pDis->Param1.base.reg_gen == DISGREG_ESP))
     {
         Log4(("pgmPoolMonitorIsReused: ESP\n"));
         return true;
@@ -886,7 +886,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
 DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
                                           PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-    unsigned uIncrement = pDis->param1.cb;
+    unsigned uIncrement = pDis->Param1.cb;
     NOREF(pVM);
 
     Assert(pDis->uCpuMode == DISCPUMODE_32BIT || pDis->uCpuMode == DISCPUMODE_64BIT);
@@ -974,10 +974,10 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
      */
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
     uint32_t    iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
-    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->param1));
+    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->Param1));
     PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #else
-    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->param1));
+    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->Param1));
 #endif
 
     /*
@@ -1122,7 +1122,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     pVCpu->pgm.s.cPoolAccessHandler++;
     if (    pPage->GCPtrLastAccessHandlerRip >= pRegFrame->rip - 0x40      /* observed loops in Windows 7 x64 */
         &&  pPage->GCPtrLastAccessHandlerRip <  pRegFrame->rip + 0x40
-        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->param1.cb)
+        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->Param1.cb)
         &&  pVCpu->pgm.s.cPoolAccessHandler == pPage->cLastAccessHandler + 1)
     {
         Log(("Possible page reuse cMods=%d -> %d (locked=%d type=%s)\n", pPage->cModifications, pPage->cModifications * 2, pgmPoolIsPageLocked(pPage), pgmPoolPoolKindToStr(pPage->enmKind)));

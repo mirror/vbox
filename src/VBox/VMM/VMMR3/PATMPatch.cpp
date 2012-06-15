@@ -693,7 +693,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     if (fIndirect)
     {
         Log(("patmPatchGenIndirectCall\n"));
-        Assert(pCpu->param1.cb == 4);
+        Assert(pCpu->Param1.cb == 4);
         Assert(OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) != OP_PARM_J);
 
         /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
@@ -789,7 +789,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     /* 2: We must push the target address onto the stack before appending the indirect call code. */
 
     Log(("patmPatchGenIndirectJump\n"));
-    Assert(pCpu->param1.cb == 4);
+    Assert(pCpu->Param1.cb == 4);
     Assert(OP_PARM_VTYPE(pCpu->pCurInstr->fParam1) != OP_PARM_J);
 
     /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
@@ -856,7 +856,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
 
     /** @note optimization: multiple identical ret instruction in a single patch can share a single patched ret. */
     if (    pPatch->pTempInfo->pPatchRetInstrGC
-        &&  pPatch->pTempInfo->uPatchRetParam1 == (uint32_t)pCpu->param1.parval) /* nr of bytes popped off the stack should be identical of course! */
+        &&  pPatch->pTempInfo->uPatchRetParam1 == (uint32_t)pCpu->Param1.parval) /* nr of bytes popped off the stack should be identical of course! */
     {
         Assert(pCpu->pCurInstr->uOpcode == OP_RETN);
         STAM_COUNTER_INC(&pVM->patm.s.StatGenRetReused);
@@ -890,7 +890,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     if (rc == VINF_SUCCESS)
     {
         pPatch->pTempInfo->pPatchRetInstrGC = pPatchRetInstrGC;
-        pPatch->pTempInfo->uPatchRetParam1  = pCpu->param1.parval;
+        pPatch->pTempInfo->uPatchRetParam1  = pCpu->Param1.parval;
     }
     return rc;
 }
@@ -1163,21 +1163,21 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
         // mov DRx, GPR
         pPB[0] = 0x89;      //mov disp32, GPR
-        Assert(pCpu->param1.fUse & DISUSE_REG_DBG);
-        Assert(pCpu->param2.fUse & DISUSE_REG_GEN32);
+        Assert(pCpu->Param1.fUse & DISUSE_REG_DBG);
+        Assert(pCpu->Param2.fUse & DISUSE_REG_GEN32);
 
-        dbgreg = pCpu->param1.base.reg_dbg;
-        reg    = pCpu->param2.base.reg_gen;
+        dbgreg = pCpu->Param1.base.reg_dbg;
+        reg    = pCpu->Param2.base.reg_gen;
     }
     else
     {
         // mov GPR, DRx
-        Assert(pCpu->param1.fUse & DISUSE_REG_GEN32);
-        Assert(pCpu->param2.fUse & DISUSE_REG_DBG);
+        Assert(pCpu->Param1.fUse & DISUSE_REG_GEN32);
+        Assert(pCpu->Param2.fUse & DISUSE_REG_DBG);
 
         pPB[0] = 0x8B;      // mov GPR, disp32
-        reg    = pCpu->param1.base.reg_gen;
-        dbgreg = pCpu->param2.base.reg_dbg;
+        reg    = pCpu->Param1.base.reg_gen;
+        dbgreg = pCpu->Param2.base.reg_dbg;
     }
 
     pPB[1] = MAKE_MODRM(mod, reg, rm);
@@ -1213,20 +1213,20 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
         // mov CRx, GPR
         pPB[0] = 0x89;      //mov disp32, GPR
-        ctrlreg = pCpu->param1.base.reg_ctrl;
-        reg     = pCpu->param2.base.reg_gen;
-        Assert(pCpu->param1.fUse & DISUSE_REG_CR);
-        Assert(pCpu->param2.fUse & DISUSE_REG_GEN32);
+        ctrlreg = pCpu->Param1.base.reg_ctrl;
+        reg     = pCpu->Param2.base.reg_gen;
+        Assert(pCpu->Param1.fUse & DISUSE_REG_CR);
+        Assert(pCpu->Param2.fUse & DISUSE_REG_GEN32);
     }
     else
     {
         // mov GPR, DRx
-        Assert(pCpu->param1.fUse & DISUSE_REG_GEN32);
-        Assert(pCpu->param2.fUse & DISUSE_REG_CR);
+        Assert(pCpu->Param1.fUse & DISUSE_REG_GEN32);
+        Assert(pCpu->Param2.fUse & DISUSE_REG_CR);
 
         pPB[0]  = 0x8B;      // mov GPR, disp32
-        reg     = pCpu->param1.base.reg_gen;
-        ctrlreg = pCpu->param2.base.reg_ctrl;
+        reg     = pCpu->Param1.base.reg_gen;
+        ctrlreg = pCpu->Param2.base.reg_ctrl;
     }
 
     pPB[1] = MAKE_MODRM(mod, reg, rm);
@@ -1291,7 +1291,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
     offset = 0;
     if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         pPB[offset++] = 0x66; /* size override -> 16 bits pop */
-    pPB[offset++] = 0x58 + pCpu->param1.base.reg_gen;
+    pPB[offset++] = 0x58 + pCpu->Param1.base.reg_gen;
     PATCHGEN_EPILOG(pPatch, offset);
 
 
@@ -1324,7 +1324,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
 
     PATCHGEN_PROLOG(pVM, pPatch);
 
-    if (pCpu->param1.fUse == DISUSE_REG_GEN32 || pCpu->param1.fUse == DISUSE_REG_GEN16)
+    if (pCpu->Param1.fUse == DISUSE_REG_GEN32 || pCpu->Param1.fUse == DISUSE_REG_GEN16)
     {
         /* Register operand */
         // 8B 15 [32 bits addr]   mov edx, CPUMCTX.tr/ldtr
@@ -1334,7 +1334,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
 
         pPB[offset++] = 0x8B;              // mov       destreg, CPUMCTX.tr/ldtr
         /* Modify REG part according to destination of original instruction */
-        pPB[offset++] = MAKE_MODRM(0, pCpu->param1.base.reg_gen, 5);
+        pPB[offset++] = MAKE_MODRM(0, pCpu->Param1.base.reg_gen, 5);
         if (pCpu->pCurInstr->uOpcode == OP_STR)
         {
             *(RTRCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);

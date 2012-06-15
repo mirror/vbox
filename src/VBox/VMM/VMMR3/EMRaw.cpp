@@ -989,19 +989,19 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                 break;
 
             case OP_MOV_CR:
-                if (Cpu.param1.fUse & DISUSE_REG_GEN32)
+                if (Cpu.Param1.fUse & DISUSE_REG_GEN32)
                 {
                     //read
-                    Assert(Cpu.param2.fUse & DISUSE_REG_CR);
-                    Assert(Cpu.param2.base.reg_ctrl <= DISCREG_CR4);
-                    STAM_COUNTER_INC(&pStats->StatMovReadCR[Cpu.param2.base.reg_ctrl]);
+                    Assert(Cpu.Param2.fUse & DISUSE_REG_CR);
+                    Assert(Cpu.Param2.base.reg_ctrl <= DISCREG_CR4);
+                    STAM_COUNTER_INC(&pStats->StatMovReadCR[Cpu.Param2.base.reg_ctrl]);
                 }
                 else
                 {
                     //write
-                    Assert(Cpu.param1.fUse & DISUSE_REG_CR);
-                    Assert(Cpu.param1.base.reg_ctrl <= DISCREG_CR4);
-                    STAM_COUNTER_INC(&pStats->StatMovWriteCR[Cpu.param1.base.reg_ctrl]);
+                    Assert(Cpu.Param1.fUse & DISUSE_REG_CR);
+                    Assert(Cpu.Param1.base.reg_ctrl <= DISCREG_CR4);
+                    STAM_COUNTER_INC(&pStats->StatMovWriteCR[Cpu.Param1.base.reg_ctrl]);
                 }
                 break;
 
@@ -1099,7 +1099,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                         STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
 
                         if (    Cpu.pCurInstr->uOpcode == OP_MOV_CR
-                            &&  Cpu.param1.fUse == DISUSE_REG_CR /* write */
+                            &&  Cpu.Param1.fUse == DISUSE_REG_CR /* write */
                            )
                         {
                             /* Deal with CR0 updates inside patch code that force
