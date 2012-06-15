@@ -47,8 +47,8 @@ pmode_enter	endp
 
 pmode_exit	proc	near
 
-		mov	ax, 28h		; Ensure RM limit/attributes
-		mov	ds, ax
+		mov	ax, 40h		; Ensure RM limit/attributes
+		mov	ds, ax		; (where base = selector << 4)
 
 		mov	eax, cr0
 		and	al, 0FEh
@@ -63,7 +63,7 @@ pmode_exit	endp
 
 
 pmbios_gdt_desc:
-		dw	30h
+		dw	40h + 7                 ; last selector plus 8 - 1
 		dw	pmbios_gdt
 		dw	000Fh
 
@@ -74,3 +74,6 @@ pmbios_gdt:
 		dw 0ffffh, 0, 9300h, 00cfh	; 32-bit data (0x18)
 		dw 0ffffh, 0, 9b0fh, 0000h	; 16-bit code, base=0xf0000
 		dw 0ffffh, 0, 9300h, 0000h	; 16-bit data, base=0x0
+		dw 0, 0, 0, 0
+		dw 0, 0, 0, 0
+		dw 0ffffh, 400h, 9300h, 0000h   ; 16-bit data, base=0x40
