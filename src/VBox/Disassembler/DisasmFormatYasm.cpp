@@ -393,7 +393,6 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         ||  (   pOp->uOpcode == OP_ILLUD2
              && (pCpu->fPrefix & DISPREFIX_LOCK)))
         PUT_SZ("Illegal opcode");
-        //cchOutput += RTStrPrintf(pszDst, cchDst, "Illegal opcode %.*Rhxs", pCpu->cbInstr, pCpu->abInstr);
     else
     {
         /*
