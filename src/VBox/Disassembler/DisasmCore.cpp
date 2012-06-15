@@ -577,23 +577,13 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     return size;
 }
 //*****************************************************************************
-// SIB byte: (32 bits mode only)
+// SIB byte: (not 16-bit mode)
 // 7 - 6  5 - 3  2-0
 // Scale  Index  Base
-//*****************************************************************************
-static const char *szSIBBaseReg[8]    = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
-static const char *szSIBIndexReg[8]   = {"EAX", "ECX", "EDX", "EBX", NULL,  "EBP", "ESI", "EDI"};
-static const char *szSIBBaseReg64[16] = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
-static const char *szSIBIndexReg64[16]= {"RAX", "RCX", "RDX", "RBX", NULL,  "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
-#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED) || defined(_MSC_VER)
-static const char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
-#endif
 //*****************************************************************************
 void UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     unsigned regtype;
-    const char **ppszSIBIndexReg;
-    const char **ppszSIBBaseReg;
     NOREF(uCodePtr); NOREF(pOp);
 
     unsigned scale = pCpu->SIB.Bits.Scale;
@@ -601,19 +591,11 @@ void UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTAT
     unsigned index = pCpu->SIB.Bits.Index;
 
     if (pCpu->uAddrMode == DISCPUMODE_32BIT)
-    {
-        ppszSIBIndexReg = szSIBIndexReg;
-        ppszSIBBaseReg  = szSIBBaseReg;
-        regtype         = DISUSE_REG_GEN32;
-    }
+        regtype    = DISUSE_REG_GEN32;
     else
-    {
-        ppszSIBIndexReg = szSIBIndexReg64;
-        ppszSIBBaseReg  = szSIBBaseReg64;
-        regtype         = DISUSE_REG_GEN64;
-    }
+        regtype    = DISUSE_REG_GEN64;
 
-    if (ppszSIBIndexReg[index])
+    if (index != 4)
     {
          pParam->fUse |= DISUSE_INDEX | regtype;
          pParam->Index.idxGenReg = index;
@@ -2284,16 +2266,6 @@ unsigned ParseGrp16(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     return size;
 }
 //*****************************************************************************
-#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
-static const char *szModRMReg8[]      = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8B", "R9B", "R10B", "R11B", "R12B", "R13B", "R14B", "R15B", "SPL", "BPL", "SIL", "DIL"};
-static const char *szModRMReg16[]     = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R8W", "R9W", "R10W", "R11W", "R12W", "R13W", "R14W", "R15W"};
-static const char *szModRMReg32[]     = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D", "R11D", "R12D", "R13D", "R14D", "R15D"};
-static const char *szModRMReg64[]     = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
-static const char *szModRMReg1616[8]  = {"BX+SI", "BX+DI", "BP+SI", "BP+DI", "SI", "DI", "BP", "BX"};
-#endif
-static const char *szModRMSegReg[6]   = {"ES", "CS", "SS", "DS", "FS", "GS"};
-static const int   BaseModRMReg16[8]  = { DISGREG_BX, DISGREG_BX, DISGREG_BP, DISGREG_BP, DISGREG_SI, DISGREG_DI, DISGREG_BP, DISGREG_BX};
-static const int   IndexModRMReg16[4] = { DISGREG_SI, DISGREG_DI, DISGREG_SI, DISGREG_DI};
 //*****************************************************************************
 static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr)
 {
@@ -2369,16 +2341,19 @@ static void disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDI
     }
 }
 //*****************************************************************************
+static const uint8_t g_auBaseModRMReg16[8]  =
+{ DISGREG_BX, DISGREG_BX, DISGREG_BP, DISGREG_BP, DISGREG_SI, DISGREG_DI, DISGREG_BP, DISGREG_BX};
+static const uint8_t g_auIndexModRMReg16[4] = { DISGREG_SI, DISGREG_DI, DISGREG_SI, DISGREG_DI };
 //*****************************************************************************
 static void disasmModRMReg16(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
 {
     NOREF(pCpu); NOREF(pOp);
     pParam->fUse |= DISUSE_REG_GEN16;
-    pParam->Base.idxGenReg = BaseModRMReg16[idx];
+    pParam->Base.idxGenReg = g_auBaseModRMReg16[idx];
     if (idx < 4)
     {
         pParam->fUse |= DISUSE_INDEX;
-        pParam->Index.idxGenReg = IndexModRMReg16[idx];
+        pParam->Index.idxGenReg = g_auIndexModRMReg16[idx];
     }
 }
 //*****************************************************************************
@@ -2386,7 +2361,7 @@ static void disasmModRMReg16(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, P
 static void disasmModRMSReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
 {
     NOREF(pOp);
-    if (idx >= RT_ELEMENTS(szModRMSegReg))
+    if (idx >= DISSELREG_END)
     {
         Log(("disasmModRMSReg %d failed!!\n", idx));
         pCpu->rc = VERR_DIS_INVALID_PARAMETER;

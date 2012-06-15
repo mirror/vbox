@@ -303,6 +303,8 @@ typedef enum
     DISSELREG_DS = 3,
     DISSELREG_FS = 4,
     DISSELREG_GS = 5,
+    /** End of the valid register index values. */
+    DISSELREG_END,
     /** The usual 32-bit paranoia. */
     DIS_SEGREG_32BIT_HACK = 0x7fffffff
 } DISSELREG;
