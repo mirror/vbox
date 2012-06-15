@@ -548,7 +548,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
                 uint16_t val16;
 
                 pParamVal->flags |= DISQPV_FLAG_16;
-                if (RT_FAILURE(DISFetchReg16(pCtx, pParam->index.reg_gen, &val16))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg16(pCtx, pParam->Index.idxGenReg, &val16))) return VERR_INVALID_PARAMETER;
 
                 Assert(!(pParam->fUse & DISUSE_SCALE));   /* shouldn't be possible in 16 bits mode */
 
@@ -560,7 +560,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
                 uint32_t val32;
 
                 pParamVal->flags |= DISQPV_FLAG_32;
-                if (RT_FAILURE(DISFetchReg32(pCtx, pParam->index.reg_gen, &val32))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg32(pCtx, pParam->Index.idxGenReg, &val32))) return VERR_INVALID_PARAMETER;
 
                 if (pParam->fUse & DISUSE_SCALE)
                     val32 *= pParam->uScale;
@@ -573,7 +573,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
                 uint64_t val64;
 
                 pParamVal->flags |= DISQPV_FLAG_64;
-                if (RT_FAILURE(DISFetchReg64(pCtx, pParam->index.reg_gen, &val64))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg64(pCtx, pParam->Index.idxGenReg, &val64))) return VERR_INVALID_PARAMETER;
 
                 if (pParam->fUse & DISUSE_SCALE)
                     val64 *= pParam->uScale;
