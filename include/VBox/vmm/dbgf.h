@@ -913,7 +913,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszP
 # define DBGFR3DisasInstrCurrentLog(pVCpu, pszPrefix) do { } while (0)
 #endif
 
-VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr);
+VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, const char *pszPrefix);
 
 /** @def DBGFR3DisasInstrLog
  * Disassembles the specified guest context instruction and writes it to the log.
@@ -921,13 +921,13 @@ VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPt
  * @thread Any EMT.
  */
 # ifdef LOG_ENABLED
-#  define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) \
+#  define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr, pszPrefix) \
     do { \
         if (LogIsEnabled()) \
-            DBGFR3DisasInstrLogInternal(pVCpu, Sel, GCPtr); \
+            DBGFR3DisasInstrLogInternal(pVCpu, Sel, GCPtr, pszPrefix); \
     } while (0)
 # else
-#  define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) do { } while (0)
+#  define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr, pszPrefix) do { } while (0)
 # endif
 #endif
 
