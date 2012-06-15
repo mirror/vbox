@@ -1163,7 +1163,7 @@ unsigned ParseModFence(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
 unsigned ParseImmByte(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    pParam->parval = disReadByte(pCpu, uCodePtr);
+    pParam->uValue = disReadByte(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE8;
     pParam->cb     = sizeof(uint8_t);
     return sizeof(uint8_t);
@@ -1182,20 +1182,20 @@ unsigned ParseImmByteSX(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam,
     NOREF(pOp);
     if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
-        pParam->parval = (uint32_t)(int8_t)disReadByte(pCpu, uCodePtr);
+        pParam->uValue = (uint32_t)(int8_t)disReadByte(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE32_SX8;
         pParam->cb     = sizeof(uint32_t);
     }
     else
     if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
-        pParam->parval = (uint64_t)(int8_t)disReadByte(pCpu, uCodePtr);
+        pParam->uValue = (uint64_t)(int8_t)disReadByte(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE64_SX8;
         pParam->cb     = sizeof(uint64_t);
     }
     else
     {
-        pParam->parval = (uint16_t)(int8_t)disReadByte(pCpu, uCodePtr);
+        pParam->uValue = (uint16_t)(int8_t)disReadByte(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE16_SX8;
         pParam->cb     = sizeof(uint16_t);
     }
@@ -1213,7 +1213,7 @@ unsigned ParseImmByteSX_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARA
 unsigned ParseImmUshort(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    pParam->parval = disReadWord(pCpu, uCodePtr);
+    pParam->uValue = disReadWord(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE16;
     pParam->cb     = sizeof(uint16_t);
     return sizeof(uint16_t);
@@ -1230,7 +1230,7 @@ unsigned ParseImmUshort_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARA
 unsigned ParseImmUlong(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    pParam->parval = disReadDWord(pCpu, uCodePtr);
+    pParam->uValue = disReadDWord(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE32;
     pParam->cb     = sizeof(uint32_t);
     return sizeof(uint32_t);
@@ -1247,7 +1247,7 @@ unsigned ParseImmUlong_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM
 unsigned ParseImmQword(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    pParam->parval = disReadQWord(pCpu, uCodePtr);
+    pParam->uValue = disReadQWord(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE64;
     pParam->cb     = sizeof(uint64_t);
     return sizeof(uint64_t);
@@ -1266,7 +1266,7 @@ unsigned ParseImmV(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
     NOREF(pOp);
     if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
-        pParam->parval = disReadDWord(pCpu, uCodePtr);
+        pParam->uValue = disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE32;
         pParam->cb     = sizeof(uint32_t);
         return sizeof(uint32_t);
@@ -1274,13 +1274,13 @@ unsigned ParseImmV(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
 
     if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
-        pParam->parval = disReadQWord(pCpu, uCodePtr);
+        pParam->uValue = disReadQWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE64;
         pParam->cb     = sizeof(uint64_t);
         return sizeof(uint64_t);
     }
 
-    pParam->parval = disReadWord(pCpu, uCodePtr);
+    pParam->uValue = disReadWord(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE16;
     pParam->cb     = sizeof(uint16_t);
     return sizeof(uint16_t);
@@ -1304,7 +1304,7 @@ unsigned ParseImmZ(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
     if (pCpu->uOpMode == DISCPUMODE_16BIT)
     {
-        pParam->parval = disReadWord(pCpu, uCodePtr);
+        pParam->uValue = disReadWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE16;
         pParam->cb     = sizeof(uint16_t);
         return sizeof(uint16_t);
@@ -1313,13 +1313,13 @@ unsigned ParseImmZ(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
     /* 64 bits op mode means *sign* extend to 64 bits. */
     if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
-        pParam->parval = (uint64_t)(int32_t)disReadDWord(pCpu, uCodePtr);
+        pParam->uValue = (uint64_t)(int32_t)disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE64;
         pParam->cb     = sizeof(uint64_t);
     }
     else
     {
-        pParam->parval = disReadDWord(pCpu, uCodePtr);
+        pParam->uValue = disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE32;
         pParam->cb     = sizeof(uint32_t);
     }
@@ -1342,7 +1342,7 @@ unsigned ParseImmZ_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPa
 unsigned ParseImmBRel(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     NOREF(pOp);
-    pParam->parval = disReadByte(pCpu, uCodePtr);
+    pParam->uValue = disReadByte(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE8_REL;
     pParam->cb     = sizeof(uint8_t);
     return sizeof(char);
@@ -1363,7 +1363,7 @@ unsigned ParseImmVRel(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     NOREF(pOp);
     if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
-        pParam->parval = disReadDWord(pCpu, uCodePtr);
+        pParam->uValue = disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE32_REL;
         pParam->cb     = sizeof(int32_t);
         return sizeof(int32_t);
@@ -1372,13 +1372,13 @@ unsigned ParseImmVRel(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     if (pCpu->uOpMode == DISCPUMODE_64BIT)
     {
         /* 32 bits relative immediate sign extended to 64 bits. */
-        pParam->parval = (uint64_t)(int32_t)disReadDWord(pCpu, uCodePtr);
+        pParam->uValue = (uint64_t)(int32_t)disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE64_REL;
         pParam->cb     = sizeof(int64_t);
         return sizeof(int32_t);
     }
 
-    pParam->parval = disReadWord(pCpu, uCodePtr);
+    pParam->uValue = disReadWord(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE16_REL;
     pParam->cb     = sizeof(int16_t);
     return sizeof(int16_t);
@@ -1403,8 +1403,8 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
         if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
         {
             /* far 16:32 pointer */
-            pParam->parval = disReadDWord(pCpu, uCodePtr);
-            *((uint32_t*)&pParam->parval+1) = disReadWord(pCpu, uCodePtr+sizeof(uint32_t));
+            pParam->uValue = disReadDWord(pCpu, uCodePtr);
+            *((uint32_t*)&pParam->uValue+1) = disReadWord(pCpu, uCodePtr+sizeof(uint32_t));
             pParam->fUse   |= DISUSE_IMMEDIATE_ADDR_16_32;
             pParam->cb     = sizeof(uint16_t) + sizeof(uint32_t);
             return sizeof(uint32_t) + sizeof(uint16_t);
@@ -1439,7 +1439,7 @@ unsigned ParseImmAddr(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
     {
         /* far 16:16 pointer */
-        pParam->parval = disReadDWord(pCpu, uCodePtr);
+        pParam->uValue = disReadDWord(pCpu, uCodePtr);
         pParam->fUse  |= DISUSE_IMMEDIATE_ADDR_16_16;
         pParam->cb     = 2*sizeof(uint16_t);
         return sizeof(uint32_t);
@@ -1499,15 +1499,15 @@ unsigned ParseImmAddrF(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
     if (pCpu->uOpMode == DISCPUMODE_32BIT)
     {
         // far 16:32 pointer
-        pParam->parval = disReadDWord(pCpu, uCodePtr);
-        *((uint32_t*)&pParam->parval+1) = disReadWord(pCpu, uCodePtr+sizeof(uint32_t));
+        pParam->uValue = disReadDWord(pCpu, uCodePtr);
+        *((uint32_t*)&pParam->uValue+1) = disReadWord(pCpu, uCodePtr+sizeof(uint32_t));
         pParam->fUse   |= DISUSE_IMMEDIATE_ADDR_16_32;
         pParam->cb     = sizeof(uint16_t) + sizeof(uint32_t);
         return sizeof(uint32_t) + sizeof(uint16_t);
     }
 
     // far 16:16 pointer
-    pParam->parval = disReadDWord(pCpu, uCodePtr);
+    pParam->uValue = disReadDWord(pCpu, uCodePtr);
     pParam->fUse  |= DISUSE_IMMEDIATE_ADDR_16_16;
     pParam->cb     = 2*sizeof(uint16_t);
     return sizeof(uint32_t);
