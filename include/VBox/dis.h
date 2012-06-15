@@ -431,8 +431,8 @@ typedef struct DISOPPARAM
         uint8_t     reg_gen;
     } index;
 
-    /** 2, 4 or 8. */
-    uint8_t         scale;
+    /** 2, 4 or 8, if DISUSE_SCALE is set in fUse. */
+    uint8_t         uScale;
     /** Parameter size. */
     uint8_t         cb;
 } DISOPPARAM;

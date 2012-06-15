@@ -731,7 +731,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             if (fUse & DISUSE_SCALE)
                             {
                                 PUT_C('*');
-                                PUT_C('0' + pParam->scale);
+                                PUT_C('0' + pParam->uScale);
                             }
                         }
                         else

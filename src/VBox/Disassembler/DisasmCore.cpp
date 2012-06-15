@@ -591,14 +591,14 @@ static const char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
 //*****************************************************************************
 void UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned scale, base, index, regtype;
+    unsigned regtype;
     const char **ppszSIBIndexReg;
     const char **ppszSIBBaseReg;
     NOREF(uCodePtr); NOREF(pOp);
 
-    scale = pCpu->SIB.Bits.Scale;
-    base  = pCpu->SIB.Bits.Base;
-    index = pCpu->SIB.Bits.Index;
+    unsigned scale = pCpu->SIB.Bits.Scale;
+    unsigned base  = pCpu->SIB.Bits.Base;
+    unsigned index = pCpu->SIB.Bits.Index;
 
     if (pCpu->uAddrMode == DISCPUMODE_32BIT)
     {
@@ -620,8 +620,8 @@ void UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTAT
 
          if (scale != 0)
          {
-             pParam->fUse |= DISUSE_SCALE;
-             pParam->scale  = (1<<scale);
+             pParam->fUse  |= DISUSE_SCALE;
+             pParam->uScale = (1<<scale);
          }
     }
 
