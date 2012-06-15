@@ -6467,9 +6467,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     }
 
     Log2(("pPatchBlockGC %RRv - pEip %RRv corresponding GC address %RRv\n", PATCHCODE_PTR_GC(&pPatch->patch), pEip, pNewEip));
-#ifdef LOG_ENABLED
-    CPUMR3DisasmInstr(pVM, pVCpu, pCtx, pNewEip, "PATCHRET: ");
-#endif
+    DBGFR3DisasInstrLog(pVCpu, pCtx->cs, pNewEip, "PATCHRET: ");
     if (pNewEip >= pPatch->patch.pPrivInstrGC && pNewEip < pPatch->patch.pPrivInstrGC + pPatch->patch.cbPatchJump)
     {
         /* We can't jump back to code that we've overwritten with a 5 byte jump! */
