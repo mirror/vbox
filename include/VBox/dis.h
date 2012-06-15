@@ -383,7 +383,7 @@ typedef enum
 
 
 /**
- * Operand Parameter.
+ * Opcode parameter (operand) details.
  */
 typedef struct DISOPPARAM
 {
