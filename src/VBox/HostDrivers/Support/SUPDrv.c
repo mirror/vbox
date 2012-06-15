@@ -5155,7 +5155,7 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
 
     /*
      * Do this behind a spinlock with interrupts disabled as this can fire
-     * on all CPUs simultaneously, see #6110.
+     * on all CPUs simultaneously, see @bugref{6110}.
      */
     RTSpinlockAcquire(pDevExt->hGipSpinlock);
 
