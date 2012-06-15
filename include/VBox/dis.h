@@ -193,7 +193,7 @@ typedef enum DISCPUMODE
 
 /** @name 64-bit general register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
  * @note  Safe to assume same values as the 16-bit and 32-bit general registers.
  * @{
  */
@@ -217,7 +217,7 @@ typedef enum DISCPUMODE
 
 /** @name 32-bit general register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
  * @note  Safe to assume same values as the 16-bit and 64-bit general registers.
  * @{
  */
@@ -241,7 +241,7 @@ typedef enum DISCPUMODE
 
 /** @name 16-bit general register indexes.
  * This matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
  * @note  Safe to assume same values as the 32-bit and 64-bit general registers.
  * @{
  */
@@ -265,7 +265,7 @@ typedef enum DISCPUMODE
 
 /** @name 8-bit general register indexes.
  * This mostly (?) matches the AMD64 register encoding.  It is found used in
- * DISOPPARAM::base.reg_gen and DISOPPARAM::index.reg_gen.
+ * DISOPPARAM::base.reg_gen and DISOPPARAM::Index.idxGenReg.
  * @{
  */
 #define DISGREG_AL                      UINT8_C(0)
@@ -425,12 +425,14 @@ typedef struct DISOPPARAM
         /** DISDREG_XXX */
         uint8_t     reg_dbg;
     } base;
+    /** The SIB index register meaning, applicable if DISUSE_INDEX is
+     * set in fUse. */
     union
     {
-        /** DISGREG_XXX. */
-        uint8_t     reg_gen;
-    } index;
-
+        /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN8,
+         * DISUSE_REG_GEN16, DISUSE_REG_GEN32 or DISUSE_REG_GEN64 is set in fUse. */
+        uint8_t     idxGenReg;
+    } Index;
     /** 2, 4 or 8, if DISUSE_SCALE is set in fUse. */
     uint8_t         uScale;
     /** Parameter size. */

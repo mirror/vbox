@@ -616,7 +616,7 @@ void UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTAT
     if (ppszSIBIndexReg[index])
     {
          pParam->fUse |= DISUSE_INDEX | regtype;
-         pParam->index.reg_gen = index;
+         pParam->Index.idxGenReg = index;
 
          if (scale != 0)
          {
@@ -2378,7 +2378,7 @@ static void disasmModRMReg16(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, P
     if (idx < 4)
     {
         pParam->fUse |= DISUSE_INDEX;
-        pParam->index.reg_gen = IndexModRMReg16[idx];
+        pParam->Index.idxGenReg = IndexModRMReg16[idx];
     }
 }
 //*****************************************************************************
