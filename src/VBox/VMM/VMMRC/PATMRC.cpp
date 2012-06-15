@@ -509,8 +509,8 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            cpu.mode = SELMGetCpuModeFromSelector(VMMGetCpu0(pVM), pRegFrame->eflags, pRegFrame->cs, 0);
-            if (cpu.mode != DISCPUMODE_32BIT)
+            DISCPUMODE enmCpuMode = SELMGetCpuModeFromSelector(VMMGetCpu0(pVM), pRegFrame->eflags, pRegFrame->cs, 0);
+            if (enmCpuMode != DISCPUMODE_32BIT)
             {
                 AssertFailed();
                 return VINF_EM_RAW_EMULATE_INSTR;
@@ -522,7 +522,7 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                                              pRec->patch.aPrivInstr, pRec->patch.cbPrivInstr);
             rc = VBOXSTRICTRC_TODO(rcStrict);
 #else
-            rc = DISInstr(&pRec->patch.aPrivInstr[0], (DISCPUMODE)cpu.mode, &cpu, &cbOp);
+            rc = DISInstr(&pRec->patch.aPrivInstr[0], enmCpuMode, &cpu, &cbOp);
             if (RT_FAILURE(rc))
             {
                 Log(("DISCoreOne failed with %Rrc\n", rc));

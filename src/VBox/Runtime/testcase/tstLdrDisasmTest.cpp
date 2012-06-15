@@ -121,7 +121,6 @@ extern "C" DECLEXPORT(int) DisasmTest1(void)
     MY_PRINTF(("DisasmTest1: %p\n", &DisasmTest1));
 
     memset(&Cpu, 0, sizeof(Cpu));
-    Cpu.mode = DISCPUMODE_32BIT;
 
 #define DISAS_AND_CHECK(cbInstr, enmOp) \
         do { \

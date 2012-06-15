@@ -586,10 +586,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
 
         if (pParam->fUse & DISUSE_DISPLACEMENT8)
         {
-            if (pCpu->mode == DISCPUMODE_32BIT)
+            if (pCpu->uCpuMode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->uDisp.i8;
             else
-            if (pCpu->mode == DISCPUMODE_64BIT)
+            if (pCpu->uCpuMode == DISCPUMODE_64BIT)
                 pParamVal->val.val64 += (int64_t)pParam->uDisp.i8;
             else
                 pParamVal->val.val16 += (int16_t)pParam->uDisp.i8;
@@ -597,10 +597,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         else
         if (pParam->fUse & DISUSE_DISPLACEMENT16)
         {
-            if (pCpu->mode == DISCPUMODE_32BIT)
+            if (pCpu->uCpuMode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->uDisp.i16;
             else
-            if (pCpu->mode == DISCPUMODE_64BIT)
+            if (pCpu->uCpuMode == DISCPUMODE_64BIT)
                 pParamVal->val.val64 += (int64_t)pParam->uDisp.i16;
             else
                 pParamVal->val.val16 += pParam->uDisp.i16;
@@ -608,7 +608,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         else
         if (pParam->fUse & DISUSE_DISPLACEMENT32)
         {
-            if (pCpu->mode == DISCPUMODE_32BIT)
+            if (pCpu->uCpuMode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += pParam->uDisp.i32;
             else
                 pParamVal->val.val64 += pParam->uDisp.i32;
@@ -616,13 +616,13 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         else
         if (pParam->fUse & DISUSE_DISPLACEMENT64)
         {
-            Assert(pCpu->mode == DISCPUMODE_64BIT);
+            Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
             pParamVal->val.val64 += pParam->uDisp.i64;
         }
         else
         if (pParam->fUse & DISUSE_RIPDISPLACEMENT32)
         {
-            Assert(pCpu->mode == DISCPUMODE_64BIT);
+            Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
             /* Relative to the RIP of the next instruction. */
             pParamVal->val.val64 += pParam->uDisp.i32 + pCtx->rip + pCpu->cbInstr;
         }

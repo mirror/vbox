@@ -363,7 +363,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
         }
         State.GCPtr = NIL_RTGCPTR;
     }
-    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->mode, emReadBytes, &State, pDis, pOpsize);
+    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->uCpuMode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #else /* IN_RC */
@@ -376,7 +376,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
     State.pVCpu = pVCpu;
     State.GCPtr = InstrGC;
 
-    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->mode, emReadBytes, &State, pDis, pOpsize);
+    return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->uCpuMode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #endif /* IN_RC */
@@ -502,7 +502,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->mode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
@@ -556,7 +556,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->mode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
@@ -1008,7 +1008,7 @@ static int emInterpretIncDec(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
  */
 static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->mode != DISCPUMODE_64BIT);    /** @todo check */
+    Assert(pDis->uCpuMode != DISCPUMODE_64BIT);    /** @todo check */
     DISQPVPARAMVAL param1;
     NOREF(pvFault);
 
@@ -1560,7 +1560,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
-            if (pDis->mode == DISCPUMODE_64BIT)
+            if (pDis->uCpuMode == DISCPUMODE_64BIT)
                 LogFlow(("EMInterpretInstruction at %RGv: OP_MOV %RGv <- %RX64 (%d) &val64=%RHv\n", (RTGCPTR)pRegFrame->rip, pDest, val64, param2.size, &val64));
             else
                 LogFlow(("EMInterpretInstruction at %08RX64: OP_MOV %RGv <- %08X  (%d) &val64=%RHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
@@ -1623,7 +1623,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
-            if (pDis->mode == DISCPUMODE_64BIT)
+            if (pDis->uCpuMode == DISCPUMODE_64BIT)
                 LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %RX64 (%d)\n", pSrc, val64, param1.size));
             else
                 LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %08X (%d)\n", pSrc, (uint32_t)val64, param1.size));
@@ -1869,7 +1869,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
  */
 static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->mode != DISCPUMODE_64BIT);    /** @todo check */
+    Assert(pDis->uCpuMode != DISCPUMODE_64BIT);    /** @todo check */
     DISQPVPARAMVAL param1;
     NOREF(pvFault);
 
@@ -1923,7 +1923,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
  */
 static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->mode != DISCPUMODE_64BIT);    /** @todo check */
+    Assert(pDis->uCpuMode != DISCPUMODE_64BIT);    /** @todo check */
     DISQPVPARAMVAL param1;
     void *pvParamReg2;
     size_t cbParamReg2;
