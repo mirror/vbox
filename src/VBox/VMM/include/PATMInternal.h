@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -673,8 +673,6 @@ void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree);
  */
 VMMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags);
 
-
-FNDISREADBYTES patmReadBytes;
 
 
 RT_C_DECLS_BEGIN

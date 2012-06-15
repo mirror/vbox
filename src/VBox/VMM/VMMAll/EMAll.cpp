@@ -283,16 +283,21 @@ VMMDECL(int) EMRemTryLock(PVM pVM)
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
+static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PEMDISSTATE   pState = (PEMDISSTATE)pDisState->pvUser;
+    PEMDISSTATE   pState = (PEMDISSTATE)pDis->pvUser;
 # ifndef IN_RING0
     PVM           pVM    = pState->pVM;
 # endif
     PVMCPU        pVCpu  = pState->pVCpu;
+    /** @todo Rewrite this to make full use of the abInstr buffer and drop our extra
+     *        caching buffer.  Just playing safe at first... */
+    uint8_t      *pbDst    = &pDis->abInstr[offInstr];
+    RTUINTPTR     uSrcAddr = pDis->uInstrAddr + offInstr;
+    size_t        cbToRead = cbMinRead;
 
 # ifdef IN_RING0
-    int rc;
+    int           rc;
 
     if (    pState->GCPtr
         &&  uSrcAddr + cbToRead <= pState->GCPtr + sizeof(pState->aOpcode))
@@ -302,11 +307,13 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTU
 
         for (unsigned i = 0; i < cbToRead; i++)
             pbDst[i] = pState->aOpcode[offset + i];
+        pDis->cbCachedInstr = offInstr + cbToRead;
         return VINF_SUCCESS;
     }
 
     rc = PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
     AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for uSrcAddr=%RTptr cbToRead=%x rc=%d\n", uSrcAddr, cbToRead, rc));
+
 # elif defined(IN_RING3)
     if (!PATMIsPatchGCAddr(pVM, uSrcAddr))
     {
@@ -331,6 +338,7 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTU
         memcpy(pbDst, (RTRCPTR)(uintptr_t)uSrcAddr, cbToRead);
 
 # endif /* IN_RING3 */
+    pDis->cbCachedInstr = offInstr + cbToRead;
     return VINF_SUCCESS;
 }
 

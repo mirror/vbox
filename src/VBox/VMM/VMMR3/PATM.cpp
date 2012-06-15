@@ -79,7 +79,7 @@ typedef struct
 {
     PVM                  pVM;
     PPATCHINFO           pPatchInfo;
-    R3PTRTYPE(uint8_t *) pInstrHC;
+    R3PTRTYPE(uint8_t *) pbInstrHC;
     RTRCPTR              pInstrGC;
     uint32_t             fReadFlags;
 } PATMDISASM, *PPATMDISASM;
@@ -533,15 +533,14 @@ VMMR3DECL(int) PATMR3Reset(PVM pVM)
     return rc;
 }
 
-DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
+/**
+ * @callback_method_impl{FNDISREADBYTES}
+ */
+static DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PATMDISASM   *pDisInfo = (PATMDISASM *)pDisState->pvUser;
-    int           orgsize  = cbToRead;
+    PATMDISASM   *pDisInfo = (PATMDISASM *)pDis->pvUser;
 
-    Assert(cbToRead);
-    if (cbToRead == 0)
-        return VERR_INVALID_PARAMETER;
-
+/** @todo change this to read more! */
     /*
      * Trap/interrupt handler typically call common code on entry. Which might already have patches inserted.
      * As we currently don't support calling patch code from patch code, we'll let it read the original opcode bytes instead.
@@ -549,47 +548,53 @@ DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPT
     /** @todo could change in the future! */
     if (pDisInfo->fReadFlags & PATMREAD_ORGCODE)
     {
-        for (int i = 0; i < orgsize; i++)
+        for (;;)
         {
-            int rc = PATMR3QueryOpcode(pDisInfo->pVM, (RTRCPTR)uSrcAddr, pbDst);
+            int rc = PATMR3QueryOpcode(pDisInfo->pVM, (RTGCPTR32)pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr]);
             if (RT_FAILURE(rc))
-                break;
-            uSrcAddr++;
-            pbDst++;
-            cbToRead--;
+                break; /* VERR_PATCH_NOT_FOUND */
+            offInstr++;
+            cbMinRead--;
+            if (cbMinRead == 0)
+            {
+                pDis->cbCachedInstr = offInstr;
+                return VINF_SUCCESS;
+            }
+            cbMaxRead--;
         }
-        if (cbToRead == 0)
-            return VINF_SUCCESS;
+
 #ifdef VBOX_STRICT
-        if (    !(pDisInfo->pPatchInfo->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER))
-            &&  !(pDisInfo->fReadFlags & PATMREAD_NOCHECK))
+        if (   !(pDisInfo->pPatchInfo->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER))
+            && !(pDisInfo->fReadFlags & PATMREAD_NOCHECK))
         {
-            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, uSrcAddr, NULL) == false);
-            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, uSrcAddr+cbToRead-1, NULL) == false);
+            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, pDis->uInstrAddr + offInstr, NULL) == false);
+            Assert(PATMR3IsInsidePatchJump(pDisInfo->pVM, pDis->uInstrAddr + offInstr + cbMinRead-1, NULL) == false);
         }
 #endif
     }
 
-    if (    !pDisInfo->pInstrHC
-        ||  (   PAGE_ADDRESS(pDisInfo->pInstrGC) != PAGE_ADDRESS(uSrcAddr + cbToRead - 1)
-             && !PATMIsPatchGCAddr(pDisInfo->pVM, uSrcAddr)))
+    int       rc       = VINF_SUCCESS;
+    RTGCPTR32 uSrcAddr = (RTGCPTR32)pDis->uInstrAddr + offInstr;
+    if (   !pDisInfo->pbInstrHC
+        || (   PAGE_ADDRESS(pDisInfo->pInstrGC) != PAGE_ADDRESS(uSrcAddr + cbMinRead - 1)
+            && !PATMIsPatchGCAddr(pDisInfo->pVM, uSrcAddr)))
     {
         Assert(!PATMIsPatchGCAddr(pDisInfo->pVM, uSrcAddr));
-        return PGMPhysSimpleReadGCPtr(&pDisInfo->pVM->aCpus[0], pbDst, uSrcAddr, cbToRead);
+        rc = PGMPhysSimpleReadGCPtr(&pDisInfo->pVM->aCpus[0], &pDis->abInstr[offInstr], uSrcAddr, cbMinRead);
+        offInstr += cbMinRead;
+    }
+    else
+    {
+        /* pbInstrHC is the base address; adjust according to the GC pointer. */
+        uint8_t const *pbInstrHC = pDisInfo->pbInstrHC; AssertPtr(pbInstrHC);
+        pbInstrHC += uSrcAddr - pDisInfo->pInstrGC;
+
+        memcpy(&pDis->abInstr[offInstr], pbInstrHC, cbMinRead);
+        offInstr += cbMinRead;
     }
 
-    Assert(pDisInfo->pInstrHC);
-
-    uint8_t *pInstrHC = pDisInfo->pInstrHC;
-
-    Assert(pInstrHC);
-
-    /* pInstrHC is the base address; adjust according to the GC pointer. */
-    pInstrHC = pInstrHC + (uSrcAddr - pDisInfo->pInstrGC);
-
-    memcpy(pbDst, (void *)pInstrHC, cbToRead);
-
-    return VINF_SUCCESS;
+    pDis->cbCachedInstr = offInstr;
+    return rc;
 }
 
 
@@ -599,7 +604,7 @@ DECLINLINE(bool) patmR3DisInstrToStr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 Instr
     PATMDISASM disinfo;
     disinfo.pVM         = pVM;
     disinfo.pPatchInfo  = pPatch;
-    disinfo.pInstrHC    = pbInstrHC;
+    disinfo.pbInstrHC   = pbInstrHC;
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
     return RT_SUCCESS(DISInstrToStrWithReader(InstrGCPtr32,
@@ -615,7 +620,7 @@ DECLINLINE(bool) patmR3DisInstr(PVM pVM, PPATCHINFO pPatch, RTGCPTR32 InstrGCPtr
     PATMDISASM disinfo;
     disinfo.pVM         = pVM;
     disinfo.pPatchInfo  = pPatch;
-    disinfo.pInstrHC    = pbInstrHC;
+    disinfo.pbInstrHC   = pbInstrHC;
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
     return RT_SUCCESS(DISInstrWithReader(InstrGCPtr32,
@@ -632,7 +637,7 @@ DECLINLINE(bool) patmR3DisInstrNoStrOpMode(PVM pVM, PPATCHINFO pPatch, RTGCPTR32
     PATMDISASM disinfo;
     disinfo.pVM         = pVM;
     disinfo.pPatchInfo  = pPatch;
-    disinfo.pInstrHC    = pbInstrHC;
+    disinfo.pbInstrHC   = pbInstrHC;
     disinfo.pInstrGC    = InstrGCPtr32;
     disinfo.fReadFlags  = fReadFlags;
     return RT_SUCCESS(DISInstrWithReader(InstrGCPtr32, pPatch->uOpMode, patmReadBytes, &disinfo,

@@ -496,17 +496,25 @@ typedef const struct DISOPCODE *PCDISOPCODE;
 
 
 /**
- * Callback for reading opcode bytes.
+ * Callback for reading instruction bytes.
  *
- * @param   pDisState       Pointer to the CPU state.  The primary user argument
- *                          can be retrived from DISCPUSTATE::pvUser. If
- *                          more is required these can be passed in the
- *                          subsequent slots.
- * @param   pbDst           Pointer to output buffer.
- * @param   uSrcAddr        The address to start reading at.
- * @param   cbToRead        The number of bytes to read.
+ * @returns VBox status code, bytes in DISCPUSTATE::abInstr and byte count in
+ *          DISCPUSTATE::cbCachedInstr.
+ * @param   pDis            Pointer to the disassembler state.  The user
+ *                          argument can be found in DISCPUSTATE::pvUser if
+ *                          needed.
+ * @param   offInstr        The offset relative to the start of the instruction.
+ *
+ *                          To get the source address, add this to
+ *                          DISCPUSTATE::uInstrAddr.
+ *
+ *                          To calculate the destination buffer address, use it
+ *                          as an index into DISCPUSTATE::abInstr.
+ *
+ * @param   cbMinRead       The minimum number of bytes to read.
+ * @param   cbMaxRead       The maximum number of bytes that may be read.
  */
-typedef DECLCALLBACK(int) FNDISREADBYTES(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead);
+typedef DECLCALLBACK(int) FNDISREADBYTES(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead);
 /** Pointer to a opcode byte reader. */
 typedef FNDISREADBYTES *PFNDISREADBYTES;
 

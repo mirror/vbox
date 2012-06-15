@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -725,39 +725,51 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) CSAMR3ReadBytes(PDISCPUSTATE pDisState, uint8_t *pbDst, RTUINTPTR uSrcAddr, uint32_t cbToRead)
+static DECLCALLBACK(int) CSAMR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PVM           pVM      = (PVM)pDisState->pvUser;
-    RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pDisState->pvUser2;
-    RTGCUINTPTR32 pInstrGC = pDisState->uInstrAddr;
-    int           orgsize  = cbToRead;
-    PVMCPU        pVCpu    = VMMGetCpu0(pVM);
+    PVM pVM = (PVM)pDis->pvUser;
+    int rc  = VINF_SUCCESS;
+
+/** @todo Optimize this code to read more when possible! Add a new PATM call for
+ *        reading more than one byte. */
 
     /* We are not interested in patched instructions, so read the original opcode bytes.
        Note! single instruction patches (int3) are checked in CSAMR3AnalyseCallback */
-    for (int i = 0; i < orgsize; i++)
+    while (cbMinRead > 0)
     {
-        int rc = PATMR3QueryOpcode(pVM, (RTRCPTR)uSrcAddr, pbDst);
-        if (RT_FAILURE(rc))
+        int rc2 = PATMR3QueryOpcode(pVM, (RTRCPTR)pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr]);
+        if (RT_FAILURE(rc2))
             break;
-        uSrcAddr++;
-        pbDst++;
-        cbToRead--;
+        offInstr++;
+        cbMinRead--;
+        cbMaxRead--;
     }
-    if (cbToRead == 0)
-        return VINF_SUCCESS;
+    if (cbMinRead > 0)
+    {
+        /*
+         * The current byte isn't a patch instruction byte...
+         */
+        uint8_t const  *pbInstr  = (uint8_t const *)pDis->pvUser2;
+        RTUINTPTR       uSrcAddr = pDis->uInstrAddr + offInstr;
+        if (   PAGE_ADDRESS(pDis->uInstrAddr) != PAGE_ADDRESS(uSrcAddr + cbMinRead - 1)
+            && !PATMIsPatchGCAddr(pVM, uSrcAddr)) /** @todo does CSAM actually analyze patch code, or is this just a copy&past check? */
+        {
+            /* Crossed page boundrary, pbInstr is no good.. */
+            PVMCPU      pVCpu    = VMMGetCpu0(pVM);
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbMinRead);
+            offInstr += cbMinRead;
+        }
+        else
+        {
+            /* pbInstr is eqvivalent to uInstrAddr. */
+            AssertPtr(pbInstr);
+            memcpy(&pDis->abInstr[offInstr], &pbInstr[offInstr], cbMinRead);
+            offInstr += cbMinRead;
+        }
+    }
 
-    if (PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(uSrcAddr + cbToRead - 1) && !PATMIsPatchGCAddr(pVM, uSrcAddr))
-        return PGMPhysSimpleReadGCPtr(pVCpu, pbDst, uSrcAddr, cbToRead);
-
-    Assert(pInstrHC);
-
-    /* pInstrHC is the base address; adjust according to the GC pointer. */
-    pInstrHC = pInstrHC + (uSrcAddr - pInstrGC);
-
-    memcpy(pbDst, (void *)pInstrHC, cbToRead);
-
-    return VINF_SUCCESS;
+    pDis->cbCachedInstr = offInstr;
+    return rc;
 }
 
 DECLINLINE(int) CSAMR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCPUMODE enmCpuMode,
