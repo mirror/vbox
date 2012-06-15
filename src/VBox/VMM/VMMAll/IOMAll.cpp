@@ -957,10 +957,10 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTA
      */
     uint64_t    uPort = 0;
     unsigned    cbSize = 0;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uPort, &cbSize);
+    bool fRc = iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &uPort, &cbSize);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
 
-    cbSize = DISGetParamSize(pCpu, &pCpu->param1);
+    cbSize = DISGetParamSize(pCpu, &pCpu->Param1);
     Assert(cbSize > 0);
     VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
     if (rcStrict == VINF_SUCCESS)
@@ -975,7 +975,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTA
             /*
              * Store the result in the AL|AX|EAX register.
              */
-            fRc = iomSaveDataToReg(pCpu, &pCpu->param1, pRegFrame, u32Data);
+            fRc = iomSaveDataToReg(pCpu, &pCpu->Param1, pRegFrame, u32Data);
             AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
         }
         else
@@ -1017,14 +1017,14 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
      */
     uint64_t    uPort = 0;
     unsigned    cbSize = 0;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uPort, &cbSize);
+    bool fRc = iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &uPort, &cbSize);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
 
     VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
     if (rcStrict == VINF_SUCCESS)
     {
         uint64_t u64Data = 0;
-        fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &u64Data, &cbSize);
+        fRc = iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &u64Data, &cbSize);
         AssertMsg(fRc, ("Failed to get reg value!\n")); NOREF(fRc);
 
         /*

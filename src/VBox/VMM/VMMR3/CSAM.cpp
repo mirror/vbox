@@ -799,8 +799,8 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     switch (pCpu->pCurInstr->uOpcode)
     {
     case OP_INT:
-        Assert(pCpu->param1.fUse & DISUSE_IMMEDIATE8);
-        if (pCpu->param1.parval == 3)
+        Assert(pCpu->Param1.fUse & DISUSE_IMMEDIATE8);
+        if (pCpu->Param1.parval == 3)
         {
             //two byte int 3
             return VINF_SUCCESS;
@@ -1096,14 +1096,14 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                      * lea esi, [esi+0]
                      * Any register is allowed as long as source and destination are identical.
                      */
-                    if (    cpu.param1.fUse != DISUSE_REG_GEN32
-                        ||  (   cpu.param2.flags != DISUSE_REG_GEN32
-                             && (   !(cpu.param2.flags & DISUSE_REG_GEN32)
-                                 || !(cpu.param2.flags & (DISUSE_DISPLACEMENT8|DISUSE_DISPLACEMENT16|DISUSE_DISPLACEMENT32))
-                                 ||  cpu.param2.parval != 0
+                    if (    cpu.Param1.fUse != DISUSE_REG_GEN32
+                        ||  (   cpu.Param2.flags != DISUSE_REG_GEN32
+                             && (   !(cpu.Param2.flags & DISUSE_REG_GEN32)
+                                 || !(cpu.Param2.flags & (DISUSE_DISPLACEMENT8|DISUSE_DISPLACEMENT16|DISUSE_DISPLACEMENT32))
+                                 ||  cpu.Param2.parval != 0
                                 )
                             )
-                        ||  cpu.param1.base.reg_gen32 != cpu.param2.base.reg_gen32
+                        ||  cpu.Param1.base.reg_gen32 != cpu.Param2.base.reg_gen32
                        )
                     {
                        STAM_COUNTER_INC(&pVM->csam.s.StatScanNextFunctionFailed);
@@ -1114,8 +1114,8 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 case OP_PUSH:
                 {
                     if (    (pCurInstrGC & 0x3) != 0
-                        ||  cpu.param1.fUse != DISUSE_REG_GEN32
-                        ||  cpu.param1.base.reg_gen32 != USE_REG_EBP
+                        ||  cpu.Param1.fUse != DISUSE_REG_GEN32
+                        ||  cpu.Param1.base.reg_gen32 != USE_REG_EBP
                        )
                     {
                        STAM_COUNTER_INC(&pVM->csam.s.StatScanNextFunctionFailed);
@@ -1140,8 +1140,8 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 case OP_SUB:
                 {
                     if (    (pCurInstrGC & 0x3) != 0
-                        ||  cpu.param1.fUse != DISUSE_REG_GEN32
-                        ||  cpu.param1.base.reg_gen32 != USE_REG_ESP
+                        ||  cpu.Param1.fUse != DISUSE_REG_GEN32
+                        ||  cpu.Param1.base.reg_gen32 != USE_REG_ESP
                        )
                     {
                        STAM_COUNTER_INC(&pVM->csam.s.StatScanNextFunctionFailed);
@@ -1327,21 +1327,21 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
         // For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction)
         if (    ((cpu.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->fParam1) == OP_PARM_J))
-            ||  (cpu.pCurInstr->uOpcode == OP_CALL && cpu.param1.fUse == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
+            ||  (cpu.pCurInstr->uOpcode == OP_CALL && cpu.Param1.fUse == DISUSE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
         {
             /* We need to parse 'call dword ptr [address]' type of calls to catch cpuid instructions in some recent Linux distributions (e.g. OpenSuse 10.3) */
             if (    cpu.pCurInstr->uOpcode == OP_CALL
-                &&  cpu.param1.fUse == DISUSE_DISPLACEMENT32)
+                &&  cpu.Param1.fUse == DISUSE_DISPLACEMENT32)
             {
                 addr = 0;
-                PGMPhysSimpleReadGCPtr(pVCpu, &addr, (RTRCUINTPTR)cpu.param1.uDisp.i32, sizeof(addr));
+                PGMPhysSimpleReadGCPtr(pVCpu, &addr, (RTRCUINTPTR)cpu.Param1.uDisp.i32, sizeof(addr));
             }
             else
                 addr = CSAMResolveBranch(&cpu, pCurInstrGC);
 
             if (addr == 0)
             {
-                Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.fUse));
+                Log(("We don't support far jumps here!! (%08X)\n", cpu.Param1.fUse));
                 rc = VINF_SUCCESS;
                 break;
             }
@@ -1398,10 +1398,10 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 #ifdef CSAM_SCAN_JUMP_TABLE
         else
         if (    cpu.pCurInstr->uOpcode == OP_JMP
-            &&  (cpu.param1.fUse & (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)) == (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)
+            &&  (cpu.Param1.fUse & (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)) == (DISUSE_DISPLACEMENT32|DISUSE_INDEX|DISUSE_SCALE)
            )
         {
-            RTRCPTR  pJumpTableGC = (RTRCPTR)cpu.param1.disp32;
+            RTRCPTR  pJumpTableGC = (RTRCPTR)cpu.Param1.disp32;
             uint8_t *pJumpTableHC;
             int      rc2;
 
@@ -1414,12 +1414,12 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                 {
                     uint64_t fFlags;
 
-                    addr = pJumpTableGC + cpu.param1.scale * i;
+                    addr = pJumpTableGC + cpu.Param1.scale * i;
                     /* Same page? */
                     if (PAGE_ADDRESS(addr) != PAGE_ADDRESS(pJumpTableGC))
                         break;
 
-                    addr = *(RTRCPTR *)(pJumpTableHC + cpu.param1.scale * i);
+                    addr = *(RTRCPTR *)(pJumpTableHC + cpu.Param1.scale * i);
 
                     rc2 = PGMGstGetPage(pVCpu, addr, &fFlags, NULL);
                     if (    rc2 != VINF_SUCCESS

@@ -537,7 +537,7 @@ static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE p
      * Get the data size from parameter 2,
      * and call the handler function to get the data.
      */
-    unsigned cb = DISGetParamSize(pCpu, &pCpu->param2);
+    unsigned cb = DISGetParamSize(pCpu, &pCpu->Param2);
     AssertMsg(cb > 0 && cb <= sizeof(uint64_t), ("cb=%d\n", cb));
 
     uint64_t u64Data = 0;
@@ -567,7 +567,7 @@ static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE p
         /*
          * Store the result to register (parameter 1).
          */
-        bool fRc = iomSaveDataToReg(pCpu, &pCpu->param1, pRegFrame, u64Data);
+        bool fRc = iomSaveDataToReg(pCpu, &pCpu->Param1, pRegFrame, u64Data);
         AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
     }
 
@@ -598,7 +598,7 @@ static int iomInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE 
      */
     unsigned cb = 0;
     uint64_t u64Data  = 0;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &u64Data, &cb);
+    bool fRc = iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &u64Data, &cb);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
 
     int rc = iomMMIODoWrite(pVM, pRange, GCPhysFault, &u64Data, cb);
@@ -700,7 +700,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
     /*
      * Get data size.
      */
-    unsigned cb = DISGetParamSize(pCpu, &pCpu->param1);
+    unsigned cb = DISGetParamSize(pCpu, &pCpu->Param1);
     AssertMsg(cb > 0 && cb <= sizeof(uint64_t), ("cb=%d\n", cb));
     int      offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cb : (signed)cb;
 
@@ -953,7 +953,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * Get data size.
      */
-    unsigned cb = DISGetParamSize(pCpu, &pCpu->param1);
+    unsigned cb = DISGetParamSize(pCpu, &pCpu->Param1);
     AssertMsg(cb > 0 && cb <= sizeof(uint64_t), ("cb=%d\n", cb));
     int      offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cb : (signed)cb;
 
@@ -1067,7 +1067,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     /*
      * Get data size.
      */
-    unsigned cb = DISGetParamSize(pCpu, &pCpu->param2);
+    unsigned cb = DISGetParamSize(pCpu, &pCpu->Param2);
     AssertMsg(cb > 0 && cb <= sizeof(uint64_t), ("cb=%d\n", cb));
     int     offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cb : (signed)cb;
 
@@ -1117,10 +1117,10 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
     uint64_t uData1 = 0;
     uint64_t uData2 = 0;
     int rc;
-    if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
+    if (iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &uData1, &cb))
         /* cmp reg, [MMIO]. */
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData2, cb);
-    else if (iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uData2, &cb))
+    else if (iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &uData2, &cb))
         /* cmp [MMIO], reg|imm. */
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData1, cb);
     else
@@ -1186,7 +1186,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
         pszInstr = "OrXorAnd??";
 #endif
 
-    if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
+    if (iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &uData1, &cb))
     {
 #if HC_ARCH_BITS == 32
         /* Can't deal with 8 byte operands in our 32-bit emulation code. */
@@ -1198,7 +1198,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
         fAndWrite = false;
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData2, cb);
     }
-    else if (iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uData2, &cb))
+    else if (iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &uData2, &cb))
     {
 #if HC_ARCH_BITS == 32
         /* Can't deal with 8 byte operands in our 32-bit emulation code. */
@@ -1232,7 +1232,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
         else
         {
             /* Store result to register. */
-            bool fRc = iomSaveDataToReg(pCpu, &pCpu->param1, pRegFrame, uData1);
+            bool fRc = iomSaveDataToReg(pCpu, &pCpu->Param1, pRegFrame, uData1);
             AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
         }
         if (rc == VINF_SUCCESS)
@@ -1272,12 +1272,12 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     uint64_t    uData2 = 0;
     int         rc;
 
-    if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
+    if (iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &uData1, &cb))
     {
         /* and test, [MMIO]. */
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData2, cb);
     }
-    else if (iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uData2, &cb))
+    else if (iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &uData2, &cb))
     {
         /* test [MMIO], reg|imm. */
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData1, cb);
@@ -1329,13 +1329,13 @@ static int iomInterpretBT(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault,
     uint64_t    uData = 0;
     unsigned    cbIgnored;
 
-    if (!iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uBit, &cbIgnored))
+    if (!iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &uBit, &cbIgnored))
     {
         AssertMsgFailed(("Disassember BT problem..\n"));
         return VERR_IOM_MMIO_HANDLER_DISASM_ERROR;
     }
     /* The size of the memory operand only matters here. */
-    unsigned cbData = DISGetParamSize(pCpu, &pCpu->param1);
+    unsigned cbData = DISGetParamSize(pCpu, &pCpu->Param1);
 
     /* bt [MMIO], reg|imm. */
     int rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData, cbData);
@@ -1375,7 +1375,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     unsigned    cb     = 0;
     uint64_t    uData1 = 0;
     uint64_t    uData2 = 0;
-    if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
+    if (iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &uData1, &cb))
     {
         /* xchg reg, [MMIO]. */
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData2, cb);
@@ -1387,7 +1387,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
             if (rc == VINF_SUCCESS)
             {
                 /* Store result to register. */
-                bool fRc = iomSaveDataToReg(pCpu, &pCpu->param1, pRegFrame, uData2);
+                bool fRc = iomSaveDataToReg(pCpu, &pCpu->Param1, pRegFrame, uData2);
                 AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
             }
             else
@@ -1396,7 +1396,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         else
             Assert(rc == VINF_IOM_R3_MMIO_READ || rc == VINF_PATM_HC_MMIO_PATCH_READ);
     }
-    else if (iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uData2, &cb))
+    else if (iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &uData2, &cb))
     {
         /* xchg [MMIO], reg. */
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData1, cb);
@@ -1407,7 +1407,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
             if (rc == VINF_SUCCESS)
             {
                 /* Store result to register. */
-                bool fRc = iomSaveDataToReg(pCpu, &pCpu->param2, pRegFrame, uData1);
+                bool fRc = iomSaveDataToReg(pCpu, &pCpu->Param2, pRegFrame, uData1);
                 AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
             }
             else
@@ -1534,10 +1534,10 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
         case OP_MOVSX:
         {
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstMov, b);
-            AssertMsg(uErrorCode == UINT32_MAX || DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.fUse) == !!(uErrorCode & X86_TRAP_PF_RW), ("flags1=%#llx/%RTbool flags2=%#llx/%RTbool ErrCd=%#x\n", pDis->param1.fUse, DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.fUse), pDis->param2.fUse, DISUSE_IS_EFFECTIVE_ADDR(pDis->param2.fUse), uErrorCode));
+            AssertMsg(uErrorCode == UINT32_MAX || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse) == !!(uErrorCode & X86_TRAP_PF_RW), ("flags1=%#llx/%RTbool flags2=%#llx/%RTbool ErrCd=%#x\n", pDis->Param1.fUse, DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse), pDis->Param2.fUse, DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse), uErrorCode));
             if (uErrorCode != UINT32_MAX    /* EPT+MMIO optimization */
                 ? uErrorCode & X86_TRAP_PF_RW
-                : DISUSE_IS_EFFECTIVE_ADDR(pDis->param1.fUse))
+                : DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse))
                 rc = iomInterpretMOVxXWrite(pVM, pCtxCore, pDis, pRange, GCPhysFault);
             else
                 rc = iomInterpretMOVxXRead(pVM, pCtxCore, pDis, pRange, GCPhysFault);
@@ -2310,7 +2310,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
      */
     uint64_t    Port = 0;
     unsigned    cb = 0;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &Port, &cb);
+    bool fRc = iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &Port, &cb);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
     if (pCpu->pCurInstr->uOpcode == OP_OUTSB)
         cb = 1;

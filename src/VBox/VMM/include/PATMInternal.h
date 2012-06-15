@@ -760,23 +760,23 @@ R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATMP2GLOOKUPREC pCacheRec, RC
 inline RTRCPTR PATMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 {
     uint32_t disp;
-    if (pCpu->param1.fUse & DISUSE_IMMEDIATE8_REL)
+    if (pCpu->Param1.fUse & DISUSE_IMMEDIATE8_REL)
     {
-        disp = (int32_t)(char)pCpu->param1.parval;
+        disp = (int32_t)(char)pCpu->Param1.parval;
     }
     else
-    if (pCpu->param1.fUse & DISUSE_IMMEDIATE16_REL)
+    if (pCpu->Param1.fUse & DISUSE_IMMEDIATE16_REL)
     {
-        disp = (int32_t)(uint16_t)pCpu->param1.parval;
+        disp = (int32_t)(uint16_t)pCpu->Param1.parval;
     }
     else
-    if (pCpu->param1.fUse & DISUSE_IMMEDIATE32_REL)
+    if (pCpu->Param1.fUse & DISUSE_IMMEDIATE32_REL)
     {
-        disp = (int32_t)pCpu->param1.parval;
+        disp = (int32_t)pCpu->Param1.parval;
     }
     else
     {
-        Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.fUse));
+        Log(("We don't support far jumps here!! (%08X)\n", pCpu->Param1.fUse));
         return 0;
     }
 #ifdef IN_RC

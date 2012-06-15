@@ -502,9 +502,9 @@ typedef struct DISCPUSTATE
 {
     /* Because of pvUser2, put the less frequently used bits at the top for
        now. (Might be better off in the middle?) */
-    DISOPPARAM      param3;
-    DISOPPARAM      param2;
-    DISOPPARAM      param1;
+    DISOPPARAM      Param3;
+    DISOPPARAM      Param2;
+    DISOPPARAM      Param1;
 
     /* off: 0x060 (96) */
     /** ModRM fields. */

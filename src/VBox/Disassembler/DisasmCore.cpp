@@ -470,9 +470,9 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
     }
 
     // Should contain the parameter type on input
-    pCpu->param1.param = pOp->fParam1;
-    pCpu->param2.param = pOp->fParam2;
-    pCpu->param3.param = pOp->fParam3;
+    pCpu->Param1.param = pOp->fParam1;
+    pCpu->Param2.param = pOp->fParam2;
+    pCpu->Param3.param = pOp->fParam3;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
     if (pCpu->uCpuMode == DISCPUMODE_64BIT)
@@ -494,20 +494,20 @@ static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPU
 
     if (pOp->idxParse1 != IDX_ParseNop)
     {
-        size += pCpu->pfnDisasmFnTable[pOp->idxParse1](uCodePtr, pOp, &pCpu->param1, pCpu);
-        if (fFiltered == false) pCpu->param1.cb = DISGetParamSize(pCpu, &pCpu->param1);
+        size += pCpu->pfnDisasmFnTable[pOp->idxParse1](uCodePtr, pOp, &pCpu->Param1, pCpu);
+        if (fFiltered == false) pCpu->Param1.cb = DISGetParamSize(pCpu, &pCpu->Param1);
     }
 
     if (pOp->idxParse2 != IDX_ParseNop)
     {
-        size += pCpu->pfnDisasmFnTable[pOp->idxParse2](uCodePtr+size, pOp, &pCpu->param2, pCpu);
-        if (fFiltered == false) pCpu->param2.cb = DISGetParamSize(pCpu, &pCpu->param2);
+        size += pCpu->pfnDisasmFnTable[pOp->idxParse2](uCodePtr+size, pOp, &pCpu->Param2, pCpu);
+        if (fFiltered == false) pCpu->Param2.cb = DISGetParamSize(pCpu, &pCpu->Param2);
     }
 
     if (pOp->idxParse3 != IDX_ParseNop)
     {
-        size += pCpu->pfnDisasmFnTable[pOp->idxParse3](uCodePtr+size, pOp, &pCpu->param3, pCpu);
-        if (fFiltered == false) pCpu->param3.cb = DISGetParamSize(pCpu, &pCpu->param3);
+        size += pCpu->pfnDisasmFnTable[pOp->idxParse3](uCodePtr+size, pOp, &pCpu->Param3, pCpu);
+        if (fFiltered == false) pCpu->Param3.cb = DISGetParamSize(pCpu, &pCpu->Param3);
     }
     // else simple one byte instruction
 
@@ -533,8 +533,8 @@ unsigned ParseEscFP(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
         pCpu->pCurInstr = (PCDISOPCODE)fpop;
 
         // Should contain the parameter type on input
-        pCpu->param1.param = fpop->fParam1;
-        pCpu->param2.param = fpop->fParam2;
+        pCpu->Param1.param = fpop->fParam1;
+        pCpu->Param2.param = fpop->fParam2;
     }
     else
     {
@@ -1568,7 +1568,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
             /* Use 64-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
             if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
-                &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
+                &&  pParam == &pCpu->Param1             /* ugly assumption that it only applies to the first parameter */
                 &&  (pCpu->fPrefix & DISPREFIX_REX)
                 &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;
@@ -1612,7 +1612,7 @@ unsigned ParseFixedReg(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, 
         if (pCpu->uOpMode == DISCPUMODE_64BIT)
         {
             if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
-                &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
+                &&  pParam == &pCpu->Param1             /* ugly assumption that it only applies to the first parameter */
                 &&  (pCpu->fPrefix & DISPREFIX_REX)
                 &&  (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;              /* least significant byte of R8-R15 */
@@ -2654,7 +2654,7 @@ static void disValidateLockSequence(PDISCPUSTATE pCpu)
         case OP_SUB:
         case OP_XCHG:
         case OP_XOR:
-            if (pCpu->param1.fUse & (DISUSE_BASE | DISUSE_INDEX | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32
+            if (pCpu->Param1.fUse & (DISUSE_BASE | DISUSE_INDEX | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32
                                      | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT8 | DISUSE_RIPDISPLACEMENT32))
                 return;
             break;
