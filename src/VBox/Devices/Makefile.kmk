@@ -907,7 +907,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
- 	$(if $(VBOX_WITH_PXE_ROM),$(if $(VBOX_WITHOUT_IPXE),(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
+ 	$(if $(VBOX_WITH_PXE_ROM),$(if $(VBOX_WITHOUT_IPXE),$(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
  ifeq ($(KBUILD_TARGET),l4)
