@@ -1098,74 +1098,146 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 
         /* Check grain table and redundant grain table for consistency. */
         size_t cbGT = pExtent->cGTEntries * sizeof(uint32_t);
-        uint32_t *pTmpGT1 = (uint32_t *)RTMemTmpAlloc(cbGT);
-        if (!pTmpGT1)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-        uint32_t *pTmpGT2 = (uint32_t *)RTMemTmpAlloc(cbGT);
-        if (!pTmpGT2)
-        {
-            RTMemTmpFree(pTmpGT1);
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
+        size_t cbGTBuffers = cbGT; /* Start with space for one GT. */
+        size_t cbGTBuffersMax = _1M;
 
-        for (i = 0, pGDTmp = pExtent->pGD, pRGDTmp = pExtent->pRGD;
-             i < pExtent->cGDEntries;
-             i++, pGDTmp++, pRGDTmp++)
+        uint32_t *pTmpGT1 = (uint32_t *)RTMemAlloc(cbGTBuffers);
+        uint32_t *pTmpGT2 = (uint32_t *)RTMemAlloc(cbGTBuffers);
+
+        if (   !pTmpGT1
+            || !pTmpGT2)
+            rc = VERR_NO_MEMORY;
+
+        i = 0;
+        pGDTmp = pExtent->pGD;
+        pRGDTmp = pExtent->pRGD;
+
+        /* Loop through all entries. */
+        while (i < pExtent->cGDEntries)
         {
+            uint32_t uGTStart = *pGDTmp;
+            uint32_t uRGTStart = *pRGDTmp;
+            uint32_t cbGTRead = cbGT;
+
             /* If no grain table is allocated skip the entry. */
             if (*pGDTmp == 0 && *pRGDTmp == 0)
+            {
+                i++;
                 continue;
+            }
 
             if (*pGDTmp == 0 || *pRGDTmp == 0 || *pGDTmp == *pRGDTmp)
             {
                 /* Just one grain directory entry refers to a not yet allocated
                  * grain table or both grain directory copies refer to the same
                  * grain table. Not allowed. */
-                RTMemTmpFree(pTmpGT1);
-                RTMemTmpFree(pTmpGT2);
                 rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent references to grain directory in '%s'"), pExtent->pszFullname);
-                goto out;
+                break;
             }
-            /* The VMDK 1.1 spec seems to talk about compressed grain tables,
-             * but in reality they are not compressed. */
-            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pExtent->pFile->pStorage,
-                                       VMDK_SECTOR2BYTE(*pGDTmp),
-                                       pTmpGT1, cbGT, NULL);
-            if (RT_FAILURE(rc))
+
+            i++;
+            pGDTmp++;
+            pRGDTmp++;
+
+            /*
+             * Read a few tables at once if adjacent to decrease the number
+             * of I/O requests. Read at maximum 1MB at once.
+             */
+            while (   i < pExtent->cGDEntries
+                   && cbGTRead < cbGTBuffersMax)
             {
-                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: error reading grain table in '%s'"), pExtent->pszFullname);
-                RTMemTmpFree(pTmpGT1);
-                RTMemTmpFree(pTmpGT2);
-                goto out;
+                /* If no grain table is allocated skip the entry. */
+                if (*pGDTmp == 0 && *pRGDTmp == 0)
+                    continue;
+
+                if (*pGDTmp == 0 || *pRGDTmp == 0 || *pGDTmp == *pRGDTmp)
+                {
+                    /* Just one grain directory entry refers to a not yet allocated
+                     * grain table or both grain directory copies refer to the same
+                     * grain table. Not allowed. */
+                    rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent references to grain directory in '%s'"), pExtent->pszFullname);
+                    break;
+                }
+
+                /* Check that the start offsets are adjacent.*/
+                if (   VMDK_SECTOR2BYTE(uGTStart) + cbGTRead != VMDK_SECTOR2BYTE(*pGDTmp)
+                    || VMDK_SECTOR2BYTE(uRGTStart) + cbGTRead != VMDK_SECTOR2BYTE(*pRGDTmp))
+                    break;
+
+                i++;
+                pGDTmp++;
+                pRGDTmp++;
+                cbGTRead += cbGT;
             }
-            /* The VMDK 1.1 spec seems to talk about compressed grain tables,
-             * but in reality they are not compressed. */
-            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pExtent->pFile->pStorage,
-                                       VMDK_SECTOR2BYTE(*pRGDTmp),
-                                       pTmpGT2, cbGT, NULL);
-            if (RT_FAILURE(rc))
+
+            /* Increase buffers if required. */
+            if (   RT_SUCCESS(rc)
+                && cbGTBuffers < cbGTRead)
             {
-                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: error reading backup grain table in '%s'"), pExtent->pszFullname);
-                RTMemTmpFree(pTmpGT1);
-                RTMemTmpFree(pTmpGT2);
-                goto out;
+                uint32_t *pTmp;
+                pTmp = (uint32_t *)RTMemRealloc(pTmpGT1, cbGTRead);
+                if (pTmp)
+                {
+                    pTmpGT1 = pTmp;
+                    pTmp = (uint32_t *)RTMemRealloc(pTmpGT2, cbGTRead);
+                    if (pTmp)
+                        pTmpGT2 = pTmp;
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+
+                if (rc == VERR_NO_MEMORY)
+                {
+                    /* Reset to the old values. */
+                    rc = VINF_SUCCESS;
+                    i -= cbGTRead / cbGT;
+                    cbGTRead = cbGT;
+
+                    /* Don't try to increase the buffer again in the next run. */
+                    cbGTBuffersMax = cbGTBuffers;
+                }
             }
-            if (memcmp(pTmpGT1, pTmpGT2, cbGT))
+
+            if (RT_SUCCESS(rc))
             {
-                RTMemTmpFree(pTmpGT1);
-                RTMemTmpFree(pTmpGT2);
-                rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistency between grain table and backup grain table in '%s'"), pExtent->pszFullname);
-                goto out;
+               /* The VMDK 1.1 spec seems to talk about compressed grain tables,
+                 * but in reality they are not compressed. */
+                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pExtent->pFile->pStorage,
+                                           VMDK_SECTOR2BYTE(uGTStart),
+                                           pTmpGT1, cbGTRead, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                   N_("VMDK: error reading grain table in '%s'"), pExtent->pszFullname);
+                    break;
+                }
+                /* The VMDK 1.1 spec seems to talk about compressed grain tables,
+                 * but in reality they are not compressed. */
+                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pExtent->pFile->pStorage,
+                                           VMDK_SECTOR2BYTE(uRGTStart),
+                                           pTmpGT2, cbGTRead, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                   N_("VMDK: error reading backup grain table in '%s'"), pExtent->pszFullname);
+                    break;
+                }
+                if (memcmp(pTmpGT1, pTmpGT2, cbGTRead))
+                {
+                    rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS,
+                                   N_("VMDK: inconsistency between grain table and backup grain table in '%s'"), pExtent->pszFullname);
+                    break;
+                }
             }
-        }
+        } /* while (i < pExtent->cGDEntries) */
 
         /** @todo figure out what to do for unclean VMDKs. */
-        RTMemTmpFree(pTmpGT1);
-        RTMemTmpFree(pTmpGT2);
+        if (pTmpGT1)
+            RTMemFree(pTmpGT1);
+        if (pTmpGT2)
+            RTMemFree(pTmpGT2);
     }
 
 out:
@@ -1180,7 +1252,7 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     int rc = VINF_SUCCESS;
     unsigned i;
     size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
-    size_t cbGDRounded = RT_ALIGN_64(pExtent->cGDEntries * sizeof(uint32_t), 512);
+    size_t cbGDRounded = RT_ALIGN_64(cbGD, 512);
     size_t cbGTRounded;
     uint64_t cbOverhead;
 
