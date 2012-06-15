@@ -529,9 +529,9 @@ typedef struct DISCPUSTATE
     /** The CPU mode (DISCPUMODE). */
     uint8_t         mode;
     /** The addressing mode (DISCPUMODE). */
-    uint8_t         addrmode;
+    uint8_t         uAddrMode;
     /** The operand mode (DISCPUMODE). */
-    uint8_t         opmode;
+    uint8_t         uOpMode;
     /** Per instruction prefix settings. */
     uint8_t         fPrefix;
     /* off: 0x070 (112) */
