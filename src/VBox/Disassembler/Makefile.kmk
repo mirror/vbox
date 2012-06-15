@@ -65,18 +65,5 @@ DisasmR0_SOURCES        = \
 	DisasmTables.cpp \
 	DisasmTablesX64.cpp
 
-
-ifdef VBOX_WITH_TESTCASES
- # testcase that hasn't been moved yet.
- PROGRAMS              += tstDisasm
- tstDisasm_TEMPLATE     = VBOXR3TSTEXE
- tstDisasm_DEFS         = IN_DIS
- tstDisasm_SOURCES      = DisasmTest.cpp DisasmTestA.asm
- tstDisasm_LIBS         = \
- 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
- 	$(LIB_RUNTIME)
-
- endif # VBOX_WITH_TESTCASES
-
 include $(FILE_KBUILD_SUB_FOOTER)
 
