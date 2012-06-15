@@ -800,7 +800,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     {
     case OP_INT:
         Assert(pCpu->Param1.fUse & DISUSE_IMMEDIATE8);
-        if (pCpu->Param1.parval == 3)
+        if (pCpu->Param1.uValue == 3)
         {
             //two byte int 3
             return VINF_SUCCESS;
@@ -1100,7 +1100,7 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                         ||  (   cpu.Param2.flags != DISUSE_REG_GEN32
                              && (   !(cpu.Param2.flags & DISUSE_REG_GEN32)
                                  || !(cpu.Param2.flags & (DISUSE_DISPLACEMENT8|DISUSE_DISPLACEMENT16|DISUSE_DISPLACEMENT32))
-                                 ||  cpu.Param2.parval != 0
+                                 ||  cpu.Param2.uValue != 0
                                 )
                             )
                         ||  cpu.Param1.base.reg_gen32 != cpu.Param2.base.reg_gen32

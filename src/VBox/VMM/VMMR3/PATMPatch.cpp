@@ -856,7 +856,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
 
     /** @note optimization: multiple identical ret instruction in a single patch can share a single patched ret. */
     if (    pPatch->pTempInfo->pPatchRetInstrGC
-        &&  pPatch->pTempInfo->uPatchRetParam1 == (uint32_t)pCpu->Param1.parval) /* nr of bytes popped off the stack should be identical of course! */
+        &&  pPatch->pTempInfo->uPatchRetParam1 == (uint32_t)pCpu->Param1.uValue) /* nr of bytes popped off the stack should be identical of course! */
     {
         Assert(pCpu->pCurInstr->uOpcode == OP_RETN);
         STAM_COUNTER_INC(&pVM->patm.s.StatGenRetReused);
@@ -890,7 +890,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     if (rc == VINF_SUCCESS)
     {
         pPatch->pTempInfo->pPatchRetInstrGC = pPatchRetInstrGC;
-        pPatch->pTempInfo->uPatchRetParam1  = pCpu->Param1.parval;
+        pPatch->pTempInfo->uPatchRetParam1  = pCpu->Param1.uValue;
     }
     return rc;
 }

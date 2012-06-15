@@ -387,7 +387,8 @@ typedef enum
  */
 typedef struct DISOPPARAM
 {
-    uint64_t        parval;
+    /** Immediate value or address, if used. */
+    uint64_t        uValue;
     /** A combination of DISUSE_XXX. */
     uint64_t        fUse;
     union

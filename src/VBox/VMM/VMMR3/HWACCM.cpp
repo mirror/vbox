@@ -1844,7 +1844,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
             {
                 Assert(pDis->Param2.fUse == DISUSE_IMMEDIATE32);
                 pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
-                pPatch->uSrcOperand = pDis->Param2.parval;
+                pPatch->uSrcOperand = pDis->Param2.uValue;
             }
             rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
             AssertRC(rc);
@@ -1874,7 +1874,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
                 &&  pDis->Param1.fUse == DISUSE_REG_GEN32
                 &&  pDis->Param1.base.reg_gen == uMmioReg
                 &&  pDis->Param2.fUse == DISUSE_IMMEDIATE8
-                &&  pDis->Param2.parval == 4
+                &&  pDis->Param2.uValue == 4
                 &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.aPatches[idx].aOpcode))
             {
                 uint8_t szInstr[15];
@@ -2047,7 +2047,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             {
                 Assert(pDis->Param2.fUse == DISUSE_IMMEDIATE32);
                 aPatch[off++] = 0xB8;    /* mov eax, immediate */
-                *(uint32_t *)&aPatch[off] = pDis->Param2.parval;
+                *(uint32_t *)&aPatch[off] = pDis->Param2.uValue;
                 off += sizeof(uint32_t);
             }
             aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */

@@ -687,12 +687,12 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
             if (pParam->cb == 2)
             {
                 pParamVal->size   = sizeof(uint16_t);
-                pParamVal->val.val16 = (uint8_t)pParam->parval;
+                pParamVal->val.val16 = (uint8_t)pParam->uValue;
             }
             else
             {
                 pParamVal->size   = sizeof(uint8_t);
-                pParamVal->val.val8 = (uint8_t)pParam->parval;
+                pParamVal->val.val8 = (uint8_t)pParam->uValue;
             }
         }
         else
@@ -700,7 +700,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         {
             pParamVal->flags |= DISQPV_FLAG_16;
             pParamVal->size   = sizeof(uint16_t);
-            pParamVal->val.val16 = (uint16_t)pParam->parval;
+            pParamVal->val.val16 = (uint16_t)pParam->uValue;
             AssertMsg(pParamVal->size == pParam->cb || ((pParam->cb == 1) && (pParam->fUse & DISUSE_IMMEDIATE16_SX8)), ("pParamVal->size %d vs %d EIP=%RX32\n", pParamVal->size, pParam->cb, pCtx->eip) );
         }
         else
@@ -708,7 +708,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         {
             pParamVal->flags |= DISQPV_FLAG_32;
             pParamVal->size   = sizeof(uint32_t);
-            pParamVal->val.val32 = (uint32_t)pParam->parval;
+            pParamVal->val.val32 = (uint32_t)pParam->uValue;
             Assert(pParamVal->size == pParam->cb || ((pParam->cb == 1) && (pParam->fUse & DISUSE_IMMEDIATE32_SX8)) );
         }
         else
@@ -716,7 +716,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         {
             pParamVal->flags |= DISQPV_FLAG_64;
             pParamVal->size   = sizeof(uint64_t);
-            pParamVal->val.val64 = pParam->parval;
+            pParamVal->val.val64 = pParam->uValue;
             Assert(pParamVal->size == pParam->cb || ((pParam->cb == 1) && (pParam->fUse & DISUSE_IMMEDIATE64_SX8)) );
         }
         else
@@ -724,8 +724,8 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         {
             pParamVal->flags |= DISQPV_FLAG_FARPTR16;
             pParamVal->size   = sizeof(uint16_t)*2;
-            pParamVal->val.farptr.sel    = (uint16_t)RT_LOWORD(pParam->parval >> 16);
-            pParamVal->val.farptr.offset = (uint32_t)RT_LOWORD(pParam->parval);
+            pParamVal->val.farptr.sel    = (uint16_t)RT_LOWORD(pParam->uValue >> 16);
+            pParamVal->val.farptr.offset = (uint32_t)RT_LOWORD(pParam->uValue);
             Assert(pParamVal->size == pParam->cb);
         }
         else
@@ -733,8 +733,8 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         {
             pParamVal->flags |= DISQPV_FLAG_FARPTR32;
             pParamVal->size   = sizeof(uint16_t) + sizeof(uint32_t);
-            pParamVal->val.farptr.sel    = (uint16_t)RT_LOWORD(pParam->parval >> 32);
-            pParamVal->val.farptr.offset = (uint32_t)(pParam->parval & 0xFFFFFFFF);
+            pParamVal->val.farptr.sel    = (uint16_t)RT_LOWORD(pParam->uValue >> 32);
+            pParamVal->val.farptr.offset = (uint32_t)(pParam->uValue & 0xFFFFFFFF);
             Assert(pParam->cb == 8);
         }
     }

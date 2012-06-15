@@ -795,13 +795,13 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                          || (pOp->fParam2 >= OP_PARM_REG_GEN8_START && pOp->fParam2 <= OP_PARM_REG_GEN8_END))
                                    )
                                     PUT_SZ("strict byte ");
-                                PUT_NUM_8(pParam->parval);
+                                PUT_NUM_8(pParam->uValue);
                                 break;
 
                             case DISUSE_IMMEDIATE16:
                                 if (    pCpu->uCpuMode != pCpu->uOpMode
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
-                                         && (   (int8_t)pParam->parval == (int16_t)pParam->parval
+                                         && (   (int8_t)pParam->uValue == (int16_t)pParam->uValue
                                              || (pOp->fParam1 >= OP_PARM_REG_GEN16_START && pOp->fParam1 <= OP_PARM_REG_GEN16_END)
                                              || (pOp->fParam2 >= OP_PARM_REG_GEN16_START && pOp->fParam2 <= OP_PARM_REG_GEN16_END))
                                         )
@@ -813,18 +813,18 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                              || OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_z)
                                         PUT_SZ_STRICT("strict word ", "word ");
                                 }
-                                PUT_NUM_16(pParam->parval);
+                                PUT_NUM_16(pParam->uValue);
                                 break;
 
                             case DISUSE_IMMEDIATE16_SX8:
                                 PUT_SZ_STRICT("strict byte ", "byte ");
-                                PUT_NUM_16(pParam->parval);
+                                PUT_NUM_16(pParam->uValue);
                                 break;
 
                             case DISUSE_IMMEDIATE32:
                                 if (    pCpu->uOpMode != (pCpu->uCpuMode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
-                                         && (   (int8_t)pParam->parval == (int32_t)pParam->parval
+                                         && (   (int8_t)pParam->uValue == (int32_t)pParam->uValue
                                              || (pOp->fParam1 >= OP_PARM_REG_GEN32_START && pOp->fParam1 <= OP_PARM_REG_GEN32_END)
                                              || (pOp->fParam2 >= OP_PARM_REG_GEN32_START && pOp->fParam2 <= OP_PARM_REG_GEN32_END))
                                         )
@@ -836,21 +836,21 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                              || OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_z)
                                         PUT_SZ_STRICT("strict dword ", "dword ");
                                 }
-                                PUT_NUM_32(pParam->parval);
+                                PUT_NUM_32(pParam->uValue);
                                 break;
 
                             case DISUSE_IMMEDIATE32_SX8:
                                 PUT_SZ_STRICT("strict byte ", "byte ");
-                                PUT_NUM_32(pParam->parval);
+                                PUT_NUM_32(pParam->uValue);
                                 break;
 
                             case DISUSE_IMMEDIATE64_SX8:
                                 PUT_SZ_STRICT("strict byte ", "byte ");
-                                PUT_NUM_64(pParam->parval);
+                                PUT_NUM_64(pParam->uValue);
                                 break;
 
                             case DISUSE_IMMEDIATE64:
-                                PUT_NUM_64(pParam->parval);
+                                PUT_NUM_64(pParam->uValue);
                                 break;
 
                             default:
@@ -876,7 +876,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         {
                             if (fPrefix)
                                 PUT_SZ("short ");
-                            offDisplacement = (int8_t)pParam->parval;
+                            offDisplacement = (int8_t)pParam->uValue;
                             Assert(*pszFmt == 'b'); pszFmt++;
 
                             if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
@@ -886,7 +886,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         {
                             if (fPrefix)
                                 PUT_SZ("near ");
-                            offDisplacement = (int16_t)pParam->parval;
+                            offDisplacement = (int16_t)pParam->uValue;
                             Assert(*pszFmt == 'v'); pszFmt++;
 
                             if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
@@ -896,7 +896,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         {
                             if (fPrefix)
                                 PUT_SZ("near ");
-                            offDisplacement = (int32_t)pParam->parval;
+                            offDisplacement = (int32_t)pParam->uValue;
                             Assert(pParam->fUse & (DISUSE_IMMEDIATE32_REL|DISUSE_IMMEDIATE64_REL));
                             Assert(*pszFmt == 'v'); pszFmt++;
 
@@ -951,33 +951,33 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         switch (pParam->fUse & (DISUSE_IMMEDIATE_ADDR_16_16 | DISUSE_IMMEDIATE_ADDR_16_32 | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT16))
                         {
                             case DISUSE_IMMEDIATE_ADDR_16_16:
-                                PUT_NUM_16(pParam->parval >> 16);
+                                PUT_NUM_16(pParam->uValue >> 16);
                                 PUT_C(':');
-                                PUT_NUM_16(pParam->parval);
+                                PUT_NUM_16(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_IMMEDIATE_ADDR_16_32:
-                                PUT_NUM_16(pParam->parval >> 32);
+                                PUT_NUM_16(pParam->uValue >> 32);
                                 PUT_C(':');
-                                PUT_NUM_32(pParam->parval);
+                                PUT_NUM_32(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT16:
-                                PUT_NUM_16(pParam->parval);
+                                PUT_NUM_16(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT32:
-                                PUT_NUM_32(pParam->parval);
+                                PUT_NUM_32(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT64:
-                                PUT_NUM_64(pParam->parval);
+                                PUT_NUM_64(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint64_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint64_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             default:
                                 AssertFailed();
@@ -1015,18 +1015,18 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         switch (pParam->fUse & (DISUSE_IMMEDIATE_ADDR_16_16 | DISUSE_IMMEDIATE_ADDR_16_32 | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT16))
                         {
                             case DISUSE_IMMEDIATE_ADDR_16_16:
-                                PUT_NUM_16(pParam->parval >> 16);
+                                PUT_NUM_16(pParam->uValue >> 16);
                                 PUT_C(':');
-                                PUT_NUM_16(pParam->parval);
+                                PUT_NUM_16(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint16_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_IMMEDIATE_ADDR_16_32:
-                                PUT_NUM_16(pParam->parval >> 32);
+                                PUT_NUM_16(pParam->uValue >> 32);
                                 PUT_C(':');
-                                PUT_NUM_32(pParam->parval);
+                                PUT_NUM_32(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->parval >> 16), (uint32_t)pParam->parval, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT16:
                                 PUT_NUM_16(pParam->uDisp.i16);
@@ -1448,7 +1448,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
     /* shl eax,1 will be assembled to the form without the immediate byte. */
     if (    pCpu->pCurInstr->fParam2 == OP_PARM_Ib
-        &&  (uint8_t)pCpu->Param2.parval == 1)
+        &&  (uint8_t)pCpu->Param2.uValue == 1)
     {
         switch (pCpu->pCurInstr->uOpcode)
         {

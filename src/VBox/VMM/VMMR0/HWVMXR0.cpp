@@ -3703,8 +3703,8 @@ ResumeExecution:
                     {
                         uint32_t intInfo2;
 
-                        LogFlow(("Realmode: INT %x\n", pDis->Param1.parval & 0xff));
-                        intInfo2  = pDis->Param1.parval & 0xff;
+                        LogFlow(("Realmode: INT %x\n", pDis->Param1.uValue & 0xff));
+                        intInfo2  = pDis->Param1.uValue & 0xff;
                         intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
                         intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
