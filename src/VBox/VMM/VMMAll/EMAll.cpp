@@ -352,7 +352,7 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
         }
     }
 
-    pDis->cbCachedInstr = offInstr + cbToRead;
+    pDis->cbCachedInstr = offInstr + (uint8_t)cbToRead;
     return rc;
 }
 

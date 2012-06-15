@@ -745,13 +745,13 @@ static DECLCALLBACK(int) csamR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, ui
     {
         if (cbRead >= cbMinRead)
         {
-            pDis->cbCachedInstr = offInstr + cbRead;
+            pDis->cbCachedInstr = offInstr + (uint8_t)cbRead;
             return rc;
         }
 
-        cbMinRead -= cbRead;
-        cbMaxRead -= cbRead;
-        offInstr  += cbRead;
+        cbMinRead -= (uint8_t)cbRead;
+        cbMaxRead -= (uint8_t)cbRead;
+        offInstr  += (uint8_t)cbRead;
         uSrcAddr  += cbRead;
     }
 

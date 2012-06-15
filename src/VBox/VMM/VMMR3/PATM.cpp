@@ -555,13 +555,13 @@ static DECLCALLBACK(int) patmReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint
         {
             if (cbRead >= cbMinRead)
             {
-                pDis->cbCachedInstr = offInstr + cbRead;
+                pDis->cbCachedInstr = offInstr + (uint8_t)cbRead;
                 return VINF_SUCCESS;
             }
 
-            cbMinRead -= cbRead;
-            cbMaxRead -= cbRead;
-            offInstr  += cbRead;
+            cbMinRead -= (uint8_t)cbRead;
+            cbMaxRead -= (uint8_t)cbRead;
+            offInstr  += (uint8_t)cbRead;
             uSrcAddr  += cbRead;
         }
 
