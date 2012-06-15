@@ -76,14 +76,7 @@ ifdef VBOX_WITH_TESTCASES
  	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
  	$(LIB_RUNTIME)
 
- PROGRAMS              += tstDisasmCore
- tstDisasmCore_TEMPLATE = VBOXR3TSTEXE
- tstDisasmCore_DEFS     = IN_DIS DIS_CORE_ONLY
- tstDisasmCore_SOURCES  = DisasmTestCore.cpp
- tstDisasmCore_LIBS     = \
- 	$(PATH_STAGE_LIB)/DisasmCoreR3$(VBOX_SUFF_LIB) \
- 	$(LIB_RUNTIME)
-endif # VBOX_WITH_TESTCASES
+ endif # VBOX_WITH_TESTCASES
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
