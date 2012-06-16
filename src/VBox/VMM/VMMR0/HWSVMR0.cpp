@@ -3108,7 +3108,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
     CPUMSetHyperEIP(pVCpu, pfnHandler);
-    for (int i=(int)cbParam-1;i>=0;i--)
+    for (int i = (int)cbParam - 1; i >= 0; i--)
         CPUMPushHyper(pVCpu, paParam[i]);
 
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
