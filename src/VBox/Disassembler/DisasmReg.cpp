@@ -200,13 +200,13 @@ static const unsigned g_aRegHidSegIndex[] =
 
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
+DISDECL(int) DISGetParamSize(PCDISCPUSTATE pDis, PCDISOPPARAM pParam)
 {
     unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
 
     if (subtype == OP_PARM_v)
     {
-        switch (pCpu->uOpMode)
+        switch (pDis->uOpMode)
         {
         case DISCPUMODE_32BIT:
             subtype = OP_PARM_d;
@@ -239,10 +239,10 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
         return 8;
 
     case OP_PARM_p: /* far pointer */
-        if (pCpu->uAddrMode == DISCPUMODE_32BIT)
+        if (pDis->uAddrMode == DISCPUMODE_32BIT)
             return 6;   /* 16:32 */
         else
-        if (pCpu->uAddrMode == DISCPUMODE_64BIT)
+        if (pDis->uAddrMode == DISCPUMODE_64BIT)
             return 12;  /* 16:64 */
         else
             return 4;   /* 16:16 */
@@ -256,11 +256,11 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 }
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
+DISDECL(DISSELREG) DISDetectSegReg(PCDISCPUSTATE pDis, PCDISOPPARAM pParam)
 {
-    if (pCpu->fPrefix & DISPREFIX_SEG)
+    if (pDis->fPrefix & DISPREFIX_SEG)
         /* Use specified SEG: prefix. */
-        return (DISSELREG)pCpu->idxSegPrefix;
+        return (DISSELREG)pDis->idxSegPrefix;
 
     /* Guess segment register by parameter type. */
     if (pParam->fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN64|DISUSE_REG_GEN16))
@@ -277,10 +277,10 @@ DISDECL(DISSELREG) DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam)
 }
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu)
+DISDECL(uint8_t) DISQuerySegPrefixByte(PCDISCPUSTATE pDis)
 {
-    Assert(pCpu->fPrefix & DISPREFIX_SEG);
-    switch (pCpu->idxSegPrefix)
+    Assert(pDis->fPrefix & DISPREFIX_SEG);
+    switch (pDis->idxSegPrefix)
     {
     case DISSELREG_ES:
         return 0x26;
@@ -490,8 +490,7 @@ DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DISSELREG sel, RTSEL val)
  *
  * @returns VBox error code
  * @param   pCtx            CPU context structure pointer
- * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
- *                          set correctly.
+ * @param   pDis            Pointer to the disassembler state.
  * @param   pParam          Pointer to the parameter to parse
  * @param   pParamVal       Pointer to parameter value (OUT)
  * @param   parmtype        Parameter type
@@ -499,7 +498,7 @@ DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DISSELREG sel, RTSEL val)
  * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
  *
  */
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype)
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PCDISCPUSTATE pDis, PCDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype)
 {
     memset(pParamVal, 0, sizeof(*pParamVal));
 
@@ -586,10 +585,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
 
         if (pParam->fUse & DISUSE_DISPLACEMENT8)
         {
-            if (pCpu->uCpuMode == DISCPUMODE_32BIT)
+            if (pDis->uCpuMode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->uDisp.i8;
             else
-            if (pCpu->uCpuMode == DISCPUMODE_64BIT)
+            if (pDis->uCpuMode == DISCPUMODE_64BIT)
                 pParamVal->val.val64 += (int64_t)pParam->uDisp.i8;
             else
                 pParamVal->val.val16 += (int16_t)pParam->uDisp.i8;
@@ -597,10 +596,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         else
         if (pParam->fUse & DISUSE_DISPLACEMENT16)
         {
-            if (pCpu->uCpuMode == DISCPUMODE_32BIT)
+            if (pDis->uCpuMode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->uDisp.i16;
             else
-            if (pCpu->uCpuMode == DISCPUMODE_64BIT)
+            if (pDis->uCpuMode == DISCPUMODE_64BIT)
                 pParamVal->val.val64 += (int64_t)pParam->uDisp.i16;
             else
                 pParamVal->val.val16 += pParam->uDisp.i16;
@@ -608,7 +607,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         else
         if (pParam->fUse & DISUSE_DISPLACEMENT32)
         {
-            if (pCpu->uCpuMode == DISCPUMODE_32BIT)
+            if (pDis->uCpuMode == DISCPUMODE_32BIT)
                 pParamVal->val.val32 += pParam->uDisp.i32;
             else
                 pParamVal->val.val64 += pParam->uDisp.i32;
@@ -616,15 +615,15 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
         else
         if (pParam->fUse & DISUSE_DISPLACEMENT64)
         {
-            Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
+            Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
             pParamVal->val.val64 += pParam->uDisp.i64;
         }
         else
         if (pParam->fUse & DISUSE_RIPDISPLACEMENT32)
         {
-            Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
+            Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
             /* Relative to the RIP of the next instruction. */
-            pParamVal->val.val64 += pParam->uDisp.i32 + pCtx->rip + pCpu->cbInstr;
+            pParamVal->val.val64 += pParam->uDisp.i32 + pCtx->rip + pDis->cbInstr;
         }
         return VINF_SUCCESS;
     }
@@ -749,8 +748,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
  *
  * @returns VBox error code
  * @param   pCtx            CPU context structure pointer
- * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
- *                          set correctly.
+ * @param   pDis            Pointer to the disassembler state.
  * @param   pParam          Pointer to the parameter to parse
  * @param   pReg            Pointer to parameter value (OUT)
  * @param   cbsize          Parameter size (OUT)
@@ -758,9 +756,9 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM 
  * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
  *
  */
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, void **ppReg, size_t *pcbSize)
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PCDISCPUSTATE pDis, PCDISOPPARAM pParam, void **ppReg, size_t *pcbSize)
 {
-    NOREF(pCpu);
+    NOREF(pDis);
     if (pParam->fUse & (DISUSE_REG_GEN8|DISUSE_REG_GEN16|DISUSE_REG_GEN32|DISUSE_REG_FP|DISUSE_REG_MMX|DISUSE_REG_XMM|DISUSE_REG_CR|DISUSE_REG_DBG|DISUSE_REG_SEG|DISUSE_REG_TEST))
     {
         if (pParam->fUse & DISUSE_REG_GEN8)

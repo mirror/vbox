@@ -32,9 +32,9 @@
  * Disassembles one instruction
  *
  * @returns VBox error code
- * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
- *                          set correctly.
  * @param   pvInstr         Pointer to the instruction to disassemble.
+ * @param   enmCpuMode      The CPU state.
+ * @param   pDis            The disassembler state (output).
  * @param   pcbInstr        Where to store the size of the instruction. NULL is
  *                          allowed.
  * @param   pszOutput       Storage for disassembled instruction
@@ -42,11 +42,11 @@
  *
  * @todo    Define output callback.
  */
-DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr,
+DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pDis, uint32_t *pcbInstr,
                            char *pszOutput, size_t cbOutput)
 {
     return DISInstrToStrEx((uintptr_t)pvInstr, enmCpuMode, NULL, NULL, DISOPTYPE_ALL,
-                           pCpu, pcbInstr, pszOutput, cbOutput);
+                           pDis, pcbInstr, pszOutput, cbOutput);
 }
 
 /**
@@ -58,7 +58,7 @@ DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUST
  * @param   pfnCallback     The byte fetcher callback.
  * @param   pvUser          The user argument (found in
  *                          DISCPUSTATE::pvUser).
- * @param   pCpu            Where to return the disassembled instruction.
+ * @param   pDis            The disassembler state (output).
  * @param   pcbInstr        Where to store the size of the instruction. NULL is
  *                          allowed.
  * @param   pszOutput       Storage for disassembled instruction.
@@ -67,11 +67,11 @@ DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUST
  * @todo    Define output callback.
  */
 DISDECL(int) DISInstrToStrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                     PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
+                                     PDISCPUSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 
 {
     return DISInstrToStrEx(uInstrAddr, enmCpuMode, pfnReadBytes, pvUser, DISOPTYPE_ALL,
-                           pCpu, pcbInstr, pszOutput, cbOutput);
+                           pDis, pcbInstr, pszOutput, cbOutput);
 }
 
 /**
@@ -82,7 +82,7 @@ DISDECL(int) DISInstrToStrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode
  * @param   enmCpuMode      The CPU mode.
  * @param   pfnCallback     The byte fetcher callback.
  * @param   uFilter         Instruction filter.
- * @param   pCpu            Where to return the disassembled instruction.
+ * @param   pDis            Where to return the disassembled instruction info.
  * @param   pcbInstr        Where to store the size of the instruction. NULL is
  *                          allowed.
  * @param   pszOutput       Storage for disassembled instruction.
@@ -92,12 +92,12 @@ DISDECL(int) DISInstrToStrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode
  */
 DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
                              PFNDISREADBYTES pfnReadBytes, void *pvUser, uint32_t uFilter,
-                             PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
+                             PDISCPUSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 {
-    int rc = DISInstEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pCpu, pcbInstr);
+    int rc = DISInstEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pDis, pcbInstr);
     if (RT_SUCCESS(rc) && pszOutput && cbOutput)
     {
-        size_t cch = DISFormatYasmEx(pCpu, pszOutput, cbOutput,
+        size_t cch = DISFormatYasmEx(pDis, pszOutput, cbOutput,
                                      DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_BRACKETS | DIS_FMT_FLAGS_BYTES_SPACED
                                      | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_ADDR_LEFT,
                                      NULL /*pfnGetSymbol*/, NULL /*pvUser*/);

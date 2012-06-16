@@ -86,11 +86,11 @@ static const char g_aszYasmRegTRx[16][5] =
  * Gets the base register name for the given parameter.
  *
  * @returns Pointer to the register name.
- * @param   pCpu        The disassembler cpu state.
+ * @param   pDis        The disassembler state.
  * @param   pParam      The parameter.
  * @param   pcchReg     Where to store the length of the name.
  */
-static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, size_t *pcchReg)
+static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
 {
     switch (pParam->fUse & (  DISUSE_REG_GEN8 | DISUSE_REG_GEN16 | DISUSE_REG_GEN32 | DISUSE_REG_GEN64
                             | DISUSE_REG_FP   | DISUSE_REG_MMX   | DISUSE_REG_XMM   | DISUSE_REG_CR
@@ -197,13 +197,13 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pPar
  * Gets the index register name for the given parameter.
  *
  * @returns The index register name.
- * @param   pCpu        The disassembler cpu state.
+ * @param   pDis        The disassembler state.
  * @param   pParam      The parameter.
  * @param   pcchReg     Where to store the length of the name.
  */
-static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, size_t *pcchReg)
+static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
 {
-    switch (pCpu->uAddrMode)
+    switch (pDis->uAddrMode)
     {
         case DISCPUMODE_16BIT:
         {
@@ -230,7 +230,7 @@ static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pPa
         }
 
         default:
-            AssertMsgFailed(("%#x %#x\n", pParam->fUse, pCpu->uAddrMode));
+            AssertMsgFailed(("%#x %#x\n", pParam->fUse, pDis->uAddrMode));
             *pcchReg = 3;
             return "r??";
     }
@@ -243,20 +243,20 @@ static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pPa
  *
  * @returns The number of output characters. If this is >= cchBuf, then the content
  *          of pszBuf will be truncated.
- * @param   pCpu            Pointer to the disassembler CPU state.
+ * @param   pDis            Pointer to the disassembler state.
  * @param   pszBuf          The output buffer.
  * @param   cchBuf          The size of the output buffer.
  * @param   fFlags          Format flags, see DIS_FORMAT_FLAGS_*.
  * @param   pfnGetSymbol    Get symbol name for a jmp or call target address. Optional.
  * @param   pvUser          User argument for pfnGetSymbol.
  */
-DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, uint32_t fFlags,
+DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags,
                                 PFNDISGETSYMBOL pfnGetSymbol, void *pvUser)
 {
     /*
      * Input validation and massaging.
      */
-    AssertPtr(pCpu);
+    AssertPtr(pDis);
     AssertPtrNull(pszBuf);
     Assert(pszBuf || !cchBuf);
     AssertPtrNull(pfnGetSymbol);
@@ -266,7 +266,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
     if (fFlags & DIS_FMT_FLAGS_BYTES_COMMENT)
         fFlags = (fFlags & ~DIS_FMT_FLAGS_BYTES_LEFT) | DIS_FMT_FLAGS_BYTES_RIGHT;
 
-    PCDISOPCODE const pOp = pCpu->pCurInstr;
+    PCDISOPCODE const pOp = pDis->pCurInstr;
 
     /*
      * Output macros
@@ -347,10 +347,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
     if (fFlags & DIS_FMT_FLAGS_ADDR_LEFT)
     {
 #if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
-        if (pCpu->uInstrAddr >= _4G)
-            PUT_NUM(9, "%08x`", (uint32_t)(pCpu->uInstrAddr >> 32));
+        if (pDis->uInstrAddr >= _4G)
+            PUT_NUM(9, "%08x`", (uint32_t)(pDis->uInstrAddr >> 32));
 #endif
-        PUT_NUM(8, "%08x", (uint32_t)pCpu->uInstrAddr);
+        PUT_NUM(8, "%08x", (uint32_t)pDis->uInstrAddr);
         PUT_C(' ');
     }
 
@@ -359,7 +359,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
      */
     if (fFlags & DIS_FMT_FLAGS_BYTES_LEFT)
     {
-        size_t cchTmp = disFormatBytes(pCpu, pszDst, cchDst, fFlags);
+        size_t cchTmp = disFormatBytes(pDis, pszDst, cchDst, fFlags);
         cchOutput += cchTmp;
         if (cchDst > 1)
         {
@@ -391,18 +391,18 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
     size_t const offInstruction = cchOutput;
     if (    pOp->uOpcode == OP_INVALID
         ||  (   pOp->uOpcode == OP_ILLUD2
-             && (pCpu->fPrefix & DISPREFIX_LOCK)))
+             && (pDis->fPrefix & DISPREFIX_LOCK)))
         PUT_SZ("Illegal opcode");
     else
     {
         /*
          * Prefixes
          */
-        if (pCpu->fPrefix & DISPREFIX_LOCK)
+        if (pDis->fPrefix & DISPREFIX_LOCK)
             PUT_SZ("lock ");
-        if(pCpu->fPrefix & DISPREFIX_REP)
+        if(pDis->fPrefix & DISPREFIX_REP)
             PUT_SZ("rep ");
-        else if(pCpu->fPrefix & DISPREFIX_REPNE)
+        else if(pDis->fPrefix & DISPREFIX_REPNE)
             PUT_SZ("repne ");
 
         /*
@@ -414,67 +414,67 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         switch (pOp->uOpcode)
         {
             case OP_JECXZ:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "jcxz %Jb" : pCpu->uOpMode == DISCPUMODE_32BIT ? "jecxz %Jb"   : "jrcxz %Jb";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "jcxz %Jb" : pDis->uOpMode == DISCPUMODE_32BIT ? "jecxz %Jb"   : "jrcxz %Jb";
                 break;
             case OP_PUSHF:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "pushfw"   : pCpu->uOpMode == DISCPUMODE_32BIT ? "pushfd"      : "pushfq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "pushfw"   : pDis->uOpMode == DISCPUMODE_32BIT ? "pushfd"      : "pushfq";
                 break;
             case OP_POPF:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "popfw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "popfd"       : "popfq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "popfw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "popfd"       : "popfq";
                 break;
             case OP_PUSHA:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "pushaw"   : "pushad";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "pushaw"   : "pushad";
                 break;
             case OP_POPA:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "popaw"    : "popad";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "popaw"    : "popad";
                 break;
             case OP_INSB:
                 pszFmt = "insb";
                 break;
             case OP_INSWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "insw"     : pCpu->uOpMode == DISCPUMODE_32BIT ? "insd"  : "insq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "insw"     : pDis->uOpMode == DISCPUMODE_32BIT ? "insd"  : "insq";
                 break;
             case OP_OUTSB:
                 pszFmt = "outsb";
                 break;
             case OP_OUTSWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "outsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "outsd" : "outsq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "outsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "outsd" : "outsq";
                 break;
             case OP_MOVSB:
                 pszFmt = "movsb";
                 break;
             case OP_MOVSWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "movsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "movsd" : "movsq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "movsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "movsd" : "movsq";
                 break;
             case OP_CMPSB:
                 pszFmt = "cmpsb";
                 break;
             case OP_CMPWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "cmpsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "cmpsd" : "cmpsq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "cmpsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "cmpsd" : "cmpsq";
                 break;
             case OP_SCASB:
                 pszFmt = "scasb";
                 break;
             case OP_SCASWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "scasw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "scasd" : "scasq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "scasw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "scasd" : "scasq";
                 break;
             case OP_LODSB:
                 pszFmt = "lodsb";
                 break;
             case OP_LODSWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "lodsw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "lodsd" : "lodsq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "lodsw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "lodsd" : "lodsq";
                 break;
             case OP_STOSB:
                 pszFmt = "stosb";
                 break;
             case OP_STOSWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "stosw"    : pCpu->uOpMode == DISCPUMODE_32BIT ? "stosd" : "stosq";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "stosw"    : pDis->uOpMode == DISCPUMODE_32BIT ? "stosd" : "stosq";
                 break;
             case OP_CBW:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "cbw"      : pCpu->uOpMode == DISCPUMODE_32BIT ? "cwde"  : "cdqe";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "cbw"      : pDis->uOpMode == DISCPUMODE_32BIT ? "cwde"  : "cdqe";
                 break;
             case OP_CWD:
-                pszFmt = pCpu->uOpMode == DISCPUMODE_16BIT ? "cwd"      : pCpu->uOpMode == DISCPUMODE_32BIT ? "cdq"   : "cqo";
+                pszFmt = pDis->uOpMode == DISCPUMODE_16BIT ? "cwd"      : pDis->uOpMode == DISCPUMODE_32BIT ? "cdq"   : "cqo";
                 break;
             case OP_SHL:
                 Assert(pszFmt[3] == '/');
@@ -491,16 +491,16 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
              * Don't know how to tell yasm to generate complicated nop stuff, so 'db' it.
              */
             case OP_NOP:
-                if (pCpu->bOpCode == 0x90)
+                if (pDis->bOpCode == 0x90)
                     /* fine, fine */;
                 else if (pszFmt[sizeof("nop %Ev") - 1] == '/' && pszFmt[sizeof("nop %Ev")] == 'p')
                     pszFmt = "prefetch %Eb";
-                else if (pCpu->bOpCode == 0x1f)
+                else if (pDis->bOpCode == 0x1f)
                 {
-                    Assert(pCpu->cbInstr >= 3);
+                    Assert(pDis->cbInstr >= 3);
                     PUT_SZ("db 00fh, 01fh,");
-                    PUT_NUM_8(pCpu->ModRM.u);
-                    for (unsigned i = 3; i < pCpu->cbInstr; i++)
+                    PUT_NUM_8(pDis->ModRM.u);
+                    for (unsigned i = 3; i < pDis->cbInstr; i++)
                     {
                         PUT_C(',');
                         PUT_NUM_8(0x90); ///@todo fixme.
@@ -539,19 +539,19 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
              * Horrible hacks.
              */
             case OP_FLD:
-                if (pCpu->bOpCode == 0xdb) /* m80fp workaround. */
-                    *(int *)&pCpu->Param1.fParam &= ~0x1f; /* make it pure OP_PARM_M */
+                if (pDis->bOpCode == 0xdb) /* m80fp workaround. */
+                    *(int *)&pDis->Param1.fParam &= ~0x1f; /* make it pure OP_PARM_M */
                 break;
             case OP_LAR: /* hack w -> v, probably not correct. */
-                *(int *)&pCpu->Param2.fParam &= ~0x1f;
-                *(int *)&pCpu->Param2.fParam |= OP_PARM_v;
+                *(int *)&pDis->Param2.fParam &= ~0x1f;
+                *(int *)&pDis->Param2.fParam |= OP_PARM_v;
                 break;
         }
 
         /*
          * Formatting context and associated macros.
          */
-        PCDISOPPARAM pParam = &pCpu->Param1;
+        PCDISOPPARAM pParam = &pDis->Param1;
         int iParam = 1;
 
 #define PUT_FAR() \
@@ -571,7 +571,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                 switch (OP_PARM_VSUBTYPE(pParam->fParam)) \
                 { \
                     case OP_PARM_v: \
-                        switch (pCpu->uOpMode) \
+                        switch (pDis->uOpMode) \
                         { \
                             case DISCPUMODE_16BIT: PUT_SZ("word "); break; \
                             case DISCPUMODE_32BIT: PUT_SZ("dword "); break; \
@@ -601,20 +601,20 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         static const char s_szSegPrefix[6][4] = { "es:", "cs:", "ss:", "ds:", "fs:", "gs:" };
 #define PUT_SEGMENT_OVERRIDE() \
         do { \
-            if (pCpu->fPrefix & DISPREFIX_SEG) \
-                PUT_STR(s_szSegPrefix[pCpu->idxSegPrefix], 3); \
+            if (pDis->fPrefix & DISPREFIX_SEG) \
+                PUT_STR(s_szSegPrefix[pDis->idxSegPrefix], 3); \
         } while (0)
 
 
         /*
          * Segment prefixing for instructions that doesn't do memory access.
          */
-        if (    (pCpu->fPrefix & DISPREFIX_SEG)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param1.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param2.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param3.fUse))
+        if (    (pDis->fPrefix & DISPREFIX_SEG)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param3.fUse))
         {
-            PUT_STR(s_szSegPrefix[pCpu->idxSegPrefix], 2);
+            PUT_STR(s_szSegPrefix[pDis->idxSegPrefix], 2);
             PUT_C(' ');
         }
 
@@ -648,7 +648,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         Assert(!(pParam->fUse & (DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT64 | DISUSE_RIPDISPLACEMENT32)));
 
                         size_t cchReg;
-                        const char *pszReg = disasmFormatYasmBaseReg(pCpu, pParam, &cchReg);
+                        const char *pszReg = disasmFormatYasmBaseReg(pDis, pParam, &cchReg);
                         PUT_STR(pszReg, cchReg);
                         break;
                     }
@@ -690,7 +690,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                      && (int16_t)pParam->uDisp.i32 == (int32_t)pParam->uDisp.i32) //??
                                 PUT_SZ("dword ");
                             else if (   (fUse & DISUSE_DISPLACEMENT64)
-                                     && (pCpu->SIB.Bits.Base != 5 || pCpu->ModRM.Bits.Mod != 0)
+                                     && (pDis->SIB.Bits.Base != 5 || pDis->ModRM.Bits.Mod != 0)
                                      && (int32_t)pParam->uDisp.i64 == (int64_t)pParam->uDisp.i64) //??
                                 PUT_SZ("qword ");
                         }
@@ -713,7 +713,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         if (fBase)
                         {
                             size_t cchReg;
-                            const char *pszReg = disasmFormatYasmBaseReg(pCpu, pParam, &cchReg);
+                            const char *pszReg = disasmFormatYasmBaseReg(pDis, pParam, &cchReg);
                             PUT_STR(pszReg, cchReg);
                         }
 
@@ -723,7 +723,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 PUT_C('+');
 
                             size_t cchReg;
-                            const char *pszReg = disasmFormatYasmIndexReg(pCpu, pParam, &cchReg);
+                            const char *pszReg = disasmFormatYasmIndexReg(pDis, pParam, &cchReg);
                             PUT_STR(pszReg, cchReg);
 
                             if (fUse & DISUSE_SCALE)
@@ -797,7 +797,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
 
                             case DISUSE_IMMEDIATE16:
-                                if (    pCpu->uCpuMode != pCpu->uOpMode
+                                if (    pDis->uCpuMode != pDis->uOpMode
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->uValue == (int16_t)pParam->uValue
                                              || (pOp->fParam1 >= OP_PARM_REG_GEN16_START && pOp->fParam1 <= OP_PARM_REG_GEN16_END)
@@ -820,7 +820,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 break;
 
                             case DISUSE_IMMEDIATE32:
-                                if (    pCpu->uOpMode != (pCpu->uCpuMode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
+                                if (    pDis->uOpMode != (pDis->uCpuMode == DISCPUMODE_16BIT ? DISCPUMODE_16BIT : DISCPUMODE_32BIT) /* not perfect */
                                     ||  (   (fFlags & DIS_FMT_FLAGS_STRICT)
                                          && (   (int8_t)pParam->uValue == (int32_t)pParam->uValue
                                              || (pOp->fParam1 >= OP_PARM_REG_GEN32_START && pOp->fParam1 <= OP_PARM_REG_GEN32_END)
@@ -904,17 +904,17 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                         if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
                             PUT_SZ(" (");
 
-                        RTUINTPTR uTrgAddr = pCpu->uInstrAddr + pCpu->cbInstr + offDisplacement;
-                        if (pCpu->uCpuMode == DISCPUMODE_16BIT)
+                        RTUINTPTR uTrgAddr = pDis->uInstrAddr + pDis->cbInstr + offDisplacement;
+                        if (pDis->uCpuMode == DISCPUMODE_16BIT)
                             PUT_NUM_16(uTrgAddr);
-                        else if (pCpu->uCpuMode == DISCPUMODE_32BIT)
+                        else if (pDis->uCpuMode == DISCPUMODE_32BIT)
                             PUT_NUM_32(uTrgAddr);
                         else
                             PUT_NUM_64(uTrgAddr);
 
                         if (pfnGetSymbol)
                         {
-                            int rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, szSymbol, sizeof(szSymbol), &off, pvUser);
+                            int rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, szSymbol, sizeof(szSymbol), &off, pvUser);
                             if (RT_SUCCESS(rc))
                             {
                                 PUT_SZ(" [");
@@ -953,29 +953,29 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 PUT_C(':');
                                 PUT_NUM_16(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_IMMEDIATE_ADDR_16_32:
                                 PUT_NUM_16(pParam->uValue >> 32);
                                 PUT_C(':');
                                 PUT_NUM_32(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT16:
                                 PUT_NUM_16(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT32:
                                 PUT_NUM_32(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT64:
                                 PUT_NUM_64(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint64_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), (uint64_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             default:
                                 AssertFailed();
@@ -1017,29 +1017,29 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                                 PUT_C(':');
                                 PUT_NUM_16(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint16_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_IMMEDIATE_ADDR_16_32:
                                 PUT_NUM_16(pParam->uValue >> 32);
                                 PUT_C(':');
                                 PUT_NUM_32(pParam->uValue);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_VALUE(pParam->uValue >> 16), (uint32_t)pParam->uValue, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT16:
                                 PUT_NUM_16(pParam->uDisp.i16);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), pParam->uDisp.u16, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), pParam->uDisp.u16, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT32:
                                 PUT_NUM_32(pParam->uDisp.i32);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), pParam->uDisp.u32, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), pParam->uDisp.u32, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             case DISUSE_DISPLACEMENT64:
                                 PUT_NUM_64(pParam->uDisp.i64);
                                 if (pfnGetSymbol)
-                                    rc = pfnGetSymbol(pCpu, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), pParam->uDisp.u64, szSymbol, sizeof(szSymbol), &off, pvUser);
+                                    rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), pParam->uDisp.u64, szSymbol, sizeof(szSymbol), &off, pvUser);
                                 break;
                             default:
                                 AssertFailed();
@@ -1080,7 +1080,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             PUT_SZ("es:");
 
                         size_t cchReg;
-                        const char *pszReg = disasmFormatYasmBaseReg(pCpu, pParam, &cchReg);
+                        const char *pszReg = disasmFormatYasmBaseReg(pDis, pParam, &cchReg);
                         PUT_STR(pszReg, cchReg);
                         PUT_C(']');
                         break;
@@ -1090,7 +1090,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     {
                         Assert(RT_C_IS_ALPHA(pszFmt[0]) && RT_C_IS_ALPHA(pszFmt[1]) && !RT_C_IS_ALPHA(pszFmt[2])); pszFmt += 2;
                         size_t cchReg;
-                        const char *pszReg = disasmFormatYasmBaseReg(pCpu, pParam, &cchReg);
+                        const char *pszReg = disasmFormatYasmBaseReg(pDis, pParam, &cchReg);
                         PUT_STR(pszReg, cchReg);
                         break;
                     }
@@ -1110,8 +1110,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                     PUT_C(' ');
                     switch (++iParam)
                     {
-                        case 2: pParam = &pCpu->Param2; break;
-                        case 3: pParam = &pCpu->Param3; break;
+                        case 2: pParam = &pDis->Param2; break;
+                        case 3: pParam = &pDis->Param3; break;
                         default: pParam = NULL; break;
                     }
                 }
@@ -1140,10 +1140,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         {
             PUT_C(' ');
 #if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
-            if (pCpu->uInstrAddr >= _4G)
-                PUT_NUM(9, "%08x`", (uint32_t)(pCpu->uInstrAddr >> 32));
+            if (pDis->uInstrAddr >= _4G)
+                PUT_NUM(9, "%08x`", (uint32_t)(pDis->uInstrAddr >> 32));
 #endif
-            PUT_NUM(8, "%08x", (uint32_t)pCpu->uInstrAddr);
+            PUT_NUM(8, "%08x", (uint32_t)pDis->uInstrAddr);
         }
 
         /*
@@ -1152,7 +1152,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
         if (fFlags & DIS_FMT_FLAGS_BYTES_RIGHT)
         {
             PUT_C(' ');
-            size_t cchTmp = disFormatBytes(pCpu, pszDst, cchDst, fFlags);
+            size_t cchTmp = disFormatBytes(pDis, pszDst, cchDst, fFlags);
             cchOutput += cchTmp;
             if (cchTmp >= cchDst)
                 cchTmp = cchDst - (cchDst != 0);
@@ -1186,13 +1186,13 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
  *
  * @returns The number of output characters. If this is >= cchBuf, then the content
  *          of pszBuf will be truncated.
- * @param   pCpu    Pointer to the disassembler CPU state.
+ * @param   pDis    Pointer to the disassembler state.
  * @param   pszBuf  The output buffer.
  * @param   cchBuf  The size of the output buffer.
  */
-DISDECL(size_t) DISFormatYasm(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf)
+DISDECL(size_t) DISFormatYasm(PCDISCPUSTATE pDis, char *pszBuf, size_t cchBuf)
 {
-    return DISFormatYasmEx(pCpu, pszBuf, cchBuf, 0 /* fFlags */, NULL /* pfnGetSymbol */, NULL /* pvUser */);
+    return DISFormatYasmEx(pDis, pszBuf, cchBuf, 0 /* fFlags */, NULL /* pfnGetSymbol */, NULL /* pvUser */);
 }
 
 
@@ -1201,46 +1201,46 @@ DISDECL(size_t) DISFormatYasm(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf)
  * can never get YASM to produce.
  *
  * @returns true if it's odd, false if it isn't.
- * @param   pCpu        The disassembler output.  The byte fetcher callback will
+ * @param   pDis        The disassembler output.  The byte fetcher callback will
  *                      be used if present as we might need to fetch opcode
  *                      bytes.
  */
-DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
+DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pDis)
 {
     /*
      * Mod rm + SIB: Check for duplicate EBP encodings that yasm won't use for very good reasons.
      */
-    if (    pCpu->uAddrMode != DISCPUMODE_16BIT ///@todo correct?
-        &&  pCpu->ModRM.Bits.Rm == 4
-        &&  pCpu->ModRM.Bits.Mod != 3)
+    if (    pDis->uAddrMode != DISCPUMODE_16BIT ///@todo correct?
+        &&  pDis->ModRM.Bits.Rm == 4
+        &&  pDis->ModRM.Bits.Mod != 3)
     {
         /* No scaled index SIB (index=4), except for ESP. */
-        if (    pCpu->SIB.Bits.Index == 4
-            &&  pCpu->SIB.Bits.Base != 4)
+        if (    pDis->SIB.Bits.Index == 4
+            &&  pDis->SIB.Bits.Base != 4)
             return true;
 
         /* EBP + displacement */
-        if (    pCpu->ModRM.Bits.Mod != 0
-             && pCpu->SIB.Bits.Base == 5
-             && pCpu->SIB.Bits.Scale == 0)
+        if (    pDis->ModRM.Bits.Mod != 0
+             && pDis->SIB.Bits.Base == 5
+             && pDis->SIB.Bits.Scale == 0)
             return true;
     }
 
     /*
      * Seems to be an instruction alias here, but I cannot find any docs on it... hrmpf!
      */
-    if (    pCpu->pCurInstr->uOpcode == OP_SHL
-        &&  pCpu->ModRM.Bits.Reg == 6)
+    if (    pDis->pCurInstr->uOpcode == OP_SHL
+        &&  pDis->ModRM.Bits.Reg == 6)
         return true;
 
     /*
      * Check for multiple prefixes of the same kind.
      */
     uint32_t fPrefixes = 0;
-    for (uint32_t offOpcode = 0; offOpcode < RT_ELEMENTS(pCpu->abInstr); offOpcode++)
+    for (uint32_t offOpcode = 0; offOpcode < RT_ELEMENTS(pDis->abInstr); offOpcode++)
     {
         uint32_t f;
-        switch (pCpu->abInstr[offOpcode])
+        switch (pDis->abInstr[offOpcode])
         {
             case 0xf0:
                 f = DISPREFIX_LOCK;
@@ -1270,7 +1270,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
             case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47:
             case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
-                f = pCpu->uCpuMode == DISCPUMODE_64BIT ? DISPREFIX_REX : 0;
+                f = pDis->uCpuMode == DISCPUMODE_64BIT ? DISPREFIX_REX : 0;
                 break;
 
             default:
@@ -1288,36 +1288,36 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     if (fPrefixes & DISPREFIX_SEG)
     {
         /* no effective address which it may apply to. */
-        Assert((pCpu->fPrefix & DISPREFIX_SEG) || pCpu->uCpuMode == DISCPUMODE_64BIT);
-        if (    !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param1.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param2.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pCpu->Param3.fUse))
+        Assert((pDis->fPrefix & DISPREFIX_SEG) || pDis->uCpuMode == DISCPUMODE_64BIT);
+        if (    !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param3.fUse))
             return true;
     }
 
     /* fixed register + addr override doesn't go down all that well. */
     if (fPrefixes & DISPREFIX_ADDRSIZE)
     {
-        Assert(pCpu->fPrefix & DISPREFIX_ADDRSIZE);
-        if (    pCpu->pCurInstr->fParam3 == OP_PARM_NONE
-            &&  pCpu->pCurInstr->fParam2 == OP_PARM_NONE
-            &&  (   pCpu->pCurInstr->fParam1 >= OP_PARM_REG_GEN32_START
-                 && pCpu->pCurInstr->fParam1 <= OP_PARM_REG_GEN32_END))
+        Assert(pDis->fPrefix & DISPREFIX_ADDRSIZE);
+        if (    pDis->pCurInstr->fParam3 == OP_PARM_NONE
+            &&  pDis->pCurInstr->fParam2 == OP_PARM_NONE
+            &&  (   pDis->pCurInstr->fParam1 >= OP_PARM_REG_GEN32_START
+                 && pDis->pCurInstr->fParam1 <= OP_PARM_REG_GEN32_END))
             return true;
     }
 
     /* Almost all prefixes are bad. */
     if (fPrefixes)
     {
-        switch (pCpu->pCurInstr->uOpcode)
+        switch (pDis->pCurInstr->uOpcode)
         {
             /* nop w/ prefix(es). */
             case OP_NOP:
                 return true;
 
             case OP_JMP:
-                if (    pCpu->pCurInstr->fParam1 != OP_PARM_Jb
-                    &&  pCpu->pCurInstr->fParam1 != OP_PARM_Jv)
+                if (    pDis->pCurInstr->fParam1 != OP_PARM_Jb
+                    &&  pDis->pCurInstr->fParam1 != OP_PARM_Jv)
                     break;
                 /* fall thru */
             case OP_JO:
@@ -1345,16 +1345,16 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     /* All but the segment prefix is bad news. */
     if (fPrefixes & ~DISPREFIX_SEG)
     {
-        switch (pCpu->pCurInstr->uOpcode)
+        switch (pDis->pCurInstr->uOpcode)
         {
             case OP_POP:
             case OP_PUSH:
-                if (    pCpu->pCurInstr->fParam1 >= OP_PARM_REG_SEG_START
-                    &&  pCpu->pCurInstr->fParam1 <= OP_PARM_REG_SEG_END)
+                if (    pDis->pCurInstr->fParam1 >= OP_PARM_REG_SEG_START
+                    &&  pDis->pCurInstr->fParam1 <= OP_PARM_REG_SEG_END)
                     return true;
                 if (    (fPrefixes & ~DISPREFIX_OPSIZE)
-                    &&  pCpu->pCurInstr->fParam1 >= OP_PARM_REG_GEN32_START
-                    &&  pCpu->pCurInstr->fParam1 <= OP_PARM_REG_GEN32_END)
+                    &&  pDis->pCurInstr->fParam1 >= OP_PARM_REG_GEN32_START
+                    &&  pDis->pCurInstr->fParam1 <= OP_PARM_REG_GEN32_END)
                     return true;
                 break;
 
@@ -1370,13 +1370,13 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
     /* Implicit 8-bit register instructions doesn't mix with operand size. */
     if (    (fPrefixes & DISPREFIX_OPSIZE)
-        &&  (   (   pCpu->pCurInstr->fParam1 == OP_PARM_Gb /* r8 */
-                 && pCpu->pCurInstr->fParam2 == OP_PARM_Eb /* r8/mem8 */)
-             || (   pCpu->pCurInstr->fParam2 == OP_PARM_Gb /* r8 */
-                 && pCpu->pCurInstr->fParam1 == OP_PARM_Eb /* r8/mem8 */))
+        &&  (   (   pDis->pCurInstr->fParam1 == OP_PARM_Gb /* r8 */
+                 && pDis->pCurInstr->fParam2 == OP_PARM_Eb /* r8/mem8 */)
+             || (   pDis->pCurInstr->fParam2 == OP_PARM_Gb /* r8 */
+                 && pDis->pCurInstr->fParam1 == OP_PARM_Eb /* r8/mem8 */))
        )
     {
-        switch (pCpu->pCurInstr->uOpcode)
+        switch (pDis->pCurInstr->uOpcode)
         {
             case OP_ADD:
             case OP_OR:
@@ -1400,9 +1400,9 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
      *    expected: 1aee   sbb ch, dh     ; SBB r8, r/m8
      *        yasm: 18F5   sbb ch, dh     ; SBB r/m8, r8
      */
-    if (pCpu->ModRM.Bits.Mod == 3 /* reg,reg */)
+    if (pDis->ModRM.Bits.Mod == 3 /* reg,reg */)
     {
-        switch (pCpu->pCurInstr->uOpcode)
+        switch (pDis->pCurInstr->uOpcode)
         {
             case OP_ADD:
             case OP_OR:
@@ -1412,14 +1412,14 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
             case OP_SUB:
             case OP_XOR:
             case OP_CMP:
-                if (    (    pCpu->pCurInstr->fParam1 == OP_PARM_Gb /* r8 */
-                         && pCpu->pCurInstr->fParam2 == OP_PARM_Eb /* r8/mem8 */)
-                    ||  (    pCpu->pCurInstr->fParam1 == OP_PARM_Gv /* rX */
-                         && pCpu->pCurInstr->fParam2 == OP_PARM_Ev /* rX/memX */))
+                if (    (    pDis->pCurInstr->fParam1 == OP_PARM_Gb /* r8 */
+                         && pDis->pCurInstr->fParam2 == OP_PARM_Eb /* r8/mem8 */)
+                    ||  (    pDis->pCurInstr->fParam1 == OP_PARM_Gv /* rX */
+                         && pDis->pCurInstr->fParam2 == OP_PARM_Ev /* rX/memX */))
                     return true;
 
                 /* 82 (see table A-6). */
-                if (pCpu->bOpCode == 0x82)
+                if (pDis->bOpCode == 0x82)
                     return true;
                 break;
 
@@ -1430,12 +1430,12 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
             case OP_POP:
             case OP_PUSH:
-                Assert(pCpu->bOpCode == 0x8f);
+                Assert(pDis->bOpCode == 0x8f);
                 return true;
 
             case OP_MOV:
-                if (   pCpu->bOpCode == 0x8a
-                    || pCpu->bOpCode == 0x8b)
+                if (   pDis->bOpCode == 0x8a
+                    || pDis->bOpCode == 0x8b)
                     return true;
                 break;
 
@@ -1445,10 +1445,10 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     }
 
     /* shl eax,1 will be assembled to the form without the immediate byte. */
-    if (    pCpu->pCurInstr->fParam2 == OP_PARM_Ib
-        &&  (uint8_t)pCpu->Param2.uValue == 1)
+    if (    pDis->pCurInstr->fParam2 == OP_PARM_Ib
+        &&  (uint8_t)pDis->Param2.uValue == 1)
     {
-        switch (pCpu->pCurInstr->uOpcode)
+        switch (pDis->pCurInstr->uOpcode)
         {
             case OP_SHL:
             case OP_SHR:
@@ -1462,9 +1462,9 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
     }
 
     /* And some more - see table A-6. */
-    if (pCpu->bOpCode == 0x82)
+    if (pDis->bOpCode == 0x82)
     {
-        switch (pCpu->pCurInstr->uOpcode)
+        switch (pDis->pCurInstr->uOpcode)
         {
             case OP_ADD:
             case OP_OR:
@@ -1484,7 +1484,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
 
     /* Yasm encodes setnbe al with /2 instead of /0 like the AMD manual
        says (intel doesn't appear to care). */
-    switch (pCpu->pCurInstr->uOpcode)
+    switch (pDis->pCurInstr->uOpcode)
     {
         case OP_SETO:
         case OP_SETNO:
@@ -1502,8 +1502,8 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
         case OP_SETNL:
         case OP_SETLE:
         case OP_SETNLE:
-            AssertMsg(pCpu->bOpCode >= 0x90 && pCpu->bOpCode <= 0x9f, ("%#x\n", pCpu->bOpCode));
-            if (pCpu->ModRM.Bits.Reg != 2)
+            AssertMsg(pDis->bOpCode >= 0x90 && pDis->bOpCode <= 0x9f, ("%#x\n", pDis->bOpCode));
+            if (pDis->ModRM.Bits.Reg != 2)
                 return true;
             break;
     }
@@ -1512,9 +1512,9 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu)
      * The MOVZX reg32,mem16 instruction without an operand size prefix
      * doesn't quite make sense...
      */
-    if (    pCpu->pCurInstr->uOpcode == OP_MOVZX
-        &&  pCpu->bOpCode == 0xB7
-        &&  (pCpu->uCpuMode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
+    if (    pDis->pCurInstr->uOpcode == OP_MOVZX
+        &&  pDis->bOpCode == 0xB7
+        &&  (pDis->uCpuMode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
         return true;
 
     return false;

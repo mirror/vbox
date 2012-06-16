@@ -127,32 +127,32 @@ static void MyDisasMasmFormatter(PMYDISSTATE pState)
  *
  * @returns true if it's valid. false if it isn't.
  *
- * @param   pCpu        The disassembler output.
+ * @param   pDis        The disassembler output.
  */
-static bool MyDisasIsValidInstruction(DISCPUSTATE const *pCpu)
+static bool MyDisasIsValidInstruction(DISCPUSTATE const *pDis)
 {
-    switch (pCpu->pCurInstr->uOpcode)
+    switch (pDis->pCurInstr->uOpcode)
     {
         /* These doesn't take memory operands. */
         case OP_MOV_CR:
         case OP_MOV_DR:
         case OP_MOV_TR:
-            if (pCpu->ModRM.Bits.Mod != 3)
+            if (pDis->ModRM.Bits.Mod != 3)
                 return false;
             break;
 
          /* The 0x8f /0 variant of this instruction doesn't get its /r value verified. */
         case OP_POP:
-            if (    pCpu->bOpCode == 0x8f
-                &&  pCpu->ModRM.Bits.Reg != 0)
+            if (    pDis->bOpCode == 0x8f
+                &&  pDis->ModRM.Bits.Reg != 0)
                 return false;
             break;
 
         /* The 0xc6 /0 and 0xc7 /0 variants of this instruction don't get their /r values verified. */
         case OP_MOV:
-            if (    (   pCpu->bOpCode == 0xc6
-                     || pCpu->bOpCode == 0xc7)
-                &&  pCpu->ModRM.Bits.Reg != 0)
+            if (    (   pDis->bOpCode == 0xc6
+                     || pDis->bOpCode == 0xc7)
+                &&  pDis->ModRM.Bits.Reg != 0)
                 return false;
             break;
 

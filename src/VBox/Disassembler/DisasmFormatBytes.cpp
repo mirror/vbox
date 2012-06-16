@@ -30,15 +30,15 @@
  *
  * @returns The number of output bytes.
  *
- * @param   pCpu    Pointer to the disassembler cpu state.
+ * @param   pDis    Pointer to the disassembler state.
  * @param   pszDst  The output buffer.
  * @param   cchDst  The size of the output buffer.
  * @param   fFlags  The flags passed to the formatter.
  */
-size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t fFlags)
+size_t disFormatBytes(PCDISCPUSTATE pDis, char *pszDst, size_t cchDst, uint32_t fFlags)
 {
     size_t      cchOutput = 0;
-    uint32_t    cb        = pCpu->cbInstr;
+    uint32_t    cb        = pDis->cbInstr;
     AssertStmt(cb <= 16, cb = 16);
 
 #define PUT_C(ch) \
@@ -68,9 +68,9 @@ size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t 
     for (uint32_t i = 0; i < cb; i++)
     {
         if (i != 0 && (fFlags & DIS_FMT_FLAGS_BYTES_SPACED))
-            PUT_NUM(3, " %02x", pCpu->abInstr[i]);
+            PUT_NUM(3, " %02x", pDis->abInstr[i]);
         else
-            PUT_NUM(2, "%02x", pCpu->abInstr[i]);
+            PUT_NUM(2, "%02x", pDis->abInstr[i]);
     }
 
     if (fFlags & DIS_FMT_FLAGS_BYTES_BRACKETS)
