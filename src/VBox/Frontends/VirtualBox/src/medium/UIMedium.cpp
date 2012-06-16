@@ -409,7 +409,7 @@ QString UIMedium::details (bool aNoDiffs /* = false */,
     // after the discard operation is finished, so the user will eventually see
     // correct data), but in order to solve the problem properly we need to use
     // exceptions everywhere (or check the result after every method call). See
-    // also Defect #2149.
+    // @bugref{2149}.
 
     if (mMedium.isNull() || mIsHostDrive)
         return mName;

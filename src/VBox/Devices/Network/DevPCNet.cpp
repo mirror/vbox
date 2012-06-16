@@ -2628,7 +2628,7 @@ static int pcnetAsyncTransmit(PCNetState *pThis, bool fOnWorkerThread)
          * it clears CSR0.TINT. This can lead to a race where the driver clears
          * CSR0.TINT right after it was set by the device. The driver waits until
          * CSR0.TINT is set again but this will never happen. So prevent clearing
-         * this bit as long as the driver didn't read it. xtracker #5288. */
+         * this bit as long as the driver didn't read it. See @bugref{5288}. */
         pThis->aCSR[0] |= 0x0200;    /* set TINT */
         /* Don't allow the guest to clear TINT before reading it */
         pThis->u16CSR0LastSeenByGuest &= ~0x0200;
@@ -5167,7 +5167,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map 8192 bytes of memory for the PCNet device into the hyper memory"));
-        pThis->pSharedMMIOR0 = (uintptr_t)pThis->pSharedMMIOR3; /** @todo #1865: Map MMIO2 into ring-0. */
+        pThis->pSharedMMIOR0 = (uintptr_t)pThis->pSharedMMIOR3; /** @todo @bugref{1865}: Map MMIO2 into ring-0. */
 
         pcnetInitSharedMemory(pThis);
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE,

@@ -2100,7 +2100,7 @@ ResumeExecution:
              * Or, if fail in interpreting the instruction because we couldn't get the guest physical address
              * of the page containing the instruction via the guest's page tables (we would invalidate the guest page
              * in the host TLB), resume execution which would cause a guest page fault to let the guest handle this
-             * weird case. See #6043.
+             * weird case. See @bugref{6043}.
              */
             if (   rc == VINF_SUCCESS
                 || rc == VERR_PAGE_TABLE_NOT_PRESENT
@@ -2122,7 +2122,7 @@ ResumeExecution:
         Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, VBOXSTRICTRC_VAL(rc)));
 
         /*
-         * Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, #6043.
+         * Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, @bugref{6043}.
          */
         if (   rc == VINF_SUCCESS
             || rc == VERR_PAGE_TABLE_NOT_PRESENT

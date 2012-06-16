@@ -151,8 +151,8 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
          * This is a FIFO, so insert at the end.
          */
         /** @todo we should add a priority to the queues so we don't have to rely on
-         * the initialization order to deal with problems like #1605 (pgm/pcnet deadlock
-         * caused by the critsect queue to be last in the chain).
+         * the initialization order to deal with problems like @bugref{1605} (pgm/pcnet
+         * deadlock caused by the critsect queue to be last in the chain).
          * - Update, the critical sections are no longer using queues, so this isn't a real
          *   problem any longer. The priority might be a nice feature for later though.
          */

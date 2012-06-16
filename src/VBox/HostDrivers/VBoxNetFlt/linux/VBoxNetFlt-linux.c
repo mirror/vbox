@@ -382,7 +382,7 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
 {
     PVBOXNETDEVICEOPSOVERRIDE   pOverride;
 
-    /* Cancel override if ethtool_ops is missing (host-only case, #5712) */
+    /* Cancel override if ethtool_ops is missing (host-only case, @bugref{5712}) */
     if (!VALID_PTR(pDev->OVR_OPS))
         return;
     pOverride = RTMemAlloc(sizeof(*pOverride));

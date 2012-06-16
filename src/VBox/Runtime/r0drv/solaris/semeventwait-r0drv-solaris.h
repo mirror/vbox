@@ -444,7 +444,7 @@ DECLINLINE(void) rtR0SemSolWaitDelete(PRTR0SEMSOLWAIT pWait)
  * we're on an interrupt thread.
  *
  * The unpinning is done to prevent a deadlock, see s this could lead to a
- * deadlock (see #4259 for the full explanation)
+ * deadlock (see @bugref{4259} for the full explanation)
  *
  * @param   pMtx            The mutex to enter.
  */

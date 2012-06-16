@@ -2457,7 +2457,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
             if (!pCtxCore->eflags.Bits.u1VM)
                 cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
             else
-                cpl = 3; /* REM doesn't set DPL=3 in V8086 mode. See #5130. */
+                cpl = 3; /* REM doesn't set DPL=3 in V8086 mode. See @bugref{5130}. */
         }
         else
             cpl = 0;  /* CPL set to 3 for VT-x real-mode emulation. */

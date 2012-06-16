@@ -421,7 +421,7 @@ done:
     write_byte(ebda_seg, &EbdaData->uForceBootDevice, 0);
 
     // Don't restore previous video mode
-    // The default text mode should be set up. (defect #1235)
+    // The default text mode should be set up. (defect @bugref{1235})
     set_mode(0x0003);
 
     // If Setup menu enabled

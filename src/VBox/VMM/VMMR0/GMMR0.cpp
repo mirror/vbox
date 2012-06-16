@@ -772,7 +772,7 @@ GMMR0DECL(int) GMMR0Init(void)
             /*
              * Check and see if RTR0MemObjAllocPhysNC works.
              */
-#if 0 /* later, see #3170. */
+#if 0 /* later, see @bufref{3170}. */
             RTR0MEMOBJ MemObj;
             rc = RTR0MemObjAllocPhysNC(&MemObj, _64K, NIL_RTHCPHYS);
             if (RT_SUCCESS(rc))

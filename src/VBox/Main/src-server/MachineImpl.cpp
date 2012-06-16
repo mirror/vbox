@@ -11301,7 +11301,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
      */
     unregisterMetrics(mParent->performanceCollector(), mPeer);
 #endif
-    /* The guest must be unregistered after its metrics (#5949). */
+    /* The guest must be unregistered after its metrics (@bugref{5949}). */
     LogAleksey(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n",
                 this, __PRETTY_FUNCTION__, mCollectorGuest));
     if (mCollectorGuest)

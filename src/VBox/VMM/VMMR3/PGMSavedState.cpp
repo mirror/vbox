@@ -50,7 +50,7 @@
 /** Saved state data unit version before the PAE PDPE registers. */
 #define PGM_SAVED_STATE_VERSION_PRE_PAE         13
 /** Saved state data unit version after this includes ballooned page flags in
- *  the state (see #5515). */
+ *  the state (see @bugref{5515}). */
 #define PGM_SAVED_STATE_VERSION_BALLOON_BROKEN  12
 /** Saved state before the balloon change. */
 #define PGM_SAVED_STATE_VERSION_PRE_BALLOON     11
@@ -2219,7 +2219,7 @@ static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAG
      */
     AssertLogRelMsgReturn(   PGM_PAGE_GET_TYPE(pPage) == uType
                           || uType == PGMPAGETYPE_INVALID
-                          /* kudge for the expanded PXE bios (r67885) - #5687: */
+                          /* kudge for the expanded PXE bios (r67885) - @bugref{5687}: */
                           || (   uType == PGMPAGETYPE_RAM
                               && GCPhys >= 0xed000
                               && GCPhys <= 0xeffff
@@ -2699,7 +2699,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
                             AssertRCReturn(rc, rc);
                         }
-                        /** @todo handle large pages (see #5545) */
+                        /** @todo handle large pages (see @bugref{5545}) */
                         break;
                     }
 
@@ -2710,10 +2710,11 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             break;
 
                         /* We don't map ballooned pages in our shadow page tables, let's
-                           just free it if allocated and mark as ballooned.  See #5515. */
+                           just free it if allocated and mark as ballooned.  See @bugref{5515}. */
                         if (PGM_PAGE_IS_ALLOCATED(pPage))
                         {
-                            /** @todo handle large pages + ballooning when it works. (see #5515, #5545). */
+                            /** @todo handle large pages + ballooning when it works. (see @bugref{5515},
+                             *        @bugref{5545}). */
                             AssertLogRelMsgReturn(   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
                                                   && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED,
                                                      ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_PGM_LOAD_UNEXPECTED_PAGE_TYPE);
@@ -3167,7 +3168,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                  *        aGCPhysGstPaePDs values now. We should used the
                  *        saved ones... Postponing this since it nothing new
                  *        and PAE/PDPTR needs some general readjusting, see
-                 *        @bugref{#5880}. */
+                 *        @bugref{5880}. */
             }
 
             pgmR3HandlerPhysicalUpdateAll(pVM);

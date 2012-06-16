@@ -318,7 +318,7 @@ static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThreadSelf, void *pvUser)
                  *
                  * If we're more than 60 intervals behind, just skip ahead. We
                  * don't want the timer thread running wild just because the
-                 * clock changed in an unexpected way. As seen in #3611 this
+                 * clock changed in an unexpected way. As seen in @bugref{3611} this
                  * does happen during suspend/resume, but it may also happen
                  * if we're using a non-monotonic clock as time source.
                  */

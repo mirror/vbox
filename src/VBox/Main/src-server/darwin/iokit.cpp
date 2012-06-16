@@ -609,7 +609,7 @@ void *DarwinSubscribeUSBNotifications(void)
         if (pNotify->NotifyRLSrc)
         {
             CFRunLoopRef RunLoopRef = CFRunLoopGetCurrent();
-            CFRetain(RunLoopRef); /* Workaround for crash when cleaning up the TLS / runloop((sub)mode). See #2807. */
+            CFRetain(RunLoopRef); /* Workaround for crash when cleaning up the TLS / runloop((sub)mode). See @bugref{2807}. */
             CFRunLoopAddSource(RunLoopRef, pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
 
             /*

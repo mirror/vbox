@@ -236,7 +236,7 @@ int main(int argc, char **argv)
      * Fork test.
      * Spawn a thread waiting for an event, then spawn a new child process (of
      * ourselves) and make sure that this does not alter the intended behaviour
-     * of our event semaphore implementation (see #5090).
+     * of our event semaphore implementation (see @bugref{5090}).
      */
     RTTestSub(hTest, "SRE Process Spawn");
     hThread = NIL_RTTHREAD;

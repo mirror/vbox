@@ -78,7 +78,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
         return VINF_SUCCESS;
 
     /*
-     * Open dummy files to preallocate file descriptors, see #4650.
+     * Open dummy files to preallocate file descriptors, see @bugref{4650}.
      */
     for (int i = 0; i < SUPLIB_FLT_DUMMYFILES; i++)
     {
