@@ -519,8 +519,9 @@ typedef DECLCALLBACK(int) FNDISREADBYTES(PDISCPUSTATE pDis, uint8_t offInstr, ui
 typedef FNDISREADBYTES *PFNDISREADBYTES;
 
 /** Parser callback.
- * @remark no DECLCALLBACK() here because it's considered to be internal (really, I'm too lazy to update all the functions). */
-typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu);
+ * @remark no DECLCALLBACK() here because it's considered to be internal and
+ *         there is no point in enforcing CDECL. */
+typedef size_t FNDISPARSE(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu);
 /** Pointer to a disassembler parser function. */
 typedef FNDISPARSE *PFNDISPARSE;
 /** Pointer to a const disassembler parser function pointer. */
@@ -656,6 +657,10 @@ DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFN
 DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
                        PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+DISDECL(int) DISInstWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                                        void const *pvPrefetched, size_t cbPretched,
+                                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                        PDISCPUSTATE pCpu, uint32_t *pcbInstr);
 
 DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
 DISDECL(DISSELREG)  DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
