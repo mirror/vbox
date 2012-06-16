@@ -42,12 +42,12 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
     {
         uint32_t const  cErrBefore = RTTestIErrorCount();
         uint32_t        cb = 1;
-        DISCPUSTATE     Cpu;
+        DISSTATE        Dis;
         char            szOutput[256] = {0};
-        int rc = DISInstrToStr(&pabInstrs[off], enmDisCpuMode, &Cpu, &cb, szOutput, sizeof(szOutput));
+        int rc = DISInstrToStr(&pabInstrs[off], enmDisCpuMode, &Dis, &cb, szOutput, sizeof(szOutput));
 
         RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
-        RTTESTI_CHECK(cb == Cpu.cbInstr);
+        RTTESTI_CHECK(cb == Dis.cbInstr);
         RTTESTI_CHECK(cb > 0);
         RTTESTI_CHECK(cb <= 16);
         RTStrStripR(szOutput);
@@ -69,7 +69,7 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         }
         if (cErrBefore != RTTestIErrorCount())
             RTTestIFailureDetails("rc=%Rrc, off=%#x (%u) cbInstr=%u enmDisCpuMode=%d\n",
-                                  rc, off, Cpu.cbInstr, enmDisCpuMode);
+                                  rc, off, Dis.cbInstr, enmDisCpuMode);
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s\n", szOutput);
         off += cb;
     }
@@ -86,9 +86,9 @@ static void testPerformance(const char *pszSub, uint8_t const *pabInstrs, uintpt
     {
         for (size_t off = 0; off < cbInstrs; cInstrs++)
         {
-            uint32_t        cb = 1;
-            DISCPUSTATE     Cpu;
-            DISInstr(&pabInstrs[off], enmDisCpuMode, &Cpu, &cb);
+            uint32_t    cb = 1;
+            DISSTATE    Dis;
+            DISInstr(&pabInstrs[off], enmDisCpuMode, &Dis, &cb);
             off += cb;
         }
     }

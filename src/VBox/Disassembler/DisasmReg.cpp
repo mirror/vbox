@@ -200,7 +200,7 @@ static const unsigned g_aRegHidSegIndex[] =
 
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(int) DISGetParamSize(PCDISCPUSTATE pDis, PCDISOPPARAM pParam)
+DISDECL(int) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
 {
     unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
 
@@ -256,7 +256,7 @@ DISDECL(int) DISGetParamSize(PCDISCPUSTATE pDis, PCDISOPPARAM pParam)
 }
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(DISSELREG) DISDetectSegReg(PCDISCPUSTATE pDis, PCDISOPPARAM pParam)
+DISDECL(DISSELREG) DISDetectSegReg(PCDISSTATE pDis, PCDISOPPARAM pParam)
 {
     if (pDis->fPrefix & DISPREFIX_SEG)
         /* Use specified SEG: prefix. */
@@ -277,7 +277,7 @@ DISDECL(DISSELREG) DISDetectSegReg(PCDISCPUSTATE pDis, PCDISOPPARAM pParam)
 }
 //*****************************************************************************
 //*****************************************************************************
-DISDECL(uint8_t) DISQuerySegPrefixByte(PCDISCPUSTATE pDis)
+DISDECL(uint8_t) DISQuerySegPrefixByte(PCDISSTATE pDis)
 {
     Assert(pDis->fPrefix & DISPREFIX_SEG);
     switch (pDis->idxSegPrefix)
@@ -498,7 +498,7 @@ DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, DISSELREG sel, RTSEL val)
  * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
  *
  */
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PCDISCPUSTATE pDis, PCDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype)
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PCDISSTATE pDis, PCDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype)
 {
     memset(pParamVal, 0, sizeof(*pParamVal));
 
@@ -756,7 +756,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PCDISCPUSTATE pDis, PCDISOPPARA
  * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
  *
  */
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PCDISCPUSTATE pDis, PCDISOPPARAM pParam, void **ppReg, size_t *pcbSize)
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PCDISSTATE pDis, PCDISOPPARAM pParam, void **ppReg, size_t *pcbSize)
 {
     NOREF(pDis);
     if (pParam->fUse & (DISUSE_REG_GEN8|DISUSE_REG_GEN16|DISUSE_REG_GEN32|DISUSE_REG_FP|DISUSE_REG_MMX|DISUSE_REG_XMM|DISUSE_REG_CR|DISUSE_REG_DBG|DISUSE_REG_SEG|DISUSE_REG_TEST))

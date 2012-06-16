@@ -170,7 +170,7 @@ extern const PCDISOPCODE g_apMapX86_FP_High[8];
 #endif
 
 
-size_t disFormatBytes(PCDISCPUSTATE pDis, char *pszDst, size_t cchDst, uint32_t fFlags);
+size_t disFormatBytes(PCDISSTATE pDis, char *pszDst, size_t cchDst, uint32_t fFlags);
 
 /** @} */
 #endif

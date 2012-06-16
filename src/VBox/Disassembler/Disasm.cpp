@@ -42,7 +42,7 @@
  *
  * @todo    Define output callback.
  */
-DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pDis, uint32_t *pcbInstr,
+DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISSTATE pDis, uint32_t *pcbInstr,
                            char *pszOutput, size_t cbOutput)
 {
     return DISInstrToStrEx((uintptr_t)pvInstr, enmCpuMode, NULL, NULL, DISOPTYPE_ALL,
@@ -57,7 +57,7 @@ DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUST
  * @param   enmCpuMode      The CPU mode.
  * @param   pfnCallback     The byte fetcher callback.
  * @param   pvUser          The user argument (found in
- *                          DISCPUSTATE::pvUser).
+ *                          DISSTATE::pvUser).
  * @param   pDis            The disassembler state (output).
  * @param   pcbInstr        Where to store the size of the instruction. NULL is
  *                          allowed.
@@ -67,7 +67,7 @@ DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUST
  * @todo    Define output callback.
  */
 DISDECL(int) DISInstrToStrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                     PDISCPUSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
+                                     PDISSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 
 {
     return DISInstrToStrEx(uInstrAddr, enmCpuMode, pfnReadBytes, pvUser, DISOPTYPE_ALL,
@@ -92,7 +92,7 @@ DISDECL(int) DISInstrToStrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode
  */
 DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
                              PFNDISREADBYTES pfnReadBytes, void *pvUser, uint32_t uFilter,
-                             PDISCPUSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
+                             PDISSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 {
     int rc = DISInstEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pDis, pcbInstr);
     if (RT_SUCCESS(rc) && pszOutput && cbOutput)

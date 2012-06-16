@@ -35,7 +35,7 @@ RT_C_DECLS_BEGIN
 
 
 /**
- * CPU mode flags (DISCPUSTATE::mode).
+ * CPU mode flags (DISSTATE::mode).
  */
 typedef enum DISCPUMODE
 {
@@ -47,7 +47,7 @@ typedef enum DISCPUMODE
     DISCPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;
 
-/** @name Prefix byte flags (DISCPUSTATE::fPrefix).
+/** @name Prefix byte flags (DISSTATE::fPrefix).
  * @{
  */
 #define DISPREFIX_NONE                  UINT8_C(0x00)
@@ -67,7 +67,7 @@ typedef enum DISCPUMODE
 #define DISPREFIX_REX                   UINT8_C(0x40)
 /** @} */
 
-/** @name 64 bits prefix byte flags (DISCPUSTATE::fRexPrefix).
+/** @name 64 bits prefix byte flags (DISSTATE::fRexPrefix).
  * Requires VBox/disopcode.h.
  * @{
  */
@@ -498,30 +498,29 @@ typedef const struct DISOPCODE *PCDISOPCODE;
 /**
  * Callback for reading instruction bytes.
  *
- * @returns VBox status code, bytes in DISCPUSTATE::abInstr and byte count in
- *          DISCPUSTATE::cbCachedInstr.
+ * @returns VBox status code, bytes in DISSTATE::abInstr and byte count in
+ *          DISSTATE::cbCachedInstr.
  * @param   pDis            Pointer to the disassembler state.  The user
- *                          argument can be found in DISCPUSTATE::pvUser if
- *                          needed.
+ *                          argument can be found in DISSTATE::pvUser if needed.
  * @param   offInstr        The offset relative to the start of the instruction.
  *
  *                          To get the source address, add this to
- *                          DISCPUSTATE::uInstrAddr.
+ *                          DISSTATE::uInstrAddr.
  *
  *                          To calculate the destination buffer address, use it
- *                          as an index into DISCPUSTATE::abInstr.
+ *                          as an index into DISSTATE::abInstr.
  *
  * @param   cbMinRead       The minimum number of bytes to read.
  * @param   cbMaxRead       The maximum number of bytes that may be read.
  */
-typedef DECLCALLBACK(int) FNDISREADBYTES(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead);
+typedef DECLCALLBACK(int) FNDISREADBYTES(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead);
 /** Pointer to a opcode byte reader. */
 typedef FNDISREADBYTES *PFNDISREADBYTES;
 
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal and
  *         there is no point in enforcing CDECL. */
-typedef size_t FNDISPARSE(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu);
+typedef size_t FNDISPARSE(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTATE pDis);
 /** Pointer to a disassembler parser function. */
 typedef FNDISPARSE *PFNDISPARSE;
 /** Pointer to a const disassembler parser function pointer. */
@@ -533,7 +532,7 @@ typedef PFNDISPARSE const *PCPFNDISPARSE;
  * @todo ModRM and SIB could be joined and 6 bytes would be saved, only it
  *       doesn't make any sense right now because of structure alignment.
  */
-typedef struct DISCPUSTATE
+typedef struct DISSTATE
 {
     /* Because of pvUser2, put the less frequently used bits at the top for
        now. (Might be better off in the middle?) */
@@ -638,32 +637,35 @@ typedef struct DISCPUSTATE
 #if ARCH_BITS == 32
     uint32_t        uPadding5;
 #endif
-} DISCPUSTATE;
+} DISSTATE;
+
+/** @deprecated  Use DISSTATE and change Cpu and DisState to Dis. */
+typedef DISSTATE DISCPUSTATE;
 
 
 
 DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode,
-                           PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
+                           PDISSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
 DISDECL(int) DISInstrToStrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                     PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
+                                     PDISSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
 DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
                              PFNDISREADBYTES pfnReadBytes, void *pvUser, uint32_t uFilter,
-                             PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
+                             PDISSTATE pDis, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput);
 
-DISDECL(int) DISInstr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+DISDECL(int) DISInstr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISSTATE pDis, uint32_t *pcbInstr);
 DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+                                PDISSTATE pDis, uint32_t *pcbInstr);
 DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                       PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+                       PDISSTATE pDis, uint32_t *pcbInstr);
 DISDECL(int) DISInstWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
                                         void const *pvPrefetched, size_t cbPretched,
                                         PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                        PDISCPUSTATE pCpu, uint32_t *pcbInstr);
+                                        PDISSTATE pDis, uint32_t *pcbInstr);
 
-DISDECL(int)        DISGetParamSize(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam);
-DISDECL(DISSELREG)  DISDetectSegReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam);
-DISDECL(uint8_t)    DISQuerySegPrefixByte(PCDISCPUSTATE pCpu);
+DISDECL(int)        DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam);
+DISDECL(DISSELREG)  DISDetectSegReg(PCDISSTATE pDis, PCDISOPPARAM pParam);
+DISDECL(uint8_t)    DISQuerySegPrefixByte(PCDISSTATE pDis);
 
 
 
@@ -715,8 +717,8 @@ typedef enum DISQPVWHICH
     DISQPVWHICH_SRC,
     DISQPVWHAT_32_BIT_HACK = 0x7fffffff
 } DISQPVWHICH;
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype);
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PCDISSTATE pDis, PCDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype);
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PCDISSTATE pDis, PCDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
 
 DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
@@ -746,7 +748,7 @@ DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg);
  *          content of pszBuf is truncated and zero terminated.
  * @retval  VERR_SYMBOL_NOT_FOUND if no matching symbol was found for the address.
  *
- * @param   pCpu        Pointer to the disassembler CPU state.
+ * @param   pDis        Pointer to the disassembler CPU state.
  * @param   u32Sel      The selector value. Use DIS_FMT_SEL_IS_REG, DIS_FMT_SEL_GET_VALUE,
  *                      DIS_FMT_SEL_GET_REG to access this.
  * @param   uAddress    The segment address.
@@ -756,7 +758,7 @@ DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg);
  *                      symbol to the specified address is returned.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNDISGETSYMBOL(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser);
+typedef DECLCALLBACK(int) FNDISGETSYMBOL(PCDISSTATE pDis, uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser);
 /** Pointer to a FNDISGETSYMBOL(). */
 typedef FNDISGETSYMBOL *PFNDISGETSYMBOL;
 
@@ -823,16 +825,17 @@ typedef FNDISGETSYMBOL *PFNDISGETSYMBOL;
     )
 /** @} */
 
-DISDECL(size_t) DISFormatYasm(  PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf);
-DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
-DISDECL(size_t) DISFormatMasm(  PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf);
-DISDECL(size_t) DISFormatMasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
-DISDECL(size_t) DISFormatGas(   PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf);
-DISDECL(size_t) DISFormatGasEx( PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
+DISDECL(size_t) DISFormatYasm(  PCDISSTATE pDis, char *pszBuf, size_t cchBuf);
+DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
+DISDECL(size_t) DISFormatMasm(  PCDISSTATE pDis, char *pszBuf, size_t cchBuf);
+DISDECL(size_t) DISFormatMasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
+DISDECL(size_t) DISFormatGas(   PCDISSTATE pDis, char *pszBuf, size_t cchBuf);
+DISDECL(size_t) DISFormatGasEx( PCDISSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
 
-/** @todo DISAnnotate(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, register reader, memory reader); */
+/** @todo DISAnnotate(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, register
+ *        reader, memory reader); */
 
-DISDECL(bool)   DISFormatYasmIsOddEncoding(PDISCPUSTATE pCpu);
+DISDECL(bool)   DISFormatYasmIsOddEncoding(PDISSTATE pDis);
 
 
 RT_C_DECLS_END

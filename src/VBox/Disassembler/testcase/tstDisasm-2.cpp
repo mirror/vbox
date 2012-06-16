@@ -39,7 +39,7 @@ typedef enum { kUndefOp_Fail, kUndefOp_All, kUndefOp_DefineByte, kUndefOp_End } 
 
 typedef struct MYDISSTATE
 {
-    DISCPUSTATE     Cpu;
+    DISSTATE        Dis;
     uint64_t        uAddress;           /**< The current instruction address. */
     uint8_t        *pbInstr;            /**< The current instruction (pointer). */
     uint32_t        cbInstr;            /**< The size of the current instruction. */
@@ -92,7 +92,7 @@ static void MyDisasYasmFormatter(PMYDISSTATE pState)
     *pszEnd = '\0';
 
 #else
-    size_t cch = DISFormatYasmEx(&pState->Cpu, szTmp, sizeof(szTmp),
+    size_t cch = DISFormatYasmEx(&pState->Dis, szTmp, sizeof(szTmp),
                                  DIS_FMT_FLAGS_STRICT | DIS_FMT_FLAGS_ADDR_RIGHT | DIS_FMT_FLAGS_ADDR_COMMENT
                                  | DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_BYTES_COMMENT | DIS_FMT_FLAGS_BYTES_SPACED,
                                  NULL, NULL);
@@ -129,7 +129,7 @@ static void MyDisasMasmFormatter(PMYDISSTATE pState)
  *
  * @param   pDis        The disassembler output.
  */
-static bool MyDisasIsValidInstruction(DISCPUSTATE const *pDis)
+static bool MyDisasIsValidInstruction(DISSTATE const *pDis)
 {
     switch (pDis->pCurInstr->uOpcode)
     {
@@ -167,10 +167,10 @@ static bool MyDisasIsValidInstruction(DISCPUSTATE const *pDis)
 /**
  * @interface_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+static DECLCALLBACK(int) MyDisasInstrRead(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     PMYDISSTATE pState   = (PMYDISSTATE)pDis;
-    RTUINTPTR   uSrcAddr = pState->Cpu.uInstrAddr + offInstr;
+    RTUINTPTR   uSrcAddr = pState->Dis.uInstrAddr + offInstr;
     if (RT_LIKELY(   pState->uNextAddr == uSrcAddr
                   && pState->cbLeft >= cbMinRead))
     {
@@ -179,8 +179,8 @@ static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, u
          */
         //size_t cbToRead    = cbMaxRead;
         size_t cbToRead    = cbMinRead;
-        memcpy(&pState->Cpu.abInstr[offInstr], pState->pbNext, cbToRead);
-        pState->Cpu.cbCachedInstr = offInstr + cbToRead;
+        memcpy(&pState->Dis.abInstr[offInstr], pState->pbNext, cbToRead);
+        pState->Dis.cbCachedInstr = offInstr + cbToRead;
         pState->pbNext    += cbToRead;
         pState->cbLeft    -= cbToRead;
         pState->uNextAddr += cbToRead;
@@ -194,14 +194,14 @@ static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, u
          */
         if (pState->cbLeft > 0)
         {
-            memcpy(&pState->Cpu.abInstr[offInstr], pState->pbNext, pState->cbLeft);
+            memcpy(&pState->Dis.abInstr[offInstr], pState->pbNext, pState->cbLeft);
             offInstr          += (uint8_t)pState->cbLeft;
             cbMinRead         -= (uint8_t)pState->cbLeft;
             pState->pbNext    += pState->cbLeft;
             pState->uNextAddr += pState->cbLeft;
             pState->cbLeft     = 0;
         }
-        memset(&pState->Cpu.abInstr[offInstr], 0xcc, cbMinRead);
+        memset(&pState->Dis.abInstr[offInstr], 0xcc, cbMinRead);
         pState->rc = VERR_EOF;
     }
     else
@@ -210,10 +210,10 @@ static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, u
          * Non-sequential read, that's an error.
          */
         RTStrmPrintf(g_pStdErr, "Reading before current instruction!\n");
-        memset(&pState->Cpu.abInstr[offInstr], 0x90, cbMinRead);
+        memset(&pState->Dis.abInstr[offInstr], 0x90, cbMinRead);
         pState->rc = VERR_INTERNAL_ERROR;
     }
-    pState->Cpu.cbCachedInstr = offInstr + cbMinRead;
+    pState->Dis.cbCachedInstr = offInstr + cbMinRead;
     return pState->rc;
 }
 
@@ -285,7 +285,7 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
         State.pbNext = State.pbInstr;
 
         int rc = DISInstrToStrWithReader(State.uAddress, enmCpuMode, MyDisasInstrRead, &State,
-                                         &State.Cpu, &State.cbInstr, State.szLine, sizeof(State.szLine));
+                                         &State.Dis, &State.cbInstr, State.szLine, sizeof(State.szLine));
         if (    RT_SUCCESS(rc)
             ||  (   (   rc == VERR_DIS_INVALID_OPCODE
                      || rc == VERR_DIS_GEN_FAILURE)
@@ -293,32 +293,32 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
         {
             State.fUndefOp = rc == VERR_DIS_INVALID_OPCODE
                           || rc == VERR_DIS_GEN_FAILURE
-                          || State.Cpu.pCurInstr->uOpcode == OP_INVALID
-                          || State.Cpu.pCurInstr->uOpcode == OP_ILLUD2
+                          || State.Dis.pCurInstr->uOpcode == OP_INVALID
+                          || State.Dis.pCurInstr->uOpcode == OP_ILLUD2
                           || (   State.enmUndefOp == kUndefOp_DefineByte
-                              && !MyDisasIsValidInstruction(&State.Cpu));
+                              && !MyDisasIsValidInstruction(&State.Dis));
             if (State.fUndefOp && State.enmUndefOp == kUndefOp_DefineByte)
             {
                 if (!State.cbInstr)
                 {
-                    State.Cpu.abInstr[0] = 0;
-                    State.Cpu.pfnReadBytes(&State.Cpu, 0, 1, 1);
+                    State.Dis.abInstr[0] = 0;
+                    State.Dis.pfnReadBytes(&State.Dis, 0, 1, 1);
                     State.cbInstr = 1;
                 }
                 RTPrintf("    db");
                 for (unsigned off = 0; off < State.cbInstr; off++)
-                    RTPrintf(off ? ", %03xh" : " %03xh", State.Cpu.abInstr[off]);
+                    RTPrintf(off ? ", %03xh" : " %03xh", State.Dis.abInstr[off]);
                 RTPrintf("    ; %s\n", State.szLine);
             }
             else if (!State.fUndefOp && State.enmUndefOp == kUndefOp_All)
             {
-                RTPrintf("%s: error at %#RX64: unexpected valid instruction (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->uOpcode);
+                RTPrintf("%s: error at %#RX64: unexpected valid instruction (op=%d)\n", argv0, State.uAddress, State.Dis.pCurInstr->uOpcode);
                 pfnFormatter(&State);
                 rcRet = VERR_GENERAL_FAILURE;
             }
             else if (State.fUndefOp && State.enmUndefOp == kUndefOp_Fail)
             {
-                RTPrintf("%s: error at %#RX64: undefined opcode (op=%d)\n", argv0, State.uAddress, State.Cpu.pCurInstr->uOpcode);
+                RTPrintf("%s: error at %#RX64: undefined opcode (op=%d)\n", argv0, State.uAddress, State.Dis.pCurInstr->uOpcode);
                 pfnFormatter(&State);
                 rcRet = VERR_GENERAL_FAILURE;
             }
@@ -326,11 +326,11 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
             {
                 /* Use db for odd encodings that we can't make the assembler use. */
                 if (    State.enmUndefOp == kUndefOp_DefineByte
-                    &&  DISFormatYasmIsOddEncoding(&State.Cpu))
+                    &&  DISFormatYasmIsOddEncoding(&State.Dis))
                 {
                     RTPrintf("    db");
                     for (unsigned off = 0; off < State.cbInstr; off++)
-                        RTPrintf(off ? ", %03xh" : " %03xh", State.Cpu.abInstr[off]);
+                        RTPrintf(off ? ", %03xh" : " %03xh", State.Dis.abInstr[off]);
                     RTPrintf(" ; ");
                 }
 

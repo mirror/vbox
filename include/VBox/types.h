@@ -1043,10 +1043,15 @@ typedef enum CPUMMODE
 } CPUMMODE;
 
 
-/** Pointer to the disassembler CPU state. */
-typedef struct DISCPUSTATE *PDISCPUSTATE;
-/** Pointer to a const disassembler CPU state. */
-typedef struct DISCPUSTATE const *PCDISCPUSTATE;
+/** Pointer to the disassembler state. */
+typedef struct DISSTATE *PDISSTATE;
+/** Pointer to a const disassembler state. */
+typedef struct DISSTATE const *PCDISSTATE;
+
+/** @deprecated  PDISSTATE and change pCpu and pDisState to pDis. */
+typedef PDISSTATE PDISCPUSTATE;
+/** @deprecated  PCDISSTATE and change pCpu and pDisState to pDis. */
+typedef PCDISSTATE PCDISCPUSTATE;
 
 
 /** @} */
