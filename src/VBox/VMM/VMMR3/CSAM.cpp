@@ -722,12 +722,21 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
     return pHCPtr;
 }
 
+
+/** For csamR3ReadBytes. */
+typedef struct CSAMDISINFO
+{
+    PVM             pVM;
+    uint8_t const  *pbSrcInstr; /* aka pInstHC */
+} CSAMDISINFO, *PCSAMDISINFO;
+
+
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
 static DECLCALLBACK(int) csamR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PVM pVM = (PVM)pDis->pvUser;
+    PCSAMDISINFO pDisInfo = (PCSAMDISINFO)pDis->pvUser;
 
     /*
      * We are not interested in patched instructions, so read the original opcode bytes.
@@ -740,7 +749,7 @@ static DECLCALLBACK(int) csamR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, ui
      */
     size_t      cbRead   = cbMaxRead;
     RTUINTPTR   uSrcAddr = pDis->uInstrAddr + offInstr;
-    int rc = PATMR3ReadOrgInstr(pVM, pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr], cbRead, &cbRead);
+    int rc = PATMR3ReadOrgInstr(pDisInfo->pVM, pDis->uInstrAddr + offInstr, &pDis->abInstr[offInstr], cbRead, &cbRead);
     if (RT_SUCCESS(rc))
     {
         if (cbRead >= cbMinRead)
@@ -758,25 +767,25 @@ static DECLCALLBACK(int) csamR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, ui
     /*
      * The current byte isn't a patch instruction byte.
      */
-    uint8_t const  *pbSrcInstr = (uint8_t const *)pDis->pvUser2; AssertPtr(pbSrcInstr);
+    AssertPtr(pDisInfo->pbSrcInstr);
     if ((pDis->uInstrAddr >> PAGE_SHIFT) == ((uSrcAddr + cbMaxRead - 1) >> PAGE_SHIFT))
     {
-        memcpy(&pDis->abInstr[offInstr], &pbSrcInstr[offInstr], cbMaxRead);
+        memcpy(&pDis->abInstr[offInstr], &pDisInfo->pbSrcInstr[offInstr], cbMaxRead);
         offInstr += cbMaxRead;
         rc = VINF_SUCCESS;
     }
     else if (   (pDis->uInstrAddr >> PAGE_SHIFT) == ((uSrcAddr + cbMinRead - 1) >> PAGE_SHIFT)
-             || PATMIsPatchGCAddr(pVM, uSrcAddr) /** @todo does CSAM actually analyze patch code, or is this just a copy&past check? */
+             || PATMIsPatchGCAddr(pDisInfo->pVM, uSrcAddr) /** @todo does CSAM actually analyze patch code, or is this just a copy&past check? */
             )
     {
-        memcpy(&pDis->abInstr[offInstr], &pbSrcInstr[offInstr], cbMaxRead);
+        memcpy(&pDis->abInstr[offInstr], &pDisInfo->pbSrcInstr[offInstr], cbMaxRead);
         offInstr += cbMinRead;
         rc = VINF_SUCCESS;
     }
     else
     {
         /* Crossed page boundrary, pbSrcInstr is no good... */
-        rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), &pDis->abInstr[offInstr], uSrcAddr, cbMinRead);
+        rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pDisInfo->pVM), &pDis->abInstr[offInstr], uSrcAddr, cbMinRead);
         offInstr += cbMinRead;
     }
 
@@ -787,9 +796,7 @@ static DECLCALLBACK(int) csamR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, ui
 DECLINLINE(int) csamR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCPUMODE enmCpuMode,
                                PDISCPUSTATE pCpu, uint32_t *pcbInstr, char *pszOutput, size_t cbOutput)
 {
-    /** @todo Put pVM and pbInstrHC in a stack structure and pass it to
-     *        csamR3ReadBytes via pvUser. This is the last pvUser2 usage. */
-    pCpu->pvUser2 = InstrHC;
+    CSAMDISINFO DisInfo = { pVM, InstrHC };
 #ifdef DEBUG
     return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, pVM, DISOPTYPE_ALL,
                            pCpu, pcbInstr, pszOutput, cbOutput);
