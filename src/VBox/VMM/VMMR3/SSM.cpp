@@ -949,7 +949,7 @@ static int ssmR3LazyInit(PVM pVM)
  * Do ssmR3SelfSaveExec in pass 0.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The SSM handle.
  * @param   uPass           The data pass number.
  */
@@ -972,7 +972,7 @@ static DECLCALLBACK(int) ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uP
  * adding it to the header.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The SSM handle.
  */
 static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
@@ -1002,7 +1002,7 @@ static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
  * For load the version + revision and stuff.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The SSM handle.
  * @param   uVersion        The version (1).
  * @param   uPass           The pass.
@@ -1066,7 +1066,7 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uV
  * This is saved by ssmR3LiveControlEmit().
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The SSM handle.
  * @param   uVersion        The version (1).
  * @param   uPass           The pass.

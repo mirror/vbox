@@ -70,7 +70,7 @@ GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
  * Prepares a GMMR0AllocatePages request.
  *
  * @returns VINF_SUCCESS or VERR_NO_TMP_MEMORY.
- * @param       pVM         Pointer to the shared VM structure.
+ * @param       pVM         Pointer to the VM.
  * @param[out]  ppReq       Where to store the pointer to the request packet.
  * @param       cPages      The number of pages that's to be allocated.
  * @param       enmAccount  The account to charge.
@@ -97,7 +97,7 @@ GMMR3DECL(int) GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, u
  * This will call VMSetError on failure.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pReq        Pointer to the request (returned by GMMR3AllocatePagesPrepare).
  */
 GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
@@ -151,7 +151,7 @@ GMMR3DECL(void) GMMR3AllocatePagesCleanup(PGMMALLOCATEPAGESREQ pReq)
  * Prepares a GMMR0FreePages request.
  *
  * @returns VINF_SUCCESS or VERR_NO_TMP_MEMORY.
- * @param       pVM         Pointer to the shared VM structure.
+ * @param       pVM         Pointer to the VM.
  * @param[out]  ppReq       Where to store the pointer to the request packet.
  * @param       cPages      The number of pages that's to be freed.
  * @param       enmAccount  The account to charge.
@@ -177,7 +177,7 @@ GMMR3DECL(int) GMMR3FreePagesPrepare(PVM pVM, PGMMFREEPAGESREQ *ppReq, uint32_t 
  * Re-prepares a GMMR0FreePages request.
  *
  * @returns VINF_SUCCESS or VERR_NO_TMP_MEMORY.
- * @param       pVM         Pointer to the shared VM structure.
+ * @param       pVM         Pointer to the VM.
  * @param       pReq        A request buffer previously returned by
  *                          GMMR3FreePagesPrepare().
  * @param       cPages      The number of pages originally passed to
@@ -199,7 +199,7 @@ GMMR3DECL(void) GMMR3FreePagesRePrep(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cP
  * This will call VMSetError on failure.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pReq            Pointer to the request (returned by GMMR3FreePagesPrepare).
  * @param   cActualPages    The number of pages actually freed.
  */
@@ -245,7 +245,7 @@ GMMR3DECL(void) GMMR3FreePagesCleanup(PGMMFREEPAGESREQ pReq)
  *
  * This will not call VMSetError on failure but will use AssertLogRel instead.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pAllocReq   The allocation request to undo.
  */
 GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAllocReq)

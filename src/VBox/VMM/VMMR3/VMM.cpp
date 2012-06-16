@@ -282,7 +282,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
  * The stacks are also used for long jumps in Ring-0.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  *
  * @remarks The optional guard page gets it protection setup up during R3 init
  *          completion because of init order issues.
@@ -334,7 +334,7 @@ static int vmmR3InitStacks(PVM pVM)
  * Initialize the loggers.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  */
 static int vmmR3InitLoggers(PVM pVM)
 {
@@ -1809,7 +1809,7 @@ VMMR3_INT_DECL(bool) VMMR3EmtRendezvousSetDisabled(PVMCPU pVCpu, bool fDisabled)
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           The ID of the source CPU context (for the address).
  * @param   R0Addr          Where to start reading.
  * @param   pvBuf           Where to store the data we've read.

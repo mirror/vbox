@@ -45,7 +45,7 @@
 /**
  * Internal cleanup routine called by DBGFR3Term().
  *
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  */
 void dbgfR3OSTerm(PVM pVM)
 {
@@ -76,7 +76,7 @@ void dbgfR3OSTerm(PVM pVM)
  * EMT worker function for DBGFR3OSRegister.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  * @param   pReg    The registration structure.
  */
 static DECLCALLBACK(int) dbgfR3OSRegister(PVM pVM, PDBGFOSREG pReg)
@@ -125,7 +125,7 @@ static DECLCALLBACK(int) dbgfR3OSRegister(PVM pVM, PDBGFOSREG pReg)
  * to the list for us in the next call to DBGFR3OSDetect().
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  * @param   pReg    The registration structure.
  * @thread  Any.
  */
@@ -163,7 +163,7 @@ VMMR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
  * EMT worker function for DBGFR3OSDeregister.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  * @param   pReg    The registration structure.
  */
 static DECLCALLBACK(int) dbgfR3OSDeregister(PVM pVM, PDBGFOSREG pReg)
@@ -215,7 +215,7 @@ static DECLCALLBACK(int) dbgfR3OSDeregister(PVM pVM, PDBGFOSREG pReg)
  *
  * @returns VBox status code.
  *
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  * @param   pReg    The registration structure.
  * @thread  Any.
  */
@@ -257,7 +257,7 @@ VMMR3DECL(int)  DBGFR3OSDeregister(PVM pVM, PCDBGFOSREG pReg)
  * @retval  VINF_SUCCESS if successfully detected.
  * @retval  VINF_DBGF_OS_NOT_DETCTED if we cannot figure it out.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     Where to store the OS name. Empty string if not detected.
  * @param   cchName     Size of the buffer.
  */
@@ -304,7 +304,7 @@ static DECLCALLBACK(int) dbgfR3OSDetect(PVM pVM, char *pszName, size_t cchName)
  * @retval  VINF_SUCCESS if successfully detected.
  * @retval  VINF_DBGF_OS_NOT_DETCTED if we cannot figure it out.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     Where to store the OS name. Empty string if not detected.
  * @param   cchName     Size of the buffer.
  * @thread  Any.
@@ -326,7 +326,7 @@ VMMR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
  * EMT worker function for DBGFR3OSQueryNameAndVersion
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Where to store the OS name. Optional.
  * @param   cchName         The size of the name buffer.
  * @param   pszVersion      Where to store the version string. Optional.
@@ -373,7 +373,7 @@ static DECLCALLBACK(int) dbgfR3OSQueryNameAndVersion(PVM pVM, char *pszName, siz
  * guest OS digger and not additions or user configuration.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Where to store the OS name. Optional.
  * @param   cchName         The size of the name buffer.
  * @param   pszVersion      Where to store the version string. Optional.
@@ -404,7 +404,7 @@ VMMR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchNam
 /**
  * EMT worker for DBGFR3OSQueryInterface.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   enmIf       The interface identifier.
  * @param   ppvIf       Where to store the interface pointer on success.
  */
@@ -429,7 +429,7 @@ static DECLCALLBACK(void) dbgfR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf,
  *
  * @returns Pointer to the digger interface on success, NULL if the interfaces isn't
  *          available or no active guest OS digger.
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   enmIf       The interface identifier.
  * @thread  Any.
  */

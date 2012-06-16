@@ -1186,7 +1186,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
  * Performs consistency checks on the heap if MMHYPER_HEAP_STRICT was
  * defined at build time.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(void) MMHyperHeapCheck(PVM pVM)
 {

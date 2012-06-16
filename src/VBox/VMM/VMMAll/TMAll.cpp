@@ -647,7 +647,7 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
  * EMT is polling.
  *
  * @returns See tmTimerPollInternal.
- * @param   pVM                 Pointer to the shared VM structure.
+ * @param   pVM                 Pointer to the VM.
  * @param   u64Now              Current virtual clock timestamp.
  * @param   u64Delta            The delta to the next even in ticks of the
  *                              virtual clock.
@@ -694,7 +694,7 @@ DECLINLINE(uint64_t) tmTimerPollReturnMiss(PVM pVM, uint64_t u64Now, uint64_t u6
  * than the one dedicated to timer work.
  *
  * @returns See tmTimerPollInternal.
- * @param   pVM                 Pointer to the shared VM structure.
+ * @param   pVM                 Pointer to the VM.
  * @param   u64Now              Current virtual clock timestamp.
  * @param   pu64Delta           Where to return the delta.
  */
@@ -710,7 +710,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnOtherCpu(PVM pVM, uint64_t u64Now, 
  * Worker for tmTimerPollInternal.
  *
  * @returns See tmTimerPollInternal.
- * @param   pVM                 Pointer to the shared VM structure.
+ * @param   pVM                 Pointer to the VM.
  * @param   pVCpu               Pointer to the shared VMCPU structure of the
  *                              caller.
  * @param   pVCpuDst            Pointer to the shared VMCPU structure of the
@@ -737,7 +737,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
  * @returns The GIP timestamp of the next event.
  *          0 if the next event has already expired.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @param   pu64Delta   Where to store the delta.
  *
@@ -952,7 +952,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t 
  *
  * @returns true if timers are pending, false if not.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @thread  The emulation thread.
  */
@@ -970,7 +970,7 @@ VMMDECL(bool) TMTimerPollBool(PVM pVM, PVMCPU pVCpu)
  *
  * This function is called before FFs are checked in the inner execution EM loops.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @thread  The emulation thread.
  */
@@ -988,7 +988,7 @@ VMM_INT_DECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
  *
  * @returns The GIP timestamp of the next event.
  *          0 if the next event has already expired.
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @param   pu64Delta   Where to store the delta.
  * @thread  The emulation thread.
