@@ -528,49 +528,33 @@ typedef PFNDISPARSE const *PCPFNDISPARSE;
 
 /**
  * The diassembler state and result.
- *
- * @todo ModRM and SIB could be joined and 6 bytes would be saved, only it
- *       doesn't make any sense right now because of structure alignment.
  */
 typedef struct DISSTATE
 {
-    /* Because of pvUser2, put the less frequently used bits at the top for
-       now. (Might be better off in the middle?) */
-    DISOPPARAM      Param3;
-    DISOPPARAM      Param2;
-    DISOPPARAM      Param1;
-
-    /* off: 0x060 (96) */
-    /** ModRM fields. */
-    union
-    {
-        /** Bitfield view */
-        struct
-        {
-            unsigned        Rm  : 4;
-            unsigned        Reg : 4;
-            unsigned        Mod : 2;
-        } Bits;
-        /** unsigned view */
-        unsigned            u;
-    } ModRM;
+    /** The number of valid bytes in abInstr. */
+    uint8_t         cbCachedInstr;
     /** SIB fields. */
     union
     {
         /** Bitfield view */
         struct
         {
-            unsigned        Base  : 4;
-            unsigned        Index : 4;
-            unsigned        Scale : 2;
+            uint8_t     Base;
+            uint8_t     Index;
+            uint8_t     Scale;
         } Bits;
-        /** unsigned view */
-        unsigned            u;
     } SIB;
-    /** SIB displacment. */
-    int32_t         i32SibDisp;
-
-    /* off: 0x06c (108) */
+    /** ModRM fields. */
+    union
+    {
+        /** Bitfield view */
+        struct
+        {
+            uint8_t     Rm;
+            uint8_t     Reg;
+            uint8_t     Mod;
+        } Bits;
+    } ModRM;
     /** The CPU mode (DISCPUMODE). */
     uint8_t         uCpuMode;
     /** The addressing mode (DISCPUMODE). */
@@ -579,7 +563,6 @@ typedef struct DISSTATE
     uint8_t         uOpMode;
     /** Per instruction prefix settings. */
     uint8_t         fPrefix;
-    /* off: 0x070 (112) */
     /** REX prefix value (64 bits only). */
     uint8_t         fRexPrefix;
     /** Segment prefix value (DISSELREG). */
@@ -588,21 +571,14 @@ typedef struct DISSTATE
     uint8_t         bLastPrefix;
     /** First opcode byte of instruction. */
     uint8_t         bOpCode;
-    /* off: 0x074 (116) */
     /** The size of the prefix bytes. */
     uint8_t         cbPrefix;
     /** The instruction size. */
     uint8_t         cbInstr;
-    /** The number of valid bytes in abInstr. */
-    uint8_t         cbCachedInstr;
-    /** Unused byte. */
-    uint8_t         abUnused[1];
-    /* off: 0x078 (120) */
-    /** Return code set by a worker function like the opcode bytes readers. */
-    int32_t         rc;
+    /** Unused bytes. */
+    uint8_t         abUnused[3];
     /** Internal: instruction filter */
     uint32_t        fFilter;
-    /* off: 0x080 (128) */
     /** Internal: pointer to disassembly function table */
     PCPFNDISPARSE   pfnDisasmFnTable;
 #if ARCH_BITS == 32
@@ -613,25 +589,31 @@ typedef struct DISSTATE
 #if ARCH_BITS == 32
     uint32_t        uPtrPadding2;
 #endif
-    /* off: 0x090 (144) */
+    /** The instruction bytes. */
+    uint8_t         abInstr[16];
+    /** SIB displacment. */
+    int32_t         i32SibDisp;
+
+    /** Return code set by a worker function like the opcode bytes readers. */
+    int32_t         rc;
     /** The address of the instruction. */
     RTUINTPTR       uInstrAddr;
-    /* off: 0x098 (152) */
     /** Optional read function */
     PFNDISREADBYTES pfnReadBytes;
 #if ARCH_BITS == 32
     uint32_t        uPadding3;
 #endif
-    /* off: 0x0a0 (160) */
-    /** The instruction bytes. */
-    uint8_t         abInstr[16];
-    /* off: 0x0b0 (176) */
     /** User data supplied as an argument to the APIs. */
     void           *pvUser;
 #if ARCH_BITS == 32
     uint32_t        uPadding4;
 #endif
+    /** Parameters.  */
+    DISOPPARAM      Param1;
+    DISOPPARAM      Param2;
+    DISOPPARAM      Param3;
 } DISSTATE;
+AssertCompileSize(DISSTATE, 0xb8);
 
 /** @deprecated  Use DISSTATE and change Cpu and DisState to Dis. */
 typedef DISSTATE DISCPUSTATE;
