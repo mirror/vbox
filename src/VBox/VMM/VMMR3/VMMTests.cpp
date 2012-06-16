@@ -47,7 +47,7 @@
  * Performs a testcase.
  *
  * @returns return value from the test.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmTestcase The testcase operation to perform.
  * @param   uVariation  The testcase variation id.
  */
@@ -81,7 +81,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
  * Performs a trap test.
  *
  * @returns Return value from the trap test.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   u8Trap      The trap number to test.
  * @param   uVariation  The testcase variation.
  * @param   rcExpect    The expected result.

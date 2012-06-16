@@ -493,7 +493,7 @@ static bool hgsmiProcessHostCmdCompletion (HGSMIINSTANCE *pIns,
     return false;
 }
 
-/* The the guest has finished processing of a buffer previously submitted by the host.
+/* The guest has finished processing of a buffer previously submitted by the host.
  * Called from HGSMI_IO_HOST write handler.
  * @thread EMT
  */

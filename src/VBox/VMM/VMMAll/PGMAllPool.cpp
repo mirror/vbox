@@ -139,7 +139,7 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * Wrapper for getting the current context pointer to the entry being modified.
  *
  * @returns VBox status code suitable for scheduling.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvDst       Destination address
  * @param   pvSrc       Source guest virtual address.
  * @param   GCPhysSrc   The source guest physical address.
@@ -737,7 +737,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsi
  *
  * @returns true if we consider the page as being reused for a different purpose.
  * @returns false if we consider it to still be a paging page.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU Handle.
  * @param   pRegFrame   Trap register frame.
  * @param   pDis        The disassembly info for the faulting instruction.
@@ -819,7 +819,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
  * Flushes the page being accessed.
  *
  * @returns VBox status code suitable for scheduling.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pPool       The pool.
  * @param   pPage       The pool page (head).
@@ -875,7 +875,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
  * Handles the STOSD write accesses.
  *
  * @returns VBox status code suitable for scheduling.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPool       The pool.
  * @param   pPage       The pool page (head).
  * @param   pDis        The disassembly of the write instruction.
@@ -946,7 +946,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
  * Handles the simple write accesses.
  *
  * @returns VBox status code suitable for scheduling.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pPool       The pool.
  * @param   pPage       The pool page (head).
@@ -1033,7 +1033,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
  * \#PF Handler callback for PT write accesses.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  *                      NULL on DMA and other non CPU access.
@@ -1615,7 +1615,7 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pP
 /**
  * Flush a dirty page
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pPool           The pool.
  * @param   idxSlot         Dirty array slot index
  * @param   fAllowRemoval   Allow a reused page table to be removed
@@ -1714,7 +1714,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
 /**
  * Add a new dirty page
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPool       The pool.
  * @param   pPage       The page.
  */
@@ -1791,7 +1791,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * Check if the specified page is dirty (not write monitored)
  *
  * @return dirty or not
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Guest physical address
  */
 bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
@@ -1822,7 +1822,7 @@ bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
 /**
  * Reset all dirty pages by reinstating page monitoring.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 void pgmPoolResetDirtyPages(PVM pVM)
 {
@@ -1861,7 +1861,7 @@ void pgmPoolResetDirtyPages(PVM pVM)
 /**
  * Invalidate the PT entry for the specified page
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtrPage       Guest page to invalidate
  */
 void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
@@ -1883,7 +1883,7 @@ void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
 /**
  * Reset all dirty pages by reinstating page monitoring.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhysPT        Physical address of the page table
  */
 void pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT)
@@ -2665,7 +2665,7 @@ static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 /**
  * Zaps the list of modified pages, resetting their modification counters in the process.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static void pgmPoolMonitorModifiedClearAll(PVM pVM)
 {
@@ -3100,7 +3100,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
  *
  * @returns true / false indicating removal of all relevant PTEs
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPhysPage   The guest page in question.
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
  * @param   iShw        The shadow page table.
@@ -3352,7 +3352,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 /**
  * Scans one shadow page table for mappings of a physical page.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPhysPage   The guest page in question.
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
  * @param   iShw        The shadow page table.
@@ -3376,7 +3376,7 @@ static void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPT
 /**
  * Flushes a list of shadow page tables mapping the same physical page.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPhysPage   The guest page in question.
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
  * @param   iPhysExt    The physical cross reference extent list to flush.
@@ -3439,7 +3439,7 @@ static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushP
  * @retval  VINF_PGM_SYNC_CR3 if we're better off with a CR3 sync and a page
  *          pool cleaning. FF and sync flags are set.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhysPage  GC physical address of the page in question
  * @param   pPhysPage   The guest page in question.
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
@@ -3552,7 +3552,7 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
  * @retval  VINF_PGM_GCPHYS_ALIASED if we're better off with a CR3 sync and
  *          a page pool cleaning.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPhysPage   The guest page in question.
  */
 int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
@@ -3860,7 +3860,7 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * Allocates a new physical cross reference extent.
  *
  * @returns Pointer to the allocated extent on success. NULL if we're out of them.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   piPhysExt   Where to store the phys ext index.
  */
 PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
@@ -3884,7 +3884,7 @@ PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
 /**
  * Frees a physical cross reference extent.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iPhysExt    The extent to free.
  */
 void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
@@ -3906,7 +3906,7 @@ void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
 /**
  * Frees a physical cross reference extent.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iPhysExt    The extent to free.
  */
 void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
@@ -3940,7 +3940,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
  *
  * @returns The new tracking data for PGMPAGE.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iPhysExt    The physical extent index of the list head.
  * @param   iShwPT      The shadow page table index.
  * @param   iPte        Page table entry
@@ -4028,7 +4028,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
  *
  * @returns The new tracking data for PGMPAGE.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPhysPage   Pointer to the aPages entry in the ram range.
  * @param   u16         The ram range flags (top 16-bits).
  * @param   iShwPT      The shadow page table index.
@@ -4967,7 +4967,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
  * @retval  VINF_PGM_CACHED_PAGE if a CACHED page was returned.
  * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address of the page we're gonna shadow.
  *                      For 4MB and 2MB PD entries, it's the first address the
  *                      shadow PT is covering.
@@ -5105,7 +5105,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS en
 /**
  * Frees a usage of a pool page.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   HCPhys      The HC physical address of the shadow page.
  * @param   iUser       The shadow page pool index of the user table.
  * @param   iUserTable  The index into the user table (shadowed).
@@ -5157,7 +5157,7 @@ PPGMPOOLPAGE pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys)
 /**
  * Flush the specified page if present
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   GCPhys  Guest physical address of the page to flush
  */
 void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
@@ -5242,7 +5242,7 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
 /**
  * Reset CPU on hot plugging.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pVCpu               The virtual CPU.
  */
 void pgmR3PoolResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)

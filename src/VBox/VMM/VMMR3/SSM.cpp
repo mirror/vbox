@@ -452,7 +452,7 @@ typedef struct SSMHANDLE
     /** Stream/buffer manager. */
     SSMSTRM                 Strm;
 
-    /** The VM handle. */
+    /** Pointer to the VM. */
     PVM                     pVM;
     /** The current operation. */
     SSMSTATE                enmOp;
@@ -895,7 +895,7 @@ static int                  ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM);
 /**
  * Cleans up resources allocated by SSM on VM termination.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 VMMR3_INT_DECL(void) SSMR3Term(PVM pVM)
 {
@@ -1100,7 +1100,7 @@ static DECLCALLBACK(int) ssmR3LiveControlLoadExec(PVM pVM, PSSMHANDLE pSSM, uint
  * Internal registration worker.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Data unit name.
  * @param   uInstance       The instance id.
  * @param   uVersion        The data unit version.
@@ -1206,7 +1206,7 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance,
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pszName         Data unit name.
  * @param   uInstance       The instance identifier of the data unit.
@@ -1259,7 +1259,7 @@ VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszN
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         Driver instance.
  * @param   pszName         Data unit name.
  * @param   uInstance       The instance identifier of the data unit.
@@ -1310,7 +1310,7 @@ VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszN
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Data unit name.
  * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
@@ -1359,7 +1359,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t uIns
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Data unit name.
  * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
@@ -1410,7 +1410,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uIns
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pszName         Data unit name.
  *                          Use NULL to deregister all data units for that device instance.
@@ -1486,7 +1486,7 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const cha
  * Deregister one ore more PDM Driver data units.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         Driver instance.
  * @param   pszName         Data unit name.
  *                          Use NULL to deregister all data units for that driver instance.
@@ -1560,7 +1560,7 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const cha
  * Deregister a data unit.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmType         Unit type
  * @param   pszName         Data unit name.
  * @remark  Only for dynamic data units.
@@ -1617,7 +1617,7 @@ static int ssmR3DeregisterByNameAndType(PVM pVM, const char *pszName, SSMUNITTYP
  * Deregister an internal data unit.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Data unit name.
  * @remark  Only for dynamic data units.
  */
@@ -1631,7 +1631,7 @@ VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
  * Deregister an external data unit.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Data unit name.
  * @remark  Only for dynamic data units.
  */
@@ -2989,7 +2989,7 @@ static void ssmR3ProgressByByte(PSSMHANDLE pSSM, uint64_t cbAdvance)
 /**
  * Makes the SSM operation cancellable or not (via SSMR3Cancel).
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The saved state handle. (SSMHANDLE::rc may be set.)
  * @param   fCancellable    The new state.
  */
@@ -4134,7 +4134,7 @@ VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
  *
  * @returns VBox status code.
  * @param   pSSM                    The saved state handle.
- * @param   lrdPct                  The progress of the the live save.
+ * @param   lrdPct                  The progress of the live save.
  * @param   uPass                   The current pass.
  */
 static int ssmR3LiveControlEmit(PSSMHANDLE pSSM, long double lrdPct, uint32_t uPass)
@@ -4222,7 +4222,7 @@ static int ssmR3LiveControlEmit(PSSMHANDLE pSSM, long double lrdPct, uint32_t uP
  * Do the pfnSaveDone run.
  *
  * @returns VBox status code (pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
@@ -4278,7 +4278,7 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
  * saved state file on failure.
  *
  * @returns VBox status code (pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
@@ -4377,7 +4377,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM)
  * Writes the directory.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The SSM handle.
  * @param   pcEntries           Where to return the number of directory entries.
  */
@@ -4432,7 +4432,7 @@ static int ssmR3WriteDirectory(PVM pVM, PSSMHANDLE pSSM, uint32_t *pcEntries)
  * and footer.
  *
  * @returns VBox status code (pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3SaveDoFinalization(PVM pVM, PSSMHANDLE pSSM)
@@ -4523,7 +4523,7 @@ static void ssmR3ProgressByUnit(PSSMHANDLE pSSM, uint32_t iUnit)
  * Do the pfnSaveExec run.
  *
  * @returns VBox status code (pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
@@ -4663,7 +4663,7 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
  * Do the pfnSavePrep run.
  *
  * @returns VBox status code (pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
@@ -4724,7 +4724,7 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
  * Common worker for SSMR3Save and SSMR3LiveSave.
  *
  * @returns VBox status code (no need to check pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The state handle.
  *
  * @thread  EMT(0)
@@ -4791,7 +4791,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM)
  * Writes the file header and clear the per-unit data.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The SSM handle.
  */
 static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
@@ -4837,7 +4837,7 @@ static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
  * Creates a new saved state file.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszFilename         The name of the file.  NULL if pStreamOps is
  *                              used.
  * @param   pStreamOps          The stream methods.  NULL if pszFilename is
@@ -4902,7 +4902,7 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS 
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszFilename     Name of the file to save the state in. NULL if pStreamOps is used.
  * @param   pStreamOps      The stream method table. NULL if pszFilename is
  *                          used.
@@ -4996,7 +4996,7 @@ VMMR3DECL(void) SSMR3HandleReportLivePercent(PSSMHANDLE pSSM, unsigned uPercent)
  * @retval  VINF_SUCCESS if we can pass on to step 2.
  * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if we need another pass.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  * @param   uPass               The current pass.
  */
@@ -5097,7 +5097,7 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  *
  * @returns VBox status code (no need to check pSSM->rc).
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  * @param   uPass               The current pass.
  */
@@ -5224,7 +5224,7 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  * Implements the live exec+vote loop.
  *
  * @returns VBox status code (no need to check pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3DoLiveExecVoteLoop(PVM pVM, PSSMHANDLE pSSM)
@@ -5296,7 +5296,7 @@ static int ssmR3DoLiveExecVoteLoop(PVM pVM, PSSMHANDLE pSSM)
  * Calls pfnLivePrep for all units.
  *
  * @returns VBox status code (no need to check pSSM->rc).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
@@ -5402,7 +5402,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   cMsMaxDowntime  The maximum downtime given as milliseconds.
  * @param   pszFilename     Name of the file to save the state in. This string
  *                          must remain valid until SSMR3LiveDone is called.
@@ -7644,7 +7644,7 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
  *
  * @returns VBox status code.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszFilename         The filename. NULL if pStreamOps is used.
  * @param   pStreamOps          The stream method table. NULL if pszFilename is
  *                              used.
@@ -7797,7 +7797,7 @@ static PSSMUNIT ssmR3Find(PVM pVM, const char *pszName, uint32_t uInstance)
  * Executes the loading of a V1.X file.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
@@ -8053,7 +8053,7 @@ static int ssmR3LoadDirectoryAndFooter(PSSMHANDLE pSSM)
  *
  * @returns VBox status code.  May or may not set pSSM->rc, the returned
  *          status code is ALWAYS the more accurate of the two.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
@@ -8217,7 +8217,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszFilename     The name of the saved state file. NULL if pStreamOps
  *                          is used.
  * @param   pStreamOps      The stream method table. NULL if pszFilename is
@@ -9095,7 +9095,7 @@ VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM)
  * @retval  VERR_SSM_ALREADY_CANCELLED if the operation as already been
  *          cancelled.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  *
  * @thread  Any.
  */

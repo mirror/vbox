@@ -114,7 +114,7 @@ static void emR3RecordCli(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrInstr)
  * potentially out of sync.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU handle.
  */
 int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
@@ -148,7 +148,7 @@ int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
  * Steps rawmode.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU handle.
  */
 int emR3RawStep(PVM pVM, PVMCPU pVCpu)
@@ -1158,7 +1158,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
  *
  * @returns Updated rc.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU handle.
  * @param   pCtx    The guest CPU context.
  * @param   rc      The result code.
@@ -1207,7 +1207,7 @@ VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pCtx        The guest CPUM register context.
  */

@@ -116,7 +116,7 @@ static void vbglQueryVMMDevPort (void)
 /**
  * Checks if VBGL has been initialized.
  *
- * The the client library, this will lazily complete the initialization.
+ * The client library, this will lazily complete the initialization.
  *
  * @return VINF_SUCCESS or VERR_VBGL_NOT_INITIALIZED.
  */

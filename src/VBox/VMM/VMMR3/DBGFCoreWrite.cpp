@@ -296,7 +296,7 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
  * offset. Instead we dump the memory in ranges. A memory range is a contiguous
  * memory area suitable for dumping to a core file.
  *
- * @param pVM               The VM handle.
+ * @param pVM               Pointer to the VM.
  *
  * @return Number of memory ranges
  */
@@ -310,7 +310,7 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
  * Worker function for dbgfR3CoreWrite which does the writing.
  *
  * @returns VBox status code
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   hFile               The file to write to.  Caller closes this.
  */
 static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
@@ -492,7 +492,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
 /**
  * EMT Rendezvous worker function for DBGFR3CoreWrite.
  *
- * @param   pVM              The VM handle.
+ * @param   pVM              Pointer to the VM.
  * @param   pVCpu            The handle of the calling VCPU.
  * @param   pvData           Opaque data.
  *
@@ -533,7 +533,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWriteRendezvous(PVM pVM, PVMCPU pVCp
  * Write core dump of the guest.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszFilename         The name of the file to which the guest core
  *                              dump should be written.
  * @param   fReplaceFile        Whether to replace the file or not.

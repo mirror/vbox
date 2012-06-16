@@ -182,7 +182,7 @@ VMMRCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger)
 /**
  * Flush logger if almost full.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
 {
@@ -199,7 +199,7 @@ VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
 /**
  * Switches from guest context to host context.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   rc          The status code.
  */
 VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
@@ -211,7 +211,7 @@ VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
 /**
  * Calls the ring-0 host code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 DECLASM(void) vmmRCProbeFireHelper(PVM pVM)
 {
@@ -231,7 +231,7 @@ DECLASM(void) vmmRCProbeFireHelper(PVM pVM)
  * @returns VERR_NOT_IMPLEMENTED if the testcase wasn't implemented.
  * @returns VERR_GENERAL_FAILURE if the testcase continued when it shouldn't.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uOperation  The testcase.
  * @param   uArg        The variation. See function description for odd / even details.
  *

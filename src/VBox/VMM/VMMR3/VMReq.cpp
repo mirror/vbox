@@ -55,7 +55,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.

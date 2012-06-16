@@ -100,7 +100,7 @@ typedef struct STAMR3SNAPSHOTONE
     char           *pszEnd;
     /** Pointer to the current buffer position. */
     char           *psz;
-    /** The VM handle. */
+    /** Pointer to the VM. */
     PVM             pVM;
     /** The number of bytes allocated. */
     size_t          cbAllocated;
@@ -365,7 +365,7 @@ VMMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STA
  * It is not possible to register the same sample twice.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -411,7 +411,7 @@ VMMR3DECL(int)  STAMR3RegisterFU(PUVM pUVM, void *pvSample, STAMTYPE enmType, ST
  * RTStrPrintf like fashion.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -436,7 +436,7 @@ VMMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
  * RTStrPrintfV like fashion.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -466,7 +466,7 @@ VMMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, ST
  * RTStrPrintfV like fashion.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    Pointer to the sample.
  * @param   enmType     Sample type. This indicates what pvSample is pointing at.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
@@ -487,7 +487,7 @@ VMMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
  * and name given in an RTStrPrintf like fashion.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    Pointer to the sample.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
  * @param   enmUnit     Sample unit.
@@ -514,7 +514,7 @@ VMMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY e
  * Same as STAMR3RegisterCallback() except for the ellipsis which is a va_list here.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    Pointer to the sample.
  * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
  * @param   enmUnit     Sample unit.
@@ -779,7 +779,7 @@ VMMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
  * temporary samples.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    Pointer to the sample registered with STAMR3Register().
  */
 VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
@@ -793,7 +793,7 @@ VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
  * It's possible to select a subset of the samples.
  *
  * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszPat      The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                      If NULL all samples are reset.
  * @remarks Don't confuse this with the other 'XYZR3Reset' methods, it's not called at VM reset.
@@ -879,7 +879,7 @@ VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
  * It's possible to select a subset of the samples.
  *
  * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszPat      The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                      If NULL all samples are reset.
  * @remarks Don't confuse this with the other 'XYZR3Reset' methods, it's not called at VM reset.
@@ -896,7 +896,7 @@ VMMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
  *
  * @returns VINF_SUCCESS
  * @param   pDesc   Pointer to the current descriptor.
- * @param   pvArg   User argument - The VM handle.
+ * @param   pvArg   User argument - Pointer to the VM.
  */
 static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg)
 {
@@ -1026,7 +1026,7 @@ VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapsho
  * It's possible to select a subset of the samples.
  *
  * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
  * @param   fWithDesc       Whether to include the descriptions.
@@ -1299,7 +1299,7 @@ VMMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot)
  * Releases a statistics snapshot returned by STAMR3Snapshot().
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszSnapshot     The snapshot data pointer returned by STAMR3Snapshot().
  *                          NULL is allowed.
  */
@@ -1333,7 +1333,7 @@ VMMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat)
  * Dumps the selected statistics to the log.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
@@ -1384,7 +1384,7 @@ VMMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat)
  * Dumps the selected statistics to the release log.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
@@ -1415,7 +1415,7 @@ static DECLCALLBACK(void) stamR3EnumRelLogPrintf(PSTAMR3PRINTONEARGS pArgs, cons
  * Prints the selected statistics to standard out.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
  */
@@ -1435,7 +1435,7 @@ VMMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat)
  * Prints the selected statistics to standard out.
  *
  * @returns VBox status.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
  */
@@ -1610,7 +1610,7 @@ VMMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum,
  *
  * @returns Whatever the callback returns.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszPat      The pattern to match samples.
  * @param   pfnEnum     The callback function.
  * @param   pvUser      The pvUser argument of the callback function.

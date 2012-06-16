@@ -39,7 +39,7 @@ RT_C_DECLS_END
  * Initializes the both bit of the paging mode data.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   fResolveGCAndR0 Indicate whether or not GC and Ring-0 symbols can be resolved now.
  *                          This is used early in the init process to avoid trouble with PDM
  *                          not being initialized yet.
@@ -198,7 +198,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
  * Relocate any GC pointers related to shadow mode paging.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   offDelta    The relocation offset.
  */

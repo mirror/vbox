@@ -1190,7 +1190,7 @@ static NDIS_STATUS vboxNetFltWinPtReceive(IN NDIS_HANDLE hProtocolBindingContext
             Assert(fWinIfActive);
 
             vboxNetFltWinRecvIndicatePassThru(pNetFlt, MacReceiveContext, pHeaderBuffer, cbHeaderBuffer, pLookAheadBuffer, cbLookAheadBuffer, cbPacket);
-            /* the status could contain an error value here in case the the IntNet recv failed,
+            /* the status could contain an error value here in case the IntNet recv failed,
              * ensure we return back success status */
             Status = NDIS_STATUS_SUCCESS;
 

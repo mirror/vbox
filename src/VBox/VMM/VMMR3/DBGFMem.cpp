@@ -36,7 +36,7 @@
  * Scan guest memory for an exact byte string.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       The ID of the CPU context to search in.
  * @param   pAddress    Where to store the mixed address.
  * @param   puAlign     The alignment restriction imposed on the search result.
@@ -109,7 +109,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
  * @retval  VERR_INVALID_POINTER if any of the pointer arguments are invalid.
  * @retval  VERR_INVALID_ARGUMENT if any other arguments are invalid.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       The ID of the CPU context to search in.
  * @param   pAddress    Where to store the mixed address.
  * @param   cbRange     The number of bytes to scan.
@@ -544,7 +544,7 @@ static uint32_t dbgfR3PagingDumpModeToFlags(PGMMODE enmMode)
  * EMT worker for DBGFR3PagingDumpEx.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           The current CPU ID.
  * @param   fFlags          The flags, DBGFPGDMP_FLAGS_XXX.  Valid.
  * @param   pcr3            The CR3 to use (unless we're getting the current
@@ -625,7 +625,7 @@ static DECLCALLBACK(int) dbgfR3PagingDumpEx(PVM pVM, VMCPUID idCpu, uint32_t fFl
  * This API can be used to dump both guest and shadow structures.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           The current CPU ID.
  * @param   fFlags          The flags, DBGFPGDMP_FLAGS_XXX.
  * @param   cr3             The CR3 to use (unless we're getting the current

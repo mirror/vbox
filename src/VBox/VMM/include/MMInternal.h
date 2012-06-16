@@ -400,7 +400,7 @@ typedef MMHYPERHEAP *PMMHYPERHEAP;
 #define MMHYPER_HEAP_ALIGN_MIN          16
 
 /**
- * The aligned size of the the MMHYPERHEAP structure.
+ * The aligned size of the MMHYPERHEAP structure.
  */
 #define MMYPERHEAP_HDR_SIZE             RT_ALIGN_Z(sizeof(MMHYPERHEAP), MMHYPER_HEAP_ALIGN_MIN * 4)
 

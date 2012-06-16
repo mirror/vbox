@@ -39,7 +39,7 @@
 /**
  * Records a invlpg instruction for replaying upon REM entry.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtrPage   The
  */
 VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
@@ -204,7 +204,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
  *
  * This is for avoiding trouble in RC when changing CR3.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle of the calling EMT.
  */
 VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)

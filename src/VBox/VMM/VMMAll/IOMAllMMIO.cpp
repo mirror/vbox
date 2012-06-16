@@ -84,7 +84,7 @@ static const unsigned g_aSize2Shift[] =
  *          VINF_IOM_R3_MMIO_WRITE, VINF_IOM_R3_MMIO_READ_WRITE or
  *          VINF_IOM_R3_MMIO_READ may be returned.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pRange              The range to write to.
  * @param   GCPhys              The physical address to start writing.
  * @param   pvValue             Where to store the value.
@@ -285,7 +285,7 @@ static int iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, c
  *          VINF_IOM_R3_MMIO_READ, VINF_IOM_R3_MMIO_READ_WRITE or
  *          VINF_IOM_R3_MMIO_WRITE may be returned.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pRange              The range to read from.
  * @param   GCPhys              The physical address to start reading.
  * @param   pvValue             Where to store the value.

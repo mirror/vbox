@@ -222,7 +222,7 @@ static int rtDbgModNmScanFile(PRTDBGMODNM pThis, PRTSTREAM pStrm, bool fAddSymbo
             /*
              * This is really what C was made for, string parsing.
              */
-            /* The the symbol value (address). */
+            /* The symbol value (address). */
             uint64_t u64Addr;
             char    *psz;
             rc = RTStrToUInt64Ex(szLine, &psz, 16, &u64Addr);

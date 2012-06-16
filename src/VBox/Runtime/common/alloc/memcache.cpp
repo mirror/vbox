@@ -225,8 +225,8 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
      * tried optimizing the code with the ASMAtomicCmpXchgExPtr function to
      * avoid some reads - no change. Inserting pause instructions did nothing
      * (as expected).  The only thing which seems to make a difference is
-     * reading the pFreeTop pointer twice in the the free code... This is weird
-     * or I'm overlooking something..
+     * reading the pFreeTop pointer twice in the free code... This is weird or I'm
+     * overlooking something..
      *
      * No time to figure it out, so I'm disabling the broken code paths for
      * now. */

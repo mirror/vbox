@@ -1510,7 +1510,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVMCPU pVCpu, PPGMPOOLP
 /**
  * Modifies a shadow PTE to account for access handlers.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       The page in question.
  * @param   fPteSrc     The shadowed flags of the source PTE.  Must include the
  *                      A (accessed) bit so it can be emulated correctly.
@@ -1875,7 +1875,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     /*
      * - In the guest SMP case we could have blocked while another VCPU reused
      *   this page table.
-     * - With W7-64 we may also take this path when the the A bit is cleared on
+     * - With W7-64 we may also take this path when the A bit is cleared on
      *   higher level tables (PDPE/PML4E).  The guest does not invalidate the
      *   relevant TLB entries.  If we're write monitoring any page mapped by
      *   the modified entry, we may end up here with a "stale" TLB entry.

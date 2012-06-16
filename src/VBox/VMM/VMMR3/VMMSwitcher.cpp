@@ -274,7 +274,7 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
 /**
  * Generic switcher code relocator.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pSwitcher   The switcher definition.
  * @param   pu8CodeR3   Pointer to the core code block for the switcher, ring-3 mapping.
  * @param   R0PtrCode   Pointer to the core code block for the switcher, ring-0 mapping.

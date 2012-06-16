@@ -68,7 +68,7 @@ typedef struct VDIOBACKENDMEM
     unsigned    cReqsRing;
     /** Event semaphore the thread waits on for more work. */
     RTSEMEVENT  EventSem;
-    /** Flag whether the the server should be still running. */
+    /** Flag whether the server should be still running. */
     volatile bool fRunning;
     /** Number of requests waiting in the request buffer. */
     volatile uint32_t cReqsWaiting;

@@ -47,7 +47,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
  * Register statistics related to the critical sections.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 int pdmR3CritSectInitStats(PVM pVM)
 {
@@ -60,7 +60,7 @@ int pdmR3CritSectInitStats(PVM pVM)
 /**
  * Relocates all the critical sections.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 void pdmR3CritSectRelocate(PVM pVM)
 {
@@ -113,7 +113,7 @@ VMMDECL(int) PDMR3CritSectTerm(PVM pVM)
  * Initializes a critical section and inserts it into the list.
  *
  * @returns VBox status code.
- * @param   pVM             The Vm handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pCritSect       The critical section.
  * @param   pvKey           The owner key.
  * @param   RT_SRC_POS_DECL The source position.
@@ -196,7 +196,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
  * works in GC as well.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
@@ -226,7 +226,7 @@ VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DEC
  * works in GC as well.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   pszNameFmt      Format string for naming the critical section.  For
@@ -244,7 +244,7 @@ int pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect,
  * Initializes the automatic default PDM critical section for a device.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  */
@@ -265,7 +265,7 @@ int pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritS
  * Initializes a PDM critical section for a driver.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         Driver instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   pszNameFmt      Format string for naming the critical section.  For
@@ -288,7 +288,7 @@ int pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
  *
  * @returns Return code from RTCritSectDelete.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCritSect   The critical section.
  * @param   pPrev       The previous critical section in the list.
  * @param   fFinal      Set if this is the final call and statistics shouldn't be deregistered.
@@ -354,7 +354,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
  *          The entire list is processed on failure, so we'll only
  *          return the first error code. This shouldn't be a problem
  *          since errors really shouldn't happen here.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pvKey   The initializer key.
  */
 static int pdmR3CritSectDeleteByKey(PVM pVM, void *pvKey)
@@ -390,7 +390,7 @@ static int pdmR3CritSectDeleteByKey(PVM pVM, void *pvKey)
  * Deletes all undeleted critical sections initialized by a given device.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pDevIns     The device handle.
  */
 int pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns)
@@ -403,7 +403,7 @@ int pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns)
  * Deletes all undeleted critical sections initialized by a given driver.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pDrvIns     The driver handle.
  */
 int pdmR3CritSectDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns)
@@ -563,7 +563,7 @@ VMMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT
  *
  * @returns Lock count.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszNames        Where to return the critical section names.
  * @param   cbNames         The size of the buffer.
  */
@@ -647,7 +647,7 @@ VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNa
  * This is only used when entering guru meditation in order to prevent other
  * EMTs and I/O threads from deadlocking.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(void) PDMR3CritSectLeaveAll(PVM pVM)
 {
@@ -674,7 +674,7 @@ VMMR3DECL(void) PDMR3CritSectLeaveAll(PVM pVM)
  * all enter immediately and concurrently.
  *
  * @returns The address of the NOP critical section.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM)
 {
@@ -687,7 +687,7 @@ VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM)
  * Gets the ring-0 address of the NOP critical section.
  *
  * @returns The ring-0 address of the NOP critical section.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 VMMR3DECL(R0PTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopR0(PVM pVM)
 {
@@ -700,7 +700,7 @@ VMMR3DECL(R0PTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopR0(PVM pVM)
  * Gets the raw-mode context address of the NOP critical section.
  *
  * @returns The raw-mode context address of the NOP critical section.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM)
 {

@@ -836,8 +836,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
 }
 
 /**
- * Send a byte (keystroke or command response) to the the
- * keyboard controller.
+ * Send a byte (keystroke or command response) to the keyboard controller.
  *
  * @param   pThis               The keyboard.
  */

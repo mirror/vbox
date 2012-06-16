@@ -33,7 +33,7 @@
 /**
  * Dispatches an interrupt that arrived while we were in the guest context.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @remark  Must be called with interrupts disabled.
  */
 VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)

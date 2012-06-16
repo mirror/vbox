@@ -623,7 +623,7 @@ DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVers
  * Creates a mockup VM structure for testing SSM.
  *
  * @returns 0 on success, 1 on failure.
- * @param   ppVM    Where to store the VM handle.
+ * @param   ppVM    Where to store Pointer to the VM.
  *
  * @todo    Move this to VMM/VM since it's stuff done by several testcases.
  */

@@ -242,7 +242,7 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
  * Finalizes HMA page attributes.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) SELMR3InitFinalize(PVM pVM)
 {
@@ -285,7 +285,7 @@ VMMR3DECL(int) SELMR3InitFinalize(PVM pVM)
 /**
  * Setup the hypervisor GDT selectors in our shadow table
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static void selmR3SetupHyperGDTSelectors(PVM pVM)
 {
@@ -1653,7 +1653,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
  * This is a VBOX_STRICT only function.
  *
  * @returns VBox status code.
- * @param   pVM         The VM Handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
 {

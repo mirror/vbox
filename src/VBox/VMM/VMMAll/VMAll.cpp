@@ -184,7 +184,7 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
  * @returns VBox status code. For some flags the status code <b>must</b> be
  *          propagated up the stack.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  *
  * @param   fFlags          Flags indicating which actions to take.
  *                          See VMSETRTERR_FLAGS_* for details on each flag.
@@ -220,7 +220,7 @@ VMMDECL(int) VMSetRuntimeError(PVM pVM, uint32_t fFlags, const char *pszErrorId,
  * @returns VBox status code. For some flags the status code <b>must</b> be
  *          propagated up the stack.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   fFlags          Flags indicating which actions to take. See
  *                          VMSETRTERR_FLAGS_*.
  * @param   pszErrorId      Error ID string.

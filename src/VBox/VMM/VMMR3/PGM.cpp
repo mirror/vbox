@@ -2113,7 +2113,7 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
  * Ring-3 init finalizing.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 {
@@ -2230,7 +2230,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
  * Init phase completed callback.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   enmWhat             What has been completed.
  * @thread  EMT(0)
  */
@@ -2467,7 +2467,7 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
 /**
  * Resets a virtual CPU when unplugged.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pVCpu               The virtual CPU handle.
  */
 VMMR3DECL(void) PGMR3ResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
@@ -2765,7 +2765,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
  * Service a VMMCALLRING3_PGM_LOCK call.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) PGMR3LockCall(PVM pVM)
 {
@@ -2844,7 +2844,7 @@ DECLINLINE(unsigned) pgmModeDataMaxIndex(void)
 /**
  * Initializes the paging mode data kept in PGM::paModeData.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   fResolveGCAndR0 Indicate whether or not GC and Ring-0 symbols can be resolved now.
  *                          This is used early in the init process to avoid trouble with PDM
  *                          not being initialized yet.
@@ -3056,10 +3056,10 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
 /**
  * Switch to different (or relocated in the relocate case) mode data.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU to operate on.
- * @param   enmShw      The the shadow paging mode.
- * @param   enmGst      The the guest paging mode.
+ * @param   enmShw      The shadow paging mode.
+ * @param   enmGst      The guest paging mode.
  */
 static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE enmGst)
 {
@@ -3646,7 +3646,7 @@ int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
  * Called by pgmPoolFlushAllInt after flushing the pool.
  *
  * @returns VBox status code, fully asserted.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU to operate on.
  */
 int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
@@ -4145,7 +4145,7 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysToVirtHandlerNode(PAVLROGCPHYSNO
  *
  * @returns VINF_SUCCESS if everything is fine.
  * @returns VBox error status after asserting on integrity breach.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
 {

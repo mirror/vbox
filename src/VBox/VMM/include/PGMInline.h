@@ -51,7 +51,7 @@
  * @returns Pointer to the RAM range on success.
  * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address.
  */
 DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PVM pVM, RTGCPHYS GCPhys)
@@ -71,7 +71,7 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PVM pVM, RTGCPHYS GCPhys)
  * @returns Pointer to the RAM range on success.
  * @returns NULL if the address is located after the last range.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address.
  */
 DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVM pVM, RTGCPHYS GCPhys)
@@ -91,7 +91,7 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVM pVM, RTGCPHYS GCPhys)
  * @returns Pointer to the page on success.
  * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address.
  */
 DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVM pVM, RTGCPHYS GCPhys)
@@ -115,7 +115,7 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVM pVM, RTGCPHYS GCPhys)
  * @retval  VINF_SUCCESS and a valid *ppPage on success.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if the address isn't valid.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address.
  * @param   ppPage      Where to store the page pointer on success.
  */
@@ -141,7 +141,7 @@ DECLINLINE(int) pgmPhysGetPageEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
  * @retval  VINF_SUCCESS and a valid *ppPage on success.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if the address isn't valid.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address.
  * @param   ppPage      Where to store the page pointer on success.
  * @param   ppRamHint   Where to read and store the ram list hint.
@@ -173,7 +173,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppP
  * @returns Pointer to the page on success.
  * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address.
  * @param   ppPage      Where to store the pointer to the PGMPAGE structure.
  * @param   ppRam       Where to store the pointer to the PGMRAMRANGE structure.
@@ -197,7 +197,7 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppP
  * Convert GC Phys to HC Phys.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address.
  * @param   pHCPhys     Where to store the corresponding HC physical address.
  *
@@ -259,7 +259,7 @@ DECLINLINE(int) pgmRZDynMapHCPageInlined(PVMCPU pVCpu, RTHCPHYS HCPhys, void **p
  * already in the set.
  *
  * @returns VBox status code, see pgmRZDynMapGCPageCommon for details.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current CPU.
  * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address.
@@ -446,7 +446,7 @@ DECLINLINE(void *) pgmPoolMapPageV2Inlined(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE p
  * @retval  VINF_SUCCESS on success
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The address of the guest page.
  * @param   ppTlbe      Where to store the pointer to the TLB entry.
  */
@@ -474,7 +474,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLBE 
  * @retval  VINF_SUCCESS on success
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       Pointer to the PGMPAGE structure corresponding to
  *                      GCPhys.
  * @param   GCPhys      The address of the guest page.
@@ -506,7 +506,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS G
  *
  * The caller is responsible for updating the shadow page tables.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       The page to write monitor.
  * @param   GCPhysPage  The address of the page.
  */
@@ -574,7 +574,7 @@ DECL_FORCE_INLINE(bool) pgmGst32BitIsPageSizeExtActive(PVMCPU pVCpu)
  * Takes PSE-36 into account.
  *
  * @returns guest physical address
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   Pde         Guest Pde
  */
 DECLINLINE(RTGCPHYS) pgmGstGet4MBPhysPage(PVM pVM, X86PDE Pde)
@@ -1176,7 +1176,7 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PVMCPU pVCpu, unsigned int iPml4
  * Cached physical handler lookup.
  *
  * @returns Physical handler covering @a GCPhys.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   GCPhys              The lookup address.
  */
 DECLINLINE(PPGMPHYSHANDLER) pgmHandlerPhysicalLookup(PVM pVM, RTGCPHYS GCPhys)
@@ -1245,7 +1245,7 @@ DECLINLINE(unsigned) pgmHandlerVirtualCalcState(PPGMVIRTHANDLER pCur)
 /**
  * Clears one physical page of a virtual handler.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCur        Virtual handler structure.
  * @param   iPage       Physical page index.
  *
@@ -1496,7 +1496,7 @@ DECL_FORCE_INLINE(bool) pgmMapAreMappingsEnabled(PVM pVM)
  * Checks if the mappings are floating and enabled.
  *
  * @returns true / false.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 DECL_FORCE_INLINE(bool) pgmMapAreMappingsFloating(PVM pVM)
 {

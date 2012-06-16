@@ -404,7 +404,7 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
  * Initialize the configuration of halt method 1 & 2.
  *
  * @return VBox status code. Failure on invalid CFGM data.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static int vmR3HaltMethod12ReadConfigU(PUVM pUVM)
 {

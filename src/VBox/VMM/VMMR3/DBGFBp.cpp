@@ -60,7 +60,7 @@ RT_C_DECLS_END
  * Initialize the breakpoint stuff.
  *
  * @returns VINF_SUCCESS
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int dbgfR3BpInit(PVM pVM)
 {
@@ -96,7 +96,7 @@ int dbgfR3BpInit(PVM pVM)
  *
  * @returns Pointer to the allocated breakpoint.
  * @returns NULL if we're out of breakpoints.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   enmType The type to allocate.
  */
 static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
@@ -149,7 +149,7 @@ static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
  *
  * @returns Pointer to the allocated breakpoint.
  * @returns NULL if the breakpoint is invalid.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   iBp     The breakpoint id.
  */
 static PDBGFBP dbgfR3BpGet(PVM pVM, uint32_t iBp)
@@ -191,7 +191,7 @@ static PDBGFBP dbgfR3BpGet(PVM pVM, uint32_t iBp)
  *
  * @returns Pointer to the allocated breakpoint.
  * @returns NULL if the breakpoint is invalid.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   enmType The breakpoint type.
  * @param   GCPtr   The breakpoint address.
  */
@@ -237,7 +237,7 @@ static PDBGFBP dbgfR3BpGetByAddr(PVM pVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr)
 /**
  * Frees a breakpoint.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pBp     The breakpoint to free.
  */
 static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
@@ -272,7 +272,7 @@ static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
  * Sets a breakpoint (int 3 based).
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pAddress    The address of the breakpoint.
  * @param   iHitTrigger The hit count at which the breakpoint start triggering.
  *                      Use 0 (or 1) if it's gonna trigger at once.
@@ -297,7 +297,7 @@ VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger
  * Sets a breakpoint (int 3 based).
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pAddress        The address of the breakpoint.
  * @param   piHitTrigger    The hit count at which the breakpoint start triggering.
  *                          Use 0 (or 1) if it's gonna trigger at once.
@@ -369,7 +369,7 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64
  * This is used to implement both DBGFR3BpSetReg() and DBGFR3BpEnable().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pBp         The breakpoint.
  */
 static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
@@ -399,7 +399,7 @@ static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
  * This is used to implement both DBGFR3BpClear() and DBGFR3BpDisable().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pBp         The breakpoint.
  */
 static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp)
@@ -425,7 +425,7 @@ static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp)
  * Sets a register breakpoint.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pAddress    The address of the breakpoint.
  * @param   iHitTrigger The hit count at which the breakpoint start triggering.
  *                      Use 0 (or 1) if it's gonna trigger at once.
@@ -455,7 +455,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
  * Sets a register breakpoint.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pAddress        The address of the breakpoint.
  * @param   piHitTrigger    The hit count at which the breakpoint start triggering.
  *                          Use 0 (or 1) if it's gonna trigger at once.
@@ -562,7 +562,7 @@ static DECLCALLBACK(int) dbgfR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_
  * This is used to implement both DBGFR3BpSetReg() and DBGFR3BpEnable().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pBp         The breakpoint.
  */
 static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
@@ -580,7 +580,7 @@ static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
  * This is used to implement both DBGFR3BpClear() and DBGFR3BpDisable().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pBp         The breakpoint.
  */
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
@@ -597,7 +597,7 @@ static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
  * Sets a recompiler breakpoint.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pAddress    The address of the breakpoint.
  * @param   iHitTrigger The hit count at which the breakpoint start triggering.
  *                      Use 0 (or 1) if it's gonna trigger at once.
@@ -621,7 +621,7 @@ VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
  * EMT worker for DBGFR3BpSetREM().
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pAddress        The address of the breakpoint.
  * @param   piHitTrigger    The hit count at which the breakpoint start triggering.
  *                          Use 0 (or 1) if it's gonna trigger at once.
@@ -702,7 +702,7 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_
  * Clears a breakpoint.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iBp         The id of the breakpoint which should be removed (cleared).
  * @thread  Any thread.
  */
@@ -721,7 +721,7 @@ VMMR3DECL(int) DBGFR3BpClear(PVM pVM, uint32_t iBp)
  * EMT worker for DBGFR3BpClear().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iBp         The id of the breakpoint which should be removed (cleared).
  * @thread  EMT
  * @internal
@@ -778,7 +778,7 @@ static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, uint32_t iBp)
  * Enables a breakpoint.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iBp         The id of the breakpoint which should be enabled.
  * @thread  Any thread.
  */
@@ -797,7 +797,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, uint32_t iBp)
  * EMT worker for DBGFR3BpEnable().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iBp         The id of the breakpoint which should be enabled.
  * @thread  EMT
  * @internal
@@ -854,7 +854,7 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, uint32_t iBp)
  * Disables a breakpoint.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iBp         The id of the breakpoint which should be disabled.
  * @thread  Any thread.
  */
@@ -873,7 +873,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, uint32_t iBp)
  * EMT worker for DBGFR3BpDisable().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iBp         The id of the breakpoint which should be disabled.
  * @thread  EMT
  * @internal
@@ -928,7 +928,7 @@ static DECLCALLBACK(int) dbgfR3BpDisable(PVM pVM, uint32_t iBp)
  * Enumerate the breakpoints.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pfnCallback The callback function.
  * @param   pvUser      The user argument to pass to the callback.
  * @thread  Any thread but the callback will be called from EMT.
@@ -948,7 +948,7 @@ VMMR3DECL(int) DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
  * EMT worker for DBGFR3BpEnum().
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pfnCallback The callback function.
  * @param   pvUser      The user argument to pass to the callback.
  * @thread  EMT

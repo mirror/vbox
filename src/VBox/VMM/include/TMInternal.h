@@ -742,7 +742,7 @@ DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
  * @retval  VINF_SUCCESS on success (always in ring-3).
  * @retval  VERR_SEM_BUSY in RC and R0 if the semaphore is busy.
  *
- * @param   a_pVM       The VM handle.
+ * @param   a_pVM       Pointer to the VM.
  *
  * @remarks The virtual sync timer queue requires the virtual sync lock.
  */
@@ -754,7 +754,7 @@ DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_SEM_BUSY if busy.
  *
- * @param   a_pVM       The VM handle.
+ * @param   a_pVM       Pointer to the VM.
  *
  * @remarks The virtual sync timer queue requires the virtual sync lock.
  */

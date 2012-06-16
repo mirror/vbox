@@ -1751,7 +1751,7 @@ static int supdrvVtgCreateObjectCopy(PSUPDRVDEVEXT pDevExt, PCVTGOBJHDR pVtgHdr,
             pThis->Hdr.cBits              = ARCH_BITS;
 
             /*
-             * Copy, convert and fix up the the probe location table.
+             * Copy, convert and fix up the probe location table.
              */
             if (pVtgHdr->cBits == 32)
             {

@@ -241,7 +241,7 @@ static char *dbgfR3Strip(char *psz)
  * which needs loading.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int dbgfR3SymInit(PVM pVM)
 {
@@ -609,7 +609,7 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
  * VBOXDBG_IMAGE_PATH in the environment. It uses semicolon as separator everywhere.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszFilename     The name of the file to locate and open.
  * @param   pszFound        Where to return the actual filename.
  * @param   cchFound        The buffer size.
@@ -799,7 +799,7 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR Ad
 /**
  * Interface used by PDMR3LdrRelocate for telling us that a GC module has been relocated.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   OldImageBase    The old image base.
  * @param   NewImageBase    The new image base.
  * @param   cbImage         The image size.
@@ -1066,7 +1066,7 @@ VMMR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDi
  * Duplicates a line.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pLine           The line to duplicate.
  */
 static PDBGFLINE dbgfR3LineDup(PVM pVM, PCDBGFLINE pLine)

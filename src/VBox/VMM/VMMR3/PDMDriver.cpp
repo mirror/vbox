@@ -376,7 +376,7 @@ PPDMDRV pdmR3DrvLookup(PVM pVM, const char *pszName)
  * Worker for pdmR3DrvInstantiate.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDrvAbove           The driver above, NULL if top.
  * @param   pLun                The LUN.
  * @param   ppNode              The AttachedDriver node, replaced if any
@@ -619,7 +619,7 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
  *
  * @returns VBox status code, including informational statuses.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pNode               The CFGM node for the driver.
  * @param   pBaseInterface      The base interface.
  * @param   pDrvAbove           The driver above it.  NULL if it's the top-most

@@ -125,7 +125,7 @@ typedef struct INTNETMACTAB
     /** Whether the wire is active. */
     bool                    fWireActive;
 
-    /** Pointer to the the trunk interface. */
+    /** Pointer to the trunk interface. */
     struct INTNETTRUNKIF   *pTrunk;
 } INTNETMACTAB;
 /** Pointer to a MAC address .  */

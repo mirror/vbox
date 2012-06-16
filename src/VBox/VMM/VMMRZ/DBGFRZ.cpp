@@ -37,7 +37,7 @@
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   uDr6        The DR6 register value.
@@ -105,7 +105,7 @@ VMMRZDECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */

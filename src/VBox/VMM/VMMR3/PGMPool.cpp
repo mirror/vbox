@@ -130,7 +130,7 @@ static const DBGCCMD    g_aCmds[] =
  * Initializes the pool
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int pgmR3PoolInit(PVM pVM)
 {
@@ -428,7 +428,7 @@ int pgmR3PoolInit(PVM pVM)
 /**
  * Relocate the page pool data.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 void pgmR3PoolRelocate(PVM pVM)
 {
@@ -453,7 +453,7 @@ void pgmR3PoolRelocate(PVM pVM)
  * I.e. adds more pages to it, assuming that hasn't reached cMaxPages yet.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
 {
@@ -637,7 +637,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
  * it to complete this function.
  *
  * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU for the EMT we're being called on. Unused.
  * @param   fpvFlushRemTlb  When not NULL, we'll flush the REM TLB as well.
  *                          (This is the pvUser, so it has to be void *.)
@@ -898,7 +898,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 /**
  * Clears the shadow page pool.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   fFlushRemTlb    When set, the REM TLB is scheduled for flushing as
  *                          well.
  */
@@ -912,7 +912,7 @@ void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
 /**
  * Protect all pgm pool page table entries to monitor writes
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  *
  * @remarks ASSUMES the caller will flush all TLBs!!
  */

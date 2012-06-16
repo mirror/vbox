@@ -48,7 +48,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  * Determin the default heap size.
  *
  * @returns The heap size in bytes.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static uint32_t mmR3ComputeHyperHeapSize(PVM pVM)
 {
@@ -325,7 +325,7 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
  *
  * @returns true if the location is ok.
  * @returns false if another location should be found.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtrOld    The old virtual address.
  * @param   GCPtrNew    The new virtual address.
  * @param   enmMode     Used to indicate the callback mode.
@@ -388,7 +388,7 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
  * Service a VMMCALLRING3_MMHYPER_LOCK call.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) MMR3LockCall(PVM pVM)
 {
@@ -727,7 +727,7 @@ VMMR3DECL(int) MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGC
  * Adds memory to the hypervisor memory arena.
  *
  * @return VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   cb          Size of the memory. Will be rounded up to nearest page.
  * @param   pszDesc     The description of the memory.
  * @param   pGCPtr      Where to store the GC address.
@@ -787,7 +787,7 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
  * Allocates a new heap.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   cb          The size of the new heap.
  * @param   ppHeap      Where to store the heap pointer on successful return.
  * @param   pR0PtrHeap  Where to store the ring-0 address of the heap on
@@ -1069,7 +1069,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
  * Lookus up a ring-3 pointer to HMA.
  *
  * @returns The lookup record on success, NULL on failure.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pvR3                The ring-3 address to look up.
  */
 DECLINLINE(PMMLOOKUPHYPER) mmR3HyperLookupR3(PVM pVM, void *pvR3)
@@ -1118,7 +1118,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmR3HyperLookupR3(PVM pVM, void *pvR3)
  * Set / unset guard status on one or more hyper heap pages.
  *
  * @returns VBox status code (first failure).
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pvStart             The hyper heap page address. Must be page
  *                              aligned.
  * @param   cb                  The number of bytes. Must be page aligned.
@@ -1217,7 +1217,7 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
  * Implements the hcphys-not-found return case of MMR3HyperQueryInfoFromHCPhys.
  *
  * @returns VINF_SUCCESS, VINF_BUFFER_OVERFLOW.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   HCPhys              The host physical address to look for.
  * @param   pLookup             The HMA lookup entry corresponding to HCPhys.
  * @param   pszWhat             Where to return the description.
@@ -1238,7 +1238,7 @@ static int mmR3HyperQueryInfoFromHCPhysFound(PVM pVM, RTHCPHYS HCPhys, PMMLOOKUP
  * Scans the HMA for the physical page and reports back a description if found.
  *
  * @returns VINF_SUCCESS, VINF_BUFFER_OVERFLOW, VERR_NOT_FOUND.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   HCPhys              The host physical address to look for.
  * @param   pszWhat             Where to return the description.
  * @param   cbWhat              Size of the return buffer.
@@ -1358,7 +1358,7 @@ VMMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t c
 /**
  * Info handler for 'hma', it dumps the list of lookup records for the hypervisor memory area.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */

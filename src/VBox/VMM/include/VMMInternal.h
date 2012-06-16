@@ -69,7 +69,7 @@
 /**
  * Switcher function, HC to RC.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @returns Return code indicating the action to take.
  */
 typedef DECLASMTYPE(int) FNVMMSWITCHERHC(PVM pVM);
@@ -94,7 +94,7 @@ typedef FNVMMSWITCHERRC *PFNVMMSWITCHERRC;
  */
 typedef struct VMMR0LOGGER
 {
-    /** Pointer to the VM handle. */
+    /** Pointer to Pointer to the VM. */
     R0PTRTYPE(PVM)              pVM;
     /** Size of the allocated logger instance (Logger). */
     uint32_t                    cbLogger;
@@ -539,7 +539,7 @@ DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
  * Callback function for vmmR0CallRing3SetJmp.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVM pVM, PVMCPU pVCpu);
 /** Pointer to FNVMMR0SETJMP(). */

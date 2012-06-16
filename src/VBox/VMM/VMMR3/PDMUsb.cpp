@@ -100,7 +100,7 @@ AssertCompile(sizeof(PDMUSBINSINT) <= RT_SIZEOFMEMB(PDMUSBINS, Internal.padding)
  * Registers a USB hub driver.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         The driver instance of the hub.
  * @param   fVersions       Indicates the kinds of USB devices that can be attached to this HUB.
  * @param   cPorts          The number of ports.
@@ -275,7 +275,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
  * This is called by pdmR3DevInit() after it has loaded it's device modules.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 int pdmR3UsbLoadModules(PVM pVM)
 {
@@ -385,7 +385,7 @@ int pdmR3UsbLoadModules(PVM pVM)
  * This is called from pdmR3DevInit() after it has do its notification round.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 int pdmR3UsbVMInitComplete(PVM pVM)
 {
@@ -426,7 +426,7 @@ PPDMUSB pdmR3UsbLookup(PVM pVM, const char *pszName)
  *
  * @returns VINF_SUCCESS and *ppHub on success.
  *          VERR_PDM_NO_USB_HUBS or VERR_PDM_NO_USB_PORTS on failure.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   iUsbVersion     The USB device version.
  * @param   ppHub           Where to store the pointer to the USB hub.
  */
@@ -455,7 +455,7 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
  * Creates the device.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pUsbDev         The USB device emulation.
  * @param   iInstance       -1 if not called by pdmR3UsbInstantiateDevices().
  * @param   pUuid           The UUID for this device.
@@ -837,7 +837,7 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
  * and try instantiate the proxy device.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pUuid           The UUID to be associated with the device.
  * @param   fRemote         Whether it's a remove or local device.
  * @param   pszAddress      The address string.
@@ -1009,7 +1009,7 @@ static void pdmR3UsbDestroyDevice(PVM pVM, PPDMUSBINS pUsbIns)
  * Detaches and destroys a USB device.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pUuid           The UUID associated with the device to detach.
  * @thread  EMT
  */

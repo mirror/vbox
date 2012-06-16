@@ -176,7 +176,7 @@ typedef SUPREQHDR *PSUPREQHDR;
 #define SUPCOOKIE_INITIAL_COOKIE                        0x69726f74 /* 'tori' */
 
 /** Current interface version.
- * The upper 16-bit is the major version, the the lower the minor version.
+ * The upper 16-bit is the major version, the lower the minor version.
  * When incompatible changes are made, the upper major number has to be changed.
  *
  * Update rules:

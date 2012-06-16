@@ -101,8 +101,8 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   u8Irq           The IRQ line.
- * @param   u8Level         The new level. 
- * @param   uTagSrc         The IRQ tag and source tracer ID.  
+ * @param   u8Level         The new level.
+ * @param   uTagSrc         The IRQ tag and source tracer ID.
  */
 VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
@@ -159,7 +159,7 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTag
  * @param   pVM             VM handle.
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
- * @param   uTagSrc         The IRQ tag and source tracer ID.  
+ * @param   uTagSrc         The IRQ tag and source tracer ID.
  */
 VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
@@ -181,7 +181,7 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint3
  * @param   pVM             VM handle.
  * @param   GCAddr          Request address.
  * @param   u8Value         Request value.
- * @param   uTagSrc         The IRQ tag and source tracer ID.  
+ * @param   uTagSrc         The IRQ tag and source tracer ID.
  */
 VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc)
 {
@@ -368,7 +368,7 @@ VMMDECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu
  * Locks PDM.
  * This might call back to Ring-3 in order to deal with lock contention in GC and R3.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 void pdmLock(PVM pVM)
 {
@@ -388,7 +388,7 @@ void pdmLock(PVM pVM)
  *
  * @returns VINF_SUCCESS on success.
  * @returns rc if we're in GC or R0 and can't get the lock.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   rc      The RC to return in GC or R0 when we can't get the lock.
  */
 int pdmLockEx(PVM pVM, int rc)
@@ -400,7 +400,7 @@ int pdmLockEx(PVM pVM, int rc)
 /**
  * Unlocks PDM.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 void pdmUnlock(PVM pVM)
 {

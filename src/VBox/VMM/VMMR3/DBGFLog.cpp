@@ -65,7 +65,7 @@ static PRTLOGGER dbgfR3LogResolvedLogger(const char **ppsz)
  * Changes the logger group settings.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszGroupSettings    The group settings string. (VBOX_LOG)
  *                              By prefixing the string with \"release:\" the
  *                              changes will be applied to the release log
@@ -85,7 +85,7 @@ VMMR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
  * EMT worker for DBGFR3LogModifyGroups.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszGroupSettings    The group settings string. (VBOX_LOG)
  */
 static DECLCALLBACK(int) dbgfR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
@@ -105,7 +105,7 @@ static DECLCALLBACK(int) dbgfR3LogModifyGroups(PVM pVM, const char *pszGroupSett
  * Changes the logger flag settings.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszFlagSettings     The group settings string. (VBOX_LOG_FLAGS)
  *                              By prefixing the string with \"release:\" the
  *                              changes will be applied to the release log
@@ -125,7 +125,7 @@ VMMR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
  * EMT worker for DBGFR3LogModifyFlags.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszFlagSettings     The group settings string. (VBOX_LOG_FLAGS)
  */
 static DECLCALLBACK(int) dbgfR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
@@ -145,7 +145,7 @@ static DECLCALLBACK(int) dbgfR3LogModifyFlags(PVM pVM, const char *pszFlagSettin
  * Changes the logger destination settings.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszDestSettings     The destination settings string. (VBOX_LOG_DEST)
  *                              By prefixing the string with \"release:\" the
  *                              changes will be applied to the release log
@@ -165,7 +165,7 @@ VMMR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
  * EMT worker for DBGFR3LogModifyFlags.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszDestSettings     The destination settings string. (VBOX_LOG_DEST)
  */
 static DECLCALLBACK(int) dbgfR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)

@@ -35,7 +35,7 @@
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   R3Ptr   The host context ring-3 address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -95,7 +95,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   R0Ptr   The host context ring-0 address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -157,7 +157,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   RCPtr   The raw-mode context address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -202,7 +202,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
  *
  * @returns Pointer to the corresponding lookup record.
  * @returns NULL on failure.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pv      The current context address to lookup.
  * @param   poff    Where to store the offset into the HMA memory chunk.
  */
@@ -279,7 +279,7 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
  * Calculate the raw-mode context address of an offset into the HMA memory chunk.
  *
  * @returns the raw-mode context base address.
- * @param   pVM         The the VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pLookup     The HMA lookup record.
  * @param   off         The offset into the HMA memory chunk.
  */
@@ -293,7 +293,7 @@ DECLINLINE(RTRCPTR) mmHyperLookupCalcRC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
  * Calculate the guest context address of an offset into the HMA memory chunk.
  *
  * @returns the guest context base address.
- * @param   pVM         The the VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pLookup     The HMA lookup record.
  * @param   off         The offset into the HMA memory chunk.
  */
