@@ -334,7 +334,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         pSingleTimer->hFireTime.cyt_when = u64First + RTTimeNanoTS();
         if (pTimer->interval == 0)
         {
-            /* @todo use gethrtime_max instead of LLONG_MAX? */
+            /** @todo use gethrtime_max instead of LLONG_MAX? */
             AssertCompileSize(pSingleTimer->hFireTime.cyt_interval, sizeof(long long));
             pSingleTimer->hFireTime.cyt_interval = LLONG_MAX - pSingleTimer->hFireTime.cyt_when;
         }
