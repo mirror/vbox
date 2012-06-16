@@ -312,9 +312,7 @@ DECL_NO_INLINE(static, uint8_t) disReadByteSlow(PDISCPUSTATE pCpu, RTUINTPTR off
         return 0;
     }
 
-    if (off <= pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 1);
-
+    disReadMore(pCpu, off, 1);
     return pCpu->abInstr[off];
 }
 
@@ -367,9 +365,7 @@ DECL_NO_INLINE(static, uint16_t) disReadWordSlow(PDISCPUSTATE pCpu, RTUINTPTR of
         return 0;
     }
 
-    if (off + 2 < pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 2);
-
+    disReadMore(pCpu, off, 2);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
     return *(uint16_t const *)&pCpu->abInstr[off];
 #else
@@ -421,7 +417,7 @@ DECL_FORCE_INLINE(uint16_t) disReadWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
  */
 DECL_NO_INLINE(static, uint32_t) disReadDWordSlow(PDISCPUSTATE pCpu, RTUINTPTR off)
 {
-    if (RT_UNLIKELY(off + 2 > DIS_MAX_INSTR_LENGTH))
+    if (RT_UNLIKELY(off + 4 > DIS_MAX_INSTR_LENGTH))
     {
         Log(("disReadDWord: too long instruction...\n"));
         pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
@@ -437,9 +433,7 @@ DECL_NO_INLINE(static, uint32_t) disReadDWordSlow(PDISCPUSTATE pCpu, RTUINTPTR o
         return 0;
     }
 
-    if (off + 2 < pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 2);
-
+    disReadMore(pCpu, off, 4);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
     return *(uint32_t const *)&pCpu->abInstr[off];
 #else
@@ -457,7 +451,7 @@ DECL_NO_INLINE(static, uint32_t) disReadDWordSlow(PDISCPUSTATE pCpu, RTUINTPTR o
  */
 DECLINLINE(uint32_t) disReadDWordByOff(PDISCPUSTATE pCpu, RTUINTPTR off)
 {
-    if (RT_UNLIKELY(off + 2 > pCpu->cbCachedInstr))
+    if (RT_UNLIKELY(off + 4 > pCpu->cbCachedInstr))
         return disReadDWordSlow(pCpu, off);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
@@ -491,7 +485,7 @@ DECL_FORCE_INLINE(uint32_t) disReadDWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
  */
 DECL_NO_INLINE(static, uint64_t) disReadQWordSlow(PDISCPUSTATE pCpu, RTUINTPTR off)
 {
-    if (RT_UNLIKELY(off + 2 > DIS_MAX_INSTR_LENGTH))
+    if (RT_UNLIKELY(off + 8 > DIS_MAX_INSTR_LENGTH))
     {
         Log(("disReadQWord: too long instruction...\n"));
         pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
@@ -516,9 +510,7 @@ DECL_NO_INLINE(static, uint64_t) disReadQWordSlow(PDISCPUSTATE pCpu, RTUINTPTR o
         return 0;
     }
 
-    if (off + 2 < pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 2);
-
+    disReadMore(pCpu, off, 8);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
     return *(uint64_t const *)&pCpu->abInstr[off];
 #else
@@ -537,7 +529,7 @@ DECL_NO_INLINE(static, uint64_t) disReadQWordSlow(PDISCPUSTATE pCpu, RTUINTPTR o
  */
 DECLINLINE(uint64_t) disReadQWordByOff(PDISCPUSTATE pCpu, RTUINTPTR off)
 {
-    if (RT_UNLIKELY(off + 2 > pCpu->cbCachedInstr))
+    if (RT_UNLIKELY(off + 8 > pCpu->cbCachedInstr))
         return disReadQWordSlow(pCpu, off);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
