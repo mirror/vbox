@@ -661,9 +661,9 @@ DISDECL(int) DISInstWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuM
                                         PFNDISREADBYTES pfnReadBytes, void *pvUser,
                                         PDISCPUSTATE pCpu, uint32_t *pcbInstr);
 
-DISDECL(int)        DISGetParamSize(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
-DISDECL(DISSELREG)  DISDetectSegReg(PDISCPUSTATE pCpu, PDISOPPARAM pParam);
-DISDECL(uint8_t)    DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
+DISDECL(int)        DISGetParamSize(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam);
+DISDECL(DISSELREG)  DISDetectSegReg(PCDISCPUSTATE pCpu, PCDISOPPARAM pParam);
+DISDECL(uint8_t)    DISQuerySegPrefixByte(PCDISCPUSTATE pCpu);
 
 
 
@@ -715,9 +715,9 @@ typedef enum DISQPVWHICH
     DISQPVWHICH_SRC,
     DISQPVWHAT_32_BIT_HACK = 0x7fffffff
 } DISQPVWHICH;
-DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype);
+DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, PDISQPVPARAMVAL pParamVal, DISQPVWHICH parmtype);
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PCDISCPUSTATE pCpu, PCDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
 
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, PDISOPPARAM pParam, void **ppReg, size_t *pcbSize);
 DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
 DISDECL(int) DISFetchReg32(PCCPUMCTXCORE pCtx, unsigned reg32, uint32_t *pVal);
