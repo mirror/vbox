@@ -873,7 +873,7 @@ VMMR3DECL(int) DBGFR3Attach(PVM pVM)
  * EMT worker for DBGFR3Attach.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  */
 static DECLCALLBACK(int) dbgfR3Attach(PVM pVM)
 {

@@ -200,7 +200,7 @@ static int pdmR3AsyncCompletionTemplateCreate(PVM pVM, PPPDMASYNCCOMPLETIONTEMPL
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
@@ -242,7 +242,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDev
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         The driver instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
@@ -285,7 +285,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrv
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pUsbIns         The USB device instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
@@ -327,7 +327,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns
  * The template is used when creating new completion tasks.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
  * @param   pvUser2         The 2nd user argument for the callback.
@@ -425,7 +425,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroy(PPDMASYNCCOMPLETIONTEMPLATE p
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PDM_ASYNC_TEMPLATE_BUSY if one or more of the templates are still in use.
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance.
  */
 VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
@@ -474,7 +474,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDe
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PDM_ASYNC_TEMPLATE_BUSY if one or more of the templates are still in use.
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         The driver instance.
  */
 VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
@@ -523,7 +523,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDr
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PDM_ASYNC_TEMPLATE_BUSY if one or more of the templates are still in use.
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  * @param   pUsbIns         The USB device instance.
  */
 VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
@@ -904,7 +904,7 @@ static void pdmR3AsyncCompletionEpClassTerminate(PPDMASYNCCOMPLETIONEPCLASS pEnd
  * Initialize the async completion manager.
  *
  * @returns VBox status code
- * @param   pVM Pointer to the shared VM structure.
+ * @param   pVM Pointer to the VM.
  */
 int pdmR3AsyncCompletionInit(PVM pVM)
 {
@@ -924,7 +924,7 @@ int pdmR3AsyncCompletionInit(PVM pVM)
  * Terminates the async completion manager.
  *
  * @returns VBox status code
- * @param   pVM Pointer to the shared VM structure.
+ * @param   pVM Pointer to the VM.
  */
 int pdmR3AsyncCompletionTerm(PVM pVM)
 {
@@ -942,7 +942,7 @@ int pdmR3AsyncCompletionTerm(PVM pVM)
  * Resume worker for the async completion manager.
  *
  * @returns nothing.
- * @param   pVM Pointer to the shared VM structure.
+ * @param   pVM Pointer to the VM.
  */
 void pdmR3AsyncCompletionResume(PVM pVM)
 {

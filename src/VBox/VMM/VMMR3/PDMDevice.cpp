@@ -468,7 +468,7 @@ PPDMDEV pdmR3DevLookup(PVM pVM, const char *pszName)
  * Loads the device modules.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVM     Pointer to the VM.
  */
 static int pdmR3DevLoadModules(PVM pVM)
 {

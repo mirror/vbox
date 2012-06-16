@@ -238,7 +238,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
 /**
  * Make REM flush all translation block upon the next call to REMR3State().
  *
- * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVM             Pointer to the VM.
  */
 VMMDECL(void) REMFlushTBs(PVM pVM)
 {

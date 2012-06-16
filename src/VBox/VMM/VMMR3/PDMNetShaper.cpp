@@ -82,7 +82,7 @@ typedef PDMNSBWGROUP *PPDMNSBWGROUP;
  */
 typedef struct PDMNETSHAPER
 {
-    /** Pointer to the shared VM structure. */
+    /** Pointer to the VM. */
     PVM                      pVM;
     /** Critical section protecting all members below. */
     RTCRITSECT               cs;
@@ -468,7 +468,7 @@ int pdmR3NetShaperTerm(PVM pVM)
  * Initialize the network shaper.
  *
  * @returns VBox status code
- * @param   pVM Pointer to the shared VM structure.
+ * @param   pVM Pointer to the VM.
  */
 int pdmR3NetShaperInit(PVM pVM)
 {
@@ -516,7 +516,7 @@ int pdmR3NetShaperInit(PVM pVM)
                         rc = pdmNsBwGroupCreate(pNetShaper, pszBwGrpId, cbMax);
 
                     RTMemFree(pszBwGrpId);
-                    
+
                     if (RT_FAILURE(rc))
                         break;
                 }

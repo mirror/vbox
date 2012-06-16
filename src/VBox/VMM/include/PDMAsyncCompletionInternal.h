@@ -169,7 +169,7 @@ typedef struct PDMACBWMGR *PPDMACBWMGR;
  */
 typedef struct PDMASYNCCOMPLETIONEPCLASS
 {
-    /** Pointer to the shared VM structure. */
+    /** Pointer to the VM. */
     PVM                                         pVM;
     /** Critical section protecting the lists below. */
     RTCRITSECT                                  CritSect;

@@ -1271,7 +1271,7 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
  *
  * @returns true if it's an all access handler, false if it's a write access
  *          handler.
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The address of the page with a disabled handler.
  *
  * @remarks The caller, PGMR3PhysTlbGCPhys2Ptr, must hold the PGM lock.
@@ -1504,7 +1504,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualDumpPhysPagesCallback(PAVLROGCPHYSNODE
  * Assertion / logging helper for dumping all the
  * virtual handlers to the log.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the VM.
  */
 void pgmHandlerVirtualDumpPhysPages(PVM pVM)
 {
