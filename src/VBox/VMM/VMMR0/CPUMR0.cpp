@@ -390,7 +390,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Save guest FPU/XMM state
  *
  * @returns VBox status code.
- * @param   pVM         Poitner to the VM.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
