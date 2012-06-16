@@ -1061,7 +1061,7 @@ int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, const char *pszLogNam
  * @returns iprt status code.
  * @param   pOptHdr     Pointer to the optional header which needs validation.
  * @param   pszLogName  The log name to  prefix the errors with.
- * @param   offNtHdrs   The offset of the NT headers from teh start of the file.
+ * @param   offNtHdrs   The offset of the NT headers from the start of the file.
  * @param   pFileHdr    Pointer to the file header (valid).
  * @param   cbRawImage  The raw image size.
  */
