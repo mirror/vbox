@@ -996,7 +996,7 @@ static int dbgcCheckAndTypePromoteArgument(PDBGC pDbgc, DBGCVARCAT enmCategory, 
                     break;
             }
 
-            /* Stringify numeric and poitner values. */
+            /* Stringify numeric and pointer values. */
             size_t cbScratch = sizeof(pDbgc->achScratch) - (pDbgc->pszScratch - &pDbgc->achScratch[0]);
             size_t cch = pDbgc->CmdHlp.pfnStrPrintf(&pDbgc->CmdHlp, pDbgc->pszScratch, cbScratch, "%Dv", pArg);
             if (cch + 1 >= cbScratch)
