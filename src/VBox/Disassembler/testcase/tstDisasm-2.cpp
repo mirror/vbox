@@ -165,7 +165,7 @@ static bool MyDisasIsValidInstruction(DISCPUSTATE const *pCpu)
 
 
 /**
- * Callback for reading bytes.
+ * @interface_method_impl{FNDISREADBYTES}
  */
 static DECLCALLBACK(int) MyDisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
