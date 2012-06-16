@@ -7070,7 +7070,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 
 /**
  * Allocate an event record.
- * @returns Poitner to a record.
+ * @returns Pointer to a record.
  */
 static PIEMVERIFYEVTREC iemVerifyAllocRecord(PIEMCPU pIemCpu)
 {
