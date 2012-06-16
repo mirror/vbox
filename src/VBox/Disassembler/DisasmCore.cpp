@@ -47,8 +47,6 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void     disasmModRMReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr);
-static void     disasmModRMReg16(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam);
-static void     disasmModRMSReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam);
 
 
 /** @name Parsers
@@ -213,10 +211,13 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
 
 
 
-//*****************************************************************************
-/* Read functions for getting the opcode bytes */
-//*****************************************************************************
-
+/********************************************************************************************************************************
+ *
+ *
+ * Read functions for getting the opcode bytes
+ *
+ *
+ ********************************************************************************************************************************/
 
 /**
  * @interface_method_impl{FNDISREADBYTES, The default byte reader callber.}
@@ -592,19 +593,16 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
 //*****************************************************************************
 static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTATE pDis)
 {
-    int index;
+    size_t      size = 0;
     PCDISOPCODE fpop;
-    size_t size = 0;
-    unsigned ModRM;
     NOREF(pOp);
 
-    ModRM = disReadByte(pDis, offInstr);
-
-    index = pDis->bOpCode - 0xD8;
+    unsigned    ModRM = disReadByte(pDis, offInstr);
+    unsigned    index = pDis->bOpCode - 0xD8;
     if (ModRM <= 0xBF)
     {
         fpop            = &(g_apMapX86_FP_Low[index])[MODRM_REG(ModRM)];
-        pDis->pCurInstr = (PCDISOPCODE)fpop;
+        pDis->pCurInstr = fpop;
 
         // Should contain the parameter type on input
         pDis->Param1.fParam = fpop->fParam1;
@@ -613,7 +611,7 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     else
     {
         fpop            = &(g_apMapX86_FP_High[index])[ModRM - 0xC0];
-        pDis->pCurInstr = (PCDISOPCODE)fpop;
+        pDis->pCurInstr = fpop;
     }
 
     /*
@@ -643,18 +641,24 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
         size = sizeof(uint8_t); //ModRM byte
 
     if (fpop->idxParse1 != IDX_ParseNop)
-        size += pDis->pfnDisasmFnTable[fpop->idxParse1](offInstr+size, (PCDISOPCODE)fpop, pParam, pDis);
+        size += pDis->pfnDisasmFnTable[fpop->idxParse1](offInstr+size, fpop, pParam, pDis);
 
     if (fpop->idxParse2 != IDX_ParseNop)
-        size += pDis->pfnDisasmFnTable[fpop->idxParse2](offInstr+size, (PCDISOPCODE)fpop, pParam, pDis);
+        size += pDis->pfnDisasmFnTable[fpop->idxParse2](offInstr+size, fpop, pParam, pDis);
 
     return size;
 }
-//*****************************************************************************
-// SIB byte: (not 16-bit mode)
-// 7 - 6  5 - 3  2-0
-// Scale  Index  Base
-//*****************************************************************************
+
+
+/********************************************************************************************************************************
+ *
+ *
+ * SIB byte: (not 16-bit mode)
+ * 7 - 6  5 - 3  2-0
+ * Scale  Index  Base
+ *
+ *
+ ********************************************************************************************************************************/
 static void UseSIB(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTATE pDis)
 {
     NOREF(offInstr); NOREF(pOp);
@@ -702,15 +706,14 @@ static void UseSIB(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTA
     }
     return;   /* Already fetched everything in ParseSIB; no size returned */
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
 static size_t ParseSIB(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTATE pDis)
 {
     unsigned size = sizeof(uint8_t);
-    unsigned SIB;
     NOREF(pOp); NOREF(pParam);
 
-    SIB = disReadByte(pDis, offInstr);
+    unsigned SIB = disReadByte(pDis, offInstr);
     offInstr += size;
 
     pDis->SIB.Bits.Base  = SIB_BASE(SIB);
@@ -721,9 +724,9 @@ static size_t ParseSIB(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     {
         /* REX.B extends the Base field if not scaled index + disp32 */
         if (!(pDis->SIB.Bits.Base == 5 && pDis->ModRM.Bits.Mod == 0))
-            pDis->SIB.Bits.Base  |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
+            pDis->SIB.Bits.Base  |= (!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3;
 
-        pDis->SIB.Bits.Index |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3);
+        pDis->SIB.Bits.Index |= (!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3;
     }
 
     if (    pDis->SIB.Bits.Base == 5
@@ -735,15 +738,14 @@ static size_t ParseSIB(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
     }
     return size;
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
 static size_t ParseSIB_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTATE pDis)
 {
     unsigned size = sizeof(uint8_t);
-    unsigned SIB;
     NOREF(pOp); NOREF(pParam);
 
-    SIB = disReadByte(pDis, offInstr);
+    unsigned SIB = disReadByte(pDis, offInstr);
 
     pDis->SIB.Bits.Base  = SIB_BASE(SIB);
     pDis->SIB.Bits.Index = SIB_INDEX(SIB);
@@ -765,11 +767,124 @@ static size_t ParseSIB_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pP
     }
     return size;
 }
+
+
+
+/********************************************************************************************************************************
+ *
+ *
+ * ModR/M byte:
+ * 7 - 6  5 - 3       2-0
+ * Mod    Reg/Opcode  R/M
+ *
+ *
+ ********************************************************************************************************************************/
+static void disasmModRMReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr)
+{
+    NOREF(pOp); NOREF(pDis);
+
+    unsigned mod     = pDis->ModRM.Bits.Mod;
+
+    unsigned type    = OP_PARM_VTYPE(pParam->fParam);
+    unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
+    if (fRegAddr)
+        subtype = (pDis->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
+    else
+    if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
+    {
+        switch (pDis->uOpMode)
+        {
+        case DISCPUMODE_32BIT:
+            subtype = OP_PARM_d;
+            break;
+        case DISCPUMODE_64BIT:
+            subtype = OP_PARM_q;
+            break;
+        case DISCPUMODE_16BIT:
+            subtype = OP_PARM_w;
+            break;
+        default:
+            /* make gcc happy */
+            break;
+        }
+    }
+
+    switch (subtype)
+    {
+    case OP_PARM_b:
+        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
+
+        /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
+        /* Intel® 64 and IA-32 Architectures Software Developer’s Manual: 3.4.1.1 */
+        if (    (pDis->fPrefix & DISPREFIX_REX)
+            &&  idx >= DISGREG_AH
+            &&  idx <= DISGREG_BH)
+        {
+            idx += (DISGREG_SPL - DISGREG_AH);
+        }
+
+        pParam->fUse |= DISUSE_REG_GEN8;
+        pParam->Base.idxGenReg = idx;
+        break;
+
+    case OP_PARM_w:
+        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
+
+        pParam->fUse |= DISUSE_REG_GEN16;
+        pParam->Base.idxGenReg = idx;
+        break;
+
+    case OP_PARM_d:
+        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
+
+        pParam->fUse |= DISUSE_REG_GEN32;
+        pParam->Base.idxGenReg = idx;
+        break;
+
+    case OP_PARM_q:
+        pParam->fUse |= DISUSE_REG_GEN64;
+        pParam->Base.idxGenReg = idx;
+        break;
+
+    default:
+        Log(("disasmModRMReg %x:%x failed!!\n", type, subtype));
+        pDis->rc = VERR_DIS_INVALID_MODRM;
+        break;
+    }
+}
+
+static void disasmModRMReg16(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
+{
+    static const uint8_t s_auBaseModRMReg16[8]  =
+    { DISGREG_BX, DISGREG_BX, DISGREG_BP, DISGREG_BP, DISGREG_SI, DISGREG_DI, DISGREG_BP, DISGREG_BX };
+
+    NOREF(pDis); NOREF(pOp);
+    pParam->fUse |= DISUSE_REG_GEN16;
+    pParam->Base.idxGenReg = s_auBaseModRMReg16[idx];
+    if (idx < 4)
+    {
+        static const uint8_t s_auIndexModRMReg16[4] = { DISGREG_SI, DISGREG_DI, DISGREG_SI, DISGREG_DI };
+        pParam->fUse |= DISUSE_INDEX;
+        pParam->Index.idxGenReg = s_auIndexModRMReg16[idx];
+    }
+}
 //*****************************************************************************
-// ModR/M byte:
-// 7 - 6  5 - 3       2-0
-// Mod    Reg/Opcode  R/M
 //*****************************************************************************
+static void disasmModRMSReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
+{
+    NOREF(pOp);
+    if (idx >= DISSELREG_END)
+    {
+        Log(("disasmModRMSReg %d failed!!\n", idx));
+        pDis->rc = VERR_DIS_INVALID_PARAMETER;
+        return;
+    }
+
+    pParam->fUse |= DISUSE_REG_SEG;
+    pParam->Base.idxSegReg = (DISSELREG)idx;
+}
+
+
 static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTATE pDis)
 {
     unsigned vtype = OP_PARM_VTYPE(pParam->fParam);
@@ -1971,7 +2086,7 @@ static size_t ParseImmGrpl(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam,
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group1[idx+reg];
+    pOp = &g_aMapX86_Group1[idx+reg];
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -2031,7 +2146,7 @@ static size_t ParseGrp3(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group3[idx+reg];
+    pOp = &g_aMapX86_Group3[idx+reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2051,7 +2166,7 @@ static size_t ParseGrp4(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group4[reg];
+    pOp = &g_aMapX86_Group4[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2071,7 +2186,7 @@ static size_t ParseGrp5(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group5[reg];
+    pOp = &g_aMapX86_Group5[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2105,7 +2220,7 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 
     uint8_t opcode = disReadByte(pDis, offInstr+sizeof(uint8_t)+modrmsize);
 
-    pOp = (PCDISOPCODE)&g_aTwoByteMapX86_3DNow[opcode];
+    pOp = &g_aTwoByteMapX86_3DNow[opcode];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2131,7 +2246,7 @@ static size_t ParseGrp6(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group6[reg];
+    pOp = &g_aMapX86_Group6[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2154,12 +2269,12 @@ static size_t ParseGrp7(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
     unsigned rm    = MODRM_RM(modrm);
 
     if (mod == 3 && rm == 0)
-        pOp = (PCDISOPCODE)&g_aMapX86_Group7_mod11_rm000[reg];
+        pOp = &g_aMapX86_Group7_mod11_rm000[reg];
     else
     if (mod == 3 && rm == 1)
-        pOp = (PCDISOPCODE)&g_aMapX86_Group7_mod11_rm001[reg];
+        pOp = &g_aMapX86_Group7_mod11_rm001[reg];
     else
-        pOp = (PCDISOPCODE)&g_aMapX86_Group7_mem[reg];
+        pOp = &g_aMapX86_Group7_mem[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2179,7 +2294,7 @@ static size_t ParseGrp8(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group8[reg];
+    pOp = &g_aMapX86_Group8[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2199,7 +2314,7 @@ static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group9[reg];
+    pOp = &g_aMapX86_Group9[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2219,7 +2334,7 @@ static size_t ParseGrp10(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group10[reg];
+    pOp = &g_aMapX86_Group10[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2242,7 +2357,7 @@ static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     if (pDis->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group12[reg];
+    pOp = &g_aMapX86_Group12[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2263,7 +2378,7 @@ static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     if (pDis->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group13[reg];
+    pOp = &g_aMapX86_Group13[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2285,7 +2400,7 @@ static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     if (pDis->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group14[reg];
+    pOp = &g_aMapX86_Group14[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2308,9 +2423,9 @@ static size_t ParseGrp15(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     unsigned rm    = MODRM_RM(modrm);
 
     if (mod == 3 && rm == 0)
-        pOp = (PCDISOPCODE)&g_aMapX86_Group15_mod11_rm000[reg];
+        pOp = &g_aMapX86_Group15_mod11_rm000[reg];
     else
-        pOp = (PCDISOPCODE)&g_aMapX86_Group15_mem[reg];
+        pOp = &g_aMapX86_Group15_mem[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2329,7 +2444,7 @@ static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     unsigned modrm = disReadByte(pDis, offInstr);
     unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group16[reg];
+    pOp = &g_aMapX86_Group16[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2337,112 +2452,6 @@ static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 
     size += disParseInstruction(offInstr, pOp, pDis);
     return size;
-}
-//*****************************************************************************
-//*****************************************************************************
-static void disasmModRMReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr)
-{
-    NOREF(pOp); NOREF(pDis);
-
-    unsigned mod     = pDis->ModRM.Bits.Mod;
-
-    unsigned type    = OP_PARM_VTYPE(pParam->fParam);
-    unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
-    if (fRegAddr)
-        subtype = (pDis->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
-    else
-    if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
-    {
-        switch (pDis->uOpMode)
-        {
-        case DISCPUMODE_32BIT:
-            subtype = OP_PARM_d;
-            break;
-        case DISCPUMODE_64BIT:
-            subtype = OP_PARM_q;
-            break;
-        case DISCPUMODE_16BIT:
-            subtype = OP_PARM_w;
-            break;
-        default:
-            /* make gcc happy */
-            break;
-        }
-    }
-
-    switch (subtype)
-    {
-    case OP_PARM_b:
-        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
-
-        /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
-        /* Intel® 64 and IA-32 Architectures Software Developer’s Manual: 3.4.1.1 */
-        if (    (pDis->fPrefix & DISPREFIX_REX)
-            &&  idx >= DISGREG_AH
-            &&  idx <= DISGREG_BH)
-        {
-            idx += (DISGREG_SPL - DISGREG_AH);
-        }
-
-        pParam->fUse |= DISUSE_REG_GEN8;
-        pParam->Base.idxGenReg = idx;
-        break;
-
-    case OP_PARM_w:
-        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
-
-        pParam->fUse |= DISUSE_REG_GEN16;
-        pParam->Base.idxGenReg = idx;
-        break;
-
-    case OP_PARM_d:
-        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
-
-        pParam->fUse |= DISUSE_REG_GEN32;
-        pParam->Base.idxGenReg = idx;
-        break;
-
-    case OP_PARM_q:
-        pParam->fUse |= DISUSE_REG_GEN64;
-        pParam->Base.idxGenReg = idx;
-        break;
-
-    default:
-        Log(("disasmModRMReg %x:%x failed!!\n", type, subtype));
-        pDis->rc = VERR_DIS_INVALID_MODRM;
-        break;
-    }
-}
-//*****************************************************************************
-static const uint8_t g_auBaseModRMReg16[8]  =
-{ DISGREG_BX, DISGREG_BX, DISGREG_BP, DISGREG_BP, DISGREG_SI, DISGREG_DI, DISGREG_BP, DISGREG_BX};
-static const uint8_t g_auIndexModRMReg16[4] = { DISGREG_SI, DISGREG_DI, DISGREG_SI, DISGREG_DI };
-//*****************************************************************************
-static void disasmModRMReg16(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
-{
-    NOREF(pDis); NOREF(pOp);
-    pParam->fUse |= DISUSE_REG_GEN16;
-    pParam->Base.idxGenReg = g_auBaseModRMReg16[idx];
-    if (idx < 4)
-    {
-        pParam->fUse |= DISUSE_INDEX;
-        pParam->Index.idxGenReg = g_auIndexModRMReg16[idx];
-    }
-}
-//*****************************************************************************
-//*****************************************************************************
-static void disasmModRMSReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
-{
-    NOREF(pOp);
-    if (idx >= DISSELREG_END)
-    {
-        Log(("disasmModRMSReg %d failed!!\n", idx));
-        pDis->rc = VERR_DIS_INVALID_PARAMETER;
-        return;
-    }
-
-    pParam->fUse |= DISUSE_REG_SEG;
-    pParam->Base.idxSegReg = (DISSELREG)idx;
 }
 
 
@@ -2656,10 +2665,7 @@ DECL_FORCE_INLINE(PCDISOPCODE)
 disInitializeState(PDISSTATE pDis, RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
                    PFNDISREADBYTES pfnReadBytes, void *pvUser)
 {
-    /*
-     * Note! The RT_BZERO make ASSUMPTIONS about the placement of pvUser2.
-     */
-    RT_BZERO(pDis, RT_OFFSETOF(DISSTATE, pvUser2));
+    RT_ZERO(*pDis);
 
 #ifdef VBOX_STRICT /* poison */
     pDis->Param1.Base.idxGenReg  = 0xc1;
@@ -2746,10 +2752,7 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
  * @param   pfnReadBytes    Callback for reading instruction bytes.
  * @param   fFilter         Instruction type filter.
  * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
- * @param   pDis            Pointer to CPU structure. With the exception of
- *                          DISSTATE::pvUser2, the structure will be
- *                          completely initialized by this API, i.e. no input is
- *                          taken from it.
+ * @param   pDis            Pointer to disassembler state (output).
  * @param   pcbInstr        Where to store the size of the instruction.  (This
  *                          is also stored in PDISSTATE::cbInstr.)  Optional.
  */
@@ -2778,10 +2781,7 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
  * @param   pfnReadBytes    Callback for reading instruction bytes.
  * @param   fFilter         Instruction type filter.
  * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
- * @param   pDis            Pointer to CPU structure. With the exception of
- *                          DISSTATE::pvUser2, the structure will be
- *                          completely initialized by this API, i.e. no input is
- *                          taken from it.
+ * @param   pDis            Pointer to disassembler state (output).
  * @param   pcbInstr        Where to store the size of the instruction.  (This
  *                          is also stored in PDISSTATE::cbInstr.)  Optional.
  */

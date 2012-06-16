@@ -631,12 +631,6 @@ typedef struct DISSTATE
 #if ARCH_BITS == 32
     uint32_t        uPadding4;
 #endif
-    /** User data that can be set prior to calling the API.
-     * @deprecated Please don't use this any more. */
-    void           *pvUser2;
-#if ARCH_BITS == 32
-    uint32_t        uPadding5;
-#endif
 } DISSTATE;
 
 /** @deprecated  Use DISSTATE and change Cpu and DisState to Dis. */
