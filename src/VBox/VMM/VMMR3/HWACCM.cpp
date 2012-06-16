@@ -1672,7 +1672,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
     Log(("hwaccmR3RemovePatches\n"));
     for (unsigned i = 0; i < pVM->hwaccm.s.cPatches; i++)
     {
-        uint8_t         szInstr[15];
+        uint8_t         abInstr[15];
         PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[i];
         RTGCPTR         pInstrGC = (RTGCPTR)pPatch->Core.Key;
         int             rc;
@@ -1687,14 +1687,14 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
 #endif
 
         /* Check if the instruction is still the same. */
-        rc = PGMPhysSimpleReadGCPtr(pVCpu, szInstr, pInstrGC, pPatch->cbNewOp);
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, abInstr, pInstrGC, pPatch->cbNewOp);
         if (rc != VINF_SUCCESS)
         {
             Log(("Patched code removed? (rc=%Rrc0\n", rc));
             continue;   /* swapped out or otherwise removed; skip it. */
         }
 
-        if (memcmp(szInstr, pPatch->aNewOpcode, pPatch->cbNewOp))
+        if (memcmp(abInstr, pPatch->aNewOpcode, pPatch->cbNewOp))
         {
             Log(("Patched instruction was changed! (rc=%Rrc0\n", rc));
             continue;   /* skip it. */
@@ -1798,39 +1798,54 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
  */
 DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    VMCPUID      idCpu  = (VMCPUID)(uintptr_t)pvUser;
-    PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
-    PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
-    unsigned     cbOp;
-
-    /* Only execute the handler on the VCPU the original patch request was issued. (the other CPU(s) might not yet have switched to protected mode) */
+    /*
+     * Only execute the handler on the VCPU the original patch request was
+     * issued. (The other CPU(s) might not yet have switched to protected
+     * mode, nor have the correct memory context.)
+     */
+    VMCPUID         idCpu  = (VMCPUID)(uintptr_t)pvUser;
     if (pVCpu->idCpu != idCpu)
         return VINF_SUCCESS;
 
-    Log(("hwaccmR3ReplaceTprInstr: %RGv\n", pCtx->rip));
-
-    /* Two or more VCPUs were racing to patch this instruction. */
+    /*
+     * We're racing other VCPUs here, so don't try patch the instruction twice
+     * and make sure there is still room for our patch record.
+     */
+    PCPUMCTX        pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
+    {
+        Log(("hwaccmR3ReplaceTprInstr: already patched %RGv\n", pCtx->rip));
         return VINF_SUCCESS;
+    }
+    uint32_t const  idx = pVM->hwaccm.s.cPatches;
+    if (idx >= RT_ELEMENTS(pVM->hwaccm.s.aPatches))
+    {
+        Log(("hwaccmR3ReplaceTprInstr: no available patch slots (%RGv)\n", pCtx->rip));
+        return VINF_SUCCESS;
+    }
+    pPatch = &pVM->hwaccm.s.aPatches[idx];
 
-    Assert(pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches));
+    Log(("hwaccmR3ReplaceTprInstr: rip=%RGv idxPatch=%u\n", pCtx->rip, idx));
 
+    /*
+     * Disassembler the instruction and get cracking.
+     */
+    DBGFR3DisasInstrCurrentLog(pVCpu, "hwaccmR3ReplaceTprInstr");
+    PDISCPUSTATE    pDis = &pVCpu->hwaccm.s.DisState;
+    uint32_t        cbOp;
     int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
         &&  pDis->pCurInstr->uOpcode == OP_MOV
         &&  cbOp >= 3)
     {
-        uint8_t         aVMMCall[3] = { 0xf, 0x1, 0xd9};
-        uint32_t        idx = pVM->hwaccm.s.cPatches;
-
-        pPatch = &pVM->hwaccm.s.aPatches[idx];
+        static uint8_t const s_abVMMCall[3] = { 0x0f, 0x01, 0xd9 };
 
         rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
         AssertRC(rc);
 
-        pPatch->cbOp     = cbOp;
+        pPatch->cbOp = cbOp;
 
         if (pDis->Param1.fUse == DISUSE_DISPLACEMENT32)
         {
@@ -1839,64 +1854,70 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
             {
                 pPatch->enmType     = HWACCMTPRINSTR_WRITE_REG;
                 pPatch->uSrcOperand = pDis->Param2.Base.idxGenReg;
+                Log(("hwaccmR3ReplaceTprInstr: HWACCMTPRINSTR_WRITE_REG %u\n", pDis->Param2.Base.idxGenReg));
             }
             else
             {
                 Assert(pDis->Param2.fUse == DISUSE_IMMEDIATE32);
                 pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
                 pPatch->uSrcOperand = pDis->Param2.uValue;
+                Log(("hwaccmR3ReplaceTprInstr: HWACCMTPRINSTR_WRITE_IMM %#llx\n", pDis->Param2.uValue));
             }
-            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
+            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, s_abVMMCall, sizeof(s_abVMMCall));
             AssertRC(rc);
 
-            memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
-            pPatch->cbNewOp = sizeof(aVMMCall);
+            memcpy(pPatch->aNewOpcode, s_abVMMCall, sizeof(s_abVMMCall));
+            pPatch->cbNewOp = sizeof(s_abVMMCall);
         }
         else
         {
-            RTGCPTR  oldrip   = pCtx->rip;
-            uint32_t oldcbOp  = cbOp;
-            uint32_t uMmioReg = pDis->Param1.Base.idxGenReg;
-
-            /* read */
-            Assert(pDis->Param1.fUse == DISUSE_REG_GEN32);
-
-            /* Found:
+            /*
+             * TPR Read.
+             *
+             * Found:
              *   mov eax, dword [fffe0080]        (5 bytes)
              * Check if next instruction is:
              *   shr eax, 4
              */
+            Assert(pDis->Param1.fUse == DISUSE_REG_GEN32);
+
+            uint8_t  const idxMmioReg = pDis->Param1.Base.idxGenReg;
+            uint8_t  const cbOpMmio   = cbOp;
+            uint64_t const uSavedRip  = pCtx->rip;
+
             pCtx->rip += cbOp;
             rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
-            pCtx->rip = oldrip;
+            DBGFR3DisasInstrCurrentLog(pVCpu, "Following read");
+            pCtx->rip = uSavedRip;
+
             if (    rc == VINF_SUCCESS
                 &&  pDis->pCurInstr->uOpcode == OP_SHR
                 &&  pDis->Param1.fUse == DISUSE_REG_GEN32
-                &&  pDis->Param1.Base.idxGenReg == uMmioReg
+                &&  pDis->Param1.Base.idxGenReg == idxMmioReg
                 &&  pDis->Param2.fUse == DISUSE_IMMEDIATE8
                 &&  pDis->Param2.uValue == 4
-                &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.aPatches[idx].aOpcode))
+                &&  cbOpMmio + cbOp < sizeof(pVM->hwaccm.s.aPatches[idx].aOpcode))
             {
-                uint8_t szInstr[15];
+                uint8_t abInstr[15];
 
                 /* Replacing two instructions now. */
-                rc = PGMPhysSimpleReadGCPtr(pVCpu, &pPatch->aOpcode, pCtx->rip, oldcbOp + cbOp);
+                rc = PGMPhysSimpleReadGCPtr(pVCpu, &pPatch->aOpcode, pCtx->rip, cbOpMmio + cbOp);
                 AssertRC(rc);
 
-                pPatch->cbOp = oldcbOp + cbOp;
+                pPatch->cbOp = cbOpMmio + cbOp;
 
                 /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
-                szInstr[0] = 0xF0;
-                szInstr[1] = 0x0F;
-                szInstr[2] = 0x20;
-                szInstr[3] = 0xC0 | pDis->Param1.Base.idxGenReg;
+                abInstr[0] = 0xF0;
+                abInstr[1] = 0x0F;
+                abInstr[2] = 0x20;
+                abInstr[3] = 0xC0 | pDis->Param1.Base.idxGenReg;
                 for (unsigned i = 4; i < pPatch->cbOp; i++)
-                    szInstr[i] = 0x90;  /* nop */
+                    abInstr[i] = 0x90;  /* nop */
 
-                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, pPatch->cbOp);
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, abInstr, pPatch->cbOp);
                 AssertRC(rc);
 
-                memcpy(pPatch->aNewOpcode, szInstr, pPatch->cbOp);
+                memcpy(pPatch->aNewOpcode, abInstr, pPatch->cbOp);
                 pPatch->cbNewOp = pPatch->cbOp;
 
                 Log(("Acceptable read/shr candidate!\n"));
@@ -1905,13 +1926,14 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
             else
             {
                 pPatch->enmType     = HWACCMTPRINSTR_READ;
-                pPatch->uDstOperand = pDis->Param1.Base.idxGenReg;
+                pPatch->uDstOperand = idxMmioReg;
 
-                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, s_abVMMCall, sizeof(s_abVMMCall));
                 AssertRC(rc);
 
-                memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
-                pPatch->cbNewOp = sizeof(aVMMCall);
+                memcpy(pPatch->aNewOpcode, s_abVMMCall, sizeof(s_abVMMCall));
+                pPatch->cbNewOp = sizeof(s_abVMMCall);
+                Log(("hwaccmR3ReplaceTprInstr: HWACCMTPRINSTR_READ %u\n", pPatch->uDstOperand));
             }
         }
 
@@ -1924,18 +1946,10 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
         return VINF_SUCCESS;
     }
 
-    /* Save invalid patch, so we will not try again. */
-    uint32_t  idx = pVM->hwaccm.s.cPatches;
-
-#ifdef LOG_ENABLED
-    char      szOutput[256];
-    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                            szOutput, sizeof(szOutput), NULL);
-    if (RT_SUCCESS(rc))
-        Log(("Failed to patch instr: %s\n", szOutput));
-#endif
-
-    pPatch = &pVM->hwaccm.s.aPatches[idx];
+    /*
+     * Save invalid patch, so we will not try again.
+     */
+    Log(("hwaccmR3ReplaceTprInstr: Failed to patch instr!\n"));
     pPatch->Core.Key = pCtx->eip;
     pPatch->enmType  = HWACCMTPRINSTR_INVALID;
     rc = RTAvloU32Insert(&pVM->hwaccm.s.PatchTree, &pPatch->Core);
@@ -1956,50 +1970,50 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
  */
 DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    VMCPUID      idCpu  = (VMCPUID)(uintptr_t)pvUser;
-    PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
-    PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
-    unsigned     cbOp;
-    int          rc;
-#ifdef LOG_ENABLED
-    RTGCPTR      pInstr;
-    char         szOutput[256];
-#endif
-
-    /* Only execute the handler on the VCPU the original patch request was issued. (the other CPU(s) might not yet have switched to protected mode) */
+    /*
+     * Only execute the handler on the VCPU the original patch request was
+     * issued. (The other CPU(s) might not yet have switched to protected
+     * mode, nor have the correct memory context.)
+     */
+    VMCPUID         idCpu  = (VMCPUID)(uintptr_t)pvUser;
     if (pVCpu->idCpu != idCpu)
         return VINF_SUCCESS;
 
-    Assert(pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches));
-
-    /* Two or more VCPUs were racing to patch this instruction. */
+    /*
+     * We're racing other VCPUs here, so don't try patch the instruction twice
+     * and make sure there is still room for our patch record.
+     */
+    PCPUMCTX        pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
     {
         Log(("hwaccmR3PatchTprInstr: already patched %RGv\n", pCtx->rip));
         return VINF_SUCCESS;
     }
+    uint32_t const  idx = pVM->hwaccm.s.cPatches;
+    if (idx >= RT_ELEMENTS(pVM->hwaccm.s.aPatches))
+    {
+        Log(("hwaccmR3PatchTprInstr: no available patch slots (%RGv)\n", pCtx->rip));
+        return VINF_SUCCESS;
+    }
+    pPatch = &pVM->hwaccm.s.aPatches[idx];
 
-    Log(("hwaccmR3PatchTprInstr %RGv\n", pCtx->rip));
+    Log(("hwaccmR3PatchTprInstr: rip=%RGv idxPatch=%u\n", pCtx->rip, idx));
+    DBGFR3DisasInstrCurrentLog(pVCpu, "hwaccmR3PatchTprInstr");
 
-    rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
+    /*
+     * Disassemble the instruction and get cracking.
+     */
+    PDISCPUSTATE    pDis   = &pVCpu->hwaccm.s.DisState;
+    uint32_t        cbOp;
+    int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
         &&  pDis->pCurInstr->uOpcode == OP_MOV
         &&  cbOp >= 5)
     {
-        uint32_t        idx = pVM->hwaccm.s.cPatches;
         uint8_t         aPatch[64];
         uint32_t        off = 0;
-
-        pPatch = &pVM->hwaccm.s.aPatches[idx];
-
-#ifdef LOG_ENABLED
-        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                                szOutput, sizeof(szOutput), NULL);
-        if (RT_SUCCESS(rc))
-            Log(("Original instr: %s\n", szOutput));
-#endif
 
         rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
         AssertRC(rc);
@@ -2121,20 +2135,18 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             AssertRC(rc);
 
 #ifdef LOG_ENABLED
-            pInstr = pVM->hwaccm.s.pFreeGuestPatchMem;
-            while (true)
+            uint32_t cbCurInstr;
+            for (RTGCPTR GCPtrInstr = pVM->hwaccm.s.pFreeGuestPatchMem;
+                 GCPtrInstr < pVM->hwaccm.s.pFreeGuestPatchMem + off;
+                 GCPtrInstr += RT_MAX(cbCurInstr, 1))
             {
-                uint32_t cb;
-
-                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                                        szOutput, sizeof(szOutput), &cb);
+                char     szOutput[256];
+                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, GCPtrInstr, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                        szOutput, sizeof(szOutput), &cbCurInstr);
                 if (RT_SUCCESS(rc))
                     Log(("Patch instr %s\n", szOutput));
-
-                pInstr += cb;
-
-                if (pInstr >= pVM->hwaccm.s.pFreeGuestPatchMem + off)
-                    break;
+                else
+                    Log(("%RGv: rc=%Rrc\n", GCPtrInstr, rc));
             }
 #endif
 
@@ -2145,12 +2157,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->eip, pPatch->aNewOpcode, 5);
             AssertRC(rc);
 
-#ifdef LOG_ENABLED
-            rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                                    szOutput, sizeof(szOutput), NULL);
-            if (RT_SUCCESS(rc))
-                Log(("Jump: %s\n", szOutput));
-#endif
+            DBGFR3DisasInstrCurrentLog(pVCpu, "Jump");
+
             pVM->hwaccm.s.pFreeGuestPatchMem += off;
             pPatch->cbNewOp = 5;
 
@@ -2163,20 +2171,16 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRPatchSuccess);
             return VINF_SUCCESS;
         }
-        else
-            Log(("Ran out of space in our patch buffer!\n"));
+
+        Log(("Ran out of space in our patch buffer!\n"));
     }
+    else
+        Log(("hwaccmR3PatchTprInstr: Failed to patch instr!\n"));
 
-    /* Save invalid patch, so we will not try again. */
-    uint32_t  idx = pVM->hwaccm.s.cPatches;
 
-#ifdef LOG_ENABLED
-    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                            szOutput, sizeof(szOutput), NULL);
-    if (RT_SUCCESS(rc))
-        Log(("Failed to patch instr: %s\n", szOutput));
-#endif
-
+    /*
+     * Save invalid patch, so we will not try again.
+     */
     pPatch = &pVM->hwaccm.s.aPatches[idx];
     pPatch->Core.Key = pCtx->eip;
     pPatch->enmType  = HWACCMTPRINSTR_INVALID;
