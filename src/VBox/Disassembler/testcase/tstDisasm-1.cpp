@@ -23,6 +23,7 @@
 #include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
+#include <iprt/time.h>
 
 
 DECLASM(int) TestProc32(void);
@@ -72,7 +73,29 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s\n", szOutput);
         off += cb;
     }
+}
 
+static void testPerformance(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uEndPtr, DISCPUMODE enmDisCpuMode)
+{
+    RTTestISubF("Performance - %s", pszSub);
+
+    size_t const    cbInstrs = uEndPtr - (uintptr_t)pabInstrs;
+    uint64_t        cInstrs  = 0;
+    uint64_t        nsStart  = RTTimeNanoTS();
+    for (uint32_t i = 0; i < _512K; i++) /* the samples are way to small. :-) */
+    {
+        for (size_t off = 0; off < cbInstrs; cInstrs++)
+        {
+            uint32_t        cb = 1;
+            DISCPUSTATE     Cpu;
+            DISInstr(&pabInstrs[off], enmDisCpuMode, &Cpu, &cb);
+            off += cb;
+        }
+    }
+    uint64_t cNsElapsed = RTTimeNanoTS() - nsStart;
+
+    RTTestIValueF(cNsElapsed, RTTESTUNIT_NS, "%s-Total", pszSub);
+    RTTestIValueF(cNsElapsed / cInstrs, RTTESTUNIT_NS_PER_CALL, "%s-per-instruction", pszSub);
 }
 
 
@@ -84,10 +107,26 @@ int main(int argc, char **argv)
         return rcExit;
     RTTestBanner(hTest);
 
-    testDisas("32-bit", (uint8_t const *)(uintptr_t)TestProc32, (uintptr_t)&TestProc32_EndProc, DISCPUMODE_32BIT);
-#ifndef RT_OS_OS2
-    testDisas("64-bit", (uint8_t const *)(uintptr_t)TestProc64, (uintptr_t)&TestProc64_EndProc, DISCPUMODE_64BIT);
-#endif
+    static const struct
+    {
+        const char     *pszDesc;
+        uint8_t const  *pbStart;
+        uintptr_t       uEndPtr;
+        DISCPUMODE      enmCpuMode;
+    } aSnippets[] =
+    {
+        { "32-bit",     (uint8_t const *)(uintptr_t)TestProc32, (uintptr_t)&TestProc32_EndProc, DISCPUMODE_32BIT },
+        { "64-bit",     (uint8_t const *)(uintptr_t)TestProc64, (uintptr_t)&TestProc64_EndProc, DISCPUMODE_64BIT },
+    };
+
+    for (unsigned i = 0; i < RT_ELEMENTS(aSnippets); i++)
+        testDisas(aSnippets[i].pszDesc, aSnippets[i].pbStart, aSnippets[i].uEndPtr, aSnippets[i].enmCpuMode);
+
+    if (RTTestIErrorCount() == 0)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(aSnippets); i++)
+            testPerformance(aSnippets[i].pszDesc, aSnippets[i].pbStart, aSnippets[i].uEndPtr, aSnippets[i].enmCpuMode);
+    }
 
     return RTTestSummaryAndDestroy(hTest);
 }

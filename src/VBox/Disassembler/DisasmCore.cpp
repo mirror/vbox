@@ -25,6 +25,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
 #include "DisasmInternal.h"
@@ -45,26 +46,9 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int      disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr);
-static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPUSTATE pCpu);
-
-static unsigned QueryModRM(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu, unsigned *pSibInc = NULL);
-static unsigned QueryModRM_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu, unsigned *pSibInc = NULL);
-static void     UseSIB(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu);
-static unsigned ParseSIB_SizeOnly(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu);
-
 static void     disasmModRMReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr);
 static void     disasmModRMReg16(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam);
 static void     disasmModRMSReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam);
-
-static void     disValidateLockSequence(PDISCPUSTATE pCpu);
-
-/* Read functions */
-static uint8_t  disReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
-static uint16_t disReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
-static uint32_t disReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
-static uint64_t disReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
-static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead);
 
 
 /** @name Parsers
@@ -226,233 +210,359 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
 };
 
 
+
+
+
+//*****************************************************************************
+/* Read functions for getting the opcode bytes */
+//*****************************************************************************
+
+
 /**
- * Parses one guest instruction.
- *
- * The result is found in pCpu and pcbInstr.
- *
- * @returns VBox status code.
- * @param   pvInstr         Address of the instruction to decode.  This is a
- *                          real address in the current context that can be
- *                          accessed without faulting.  (Consider
- *                          DISInstrWithReader if this isn't the case.)
- * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
- * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
- * @param   pCpu            Pointer to cpu structure. Will be initialized.
- * @param   pcbInstr        Where to store the size of the instruction.
- *                          NULL is allowed.  This is also stored in
- *                          PDISCPUSTATE::cbInstr.
+ * @interface_method_impl{FNDISREADBYTES, The default byte reader callber.}
  */
-DISDECL(int) DISInstr(const void *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    return DISInstEx((uintptr_t)pvInstr, enmCpuMode, DISOPTYPE_ALL, NULL /*pfnReadBytes*/, NULL /*pvUser*/, pCpu, pcbInstr);
+#ifdef IN_RING0
+    AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
+    RT_BZERO(&pDis->abInstr[offInstr], cbMaxRead);
+    pDis->cbCachedInstr = offInstr + cbMaxRead;
+    return VERR_DIS_NO_READ_CALLBACK;
+#else
+    uint8_t const  *pbSrc        = (uint8_t const *)(uintptr_t)pDis->uInstrAddr + offInstr;
+    size_t          cbLeftOnPage = (uintptr_t)pbSrc & PAGE_OFFSET_MASK;
+    uint8_t         cbToRead     = cbLeftOnPage >= cbMaxRead
+                                 ? cbMaxRead
+                                 : cbLeftOnPage <= cbMinRead
+                                 ? cbMinRead
+                                 : (uint8_t)cbLeftOnPage;
+    memcpy(&pDis->abInstr[offInstr], pbSrc, cbToRead);
+    pDis->cbCachedInstr = offInstr + cbToRead;
+    return VINF_SUCCESS;
+#endif
 }
 
 
 /**
- * Parses one guest instruction.
+ * Read more bytes into the DISCPUSTATE::abInstr buffer, advance
+ * DISCPUSTATE::cbCachedInstr.
  *
- * The result is found in pCpu and pcbInstr.
+ * Will set DISCPUSTATE::rc on failure, but still advance cbCachedInstr.
  *
- * @returns VBox status code.
- * @param   uInstrAddr      Address of the instruction to decode. What this means
- *                          is left to the pfnReadBytes function.
- * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
- * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
- * @param   pCpu            Pointer to cpu structure. Will be initialized.
- * @param   pcbInstr        Where to store the size of the instruction.
- *                          NULL is allowed.  This is also stored in
- *                          PDISCPUSTATE::cbInstr.
+ * The caller shall fend off reads beyond the DISCPUSTATE::abInstr buffer.
+ *
+ * @param   pCpu                The disassembler state.
+ * @param   off                 The offset of the read request.
+ * @param   cbMin               The size of the read request that needs to be
+ *                              satisfied.
  */
-DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+DECL_NO_INLINE(static, void) disReadMore(PDISCPUSTATE pCpu, uint8_t off, uint8_t cbMin)
 {
-    return DISInstEx(uInstrAddr, enmCpuMode, DISOPTYPE_ALL, pfnReadBytes, pvUser, pCpu, pcbInstr);
-}
-
-
-/**
- * Disassembles on instruction, details in @a pCpu and length in @a pcbInstr.
- *
- * @returns VBox status code.
- * @param   uInstrAddr      Address of the instruction to decode. What this means
- *                          is left to the pfnReadBytes function.
- * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
- * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   fFilter         Instruction type filter.
- * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
- * @param   pCpu            Pointer to CPU structure. With the exception of
- *                          DISCPUSTATE::pvUser2, the structure will be
- *                          completely initialized by this API, i.e. no input is
- *                          taken from it.
- * @param   pcbInstr        Where to store the size of the instruction.  (This
- *                          is also stored in PDISCPUSTATE::cbInstr.)  Optional.
- */
-DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
-                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                       PDISCPUSTATE pCpu, uint32_t *pcbInstr)
-{
-    PCDISOPCODE paOneByteMap;
+    Assert(cbMin + off <= sizeof(pCpu->abInstr));
 
     /*
-     * Initialize the CPU state.
-     * Note! The RT_BZERO make ASSUMPTIONS about the placement of pvUser2.
+     * Adjust the incoming request to not overlap with bytes that has already
+     * been read and to make sure we don't leave unread gaps.
      */
-    RT_BZERO(pCpu, RT_OFFSETOF(DISCPUSTATE, pvUser2));
-
-    pCpu->uCpuMode          = enmCpuMode;
-    if (enmCpuMode == DISCPUMODE_64BIT)
+    if (off < pCpu->cbCachedInstr)
     {
-        paOneByteMap        = g_aOneByteMapX64;
-        pCpu->uAddrMode     = DISCPUMODE_64BIT;
-        pCpu->uOpMode       = DISCPUMODE_32BIT;
+        Assert(off + cbMin > pCpu->cbCachedInstr);
+        cbMin -= pCpu->cbCachedInstr - off;
+        off = pCpu->cbCachedInstr;
+    }
+    else if (off > pCpu->cbCachedInstr)
+    {
+        cbMin += off - pCpu->cbCachedInstr;
+        off = pCpu->cbCachedInstr;
+    }
+
+    /*
+     * Do the read.
+     * (No need to zero anything on failure as abInstr is already zeroed by the
+     * DISInstrEx API.)
+     */
+    int rc = pCpu->pfnReadBytes(pCpu, off, cbMin, sizeof(pCpu->abInstr) - off);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pCpu->cbCachedInstr >= off + cbMin);
+        Assert(pCpu->cbCachedInstr <= sizeof(pCpu->abInstr));
     }
     else
     {
-        paOneByteMap        = g_aOneByteMapX86;
-        pCpu->uAddrMode     = enmCpuMode;
-        pCpu->uOpMode       = enmCpuMode;
+        Log(("disReadMore failed with rc=%Rrc!!\n", rc));
+        pCpu->rc = VERR_DIS_MEM_READ;
     }
-    pCpu->fPrefix           = DISPREFIX_NONE;
-    pCpu->idxSegPrefix      = DISSELREG_DS;
-    pCpu->uInstrAddr        = uInstrAddr;
-    pCpu->pfnDisasmFnTable  = g_apfnFullDisasm;
-    pCpu->fFilter           = fFilter;
-    pCpu->rc                = VINF_SUCCESS;
-    pCpu->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
-    pCpu->pvUser    = pvUser;
-
-    return disInstrWorker(pCpu, uInstrAddr, paOneByteMap, pcbInstr);
 }
 
 
 /**
- * Internal worker for DISInstEx.
+ * Function for handling a 8-bit cache miss.
  *
- * @returns VBox status code.
- * @param   pCpu            Initialized cpu state.
- * @param   paOneByteMap    The one byte opcode map to use.
- * @param   uInstrAddr      Instruction address.
- * @param   pcbInstr        Where to store the instruction size. Can be NULL.
+ * @returns The requested byte.
+ * @param   pCpu                The disassembler state.
+ * @param   off                 The offset of the byte relative to the
+ *                              instruction.
  */
-static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr)
+DECL_NO_INLINE(static, uint8_t) disReadByteSlow(PDISCPUSTATE pCpu, RTUINTPTR off)
 {
-    /*
-     * Parse byte by byte.
-     */
-    unsigned  iByte = 0;
-    unsigned  cbInc;
-    for (;;)
+    if (RT_UNLIKELY(off >= DIS_MAX_INSTR_LENGTH))
     {
-        uint8_t codebyte = disReadByte(pCpu, uInstrAddr+iByte);
-        uint8_t opcode   = paOneByteMap[codebyte].uOpcode;
-
-        /* Hardcoded assumption about OP_* values!! */
-        if (opcode <= OP_LAST_PREFIX)
-        {
-            /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
-            if (opcode != OP_REX)
-            {
-                /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
-                pCpu->bLastPrefix = opcode;
-                pCpu->fPrefix &= ~DISPREFIX_REX;
-            }
-
-            switch (opcode)
-            {
-            case OP_INVALID:
-                if (pcbInstr)
-                    *pcbInstr = iByte + 1;
-                return pCpu->rc = VERR_DIS_INVALID_OPCODE;
-
-            // segment override prefix byte
-            case OP_SEG:
-                pCpu->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].fParam1 - OP_PARM_REG_SEG_START);
-                /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
-                if (   pCpu->uCpuMode != DISCPUMODE_64BIT
-                    || pCpu->idxSegPrefix >= DISSELREG_FS)
-                {
-                    pCpu->fPrefix   |= DISPREFIX_SEG;
-                }
-                iByte += sizeof(uint8_t);
-                continue;   //fetch the next byte
-
-            // lock prefix byte
-            case OP_LOCK:
-                pCpu->fPrefix |= DISPREFIX_LOCK;
-                iByte       += sizeof(uint8_t);
-                continue;   //fetch the next byte
-
-            // address size override prefix byte
-            case OP_ADDRSIZE:
-                pCpu->fPrefix |= DISPREFIX_ADDRSIZE;
-                if (pCpu->uCpuMode == DISCPUMODE_16BIT)
-                    pCpu->uAddrMode = DISCPUMODE_32BIT;
-                else
-                if (pCpu->uCpuMode == DISCPUMODE_32BIT)
-                    pCpu->uAddrMode = DISCPUMODE_16BIT;
-                else
-                    pCpu->uAddrMode = DISCPUMODE_32BIT;     /* 64 bits */
-
-                iByte        += sizeof(uint8_t);
-                continue;   //fetch the next byte
-
-            // operand size override prefix byte
-            case OP_OPSIZE:
-                pCpu->fPrefix |= DISPREFIX_OPSIZE;
-                if (pCpu->uCpuMode == DISCPUMODE_16BIT)
-                    pCpu->uOpMode = DISCPUMODE_32BIT;
-                else
-                    pCpu->uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
-
-                iByte        += sizeof(uint8_t);
-                continue;   //fetch the next byte
-
-            // rep and repne are not really prefixes, but we'll treat them as such
-            case OP_REPE:
-                pCpu->fPrefix |= DISPREFIX_REP;
-                iByte       += sizeof(uint8_t);
-                continue;   //fetch the next byte
-
-            case OP_REPNE:
-                pCpu->fPrefix |= DISPREFIX_REPNE;
-                iByte       += sizeof(uint8_t);
-                continue;   //fetch the next byte
-
-            case OP_REX:
-                Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
-                /* REX prefix byte */
-                pCpu->fPrefix   |= DISPREFIX_REX;
-                pCpu->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].fParam1);
-                iByte           += sizeof(uint8_t);
-
-                if (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_W)
-                    pCpu->uOpMode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
-                continue;   //fetch the next byte
-            }
-        }
-
-        unsigned uIdx = iByte;
-        iByte += sizeof(uint8_t); //first opcode byte
-
-        pCpu->bOpCode = codebyte;
-
-        cbInc = disParseInstruction(uInstrAddr + iByte, &paOneByteMap[pCpu->bOpCode], pCpu);
-        iByte += cbInc;
-        break;
+        Log(("disReadByte: too long instruction...\n"));
+        pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+        return 0;
     }
 
-    pCpu->cbInstr = iByte;
-    if (pcbInstr)
-        *pcbInstr = iByte;
+    if (off <= pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 1);
 
-    if (pCpu->fPrefix & DISPREFIX_LOCK)
-        disValidateLockSequence(pCpu);
-
-    return pCpu->rc;
+    return pCpu->abInstr[off];
 }
+
+
+/**
+ * Read a byte (8-bit) instruction byte by offset.
+ *
+ * @returns The requested byte.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECLINLINE(uint8_t) disReadByteByOff(PDISCPUSTATE pCpu, RTUINTPTR off)
+{
+    if (RT_UNLIKELY(off >= pCpu->cbCachedInstr))
+        return disReadByteSlow(pCpu, off);
+
+    return pCpu->abInstr[off];
+}
+
+
+/**
+ * Read a byte (8-bit) instruction byte.
+ *
+ * @returns The requested byte.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_FORCE_INLINE(uint8_t) disReadByte(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    return disReadByteByOff(pCpu, uAddress - pCpu->uInstrAddr);
+}
+
+
+/**
+ * Function for handling a 16-bit cache miss.
+ *
+ * @returns The requested word.
+ * @param   pCpu                The disassembler state.
+ * @param   off                 The offset of the word relative to the
+ *                              instruction.
+ */
+DECL_NO_INLINE(static, uint16_t) disReadWordSlow(PDISCPUSTATE pCpu, RTUINTPTR off)
+{
+    if (RT_UNLIKELY(off + 2 > DIS_MAX_INSTR_LENGTH))
+    {
+        Log(("disReadWord: too long instruction...\n"));
+        pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+        if (off < DIS_MAX_INSTR_LENGTH)
+            return pCpu->abInstr[off];
+        return 0;
+    }
+
+    if (off + 2 < pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 2);
+
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint16_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U16(pCpu->abInstr[off], pCpu->abInstr[off + 1]);
+#endif
+}
+
+
+/**
+ * Read a word (16-bit) instruction byte by offset.
+ *
+ * @returns The requested word.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECLINLINE(uint16_t) disReadWordByOff(PDISCPUSTATE pCpu, RTUINTPTR off)
+{
+    if (RT_UNLIKELY(off + 2 > pCpu->cbCachedInstr))
+        return disReadWordSlow(pCpu, off);
+
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint16_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U16(pCpu->abInstr[off], pCpu->abInstr[off + 1]);
+#endif
+}
+
+
+/**
+ * Read a word (16-bit) instruction byte.
+ *
+ * @returns The requested word.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_FORCE_INLINE(uint16_t) disReadWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    return disReadWordByOff(pCpu, uAddress - pCpu->uInstrAddr);
+}
+
+
+/**
+ * Function for handling a 32-bit cache miss.
+ *
+ * @returns The requested dword.
+ * @param   pCpu                The disassembler state.
+ * @param   off                 The offset of the dword relative to the
+ *                              instruction.
+ */
+DECL_NO_INLINE(static, uint32_t) disReadDWordSlow(PDISCPUSTATE pCpu, RTUINTPTR off)
+{
+    if (RT_UNLIKELY(off + 2 > DIS_MAX_INSTR_LENGTH))
+    {
+        Log(("disReadDWord: too long instruction...\n"));
+        pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+        switch ((RTUINTPTR)DIS_MAX_INSTR_LENGTH - off)
+        {
+            case 1:
+                return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], 0, 0, 0);
+            case 2:
+                return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], 0, 0);
+            case 3:
+                return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], 0);
+        }
+        return 0;
+    }
+
+    if (off + 2 < pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 2);
+
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint32_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3]);
+#endif
+}
+
+
+/**
+ * Read a dword (32-bit) instruction byte by offset.
+ *
+ * @returns The requested dword.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECLINLINE(uint32_t) disReadDWordByOff(PDISCPUSTATE pCpu, RTUINTPTR off)
+{
+    if (RT_UNLIKELY(off + 2 > pCpu->cbCachedInstr))
+        return disReadDWordSlow(pCpu, off);
+
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint32_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3]);
+#endif
+}
+
+
+/**
+ * Read a dword (32-bit) instruction byte.
+ *
+ * @returns The requested dword.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_FORCE_INLINE(uint32_t) disReadDWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    return disReadDWordByOff(pCpu, uAddress - pCpu->uInstrAddr);
+}
+
+
+/**
+ * Function for handling a 64-bit cache miss.
+ *
+ * @returns The requested qword.
+ * @param   pCpu                The disassembler state.
+ * @param   off                 The offset of the qword relative to the
+ *                              instruction.
+ */
+DECL_NO_INLINE(static, uint64_t) disReadQWordSlow(PDISCPUSTATE pCpu, RTUINTPTR off)
+{
+    if (RT_UNLIKELY(off + 2 > DIS_MAX_INSTR_LENGTH))
+    {
+        Log(("disReadQWord: too long instruction...\n"));
+        pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
+        switch ((RTUINTPTR)DIS_MAX_INSTR_LENGTH - off)
+        {
+            case 1:
+                return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], 0, 0, 0,   0, 0, 0, 0);
+            case 2:
+                return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], 0, 0,   0, 0, 0, 0);
+            case 3:
+                return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], 0,   0, 0, 0, 0);
+            case 4:
+                return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                                           pCpu->abInstr[off + 4], 0, 0, 0);
+            case 5:
+                return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                                           pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], 0, 0);
+            case 6:
+                return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                                           pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], pCpu->abInstr[off + 6], 0);
+        }
+        return 0;
+    }
+
+    if (off + 2 < pCpu->cbCachedInstr)
+        disReadMore(pCpu, off, 2);
+
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint64_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off    ], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                               pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], pCpu->abInstr[off + 6], pCpu->abInstr[off + 7]);
+#endif
+}
+
+
+/**
+ * Read a qword (64-bit) instruction byte by offset.
+ *
+ * @returns The requested qword.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECLINLINE(uint64_t) disReadQWordByOff(PDISCPUSTATE pCpu, RTUINTPTR off)
+{
+    if (RT_UNLIKELY(off + 2 > pCpu->cbCachedInstr))
+        return disReadQWordSlow(pCpu, off);
+
+#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
+    return *(uint64_t const *)&pCpu->abInstr[off];
+#else
+    return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off    ], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
+                               pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], pCpu->abInstr[off + 6], pCpu->abInstr[off + 7]);
+#endif
+}
+
+
+/**
+ * Read a qword (64-bit) instruction byte.
+ *
+ * @returns The requested qword.
+ * @param   pCpu                The disassembler state.
+ * @param   uAddress            The address.
+ */
+DECL_FORCE_INLINE(uint64_t) disReadQWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
+{
+    return disReadQWordByOff(pCpu, uAddress - pCpu->uInstrAddr);
+}
+
+
+
 //*****************************************************************************
 //*****************************************************************************
 static unsigned disParseInstruction(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISCPUSTATE pCpu)
@@ -2039,7 +2149,7 @@ static unsigned Parse3DNow(RTUINTPTR uCodePtr, PCDISOPCODE pOp, PDISOPPARAM pPar
     pCpu->ModRM.Bits.Mod = MODRM_MOD(ModRM);
     pCpu->ModRM.Bits.Reg = MODRM_REG(ModRM);
 
-    modrmsize = QueryModRM(uCodePtr+sizeof(uint8_t), pOp, pParam, pCpu);
+    modrmsize = QueryModRM(uCodePtr+sizeof(uint8_t), pOp, pParam, pCpu, NULL);
 
     uint8_t opcode = disReadByte(pCpu, uCodePtr+sizeof(uint8_t)+modrmsize);
 
@@ -2384,263 +2494,6 @@ static void disasmModRMSReg(PDISCPUSTATE pCpu, PCDISOPCODE pOp, unsigned idx, PD
 }
 
 
-//*****************************************************************************
-/* Read functions for getting the opcode bytes */
-//*****************************************************************************
-
-
-static DECLCALLBACK(int) disReadBytesDefault(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
-{
-#ifdef IN_RING0
-    AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
-    RT_BZERO(&pDis->abInstr[offInstr], cbMaxRead);
-    pDis->cbCachedInstr = offInstr + cbMaxRead;
-    return VERR_DIS_NO_READ_CALLBACK;
-#else
-    memcpy(&pDis->abInstr[offInstr], (uint8_t const *)(uintptr_t)pDis->uInstrAddr + offInstr, cbMaxRead);
-    pDis->cbCachedInstr = offInstr + cbMaxRead;
-    return VINF_SUCCESS;
-#endif
-}
-
-
-/**
- * Read more bytes into the DISCPUSTATE::abInstr buffer, advance
- * DISCPUSTATE::cbCachedInstr.
- *
- * Will set DISCPUSTATE::rc on failure, but still advance cbCachedInstr.
- *
- * The caller shall fend off reads beyond the DISCPUSTATE::abInstr buffer.
- *
- * @param   pCpu                The disassembler state.
- * @param   off                 The offset of the read request.
- * @param   cbMin               The size of the read request that needs to be
- *                              satisfied.
- */
-DECL_NO_INLINE(static, void) disReadMore(PDISCPUSTATE pCpu, uint8_t off, uint8_t cbMin)
-{
-    Assert(cbMin + off <= sizeof(pCpu->abInstr));
-
-    /*
-     * Adjust the incoming request to not overlap with bytes that has already
-     * been read and to make sure we don't leave unread gaps.
-     */
-    if (off < pCpu->cbCachedInstr)
-    {
-        Assert(off + cbMin > pCpu->cbCachedInstr);
-        cbMin -= pCpu->cbCachedInstr - off;
-        off = pCpu->cbCachedInstr;
-    }
-    else if (off > pCpu->cbCachedInstr)
-    {
-        cbMin += off - pCpu->cbCachedInstr;
-        off = pCpu->cbCachedInstr;
-    }
-
-    /*
-     * Do the read.
-     * (No need to zero anything on failure as abInstr is already zeroed by the
-     * DISInstrEx API.)
-     */
-    int rc = pCpu->pfnReadBytes(pCpu, off, cbMin, sizeof(pCpu->abInstr) - off);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(pCpu->cbCachedInstr >= off + cbMin);
-        Assert(pCpu->cbCachedInstr <= sizeof(pCpu->abInstr));
-    }
-    else
-    {
-        Log(("disReadMore failed with rc=%Rrc!!\n", rc));
-        pCpu->rc = VERR_DIS_MEM_READ;
-    }
-}
-
-
-/**
- * Function for handling a 8-bit read beyond the max instruction length.
- *
- * @returns 0
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-DECL_NO_INLINE(static, uint8_t) disReadByteBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    Log(("disReadByte: too long instruction...\n"));
-    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
-    return 0;
-}
-
-
-/**
- * Read a byte (8-bit) instruction byte.
- *
- * @returns The requested byte.
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-static uint8_t disReadByte(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
-    if (RT_UNLIKELY(off + 1 > DIS_MAX_INSTR_LENGTH))
-        return disReadByteBad(pCpu, uAddress);
-
-    if (off + 1 > pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 1);
-    return pCpu->abInstr[off];
-}
-
-
-/**
- * Function for handling a 16-bit read beyond the max instruction length.
- *
- * @returns 0
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-DECL_NO_INLINE(static, uint16_t) disReadWordBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    Log(("disReadWord: too long instruction...\n"));
-    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
-    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
-    if (off < DIS_MAX_INSTR_LENGTH)
-        return pCpu->abInstr[off];
-    return 0;
-}
-
-
-/**
- * Read a word (16-bit) instruction byte.
- *
- * @returns The requested byte.
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-static uint16_t disReadWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
-    if (RT_UNLIKELY(off + 2 > DIS_MAX_INSTR_LENGTH))
-        return disReadWordBad(pCpu, uAddress);
-
-    if (off + 2 > pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 2);
-#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint16_t const *)&pCpu->abInstr[off];
-#else
-    return RT_MAKE_U16(pCpu->abInstr[off], pCpu->abInstr[off + 1]);
-#endif
-}
-
-
-/**
- * Function for handling a 32-bit read beyond the max instruction length.
- *
- * @returns 0
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-DECL_NO_INLINE(static, uint32_t) disReadDWordBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    Log(("disReadDWord: too long instruction...\n"));
-    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
-    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
-    switch ((RTUINTPTR)DIS_MAX_INSTR_LENGTH - off)
-    {
-        case 1:
-            return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], 0, 0, 0);
-        case 2:
-            return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], 0, 0);
-        case 3:
-            return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], 0);
-        default:
-            return 0;
-    }
-    return 0;
-}
-
-
-/**
- * Read a word (32-bit) instruction byte.
- *
- * @returns The requested byte.
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-static uint32_t disReadDWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
-    if (RT_UNLIKELY(off + 4 > DIS_MAX_INSTR_LENGTH))
-        return disReadDWordBad(pCpu, uAddress);
-
-    if (off + 4 > pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 4);
-#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint32_t const *)&pCpu->abInstr[off];
-#else
-    return RT_MAKE_U32_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3]);
-#endif
-}
-
-
-/**
- * Function for handling a 64-bit read beyond the max instruction length.
- *
- * @returns 0
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-DECL_NO_INLINE(static, uint64_t) disReadQWordBad(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    Log(("disReadQWord: too long instruction...\n"));
-    pCpu->rc = VERR_DIS_TOO_LONG_INSTR;
-    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
-    switch ((RTUINTPTR)DIS_MAX_INSTR_LENGTH - off)
-    {
-        case 1:
-            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], 0, 0, 0,   0, 0, 0, 0);
-        case 2:
-            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], 0, 0,   0, 0, 0, 0);
-        case 3:
-            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], 0,   0, 0, 0, 0);
-        case 4:
-            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
-                                       pCpu->abInstr[off + 4], 0, 0, 0);
-        case 5:
-            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
-                                       pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], 0, 0);
-        case 6:
-            return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
-                                       pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], pCpu->abInstr[off + 6], 0);
-        default:
-            return 0;
-    }
-    return 0;
-}
-
-
-/**
- * Read a word (64-bit) instruction byte.
- *
- * @returns The requested byte.
- * @param   pCpu                The disassembler state.
- * @param   uAddress            The address.
- */
-static uint64_t disReadQWord(PDISCPUSTATE pCpu, RTUINTPTR uAddress)
-{
-    RTUINTPTR off = uAddress - pCpu->uInstrAddr;
-    if (RT_UNLIKELY(off + 8 > DIS_MAX_INSTR_LENGTH))
-        return disReadQWordBad(pCpu, uAddress);
-
-    if (off + 8 > pCpu->cbCachedInstr)
-        disReadMore(pCpu, off, 8);
-#ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint64_t const *)&pCpu->abInstr[off];
-#else
-    return RT_MAKE_U64_FROM_U8(pCpu->abInstr[off    ], pCpu->abInstr[off + 1], pCpu->abInstr[off + 2], pCpu->abInstr[off + 3],
-                               pCpu->abInstr[off + 4], pCpu->abInstr[off + 5], pCpu->abInstr[off + 6], pCpu->abInstr[off + 7]);
-#endif
-}
-
-
 
 /**
  * Validates the lock sequence.
@@ -2721,5 +2574,254 @@ static void disValidateLockSequence(PDISCPUSTATE pCpu)
      */
     pCpu->pCurInstr = &g_aTwoByteMapX86[11];
     Assert(pCpu->pCurInstr->uOpcode == OP_ILLUD2);
+}
+
+
+/**
+ * Internal worker for DISInstEx.
+ *
+ * @returns VBox status code.
+ * @param   pCpu            Initialized cpu state.
+ * @param   paOneByteMap    The one byte opcode map to use.
+ * @param   uInstrAddr      Instruction address.
+ * @param   pcbInstr        Where to store the instruction size. Can be NULL.
+ */
+static int disInstrWorker(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr)
+{
+    /*
+     * Parse byte by byte.
+     */
+    size_t offByte = 0;
+    for (;;)
+    {
+        uint8_t codebyte = disReadByteByOff(pCpu, offByte++);
+        uint8_t opcode   = paOneByteMap[codebyte].uOpcode;
+
+        /* Hardcoded assumption about OP_* values!! */
+        if (opcode <= OP_LAST_PREFIX)
+        {
+            /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
+            if (opcode != OP_REX)
+            {
+                /** Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
+                pCpu->bLastPrefix = opcode;
+                pCpu->fPrefix &= ~DISPREFIX_REX;
+            }
+
+            switch (opcode)
+            {
+            case OP_INVALID:
+                if (pcbInstr)
+                    *pcbInstr = (uint32_t)offByte;
+                return pCpu->rc = VERR_DIS_INVALID_OPCODE;
+
+            // segment override prefix byte
+            case OP_SEG:
+                pCpu->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].fParam1 - OP_PARM_REG_SEG_START);
+                /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
+                if (   pCpu->uCpuMode != DISCPUMODE_64BIT
+                    || pCpu->idxSegPrefix >= DISSELREG_FS)
+                {
+                    pCpu->fPrefix   |= DISPREFIX_SEG;
+                }
+                continue;   //fetch the next byte
+
+            // lock prefix byte
+            case OP_LOCK:
+                pCpu->fPrefix |= DISPREFIX_LOCK;
+                continue;   //fetch the next byte
+
+            // address size override prefix byte
+            case OP_ADDRSIZE:
+                pCpu->fPrefix |= DISPREFIX_ADDRSIZE;
+                if (pCpu->uCpuMode == DISCPUMODE_16BIT)
+                    pCpu->uAddrMode = DISCPUMODE_32BIT;
+                else
+                if (pCpu->uCpuMode == DISCPUMODE_32BIT)
+                    pCpu->uAddrMode = DISCPUMODE_16BIT;
+                else
+                    pCpu->uAddrMode = DISCPUMODE_32BIT;     /* 64 bits */
+                continue;   //fetch the next byte
+
+            // operand size override prefix byte
+            case OP_OPSIZE:
+                pCpu->fPrefix |= DISPREFIX_OPSIZE;
+                if (pCpu->uCpuMode == DISCPUMODE_16BIT)
+                    pCpu->uOpMode = DISCPUMODE_32BIT;
+                else
+                    pCpu->uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
+                continue;   //fetch the next byte
+
+            // rep and repne are not really prefixes, but we'll treat them as such
+            case OP_REPE:
+                pCpu->fPrefix |= DISPREFIX_REP;
+                continue;   //fetch the next byte
+
+            case OP_REPNE:
+                pCpu->fPrefix |= DISPREFIX_REPNE;
+                continue;   //fetch the next byte
+
+            case OP_REX:
+                Assert(pCpu->uCpuMode == DISCPUMODE_64BIT);
+                /* REX prefix byte */
+                pCpu->fPrefix   |= DISPREFIX_REX;
+                pCpu->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].fParam1);
+                if (pCpu->fRexPrefix & DISPREFIX_REX_FLAGS_W)
+                    pCpu->uOpMode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
+                continue;   //fetch the next byte
+            }
+        }
+
+        /* first opcode byte. */
+        pCpu->bOpCode = codebyte;
+        offByte += disParseInstruction(uInstrAddr + offByte, &paOneByteMap[pCpu->bOpCode], pCpu);
+        break;
+    }
+
+    pCpu->cbInstr = offByte;
+    if (pcbInstr)
+        *pcbInstr = offByte;
+
+    if (pCpu->fPrefix & DISPREFIX_LOCK)
+        disValidateLockSequence(pCpu);
+
+    return pCpu->rc;
+}
+
+
+/**
+ * Disassembles on instruction, details in @a pCpu and length in @a pcbInstr.
+ *
+ * @returns VBox status code.
+ * @param   uInstrAddr      Address of the instruction to decode. What this means
+ *                          is left to the pfnReadBytes function.
+ * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
+ * @param   pfnReadBytes    Callback for reading instruction bytes.
+ * @param   fFilter         Instruction type filter.
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
+ * @param   pCpu            Pointer to CPU structure. With the exception of
+ *                          DISCPUSTATE::pvUser2, the structure will be
+ *                          completely initialized by this API, i.e. no input is
+ *                          taken from it.
+ * @param   pcbInstr        Where to store the size of the instruction.  (This
+ *                          is also stored in PDISCPUSTATE::cbInstr.)  Optional.
+ */
+DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                       PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+{
+    PCDISOPCODE paOneByteMap;
+
+    /*
+     * Initialize the CPU state.
+     * Note! The RT_BZERO make ASSUMPTIONS about the placement of pvUser2.
+     */
+    RT_BZERO(pCpu, RT_OFFSETOF(DISCPUSTATE, pvUser2));
+
+#ifdef VBOX_STRICT /* poison */
+    pCpu->Param1.Base.idxGenReg  = 0xc1;
+    pCpu->Param2.Base.idxGenReg  = 0xc2;
+    pCpu->Param3.Base.idxGenReg  = 0xc3;
+    pCpu->Param1.Index.idxGenReg = 0xc4;
+    pCpu->Param2.Index.idxGenReg = 0xc5;
+    pCpu->Param3.Index.idxGenReg = 0xc6;
+    pCpu->Param1.uDisp.u64 = UINT64_C(0xd1d1d1d1d1d1d1d1);
+    pCpu->Param2.uDisp.u64 = UINT64_C(0xd2d2d2d2d2d2d2d2);
+    pCpu->Param3.uDisp.u64 = UINT64_C(0xd3d3d3d3d3d3d3d3);
+    pCpu->Param1.uValue    = UINT64_C(0xb1b1b1b1b1b1b1b1);
+    pCpu->Param2.uValue    = UINT64_C(0xb2b2b2b2b2b2b2b2);
+    pCpu->Param3.uValue    = UINT64_C(0xb3b3b3b3b3b3b3b3);
+    pCpu->Param1.uScale    = 28;
+    pCpu->Param2.uScale    = 29;
+    pCpu->Param3.uScale    = 30;
+#endif
+
+    pCpu->uCpuMode          = enmCpuMode;
+    if (enmCpuMode == DISCPUMODE_64BIT)
+    {
+        paOneByteMap        = g_aOneByteMapX64;
+        pCpu->uAddrMode     = DISCPUMODE_64BIT;
+        pCpu->uOpMode       = DISCPUMODE_32BIT;
+    }
+    else
+    {
+        paOneByteMap        = g_aOneByteMapX86;
+        pCpu->uAddrMode     = enmCpuMode;
+        pCpu->uOpMode       = enmCpuMode;
+    }
+    pCpu->fPrefix           = DISPREFIX_NONE;
+    pCpu->idxSegPrefix      = DISSELREG_DS;
+    pCpu->uInstrAddr        = uInstrAddr;
+    pCpu->pfnDisasmFnTable  = g_apfnFullDisasm;
+    pCpu->fFilter           = fFilter;
+    pCpu->rc                = VINF_SUCCESS;
+    pCpu->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
+    pCpu->pvUser            = pvUser;
+
+    /*
+     * Read some bytes into the cache.  (If this fail we continue as nothing
+     * has gone wrong since this is what would happen if we didn't precharge
+     * the cache here.)
+     */
+    int rc = pCpu->pfnReadBytes(pCpu, 0, 1, sizeof(pCpu->abInstr));
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pCpu->cbCachedInstr >= 1);
+        Assert(pCpu->cbCachedInstr <= sizeof(pCpu->abInstr));
+    }
+    else
+    {
+        Log(("Initial read failed with rc=%Rrc!!\n", rc));
+        pCpu->rc = VERR_DIS_MEM_READ;
+    }
+
+    return disInstrWorker(pCpu, uInstrAddr, paOneByteMap, pcbInstr);
+}
+
+
+/**
+ * Parses one guest instruction.
+ *
+ * The result is found in pCpu and pcbInstr.
+ *
+ * @returns VBox status code.
+ * @param   uInstrAddr      Address of the instruction to decode. What this means
+ *                          is left to the pfnReadBytes function.
+ * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
+ * @param   pfnReadBytes    Callback for reading instruction bytes.
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
+ * @param   pCpu            Pointer to cpu structure. Will be initialized.
+ * @param   pcbInstr        Where to store the size of the instruction.
+ *                          NULL is allowed.  This is also stored in
+ *                          PDISCPUSTATE::cbInstr.
+ */
+DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+{
+    return DISInstEx(uInstrAddr, enmCpuMode, DISOPTYPE_ALL, pfnReadBytes, pvUser, pCpu, pcbInstr);
+}
+
+
+/**
+ * Parses one guest instruction.
+ *
+ * The result is found in pCpu and pcbInstr.
+ *
+ * @returns VBox status code.
+ * @param   pvInstr         Address of the instruction to decode.  This is a
+ *                          real address in the current context that can be
+ *                          accessed without faulting.  (Consider
+ *                          DISInstrWithReader if this isn't the case.)
+ * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
+ * @param   pfnReadBytes    Callback for reading instruction bytes.
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
+ * @param   pCpu            Pointer to cpu structure. Will be initialized.
+ * @param   pcbInstr        Where to store the size of the instruction.
+ *                          NULL is allowed.  This is also stored in
+ *                          PDISCPUSTATE::cbInstr.
+ */
+DISDECL(int) DISInstr(const void *pvInstr, DISCPUMODE enmCpuMode, PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+{
+    return DISInstEx((uintptr_t)pvInstr, enmCpuMode, DISOPTYPE_ALL, NULL /*pfnReadBytes*/, NULL /*pvUser*/, pCpu, pcbInstr);
 }
 
