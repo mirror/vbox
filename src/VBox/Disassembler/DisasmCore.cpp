@@ -2641,27 +2641,20 @@ static int disInstrWorker(PDISCPUSTATE pCpu, PCDISOPCODE paOneByteMap, uint32_t 
 
 
 /**
- * Disassembles on instruction, details in @a pCpu and length in @a pcbInstr.
+ * Inlined worker that initializes the disassembler state.
  *
- * @returns VBox status code.
- * @param   uInstrAddr      Address of the instruction to decode. What this means
- *                          is left to the pfnReadBytes function.
- * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
- * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   fFilter         Instruction type filter.
- * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
- * @param   pCpu            Pointer to CPU structure. With the exception of
- *                          DISCPUSTATE::pvUser2, the structure will be
- *                          completely initialized by this API, i.e. no input is
- *                          taken from it.
- * @param   pcbInstr        Where to store the size of the instruction.  (This
- *                          is also stored in PDISCPUSTATE::cbInstr.)  Optional.
+ * @returns The primary opcode map to use.
+ * @param   pCpu            The disassembler state.
+ * @param   uInstrAddr      The instruction address.
+ * @param   enmCpuMode      The CPU mode.
+ * @param   fFilter         The instruction filter settings.
+ * @param   pfnReadBytes    The byte reader, can be NULL.
+ * @param   pvUser          The the user data for the reader.
  */
-DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
-                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                       PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+DECL_FORCE_INLINE(PCDISOPCODE)
+disInitializeState(PDISCPUSTATE pCpu, RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                   PFNDISREADBYTES pfnReadBytes, void *pvUser)
 {
-    PCDISOPCODE paOneByteMap;
 
     /*
      * Initialize the CPU state.
@@ -2687,28 +2680,44 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
     pCpu->Param3.uScale    = 30;
 #endif
 
+    pCpu->fPrefix           = DISPREFIX_NONE;
+    pCpu->idxSegPrefix      = DISSELREG_DS;
+    pCpu->rc                = VINF_SUCCESS;
+    pCpu->pfnDisasmFnTable  = g_apfnFullDisasm;
+
+    pCpu->uInstrAddr        = uInstrAddr;
+    pCpu->fFilter           = fFilter;
+    pCpu->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
+    pCpu->pvUser            = pvUser;
     pCpu->uCpuMode          = enmCpuMode;
+    PCDISOPCODE paOneByteMap;
     if (enmCpuMode == DISCPUMODE_64BIT)
     {
-        paOneByteMap        = g_aOneByteMapX64;
         pCpu->uAddrMode     = DISCPUMODE_64BIT;
         pCpu->uOpMode       = DISCPUMODE_32BIT;
+        paOneByteMap        = g_aOneByteMapX64;
     }
     else
     {
-        paOneByteMap        = g_aOneByteMapX86;
         pCpu->uAddrMode     = enmCpuMode;
         pCpu->uOpMode       = enmCpuMode;
+        paOneByteMap        = g_aOneByteMapX86;
     }
-    pCpu->fPrefix           = DISPREFIX_NONE;
-    pCpu->idxSegPrefix      = DISSELREG_DS;
-    pCpu->uInstrAddr        = uInstrAddr;
-    pCpu->pfnDisasmFnTable  = g_apfnFullDisasm;
-    pCpu->fFilter           = fFilter;
-    pCpu->rc                = VINF_SUCCESS;
-    pCpu->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
-    pCpu->pvUser            = pvUser;
+    return paOneByteMap;
+}
 
+
+/**
+ * Reads some bytes into the cache.
+ *
+ * While this will set DISCPUSTATE::rc on failure, the caller should disregard
+ * this since that is what would happen if we didn't prefetch bytes prior to the
+ * instruction parsing.
+ *
+ * @param   pCpu                The disassembler state.
+ */
+DECL_FORCE_INLINE(void) disPrefetchBytes(PDISCPUSTATE pCpu)
+{
     /*
      * Read some bytes into the cache.  (If this fail we continue as nothing
      * has gone wrong since this is what would happen if we didn't precharge
@@ -2725,9 +2734,84 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
         Log(("Initial read failed with rc=%Rrc!!\n", rc));
         pCpu->rc = VERR_DIS_MEM_READ;
     }
+}
+
+
+/**
+ * Disassembles on instruction, details in @a pCpu and length in @a pcbInstr.
+ *
+ * @returns VBox status code.
+ * @param   uInstrAddr      Address of the instruction to decode. What this means
+ *                          is left to the pfnReadBytes function.
+ * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
+ * @param   pfnReadBytes    Callback for reading instruction bytes.
+ * @param   fFilter         Instruction type filter.
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
+ * @param   pCpu            Pointer to CPU structure. With the exception of
+ *                          DISCPUSTATE::pvUser2, the structure will be
+ *                          completely initialized by this API, i.e. no input is
+ *                          taken from it.
+ * @param   pcbInstr        Where to store the size of the instruction.  (This
+ *                          is also stored in PDISCPUSTATE::cbInstr.)  Optional.
+ */
+DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                       PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+{
+
+    PCDISOPCODE paOneByteMap = disInitializeState(pCpu, uInstrAddr, enmCpuMode, fFilter, pfnReadBytes, pvUser);
+    disPrefetchBytes(pCpu);
+    return disInstrWorker(pCpu, paOneByteMap, pcbInstr);
+}
+
+
+/**
+ * Disassembles on instruction partially or fully from prefetched bytes, details
+ * in @a pCpu and length in @a pcbInstr.
+ *
+ * @returns VBox status code.
+ * @param   uInstrAddr      Address of the instruction to decode. What this means
+ *                          is left to the pfnReadBytes function.
+ * @param   enmCpuMode      The CPU mode. DISCPUMODE_32BIT, DISCPUMODE_16BIT, or DISCPUMODE_64BIT.
+ * @param   pvPrefetched    Pointer to the prefetched bytes.
+ * @param   cbPrefetched    The number of valid bytes pointed to by @a
+ *                          pbPrefetched.
+ * @param   pfnReadBytes    Callback for reading instruction bytes.
+ * @param   fFilter         Instruction type filter.
+ * @param   pvUser          User argument for the instruction reader. (Ends up in pvUser.)
+ * @param   pCpu            Pointer to CPU structure. With the exception of
+ *                          DISCPUSTATE::pvUser2, the structure will be
+ *                          completely initialized by this API, i.e. no input is
+ *                          taken from it.
+ * @param   pcbInstr        Where to store the size of the instruction.  (This
+ *                          is also stored in PDISCPUSTATE::cbInstr.)  Optional.
+ */
+DISDECL(int) DISInstWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                                        void const *pvPrefetched, size_t cbPretched,
+                                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                        PDISCPUSTATE pCpu, uint32_t *pcbInstr)
+{
+    PCDISOPCODE paOneByteMap = disInitializeState(pCpu, uInstrAddr, enmCpuMode, fFilter, pfnReadBytes, pvUser);
+
+    if (!cbPretched)
+        disPrefetchBytes(pCpu);
+    else
+    {
+        if (cbPretched >= sizeof(pCpu->abInstr))
+        {
+            memcpy(pCpu->abInstr, pvPrefetched, sizeof(pCpu->abInstr));
+            pCpu->cbCachedInstr = (uint8_t)sizeof(pCpu->abInstr);
+        }
+        else
+        {
+            memcpy(pCpu->abInstr, pvPrefetched, cbPretched);
+            pCpu->cbCachedInstr = (uint8_t)cbPretched;
+        }
+    }
 
     return disInstrWorker(pCpu, paOneByteMap, pcbInstr);
 }
+
 
 
 /**
