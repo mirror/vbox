@@ -520,7 +520,7 @@ typedef FNDISREADBYTES *PFNDISREADBYTES;
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal and
  *         there is no point in enforcing CDECL. */
-typedef size_t FNDISPARSE(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISSTATE pDis);
+typedef size_t FNDISPARSE(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam);
 /** Pointer to a disassembler parser function. */
 typedef FNDISPARSE *PFNDISPARSE;
 /** Pointer to a const disassembler parser function pointer. */
