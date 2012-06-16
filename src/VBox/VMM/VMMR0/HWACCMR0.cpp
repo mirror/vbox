@@ -537,7 +537,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
 
 
 /**
- * AMD specific initialization code.
+ * AMD-specific initialization code.
  */
 static void hmR0InitAmd(uint32_t u32FeaturesEDX)
 {
@@ -850,7 +850,7 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
  * Disable VT-x or AMD-V on the current CPU
  *
  * @returns VBox status code.
- * @param   pVM         VM handle (can be 0!)
+ * @param   pVM         Pointer to the VM (can be 0).
  * @param   idCpu       The identifier for the CPU the function is called on.
  */
 static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
@@ -902,8 +902,8 @@ static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, vo
 /**
  * RTOnce callback employed by HWACCMR0EnableAllCpus.
  *
- * @returns VBox status code
- * @param   pvUser          The VM handle.
+ * @returns VBox status code.
+ * @param   pvUser          Pointer to the VM.
  * @param   pvUserIgnore    NULL, ignored.
  */
 static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgnore)
@@ -990,7 +990,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
  * Sets up HWACCM on all cpus.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
 {
@@ -1004,7 +1004,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
 
 
 /**
- * Disable VT-x or AMD-V on the current CPU
+ * Disable VT-x or AMD-V on the current CPU.
  *
  * @returns VBox status code.
  * @param   idCpu       The identifier for the CPU the function is called on.
@@ -1098,8 +1098,8 @@ static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu,
 /**
  * Called whenever a system power state change occurs.
  *
- * @param   enmEvent        Power event
- * @param   pvUser          User argument
+ * @param   enmEvent        The Power event.
+ * @param   pvUser          User argument.
  */
 static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
 {
@@ -1169,7 +1169,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
  * init routine which will allocate resources for each virtual CPU and such.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 {
@@ -1266,7 +1266,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
  * Does Ring-0 per VM HM termination.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
 {
@@ -1304,7 +1304,7 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
  * This is mostly about setting up the hardware VM state.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 {
@@ -1355,11 +1355,11 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 
 
 /**
- * Enters the VT-x or AMD-V session
+ * Enters the VT-x or AMD-V session.
  *
  * @returns VBox status code.
- * @param   pVM        The VM to operate on.
- * @param   pVCpu      VMCPU handle.
+ * @param   pVM        Pointer to the VM.
+ * @param   pVCpu      Pointer to the VMCPU.
  *
  * @remarks This is called with preemption disabled.
  */
@@ -1429,11 +1429,11 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Leaves the VT-x or AMD-V session
+ * Leaves the VT-x or AMD-V session.
  *
  * @returns VBox status code.
- * @param   pVM        The VM to operate on.
- * @param   pVCpu      VMCPU handle.
+ * @param   pVM        Pointer to the VM.
+ * @param   pVCpu      Pointer to the VMCPU.
  *
  * @remarks Called with preemption disabled just like HWACCMR0Enter, our
  *          counterpart.
@@ -1505,7 +1505,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
  * Runs guest code in a hardware accelerated VM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPUD id.
  *
  * @remarks Called with preemption disabled and after first having called
@@ -1539,9 +1539,9 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
  * Save guest FPU/XMM state (64 bits guest mode & 32 bits host only)
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pVCpu       VMCPU handle.
- * @param   pCtx        CPU context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -1556,9 +1556,9 @@ VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Save guest debug state (64 bits guest mode & 32 bits host only)
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pVCpu       VMCPU handle.
- * @param   pCtx        CPU context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -1570,10 +1570,10 @@ VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Test the 32->64 bits switcher
+ * Test the 32->64 bits switcher.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
 {
@@ -1595,9 +1595,9 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
 
 /**
- * Returns suspend status of the host
+ * Returns suspend status of the host.
  *
- * @returns Suspend pending or not
+ * @returns Suspend pending or not.
  */
 VMMR0DECL(bool) HWACCMR0SuspendPending(void)
 {
@@ -1609,7 +1609,7 @@ VMMR0DECL(bool) HWACCMR0SuspendPending(void)
  * Returns the cpu structure for the current cpu.
  * Keep in mind that there is no guarantee it will stay the same (long jumps to ring 3!!!).
  *
- * @returns cpu structure pointer
+ * @returns The cpu structure pointer.
  */
 VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpu(void)
 {
@@ -1623,8 +1623,8 @@ VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpu(void)
  * Returns the cpu structure for the current cpu.
  * Keep in mind that there is no guarantee it will stay the same (long jumps to ring 3!!!).
  *
- * @returns cpu structure pointer
- * @param   idCpu       id of the VCPU
+ * @returns The cpu structure pointer.
+ * @param   idCpu       id of the VCPU.
  */
 VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu)
 {
@@ -1636,12 +1636,12 @@ VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu)
 /**
  * Save a pending IO read.
  *
- * @param   pVCpu           The VMCPU to operate on.
- * @param   GCPtrRip        Address of IO instruction
- * @param   GCPtrRipNext    Address of the next instruction
- * @param   uPort           Port address
- * @param   uAndVal         And mask for saving the result in eax
- * @param   cbSize          Read size
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   GCPtrRip        Address of IO instruction.
+ * @param   GCPtrRipNext    Address of the next instruction.
+ * @param   uPort           Port address.
+ * @param   uAndVal         AND mask for saving the result in eax.
+ * @param   cbSize          Read size.
  */
 VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
@@ -1658,11 +1658,11 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RT
 /**
  * Save a pending IO write.
  *
- * @param   pVCpu           The VMCPU to operate on.
- * @param   GCPtrRIP        Address of IO instruction
- * @param   uPort           Port address
- * @param   uAndVal         And mask for fetching the result from eax
- * @param   cbSize          Read size
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   GCPtrRIP        Address of IO instruction.
+ * @param   uPort           Port address.
+ * @param   uAndVal         AND mask for fetching the result from eax.
+ * @param   cbSize          Read size.
  */
 VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
@@ -1681,8 +1681,8 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
  * switcher turns off paging.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pfVTxDisabled   VT-x was disabled or not (out).
+ * @param   pVM             Pointer to the VM.
+ * @param   pfVTxDisabled   Where to store whether VT-x was disabled or not.
  */
 VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
 {
@@ -1726,8 +1726,8 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
  * switcher turned off paging.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   fVTxDisabled    VT-x was disabled or not.
+ * @param   pVM             Pointer to the VM.
+ * @param   fVTxDisabled    Whether VT-x was disabled or not.
  */
 VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 {
@@ -1754,8 +1754,8 @@ VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
  * Dumps a descriptor.
  *
  * @param   pDesc    Descriptor to dump.
- * @param   Sel     Selector number.
- * @param   pszMsg  Message to prepend the log entry with.
+ * @param   Sel      Selector number.
+ * @param   pszMsg   Message to prepend the log entry with.
  */
 VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
 {
@@ -1876,9 +1876,9 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char 
 /**
  * Formats a full register dump.
  *
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- * @param   pCtx        The context to format.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the CPU context.
  */
 VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
