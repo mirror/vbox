@@ -90,7 +90,7 @@ static const char g_aszYasmRegTRx[16][5] =
  * @param   pParam      The parameter.
  * @param   pcchReg     Where to store the length of the name.
  */
-static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
+static const char *disasmFormatYasmBaseReg(PCDISSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
 {
     switch (pParam->fUse & (  DISUSE_REG_GEN8 | DISUSE_REG_GEN16 | DISUSE_REG_GEN32 | DISUSE_REG_GEN64
                             | DISUSE_REG_FP   | DISUSE_REG_MMX   | DISUSE_REG_XMM   | DISUSE_REG_CR
@@ -201,7 +201,7 @@ static const char *disasmFormatYasmBaseReg(PCDISCPUSTATE pDis, PCDISOPPARAM pPar
  * @param   pParam      The parameter.
  * @param   pcchReg     Where to store the length of the name.
  */
-static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
+static const char *disasmFormatYasmIndexReg(PCDISSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
 {
     switch (pDis->uAddrMode)
     {
@@ -250,7 +250,7 @@ static const char *disasmFormatYasmIndexReg(PCDISCPUSTATE pDis, PCDISOPPARAM pPa
  * @param   pfnGetSymbol    Get symbol name for a jmp or call target address. Optional.
  * @param   pvUser          User argument for pfnGetSymbol.
  */
-DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags,
+DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags,
                                 PFNDISGETSYMBOL pfnGetSymbol, void *pvUser)
 {
     /*
@@ -1190,7 +1190,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pDis, char *pszBuf, size_t cchBuf,
  * @param   pszBuf  The output buffer.
  * @param   cchBuf  The size of the output buffer.
  */
-DISDECL(size_t) DISFormatYasm(PCDISCPUSTATE pDis, char *pszBuf, size_t cchBuf)
+DISDECL(size_t) DISFormatYasm(PCDISSTATE pDis, char *pszBuf, size_t cchBuf)
 {
     return DISFormatYasmEx(pDis, pszBuf, cchBuf, 0 /* fFlags */, NULL /* pfnGetSymbol */, NULL /* pvUser */);
 }
@@ -1205,7 +1205,7 @@ DISDECL(size_t) DISFormatYasm(PCDISCPUSTATE pDis, char *pszBuf, size_t cchBuf)
  *                      be used if present as we might need to fetch opcode
  *                      bytes.
  */
-DISDECL(bool) DISFormatYasmIsOddEncoding(PDISCPUSTATE pDis)
+DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
 {
     /*
      * Mod rm + SIB: Check for duplicate EBP encodings that yasm won't use for very good reasons.
