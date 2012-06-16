@@ -594,8 +594,7 @@ typedef struct DISCPUSTATE
     uint8_t         cbPrefix;
     /** The instruction size. */
     uint8_t         cbInstr;
-    /** The number of valid bytes in abInstr.
-     * @todo Implement caching and read-ahead tomorrow. */
+    /** The number of valid bytes in abInstr. */
     uint8_t         cbCachedInstr;
     /** Unused byte. */
     uint8_t         abUnused[1];
