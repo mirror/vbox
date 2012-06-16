@@ -312,7 +312,7 @@ DECL_NO_INLINE(static, uint8_t) disReadByteSlow(PDISCPUSTATE pCpu, size_t offIns
         return 0;
     }
 
-    disReadMore(pCpu, offInstr, 1);
+    disReadMore(pCpu, (uint8_t)offInstr, 1);
     return pCpu->abInstr[offInstr];
 }
 
@@ -352,7 +352,7 @@ DECL_NO_INLINE(static, uint16_t) disReadWordSlow(PDISCPUSTATE pCpu, size_t offIn
         return 0;
     }
 
-    disReadMore(pCpu, offInstr, 2);
+    disReadMore(pCpu, (uint8_t)offInstr, 2);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
     return *(uint16_t const *)&pCpu->abInstr[offInstr];
 #else
@@ -408,7 +408,7 @@ DECL_NO_INLINE(static, uint32_t) disReadDWordSlow(PDISCPUSTATE pCpu, size_t offI
         return 0;
     }
 
-    disReadMore(pCpu, offInstr, 4);
+    disReadMore(pCpu, (uint8_t)offInstr, 4);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
     return *(uint32_t const *)&pCpu->abInstr[offInstr];
 #else
@@ -480,7 +480,7 @@ DECL_NO_INLINE(static, uint64_t) disReadQWordSlow(PDISCPUSTATE pCpu, size_t offI
         return 0;
     }
 
-    disReadMore(pCpu, offInstr, 8);
+    disReadMore(pCpu, (uint8_t)offInstr, 8);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
     return *(uint64_t const *)&pCpu->abInstr[offInstr];
 #else
@@ -518,9 +518,9 @@ DECLINLINE(uint64_t) disReadQWord(PDISCPUSTATE pCpu, size_t offInstr)
 
 //*****************************************************************************
 //*****************************************************************************
-static unsigned disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISCPUSTATE pCpu)
+static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISCPUSTATE pCpu)
 {
-    int  size = 0;
+    size_t size = 0;
     bool fFiltered = false;
 
     Assert(pOp); Assert(pCpu);
@@ -594,7 +594,7 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 {
     int index;
     PCDISOPCODE fpop;
-    unsigned size = 0;
+    size_t size = 0;
     unsigned ModRM;
     NOREF(pOp);
 
@@ -947,10 +947,10 @@ static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDI
 //*****************************************************************************
 // Query the size of the ModRM parameters and fetch the immediate data (if any)
 //*****************************************************************************
-static unsigned QueryModRM(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu, unsigned *pSibInc)
+static size_t QueryModRM(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu, size_t *pSibInc)
 {
-    unsigned sibinc;
-    unsigned size = 0;
+    size_t sibinc;
+    size_t size = 0;
     // unsigned reg = pCpu->ModRM.Bits.Reg;
     unsigned mod = pCpu->ModRM.Bits.Mod;
     unsigned rm  = pCpu->ModRM.Bits.Rm;
@@ -1030,10 +1030,10 @@ static unsigned QueryModRM(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam,
 //*****************************************************************************
 // Query the size of the ModRM parameters and fetch the immediate data (if any)
 //*****************************************************************************
-static unsigned QueryModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu, unsigned *pSibInc)
+static size_t QueryModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu, size_t *pSibInc)
 {
-    unsigned sibinc;
-    unsigned size = 0;
+    size_t sibinc;
+    size_t size = 0;
     // unsigned reg = pCpu->ModRM.Bits.Reg;
     unsigned mod = pCpu->ModRM.Bits.Mod;
     unsigned rm  = pCpu->ModRM.Bits.Rm;
@@ -1115,10 +1115,10 @@ static size_t ParseIllegal(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam,
 //*****************************************************************************
 static size_t ParseModRM(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = sizeof(uint8_t);   //ModRM byte
-    unsigned sibinc, ModRM;
+    size_t size = sizeof(uint8_t);   //ModRM byte
+    size_t sibinc;
 
-    ModRM = disReadByte(pCpu, offInstr);
+    unsigned ModRM = disReadByte(pCpu, offInstr);
     offInstr += sizeof(uint8_t);
 
     pCpu->ModRM.Bits.Rm  = MODRM_RM(ModRM);
@@ -1161,10 +1161,10 @@ static size_t ParseModRM(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 //*****************************************************************************
 static size_t ParseModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = sizeof(uint8_t);   //ModRM byte
-    unsigned sibinc, ModRM;
+    size_t size = sizeof(uint8_t);   //ModRM byte
+    size_t sibinc;
 
-    ModRM = disReadByte(pCpu, offInstr);
+    unsigned ModRM = disReadByte(pCpu, offInstr);
     offInstr += sizeof(uint8_t);
 
     pCpu->ModRM.Bits.Rm  = MODRM_RM(ModRM);
@@ -1792,7 +1792,7 @@ static size_t ParseYb(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDIS
 static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     PCDISOPCODE   pOpcode;
-    int           size    = sizeof(uint8_t);
+    size_t        size    = sizeof(uint8_t);
     NOREF(pOp); NOREF(pParam);
 
     /* 2nd byte */
@@ -1851,7 +1851,7 @@ static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pPar
 static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     PCDISOPCODE   pOpcode;
-    int           size    = sizeof(uint8_t);
+    size_t        size    = sizeof(uint8_t);
     NOREF(pOp); NOREF(pParam);
 
     /* 3rd byte */
@@ -1912,7 +1912,7 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM p
 static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     PCDISOPCODE   pOpcode;
-    int           size    = sizeof(uint8_t);
+    size_t        size    = sizeof(uint8_t);
     NOREF(pOp); NOREF(pParam);
 
     /* 3rd byte */
@@ -1946,7 +1946,7 @@ static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM p
 //*****************************************************************************
 static size_t ParseNopPause(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0;
+    size_t size = 0;
     NOREF(pParam);
 
     if (pCpu->fPrefix & DISPREFIX_REP)
@@ -1965,11 +1965,11 @@ static size_t ParseNopPause(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam
 static size_t ParseImmGrpl(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     int idx = (pCpu->bOpCode - 0x80) * 8;
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group1[idx+reg];
     //little hack to make sure the ModRM byte is included in the returned size
@@ -1985,7 +1985,7 @@ static size_t ParseImmGrpl(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam,
 static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     int idx;
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
     switch (pCpu->bOpCode)
@@ -2007,10 +2007,10 @@ static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pPara
         return sizeof(uint8_t);
     }
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
-    pOp = (PCDISOPCODE)&g_aMapX86_Group2[idx+reg];
+    pOp = &g_aMapX86_Group2[idx+reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2025,11 +2025,11 @@ static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pPara
 static size_t ParseGrp3(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
     int idx = (pCpu->bOpCode - 0xF6) * 8;
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group3[idx+reg];
 
@@ -2045,11 +2045,11 @@ static size_t ParseGrp3(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
 //*****************************************************************************
 static size_t ParseGrp4(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group4[reg];
 
@@ -2065,11 +2065,11 @@ static size_t ParseGrp4(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
 //*****************************************************************************
 static size_t ParseGrp5(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group5[reg];
 
@@ -2089,7 +2089,7 @@ static size_t ParseGrp5(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
 //*****************************************************************************
 static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrmsize;
+    size_t size = 0;
 
 #ifdef DEBUG_Sander
     //needs testing
@@ -2101,7 +2101,7 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
     pCpu->ModRM.Bits.Mod = MODRM_MOD(ModRM);
     pCpu->ModRM.Bits.Reg = MODRM_REG(ModRM);
 
-    modrmsize = QueryModRM(offInstr+sizeof(uint8_t), pOp, pParam, pCpu, NULL);
+    size_t modrmsize = QueryModRM(offInstr+sizeof(uint8_t), pOp, pParam, pCpu, NULL);
 
     uint8_t opcode = disReadByte(pCpu, offInstr+sizeof(uint8_t)+modrmsize);
 
@@ -2125,11 +2125,11 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 //*****************************************************************************
 static size_t ParseGrp6(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group6[reg];
 
@@ -2145,13 +2145,13 @@ static size_t ParseGrp6(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
 //*****************************************************************************
 static size_t ParseGrp7(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg, rm, mod;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    mod   = MODRM_MOD(modrm);
-    reg   = MODRM_REG(modrm);
-    rm    = MODRM_RM(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned mod   = MODRM_MOD(modrm);
+    unsigned reg   = MODRM_REG(modrm);
+    unsigned rm    = MODRM_RM(modrm);
 
     if (mod == 3 && rm == 0)
         pOp = (PCDISOPCODE)&g_aMapX86_Group7_mod11_rm000[reg];
@@ -2173,11 +2173,11 @@ static size_t ParseGrp7(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
 //*****************************************************************************
 static size_t ParseGrp8(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group8[reg];
 
@@ -2193,11 +2193,11 @@ static size_t ParseGrp8(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
 //*****************************************************************************
 static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group9[reg];
 
@@ -2213,11 +2213,11 @@ static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PD
 //*****************************************************************************
 static size_t ParseGrp10(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group10[reg];
 
@@ -2233,11 +2233,11 @@ static size_t ParseGrp10(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 //*****************************************************************************
 static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
@@ -2255,11 +2255,11 @@ static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 //*****************************************************************************
 static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
     if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
@@ -2277,11 +2277,11 @@ static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 //*****************************************************************************
 static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
     if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   //2nd table
 
@@ -2299,13 +2299,13 @@ static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 //*****************************************************************************
 static size_t ParseGrp15(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg, mod, rm;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    mod   = MODRM_MOD(modrm);
-    reg   = MODRM_REG(modrm);
-    rm    = MODRM_RM(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned mod   = MODRM_MOD(modrm);
+    unsigned reg   = MODRM_REG(modrm);
+    unsigned rm    = MODRM_RM(modrm);
 
     if (mod == 3 && rm == 0)
         pOp = (PCDISOPCODE)&g_aMapX86_Group15_mod11_rm000[reg];
@@ -2323,11 +2323,11 @@ static size_t ParseGrp15(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, P
 //*****************************************************************************
 static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISOPPARAM pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = 0, modrm, reg;
+    size_t size = 0;
     NOREF(pParam);
 
-    modrm = disReadByte(pCpu, offInstr);
-    reg   = MODRM_REG(modrm);
+    unsigned modrm = disReadByte(pCpu, offInstr);
+    unsigned reg   = MODRM_REG(modrm);
 
     pOp = (PCDISOPCODE)&g_aMapX86_Group16[reg];
 
@@ -2629,9 +2629,9 @@ static int disInstrWorker(PDISCPUSTATE pCpu, PCDISOPCODE paOneByteMap, uint32_t 
         break;
     }
 
-    pCpu->cbInstr = offInstr;
+    pCpu->cbInstr = (uint8_t)offInstr;
     if (pcbInstr)
-        *pcbInstr = offInstr;
+        *pcbInstr = (uint32_t)offInstr;
 
     if (pCpu->fPrefix & DISPREFIX_LOCK)
         disValidateLockSequence(pCpu);
