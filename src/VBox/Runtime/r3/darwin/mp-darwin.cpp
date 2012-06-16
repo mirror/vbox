@@ -90,7 +90,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 #if 0
     return RTMpIsCpuPossible(idCpu);
 #else
-    /** @todo proper ring-3 support on darwin, see #3014. */
+    /** @todo proper ring-3 support on darwin, see @bugref{3014}. */
     natural_t nCpus;
     processor_basic_info_t pinfo;
     mach_msg_type_number_t count;

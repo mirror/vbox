@@ -35,13 +35,13 @@
  * E1K_INIT_RA0 forces E1000 to set the first entry in Receive Address filter
  * table to MAC address obtained from CFGM. Most guests read MAC address from
  * EEPROM and write it to RA[0] explicitly, but Mac OS X seems to depend on it
- * being already set (see #4657).
+ * being already set (see @bugref{4657}).
  */
 #define E1K_INIT_RA0
 /*
  * E1K_LSC_ON_SLU causes E1000 to generate Link Status Change interrupt when
  * the guest driver brings up the link via STATUS.LU bit. Again the only guest
- * that requires it is Mac OS X (see #4657).
+ * that requires it is Mac OS X (see @bugref{4657}).
  */
 #define E1K_LSC_ON_SLU
 /*
@@ -89,14 +89,14 @@
  * single physical memory read (or two if it wraps around the end of TX
  * descriptor ring). It is required for proper functioning of bandwidth
  * resource control as it allows to compute exact sizes of packets prior
- * to allocating their buffers (see #5582).
+ * to allocating their buffers (see @bugref{5582}).
  */
 #define E1K_WITH_TXD_CACHE
 /*
  * E1K_WITH_RXD_CACHE causes E1000 to fetch multiple RX descriptors in a
  * single physical memory read (or two if it wraps around the end of RX
  * descriptor ring). Intel's packet driver for DOS needs this option in
- * order to work properly (see #6217).
+ * order to work properly (see @bugref{6217}).
  */
 #define E1K_WITH_RXD_CACHE
 /* End of Options ************************************************************/
@@ -2775,7 +2775,7 @@ static int e1kRegWriteIMS(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
     {
         E1kLog2(("%s e1kRegWriteIMS: IRQ pending (%08x), arming late int timer...\n",
                  INSTANCE(pState), ICR));
-        /* Raising an interrupt immediately causes win7 to hang upon NIC reconfiguration (#5023) */
+        /* Raising an interrupt immediately causes win7 to hang upon NIC reconfiguration, see @bugref{5023}. */
         TMTimerSet(pState->CTX_SUFF(pIntTimer), TMTimerFromNano(pState->CTX_SUFF(pIntTimer), ITR * 256) +
                    TMTimerGet(pState->CTX_SUFF(pIntTimer)));
     }
@@ -4825,7 +4825,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
             E1KTXDESC desc;
             E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
                      INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
-            
+
             e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
             rc = e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc), fOnWorkerThread);
             /* If we failed to transmit descriptor we will try it again later */
@@ -4951,7 +4951,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                       "%d more are available\n",
                       INSTANCE(pState), pState->iTxDCurrent, u8Remain,
                       e1kGetTxLen(pState) - u8Remain));
-                      
+
                 /*
                  * A packet was partially fetched. Move incomplete packet to
                  * the beginning of cache buffer, then load more descriptors.

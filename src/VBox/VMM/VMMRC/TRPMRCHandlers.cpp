@@ -147,7 +147,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
     /*
      * We should poll the timers occasionally.
      * We must *NOT* do this too frequently as it adds a significant overhead
-     * and it'll kill us if the trap load is high. (See #1354.)
+     * and it'll kill us if the trap load is high. (See @bugref{1354}.)
      * (The heuristic is not very intelligent, we should really check trap
      * frequency etc. here, but alas, we lack any such information atm.)
      */

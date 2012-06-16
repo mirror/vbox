@@ -4544,7 +4544,7 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
      * In case of spurious wakeups causing VERR_TIMEOUTs and/or other return codes
      * we must not stop processing events and delete the "eventQ" object. This must
      * be done ONLY when we stop this loop via interruptEventQueueProcessing().
-     * See #5724.
+     * See @bugref{5724}.
      */
     while (eventQ->processEventQueue(RT_INDEFINITE_WAIT) != VERR_INTERRUPTED)
         /* nothing */ ;

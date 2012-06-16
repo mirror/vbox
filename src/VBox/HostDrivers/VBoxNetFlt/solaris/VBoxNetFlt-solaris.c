@@ -2043,7 +2043,7 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
 
     /*
      * Figure out if this is a VLAN interface or not based on the interface name.
-     * Only works for the VLAN PPA-hack based names. See #4854 for details.
+     * Only works for the VLAN PPA-hack based names. See @bugref{4854} for details.
      */
     char *pszEnd = strchr(pThis->szName, '\0');
     while (--pszEnd > pThis->szName)
@@ -3738,7 +3738,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     if (RT_LIKELY(pData))
     {
         /*
-         * See #5262 as to why we need to do all this qtimeout/qwriter tricks.
+         * See @bugref{5262} as to why we need to do all this qtimeout/qwriter tricks.
          */
         vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
         if (   pPromiscStream

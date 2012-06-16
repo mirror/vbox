@@ -1482,7 +1482,7 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
                                  * Tell the control thread that it can continue
                                  * spawning services. This needs to be done after the new
                                  * process has been started because otherwise signal handling
-                                 * on (Open) Solaris does not work correctly (see #5068).
+                                 * on (Open) Solaris does not work correctly (see @bugref{5068}).
                                  */
                                 int rc2 = RTThreadUserSignal(RTThreadSelf());
                                 if (RT_SUCCESS(rc))

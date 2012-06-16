@@ -5709,7 +5709,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
                 /*
                  * Always raise an interrupt after task completion; delaying
                  * this (interrupt coalescing) increases latency and has a significant
-                 * impact on performance (see #5071)
+                 * impact on performance (see @bugref{5071})
                  */
                 ahciSendSDBFis(pAhciPort, 0, true);
             }

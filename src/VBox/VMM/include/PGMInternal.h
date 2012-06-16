@@ -106,7 +106,7 @@
  * world switch overhead, so let's sync more.
  */
 # ifdef IN_RING0
-/* Chose 32 based on the compile test in #4219; 64 shows worse stats.
+/* Chose 32 based on the compile test in @bugref{4219}; 64 shows worse stats.
  * 32 again shows better results than 16; slightly more overhead in the \#PF handler,
  * but ~5% fewer faults.
  */

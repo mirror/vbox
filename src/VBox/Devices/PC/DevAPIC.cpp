@@ -1432,7 +1432,7 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *s,
     }
 
     return apic_bus_deliver(pDev, &DstSet, delivery_mode, vector_num,
-                            polarity, trigger_mode, 
+                            polarity, trigger_mode,
                             pDev->CTX_SUFF(pApicHlp)->pfnCalcIrqTag(pDev->CTX_SUFF(pDevIns), PDM_IRQ_LEVEL_HIGH));
 }
 
@@ -1699,7 +1699,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
 
     if (!(pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
         LogFlow(("apic_timer: trigger irq\n"));
-        apic_set_irq(pDev, pApic, pApic->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE, 
+        apic_set_irq(pDev, pApic, pApic->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE,
                      pDev->CTX_SUFF(pApicHlp)->pfnCalcIrqTag(pDevIns, PDM_IRQ_LEVEL_HIGH));
 
         if (   (pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC)
@@ -1827,7 +1827,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     Log(("CPU%d: apicMMIORead at %llx\n", s->phys_id,  (uint64_t)GCPhysAddr));
 
     /** @todo add LAPIC range validity checks (different LAPICs can
-     *        theoretically have different physical addresses, see #3092) */
+     *        theoretically have different physical addresses, see @bugref{3092}) */
 
     STAM_COUNTER_INC(&CTXSUFF(pDev->StatMMIORead));
     switch (cb)
@@ -1886,7 +1886,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     Log(("CPU%d: apicMMIOWrite at %llx\n", s->phys_id, (uint64_t)GCPhysAddr));
 
     /** @todo: add LAPIC range validity checks (multiple LAPICs can theoretically have
-               different physical addresses, see #3092) */
+     *         different physical addresses, see @bugref{3092}) */
 
     STAM_COUNTER_INC(&CTXSUFF(pDev->StatMMIOWrite));
     switch (cb)
