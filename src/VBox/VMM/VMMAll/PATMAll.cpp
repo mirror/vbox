@@ -206,7 +206,7 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
  * This is a worker for CPUMRawGetEFlags().
  *
  * @returns The eflags.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The context core.
  */
 VMMDECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore)
@@ -221,7 +221,7 @@ VMMDECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore)
  * Updates the EFLAGS.
  * This is a worker for CPUMRawSetEFlags().
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The context core.
  * @param   efl         The new EFLAGS value.
  */
@@ -290,7 +290,7 @@ VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
  * @returns true if it's enabled.
  * @returns false if it's disabled.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
 {
@@ -305,7 +305,7 @@ VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
  * @returns true if it's enabled.
  * @returns false if it's disabled.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    CPU context
  */
 VMMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
@@ -345,7 +345,7 @@ VMMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
  *
  * @returns VBox status
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Instruction pointer
  * @param   pOpcode     Original instruction opcode (out, optional)
  * @param   pSize       Original instruction size (out, optional)
@@ -372,7 +372,7 @@ VMMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint
  *
  * @returns VBox status
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The relevant core context.
  * @param   pCpu        Disassembly context
  */

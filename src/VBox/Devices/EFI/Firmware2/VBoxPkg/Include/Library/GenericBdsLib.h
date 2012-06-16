@@ -134,44 +134,44 @@ BdsLibBootViaBootOption (
 
 /**
   This function will enumerate all possible boot devices in the system, and
-  automatically create boot options for Network, Shell, Removable BlockIo, 
-  and Non-BlockIo Simplefile devices. 
-  
+  automatically create boot options for Network, Shell, Removable BlockIo,
+  and Non-BlockIo Simplefile devices.
+
   BDS separates EFI boot options into six types:
-  1. Network - The boot option points to the SimpleNetworkProtocol device. 
+  1. Network - The boot option points to the SimpleNetworkProtocol device.
                Bds will try to automatically create this type of boot option during enumeration.
-  2. Shell   - The boot option points to internal flash shell. 
+  2. Shell   - The boot option points to internal flash shell.
                Bds will try to automatically create this type of boot option during enumeration.
   3. Removable BlockIo      - The boot option points to a removable media
                               device, such as a USB flash drive or DVD drive.
                               These devices should contain a *removable* blockIo
                               protocol in their device handle.
-                              Bds will try to automatically create this type boot option 
+                              Bds will try to automatically create this type boot option
                               when enumerate.
-  4. Fixed BlockIo          - The boot option points to a Fixed blockIo device, 
+  4. Fixed BlockIo          - The boot option points to a Fixed blockIo device,
                               such as a hard disk.
                               These devices should contain a *fixed* blockIo
                               protocol in their device handle.
                               BDS will skip fixed blockIo devices, and not
-                              automatically create boot option for them. But BDS 
-                              will help to delete those fixed blockIo boot options, 
+                              automatically create boot option for them. But BDS
+                              will help to delete those fixed blockIo boot options,
                               whose description rules conflict with other auto-created
                               boot options.
-  5. Non-BlockIo Simplefile - The boot option points to a device whose handle 
+  5. Non-BlockIo Simplefile - The boot option points to a device whose handle
                               has SimpleFileSystem Protocol, but has no blockio
                               protocol. These devices do not offer blockIo
-                              protocol, but BDS still can get the 
+                              protocol, but BDS still can get the
                               \EFI\BOOT\boot{machinename}.EFI by SimpleFileSystem
                               Protocol.
-  6. File    - The boot option points to a file. These boot options are usually 
+  6. File    - The boot option points to a file. These boot options are usually
                created by the user, either manually or with an OS loader. BDS will not delete or modify
-               these boot options.        
-    
+               these boot options.
+
   This function will enumerate all possible boot devices in the system, and
-  automatically create boot options for Network, Shell, Removable BlockIo, 
+  automatically create boot options for Network, Shell, Removable BlockIo,
   and Non-BlockIo Simplefile devices.
   It will excute once every boot.
-  
+
   @param  BdsBootOptionList      The header of the linked list that indexed all
                                  current boot options
 
@@ -364,7 +364,7 @@ BdsLibRegisterNewOption (
 // Bds connect and disconnect driver lib functions
 //
 /**
-  This function connects all system drivers with the corresponding controllers. 
+  This function connects all system drivers with the corresponding controllers.
 
 **/
 VOID
@@ -386,7 +386,7 @@ BdsLibConnectAll (
 /**
   This function creates all handles associated with the given device
   path node. If the handle associated with one device path node can not
-  be created, then it tries to execute the dispatch to load the missing drivers.  
+  be created, then it tries to execute the dispatch to load the missing drivers.
 
   @param  DevicePathToConnect   The device path to be connected. Can be
                                 a multi-instance device path
@@ -503,7 +503,7 @@ BdsLibConnectConsoleVariable (
 // Bds device path related lib functions
 //
 /**
-  Delete the instance in Multi that overlaps with Single 
+  Delete the instance in Multi that overlaps with Single
 
   @param  Multi                 A pointer to a multi-instance device path data
                                 structure.
@@ -603,7 +603,7 @@ typedef struct {
 #endif
 
 /**
-  Shadow all Legacy OptionRom. 
+  Shadow all Legacy OptionRom.
 
 **/
 VOID
@@ -642,7 +642,7 @@ BdsDeleteAllInvalidLegacyBootOptions (
 /**
   Add the legacy boot options from BBS table if they do not exist.
 
-  @retval EFI_SUCCESS          The boot options are added successfully 
+  @retval EFI_SUCCESS          The boot options are added successfully
                                or they are already in boot options.
   @retval EFI_NOT_FOUND        No legacy boot options is found.
   @retval EFI_OUT_OF_RESOURCE  No enough memory.
@@ -655,7 +655,7 @@ BdsAddNonExistingLegacyBootOptions (
   );
 
 /**
-  Add the legacy boot devices from BBS table into 
+  Add the legacy boot devices from BBS table into
   the legacy device boot order.
 
   @retval EFI_SUCCESS           The boot devices are added successfully.
@@ -674,7 +674,7 @@ BdsUpdateLegacyDevOrder (
   Refresh the boot priority for BBS entries based on boot option entry and boot order.
 
   @param  Entry             The boot option is to be checked for refresh BBS table.
-  
+
   @retval EFI_SUCCESS           The boot priority for BBS entries is refreshed successfully.
   @retval EFI_NOT_FOUND         BBS entries can't be found.
   @retval EFI_OUT_OF_RESOURCES  Failed to get the legacy device boot order.
@@ -843,7 +843,7 @@ MatchPartitionDevicePathNode (
 
 /**
   Expand a device path that starts with a hard drive media device path node to be a
-  full device path that includes the full hardware path to the device. This function enables the device to boot. 
+  full device path that includes the full hardware path to the device. This function enables the device to boot.
   To avoid requiring a connect on every boot, the front match is saved in a variable (the part point
   to the partition node. E.g. ACPI() /PCI()/ATA()/Partition() ).
   All successful history device paths
@@ -860,12 +860,12 @@ EFIAPI
 BdsExpandPartitionPartialDevicePathToFull (
   IN  HARDDRIVE_DEVICE_PATH      *HardDriveDevicePath
   );
-  
+
 /**
   Return the bootable media handle.
   First, check whether the device is connected.
   Second, check whether the device path points to a device that supports SimpleFileSystemProtocol.
-  Third, detect the the default boot file in the Media, and return the removable Media handle.
+  Third, detect the default boot file in the Media, and return the removable Media handle.
 
   @param  DevicePath             Device Path to a  bootable device
 
@@ -878,7 +878,7 @@ BdsLibGetBootableHandle (
   IN  EFI_DEVICE_PATH_PROTOCOL      *DevicePath,
   IN OUT CHAR16                     **NewFileName
   );
-  
+
 
 /**
   Checks whether the Device path in a boot option points to a valid bootable device, and if the device
@@ -926,7 +926,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
 
   @param  DevicePath                      The bootable device Path to check
 
-  @retval BDS_EFI_MEDIA_HD_BOOT           If given device path contains MEDIA_DEVICE_PATH type device path node                                           which subtype is MEDIA_HARDDRIVE_DP  @retval BDS_EFI_MEDIA_CDROM_BOOT        If given device path contains MEDIA_DEVICE_PATH type device path node                                          which subtype is MEDIA_CDROM_DP  @retval BDS_EFI_ACPI_FLOPPY_BOOT        If given device path contains ACPI_DEVICE_PATH type device path node                                          which HID is floppy device.  @retval BDS_EFI_MESSAGE_ATAPI_BOOT      If given device path contains MESSAGING_DEVICE_PATH type device path node                                          and its last device path node's subtype is MSG_ATAPI_DP.  @retval BDS_EFI_MESSAGE_SCSI_BOOT       If given device path contains MESSAGING_DEVICE_PATH type device path node                                          and its last device path node's subtype is MSG_SCSI_DP.  @retval BDS_EFI_MESSAGE_USB_DEVICE_BOOT If given device path contains MESSAGING_DEVICE_PATH type device path node                                          and its last device path node's subtype is MSG_USB_DP.  @retval BDS_EFI_MESSAGE_MISC_BOOT       If the device path not contains any media device path node,  and                                          its last device path node point to a message device path node.  @retval BDS_LEGACY_BBS_BOOT             If given device path contains BBS_DEVICE_PATH type device path node.  @retval BDS_EFI_UNSUPPORT               An EFI Removable BlockIO device path not point to a media and message device,   
+  @retval BDS_EFI_MEDIA_HD_BOOT           If given device path contains MEDIA_DEVICE_PATH type device path node                                           which subtype is MEDIA_HARDDRIVE_DP  @retval BDS_EFI_MEDIA_CDROM_BOOT        If given device path contains MEDIA_DEVICE_PATH type device path node                                          which subtype is MEDIA_CDROM_DP  @retval BDS_EFI_ACPI_FLOPPY_BOOT        If given device path contains ACPI_DEVICE_PATH type device path node                                          which HID is floppy device.  @retval BDS_EFI_MESSAGE_ATAPI_BOOT      If given device path contains MESSAGING_DEVICE_PATH type device path node                                          and its last device path node's subtype is MSG_ATAPI_DP.  @retval BDS_EFI_MESSAGE_SCSI_BOOT       If given device path contains MESSAGING_DEVICE_PATH type device path node                                          and its last device path node's subtype is MSG_SCSI_DP.  @retval BDS_EFI_MESSAGE_USB_DEVICE_BOOT If given device path contains MESSAGING_DEVICE_PATH type device path node                                          and its last device path node's subtype is MSG_USB_DP.  @retval BDS_EFI_MESSAGE_MISC_BOOT       If the device path not contains any media device path node,  and                                          its last device path node point to a message device path node.  @retval BDS_LEGACY_BBS_BOOT             If given device path contains BBS_DEVICE_PATH type device path node.  @retval BDS_EFI_UNSUPPORT               An EFI Removable BlockIO device path not point to a media and message device,
 **/
 UINT32
 EFIAPI
@@ -945,7 +945,7 @@ EFIAPI
 BdsLibSaveMemoryTypeInformation (
   VOID
   );
-  
+
 
 /**
   This function checks if a Fv file device path is valid, according to a file GUID. If it is invalid,
@@ -985,7 +985,7 @@ BdsLibUpdateFvFileDevicePath (
                                 path
 
   @retval EFI_SUCCESS           The specific Usb device is connected successfully.
-  @retval EFI_INVALID_PARAMETER Invalid HostControllerPi (not 0x00, 0x20 or 0xFF) 
+  @retval EFI_INVALID_PARAMETER Invalid HostControllerPi (not 0x00, 0x20 or 0xFF)
                                 or RemainingDevicePath is not the USB class device path.
   @retval EFI_NOT_FOUND         The device specified by device path is not found.
 
@@ -996,7 +996,7 @@ BdsLibConnectUsbDevByShortFormDP(
   IN UINT8                      HostControllerPI,
   IN EFI_DEVICE_PATH_PROTOCOL   *RemainingDevicePath
   );
-  
+
 
 //
 // The implementation of this function is provided by Platform code.
@@ -1053,7 +1053,7 @@ EnableQuietBoot (
 
 
 /**
-  Use SystemTable ConOut to turn on video based Simple Text Out consoles. The 
+  Use SystemTable ConOut to turn on video based Simple Text Out consoles. The
   Simple Text Out screens will now be synced up with all non video output devices
 
   @retval EFI_SUCCESS     UGA devices are back in text mode and synced up.

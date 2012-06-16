@@ -112,7 +112,7 @@ int pdmR3LdrInitU(PUVM pUVM)
  *
  * This will unload and free all modules.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  *
  * @remarks This is normally called twice during termination.
  */
@@ -431,8 +431,8 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
 
 
 /**
- * Loads a module into the raw-mode context (i.e. into the Hypervisor memory 
- * region). 
+ * Loads a module into the raw-mode context (i.e. into the Hypervisor memory
+ * region).
  *
  * @returns VBox status code.
  * @param   pVM             The VM to load it into.
@@ -534,14 +534,14 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                              * Register the tracer bits if present.
                              */
                             RTLDRADDR uValue;
-                            rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, 
+                            rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase,
                                                   "g_VTGObjHeader", &uValue);
                             if (RT_SUCCESS(rc))
                             {
                                 PVTGOBJHDR pVtgHdr = (PVTGOBJHDR)MMHyperRCToCC(pVM, (RTRCPTR)uValue);
-                                if (   pVtgHdr 
+                                if (   pVtgHdr
                                     && !memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
-                                    rc = SUPR3TracerRegisterModule(~(uintptr_t)0, pModule->szName, pVtgHdr, uValue, 
+                                    rc = SUPR3TracerRegisterModule(~(uintptr_t)0, pModule->szName, pVtgHdr, uValue,
                                                                    SUP_TRACER_UMOD_FLAGS_SHARED);
                                 else
                                     rc = pVtgHdr ? VERR_INVALID_MAGIC : VERR_INVALID_POINTER;
@@ -1512,7 +1512,7 @@ static PPDMMOD pdmR3LdrFindModule(PUVM pUVM, const char *pszModule, PDMMODTYPE e
  * Resolves a ring-0 or raw-mode context interface.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pvInterface     Pointer to the interface structure.  The symbol list
  *                          describes the layout.
  * @param   cbInterface     The size of the structure pvInterface is pointing

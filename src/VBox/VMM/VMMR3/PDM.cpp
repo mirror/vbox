@@ -297,7 +297,7 @@
  */
 typedef struct PDMNOTIFYASYNCSTATS
 {
-    /** The the start timestamp. */
+    /** The start timestamp. */
     uint64_t        uStartNsTs;
     /** When to log the next time. */
     uint64_t        cNsElapsedNextLog;
@@ -728,7 +728,7 @@ VMMR3DECL(void) PDMR3TermUVM(PUVM pUVM)
 /**
  * Bits that are saved in pass 0 and in the final pass.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The saved state handle.
  */
 static void pdmR3SaveBoth(PVM pVM, PSSMHANDLE pSSM)
@@ -752,7 +752,7 @@ static void pdmR3SaveBoth(PVM pVM, PSSMHANDLE pSSM)
  * Live save.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The saved state handle.
  * @param   uPass           The pass.
  */
@@ -769,7 +769,7 @@ static DECLCALLBACK(int) pdmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            The saved state handle.
  */
 static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
@@ -800,7 +800,7 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
  * This will dispatch pending operations and clear the FFs governed by PDM and its devices.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pSSM        The SSM handle.
  */
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
@@ -1255,7 +1255,7 @@ static void pdmR3NotifyAsyncLog(PPDMNOTIFYASYNCSTATS pThis)
  * Wait for events and process pending requests.
  *
  * @param   pThis               The asynchronous notifification stats.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 static void pdmR3NotifyAsyncWaitAndProcessRequests(PPDMNOTIFYASYNCSTATS pThis, PVM pVM)
 {
@@ -1646,7 +1646,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
  * This function will notify all the devices and their attached drivers about
  * the VM now being suspended.
  *
- * @param   pVM     The VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @thread  EMT(0)
  */
 VMMR3DECL(void) PDMR3Suspend(PVM pVM)
@@ -2288,7 +2288,7 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
  * Service a VMMCALLRING3_PDM_LOCK call.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) PDMR3LockCall(PVM pVM)
 {
@@ -2386,7 +2386,7 @@ VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
  * matches a device or driver name and applies the tracing config change.
  *
  * @returns VINF_SUCCESS or VERR_NOT_FOUND.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszName             The tracing config group name.  This is NULL if
  *                              the operation applies to every device and
  *                              driver.
@@ -2522,7 +2522,7 @@ VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchN
  * and USB device have the same tracing settings.
  *
  * @returns true / false.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   fEnabled            The tracing setting to check for.
  */
 VMMR3_INT_DECL(bool) PDMR3TracingAreAll(PVM pVM, bool fEnabled)
@@ -2560,7 +2560,7 @@ VMMR3_INT_DECL(bool) PDMR3TracingAreAll(PVM pVM, bool fEnabled)
  * string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW
- * @param   ppszDst             The pointer to the the output buffer pointer.
+ * @param   ppszDst             The pointer to the output buffer pointer.
  * @param   pcbDst              The pointer to the output buffer size.
  * @param   fSpace              Whether to add a space before the name.
  * @param   pszPrefix           The name prefix.
@@ -2598,7 +2598,7 @@ static int pdmR3TracingAdd(char **ppszDst, size_t *pcbDst, bool fSpace, const ch
  * or disabled.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszConfig           Where to store the config spec.
  * @param   cbConfig            The size of the output buffer.
  */
@@ -2675,7 +2675,7 @@ bool pdmR3IsValidName(const char *pszName)
 /**
  * Info handler for 'pdmtracingids'.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The output helpers.
  * @param   pszArgs     The optional user arguments.
  *

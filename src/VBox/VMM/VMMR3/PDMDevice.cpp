@@ -852,7 +852,7 @@ VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInsta
  * timer or similar created by the device.
  *
  * @returns Pointer to the critical section.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance in question.
  *
  * @internal

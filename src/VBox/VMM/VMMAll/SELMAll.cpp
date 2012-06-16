@@ -1091,7 +1091,7 @@ VMMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM)
 /**
  * Gets the hypervisor code selector (CS).
  * @returns CS selector.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
 {
@@ -1102,7 +1102,7 @@ VMMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
 /**
  * Gets the 64-mode hypervisor code selector (CS64).
  * @returns CS selector.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
 {
@@ -1113,7 +1113,7 @@ VMMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
 /**
  * Gets the hypervisor data selector (DS).
  * @returns DS selector.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
 {
@@ -1124,7 +1124,7 @@ VMMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
 /**
  * Gets the hypervisor TSS selector.
  * @returns TSS selector.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
 {
@@ -1135,7 +1135,7 @@ VMMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
 /**
  * Gets the hypervisor TSS Trap 8 selector.
  * @returns TSS Trap 8 selector.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
 {
@@ -1146,7 +1146,7 @@ VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
  * Gets the address for the hypervisor GDT.
  *
  * @returns The GDT address.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @remark  This is intended only for very special use, like in the world
  *          switchers. Don't exploit this API!
  */
@@ -1169,7 +1169,7 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
  * @retval  VINF_SUCCESS if we've got a TSS loaded.
  * @retval  VERR_SELM_NO_TSS if we haven't got a TSS (rather unlikely).
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pVCpu               VMCPU Handle.
  * @param   pGCPtrTss           Where to store the TSS address.
  * @param   pcbTss              Where to store the TSS size limit.

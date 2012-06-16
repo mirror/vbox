@@ -402,7 +402,7 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Record return code statistics
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   rc          The status code.
  */

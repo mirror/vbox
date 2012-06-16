@@ -333,7 +333,7 @@ VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
  * Flag whether the event implies that we're stopped in the hypervisor code
  * and have to block certain operations.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    The event.
  */
 static void dbgfR3EventSetStoppedInHyperFlag(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -356,7 +356,7 @@ static void dbgfR3EventSetStoppedInHyperFlag(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Try to determine the event context.
  *
  * @returns debug event context.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
 {
@@ -388,7 +388,7 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
  * and perhaps process any high priority pending actions (none yet).
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    The event to be sent.
  */
 static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -428,7 +428,7 @@ static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Sends the event in the event buffer.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static int dbgfR3SendEvent(PVM pVM)
 {
@@ -446,7 +446,7 @@ static int dbgfR3SendEvent(PVM pVM)
  * Send a generic debugger event which takes no data.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    The event to send.
  */
 VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -468,7 +468,7 @@ VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Send a debugger event which takes the full source file location.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    The event to send.
  * @param   pszFile     Source file.
  * @param   uLine       Line number in source file.
@@ -490,7 +490,7 @@ VMMR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFi
  * Send a debugger event which takes the full source file location.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    The event to send.
  * @param   pszFile     Source file.
  * @param   uLine       Line number in source file.
@@ -532,7 +532,7 @@ VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszF
  * Send a debugger event which takes the two assertion messages.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    The event to send.
  * @param   pszMsg1     First assertion message.
  * @param   pszMsg2     Second assertion message.
@@ -559,7 +559,7 @@ VMMR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char 
  * Figure out which breakpoint it is and notify the debugger.
  *
  * @returns VBox status.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    DBGFEVENT_BREAKPOINT_HYPER or DBGFEVENT_BREAKPOINT.
  */
 VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)

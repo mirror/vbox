@@ -458,7 +458,7 @@ VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 /**
  * Reset notification.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 VMMR3DECL(void) EMR3Reset(PVM pVM)
 {
@@ -926,7 +926,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
  * critical section.
  *
  * @returns false - new fInREMState value.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  */
 DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)

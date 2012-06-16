@@ -103,7 +103,7 @@ int tmCpuTickPause(PVMCPU pVCpu)
  *
  * Used by TMCpuTickCanUseRealTSC and TMCpuTickGetDeadlineAndTscOffset.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current CPU.
  */
 DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
@@ -362,7 +362,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
  * Sets the current CPU timestamp counter.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU to operate on.
  * @param   u64Tick     The new timestamp value.
  *

@@ -75,7 +75,7 @@ VMMRCDECL(int) TRPMGCSetTempHandler(PVM pVM, unsigned iTrap, PFNTRPMGCTRAPHANDLE
  * This function will *never* return.
  * It will also reset any traps that are pending.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   rc      The return code for host context.
  */
 VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)

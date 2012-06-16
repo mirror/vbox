@@ -191,7 +191,7 @@ STDMETHODIMP Appliance::Interpret()
                 nameVBox = pNewDesc->m->pConfig->machineUserData.strName;
             else
                 nameVBox = vsysThis.strName;
-            /* If the there isn't any name specified create a default one out
+            /* If there isn't any name specified create a default one out
              * of the OS type */
             if (nameVBox.isEmpty())
                 nameVBox = strOsTypeVBox;

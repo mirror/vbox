@@ -83,7 +83,7 @@ typedef struct TRPMGCHYPER
      * @returns VBox status code
      *          VINF_SUCCESS means we've handled the trap.
      *          Any other error code means returning to the host context.
-     * @param   pVM             The VM handle.
+     * @param   pVM             Pointer to the VM.
      * @param   pRegFrame       The register frame.
      * @param   uUser           The user argument.
      */
@@ -718,7 +718,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
@@ -818,7 +818,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
@@ -938,7 +938,7 @@ DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pTrpmCpu    Pointer to TRPMCPU data (within VM).
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
@@ -1175,7 +1175,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   paHandlers  The array of trap handler records.
  * @param   pEndRecord  The end record (exclusive).
@@ -1271,7 +1271,7 @@ DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  * Deal with hypervisor traps occurring when resuming execution on a trap.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Register frame.
  * @param   uUser       User arg.
  */

@@ -55,9 +55,9 @@
  */
 typedef struct PGMHVUSTATE
 {
-    /** The VM handle. */
+    /** Pointer to the VM. */
     PVM         pVM;
-    /** The VMCPU handle. */
+    /** Pointer to the VMCPU. */
     PVMCPU      pVCpu;
     /** The todo flags. */
     RTUINT      fTodo;
@@ -522,7 +522,7 @@ VMMDECL(int) PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * @returns Pointer to the mapping.
  * @returns NULL if not
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       The guest context pointer.
  */
 PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
@@ -799,7 +799,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * Executes an instruction using the interpreter.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   pRegFrame   Register frame.
  * @param   pvFault     Fault address.
@@ -1714,7 +1714,7 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVMCPU pVCpu, PGMMODE enmShadowMode)
 /**
  * Gets the current CR3 register value for the HC intermediate memory context.
  * @returns CR3 value.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTHCPHYS) PGMGetInterHCCR3(PVM pVM)
 {
@@ -1746,7 +1746,7 @@ VMMDECL(RTHCPHYS) PGMGetInterHCCR3(PVM pVM)
 /**
  * Gets the current CR3 register value for the RC intermediate memory context.
  * @returns CR3 value.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  */
 VMMDECL(RTHCPHYS) PGMGetInterRCCR3(PVM pVM, PVMCPU pVCpu)
@@ -1778,7 +1778,7 @@ VMMDECL(RTHCPHYS) PGMGetInterRCCR3(PVM pVM, PVMCPU pVCpu)
 /**
  * Gets the CR3 register value for the 32-Bit intermediate memory context.
  * @returns CR3 value.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTHCPHYS) PGMGetInter32BitCR3(PVM pVM)
 {
@@ -1789,7 +1789,7 @@ VMMDECL(RTHCPHYS) PGMGetInter32BitCR3(PVM pVM)
 /**
  * Gets the CR3 register value for the PAE intermediate memory context.
  * @returns CR3 value.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTHCPHYS) PGMGetInterPaeCR3(PVM pVM)
 {
@@ -1800,7 +1800,7 @@ VMMDECL(RTHCPHYS) PGMGetInterPaeCR3(PVM pVM)
 /**
  * Gets the CR3 register value for the AMD64 intermediate memory context.
  * @returns CR3 value.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTHCPHYS) PGMGetInterAmd64CR3(PVM pVM)
 {
@@ -2210,7 +2210,7 @@ VMMDECL(PGMMODE) PGMGetShadowMode(PVMCPU pVCpu)
  * Gets the current host paging mode.
  *
  * @returns The current paging mode.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMDECL(PGMMODE) PGMGetHostMode(PVM pVM)
 {
@@ -2329,7 +2329,7 @@ VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
  * Check if any pgm pool pages are marked dirty (not monitored)
  *
  * @returns bool locked/not locked
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
 {
@@ -2341,7 +2341,7 @@ VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
  * Check if this VCPU currently owns the PGM lock.
  *
  * @returns bool owner/not owner
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) PGMIsLockOwner(PVM pVM)
 {
@@ -2353,7 +2353,7 @@ VMMDECL(bool) PGMIsLockOwner(PVM pVM)
  * Enable or disable large page usage
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   fUseLargePages  Use/not use large pages
  */
 VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
@@ -2369,7 +2369,7 @@ VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
  * Acquire the PGM lock.
  *
  * @returns VBox status code
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 int pgmLock(PVM pVM)
 {
@@ -2387,7 +2387,7 @@ int pgmLock(PVM pVM)
  * Release the PGM lock.
  *
  * @returns VBox status code
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 void pgmUnlock(PVM pVM)
 {
@@ -2404,7 +2404,7 @@ void pgmUnlock(PVM pVM)
  * Common worker for pgmRZDynMapGCPageOffInlined and pgmRZDynMapGCPageV2Inlined.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current CPU.
  * @param   GCPhys      The guest physical address of the page to map.  The
  *                      offset bits are not ignored.
@@ -2603,7 +2603,7 @@ VMMDECL(void) PGMDeregisterStringFormatTypes(void)
  * Asserts that there are no mapping conflicts.
  *
  * @returns Number of conflicts.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
 {
@@ -2647,7 +2647,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
  * shadow page tables is in sync with the guest page tables.
  *
  * @returns Number of conflicts.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU handle.
  * @param   cr3     The current guest CR3 register value.
  * @param   cr4     The current guest CR4 register value.

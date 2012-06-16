@@ -305,7 +305,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
  * Finalizes HMA page attributes.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) PATMR3InitFinalize(PVM pVM)
 {
@@ -6679,7 +6679,7 @@ static const char *PATMPatchState(PVM pVM, PPATCHINFO pPatch)
 
 /**
  * Resets the sample.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    The sample registered using STAMR3RegisterCallback.
  */
 static void patmResetStat(PVM pVM, void *pvSample)
@@ -6694,7 +6694,7 @@ static void patmResetStat(PVM pVM, void *pvSample)
 /**
  * Prints the sample into the buffer.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvSample    The sample registered using STAMR3RegisterCallback.
  * @param   pszBuf      The buffer to print into.
  * @param   cchBuf      The size of the buffer.

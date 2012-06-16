@@ -539,7 +539,7 @@ VMMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
  *
  * @returns Pointer to the duplicate.
  * @returns NULL on failure or when input NULL.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
  *                      identify how memory is used by the VM. See MM_TAG_*.

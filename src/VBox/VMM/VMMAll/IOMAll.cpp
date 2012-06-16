@@ -1042,7 +1042,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
 /**
  * Fress an MMIO range after the reference counter has become zero.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pRange              The range to free.
  */
 void iomMmioFreeRange(PVM pVM, PIOMMMIORANGE pRange)

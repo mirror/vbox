@@ -144,7 +144,7 @@ static bool rtAssertShouldPanicWorker(void)
 RTDECL(bool) RTAssertShouldPanic(void)
 {
     /*
-     * Check if panicing is excluded by the the RTAssert settings first.
+     * Check if panicing is excluded by the RTAssert settings first.
      */
     if (!RTAssertMayPanic())
         return false;

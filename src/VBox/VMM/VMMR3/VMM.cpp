@@ -615,7 +615,7 @@ VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
  * Called when an init phase completes.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   enmWhat             Which init phase.
  */
 VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
@@ -699,7 +699,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  * Terminate the VMM bits.
  *
  * @returns VINF_SUCCESS.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
 {
@@ -782,7 +782,7 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
  *
  * The VMM will need to apply relocations to the core code.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   offDelta    The relocation delta.
  */
 VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -834,7 +834,7 @@ VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * Updates the settings for the RC and R0 loggers.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 {
@@ -933,7 +933,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
  * Gets the pointer to a buffer containing the R0/RC RTAssertMsg1Weak output.
  *
  * @returns Pointer to the buffer.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
 {
@@ -953,7 +953,7 @@ VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
  * Gets the pointer to a buffer containing the R0/RC RTAssertMsg2Weak output.
  *
  * @returns Pointer to the buffer.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM)
 {
@@ -1102,7 +1102,7 @@ VMMR3_INT_DECL(int) VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pR
 /**
  * Suspends the CPU yielder.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
 {
@@ -1124,7 +1124,7 @@ VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
 /**
  * Stops the CPU yielder.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3_INT_DECL(void) VMMR3YieldStop(PVM pVM)
 {
@@ -1138,7 +1138,7 @@ VMMR3_INT_DECL(void) VMMR3YieldStop(PVM pVM)
 /**
  * Resumes the CPU yielder when it has been a suspended or stopped.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3_INT_DECL(void) VMMR3YieldResume(PVM pVM)
 {
@@ -1426,7 +1426,7 @@ VMMR3DECL(int) VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned c
  * @returns VBox strict informational status code for EM scheduling. No failures
  *          will be returned here, those are for the caller only.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 DECL_FORCE_INLINE(int) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
 {
@@ -1453,7 +1453,7 @@ DECL_FORCE_INLINE(int) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
  *          will be returned here, those are for the caller only.  When
  *          fIsCaller is set, VINF_SUCCESS is always returned.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pVCpu               The VMCPU structure for the calling EMT.
  * @param   fIsCaller           Whether we're the VMMR3EmtRendezvous caller or
  *                              not.
@@ -1647,10 +1647,10 @@ VMMR3_INT_DECL(int) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
  * Gathers all the EMTs and execute some code on each of them, either in a one
  * by one fashion or all at once.
  *
- * @returns VBox strict status code.  This will be the the first error,
+ * @returns VBox strict status code.  This will be the first error,
  *          VINF_SUCCESS, or an EM scheduling status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   fFlags          Flags indicating execution methods. See
  *                          grp_VMMR3EmtRendezvous_fFlags.
  * @param   pfnRendezvous   The callback.
@@ -1837,7 +1837,7 @@ VMMR3_INT_DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr,
 /**
  * Calls a RC function.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   RCPtrEntry  The address of the RC function.
  * @param   cArgs       The number of arguments in the ....
  * @param   ...         Arguments to the function.
@@ -1855,7 +1855,7 @@ VMMR3DECL(int) VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...)
 /**
  * Calls a RC function.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   RCPtrEntry  The address of the RC function.
  * @param   cArgs       The number of arguments in the ....
  * @param   args        Arguments to the function.
@@ -2208,7 +2208,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
 /**
  * Displays the Force action Flags.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The output helpers.
  * @param   pszArgs     The additional arguments (ignored).
  */

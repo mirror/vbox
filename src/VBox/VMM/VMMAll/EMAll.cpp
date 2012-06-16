@@ -370,7 +370,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
  *          details.
  * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pVCpu           The VMCPU handle.
  * @param   pCtxCore        The context core (used for both the mode and instruction).
  * @param   pDis            Where to return the parsed instruction info.
@@ -398,7 +398,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
  * @returns VBox status code.
  * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pVCpu           The VMCPU handle.
  * @param   GCPtrInstr      The flat address of the instruction.
  * @param   pCtxCore        The context core (used to determine the cpu mode).
@@ -477,7 +477,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
@@ -534,7 +534,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pDis        The disassembler cpu state for the instruction to be
  *                      interpreted.
@@ -585,7 +585,7 @@ DECLINLINE(int) emRCStackRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void
  * Interpret IRET (currently only to V86 code) - PATM only.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
@@ -1967,7 +1967,7 @@ static int emInterpretWbInvd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
  * Interpret INVLPG
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   pAddrGC     Operand address
@@ -2041,7 +2041,7 @@ static VBOXSTRICTRC emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, 
  * Interpret CPUID given the parameters in the CPU context
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
@@ -2079,7 +2079,7 @@ static int emInterpretCpuId(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * Interpret CRx read
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
@@ -2112,7 +2112,7 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
  * Interpret CLTS
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  *
  */
@@ -2139,7 +2139,7 @@ static int emInterpretClts(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
  * Update CRx
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
@@ -2278,7 +2278,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
  * Interpret CRx write
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
@@ -2311,7 +2311,7 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  * Interpret LMSW
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   u16Data     LMSW source data.
@@ -2430,7 +2430,7 @@ static int emInterpretMovCRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
  * Interpret DRx write
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegDRx  DRx register index (USE_REG_DR*)
@@ -2470,7 +2470,7 @@ VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  * Interpret DRx read
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
@@ -2659,7 +2659,7 @@ emInterpretHlt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
  * Interpret RDTSC
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
@@ -2685,7 +2685,7 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  * Interpret RDTSCP
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pCtx        The CPU context.
  *
@@ -2728,7 +2728,7 @@ static int emInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * Interpret RDPMC
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
@@ -2943,7 +2943,7 @@ static const char *emMSRtoString(uint32_t uMsr)
  * Interpret RDMSR
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  */
@@ -2988,7 +2988,7 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * Interpret WRMSR
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  */

@@ -403,7 +403,7 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint32_t
  * I/O thread for pending TX.
  *
  * @returns VINF_SUCCESS (ignored).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pThread     The PDM thread data.
  */
 static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)

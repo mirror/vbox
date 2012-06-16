@@ -217,7 +217,7 @@ typedef HWACCMTPRPATCH *PHWACCMTPRPATCH;
 /**
  * Switcher function, HC to RC.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   uOffsetVMCPU    VMCPU offset from pVM
  * @returns Return code indicating the action to take.
  */

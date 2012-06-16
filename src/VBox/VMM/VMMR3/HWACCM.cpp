@@ -693,7 +693,7 @@ static void hwaccmR3DisableRawMode(PVM pVM)
  * Initialize VT-x or AMD-V.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 static int hwaccmR3InitFinalizeR0(PVM pVM)
 {
@@ -1656,7 +1656,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
  * Callback to patch a TPR instruction (vmmcall or mov cr8)
  *
  * @returns VBox strict status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  Unused
  *
@@ -1791,7 +1791,7 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
  * Callback to patch a TPR instruction (vmmcall or mov cr8)
  *
  * @returns VBox strict status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  User specified CPU context
  *
@@ -1963,7 +1963,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
  * Callback to patch a TPR instruction (jump to generated code)
  *
  * @returns VBox strict status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  User specified CPU context
  *
@@ -2508,7 +2508,7 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
  * Checks if the VMX-preemption timer is being used.
  *
  * @returns true if it is, false if it isn't.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(bool) HWACCMR3IsVmxPreemptionTimerUsed(PVM pVM)
 {

@@ -107,7 +107,7 @@ DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
  * for the two globals which live in TM.
  *
  * @returns Nanosecond timestamp.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
 {
@@ -282,7 +282,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
  * Get the time when we're not running at 100%
  *
  * @returns The timestamp.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
 {
@@ -310,7 +310,7 @@ static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
  * Get the raw virtual time.
  *
  * @returns The current time stamp.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
 {
@@ -403,7 +403,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGetNoCheck(PVM pVM)
  * Converts the dead line interval from TMCLOCK_VIRTUAL to host nano seconds.
  *
  * @returns Host nano second count.
- * @param   pVM                     The VM handle.
+ * @param   pVM                     Pointer to the VM.
  * @param   cVirtTicksToDeadline    The TMCLOCK_VIRTUAL interval.
  */
 DECLINLINE(uint64_t) tmVirtualVirtToNsDeadline(PVM pVM, uint64_t cVirtTicksToDeadline)
@@ -532,7 +532,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
  * tmVirtualSyncGetEx worker for when we get the lock.
  *
  * @returns timesamp.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   u64                 The virtual clock timestamp.
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
  *                              the next virtual sync timer deadline.  Can be
@@ -976,7 +976,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
  * Worker for TMR3PauseClocks.
  *
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int tmVirtualPauseLocked(PVM pVM)
 {
@@ -996,7 +996,7 @@ int tmVirtualPauseLocked(PVM pVM)
  * Worker for TMR3ResumeClocks.
  *
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int tmVirtualResumeLocked(PVM pVM)
 {
@@ -1018,7 +1018,7 @@ int tmVirtualResumeLocked(PVM pVM)
  * Converts from virtual ticks to nanoseconds.
  *
  * @returns nanoseconds.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u64VirtualTicks The virtual ticks to convert.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
@@ -1035,7 +1035,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
  * Converts from virtual ticks to microseconds.
  *
  * @returns microseconds.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u64VirtualTicks The virtual ticks to convert.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
@@ -1052,7 +1052,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
  * Converts from virtual ticks to milliseconds.
  *
  * @returns milliseconds.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u64VirtualTicks The virtual ticks to convert.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
@@ -1069,7 +1069,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
  * Converts from nanoseconds to virtual ticks.
  *
  * @returns virtual ticks.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u64NanoTS       The nanosecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
@@ -1085,7 +1085,7 @@ VMM_INT_DECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS)
  * Converts from microseconds to virtual ticks.
  *
  * @returns virtual ticks.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u64MicroTS      The microsecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
@@ -1101,7 +1101,7 @@ VMM_INT_DECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS)
  * Converts from milliseconds to virtual ticks.
  *
  * @returns virtual ticks.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u64MilliTS      The millisecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */

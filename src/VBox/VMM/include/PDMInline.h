@@ -22,7 +22,7 @@
  * Calculates the next IRQ tag.
  *
  * @returns IRQ tag.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   idTracer            The ID of the source device.
  */
 DECLINLINE(uint32_t) pdmCalcIrqTag(PVM pVM, uint32_t idTracer)

@@ -102,7 +102,7 @@ typedef struct RTTIMER
  * Timer callback function for the non-omni timers.
  *
  * @returns HRTIMER_NORESTART or HRTIMER_RESTART depending on whether it's a one-shot or interval timer.
- * @param   pDpc                Pointer to the the DPC.
+ * @param   pDpc                Pointer to the DPC.
  * @param   pvUser              Pointer to our internal timer structure.
  * @param   SystemArgument1     Some system argument.
  * @param   SystemArgument2     Some system argument.

@@ -220,7 +220,7 @@
  * Maps a HC physical page pool address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current CPU.
  * @param   HCPhys      The HC physical address to map to a virtual one.
  * @param   ppv         Where to store the virtual address. No need to cast
@@ -242,7 +242,7 @@
  * Maps a GC physical page address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The current CPU.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
@@ -263,7 +263,7 @@
  * Maps a GC physical page address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
  *
@@ -291,7 +291,7 @@
  * Maps a unaligned GC physical page address to a virtual address.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
  *
@@ -332,7 +332,7 @@
  *
  * For best effect only apply this to the page that was mapped most recently.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pvPage  The pool page.
  */
 #define PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvPage)  PGM_DYNMAP_UNUSED_HINT(VMMGetCpu(pVM), pvPage)
@@ -355,7 +355,7 @@
 /** @def PGM_INVL_PG_ALL_VCPU
  * Invalidates a page on all VCPUs
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
@@ -396,7 +396,7 @@
 /** @def PGM_INVL_ALL_VCPU_TLBS()
  * Invalidates the TLBs of all VCPUs
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 #ifdef IN_RC
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            ASMReloadCR3()
@@ -2435,7 +2435,7 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
  * Maps a pool page pool into the current context.
  *
  * @returns VBox status code.
- * @param   a_pVM       The VM handle.
+ * @param   a_pVM       Pointer to the VM.
  * @param   a_pPage     The pool page.
  *
  * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
@@ -2460,7 +2460,7 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage)
  * Maps a pool page pool into the current context, taking both VM and VMCPU.
  *
  * @returns VBox status code.
- * @param   a_pVM       The VM handle.
+ * @param   a_pVM       Pointer to the VM.
  * @param   a_pVCpu     The current CPU.
  * @param   a_pPage     The pool page.
  *
@@ -3890,13 +3890,13 @@ void            pgmUnlock(PVM pVM);
 /**
  * Asserts that the caller owns the PDM lock.
  * This is the internal variant of PGMIsLockOwner.
- * @param   a_pVM           The VM handle.
+ * @param   a_pVM           Pointer to the VM.
  */
 #define PGM_LOCK_ASSERT_OWNER(a_pVM)    Assert(PDMCritSectIsOwner(&(a_pVM)->pgm.s.CritSectX))
 /**
  * Asserts that the caller owns the PDM lock.
  * This is the internal variant of PGMIsLockOwner.
- * @param   a_pVM           The VM handle.
+ * @param   a_pVM           Pointer to the VM.
  * @param   a_pVCpu         The current CPU handle.
  */
 #define PGM_LOCK_ASSERT_OWNER_EX(a_pVM, a_pVCpu)  Assert(PDMCritSectIsOwnerEx(&(a_pVM)->pgm.s.CritSectX, pVCpu))

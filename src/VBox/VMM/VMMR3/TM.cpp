@@ -1259,7 +1259,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
  * Internal TMR3TimerCreate worker.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmClock    The timer clock.
  * @param   pszDesc     The timer description.
  * @param   ppTimer     Where to store the timer pointer on success.
@@ -1770,7 +1770,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
  * Internal function for getting the clock time.
  *
  * @returns clock time.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmClock    The clock.
  */
 DECLINLINE(uint64_t) tmClock(PVM pVM, TMCLOCK enmClock)
@@ -1793,7 +1793,7 @@ DECLINLINE(uint64_t) tmClock(PVM pVM, TMCLOCK enmClock)
  *
  * @returns true / false.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmClock    The queue.
  */
 DECLINLINE(bool) tmR3HasExpiredTimer(PVM pVM, TMCLOCK enmClock)
@@ -1807,7 +1807,7 @@ DECLINLINE(bool) tmR3HasExpiredTimer(PVM pVM, TMCLOCK enmClock)
  * Checks for expired timers in all the queues.
  *
  * @returns true / false.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
 {
@@ -2608,7 +2608,7 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
  * Pauses all clocks except TMCLOCK_REAL.
  *
  * @returns VBox status code, all errors are asserted.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @thread  EMT corresponding to the virtual CPU handle.
  */
@@ -2651,7 +2651,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
  * Resumes all clocks except TMCLOCK_REAL.
  *
  * @returns VBox status code, all errors are asserted.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @thread  EMT corresponding to the virtual CPU handle.
  */
@@ -2695,7 +2695,7 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
  * Sets the warp drive percent of the virtual time.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   u32Percent  The new percentage. 100 means normal operation.
  */
 VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
@@ -2708,7 +2708,7 @@ VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
  * EMT worker for TMR3SetWarpDrive.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   u32Percent  See TMR3SetWarpDrive().
  * @internal
  */
@@ -2758,7 +2758,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
  * @retval  VERR_INVALID_STATE if the VM handle is bad.
  * @retval  VERR_INVALID_PARAMETER if idCpu is out of range.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           The ID of the virtual CPU which times to get.
  * @param   pcNsTotal       Where to store the total run time (nano seconds) of
  *                          the CPU, i.e. the sum of the three other returns.
@@ -2869,7 +2869,7 @@ DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState,
  * Timer callback that calculates the CPU load since the last time it was
  * called.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pTimer              The timer.
  * @param   pvUser              NULL, unused.
  */

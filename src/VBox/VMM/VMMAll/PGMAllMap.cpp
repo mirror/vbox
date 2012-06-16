@@ -216,7 +216,7 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
  * the page table to calculate the flags.
  *
  * @returns VINF_SUCCESS, VERR_PAGE_NOT_PRESENT or VERR_NOT_FOUND.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   GCPtr               The page address.
  * @param   pfFlags             Where to return the flags.  Optional.
  * @param   pHCPhys             Where to return the address.  Optional.
@@ -264,7 +264,7 @@ VMMDECL(int) PGMMapGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS 
 /**
  * Sets all PDEs involved with the mapping in the shadow page table.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pMap        Pointer to the mapping in question.
  * @param   iNewPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
  */
@@ -416,7 +416,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 /**
  * Clears all PDEs involved with the mapping in the shadow page table.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pShwPageCR3     CR3 root page
  * @param   pMap            Pointer to the mapping in question.
  * @param   iOldPDE         The index of the 32-bit PDE corresponding to the base of the mapping.
@@ -546,7 +546,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 /**
  * Clears all PDEs involved with the mapping in the shadow page table.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  * @param   pShwPageCR3 CR3 root page
  * @param   pMap        Pointer to the mapping in question.

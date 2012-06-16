@@ -781,7 +781,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  * This usually means the size of the first contiguous block of physical memory.
  *
  * @returns The guest base RAM size.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @thread  Any.
  *
  * @deprecated

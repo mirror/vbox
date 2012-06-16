@@ -2397,7 +2397,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
         return iemRaiseSelectorNotPresentBySelector(pIemCpu, uSel);
     }
 
-    /* The the base and limit. */
+    /* The base and limit. */
     uint64_t u64Base;
     uint32_t cbLimit = X86DESC_LIMIT(Desc.Legacy);
     if (Desc.Legacy.Gen.u1Granularity)

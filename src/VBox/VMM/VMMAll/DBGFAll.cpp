@@ -30,7 +30,7 @@
  * Gets the hardware breakpoint configuration as DR7.
  *
  * @returns DR7 from the DBGF point of view.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
 {
@@ -61,7 +61,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
  * Gets the address of the hardware breakpoint number 0.
  *
  * @returns DR0 from the DBGF point of view.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
 {
@@ -75,7 +75,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
  * Gets the address of the hardware breakpoint number 1.
  *
  * @returns DR1 from the DBGF point of view.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
 {
@@ -89,7 +89,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
  * Gets the address of the hardware breakpoint number 2.
  *
  * @returns DR2 from the DBGF point of view.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
 {
@@ -103,7 +103,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
  * Gets the address of the hardware breakpoint number 3.
  *
  * @returns DR3 from the DBGF point of view.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
 {

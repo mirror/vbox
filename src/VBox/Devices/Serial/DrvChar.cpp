@@ -308,7 +308,7 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
 
     /*
      * Wait for the threads.
-     * ASSUMES that PDM destroys the driver chain from the the bottom and up.
+     * ASSUMES that PDM destroys the driver chain from the bottom and up.
      */
     if (pThis->ReceiveThread != NIL_RTTHREAD)
     {

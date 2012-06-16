@@ -101,7 +101,7 @@ static DECLCALLBACK(int) pgmR3PhysReadExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, vo
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Physical address to read from.
  * @param   pvBuf           Where to read into.
  * @param   cbRead          How many bytes to read.
@@ -230,7 +230,7 @@ static DECLCALLBACK(int) pgmR3PhysWriteExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, c
  * @retval  VINF_SUCCESS.
  * @retval  VERR_EM_NO_MEMORY.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Physical address to write to.
  * @param   pvBuf           What to write.
  * @param   cbWrite         How many bytes to write.
@@ -352,7 +352,7 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
  * VMR3ReqCall worker for PGMR3PhysGCPhys2CCPtrExternal to make pages writable.
  *
  * @returns see PGMR3PhysGCPhys2CCPtrExternal
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pGCPhys     Pointer to the guest physical address.
  * @param   ppv         Where to store the mapping address.
  * @param   pLock       Where to store the lock.
@@ -416,7 +416,7 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
  *          must fall back on using PGMR3PhysWriteExternal.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
@@ -523,7 +523,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
  *          must fall back on using PGMPhysRead.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
  * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
@@ -660,7 +660,7 @@ static PPGMRAMRANGE pgmR3PhysRebuildRamRangeSearchTreesRecursively(PPGMRAMRANGE 
 /**
  * Rebuilds the RAM range search trees.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 static void pgmR3PhysRebuildRamRangeSearchTrees(PVM pVM)
 {
@@ -734,7 +734,7 @@ static void pgmR3PhysRebuildRamRangeSearchTrees(PVM pVM)
  *
  * Called when anything was relocated.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 void pgmR3PhysRelinkRamRanges(PVM pVM)
 {
@@ -784,7 +784,7 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
 /**
  * Links a new RAM range into the list.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pNew        Pointer to the new list entry.
  * @param   pPrev       Pointer to the previous list entry. If NULL, insert as head.
  */
@@ -823,7 +823,7 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
 /**
  * Unlink an existing RAM range from the list.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRam        Pointer to the new list entry.
  * @param   pPrev       Pointer to the previous list entry. If NULL, insert as head.
  */
@@ -859,7 +859,7 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
 /**
  * Unlink an existing RAM range from the list.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRam        Pointer to the new list entry.
  */
 static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
@@ -885,7 +885,7 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
  * Frees a range of pages, replacing them with ZERO pages of the specified type.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRam        The RAM range in which the pages resides.
  * @param   GCPhys      The address of the first page.
  * @param   GCPhysLast  The address of the last page.
@@ -932,7 +932,7 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
  * it to complete this function.
  *
  * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser      User parameter
  */
@@ -1049,7 +1049,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
  * Frees a range of ram pages, replacing them with ZERO pages; helper for PGMR3PhysFreeRamPages
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   fInflate    Inflate or deflate memory balloon
  * @param   cPages      Number of pages to free
  * @param   paPhysPage  Array of guest physical addresses
@@ -1074,7 +1074,7 @@ static DECLCALLBACK(void) pgmR3PhysChangeMemBalloonHelper(PVM pVM, bool fInflate
  * Inflate or deflate a memory balloon
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   fInflate    Inflate or deflate memory balloon
  * @param   cPages      Number of pages to free
  * @param   paPhysPage  Array of guest physical addresses
@@ -1129,7 +1129,7 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
  * it to complete this function.
  *
  * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser      User parameter, unused.
  */
@@ -1200,7 +1200,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
  * Protect all physical RAM to monitor writes
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) PGMR3PhysWriteProtectRAM(PVM pVM)
 {
@@ -1215,7 +1215,7 @@ VMMR3DECL(int) PGMR3PhysWriteProtectRAM(PVM pVM)
  * Enumerate all dirty FT pages.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pfnEnum     Enumerate callback handler.
  * @param   pvUser      Enumerate callback handler parameter.
  */
@@ -1299,7 +1299,7 @@ VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum
  * Gets the number of ram ranges.
  *
  * @returns Number of ram ranges.  Returns UINT32_MAX if @a pVM is invalid.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM)
 {
@@ -1357,7 +1357,7 @@ VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStar
  * Query the amount of free memory inside VMMR0
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pcbAllocMem         Where to return the amount of memory allocated
  *                              by VMs.
  * @param   pcbFreeMem          Where to return the amount of memory that is
@@ -1400,7 +1400,7 @@ VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PVM pVM, uint64_t *pcbAllocMem, uint6
  * Query memory stats for the VM.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pcbTotalMem         Where to return total amount memory the VM may
  *                              possibly use.
  * @param   pcbPrivateMem       Where to return the amount of private memory
@@ -1446,7 +1446,7 @@ VMMR3DECL(int) PGMR3QueryMemoryStats(PVM pVM, uint64_t *pcbTotalMem, uint64_t *p
 /**
  * PGMR3PhysRegisterRam worker that initializes and links a RAM range.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pNew            The new RAM range.
  * @param   GCPhys          The address of the RAM range.
  * @param   GCPhysLast      The last address of the RAM range.
@@ -1531,7 +1531,7 @@ static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, R
  * PGMR3PhysRegisterRam worker that registers a high chunk.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The address of the RAM.
  * @param   cRamPages       The number of RAM pages to register.
  * @param   cbChunk         The size of the PGMRAMRANGE guest mapping.
@@ -1617,7 +1617,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
  * tracking structures (PGMPAGE).
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The physical address of the RAM.
  * @param   cb              The size of the RAM.
  * @param   pszDesc         The description - not copied, so, don't free or change it.
@@ -1754,7 +1754,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
  *
  * @returns VBox status code.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int pgmR3PhysRamPreAllocate(PVM pVM)
 {
@@ -1821,7 +1821,7 @@ int pgmR3PhysRamPreAllocate(PVM pVM)
  * ASSUMES that the caller owns the PGM lock.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int pgmR3PhysRamReset(PVM pVM)
 {
@@ -1983,7 +1983,7 @@ int pgmR3PhysRamReset(PVM pVM)
  * ASSUMES that the caller owns the PGM lock.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int pgmR3PhysRamTerm(PVM pVM)
 {
@@ -2064,7 +2064,7 @@ int pgmR3PhysRamTerm(PVM pVM)
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The start of the MMIO region.
  * @param   cb              The size of the MMIO region.
  * @param   pfnHandlerR3    The address of the ring-3 handler. (IOMR3MMIOHandler)
@@ -2230,7 +2230,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
  * any ad hoc PGMRAMRANGE left behind.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The start of the MMIO region.
  * @param   cb              The size of the MMIO region.
  */
@@ -2346,7 +2346,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
  * Locate a MMIO2 range.
  *
  * @returns Pointer to the MMIO2 range.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance owning the region.
  * @param   iRegion         The region.
  */
@@ -2381,7 +2381,7 @@ DECLINLINE(PPGMMMIO2RANGE) pgmR3PhysMMIO2Find(PVM pVM, PPDMDEVINS pDevIns, uint3
  *          memory.
  * @retval  VERR_ALREADY_EXISTS if the region already exists.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance owning the region.
  * @param   iRegion         The region number.  If the MMIO2 memory is a PCI
  *                          I/O region this number has to be the number of that
@@ -2509,7 +2509,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
  * be deregistered before calling this function.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance owning the region.
  * @param   iRegion         The region. If it's UINT32_MAX it'll be a wildcard match.
  */
@@ -2614,7 +2614,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The device instance owning the region.
  */
 VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
@@ -2871,7 +2871,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
  * Checks if the given address is an MMIO2 base address or not.
  *
  * @returns true/false accordingly.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The owner of the memory, optional.
  * @param   GCPhys          The address to check.
  */
@@ -2909,7 +2909,7 @@ VMMR3DECL(bool) PGMR3PhysMMIO2IsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhy
  * by anyone else...
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         The owner of the memory, optional.
  * @param   iRegion         The region.
  * @param   off             The page expressed an offset into the MMIO2 region.
@@ -2944,7 +2944,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  *
  * @return VBox status code.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pDevIns     The device owning the MMIO2 memory.
  * @param   iRegion     The region.
  * @param   off         The offset into the region. Must be page aligned.
@@ -2986,7 +2986,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  * anything first.
  *
  * @returns VBox status.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             The device instance owning the ROM.
  * @param   GCPhys              First physical address in the range.
  *                              Must be page aligned!
@@ -3341,7 +3341,7 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
  * is configured to be preallocated).
  *
  * @returns VBox status.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             The device instance owning the ROM.
  * @param   GCPhys              First physical address in the range.
  *                              Must be page aligned!
@@ -3375,7 +3375,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -3479,7 +3479,7 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
  *
  * ASSUMES that the caller owns the PGM lock.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 int pgmR3PhysRomReset(PVM pVM)
 {
@@ -3579,7 +3579,7 @@ int pgmR3PhysRomReset(PVM pVM)
  *
  * ASSUMES that the caller owns the PGM lock.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 void pgmR3PhysRomTerm(PVM pVM)
 {
@@ -3610,7 +3610,7 @@ void pgmR3PhysRomTerm(PVM pVM)
  * @returns VBox status code.
  * @retval  VINF_PGM_SYNC_CR3
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      Where to start. Page aligned.
  * @param   cb          How much to change. Page aligned.
  * @param   enmProt     The new ROM protection.
@@ -3755,7 +3755,7 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pN
  */
 typedef struct PGMR3PHYSCHUNKUNMAPCB
 {
-    PVM                 pVM;            /**< The VM handle. */
+    PVM                 pVM;            /**< Pointer to the VM. */
     PPGMCHUNKR3MAP      pChunk;         /**< The chunk to unmap. */
 } PGMR3PHYSCHUNKUNMAPCB, *PPGMR3PHYSCHUNKUNMAPCB;
 
@@ -3814,7 +3814,7 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pN
  * anything afterwards.
  *
  * @returns Chunk id.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
 {
@@ -3849,7 +3849,7 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
  * it to complete this function.
  *
  * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser      User pointer. Unused
  *
@@ -3942,7 +3942,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
  * Unmap a chunk to free up virtual address space (request packet handler for pgmR3PhysChunkMap)
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 void pgmR3PhysUnmapChunk(PVM pVM)
 {
@@ -3957,7 +3957,7 @@ void pgmR3PhysUnmapChunk(PVM pVM)
  * This will call ring-0.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   idChunk     The chunk in question.
  * @param   ppChunk     Where to store the chunk tracking structure.
  *
@@ -4082,7 +4082,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
  * For VMMCALLRING3_PGM_MAP_CHUNK, considered internal.
  *
  * @returns see pgmR3PhysChunkMap.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   idChunk     The chunk to map.
  */
 VMMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk)
@@ -4100,7 +4100,7 @@ VMMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk)
 /**
  * Invalidates the TLB for the ring-3 mapping cache.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
 {
@@ -4124,7 +4124,7 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
  * @retval  VINF_SUCCESS on success.
  * @retval  VINF_EM_NO_MEMORY if we're out of memory.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      GC physical start address of the 2 MB range
  */
 VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
@@ -4249,7 +4249,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
  * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is not cleared in
  *          this case and it gets accompanied by VM_FF_PGM_NO_MEMORY.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  *
  * @remarks The VINF_EM_NO_MEMORY status is for the benefit of the FF processing
  *          in EM.cpp and shouldn't be propagated outside TRPM, HWACCM, EM and
@@ -4407,7 +4407,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
  *
  * This is used by ballooning, remapping MMIO2, RAM reset and state loading.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pReq            Pointer to the request.
  * @param   pcPendingPages  Where the number of pages waiting to be freed are
  *                          kept.  This will normally be incremented.
@@ -4528,7 +4528,7 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
  *          accesses or is odd in any way.
  * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The GC physical address to convert.  Since this is only
  *                      used for filling the REM TLB, the A20 mask must be
  *                      applied before calling this API.

@@ -545,7 +545,7 @@ public:
      *  two or more semantically different roles of the same source text in the
      *  same context.
      *
-     *  @param context      the context of the the translation
+     *  @param context      the context of the translation
      *  @param sourceText   the string to translate
      *  @param comment      the comment to the string (NULL means no comment)
      *

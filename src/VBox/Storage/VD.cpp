@@ -5398,7 +5398,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         }
 
         /*
-         * Fail if the the backend can't do async I/O but the
+         * Fail if the backend can't do async I/O but the
          * flag is set.
          */
         if (   !(pImage->Backend->uBackendCaps & VD_CAP_ASYNC)
@@ -5410,7 +5410,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         }
 
         /*
-         * Fail if the the backend doesn't support the discard operation but the
+         * Fail if the backend doesn't support the discard operation but the
          * flag is set.
          */
         if (   !(pImage->Backend->uBackendCaps & VD_CAP_DISCARD)
@@ -7444,7 +7444,7 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
 }
 
 /**
- * Resizes the the given disk image to the given size.
+ * Resizes the given disk image to the given size.
  *
  * @return  VBox status
  * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.

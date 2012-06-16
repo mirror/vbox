@@ -133,7 +133,7 @@ typedef FNDBGFR3ASSEARCHOPEN *PFNDBGFR3ASSEARCHOPEN;
  * Initializes the address space parts of DBGF.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 int dbgfR3AsInit(PVM pVM)
 {
@@ -206,7 +206,7 @@ static DECLCALLBACK(int) dbgfR3AsTermDestroyNode(PAVLPVNODECORE pNode, void *pvI
 /**
  * Terminates the address space parts of DBGF.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 void dbgfR3AsTerm(PVM pVM)
 {
@@ -232,7 +232,7 @@ void dbgfR3AsTerm(PVM pVM)
 /**
  * Relocates the RC address space.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   offDelta        The relocation delta.
  */
 void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta)
@@ -246,7 +246,7 @@ void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta)
  * Adds the address space to the database.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hDbgAs          The address space handle. The reference of the
  *                          caller will NOT be consumed.
  * @param   ProcId          The process id or NIL_RTPROCESS.
@@ -304,7 +304,7 @@ VMMR3DECL(int) DBGFR3AsAdd(PVM pVM, RTDBGAS hDbgAs, RTPROCESS ProcId)
  * @retval  VERR_SHARING_VIOLATION if in use as an alias.
  * @retval  VERR_NOT_FOUND if not found in the address space database.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hDbgAs          The address space handle. Aliases are not allowed.
  */
 VMMR3DECL(int) DBGFR3AsDelete(PVM pVM, RTDBGAS hDbgAs)
@@ -365,7 +365,7 @@ VMMR3DECL(int) DBGFR3AsDelete(PVM pVM, RTDBGAS hDbgAs)
  * and DBGF_AS_KERNEL.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hAlias          The alias to change.
  * @param   hAliasFor       The address space hAlias should be an alias for.
  *                          This can be an alias. The caller's reference to
@@ -436,7 +436,7 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *psz
 /**
  * Lazily populates the specified address space.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   hAlias              The alias.
  */
 static void dbgfR3AsLazyPopulate(PVM pVM, RTDBGAS hAlias)
@@ -461,7 +461,7 @@ static void dbgfR3AsLazyPopulate(PVM pVM, RTDBGAS hAlias)
  *
  * @returns Real address space handle. NIL_RTDBGAS if invalid handle.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hAlias          The possibly address space alias.
  *
  * @remarks Doesn't take any locks.
@@ -484,7 +484,7 @@ VMMR3DECL(RTDBGAS) DBGFR3AsResolve(PVM pVM, RTDBGAS hAlias)
  *
  * @returns Real address space handle. NIL_RTDBGAS if invalid handle.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hAlias          The possibly address space alias.
  */
 VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias)
@@ -528,7 +528,7 @@ VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias)
  *
  * @returns Retained address space handle if found, NIL_RTDBGAS if not.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The name.
  */
 VMMR3DECL(RTDBGAS) DBGFR3AsQueryByName(PVM pVM, const char *pszName)
@@ -566,7 +566,7 @@ VMMR3DECL(RTDBGAS) DBGFR3AsQueryByName(PVM pVM, const char *pszName)
  *
  * @returns Retained address space handle if found, NIL_RTDBGAS if not.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   ProcId      The process ID.
  */
 VMMR3DECL(RTDBGAS) DBGFR3AsQueryByPid(PVM pVM, RTPROCESS ProcId)
@@ -757,7 +757,7 @@ static DECLCALLBACK(int) dbgfR3AsLoadImageOpen(const char *pszFilename, void *pv
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hDbgAs          The address space.
  * @param   pszFilename     The filename of the executable module.
  * @param   pszModName      The module name. If NULL, then then the file name
@@ -829,7 +829,7 @@ static DECLCALLBACK(int) dbgfR3AsLoadMapOpen(const char *pszFilename, void *pvUs
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hDbgAs          The address space.
  * @param   pszFilename     The map file.
  * @param   pszModName      The module name. If NULL, then then the file name
@@ -887,7 +887,7 @@ VMMR3DECL(int) DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename,
  * Wrapper around RTDbgAsModuleLink, RTDbgAsModuleLinkSeg and DBGFR3AsResolve.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   hDbgAs          The address space handle.
  * @param   hMod            The module handle.
  * @param   pModAddress     The link address.
@@ -966,7 +966,7 @@ static void dbgfR3AsSymbolConvert(PRTDBGSYMBOL pSymbol, PCDBGFSYMBOL pDbgfSym)
  *
  * @returns VBox status code. See RTDbgAsSymbolByAddr.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   hDbgAs              The address space handle.
  * @param   pAddress            The address to lookup.
  * @param   poffDisp            Where to return the distance between the
@@ -1065,7 +1065,7 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
  *          RTDbgSymbolFree(). NULL is returned if not found or any error
  *          occurs.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   hDbgAs              See DBGFR3AsSymbolByAddr.
  * @param   pAddress            See DBGFR3AsSymbolByAddr.
  * @param   poffDisp            See DBGFR3AsSymbolByAddr.
@@ -1090,7 +1090,7 @@ VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PVM pVM, RTDBGAS hDbgAs, PCDBGFADD
  *
  * @returns VBox status code. See RTDbgAsSymbolByAddr.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   hDbgAs              The address space handle.
  * @param   pszSymbol           The symbol to search for, maybe prefixed by a
  *                              module pattern.

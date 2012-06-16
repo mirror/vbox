@@ -308,7 +308,7 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
 }
 
 /**
- * Destroys the the internal data buffer.
+ * Destroys the internal data buffer.
  */
 void GuestProcessStream::Destroy()
 {

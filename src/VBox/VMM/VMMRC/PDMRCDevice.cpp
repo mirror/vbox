@@ -507,7 +507,7 @@ static DECLCALLBACK(uint32_t) pdmRCApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_
 
 
     pdmUnlock(pVM);
-    LogFlow(("pdmRCApicHlp_CalcIrqTag: caller=%p/%d: returns %#x (u8Level=%d)\n", 
+    LogFlow(("pdmRCApicHlp_CalcIrqTag: caller=%p/%d: returns %#x (u8Level=%d)\n",
              pDevIns, pDevIns->iInstance, uTagSrc, u8Level));
     return uTagSrc;
 }
@@ -867,7 +867,7 @@ extern DECLEXPORT(const PDMDRVHLPRC) g_pdmRCDrvHlp =
  * Sets an irq on the PIC and I/O APIC.
  *
  * @returns true if     delivered, false if postponed.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iIrq        The irq.
  * @param   iLevel      The new level.
  * @param   uTagSrc     The IRQ tag and source.

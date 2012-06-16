@@ -615,7 +615,7 @@ static SSMSTRMOPS const g_ftmR3TcpOps =
 /**
  * VMR3ReqCallWait callback
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  *
  */
 static DECLCALLBACK(void) ftmR3WriteProtectMemory(PVM pVM)
@@ -629,7 +629,7 @@ static DECLCALLBACK(void) ftmR3WriteProtectMemory(PVM pVM)
  * Sync the VM state
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 static int ftmR3PerformFullSync(PVM pVM)
 {
@@ -730,7 +730,7 @@ static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *p
  * Thread function which starts syncing process for this master VM
  *
  * @param   hThread     The thread handle.
- * @param   pvUser      The VM handle.
+ * @param   pvUser      Pointer to the VM.
  * @return  VINF_SUCCESS (ignored).
  *
  */
@@ -911,7 +911,7 @@ static int ftmR3SyncMem(PVM pVM)
  *
  * @returns 0 to continue, otherwise stop
  * @param   pBaseNode       Node to destroy
- * @param   pvUser          The VM handle.
+ * @param   pvUser          Pointer to the VM.
  */
 static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNode, void *pvUser)
 {
@@ -932,7 +932,7 @@ static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNo
  * Thread function which monitors the health of the master VM
  *
  * @param   hThread     The thread handle.
- * @param   pvUser      The VM handle.
+ * @param   pvUser      Pointer to the VM.
  * @return  VINF_SUCCESS (ignored).
  *
  */
@@ -1230,7 +1230,7 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
  * it to complete this function.
  *
  * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser      Not used.
  */

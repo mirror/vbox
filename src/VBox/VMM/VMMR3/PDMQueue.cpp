@@ -596,7 +596,7 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
 /**
  * Relocate the queues.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   offDelta        The relocation delta.
  */
 void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)

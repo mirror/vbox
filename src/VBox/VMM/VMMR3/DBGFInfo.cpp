@@ -693,7 +693,7 @@ VMMR3DECL(int) DBGFR3InfoDeregisterExternal(PVM pVM, const char *pszName)
  * Worker for DBGFR3Info and DBGFR3InfoEx.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   idCpu               Which CPU to run EMT bound handlers on.
  *                              VMCPUID_ANY or a valid CPU ID.
  * @param   pszName             What to dump.
@@ -822,7 +822,7 @@ VMMR3DECL(int) DBGFR3InfoEx(PVM pVM, VMCPUID idCpu, const char *pszName, const c
  * Wrapper for DBGFR3Info that outputs to the release log.
  *
  * @returns See DBGFR3Info.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszName             See DBGFR3Info.
  * @param   pszArgs             See DBGFR3Info.
  */
@@ -836,7 +836,7 @@ VMMR3DECL(int) DBGFR3InfoLogRel(PVM pVM, const char *pszName, const char *pszArg
  * Wrapper for DBGFR3Info that outputs to standard error.
  *
  * @returns See DBGFR3Info.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszName             See DBGFR3Info.
  * @param   pszArgs             See DBGFR3Info.
  */
@@ -852,7 +852,7 @@ VMMR3DECL(int) DBGFR3InfoStdErr(PVM pVM, const char *pszName, const char *pszArg
  * This is intended used by the fatal error dump only.
  *
  * @returns
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszIncludePat   Simple string pattern of info items to include.
  * @param   pszExcludePat   Simple string pattern of info items to exclude.
  * @param   pszSepFmt       Item separator format string.  The item name will be
@@ -984,7 +984,7 @@ VMMR3DECL(int) DBGFR3InfoEnum(PVM pVM, PFNDBGFINFOENUM pfnCallback, void *pvUser
 /**
  * Info handler, internal version.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */

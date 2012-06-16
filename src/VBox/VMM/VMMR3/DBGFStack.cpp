@@ -469,7 +469,7 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
  * @returns VINF_SUCCESS on success.
  * @returns VERR_NO_MEMORY if we're out of memory.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
  * @param   enmCodeType     Code type
  * @param   pAddrFrame      Frame address to start at. (Optional)
@@ -501,7 +501,7 @@ VMMR3DECL(int) DBGFR3StackWalkBeginEx(PVM pVM,
  * @returns VINF_SUCCESS on success.
  * @returns VERR_NO_MEMORY if we're out of memory.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
  * @param   enmCodeType     Code type
  * @param   ppFirstFrame    Where to return the pointer to the first info frame.
@@ -534,8 +534,7 @@ VMMR3DECL(PCDBGFSTACKFRAME) DBGFR3StackWalkNext(PCDBGFSTACKFRAME pCurrent)
  * This *must* be called after a successful first call to any of the stack
  * walker functions. If not called we will leak memory or other resources.
  *
- * @param   pFirstFrame     The frame returned by one of the the begin
- *                          functions.
+ * @param   pFirstFrame     The frame returned by one of the begin functions.
  */
 VMMR3DECL(void) DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame)
 {

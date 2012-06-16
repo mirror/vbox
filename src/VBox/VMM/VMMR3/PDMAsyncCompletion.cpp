@@ -768,7 +768,7 @@ void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, boo
  * @returns VBox status code.
  * @param   pVM        Pointer to the shared VM instance data.
  * @param   pEpClass   Pointer to the endpoint class structure.
- * @param   pCfgHandle Pointer to the the CFGM tree.
+ * @param   pCfgHandle Pointer to the CFGM tree.
  */
 int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpClassOps, PCFGMNODE pCfgHandle)
 {

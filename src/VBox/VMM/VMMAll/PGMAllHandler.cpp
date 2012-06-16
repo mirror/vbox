@@ -198,7 +198,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
  * @retval  VINF_SUCCESS when shadow PTs was successfully updated.
  * @retval  VINF_PGM_SYNC_CR3 when the shadow PTs could be updated because
  *          the guest page aliased or/and mapped by multiple PTs. FFs set.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pCur    The physical handler.
  * @param   pRam    The RAM range.
  */
@@ -473,7 +473,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS when shadow PTs was successfully updated.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pCur    The physical handler.
  *
  * @remark  We don't start messing with the shadow page tables, as we've
@@ -1322,7 +1322,7 @@ VMMDECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
  * Search for virtual handler with matching physical address
  *
  * @returns VBox status code
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      GC physical address to search for.
  * @param   ppVirt      Where to store the pointer to the virtual handler structure.
  * @param   piPage      Where to store the pointer to the index of the cached physical page.
@@ -1363,7 +1363,7 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
  * As pointed out by the various todos, this currently only deals with
  * aliases where the two ranges match 100%.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pPhys2Virt      The node we failed insert.
  */
 static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2Virt)
@@ -1414,7 +1414,7 @@ static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2V
  *
  * @returns 0
  * @param   pNode   Pointer to a PGMVIRTHANDLER.
- * @param   pvUser  The VM handle.
+ * @param   pvUser  Pointer to the VM.
  */
 DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvUser)
 {
@@ -1529,7 +1529,7 @@ typedef struct PGMAHAFIS
     unsigned    uVirtState;
     /** Number of errors. */
     unsigned    cErrors;
-    /** The VM handle. */
+    /** Pointer to the VM. */
     PVM         pVM;
 } PGMAHAFIS, *PPGMAHAFIS;
 
@@ -1678,7 +1678,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
  * that the physical addresses associated with virtual handlers are correct.
  *
  * @returns Number of mismatches.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
 {

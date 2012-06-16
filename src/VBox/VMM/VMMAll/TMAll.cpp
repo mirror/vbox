@@ -77,7 +77,7 @@
  * Gets the current warp drive percent.
  *
  * @returns The warp drive percent.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
 {
@@ -225,7 +225,7 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
 /**
  * Raise the timer force action flag and notify the dedicated timer EMT.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 DECLINLINE(void) tmScheduleNotify(PVM pVM)
 {
@@ -1089,7 +1089,7 @@ VMMDECL(bool) TMTimerIsLockOwner(PTMTIMER pTimer)
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pTimer          The timer handle.
  * @param   u64Expire       The new expire time.
  */
@@ -1132,7 +1132,7 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
  * queue lock and bypassing the scheduling list.
  *
  * @returns VBox status code
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pTimer              The timer handle.
  * @param   u64Expire           The expiration time.
  */
@@ -1358,7 +1358,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
  * Return the current time for the specified clock, setting pu64Now if not NULL.
  *
  * @returns Current time.
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmClock        The clock to query.
  * @param   pu64Now         Optional pointer where to store the return time
  */
@@ -1391,7 +1391,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVM pVM, TMCLOCK enmCloc
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pTimer          The timer handle.
  * @param   cTicksToNext    Clock ticks until the next time expiration.
  * @param   pu64Now         Where to return the current time stamp used.
@@ -1430,7 +1430,7 @@ static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t c
  * queue lock and bypassing the scheduling list.
  *
  * @returns VBox status code
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   cTicksToNext        Clock ticks until the next time expiration.
  * @param   pu64Now             Where to return the current time stamp used.
  *                              Optional.
@@ -1759,7 +1759,7 @@ VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
  * queue lock and bypassing the scheduling list.
  *
  * @returns VBox status code
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pTimer              The timer handle.
  */
 static int tmTimerVirtualSyncStop(PVM pVM, PTMTIMER pTimer)
@@ -2432,7 +2432,7 @@ const char *tmTimerState(TMTIMERSTATE enmState)
  * Gets the highest frequency hint for all the important timers.
  *
  * @returns The highest frequency.  0 if no timers care.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 static uint32_t tmGetFrequencyHint(PVM pVM)
 {
@@ -2502,7 +2502,7 @@ static uint32_t tmGetFrequencyHint(PVM pVM)
  * the result to adjust the per-cpu preemption timer.
  *
  * @returns The highest frequency.  0 if no important timers around.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current CPU.
  */
 VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)

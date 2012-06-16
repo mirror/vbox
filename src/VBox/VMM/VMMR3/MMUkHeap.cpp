@@ -375,7 +375,7 @@ static void *mmR3UkHeapAlloc(PMMUKHEAP pHeap, MMTAG enmTag, size_t cb, bool fZer
 /**
  * Releases memory allocated with MMR3UkHeapAlloc() and MMR3UkHeapAllocZ()
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pv          Pointer to the memory block to free.
  */
 VMMR3DECL(void) MMR3UkHeapFree(PVM pVM, void *pv, MMTAG enmTag)

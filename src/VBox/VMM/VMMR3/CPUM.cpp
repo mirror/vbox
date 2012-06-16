@@ -1148,7 +1148,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
  * Resets the CPU.
  *
  * @returns VINF_SUCCESS.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 {
@@ -1171,7 +1171,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 /**
  * Called both in pass 0 and the final pass.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  */
 static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
@@ -1213,7 +1213,7 @@ static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
  * Loads the CPU ID leaves saved by pass 0.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  * @param   uVersion            The format version.
  */
@@ -1920,7 +1920,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  * Pass 0 live exec callback.
  *
  * @returns VINF_SSM_DONT_CALL_AGAIN.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pSSM                The saved state handle.
  * @param   uPass               The pass (0).
  */
@@ -2327,7 +2327,7 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  * Checks if the CPUM state restore is still pending.
  *
  * @returns true / false.
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 VMMDECL(bool) CPUMR3IsStateRestorePending(PVM pVM)
 {
@@ -3500,7 +3500,7 @@ typedef struct CPUMDISASSTATE
 {
     /** Pointer to the CPU structure. */
     PDISCPUSTATE    pCpu;
-    /** The VM handle. */
+    /** Pointer to the VM. */
     PVM             pVM;
     /** The VMCPU handle. */
     PVMCPU          pVCpu;
@@ -3734,7 +3734,7 @@ VMMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
  *
  * @returns VBox status code.
  *
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   fOr     The CR4 OR mask.
  * @param   fAnd    The CR4 AND mask.
  */
@@ -3756,7 +3756,7 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
  * CPUMR3GetGuestCpuIdStdMax() give the size of the array.
  *
  * @returns Pointer to the standard CPUID leaves (read-only).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @remark  Intended for PATM.
  */
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM)
@@ -3771,7 +3771,7 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM)
  * CPUMGetGuestCpuIdExtMax() give the size of the array.
  *
  * @returns Pointer to the extended CPUID leaves (read-only).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @remark  Intended for PATM.
  */
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM)
@@ -3786,7 +3786,7 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM)
  * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
  *
  * @returns Pointer to the centaur CPUID leaves (read-only).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @remark  Intended for PATM.
  */
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdCentaurRCPtr(PVM pVM)
@@ -3799,7 +3799,7 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdCentaurRCPtr(PVM pVM)
  * Gets a pointer to the default CPUID leaf.
  *
  * @returns Pointer to the default CPUID leaf (read-only).
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @remark  Intended for PATM.
  */
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM)

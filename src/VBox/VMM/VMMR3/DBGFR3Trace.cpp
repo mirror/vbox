@@ -69,7 +69,7 @@ static const struct
  * Initializes the tracing.
  *
  * @returns VBox status code
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 static int dbgfR3TraceEnable(PVM pVM, uint32_t cbEntry, uint32_t cEntries)
 {
@@ -133,7 +133,7 @@ static int dbgfR3TraceEnable(PVM pVM, uint32_t cbEntry, uint32_t cEntries)
  * Initializes the tracing.
  *
  * @returns VBox status code
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 int dbgfR3TraceInit(PVM pVM)
 {
@@ -189,7 +189,7 @@ int dbgfR3TraceInit(PVM pVM)
 /**
  * Terminates the tracing.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 void dbgfR3TraceTerm(PVM pVM)
 {
@@ -201,7 +201,7 @@ void dbgfR3TraceTerm(PVM pVM)
 /**
  * Relocates the trace buffer handle in RC.
  *
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 void dbgfR3TraceRelocate(PVM pVM)
 {
@@ -221,7 +221,7 @@ void dbgfR3TraceRelocate(PVM pVM)
  * @retval  VERR_INVALID_VM_HANDLE
  * @retval  VERR_INVALID_POINTER
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszConfig   The configuration change specification.
  *
  *                      Trace point group names, optionally prefixed by a '-' to
@@ -348,7 +348,7 @@ VMMDECL(int) DBGFR3TraceConfig(PVM pVM, const char *pszConfig)
  * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small. Buffer will be
  *          empty.
 
- * @param   pVM                 The VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszConfig           Pointer to the output buffer.
  * @param   cbConfig            The size of the output buffer.
  */

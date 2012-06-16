@@ -43,7 +43,7 @@ RT_C_DECLS_END
  * when resuming guest context.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   The register frame.
  * @param   uUser       User argument. In this case a combination of the
  *                      CPUM_HANDLER_* \#defines.

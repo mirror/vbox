@@ -1538,7 +1538,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
  * Gets a number of standard CPUID leafs.
  *
  * @returns Number of leafs.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @remark  Intended for PATM.
  */
 VMMDECL(uint32_t) CPUMGetGuestCpuIdStdMax(PVM pVM)
@@ -1551,7 +1551,7 @@ VMMDECL(uint32_t) CPUMGetGuestCpuIdStdMax(PVM pVM)
  * Gets a number of extended CPUID leafs.
  *
  * @returns Number of leafs.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @remark  Intended for PATM.
  */
 VMMDECL(uint32_t) CPUMGetGuestCpuIdExtMax(PVM pVM)
@@ -1564,7 +1564,7 @@ VMMDECL(uint32_t) CPUMGetGuestCpuIdExtMax(PVM pVM)
  * Gets a number of centaur CPUID leafs.
  *
  * @returns Number of leafs.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @remark  Intended for PATM.
  */
 VMMDECL(uint32_t) CPUMGetGuestCpuIdCentaurMax(PVM pVM)
@@ -1576,7 +1576,7 @@ VMMDECL(uint32_t) CPUMGetGuestCpuIdCentaurMax(PVM pVM)
 /**
  * Sets a CPUID feature bit.
  *
- * @param   pVM             The VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmFeature      The feature to set.
  */
 VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
@@ -1776,7 +1776,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
  * Queries a CPUID feature bit.
  *
  * @returns boolean for feature presence
- * @param   pVM             The VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmFeature      The feature to query.
  */
 VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
@@ -1821,7 +1821,7 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
 /**
  * Clears a CPUID feature bit.
  *
- * @param   pVM             The VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmFeature      The feature to clear.
  */
 VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
@@ -1906,7 +1906,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
  * Gets the host CPU vendor
  *
  * @returns CPU vendor
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(CPUMCPUVENDOR) CPUMGetHostCpuVendor(PVM pVM)
 {
@@ -1917,7 +1917,7 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetHostCpuVendor(PVM pVM)
  * Gets the CPU vendor
  *
  * @returns CPU vendor
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(CPUMCPUVENDOR) CPUMGetGuestCpuVendor(PVM pVM)
 {
@@ -2297,7 +2297,7 @@ VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags)
  * Checks if the CPU supports the FXSAVE and FXRSTOR instruction.
  * @returns true if supported.
  * @returns false if not supported.
- * @param   pVM     The VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(bool) CPUMSupportsFXSR(PVM pVM)
 {
@@ -2309,7 +2309,7 @@ VMMDECL(bool) CPUMSupportsFXSR(PVM pVM)
  * Checks if the host OS uses the SYSENTER / SYSEXIT instructions.
  * @returns true if used.
  * @returns false if not used.
- * @param   pVM       The VM handle.
+ * @param   pVM       Pointer to the VM.
  */
 VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
 {
@@ -2321,7 +2321,7 @@ VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
  * Checks if the host OS uses the SYSCALL / SYSRET instructions.
  * @returns true if used.
  * @returns false if not used.
- * @param   pVM       The VM handle.
+ * @param   pVM       Pointer to the VM.
  */
 VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
 {
@@ -2416,7 +2416,7 @@ VMMDECL(void) CPUMDeactivateHyperDebugState(PVMCPU pVCpu)
  *
  * @returns true if they are.
  * @returns false if not.
- * @param   pVCpu     The VM handle.
+ * @param   pVCpu     Pointer to the VM.
  */
 VMMDECL(bool) CPUMAreHiddenSelRegsValid(PVMCPU pVCpu)
 {

@@ -585,7 +585,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
  * This function will be called at init and whenever the VMM need
  * to relocate itself inside the GC.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -969,7 +969,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
  * (callback for the VMCPU_FF_TRPM_SYNC_IDT forced action).
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU handle.
  */
 VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
