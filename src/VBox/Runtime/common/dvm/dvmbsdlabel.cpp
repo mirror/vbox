@@ -185,7 +185,7 @@ typedef RTDVMVOLUMEFMTINTERNAL *PRTDVMVOLUMEFMTINTERNAL;
  * Calculates the checksum of the entire bsd disklabel structure.
  *
  * @returns The checksum.
- * @param   pBsdLabel    BSD disklabel to get teh checksum for.
+ * @param   pBsdLabel    BSD disklabel to get the checksum for.
  */
 static uint16_t rtDvmFmtBsdLblDiskLabelChkSum(PBsdLabel pBsdLabel)
 {

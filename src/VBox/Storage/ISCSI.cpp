@@ -788,7 +788,7 @@ static PISCSICMD iscsiCmdRemove(PISCSIIMAGE pImage, uint32_t Itt)
  * Removes all commands from the table and returns the
  * list head
  *
- * @returns Pointer to the head of teh command list.
+ * @returns Pointer to the head of the command list.
  * @param   pImage    iSCSI connection to use.
  */
 static PISCSICMD iscsiCmdRemoveAll(PISCSIIMAGE pImage)
