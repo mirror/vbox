@@ -54,7 +54,7 @@ static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pR
  * The GC entry point.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   uOperation  Which operation to execute (VMMGCOPERATION).
  * @param   uArg        Argument to that operation.
  */

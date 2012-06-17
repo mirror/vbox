@@ -48,7 +48,7 @@ int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RCPTR
  * Generate indirect jump to unknown destination
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch record
  * @param   pCpu        Disassembly state
  * @param   pCurInstrGC Current instruction address
@@ -59,7 +59,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
  * Generate a trap handler entrypoint
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch record
  * @param   pTrapHandlerGC  IDT handler address
  */
@@ -69,7 +69,7 @@ int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTrapHandlerGC);
  * Generate an interrupt handler entrypoint
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch record
  * @param   pIntHandlerGC IDT handler address
  */
@@ -79,7 +79,7 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC);
  * Generate the jump from guest to patch code
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch record
  * @param   pTargetGC   Guest target jump
  * @param   fClearInhibitIRQs   Clear inhibit irq flag
@@ -90,7 +90,7 @@ int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pRe
  * Generate illegal instruction (int 3)
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch structure
  *
  */
@@ -100,7 +100,7 @@ int patmPatchGenIllegalInstr(PVM pVM, PPATCHINFO pPatch);
  * Set PATM interrupt flag
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch structure
  * @param   pInstrGC    Corresponding guest instruction
  *
@@ -111,7 +111,7 @@ int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC);
  * Clear PATM interrupt flag
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch structure
  * @param   pInstrGC    Corresponding guest instruction
  *
@@ -122,7 +122,7 @@ int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC);
  * Clear PATM inhibit irq flag
  *
  * @returns VBox status code.
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   pPatch          Patch structure
  * @param   pNextInstrGC    Next guest instruction
  */
@@ -132,7 +132,7 @@ int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTRCPTR pNextInstrGC
  * Check virtual IF flag and jump back to original guest code if set
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch structure
  * @param   pCurInstrGC Guest context pointer to the current instruction
  *
@@ -143,7 +143,7 @@ int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC);
  * Generate all global patm functions
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch structure
  *
  */

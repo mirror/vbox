@@ -38,7 +38,7 @@
  * Queues a page for invalidation
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Page to invalidate
  */
 static void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
@@ -62,7 +62,7 @@ static void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * Invalidates a guest page
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Page to invalidate
  */
 VMMDECL(int) HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
@@ -86,7 +86,7 @@ VMMDECL(int) HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * Flushes the guest TLB
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(int) HWACCMFlushTLB(PVMCPU pVCpu)
 {
@@ -188,7 +188,7 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
  * Invalidates a guest page on all VCPUs.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   GCVirt      Page to invalidate
  */
 VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
@@ -222,7 +222,7 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
  * Flush the TLBs of all VCPUs
  *
  * @returns VBox status code.
- * @param   pVM       The VM to operate on.
+ * @param   pVM       Pointer to the VM.
  */
 VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
 {
@@ -256,7 +256,7 @@ VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
  * Checks if nested paging is enabled
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
 {
@@ -267,7 +267,7 @@ VMMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
  * Return the shadow paging mode for nested paging/ept
  *
  * @returns shadow paging mode
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM)
 {
@@ -285,7 +285,7 @@ VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM)
  * NOTE: Assumes the current instruction references this physical page though a virtual address!!
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      Page to invalidate
  */
 VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
@@ -328,7 +328,7 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  * Checks if an interrupt event is currently pending.
  *
  * @returns Interrupt event pending state.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
 {

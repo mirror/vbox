@@ -93,7 +93,7 @@ VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
  * The function may, depending on the configuration, resume the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
 {
@@ -115,7 +115,7 @@ VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
  * The function may, depending on the configuration, suspend the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
 {
@@ -163,7 +163,7 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
  * The function may, depending on the configuration, resume the TSC and future
  * clocks that only ticks when we're halted.
  *
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
 {
@@ -187,7 +187,7 @@ VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
  * The function may, depending on the configuration, suspend the TSC and future
  * clocks that only ticks when we're halted.
  *
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
 {

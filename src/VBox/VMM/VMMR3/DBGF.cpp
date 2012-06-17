@@ -1103,7 +1103,7 @@ VMMR3DECL(int) DBGFR3Step(PVM pVM, VMCPUID idCpu)
  *
  * @returns VINF_EM_DBG_STEP
  *
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  *
  * @thread  VCpu EMT
  */

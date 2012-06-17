@@ -3057,7 +3057,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
  * Switch to different (or relocated in the relocate case) mode data.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   enmShw      The shadow paging mode.
  * @param   enmGst      The guest paging mode.
  */
@@ -3332,7 +3332,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
  *          will trigger using FFs and not status codes.
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU to operate on.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.
  */
@@ -3626,7 +3626,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
  * Called by pgmPoolFlushAllInt prior to flushing the pool.
  *
  * @returns VBox status code, fully asserted.
- * @param   pVCpu   The VMCPU to operate on.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
 int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
 {
@@ -3647,7 +3647,7 @@ int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
  *
  * @returns VBox status code, fully asserted.
  * @param   pVM     Pointer to the VM.
- * @param   pVCpu   The VMCPU to operate on.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
 int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
 {
@@ -3668,7 +3668,7 @@ int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
 /**
  * Called by PGMR3PhysSetA20 after changing the A20 state.
  *
- * @param   pVCpu   The VMCPU to operate on.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
 void pgmR3RefreshShadowModeAfterA20Change(PVMCPU pVCpu)
 {

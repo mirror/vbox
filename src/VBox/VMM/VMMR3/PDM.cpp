@@ -350,7 +350,7 @@ VMMR3DECL(int) PDMR3InitUVM(PUVM pUVM)
  * Initializes the PDM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) PDMR3Init(PVM pVM)
 {
@@ -614,7 +614,7 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) PDMR3Term(PVM pVM)
 {

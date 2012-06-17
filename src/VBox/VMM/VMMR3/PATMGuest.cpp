@@ -80,7 +80,7 @@ static uint8_t uFnOpenBSDHandlerPrefix2[6] = { 0x0E, 0x56, 0x6A, 0x00, 0x6A, 0x0
  * Check Windows XP sysenter heuristics and install patch
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    GC Instruction pointer for sysenter
  * @param   pPatchRec   Patch structure
  *
@@ -169,7 +169,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
  * Patch OpenBSD interrupt handler prefix
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on
+ * @param   pVM         Pointer to the VM.
  * @param   pCpu        Disassembly state of instruction.
  * @param   pInstrGC    GC Instruction pointer for instruction
  * @param   pInstrHC    GC Instruction pointer for instruction
@@ -201,7 +201,7 @@ int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
  * Install guest OS specific patch
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on
+ * @param   pVM         Pointer to the VM.
  * @param   pCpu        Disassembly state of instruction.
  * @param   pInstrGC    GC Instruction pointer for instruction
  * @param   pInstrHC    GC Instruction pointer for instruction
