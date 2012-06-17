@@ -76,6 +76,7 @@ static FNDISPARSE ParseImmUlong;
 static FNDISPARSE ParseImmUlong_SizeOnly;
 static FNDISPARSE ParseImmQword;
 static FNDISPARSE ParseImmQword_SizeOnly;
+static FNDISPARSE ParseInvOpModRm;
 
 static FNDISPARSE ParseTwoByteEsc;
 static FNDISPARSE ParseThreeByteEsc4;
@@ -155,7 +156,8 @@ static PFNDISPARSE const g_apfnFullDisasm[IDX_ParseMax] =
     ParseImmZ,
     ParseThreeByteEsc4,
     ParseThreeByteEsc5,
-    ParseImmAddrF
+    ParseImmAddrF,
+    ParseInvOpModRm
 };
 
 /** Parser opcode table for only calculating instruction size. */
@@ -201,7 +203,8 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
     ParseImmZ_SizeOnly,
     ParseThreeByteEsc4,
     ParseThreeByteEsc5,
-    ParseImmAddrF_SizeOnly
+    ParseImmAddrF_SizeOnly,
+    ParseInvOpModRm
 };
 
 
@@ -1281,10 +1284,9 @@ static size_t ParseModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
 //*****************************************************************************
 static size_t ParseModFence(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    ////AssertMsgFailed(("??\n"));
-    //nothing to do apparently
     NOREF(pOp); NOREF(pParam); NOREF(pDis);
-    return offInstr;
+    /* Note! Only used in group 15, so we must account for the mod/rm byte. */
+    return offInstr + 1;
 }
 //*****************************************************************************
 //*****************************************************************************
@@ -1842,6 +1844,14 @@ static size_t ParseYb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
 }
 //*****************************************************************************
 //*****************************************************************************
+static size_t ParseInvOpModRm(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+{
+    /* This is used to avoid a bunch of special hacks to get the ModRM byte
+       included when encountering invalid opcodes in groups. */
+    return offInstr + 1;
+}
+//*****************************************************************************
+//*****************************************************************************
 static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     NOREF(pOp); NOREF(pParam);
@@ -2018,9 +2028,6 @@ static size_t ParseImmGrpl(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
     unsigned idx   = (pDis->bOpCode - 0x80) * 8;
 
     pOp = &g_aMapX86_Group1[idx+reg];
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2056,10 +2063,6 @@ static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 
     pOp = &g_aMapX86_Group2[idx+reg];
 
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
-
     return disParseInstruction(offInstr, pOp, pDis);
 }
 //*****************************************************************************
@@ -2074,10 +2077,6 @@ static size_t ParseGrp3(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 
     pOp = &g_aMapX86_Group3[idx+reg];
 
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
-
     return disParseInstruction(offInstr, pOp, pDis);
 }
 //*****************************************************************************
@@ -2090,10 +2089,6 @@ static size_t ParseGrp4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     uint8_t reg   = MODRM_REG(modrm);
 
     pOp = &g_aMapX86_Group4[reg];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2108,10 +2103,6 @@ static size_t ParseGrp5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 
     pOp = &g_aMapX86_Group5[reg];
 
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
-
     return disParseInstruction(offInstr, pOp, pDis);
 }
 //*****************************************************************************
@@ -2122,10 +2113,7 @@ static size_t ParseGrp5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-#ifdef DEBUG_Sander
-    //needs testing
-    AssertMsgFailed(("Test me\n"));
-#endif
+    /** @todo This code needs testing! */
 
     uint8_t ModRM = disReadByte(pDis, offInstr);
     pDis->ModRM.Bits.Rm  = MODRM_RM(ModRM);
@@ -2137,10 +2125,6 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     uint8_t opcode = disReadByte(pDis, offRet);
     offRet++;
     pOp = &g_aTwoByteMapX86_3DNow[opcode];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;                 /* for illegal opcodes */
 
     size_t offStrict = disParseInstruction(offInstr, pOp, pDis);
     Assert(offStrict == offRet - 1);  NOREF(offStrict);   /* the imm8_opcode */
@@ -2156,10 +2140,6 @@ static size_t ParseGrp6(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     uint8_t reg   = MODRM_REG(modrm);
 
     pOp = &g_aMapX86_Group6[reg];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2182,6 +2162,7 @@ static size_t ParseGrp7(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     else
         pOp = &g_aMapX86_Group7_mem[reg];
 
+    /* Cannot easily skip this hack because of monitor and vmcall! */
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         offInstr++;
@@ -2199,10 +2180,6 @@ static size_t ParseGrp8(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 
     pOp = &g_aMapX86_Group8[reg];
 
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
-
     return disParseInstruction(offInstr, pOp, pDis);
 }
 //*****************************************************************************
@@ -2215,10 +2192,6 @@ static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     uint8_t reg   = MODRM_REG(modrm);
 
     pOp = &g_aMapX86_Group9[reg];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2233,10 +2206,6 @@ static size_t ParseGrp10(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     pOp = &g_aMapX86_Group10[reg];
 
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
-
     return disParseInstruction(offInstr, pOp, pDis);
 }
 //*****************************************************************************
@@ -2249,13 +2218,9 @@ static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     uint8_t reg   = MODRM_REG(modrm);
 
     if (pDis->fPrefix & DISPREFIX_OPSIZE)
-        reg += 8;   //2nd table
+        reg += 8;   /* 2nd table */
 
     pOp = &g_aMapX86_Group12[reg];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2268,13 +2233,9 @@ static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
     if (pDis->fPrefix & DISPREFIX_OPSIZE)
-        reg += 8;   //2nd table
+        reg += 8;   /* 2nd table */
 
     pOp = &g_aMapX86_Group13[reg];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2287,14 +2248,9 @@ static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
     if (pDis->fPrefix & DISPREFIX_OPSIZE)
-        reg += 8;   //2nd table
+        reg += 8;   /* 2nd table */
 
     pOp = &g_aMapX86_Group14[reg];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    size_t size = 0;
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2314,11 +2270,6 @@ static size_t ParseGrp15(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     else
         pOp = &g_aMapX86_Group15_mem[reg];
 
-    //little hack to make sure the ModRM byte is included in the returned size
-    size_t size = 0;
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
-
     return disParseInstruction(offInstr, pOp, pDis);
 }
 //*****************************************************************************
@@ -2329,10 +2280,6 @@ static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     pOp = &g_aMapX86_Group16[MODRM_REG(modrm)];
-
-    //little hack to make sure the ModRM byte is included in the returned size
-    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-        offInstr++;
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
