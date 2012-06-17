@@ -196,7 +196,7 @@ typedef struct DRVNAT
     RTCRITSECT              XmitLock;
 } DRVNAT;
 AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
-/** Pointer the NAT driver instance data. */
+/** Pointer to the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
 
 

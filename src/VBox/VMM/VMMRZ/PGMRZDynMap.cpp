@@ -303,7 +303,7 @@ typedef CTX_MID(PGM,DYNMAPENTRY) PGMRZDYNMAPENTRY;
  * @sa PGMR0DYNMAPENTRY, PGMRCDYNMAPENTRY  */
 typedef PGMRZDYNMAPENTRY *PPGMRZDYNMAPENTRY;
 
-/** Pointer the mapping cache instance for the current context.
+/** Pointer to the mapping cache instance for the current context.
  * @sa PGMR0DYNMAP, PGMRCDYNMAP  */
 typedef CTX_MID(PGM,DYNMAP) *PPGMRZDYNMAP;
 
