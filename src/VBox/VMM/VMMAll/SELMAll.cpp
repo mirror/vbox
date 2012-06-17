@@ -139,7 +139,7 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RT
  * Some basic checking is done, but not all kinds yet.
  *
  * @returns VBox status
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   SelReg      Selector register.
  * @param   pCtxCore    CPU context.
  * @param   Addr        Address part.
@@ -447,7 +447,7 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCCPUMCTXCORE pCtxCore
  * Some basic checking is done, but not all kinds yet.
  *
  * @returns VBox status
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   eflags      Current eflags
  * @param   Sel         Selector part.
  * @param   Addr        Address part.
@@ -663,7 +663,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPT
  * address when in real or v8086 mode.
  *
  * @returns VINF_SUCCESS.
- * @param   pVCpu   The Virtual CPU handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  * @param   SelCS   Selector part.
  * @param   pHidCS  The hidden CS register part. Optional.
  * @param   Addr    Address part.
@@ -689,7 +689,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, 
  *
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
- * @param   pVCpu   The virtual CPU handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  * @param   SelCPL  Current privilege level. Get this from SS - CS might be conforming!
  *                  A full selector can be passed, we'll only use the RPL part.
  * @param   SelCS   Selector part.
@@ -832,7 +832,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
  * at GC trap time.
  *
  * @returns VBox status code.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   eflags      Current eflags
  * @param   SelCPL      Current privilege level. Get this from SS - CS might be
  *                      conforming! A full selector can be passed, we'll only
@@ -860,7 +860,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVMCPU pVCpu, X86EFLAGS eflags, 
  * Validates and converts a GC selector based code address to a flat address.
  *
  * @returns VBox status code.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu        Pointer to the VMCPU.
  * @param   eflags       Current eflags
  * @param   SelCPL       Current privilege level. Get this from SS - CS might be conforming!
  *                       A full selector can be passed, we'll only use the RPL part.
@@ -893,7 +893,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL 
  *
  * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
  * @param   pVM     Pointer to the VM.
- * @param   pVCpu   The virtual CPU handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  * @param   Sel     The selector.
  */
 static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, PVMCPU pVCpu, RTSEL Sel)
@@ -919,7 +919,7 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, PVMCPU pVCpu, RTSEL Sel)
  * Return the cpu mode corresponding to the (CS) selector
  *
  * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
- * @param   pVCpu      The virtual CPU handle.
+ * @param   pVCpu      Pointer to the VMCPU.
  * @param   eflags     Current eflags register
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.

@@ -205,7 +205,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
  * This is for avoiding trouble in RC when changing CR3.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle of the calling EMT.
+ * @param   pVCpu       Pointer to the VMCPU of the calling EMT.
  */
 VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
 {

@@ -214,7 +214,7 @@ VMMR3DECL(bool) DBGFR3AddrIsValid(PVM pVM, PCDBGFADDRESS pAddress)
  * Called on the EMT for the VCpu.
  *
  * @returns VBox status code.
- * @param   pVCpu           The virtual CPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pAddress        The address.
  * @param   pGCPhys         Where to return the physical address.
  */

@@ -127,7 +127,7 @@ RT_C_DECLS_END
  * @returns rc, can be adjusted if its VINF_SUCCESS or something really bad
  *          happened.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The VBox status code to return.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  *
@@ -719,7 +719,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  *          other codes are passed execution to host context.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
  * @param   PC          The program counter corresponding to cs:eip in pRegFrame.
@@ -819,7 +819,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *          other codes are passed execution to host context.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   pCpu        The opcode info.
  * @param   PC          The program counter corresponding to cs:eip in pRegFrame.
@@ -912,7 +912,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  * @returns VINF_SUCCESS or VINF_EM_RAW_EMULATE_INSTR.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  *                      This will be updated on successful return.
  */

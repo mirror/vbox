@@ -2609,8 +2609,8 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
  *
  * @returns VBox status code, all errors are asserted.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
- * @thread  EMT corresponding to the virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @thread  EMT corresponding to Pointer to the VMCPU.
  */
 VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
 {
@@ -2652,8 +2652,8 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code, all errors are asserted.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
- * @thread  EMT corresponding to the virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @thread  EMT corresponding to Pointer to the VMCPU.
  */
 VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
 {

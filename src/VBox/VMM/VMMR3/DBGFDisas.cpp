@@ -89,8 +89,8 @@ static FNDISREADBYTES dbgfR3DisasInstrRead;
  * Calls the disassembler with the proper reader functions and such for disa
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM
- * @param   pVCpu       VMCPU handle
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pSelInfo    The selector info.
  * @param   enmMode     The guest paging mode.
  * @param   fFlags      DBGF_DISAS_FLAGS_XXX.
@@ -322,7 +322,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
  *
  * @returns VBox status code.
  * @param       pVM             Pointer to the VM.
- * @param       pVCpu           The virtual CPU handle.
+ * @param       pVCpu           Pointer to the VMCPU.
  * @param       Sel             The code selector. This used to determine the 32/16 bit ness and
  *                              calculation of the actual instruction address.
  * @param       pGCPtr          Pointer to the variable holding the code address
@@ -652,7 +652,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszP
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The virtual CPU handle, defaults to CPU 0 if NULL.
+ * @param   pVCpu           Pointer to the VMCPU, defaults to CPU 0 if NULL.
  * @param   Sel             The code selector. This used to determine the 32/16 bit-ness and
  *                          calculation of the actual instruction address.
  * @param   GCPtr           The code address relative to the base of Sel.

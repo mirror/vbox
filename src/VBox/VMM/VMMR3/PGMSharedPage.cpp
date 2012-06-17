@@ -196,7 +196,7 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
  *
  * @returns VBox strict status code.
  * @param   pVM                 Pointer to the VM.
- * @param   pVCpu               The VMCPU handle for the calling EMT.
+ * @param   pVCpu               Pointer to the VMCPU of the calling EMT.
  * @param   pvUser              Pointer to a VMCPUID with the requester's ID.
  */
 static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)

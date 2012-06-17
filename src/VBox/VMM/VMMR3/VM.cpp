@@ -1210,7 +1210,7 @@ VMMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  *          code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOn(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1299,7 +1299,7 @@ static void vmR3SuspendDoWork(PVM pVM)
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Suspend(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1381,7 +1381,7 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Resume(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1463,7 +1463,7 @@ VMMR3DECL(int) VMR3Resume(PVM pVM)
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          The pfSuspended argument of vmR3SaveTeleport.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -1563,7 +1563,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
  *          status code. (This is a strict return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          The pfSuspended argument of vmR3SaveTeleport.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -2155,7 +2155,7 @@ VMMR3DECL(int) VMR3LoadFromStreamFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvSt
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -2785,7 +2785,7 @@ static void vmR3CheckIntegrity(PVM pVM)
  *          is a strict return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -4088,7 +4088,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the EMT.
  * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3SetRuntimeErrorChangeState(PVM pVM, PVMCPU pVCpu, void *pvUser)

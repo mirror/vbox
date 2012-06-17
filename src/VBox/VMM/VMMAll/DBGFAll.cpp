@@ -118,7 +118,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
  *
  * @returns stepping (true) or not (false).
  *
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) DBGFIsStepping(PVMCPU pVCpu)
 {
