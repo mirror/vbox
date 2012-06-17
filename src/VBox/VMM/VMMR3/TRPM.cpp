@@ -729,7 +729,7 @@ VMMR3DECL(int) TRPMR3Term(PVM pVM)
  *
  * Used by TRPMR3Reset and CPU hot plugging.
  *
- * @param   pVCpu               The virtual CPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  */
 VMMR3DECL(void) TRPMR3ResetCpu(PVMCPU pVCpu)
 {

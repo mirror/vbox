@@ -2468,7 +2468,7 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
  * Resets a virtual CPU when unplugged.
  *
  * @param   pVM                 Pointer to the VM.
- * @param   pVCpu               The virtual CPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  */
 VMMR3DECL(void) PGMR3ResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
 {

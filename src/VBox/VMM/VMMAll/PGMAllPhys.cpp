@@ -1990,7 +1990,7 @@ int pgmPhysCr3ToHCPtr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
  * This uses the current CR3/CR0/CR4 of the guest.
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU Handle
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       The guest pointer to convert.
  * @param   pGCPhys     Where to store the GC physical address.
  */
@@ -2009,7 +2009,7 @@ VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
  * This uses the current CR3/CR0/CR4 of the guest.
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU Handle
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       The guest pointer to convert.
  * @param   pHCPhys     Where to store the HC physical address.
  */

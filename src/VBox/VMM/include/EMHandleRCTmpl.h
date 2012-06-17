@@ -27,8 +27,8 @@
  * @returns VINF_SUCCESS if it's ok to continue raw mode.
  * @returns VBox status code to return to the EM main loop.
  *
- * @param   pVM     The VM handle
- * @param   pVCpu   The VMCPU handle
+ * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VMCPU.
  * @param   rc      The return code.
  * @param   pCtx    The guest cpu context.
  */

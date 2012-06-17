@@ -2118,7 +2118,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
  * Tests if the guest has No-Execute Page Protection Enabled (NXE).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
 {
@@ -2130,7 +2130,7 @@ VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
  * Tests if the guest has the Page Size Extension enabled (PSE).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
 {
@@ -2143,7 +2143,7 @@ VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
  * Tests if the guest has the paging enabled (PG).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
 {
@@ -2155,7 +2155,7 @@ VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
  * Tests if the guest has the paging enabled (PG).
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
 {
@@ -2167,7 +2167,7 @@ VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
  * Tests if the guest is running in real mode or not.
  *
  * @returns true if in real mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
 {
@@ -2179,7 +2179,7 @@ VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
  * Tests if the guest is running in real or virtual 8086 mode.
  *
  * @returns @c true if it is, @c false if not.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
 {
@@ -2192,7 +2192,7 @@ VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
  * Tests if the guest is running in protected or not.
  *
  * @returns true if in protected mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
 {
@@ -2204,7 +2204,7 @@ VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
  * Tests if the guest is running in paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
 {
@@ -2216,7 +2216,7 @@ VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
  * Tests if the guest is running in long mode or not.
  *
  * @returns true if in long mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
 {
@@ -2228,7 +2228,7 @@ VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
  * Tests if the guest is running in PAE mode or not.
  *
  * @returns true if in PAE mode, otherwise false.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 {
@@ -2334,7 +2334,7 @@ VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
  * Lazily sync in the FPU/XMM state
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
 {

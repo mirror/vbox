@@ -38,7 +38,7 @@
  *
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The virtual CPU handle of the calling EMT.
+ * @param   pVCpu           Pointer to the VMCPU of the calling EMT.
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
  */

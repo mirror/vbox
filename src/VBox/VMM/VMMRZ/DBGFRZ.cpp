@@ -38,7 +38,7 @@
  *          other codes are passed execution to host context.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   uDr6        The DR6 register value.
  */
@@ -106,7 +106,7 @@ VMMRZDECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  *          other codes are passed execution to host context.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
 VMMRZDECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)

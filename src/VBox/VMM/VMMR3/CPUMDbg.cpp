@@ -170,7 +170,7 @@ static DECLCALLBACK(int) cpumR3RegSet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PC
  * Is the FPU state in FXSAVE format or not.
  *
  * @returns true if it is, false if it's in FNSAVE.
- * @param   pVCpu               The virtual CPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  */
 DECLINLINE(bool) cpumR3RegIsFxSaveFormat(PVMCPU pVCpu)
 {

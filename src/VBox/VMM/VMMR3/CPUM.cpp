@@ -1060,7 +1060,7 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
  *
  * Used by CPUMR3Reset and CPU hot plugging.
  *
- * @param   pVCpu               The virtual CPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  */
 VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
 {
@@ -3604,12 +3604,12 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
  * Disassemble an instruction and return the information in the provided structure.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM
- * @param   pVCpu       VMCPU Handle
- * @param   pCtx        CPU context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  * @param   GCPtrPC     Program counter (relative to CS) to disassemble from.
- * @param   pCpu        Disassembly state
- * @param   pszPrefix   String prefix for logging (debug only)
+ * @param   pCpu        Disassembly state.
+ * @param   pszPrefix   String prefix for logging (debug only).
  *
  */
 VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix)
@@ -3999,7 +3999,7 @@ VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)
 /**
  * Leaves REM and works the CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID flag.
  *
- * @param   pVCpu               The virtual CPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   fNoOutOfSyncSels    This is @c false if there are out of sync
  *                              registers.
  */
