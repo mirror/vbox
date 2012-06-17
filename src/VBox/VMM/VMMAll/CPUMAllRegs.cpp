@@ -53,7 +53,7 @@
  * core with the trap frame on the stack. It is called again to reset
  * back to the default context core when resuming hypervisor execution.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtxCore    Pointer to the alternative context core or NULL
  *                      to go back to the default context core.
  */
@@ -1440,7 +1440,7 @@ VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
 /**
  * Gets a CpuId leaf.
  *
- * @param   pVCpu   The VMCPU handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  * @param   iLeaf   The CPUID leaf to get.
  * @param   pEax    Where to store the EAX value.
  * @param   pEbx    Where to store the EBX value.
@@ -1987,7 +1987,7 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
  * any (hyper) DRx registers which comes out with a different value.
  *
  * @returns VINF_SUCCESS.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
 {
@@ -2242,7 +2242,7 @@ VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 /**
  * Updates the EFLAGS while we're in raw-mode.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtxCore    The context core.
  * @param   eflags      The new EFLAGS value.
  */
@@ -2264,7 +2264,7 @@ VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t efl
  * Gets the EFLAGS while we're in raw-mode.
  *
  * @returns The eflags.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtxCore    The context core.
  */
 VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
@@ -2285,7 +2285,7 @@ VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 /**
  * Sets the specified changed flags (CPUM_CHANGED_*).
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags)
 {
@@ -2347,7 +2347,7 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
  * Checks if we activated the FPU/XMM state of the guest OS
  * @returns true if we did.
  * @returns false if not.
- * @param   pVCpu   The VMCPU handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 {
@@ -2357,7 +2357,7 @@ VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 
 /**
  * Deactivate the FPU/XMM state of the guest OS
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
 {
@@ -2493,7 +2493,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
  * If paging mode is what you need, check out PGMGetGuestMode().
  *
  * @returns The CPU mode.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 {

@@ -39,7 +39,7 @@
  * Gets the pending interrupt.
  *
  * @returns VBox status code.
- * @param   pVCpu           VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pu8Interrupt    Where to store the interrupt on success.
  */
 VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
@@ -278,7 +278,7 @@ VMMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
  * Set the TPR (task priority register?).
  *
  * @returns VBox status code.
- * @param   pVCpu           VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   u8TPR           The new TPR.
  */
 VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
@@ -300,7 +300,7 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
  * Get the TPR (task priority register).
  *
  * @returns The current TPR.
- * @param   pVCpu           VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pu8TPR          Where to store the TRP.
  * @param   pfPending       Pending interrupt state (out).
 */

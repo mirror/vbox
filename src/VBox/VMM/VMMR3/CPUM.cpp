@@ -3502,7 +3502,7 @@ typedef struct CPUMDISASSTATE
     PDISCPUSTATE    pCpu;
     /** Pointer to the VM. */
     PVM             pVM;
-    /** The VMCPU handle. */
+    /** Pointer to the VMCPU. */
     PVMCPU          pVCpu;
     /** Pointer to the first byte in the segment. */
     RTGCUINTPTR     GCPtrSegBase;
@@ -3814,7 +3814,7 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM)
  * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
  *
  * @returns VBox status. (recompiler failure)
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtxCore    The context core (for trap usage).
  * @see     @ref pg_raw
  */
@@ -3882,7 +3882,7 @@ VMMR3DECL(int) CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
  * This function will change any selector registers with DPL=1 to DPL=0.
  *
  * @returns Adjusted rc.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          Raw mode return code
  * @param   pCtxCore    The context core (for trap usage).
  * @see     @ref pg_raw
@@ -3965,7 +3965,7 @@ VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
  * Only REM should ever call this function!
  *
  * @returns The changed flags.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   puCpl       Where to return the current privilege level (CPL).
  */
 VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)

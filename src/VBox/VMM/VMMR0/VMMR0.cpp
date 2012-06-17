@@ -403,7 +403,7 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 /**
  * Record return code statistics
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The status code.
  */
 static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)

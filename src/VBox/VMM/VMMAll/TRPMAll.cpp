@@ -45,7 +45,7 @@
  * If no trap is active active an error code is returned.
  *
  * @returns VBox status code.
- * @param   pVCpu                   VMCPU handle.
+ * @param   pVCpu                   Pointer to the VMCPU.
  * @param   pu8TrapNo               Where to store the trap number.
  * @param   pEnmType                Where to store the trap type
  */
@@ -74,7 +74,7 @@ VMMDECL(int)  TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmTyp
  * takes an error code when making this request.
  *
  * @returns The current trap number.
- * @param   pVCpu                   VMCPU handle.
+ * @param   pVCpu                   Pointer to the VMCPU.
  */
 VMMDECL(uint8_t)  TRPMGetTrapNo(PVMCPU pVCpu)
 {
@@ -90,7 +90,7 @@ VMMDECL(uint8_t)  TRPMGetTrapNo(PVMCPU pVCpu)
  * takes an error code when making this request.
  *
  * @returns Error code.
- * @param   pVCpu                   VMCPU handle.
+ * @param   pVCpu                   Pointer to the VMCPU.
  */
 VMMDECL(RTGCUINT)  TRPMGetErrorCode(PVMCPU pVCpu)
 {
@@ -122,7 +122,7 @@ VMMDECL(RTGCUINT)  TRPMGetErrorCode(PVMCPU pVCpu)
  * making this request.
  *
  * @returns Fault address associated with the trap.
- * @param   pVCpu                   VMCPU handle.
+ * @param   pVCpu                   Pointer to the VMCPU.
  */
 VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu)
 {
@@ -139,7 +139,7 @@ VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu)
  * when making this request.
  *
  * @returns VBox status code.
- * @param   pVCpu                   VMCPU handle.
+ * @param   pVCpu                   Pointer to the VMCPU.
  */
 VMMDECL(int) TRPMResetTrap(PVMCPU pVCpu)
 {
@@ -167,7 +167,7 @@ VMMDECL(int) TRPMResetTrap(PVMCPU pVCpu)
  * when making this request.
  *
  * @returns VBox status code.
- * @param   pVCpu               VMCPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   u8TrapNo            The trap vector to assert.
  * @param   enmType             Trap type.
  */
@@ -199,7 +199,7 @@ VMMDECL(int)  TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
  * The caller is responsible for making sure there is an active trap
  * which takes an errorcode when making this request.
  *
- * @param   pVCpu               VMCPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   uErrorCode          The new error code.
  */
 VMMDECL(void)  TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
@@ -231,7 +231,7 @@ VMMDECL(void)  TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
  * The caller is responsible for making sure there is an active trap 0e
  * when making this request.
  *
- * @param   pVCpu               VMCPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   uCR2                The new fault address (cr2 register).
  */
 VMMDECL(void)  TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2)
@@ -252,7 +252,7 @@ VMMDECL(void)  TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2)
  *
  * @returns true if software interrupt, false if not.
  *
- * @param   pVCpu               VMCPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  */
 VMMDECL(bool) TRPMIsSoftwareInterrupt(PVMCPU pVCpu)
 {
@@ -265,7 +265,7 @@ VMMDECL(bool) TRPMIsSoftwareInterrupt(PVMCPU pVCpu)
  * Check if there is an active trap.
  *
  * @returns true if trap active, false if not.
- * @param   pVCpu               VMCPU handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  */
 VMMDECL(bool)  TRPMHasTrap(PVMCPU pVCpu)
 {
@@ -278,7 +278,7 @@ VMMDECL(bool)  TRPMHasTrap(PVMCPU pVCpu)
  * If no trap is active active an error code is returned.
  *
  * @returns VBox status code.
- * @param   pVCpu                   VMCPU handle.
+ * @param   pVCpu                   Pointer to the VMCPU.
  * @param   pu8TrapNo               Where to store the trap number.
  * @param   pEnmType                Where to store the trap type
  * @param   puErrorCode             Where to store the error code associated with some traps.

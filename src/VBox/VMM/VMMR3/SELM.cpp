@@ -1988,7 +1988,7 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
  *
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
@@ -2173,7 +2173,7 @@ DECLINLINE(void) selmR3SelInfoFromDesc32(PDBGFSELINFO pSelInfo, PCX86DESC pDesc)
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
