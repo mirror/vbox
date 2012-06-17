@@ -70,7 +70,8 @@
 #define IDX_ParseThreeByteEsc4      38
 #define IDX_ParseThreeByteEsc5      39
 #define IDX_ParseImmAddrF           40
-#define IDX_ParseMax                (IDX_ParseImmAddrF+1)
+#define IDX_ParseInvOpModRM         41
+#define IDX_ParseMax                (IDX_ParseInvOpModRM+1)
 /** @}  */
 
 
