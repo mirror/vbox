@@ -103,7 +103,7 @@ VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
 /**
  * Sets the PC for which interrupts should be inhibited.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   PC          The PC.
  */
 VMMDECL(void) EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC)
@@ -123,7 +123,7 @@ VMMDECL(void) EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC)
  *      - POP SS
  *
  * @returns The PC for which interrupts should be inhibited.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  *
  */
 VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
@@ -371,7 +371,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
  * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtxCore        The context core (used for both the mode and instruction).
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
@@ -399,7 +399,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
  * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   GCPtrInstr      The flat address of the instruction.
  * @param   pCtxCore        The context core (used to determine the cpu mode).
  * @param   pDis            Where to return the parsed instruction info.
@@ -424,7 +424,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
  * @param   pvFault     The fault address (CR2).
@@ -478,7 +478,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  * @retval  VERR_*                  Fatal errors.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
  * @param   pvFault     The fault address (CR2).
@@ -535,7 +535,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  * @retval  VERR_*                  Fatal errors.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pDis        The disassembler cpu state for the instruction to be
  *                      interpreted.
  * @param   pRegFrame   The register frame. IP/EIP/RIP *IS* changed!
@@ -586,7 +586,7 @@ DECLINLINE(int) emRCStackRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
  */
@@ -1968,7 +1968,7 @@ static int emInterpretWbInvd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   pAddrGC     Operand address
  *
@@ -2042,7 +2042,7 @@ static VBOXSTRICTRC emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, 
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
  */
@@ -2080,7 +2080,7 @@ static int emInterpretCpuId(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
  * @param   SrcRegCRx   CRx register index (DISUSE_REG_CR*)
@@ -2113,7 +2113,7 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  *
  */
 VMMDECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
@@ -2140,7 +2140,7 @@ static int emInterpretClts(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
  * @param   val         New CRx value
@@ -2279,7 +2279,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (DISUSE_REG_CR*)
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
@@ -2312,7 +2312,7 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   u16Data     LMSW source data.
  *
@@ -2431,7 +2431,7 @@ static int emInterpretMovCRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegDRx  DRx register index (USE_REG_DR*)
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
@@ -2471,7 +2471,7 @@ VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
  * @param   SrcRegDRx   DRx register index (USE_REG_DR*)
@@ -2660,7 +2660,7 @@ emInterpretHlt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
  */
@@ -2686,7 +2686,7 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        The CPU context.
  *
  */
@@ -2729,7 +2729,7 @@ static int emInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  *
  */
@@ -2944,7 +2944,7 @@ static const char *emMSRtoString(uint32_t uMsr)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  */
 VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
@@ -2989,7 +2989,7 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  */
 VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
@@ -3301,7 +3301,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pDis        The disassembler cpu state for the instruction to be
  *                      interpreted.
  * @param   pRegFrame   The register frame. EIP is *NOT* changed!

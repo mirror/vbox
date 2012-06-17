@@ -171,7 +171,7 @@ void vmmTermFormatTypes(void)
  * by a push/ret/whatever does it become writable.)
  *
  * @returns bottom of the stack.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
 {

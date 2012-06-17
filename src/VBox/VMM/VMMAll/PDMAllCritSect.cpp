@@ -639,7 +639,7 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
 /**
  * Process the critical sections queued for ring-3 'leave'.
  *
- * @param   pVCpu         The VMCPU handle.
+ * @param   pVCpu         Pointer to the VMCPU.
  */
 VMMDECL(void) PDMCritSectFF(PVMCPU pVCpu)
 {

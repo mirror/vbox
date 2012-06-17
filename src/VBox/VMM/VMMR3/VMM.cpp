@@ -1625,7 +1625,7 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
  * @returns VBox strict status code - EM scheduling.  No errors will be returned
  *          here, nor will any non-EM scheduling status codes be returned.
  *
- * @param   pVM         The VM handle
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The handle of the calling EMT.
  *
  * @thread  EMT
@@ -1984,7 +1984,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 {

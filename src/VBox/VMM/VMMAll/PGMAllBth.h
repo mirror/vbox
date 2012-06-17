@@ -438,7 +438,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  *
- * @param   pVCpu       VMCPU Handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   uErr        The trap error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address.
@@ -1102,7 +1102,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
  *
  * @returns VBox status code.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtrPage   Page to invalidate.
  *
  * @remark  ASSUMES that the guest is updating before invalidating. This order
@@ -1395,7 +1395,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 /**
  * Update the tracking of shadowed pages.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pShwPage    The shadow page.
  * @param   HCPhys      The physical page we is being dereferenced.
  * @param   iPte        Shadow PTE index
@@ -1472,7 +1472,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
 /**
  * Update the tracking of shadowed pages.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pShwPage    The shadow page.
  * @param   u16         The top 16-bit of the pPage->HCPhys.
  * @param   pPage       Pointer to the guest page. this will be modified.
@@ -1585,7 +1585,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint64_t
  * physical address.  The PdeSrc argument only the flags are used.  No page
  * structured will be mapped in this function.
  *
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pPteDst     Destination page table entry.
  * @param   PdeSrc      Source page directory entry (i.e. Guest OS page directory entry).
  *                      Can safely assume that only the flags are being used.
@@ -1806,7 +1806,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS
  *
  * @returns VBox status code.
  * @returns VINF_PGM_SYNCPAGE_MODIFIED_PDE if it modifies the PDE in any way.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   PdeSrc      Page directory entry of the guest.
  * @param   GCPtrPage   Guest context page address.
  * @param   cPages      Number of pages to sync (PGM_SYNC_N_PAGES) (default=1).
@@ -2358,7 +2358,7 @@ DECLINLINE(int) PGM_BTH_NAME(CheckPageFaultReturnProt)(PVMCPU pVCpu, uint32_t uE
  * Handle dirty bit tracking faults.
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   uErr        Page fault error code.
  * @param   pPdeSrc     Guest page directory entry.
  * @param   pPdeDst     Shadow page directory entry.
@@ -2546,7 +2546,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
  * when calling this method.
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   iPD         Page directory index.
  * @param   pPDSrc      Source page directory (i.e. Guest OS page directory).
  *                      Assume this is a temporary mapping.
@@ -3260,7 +3260,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
  * after a CR3 reload.
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtrPage   Page to invalidate.
  */
 PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
@@ -3400,7 +3400,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * Syncs a page during a PGMVerifyAccess() call.
  *
  * @returns VBox status code (informational included).
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtrPage   The address of the page to sync.
  * @param   fPage       The effective guest page flags.
  * @param   uErr        The trap error code.
@@ -3590,7 +3590,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
  * Syncs the paging hierarchy starting at CR3.
  *
  * @returns VBox status code, no specials.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   cr0         Guest context CR0 register.
  * @param   cr3         Guest context CR3 register. Not subjected to the A20
  *                      mask.
@@ -3682,7 +3682,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
  *
  * @returns The number of errors.
  * @param   pVM         The virtual machine.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   cr3         Guest context CR3 register.
  * @param   cr4         Guest context CR4 register.
  * @param   GCPtr       Where to start. Defaults to 0.
@@ -4444,7 +4444,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
  * @returns Strict VBox status code.
  * @retval  VINF_SUCCESS.
  *
- * @param   pVCpu           The VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   GCPhysCR3       The physical address in the CR3 register.  (A20
  *                          mask already applied.)
  */
@@ -4679,7 +4679,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
  * Unmaps the shadow CR3.
  *
  * @returns VBox status, no specials.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
 {

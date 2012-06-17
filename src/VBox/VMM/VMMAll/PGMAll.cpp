@@ -397,7 +397,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
  * #PF Handler.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   uErr        The trap error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address.
@@ -503,7 +503,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
  * @returns VBox status code suitable for scheduling.
  * @retval  VINF_SUCCESS on success.
  * @retval  VINF_PGM_SYNC_CR3 if we're out of shadow pages or something like that.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtrPage   Page to invalidate.
  */
 VMMDECL(int) PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
@@ -546,7 +546,7 @@ PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
  * Only checks the guest's page tables
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   Addr        Guest virtual address to check
  * @param   cbSize      Access size
  * @param   fAccess     Access type (r/w, user/supervisor (X86_PTE_*))
@@ -599,7 +599,7 @@ VMMDECL(int) PGMIsValidAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint3
  * Supports handling of pages marked for dirty bit tracking and CSAM
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   Addr        Guest virtual address to check
  * @param   cbSize      Access size
  * @param   fAccess     Access type (r/w, user/supervisor (X86_PTE_*))
@@ -708,7 +708,7 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
  * @retval  VINF_EM_RAW_EMULATE_INSTR - not handled (RC only).
  * @retval  VERR_REM_FLUSHED_PAGES_OVERFLOW - not handled.
  *
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtrPage   Page to invalidate.
  *
  * @remark  ASSUMES the page table entry or page directory is valid. Fairly
@@ -800,7 +800,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   Register frame.
  * @param   pvFault     Fault address.
  */
@@ -819,7 +819,7 @@ VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCOR
  * Gets effective page information (from the VMM page directory).
  *
  * @returns VBox status.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*.
  * @param   pHCPhys     Where to store the HC physical address of the page.
@@ -841,7 +841,7 @@ VMMDECL(int) PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHC
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
  * @param   fMask       The AND mask - page flags X86_PTE_*.
@@ -869,7 +869,7 @@ DECLINLINE(int) pdmShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t fFlags, u
  * make it read-only.
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  */
@@ -888,7 +888,7 @@ VMMDECL(int) PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFla
  * pages.
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   fMmio2      Set if it is an MMIO2 page.
  * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
@@ -904,7 +904,7 @@ VMMDECL(int) PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFla
  * make it not present.
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   fOpFlags    A combination of the PGM_MK_PG_XXX flags.
  */
@@ -918,7 +918,7 @@ VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpF
  * Gets the shadow page directory for the specified address, PAE.
  *
  * @returns Pointer to the shadow PD.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       The address.
  * @param   uGstPdpe    Guest PDPT entry. Valid.
  * @param   ppPD        Receives address of page directory
@@ -1051,7 +1051,7 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
  * calling this function.
  *
  * @returns VBox status.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       The address.
  * @param   uGstPml4e   Guest PML4 entry (valid).
  * @param   uGstPdpe    Guest PDPT entry (valid).
@@ -1154,7 +1154,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
  * Gets the SHADOW page directory pointer for the specified address (long mode).
  *
  * @returns VBox status.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       The address.
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
@@ -1199,7 +1199,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
  * backing pages in case the PDPT or PML4 entry is missing.
  *
  * @returns VBox status.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       The address.
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
@@ -1366,7 +1366,7 @@ VMMDECL(int) PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
  *
  * @returns true if the page is present.
  * @returns false if the page is not present.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Address within the page.
  */
 VMMDECL(bool) PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr)
@@ -1381,7 +1381,7 @@ VMMDECL(bool) PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr)
  * Sets (replaces) the page flags for a range of pages in the guest's tables.
  *
  * @returns VBox status.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       The address of the first page.
  * @param   cb          The size of the range in bytes.
  * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
@@ -1399,7 +1399,7 @@ VMMDECL(int)  PGMGstSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFl
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   cb          Size (in bytes) of the range to apply the modification to.
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
@@ -1688,7 +1688,7 @@ VMM_INT_DECL(int) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
 /**
  * Gets the current CR3 register value for the shadow memory context.
  * @returns CR3 value.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
 {
@@ -1701,7 +1701,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
 /**
  * Gets the current CR3 register value for the nested memory context.
  * @returns CR3 value.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVMCPU pVCpu, PGMMODE enmShadowMode)
 {
@@ -1747,7 +1747,7 @@ VMMDECL(RTHCPHYS) PGMGetInterHCCR3(PVM pVM)
  * Gets the current CR3 register value for the RC intermediate memory context.
  * @returns CR3 value.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(RTHCPHYS) PGMGetInterRCCR3(PVM pVM, PVMCPU pVCpu)
 {
@@ -1816,7 +1816,7 @@ VMMDECL(RTHCPHYS) PGMGetInterAmd64CR3(PVM pVM)
  * @returns VBox status code.
  * @retval  VINF_PGM_SYNC_CR3 if monitoring requires a CR3 sync. This can
  *          safely be ignored and overridden since the FF will be set too then.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   cr3         The new cr3.
  * @param   fGlobal     Indicates whether this is a global flush or not.
  */
@@ -1926,7 +1926,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
  * @retval  (If applied when not in nested mode: VINF_PGM_SYNC_CR3 if monitoring
  *          requires a CR3 sync. This can safely be ignored and overridden since
  *          the FF will be set too then.)
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   cr3         The new cr3.
  */
 VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
@@ -1978,7 +1978,7 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
  * in several places, most importantly whenever the CR3 is loaded.
  *
  * @returns VBox status code.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   cr0         Guest context CR0 register
  * @param   cr3         Guest context CR3 register
  * @param   cr4         Guest context CR4 register
@@ -2121,7 +2121,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
  *          (I.e. not in R3.)
  * @retval  VINF_EM_SUSPEND or VINF_EM_OFF on a fatal runtime error. (R3 only)
  *
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   cr0         The new cr0.
  * @param   cr4         The new cr4.
  * @param   efer        The new extended feature enable register.
@@ -2186,7 +2186,7 @@ VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t ef
  * If you just need the CPU mode (real/protected/long), use CPUMGetGuestMode().
  *
  * @returns The current paging mode.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(PGMMODE) PGMGetGuestMode(PVMCPU pVCpu)
 {
@@ -2198,7 +2198,7 @@ VMMDECL(PGMMODE) PGMGetGuestMode(PVMCPU pVCpu)
  * Gets the current shadow paging mode.
  *
  * @returns The current paging mode.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(PGMMODE) PGMGetShadowMode(PVMCPU pVCpu)
 {
@@ -2648,7 +2648,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
  *
  * @returns Number of conflicts.
  * @param   pVM     Pointer to the VM.
- * @param   pVCpu   The VMCPU handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  * @param   cr3     The current guest CR3 register value.
  * @param   cr4     The current guest CR4 register value.
  */

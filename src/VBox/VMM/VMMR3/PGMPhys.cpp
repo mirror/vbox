@@ -1318,7 +1318,7 @@ VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM)
  * Get information about a range.
  *
  * @returns VINF_SUCCESS or VERR_OUT_OF_RANGE.
- * @param   pVM             The VM handle
+ * @param   pVM             Pointer to the VM.
  * @param   iRange          The ordinal of the range.
  * @param   pGCPhysStart    Where to return the start of the range. Optional.
  * @param   pGCPhysLast     Where to return the address of the last byte in the

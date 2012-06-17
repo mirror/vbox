@@ -51,7 +51,7 @@ typedef struct
     DISCPUSTATE     Cpu;
     /** Pointer to the VM. */
     PVM             pVM;
-    /** The VMCPU handle. */
+    /** Pointer to the VMCPU. */
     PVMCPU          pVCpu;
     /** The address space for resolving symbol. */
     RTDBGAS         hAs;
@@ -606,7 +606,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCP
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param   pVCpu           VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pszOutput       Output buffer.  This will always be properly
  *                          terminated if @a cbOutput is greater than zero.
  * @param   cbOutput        Size of the output buffer.
@@ -627,7 +627,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint32_t c
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param   pVCpu           VMCPU handle.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pszPrefix       Short prefix string to the disassembly string. (optional)
  */
 VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszPrefix)

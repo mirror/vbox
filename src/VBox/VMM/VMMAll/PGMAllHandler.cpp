@@ -1025,7 +1025,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  * save the change).
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle
+ * @param   pVM                 Pointer to the VM.
  * @param   GCPhys              The start address of the access handler. This
  *                              must be a fully page aligned range or we risk
  *                              messing up other handlers installed for the
@@ -1151,7 +1151,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
  * save the change).
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle
+ * @param   pVM                 Pointer to the VM.
  * @param   GCPhys              The start address of the access handler. This
  *                              must be a fully page aligned range or we risk
  *                              messing up other handlers installed for the

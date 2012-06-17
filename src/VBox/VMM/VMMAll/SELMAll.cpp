@@ -764,7 +764,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, PVMCPU pVCpu, RTSEL Sel
  * address when in protected/long mode using the standard algorithm.
  *
  * @returns VBox status code.
- * @param   pVCpu   VMCPU Handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  * @param   SelCPL  Current privilege level. Get this from SS - CS might be conforming!
  *                  A full selector can be passed, we'll only use the RPL part.
  * @param   SelCS   Selector part.
@@ -1170,7 +1170,7 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
  * @retval  VERR_SELM_NO_TSS if we haven't got a TSS (rather unlikely).
  *
  * @param   pVM                 Pointer to the VM.
- * @param   pVCpu               VMCPU Handle.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   pGCPtrTss           Where to store the TSS address.
  * @param   pcbTss              Where to store the TSS size limit.
  * @param   pfCanHaveIOBitmap   Where to store the can-have-I/O-bitmap indicator. (optional)
@@ -1202,8 +1202,8 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGC
  * value might have changed.
  * This is called by PGM.
  *
- * @param   pVM       The VM handle
- * @param   pVCpu     The VMCPU handle
+ * @param   pVM       Pointer to the VM.
+ * @param   pVCpu     Pointer to the VMCPU.
  */
 VMMDECL(void) SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu)
 {
