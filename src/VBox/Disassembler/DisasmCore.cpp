@@ -46,9 +46,6 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void     disasmModRMReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr);
-
-
 /** @name Parsers
  * @{ */
 static FNDISPARSE ParseIllegal;
@@ -522,7 +519,6 @@ DECLINLINE(uint64_t) disReadQWord(PDISSTATE pDis, size_t offInstr)
 static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, size_t cbExtra)
 {
     size_t size = 0;
-    bool fFiltered = false;
 
     Assert(pOp); Assert(pDis);
 
@@ -533,6 +529,7 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
      * Apply filter to instruction type to determine if a full disassembly is required.
      * Note! Multibyte opcodes are always marked harmless until the final byte.
      */
+    bool fFiltered;
     if ((pOp->fOpType & pDis->fFilter) == 0)
     {
         fFiltered = true;
@@ -541,6 +538,7 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
     else
     {
         /* Not filtered out -> full disassembly */
+        fFiltered = false;
         pDis->pfnDisasmFnTable = g_apfnFullDisasm;
     }
 
@@ -593,12 +591,11 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
 //*****************************************************************************
 static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    size_t      size = 0;
     PCDISOPCODE fpop;
     NOREF(pOp);
 
-    unsigned    ModRM = disReadByte(pDis, offInstr);
-    unsigned    index = pDis->bOpCode - 0xD8;
+    uint8_t    ModRM = disReadByte(pDis, offInstr);
+    uint8_t    index = pDis->bOpCode - 0xD8;
     if (ModRM <= 0xBF)
     {
         fpop            = &(g_apMapX86_FP_Low[index])[MODRM_REG(ModRM)];
@@ -637,6 +634,7 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     }
 
     // Little hack to make sure the ModRM byte is included in the returned size
+    size_t      size = 0;
     if (fpop->idxParse1 != IDX_ParseModRM && fpop->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
 
@@ -659,10 +657,8 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
  *
  *
  ********************************************************************************************************************************/
-static void UseSIB(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+static void UseSIB(PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp);
-
     unsigned scale = pDis->SIB.Bits.Scale;
     unsigned base  = pDis->SIB.Bits.Base;
     unsigned index = pDis->SIB.Bits.Index;
@@ -779,7 +775,7 @@ static size_t ParseSIB_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis
  *
  *
  ********************************************************************************************************************************/
-static void disasmModRMReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam, int fRegAddr)
+static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam, int fRegAddr)
 {
     NOREF(pOp); NOREF(pDis);
 
@@ -853,7 +849,8 @@ static void disasmModRMReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOP
     }
 }
 
-static void disasmModRMReg16(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
+
+static void disasmModRMReg16(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     static const uint8_t s_auBaseModRMReg16[8]  =
     { DISGREG_BX, DISGREG_BX, DISGREG_BP, DISGREG_BP, DISGREG_SI, DISGREG_DI, DISGREG_BP, DISGREG_BX };
@@ -868,9 +865,9 @@ static void disasmModRMReg16(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDIS
         pParam->Index.idxGenReg = s_auIndexModRMReg16[idx];
     }
 }
-//*****************************************************************************
-//*****************************************************************************
-static void disasmModRMSReg(PDISSTATE pDis, PCDISOPCODE pOp, unsigned idx, PDISOPPARAM pParam)
+
+
+static void disasmModRMSReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     NOREF(pOp);
     if (idx >= DISSELREG_END)
@@ -895,7 +892,7 @@ static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
     switch (vtype)
     {
     case OP_PARM_G: //general purpose register
-        disasmModRMReg(pDis, pOp, reg, pParam, 0);
+        disasmModRMReg(reg, pOp, pDis, pParam, 0);
         return 0;
 
     default:
@@ -930,7 +927,7 @@ static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
 
             case OP_PARM_S: //segment register
                 reg &= 7;   /* REX.R has no effect here */
-                disasmModRMSReg(pDis, pOp, reg, pParam);
+                disasmModRMSReg(reg, pOp, pDis, pParam);
                 pParam->fUse |= DISUSE_REG_SEG;
                 return 0;
 
@@ -966,10 +963,8 @@ static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
         switch (mod)
         {
         case 0: //effective address
-            if (rm == 4)
-            {   /* SIB byte follows ModRM */
-                UseSIB(offInstr, pOp, pDis, pParam);
-            }
+            if (rm == 4)    /* SIB byte follows ModRM */
+                UseSIB(pDis, pParam);
             else
             if (rm == 5)
             {
@@ -988,38 +983,36 @@ static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
             else
             {   //register address
                 pParam->fUse |= DISUSE_BASE;
-                disasmModRMReg(pDis, pOp, rm, pParam, 1);
+                disasmModRMReg(rm, pOp, pDis, pParam, 1);
             }
             break;
 
         case 1: //effective address + 8 bits displacement
-            if (rm == 4) {//SIB byte follows ModRM
-                UseSIB(offInstr, pOp, pDis, pParam);
-            }
+            if (rm == 4)    /* SIB byte follows ModRM */
+                UseSIB(pDis, pParam);
             else
             {
                 pParam->fUse |= DISUSE_BASE;
-                disasmModRMReg(pDis, pOp, rm, pParam, 1);
+                disasmModRMReg(rm, pOp, pDis, pParam, 1);
             }
             pParam->uDisp.i8 = pDis->i32SibDisp;
             pParam->fUse |= DISUSE_DISPLACEMENT8;
             break;
 
         case 2: //effective address + 32 bits displacement
-            if (rm == 4) {//SIB byte follows ModRM
-                UseSIB(offInstr, pOp, pDis, pParam);
-            }
+            if (rm == 4)    /* SIB byte follows ModRM */
+                UseSIB(pDis, pParam);
             else
             {
                 pParam->fUse |= DISUSE_BASE;
-                disasmModRMReg(pDis, pOp, rm, pParam, 1);
+                disasmModRMReg(rm, pOp, pDis, pParam, 1);
             }
             pParam->uDisp.i32 = pDis->i32SibDisp;
             pParam->fUse |= DISUSE_DISPLACEMENT32;
             break;
 
         case 3: //registers
-            disasmModRMReg(pDis, pOp, rm, pParam, 0);
+            disasmModRMReg(rm, pOp, pDis, pParam, 0);
             break;
         }
     }
@@ -1036,24 +1029,24 @@ static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
             else
             {
                 pParam->fUse |= DISUSE_BASE;
-                disasmModRMReg16(pDis, pOp, rm, pParam);
+                disasmModRMReg16(rm, pOp, pDis, pParam);
             }
             break;
 
         case 1: //effective address + 8 bits displacement
-            disasmModRMReg16(pDis, pOp, rm, pParam);
+            disasmModRMReg16(rm, pOp, pDis, pParam);
             pParam->uDisp.i8 = pDis->i32SibDisp;
             pParam->fUse |= DISUSE_BASE | DISUSE_DISPLACEMENT8;
             break;
 
         case 2: //effective address + 16 bits displacement
-            disasmModRMReg16(pDis, pOp, rm, pParam);
+            disasmModRMReg16(rm, pOp, pDis, pParam);
             pParam->uDisp.i16 = pDis->i32SibDisp;
             pParam->fUse |= DISUSE_BASE | DISUSE_DISPLACEMENT16;
             break;
 
         case 3: //registers
-            disasmModRMReg(pDis, pOp, rm, pParam, 0);
+            disasmModRMReg(rm, pOp, pDis, pParam, 0);
             break;
         }
     }
