@@ -77,7 +77,7 @@ static const DBGFINFOHLP g_dbgfR3InfoStdErrHlp =
  * Initialize the info handlers.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int dbgfR3InfoInit(PVM pVM)
 {
@@ -107,7 +107,7 @@ int dbgfR3InfoInit(PVM pVM)
  * Terminate the info handlers.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 int dbgfR3InfoTerm(PVM pVM)
 {
@@ -210,7 +210,7 @@ VMMR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogRelHlp(void)
  * Upon successful return the we're inside the crit sect and the caller must leave it.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   fFlags      The flags.
@@ -277,7 +277,7 @@ static int dbgfR3InfoRegister(PVM pVM, const char *pszName, const char *pszDesc,
  * Register a info handler owned by a device.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -323,7 +323,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterDevice(PVM pVM, const char *pszName, const char
  * Register a info handler owned by a driver.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -369,7 +369,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const char
  * Register a info handler owned by an internal component.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -384,7 +384,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterInternal(PVM pVM, const char *pszName, const ch
  * Register a info handler owned by an internal component.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -424,7 +424,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterInternalEx(PVM pVM, const char *pszName, const 
  * Register a info handler owned by an external component.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info.
  * @param   pszDesc     The description of the info and any arguments the handler may take.
  * @param   pfnHandler  The handler function to be called to display the info.
@@ -465,7 +465,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterExternal(PVM pVM, const char *pszName, const ch
  * Deregister one(/all) info handler(s) owned by a device.
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pDevIns     Device instance.
  * @param   pszName     The identifier of the info. If NULL all owned by the device.
  */
@@ -540,7 +540,7 @@ VMMR3DECL(int) DBGFR3InfoDeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const cha
  * Deregister one(/all) info handler(s) owned by a driver.
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pDrvIns     Driver instance.
  * @param   pszName     The identifier of the info. If NULL all owned by the driver.
  */
@@ -616,7 +616,7 @@ VMMR3DECL(int) DBGFR3InfoDeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const cha
  * Internal deregistration helper.
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info.
  * @param   enmType     The info owner type.
  */
@@ -665,7 +665,7 @@ static int dbgfR3InfoDeregister(PVM pVM, const char *pszName, DBGFINFOTYPE enmTy
  * Deregister a info handler owned by an internal component.
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info. If NULL all owned by the device.
  */
 VMMR3DECL(int) DBGFR3InfoDeregisterInternal(PVM pVM, const char *pszName)
@@ -679,7 +679,7 @@ VMMR3DECL(int) DBGFR3InfoDeregisterInternal(PVM pVM, const char *pszName)
  * Deregister a info handler owned by an external component.
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info. If NULL all owned by the device.
  */
 VMMR3DECL(int) DBGFR3InfoDeregisterExternal(PVM pVM, const char *pszName)
@@ -787,7 +787,7 @@ static DECLCALLBACK(int) dbgfR3Info(PVM pVM, VMCPUID idCpu, const char *pszName,
  * Display a piece of info writing to the supplied handler.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pszName     The identifier of the info to display.
  * @param   pszArgs     Arguments to the info handler.
  * @param   pHlp        The output helper functions. If NULL the logger will be used.
@@ -802,7 +802,7 @@ VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCD
  * Display a piece of info writing to the supplied handler.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       The CPU to exectue the request on.  Pass NIL_VMCPUID
  *                      to not involve any EMT.
  * @param   pszName     The identifier of the info to display.
@@ -943,7 +943,7 @@ VMMR3DECL(int) DBGFR3InfoMulti(PVM pVM, const char *pszIncludePat, const char *p
  * Enumerate all the register info handlers.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pfnCallback     Pointer to callback function.
  * @param   pvUser          User argument to pass to the callback.
  */

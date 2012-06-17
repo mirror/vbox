@@ -225,7 +225,7 @@ static void vmmR3FatalDumpInfoHlpDelete(PVMMR3FATALDUMPINFOHLP pHlp)
 /**
  * Dumps the VM state on a fatal error.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU Handle.
  * @param   rcErr       VBox status code.
  */

@@ -422,7 +422,7 @@ static DECLCALLBACK(int) patmCountPatch(PAVLOU32NODECORE pNode, void *pcPatches)
  *
  * @returns VBox status code.
  * @param   pNode           Current node
- * @param   pVM1            VM Handle
+ * @param   pVM1            Pointer to the VM
  */
 static DECLCALLBACK(int) patmSaveP2GLookupRecords(PAVLU32NODECORE pNode, void *pVM1)
 {
@@ -444,7 +444,7 @@ static DECLCALLBACK(int) patmSaveP2GLookupRecords(PAVLU32NODECORE pNode, void *p
  *
  * @returns VBox status code.
  * @param   pNode           Current node
- * @param   pVM1            VM Handle
+ * @param   pVM1            Pointer to the VM
  */
 static DECLCALLBACK(int) patmSaveFixupRecords(PAVLPVNODECORE pNode, void *pVM1)
 {
@@ -580,7 +580,7 @@ static void patmR3PatchConvertMem2SSM(PPATMPATCHRECSSM pPatchSSM, PPATMPATCHREC 
  *
  * @returns VBox status code.
  * @param   pNode           Current node
- * @param   pVM1            VM Handle
+ * @param   pVM1            Pointer to the VM
  */
 static DECLCALLBACK(int) patmSavePatchState(PAVLOU32NODECORE pNode, void *pVM1)
 {
@@ -631,7 +631,7 @@ static DECLCALLBACK(int) patmSavePatchState(PAVLOU32NODECORE pNode, void *pVM1)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 DECLCALLBACK(int) patmR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -695,7 +695,7 @@ DECLCALLBACK(int) patmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -971,7 +971,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
  * Correct fixups to predefined hypervisor PATM regions. (their addresses might have changed)
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   ulSSMVersion    SSM version
  * @param   patmInfo        Saved PATM structure
  * @param   pPatch          Patch record

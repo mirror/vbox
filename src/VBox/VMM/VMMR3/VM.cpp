@@ -1173,7 +1173,7 @@ static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBu
  *
  * This is used both on init and on runtime relocations.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -2484,7 +2484,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
  * This is called as the final step in the VM destruction or as the cleanup
  * in case of a creation failure.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   cMilliesEMTWait The number of milliseconds to wait for the emulation
  *                          threads.
  */
@@ -3061,7 +3061,7 @@ VMMR3DECL(PRTUUID) VMR3GetUuid(PUVM pUVM, PRTUUID pUuid)
  * Gets the current VM state.
  *
  * @returns The current VM state.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @thread  Any
  */
 VMMR3DECL(VMSTATE) VMR3GetState(PVM pVM)
@@ -3390,7 +3390,7 @@ static void vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE 
 /**
  * Sets the current VM state.
  *
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmStateNew     The new state.
  * @param   enmStateOld     The old state (for asserting only).
  */
@@ -3564,7 +3564,7 @@ VMMR3DECL(bool) VMR3TeleportedAndNotFullyResumedYet(PVM pVM)
  * state callback.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pfnAtState      Pointer to callback.
  * @param   pvUser          User argument.
  * @thread  Any.
@@ -3606,7 +3606,7 @@ VMMR3DECL(int) VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUse
  * Deregisters a VM state change callback.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pfnAtState      Pointer to callback.
  * @param   pvUser          User argument.
  * @thread  Any.

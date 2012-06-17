@@ -202,7 +202,7 @@ VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * Locks REM execution to a single VCpu
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(void) EMRemLock(PVM pVM)
 {
@@ -221,7 +221,7 @@ VMMDECL(void) EMRemLock(PVM pVM)
 /**
  * Unlocks REM execution
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(void) EMRemUnlock(PVM pVM)
 {

@@ -542,7 +542,7 @@ static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE 
  *
  * @returns VINF_SUCCESS if the handler has carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.

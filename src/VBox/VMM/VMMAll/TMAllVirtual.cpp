@@ -369,7 +369,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
  * Gets the current TMCLOCK_VIRTUAL time
  *
  * @returns The timestamp.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  *
  * @remark  While the flow of time will never go backwards, the speed of the
  *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
@@ -389,7 +389,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGet(PVM pVM)
  * Meaning, this has no side effect on FFs like TMVirtualGet may have.
  *
  * @returns The timestamp.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  *
  * @remarks See TMVirtualGet.
  */
@@ -418,7 +418,7 @@ DECLINLINE(uint64_t) tmVirtualVirtToNsDeadline(PVM pVM, uint64_t cVirtTicksToDea
  * tmVirtualSyncGetLocked worker for handling catch-up when owning the lock.
  *
  * @returns The timestamp.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   u64                 raw virtual time.
  * @param   off                 offVirtualSync.
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
@@ -619,7 +619,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   fCheckTimers        Check timers or not
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
  *                              the next virtual sync timer deadline.  Can be
@@ -857,7 +857,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
@@ -872,7 +872,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGet(PVM pVM)
  * TMCLOCK_VIRTUAL.
  *
  * @returns The timestamp.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
@@ -886,7 +886,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM)
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   fCheckTimers    Check timers on the virtual clock or not.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
@@ -902,7 +902,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
  * without checking timers running on TMCLOCK_VIRTUAL.
  *
  * @returns The timestamp.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pcNsToDeadline      Where to return the number of nano seconds to
  *                              the next virtual sync timer deadline.
  * @thread  EMT.
@@ -921,7 +921,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pc
  * Gets the number of nano seconds to the next virtual sync deadline.
  *
  * @returns The number of TMCLOCK_VIRTUAL ticks.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
@@ -937,7 +937,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVM pVM)
  * Gets the current lag of the synchronous virtual clock (relative to the virtual clock).
  *
  * @return  The current lag.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMM_INT_DECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
 {
@@ -949,7 +949,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
  * Get the current catch-up percent.
  *
  * @return  The current catch0up percent. 0 means running at the same speed as the virtual clock.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
 {
@@ -963,7 +963,7 @@ VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
  * Gets the current TMCLOCK_VIRTUAL frequency.
  *
  * @returns The frequency.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
 {

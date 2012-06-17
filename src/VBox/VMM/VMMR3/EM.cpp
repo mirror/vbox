@@ -492,7 +492,7 @@ VMMR3DECL(int) EMR3Term(PVM pVM)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -531,7 +531,7 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -715,7 +715,7 @@ static const char *emR3GetStateName(EMSTATE enmState)
  * Debug loop.
  *
  * @returns VBox status code for EM.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   VMCPU handle.
  * @param   rc      Current EM VBox status code..
  */
@@ -891,7 +891,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
  * @returns VBox status code. The most important ones are: VINF_EM_STEP_EVENT,
  *          VINF_EM_RESCHEDULE, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  */
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
@@ -951,7 +951,7 @@ DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
@@ -1324,7 +1324,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns rc or a fatal status code.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   rc          The current rc.
  */
@@ -1363,7 +1363,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  *          The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   rc          The current rc.
  *
@@ -2308,7 +2308,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 /**
  * Notify EM of a state change (used by FTM)
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3DECL(int) EMR3NotifySuspend(PVM pVM)
 {
@@ -2323,7 +2323,7 @@ VMMR3DECL(int) EMR3NotifySuspend(PVM pVM)
 /**
  * Notify EM of a state change (used by FTM)
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3DECL(int) EMR3NotifyResume(PVM pVM)
 {

@@ -1936,7 +1936,7 @@ static DECLCALLBACK(int) cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
@@ -1973,7 +1973,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
  * Load a version 1.6 CPUMCTX structure.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pCpumctx16      Version 1.6 CPUMCTX
  */
 static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
@@ -2385,7 +2385,7 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
 /**
  * Formats a full register dump.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtx        The context to format.
  * @param   pCtxCore    The context core to format.
  * @param   pHlp        Output functions.
@@ -2604,7 +2604,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
 /**
  * Display all cpu states and any other cpum info.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2661,7 +2661,7 @@ static void cpumR3InfoParseArg(const char *pszArgs, CPUMDUMPTYPE *penmType, cons
 /**
  * Display the guest cpu state.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2686,7 +2686,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 /**
  * Display the current guest instruction
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2709,7 +2709,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
 /**
  * Display the hypervisor cpu state.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2730,7 +2730,7 @@ static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 /**
  * Display the host cpu state.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2871,7 +2871,7 @@ const char *getL2CacheAss(unsigned u)
 /**
  * Display the guest CpuId leaves.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     "terse", "default" or "verbose".
  */
@@ -3604,7 +3604,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
  * Disassemble an instruction and return the information in the provided structure.
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle
+ * @param   pVM         Pointer to the VM
  * @param   pVCpu       VMCPU Handle
  * @param   pCtx        CPU context
  * @param   GCPtrPC     Program counter (relative to CS) to disassemble from.

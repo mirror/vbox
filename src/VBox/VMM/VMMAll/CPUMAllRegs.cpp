@@ -2369,7 +2369,7 @@ VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
  * Checks if the guest debug state is active
  *
  * @returns boolean
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 {
@@ -2380,7 +2380,7 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
  * Checks if the hyper debug state is active
  *
  * @returns boolean
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 {
@@ -2392,7 +2392,7 @@ VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
  * Mark the guest's debug state as inactive.
  *
  * @returns boolean
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
 {
@@ -2404,7 +2404,7 @@ VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
  * Mark the hypervisor's debug state as inactive.
  *
  * @returns boolean
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(void) CPUMDeactivateHyperDebugState(PVMCPU pVCpu)
 {
@@ -2432,7 +2432,7 @@ VMMDECL(bool) CPUMAreHiddenSelRegsValid(PVMCPU pVCpu)
  * Get the current privilege level of the guest.
  *
  * @returns cpl
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Trap register frame.
  */
 VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)

@@ -7776,7 +7776,7 @@ static int ssmR3ValidateDirectory(PSSMFILEDIR pDir, size_t cbDir, uint64_t offDi
  * @returns Pointer to the unit.
  * @returns NULL if not found.
  *
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszName         Data unit name.
  * @param   uInstance       The data unit instance id.
  */

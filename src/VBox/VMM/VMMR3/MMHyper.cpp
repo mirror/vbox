@@ -404,7 +404,7 @@ VMMR3DECL(int) MMR3LockCall(PVM pVM)
  *
  * @return VBox status code.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvR3        Ring-3 address of the memory. Must be page aligned!
  * @param   pvR0        Optional ring-0 address of the memory.
  * @param   HCPhys      Host context physical address of the memory to be
@@ -457,7 +457,7 @@ VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTR0PTR pvR0, RTHCPHYS HC
  *
  * @return VBox status code.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      Guest context physical address of the memory to be mapped. Must be page aligned!
  * @param   cb          Size of the memory. Will be rounded up to nearest page.
  * @param   pszDesc     Mapping description.
@@ -607,7 +607,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
  *
  * @return VBox status code.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvR3        The ring-3 address of the memory, must be page aligned.
  * @param   pvR0        The ring-0 address of the memory, must be page aligned. (optional)
  * @param   cPages      The number of pages.
@@ -686,7 +686,7 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
  *
  * @return VBox status code.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   cb          Size of the memory. Will be rounded up to nearest page.
  * @param   pszDesc     Mapping description.
  * @param   pGCPtr      Where to store the assigned GC address. Optional.
@@ -1165,7 +1165,7 @@ VMMR3DECL(int) MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet)
  * Convert hypervisor HC virtual address to HC physical address.
  *
  * @returns HC physical address.
- * @param   pVM         VM Handle
+ * @param   pVM         Pointer to the VM
  * @param   pvR3        Host context virtual address.
  */
 VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
@@ -1303,7 +1303,7 @@ VMMR3_INT_DECL(int) MMR3HyperQueryInfoFromHCPhys(PVM pVM, RTHCPHYS HCPhys, char 
  * Convert hypervisor HC physical address to HC virtual address.
  *
  * @returns HC virtual address.
- * @param   pVM         VM Handle
+ * @param   pVM         Pointer to the VM
  * @param   HCPhys      Host context physical address.
  */
 VMMR3DECL(void *) MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys)
@@ -1321,7 +1321,7 @@ VMMR3DECL(void *) MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys)
  * Convert hypervisor HC physical address to HC virtual address.
  *
  * @returns VBox status.
- * @param   pVM         VM Handle
+ * @param   pVM         Pointer to the VM
  * @param   HCPhys      Host context physical address.
  * @param   ppv         Where to store the HC virtual address.
  */
@@ -1340,7 +1340,7 @@ VMMR3DECL(int)   MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  * Read hypervisor memory from GC virtual address.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pvDst       Destination address (HC of course).
  * @param   GCPtr       GC virtual address.
  * @param   cb          Number of bytes to read.

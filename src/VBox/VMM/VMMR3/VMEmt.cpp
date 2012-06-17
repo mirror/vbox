@@ -1039,7 +1039,7 @@ VMMR3DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
  *
  * @returns VINF_SUCCESS unless a fatal error occurred. In the latter
  *          case an appropriate status code is returned.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
  * @thread  The emulation thread.
@@ -1188,7 +1188,7 @@ VMMR3_INT_DECL(void) VMR3AsyncPdmNotificationWakeupU(PUVM pUVM)
  * Rendezvous callback that will be called once.
  *
  * @returns VBox strict status code.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pVCpu               The VMCPU handle for the calling EMT.
  * @param   pvUser              The new g_aHaltMethods index.
  */

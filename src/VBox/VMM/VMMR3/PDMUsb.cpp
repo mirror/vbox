@@ -167,7 +167,7 @@ int pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_
  * Loads one device module and call the registration entry point.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pRegCB          The registration callback stuff.
  * @param   pszFilename     Module filename.
  * @param   pszName         Module name.

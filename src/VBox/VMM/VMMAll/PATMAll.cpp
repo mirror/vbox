@@ -42,7 +42,7 @@
  * This function is called from CPUMRawEnter(). It doesn't have to update the
  * IF and IOPL eflags bits, the caller will enforce those to set and 0 respectively.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The cpu context core.
  * @see     pg_raw
  */
@@ -112,7 +112,7 @@ VMMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
  *
  ** @note Only here we are allowed to switch back to guest code (without a special reason such as a trap in patch code)!!
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The cpu context core.
  * @param   rawRC       Raw mode return code
  * @see     @ref pg_raw
@@ -236,7 +236,7 @@ VMMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl)
 /**
  * Check if we must use raw mode (patch code being executed)
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pAddrGC     Guest context address
  */
 VMMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)

@@ -259,7 +259,7 @@ static void iomR3FlushCache(PVM pVM)
 /**
  * The VM is being reset.
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3_INT_DECL(void) IOMR3Reset(PVM pVM)
 {
@@ -392,7 +392,7 @@ VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
  *
  * @returns Pointer to new stats node.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   Port        Port.
  * @param   pszDesc     Description.
  */
@@ -445,7 +445,7 @@ PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDe
  *
  * @returns Pointer to new stats node.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The address.
  * @param   pszDesc     Description.
  */
@@ -497,7 +497,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  *
  * @returns VBox status code.
  *
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             PDM device instance owning the port range.
  * @param   PortStart           First port number in the range.
  * @param   cPorts              Number of ports to register.
@@ -595,7 +595,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             PDM device instance owning the port range.
  * @param   PortStart           First port number in the range.
  * @param   cPorts              Number of ports to register.
@@ -709,7 +709,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             PDM device instance owning the port range.
  * @param   PortStart           First port number in the range.
  * @param   cPorts              Number of ports to register.
@@ -1267,7 +1267,7 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneRC(PAVLROIOPORTNODECORE pNode, void *
 /**
  * Display all registered I/O port ranges.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -1392,7 +1392,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  *
  * @returns VBox status code.
  *
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             PDM device instance owning the MMIO range.
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
@@ -1510,7 +1510,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             PDM device instance owning the MMIO range.
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
@@ -1566,7 +1566,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  *
  * @returns VBox status code.
  *
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pDevIns             PDM device instance owning the MMIO range.
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
@@ -1749,7 +1749,7 @@ static DECLCALLBACK(int) iomR3MMIOInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUs
 /**
  * Display registered MMIO ranges to the log.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */

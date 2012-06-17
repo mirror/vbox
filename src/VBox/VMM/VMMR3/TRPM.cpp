@@ -743,7 +743,7 @@ VMMR3DECL(void) TRPMR3ResetCpu(PVMCPU pVCpu)
  * For the TRPM component this means that any IDT write monitors
  * needs to be removed, any pending trap cleared, and the IDT reset.
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) TRPMR3Reset(PVM pVM)
 {
@@ -784,7 +784,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -835,7 +835,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -1121,7 +1121,7 @@ VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   pvPtr           The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -1207,7 +1207,7 @@ VMMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
  *
  * @returns gate nr or ~0 is not found
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC address to check.
  */
 VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
@@ -1375,7 +1375,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
  *
  * @returns True is gate handler, false if not.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC address to check.
  */
 VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)

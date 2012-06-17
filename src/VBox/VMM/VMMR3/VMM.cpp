@@ -973,7 +973,7 @@ VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -995,7 +995,7 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -1069,7 +1069,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  * Called by PDM when loading or relocating RC modules.
  *
  * @returns VBox status
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszSymbol       Symbol to resolv
  * @param   pRCPtrValue     Where to store the symbol value.
  *
@@ -1195,7 +1195,7 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
 /**
  * Executes guest code in the raw-mode context.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU to operate on.
  */
 VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
@@ -1264,7 +1264,7 @@ VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 /**
  * Executes guest code (Intel VT-x and AMD-V).
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU to operate on.
  */
 VMMR3_INT_DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
@@ -1983,7 +1983,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
  * debug event.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  */
 VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
@@ -2041,7 +2041,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
  * Service a call to the ring-3 host code.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   VMCPU handle
  * @remark  Careful with critsects.
  */

@@ -158,7 +158,7 @@ static void pdmR3AsyncCompletionPutTask(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, P
  * Internal worker for the creation apis
  *
  * @returns VBox status.
- * @param   pVM           VM handle.
+ * @param   pVM           Pointer to the VM.
  * @param   ppTemplate    Where to store the template handle.
  */
 static int pdmR3AsyncCompletionTemplateCreate(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,

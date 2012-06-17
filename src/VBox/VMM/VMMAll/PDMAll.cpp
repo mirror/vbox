@@ -99,7 +99,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
  * Sets the pending interrupt coming from ISA source or HPET.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
  * @param   uTagSrc         The IRQ tag and source tracer ID.
@@ -156,7 +156,7 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTag
  * Sets the pending I/O APIC interrupt.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
  * @param   uTagSrc         The IRQ tag and source tracer ID.
@@ -178,7 +178,7 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint3
  * Send a MSI to an I/O APIC.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCAddr          Request address.
  * @param   u8Value         Request value.
  * @param   uTagSrc         The IRQ tag and source tracer ID.
@@ -202,7 +202,7 @@ VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, ui
  * Returns presence of an IO-APIC
  *
  * @returns VBox true if IO-APIC is present
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMDECL(bool) PDMHasIoApic(PVM pVM)
 {
@@ -214,7 +214,7 @@ VMMDECL(bool) PDMHasIoApic(PVM pVM)
  * Set the APIC base.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   u64Base         The new base.
  */
 VMMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
@@ -235,7 +235,7 @@ VMMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
  * Get the APIC base.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pu64Base        Where to store the APIC base.
  */
 VMMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
@@ -327,7 +327,7 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
  * Write a MSR in APIC range.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   iCpu            Target CPU.
  * @param   u32Reg          MSR to write.
  * @param   u64Value        Value to write.
@@ -347,7 +347,7 @@ VMMDECL(int) PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u6
  * Read a MSR in APIC range.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   iCpu            Target CPU.
  * @param   u32Reg          MSR to read.
  * @param   pu64Value       Value read.
@@ -412,7 +412,7 @@ void pdmUnlock(PVM pVM)
  * Converts ring 3 VMM heap pointer to a guest physical address
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pv              Ring-3 pointer.
  * @param   pGCPhys         GC phys address (out).
  */
@@ -434,7 +434,7 @@ VMMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
  * Checks if the vmm device heap is enabled (== vmm device's pci region mapped)
  *
  * @returns dev heap enabled status (true/false)
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMDECL(bool)   PDMVMMDevHeapIsEnabled(PVM pVM)
 {

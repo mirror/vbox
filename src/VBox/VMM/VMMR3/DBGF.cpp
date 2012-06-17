@@ -103,7 +103,7 @@ static DECLCALLBACK(int) dbgfR3Attach(PVM pVM);
  * Sets the VMM Debug Command variable.
  *
  * @returns Previous command.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @param   enmCmd  The command.
  */
 DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
@@ -131,7 +131,7 @@ DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
  * Initializes the DBGF.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) DBGFR3Init(PVM pVM)
 {
@@ -154,7 +154,7 @@ VMMR3DECL(int) DBGFR3Init(PVM pVM)
  * Terminates and cleans up resources allocated by the DBGF.
  *
  * @returns VBox status code.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) DBGFR3Term(PVM pVM)
 {
@@ -225,7 +225,7 @@ VMMR3DECL(int) DBGFR3Term(PVM pVM)
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
 VMMR3DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
@@ -239,7 +239,7 @@ VMMR3DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * Waits a little while for a debuggger to attach.
  *
  * @returns True is a debugger have attached.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   enmEvent    Event.
  */
 bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
@@ -296,7 +296,7 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
  *
  * @returns VINF_SUCCESS normally.
  * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happened.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
@@ -607,7 +607,7 @@ VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
  * Waits for the debugger to respond.
  *
  * @returns VBox status. (clearify)
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static int dbgfR3VMMWait(PVM pVM)
 {
@@ -733,7 +733,7 @@ static int dbgfR3VMMWait(PVM pVM)
  * value returned in the *pfResumeExecution indicator.
  *
  * @returns VBox status. (clearify!)
- * @param   pVM                 VM Handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   enmCmd              The command in question.
  * @param   pCmdData            Pointer to the command data.
  * @param   pfResumeExecution   Where to store the resume execution / continue waiting indicator.
@@ -855,7 +855,7 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
  * Only one debugger at a time.
  *
  * @returns VBox status code.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) DBGFR3Attach(PVM pVM)
 {
@@ -903,7 +903,7 @@ static DECLCALLBACK(int) dbgfR3Attach(PVM pVM)
  * Caller must be attached to the VM.
  *
  * @returns VBox status code.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) DBGFR3Detach(PVM pVM)
 {
@@ -949,7 +949,7 @@ VMMR3DECL(int) DBGFR3Detach(PVM pVM)
  * Wait for a debug event.
  *
  * @returns VBox status. Will not return VBOX_INTERRUPTED.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   cMillies    Number of millis to wait.
  * @param   ppEvent     Where to store the event pointer.
  */
@@ -983,7 +983,7 @@ VMMR3DECL(int) DBGFR3EventWait(PVM pVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEv
  * arrives. Until that time it's not possible to issue any new commands.
  *
  * @returns VBox status.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) DBGFR3Halt(PVM pVM)
 {
@@ -1010,7 +1010,7 @@ VMMR3DECL(int) DBGFR3Halt(PVM pVM)
  *
  * @returns True if halted.
  * @returns False if not halted.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM)
 {
@@ -1028,7 +1028,7 @@ VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM)
  *
  * @returns True if waitable.
  * @returns False if not waitable.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(bool) DBGFR3CanWait(PVM pVM)
 {
@@ -1043,7 +1043,7 @@ VMMR3DECL(bool) DBGFR3CanWait(PVM pVM)
  * There is no receipt event on this command.
  *
  * @returns VBox status.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) DBGFR3Resume(PVM pVM)
 {
@@ -1071,7 +1071,7 @@ VMMR3DECL(int) DBGFR3Resume(PVM pVM)
  * The current implementation is not reliable, so don't rely on the event coming.
  *
  * @returns VBox status.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   idCpu   The ID of the CPU to single step on.
  */
 VMMR3DECL(int) DBGFR3Step(PVM pVM, VMCPUID idCpu)

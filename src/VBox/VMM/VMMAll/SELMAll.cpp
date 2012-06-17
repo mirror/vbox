@@ -44,7 +44,7 @@
  * for that.
  *
  * @returns Flat address.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  * @remarks Don't use when in long mode.
@@ -76,7 +76,7 @@ VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  * for that.
  *
  * @returns Flat address.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   SelReg      Selector register
  * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
@@ -688,7 +688,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, 
  * address when in protected/long mode using the standard algorithm.
  *
  * @returns VBox status code.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The virtual CPU handle.
  * @param   SelCPL  Current privilege level. Get this from SS - CS might be conforming!
  *                  A full selector can be passed, we'll only use the RPL part.
@@ -892,7 +892,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL 
  * Return the cpu mode corresponding to the (CS) selector
  *
  * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   The virtual CPU handle.
  * @param   Sel     The selector.
  */
@@ -955,7 +955,7 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVMCPU pVCpu, X86EFLAGS eflags, R
  * Returns Hypervisor's Trap 08 (\#DF) selector.
  *
  * @returns Hypervisor's Trap 08 (\#DF) selector.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
 {
@@ -966,7 +966,7 @@ VMMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
 /**
  * Sets EIP of Hypervisor's Trap 08 (\#DF) TSS.
  *
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @param   u32EIP  EIP of Trap 08 handler.
  */
 VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
@@ -978,7 +978,7 @@ VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
 /**
  * Sets ss:esp for ring1 in main Hypervisor's TSS.
  *
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @param   ss      Ring1 SS register value. Pass 0 if invalid.
  * @param   esp     Ring1 ESP register value.
  */
@@ -997,7 +997,7 @@ void selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  * Returns SS=0 if the ring-1 stack isn't valid.
  *
  * @returns VBox status code.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
@@ -1078,7 +1078,7 @@ l_tryagain:
  * Returns Guest TSS pointer
  *
  * @returns Pointer to the guest TSS, RTRCPTR_MAX if not being monitored.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM)
 {

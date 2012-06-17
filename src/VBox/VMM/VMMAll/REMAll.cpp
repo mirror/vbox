@@ -79,7 +79,7 @@ VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 /**
  * Insert pending notification
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pRec            Notification record to insert
  */
 static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
@@ -131,7 +131,7 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
 /**
  * Notification about a successful PGMR3HandlerPhysicalRegister() call.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmType         Handler type.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
@@ -152,7 +152,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
 /**
  * Notification about a successful PGMR3HandlerPhysicalDeregister() operation.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmType         Handler type.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
@@ -175,7 +175,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
 /**
  * Notification about a successful PGMR3HandlerPhysicalModify() call.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmType         Handler type.
  * @param   GCPhysOld       Old handler range address.
  * @param   GCPhysNew       New handler range address.

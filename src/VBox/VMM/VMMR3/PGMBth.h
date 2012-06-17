@@ -114,7 +114,7 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  * Enters the shadow+guest mode.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   GCPhysCR3   The physical address from the CR3 register.
  */

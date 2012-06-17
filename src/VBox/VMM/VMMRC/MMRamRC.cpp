@@ -51,7 +51,7 @@ DECLASM(void) MMGCRamWrite_Error(void);
  * This handler will be automatically removed at page fault.
  * In other case it must be removed by MMGCRamDeregisterTrapHandler call.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMRCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
 {
@@ -63,7 +63,7 @@ VMMRCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
  * Remove MMGCRam Hypervisor page fault handler.
  * See description of MMGCRamRegisterTrapHandler call.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 VMMRCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
 {

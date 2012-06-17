@@ -468,7 +468,7 @@ static DECLCALLBACK(int) CountRecord(PAVLPVNODECORE pNode, void *pcPatches)
  *
  * @returns VBox status code.
  * @param   pNode           Current node
- * @param   pVM1            VM Handle
+ * @param   pVM1            Pointer to the VM
  */
 static DECLCALLBACK(int) SavePageState(PAVLPVNODECORE pNode, void *pVM1)
 {
@@ -495,7 +495,7 @@ static DECLCALLBACK(int) SavePageState(PAVLPVNODECORE pNode, void *pVM1)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -544,7 +544,7 @@ static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -2082,7 +2082,7 @@ static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
 /**
  * Callback for delayed writes from non-EMT threads
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   cbBuf           How much it's reading/writing.
  */
@@ -2100,7 +2100,7 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   pvPtr           The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -2143,7 +2143,7 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
 /**
  * \#PF Handler callback for invalidation of virtual access handler ranges.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest has changed.
  */
 static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr)

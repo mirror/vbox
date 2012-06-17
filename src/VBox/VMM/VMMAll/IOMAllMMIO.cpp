@@ -1429,7 +1429,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  * \#PF Handler callback for MMIO ranges.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode  CPU Error code.  This is UINT32_MAX when we don't have
  *                      any error code (the EPT misconfig hack).
  * @param   pCtxCore    Trap register frame.
@@ -1666,7 +1666,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
  * \#PF Handler callback for MMIO ranges.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode  CPU Error code.
  * @param   pCtxCore    Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -1685,7 +1685,7 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
  * Physical access handler for MMIO ranges.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode  CPU Error code.
  * @param   pCtxCore    Trap register frame.
  * @param   GCPhysFault The GC physical address.
@@ -1709,7 +1709,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -1768,7 +1768,7 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
  *
  * @returns VBox status code.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The physical address to read.
  * @param   pu32Value   Where to store the value read.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
@@ -1897,7 +1897,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
  *
  * @returns VBox status code.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      The physical address to write to.
  * @param   u32Value    The value to write.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.

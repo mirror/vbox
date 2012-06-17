@@ -427,7 +427,7 @@ int dbgfR3SymLazyInit(PVM pVM)
  * @returns VBox status.
  *          Failure will stop the search and return the return code.
  *          Warnings will be ignored and not returned.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszFilename     Module filename.
  * @param   pszName         Module name. (short and unique)
  * @param   ImageBase       Address where to executable image is loaded.
@@ -454,7 +454,7 @@ static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, con
  * Terminate the debug info repository for the specified VM.
  *
  * @returns VBox status.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  */
 int dbgfR3SymTerm(PVM pVM)
 {
@@ -689,7 +689,7 @@ int dbgfR3ModuleLocateAndOpen(PVM pVM, const char *pszFilename, char *pszFound, 
  * Load debug info, optionally related to a specific module.
  *
  * @returns VBox status.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszFilename     Path to the file containing the symbol information.
  *                          This can be the executable image, a flat symbol file of some kind or stripped debug info.
  * @param   AddressDelta    The value to add to the loaded symbols.
@@ -832,7 +832,7 @@ VMMR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINT
  * Adds a symbol to the debug info manager.
  *
  * @returns VBox status.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   ModuleAddress   Module address. Use 0 if no module.
  * @param   SymbolAddress   Symbol address
  * @param   cbSymbol        Size of the symbol. Use 0 if info not available.
@@ -875,7 +875,7 @@ VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR S
  * Find symbol by address (nearest).
  *
  * @returns VBox status.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   Address             Address.
  * @param   poffDisplacement    Where to store the symbol displacement from Address.
  * @param   pSymbol             Where to store the symbol info.
@@ -964,7 +964,7 @@ VMMR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poff
  * Find symbol by name (first).
  *
  * @returns VBox status.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszSymbol           Symbol name.
  * @param   pSymbol             Where to store the symbol info.
  */
@@ -1020,7 +1020,7 @@ VMMR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pS
  * Find line by address (nearest).
  *
  * @returns VBox status.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   Address             Address.
  * @param   poffDisplacement    Where to store the line displacement from Address.
  * @param   pLine               Where to store the line info.
@@ -1084,7 +1084,7 @@ static PDBGFLINE dbgfR3LineDup(PVM pVM, PCDBGFLINE pLine)
  *
  * @returns Pointer to the line. Must be freed using DBGFR3LineFree().
  * @returns NULL if the line was not found or if we're out of memory.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  * @param   Address             Address.
  * @param   poffDisplacement    Where to store the line displacement from Address.
  */

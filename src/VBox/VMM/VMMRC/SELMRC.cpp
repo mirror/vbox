@@ -39,7 +39,7 @@
  * Synchronizes one GDT entry (guest -> shadow).
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Trap register frame.
  * @param   iGDTEntry   The GDT entry to sync.
  */
@@ -160,7 +160,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
  * \#PF Virtual Handler callback for Guest write access to the Guest's own GDT.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -235,7 +235,7 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * \#PF Virtual Handler callback for Guest write access to the Guest's own LDT.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -286,7 +286,7 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_
  * \#PF Virtual Handler callback for Guest write access to the Guest's own current TSS.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -421,7 +421,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow GDT.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -441,7 +441,7 @@ VMMRCDECL(int) selmRCShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow LDT.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -462,7 +462,7 @@ VMMRCDECL(int) selmRCShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow TSS.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).

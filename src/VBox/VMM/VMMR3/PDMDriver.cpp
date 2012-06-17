@@ -105,7 +105,7 @@ VMMR3DECL(int) PDMR3DrvStaticRegistration(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnC
  * loaded and called for registration.
  *
  * @returns VBox status code.
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 int pdmR3DrvInit(PVM pVM)
 {
@@ -217,7 +217,7 @@ int pdmR3DrvInit(PVM pVM)
  * Loads one driver module and call the registration entry point.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pRegCB          The registration callback stuff.
  * @param   pszFilename     Module filename.
  * @param   pszName         Module name.

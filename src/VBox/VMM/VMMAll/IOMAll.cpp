@@ -214,7 +214,7 @@ bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegF
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   Port        The port to read.
  * @param   pu32Value   Where to store the value read.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
@@ -387,7 +387,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   Port        The port to read.
  * @param   pGCPtrDst   Pointer to the destination buffer (GC, incremented appropriately).
  * @param   pcTransfers Pointer to the number of transfer units to read, on return remaining transfer units.
@@ -539,7 +539,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPt
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   Port        The port to write to.
  * @param   u32Value    The value to write.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
@@ -687,7 +687,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, 
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   Port        The port to write.
  * @param   pGCPtrSrc   Pointer to the source buffer (GC, incremented appropriately).
  * @param   pcTransfers Pointer to the number of transfer units to write, on return remaining transfer units.
@@ -840,7 +840,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCP
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    Pointer to register frame.
  * @param   Port        The I/O port number.
  * @param   cb          The access size.

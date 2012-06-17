@@ -943,7 +943,7 @@ DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
  * Selects the switcher to be used for switching to raw-mode context.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmSwitcher     The new switcher.
  * @remark  This function may be called before the VMM is initialized.
  */
@@ -992,7 +992,7 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
  * Disable the switcher logic permanently.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3_INT_DECL(int) VMMR3DisableSwitcher(PVM pVM)
 {
@@ -1012,7 +1012,7 @@ VMMR3_INT_DECL(int) VMMR3DisableSwitcher(PVM pVM)
  * Gets the switcher to be used for switching to GC.
  *
  * @returns host to guest ring 0 switcher entrypoint
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmSwitcher     The new switcher.
  */
 VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)

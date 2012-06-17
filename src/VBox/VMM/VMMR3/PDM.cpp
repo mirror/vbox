@@ -439,7 +439,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
  * @remark  The loader subcomponent is relocated by PDMR3LdrRelocate() very
  *          early in the relocation phase.
@@ -845,7 +845,7 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -1096,7 +1096,7 @@ DECLINLINE(int) pdmR3PowerOnDev(PPDMDEVINS pDevIns)
  * This function will notify all the devices and their
  * attached drivers about the VM now being powered on.
  *
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) PDMR3PowerOn(PVM pVM)
 {
@@ -1417,7 +1417,7 @@ VMMR3DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
  * This function will notify all the devices and their attached drivers about
  * the VM now being reset.
  *
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) PDMR3Reset(PVM pVM)
 {
@@ -1808,7 +1808,7 @@ DECLINLINE(int) pdmR3ResumeDev(PPDMDEVINS pDevIns)
  * This function will notify all the devices and their
  * attached drivers about the VM now being resumed.
  *
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) PDMR3Resume(PVM pVM)
 {
@@ -2009,7 +2009,7 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsyn
  * This function will notify all the devices and their
  * attached drivers about the VM being powered off.
  *
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
 {
@@ -2089,7 +2089,7 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
  * and use them to talk to the device.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   ppBase          Where to store the pointer to the base device interface on success.
@@ -2145,7 +2145,7 @@ VMMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstan
  * device and not the top level driver.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -2178,7 +2178,7 @@ VMMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iIns
  * Query the interface of the top level driver on a LUN.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -2219,7 +2219,7 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
  * is returned.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -2264,7 +2264,7 @@ VMMR3DECL(int) PDMR3QueryDriverOnLun(PVM pVM, const char *pszDevice, unsigned iI
  * Executes pending DMA transfers.
  * Forced Action handler.
  *
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
 {
@@ -2300,7 +2300,7 @@ VMMR3DECL(int) PDMR3LockCall(PVM pVM)
  * Registers the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The physical address.
  * @param   pvHeap          Ring-3 pointer.
  * @param   cbSize          Size of the heap.
@@ -2322,7 +2322,7 @@ VMMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap,
  * Unregisters the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The physical address.
  */
 VMMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
@@ -2342,7 +2342,7 @@ VMMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
  * Allocates memory from the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   cbSize          Allocation size.
  * @param   pv              Ring-3 pointer. (out)
  */
@@ -2368,7 +2368,7 @@ VMMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
  * Frees memory from the VMM device heap
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pv              Ring-3 pointer.
  */
 VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
