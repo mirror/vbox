@@ -75,6 +75,15 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
     }
 }
 
+
+static DECLCALLBACK(int) testReadBytes(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+{
+    memcpy(&pDis->abInstr[offInstr], (void *)((uintptr_t)pDis->uInstrAddr + offInstr), cbMaxRead);
+    pDis->cbCachedInstr = offInstr + cbMaxRead;
+    return VINF_SUCCESS;
+}
+
+
 static void testPerformance(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uEndPtr, DISCPUMODE enmDisCpuMode)
 {
     RTTestISubF("Performance - %s", pszSub);
@@ -88,7 +97,7 @@ static void testPerformance(const char *pszSub, uint8_t const *pabInstrs, uintpt
         {
             uint32_t    cb = 1;
             DISSTATE    Dis;
-            DISInstr(&pabInstrs[off], enmDisCpuMode, &Dis, &cb);
+            DISInstrWithReader((uintptr_t)&pabInstrs[off], enmDisCpuMode, testReadBytes, NULL, &Dis, &cb);
             off += cb;
         }
     }
