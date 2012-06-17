@@ -101,7 +101,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
  * Initializes the EM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) EMR3Init(PVM pVM)
 {
@@ -419,7 +419,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
  *
- * @param   pVM     The VM.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) EMR3Relocate(PVM pVM)
 {
@@ -438,7 +438,7 @@ VMMR3DECL(void) EMR3Relocate(PVM pVM)
  *
  * Called by EMR3Reset and hot plugging.
  *
- * @param   pVCpu               The virtual CPU.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
 VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 {
@@ -458,7 +458,7 @@ VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 /**
  * Reset notification.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(void) EMR3Reset(PVM pVM)
 {
@@ -475,7 +475,7 @@ VMMR3DECL(void) EMR3Reset(PVM pVM)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) EMR3Term(PVM pVM)
 {
@@ -651,7 +651,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
  * @returns VINF_RESCHEDULE if a rescheduling might be required.
  * @returns VERR_INVALID_PARAMETER on an invalid enmMode value.
  *
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   enmPolicy       The scheduling policy to change.
  * @param   fEnforce        Whether to enforce the policy or not.
  */
@@ -671,7 +671,7 @@ VMMR3DECL(int) EMR3SetExecutionPolicy(PVM pVM, EMEXECPOLICY enmPolicy, bool fEnf
  * Safely terminate the VM with full state report and stuff. This function
  * will naturally never return.
  *
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          VBox status code.
  */
 VMMR3DECL(void) EMR3FatalError(PVMCPU pVCpu, int rc)
@@ -716,8 +716,8 @@ static const char *emR3GetStateName(EMSTATE enmState)
  *
  * @returns VBox status code for EM.
  * @param   pVM     Pointer to the VM.
- * @param   pVCpu   VMCPU handle.
- * @param   rc      Current EM VBox status code..
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   rc      Current EM VBox status code.
  */
 static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
 {
@@ -892,7 +892,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
  *          VINF_EM_RESCHEDULE, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 {
@@ -927,7 +927,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
  *
  * @returns false - new fInREMState value.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
 {
@@ -952,7 +952,7 @@ DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  *
@@ -1158,9 +1158,9 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  * Decides whether to execute RAW, HWACC or REM.
  *
  * @returns new EM state
- * @param   pVM     The VM.
- * @param   pVCpu   The VMCPU handle.
- * @param   pCtx    The CPU context.
+ * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pCtx    Pointer to the guest CPU context.
  */
 EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -1325,7 +1325,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns rc or a fatal status code.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The current rc.
  */
 int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
@@ -1364,7 +1364,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          The current rc.
  *
  */
@@ -1790,8 +1790,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  * Check if the preset execution time cap restricts guest execution scheduling.
  *
  * @returns true if allowed, false otherwise
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  *
  */
 VMMR3DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
@@ -1827,14 +1827,14 @@ VMMR3DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
  * and we're ready for executing the VM.
  *
  * Returning from this function means that the VM is turned off or
- * suspended (state already saved) and deconstruction in next in line.
+ * suspended (state already saved) and deconstruction is next in line.
  *
  * All interaction from other thread are done using forced actions
  * and signaling of the wait object.
  *
  * @returns VBox status code, informational status codes may indicate failure.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 {

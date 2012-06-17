@@ -226,7 +226,7 @@ VMMR3DECL(int) MMR3InitUVM(PUVM pUVM)
  * it will choose a default starting location, currently 0xa0000000.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) MMR3Init(PVM pVM)
 {
@@ -290,7 +290,7 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
  * Initializes the MM parts which depends on PGM being initialized.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @remark  No cleanup necessary since MMR3Term() will be called on failure.
  */
 VMMR3DECL(int) MMR3InitPaging(PVM pVM)
@@ -445,7 +445,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) MMR3Term(PVM pVM)
 {

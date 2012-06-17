@@ -119,7 +119,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * Initializes the CPUM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) CPUMR3Init(PVM pVM)
 {
@@ -364,7 +364,7 @@ static int cpumR3CpuIdInitHostSet(uint32_t uStart, PCPUMCPUID paLeaves, uint32_t
  * Initializes the emulated CPU's cpuid information.
  *
  * @returns VBox status code.
- * @param   pVM          The VM to operate on.
+ * @param   pVM          Pointer to the VM.
  */
 static int cpumR3CpuIdInit(PVM pVM)
 {
@@ -1006,7 +1006,7 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 /**
  * Apply late CPUM property changes based on the fHWVirtEx setting
  *
- * @param   pVM                 The VM to operate on.
+ * @param   pVM                 Pointer to the VM.
  * @param   fHWVirtExEnabled    HWVirtEx enabled/disabled
  */
 VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
@@ -1034,7 +1034,7 @@ VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) CPUMR3Term(PVM pVM)
 {

@@ -4386,7 +4386,7 @@ VMMR3DECL(RTTHREAD) VMR3GetVMCPUThreadU(PUVM pUVM)
  * Return the package and core id of a CPU.
  *
  * @returns VBOX status code.
- * @param   pVM              The VM to operate on.
+ * @param   pVM              Pointer to the VM.
  * @param   idCpu            Virtual CPU to get the ID from.
  * @param   pidCpuCore       Where to store the core ID of the virtual CPU.
  * @param   pidCpuPackage    Where to store the package ID of the virtual CPU.
@@ -4452,7 +4452,7 @@ static DECLCALLBACK(int) vmR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
  * Hot-unplugs a CPU from the guest.
  *
  * @returns VBox status code.
- * @param   pVM     The VM to operate on.
+ * @param   pVM     Pointer to the VM.
  * @param   idCpu   Virtual CPU to perform the hot unplugging operation on.
  */
 VMMR3DECL(int) VMR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
@@ -4472,7 +4472,7 @@ VMMR3DECL(int) VMR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
  * Hot-plugs a CPU on the guest.
  *
  * @returns VBox status code.
- * @param   pVM     The VM to operate on.
+ * @param   pVM     Pointer to the VM.
  * @param   idCpu   Virtual CPU to perform the hot plugging operation on.
  */
 VMMR3DECL(int) VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu)
@@ -4489,7 +4489,7 @@ VMMR3DECL(int) VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu)
  * Changes the VMM execution cap.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM to operate on.
+ * @param   pVM                 Pointer to the VM.
  * @param   uCpuExecutionCap    New CPU execution cap in precent, 1-100. Where
  *                              100 is max performance (default).
  */

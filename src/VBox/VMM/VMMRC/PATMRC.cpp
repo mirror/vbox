@@ -69,7 +69,7 @@ VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pReg
  * (if so, then we are not allowed to turn on r/w)
  *
  * @returns VBox status
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   CPU context
  * @param   GCPtr       GC pointer to write address
  * @param   cbWrite     Nr of bytes to write

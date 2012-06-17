@@ -53,8 +53,8 @@ DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
  * Resumes the CPU timestamp counter ticking.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @internal
  */
 int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
@@ -83,7 +83,7 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
  * Pauses the CPU timestamp counter ticking.
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @internal
  */
 int tmCpuTickPause(PVMCPU pVCpu)
@@ -139,7 +139,7 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
  * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
  *
  * @returns true/false accordingly.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   poffRealTSC     The offset against the TSC of the current CPU.
  *                          Can be NULL.
  * @thread EMT.
@@ -300,7 +300,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOf
  * Read the current CPU timestamp counter.
  *
  * @returns Gets the CPU tsc.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
 {
@@ -338,7 +338,7 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
  * Read the current CPU timestamp counter.
  *
  * @returns Gets the CPU tsc.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
 {
@@ -350,7 +350,7 @@ VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
  * Read the current CPU timestamp counter, don't check for expired timers.
  *
  * @returns Gets the CPU tsc.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMM_INT_DECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
 {

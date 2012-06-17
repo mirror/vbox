@@ -76,7 +76,7 @@ static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  *
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
- * @param   pVCpu   The VMCPU handle.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
 static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
 {
@@ -158,7 +158,7 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  * @returns VBox status code suitable for EM.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   rcRC        Return code from RC.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
@@ -259,7 +259,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  * @param   rcGC        GC return code
@@ -278,7 +278,7 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
@@ -388,7 +388,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        The guest CPUM register context.
  */
 static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -459,7 +459,7 @@ static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPU handle.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  */

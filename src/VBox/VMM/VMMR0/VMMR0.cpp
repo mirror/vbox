@@ -598,7 +598,7 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
  * Will be removed one of the next times we do a major SUPDrv version bump.
  *
  * @returns VBox status code.
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   enmOperation    Which operation to execute.
  * @param   pvArg           Argument to the operation.
  * @remarks Assume called with interrupts disabled.
@@ -618,7 +618,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
 /**
  * The Ring 0 entry point, called by the fast-ioctl path.
  *
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  *                          The return code is stored in pVM->vmm.s.iLastGZRc.
  * @param   idCpu           The Virtual CPU ID of the calling EMT.
  * @param   enmOperation    Which operation to execute.
@@ -802,7 +802,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
  * Validates a session or VM session argument.
  *
  * @returns true / false accordingly.
- * @param   pVM         The VM argument.
+ * @param   pVM         Pointer to the VM.
  * @param   pSession    The session argument.
  */
 DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PSUPDRVSESSION pSession)
@@ -825,7 +825,7 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PS
  * called thru a longjmp so we can exit safely on failure.
  *
  * @returns VBox status code.
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           Virtual CPU ID argument. Must be NIL_VMCPUID if pVM
  *                          is NIL_RTR0PTR, and may be NIL_VMCPUID if it isn't
  * @param   enmOperation    Which operation to execute.
@@ -1306,11 +1306,11 @@ static DECLCALLBACK(int) vmmR0EntryExWrapper(void *pvArgs)
  * The Ring 0 entry point, called by the support library (SUP).
  *
  * @returns VBox status code.
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           Virtual CPU ID argument. Must be NIL_VMCPUID if pVM
  *                          is NIL_RTR0PTR, and may be NIL_VMCPUID if it isn't
  * @param   enmOperation    Which operation to execute.
- * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
+ * @param   pReq            Pointer to the SUPVMMR0REQHDR packet. Optional.
  * @param   u64Arg          Some simple constant argument.
  * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
@@ -1461,7 +1461,7 @@ VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchB
 /**
  * Disables flushing of the ring-0 debug log.
  *
- * @param   pVCpu       The shared virtual cpu structure.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR0DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 {
@@ -1473,7 +1473,7 @@ VMMR0DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 /**
  * Enables flushing of the ring-0 debug log.
  *
- * @param   pVCpu       The shared virtual cpu structure.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
 {

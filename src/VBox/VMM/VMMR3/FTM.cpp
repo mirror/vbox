@@ -98,7 +98,7 @@ static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNo
  * Initializes the FTM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) FTMR3Init(PVM pVM)
 {
@@ -154,7 +154,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
  * the VM itself is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) FTMR3Term(PVM pVM)
 {
@@ -269,7 +269,7 @@ static int ftmR3TcpReadLine(PVM pVM, char *pszBuf, size_t cchBuf)
  * Reads an ACK or NACK.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM to operate on.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszWhich            Which ACK is this this?
  * @param   pszNAckMsg          Optional NACK message.
  */
@@ -325,7 +325,7 @@ static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg
  *
  * @returns VBox status code.
  *
- * @param   pVM                 The VM to operate on.
+ * @param   pVM                 Pointer to the VM.
  * @param   pszCommand          The command.
  * @param   fWaitForAck         Whether to wait for the ACK.
  */
@@ -1123,7 +1123,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   fMaster     FT master or standby
  * @param   uInterval   FT sync interval
  * @param   pszAddress  Standby VM address
@@ -1212,7 +1212,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
 {
@@ -1298,7 +1298,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   enmCheckpoint   Checkpoint type
  */
 VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)

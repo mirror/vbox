@@ -211,7 +211,7 @@ static const SSMFIELD g_aCsamPageRecFields[] =
  * Initializes the CSAM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) CSAMR3Init(PVM pVM)
 {
@@ -387,7 +387,7 @@ VMMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) CSAMR3Term(PVM pVM)
 {
@@ -672,7 +672,7 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
  * Convert guest context address to host context pointer
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pCacheRec   Address conversion cache record
  * @param   pGCPtr      Guest context pointer
  * @returns             Host context pointer or NULL in case of an error
@@ -814,7 +814,7 @@ DECLINLINE(int) csamR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCP
  * Analyses the instructions following the cli for compliance with our heuristics for cli
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pCpu        CPU disassembly state
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
@@ -1016,7 +1016,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
  * Wrapper for csamAnalyseCodeStream for call instructions.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
  * @param   fCode32     16 or 32 bits code
@@ -1220,7 +1220,7 @@ done:
  * Disassembles the code stream until the callback function detects a failure or decides everything is acceptable
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Guest context pointer to privileged instruction
  * @param   pCurInstrGC Guest context pointer to the current instruction
  * @param   fCode32     16 or 32 bits code
@@ -1507,7 +1507,7 @@ done:
  * Calculates the 64 bits hash value for the current page
  *
  * @returns hash value
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstr      Page address
  */
 uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
@@ -1573,7 +1573,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
  * Notify CSAM of a page flush
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   addr        GC address of the page to flush
  * @param   fRemovePage Page removal flag
  */
@@ -1684,7 +1684,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
  * Notify CSAM of a page flush
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   addr        GC address of the page to flush
  */
 VMMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
@@ -1696,7 +1696,7 @@ VMMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
  * Remove a CSAM monitored page. Use with care!
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   addr        GC address of the page to flush
  */
 VMMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
@@ -1721,7 +1721,7 @@ VMMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
  * Check a page record in case a page has been changed
  *
  * @returns VBox status code. (trap handled or not)
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    GC instruction pointer
  */
 int csamR3CheckPageRecord(PVM pVM, RTRCPTR pInstrGC)
@@ -1765,7 +1765,7 @@ const char *csamGetMonitorDescription(CSAMTAG enmTag)
  * Adds page record to our lookup tree
  *
  * @returns CSAMPAGE ptr or NULL if failure
- * @param   pVM                     The VM to operate on.
+ * @param   pVM                     Pointer to the VM.
  * @param   GCPtr                   Page address
  * @param   enmTag                  Owner tag
  * @param   fCode32                 16 or 32 bits code
@@ -1870,7 +1870,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
  * Monitors a code page (if not already monitored)
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
@@ -1994,7 +1994,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
  * Unmonitors a code page
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
@@ -2019,7 +2019,7 @@ VMMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
  * Removes a page record from our lookup tree
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       Page address
  */
 static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
@@ -2160,7 +2160,7 @@ static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr)
  * Check if the current instruction has already been checked before
  *
  * @returns VBox status code. (trap handled or not)
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstr      Instruction pointer
  * @param   pPage       CSAM patch structure pointer
  */
@@ -2210,7 +2210,7 @@ bool csamIsCodeScanned(PVM pVM, RTRCPTR pInstr, PCSAMPAGE *pPage)
 /**
  * Mark an instruction in a page as scanned/not scanned
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       Patch structure pointer
  * @param   pInstr      Instruction pointer
  * @param   cbInstr      Instruction size
@@ -2250,7 +2250,7 @@ static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t cbIn
  * Mark an instruction in a page as scanned/not scanned
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstr      Instruction pointer
  * @param   cbInstr      Instruction size
  * @param   fScanned    Mark as scanned or not
@@ -2278,7 +2278,7 @@ VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fS
  * Scan and analyse code
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    CPU context
  * @param   pInstrGC    Instruction pointer
  */
@@ -2305,7 +2305,7 @@ VMMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrG
  * Scan and analyse code
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Instruction pointer (0:32 virtual address)
  */
 VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
@@ -2345,7 +2345,7 @@ VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
  * Flush dirty code pages
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 static int csamR3FlushDirtyPages(PVM pVM)
 {
@@ -2398,7 +2398,7 @@ static int csamR3FlushDirtyPages(PVM pVM)
  * Flush potential new code pages
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 static int csamR3FlushCodePages(PVM pVM)
 {
@@ -2424,8 +2424,8 @@ static int csamR3FlushCodePages(PVM pVM)
  * Perform any pending actions
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
 {
@@ -2440,7 +2440,7 @@ VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
  * Analyse interrupt and trap gates
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   iGate       Start gate
  * @param   cGates      Number of gates to check
  */
@@ -2656,7 +2656,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
  * Record previous call instruction addresses
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtrCall   Call address
  */
 VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall)
@@ -2681,7 +2681,7 @@ VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall)
  * Query CSAM state (enabled/disabled)
  *
  * @returns 0 - disabled, 1 - enabled
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
 {

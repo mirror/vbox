@@ -560,7 +560,7 @@ RTRCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(
 
 /* Add a patch to guest lookup record
  *
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   pPatch          Patch structure ptr
  * @param   pPatchInstrHC   Guest context pointer to patch block
  * @param   pInstrGC        Guest context pointer to privileged instruction
@@ -574,7 +574,7 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
  * Insert page records for all guest pages that contain instructions that were recompiled for this patch
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch record
  */
 int patmInsertPatchPages(PVM pVM, PPATCHINFO pPatch);
@@ -583,7 +583,7 @@ int patmInsertPatchPages(PVM pVM, PPATCHINFO pPatch);
  * Remove page records for all guest pages that contain instructions that were recompiled for this patch
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch record
  */
 int patmRemovePatchPages(PVM pVM, PPATCHINFO pPatch);
@@ -592,7 +592,7 @@ int patmRemovePatchPages(PVM pVM, PPATCHINFO pPatch);
  * Returns the GC address of the corresponding patch statistics counter
  *
  * @returns Stat address
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch structure
  */
 RTRCPTR patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch);
@@ -601,7 +601,7 @@ RTRCPTR patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch);
  * Remove patch for privileged instruction at specified location
  *
  * @returns VBox status code.
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   pPatchRec       Patch record
  * @param   fForceRemove    Remove *all* patches
  */
@@ -611,7 +611,7 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove);
  * Call for analysing the instructions following the privileged instr. for compliance with our heuristics
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pCpu        CPU disassembly state
  * @param   pInstrHC    Guest context pointer to privileged instruction
  * @param   pCurInstrHC Guest context pointer to current instruction
@@ -624,7 +624,7 @@ typedef int (VBOXCALL *PFN_PATMR3ANALYSE)(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(
  * Install guest OS specific patch
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on
+ * @param   pVM         Pointer to the VM.
  * @param   pCpu        Disassembly state of instruction.
  * @param   pInstrGC    GC Instruction pointer for instruction
  * @param   pInstrHC    GC Instruction pointer for instruction
@@ -638,7 +638,7 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTRCPTR pInstrGC, 
  * Check if the instruction is patched as a duplicated function
  *
  * @returns patch record
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Guest context point to the instruction
  *
  */
@@ -648,7 +648,7 @@ VMMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC);
 /**
  * Empty the specified tree (PV tree, MMR3 heap)
  *
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   ppTree          Tree to empty
  */
 void patmEmptyTree(PVM pVM, PPAVLPVNODECORE ppTree);
@@ -657,7 +657,7 @@ void patmEmptyTree(PVM pVM, PPAVLPVNODECORE ppTree);
 /**
  * Empty the specified tree (U32 tree, MMR3 heap)
  *
- * @param   pVM             The VM to operate on.
+ * @param   pVM             Pointer to the VM.
  * @param   ppTree          Tree to empty
  */
 void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree);
@@ -694,7 +694,7 @@ VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pReg
  * Find patch for privileged instruction at specified location
  *
  * @returns Patch structure pointer if found; else NULL
- * @param   pVM           The VM to operate on.
+ * @param   pVM           Pointer to the VM.
  * @param   pInstr        Guest context point to instruction that might lie within 5 bytes of an existing patch jump
  * @param   fIncludeHints Include hinted patches or not
  *
@@ -705,7 +705,7 @@ PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTRCPTR pInstrGC, bool fIncl
  * Patch cli/sti pushf/popf instruction block at specified location
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pInstrHC    Host context point to privileged instruction
  * @param   uOpcode     Instruction opcodee
@@ -723,7 +723,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
  * Replace an instruction with a breakpoint (0xCC), that is handled dynamically in the guest context.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Guest context point to privileged instruction
  * @param   pInstrHC    Host context point to privileged instruction
  * @param   pCpu        Disassembly CPU structure ptr
@@ -738,7 +738,7 @@ VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t
  * Mark patch as dirty
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatch      Patch record
  *
  * @note    returns failure if patching is not allowed or possible

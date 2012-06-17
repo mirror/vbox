@@ -47,7 +47,7 @@
  * Check if this page needs to be analysed by CSAM
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pvFault     Fault address
  */
 VMMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault)
@@ -74,7 +74,7 @@ VMMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault)
  * Check if this page was previously scanned by CSAM
  *
  * @returns true -> scanned, false -> not scanned
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       GC page address
  */
 VMMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
@@ -100,7 +100,7 @@ VMMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
  * @note: we always mark it as scanned, even if we haven't completely done so
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       GC page address (not necessarily aligned)
  * @param   fScanned    Mark as scanned or not scanned
  *
@@ -171,7 +171,7 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned)
  * @returns true if the page should be marked not present because
  *          CSAM want need to scan it.
  * @returns false if the page was already scanned.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC pointer of page
  */
 VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
@@ -194,7 +194,7 @@ VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
  * Remember a possible code page for later inspection
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC pointer of page
  */
 VMMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
@@ -212,7 +212,7 @@ VMMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
  * Turn on code scanning
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(int) CSAMEnableScanning(PVM pVM)
 {
@@ -224,7 +224,7 @@ VMMDECL(int) CSAMEnableScanning(PVM pVM)
  * Turn off code scanning
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(int) CSAMDisableScanning(PVM pVM)
 {
@@ -241,7 +241,7 @@ VMMDECL(int) CSAMDisableScanning(PVM pVM)
  * tree lookup is likely to be more expensive. (as it would also have to be offset based)
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC pointer of page table entry
  */
 VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr)

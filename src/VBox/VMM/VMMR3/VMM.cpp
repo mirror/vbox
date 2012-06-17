@@ -144,7 +144,7 @@ static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char 
  * Initializes the VMM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
 {
@@ -475,7 +475,7 @@ static void vmmR3InitRegisterStats(PVM pVM)
  * Initializes the R0 VMM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
 {
@@ -537,7 +537,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
  * Initializes the RC VMM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
 {
@@ -1196,7 +1196,7 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
  * Executes guest code in the raw-mode context.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 {
@@ -1265,7 +1265,7 @@ VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
  * Executes guest code (Intel VT-x and AMD-V).
  *
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3_INT_DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 {
@@ -1313,7 +1313,7 @@ VMMR3_INT_DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 /**
  * VCPU worker for VMMSendSipi.
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       Virtual CPU to perform SIPI on
  * @param   uVector     SIPI vector
  */
@@ -1360,7 +1360,7 @@ DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
  * Sends SIPI to the virtual CPU by setting CS:EIP into vector-dependent state
  * and unhalting processor
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       Virtual CPU to perform SIPI on
  * @param   uVector     SIPI vector
  */
@@ -1375,7 +1375,7 @@ VMMR3_INT_DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
 /**
  * Sends init IPI to the virtual CPU.
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       Virtual CPU to perform int IPI on
  */
 VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
@@ -1390,7 +1390,7 @@ VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
  * Registers the guest memory range that can be used for patching
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
  */
@@ -1407,7 +1407,7 @@ VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
  * Deregisters the guest memory range that can be used for patching
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
  */
@@ -1933,7 +1933,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
  * Wrapper for SUPR3CallVMMR0Ex which will deal with VINF_VMM_CALL_HOST returns.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   uOperation  Operation to execute.
  * @param   u64Arg      Constant argument.
  * @param   pReqHdr     Pointer to a request header. See SUPR3CallVMMR0Ex for

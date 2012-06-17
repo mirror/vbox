@@ -137,7 +137,7 @@ static const char *iomR3IOPortGetStandardName(RTIOPORT Port);
  * Initializes the IOM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 {
@@ -373,7 +373,7 @@ static DECLCALLBACK(int) iomR3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, v
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
 {

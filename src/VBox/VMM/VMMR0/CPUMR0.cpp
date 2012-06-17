@@ -114,7 +114,7 @@ VMMR0DECL(int) CPUMR0ModuleTerm(void)
  * with VBox.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR0DECL(int) CPUMR0Init(PVM pVM)
 {

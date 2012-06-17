@@ -1058,7 +1058,7 @@ GVMMR0DECL(bool) GVMMR0DoingTermVM(PVM pVM, PGVM pGVM)
  * could've associated the calling thread with the VM up front.
  *
  * @returns VBox status code.
- * @param   pVM         Where to store the pointer to the VM structure.
+ * @param   pVM         Pointer to the VM.
  *
  * @thread  EMT(0) if it's associated with the VM, otherwise any thread.
  */
@@ -1313,7 +1313,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
  * Note that VCPU 0 is automatically registered during VM creation.
  *
  * @returns VBox status code
- * @param   pVM             The shared VM structure (the ring-0 mapping).
+ * @param   pVM             Pointer to the VM.
  * @param   idCpu           VCPU id.
  */
 GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
@@ -1378,7 +1378,7 @@ GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
  * are by threads inside the same process, so this will not be an issue.
  *
  * @returns VBox status code.
- * @param   pVM             The shared VM structure (the ring-0 mapping).
+ * @param   pVM             Pointer to the VM.
  * @param   ppGVM           Where to store the GVM pointer.
  * @param   ppGVMM          Where to store the pointer to the GVMM instance data.
  * @param   fTakeUsedLock   Whether to take the used lock or not.
@@ -1455,7 +1455,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
  * Lookup a GVM structure by the shared VM structure.
  *
  * @returns VBox status code.
- * @param   pVM     The shared VM structure (the ring-0 mapping).
+ * @param   pVM         Pointer to the VM.
  * @param   ppGVM       Where to store the GVM pointer.
  *
  * @remark  This will not take the 'used'-lock because it doesn't do
@@ -1473,7 +1473,7 @@ GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
  * caller is an EMT thread.
  *
  * @returns VBox status code.
- * @param   pVM         The shared VM structure (the ring-0 mapping).
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       The Virtual CPU ID of the calling EMT.
  * @param   ppGVM       Where to store the GVM pointer.
  * @param   ppGVMM      Where to store the pointer to the GVMM instance data.
@@ -1523,7 +1523,7 @@ static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
  * and ensuring that the caller is the EMT thread.
  *
  * @returns VBox status code.
- * @param   pVM         The shared VM structure (the ring-0 mapping).
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       The Virtual CPU ID of the calling EMT.
  * @param   ppGVM       Where to store the GVM pointer.
  * @thread  EMT

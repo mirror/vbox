@@ -515,7 +515,7 @@ DECLINLINE(void) hmR0SvmInjectEvent(PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pVMCB       Pointer to the VMCB.
  * @param   pCtx        Pointer to the guest CPU Context.
  */
@@ -682,7 +682,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, 
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 {
@@ -700,7 +700,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1011,7 +1011,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Setup TLB for ASID.
  *
  * @param    pVM        Pointer to the VM.
- * @param    pVCpu      The VM CPU to operate on.
+ * @param    pVCpu      Pointer to the VMCPU.
  */
 static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
 {
@@ -1155,7 +1155,7 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -2785,7 +2785,7 @@ end:
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 static int hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -2850,7 +2850,7 @@ static int hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCpu        Pointer to the CPU info struct.
  */
 VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
@@ -2872,7 +2872,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -3004,7 +3004,7 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Guest virtual address of the page to invalidate.
  */
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
@@ -3041,7 +3041,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPhys      Guest physical address of the page to invalidate.
  */
 VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)

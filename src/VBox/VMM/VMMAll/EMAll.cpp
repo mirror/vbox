@@ -80,7 +80,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVMCPU pVCpu, PDISCPUSTA
  * Get the current execution manager status.
  *
  * @returns Current status.
- * @param   pVCpu         The VMCPU to operate on.
+ * @param   pVCpu         Pointer to the VMCPU.
  */
 VMMDECL(EMSTATE) EMGetState(PVMCPU pVCpu)
 {
@@ -90,7 +90,7 @@ VMMDECL(EMSTATE) EMGetState(PVMCPU pVCpu)
 /**
  * Sets the current execution manager status. (use only when you know what you're doing!)
  *
- * @param   pVCpu         The VMCPU to operate on.
+ * @param   pVCpu         Pointer to the VMCPU.
  */
 VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
 {
@@ -182,7 +182,7 @@ VMM_INT_DECL(int) EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx)
  * Clears MWAIT flags if returning @c true.
  *
  * @returns boolean
- * @param   pVCpu           The VMCPU to operate on.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Current CPU context.
  */
 VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -238,7 +238,7 @@ VMMDECL(void) EMRemUnlock(PVM pVM)
  * Check if this VCPU currently owns the REM lock.
  *
  * @returns bool owner/not owner
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
 {
@@ -257,7 +257,7 @@ VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
  * Try to acquire the REM lock.
  *
  * @returns VBox status code
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMDECL(int) EMRemTryLock(PVM pVM)
 {

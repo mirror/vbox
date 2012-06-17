@@ -281,7 +281,7 @@ static int hwaccmR3TermCPU(PVM pVM);
  * Initializes the HWACCM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) HWACCMR3Init(PVM pVM)
 {
@@ -418,7 +418,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
  * Initializes the per-VCPU HWACCM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 static int hwaccmR3InitCPU(PVM pVM)
 {
@@ -659,7 +659,7 @@ VMMR3_INT_DECL(int) HWACCMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 /**
  * Turns off normal raw mode features
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 static void hwaccmR3DisableRawMode(PVM pVM)
 {
@@ -1466,7 +1466,7 @@ VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
  * Checks hardware accelerated raw mode is allowed.
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
 {
@@ -1479,8 +1479,8 @@ VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
  *
  * This is called by PGM.
  *
- * @param   pVM            The VM to operate on.
- * @param   pVCpu          The VMCPU to operate on.
+ * @param   pVM            Pointer to the VM.
+ * @param   pVCpu          Pointer to the VMCPU.
  * @param   enmShadowMode  New shadow paging mode.
  * @param   enmGuestMode   New guest paging mode.
  */
@@ -1536,7 +1536,7 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShad
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int) HWACCMR3Term(PVM pVM)
 {
@@ -1553,7 +1553,7 @@ VMMR3DECL(int) HWACCMR3Term(PVM pVM)
  * Terminates the per-VCPU HWACCM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 static int hwaccmR3TermCPU(PVM pVM)
 {
@@ -1721,7 +1721,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
  * Enable patching in a VT-x/AMD-V guest
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       VCPU to execute hwaccmR3RemovePatches on
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
@@ -1741,7 +1741,7 @@ int hwaccmR3EnablePatching(PVM pVM, VMCPUID idCpu, RTRCPTR pPatchMem, unsigned c
  * Enable patching in a VT-x/AMD-V guest
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
  */
@@ -1764,7 +1764,7 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
  * Disable patching in a VT-x/AMD-V guest
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
  */
@@ -2195,9 +2195,9 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
  * Attempt to patch TPR mmio instructions
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VM CPU to operate on.
- * @param   pCtx        CPU context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR3DECL(int) HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -2213,8 +2213,8 @@ VMMR3DECL(int) HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Force execution of the current IO code in the recompiler
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pCtx        Partial VM execution context
+ * @param   pVM         Pointer to the VM.
+ * @param   pCtx        Partial VM execution context.
  */
 VMMR3DECL(int) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
 {
@@ -2239,8 +2239,8 @@ VMMR3DECL(int) HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
  * Checks if we can currently use hardware accelerated raw mode.
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
- * @param   pCtx        Partial VM execution context
+ * @param   pVM         Pointer to the VM.
+ * @param   pCtx        Partial VM execution context.
  */
 VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 {
@@ -2421,8 +2421,8 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
  * Checks if we need to reschedule due to VMM device heap changes
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
- * @param   pCtx        VM execution context
+ * @param   pVM         Pointer to the VM.
+ * @param   pCtx        VM execution context.
  */
 VMMR3DECL(bool) HWACCMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
 {
@@ -2442,7 +2442,7 @@ VMMR3DECL(bool) HWACCMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
  * Notification from EM about a rescheduling into hardware assisted execution
  * mode.
  *
- * @param   pVCpu       Pointer to the current virtual cpu structure.
+ * @param   pVCpu       Pointer to the current VMCPU.
  */
 VMMR3DECL(void) HWACCMR3NotifyScheduled(PVMCPU pVCpu)
 {
@@ -2452,7 +2452,7 @@ VMMR3DECL(void) HWACCMR3NotifyScheduled(PVMCPU pVCpu)
 /**
  * Notification from EM about returning from instruction emulation (REM / EM).
  *
- * @param   pVCpu       Pointer to the current virtual cpu structure.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMR3DECL(void) HWACCMR3NotifyEmulated(PVMCPU pVCpu)
 {
@@ -2463,7 +2463,7 @@ VMMR3DECL(void) HWACCMR3NotifyEmulated(PVMCPU pVCpu)
  * Checks if we are currently using hardware accelerated raw mode.
  *
  * @returns boolean
- * @param   pVCpu        The VMCPU to operate on.
+ * @param   pVCpu        Pointer to the VMCPU.
  */
 VMMR3DECL(bool) HWACCMR3IsActive(PVMCPU pVCpu)
 {
@@ -2474,7 +2474,7 @@ VMMR3DECL(bool) HWACCMR3IsActive(PVMCPU pVCpu)
  * Checks if we are currently using nested paging.
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM)
 {
@@ -2485,7 +2485,7 @@ VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM)
  * Checks if we are currently using VPID in VT-x mode.
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM)
 {
@@ -2497,7 +2497,7 @@ VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM)
  * Checks if internal events are pending. In that case we are not allowed to dispatch interrupts.
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
 {
@@ -2527,9 +2527,9 @@ VMMR3DECL(bool) HWACCMR3IsVmxPreemptionTimerUsed(PVM pVM)
  *                                      status code must be passed on to EM.
  * @retval  VERR_NOT_FOUND if no pending I/O instruction.
  *
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- * @param   pCtx        VCPU register context
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR3DECL(VBOXSTRICTRC) HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -2580,7 +2580,7 @@ VMMR3DECL(VBOXSTRICTRC) HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCP
  * Inject an NMI into a running VM (only VCPU 0!)
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM)
 {
@@ -2592,8 +2592,8 @@ VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM)
  * Check fatal VT-x/AMD-V error and produce some meaningful
  * log release message.
  *
- * @param   pVM         The VM to operate on.
- * @param   iStatusCode VBox status code
+ * @param   pVM         Pointer to the VM.
+ * @param   iStatusCode VBox status code.
  */
 VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
 {

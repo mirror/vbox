@@ -183,7 +183,7 @@ static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  * Initializes the TM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMM_INT_DECL(int) TMR3Init(PVM pVM)
 {
@@ -901,7 +901,7 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
  * Finalizes the TM initialization.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
 {
@@ -1011,7 +1011,7 @@ VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * the VM it self is at this point powered off or suspended.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVM         Pointer to the VM.
  */
 VMM_INT_DECL(int) TMR3Term(PVM pVM)
 {

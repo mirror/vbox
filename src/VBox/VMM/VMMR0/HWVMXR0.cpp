@@ -4957,7 +4957,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The VM CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPhys      Guest physical address of the page to invalidate.
  */
 VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
