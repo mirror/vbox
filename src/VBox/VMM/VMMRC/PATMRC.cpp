@@ -518,8 +518,8 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
 #ifdef VBOX_WITH_IEM
             VBOXSTRICTRC rcStrict;
-            rcStrict = IEMExecOneWithOpcodes(VMMGetCpu0(pVM), pRegFrame, pRec->patch.pPrivInstrGC,
-                                             pRec->patch.aPrivInstr, pRec->patch.cbPrivInstr);
+            rcStrict = IEMExecOneWithPrefetchedByPC(VMMGetCpu0(pVM), pRegFrame, pRegFrame->rip,
+                                                    pRec->patch.aPrivInstr, pRec->patch.cbPrivInstr);
             rc = VBOXSTRICTRC_TODO(rcStrict);
 #else
             rc = DISInstr(&pRec->patch.aPrivInstr[0], enmCpuMode, &cpu, &cbOp);

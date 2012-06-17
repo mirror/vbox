@@ -40,8 +40,8 @@ RT_C_DECLS_BEGIN
 
 VMMDECL(VBOXSTRICTRC)       IEMExecOne(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t *pcbWritten);
-VMMDECL(VBOXSTRICTRC)       IEMExecOneWithOpcodes(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore,
-                                                  RTGCPTR GCPtrOpcodeBytes, const void *pvOpcodeBytes, size_t cbOpcodeBytes);
+VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
+                                                         const void *pvOpcodeBytes, size_t cbOpcodeBytes);
 VMMDECL(VBOXSTRICTRC)       IEMExecLots(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2);
 
