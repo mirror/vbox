@@ -30,7 +30,7 @@
  * @param   pVM     Pointer to the VM.
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   rc      The return code.
- * @param   pCtx    The guest cpu context.
+ * @param   pCtx    Pointer to the guest CPU context.
  */
 #ifdef EMHANDLERC_WITH_PATM
 int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
