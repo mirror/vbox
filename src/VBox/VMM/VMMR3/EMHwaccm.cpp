@@ -157,7 +157,7 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  *
  * @returns VBox status code suitable for EM.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle
  * @param   rcRC        Return code from RC.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
@@ -258,7 +258,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
  * This is just a wrapper for discarding pszPrefix in non-logging builds.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
@@ -277,7 +277,7 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
  * Executes one (or perhaps a few more) IO instruction(s).
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  */
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
@@ -458,7 +458,7 @@ static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE, VINF_EM_RESCHEDULE_RAW,
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.

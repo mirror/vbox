@@ -527,7 +527,7 @@ VMMR3DECL(int) SELMR3Term(PVM pVM)
  * For the SELM component this means that any GDT/LDT/TSS monitors
  * needs to be removed.
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) SELMR3Reset(PVM pVM)
 {
@@ -664,7 +664,7 @@ VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) selmR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -691,7 +691,7 @@ static DECLCALLBACK(int) selmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -756,7 +756,7 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
  * executing GC code.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
@@ -1359,7 +1359,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   pvPtr           The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -1387,7 +1387,7 @@ static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   pvPtr           The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -1415,7 +1415,7 @@ static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
  *
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   pvPtr           The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
@@ -1791,7 +1791,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
  *
  * @returns true if it matches.
  * @returns false and assertions on mismatch..
- * @param   pVM     VM Handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 {
@@ -1934,7 +1934,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
  * Fully validate selector.
  *
  * @returns VBox status.
- * @param   pVM       VM Handle.
+ * @param   pVM       Pointer to the VM.
  * @param   SelLdt    LDT selector.
  * @param   ppvLdt    Where to store the flat address of LDT.
  * @param   pcbLimit  Where to store LDT limit.
@@ -2172,7 +2172,7 @@ DECLINLINE(void) selmR3SelInfoFromDesc32(PDBGFSELINFO pSelInfo, PCX86DESC pDesc)
  *
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
@@ -2298,7 +2298,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
  *          pagetable or page backing the selector table wasn't present.
  * @returns Other VBox status code on other errors.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
@@ -2328,7 +2328,7 @@ VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELI
  *          pagetable or page backing the selector table wasn't present.
  * @returns Other VBox status code on other errors.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  *
@@ -2491,7 +2491,7 @@ VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMs
 /**
  * Display the shadow gdt.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2525,7 +2525,7 @@ static DECLCALLBACK(void) selmR3InfoGdt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 /**
  * Display the guest gdt.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2568,7 +2568,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 /**
  * Display the shadow ldt.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2593,7 +2593,7 @@ static DECLCALLBACK(void) selmR3InfoLdt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 /**
  * Display the guest ldt.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2648,7 +2648,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 /**
  * Dumps the hypervisor GDT
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM)
 {
@@ -2659,7 +2659,7 @@ VMMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM)
 /**
  * Dumps the hypervisor LDT
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM)
 {
@@ -2670,7 +2670,7 @@ VMMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM)
 /**
  * Dumps the guest GDT
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM)
 {
@@ -2681,7 +2681,7 @@ VMMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM)
 /**
  * Dumps the guest LDT
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) SELMR3DumpGuestLDT(PVM pVM)
 {

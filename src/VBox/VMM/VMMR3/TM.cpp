@@ -1034,7 +1034,7 @@ VMM_INT_DECL(int) TMR3Term(PVM pVM)
  * the FF is cleared and but without running the queues. We'll have to
  * check if this makes sense or not, but it seems like a good idea now....
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMM_INT_DECL(void) TMR3Reset(PVM pVM)
 {
@@ -1084,7 +1084,7 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
  * Called by PDM when loading or relocating GC modules.
  *
  * @returns VBox status
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pszSymbol       Symbol to resolve.
  * @param   pRCPtrValue     Where to store the symbol value.
  * @remark  This has to     work before TMR3Relocate() is called.
@@ -1104,7 +1104,7 @@ VMM_INT_DECL(int) TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPt
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
 static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
@@ -1151,7 +1151,7 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * Execute state load operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
@@ -1671,7 +1671,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
  * Destroy all timers owned by a device.
  *
  * @returns VBox status.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDevIns         Device which timers should be destroyed.
  */
 VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
@@ -1704,7 +1704,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
  * Destroy all timers owned by a USB device.
  *
  * @returns VBox status.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pUsbIns         USB device which timers should be destroyed.
  */
 VMM_INT_DECL(int) TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
@@ -1737,7 +1737,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
  * Destroy all timers owned by a driver.
  *
  * @returns VBox status.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pDrvIns         Driver which timers should be destroyed.
  */
 VMM_INT_DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
@@ -1839,7 +1839,7 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
  * Schedule timer callback.
  *
  * @param   pTimer      Timer handle.
- * @param   pvUser      VM handle.
+ * @param   pvUser      Pointer to the VM.
  * @thread  Timer thread.
  *
  * @remark  We cannot do the scheduling and queues running from a timer handler
@@ -2952,7 +2952,7 @@ DECLINLINE(const char *) tmR3Get5CharClockName(TMCLOCK enmClock)
 /**
  * Display all timers.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2994,7 +2994,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 /**
  * Display all active timers.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -3041,7 +3041,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
 /**
  * Display all clocks.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */

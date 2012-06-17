@@ -41,7 +41,7 @@
  *    @code
  *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
  *    @endcode
- * @param   pVM             VM handle. Must be non-NULL.
+ * @param   pVM             Pointer to the VM. Must be non-NULL.
  * @param   rc              VBox status code.
  * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
  * @param   pszFormat       Error message format string.
@@ -65,7 +65,7 @@ VMMDECL(int) VMSetError(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat,
  *    @code
  *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
  *    @endcode
- * @param   pVM             VM handle. Must be non-NULL.
+ * @param   pVM             Pointer to the VM. Must be non-NULL.
  * @param   rc              VBox status code.
  * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
  * @param   pszFormat       Error message format string.
@@ -102,7 +102,7 @@ VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat
  * memory accessible from ring-3. But it's just possible that we might add
  * APIs for retrieving the VMERROR copy later.
  *
- * @param   pVM             VM handle. Must be non-NULL.
+ * @param   pVM             Pointer to the VM. Must be non-NULL.
  * @param   rc              VBox status code.
  * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
  * @param   pszFormat       Error message format string.
@@ -297,7 +297,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
  * memory accessible from ring-3. But it's just possible that we might add
  * APIs for retrieving the VMRUNTIMEERROR copy later.
  *
- * @param   pVM             VM handle. Must be non-NULL.
+ * @param   pVM             Pointer to the VM. Must be non-NULL.
  * @param   fFlags          The error flags.
  * @param   pszErrorId      Error ID string.
  * @param   pszFormat       Error message format string.

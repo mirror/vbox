@@ -1505,7 +1505,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
  * been initialized.
  *
  * @returns VBox status code.
- * @param   pVM                 VM handle.
+ * @param   pVM                 Pointer to the VM.
  */
 static int pgmR3InitPaging(PVM pVM)
 {
@@ -2079,7 +2079,7 @@ static int pgmR3InitStats(PVM pVM)
  * page table entries with the dummy page.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
 {
@@ -2501,7 +2501,7 @@ VMMR3DECL(void) PGMR3ResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
  * For the PGM component this means that any PD write monitors
  * needs to be removed.
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(void) PGMR3Reset(PVM pVM)
 {
@@ -2627,7 +2627,7 @@ VMMR3DECL(int) PGMR3Term(PVM pVM)
 /**
  * Show paging mode.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     "all" (default), "guest", "shadow" or "host".
  */
@@ -2684,7 +2684,7 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 /**
  * Dump registered MMIO ranges to the log.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -2710,7 +2710,7 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 /**
  * Dump the page directory to the log.
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -3137,7 +3137,7 @@ static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE e
  * Calculates the shadow paging mode.
  *
  * @returns The shadow paging mode.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmGuestMode    The guest mode.
  * @param   enmHostMode     The host mode.
  * @param   enmShadowMode   The current shadow mode.
@@ -3331,7 +3331,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
  * @returns VBox status code. May suspend or power off the VM on error, but this
  *          will trigger using FFs and not status codes.
  *
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   pVCpu           The VMCPU to operate on.
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.

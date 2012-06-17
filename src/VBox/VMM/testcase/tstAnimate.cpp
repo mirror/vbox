@@ -326,7 +326,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
  * This assumes an empty tree.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
 {

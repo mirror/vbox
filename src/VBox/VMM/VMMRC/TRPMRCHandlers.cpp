@@ -126,7 +126,7 @@ RT_C_DECLS_END
  *
  * @returns rc, can be adjusted if its VINF_SUCCESS or something really bad
  *          happened.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The virtual CPU handle.
  * @param   rc          The VBox status code to return.
  * @param   pRegFrame   Pointer to the register frame for the trap.

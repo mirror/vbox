@@ -1204,7 +1204,7 @@ VMMDECL(void) MMHyperHeapCheck(PVM pVM)
 #ifdef DEBUG
 /**
  * Dumps the hypervisor heap to Log.
- * @param pVM       VM Handle.
+ * @param pVM       Pointer to the VM.
  */
 VMMDECL(void) MMHyperHeapDump(PVM pVM)
 {
@@ -1250,7 +1250,7 @@ VMMDECL(size_t) MMHyperHeapGetSize(PVM pVM)
  * Query the address and size the hypervisor memory area.
  *
  * @returns Base address of the hypervisor area.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pcb         Where to store the size of the hypervisor area. (out)
  */
 VMMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
@@ -1266,7 +1266,7 @@ VMMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
  *
  * @returns true if inside.
  * @returns false if outside.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       The pointer to check.
  */
 VMMDECL(bool) MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr)

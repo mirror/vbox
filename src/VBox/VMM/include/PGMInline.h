@@ -1431,7 +1431,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 /**
  * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       PGM pool page
  */
 DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
@@ -1444,7 +1444,7 @@ DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 /**
  * Unlocks a page to allow flushing again
  *
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pPage       PGM pool page
  */
 DECLINLINE(void) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
@@ -1478,7 +1478,7 @@ DECLINLINE(bool) pgmPoolIsPageLocked(PPGMPOOLPAGE pPage)
  * Tells if mappings are to be put into the shadow page table or not.
  *
  * @returns boolean result
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  */
 DECL_FORCE_INLINE(bool) pgmMapAreMappingsEnabled(PVM pVM)
 {

@@ -528,7 +528,7 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
 /**
  * Checks that the timer queues are sane.
  *
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  *
  * @remarks Called while owning the lock.
  */

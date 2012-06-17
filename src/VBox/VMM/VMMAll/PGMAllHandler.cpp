@@ -66,7 +66,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
  * @retval  VERR_PGM_HANDLER_PHYSICAL_CONFLICT if the range conflicts with an existing
  *          one. A debug assertion is raised.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   enmType         Handler type. Any of the PGMPHYSHANDLERTYPE_PHYSICAL* enums.
  * @param   GCPhys          Start physical address.
  * @param   GCPhysLast      Last physical address. (inclusive)
@@ -252,7 +252,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
  * Register a physical page access handler.
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      Start physical address.
  */
 VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
@@ -535,7 +535,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
  * @returns VBox status code.
  *          For all return codes other than VERR_PGM_HANDLER_NOT_FOUND and VINF_SUCCESS the range is deregistered
  *          and a new registration must be performed!
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhysCurrent   Current location.
  * @param   GCPhys          New location.
  * @param   GCPhysLast      New last location.
@@ -642,7 +642,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
  * Changes the callbacks associated with a physical access handler.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Start physical address.
  * @param   pfnHandlerR3    The R3 handler.
  * @param   pvUserR3        User argument to the R3 handler.
@@ -693,7 +693,7 @@ VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
  * Splits a physical access handler in two.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Start physical address of the handler.
  * @param   GCPhysSplit     The split address.
  */
@@ -759,7 +759,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
  * Joins up two adjacent physical access handlers which has the same callbacks.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys1         Start physical address of the first handler.
  * @param   GCPhys2         Start physical address of the second handler.
  */
@@ -841,7 +841,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
  * PGMHandlerPhysicalPageAlias() or PGMHandlerPhysicalPageAliasHC().
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle
+ * @param   pVM         Pointer to the VM
  * @param   GCPhys      The start address of the handler regions, i.e. what you
  *                      passed to PGMR3HandlerPhysicalRegister(),
  *                      PGMHandlerPhysicalRegisterEx() or
@@ -950,7 +950,7 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
  * The caller must do required page table modifications.
  *
  * @returns VBox status code.
- * @param   pVM                 VM Handle
+ * @param   pVM                 Pointer to the VM
  * @param   GCPhys              The start address of the access handler. This
  *                              must be a fully page aligned range or we risk
  *                              messing up other handlers installed for the
@@ -1239,7 +1239,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  * Checks if a physical range is handled
  *
  * @returns boolean
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPhys      Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
  * @remarks Caller must take the PGM lock...
  * @thread  EMT.
@@ -1303,7 +1303,7 @@ bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
  * Check if particular guest's VA is being monitored.
  *
  * @returns true or false
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPtr           Virtual address.
  * @remarks Will acquire the PGM lock.
  * @thread  Any.

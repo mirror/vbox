@@ -48,7 +48,7 @@
  * \#PF Virtual Handler callback for Guest access a page monitored by PATM
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).

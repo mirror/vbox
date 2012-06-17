@@ -116,7 +116,7 @@ VMMDECL(int) PGMMap(PVM pVM, RTGCUINTPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPage
  * Sets (replaces) the page flags for a range of pages in a mapping.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   cb          Size (in bytes) of the range to apply the modification to.
  * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
@@ -133,7 +133,7 @@ VMMDECL(int) PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags)
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   cb          Size (in bytes) of the range to apply the modification to.
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.

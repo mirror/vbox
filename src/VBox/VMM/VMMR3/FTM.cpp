@@ -675,7 +675,7 @@ static int ftmR3PerformFullSync(PVM pVM)
 /**
  * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          GC physical address
  * @param   pRange          HC virtual address of the page(s)
  * @param   cbRange         Size of the dirty range in bytes.
@@ -847,7 +847,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD hThread, void *pvUser)
  * Syncs memory from the master VM
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  */
 static int ftmR3SyncMem(PVM pVM)
 {

@@ -46,7 +46,7 @@
  * To uninstall the temporary handler, call this function with pfnHandler set to NULL.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   iTrap       Trap number to install handler [0..255].
  * @param   pfnHandler  Pointer to the handler. Use NULL for uninstalling the handler.
  */
@@ -94,7 +94,7 @@ VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
  * \#PF Virtual Handler callback for Guest write access to the Guest's own current IDT.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -157,7 +157,7 @@ VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow IDT.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).

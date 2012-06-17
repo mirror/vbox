@@ -343,7 +343,7 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
  *
  * @returns VBox status code (appropriate for GC return).
  *          In this context RT_SUCCESS means to restart the instruction.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Trap register frame.
  */
 static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
@@ -364,7 +364,7 @@ static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
  *
  * @returns VBox status code (appropriate for GC return).
  *          In this context RT_SUCCESS means to restart the instruction.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Trap register frame.
  */
 static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pRegFrame)

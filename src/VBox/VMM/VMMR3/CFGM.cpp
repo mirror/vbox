@@ -140,7 +140,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
  * Terminates the configuration manager.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3DECL(int) CFGMR3Term(PVM pVM)
 {
@@ -154,7 +154,7 @@ VMMR3DECL(int) CFGMR3Term(PVM pVM)
  * Gets the root node for the VM.
  *
  * @returns Pointer to root node.
- * @param   pVM             VM handle.
+ * @param   pVM             Pointer to the VM.
  */
 VMMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
 {
@@ -819,7 +819,7 @@ VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
  * need to do very small adjustments to the config.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  */
 VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
 {

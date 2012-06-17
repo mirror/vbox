@@ -22,7 +22,7 @@
  * This API respects access handlers and MMIO. Use PGMPhysSimpleReadGCPhys() if you
  * want to ignore those.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Physical address start reading from.
  */
 VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
@@ -40,7 +40,7 @@ VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
  * This API respects access handlers and MMIO. Use PGMPhysSimpleReadGCPhys() if you
  * want to ignore those.
  *
- * @param   pVM             VM Handle.
+ * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Physical address to write to.
  * @param   val             What to write.
  */

@@ -53,7 +53,7 @@
  * for ALL and WRITE handlers these will also trigger.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         VM Handle.
+ * @param   pVM         Pointer to the VM.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).

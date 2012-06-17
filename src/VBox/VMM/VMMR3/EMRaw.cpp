@@ -75,7 +75,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu);
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Just a braindead function to keep track of cli addresses.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVMCPU      VMCPU handle.
  * @param   GCPtrInstr  The EIP of the cli instruction.
  */
@@ -256,7 +256,7 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  *
  * @returns VBox status code suitable for EM.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle
  * @param   rcGC        GC return code
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
@@ -390,7 +390,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
  * This is just a wrapper for discarding pszPrefix in non-logging builds.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
@@ -409,7 +409,7 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
  * Executes one (or perhaps a few more) IO instruction(s).
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  */
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
@@ -503,7 +503,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  * Handle a guest context trap.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  */
 static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
@@ -663,7 +663,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
  * Need to do statistics and to install patches. The result is going to REM.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  */
 static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
@@ -722,7 +722,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
  * Handle a trap (\#PF or \#GP) in patch code
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   VMCPU handle.
  * @param   pCtx    CPU context
  * @param   gcret   GC return code
@@ -906,7 +906,7 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
  * Handle a privileged instruction.
  *
  * @returns VBox status code suitable for EM.
- * @param   pVM     VM handle.
+ * @param   pVM     Pointer to the VM.
  * @param   pVCpu   VMCPU handle;
  */
 static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
@@ -1327,7 +1327,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       VMCPU handle.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.

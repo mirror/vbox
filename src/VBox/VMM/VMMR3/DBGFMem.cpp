@@ -445,7 +445,7 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
  * @retval  VERR_PAGE_TABLE_NOT_PRESENT or VERR_PAGE_NOT_PRESENT if the
  *          pagetable or page backing the selector table wasn't present.
  *
- * @param   pVM         VM handle.
+ * @param   pVM         Pointer to the VM.
  * @param   idCpu       The ID of the virtual CPU context.
  * @param   Sel         The selector to get info about.
  * @param   fFlags      Flags, see DBGFQSEL_FLAGS_*.
