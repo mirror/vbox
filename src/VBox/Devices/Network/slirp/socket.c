@@ -191,6 +191,10 @@ sofree(PNATState pData, struct socket *so)
         LogFlowFunc(("LEAVE:%R[natsock] postponed deletion\n", so));
         return;
     }
+    /**
+     * Check that we don't freeng socket with tcbcb
+     */
+    Assert(!sototcpcb(so));
     if (so == tcp_last_so)
         tcp_last_so = &tcb;
     else if (so == udp_last_so)
