@@ -282,7 +282,7 @@ static int slirpVerifyAndFreeSocket(PNATState pData, struct socket *pSocket)
     {
         pSocket->fUnderPolling = 0;
         sofree(pData, pSocket);
-        /* so is PHANTOM, now */
+        /* pSocket is PHANTOM, now */
         return 1;
     }
     return 0;
@@ -1084,6 +1084,11 @@ done:
 }
 
 
+/**
+ * This function do Connection or sending tcp sequence to.
+ * @returns if true operation completed
+ * @note: functions call tcp_input that potentially could lead to tcp_drop
+ */
 static bool slirpConnectOrWrite(PNATState pData, struct socket *so, bool fConnectOnly)
 {
     int ret;
@@ -1352,12 +1357,18 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 #endif
             )
         {
-            if(!slirpConnectOrWrite(pData, so, false))
+            int fConnectOrWriteSuccess = slirpConnectOrWrite(pData, so, false);
+            /* slirpConnectOrWrite could return true even if tcp_input called tcp_drop,
+             * so we should be ready to such situations.
+             */
+            if (slirpVerifyAndFreeSocket(pData, so))
+                CONTINUE(tcp);
+            else if (!fConnectOrWriteSuccess)
             {
-                if (!slirpVerifyAndFreeSocket(pData, so))
-                    so->fUnderPolling = 0;
+                so->fUnderPolling = 0;
                 CONTINUE(tcp);
             }
+            /* slirpConnectionOrWrite succeeded and socket wasn't dropped */
         }
 
         /*
