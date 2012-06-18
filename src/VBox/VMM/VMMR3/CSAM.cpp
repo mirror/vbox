@@ -798,15 +798,16 @@ DECLINLINE(int) csamR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCP
 {
     CSAMDISINFO DisInfo = { pVM, InstrHC };
 #ifdef DEBUG
-    return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, pVM, DISOPTYPE_ALL,
+    return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, &DisInfo, DISOPTYPE_ALL,
                            pCpu, pcbInstr, pszOutput, cbOutput);
 #else
     /* We are interested in everything except harmless stuff */
     if (pszOutput)
-        return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, pVM, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
+        return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, &DisInfo,
+                               ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
                                pCpu, pcbInstr, pszOutput, cbOutput);
-    return DISInstEx(InstrGC, enmCpuMode, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK), csamR3ReadBytes, pVM,
-                     pCpu, pcbInstr);
+    return DISInstEx(InstrGC, enmCpuMode, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
+                     csamR3ReadBytes, &DisInfo, pCpu, pcbInstr);
 #endif
 }
 
