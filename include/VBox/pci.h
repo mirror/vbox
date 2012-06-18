@@ -537,6 +537,11 @@ typedef struct PCIDevice
     /**  @} */
 } PCIDEVICE;
 
+#ifdef IN_RING3
+int PCIDevPhysRead(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
+int PCIDevPhysWrite(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
+#endif
+
 /* @todo: handle extended space access */
 DECLINLINE(void)     PCIDevSetByte(PPCIDEVICE pPciDev, uint32_t uOffset, uint8_t u8Value)
 {
@@ -642,6 +647,16 @@ DECLINLINE(void) PCIDevSetCommand(PPCIDEVICE pPciDev, uint16_t u16Command)
 DECLINLINE(uint16_t) PCIDevGetCommand(PPCIDEVICE pPciDev)
 {
     return PCIDevGetWord(pPciDev, VBOX_PCI_COMMAND);
+}
+
+/**
+ * Checks if the given PCI device is a bus master.
+ * @returns true if the device is a bus master, false if not.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(bool) PCIDevIsBusmaster(PPCIDEVICE pPciDev)
+{
+    return (PCIDevGetCommand(pPciDev) & VBOX_PCI_COMMAND_MASTER) != 0;
 }
 
 /**
