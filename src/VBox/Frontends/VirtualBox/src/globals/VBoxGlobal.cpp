@@ -64,7 +64,7 @@
 #include "UIUpdateManager.h"
 #include "UIMachine.h"
 #include "UISession.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 #ifdef Q_WS_X11
 # include "UIHotKeyEditor.h"
@@ -958,149 +958,6 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aTypeId) const
     return QString::null;
 }
 
-/**
- * Returns a full string representation of the given device of the given channel on the given storage bus.
- * This method does not uses any separate string tags related to bus, channel, device, it has own
- * separately translated string tags allowing to translate a full slot name into human readable format
- * to be consistent with i18n.
- * Complementary to #toStorageSlot (const QString &) const.
- */
-QString VBoxGlobal::toString (StorageSlot aSlot) const
-{
-    switch (aSlot.bus)
-    {
-        case KStorageBus_IDE:
-        case KStorageBus_SATA:
-        case KStorageBus_SCSI:
-        case KStorageBus_SAS:
-        case KStorageBus_Floppy:
-            break;
-
-        default:
-        {
-            AssertMsgFailed (("Invalid bus type %d\n", aSlot.bus));
-            break;
-        }
-    }
-
-    int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (aSlot.bus);
-    int maxDevice = virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus (aSlot.bus);
-    if (aSlot.port < 0 || aSlot.port > maxPort)
-        AssertMsgFailed (("Invalid port %d\n", aSlot.port));
-    if (aSlot.device < 0 || aSlot.device > maxDevice)
-        AssertMsgFailed (("Invalid device %d\n", aSlot.device));
-
-    QString result;
-    switch (aSlot.bus)
-    {
-        case KStorageBus_IDE:
-        {
-            result = mSlotTemplates [aSlot.port * maxDevice + aSlot.device];
-            break;
-        }
-        case KStorageBus_SATA:
-        {
-            result = mSlotTemplates [4].arg (aSlot.port);
-            break;
-        }
-        case KStorageBus_SCSI:
-        {
-            result = mSlotTemplates [5].arg (aSlot.port);
-            break;
-        }
-        case KStorageBus_SAS:
-        {
-            result = mSlotTemplates [6].arg (aSlot.port);
-            break;
-        }
-        case KStorageBus_Floppy:
-        {
-            result = mSlotTemplates [7].arg (aSlot.device);
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Invalid bus type %d\n", aSlot.bus));
-            break;
-        }
-    }
-    return result;
-}
-
-/**
- * Returns a StorageSlot based on the given device of the given channel on the given storage bus.
- * Complementary to #toFullString (StorageSlot) const.
- */
-StorageSlot VBoxGlobal::toStorageSlot (const QString &aSlot) const
-{
-    int index = -1;
-    QRegExp regExp;
-    for (int i = 0; i < mSlotTemplates.size(); ++ i)
-    {
-        regExp = QRegExp (i >= 0 && i <= 3 ? mSlotTemplates [i] : mSlotTemplates [i].arg ("(\\d+)"));
-        if (regExp.indexIn (aSlot) != -1)
-        {
-            index = i;
-            break;
-        }
-    }
-
-    StorageSlot result;
-    switch (index)
-    {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        {
-            result.bus = KStorageBus_IDE;
-            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
-            result.port = index / maxPort;
-            result.device = index % maxPort;
-            break;
-        }
-        case 4:
-        {
-            result.bus = KStorageBus_SATA;
-            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
-            result.port = regExp.cap (1).toInt();
-            if (result.port < 0 || result.port > maxPort)
-                AssertMsgFailed (("Invalid port %d\n", result.port));
-            break;
-        }
-        case 5:
-        {
-            result.bus = KStorageBus_SCSI;
-            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
-            result.port = regExp.cap (1).toInt();
-            if (result.port < 0 || result.port > maxPort)
-                AssertMsgFailed (("Invalid port %d\n", result.port));
-            break;
-        }
-        case 6:
-        {
-            result.bus = KStorageBus_SAS;
-            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
-            result.port = regExp.cap (1).toInt();
-            if (result.port < 0 || result.port > maxPort)
-                AssertMsgFailed (("Invalid port %d\n", result.port));
-            break;
-        }
-        case 7:
-        {
-            result.bus = KStorageBus_Floppy;
-            int maxDevice = virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus (result.bus);
-            result.device = regExp.cap (1).toInt();
-            if (result.device < 0 || result.device > maxDevice)
-                AssertMsgFailed (("Invalid device %d\n", result.device));
-            break;
-        }
-        default:
-            break;
-    }
-    return result;
-}
-
 struct PortConfig
 {
     const char *name;
@@ -1138,7 +995,7 @@ QString VBoxGlobal::mediumTypeString(const CMedium &medium) const
         Assert(medium.GetType() == KMediumType_Normal);
         return mDiskTypes_Differencing;
     }
-    return gCOMenum->toString(medium.GetType());
+    return gpConverter->toString(medium.GetType());
 }
 
 /**
@@ -1323,7 +1180,7 @@ QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
     if (!hostDev.isNull())
     {
         tip += QString (tr ("<br><nobr>State: %1</nobr>", "USB device tooltip"))
-                        .arg (gCOMenum->toString (hostDev.GetState()));
+                        .arg (gpConverter->toString (hostDev.GetState()));
     }
 
     return tip;
@@ -1376,7 +1233,7 @@ QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
     if (!hostDev.isNull())
     {
         tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>State: %1</nobr>", "USB filter tooltip")
-                                                .arg (gCOMenum->toString (hostDev.GetState()));
+                                                .arg (gpConverter->toString (hostDev.GetState()));
     }
 
     return tip;
@@ -1447,10 +1304,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                 continue;
             if (!bootOrder.isEmpty())
                 bootOrder += ", ";
-            bootOrder += gCOMenum->toString (device);
+            bootOrder += gpConverter->toString (device);
         }
         if (bootOrder.isEmpty())
-            bootOrder = gCOMenum->toString (KDeviceType_Null);
+            bootOrder = gpConverter->toString (KDeviceType_Null);
 
         iRowCount += 1; /* Boot-order row. */
 
@@ -1616,9 +1473,9 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                 QString strAttachmentInfo = !attachment.isOk() ? QString() :
                                             QString(sSectionItemTpl2)
                                             .arg(QString("&nbsp;&nbsp;") +
-                                                 toString(StorageSlot(controller.GetBus(),
-                                                                      attachment.GetPort(),
-                                                                      attachment.GetDevice())) + strDeviceType)
+                                                 gpConverter->toString(StorageSlot(controller.GetBus(),
+                                                                                   attachment.GetPort(),
+                                                                                   attachment.GetDevice())) + strDeviceType)
                                             .arg(details(medium, false));
                 /* Insert that attachment into map: */
                 if (!strAttachmentInfo.isNull())
@@ -1660,10 +1517,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         if (audio.GetEnabled())
             item = QString (sSectionItemTpl2)
                    .arg (tr ("Host Driver", "details report (audio)"),
-                         gCOMenum->toString (audio.GetAudioDriver())) +
+                         gpConverter->toString (audio.GetAudioDriver())) +
                    QString (sSectionItemTpl2)
                    .arg (tr ("Controller", "details report (audio)"),
-                         gCOMenum->toString (audio.GetAudioController()));
+                         gpConverter->toString (audio.GetAudioController()));
         else
             item = QString (sSectionItemTpl1)
                    .arg (tr ("Disabled", "details report (audio)"));
@@ -1688,7 +1545,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             if (adapter.GetEnabled())
             {
                 KNetworkAttachmentType type = adapter.GetAttachmentType();
-                QString attType = gCOMenum->toString (adapter.GetAdapterType())
+                QString attType = gpConverter->toString (adapter.GetAdapterType())
                                   .replace (QRegExp ("\\s\\(.+\\)"), " (%1)");
                 /* don't use the adapter type string for types that have
                  * an additional symbolic network/interface name field, use
@@ -1706,7 +1563,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                     attType = attType.arg (tr ("Generic, '%1'",
                         "details report (network)").arg (adapter.GetGenericDriver()));
                 else
-                    attType = attType.arg (gCOMenum->toString (type));
+                    attType = attType.arg (gpConverter->toString (type));
 
                 item += QString (sSectionItemTpl2)
                         .arg (tr ("Adapter %1", "details report (network)")
@@ -1748,10 +1605,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                     mode == KPortMode_HostDevice ||
                     mode == KPortMode_RawFile)
                     data += QString ("%1 (<nobr>%2</nobr>)")
-                            .arg (gCOMenum->toString (mode))
+                            .arg (gpConverter->toString (mode))
                             .arg (QDir::toNativeSeparators (port.GetPath()));
                 else
-                    data += gCOMenum->toString (mode);
+                    data += gpConverter->toString (mode);
 
                 item += QString (sSectionItemTpl2)
                         .arg (tr ("Port %1", "details report (serial ports)")
@@ -2576,16 +2433,7 @@ QString VBoxGlobal::languageTranslators() const
  */
 void VBoxGlobal::retranslateUi()
 {
-    mSlotTemplates [0] = tr ("IDE Primary Master", "New Storage UI : Slot Name");
-    mSlotTemplates [1] = tr ("IDE Primary Slave", "New Storage UI : Slot Name");
-    mSlotTemplates [2] = tr ("IDE Secondary Master", "New Storage UI : Slot Name");
-    mSlotTemplates [3] = tr ("IDE Secondary Slave", "New Storage UI : Slot Name");
-    mSlotTemplates [4] = tr ("SATA Port %1", "New Storage UI : Slot Name");
-    mSlotTemplates [5] = tr ("SCSI Port %1", "New Storage UI : Slot Name");
-    mSlotTemplates [6] = tr ("SAS Port %1", "New Storage UI : Slot Name");
-    mSlotTemplates [7] = tr ("Floppy Device %1", "New Storage UI : Slot Name");
-
-    mDiskTypes_Differencing =                   tr ("Differencing", "DiskType");
+    mDiskTypes_Differencing = tr ("Differencing", "DiskType");
 
     mUserDefinedPortName = tr ("User-defined", "serial port");
 
@@ -4660,8 +4508,7 @@ void VBoxGlobal::init()
 
     mValid = true;
 
-    /* Prepare COM enum extensions: */
-    COMEnumsWrapper::prepare();
+    UIConverter::prepare();
 
     /* Cache IMedium data.
      * There could be no used mediums at all,
@@ -4761,8 +4608,7 @@ void VBoxGlobal::cleanup()
     if (m_pVirtualMachine)
         delete m_pVirtualMachine;
 
-    /* Cleanup COM enum extensions: */
-    COMEnumsWrapper::cleanup();
+    UIConverter::cleanup();
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();

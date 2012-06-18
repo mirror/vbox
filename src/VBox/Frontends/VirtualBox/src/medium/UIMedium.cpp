@@ -28,7 +28,7 @@
 #include "UIMedium.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -141,7 +141,7 @@ void UIMedium::refresh()
     {
         mHardDiskFormat = mMedium.GetFormat();
         mHardDiskType = vboxGlobal().mediumTypeString (mMedium);
-        mStorageDetails = gCOMenum->toString((KMediumVariant)mMedium.GetVariant());
+        mStorageDetails = gpConverter->toString((KMediumVariant)mMedium.GetVariant());
         mIsReadOnly = mMedium.GetReadOnly();
 
         /* Adjust the parent if its possible */

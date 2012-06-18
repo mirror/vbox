@@ -35,7 +35,7 @@
 #include "UIProgressDialog.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerDialog.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
 #endif /* VBOX_OSE */
@@ -1352,7 +1352,7 @@ void UIMessageCenter::cannotChangeMediumType(QWidget *pParent,
 {
     message(pParent ? pParent : mainWindowShown(), Error,
             tr("<p>Error changing medium type from <b>%1</b> to <b>%2</b>.</p>")
-                .arg(gCOMenum->toString(oldMediumType)).arg(gCOMenum->toString(newMediumType)),
+                .arg(gpConverter->toString(oldMediumType)).arg(gpConverter->toString(newMediumType)),
             formatErrorInfo(medium));
 }
 
@@ -1540,19 +1540,19 @@ void UIMessageCenter::cannotDetachDevice(QWidget *pParent,
         case UIMediumType_HardDisk:
         {
             strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
         case UIMediumType_DVD:
         {
             strMessage = tr("Failed to detach the CD/DVD device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
         case UIMediumType_Floppy:
         {
             strMessage = tr("Failed to detach the floppy device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
         default:
@@ -3081,19 +3081,19 @@ void UIMessageCenter::sltCannotAttachDevice(const CMachine &machine, UIMediumTyp
         case UIMediumType_HardDisk:
         {
             strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
         case UIMediumType_DVD:
         {
             strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
         case UIMediumType_Floppy:
         {
             strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
         default:

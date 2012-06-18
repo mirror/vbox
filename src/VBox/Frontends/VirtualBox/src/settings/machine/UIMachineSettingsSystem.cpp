@@ -25,7 +25,7 @@
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "UIMachineSettingsSystem.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CBIOSSettings.h"
@@ -162,8 +162,8 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     sltValueChangedCPUExecCap(mSlCPUExecCap->value());
 
     /* Populate chipset combo: */
-    mCbChipset->insertItem(0, gCOMenum->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
-    mCbChipset->insertItem(1, gCOMenum->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
+    mCbChipset->insertItem(0, gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
+    mCbChipset->insertItem(1, gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
 
     /* Install global event filter */
     qApp->installEventFilter (this);

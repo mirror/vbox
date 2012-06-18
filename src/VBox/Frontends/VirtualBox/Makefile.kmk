@@ -144,6 +144,7 @@ endif
 
 VBOX_GUI_INC_DIRS = \
 	./src \
+	./src/converter \
 	./src/extensions \
 	./src/globals \
 	./src/net \
@@ -274,7 +275,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/UIMessageCenter.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
-	src/globals/COMEnumsWrapper.h \
 	src/net/UINetworkManager.h \
 	src/net/UINetworkManagerDialog.h \
 	src/net/UINetworkManagerIndicator.h \
@@ -445,6 +445,9 @@ VirtualBox_SOURCES = \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
 	src/UIVMLogViewer.cpp \
+	src/converter/UIConverter.cpp \
+	src/converter/UIConverterBackendCOM.cpp \
+	src/converter/UIConverterBackendGlobal.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
@@ -478,7 +481,6 @@ VirtualBox_SOURCES = \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/VBoxGlobal.cpp \
-	src/globals/COMEnumsWrapper.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumManager.cpp \

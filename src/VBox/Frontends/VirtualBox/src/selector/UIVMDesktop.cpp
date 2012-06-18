@@ -41,7 +41,7 @@
 #include "VBoxSnapshotsWgt.h"
 #include "UIToolBar.h"
 #include "VBoxUtils.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -754,10 +754,10 @@ void UIDetailsBlock::sltUpdateSystem()
                     KDeviceType device = m_machine.GetBootOrder(i);
                     if (device == KDeviceType_Null)
                         continue;
-                    bootOrder << gCOMenum->toString(device);
+                    bootOrder << gpConverter->toString(device);
                 }
                 if (bootOrder.isEmpty())
-                    bootOrder << gCOMenum->toString(KDeviceType_Null);
+                    bootOrder << gpConverter->toString(KDeviceType_Null);
 
                 item += sSectionItemTpl2.arg(tr("Boot Order", "details report"), bootOrder.join(", "));
 
@@ -928,7 +928,7 @@ void UIDetailsBlock::sltUpdateStorage()
                     QString strAttachmentInfo = !attachment.isOk() ? QString() :
                                                 QString(sSectionItemTpl2)
                                                 .arg(QString("&nbsp;&nbsp;") +
-                                                     vboxGlobal().toString(StorageSlot(controller.GetBus(),
+                                                     gpConverter->toString(StorageSlot(controller.GetBus(),
                                                                                        attachment.GetPort(),
                                                                                        attachment.GetDevice())) +
                                                      strDeviceType)
@@ -980,9 +980,9 @@ void UIDetailsBlock::sltUpdateAudio()
             const CAudioAdapter &audio = m_machine.GetAudioAdapter();
             if (audio.GetEnabled())
                 item = QString(sSectionItemTpl2).arg(tr("Host Driver", "details report (audio)"),
-                                                     gCOMenum->toString(audio.GetAudioDriver())) +
+                                                     gpConverter->toString(audio.GetAudioDriver())) +
                        QString(sSectionItemTpl2).arg(tr("Controller", "details report (audio)"),
-                                                     gCOMenum->toString(audio.GetAudioController()));
+                                                     gpConverter->toString(audio.GetAudioController()));
             else
                 item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (audio)"));
 
@@ -1019,7 +1019,7 @@ void UIDetailsBlock::sltUpdateNetwork()
                 if (adapter.GetEnabled())
                 {
                     KNetworkAttachmentType type = adapter.GetAttachmentType();
-                    QString attType = gCOMenum->toString(adapter.GetAdapterType())
+                    QString attType = gpConverter->toString(adapter.GetAdapterType())
                                       .replace(QRegExp("\\s\\(.+\\)"), " (%1)");
                     /* Don't use the adapter type string for types that have
                      * an additional symbolic network/interface name field,
@@ -1039,7 +1039,7 @@ void UIDetailsBlock::sltUpdateNetwork()
                                               .arg(adapter.GetGenericDriver(), strGenericDriverProperties));
                     }
                     else
-                        attType = attType.arg(gCOMenum->toString(type));
+                        attType = attType.arg(gpConverter->toString(type));
 
                     item += QString(sSectionItemTpl2).arg(tr("Adapter %1", "details report (network)").arg(adapter.GetSlot() + 1))
                                                      .arg(attType);
@@ -1083,9 +1083,9 @@ void UIDetailsBlock::sltUpdateSerialPorts()
                     KPortMode mode = port.GetHostMode();
                     QString data = vboxGlobal().toCOMPortName(port.GetIRQ(), port.GetIOBase()) + ", ";
                     if (mode == KPortMode_HostPipe || mode == KPortMode_HostDevice || mode == KPortMode_RawFile)
-                        data += QString("%1 (<nobr>%2</nobr>)").arg(gCOMenum->toString(mode)).arg(QDir::toNativeSeparators(port.GetPath()));
+                        data += QString("%1 (<nobr>%2</nobr>)").arg(gpConverter->toString(mode)).arg(QDir::toNativeSeparators(port.GetPath()));
                     else
-                        data += gCOMenum->toString(mode);
+                        data += gpConverter->toString(mode);
 
                     item += QString(sSectionItemTpl2).arg(tr("Port %1", "details report (serial ports)").arg(port.GetSlot() + 1))
                                                      .arg(data);

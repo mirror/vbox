@@ -47,6 +47,7 @@
 #include "VBoxVMInformationDlg.h"
 #include "UISettingsDialogSpecific.h"
 #include "UIVMLogViewer.h"
+#include "UIConverter.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataEventHandler.h"
@@ -1152,7 +1153,7 @@ void UIMachineLogic::sltPrepareStorageMenu()
             {
                 pAttachmentMenu = new QMenu(pMenu);
                 pAttachmentMenu->setTitle(QString("%1 (%2)").arg(controller.GetName())
-                                          .arg(vboxGlobal().toString(StorageSlot(controller.GetBus(),
+                                          .arg(gpConverter->toString(StorageSlot(controller.GetBus(),
                                                                                  attachment.GetPort(),
                                                                                  attachment.GetDevice()))));
                 switch (controller.GetBus())

@@ -34,7 +34,6 @@
 
 /* COM includes: */
 #include "VBox/com/Guid.h"
-#include "COMEnums.h"
 #include "CHost.h"
 #include "CVirtualBox.h"
 #include "CSession.h"
@@ -49,25 +48,6 @@ class CMachine;
 class CMedium;
 class CUSBDevice;
 
-struct StorageSlot
-{
-    StorageSlot() : bus (KStorageBus_Null), port (0), device (0) {}
-    StorageSlot (const StorageSlot &aOther) : bus (aOther.bus), port (aOther.port), device (aOther.device) {}
-    StorageSlot (KStorageBus aBus, LONG aPort, LONG aDevice) : bus (aBus), port (aPort), device (aDevice) {}
-    StorageSlot& operator= (const StorageSlot &aOther) { bus = aOther.bus; port = aOther.port; device = aOther.device; return *this; }
-    bool operator== (const StorageSlot &aOther) const { return bus == aOther.bus && port == aOther.port && device == aOther.device; }
-    bool operator!= (const StorageSlot &aOther) const { return bus != aOther.bus || port != aOther.port || device != aOther.device; }
-    bool operator< (const StorageSlot &aOther) const { return (bus < aOther.bus) ||
-                                                              (bus == aOther.bus && port < aOther.port) ||
-                                                              (bus == aOther.bus && port == aOther.port && device < aOther.device); }
-    bool operator> (const StorageSlot &aOther) const { return (bus > aOther.bus) ||
-                                                              (bus == aOther.bus && port > aOther.port) ||
-                                                              (bus == aOther.bus && port == aOther.port && device > aOther.device); }
-    bool isNull() { return bus == KStorageBus_Null; }
-    KStorageBus bus; LONG port; LONG device;
-};
-Q_DECLARE_METATYPE (StorageSlot);
-
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -80,8 +60,6 @@ class VBoxGlobal : public QObject
     Q_OBJECT
 
 public:
-
-    typedef QHash <ulong, QString> QULongStringHash;
 
     static VBoxGlobal &instance();
 
@@ -207,9 +185,6 @@ public:
     {
         return tr("%n second(s)", "", cVal);
     }
-
-    QString toString (StorageSlot aSlot) const;
-    StorageSlot toStorageSlot (const QString &aSlot) const;
 
     QString differencingMediumTypeName() const { return mDiskTypes_Differencing; }
 
@@ -546,8 +521,6 @@ private:
     QHash <QString, QPixmap *> mOsTypeIcons;
 
     QPixmap mOfflineSnapshotIcon, mOnlineSnapshotIcon;
-
-    QULongStringHash mSlotTemplates;
 
     QString mDiskTypes_Differencing;
 

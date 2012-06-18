@@ -37,7 +37,7 @@
 #include "QITableView.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* Other VBox includes: */
 #include <iprt/cidr.h>
@@ -110,8 +110,8 @@ public:
 
     ProtocolEditor(QWidget *pParent = 0) : QComboBox(pParent)
     {
-        addItem(gCOMenum->toString(KNATProtocol_UDP), QVariant::fromValue(KNATProtocol_UDP));
-        addItem(gCOMenum->toString(KNATProtocol_TCP), QVariant::fromValue(KNATProtocol_TCP));
+        addItem(gpConverter->toString(KNATProtocol_UDP), QVariant::fromValue(KNATProtocol_UDP));
+        addItem(gpConverter->toString(KNATProtocol_TCP), QVariant::fromValue(KNATProtocol_TCP));
     }
 
 private:
@@ -283,7 +283,7 @@ public:
                 switch (index.column())
                 {
                     case UIPortForwardingDataType_Name: return m_dataList[index.row()].name;
-                    case UIPortForwardingDataType_Protocol: return gCOMenum->toString(m_dataList[index.row()].protocol);
+                    case UIPortForwardingDataType_Protocol: return gpConverter->toString(m_dataList[index.row()].protocol);
                     case UIPortForwardingDataType_HostIp: return m_dataList[index.row()].hostIp;
                     case UIPortForwardingDataType_HostPort: return m_dataList[index.row()].hostPort.value();
                     case UIPortForwardingDataType_GuestIp: return m_dataList[index.row()].guestIp;

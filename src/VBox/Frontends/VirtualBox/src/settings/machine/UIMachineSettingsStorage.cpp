@@ -35,7 +35,7 @@
 #include "QIFileDialog.h"
 #include "UIMessageCenter.h"
 #include "UIMachineSettingsStorage.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CStorageController.h"
@@ -549,8 +549,8 @@ QString ControllerItem::tip() const
                                  "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
                                  "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
                                  .arg (mCtrName)
-                                 .arg (gCOMenum->toString (mCtrType->busType()))
-                                 .arg (gCOMenum->toString (mCtrType->ctrType()));
+                                 .arg (gpConverter->toString (mCtrType->busType()))
+                                 .arg (gpConverter->toString (mCtrType->ctrType()));
 }
 
 QPixmap ControllerItem::pixmap (ItemState aState)
@@ -2125,7 +2125,7 @@ bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strT
             StorageSlot attSlot = mStorageModel->data (attIndex, StorageModel::R_AttSlot).value <StorageSlot>();
             KDeviceType attDevice = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
             QString key (mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString());
-            QString value (QString ("%1 (%2)").arg (ctrName, vboxGlobal().toString (attSlot)));
+            QString value (QString ("%1 (%2)").arg (ctrName, gpConverter->toString (attSlot)));
             /* Check for emptiness */
             if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
             {
@@ -2152,7 +2152,7 @@ bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strT
         if (currentType[(KStorageBus)iStorageBusType] > maximumType[(KStorageBus)iStorageBusType])
         {
             QString strExcessiveRecord = QString("%1 (%2)");
-            strExcessiveRecord = strExcessiveRecord.arg(QString("<b>%1</b>").arg(gCOMenum->toString((KStorageBus)iStorageBusType)));
+            strExcessiveRecord = strExcessiveRecord.arg(QString("<b>%1</b>").arg(gpConverter->toString((KStorageBus)iStorageBusType)));
             strExcessiveRecord = strExcessiveRecord.arg(maximumType[(KStorageBus)iStorageBusType] == 1 ?
                                                         tr("at most one supported", "controller") :
                                                         tr("up to %1 supported", "controllers").arg(maximumType[(KStorageBus)iStorageBusType]));
@@ -2164,7 +2164,7 @@ bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strT
         strWarning = tr("you are currently using more storage controllers than a %1 chipset supports. "
                         "Please change the chipset type on the System settings page or reduce the number "
                         "of the following storage controllers on the Storage settings page: %2.")
-                        .arg(gCOMenum->toString(mStorageModel->chipsetType()))
+                        .arg(gpConverter->toString(mStorageModel->chipsetType()))
                         .arg(excessiveList.join(", "));
         return false;
     }
@@ -2430,9 +2430,9 @@ void UIMachineSettingsStorage::getInformation()
                 mCbType->clear();
                 ControllerTypeList controllerTypeList (mStorageModel->data (index, StorageModel::R_CtrTypes).value <ControllerTypeList>());
                 for (int i = 0; i < controllerTypeList.size(); ++ i)
-                    mCbType->insertItem (mCbType->count(), gCOMenum->toString (controllerTypeList [i]));
+                    mCbType->insertItem (mCbType->count(), gpConverter->toString (controllerTypeList [i]));
                 KStorageControllerType type = mStorageModel->data (index, StorageModel::R_CtrType).value <KStorageControllerType>();
-                int ctrPos = mCbType->findText (gCOMenum->toString (type));
+                int ctrPos = mCbType->findText (gpConverter->toString (type));
                 mCbType->setCurrentIndex (ctrPos == -1 ? 0 : ctrPos);
 
                 KStorageBus bus = mStorageModel->data (index, StorageModel::R_CtrBusType).value <KStorageBus>();
@@ -2454,9 +2454,9 @@ void UIMachineSettingsStorage::getInformation()
                 mCbSlot->clear();
                 SlotsList slotsList (mStorageModel->data (index, StorageModel::R_AttSlots).value <SlotsList>());
                 for (int i = 0; i < slotsList.size(); ++ i)
-                    mCbSlot->insertItem (mCbSlot->count(), vboxGlobal().toString (slotsList [i]));
+                    mCbSlot->insertItem (mCbSlot->count(), gpConverter->toString (slotsList [i]));
                 StorageSlot slt = mStorageModel->data (index, StorageModel::R_AttSlot).value <StorageSlot>();
-                int attSlotPos = mCbSlot->findText (vboxGlobal().toString (slt));
+                int attSlotPos = mCbSlot->findText (gpConverter->toString (slt));
                 mCbSlot->setCurrentIndex (attSlotPos == -1 ? 0 : attSlotPos);
                 mCbSlot->setToolTip (mCbSlot->itemText (mCbSlot->currentIndex()));
 
@@ -2550,7 +2550,7 @@ void UIMachineSettingsStorage::setInformation()
                 mStorageModel->setData (index, mLeName->text(), StorageModel::R_CtrName);
             /* Setting Controller Sub-Type */
             else if (sdr == mCbType)
-                mStorageModel->setData (index, QVariant::fromValue (gCOMenum->toControllerType (mCbType->currentText())),
+                mStorageModel->setData (index, QVariant::fromValue (gpConverter->fromString<KStorageControllerType> (mCbType->currentText())),
                                         StorageModel::R_CtrType);
             else if (sdr == mSbPortCount)
                 mStorageModel->setData (index, mSbPortCount->value(), StorageModel::R_CtrPortCount);
@@ -2564,7 +2564,7 @@ void UIMachineSettingsStorage::setInformation()
             if (sdr == mCbSlot)
             {
                 QModelIndex controllerIndex = mStorageModel->parent(index);
-                StorageSlot attachmentStorageSlot = vboxGlobal().toStorageSlot(mCbSlot->currentText());
+                StorageSlot attachmentStorageSlot = gpConverter->fromString<StorageSlot>(mCbSlot->currentText());
                 mStorageModel->setData(index, QVariant::fromValue(attachmentStorageSlot), StorageModel::R_AttSlot);
                 QModelIndex theSameIndexAtNewPosition = mStorageModel->attachmentBySlot(controllerIndex, attachmentStorageSlot);
                 AssertMsg(theSameIndexAtNewPosition.isValid(), ("Current attachment disappears!\n"));

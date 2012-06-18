@@ -30,7 +30,7 @@
 #include "UIToolBar.h"
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsUSBFilterDetails.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -820,7 +820,7 @@ void UIMachineSettingsUSB::edtClicked()
         {
             case UISettingsPageType_Global:
             {
-                usbFilterData.m_action = gCOMenum->toUSBDevFilterAction(dlgFilterDetails.mCbAction->currentText());
+                usbFilterData.m_action = gpConverter->fromString<KUSBDeviceFilterAction>(dlgFilterDetails.mCbAction->currentText());
                 break;
             }
             case UISettingsPageType_Machine:
@@ -1019,7 +1019,7 @@ QString UIMachineSettingsUSB::toolTipFor(const UIDataSettingsMachineUSBFilter &u
     if (usbFilterData.m_fHostUSBDevice)
     {
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>State: %1</nobr>", "USB filter tooltip")
-                                                          .arg(gCOMenum->toString(usbFilterData.m_hostUSBDeviceState));
+                                                          .arg(gpConverter->toString(usbFilterData.m_hostUSBDeviceState));
     }
 
     return strToolTip;
