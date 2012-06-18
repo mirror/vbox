@@ -23,6 +23,9 @@
 #include <QEvent>
 #include <QStringList>
 
+/* COM includes: */
+#include "COMEnums.h"
+
 /* Other VBox defines: */
 #define LOG_GROUP LOG_GROUP_GUI
 
@@ -205,6 +208,25 @@ namespace UIDefs
     extern QStringList OVFFileExts;
 }
 using namespace UIDefs /* globally */;
+
+struct StorageSlot
+{
+    StorageSlot() : bus(KStorageBus_Null), port(0), device(0) {}
+    StorageSlot(const StorageSlot &other) : bus(other.bus), port(other.port), device(other.device) {}
+    StorageSlot(KStorageBus otherBus, LONG iPort, LONG iDevice) : bus(otherBus), port(iPort), device(iDevice) {}
+    StorageSlot& operator=(const StorageSlot &other) { bus = other.bus; port = other.port; device = other.device; return *this; }
+    bool operator==(const StorageSlot &other) const { return bus == other.bus && port == other.port && device == other.device; }
+    bool operator!=(const StorageSlot &other) const { return bus != other.bus || port != other.port || device != other.device; }
+    bool operator<(const StorageSlot &other) const { return (bus <  other.bus) ||
+                                                            (bus == other.bus && port <  other.port) ||
+                                                            (bus == other.bus && port == other.port && device < other.device); }
+    bool operator>(const StorageSlot &other) const { return (bus >  other.bus) ||
+                                                            (bus == other.bus && port >  other.port) ||
+                                                            (bus == other.bus && port == other.port && device > other.device); }
+    bool isNull() const { return bus == KStorageBus_Null; }
+    KStorageBus bus; LONG port; LONG device;
+};
+Q_DECLARE_METATYPE(StorageSlot);
 
 #endif // __UIDefs_h__
 

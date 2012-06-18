@@ -36,7 +36,7 @@
 #include "UIMouseHandler.h"
 #include "UISession.h"
 #include "UIVMCloseDialog.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -608,7 +608,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         }
         QString strMachineName = m.GetName() + strSnapshotName;
         if (state != KMachineState_Null)
-            strMachineName += " [" + gCOMenum->toString(state) + "]";
+            strMachineName += " [" + gpConverter->toString(state) + "]";
         /* Unusual on the Mac. */
 #ifndef Q_WS_MAC
         strMachineName += " - " + defaultWindowTitle();

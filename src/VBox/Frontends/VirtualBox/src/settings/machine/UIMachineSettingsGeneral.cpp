@@ -25,7 +25,7 @@
 #include "UIMachineSettingsGeneral.h"
 #include "UIMessageCenter.h"
 #include "QIWidgetValidator.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : mValidator(0)
@@ -240,10 +240,10 @@ void UIMachineSettingsGeneral::retranslateUi()
                                    "space."));
 
     /* Shared Clipboard mode */
-    mCbClipboard->setItemText (0, gCOMenum->toString (KClipboardMode_Disabled));
-    mCbClipboard->setItemText (1, gCOMenum->toString (KClipboardMode_HostToGuest));
-    mCbClipboard->setItemText (2, gCOMenum->toString (KClipboardMode_GuestToHost));
-    mCbClipboard->setItemText (3, gCOMenum->toString (KClipboardMode_Bidirectional));
+    mCbClipboard->setItemText (0, gpConverter->toString (KClipboardMode_Disabled));
+    mCbClipboard->setItemText (1, gpConverter->toString (KClipboardMode_HostToGuest));
+    mCbClipboard->setItemText (2, gpConverter->toString (KClipboardMode_GuestToHost));
+    mCbClipboard->setItemText (3, gpConverter->toString (KClipboardMode_Bidirectional));
 }
 
 void UIMachineSettingsGeneral::polishPage()

@@ -29,7 +29,7 @@
 #include "UIMessageCenter.h"
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* Constructor: */
 UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumId)
@@ -125,7 +125,7 @@ void UIMediumTypeChangeDialog::retranslateUi()
     /* Translate radio-buttons: */
     QList<QRadioButton*> buttons = findChildren<QRadioButton*>();
     for (int i = 0; i < buttons.size(); ++i)
-        buttons[i]->setText(gCOMenum->toString(buttons[i]->property("mediumType").value<KMediumType>()));
+        buttons[i]->setText(gpConverter->toString(buttons[i]->property("mediumType").value<KMediumType>()));
 }
 
 void UIMediumTypeChangeDialog::sltValidate()

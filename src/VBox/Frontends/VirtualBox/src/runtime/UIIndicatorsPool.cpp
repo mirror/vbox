@@ -25,7 +25,7 @@
 #include "VBoxGlobal.h"
 #include "UIMachineDefs.h"
 #include "QIWithRetranslateUI.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -87,7 +87,7 @@ public:
                 if (attachment.GetType() != KDeviceType_HardDisk)
                     continue;
                 strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
-                    .arg(vboxGlobal().toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
+                    .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg(UIMedium(attachment.GetMedium(), UIMediumType_HardDisk).location());
                 fAttachmentsPresent = true;
             }
@@ -156,7 +156,7 @@ public:
                     continue;
                 UIMedium vboxMedium(attachment.GetMedium(), UIMediumType_DVD);
                 strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
-                    .arg(vboxGlobal().toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
+                    .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
                 fAttachmentsPresent = true;
                 if (!vboxMedium.isNull())
@@ -227,7 +227,7 @@ public:
                     continue;
                 UIMedium vboxMedium(attachment.GetMedium(), UIMediumType_Floppy);
                 strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
-                    .arg(vboxGlobal().toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
+                    .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
                 fAttachmentsPresent = true;
                 if (!vboxMedium.isNull())
@@ -327,7 +327,7 @@ public:
                 strFullData += QApplication::translate("UIIndicatorsPool",
                                "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg(uSlot + 1)
-                    .arg(gCOMenum->toString(adapter.GetAttachmentType()))
+                    .arg(gpConverter->toString(adapter.GetAttachmentType()))
                     .arg(strGuestIp.isEmpty() ? "" : "IP " + strGuestIp + ", ")
                     .arg(adapter.GetCableConnected() ?
                          QApplication::translate("UIIndicatorsPool", "connected", "Network adapters tooltip") :

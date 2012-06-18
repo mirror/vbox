@@ -22,7 +22,7 @@
 
 /* Local includes */
 #include "UIBootTable.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 UIBootTableItem::UIBootTableItem(KDeviceType type)
   : m_type(type)
@@ -61,7 +61,7 @@ KDeviceType UIBootTableItem::type() const
 
 void UIBootTableItem::retranslateUi()
 {
-    setText(gCOMenum->toString(m_type));
+    setText(gpConverter->toString(m_type));
 }
 
 UIBootTable::UIBootTable(QWidget *pParent /* = 0 */)

@@ -19,7 +19,7 @@
 
 /* GUI includes: */
 #include "UIMachineSettingsAudio.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CAudioAdapter.h"
@@ -71,8 +71,8 @@ void UIMachineSettingsAudio::getFromCache()
 
     /* Load audio data to page: */
     mGbAudio->setChecked(audioData.m_fAudioEnabled);
-    mCbAudioDriver->setCurrentIndex(mCbAudioDriver->findText(gCOMenum->toString(audioData.m_audioDriverType)));
-    mCbAudioController->setCurrentIndex(mCbAudioController->findText(gCOMenum->toString(audioData.m_audioControllerType)));
+    mCbAudioDriver->setCurrentIndex(mCbAudioDriver->findText(gpConverter->toString(audioData.m_audioDriverType)));
+    mCbAudioController->setCurrentIndex(mCbAudioController->findText(gpConverter->toString(audioData.m_audioControllerType)));
 
     /* Polish page finally: */
     polishPage();
@@ -87,8 +87,8 @@ void UIMachineSettingsAudio::putToCache()
 
     /* Gather audio data: */
     audioData.m_fAudioEnabled = mGbAudio->isChecked();
-    audioData.m_audioDriverType = gCOMenum->toAudioDriverType(mCbAudioDriver->currentText());
-    audioData.m_audioControllerType = gCOMenum->toAudioControllerType(mCbAudioController->currentText());
+    audioData.m_audioDriverType = gpConverter->fromString<KAudioDriverType>(mCbAudioDriver->currentText());
+    audioData.m_audioControllerType = gpConverter->fromString<KAudioControllerType>(mCbAudioController->currentText());
 
     /* Cache audio data: */
     m_cache.cacheCurrentData(audioData);
@@ -147,32 +147,32 @@ void UIMachineSettingsAudio::prepareComboboxes()
     /* Clear the driver box */
     mCbAudioDriver->clear();
     /* Refill them */
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_Null));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_Null));
 #if defined Q_WS_WIN32
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_DirectSound));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_DirectSound));
 # ifdef VBOX_WITH_WINMM
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_WinMM));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_WinMM));
 # endif
 #endif
 #if defined Q_OS_SOLARIS
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_SolAudio));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_SolAudio));
 # if defined VBOX_WITH_SOLARIS_OSS
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_OSS));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_OSS));
 #endif
 #endif
 #if defined Q_OS_LINUX || defined Q_OS_FREEBSD
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_OSS));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_OSS));
 # ifdef VBOX_WITH_PULSE
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_Pulse));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_Pulse));
 # endif
 #endif
 #if defined Q_OS_LINUX
 # ifdef VBOX_WITH_ALSA
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_ALSA));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_ALSA));
 # endif
 #endif
 #if defined Q_OS_MACX
-    mCbAudioDriver->addItem (gCOMenum->toString (KAudioDriverType_CoreAudio));
+    mCbAudioDriver->addItem (gpConverter->toString (KAudioDriverType_CoreAudio));
 #endif
     /* Set the old value */
     mCbAudioDriver->setCurrentIndex (currentDriver);
@@ -183,11 +183,11 @@ void UIMachineSettingsAudio::prepareComboboxes()
     mCbAudioController->clear();
     /* Refill them */
     mCbAudioController->insertItem (mCbAudioController->count(),
-        gCOMenum->toString (KAudioControllerType_HDA));
+        gpConverter->toString (KAudioControllerType_HDA));
     mCbAudioController->insertItem (mCbAudioController->count(),
-        gCOMenum->toString (KAudioControllerType_AC97));
+        gpConverter->toString (KAudioControllerType_AC97));
     mCbAudioController->insertItem (mCbAudioController->count(),
-        gCOMenum->toString (KAudioControllerType_SB16));
+        gpConverter->toString (KAudioControllerType_SB16));
     /* Set the old value */
     mCbAudioController->setCurrentIndex (currentController);
 }

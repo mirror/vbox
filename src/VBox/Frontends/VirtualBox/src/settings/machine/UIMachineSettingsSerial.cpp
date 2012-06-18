@@ -25,7 +25,7 @@
 #include "QIWidgetValidator.h"
 #include "VBoxGlobal.h"
 #include "QITabWidget.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 
 /* COM includes: */
 #include "CSerialPort.h"
@@ -75,7 +75,7 @@ void UIMachineSettingsSerial::polishTab()
 {
     ulong uIRQ, uIOBase;
     bool fStd = vboxGlobal().toCOMPortNumbers(mCbNumber->currentText(), uIRQ, uIOBase);
-    KPortMode mode = gCOMenum->toPortMode(mCbMode->currentText());
+    KPortMode mode = gpConverter->fromString<KPortMode>(mCbMode->currentText());
 
     mGbSerial->setEnabled(m_pParent->isMachineOffline());
     mLbNumber->setEnabled(m_pParent->isMachineOffline());
@@ -104,7 +104,7 @@ void UIMachineSettingsSerial::fetchPortData(const UICacheSettingsMachineSerialPo
     mCbNumber->setCurrentIndex(mCbNumber->findText(vboxGlobal().toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
     mLeIRQ->setText(QString::number(portData.m_uIRQ));
     mLeIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
-    mCbMode->setCurrentIndex(mCbMode->findText(gCOMenum->toString(portData.m_hostMode)));
+    mCbMode->setCurrentIndex(mCbMode->findText(gpConverter->toString(portData.m_hostMode)));
     mCbPipe->setChecked(portData.m_fServer);
     mLePath->setText(portData.m_strPath);
 
@@ -122,7 +122,7 @@ void UIMachineSettingsSerial::uploadPortData(UICacheSettingsMachineSerialPort &p
     portData.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
     portData.m_uIOBase = mLeIOPort->text().toULong (NULL, 0);
     portData.m_fServer = mCbPipe->isChecked();
-    portData.m_hostMode = gCOMenum->toPortMode(mCbMode->currentText());
+    portData.m_hostMode = gpConverter->fromString<KPortMode>(mCbMode->currentText());
     portData.m_strPath = QDir::toNativeSeparators(mLePath->text());
 
     /* Cache port data to port cache: */
@@ -172,10 +172,10 @@ void UIMachineSettingsSerial::retranslateUi()
 
     mCbNumber->setItemText (mCbNumber->count() - 1, vboxGlobal().toCOMPortName (0, 0));
 
-    mCbMode->setItemText (3, gCOMenum->toString (KPortMode_RawFile));
-    mCbMode->setItemText (2, gCOMenum->toString (KPortMode_HostDevice));
-    mCbMode->setItemText (1, gCOMenum->toString (KPortMode_HostPipe));
-    mCbMode->setItemText (0, gCOMenum->toString (KPortMode_Disconnected));
+    mCbMode->setItemText (3, gpConverter->toString (KPortMode_RawFile));
+    mCbMode->setItemText (2, gpConverter->toString (KPortMode_HostDevice));
+    mCbMode->setItemText (1, gpConverter->toString (KPortMode_HostPipe));
+    mCbMode->setItemText (0, gpConverter->toString (KPortMode_Disconnected));
 }
 
 void UIMachineSettingsSerial::mGbSerialToggled (bool aOn)
@@ -205,7 +205,7 @@ void UIMachineSettingsSerial::mCbNumberActivated (const QString &aText)
 
 void UIMachineSettingsSerial::mCbModeActivated (const QString &aText)
 {
-    KPortMode mode = gCOMenum->toPortMode (aText);
+    KPortMode mode = gpConverter->fromString<KPortMode> (aText);
     mCbPipe->setEnabled (mode == KPortMode_HostPipe);
     mLePath->setEnabled (mode != KPortMode_Disconnected);
     if (mValidator)
@@ -408,7 +408,7 @@ bool UIMachineSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle
 
         /* Check the port path emptiness & unicity */
         KPortMode mode =
-            gCOMenum->toPortMode (page->mCbMode->currentText());
+            gpConverter->fromString<KPortMode> (page->mCbMode->currentText());
         if (mode != KPortMode_Disconnected)
         {
             QString path = page->mLePath->text();

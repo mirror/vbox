@@ -28,7 +28,7 @@
 /* GUI includes: */
 #include "UIVMItem.h"
 #include "VBoxGlobal.h"
-#include "COMEnumsWrapper.h"
+#include "UIConverter.h"
 #ifdef Q_WS_MAC
 # include <ApplicationServices/ApplicationServices.h>
 #endif /* Q_WS_MAC */
@@ -160,19 +160,19 @@ QIcon UIVMItem::osIcon() const
 
 QString UIVMItem::machineStateName() const
 {
-    return m_fAccessible ? gCOMenum->toString(m_machineState) :
+    return m_fAccessible ? gpConverter->toString(m_machineState) :
            QApplication::translate("UIVMListView", "Inaccessible");
 }
 
 QIcon UIVMItem::machineStateIcon() const
 {
-    return m_fAccessible ? gCOMenum->toIcon(m_machineState) :
+    return m_fAccessible ? gpConverter->toPixmap(m_machineState) :
                            QPixmap(":/state_aborted_16px.png");
 }
 
 QString UIVMItem::sessionStateName() const
 {
-    return m_fAccessible ? gCOMenum->toString(m_sessionState) :
+    return m_fAccessible ? gpConverter->toString(m_sessionState) :
            QApplication::translate("UIVMListView", "Inaccessible");
 }
 
@@ -195,9 +195,9 @@ QString UIVMItem::toolTipText() const
             "<nobr>Session %4</nobr>",
             "VM tooltip (name, last state change, session state)")
             .arg(toolTip)
-            .arg(gCOMenum->toString(m_machineState))
+            .arg(gpConverter->toString(m_machineState))
             .arg(dateTime)
-            .arg(gCOMenum->toString(m_sessionState));
+            .arg(gpConverter->toString(m_sessionState));
     }
     else
     {
