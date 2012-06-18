@@ -4959,6 +4959,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                 memmove(pState->aTxDescriptors,
                         &pState->aTxDescriptors[pState->iTxDCurrent],
                         u8Remain * sizeof(E1KTXDESC));
+                pState->iTxDCurrent = 0;
                 pState->nTxDFetched = u8Remain;
                 e1kTxDLoadMore(pState);
                 fIncomplete = true;
