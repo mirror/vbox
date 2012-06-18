@@ -7074,7 +7074,7 @@ void device_cleanup_durtify_texture_target(IWineD3DDeviceImpl *This, GLuint text
     /* dirtify */
     for (i = 0; i < gl_info->limits.textures; ++i)
     {
-        DWORD active_sampler = This->rev_tex_unit_map[GL_TEXTURE0_ARB + i];
+        DWORD active_sampler = This->rev_tex_unit_map[i];
 
         if (active_sampler != WINED3D_UNMAPPED_STAGE)
         {
