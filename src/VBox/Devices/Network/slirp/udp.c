@@ -293,14 +293,30 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         LogRel(("NAT: Error (%s) occurred while setting TTL(%d) attribute "
                 "of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
 
-    if (sosendto(pData, so, m) == -1)
+    if (   sosendto(pData, so, m) == -1
+        && (   errno != EAGAIN
+            && errno != EWOULDBLOCK
+            && errno != EINPROGRESS
+            && errno != ENOTCONN))
     {
         m->m_len += iphlen;
         m->m_data -= iphlen;
         *ip = save_ip;
         Log2(("NAT: UDP tx errno = %d (%s) on sent to %RTnaipv4\n",
               errno, strerror(errno), ip->ip_dst));
-        icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
+#if 0
+        /* ICMP_SOURCEQUENCH haven't got any effect, the idea here 
+         * inform guest about the exosting NAT resources with assumption that 
+         * that guest reduce traffic. But it doesn't work 
+         */
+        if(    errno == EAGAIN
+            || errno == EWOULDBLOCK
+            || errno == EINPROGRESS
+            || errno == ENOTCONN)
+            icmp_error(pData, m, ICMP_SOURCEQUENCH, 0, 1, strerror(errno));
+        else
+#endif
+            icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         so->so_m = NULL;
         LogFlowFuncLeave();
         return;
