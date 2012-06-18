@@ -102,18 +102,20 @@ fd_nonblock(int fd)
 # endif
 }
 
-# if !defined(VBOX_NAT_MEM_DEBUG) && defined(LOG_ENABLED)
-#  undef LogFlowFunc
-#  define LogFlowFunc(x)
+# if !defined(VBOX_NAT_MEM_DEBUG)
+#  if defined (LOG_ENABLED)
+#   undef LogFlowFunc
+#   define LogFlowFunc(x)
 
-#  undef LogFlowFuncEnter
-#  define LogFlowFuncEnter()
+#   undef LogFlowFuncEnter
+#   define LogFlowFuncEnter()
 
-#  undef LogFlowFuncLeave
-#  define LogFlowFuncLeave()
+#   undef LogFlowFuncLeave
+#   define LogFlowFuncLeave()
 
-#  undef Log2
-#  define Log2(x)
+#   undef Log2
+#   define Log2(x)
+#  endif /* !LOG_ENABLED */
 # else /* VBOX_NAT_MEM_DEBUG */
 # define NAT_MEM_LOG_ENABLED
 # endif
