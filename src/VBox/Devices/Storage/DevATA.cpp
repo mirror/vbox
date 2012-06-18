@@ -5012,10 +5012,14 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
                 dmalen = RT_MIN(cbBuffer, iIOBufferEnd - iIOBufferCur);
                 Log2(("%s: DMA desc %#010x: addr=%#010x size=%#010x orig_size=%#010x\n", __FUNCTION__,
                        (int)pDesc, pBuffer, cbBuffer, RT_LE2H_U32(DMADesc.cbBuffer) & 0xfffe));
+
+                PCIATAState *pATAState = PDMINS_2_DATA(pDevIns, PCIATAState *);
+                AssertPtr(pATAState);
                 if (uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
-                    PDMDevHlpPhysWrite(pDevIns, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
+                    PCIDevPhysWrite(&pATAState->dev, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
                 else
-                    PDMDevHlpPhysRead(pDevIns, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
+                    PCIDevPhysRead(&pATAState->dev, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
+
                 iIOBufferCur += dmalen;
                 cbTotalTransfer -= dmalen;
                 cbBuffer -= dmalen;
@@ -5738,9 +5742,16 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
-    int rc;
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    bool fBm = PCIDevIsBusmaster(&pThis->dev);
+#ifdef DEBUG_andy
+    Log2(("%s: Ctl#%d: Bus master = %RTbool\n",
+          __FUNCTION__, ATACONTROLLER_IDX(pCtl), fBm));
+#endif
+    if (!fBm)
+        return VINF_SUCCESS; /** @todo Correct? */
+
+    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
     switch (VAL(Port, cb))
@@ -5772,9 +5783,16 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
-    int rc;
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    bool fBm = PCIDevIsBusmaster(&pThis->dev);
+#ifdef DEBUG_andy
+    Log2(("%s: Ctl#%d: Bus master = %RTbool\n",
+          __FUNCTION__, ATACONTROLLER_IDX(pCtl), fBm));
+#endif
+    if (!fBm)
+        return VINF_SUCCESS; /** @todo Correct? */
+
+    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
     switch (VAL(Port, cb))
