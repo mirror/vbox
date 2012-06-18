@@ -1378,7 +1378,11 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
 
                         /* Take action if we're supposed to attach it to a VM. */
                         if (mUniState == kHostUSBDeviceState_AttachingToVM)
+                        {
+                            alock.release();
                             attachToVM(mMachine, mMaskedIfs);
+                            alock.acquire();
+                        }
                         break;
 
                     /* Can only mean that we've failed capturing it. */
@@ -1467,7 +1471,6 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
     }
 
     return fIsImportant;
-
 }
 
 
