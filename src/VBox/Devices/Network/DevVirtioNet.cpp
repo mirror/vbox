@@ -1073,7 +1073,11 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
     vpciSetWriteLed(&pState->VPCI, true);
 
     VQUEUEELEM elem;
-    while (vqueueGet(&pState->VPCI, pQueue, &elem))
+    /*
+     * Do not remove descriptors from available ring yet, try to allocate the
+     * buffer first.
+     */
+    while (vqueuePeek(&pState->VPCI, pQueue, &elem))
     {
         unsigned int uOffset = 0;
         if (elem.nOut < 2 || elem.aSegsOut[0].cb != uHdrLen)
@@ -1164,12 +1168,20 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
                     rc = pState->pDrv->pfnSendBuf(pState->pDrv, pSgBuf, false);
                 }
                 else
-                    LogRel(("virtio-net: failed to allocate SG buffer: size=%u rc=%Rrc\n", uSize, rc));
+                {
+                    Log4(("virtio-net: failed to allocate SG buffer: size=%u rc=%Rrc\n", uSize, rc));
+                    STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
+                    STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
+                    /* Stop trying to fetch TX descriptors until we get more bandwidth. */
+                    break;
+                }
 
                 STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
                 STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
             }
         }
+        /* Remove this descriptor chain from the available ring */
+        vqueueSkip(&pState->VPCI, pQueue);
         vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
         vqueueSync(&pState->VPCI, pQueue);
         STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
