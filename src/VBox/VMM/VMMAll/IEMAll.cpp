@@ -4842,6 +4842,9 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     pIemCpu->iNextMapping = iMemMap + 1;
     pIemCpu->cActiveMappings++;
 
+    if (   (fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_WRITE)) == (IEM_ACCESS_WHAT_STACK | IEM_ACCESS_TYPE_WRITE)
+        || (fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_WRITE)) == (IEM_ACCESS_WHAT_DATA | IEM_ACCESS_TYPE_WRITE) )
+        pIemCpu->cbWritten += cbMem;
     *ppvMem = pvMem;
     return VINF_SUCCESS;
 }
@@ -7748,6 +7751,75 @@ static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port,
 
 
 /**
+ * Updates the real CPU context structure with the context core (from the trap
+ * stack frame) before interpreting any instructions.
+ *
+ * @param   pCtx        The real CPU context.
+ * @param   pCtxCore    The trap stack CPU core context.
+ */
+DECLINLINE(void) iemCtxCoreToCtx(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore)
+{
+    PCPUMCTXCORE pDst = CPUMCTX2CORE(pCtx);
+    if (pDst != pCtxCore)
+        *pDst = *pCtxCore;
+}
+
+
+/**
+ * Updates the context core (from the trap stack frame) with the updated values
+ * from the real CPU context structure after instruction emulation.
+ *
+ * @param   pCtx        The real CPU context.
+ * @param   pCtxCore    The trap stack CPU core context.
+ */
+DECLINLINE(void) iemCtxToCtxCore(PCPUMCTXCORE pCtxCore, PCCPUMCTX pCtx)
+{
+    PCCPUMCTXCORE pSrc = CPUMCTX2CORE(pCtx);
+    if (pSrc != pCtxCore)
+        *pCtxCore = *pSrc;
+}
+
+
+/**
+ * The actual code execution bits of IEMExecOne, IEMExecOneEx, and
+ * IEMExecOneWithPrefetchedByPC.
+ *
+ * @return  Strict VBox status code.
+ * @param   pVCpu       The current virtual CPU.
+ * @param   pIemCpu     The IEM per CPU data.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu)
+{
+    uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
+    VBOXSTRICTRC rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+    if (rcStrict == VINF_SUCCESS)
+        pIemCpu->cInstructions++;
+//#ifdef DEBUG
+//    AssertMsg(pIemCpu->offOpcode == cbInstr || rcStrict != VINF_SUCCESS, ("%u %u\n", pIemCpu->offOpcode, cbInstr));
+//#endif
+
+    /* Execute the next instruction as well if a cli, pop ss or
+       mov ss, Gr has just completed successfully. */
+    if (   rcStrict == VINF_SUCCESS
+        && VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        && EMGetInhibitInterruptsPC(pVCpu) == pIemCpu->CTX_SUFF(pCtx)->rip )
+    {
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            b; IEM_OPCODE_GET_NEXT_U8(&b);
+            rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+            if (rcStrict == VINF_SUCCESS)
+                pIemCpu->cInstructions++;
+        }
+        EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
+    }
+
+    return rcStrict;
+}
+
+
+/**
  * Execute one instruction.
  *
  * @return  Strict VBox status code.
@@ -7796,38 +7868,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
      * Do the decoding and emulation.
      */
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
-    if (rcStrict != VINF_SUCCESS)
-    {
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
-        iemExecVerificationModeCheck(pIemCpu);
-#endif
-        return rcStrict;
-    }
-
-    uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
-    rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
     if (rcStrict == VINF_SUCCESS)
-        pIemCpu->cInstructions++;
-//#ifdef DEBUG
-//    AssertMsg(pIemCpu->offOpcode == cbInstr || rcStrict != VINF_SUCCESS, ("%u %u\n", pIemCpu->offOpcode, cbInstr));
-//#endif
-
-    /* Execute the next instruction as well if a cli, pop ss or
-       mov ss, Gr has just completed successfully. */
-    if (   rcStrict == VINF_SUCCESS
-        && VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-        && EMGetInhibitInterruptsPC(pVCpu) == pIemCpu->CTX_SUFF(pCtx)->rip )
-    {
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
-        if (rcStrict == VINF_SUCCESS)
-        {
-            b; IEM_OPCODE_GET_NEXT_U8(&b);
-            rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
-            if (rcStrict == VINF_SUCCESS)
-                pIemCpu->cInstructions++;
-        }
-        EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
-    }
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu);
 
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     /*
@@ -7838,6 +7880,56 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     if (rcStrict != VINF_SUCCESS)
         LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
                  pCtx->cs, pCtx->rip, pCtx->ss, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t *pcbWritten)
+{
+    PIEMCPU  pIemCpu = &pVCpu->iem.s;
+    PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
+
+    iemCtxCoreToCtx(pCtx, pCtxCore);
+    iemInitDecoder(pIemCpu);
+    uint32_t const cbOldWritten = pIemCpu->cbWritten;
+
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu);
+        if (rcStrict == VINF_SUCCESS)
+            iemCtxToCtxCore(pCtxCore, pCtx);
+        if (pcbWritten)
+            *pcbWritten = pIemCpu->cbWritten - cbOldWritten;
+    }
+    return rcStrict;
+}
+
+
+VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
+                                                         const void *pvOpcodeBytes, size_t cbOpcodeBytes)
+{
+    PIEMCPU  pIemCpu = &pVCpu->iem.s;
+    PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
+
+    iemCtxCoreToCtx(pCtx, pCtxCore);
+
+    VBOXSTRICTRC rcStrict;
+    if (cbOpcodeBytes)
+    {
+        iemInitDecoder(pIemCpu);
+        pIemCpu->cbOpcode = RT_MIN(cbOpcodeBytes, sizeof(pIemCpu->abOpcode));
+        memcpy(pIemCpu->abOpcode, pvOpcodeBytes, pIemCpu->cbOpcode);
+        rcStrict = VINF_SUCCESS;
+    }
+    else
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu);
+        if (rcStrict == VINF_SUCCESS)
+            iemCtxToCtxCore(pCtxCore, pCtx);
+    }
     return rcStrict;
 }
 
@@ -7915,36 +8007,6 @@ VMM_INT_DECL(int) IEMBreakpointSet(PVM pVM, RTGCPTR GCPtrBp)
 VMM_INT_DECL(int) IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp)
 {
     return VERR_NOT_IMPLEMENTED;
-}
-
-
-/**
- * Updates the real CPU context structure with the context core (from the trap
- * stack frame) before interpreting any instructions.
- *
- * @param   pCtx        The real CPU context.
- * @param   pCtxCore    The trap stack CPU core context.
- */
-DECLINLINE(void) iemCtxCoreToCtx(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore)
-{
-    PCPUMCTXCORE pDst = CPUMCTX2CORE(pCtx);
-    if (pDst != pCtxCore)
-        *pDst = *pCtxCore;
-}
-
-
-/**
- * Updates the context core (from the trap stack frame) with the updated values
- * from the real CPU context structure after instruction emulation.
- *
- * @param   pCtx        The real CPU context.
- * @param   pCtxCore    The trap stack CPU core context.
- */
-DECLINLINE(void) iemCtxToCtxCore(PCPUMCTXCORE pCtxCore, PCCPUMCTX pCtx)
-{
-    PCCPUMCTXCORE pSrc = CPUMCTX2CORE(pCtx);
-    if (pSrc != pCtxCore)
-        *pCtxCore = *pSrc;
 }
 
 
