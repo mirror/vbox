@@ -1075,9 +1075,12 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
                     else
                         max_constantsF = gl_info->limits.glsl_vs_float_constants - 3;
                 }
-#else
-                max_constantsF = gl_info->limits.glsl_vs_float_constants - 3;
+                else
 #endif
+                {
+                    max_constantsF = gl_info->limits.glsl_vs_float_constants - 3;
+                }
+
                 if(ctx_priv->cur_vs_args->clip_enabled)
                 {
                     max_constantsF -= gl_info->limits.clipplanes;
