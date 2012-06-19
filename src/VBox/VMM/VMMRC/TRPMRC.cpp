@@ -171,24 +171,20 @@ VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     LogRel(("FATAL ERROR: trpmRCShadowIDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(uErrorCode); NOREF(offRange);
 
-    /* If we ever get here, then the guest has executed an sidt instruction that we failed to patch. In theory this could be very bad, but
-     * there are nasty applications out there that install device drivers that mess with the guest's IDT. In those cases, it's quite ok
-     * to simply ignore the writes and pretend success.
+    /*
+     * If we ever get here, then the guest has executed an SIDT instruction
+     * that we failed to patch.  In theory this could be very bad, but there
+     * are nasty applications out there that install device drivers that mess
+     * with the guest's IDT.  In those cases, it's quite ok to simply ignore
+     * the writes and pretend success.
      */
-    RTGCPTR PC;
-    int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
-                                          (RTGCPTR)pRegFrame->eip, &PC);
+    DISSTATE Dis;
+    int rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, &Dis, NULL);
     if (rc == VINF_SUCCESS)
     {
-        DISCPUSTATE Cpu;
-        uint32_t    cbOp;
-        rc = EMInterpretDisasOneEx(pVM, pVCpu, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
-        if (rc == VINF_SUCCESS)
-        {
-            /* Just ignore the write. */
-            pRegFrame->eip += Cpu.cbInstr;
-            return VINF_SUCCESS;
-        }
+        /* Just ignore the write. */
+        pRegFrame->eip += Dis.cbInstr;
+        return VINF_SUCCESS;
     }
 
     return VERR_TRPM_SHADOW_IDT_WRITE;

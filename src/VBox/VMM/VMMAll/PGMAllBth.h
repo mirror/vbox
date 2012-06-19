@@ -905,22 +905,16 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 /*
                  * Decode the instruction.
                  */
-                RTGCPTR PC;
-                rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
-                                                  &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
-                if (rc == VINF_SUCCESS)
-                {
-                    PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
-                    uint32_t     cbOp;
-                    rc = EMInterpretDisasOneEx(pVM, pVCpu, PC, pRegFrame, pDis, &cbOp);
+                PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
+                uint32_t     cbOp;
+                rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, &cbOp);
 
-                    /* For now we'll restrict this to rep movsw/d instructions */
-                    if (    rc == VINF_SUCCESS
-                        &&  pDis->pCurInstr->opcode == OP_MOVSWD
-                        &&  (pDis->prefix & DISPREFIX_REP))
-                    {
-                        CSAMMarkPossibleCodePage(pVM, pvFault);
-                    }
+                /* For now we'll restrict this to rep movsw/d instructions */
+                if (    rc == VINF_SUCCESS
+                    &&  pDis->pCurInstr->opcode == OP_MOVSWD
+                    &&  (pDis->prefix & DISPREFIX_REP))
+                {
+                    CSAMMarkPossibleCodePage(pVM, pvFault);
                 }
             }
 #    endif  /* CSAM_DETECT_NEW_CODE_PAGES */
