@@ -4624,7 +4624,7 @@ DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE p
 
 /**
  * Reads data via bus mastering, if enabled. If no bus mastering is available,
- * this function does nothing and returns VINF_NOT_SUPPORTED.
+ * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
  *
  * @return  IPRT status code.
  */
@@ -4648,7 +4648,7 @@ DECLINLINE(int) PDMDevHlpPCIDevPhysRead(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, voi
 
 /**
  * Writes data via bus mastering, if enabled. If no bus mastering is available,
- * this function does nothing and returns VINF_NOT_SUPPORTED.
+ * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
  *
  * @return  IPRT status code.
  */
