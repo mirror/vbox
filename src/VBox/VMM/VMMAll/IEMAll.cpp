@@ -7940,7 +7940,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
         && pCtx->rip == OpcodeBytesPC)
     {
         iemInitDecoder(pIemCpu);
-        pIemCpu->cbOpcode = RT_MIN(cbOpcodeBytes, sizeof(pIemCpu->abOpcode));
+        pIemCpu->cbOpcode = (uint8_t)RT_MIN(cbOpcodeBytes, sizeof(pIemCpu->abOpcode));
         memcpy(pIemCpu->abOpcode, pvOpcodeBytes, pIemCpu->cbOpcode);
         rcStrict = VINF_SUCCESS;
     }
