@@ -659,6 +659,32 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
  */
 
 
+/**
+ * Interpret CPUID given the parameters in the CPU context
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+{
+    uint32_t iLeaf = pRegFrame->eax;
+    NOREF(pVM);
+
+    /* cpuid clears the high dwords of the affected 64 bits registers. */
+    pRegFrame->rax = 0;
+    pRegFrame->rbx = 0;
+    pRegFrame->rcx &= UINT64_C(0x00000000ffffffff);
+    pRegFrame->rdx = 0;
+
+    /* Note: operates the same in 64 and non-64 bits mode. */
+    CPUMGetGuestCpuId(pVCpu, iLeaf, &pRegFrame->eax, &pRegFrame->ebx, &pRegFrame->ecx, &pRegFrame->edx);
+    Log(("Emulate: CPUID %x -> %08x %08x %08x %08x\n", iLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Interpret RDTSC
@@ -789,8 +815,66 @@ VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
 }
 
 
+/**
+ * MONITOR Emulation.
+ */
+VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+{
+    uint32_t u32Dummy, u32ExtFeatures, cpl;
+    NOREF(pVM);
+
+    if (pRegFrame->ecx != 0)
+    {
+        Log(("emInterpretMonitor: unexpected ecx=%x -> recompiler!!\n", pRegFrame->ecx));
+        return VERR_EM_INTERPRETER; /* illegal value. */
+    }
+
+    /* Get the current privilege level. */
+    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+    if (cpl != 0)
+        return VERR_EM_INTERPRETER; /* supervisor only */
+
+    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
+    if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
+        return VERR_EM_INTERPRETER; /* not supported */
+
+    EMMonitorWaitPrepare(pVCpu, pRegFrame->rax, pRegFrame->rcx, pRegFrame->rdx);
+    return VINF_SUCCESS;
+}
+
+
 
 /* VT-x only: */
+
+/**
+ * Interpret INVLPG
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pRegFrame   The register frame.
+ * @param   pAddrGC     Operand address
+ *
+ */
+VMMDECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
+{
+    /** @todo is addr always a flat linear address or ds based
+     * (in absence of segment override prefixes)????
+     */
+    NOREF(pVM); NOREF(pRegFrame);
+#ifdef IN_RC
+    LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
+#endif
+    VBOXSTRICTRC rc = PGMInvalidatePage(pVCpu, pAddrGC);
+    if (    rc == VINF_SUCCESS
+        ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
+        return VINF_SUCCESS;
+    AssertMsgReturn(rc == VINF_EM_RAW_EMULATE_INSTR,
+                    ("%Rrc addr=%RGv\n", VBOXSTRICTRC_VAL(rc), pAddrGC),
+                    VERR_EM_INTERPRETER);
+    return rc;
+}
+
 
 /**
  * Update CRx
@@ -2438,36 +2522,6 @@ static int emInterpretWbInvd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
 
 
 /**
- * Interpret INVLPG
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pRegFrame   The register frame.
- * @param   pAddrGC     Operand address
- *
- */
-VMMDECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
-{
-    /** @todo is addr always a flat linear address or ds based
-     * (in absence of segment override prefixes)????
-     */
-    NOREF(pVM); NOREF(pRegFrame);
-#ifdef IN_RC
-    LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
-#endif
-    VBOXSTRICTRC rc = PGMInvalidatePage(pVCpu, pAddrGC);
-    if (    rc == VINF_SUCCESS
-        ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
-        return VINF_SUCCESS;
-    AssertMsgReturn(rc == VINF_EM_RAW_EMULATE_INSTR,
-                    ("%Rrc addr=%RGv\n", VBOXSTRICTRC_VAL(rc), pAddrGC),
-                    VERR_EM_INTERPRETER);
-    return rc;
-}
-
-
-/**
  * INVLPG Emulation.
  */
 static VBOXSTRICTRC emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
@@ -2510,33 +2564,6 @@ static VBOXSTRICTRC emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, 
 }
 
 /** @todo change all these EMInterpretXXX methods to VBOXSTRICTRC. */
-
-/**
- * Interpret CPUID given the parameters in the CPU context
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pRegFrame   The register frame.
- *
- */
-VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
-{
-    uint32_t iLeaf = pRegFrame->eax;
-    NOREF(pVM);
-
-    /* cpuid clears the high dwords of the affected 64 bits registers. */
-    pRegFrame->rax = 0;
-    pRegFrame->rbx = 0;
-    pRegFrame->rcx &= UINT64_C(0x00000000ffffffff);
-    pRegFrame->rdx = 0;
-
-    /* Note: operates the same in 64 and non-64 bits mode. */
-    CPUMGetGuestCpuId(pVCpu, iLeaf, &pRegFrame->eax, &pRegFrame->ebx, &pRegFrame->ecx, &pRegFrame->edx);
-    Log(("Emulate: CPUID %x -> %08x %08x %08x %08x\n", iLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
-    return VINF_SUCCESS;
-}
-
 
 /**
  * CPUID Emulation.
@@ -2833,38 +2860,12 @@ static int emInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 }
 
 
-/**
- * MONITOR Emulation.
- */
-VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
-{
-    uint32_t u32Dummy, u32ExtFeatures, cpl;
-    NOREF(pVM);
-
-    if (pRegFrame->ecx != 0)
-    {
-        Log(("emInterpretMonitor: unexpected ecx=%x -> recompiler!!\n", pRegFrame->ecx));
-        return VERR_EM_INTERPRETER; /* illegal value. */
-    }
-
-    /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-    if (cpl != 0)
-        return VERR_EM_INTERPRETER; /* supervisor only */
-
-    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
-    if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
-        return VERR_EM_INTERPRETER; /* not supported */
-
-    EMMonitorWaitPrepare(pVCpu, pRegFrame->rax, pRegFrame->rcx, pRegFrame->rdx);
-    return VINF_SUCCESS;
-}
-
 static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     NOREF(pDis); NOREF(pvFault); NOREF(pcbSize);
     return EMInterpretMonitor(pVM, pVCpu, pRegFrame);
 }
+
 
 static VBOXSTRICTRC emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
