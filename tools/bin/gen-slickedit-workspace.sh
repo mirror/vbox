@@ -797,7 +797,7 @@ my_generate_project "REM"           "src/recompiler"                        --be
     "src/recompiler/Sun/crt" \
     --end-includes \
     "src/recompiler" \
-    "src/VBox/VMM/REMInternal.h" \
+    "src/VBox/VMM/include/REMInternal.h" \
     "src/VBox/VMM/VMMAll/REMAll.cpp"
 
 # src/VBox/Additions
