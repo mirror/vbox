@@ -359,7 +359,7 @@ void UIWizardNewVDPageBasic3::sltSizeEditorTextChanged(const QString &strValue)
 void UIWizardNewVDPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVD::tr("Location and size"));
+    setTitle(UIWizardNewVD::tr("File location and size"));
 
     /* Translate widgets: */
     m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard drive file into the box below or "

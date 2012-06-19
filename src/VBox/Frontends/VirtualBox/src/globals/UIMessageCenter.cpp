@@ -2336,11 +2336,10 @@ void UIMessageCenter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent)
 {
     return message(pParent, Warning,
-        tr("<p>You didn't attach a hard drive to the new virtual machine. "
-           "The machine will not be able to boot unless you attach "
-           "a hard drive with a guest operating system or some other bootable "
-           "media to it later using the machine settings window or the Start-up "
-           "wizard.</p><p>Do you wish to continue?</p>"),
+        tr("You are about to create a new virtual machine without a hard drive. "
+           "You will not be able to install an operating system on the machine "
+           "until you add one. In the mean time you will only be able to start the "
+           "machine using a virtual optical disk or from the network."),
         0, /* pcszAutoConfirmId */
         QIMessageBox::Ok,
         QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
