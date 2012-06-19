@@ -77,6 +77,7 @@
 #define LOG_GROUP   LOG_GROUP_IEM
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/pgm.h>
+#include <internal/pgm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/tm.h>
@@ -682,7 +683,7 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
     else
     {
         uint32_t GCPtrPC32 = pCtx->eip;
-        Assert(!(GCPtrPC32 & ~(uint32_t)UINT16_MAX) || pIemCpu->enmCpuMode == IEMMODE_32BIT);
+        AssertMsg(!(GCPtrPC32 & ~(uint32_t)UINT16_MAX) || pIemCpu->enmCpuMode == IEMMODE_32BIT, ("%04x:%RX64\n", pCtx->cs, pCtx->rip));
         if (GCPtrPC32 > pCtx->csHid.u32Limit)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
         cbToTryRead = pCtx->csHid.u32Limit - GCPtrPC32 + 1;
@@ -2158,7 +2159,7 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
     /*
      * Extensive logging.
      */
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && defined(IN_RING3)
     if (LogIs3Enabled())
     {
         PVM     pVM   = IEMCPU_TO_VM(pIemCpu);
@@ -2529,7 +2530,7 @@ static void iemRecalEffOpSize64Default(PIEMCPU pIemCpu)
  * Common opcode decoders.
  *
  */
-#include <iprt/mem.h>
+//#include <iprt/mem.h>
 
 /**
  * Used to add extra details about a stub case.
@@ -2537,6 +2538,7 @@ static void iemRecalEffOpSize64Default(PIEMCPU pIemCpu)
  */
 static void iemOpStubMsg2(PIEMCPU pIemCpu)
 {
+#if defined(LOG_ENABLED) && defined(IN_RING3)
     PVM     pVM   = IEMCPU_TO_VM(pIemCpu);
     PVMCPU  pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
     char szRegs[4096];
@@ -2573,6 +2575,9 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
                        szInstr, sizeof(szInstr), NULL);
 
     RTAssertMsg2Weak("%s%s\n", szRegs, szInstr);
+#else
+    RTAssertMsg2Weak("cs:rip=%04x:%RX64\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip);
+#endif
 }
 
 
@@ -3294,7 +3299,8 @@ DECLINLINE(void) iemFpuPrepareUsage(PIEMCPU pIemCpu)
 #ifdef IN_RING3
     NOREF(pIemCpu);
 #else
-# error "Implement me"
+/** @todo RZ: FIXME */
+//# error "Implement me"
 #endif
 }
 
@@ -4408,10 +4414,23 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
      * until the end of the current page.
      */
     /** @todo need some better API. */
+#ifdef IN_RING3
     return PGMR3PhysTlbGCPhys2Ptr(IEMCPU_TO_VM(pIemCpu),
                                   GCPhysMem,
                                   RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
                                   ppvMem);
+#else
+//# error "Implement me"
+    if (fAccess & IEM_ACCESS_TYPE_WRITE)
+        return PGMPhysGCPhys2CCPtr(IEMCPU_TO_VM(pIemCpu),
+                                   GCPhysMem,
+                                   ppvMem,
+                                   /** @todo pLock */ NULL);
+    return PGMPhysGCPhys2CCPtrReadOnly(IEMCPU_TO_VM(pIemCpu),
+                                       GCPhysMem,
+                                       (void const **)ppvMem,
+                                       /** @todo pLock */ NULL);
+#endif
 }
 
 
@@ -7834,6 +7853,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 #endif
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+# ifdef IN_RING3
     if (LogIs2Enabled())
     {
         char     szInstr[256];
@@ -7860,6 +7880,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
             DBGFR3Info(pVCpu->pVMR3, "cpumguest", "verbose", NULL);
     }
     else
+# endif
         LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
                  pCtx->cs, pCtx->rip, pCtx->ss, pCtx->rsp, pCtx->eflags.u));
 #endif
@@ -7915,7 +7936,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
     iemCtxCoreToCtx(pCtx, pCtxCore);
 
     VBOXSTRICTRC rcStrict;
-    if (cbOpcodeBytes)
+    if (   cbOpcodeBytes
+        && pCtx->rip == OpcodeBytesPC)
     {
         iemInitDecoder(pIemCpu);
         pIemCpu->cbOpcode = RT_MIN(cbOpcodeBytes, sizeof(pIemCpu->abOpcode));

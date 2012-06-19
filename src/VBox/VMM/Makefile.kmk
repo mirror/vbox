@@ -431,7 +431,12 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  ifeq ($(VBOX_LDR_FMT32),lx)
   VMMRC_SOURCES += $(VMMRCImp_0_OUTDIR)/VMMRC.def
  endif
-
+ ifdef VBOX_WITH_IEM
+  VMMRC_SOURCES += \
+	VMMAll/IEMAll.cpp \
+	VMMAll/IEMAllAImpl.asm \
+	VMMAll/IEMAllAImplC.cpp
+ endif
 
  # the very last one.
  VMMRC_SOURCES += VMMRC/VMMRC99.asm
@@ -530,6 +535,12 @@ ifndef VBOX_ONLY_EXTPACKS
   VMMR0_SOURCES += \
  	VMMR0/VMMR0TripleFaultHack.cpp \
 	VMMR0/VMMR0TripleFaultHackA.asm
+ endif
+ ifdef VBOX_WITH_IEM
+  VMMR0_SOURCES += \
+	VMMAll/IEMAll.cpp \
+	VMMAll/IEMAllAImpl.asm \
+	VMMAll/IEMAllAImplC.cpp
  endif
  VMMR0_SOURCES.amd64 = \
  	VMMR0/VMMR0JmpA-amd64.asm
