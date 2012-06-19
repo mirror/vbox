@@ -162,6 +162,11 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
     else
         pCpu->fFlushASIDBeforeUse = true;
 
+    /*
+     * Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}.
+     */
+    pCpu->cTLBFlushes++;
+
     return VINF_SUCCESS;
 }
 
@@ -2447,7 +2452,8 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
     }
     else
     {
-        Assert(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID);
+        AssertMsg(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID, ("hwaccm uCurrentASID=%lu cpu uCurrentASID=%lu\n",
+                                                                       pVCpu->hwaccm.s.uCurrentASID, pCpu->uCurrentASID));
 
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hwaccmQueueInvlPage() where it is commented
@@ -2524,7 +2530,8 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
     if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
         pVCpu->hwaccm.s.fForceTLBFlush = true;
 
-    pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
+    pVCpu->hwaccm.s.idLastCpu   = pCpu->idCpu;
+    pVCpu->hwaccm.s.cTLBFlushes = pCpu->cTLBFlushes;
 
     if (pVCpu->hwaccm.s.fForceTLBFlush)
         hmR0VmxFlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushEPT);
