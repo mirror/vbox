@@ -243,7 +243,7 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM instance in question.
+ * @param   pVM         Pointer to the VM.
  * @param   uSvnRev     The SVN revision of the ring-3 part.
  * @thread  EMT.
  */
@@ -370,7 +370,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM instance in question.
+ * @param   pVM         Pointer to the VM.
  * @param   pGVM        Pointer to the global VM structure. Optional.
  * @thread  EMT or session clean up thread.
  */

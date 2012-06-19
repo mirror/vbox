@@ -41,7 +41,7 @@
  * @param   pVM                 Pointer to the VM.
  * @param   pGVM                Pointer to the GVM instance data.
  * @param   idCpu               The ID of the calling virtual CPU.
- * @param   pModule             Global module description
+ * @param   pModule             Global module description.
  * @param   paRegionsGCPtrs     Array parallel to pModules->aRegions with the
  *                              addresses of the regions in the calling
  *                              process.

@@ -363,7 +363,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       The virtual CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   u64Tick     The new timestamp value.
  *
  * @thread  EMT which TSC is to be set.
@@ -393,7 +393,7 @@ VMM_INT_DECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
  * Sets the last seen CPU timestamp counter.
  *
  * @returns VBox status code.
- * @param   pVCpu               The virtual CPU to operate on.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   u64LastSeenTick     The last seen timestamp value.
  *
  * @thread  EMT which TSC is to be set.
@@ -412,7 +412,7 @@ VMM_INT_DECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
  * Gets the last seen CPU timestamp counter.
  *
  * @returns last seen TSC
- * @param   pVCpu               The virtual CPU to operate on.
+ * @param   pVCpu               Pointer to the VMCPU.
  *
  * @thread  EMT which TSC is to be set.
  */

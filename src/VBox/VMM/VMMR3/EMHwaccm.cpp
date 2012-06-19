@@ -389,7 +389,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  *          EM statuses.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        The guest CPUM register context.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {

@@ -3703,7 +3703,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
 /**
  * Sets the Address Gate 20 state.
  *
- * @param   pVCpu       The VCPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   fEnable     True if the gate should be enabled.
  *                      False if the gate should be disabled.
  */

@@ -529,7 +529,7 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);
  * It will call VMMGCEntry().
  *
  * @returns return code from VMMGCEntry().
- * @param   pVM     The VM in question.
+ * @param   pVM     Pointer to the VM.
  * @param   uArg    See VMMGCEntry().
  * @internal
  */
