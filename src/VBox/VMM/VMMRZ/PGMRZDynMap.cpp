@@ -338,7 +338,7 @@ static int  pgmR0DynMapTest(PVM pVM);
  * Initializes the auto mapping sets for a VM.
  *
  * @returns VINF_SUCCESS on success, VERR_PGM_DYNMAP_IPE on failure.
- * @param   pVM         The VM in question.
+ * @param   pVM         Pointer to the VM.
  */
 static int pgmRZDynMapInitAutoSetsForVM(PVM pVM)
 {

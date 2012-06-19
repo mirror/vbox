@@ -733,14 +733,14 @@ VMMDECL(void) CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val)
  * Query an MSR.
  *
  * The caller is responsible for checking privilege if the call is the result
- * of a RDMSR instruction.  We'll do the rest.
+ * of a RDMSR instruction. We'll do the rest.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_CPUM_RAISE_GP_0 on failure (invalid MSR), the caller is
  *          expected to take the appropriate actions. @a *puValue is set to 0.
- * @param   pVCpu               The virtual CPU to operate on.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   idMsr               The MSR.
- * @param   puValue             Where to return the value..
+ * @param   puValue             Where to return the value.
  *
  * @remarks This will always return the right values, even when we're in the
  *          recompiler.
@@ -970,18 +970,18 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
  * Sets the MSR.
  *
  * The caller is responsible for checking privilege if the call is the result
- * of a WRMSR instruction.  We'll do the rest.
+ * of a WRMSR instruction. We'll do the rest.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_CPUM_RAISE_GP_0 on failure, the caller is expected to take the
  *          appropriate actions.
  *
- * @param   pVCpu       The virtual CPU to operate on.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   idMsr       The MSR id.
  * @param   uValue      The value to set.
  *
  * @remarks Everyone changing MSR values, including the recompiler, shall do it
- *          by calling this method.  This makes sure we have current values and
+ *          by calling this method. This makes sure we have current values and
  *          that we trigger all the right actions when something changes.
  */
 VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)

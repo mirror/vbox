@@ -503,7 +503,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM                 Pointer to the VM.
- * @param   pVCpu               The current CPU.
+ * @param   pVCpu               Pointer to the VMCPU.
  * @param   enmShwPagingMode    Paging mode for the nested page tables.
  * @param   pRegFrame           Trap register frame.
  * @param   GCPhysFault         The fault address.

@@ -1506,7 +1506,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       VMCPUD id.
+ * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks Called with preemption disabled and after first having called
  *          HWACCMR0Enter.

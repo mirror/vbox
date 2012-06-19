@@ -2285,7 +2285,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
  * (NP) entry in the page translation structures.
  *
  * @returns VINF_EM_RAW_GUEST_TRAP.
- * @param   pVCpu           The virtual CPU to operate on.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   uErr            The error code of the shadow fault.  Corrections to
  *                          TRPM's copy will be made if necessary.
  * @param   GCPtrPage       For logging.
@@ -2309,7 +2309,7 @@ DECLINLINE(int) PGM_BTH_NAME(CheckPageFaultReturnNP)(PVMCPU pVCpu, uint32_t uErr
  * (RSVD) error in the page translation structures.
  *
  * @returns VINF_EM_RAW_GUEST_TRAP.
- * @param   pVCpu           The virtual CPU to operate on.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   uErr            The error code of the shadow fault.  Corrections to
  *                          TRPM's copy will be made if necessary.
  * @param   GCPtrPage       For logging.
@@ -2330,7 +2330,7 @@ DECLINLINE(int) PGM_BTH_NAME(CheckPageFaultReturnRSVD)(PVMCPU pVCpu, uint32_t uE
  * CheckPageFault helper for returning a page protection fault (P).
  *
  * @returns VINF_EM_RAW_GUEST_TRAP.
- * @param   pVCpu           The virtual CPU to operate on.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   uErr            The error code of the shadow fault.  Corrections to
  *                          TRPM's copy will be made if necessary.
  * @param   GCPtrPage       For logging.

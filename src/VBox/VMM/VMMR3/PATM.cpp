@@ -3492,7 +3492,7 @@ failure:
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pCtx        Guest context
+ * @param   pCtx        Pointer to the guest CPU context.
  *
  */
 VMMR3DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx)
@@ -6050,11 +6050,11 @@ VMMR3DECL(RTRCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTRCPTR pAddrGC)
  * Attempt to recover dirty instructions
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pCtx        CPU context
- * @param   pPatch      Patch record
- * @param   pPatchToGuestRec    Patch to guest address record
- * @param   pEip        GC pointer of trapping instruction
+ * @param   pVM                 Pointer to the VM.
+ * @param   pCtx                Pointer to the guest CPU context.
+ * @param   pPatch              Patch record.
+ * @param   pPatchToGuestRec    Patch to guest address record.
+ * @param   pEip                GC pointer of trapping instruction.
  */
 static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, PRECPATCHTOGUEST pPatchToGuestRec, RTRCPTR pEip)
 {
@@ -6278,9 +6278,9 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pCtx        CPU context
- * @param   pEip        GC pointer of trapping instruction
- * @param   ppNewEip    GC pointer to new instruction
+ * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pEip        GC pointer of trapping instruction.
+ * @param   ppNewEip    GC pointer to new instruction.
  */
 VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *ppNewEip)
 {
