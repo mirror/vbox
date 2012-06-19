@@ -1140,13 +1140,16 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
                                 case PDMNETWORKGSOTYPE_IPV6_TCP:
                                     pGso->cbHdrsTotal = Hdr.u16CSumStart +
                                         ((PRTNETTCP)(((uint8_t*)pSgBuf->aSegs[0].pvSeg) + Hdr.u16CSumStart))->th_off * 4;
+                                    pGso->cbHdrsSeg   = pGso->cbHdrsTotal;
                                     break;
                                 case PDMNETWORKGSOTYPE_IPV4_UDP:
                                     pGso->cbHdrsTotal = Hdr.u16CSumStart + sizeof(RTNETUDP);
+                                    pGso->cbHdrsSeg   = Hdr.u16CSumStart;
                                     break;
                             }
                             /* Update GSO structure embedded into the frame */
                             ((PPDMNETWORKGSO)pSgBuf->pvUser)->cbHdrsTotal = pGso->cbHdrsTotal;
+                            ((PPDMNETWORKGSO)pSgBuf->pvUser)->cbHdrsSeg   = pGso->cbHdrsTotal;
                             Log4(("%s vnetTransmitPendingPackets: adjusted HdrLen to %d.\n",
                                   INSTANCE(pState), pGso->cbHdrsTotal));
                         }
