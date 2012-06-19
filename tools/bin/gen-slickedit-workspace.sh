@@ -368,18 +368,30 @@ my_generate_usercpp_h()
     #
     # Probe the slickedit user config, picking the most recent version.
     #
-    if test -d "${HOME}/Library/Application Support/Slickedit"; then
-        MY_SLICKDIR_="${HOME}/Library/Application Support/Slickedit"
-        MY_USERCPP_H="unxcpp.h"
-        MY_VSLICK_DB="vslick.stu"
-    elif test -d "${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"; then
-        MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"
-        MY_USERCPP_H="usercpp.h"
-        MY_VSLICK_DB="vslick.sta"
+    if test -z "${MY_SLICK_CONFIG}"; then
+        if test -d "${HOME}/Library/Application Support/Slickedit"; then
+            MY_SLICKDIR_="${HOME}/Library/Application Support/Slickedit"
+            MY_USERCPP_H="unxcpp.h"
+            MY_VSLICK_DB="vslick.stu"
+        elif test -d "${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"; then
+            MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"
+            MY_USERCPP_H="usercpp.h"
+            MY_VSLICK_DB="vslick.sta"
+        else
+            MY_SLICKDIR_="${HOME}/.slickedit"
+            MY_USERCPP_H="unxcpp.h"
+            MY_VSLICK_DB="vslick.stu"
+        fi
     else
-        MY_SLICKDIR_="${HOME}/.slickedit"
-        MY_USERCPP_H="unxcpp.h"
-        MY_VSLICK_DB="vslick.stu"
+        MY_SLICKDIR_="${MY_SLICK_CONFIG}"
+        if test -n "${MY_WINDOWS_HOST}"; then
+            MY_USERCPP_H="usercpp.h"
+            MY_VSLICK_DB="vslick.sta"
+        else
+            MY_USERCPP_H="unxcpp.h"
+            MY_VSLICK_DB="vslick.stu"
+        fi
+        # MacOS: Implement me!
     fi
 
     MY_VER_NUM="0"
@@ -694,9 +706,14 @@ do
             MY_OPT_MINIMAL=1
             ;;
 
+        --slickedit-config)
+            MY_SLICK_CONFIG="$1"
+            shift
+            ;;
+
         # usage
         --h*|-h*|-?|--?)
-            echo "usage: $0 [--rootdir <rootdir>] [--outdir <outdir>] [--project-base <prefix>] [--workspace <name>] [--minimal]"
+            echo "usage: $0 [--rootdir <rootdir>] [--outdir <outdir>] [--project-base <prefix>] [--workspace <name>] [--minimal] [--slickedit-config <DIR>]"
             echo ""
             echo "If --outdir is specified, you must specify a --rootdir relative to it as well."
             exit 1;
@@ -780,7 +797,7 @@ my_generate_project "REM"           "src/recompiler"                        --be
     "src/recompiler/Sun/crt" \
     --end-includes \
     "src/recompiler" \
-    "src/VBox/VMM/include/REMInternal.h" \
+    "src/VBox/VMM/REMInternal.h" \
     "src/VBox/VMM/VMMAll/REMAll.cpp"
 
 # src/VBox/Additions
