@@ -41,6 +41,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
     {
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
         m_pNameLabel = new QLabel(this);
         {
             m_pNameLabel->setAlignment(Qt::AlignRight);
