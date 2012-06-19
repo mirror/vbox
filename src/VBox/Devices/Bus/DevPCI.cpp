@@ -241,54 +241,6 @@ RT_C_DECLS_END
 
 
 #ifdef IN_RING3
-/**
- * Reads data via bus mastering, if enabled. If no bus mastering is available,
- * this function does nothing and returns VINF_NOT_SUPPORTED.
- *
- * @return  IPRT status code.
- */
-int PCIDevPhysRead(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
-{
-    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbRead, VERR_INVALID_PARAMETER);
-
-    if (!PCIDevIsBusmaster(pPciDev))
-    {
-#ifdef DEBUG
-        Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping read %p (%z)\n", __FUNCTION__,
-              PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbRead));
-#endif
-        return VINF_NOT_SUPPORTED;
-    }
-
-    return PDMDevHlpPhysRead(pPciDev->pDevIns, GCPhys, pvBuf, cbRead);
-}
-
-/**
- * Writes data via bus mastering, if enabled. If no bus mastering is available,
- * this function does nothing and returns VINF_NOT_SUPPORTED.
- *
- * @return  IPRT status code.
- */
-int PCIDevPhysWrite(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
-{
-    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbWrite, VERR_INVALID_PARAMETER);
-
-    if (!PCIDevIsBusmaster(pPciDev))
-    {
-#ifdef DEBUG
-        Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping write %p (%z)\n", __FUNCTION__,
-              PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbWrite));
-#endif
-        return VINF_NOT_SUPPORTED;
-    }
-
-    return PDMDevHlpPhysWrite(pPciDev->pDevIns, GCPhys, pvBuf, cbWrite);
-}
-
 static void pci_update_mappings(PCIDevice *d)
 {
     PPCIBUS pBus = d->Int.s.CTX_SUFF(pBus);
