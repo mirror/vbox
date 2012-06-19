@@ -2973,26 +2973,14 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
     DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
     if (enmMode != DISCPUMODE_16BIT)
     {
-        RTGCPTR pbCode;
-        int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
-                                              &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
-        if (RT_SUCCESS(rc))
+        PDISSTATE pDis = &pVCpu->hwaccm.s.DisState;
+        int rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, NULL);
+        if (RT_SUCCESS(rc) && pDis->pCurInstr->uOpcode == OP_INVLPG)
         {
-            uint32_t     cbOp;
-            PDISCPUSTATE pDis = &pVCpu->hwaccm.s.DisState;
-
-            pDis->uCpuMode = enmMode;
-            rc = EMInterpretDisasOneEx(pVM, pVCpu, pbCode, pRegFrame, pDis, &cbOp);
-            Assert(RT_FAILURE(rc) || pDis->pCurInstr->uOpcode == OP_INVLPG);
-            if (RT_SUCCESS(rc) && pDis->pCurInstr->uOpcode == OP_INVLPG)
-            {
-                Assert(cbOp == pDis->cbInstr);
-                rc = hmR0svmInterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
-                if (RT_SUCCESS(rc))
-                    pRegFrame->rip += cbOp; /* Move on to the next instruction. */
-
-                return rc;
-            }
+            rc = hmR0svmInterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
+            if (RT_SUCCESS(rc))
+                pRegFrame->rip += pDis->cbInstr; /* Move on to the next instruction. */
+            return rc;
         }
     }
     return VERR_EM_INTERPRETER;
