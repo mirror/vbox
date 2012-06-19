@@ -345,7 +345,15 @@ VBoxMPFillModesTable(PVBOXMP_DEVEXT pExt, int iDisplay, PVIDEO_MODE_INFORMATION 
                 continue;
             }
 
-            if (!VBoxLikesVideoMode(iDisplay, resolutionMatrix[resIndex].xRes, resolutionMatrix[resIndex].yRes - yOffset, bitsPerPixel))
+            if (
+#ifdef VBOX_WDDM_MINIPORT
+                    /* 1024x768 resolution is a minimal resolutions for win8 to make most metro apps run.
+                     * For small host display resolutions, host will dislike the mode 1024x768 and above
+                     * if the framebuffer window requires scrolling to fit the guest resolution.
+                     * So add 1024x768 resolution for win8 guest to allow user switch to it */
+                    (VBoxQueryWinVersion() != WIN8 || resolutionMatrix[resIndex].xRes != 1024 || resolutionMatrix[resIndex].yRes != 768) &&
+#endif
+                    !VBoxLikesVideoMode(iDisplay, resolutionMatrix[resIndex].xRes, resolutionMatrix[resIndex].yRes - yOffset, bitsPerPixel))
             {
                 /* host doesn't like this mode */
                 continue;
