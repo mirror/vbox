@@ -1299,10 +1299,10 @@ typedef struct PDMAPICHLPRC
 
     /**
      * Calculates an IRQ tag for a timer, IPI or similar event.
-     *  
-     * @returns The IRQ tag. 
-     * @param   pDevIns         Device instance of the APIC. 
-     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP. 
+     *
+     * @returns The IRQ tag.
+     * @param   pDevIns         Device instance of the APIC.
+     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP.
      */
     DECLRCCALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
 
@@ -1378,10 +1378,10 @@ typedef struct PDMAPICHLPR0
 
     /**
      * Calculates an IRQ tag for a timer, IPI or similar event.
-     *  
-     * @returns The IRQ tag. 
-     * @param   pDevIns         Device instance of the APIC. 
-     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP. 
+     *
+     * @returns The IRQ tag.
+     * @param   pDevIns         Device instance of the APIC.
+     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP.
      */
     DECLR0CALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
 
@@ -1456,10 +1456,10 @@ typedef struct PDMAPICHLPR3
 
     /**
      * Calculates an IRQ tag for a timer, IPI or similar event.
-     *  
-     * @returns The IRQ tag. 
-     * @param   pDevIns         Device instance of the APIC. 
-     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP. 
+     *
+     * @returns The IRQ tag.
+     * @param   pDevIns         Device instance of the APIC.
+     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
 
@@ -4613,7 +4613,6 @@ DECLINLINE(int) PDMDevHlpPCIRegisterMsi(PPDMDEVINS pDevIns, PPDMMSIREG pMsiReg)
     return pDevIns->pHlpR3->pfnPCIRegisterMsi(pDevIns, pMsiReg);
 }
 
-
 /**
  * @copydoc PDMDEVHLPR3::pfnPCISetConfigCallbacks
  */
@@ -4621,6 +4620,54 @@ DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE p
                                                 PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     pDevIns->pHlpR3->pfnPCISetConfigCallbacks(pDevIns, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
+}
+
+/**
+ * Reads data via bus mastering, if enabled. If no bus mastering is available,
+ * this function does nothing and returns VINF_NOT_SUPPORTED.
+ *
+ * @return  IPRT status code.
+ */
+DECLINLINE(int) PDMDevHlpPCIDevPhysRead(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbRead, VERR_INVALID_PARAMETER);
+
+    if (!PCIDevIsBusmaster(pPciDev))
+    {
+#ifdef DEBUG
+        Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping read %p (%z)\n", __FUNCTION__,
+              PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbRead));
+#endif
+        return VINF_PGM_PCI_PHYS_READ_BM_DISABLED;
+    }
+
+    return PDMDevHlpPhysRead(pPciDev->pDevIns, GCPhys, pvBuf, cbRead);
+}
+
+/**
+ * Writes data via bus mastering, if enabled. If no bus mastering is available,
+ * this function does nothing and returns VINF_NOT_SUPPORTED.
+ *
+ * @return  IPRT status code.
+ */
+DECLINLINE(int) PDMDevHlpPCIDevPhysWrite(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbWrite, VERR_INVALID_PARAMETER);
+
+    if (!PCIDevIsBusmaster(pPciDev))
+    {
+#ifdef DEBUG
+        Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping write %p (%z)\n", __FUNCTION__,
+              PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbWrite));
+#endif
+        return VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED;
+    }
+
+    return PDMDevHlpPhysWrite(pPciDev->pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 #endif /* IN_RING3 */

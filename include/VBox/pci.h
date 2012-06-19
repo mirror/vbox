@@ -537,11 +537,6 @@ typedef struct PCIDevice
     /**  @} */
 } PCIDEVICE;
 
-#ifdef IN_RING3
-int PCIDevPhysRead(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
-int PCIDevPhysWrite(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
-#endif
-
 /* @todo: handle extended space access */
 DECLINLINE(void)     PCIDevSetByte(PPCIDEVICE pPciDev, uint32_t uOffset, uint8_t u8Value)
 {

@@ -5016,9 +5016,9 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
                 PCIATAState *pATAState = PDMINS_2_DATA(pDevIns, PCIATAState *);
                 AssertPtr(pATAState);
                 if (uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
-                    PCIDevPhysWrite(&pATAState->dev, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
+                    PDMDevHlpPCIDevPhysWrite(&pATAState->dev, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
                 else
-                    PCIDevPhysRead(&pATAState->dev, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
+                    PDMDevHlpPCIDevPhysRead(&pATAState->dev, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
 
                 iIOBufferCur += dmalen;
                 cbTotalTransfer -= dmalen;

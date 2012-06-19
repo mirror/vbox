@@ -568,6 +568,10 @@
 #define VERR_PGM_PHYS_NULL_PAGE_PARAM           (-1681)
 /** PCI passthru is not supported by this build. */
 #define VERR_PGM_PCI_PASSTHRU_MISCONFIG         (-1682)
+/** PCI physical read with bus mastering disabled. */
+#define VINF_PGM_PCI_PHYS_READ_BM_DISABLED      (1683)
+/** PCI physical write with bus mastering disabled. */
+#define VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED     (1684)
 /** @} */
 
 
