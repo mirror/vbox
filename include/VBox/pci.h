@@ -826,6 +826,8 @@ DECLINLINE(uint32_t) PCIDevGetRegionReg(uint32_t iRegion)
     return iRegion == VBOX_PCI_ROM_SLOT
          ? VBOX_PCI_ROM_ADDRESS : (VBOX_PCI_BASE_ADDRESS_0 + iRegion * 4);
 }
+
+/**
  * Sets the sub-system vendor id config register.
  *
  * @param   pPciDev             The PCI device.
