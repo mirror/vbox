@@ -1163,29 +1163,6 @@ void UISelectorWindow::sltMediumEnumFinished(const VBoxMediaList &list)
     while (0);
 }
 
-#if 0
-void UISelectorWindow::sltEmbedDownloader(UIDownloadType downloaderType)
-{
-    switch (downloaderType)
-    {
-        case UIDownloadType_UserManual:
-        {
-            if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
-                statusBar()->addWidget(pDl->progressWidget(this), 0);
-            break;
-        }
-        case UIDownloadType_ExtensionPack:
-        {
-            if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
-                statusBar()->addWidget(pDl->progressWidget(this), 0);
-            break;
-        }
-        default:
-            break;
-    }
-}
-#endif
-
 void UISelectorWindow::retranslateUi()
 {
     /* Set window title: */
@@ -1589,11 +1566,6 @@ void UISelectorWindow::prepareConnections()
     /* Medium enumeration connections: */
     connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()), this, SLOT(sltMediumEnumerationStarted()));
     connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltMediumEnumFinished(const VBoxMediaList &)));
-
-#if 0
-    /* Network manager connections: */
-    connect(gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)), this, SLOT(sltEmbedDownloader(UIDownloadType)));
-#endif
 
     /* Menu-bar connections: */
     connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorContextMenu(const QPoint&)));
