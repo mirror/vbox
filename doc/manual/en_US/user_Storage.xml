@@ -813,7 +813,7 @@
     <para>Limits are configured through
     <computeroutput>VBoxManage</computeroutput>. The example below creates a
     bandwidth group named "Limit", sets the limit to 20 MB/s and assigns the
-    group to the attached disks of the VM:<screen>VBoxManage bandwidthctl "VM name" --name Limit --add disk --limit 20
+    group to the attached disks of the VM:<screen>VBoxManage bandwidthctl "VM name" add Limit --type disk --limit 20M
 VBoxManage storageattach "VM name" --controller "SATA" --port 0 --device 0 --type hdd
                                    --medium disk1.vdi --bandwidthgroup Limit
 VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --type hdd
@@ -826,7 +826,7 @@ VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --typ
 
     <para>The limits for each group can be changed while the VM is running,
     with changes being picked up immediately. The example below changes the
-    limit for the group created in the example above to 10 MB/s:<screen>VBoxManage bandwidthctl "VM name" --name Limit --limit 10</screen></para>
+    limit for the group created in the example above to 10 MB/s:<screen>VBoxManage bandwidthctl "VM name" set Limit --limit 10M</screen></para>
   </sect1>
 
   <sect1 id="storage-cds">

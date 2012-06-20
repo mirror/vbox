@@ -1967,15 +1967,33 @@ Virtual system 0:
   <sect1>
     <title>VBoxManage bandwidthctl</title>
 
-    <para>This command creates/deletes/modifies bandwidth groups of the given
+    <para>This command creates/deletes/modifies/shows bandwidth groups of the given
     virtual machine:<screen>VBoxManage bandwidthctl    &lt;uuid|vmname&gt;
-                          --name &lt;name&gt;
-                          [--add disk
-                          [--delete]
-                          [--limit MB/s]</screen></para>
+                            add &lt;name&gt; --type disk|network --limit &lt;megabytes per second&gt;[k|m|g|K|M|G] |
+                            set &lt;name&gt; --limit &lt;megabytes per second&gt;[k|m|g|K|M|G] |
+                            remove &lt;name&gt; |
+                            list [--machinereadable]</screen></para>
 
-    <para>See <xref linkend="storage-bandwidth-limit" /> for an introduction
-    to bandwidth limits. The parameters mean:<glosslist>
+    <para>The following subcommands are available:<itemizedlist>
+      <listitem>
+        <para><computeroutput>add</computeroutput>, creates a new bandwidth
+          group of given type.</para>
+      </listitem>
+      <listitem>
+        <para><computeroutput>set</computeroutput>, modifies the limit for an
+          existing bandwidth group.</para>
+      </listitem>
+      <listitem>
+        <para><computeroutput>remove</computeroutput>, destroys a bandwidth
+          group.</para>
+      </listitem>
+      <listitem>
+        <para><computeroutput>list</computeroutput>, shows all bandwidth groups
+          defined for the given VM.</para>
+      </listitem>
+    </itemizedlist>
+    </para>
+    <para>The parameters mean:<glosslist>
         <glossentry>
           <glossterm>uuid|vmname</glossterm>
 
@@ -1993,18 +2011,15 @@ Virtual system 0:
         </glossentry>
 
         <glossentry>
-          <glossterm>add</glossterm>
+          <glossterm>type</glossterm>
 
           <glossdef>
-            <para>Creates a new bandwdith group with the given type.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>delete</glossterm>
-
-          <glossdef>
-            <para>Deletes a bandwdith group if it isn't used anymore.</para>
+            <para>Type of the bandwidth group. Mandatory. Two types are
+              supported: <computeroutput>disk</computeroutput> and
+              <computeroutput>network</computeroutput>. See
+              <xref linkend="storage-bandwidth-limit" /> or
+              <xref linkend="network_bandwidth_limit" /> for a description of a
+              particular type.</para>
           </glossdef>
         </glossentry>
 
@@ -2012,11 +2027,18 @@ Virtual system 0:
           <glossterm>limit</glossterm>
 
           <glossdef>
-            <para>Sets the limit for the given group to the specified amount.
-            Can be changed while the VM is running.</para>
+            <para>Specifies the limit for the given group. Can be changed
+              while the VM is running. The default unit is megabytes per
+              second. The unit can be changed by specifying one of the
+              following suffixes: <computeroutput>k</computeroutput> for kilobits/s, <computeroutput>m</computeroutput> for megabits/s, <computeroutput>g</computeroutput> for gigabits/s, <computeroutput>K</computeroutput> for kilobytes/s, <computeroutput>M</computeroutput> for megabytes/s, <computeroutput>G</computeroutput> for gigabytes/s</para>
           </glossdef>
         </glossentry>
-      </glosslist></para>
+      </glosslist>
+      <note>
+        <para>To remove a bandwidth group it must not be referenced by any disks
+          or adapters in running VM.</para>
+      </note>
+    </para>
   </sect1>
 
   <sect1>
