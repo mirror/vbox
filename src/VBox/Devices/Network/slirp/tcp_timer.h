@@ -151,6 +151,8 @@ struct tcpcb;
 void tcp_fasttimo (PNATState);
 void tcp_slowtimo (PNATState);
 void tcp_canceltimers (struct tcpcb *);
+#if 0
 struct tcpcb * tcp_timers (PNATState, register struct tcpcb *, int);
+#endif
 
 #endif
