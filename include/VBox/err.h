@@ -568,10 +568,6 @@
 #define VERR_PGM_PHYS_NULL_PAGE_PARAM           (-1681)
 /** PCI passthru is not supported by this build. */
 #define VERR_PGM_PCI_PASSTHRU_MISCONFIG         (-1682)
-/** PCI physical read with bus mastering disabled. */
-#define VINF_PGM_PCI_PHYS_READ_BM_DISABLED      (1683)
-/** PCI physical write with bus mastering disabled. */
-#define VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED     (1684)
 /** @} */
 
 
@@ -1214,9 +1210,13 @@
 /** No PCI Bus is available to register the device with. This is usually a
  * misconfiguration or in rare cases a buggy pci device. */
 #define VERR_PDM_NO_PCI_BUS                         (-2833)
+/** PCI physical read with bus mastering disabled. */
+#define VINF_PDM_PCI_PHYS_READ_BM_DISABLED          (2833)
 /** The device is not a registered PCI device and thus cannot
  * perform any PCI operations. The device forgot to register it self. */
 #define VERR_PDM_NOT_PCI_DEVICE                     (-2834)
+/** PCI physical write with bus mastering disabled. */
+#define VINF_PDM_PCI_PHYS_WRITE_BM_DISABLED         (2834)
 
 /** The version of the device registration structure is unknown
  * to this VBox version. Either mixing incompatible versions or

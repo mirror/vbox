@@ -2188,7 +2188,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
  */
 typedef struct PDMDEVHLPR3
 {
-    /** Structure version. PDM_DEVHLP_VERSION defines the current version. */
+    /** Structure version. PDM_DEVHLPR3_VERSION defines the current version. */
     uint32_t                        u32Version;
 
     /**
@@ -2858,6 +2858,22 @@ typedef struct PDMDEVHLPR3
                                                  STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args));
 
     /**
+     * Reads data via bus mastering, if enabled. If no bus mastering is available,
+     * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
+     *
+     * @return  IPRT status code.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+
+    /**
+     * Writes data via bus mastering, if enabled. If no bus mastering is available,
+     * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
+     *
+     * @return  IPRT status code.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+
+    /**
      * Registers the device with the default PCI bus.
      *
      * @returns VBox status code.
@@ -3510,7 +3526,7 @@ typedef struct PDMDEVHLPR3
 
     /** @} */
 
-    /** Just a safety precaution. (PDM_DEVHLP_VERSION) */
+    /** Just a safety precaution. (PDM_DEVHLPR3_VERSION) */
     uint32_t                        u32TheEnd;
 } PDMDEVHLPR3;
 #endif /* !IN_RING3 */
@@ -3520,7 +3536,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 8, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 9, 0)
 
 
 /**
@@ -3530,6 +3546,22 @@ typedef struct PDMDEVHLPRC
 {
     /** Structure version. PDM_DEVHLPRC_VERSION defines the current version. */
     uint32_t                    u32Version;
+
+    /**
+     * Reads data via bus mastering, if enabled. If no bus mastering is available,
+     * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
+     *
+     * @return  IPRT status code.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnPCIDevPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+
+    /**
+     * Writes data via bus mastering, if enabled. If no bus mastering is available,
+     * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
+     *
+     * @return  IPRT status code.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnPCIDevPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
     /**
      * Set the IRQ for a PCI device.
@@ -3711,7 +3743,7 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 2, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 3, 0)
 
 
 /**
@@ -3721,6 +3753,22 @@ typedef struct PDMDEVHLPR0
 {
     /** Structure version. PDM_DEVHLPR0_VERSION defines the current version. */
     uint32_t                    u32Version;
+
+    /**
+     * Reads data via bus mastering, if enabled. If no bus mastering is available,
+     * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
+     *
+     * @return  IPRT status code.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+
+    /**
+     * Writes data via bus mastering, if enabled. If no bus mastering is available,
+     * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
+     *
+     * @return  IPRT status code.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
     /**
      * Set the IRQ for a PCI device.
@@ -3910,7 +3958,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 2, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 3, 0)
 
 
 
@@ -4640,7 +4688,7 @@ DECLINLINE(int) PDMDevHlpPCIDevPhysRead(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, voi
         Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping read %p (%z)\n", __FUNCTION__,
               PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbRead));
 #endif
-        return VINF_PGM_PCI_PHYS_READ_BM_DISABLED;
+        return VINF_PDM_PCI_PHYS_READ_BM_DISABLED;
     }
 
     return PDMDevHlpPhysRead(pPciDev->pDevIns, GCPhys, pvBuf, cbRead);
@@ -4664,7 +4712,7 @@ DECLINLINE(int) PDMDevHlpPCIDevPhysWrite(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, co
         Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping write %p (%z)\n", __FUNCTION__,
               PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbWrite));
 #endif
-        return VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED;
+        return VINF_PDM_PCI_PHYS_WRITE_BM_DISABLED;
     }
 
     return PDMDevHlpPhysWrite(pPciDev->pDevIns, GCPhys, pvBuf, cbWrite);
