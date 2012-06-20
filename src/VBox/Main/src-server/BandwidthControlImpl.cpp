@@ -411,6 +411,10 @@ HRESULT BandwidthControl::getBandwidthGroupByName(const Utf8Str &aName,
 
 STDMETHODIMP BandwidthControl::CreateBandwidthGroup(IN_BSTR aName, BandwidthGroupType_T aType, LONG64 aMaxBytesPerSec)
 {
+    if (aMaxBytesPerSec <= 0)
+        return setError(E_INVALIDARG,
+                        tr("Bandwidth group limit must be positive"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
