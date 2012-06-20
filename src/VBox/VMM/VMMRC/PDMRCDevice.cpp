@@ -54,6 +54,13 @@ RT_C_DECLS_END
 
 
 /*******************************************************************************
+*   Prototypes                                                                 *
+*******************************************************************************/
+static int pdmRCDevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
+static int pdmRCDevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
+
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static bool pdmRCIsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc);
@@ -62,6 +69,52 @@ static bool pdmRCIsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc);
 /** @name Raw-Mode Context Device Helpers
  * @{
  */
+
+/** @interface_method_impl{PDMDEVHLPRC,pfnPCIPhysRead} */
+static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmRCDevHlp_PCIPhysRead: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
+             pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
+
+    PCIDevice *pPciDev = pDevIns->Internal.s.pPciDeviceRC;
+    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
+
+    if (!PCIDevIsBusmaster(pPciDev))
+    {
+#ifdef DEBUG
+        LogFlow(("%s: %RU16:%RU16: No bus master (anymore), skipping read %p (%z)\n", __FUNCTION__,
+                 PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbRead));
+#endif
+        return VINF_PDM_PCI_PHYS_READ_BM_DISABLED;
+    }
+
+    return pdmRCDevHlp_PhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPRC,pfnPCIPhysRead} */
+static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmRCDevHlp_PCIPhysWrite: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
+             pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
+
+    PCIDevice *pPciDev = pDevIns->Internal.s.pPciDeviceRC;
+    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
+
+    if (!PCIDevIsBusmaster(pPciDev))
+    {
+#ifdef DEBUG
+        LogFlow(("%s: %RU16:%RU16: No bus master (anymore), skipping write %p (%z)\n", __FUNCTION__,
+                 PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbWrite));
+#endif
+        return VINF_PDM_PCI_PHYS_WRITE_BM_DISABLED;
+    }
+
+    return pdmRCDevHlp_PhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+}
+
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPCISetIrq} */
 static DECLCALLBACK(void) pdmRCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
@@ -315,6 +368,8 @@ static DECLCALLBACK(RTTRACEBUF) pdmRCDevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
 extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
 {
     PDM_DEVHLPRC_VERSION,
+    pdmRCDevHlp_PCIPhysRead,
+    pdmRCDevHlp_PCIPhysWrite,
     pdmRCDevHlp_PCISetIrq,
     pdmRCDevHlp_ISASetIrq,
     pdmRCDevHlp_PhysRead,
