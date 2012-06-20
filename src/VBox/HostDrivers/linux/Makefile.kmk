@@ -25,6 +25,7 @@ HostDrivers-scripts_SOURCES     = \
 	$(HostDrivers-scripts_0_OUTDIR)/dkms.conf=>src/dkms.conf
 HostDrivers-scripts_EXEC_SOURCES = \
 	loadall.sh \
+	load.sh \
 	do_dkms=>src/do_dkms \
 	build_in_tmp=>src/build_in_tmp
 HostDrivers-scripts_CLEAN       = \
