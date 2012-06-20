@@ -1018,6 +1018,7 @@ void slirpDeleteLinkSocket(void *pvLnk)
         struct libalias *la = lnk->la;
         la->sockCount--;
         lnk->pSo->fShouldBeRemoved = 1;
+        lnk->pSo->so_pvLnk = NULL; /* forget me, please ! */
         lnk->pSo = NULL;
     }
 }
