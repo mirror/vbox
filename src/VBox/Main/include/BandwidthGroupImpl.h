@@ -43,7 +43,7 @@ public:
     HRESULT init(BandwidthControl *aParent,
                  const Utf8Str &aName,
                  BandwidthGroupType_T aType,
-                 ULONG aMaxMbPerSec);
+                 LONG64 aMaxBytesPerSec);
     HRESULT init(BandwidthControl *aParent, BandwidthGroup *aThat, bool aReshare = false);
     HRESULT initCopy(BandwidthControl *aParent, BandwidthGroup *aThat);
     void uninit();
@@ -54,8 +54,8 @@ public:
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMGETTER(Type))(BandwidthGroupType_T *aType);
     STDMETHOD(COMGETTER(Reference))(ULONG *aReferences);
-    STDMETHOD(COMGETTER(MaxMbPerSec))(ULONG *aMaxMbPerSec);
-    STDMETHOD(COMSETTER(MaxMbPerSec))(ULONG aMaxMbPerSec);
+    STDMETHOD(COMGETTER(MaxBytesPerSec))(LONG64 *aMaxBytesPerSec);
+    STDMETHOD(COMSETTER(MaxBytesPerSec))(LONG64 aMaxBytesPerSec);
 
     // public methods only for internal purposes
     void rollback();
@@ -64,7 +64,7 @@ public:
 
     const Utf8Str &getName() const;
     BandwidthGroupType_T getType() const;
-    ULONG getMaxMbPerSec() const;
+    LONG64 getMaxBytesPerSec() const;
     ULONG getReferences() const;
 
     void reference();

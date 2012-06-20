@@ -51,7 +51,7 @@ public:
     HRESULT initCopy(Machine *aParent, BandwidthControl *aThat);
     void uninit();
 
-    STDMETHOD(CreateBandwidthGroup) (IN_BSTR aName, BandwidthGroupType_T aType, ULONG aMaxMbPerSec);
+    STDMETHOD(CreateBandwidthGroup) (IN_BSTR aName, BandwidthGroupType_T aType, LONG64 aMaxBytesPerSec);
     STDMETHOD(DeleteBandwidthGroup) (IN_BSTR aName);
     STDMETHOD(COMGETTER(NumGroups)) (ULONG *aGroups);
     STDMETHOD(GetBandwidthGroup) (IN_BSTR aName, IBandwidthGroup **aBandwidthGroup);

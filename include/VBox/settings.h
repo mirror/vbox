@@ -669,19 +669,19 @@ typedef std::list<Cpu> CpuList;
 struct BandwidthGroup
 {
     BandwidthGroup()
-        : cMaxMbPerSec(0),
+        : cMaxBytesPerSec(0),
           enmType(BandwidthGroupType_Null)
     {}
 
     bool operator==(const BandwidthGroup &i) const
     {
         return (   (strName      == i.strName)
-                && (cMaxMbPerSec == i.cMaxMbPerSec)
+                && (cMaxBytesPerSec == i.cMaxBytesPerSec)
                 && (enmType      == i.enmType));
     }
 
     com::Utf8Str         strName;
-    uint32_t             cMaxMbPerSec;
+    uint64_t             cMaxBytesPerSec;
     BandwidthGroupType_T enmType;
 };
 typedef std::list<BandwidthGroup> BandwidthGroupList;

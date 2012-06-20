@@ -16494,8 +16494,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>How many devices/medium attachements use this group.</desc>
     </attribute>
 
-    <attribute name="maxMbPerSec" type="unsigned long">
-      <desc>The maximum number of MBytes which can be transfered by all
+    <attribute name="maxBytesPerSec" type="long long">
+      <desc>The maximum number of bytes which can be transfered by all
         entities attached to this group during one second.</desc>
     </attribute>
 
@@ -16532,8 +16532,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="type" type="BandwidthGroupType" dir="in">
         <desc>The type of the bandwidth group (network or disk).</desc>
       </param>
-      <param name="maxMbPerSec" type="unsigned long" dir="in">
-        <desc>The maximum number of MBytes which can be transfered by all
+      <param name="maxBytesPerSec" type="long long" dir="in">
+        <desc>The maximum number of bytes which can be transfered by all
           entities attached to this group during one second.</desc>
       </param>
     </method>

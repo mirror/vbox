@@ -34,13 +34,13 @@ struct BackupableBandwidthGroupData
 {
     BackupableBandwidthGroupData()
         : enmType(BandwidthGroupType_Null),
-          aMaxMbPerSec(0),
+          aMaxBytesPerSec(0),
           cReferences(0)
     { }
 
     Utf8Str                 strName;
     BandwidthGroupType_T    enmType;
-    ULONG                   aMaxMbPerSec;
+    LONG64                  aMaxBytesPerSec;
     ULONG                   cReferences;
 };
 
@@ -86,7 +86,7 @@ void BandwidthGroup::FinalRelease()
 HRESULT BandwidthGroup::init(BandwidthControl *aParent,
                              const Utf8Str &aName,
                              BandwidthGroupType_T aType,
-                             ULONG aMaxMbPerSec)
+                             LONG64 aMaxBytesPerSec)
 {
     LogFlowThisFunc(("aParent=%p aName=\"%s\"\n",
                      aParent, aName.c_str()));
@@ -110,7 +110,7 @@ HRESULT BandwidthGroup::init(BandwidthControl *aParent,
     m->bd->strName = aName;
     m->bd->enmType = aType;
     m->bd->cReferences = 0;
-    m->bd->aMaxMbPerSec = aMaxMbPerSec;
+    m->bd->aMaxBytesPerSec = aMaxBytesPerSec;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -267,21 +267,21 @@ STDMETHODIMP BandwidthGroup::COMGETTER(Reference)(ULONG *aReferences)
     return S_OK;
 }
 
-STDMETHODIMP BandwidthGroup::COMGETTER(MaxMbPerSec)(ULONG *aMaxMbPerSec)
+STDMETHODIMP BandwidthGroup::COMGETTER(MaxBytesPerSec)(LONG64 *aMaxBytesPerSec)
 {
-    CheckComArgOutPointerValid(aMaxMbPerSec);
+    CheckComArgOutPointerValid(aMaxBytesPerSec);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMaxMbPerSec = m->bd->aMaxMbPerSec;
+    *aMaxBytesPerSec = m->bd->aMaxBytesPerSec;
 
     return S_OK;
 }
 
-STDMETHODIMP BandwidthGroup::COMSETTER(MaxMbPerSec)(ULONG aMaxMbPerSec)
+STDMETHODIMP BandwidthGroup::COMSETTER(MaxBytesPerSec)(LONG64 aMaxBytesPerSec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -289,7 +289,7 @@ STDMETHODIMP BandwidthGroup::COMSETTER(MaxMbPerSec)(ULONG aMaxMbPerSec)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->aMaxMbPerSec = aMaxMbPerSec;
+    m->bd->aMaxBytesPerSec = aMaxBytesPerSec;
 
     /* inform direct session if any. */
     ComObjPtr<Machine> pMachine = m->pParent->getMachine();
@@ -391,9 +391,9 @@ BandwidthGroupType_T BandwidthGroup::getType() const
     return m->bd->enmType;
 }
 
-ULONG BandwidthGroup::getMaxMbPerSec() const
+LONG64 BandwidthGroup::getMaxBytesPerSec() const
 {
-    return m->bd->aMaxMbPerSec;
+    return m->bd->aMaxBytesPerSec;
 }
 
 ULONG BandwidthGroup::getReferences() const

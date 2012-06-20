@@ -259,18 +259,64 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
     for (size_t i = 0; i < bwGroups.size(); i++)
     {
         Bstr strName;
-        ULONG cMaxMbPerSec;
+        LONG64 cMaxBytesPerSec;
         BandwidthGroupType_T enmType;
 
         CHECK_ERROR_RET(bwGroups[i], COMGETTER(Name)(strName.asOutParam()), rc);
         CHECK_ERROR_RET(bwGroups[i], COMGETTER(Type)(&enmType), rc);
-        CHECK_ERROR_RET(bwGroups[i], COMGETTER(MaxMbPerSec)(&cMaxMbPerSec), rc);
+        CHECK_ERROR_RET(bwGroups[i], COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec), rc);
 
         const char *pszType = bwGroupTypeToString(enmType);
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("BandwidthGroup%zu=%ls,%s,%d\n", i, strName.raw(), pszType, cMaxMbPerSec);
+            RTPrintf("BandwidthGroup%zu=%ls,%s,%lld\n", i, strName.raw(), pszType, cMaxBytesPerSec);
         else
-            RTPrintf("Name: '%ls', Type: %s, Limit: %d Mbytes/sec\n", strName.raw(), pszType, cMaxMbPerSec);
+        {
+            const char *pszUnits = "";
+            LONG64 cBytes = cMaxBytesPerSec;
+            if (!(cBytes % _1G))
+            {
+                pszUnits = "G";
+                cBytes /= _1G;
+            }
+            else if (!(cBytes % _1M))
+            {
+                pszUnits = "M";
+                cBytes /= _1M;
+            }
+            else if (!(cBytes % _1K))
+            {
+                pszUnits = "K";
+                cBytes /= _1K;
+            }
+            const char *pszNetUnits = NULL;
+            if (enmType == BandwidthGroupType_Network)
+            {
+                /*
+                 * We want to report network rate limit in bits/s, not bytes.
+                 * Only if it cannot be express it in kilobits we will fall
+                 * back to reporting it in bytes.
+                 */
+                LONG64 cBits = cMaxBytesPerSec;
+                if (!(cBits % 125))
+                {
+                    cBits /= 125;
+                    pszNetUnits = "k";
+                    if (!(cBits % 1000000))
+                    {
+                        cBits /= 1000000;
+                        pszNetUnits = "g";
+                    }
+                    else if (!(cBits % 1000))
+                    {
+                        cBits /= 1000;
+                        pszNetUnits = "m";
+                    }
+                    RTPrintf("Name: '%ls', Type: %s, Limit: %lld %sbits/sec (%lld %sbytes/sec)\n", strName.raw(), pszType, cBits, pszNetUnits, cBytes, pszUnits);
+                }
+            }
+            if (!pszNetUnits)
+                RTPrintf("Name: '%ls', Type: %s, Limit: %lld %sbytes/sec\n", strName.raw(), pszType, cBytes, pszUnits);
+        }
     }
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf(bwGroups.size() != 0 ? "\n" : "<none>\n\n");
