@@ -787,7 +787,7 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen></para>
 
     <para>All adapters in a group share the bandwidth limit, meaning that in the
     example above the bandwidth of both adapters combined can never exceed 20
-    Mbit/s. However, if one disk doesn't require bandwidth the other can use the
+    Mbit/s. However, if one adapter doesn't require bandwidth the other can use the
     remaining bandwidth of its group.</para>
 
     <para>The limits for each group can be changed while the VM is running,
