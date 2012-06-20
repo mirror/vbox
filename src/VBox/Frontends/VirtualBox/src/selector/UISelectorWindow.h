@@ -126,11 +126,6 @@ private slots:
     void sltMediumEnumerationStarted();
     void sltMediumEnumFinished(const VBoxMediaList &mediumList);
 
-#if 0
-    /* Downloading handler: */
-    void sltEmbedDownloader(UIDownloadType downloaderType);
-#endif
-
 private:
 
     /* Translation stuff: */
