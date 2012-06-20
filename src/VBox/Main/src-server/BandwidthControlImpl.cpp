@@ -409,7 +409,7 @@ HRESULT BandwidthControl::getBandwidthGroupByName(const Utf8Str &aName,
     return VBOX_E_OBJECT_NOT_FOUND;
 }
 
-STDMETHODIMP BandwidthControl::CreateBandwidthGroup(IN_BSTR aName, BandwidthGroupType_T aType, ULONG aMaxMbPerSec)
+STDMETHODIMP BandwidthControl::CreateBandwidthGroup(IN_BSTR aName, BandwidthGroupType_T aType, LONG64 aMaxBytesPerSec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -431,7 +431,7 @@ STDMETHODIMP BandwidthControl::CreateBandwidthGroup(IN_BSTR aName, BandwidthGrou
 
     group.createObject();
 
-    rc = group->init(this, aName, aType, aMaxMbPerSec);
+    rc = group->init(this, aName, aType, aMaxBytesPerSec);
     if (FAILED(rc)) return rc;
 
     m->pParent->setModified(Machine::IsModified_BandwidthControl);
@@ -536,7 +536,7 @@ HRESULT BandwidthControl::loadSettings(const settings::IoSettings &data)
         ++it)
     {
         const settings::BandwidthGroup &gr = *it;
-        rc = CreateBandwidthGroup(Bstr(gr.strName).raw(), gr.enmType, gr.cMaxMbPerSec);
+        rc = CreateBandwidthGroup(Bstr(gr.strName).raw(), gr.enmType, gr.cMaxBytesPerSec);
         if (FAILED(rc)) break;
     }
 
@@ -561,7 +561,7 @@ HRESULT BandwidthControl::saveSettings(settings::IoSettings &data)
 
         group.strName      = (*it)->getName();
         group.enmType      = (*it)->getType();
-        group.cMaxMbPerSec = (*it)->getMaxMbPerSec();
+        group.cMaxBytesPerSec = (*it)->getMaxBytesPerSec();
 
         data.llBandwidthGroups.push_back(group);
     }

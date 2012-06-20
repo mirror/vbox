@@ -5157,12 +5157,12 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
             )
         {
             /* No need to call in the EMT thread. */
-            ULONG cMax;
+            LONG64 cMax;
             Bstr strName;
             BandwidthGroupType_T enmType;
             rc = aBandwidthGroup->COMGETTER(Name)(strName.asOutParam());
             if (SUCCEEDED(rc))
-                rc = aBandwidthGroup->COMGETTER(MaxMbPerSec)(&cMax);
+                rc = aBandwidthGroup->COMGETTER(MaxBytesPerSec)(&cMax);
             if (SUCCEEDED(rc))
                 rc = aBandwidthGroup->COMGETTER(Type)(&enmType);
 
@@ -5171,11 +5171,11 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
                 int vrc = VINF_SUCCESS;
                 if (enmType == BandwidthGroupType_Disk)
                     vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM, Utf8Str(strName).c_str(),
-                                                                 cMax * _1M);
+                                                                 cMax);
 #ifdef VBOX_WITH_NETSHAPER
                 else if (enmType == BandwidthGroupType_Network)
                     vrc = PDMR3NsBwGroupSetLimit(ptrVM, Utf8Str(strName).c_str(),
-                                                                 cMax * 1000);
+                                                 cMax);
                 else
                     rc = E_NOTIMPL;
 #endif /* VBOX_WITH_NETSHAPER */

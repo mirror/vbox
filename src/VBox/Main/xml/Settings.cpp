@@ -2795,7 +2795,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     else
                         throw ConfigFileError(this, pelmBandwidthGroup, N_("Missing BandwidthGroup/@type attribute"));
 
-                    pelmBandwidthGroup->getAttributeValue("maxMbPerSec", gr.cMaxMbPerSec);
+                    if (!pelmBandwidthGroup->getAttributeValue("maxBytesPerSec", gr.cMaxBytesPerSec))
+                    {
+                        pelmBandwidthGroup->getAttributeValue("maxMbPerSec", gr.cMaxBytesPerSec);
+                        gr.cMaxBytesPerSec *= _1M;
+                    }
                     hw.ioSettings.llBandwidthGroups.push_back(gr);
                 }
             }
@@ -4028,7 +4032,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     default: /* BandwidthGrouptype_Disk */ pcszType = "Disk"; break;
                 }
                 pelmThis->setAttribute("type", pcszType);
-                pelmThis->setAttribute("maxMbPerSec", gr.cMaxMbPerSec);
+                if (m->sv >= SettingsVersion_v1_13)
+                    pelmThis->setAttribute("maxBytesPerSec", gr.cMaxBytesPerSec);
+                else
+                    pelmThis->setAttribute("maxMbPerSec", gr.cMaxBytesPerSec / _1M);
             }
         }
     }
@@ -4662,6 +4669,23 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // VirtualBox 4.2 adds tracing.
         if (!debugging.areDefaultSettings())
             m->sv = SettingsVersion_v1_13;
+    }
+
+    if (m->sv < SettingsVersion_v1_13)
+    {
+        // VirtualBox 4.2 changes the units for bandwidth group limits.
+        for (BandwidthGroupList::const_iterator it = hardwareMachine.ioSettings.llBandwidthGroups.begin();
+             it != hardwareMachine.ioSettings.llBandwidthGroups.end();
+             ++it)
+        {
+            const BandwidthGroup &gr = *it;
+            if (gr.cMaxBytesPerSec % _1M)
+            {
+                // Bump version if a limit cannot be expressed in megabytes
+                m->sv = SettingsVersion_v1_13;
+                break;
+            }
+        }
     }
 
     if (m->sv < SettingsVersion_v1_12)

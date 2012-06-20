@@ -1031,19 +1031,19 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
         for (size_t i = 0; i < bwGroups.size(); i++)
         {
             Bstr strName;
-            ULONG cMaxMbPerSec;
+            LONG64 cMaxBytesPerSec;
             BandwidthGroupType_T enmType;
 
             hrc = bwGroups[i]->COMGETTER(Name)(strName.asOutParam());                       H();
             hrc = bwGroups[i]->COMGETTER(Type)(&enmType);                                   H();
-            hrc = bwGroups[i]->COMGETTER(MaxMbPerSec)(&cMaxMbPerSec);                       H();
+            hrc = bwGroups[i]->COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec);                       H();
 
             if (enmType == BandwidthGroupType_Disk)
             {
                 PCFGMNODE pBwGroup;
                 InsertConfigNode(pAcFileBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
-                InsertConfigInteger(pBwGroup, "Max", cMaxMbPerSec * _1M);
-                InsertConfigInteger(pBwGroup, "Start", cMaxMbPerSec * _1M);
+                InsertConfigInteger(pBwGroup, "Max", cMaxBytesPerSec);
+                InsertConfigInteger(pBwGroup, "Start", cMaxBytesPerSec);
                 InsertConfigInteger(pBwGroup, "Step", 0);
             }
 #ifdef VBOX_WITH_NETSHAPER
@@ -1052,7 +1052,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 /* Network bandwidth groups. */
                 PCFGMNODE pBwGroup;
                 InsertConfigNode(pNetworkBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
-                InsertConfigInteger(pBwGroup, "Max", cMaxMbPerSec * 1000); // @todo: _1M);
+                InsertConfigInteger(pBwGroup, "Max", cMaxBytesPerSec);
             }
 #endif /* VBOX_WITH_NETSHAPER */
         }

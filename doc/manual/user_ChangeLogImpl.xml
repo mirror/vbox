@@ -21,6 +21,11 @@
         <para>GUI: network operations manager</para>
       </listitem>
 
+      <listitem>
+        <para>Resource control: added support for limiting network IO
+          bandwidth; see <xref linkend="network_bandwidth_limit" /></para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>

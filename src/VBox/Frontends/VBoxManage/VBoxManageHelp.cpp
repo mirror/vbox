@@ -513,10 +513,11 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_BANDWIDTHCONTROL)
         RTStrmPrintf(pStrm,
                      "VBoxManage bandwidthctl     <uuid|vmname>\n"
-                     "                            add <name> --type <disk|network> --limit <megabytes per second> |\n"
-                     "                            set <name> --limit <megabytes per second> |\n"
+                     "                            add <name> --type disk|network --limit <megabytes per second>[k|m|g|K|M|G] |\n"
+                     "                            set <name> --limit <megabytes per second>[k|m|g|K|M|G] |\n"
                      "                            remove <name> |\n"
                      "                            list [--machinereadable]\n"
+                     "                            (limit units: k=kilobit, m=megabit, g=gigabit, K=kilobyte, M=megabyte, G=gigabyte)\n"
                      "\n");
 
     if (u64Cmd & USAGE_SHOWHDINFO)

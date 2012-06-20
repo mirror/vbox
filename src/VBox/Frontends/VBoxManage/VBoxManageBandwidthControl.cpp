@@ -43,6 +43,54 @@ using namespace com;
 
 
 /**
+ * Parses a string in the following format "n[k|m|g|K|M|G]". Stores the value
+ * of n expressed in bytes to *pLimit. k meas kilobit, while K means kilobyte.
+ *
+ * @returns Error message or NULL if successful.
+ * @param   pcszLimit       The string to parse.
+ * @param   pLimit          Where to store the result.
+ */
+static const char *parseLimit(const char *pcszLimit, LONG64 *pLimit)
+{
+    int iMultiplier = _1M;
+    char *pszNext = NULL;
+    int rc = RTStrToInt64Ex(pcszLimit, &pszNext, 10, pLimit);
+
+    switch (rc)
+    {
+        case VINF_SUCCESS:
+            break;
+        case VWRN_NUMBER_TOO_BIG:
+            return "Limit is too big\n";
+        case VWRN_TRAILING_CHARS:
+            switch (*pszNext)
+            {
+                case 'G': iMultiplier = _1G;       break;
+                case 'M': iMultiplier = _1M;       break;
+                case 'K': iMultiplier = _1K;       break;
+                case 'g': iMultiplier = 125000000; break;
+                case 'm': iMultiplier = 125000;    break;
+                case 'k': iMultiplier = 125;       break;
+                default:  return "Invalid unit suffix. Valid suffixes are: k, m, g, K, M, G\n";
+            }
+            break;
+        case VWRN_TRAILING_SPACES:
+            return "Trailing spaces in limit!\n";
+        case VERR_NO_DIGITS:
+            return "No digits in limit specifier\n";
+        default:
+            return "Invalid limit specifier\n";
+    }
+    if (*pLimit <= 0)
+        return "Limit must be positive\n";
+    if (*pLimit > INT64_MAX / iMultiplier)
+        return "Limit is too big\n";
+    *pLimit *= iMultiplier;
+
+    return NULL;
+}
+
+/**
  * Handles the 'bandwidthctl myvm add' sub-command.
  * @returns Exit code.
  * @param   a               The handler argument package.
@@ -54,13 +102,13 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
     static const RTGETOPTDEF g_aBWCtlAddOptions[] =
         {
             { "--type",   't', RTGETOPT_REQ_STRING },
-            { "--limit",  'l', RTGETOPT_REQ_UINT32 }
+            { "--limit",  'l', RTGETOPT_REQ_STRING }
         };
 
 
     Bstr name(a->argv[2]);
     const char *pszType  = NULL;
-    ULONG cMaxMbPerSec   = UINT32_MAX;
+    LONG64 cMaxBytesPerSec   = INT64_MAX;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -84,7 +132,17 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
 
             case 'l': // limit
             {
-                cMaxMbPerSec = ValueUnion.u32;
+                if (ValueUnion.psz)
+                {
+                    const char *pcszError = parseLimit(ValueUnion.psz, &cMaxBytesPerSec);
+                    if (pcszError)
+                    {
+                        errorArgument(pcszError);
+                        return RTEXITCODE_FAILURE;
+                    }
+                }
+                else
+                    rc = E_FAIL;
                 break;
             }
 
@@ -109,7 +167,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
         return RTEXITCODE_FAILURE;
     }
     
-    CHECK_ERROR2_RET(bwCtrl, CreateBandwidthGroup(name.raw(), enmType, cMaxMbPerSec), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(bwCtrl, CreateBandwidthGroup(name.raw(), enmType, cMaxBytesPerSec), RTEXITCODE_FAILURE);
 
     return RTEXITCODE_SUCCESS;
 }
@@ -125,12 +183,12 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
     HRESULT rc = S_OK;
     static const RTGETOPTDEF g_aBWCtlAddOptions[] =
         {
-            { "--limit",  'l', RTGETOPT_REQ_UINT32 }
+            { "--limit",  'l', RTGETOPT_REQ_STRING }
         };
 
 
     Bstr name(a->argv[2]);
-    ULONG cMaxMbPerSec   = UINT32_MAX;
+    LONG64 cMaxBytesPerSec   = INT64_MAX;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -145,7 +203,17 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
         {
             case 'l': // limit
             {
-                cMaxMbPerSec = ValueUnion.u32;
+                if (ValueUnion.psz)
+                {
+                    const char *pcszError = parseLimit(ValueUnion.psz, &cMaxBytesPerSec);
+                    if (pcszError)
+                    {
+                        errorArgument(pcszError);
+                        return RTEXITCODE_FAILURE;
+                    }
+                }
+                else
+                    rc = E_FAIL;
                 break;
             }
 
@@ -159,12 +227,12 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
     }
 
     
-    if (cMaxMbPerSec != UINT32_MAX)
+    if (cMaxBytesPerSec != INT64_MAX)
     {
         ComPtr<IBandwidthGroup> bwGroup;
         CHECK_ERROR2_RET(bwCtrl, GetBandwidthGroup(name.raw(), bwGroup.asOutParam()), RTEXITCODE_FAILURE);
         if (SUCCEEDED(rc))
-            CHECK_ERROR2_RET(bwGroup, COMSETTER(MaxMbPerSec)(cMaxMbPerSec), RTEXITCODE_FAILURE);
+            CHECK_ERROR2_RET(bwGroup, COMSETTER(MaxBytesPerSec)(cMaxBytesPerSec), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
