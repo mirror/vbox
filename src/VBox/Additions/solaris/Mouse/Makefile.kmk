@@ -32,21 +32,21 @@ include	$(KBUILD_PATH)/subheader.kmk
 #endif
 
 #
-# vboxmouse - The Mouse Integration Driver
+# vboxms - The Mouse Integration Driver
 #
-SYSMODS.solaris     += vboxmouse
-vboxmouse_TEMPLATE   = VBOXGUESTR0
-vboxmouse_DEFS       = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
-vboxmouse_DEPS      += $(VBOX_SVN_REV_KMK)
-vboxmouse_SOURCES    = \
+SYSMODS.solaris     += vboxms
+vboxms_TEMPLATE   = VBOXGUESTR0
+vboxms_DEFS       = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
+vboxms_DEPS      += $(VBOX_SVN_REV_KMK)
+vboxms_SOURCES    = \
 	vboxmouse.c
-vboxmouse_LIBS       = \
+vboxms_LIBS       = \
 	$(VBOX_LIB_VBGL_R0)
 ifeq ($(KBUILD_HOST),solaris)
- vboxmouse_LDFLAGS         += -N drv/vboxguest -N misc/ctf
+ vboxms_LDFLAGS         += -N drv/vboxguest -N misc/ctf
 else
- vboxmouse_SOURCES         += deps.asm
- vboxmouse_deps.asm_ASFLAGS = -f bin -g null
+ vboxms_SOURCES         += deps.asm
+ vboxms_deps.asm_ASFLAGS = -f bin -g null
 endif
 
 

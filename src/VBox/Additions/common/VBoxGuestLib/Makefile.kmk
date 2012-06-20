@@ -60,6 +60,7 @@ VBoxGuestR0Lib_SOURCES      = \
 	SysHlp.cpp \
 	PhysHeap.cpp \
 	Init.cpp \
+	Mouse.cpp \
 	VMMDev.cpp \
 	HGCM.cpp \
 	VBoxGuestR0LibSharedFolders.c \

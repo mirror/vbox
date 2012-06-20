@@ -77,7 +77,7 @@
 /** The module name. */
 #define DEVICE_NAME              "vboxmouse"
 /** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "VirtualBox MouInt"
+#define DEVICE_DESC              "VBoxMouseIntegr"
 
 
 /******************************************************************************
@@ -101,8 +101,8 @@ static int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk);
  */
 static struct module_info g_vbmsSolModInfo =
 {
-    0x0ffff,                /* module id number */
-    "vboxmouse",
+    0,                      /* module id number */
+    "vboxms",
     0,                      /* minimum packet size */
     INFPSZ,                 /* maximum packet size accepted */
     512,                    /* high water mark for data flow control */
@@ -158,9 +158,9 @@ static struct streamtab g_vbmsSolStreamTab =
  * fmodsw: loadable module wrapper for streams drivers.
  */
 static struct fmodsw g_vbmsSolStrWrapper = {
-    "vboxmouse",
+    "vboxms",
     &g_vbmsSolStreamTab,
-    D_MP | D_MTPERMOD
+    D_MP
 };
 
 /**
@@ -192,8 +192,6 @@ static void *g_vbmsSolModLinkage;
  */
 typedef struct
 {
-    /** Pointer to the Guest Library handle for the main driver. */
-    VBGLDRIVER         Driver;
     /** The STREAMS write queue which we need for sending messages up to
      * user-space. */
     queue_t           *pWriteQueue;
@@ -285,19 +283,6 @@ int _info(struct modinfo *pModInfo)
 
 
 /******************************************************************************
-*   Helper routines                                                           *
-******************************************************************************/
-
-/** Calls the kernel IOCtl to report mouse status to the host on behalf of
- * an open session. */
-static int vbmsSolSetMouseStatus(VBGLDRIVER *pDriver, uint32_t fStatus)
-{
-    return vbglDriverIOCtl(pDriver, VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &fStatus,
-                           sizeof(fStatus));
-}
-
-
-/******************************************************************************
 *   Main code                                                                 *
 ******************************************************************************/
 
@@ -340,20 +325,13 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
     /*
      * Create a new session.
      */
-    rc = vbglDriverOpen(&pState->Driver);
-    if (RT_SUCCESS(rc))
+    if (VbglIsReady())
     {
-        VBoxGuestMouseSetNotifyCallback NotifyCallback;
-
         /* Initialise user data for the queues to our state and vice-versa. */
         WR(pReadQueue)->q_ptr = (char *)pState;
         pReadQueue->q_ptr = (char *)pState;
         /* Enable our IRQ handler. */
-        NotifyCallback.pfnNotify = vbmsSolNotify;
-        NotifyCallback.pvUser    = (void *)pState;
-        vbglDriverIOCtl(&pState->Driver,
-                        VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK,
-                        &NotifyCallback, sizeof(NotifyCallback));
+        VbglSetMouseNotifyCallback(vbmsSolNotify, (void *)pState);
         qprocson(pReadQueue);
         LogRel((DEVICE_NAME "::Open\n"));
         return 0;
@@ -376,18 +354,11 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
 void vbmsSolNotify(void *pvState)
 {
     PVBMSSTATE pState = (PVBMSSTATE)pvState;
-    VMMDevReqMouseStatus *pReq;
     int rc;
+    uint32_t x, y;
     LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
 
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq),
-                     VMMDevReq_GetMouseStatus);
-    if (RT_FAILURE(rc))
-        return;  /* If kernel memory is short a missed event is acceptable! */
-    pReq->mouseFeatures = 0;
-    pReq->pointerXPos = 0;
-    pReq->pointerYPos = 0;
-    rc = VbglGRPerform(&pReq->header);
+    rc = VbglGetMouseStatus(NULL, &x, &y);
     if (RT_SUCCESS(rc))
     {
         int cMaxScreenX  = pState->cMaxScreenX;
@@ -396,14 +367,11 @@ void vbmsSolNotify(void *pvState)
         if (cMaxScreenX && cMaxScreenY)
         {
             vbmsSolVUIDPutAbsEvent(pState, LOC_X_ABSOLUTE,
-                                     pReq->pointerXPos * cMaxScreenX
-                                   / VMMDEV_MOUSE_RANGE_MAX);
+                                   x * cMaxScreenX / VMMDEV_MOUSE_RANGE_MAX);
             vbmsSolVUIDPutAbsEvent(pState, LOC_Y_ABSOLUTE,
-                                     pReq->pointerYPos * cMaxScreenY
-                                   / VMMDEV_MOUSE_RANGE_MAX);
+                                   y * cMaxScreenY / VMMDEV_MOUSE_RANGE_MAX);
         }
     }
-    VbglGRFree(&pReq->header);
 }
 
 
@@ -438,7 +406,6 @@ void vbmsSolVUIDPutAbsEvent(PVBMSSTATE pState, ushort_t cEvent,
 int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
 {
     PVBMSSTATE pState = (PVBMSSTATE)pReadQueue->q_ptr;
-    VBoxGuestMouseSetNotifyCallback NotifyCallback;
 
     LogFlow((DEVICE_NAME "::Close\n"));
     NOREF(fFlag);
@@ -450,17 +417,14 @@ int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
         return EFAULT;
     }
 
+    VbglSetMouseStatus(0);
     /* Disable our IRQ handler. */
-    RT_ZERO(NotifyCallback);
-    vbglDriverIOCtl(&pState->Driver,
-                    VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK,
-                    &NotifyCallback, sizeof(NotifyCallback));
+    VbglSetMouseNotifyCallback(NULL, NULL);
     qprocsoff(pReadQueue);
 
     /*
      * Close the session.
      */
-    vbglDriverClose(&pState->Driver);
     ASMAtomicWriteNullPtr(&pState->pWriteQueue);
     pReadQueue->q_ptr = NULL;
     return 0;
@@ -1197,9 +1161,8 @@ static int vbmsSolVUIDIOCtl(PVBMSSTATE pState, int iCmd, void *pvData,
             pState->cMaxScreenX = pResolution->width  - 1;
             pState->cMaxScreenY = pResolution->height - 1;
             /* Note: we don't disable this again until session close. */
-            rc = vbmsSolSetMouseStatus(&pState->Driver,
-                                         VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                       | VMMDEV_MOUSE_NEW_PROTOCOL);
+            rc = VbglSetMouseStatus(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                    | VMMDEV_MOUSE_NEW_PROTOCOL);
             if (RT_SUCCESS(rc))
                 return 0;
             pState->cMaxScreenX = 0;

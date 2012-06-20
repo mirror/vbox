@@ -363,6 +363,9 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** IOCTL to for setting the mouse driver callback. (kernel only)  */
 #define VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE_(31, sizeof(VBoxGuestMouseSetNotifyCallback))
 
+typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pfnUser);
+typedef FNVBOXGUESTMOUSENOTIFY *PFNVBOXGUESTMOUSENOTIFY;
+
 /** Input buffer for VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK. */
 typedef struct VBoxGuestMouseSetNotifyCallback
 {
@@ -371,7 +374,7 @@ typedef struct VBoxGuestMouseSetNotifyCallback
      *
      * @param   pvUser      The callback argument.
      */
-    DECLR0CALLBACKMEMBER(void,  pfnNotify, (void *pvUser));
+    PFNVBOXGUESTMOUSENOTIFY      pfnNotify;
     /** The callback argument*/
     void                       *pvUser;
 } VBoxGuestMouseSetNotifyCallback;
