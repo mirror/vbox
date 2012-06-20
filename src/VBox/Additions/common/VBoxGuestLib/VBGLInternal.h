@@ -100,6 +100,17 @@ typedef struct _VBGLDATA
 
 #ifndef VBGL_VBOXGUEST
     /**
+     * Handle for the main driver instance.
+     * @{
+     */
+
+    RTSEMFASTMUTEX mutexDriverInit;
+
+    VBGLDRIVER driver;
+
+    /** @} */
+
+    /**
      * Fast heap for HGCM handles data.
      * @{
      */
@@ -154,6 +165,14 @@ int vbglR0HGCMInit (void);
 int vbglR0HGCMTerminate (void);
 # endif
 #endif /* VBOX_WITH_HGCM */
+
+#ifndef VBGL_VBOXGUEST
+/**
+ * Get a handle to the main VBoxGuest driver.
+ * @returns VERR_TRY_AGAIN if the main driver has not yet been loaded.
+ */
+int vbglGetDriver(VBGLDRIVER **ppDriver);
+#endif
 
 #endif /* !___VBoxGuestLib_VBGLInternal_h */
 

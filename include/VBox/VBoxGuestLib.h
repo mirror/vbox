@@ -30,6 +30,7 @@
 #include <VBox/VMMDev2.h>
 #include <VBox/VMMDev.h>     /* grumble */
 #ifdef IN_RING0
+# include <VBox/VBoxGuest.h>
 # include <VBox/VBoxGuest2.h>
 #endif
 
@@ -110,6 +111,12 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemor
  * @return VBox status code.
  */
 DECLVBGL(int) VbglInit (void);
+
+/**
+ * Check whether the main VBoxGuest driver is loaded.  (The load order of guest
+ * drivers is not guaranteed on all platforms.)
+ */
+DECLVBGL(bool) VbglIsReady(void);
 
 # endif
 
@@ -391,6 +398,15 @@ DECLVBGL(void) VbglPhysHeapFree (void *p);
 
 DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory);
 DECLR0VBGL(bool) VbglR0CanUsePhysPageList(void);
+
+# ifndef VBOX_GUEST
+/** @name Mouse
+ * @{ */
+DECLVBGL(int)     VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify, void *pvUser);
+DECLVBGL(int)     VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
+DECLVBGL(int)     VbglSetMouseStatus(uint32_t fFeatures);
+/** @}  */
+# endif /* VBOX_GUEST */
 
 #endif /* IN_RING0 && !IN_RING0_AGNOSTIC */
 /** @} */

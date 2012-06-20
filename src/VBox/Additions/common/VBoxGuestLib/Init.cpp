@@ -32,6 +32,7 @@
 
 #include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/semaphore.h>
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -40,7 +41,7 @@
 VBGLDATA g_vbgldata;
 
 /**
- * Used by vbglQueryVMMDevPort and VbglInit to try get the host feature mask and
+ * Used by vbglQueryDriverInfo and VbglInit to try get the host feature mask and
  * version information (g_vbgldata::hostVersion).
  *
  * This was first implemented by the host in 3.1 and we quietly ignore failures
@@ -77,13 +78,22 @@ static void vbglR0QueryHostVersion (void)
  * values and fails if they are unavailable.
  *
  */
-static void vbglQueryVMMDevPort (void)
+static void vbglQueryDriverInfo (void)
 {
     int rc = VINF_SUCCESS;
 
-    VBGLDRIVER driver;
+    rc = RTSemFastMutexRequest(g_vbgldata.mutexDriverInit);
+    
+    if (RT_FAILURE(rc))
+        return;
 
-    rc = vbglDriverOpen (&driver);
+    if (g_vbgldata.status == VbglStatusReady)
+    {
+        RTSemFastMutexRelease(g_vbgldata.mutexDriverInit);
+        return;
+    }
+
+    rc = vbglDriverOpen(&g_vbgldata.driver);
 
     if (RT_SUCCESS(rc))
     {
@@ -92,7 +102,9 @@ static void vbglQueryVMMDevPort (void)
          */
         VBoxGuestPortInfo port;
 
-        rc = vbglDriverIOCtl (&driver, VBOXGUEST_IOCTL_GETVMMDEVPORT, &port, sizeof (port));
+        rc = vbglDriverIOCtl (&g_vbgldata.driver,
+                              VBOXGUEST_IOCTL_GETVMMDEVPORT, &port,
+                              sizeof (port));
 
         if (RT_SUCCESS (rc))
         {
@@ -105,11 +117,9 @@ static void vbglQueryVMMDevPort (void)
 
             vbglR0QueryHostVersion();
         }
-
-        vbglDriverClose (&driver);
     }
-
-    dprintf (("vbglQueryVMMDevPort rc = %d\n", rc));
+    RTSemFastMutexRelease(g_vbgldata.mutexDriverInit);
+    dprintf (("vbglQueryDriverInfo rc = %d\n", rc));
 }
 #endif /* !VBGL_VBOXGUEST */
 
@@ -127,7 +137,7 @@ int vbglR0Enter (void)
 #ifndef VBGL_VBOXGUEST
     if (g_vbgldata.status == VbglStatusInitializing)
     {
-        vbglQueryVMMDevPort ();
+        vbglQueryDriverInfo ();
     }
 #endif
 
@@ -233,20 +243,36 @@ DECLVBGL(int) VbglInit (void)
 
     if (RT_SUCCESS(rc))
     {
-        /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
-        vbglQueryVMMDevPort ();
+        rc = RTSemFastMutexCreate(&g_vbgldata.mutexDriverInit);
+        if (RT_SUCCESS(rc))
+        {
+            /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
+            vbglQueryDriverInfo ();
 
 # ifdef VBOX_WITH_HGCM
-        rc = vbglR0HGCMInit ();
+            rc = vbglR0HGCMInit ();
 # endif /* VBOX_WITH_HGCM */
+
+            if (RT_FAILURE(rc))
+            {
+                RTSemFastMutexDestroy(g_vbgldata.mutexDriverInit);
+                g_vbgldata.mutexDriverInit = NIL_RTSEMFASTMUTEX;
+            }
+        }
 
         if (RT_FAILURE(rc))
         {
             vbglTerminateCommon ();
         }
+        
     }
 
     return rc;
+}
+
+DECLVBGL(bool) VbglIsReady(void)
+{
+    return(g_vbgldata.status == VbglStatusReady);
 }
 
 DECLVBGL(void) VbglTerminate (void)
@@ -256,9 +282,23 @@ DECLVBGL(void) VbglTerminate (void)
 # endif
 
     vbglTerminateCommon ();
+    vbglDriverClose(&g_vbgldata.driver);
+    RTSemFastMutexDestroy(g_vbgldata.mutexDriverInit);
+    g_vbgldata.mutexDriverInit = NIL_RTSEMFASTMUTEX;
 
     return;
 }
 
-#endif /* !VBGL_VBOXGUEST */
+int vbglGetDriver(VBGLDRIVER **ppDriver)
+{
+    if (g_vbgldata.status != VbglStatusReady)
+    {
+        vbglQueryDriverInfo();
+        if (g_vbgldata.status != VbglStatusReady)
+            return VERR_TRY_AGAIN;
+    }
+    *ppDriver = &g_vbgldata.driver;
+    return VINF_SUCCESS;
+}
 
+#endif /* !VBGL_VBOXGUEST */

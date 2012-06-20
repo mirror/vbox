@@ -334,9 +334,11 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define mod_info(...) 0
 #define RTR0Init(...) VINF_SUCCESS
 #define RTR0Term(...) do {} while(0)
+#define RTR0AssertPanicSystem(...) do {} while(0)
 #define RTLogCreate(...) VINF_SUCCESS
 #define RTLogRelSetDefaultInstance(...) do {} while(0)
 #define RTLogDestroy(...) do {} while(0)
+#if 0
 #define VBoxGuestCreateKernelSession(...) VINF_SUCCESS
 #define VBoxGuestCreateUserSession(...) VINF_SUCCESS
 #define VBoxGuestCloseSession(...) do {} while(0)
@@ -347,6 +349,11 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define VbglGRAlloc(...) VINF_SUCCESS
 #define VbglGRPerform(...) VINF_SUCCESS
 #define VbglGRFree(...) do {} while(0)
+#endif
+#define VbglInit(...) VINF_SUCCESS
+#define vbglDriverOpen(...) VINF_SUCCESS
+#define vbglDriverClose(...) do {} while(0)
+#define vbglDriverIOCtl(...) VINF_SUCCESS
 #define qprocson(...) do {} while(0)
 #define qprocsoff(...) do {} while(0)
 #define flushq(...) do {} while(0)
