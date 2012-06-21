@@ -591,6 +591,8 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 endif
 # Enables the UDP tunnel transport.
 VBOX_WITH_UDPTUNNEL = 1
+# Enable the netshaper support
+VBOX_WITH_NETSHAPER = 1
 # Enable Virtual Distributed Ethernet or not.
 if1of ($(KBUILD_TARGET), freebsd linux)
  VBOX_WITH_VDE = 1
