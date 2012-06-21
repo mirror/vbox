@@ -294,7 +294,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
                 "of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
 
     if (   sosendto(pData, so, m) == -1
-        && (   soIgnorableErrorCode(errno)
+        && (   !soIgnorableErrorCode(errno)
             && errno != ENOTCONN))
     {
         m->m_len += iphlen;
