@@ -946,6 +946,12 @@ static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
                 pParam->Base.idxDbgReg = reg;
                 return offInstr;
 
+            case OP_PARM_Q: //MMX or memory operand
+                if (mod != 3)
+                    break;  /* memory operand */
+                reg = rm; /* the RM field specifies the xmm register */
+                /* else no break */
+
             case OP_PARM_P: //MMX register
                 reg &= 7;   /* REX.R has no effect here */
                 pParam->fUse |= DISUSE_REG_MMX;
@@ -2436,12 +2442,14 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
             // segment override prefix byte
             case OP_SEG:
                 pDis->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].fParam1 - OP_PARM_REG_SEG_START);
+#if 0  /* Try be accurate in our reporting, shouldn't break anything... :-) */
                 /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                 if (   pDis->uCpuMode != DISCPUMODE_64BIT
                     || pDis->idxSegPrefix >= DISSELREG_FS)
-                {
                     pDis->fPrefix   |= DISPREFIX_SEG;
-                }
+#else
+                pDis->fPrefix |= DISPREFIX_SEG;
+#endif
                 continue;   //fetch the next byte
 
             // lock prefix byte
