@@ -327,7 +327,8 @@ IMAGE_PATH             = \
     doc \
     doc/tg/Networking-diagrams \
     doc/tg/USB-diagrams \
-    doc/tg/diagrams
+    doc/tg/diagrams \
+    doc/VMM
 INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO
