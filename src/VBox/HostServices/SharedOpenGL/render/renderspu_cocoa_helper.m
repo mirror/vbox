@@ -1783,7 +1783,7 @@ void cocoaViewDestroy(NativeNSViewRef pView)
     for (; a > 1; --a)
         [pWin performSelector:@selector(release)]
     */
-    [pWin performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:YES];
+    [pWin performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
     /*
     [pWin release];
     */
@@ -1796,7 +1796,7 @@ void cocoaViewDestroy(NativeNSViewRef pView)
     a = [pView retainCount];
     for (; a > 1; --a)
     */
-    [pView performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:YES];
+    [pView performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
     /*
     [pView release];
     */
