@@ -232,7 +232,15 @@ DECLINLINE(void) pdmNsBwGroupUnref(PPDMNSBWGROUP pBwGroup)
 
 static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
 {
-    int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
+    /*
+     * We don't need to hold the bandwidth group lock to iterate over the list
+     * of filters since the filters are removed while the shaper lock is being
+     * held.
+     */
+    AssertPtr(pBwGroup);
+    AssertPtr(pBwGroup->pShaper);
+    Assert(RTCritSectIsOwner(&pBwGroup->pShaper->cs));
+    //int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
 
     PPDMNSFILTER pFilter = pBwGroup->pFiltersHead;
     while (pFilter)
@@ -248,7 +256,7 @@ static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
         pFilter = pFilter->pNext;
     }
 
-    rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
+    //rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
 }
 
 static void pdmNsFilterLink(PPDMNSFILTER pFilter)
@@ -265,6 +273,14 @@ static void pdmNsFilterLink(PPDMNSFILTER pFilter)
 static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
 {
     PPDMNSBWGROUP pBwGroup = pFilter->pBwGroupR3;
+    /*
+     * We need to make sure we hold the shaper lock since pdmNsBwGroupXmitPending()
+     * does not hold the bandwidth group lock while iterating over the list
+     * of group's filters.
+     */
+    AssertPtr(pBwGroup);
+    AssertPtr(pBwGroup->pShaper);
+    Assert(RTCritSectIsOwner(&pBwGroup->pShaper->cs));
     int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
 
     if (pFilter == pBwGroup->pFiltersHead)
