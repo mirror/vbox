@@ -31,11 +31,11 @@
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifndef DIS_CORE_ONLY
-static char SZINVALID_OPCODE[] = "Invalid Opcode";
+static char g_szInvalidOpcode[] = "Invalid Opcode";
 #endif
 
 #define INVALID_OPCODE  \
-    OP(SZINVALID_OPCODE,     0,              0,          0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_INVALID)
+    OP(g_szInvalidOpcode,    0,              0,          0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_INVALID)
 #define INVALID_OPCODE_BLOCK \
     INVALID_OPCODE,\
     INVALID_OPCODE,\
@@ -54,25 +54,26 @@ static char SZINVALID_OPCODE[] = "Invalid Opcode";
     INVALID_OPCODE,\
     INVALID_OPCODE,
 
-#define INVALID_OPCODE_MOD_RM \
-    OP(SZINVALID_OPCODE,     IDX_ParseInvOpModRM, 0,     0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_INVALID)
-#define INVALID_OPCODE_BLOCK_MOD_RM \
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,\
-    INVALID_OPCODE_MOD_RM,
+#define INVALID_OPCODE_MOD_RM(a_Index) \
+    OP(g_szInvalidOpcode,    IDX_ParseInvOpModRM, 0,     0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_INVALID)
+#define INVALID_OPCODE_BLOCK_MOD_RM(a_UpperDigit) \
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 0),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 1),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 2),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 3),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 4),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 5),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 6),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 7),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 8),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## 9),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## a),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## b),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## c),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## d),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## e),\
+    INVALID_OPCODE_MOD_RM(a_UpperDigit ## f),
+
 
 /* Invalid opcode */
 const DISOPCODE g_InvalidOpcode[1] =
@@ -1496,140 +1497,142 @@ PCDISOPCODE const g_apThreeByteMapX86_660F3A[16] =
 const DISOPCODE g_aTwoByteMapX86_3DNow[256] =
 {
     /* 0 */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x00),
+    INVALID_OPCODE_MOD_RM(0x01),
+    INVALID_OPCODE_MOD_RM(0x02),
+    INVALID_OPCODE_MOD_RM(0x03),
+    INVALID_OPCODE_MOD_RM(0x04),
+    INVALID_OPCODE_MOD_RM(0x05),
+    INVALID_OPCODE_MOD_RM(0x06),
+    INVALID_OPCODE_MOD_RM(0x07),
+    INVALID_OPCODE_MOD_RM(0x08),
+    INVALID_OPCODE_MOD_RM(0x09),
+    INVALID_OPCODE_MOD_RM(0x0a),
+    INVALID_OPCODE_MOD_RM(0x0c),
     OP("pi2fw %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PI2FW,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pi2fd %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PI2FD,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x0e),
+    INVALID_OPCODE_MOD_RM(0x0f),
 
     /* 1 */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x10),
+    INVALID_OPCODE_MOD_RM(0x11),
+    INVALID_OPCODE_MOD_RM(0x12),
+    INVALID_OPCODE_MOD_RM(0x13),
+    INVALID_OPCODE_MOD_RM(0x14),
+    INVALID_OPCODE_MOD_RM(0x15),
+    INVALID_OPCODE_MOD_RM(0x16),
+    INVALID_OPCODE_MOD_RM(0x17),
+    INVALID_OPCODE_MOD_RM(0x18),
+    INVALID_OPCODE_MOD_RM(0x19),
+    INVALID_OPCODE_MOD_RM(0x1a),
+    INVALID_OPCODE_MOD_RM(0x1b),
     OP("pf2iw %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PF2IW,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pf2id %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PF2ID,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x1e),
+    INVALID_OPCODE_MOD_RM(0x1f),
 
     /* 2 */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0x2)
 
     /* 3 */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0x3)
 
     /* 4 */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0x4)
 
     /* 5 */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0x5)
 
     /* 6 */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0x6)
 
     /* 7 */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0x7)
 
     /* 8 */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x80),
+    INVALID_OPCODE_MOD_RM(0x81),
+    INVALID_OPCODE_MOD_RM(0x82),
+    INVALID_OPCODE_MOD_RM(0x83),
+    INVALID_OPCODE_MOD_RM(0x84),
+    INVALID_OPCODE_MOD_RM(0x85),
+    INVALID_OPCODE_MOD_RM(0x86),
+    INVALID_OPCODE_MOD_RM(0x87),
+    INVALID_OPCODE_MOD_RM(0x88),
+    INVALID_OPCODE_MOD_RM(0x89),
     OP("pfnacc %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFNACC,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x8b),
+    INVALID_OPCODE_MOD_RM(0x8c),
+    INVALID_OPCODE_MOD_RM(0x8d),
     OP("pfpnacc %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFPNACC, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x8f),
 
     /* 9 */
     OP("pfcmpge %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFCMPGE, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x91),
+    INVALID_OPCODE_MOD_RM(0x92),
+    INVALID_OPCODE_MOD_RM(0x93),
     OP("pfmin %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFMIN,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x95),
     OP("pfrcp %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFRCP,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pfrsqrt %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFRSQRT, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x98),
+    INVALID_OPCODE_MOD_RM(0x99),
     OP("pfsub %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFSUB,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x9b),
+    INVALID_OPCODE_MOD_RM(0x9c),
+    INVALID_OPCODE_MOD_RM(0x9d),
     OP("pfadd %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFADD,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x9f),
 
     /* a */
     OP("pfcmpgt %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFCMPGT, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xa1),
+    INVALID_OPCODE_MOD_RM(0xa2),
+    INVALID_OPCODE_MOD_RM(0xa3),
     OP("pfmax %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFMAX,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xa5),
     OP("pfrcpit1 %Pq,%Qq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFRCPIT1,OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pfrsqrtit1 %Pq,%Qq", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFRSQRTIT1,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xa8),
+    INVALID_OPCODE_MOD_RM(0xa9),
     OP("pfsubr %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFSUBR,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xab),
+    INVALID_OPCODE_MOD_RM(0xac),
+    INVALID_OPCODE_MOD_RM(0xad),
     OP("pfacc %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFACC,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xaf),
 
     /* b */
     OP("pfcmpeq %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFCMPEQ, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xb1),
+    INVALID_OPCODE_MOD_RM(0xb2),
+    INVALID_OPCODE_MOD_RM(0xb3),
     OP("pfmul %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFMUL,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xb5),
     OP("pfrcpit2 %Pq,%Qq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFRCPIT2,OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pfmulhrw %Pq,%Qq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFMULHRW,OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xb8),
+    INVALID_OPCODE_MOD_RM(0xb9),
+    INVALID_OPCODE_MOD_RM(0xba),
     OP("pswapd %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PFSWAPD, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xbc),
+    INVALID_OPCODE_MOD_RM(0xbd),
+    INVALID_OPCODE_MOD_RM(0xbe),
     OP("pavgusb %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PAVGUSB, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 
     /* c */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0xc)
 
     /* d */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0xd)
 
     /* e */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0xe)
 
     /* f */
-    INVALID_OPCODE_BLOCK_MOD_RM
+    INVALID_OPCODE_BLOCK_MOD_RM(0xf)
 };
 
 
@@ -2439,7 +2442,7 @@ const DISOPCODE g_aMapX86_Group3[8*2] =
     /* F6 */
     OP("test %Eb,%Ib",       IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_TEST,   OP_PARM_Eb,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     //AMD manual claims test??
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xf601),
     OP("not %Eb",            IDX_ParseModRM,     0,          0,          OP_NOT,     OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("neg %Eb",            IDX_ParseModRM,     0,          0,          OP_NEG,     OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mul %Eb",            IDX_ParseModRM,     0,          0,          OP_MUL,     OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2450,7 +2453,7 @@ const DISOPCODE g_aMapX86_Group3[8*2] =
     /* F7 */
     OP("test %Ev,%Iz",       IDX_ParseModRM,     IDX_ParseImmZ,  0,          OP_TEST,    OP_PARM_Ev,         OP_PARM_Iz ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     //AMD manual claims test??
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xf701),
     OP("not %Ev",            IDX_ParseModRM,     0,          0,          OP_NOT,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("neg %Ev",            IDX_ParseModRM,     0,          0,          OP_NEG,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mul %Ev",            IDX_ParseModRM,     0,          0,          OP_MUL,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2464,12 +2467,12 @@ const DISOPCODE g_aMapX86_Group4[8] =
     /* FE */
     OP("inc %Eb",            IDX_ParseModRM,     0,          0,          OP_INC,     OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("dec %Eb",            IDX_ParseModRM,     0,          0,          OP_DEC,     OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xfe02),
+    INVALID_OPCODE_MOD_RM(0xfe03),
+    INVALID_OPCODE_MOD_RM(0xfe04),
+    INVALID_OPCODE_MOD_RM(0xfe05),
+    INVALID_OPCODE_MOD_RM(0xfe06),
+    INVALID_OPCODE_MOD_RM(0xfe07),
 };
 
 const DISOPCODE g_aMapX86_Group5[8] =
@@ -2482,7 +2485,7 @@ const DISOPCODE g_aMapX86_Group5[8] =
     OP("jmp %Ev",            IDX_ParseModRM,     0,          0,          OP_JMP,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW | DISOPTYPE_FORCED_64_OP_SIZE),
     OP("jmp %Ep",            IDX_ParseModRM,     0,          0,          OP_JMP,     OP_PARM_Ep,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW),
     OP("push %Ev",           IDX_ParseModRM,     0,          0,          OP_PUSH,    OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_DEFAULT_64_OP_SIZE),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0xff07),
 };
 
 
@@ -2495,8 +2498,8 @@ const DISOPCODE g_aMapX86_Group6[8] =
     OP("ltr %Ew",            IDX_ParseModRM,     0,          0,          OP_LTR,     OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
     OP("verr %Ew",           IDX_ParseModRM,     0,          0,          OP_VERR,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
     OP("verw %Ew",           IDX_ParseModRM,     0,          0,          OP_VERW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x0f0006),
+    INVALID_OPCODE_MOD_RM(0x0f0007),
 };
 
 /* Note!! Group 7 is NOT using the INVALID_OPCODE_MOD_RM because of monitor and vmcall. */
@@ -2544,10 +2547,10 @@ const DISOPCODE g_aMapX86_Group7_mod11_rm001[8] =
 const DISOPCODE g_aMapX86_Group8[8] =
 {
     /* 0F BA */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("bt %Ev,%Ib",         IDX_ParseModRM,     IDX_ParseImmByte,       0,          OP_BT,      OP_PARM_Ev,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("bts %Ev,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,       0,          OP_BTS,     OP_PARM_Ev,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("btr %Ev,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,       0,          OP_BTR,     OP_PARM_Ev,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2557,27 +2560,27 @@ const DISOPCODE g_aMapX86_Group8[8] =
 const DISOPCODE g_aMapX86_Group9[8] =
 {
     /* 0F C7 */
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("cmpxchg8b %Mq",      IDX_ParseModRM,     0,          0,          OP_CMPXCHG8B, OP_PARM_Mq,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
 };
 
 const DISOPCODE g_aMapX86_Group10[8] =
 {
     /* 0F B9 */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
 };
 
 
@@ -2607,68 +2610,68 @@ const DISOPCODE g_aMapX86_Group11[8*2] =
 /* 0xF 0x71 */
 const DISOPCODE g_aMapX86_Group12[8*2] =
 {
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrlw %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRLW,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psraw %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRAW,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psllw %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSLLW,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
 
     /* Group 12 with prefix 0x66 */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrlw %Pdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRLW,  OP_PARM_Pdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psraw %Pdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRAW,  OP_PARM_Pdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psllw %Pdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSLLW,  OP_PARM_Pdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
 };
 
 /* 0xF 0x72 */
 const DISOPCODE g_aMapX86_Group13[8*2] =
 {
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrld %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRLD,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrad %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRAD,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("pslld %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSLLD,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
 
     /* Group 13 with prefix 0x66 */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrld %Wdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRLD,  OP_PARM_Wdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrad %Wdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRAD,  OP_PARM_Wdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
     OP("pslld %Wdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSLLD,  OP_PARM_Wdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
 };
 
 /* 0xF 0x73 */
 const DISOPCODE g_aMapX86_Group14[8*2] =
 {
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrlq %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRLQ,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psllq %Pq,%Ib",      IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSLLQ,  OP_PARM_Pq,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
 
     /* Group 14 with prefix 0x66 */
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psrlq %Wdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRLD,  OP_PARM_Wdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("psrldq %Wdq,%Ib",    IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSRLDQ, OP_PARM_Wdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("psllq %Wdq,%Ib",     IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSLLD,  OP_PARM_Wdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pslldq %Wdq,%Ib",    IDX_ParseModRM,     IDX_ParseImmByte,0,          OP_PSLLDQ, OP_PARM_Wdq,        OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
@@ -2681,20 +2684,20 @@ const DISOPCODE g_aMapX86_Group15_mem[8] =
     OP("fxrstor %M",         IDX_ParseModRM,     0,          0,          OP_FXRSTOR, OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("ldmxcsr %M",         IDX_ParseModRM,     0,          0,          OP_LDMXCSR, OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("stmxcsr %M",         IDX_ParseModRM,     0,          0,          OP_STMXCSR, OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("clflush %Mb",        IDX_ParseModRM,     0,          0,          OP_CLFLUSH, OP_PARM_Mb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
 
 /* 0xF 0xAE */
 const DISOPCODE g_aMapX86_Group15_mod11_rm000[8] =
 {
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
     OP("lfence",             IDX_ParseModFence,  0,          0,          OP_LFENCE,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mfence",             IDX_ParseModFence,  0,          0,          OP_MFENCE,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("sfence",             IDX_ParseModFence,  0,          0,          OP_SFENCE,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2707,10 +2710,10 @@ const DISOPCODE g_aMapX86_Group16[8] =
     OP("prefetcht0 %Mb",   IDX_ParseModRM, 0,          0,          OP_PREFETCH,OP_PARM_Mb,        OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("prefetcht1 %Mb",   IDX_ParseModRM, 0,          0,          OP_PREFETCH,OP_PARM_Mb,        OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("prefetcht2 %Mb",   IDX_ParseModRM, 0,          0,          OP_PREFETCH,OP_PARM_Mb,        OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
-    INVALID_OPCODE_MOD_RM,
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
+    INVALID_OPCODE_MOD_RM(0x),
 };
 
 /* 0x90 or 0xF3 0x90 */

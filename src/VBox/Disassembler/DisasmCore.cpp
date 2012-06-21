@@ -2141,7 +2141,7 @@ static size_t ParseGrp5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    /** @todo This code needs testing! */
+    /** @todo This code needs testing!  Esp. wrt invalid opcodes. */
 
     uint8_t ModRM = disReadByte(pDis, offInstr);
     pDis->ModRM.Bits.Rm  = MODRM_RM(ModRM);
@@ -2155,7 +2155,7 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     pOp = &g_aTwoByteMapX86_3DNow[opcode];
 
     size_t offStrict = disParseInstruction(offInstr, pOp, pDis);
-    Assert(offStrict == offRet - 1);  NOREF(offStrict);   /* the imm8_opcode */
+    Assert(offStrict == offRet - 1 || pOp->uOpcode == OP_INVALID);  NOREF(offStrict);   /* the imm8_opcode */
     return offRet;
 }
 //*****************************************************************************
