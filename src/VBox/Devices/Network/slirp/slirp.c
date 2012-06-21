@@ -1113,9 +1113,7 @@ static bool slirpConnectOrWrite(PNATState pData, struct socket *so, bool fConnec
     if (ret < 0)
     {
         /* XXXXX Must fix, zero bytes is a NOP */
-        if (   errno == EAGAIN
-            || errno == EWOULDBLOCK
-            || errno == EINPROGRESS
+        if (   soIgnorableErrorCode(errno)
             || errno == ENOTCONN)
         {
             LogFlowFunc(("LEAVE: false\n"));
@@ -1383,9 +1381,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             if (ret < 0)
             {
                 /* XXX */
-                if (   errno == EAGAIN
-                    || errno == EWOULDBLOCK
-                    || errno == EINPROGRESS
+                if (   soIgnorableErrorCode(errno)
                     || errno == ENOTCONN)
                 {
                     CONTINUE(tcp); /* Still connecting, continue */
@@ -1402,9 +1398,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 if (ret < 0)
                 {
                     /* XXX */
-                    if (   errno == EAGAIN
-                        || errno == EWOULDBLOCK
-                        || errno == EINPROGRESS
+                    if (   soIgnorableErrorCode(errno)
                         || errno == ENOTCONN)
                     {
                         CONTINUE(tcp);

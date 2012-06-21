@@ -194,4 +194,11 @@ struct socket * soCloneUDPSocketWithForegnAddr(PNATState pData, bool fBindSocket
 struct socket *soLookUpClonedUDPSocket(PNATState pData, const struct socket *pcSo, uint32_t u32ForeignAddress);
 #endif
 
+static inline int soIgnorableErrorCode(int iErrorCode)
+{
+    return (   iErrorCode == EINPROGRESS
+            || iErrorCode == EAGAIN
+            || iErrorCode == EWOULDBLOCK);
+}
+
 #endif /* _SOCKET_H_ */

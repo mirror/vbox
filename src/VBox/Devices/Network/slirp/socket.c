@@ -334,9 +334,7 @@ soread(PNATState pData, struct socket *so)
             return 0;
         }
         if (   nn < 0
-            && (   errno == EINTR
-                || errno == EAGAIN
-                || errno == EWOULDBLOCK))
+            && soIgnorableErrorCode(errno))
         {
             SOCKET_UNLOCK(so);
             STAM_PROFILE_STOP(&pData->StatIOread, a);
@@ -467,9 +465,7 @@ soread(PNATState pData, struct socket *so)
             return 0;
         }
         if (   n < 0
-            && (   errno == EINTR
-                || errno == EAGAIN
-                || errno == EWOULDBLOCK))
+            && soIgnorableErrorCode(errno))
         {
             SOCKET_UNLOCK(so);
             STAM_PROFILE_STOP(&pData->StatIOread, a);
@@ -686,9 +682,7 @@ sowrite(PNATState pData, struct socket *so)
     Log2(("%s: wrote(1) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
     /* This should never happen, but people tell me it does *shrug* */
     if (   nn < 0
-        && (   errno == EAGAIN
-            || errno == EINTR
-            || errno == EWOULDBLOCK))
+        && soIgnorableErrorCode(errno))
     {
         SOCKET_UNLOCK(so);
         STAM_PROFILE_STOP(&pData->StatIOwrite, a);
@@ -844,9 +838,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         rc = ioctlsocket(so->s, FIONREAD, &n);
         if (rc == -1)
         {
-            if (  errno == EAGAIN
-               || errno == EWOULDBLOCK
-               || errno == EINPROGRESS
+            if (  soIgnorableErrorCode(errno)
                || errno == ENOTCONN)
                 return;
             else if (signalled == 0)
@@ -916,9 +908,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                 code = ICMP_UNREACH_NET;
 
             m_freem(pData, m);
-            if (   errno == EAGAIN
-                || errno == EWOULDBLOCK
-                || errno == EINPROGRESS
+            if (   soIgnorableErrorCode(errno)
                 || errno == ENOTCONN)
             {
                 return;
@@ -1626,9 +1616,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     len = recvfrom(so->s, &ip, sizeof(struct ip), MSG_PEEK,
                    (struct sockaddr *)&addr, &addrlen);
     if (   len < 0
-        && (   errno == EAGAIN
-            || errno == EWOULDBLOCK
-            || errno == EINPROGRESS
+        && (   soIgnorableErrorCode(errno)
             || errno == ENOTCONN))
     {
         Log(("sorecvfrom_icmp_unix: 1 - step can't read IP datagramm (would block)\n"));
@@ -1685,9 +1673,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     len = recvfrom(so->s, buff, len, 0,
                    (struct sockaddr *)&addr, &addrlen);
     if (   len < 0
-        && (   errno == EAGAIN
-            || errno == EWOULDBLOCK
-            || errno == EINPROGRESS
+        && (   soIgnorableErrorCode(errno)
             || errno == ENOTCONN))
     {
         Log(("sorecvfrom_icmp_unix: 2 - step can't read IP body (would block expected:%d)\n",
