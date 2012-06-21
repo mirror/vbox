@@ -2161,7 +2161,11 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     pOp = &g_aTwoByteMapX86_3DNow[opcode];
 
     size_t offStrict = disParseInstruction(offInstr, pOp, pDis);
-    Assert(offStrict == offRet - 1 || pOp->uOpcode == OP_INVALID);  NOREF(offStrict);   /* the imm8_opcode */
+
+    AssertMsg(offStrict == offRet - 1  /* the imm8_opcode */ || pOp->uOpcode == OP_INVALID,
+              ("offStrict=%#x offRet=%#x uOpCode=%u\n", offStrict, offRet, pOp->uOpcode));
+    NOREF(offStrict);
+
     return offRet;
 }
 //*****************************************************************************
