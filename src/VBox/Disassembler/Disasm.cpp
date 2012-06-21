@@ -101,7 +101,7 @@ DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
                                      DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_BRACKETS | DIS_FMT_FLAGS_BYTES_SPACED
                                      | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_ADDR_LEFT,
                                      NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-        if (cch < cbOutput)
+        if (cch + 2 <= cbOutput)
         {
             pszOutput[cch++] = '\n';
             pszOutput[cch] = '\0';
