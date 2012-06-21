@@ -821,9 +821,7 @@ GetSocket(struct libalias *la, u_short port_net, struct alias_link *pLnk, int li
             sin.sin_port = so->so_fport;
             ret = connect(so->s, (struct sockaddr *)&sin, sizeof(sin));
             if (   ret < 0
-                && errno == EINPROGRESS
-                && errno == EAGAIN
-                && errno == EWOULDBLOCK)
+                && !soIgnorableErrorCode(errno))
             {
                 closesocket(so->s);
                 RTMemFree(so);
