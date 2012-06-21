@@ -398,7 +398,7 @@ static int HexDigitToNum(char ch)
         case 'F':
         case 'f': return 0xf;
         default:
-            RTPrintf("error: Invalid hex digig '%c'\n", ch);
+            RTPrintf("error: Invalid hex digit '%c'\n", ch);
             return -1;
     }
 }
@@ -579,12 +579,19 @@ int main(int argc, char **argv)
             {
                 /** @todo this stuff belongs in IPRT, same stuff as mac address reading. Could be reused for IPv6 with a different item size.*/
                 /* skip white space, and for the benefit of linux panics '<' and '>'. */
-                while (RT_C_IS_SPACE(ch2 = *psz) || ch2 == '<' || ch2 == '>')
+                while (RT_C_IS_SPACE(ch2 = *psz) || ch2 == '<' || ch2 == '>' || ch2 == ',' || ch2 == ';')
                 {
                     if (ch2 == '<')
                         uHighlightAddr = uAddress + cb;
                     psz++;
                 }
+
+                if (ch2 == '0' && (psz[1] == 'x' || psz[1] == 'X'))
+                {
+                    psz += 2;
+                    ch2 = *psz;
+                }
+
                 if (!ch2)
                     break;
 
@@ -592,7 +599,7 @@ int main(int argc, char **argv)
                 int iNum = HexDigitToNum(*psz++);
                 if (iNum == -1)
                     return 1;
-                if (!RT_C_IS_SPACE(ch2 = *psz) && ch2 != '\0' && ch2 != '>')
+                if (!RT_C_IS_SPACE(ch2 = *psz) && ch2 != '\0' && ch2 != '>' && ch2 != ',' && ch2 != ';')
                 {
                     int iDigit = HexDigitToNum(*psz++);
                     if (iDigit == -1)

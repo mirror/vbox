@@ -84,6 +84,8 @@ BEGINPROC   TestProc32
 
         pause
         nop
+        ;pfmulhrw mm0, qword [ds:ebp+edi*8+00f000001h]
+        db 0x3e, 0xf, 0xf, 0x84, 0xfd, 0x1, 0x0, 0x0, 0xf, 0xb7
 ENDPROC   TestProc32
 
 
