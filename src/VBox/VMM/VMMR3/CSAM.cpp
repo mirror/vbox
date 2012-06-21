@@ -778,7 +778,7 @@ static DECLCALLBACK(int) csamR3ReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, ui
              || PATMIsPatchGCAddr(pDisInfo->pVM, uSrcAddr) /** @todo does CSAM actually analyze patch code, or is this just a copy&past check? */
             )
     {
-        memcpy(&pDis->abInstr[offInstr], &pDisInfo->pbSrcInstr[offInstr], cbMaxRead);
+        memcpy(&pDis->abInstr[offInstr], &pDisInfo->pbSrcInstr[offInstr], cbMinRead);
         offInstr += cbMinRead;
         rc = VINF_SUCCESS;
     }
