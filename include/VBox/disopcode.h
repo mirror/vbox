@@ -746,10 +746,9 @@
 #define OP_PARM_J               0x1A0
 #define OP_PARM_M               0x1C0
 #define OP_PARM_O               0x1E0
-#define OP_PARM_Q               0x200
-#define OP_PARM_R               0x220
-#define OP_PARM_X               0x240
-#define OP_PARM_Y               0x260
+#define OP_PARM_R               0x200
+#define OP_PARM_X               0x220
+#define OP_PARM_Y               0x240
 
 /* Grouped rare parameters for optimization purposes */
 #define IS_OP_PARM_RARE(a)      ((a & 0xF00) == 0x300)
@@ -757,9 +756,10 @@
 #define OP_PARM_D               0x320       /* debug register */
 #define OP_PARM_S               0x340       /* segment register */
 #define OP_PARM_T               0x360       /* test register */
-#define OP_PARM_P               0x380       /* mmx register */
-#define OP_PARM_W               0x3A0       /* xmm register */
-#define OP_PARM_V               0x3C0
+#define OP_PARM_Q               0x380
+#define OP_PARM_P               0x3A0       /* mmx register */
+#define OP_PARM_W               0x3C0       /* xmm register */
+#define OP_PARM_V               0x3E0
 
 #define OP_PARM_NONE            0
 #define OP_PARM_a               0x1
