@@ -84,8 +84,66 @@ BEGINPROC   TestProc32
 
         pause
         nop
-        ;pfmulhrw mm0, qword [ds:ebp+edi*8+00f000001h]
-        db 0x3e, 0xf, 0xf, 0x84, 0xfd, 0x1, 0x0, 0x0, 0xf, 0xb7
+
+        ; 3Dnow!
+        pavgusb     mm1, mm0
+        pf2id       mm5, mm4
+        pf2iw       mm6, mm3
+        pfacc       mm7, mm2
+        pfadd       mm5, mm4
+        pfcmpeq     mm6, mm3
+        pfcmpge     mm2, mm7
+        pfcmpgt     mm4, mm5
+        pfmax       mm3, mm6
+        pfmin       mm1, mm0
+        pfmul       mm5, mm4
+        pmulhrwa    mm3, mm6
+        pfnacc      mm4, mm5
+        pfpnacc     mm3, mm6
+        pfrcp       mm0, mm1
+        pfrcpit1    mm2, mm7
+        pfrcpit2    mm4, mm5
+        pfrsqrt     mm7, mm2
+        pfrsqit1    mm1, mm0
+        pfsub       mm6, mm3
+        pfsubr      mm0, mm1
+        pi2fd       mm7, mm2
+        pi2fw       mm0, mm1
+        pswapd      mm2, mm7
+
+        pavgusb     mm1, qword [es:eax+000000010h]
+        pf2id       mm5, qword [ds:esi+000101010h]
+        pf2iw       mm6, qword [fs:esi+000101010h]
+        pfacc       mm7, qword [gs:esi+000101010h]
+        pfadd       mm5, qword [   esi+000101010h]
+        pfcmpeq     mm6, qword [ edi*8+000101010h]
+        pfcmpge     mm2, qword [es:esi+000100010h]
+        pfcmpgt     mm4, qword [es:esi+000101010h]
+        pfmax       mm3, qword [es:esi+000101010h]
+        pfmin       mm1, qword [es:esi+000101010h]
+        pfmul       mm5, qword [es:esi+000101000h]
+        pmulhrwa    mm3, qword [es:eax+0ffffffffh]
+        pfnacc      mm4, qword [es:ebx+000101010h]
+        pfpnacc     mm3, qword [es:edx+000102900h]
+        pfrcp       mm0, qword [es:ecx+000101020h]
+        pfrcpit1    mm2, qword [es:ebp+000101510h]
+        pfrcpit2    mm4, qword [es:esp+000101310h]
+        pfrsqrt     mm7, qword [es:esi+0f0106010h]
+        pfrsqit1    mm1, qword [es:edi+0001f1010h]
+        pfsub       mm6, qword [es:esi*2]
+        pfsubr      mm0, qword [es:esi*3]
+        pi2fd       mm7, qword [es:esi*4]
+        pi2fw       mm0, qword [es:esi*5]
+        pswapd      mm2, qword [es:esi*8]
+
+        pmulhrwa mm0, qword [ds:ebp+edi*8+00f000001h]
+
+
+        ; MMX
+        psubusb     mm1, mm3
+        cvtpi2pd    xmm0, mm3
+        paddd       mm1, mm3
+        paddd       xmm1, xmm3
 ENDPROC   TestProc32
 
 

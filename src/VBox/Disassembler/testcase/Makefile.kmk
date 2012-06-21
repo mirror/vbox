@@ -50,6 +50,7 @@ VBOX_DISAS_TESTS_BUILD = \
 	tstAsmPush-1.asm \
 	tstAsmSignExtend-1.asm \
 	tstAsmRegs-1.asm \
+	tstAsm3DNow-1.asm \
 
 # Tests that only contains invalid/undefined instructions.
 VBOX_DISAS_TESTS_INVALID = \
