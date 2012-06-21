@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -135,10 +135,51 @@
  *  - @ref pg_main
  *      - @ref pg_main_events
  *      - @ref pg_vrdb_usb
+ *  - Frontends:
+ *      - VirtualBox - The default Qt4 based GUI.
+ *      - VBoxHeadless - The headless frontend.
+ *      - VBoxManage - The CLI.
+ *      - VBoxShell - An interactive shell written in python.
+ *      - VBoxSDL - A very simple GUI.
+ *      - VBoxBFE - A bare metal edition which does not use COM/XPCOM (barely
+ *        maintained atm).
  *  - IPRT - Runtime Library for hiding host OS differences.
  *  - Testsuite:
  *      - @ref pg_testsuite_guideline
  *
  * @todo Make links to the components.
+ *
+ *
+ *
+ * @section Execution Contexts
+ *
+ * VirtualBox defines a number of different execution context, this can be
+ * confusing at first.  So, to start with take a look at this diagram:
+ *
+ * @image html VMMContexts.png
+ *
+ * Context definitions:
+ *      - Host context (HC) - This is the context where the host OS runs and
+ *        runs VirtualBox within it.  The absense of IN_RC and IN_GUEST
+ *        indicates that we're in HC.  IN_RING0 indicates ring-0 (kernel) and
+ *        IN_RING3 indicates ring-3.
+ *      - Raw-mode Context (RC) - This is the special VMM context where we
+ *        execute the guest code directly on the CPU.  Kernel code is patched
+ *        and execute in ring-1 instead of ring-0 (ring compression).  Ring-3
+ *        code execute unmodified.  Only VMMs use ring-1, so we don't need to
+ *        worry about that (it's guarded against in the scheduler (EM)).  We can
+ *        in theory run ring-2 there, but since practially only only OS/2 uses
+ *        ring-2, it is of little importance.  The macro IN_RC indicates that
+ *        we're compiling something for RC.
+ *        Note! This used to be called GC (see below) earlier, so a bunch of RC
+ *        things are using GC markers.
+ *      - Guest Context (GC) - This is where the guest code is executed.  When
+ *        compiling, IN_GUEST indicates that it's for GC.  IN_RING0 and
+ *        IN_RING3 are also set when applicable, these are accompanied by
+ *        IN_GUEST_R0 and IN_GUEST_R3 respecitively.
+ *      - Intermediate context - This is a special memory context used within
+ *        the world switchers (HC -> RC and back), it features some identity
+ *        mapped code pages so we can switch to real mode if necessary.
+ *
  */
 
