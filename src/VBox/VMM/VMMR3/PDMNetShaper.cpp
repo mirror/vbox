@@ -362,7 +362,7 @@ VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
 
 VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
 {
-    AssertPtrReturn(pFilter, VERR_INVALID_POINTER);
+    AssertPtrReturn(pFilter, true);
     if (!VALID_PTR(pFilter->pBwGroupR3))
         return true;
 
