@@ -292,11 +292,7 @@ typedef struct VBOXWDDMDISP_QUERY
 {
     D3DDDIQUERYTYPE enmType;
     D3DDDI_ISSUEQUERYFLAGS fQueryState;
-    union
-    {
-        BOOL bData;
-        UINT u32Data;
-    } data ;
+    IDirect3DQuery9 *pQueryIf;
 } VBOXWDDMDISP_QUERY, *PVBOXWDDMDISP_QUERY;
 
 typedef struct VBOXWDDMDISP_TSS_LOOKUP

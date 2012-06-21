@@ -1862,6 +1862,20 @@ D3DTEXTUREFILTERTYPE vboxDDI2D3DBltFlags(D3DDDI_BLTFLAGS fFlags)
     return D3DTEXF_NONE;
 }
 
+static D3DQUERYTYPE vboxDDI2D3DQueryType(D3DDDIQUERYTYPE enmType)
+{
+    return (D3DQUERYTYPE)enmType;
+}
+
+static DWORD vboxDDI2D3DIssueQueryFlags(D3DDDI_ISSUEQUERYFLAGS Flags)
+{
+    DWORD fFlags = 0;
+    if (Flags.Begin)
+        fFlags |= D3DISSUE_BEGIN;
+    if (Flags.End)
+        fFlags |= D3DISSUE_END;
+    return fFlags;
+}
 
 /******/
 static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL bOnSwapchainSynch);
@@ -6342,29 +6356,32 @@ static HRESULT APIENTRY vboxWddmDDevCreateQuery(HANDLE hDevice, D3DDDIARG_CREATE
 {
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-//    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-//    Assert(pDevice);
-//    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
+
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
     HRESULT hr = S_OK;
-    if (pData->QueryType == D3DDDIQUERYTYPE_EVENT)
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)RTMemAllocZ(sizeof (VBOXWDDMDISP_QUERY));
+    if (!pQuery)
     {
-        PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)RTMemAllocZ(sizeof (VBOXWDDMDISP_QUERY));
-        Assert(pQuery);
-        if (pQuery)
-        {
-            pQuery->enmType = pData->QueryType;
-            pData->hQuery = pQuery;
-        }
-        else
-        {
-            hr = E_OUTOFMEMORY;
-        }
+        WARN(("RTMemAllocZ failed"));
+        return E_OUTOFMEMORY;
     }
-    else
+
+    hr = pDevice9If->CreateQuery(vboxDDI2D3DQueryType(pData->QueryType), &pQuery->pQueryIf);
+    if (FAILED(hr))
     {
-        Assert(0);
-        hr = E_FAIL;
+        WARN(("CreateQuery failed, hr 0x%x", hr));
+        RTMemFree(pQuery);
+        return hr;
     }
+
+    Assert(hr == S_OK);
+
+    pQuery->enmType = pData->QueryType;
+    pData->hQuery = pQuery;
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
 }
@@ -6373,12 +6390,13 @@ static HRESULT APIENTRY vboxWddmDDevDestroyQuery(HANDLE hDevice, HANDLE hQuery)
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     HRESULT hr = S_OK;
-//    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-//    Assert(pDevice);
-//    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
     PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)hQuery;
     Assert(pQuery);
+    pQuery->pQueryIf->Release();
     RTMemFree(pQuery);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
@@ -6388,13 +6406,17 @@ static HRESULT APIENTRY vboxWddmDDevIssueQuery(HANDLE hDevice, CONST D3DDDIARG_I
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     HRESULT hr = S_OK;
-//    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-//    Assert(pDevice);
-//    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
     PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)pData->hQuery;
     Assert(pQuery);
     pQuery->fQueryState.Value |= pData->Flags.Value;
+    hr = pQuery->pQueryIf->Issue(vboxDDI2D3DIssueQueryFlags(pData->Flags));
+    if (hr != S_OK)
+        WARN(("Issue failed, hr = 0x%x", hr));
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
 }
@@ -6403,24 +6425,28 @@ static HRESULT APIENTRY vboxWddmDDevGetQueryData(HANDLE hDevice, CONST D3DDDIARG
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     HRESULT hr = S_OK;
-//    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-//    Assert(pDevice);
-//    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
     PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)pData->hQuery;
     Assert(pQuery);
+    DWORD cbData = pQuery->pQueryIf->GetDataSize();
+#ifdef DEBUG
     switch (pQuery->enmType)
     {
         case D3DDDIQUERYTYPE_EVENT:
-            pQuery->data.bData = TRUE;
-            Assert(pData->pData);
-            *((BOOL*)pData->pData) = TRUE;
+            Assert(cbData == sizeof (BOOL));
             break;
         default:
             Assert(0);
-            hr = E_FAIL;
             break;
     }
+#endif
+    hr = pQuery->pQueryIf->GetData(pData->pData, cbData, 0);
+    if (hr != S_OK)
+        WARN(("GetData failed, hr = 0x%x", hr));
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
 }
@@ -7560,6 +7586,7 @@ static BOOL vboxDispIsDDraw(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 
     return FALSE;
 }
+
 
 HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 {

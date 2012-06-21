@@ -61,15 +61,13 @@ enum wined3d_event_query_result wined3d_event_query_test(struct wined3d_event_qu
         return WINED3D_EVENT_QUERY_NOT_STARTED;
     }
 
+#if !defined(VBOX_WINE_WITH_SINGLE_CONTEXT) && !defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
     if (!query->context->gl_info->supported[ARB_SYNC] && query->context->tid != GetCurrentThreadId())
     {
-#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
-        ERR("Event query tested from wrong thread\n");
-#else
         WARN("Event query tested from wrong thread\n");
-#endif
         return WINED3D_EVENT_QUERY_WRONG_THREAD;
     }
+#endif
 
     context = context_acquire(device, query->context->current_rt, CTXUSAGE_RESOURCELOAD);
     gl_info = context->gl_info;
@@ -114,8 +112,15 @@ enum wined3d_event_query_result wined3d_event_query_test(struct wined3d_event_qu
     }
     else
     {
+#ifdef VBOX_WITH_WDDM
+        Assert(0);
+        /* doing Flush (rather than Finish) should be enough since we're serialized on the host in any way */
+        wglFlush();
+        ret = WINED3D_EVENT_QUERY_OK;
+#else
         ERR("Event query created despite lack of GL support\n");
         ret = WINED3D_EVENT_QUERY_ERROR;
+#endif
     }
 
     LEAVE_GL();
