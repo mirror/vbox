@@ -283,9 +283,9 @@ STDMETHODIMP BandwidthGroup::COMGETTER(MaxBytesPerSec)(LONG64 *aMaxBytesPerSec)
 
 STDMETHODIMP BandwidthGroup::COMSETTER(MaxBytesPerSec)(LONG64 aMaxBytesPerSec)
 {
-    if (aMaxBytesPerSec <= 0)
+    if (aMaxBytesPerSec < 0)
         return setError(E_INVALIDARG,
-                        tr("Bandwidth group limit must be positive"));
+                        tr("Bandwidth group limit cannot be negative"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

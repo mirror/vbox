@@ -81,8 +81,8 @@ static const char *parseLimit(const char *pcszLimit, LONG64 *pLimit)
         default:
             return "Invalid limit specifier\n";
     }
-    if (*pLimit <= 0)
-        return "Limit must be positive\n";
+    if (*pLimit < 0)
+        return "Limit cannot be negative\n";
     if (*pLimit > INT64_MAX / iMultiplier)
         return "Limit is too big\n";
     *pLimit *= iMultiplier;

@@ -242,6 +242,10 @@ static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
     Assert(RTCritSectIsOwner(&pBwGroup->pShaper->cs));
     //int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
 
+    /* Check if the group is disabled. */
+    if (pBwGroup->cbTransferPerSecMax == 0)
+        return;
+
     PPDMNSFILTER pFilter = pBwGroup->pFiltersHead;
     while (pFilter)
     {
@@ -369,25 +373,31 @@ VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransf
     PPDMNSBWGROUP pBwGroup = ASMAtomicReadPtrT(&pFilter->pBwGroupR3, PPDMNSBWGROUP);
     int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
     bool fAllowed = true;
-    /* Re-fill the bucket first */
-    uint64_t tsNow = RTTimeSystemNanoTS();
-    uint32_t uTokensAdded = (tsNow - pBwGroup->tsUpdatedLast)*pBwGroup->cbTransferPerSecMax/(1000*1000*1000);
-    uint32_t uTokens = RT_MIN(pBwGroup->cbBucketSize, uTokensAdded + pBwGroup->cbTokensLast);
-
-    if (cbTransfer > uTokens)
+    if (pBwGroup->cbTransferPerSecMax)
     {
-        fAllowed = false;
-        ASMAtomicWriteBool(&pFilter->fChoked, true);
+        /* Re-fill the bucket first */
+        uint64_t tsNow = RTTimeSystemNanoTS();
+        uint32_t uTokensAdded = (tsNow - pBwGroup->tsUpdatedLast)*pBwGroup->cbTransferPerSecMax/(1000*1000*1000);
+        uint32_t uTokens = RT_MIN(pBwGroup->cbBucketSize, uTokensAdded + pBwGroup->cbTokensLast);
+
+        if (cbTransfer > uTokens)
+        {
+            fAllowed = false;
+            ASMAtomicWriteBool(&pFilter->fChoked, true);
+        }
+        else
+        {
+            pBwGroup->tsUpdatedLast = tsNow;
+            pBwGroup->cbTokensLast = uTokens - cbTransfer;
+        }
+        Log2((LOG_FN_FMT "BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
+              __PRETTY_FUNCTION__, pBwGroup, pBwGroup->pszName, cbTransfer, uTokens, uTokensAdded, fAllowed));
     }
     else
-    {
-        pBwGroup->tsUpdatedLast = tsNow;
-        pBwGroup->cbTokensLast = uTokens - cbTransfer;
-    }
+        Log2((LOG_FN_FMT "BwGroup=%#p{%s} disabled fAllowed=%RTbool\n",
+              __PRETTY_FUNCTION__, pBwGroup, pBwGroup->pszName, fAllowed));
 
     rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
-    Log2((LOG_FN_FMT "BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
-          __PRETTY_FUNCTION__, pBwGroup, pBwGroup->pszName, cbTransfer, uTokens, uTokensAdded, fAllowed));
     return fAllowed;
 }
 
