@@ -64,7 +64,7 @@ typedef struct PDMNSBWGROUP
     /** Bandwidth group name. */
     char                                       *pszName;
     /** Maximum number of bytes filters are allowed to transfer. */
-    volatile uint32_t                           cbTransferPerSecMax;
+    volatile uint64_t                           cbTransferPerSecMax;
     /** Number of bytes we are allowed to transfer in one burst. */
     volatile uint32_t                           cbBucketSize;
     /** Number of bytes we were allowed to transfer at the last update. */
@@ -151,7 +151,7 @@ static void pdmNsBwGroupUnlink(PPDMNSBWGROUP pBwGroup)
 }
 #endif
 
-static void pdmNsBwGroupSetLimit(PPDMNSBWGROUP pBwGroup, uint32_t cbTransferPerSecMax)
+static void pdmNsBwGroupSetLimit(PPDMNSBWGROUP pBwGroup, uint64_t cbTransferPerSecMax)
 {
     pBwGroup->cbTransferPerSecMax = cbTransferPerSecMax;
     pBwGroup->cbBucketSize        = RT_MAX(PDM_NETSHAPER_MIN_BUCKET_SIZE,
@@ -160,7 +160,7 @@ static void pdmNsBwGroupSetLimit(PPDMNSBWGROUP pBwGroup, uint32_t cbTransferPerS
                  pBwGroup->cbTransferPerSecMax, pBwGroup->cbBucketSize));
 }
 
-static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, uint32_t cbTransferPerSecMax)
+static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, uint64_t cbTransferPerSecMax)
 {
     LogFlowFunc(("pShaper=%#p pcszBwGroup=%#p{%s} cbTransferPerSecMax=%u\n",
                  pShaper, pcszBwGroup, pcszBwGroup, cbTransferPerSecMax));
@@ -401,7 +401,7 @@ VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransf
     return fAllowed;
 }
 
-VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint32_t cbTransferPerSecMax)
+VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint64_t cbTransferPerSecMax)
 {
     PUVM pUVM = pVM->pUVM;
     PPDMNETSHAPER pShaper = pUVM->pdm.s.pNetShaper;
@@ -474,7 +474,9 @@ static DECLCALLBACK(int) pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
 int pdmR3NetShaperTerm(PVM pVM)
 {
     PUVM pUVM = pVM->pUVM;
+    AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
     PPDMNETSHAPER pShaper = pUVM->pdm.s.pNetShaper;
+    AssertPtrReturn(pShaper, VERR_INVALID_POINTER);
 
     /* Destroy the bandwidth managers. */
     PPDMNSBWGROUP pBwGroup = pShaper->pBwGroupsHead;
@@ -523,7 +525,7 @@ int pdmR3NetShaperInit(PVM pVM)
             {
                 for (PCFGMNODE pCur = CFGMR3GetFirstChild(pCfgBwGrp); pCur; pCur = CFGMR3GetNextChild(pCur))
                 {
-                    uint32_t cbMax;
+                    uint64_t cbMax;
                     size_t cchName = CFGMR3GetNameLen(pCur) + 1;
                     char *pszBwGrpId = (char *)RTMemAllocZ(cchName);
 
@@ -537,7 +539,7 @@ int pdmR3NetShaperInit(PVM pVM)
                     AssertRC(rc);
 
                     if (RT_SUCCESS(rc))
-                        rc = CFGMR3QueryU32(pCur, "Max", &cbMax);
+                        rc = CFGMR3QueryU64(pCur, "Max", &cbMax);
                     if (RT_SUCCESS(rc))
                         rc = pdmNsBwGroupCreate(pNetShaper, pszBwGrpId, cbMax);
 

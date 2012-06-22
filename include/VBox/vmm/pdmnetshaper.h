@@ -99,7 +99,7 @@ VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter);
  * @param   pcszBwGroup           Name of the bandwidth group to attach to.
  * @param   cbTransferPerSecMax   Maximum number of bytes per second to be transmitted.
  */
-VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint32_t cbTransferPerSecMax);
+VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint64_t cbTransferPerSecMax);
 
 /** @} */
 
