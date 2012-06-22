@@ -1128,7 +1128,7 @@ int handleControlVM(HandlerArg *a)
             com::SafeArray<BYTE> saScreenshot;
             CHECK_ERROR_BREAK(pDisplay, TakeScreenShotPNGToArray(displayIdx, width, height, ComSafeArrayAsOutParam(saScreenshot)));
             RTFILE pngFile = NIL_RTFILE;
-            vrc = RTFileOpen(&pngFile, a->argv[2], RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_TRUNCATE);
+            vrc = RTFileOpen(&pngFile, a->argv[2], RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_ALL);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError("Failed to create file '%s'. rc=%Rrc", a->argv[2], vrc);
