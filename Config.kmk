@@ -1473,7 +1473,7 @@ VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
  VBOX_GCC_WARN_PEDANTIC += -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
-VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long
+VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long $(VBOX_GCC_Wno-delete-non-virtual-dtor)
 VBOX_GCC_PEDANTIC_C   ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 ifeq ($(KBUILD_TARGET),win)
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = #-Wdxxxx
@@ -2184,15 +2184,16 @@ $(PATH_OUT)/GCCConfig.kmk: \
 # -Wextra produces additional useful warnings but includes -Wno-missing-field-initializers (too noisy)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wextra                ?= $(call VBOX_GCC_CHECK_CC,-Wextra,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wlogical-op           ?= $(call VBOX_GCC_CHECK_CC,-Wlogical-op,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-address           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-address,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-delete-non-virtual-dtor    ?= $(call VBOX_GCC_CHECK_CXX,-Wno-delete-non-virtual-dtor,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-int-to-pointer-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-int-to-pointer-cast,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-invalid-offsetof           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-invalid-offsetof,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-missing-field-initializers ?= $(call VBOX_GCC_CHECK_CC,-Wno-missing-field-initializers,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-pointer-to-int-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-to-int-cast,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-int-to-pointer-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-int-to-pointer-cast,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-variadic-macros   ?= $(call VBOX_GCC_CHECK_CXX,-Wno-variadic-macros,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-invalid-offsetof  ?= $(call VBOX_GCC_CHECK_CXX,-Wno-invalid-offsetof,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-address           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-address,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fdiagnostics-show-option ?= $(call VBOX_GCC_CHECK_CC,-fdiagnostics-show-option,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fdiagnostics-show-option ?= $(call VBOX_GCC_CHECK_CC,-fdiagnostics-show-option,)'
 # Produce code optimized for the most common IA32/AMD64/EM64T processors. Introduced with gcc version 4.2.
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_as_needed              ?= $(call VBOX_GCC_CHECK_LD,--as-needed,)'
