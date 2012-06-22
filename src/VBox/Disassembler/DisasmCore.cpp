@@ -909,7 +909,7 @@ static void disasmModRMSReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 }
 
 
-static size_t UseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     unsigned vtype = OP_PARM_VTYPE(pParam->fParam);
     uint8_t  reg = pDis->ModRM.Bits.Reg;
@@ -1309,7 +1309,7 @@ static size_t ParseModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
         }
     }
 
-    offInstr += QueryModRM_SizeOnly(offInstr, pOp, pDis, pParam);
+    offInstr = QueryModRM_SizeOnly(offInstr, pOp, pDis, pParam);
 
     /* UseModRM is not necessary here; we're only interested in the opcode size */
     return offInstr;
@@ -1496,7 +1496,7 @@ static size_t ParseImmZ_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
     NOREF(offInstr); NOREF(pOp); NOREF(pParam);
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
     if (pDis->uOpMode == DISCPUMODE_16BIT)
-        return sizeof(uint16_t);
+        return offInstr + 2;
     return offInstr + 4;
 }
 
