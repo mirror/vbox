@@ -363,9 +363,9 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
             uint32_t cbInstrOnly = 32;
             uint8_t  abInstr[sizeof(State.Dis.abInstr)];
             memcpy(abInstr, State.Dis.abInstr, sizeof(State.Dis.abInstr));
-            int rcOnly = DISInstWithPrefetchedBytes(State.uAddress, enmCpuMode, 0 /*fFilter - none */,
-                                                    abInstr, State.Dis.cbCachedInstr, MyDisasInstrRead, &State,
-                                                    &State.Dis, &cbInstrOnly);
+            int rcOnly = DISInstrWithPrefetchedBytes(State.uAddress, enmCpuMode, 0 /*fFilter - none */,
+                                                     abInstr, State.Dis.cbCachedInstr, MyDisasInstrRead, &State,
+                                                     &State.Dis, &cbInstrOnly);
             if (   rcOnly != rc
                 || cbInstrOnly != State.cbInstr)
             {

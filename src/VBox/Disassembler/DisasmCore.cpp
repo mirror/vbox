@@ -2407,7 +2407,7 @@ static void disValidateLockSequence(PDISSTATE pDis)
 
 
 /**
- * Internal worker for DISInstEx.
+ * Internal worker for DISInstrEx and DISInstrWithPrefetchedBytes.
  *
  * @returns VBox status code.
  * @param   pDis            Initialized disassembler state.
@@ -2626,9 +2626,9 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
  * @param   pcbInstr        Where to store the size of the instruction.  (This
  *                          is also stored in PDISSTATE::cbInstr.)  Optional.
  */
-DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
-                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                       PDISSTATE pDis, uint32_t *pcbInstr)
+DISDECL(int) DISInstrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                        PDISSTATE pDis, uint32_t *pcbInstr)
 {
 
     PCDISOPCODE paOneByteMap = disInitializeState(pDis, uInstrAddr, enmCpuMode, fFilter, pfnReadBytes, pvUser);
@@ -2655,10 +2655,10 @@ DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFi
  * @param   pcbInstr        Where to store the size of the instruction.  (This
  *                          is also stored in PDISSTATE::cbInstr.)  Optional.
  */
-DISDECL(int) DISInstWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
-                                        void const *pvPrefetched, size_t cbPretched,
-                                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                        PDISSTATE pDis, uint32_t *pcbInstr)
+DISDECL(int) DISInstrWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                                         void const *pvPrefetched, size_t cbPretched,
+                                         PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                         PDISSTATE pDis, uint32_t *pcbInstr)
 {
     PCDISOPCODE paOneByteMap = disInitializeState(pDis, uInstrAddr, enmCpuMode, fFilter, pfnReadBytes, pvUser);
 
@@ -2702,7 +2702,7 @@ DISDECL(int) DISInstWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuM
 DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
                                 PDISSTATE pDis, uint32_t *pcbInstr)
 {
-    return DISInstEx(uInstrAddr, enmCpuMode, DISOPTYPE_ALL, pfnReadBytes, pvUser, pDis, pcbInstr);
+    return DISInstrEx(uInstrAddr, enmCpuMode, DISOPTYPE_ALL, pfnReadBytes, pvUser, pDis, pcbInstr);
 }
 
 
@@ -2726,6 +2726,6 @@ DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFN
  */
 DISDECL(int) DISInstr(const void *pvInstr, DISCPUMODE enmCpuMode, PDISSTATE pDis, uint32_t *pcbInstr)
 {
-    return DISInstEx((uintptr_t)pvInstr, enmCpuMode, DISOPTYPE_ALL, NULL /*pfnReadBytes*/, NULL /*pvUser*/, pDis, pcbInstr);
+    return DISInstrEx((uintptr_t)pvInstr, enmCpuMode, DISOPTYPE_ALL, NULL /*pfnReadBytes*/, NULL /*pvUser*/, pDis, pcbInstr);
 }
 
