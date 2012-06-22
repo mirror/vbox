@@ -631,13 +631,13 @@ DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
 DISDECL(int) DISInstr(void const *pvInstr, DISCPUMODE enmCpuMode, PDISSTATE pDis, uint32_t *pcbInstr);
 DISDECL(int) DISInstrWithReader(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, PFNDISREADBYTES pfnReadBytes, void *pvUser,
                                 PDISSTATE pDis, uint32_t *pcbInstr);
-DISDECL(int) DISInstEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
-                       PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                       PDISSTATE pDis, uint32_t *pcbInstr);
-DISDECL(int) DISInstWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
-                                        void const *pvPrefetched, size_t cbPretched,
-                                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
-                                        PDISSTATE pDis, uint32_t *pcbInstr);
+DISDECL(int) DISInstrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t uFilter,
+                        PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                        PDISSTATE pDis, uint32_t *pcbInstr);
+DISDECL(int) DISInstrWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fFilter,
+                                         void const *pvPrefetched, size_t cbPretched,
+                                         PFNDISREADBYTES pfnReadBytes, void *pvUser,
+                                         PDISSTATE pDis, uint32_t *pcbInstr);
 
 DISDECL(int)        DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam);
 DISDECL(DISSELREG)  DISDetectSegReg(PCDISSTATE pDis, PCDISOPPARAM pParam);

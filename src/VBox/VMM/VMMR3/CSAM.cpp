@@ -806,8 +806,8 @@ DECLINLINE(int) csamR3DISInstr(PVM pVM, RTRCPTR InstrGC, uint8_t *InstrHC, DISCP
         return DISInstrToStrEx(InstrGC, enmCpuMode, csamR3ReadBytes, &DisInfo,
                                ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
                                pCpu, pcbInstr, pszOutput, cbOutput);
-    return DISInstEx(InstrGC, enmCpuMode, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
-                     csamR3ReadBytes, &DisInfo, pCpu, pcbInstr);
+    return DISInstrEx(InstrGC, enmCpuMode, ~(DISOPTYPE_INVALID | DISOPTYPE_HARMLESS | DISOPTYPE_RRM_MASK),
+                      csamR3ReadBytes, &DisInfo, pCpu, pcbInstr);
 #endif
 }
 

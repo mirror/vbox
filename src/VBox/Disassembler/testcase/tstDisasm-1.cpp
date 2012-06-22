@@ -75,8 +75,8 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         /* Check with size-only. */
         uint32_t        cbOnly = 1;
         DISSTATE        DisOnly;
-        rc = DISInstWithPrefetchedBytes((uintptr_t)&pabInstrs[off], enmDisCpuMode,  0 /*fFilter - none */,
-                                        Dis.abInstr, Dis.cbCachedInstr, NULL, NULL, &DisOnly, &cbOnly);
+        rc = DISInstrWithPrefetchedBytes((uintptr_t)&pabInstrs[off], enmDisCpuMode,  0 /*fFilter - none */,
+                                         Dis.abInstr, Dis.cbCachedInstr, NULL, NULL, &DisOnly, &cbOnly);
 
         RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
         RTTESTI_CHECK(cbOnly == DisOnly.cbInstr);
