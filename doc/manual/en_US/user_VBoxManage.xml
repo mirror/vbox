@@ -2030,10 +2030,14 @@ Virtual system 0:
             <para>Specifies the limit for the given group. Can be changed
               while the VM is running. The default unit is megabytes per
               second. The unit can be changed by specifying one of the
-              following suffixes: <computeroutput>k</computeroutput> for kilobits/s, <computeroutput>m</computeroutput> for megabits/s, <computeroutput>g</computeroutput> for gigabits/s, <computeroutput>K</computeroutput> for kilobytes/s, <computeroutput>M</computeroutput> for megabytes/s, <computeroutput>G</computeroutput> for gigabytes/s</para>
+              following suffixes: <computeroutput>k</computeroutput> for kilobits/s, <computeroutput>m</computeroutput> for megabits/s, <computeroutput>g</computeroutput> for gigabits/s, <computeroutput>K</computeroutput> for kilobytes/s, <computeroutput>M</computeroutput> for megabytes/s, <computeroutput>G</computeroutput> for gigabytes/s.</para>
           </glossdef>
         </glossentry>
       </glosslist>
+      <note>
+        <para>The network bandwidth limits apply only to the traffic being sent by
+          virtual machines. The traffic being received by VMs is unlimited.</para>
+      </note>
       <note>
         <para>To remove a bandwidth group it must not be referenced by any disks
           or adapters in running VM.</para>

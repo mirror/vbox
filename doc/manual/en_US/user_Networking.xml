@@ -777,6 +777,10 @@
     maximum bandwidth used for network transmission. Several network adapters
     of one VM may share limits through bandwidth groups. It is possible
     to have more than one such limit.</para>
+    <note><para>VirtualBox shapes VM traffic only in ergress direction, delaying
+        the packets being sent by virtual machines. It does not limit the
+        traffic being received by virtual machines.</para>
+    </note>
 
     <para>Limits are configured through
     <computeroutput>VBoxManage</computeroutput>. The example below creates a
@@ -793,5 +797,14 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen></para>
     <para>The limits for each group can be changed while the VM is running,
     with changes being picked up immediately. The example below changes the
     limit for the group created in the example above to 100 Kbit/s:<screen>VBoxManage bandwidthctl "VM name" set Limit --limit 100k</screen></para>
+
+    <para>To completely disable shaping for the first adapter of VM use the
+      following command:
+      <screen>VBoxManage modifyvm "VM name" --nicbandwidthgroup1 none</screen></para>
+
+    <para>It is also possible to disable shaping for all adapters assigned to a
+      bandwidth group while VM is running, by specifying the zero limit for the
+      group. For example, for the bandwidth group named "Limit" use:
+      <screen>VBoxManage bandwidthctl "VM name" set Limit --limit 0</screen></para>
   </sect1>
 </chapter>
