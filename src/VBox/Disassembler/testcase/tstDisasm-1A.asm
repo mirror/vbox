@@ -136,8 +136,7 @@ BEGINPROC   TestProc32
         pi2fw       mm0, qword [es:esi*5]
         pswapd      mm2, qword [es:esi*8]
 
-        pmulhrwa mm0, qword [ds:ebp+edi*8+00f000001h]
-
+        pmulhrwa    mm0, qword [ds:ebp+edi*8+00f000001h]
 
         ; MMX
         psubusb     mm1, mm3
