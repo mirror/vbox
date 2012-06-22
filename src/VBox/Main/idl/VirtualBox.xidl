@@ -10180,7 +10180,7 @@
 
   <enum
     name="MediumVariant"
-    uuid="584ea502-143b-4ab0-ad14-d1028fdf0316"
+    uuid="80685b6b-e42f-497d-8271-e77bf3c61ada"
     >
     <desc>
       Virtual medium image variant. More than one flag may be set.
@@ -10195,6 +10195,11 @@
     <const name="VmdkSplit2G"       value="0x01">
       <desc>
         VMDK image split in chunks of less than 2GByte.
+      </desc>
+    </const>
+    <const name="VmdkRawDisk"       value="0x02">
+      <desc>
+        VMDK image representing a raw disk.
       </desc>
     </const>
     <const name="VmdkStreamOptimized" value="0x04">
