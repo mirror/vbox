@@ -777,9 +777,9 @@
     maximum bandwidth used for network transmission. Several network adapters
     of one VM may share limits through bandwidth groups. It is possible
     to have more than one such limit.</para>
-    <note><para>VirtualBox shapes VM traffic only in ergress direction, delaying
-        the packets being sent by virtual machines. It does not limit the
-        traffic being received by virtual machines.</para>
+    <note><para>VirtualBox shapes VM traffic only in the transmit direction,
+        delaying the packets being sent by virtual machines. It does not limit
+        the traffic being received by virtual machines.</para>
     </note>
 
     <para>Limits are configured through
