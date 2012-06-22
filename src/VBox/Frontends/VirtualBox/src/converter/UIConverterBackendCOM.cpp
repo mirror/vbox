@@ -239,10 +239,10 @@ template<> QString toString(const KMediumVariant &variant)
             return QApplication::translate("VBoxGlobal", "Dynamically allocated differencing compressed storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkESX):
             return QApplication::translate("VBoxGlobal", "Fixed size ESX storage", "MediumVariant");
-#ifndef DEBUG_bird /* remove when the missing cases have been added! */
+        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkRawDisk):
+            return QApplication::translate("VBoxGlobal", "Fixed size storage on raw disk", "MediumVariant");
         default:
             AssertMsgFailed(("No text for %d", variant)); break;
-#endif
     }
     return QString();
 }
