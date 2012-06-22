@@ -616,6 +616,13 @@ int VBoxClipboardInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSta
         return VERR_NOT_SUPPORTED;
     }
 
+    if (VbglR3AutoLogonIsRemoteSession())
+    {
+        /* Do not use clipboard for remote sessions. */
+        LogRel(("VBoxTray: clipboard has been disabled for a remote session.\n"));
+        return VERR_NOT_SUPPORTED;
+    }
+
     RT_ZERO (gCtx);
     gCtx.pEnv = pEnv;
 
