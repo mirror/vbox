@@ -168,6 +168,41 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr)
 
 
 /**
+ * Destroys an allocated page.
+ * 
+ * @param pPage         Pointer to the page to be destroyed. 
+ * @remarks This function expects page in @c pPage to be shared locked.
+ */
+static void rtR0MemObjSolPageDestroy(page_t *pPage)
+{
+    /*
+     * We need to exclusive lock the pages before freeing them, if upgrading the shared lock to exclusive fails, 
+     * drop the page lock and look it up  from the hash. Record the page offset before we drop the page lock as 
+     * we cannot touch any page_t members once the lock is dropped. 
+     */
+    AssertPtr(pPage);
+    Assert(PAGE_LOCKED_SE(pPage, SE_SHARED));
+
+    u_offset_t offPage = pPage->p_offset;
+    int rc = page_tryupgrade(pPage);
+    if (!rc)
+    {
+        page_unlock(pPage);
+        page_t *pFoundPage = page_lookup(&g_PageVnode, offPage, SE_EXCL);
+
+        /*
+         * Since we allocated the pages as PG_NORELOC we should only get back the exact page always.
+         */
+        AssertReleaseMsg(pFoundPage == pPage, ("Page lookup failed %p:%llx returned %p, expected %p\n",
+                                               &g_PageVnode, offPage, pFoundPage, pPage));
+    }
+    Assert(PAGE_LOCKED_SE(pPage, SE_EXCL));
+    page_pp_unlock(pPage, 0 /* COW */, 1 /* Kernel */);
+    page_destroy(pPage, 0 /* move it to the free list */);
+}
+
+
+/**
  * Allocates physical, non-contiguous memory of pages.
  *
  * @param puPhys    Where to store the physical address of first page. Optional,
@@ -218,7 +253,7 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t *puPhys, size_t cb)
                      * No page found, release whatever pages we grabbed so far.
                      */
                     for (size_t k = 0; k < i; k++)
-                        page_destroy(ppPages[k], 0 /* move it to the free list */);
+                        rtR0MemObjSolPageDestroy(ppPages[k]);
                     kmem_free(ppPages, cbPages);
                     page_unresv(cPages);
                     return NULL;
@@ -250,29 +285,8 @@ static void rtR0MemObjSolPagesFree(page_t **ppPages, size_t cb)
     size_t cPages  = (cb + PAGE_SIZE - 1) >> PAGE_SHIFT;
     size_t cbPages = cPages * sizeof(page_t *);
     for (size_t iPage = 0; iPage < cPages; iPage++)
-    {
-        /*
-         *  We need to exclusive lock the pages before freeing them.
-         */
-        page_t     *pPage  = ppPages[iPage];
-        u_offset_t offPage = pPage->p_offset;
+        rtR0MemObjSolPageDestroy(ppPages[iPage]);
 
-        int rc = page_tryupgrade(ppPages[iPage]);
-        if (!rc)
-        {
-            page_unlock(pPage);
-            page_t *pFoundPage = page_lookup(&g_PageVnode, offPage, SE_EXCL);
-
-            /*
-             * Since we allocated the pages as PG_NORELOC we should only get back the exact page always.
-             */
-            AssertReleaseMsg(pFoundPage == pPage, ("Page lookup failed %p:%llx returned %p, expected %p\n",
-                                                   &g_PageVnode, offPage, pFoundPage, pPage));
-        }
-        Assert(PAGE_LOCKED_SE(pPage, SE_EXCL));
-        page_pp_unlock(pPage, 0 /* COW */, 1 /* Kernel */);
-        page_destroy(pPage, 0 /* move it to the free list */);
-    }
     kmem_free(ppPages, cbPages);
     page_unresv(cPages);
 }
