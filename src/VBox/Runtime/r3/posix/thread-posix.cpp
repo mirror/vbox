@@ -47,7 +47,7 @@
 # include <mach/mach_init.h>
 # include <mach/mach_host.h>
 #endif
-#if defined(RT_OS_DARWIN) /*|| defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) - later */ \
+#if defined(RT_OS_DARWIN) /*|| defined(RT_OS_FREEBSD) - later */ || defined(RT_OS_LINUX) \
  || defined(IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP)
 # define IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP
 # include <dlfcn.h>
@@ -91,7 +91,7 @@ static int              g_iSigPokeThread = -1;
  * @param   pszName         The new thread name.
  */
 typedef int (*PFNPTHREADSETNAME)(const char *pszName);
-# elif
+# else
 /**
  * The variant of pthread_setname_np most other unix-like systems implement.
  *
@@ -255,6 +255,8 @@ DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 static void *rtThreadNativeMain(void *pvArgs)
 {
     PRTTHREADINT  pThread = (PRTTHREADINT)pvArgs;
+    pthread_t     Self    = pthread_self();
+    Assert((uintptr_t)Self == (RTNATIVETHREAD)Self && (uintptr_t)Self != NIL_RTNATIVETHREAD);
 
 #if defined(RT_OS_LINUX)
     /*
@@ -286,14 +288,16 @@ static void *rtThreadNativeMain(void *pvArgs)
 
 #ifdef IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP
     if (g_pfnThreadSetName)
+# ifdef RT_OS_DARWIN
         g_pfnThreadSetName(pThread->szName);
+# else
+        g_pfnThreadSetName(Self, pThread->szName);
+# endif
 #endif
 
     /*
      * Call common main.
      */
-    pthread_t Self = pthread_self();
-    Assert((uintptr_t)Self == (RTNATIVETHREAD)Self && (uintptr_t)Self != NIL_RTNATIVETHREAD);
     rc = rtThreadMain(pThread, (uintptr_t)Self, &pThread->szName[0]);
 
     pthread_setspecific(g_SelfKey, NULL);
