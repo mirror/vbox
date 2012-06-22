@@ -744,18 +744,6 @@ static DECLCALLBACK(int) svcHostCall (void *,
     return rc;
 }
 
-#ifdef UNIT_TEST
-static int testSSMStubRC(void) { AssertFailedReturn(VERR_WRONG_ORDER); }
-static uint32_t testSSMStubU32(void) { AssertFailedReturn(0); }
-# define SSMR3PutU32(pSSM, u32) testSSMStubRC()
-# define SSMR3PutStructEx(pSSM, pvStruct, cbStruct, fFlags, paFields, pvUser) \
-      testSSMStubRC()
-# define SSMR3GetU32(pSSM, pu32) ( *(pu32) = 0, testSSMStubRC() )
-# define SSMR3HandleHostBits(pSSM) testSSMStubU32()
-# define SSMR3GetStructEx(pSSM, pvStruct, cbStruct, fFlags, paFields, pvUser) \
-      testSSMStubRC()
-#endif
-
 /**
  * SSM descriptor table for the VBOXCLIPBOARDCLIENTDATA structure.
  */
@@ -771,6 +759,7 @@ static SSMFIELD const g_aClipboardClientDataFields[] =
 
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
+#ifndef UNIT_TEST
     /* If there are any pending requests, they must be completed here. Since
      * the service is single threaded, there could be only requests
      * which the service itself has postponed.
@@ -800,6 +789,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 
     vboxSvcClipboardCompleteReadData (pClient, VINF_SUCCESS, 0);
 
+#endif /* !UNIT_TEST */
     return VINF_SUCCESS;
 }
 
@@ -847,6 +837,7 @@ typedef struct CLIPSAVEDSTATEDATA
 
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
+#ifndef UNIT_TEST
     LogRel2 (("svcLoadState: u32ClientID = %d\n", u32ClientID));
 
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
@@ -917,15 +908,9 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     /* Actual host data are to be reported to guest (SYNC). */
     vboxClipboardSync (pClient);
 
+#endif /* !UNIT_TEST */
     return VINF_SUCCESS;
 }
-
-#ifdef UNIT_TEST
-# undef SSMR3PutU32
-# undef SSMR3GetU32
-# undef SSMR3HandleHostBits
-# undef SSMR3GetStructEx
-#endif
 
 static DECLCALLBACK(int) extCallback (uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData)
 {
