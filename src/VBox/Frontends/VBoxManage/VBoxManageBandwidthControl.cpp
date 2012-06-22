@@ -108,7 +108,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
 
     Bstr name(a->argv[2]);
     const char *pszType  = NULL;
-    LONG64 cMaxBytesPerSec   = INT64_MAX;
+    int64_t cMaxBytesPerSec = INT64_MAX;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -167,7 +167,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
         return RTEXITCODE_FAILURE;
     }
     
-    CHECK_ERROR2_RET(bwCtrl, CreateBandwidthGroup(name.raw(), enmType, cMaxBytesPerSec), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(bwCtrl, CreateBandwidthGroup(name.raw(), enmType, (LONG64)cMaxBytesPerSec), RTEXITCODE_FAILURE);
 
     return RTEXITCODE_SUCCESS;
 }
@@ -188,7 +188,7 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
 
 
     Bstr name(a->argv[2]);
-    LONG64 cMaxBytesPerSec   = INT64_MAX;
+    int64_t cMaxBytesPerSec = INT64_MAX;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -232,7 +232,7 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
         ComPtr<IBandwidthGroup> bwGroup;
         CHECK_ERROR2_RET(bwCtrl, GetBandwidthGroup(name.raw(), bwGroup.asOutParam()), RTEXITCODE_FAILURE);
         if (SUCCEEDED(rc))
-            CHECK_ERROR2_RET(bwGroup, COMSETTER(MaxBytesPerSec)(cMaxBytesPerSec), RTEXITCODE_FAILURE);
+            CHECK_ERROR2_RET(bwGroup, COMSETTER(MaxBytesPerSec)((LONG64)cMaxBytesPerSec), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
