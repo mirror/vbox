@@ -363,7 +363,6 @@ RuntimeR3_SOURCES       = \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
-	common/rand/randopenssl.cpp \
 	common/sort/RTSortIsSorted.cpp \
 	common/sort/RTSortApvIsSorted.cpp \
 	common/sort/shellsort.cpp \
@@ -1029,11 +1028,6 @@ RuntimeBldProg_EXTENDS          := RuntimeR3
 RuntimeBldProg_BLD_TRG          := $(KBUILD_HOST)
 RuntimeBldProg_BLD_TRG_ARCH     := $(KBUILD_HOST_ARCH)
 RuntimeBldProg_BLD_TRG_CPU      := $(KBUILD_HOST_CPU)
-RuntimeBldProg_SOURCES          := $(filter-out \
-	common/rand/randopenssl.cpp \
-	, $(RuntimeR3_SOURCES))
-RuntimeBldProg_SOURCES          += \
-	generic/RTRandAdvCreateOpenssl-generic.cpp
 
 
 #
@@ -1056,13 +1050,11 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesup.cpp \
 	common/checksum/RTSha1Digest.cpp \
 	common/checksum/sha% \
-	common/rand/randopenssl.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	, $(RuntimeR3_SOURCES))
 RuntimeGuestR3_SOURCES              += \
 	common/time/timesysalias.cpp \
-	VBox/logbackdoor.cpp \
-	generic/RTRandAdvCreateOpenssl-generic.cpp
+	VBox/logbackdoor.cpp
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)      := $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST)        := $(RuntimeR3_SOURCES.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
