@@ -373,7 +373,7 @@ typedef struct PATMPATCHPAGE
     /** Maximum nr of pointers in the array. */
     uint32_t                    cMaxPatches;
     /** Array of patch pointers for this page. */
-    R3PTRTYPE(PPATCHINFO *)     aPatch;
+    R3PTRTYPE(PPATCHINFO *)     papPatch;
 } PATMPATCHPAGE, *PPATMPATCHPAGE;
 
 #define PATM_PATCHREC_FROM_COREOFFSET(a)  (PPATMPATCHREC)((uintptr_t)a - RT_OFFSETOF(PATMPATCHREC, CoreOffset))
