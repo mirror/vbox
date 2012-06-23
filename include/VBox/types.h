@@ -761,17 +761,6 @@ typedef struct VBOXGDTR
 /** Pointer to GDTR. */
 typedef VBOXGDTR *PVBOXGDTR;
 
-#pragma pack(1)
-/** GDTR from version 1.6 */
-typedef struct VBOXGDTR_VER1_6
-{
-    /** Size of the GDT. */
-    uint16_t    cbGdt;
-    /** Address of the GDT. */
-    uint32_t    pGdt;
-} VBOXGDTR_VER1_6;
-#pragma pack()
-
 /** @} */
 
 

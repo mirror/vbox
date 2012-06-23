@@ -47,6 +47,17 @@ typedef struct VBOXIDTR_VER1_6
 } VBOXIDTR_VER1_6;
 #pragma pack()
 
+#pragma pack(1)
+/** GDTR from version 1.6 */
+typedef struct VBOXGDTR_VER1_6
+{
+    /** Size of the GDT. */
+    uint16_t    cbGdt;
+    /** Address of the GDT. */
+    uint32_t    pGdt;
+} VBOXGDTR_VER1_6;
+#pragma pack()
+
 
 /**
  * Selector hidden registers, for version 1.6 saved state.
