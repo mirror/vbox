@@ -3609,6 +3609,9 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                     rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(uint32_t));
                 break;
 
+            case SSMFIELDTRANS_U32_ZX_U64:
+                AssertFailedReturn(VERR_SSM_FIELD_LOAD_ONLY_TRANSFORMATION);
+                break;
 
             case SSMFIELDTRANS_IGNORE:
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
@@ -6480,6 +6483,12 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
                                     ("high=%#x low=%#x (%s)\n", u32, *(uint32_t *)pbField, pCur->pszName),
                                     VERR_SSM_FIELD_INVALID_VALUE);
                 }
+                break;
+
+            case SSMFIELDTRANS_U32_ZX_U64:
+                AssertMsgReturn(cbField == sizeof(uint64_t), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                ((uint32_t *)pbField)[1] = 0;
+                rc = SSMR3GetU32(pSSM, (uint32_t *)pbField);
                 break;
 
 

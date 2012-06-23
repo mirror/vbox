@@ -744,7 +744,9 @@
 #define VERR_SSM_IPE_2                          (-1877)
 /** Internal processing error \#3 in SSM code.  */
 #define VERR_SSM_IPE_3                          (-1878)
-
+/** A field contained an transformation that should only be used when loading
+ * old states. */
+#define VERR_SSM_FIELD_LOAD_ONLY_TRANSFORMATION (-1879)
 /** @} */
 
 
