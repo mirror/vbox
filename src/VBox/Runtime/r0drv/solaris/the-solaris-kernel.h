@@ -59,9 +59,6 @@
 #include <sys/modctl.h>
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
-#ifndef PG_KFLT     /* introduced in snv_153, previous builds don't define this. */
-# define PG_KFLT        (0x0200)
-#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
