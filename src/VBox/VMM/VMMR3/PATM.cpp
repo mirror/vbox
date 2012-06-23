@@ -4677,10 +4677,10 @@ int patmRemovePatchFromPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
             if (pPatchPage->papPatch[i] == pPatch)
             {
                 /* close the gap between the remaining pointers. */
-                uint32_t cAfter = pPatchPage->cCount - i - 1;
-                if (cAfter)
-                    memmove(&pPatchPage->papPatch[i], &pPatchPage->papPatch[i + 1], sizeof(pPatchPage->papPatch[i]) * cAfter);
-                pPatchPage->papPatch[--pPatchPage->cCount] = NULL;
+                uint32_t cNew = --pPatchPage->cCount;
+                if (i < cNew)
+                    pPatchPage->papPatch[i] = pPatchPage->papPatch[cNew];
+                pPatchPage->papPatch[cNew] = NULL;
                 return VINF_SUCCESS;
             }
         }
