@@ -1479,7 +1479,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
     uint32_t        cbTss    = trHid.u32Limit;
     Assert(     (SelTss & X86_SEL_MASK)
            ||   (cbTss == 0 && GCPtrTss == 0 && trHid.Attr.u == 0 /* TR=0 */)
-           ||   (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_BUSY /* RESET */));
+           ||   (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY /* RESET */));
     if (SelTss & X86_SEL_MASK)
     {
         Assert(!(SelTss & X86_SEL_LDT));
@@ -1492,7 +1492,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
     else
     {
         Assert(   (cbTss == 0 && GCPtrTss == 0 && trHid.Attr.u == 0 /* TR=0 */)
-               || (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_BUSY /* RESET */));
+               || (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY /* RESET */));
         cbTss = 0; /* the reset case. */
     }
     pVM->selm.s.cbGuestTss     = cbTss;
@@ -1810,7 +1810,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
     uint32_t        cbTss    = trHid.u32Limit;
     Assert(     (SelTss & X86_SEL_MASK)
            ||   (cbTss == 0 && GCPtrTss == 0 && trHid.Attr.u == 0 /* TR=0 */)
-           ||   (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_BUSY /* RESET */));
+           ||   (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY /* RESET */));
     if (SelTss & X86_SEL_MASK)
     {
         AssertReturn(!(SelTss & X86_SEL_LDT), false);
@@ -1824,7 +1824,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
     else
     {
         AssertReturn(   (cbTss == 0 && GCPtrTss == 0 && trHid.Attr.u == 0 /* TR=0 */)
-                     || (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_BUSY /* RESET */),
+                     || (cbTss == 0xffff && GCPtrTss == 0 && trHid.Attr.n.u1Present && trHid.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY /* RESET */),
                      false);
         cbTss = 0; /* the reset case. */
     }
