@@ -258,136 +258,136 @@ static const SSMFIELD g_aCpumCtxFields[] =
 /** Saved state field descriptors for CPUMCTX_VER1_6. */
 static const SSMFIELD g_aCpumCtxFieldsV16[] =
 {
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.FCW),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.FSW),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.FTW),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.FOP),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.FPUIP),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.CS),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.Rsrvd1),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.FPUDP),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.DS),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.Rsrvd2),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.MXCSR),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.MXCSR_MASK),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[0]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[1]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[2]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[3]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[4]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[5]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[6]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aRegs[7]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[0]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[1]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[2]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[3]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[4]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[5]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[6]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[7]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[8]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[9]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[10]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[11]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[12]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[13]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[14]),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fpu.aXMM[15]),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, fpu.au32RsrvdRest),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rdi),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rsi),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rbp),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rax),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rbx),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rdx),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rcx),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, esp),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ss),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, ssPadding),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, rsp_notused),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, gs),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, gsPadding),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fs),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, fsPadding),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, es),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, esPadding),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ds),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, dsPadding),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, cs),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, csPadding),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rflags),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, rip),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r8),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r9),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r10),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r11),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r12),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r13),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r14),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, r15),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, esHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, esHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, esHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, csHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, csHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, csHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ssHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ssHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ssHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dsHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dsHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dsHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fsHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fsHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, fsHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, gsHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, gsHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, gsHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, cr0),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, cr2),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, cr3),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, cr4),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, cr8),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dr0),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dr1),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dr2),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dr3),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dr4),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, dr5),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, dr6),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, dr7),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, gdtr.cbGdt),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, gdtr.pGdt),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, gdtrPadding),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, gdtrPadding64),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, idtr.cbIdt),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, idtr.pIdt),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, idtrPadding),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, idtrPadding64),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ldtr),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, ldtrPadding),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, tr),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, trPadding),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, SysEnter.cs),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, SysEnter.eip),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, SysEnter.esp),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrEFER),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrSTAR),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrPAT),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrLSTAR),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrCSTAR),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrSFMASK),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrFSBASE),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrGSBASE),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, msrKERNELGSBASE),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ldtrHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ldtrHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, ldtrHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, trHid.u32Base),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, trHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX_VER1_6, trHid.Attr),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX_VER1_6, padding),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.FCW),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.FSW),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.FTW),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.FOP),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.FPUIP),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.CS),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.Rsrvd1),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.FPUDP),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.DS),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.Rsrvd2),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.MXCSR),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.MXCSR_MASK),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[0]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[1]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[2]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[3]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[4]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[5]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[6]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[7]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[0]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[1]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[2]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[3]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[4]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[5]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[6]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[7]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[8]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[9]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[10]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[11]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[12]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[13]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[14]),
+    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[15]),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, fpu.au32RsrvdRest),
+    SSMFIELD_ENTRY(             CPUMCTX, rdi),
+    SSMFIELD_ENTRY(             CPUMCTX, rsi),
+    SSMFIELD_ENTRY(             CPUMCTX, rbp),
+    SSMFIELD_ENTRY(             CPUMCTX, rax),
+    SSMFIELD_ENTRY(             CPUMCTX, rbx),
+    SSMFIELD_ENTRY(             CPUMCTX, rdx),
+    SSMFIELD_ENTRY(             CPUMCTX, rcx),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, rsp),
+    SSMFIELD_ENTRY(             CPUMCTX, ss),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, ssPadding),
+    SSMFIELD_ENTRY_OLD(         CPUMCTX, sizeof(uint64_t) /*rsp_notused*/),
+    SSMFIELD_ENTRY(             CPUMCTX, gs),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, gsPadding),
+    SSMFIELD_ENTRY(             CPUMCTX, fs),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, fsPadding),
+    SSMFIELD_ENTRY(             CPUMCTX, es),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, esPadding),
+    SSMFIELD_ENTRY(             CPUMCTX, ds),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, dsPadding),
+    SSMFIELD_ENTRY(             CPUMCTX, cs),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, csPadding),
+    SSMFIELD_ENTRY(             CPUMCTX, rflags),
+    SSMFIELD_ENTRY(             CPUMCTX, rip),
+    SSMFIELD_ENTRY(             CPUMCTX, r8),
+    SSMFIELD_ENTRY(             CPUMCTX, r9),
+    SSMFIELD_ENTRY(             CPUMCTX, r10),
+    SSMFIELD_ENTRY(             CPUMCTX, r11),
+    SSMFIELD_ENTRY(             CPUMCTX, r12),
+    SSMFIELD_ENTRY(             CPUMCTX, r13),
+    SSMFIELD_ENTRY(             CPUMCTX, r14),
+    SSMFIELD_ENTRY(             CPUMCTX, r15),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, esHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, esHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, esHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, csHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, csHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, csHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, ssHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, ssHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, ssHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, dsHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, dsHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, dsHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, fsHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, fsHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, fsHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, gsHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, gsHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, gsHid.Attr),
+    SSMFIELD_ENTRY(             CPUMCTX, cr0),
+    SSMFIELD_ENTRY(             CPUMCTX, cr2),
+    SSMFIELD_ENTRY(             CPUMCTX, cr3),
+    SSMFIELD_ENTRY(             CPUMCTX, cr4),
+    SSMFIELD_ENTRY_OLD(                  cr8, sizeof(uint64_t)),
+    SSMFIELD_ENTRY(             CPUMCTX, dr[0]),
+    SSMFIELD_ENTRY(             CPUMCTX, dr[1]),
+    SSMFIELD_ENTRY(             CPUMCTX, dr[2]),
+    SSMFIELD_ENTRY(             CPUMCTX, dr[3]),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, dr[4]),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, dr[5]),
+    SSMFIELD_ENTRY(             CPUMCTX, dr[6]),
+    SSMFIELD_ENTRY(             CPUMCTX, dr[7]),
+    SSMFIELD_ENTRY(             CPUMCTX, gdtr.cbGdt),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, gdtr.pGdt),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, gdtrPadding),
+    SSMFIELD_ENTRY_OLD(                  gdtrPadding64, sizeof(uint64_t)),
+    SSMFIELD_ENTRY(             CPUMCTX, idtr.cbIdt),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, idtr.pIdt),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, idtrPadding),
+    SSMFIELD_ENTRY_OLD(                  idtrPadding64, sizeof(uint64_t)),
+    SSMFIELD_ENTRY(             CPUMCTX, ldtr),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, ldtrPadding),
+    SSMFIELD_ENTRY(             CPUMCTX, tr),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, trPadding),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, SysEnter.cs),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, SysEnter.eip),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, SysEnter.esp),
+    SSMFIELD_ENTRY(             CPUMCTX, msrEFER),
+    SSMFIELD_ENTRY(             CPUMCTX, msrSTAR),
+    SSMFIELD_ENTRY(             CPUMCTX, msrPAT),
+    SSMFIELD_ENTRY(             CPUMCTX, msrLSTAR),
+    SSMFIELD_ENTRY(             CPUMCTX, msrCSTAR),
+    SSMFIELD_ENTRY(             CPUMCTX, msrSFMASK),
+    SSMFIELD_ENTRY_OLD(                  msrFSBASE, sizeof(uint64_t)),
+    SSMFIELD_ENTRY_OLD(                  msrGSBASE, sizeof(uint64_t)),
+    SSMFIELD_ENTRY(             CPUMCTX, msrKERNELGSBASE),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, ldtrHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, ldtrHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, ldtrHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, trHid.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, trHid.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, trHid.Attr),
+    SSMFIELD_ENTRY_OLD(                  padding, sizeof(uint32_t)*2),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -2248,101 +2248,6 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Load a version 1.6 CPUMCTX structure.
- *
- * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- * @param   pCpumctx16      Version 1.6 CPUMCTX
- */
-static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
-{
-#define CPUMCTX16_LOADREG(RegName) \
-        pVM->aCpus[0].cpum.s.Guest.RegName = pCpumctx16->RegName;
-
-#define CPUMCTX16_LOADDRXREG(RegName) \
-        pVM->aCpus[0].cpum.s.Guest.dr[RegName] = pCpumctx16->dr##RegName;
-
-#define CPUMCTX16_LOADHIDREG(RegName) \
-        pVM->aCpus[0].cpum.s.Guest.RegName##Hid.u64Base  = pCpumctx16->RegName##Hid.u32Base; \
-        pVM->aCpus[0].cpum.s.Guest.RegName##Hid.u32Limit = pCpumctx16->RegName##Hid.u32Limit; \
-        pVM->aCpus[0].cpum.s.Guest.RegName##Hid.Attr     = pCpumctx16->RegName##Hid.Attr;
-
-#define CPUMCTX16_LOADSEGREG(RegName) \
-        pVM->aCpus[0].cpum.s.Guest.RegName = pCpumctx16->RegName; \
-        CPUMCTX16_LOADHIDREG(RegName);
-
-    pVM->aCpus[0].cpum.s.Guest.fpu = pCpumctx16->fpu;
-
-    CPUMCTX16_LOADREG(rax);
-    CPUMCTX16_LOADREG(rbx);
-    CPUMCTX16_LOADREG(rcx);
-    CPUMCTX16_LOADREG(rdx);
-    CPUMCTX16_LOADREG(rdi);
-    CPUMCTX16_LOADREG(rsi);
-    CPUMCTX16_LOADREG(rbp);
-    CPUMCTX16_LOADREG(esp);
-    CPUMCTX16_LOADREG(rip);
-    CPUMCTX16_LOADREG(rflags);
-
-    CPUMCTX16_LOADSEGREG(cs);
-    CPUMCTX16_LOADSEGREG(ds);
-    CPUMCTX16_LOADSEGREG(es);
-    CPUMCTX16_LOADSEGREG(fs);
-    CPUMCTX16_LOADSEGREG(gs);
-    CPUMCTX16_LOADSEGREG(ss);
-
-    CPUMCTX16_LOADREG(r8);
-    CPUMCTX16_LOADREG(r9);
-    CPUMCTX16_LOADREG(r10);
-    CPUMCTX16_LOADREG(r11);
-    CPUMCTX16_LOADREG(r12);
-    CPUMCTX16_LOADREG(r13);
-    CPUMCTX16_LOADREG(r14);
-    CPUMCTX16_LOADREG(r15);
-
-    CPUMCTX16_LOADREG(cr0);
-    CPUMCTX16_LOADREG(cr2);
-    CPUMCTX16_LOADREG(cr3);
-    CPUMCTX16_LOADREG(cr4);
-
-    CPUMCTX16_LOADDRXREG(0);
-    CPUMCTX16_LOADDRXREG(1);
-    CPUMCTX16_LOADDRXREG(2);
-    CPUMCTX16_LOADDRXREG(3);
-    CPUMCTX16_LOADDRXREG(4);
-    CPUMCTX16_LOADDRXREG(5);
-    CPUMCTX16_LOADDRXREG(6);
-    CPUMCTX16_LOADDRXREG(7);
-
-    pVM->aCpus[0].cpum.s.Guest.gdtr.cbGdt   = pCpumctx16->gdtr.cbGdt;
-    pVM->aCpus[0].cpum.s.Guest.gdtr.pGdt    = pCpumctx16->gdtr.pGdt;
-    pVM->aCpus[0].cpum.s.Guest.idtr.cbIdt   = pCpumctx16->idtr.cbIdt;
-    pVM->aCpus[0].cpum.s.Guest.idtr.pIdt    = pCpumctx16->idtr.pIdt;
-
-    CPUMCTX16_LOADREG(ldtr);
-    CPUMCTX16_LOADREG(tr);
-
-    pVM->aCpus[0].cpum.s.Guest.SysEnter     = pCpumctx16->SysEnter;
-
-    CPUMCTX16_LOADREG(msrEFER);
-    CPUMCTX16_LOADREG(msrSTAR);
-    CPUMCTX16_LOADREG(msrPAT);
-    CPUMCTX16_LOADREG(msrLSTAR);
-    CPUMCTX16_LOADREG(msrCSTAR);
-    CPUMCTX16_LOADREG(msrSFMASK);
-    CPUMCTX16_LOADREG(msrKERNELGSBASE);
-
-    CPUMCTX16_LOADHIDREG(ldtr);
-    CPUMCTX16_LOADHIDREG(tr);
-
-#undef CPUMCTX16_LOADSEGREG
-#undef CPUMCTX16_LOADHIDREG
-#undef CPUMCTX16_LOADDRXREG
-#undef CPUMCTX16_LOADREG
-}
-
-
-/**
  * @copydoc FNSSMINTLOADPREP
  */
 static DECLCALLBACK(int) cpumR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
@@ -2405,56 +2310,40 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             pVCpu->cpum.s.Hyper.rsp = uRSP;
         }
 
-        if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
+        if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
         {
-            CPUMCTX_VER1_6 cpumctx16;
-            memset(&pVM->aCpus[0].cpum.s.Guest, 0, sizeof(pVM->aCpus[0].cpum.s.Guest));
-            SSMR3GetStructEx(pSSM, &cpumctx16, sizeof(cpumctx16), fLoad,
-                             paCpumCtxFields, NULL);
-
-            /* Save the old cpumctx state into the new one. */
-            cpumR3LoadCPUM1_6(pVM, &cpumctx16);
-
-            SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fUseFlags);
-            SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fChanged);
-        }
-        else
-        {
-            if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
-            {
-                uint32_t cCpus;
-                int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
-                AssertLogRelMsgReturn(cCpus == pVM->cCpus, ("Mismatching CPU counts: saved: %u; configured: %u \n", cCpus, pVM->cCpus),
-                                      VERR_SSM_UNEXPECTED_DATA);
-            }
-            AssertLogRelMsgReturn(   uVersion > CPUM_SAVED_STATE_VERSION_VER2_0
-                                  || pVM->cCpus == 1,
-                                  ("cCpus=%u\n", pVM->cCpus),
+            uint32_t cCpus;
+            int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
+            AssertLogRelMsgReturn(cCpus == pVM->cCpus, ("Mismatching CPU counts: saved: %u; configured: %u \n", cCpus, pVM->cCpus),
                                   VERR_SSM_UNEXPECTED_DATA);
+        }
+        AssertLogRelMsgReturn(   uVersion > CPUM_SAVED_STATE_VERSION_VER2_0
+                              || pVM->cCpus == 1,
+                              ("cCpus=%u\n", pVM->cCpus),
+                              VERR_SSM_UNEXPECTED_DATA);
 
-            uint32_t cbMsrs = 0;
+        uint32_t cbMsrs = 0;
+        if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
+        {
+            int rc = SSMR3GetU32(pSSM, &cbMsrs); AssertRCReturn(rc, rc);
+            AssertLogRelMsgReturn(RT_ALIGN(cbMsrs, sizeof(uint64_t)) == cbMsrs, ("Size of MSRs is misaligned: %#x\n", cbMsrs),
+                                  VERR_SSM_UNEXPECTED_DATA);
+            AssertLogRelMsgReturn(cbMsrs <= sizeof(CPUMCTXMSRS) && cbMsrs > 0,  ("Size of MSRs is out of range: %#x\n", cbMsrs),
+                                  VERR_SSM_UNEXPECTED_DATA);
+        }
+
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            SSMR3GetStructEx(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest), fLoad,
+                             paCpumCtxFields, NULL);
+            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
+            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
             if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
+                SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], cbMsrs);
+            else if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
             {
-                int rc = SSMR3GetU32(pSSM, &cbMsrs); AssertRCReturn(rc, rc);
-                AssertLogRelMsgReturn(RT_ALIGN(cbMsrs, sizeof(uint64_t)) == cbMsrs, ("Size of MSRs is misaligned: %#x\n", cbMsrs),
-                                      VERR_SSM_UNEXPECTED_DATA);
-                AssertLogRelMsgReturn(cbMsrs <= sizeof(CPUMCTXMSRS) && cbMsrs > 0,  ("Size of MSRs is out of range: %#x\n", cbMsrs),
-                                      VERR_SSM_UNEXPECTED_DATA);
-            }
-
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-            {
-                SSMR3GetStructEx(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest), fLoad,
-                                 paCpumCtxFields, NULL);
-                SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
-                SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
-                if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
-                    SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], cbMsrs);
-                else if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
-                {
-                    SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], 2 * sizeof(uint64_t)); /* Restore two MSRs. */
-                    SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
-                }
+                SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], 2 * sizeof(uint64_t)); /* Restore two MSRs. */
+                SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
             }
         }
 
