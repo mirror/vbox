@@ -730,17 +730,6 @@ typedef struct VBOXIDTR
 } VBOXIDTR, *PVBOXIDTR;
 #pragma pack()
 
-#pragma pack(1)
-/** IDTR from version 1.6 */
-typedef struct VBOXIDTR_VER1_6
-{
-    /** Size of the IDT. */
-    uint16_t    cbIdt;
-    /** Address of the IDT. */
-    uint32_t     pIdt;
-} VBOXIDTR_VER1_6, *PVBOXIDTR_VER1_6;
-#pragma pack()
-
 /** @} */
 
 
