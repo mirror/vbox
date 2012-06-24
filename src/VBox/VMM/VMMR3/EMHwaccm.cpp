@@ -230,7 +230,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     }
 #endif /* 0 */
     STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
-    Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
+    Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
 #ifdef VBOX_WITH_REM
     EMRemLock(pVM);
     /* Flush the recompiler TLB if the VCPU has changed. */
@@ -468,7 +468,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     int      rc = VERR_IPE_UNINITIALIZED_STATUS;
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
-    LogFlow(("emR3HwAccExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pCtx->cs, (RTGCPTR)pCtx->rip));
+    LogFlow(("emR3HwAccExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
     *pfFFDone = false;
 
     STAM_COUNTER_INC(&pVCpu->em.s.StatHwAccExecuteEntry);
@@ -508,7 +508,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Log important stuff before entering GC.
          */
         if (TRPMHasTrap(pVCpu))
-            Log(("CPU%d: Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", pVCpu->idCpu, TRPMGetTrapNo(pVCpu), pCtx->cs, (RTGCPTR)pCtx->rip));
+            Log(("CPU%d: Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", pVCpu->idCpu, TRPMGetTrapNo(pVCpu), pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
 
         uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
 
@@ -517,18 +517,18 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             if (pCtx->eflags.Bits.u1VM)
                 Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
             else if (CPUMIsGuestIn64BitCodeEx(pCtx))
-                Log(("HWR%d: %04X:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+                Log(("HWR%d: %04X:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
             else
-                Log(("HWR%d: %04X:%08X ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+                Log(("HWR%d: %04X:%08X ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs.Sel,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
         }
         else
         {
             if (pCtx->eflags.Bits.u1VM)
                 Log(("HWV86-CPU%d: %08X IF=%d\n", pVCpu->idCpu, pCtx->eip, pCtx->eflags.Bits.u1IF));
             else if (CPUMIsGuestIn64BitCodeEx(pCtx))
-                Log(("HWR%d-CPU%d: %04X:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+                Log(("HWR%d-CPU%d: %04X:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
             else
-                Log(("HWR%d-CPU%d: %04X:%08X ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pCtx->cs,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+                Log(("HWR%d-CPU%d: %04X:%08X ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pCtx->cs.Sel,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
         }
 #endif /* LOG_ENABLED */
 

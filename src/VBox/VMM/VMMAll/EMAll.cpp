@@ -383,13 +383,13 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
     int rc = SELMToFlatEx(pVCpu, DISSELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
 #else
 /** @todo Get the CPU mode as well while we're at it! */
-    int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtxCore->eflags, pCtxCore->ss, pCtxCore->cs,
-                                          &pCtxCore->csHid, pCtxCore->rip, &GCPtrInstr);
+    int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtxCore->eflags, pCtxCore->ss.Sel, pCtxCore->cs.Sel,
+                                          &pCtxCore->cs, pCtxCore->rip, &GCPtrInstr);
 #endif
     if (RT_FAILURE(rc))
     {
         Log(("EMInterpretDisasOne: Failed to convert %RTsel:%RGv (cpl=%d) - rc=%Rrc !!\n",
-             pCtxCore->cs, (RTGCPTR)pCtxCore->rip, pCtxCore->ss & X86_SEL_RPL, rc));
+             pCtxCore->cs.Sel, (RTGCPTR)pCtxCore->rip, pCtxCore->ss.Sel & X86_SEL_RPL, rc));
         return rc;
     }
     return EMInterpretDisasOneEx(pVM, pVCpu, (RTGCUINTPTR)GCPtrInstr, pCtxCore, pDis, pcbInstr);
@@ -414,7 +414,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
 VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                    PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
-    DISCPUMODE enmCpuMode = SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid);
+    DISCPUMODE enmCpuMode = SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs.Sel, (PCPUMSELREGHID)&pCtxCore->cs);
     /** @todo Deal with too long instruction (=> \#GP), opcode read errors (=>
      *        \#PF, \#GP, \#??), undefined opcodes (=> \#UD), and such. */
     int rc = DISInstrWithReader(GCPtrInstr, enmCpuMode, emReadBytes, pVCpu, pDis, pcbInstr);
@@ -460,7 +460,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs.Sel, &pRegFrame->cs);
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
@@ -514,7 +514,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs.Sel, &pRegFrame->cs);
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
@@ -624,8 +624,8 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
     rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &gs,       (RTGCPTR)(pIretStack + 32), 4);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 
-    pRegFrame->eip = eip & 0xffff;
-    pRegFrame->cs  = cs;
+    pRegFrame->eip    = eip & 0xffff;
+    pRegFrame->cs.Sel = cs;
 
     /* Mask away all reserved bits */
     uMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM | X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_ID;
@@ -634,12 +634,12 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
     CPUMRawSetEFlags(pVCpu, pRegFrame, eflags);
     Assert((pRegFrame->eflags.u32 & (X86_EFL_IF|X86_EFL_IOPL)) == X86_EFL_IF);
 
-    pRegFrame->esp = esp;
-    pRegFrame->ss  = ss;
-    pRegFrame->ds  = ds;
-    pRegFrame->es  = es;
-    pRegFrame->fs  = fs;
-    pRegFrame->gs  = gs;
+    pRegFrame->esp      = esp;
+    pRegFrame->ss.Sel   = ss;
+    pRegFrame->ds.Sel   = ds;
+    pRegFrame->es.Sel   = es;
+    pRegFrame->fs.Sel   = fs;
+    pRegFrame->gs.Sel   = gs;
 
     return VINF_SUCCESS;
 }
@@ -925,7 +925,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
                 &&  (val & X86_CR0_PG))
             {
                 /* Illegal to have an active 64 bits CS selector (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-                if (pRegFrame->csHid.Attr.n.u1Long)
+                if (pRegFrame->cs.Attr.n.u1Long)
                 {
                     AssertMsgFailed(("Illegal enabling of paging with CS.u1Long = 1!!\n"));
                     return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
@@ -1534,7 +1534,7 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
             RTGCPTR pStackVal;
 
             /* Read stack value first */
-            if (SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == DISCPUMODE_16BIT)
+            if (SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, &pRegFrame->ss) == DISCPUMODE_16BIT)
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */
@@ -2201,7 +2201,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
 
     if (!(pDis->fPrefix & DISPREFIX_REP))
     {
-        LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize));
+        LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d\n", pRegFrame->es.Sel, GCOffset, GCDest, cbSize));
 
         rc = emRamWrite(pVM, pVCpu, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
         if (RT_FAILURE(rc))
@@ -2246,7 +2246,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
             return VERR_EM_INTERPRETER;
         }
 
-        LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d cTransfers=%x DF=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize, cTransfers, pRegFrame->eflags.Bits.u1DF));
+        LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d cTransfers=%x DF=%d\n", pRegFrame->es.Sel, GCOffset, GCDest, cbSize, cTransfers, pRegFrame->eflags.Bits.u1DF));
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
         rc = PGMVerifyAccess(pVCpu, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)),
                              cTransfers * cbSize,

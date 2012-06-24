@@ -264,10 +264,10 @@ GenericTrapErrCode:
     mov     eax, [esp + 14h + ESPOFF]           ; esp
     mov     [esp + CPUMCTXCORE.esp], eax
     mov     eax, [esp + 18h + ESPOFF]           ; ss
-    mov     dword [esp + CPUMCTXCORE.ss], eax
+    mov     dword [esp + CPUMCTXCORE.ss.Sel], eax
 
     mov     eax, [esp + 0ch + ESPOFF]           ; cs
-    mov     dword [esp + CPUMCTXCORE.cs], eax
+    mov     dword [esp + CPUMCTXCORE.cs.Sel], eax
     mov     eax, [esp + 08h + ESPOFF]           ; eip
     mov     [esp + CPUMCTXCORE.eip], eax
     mov     eax, [esp + 10h + ESPOFF]           ; eflags
@@ -287,13 +287,13 @@ GenericTrapErrCode:
 %endif
 
     mov     eax, es
-    mov     dword [esp + CPUMCTXCORE.es], eax
+    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
     mov     eax, ds
-    mov     dword [esp + CPUMCTXCORE.ds], eax
+    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
     mov     eax, fs
-    mov     dword [esp + CPUMCTXCORE.fs], eax
+    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
     mov     eax, gs
-    mov     dword [esp + CPUMCTXCORE.gs], eax
+    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
 
     test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
     jz short gt_SkipV86Entry
@@ -302,16 +302,16 @@ GenericTrapErrCode:
     ; The DS, ES, FS and GS registers are zeroed in V86 mode and their real values are on the stack
     ;
     mov     eax, dword [esp + ESPOFF + 1Ch]
-    mov     dword [esp + CPUMCTXCORE.es], eax
+    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
 
     mov     eax, dword [esp + ESPOFF + 20h]
-    mov     dword [esp + CPUMCTXCORE.ds], eax
+    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
 
     mov     eax, dword [esp + ESPOFF + 24h]
-    mov     dword [esp + CPUMCTXCORE.fs], eax
+    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
 
     mov     eax, dword [esp + ESPOFF + 28h]
-    mov     dword [esp + CPUMCTXCORE.gs], eax
+    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
 
 gt_SkipV86Entry:
     ;
@@ -466,26 +466,26 @@ gt_continue_guest:
 
     mov     eax, [esp + CPUMCTXCORE.esp]
     mov     [esp + 14h + ESPOFF], eax           ; esp
-    mov     eax, dword [esp + CPUMCTXCORE.ss]
+    mov     eax, dword [esp + CPUMCTXCORE.ss.Sel]
     mov     [esp + 18h + ESPOFF], eax           ; ss
 
-    mov     eax, dword [esp + CPUMCTXCORE.gs]
+    mov     eax, dword [esp + CPUMCTXCORE.gs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
     mov     gs, eax
 
-    mov     eax, dword [esp + CPUMCTXCORE.fs]
+    mov     eax, dword [esp + CPUMCTXCORE.fs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS
     mov     fs, eax
 
-    mov     eax, dword [esp + CPUMCTXCORE.es]
+    mov     eax, dword [esp + CPUMCTXCORE.es.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES
     mov     es, eax
 
-    mov     eax, dword [esp + CPUMCTXCORE.ds]
+    mov     eax, dword [esp + CPUMCTXCORE.ds.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS
     mov     ds, eax
 
-    mov     eax, dword [esp + CPUMCTXCORE.cs]
+    mov     eax, dword [esp + CPUMCTXCORE.cs.Sel]
     mov     [esp + 0ch + ESPOFF], eax           ; cs
     mov     eax, [esp + CPUMCTXCORE.eflags]
     mov     [esp + 10h + ESPOFF], eax           ; eflags
@@ -511,21 +511,21 @@ gt_V86Return:
 
     mov     eax, [esp + CPUMCTXCORE.esp]
     mov     [esp + 14h + ESPOFF], eax           ; esp
-    mov     eax, dword [esp + CPUMCTXCORE.ss]
+    mov     eax, dword [esp + CPUMCTXCORE.ss.Sel]
     mov     [esp + 18h + ESPOFF], eax           ; ss
 
-    mov     eax, dword [esp + CPUMCTXCORE.es]
+    mov     eax, dword [esp + CPUMCTXCORE.es.Sel]
     mov     [esp + 1ch + ESPOFF], eax           ; es
-    mov     eax, dword [esp + CPUMCTXCORE.ds]
+    mov     eax, dword [esp + CPUMCTXCORE.ds.Sel]
     mov     [esp + 20h + ESPOFF], eax           ; ds
-    mov     eax, dword [esp + CPUMCTXCORE.fs]
+    mov     eax, dword [esp + CPUMCTXCORE.fs.Sel]
     mov     [esp + 24h + ESPOFF], eax           ; fs
-    mov     eax, dword [esp + CPUMCTXCORE.gs]
+    mov     eax, dword [esp + CPUMCTXCORE.gs.Sel]
     mov     [esp + 28h + ESPOFF], eax           ; gs
 
     mov     eax, [esp + CPUMCTXCORE.eip]
     mov     [esp + 08h + ESPOFF], eax           ; eip
-    mov     eax, dword [esp + CPUMCTXCORE.cs]
+    mov     eax, dword [esp + CPUMCTXCORE.cs.Sel]
     mov     [esp + 0ch + ESPOFF], eax           ; cs
     mov     eax, [esp + CPUMCTXCORE.eflags]
     mov     [esp + 10h + ESPOFF], eax           ; eflags
@@ -548,7 +548,7 @@ gt_InHypervisor:
     ; fix ss:esp.
     lea     ebx, [esp + 14h + ESPOFF]   ; calc esp at trap
     mov     [esp + CPUMCTXCORE.esp], ebx; update esp in register frame
-    mov     [esp + CPUMCTXCORE.ss], ss  ; update ss in register frame
+    mov     [esp + CPUMCTXCORE.ss.Sel], ss ; update ss in register frame
 
     ; tell cpum about the context core.
     xchg    esi, eax                    ; save pTRPMCPU - @todo reallocate this variable to esi, edi, or ebx
@@ -655,24 +655,24 @@ gt_Hyper_Continue:
     mov     esi, [esp + CPUMCTXCORE.esi]
     mov     edi, [esp + CPUMCTXCORE.edi]
 
-    mov     eax, dword [esp + CPUMCTXCORE.gs]
+    mov     eax, dword [esp + CPUMCTXCORE.gs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS | TRPM_TRAP_IN_HYPER
     mov     gs, eax
 
-    mov     eax, dword [esp + CPUMCTXCORE.fs]
+    mov     eax, dword [esp + CPUMCTXCORE.fs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS | TRPM_TRAP_IN_HYPER
     mov     fs, eax
 
-    mov     eax, dword [esp + CPUMCTXCORE.es]
+    mov     eax, dword [esp + CPUMCTXCORE.es.Sel]
     mov     es, eax
-    mov     eax, dword [esp + CPUMCTXCORE.ds]
+    mov     eax, dword [esp + CPUMCTXCORE.ds.Sel]
     mov     ds, eax
 
     ; skip esp & ss
 
     mov     eax, [esp + CPUMCTXCORE.eip]
     mov     [esp + 08h + ESPOFF], eax           ; eip
-    mov     eax, dword [esp + CPUMCTXCORE.cs]
+    mov     eax, dword [esp + CPUMCTXCORE.cs.Sel]
     mov     [esp + 0ch + ESPOFF], eax           ; cs
     mov     eax, [esp + CPUMCTXCORE.eflags]
     mov     [esp + 10h + ESPOFF], eax           ; eflags
@@ -768,14 +768,14 @@ ti_GenericInterrupt:
     mov     eax, [esp + 04h + ESPOFF]           ; eip
     mov     [esp + CPUMCTXCORE.eip], eax
     mov     eax, dword [esp + 08h + ESPOFF]     ; cs
-    mov     [esp + CPUMCTXCORE.cs], eax
+    mov     [esp + CPUMCTXCORE.cs.Sel], eax
     mov     eax, [esp + 0ch + ESPOFF]           ; eflags
     mov     [esp + CPUMCTXCORE.eflags], eax
 
     mov     eax, [esp + 10h + ESPOFF]           ; esp
     mov     [esp + CPUMCTXCORE.esp], eax
     mov     eax, dword [esp + 14h + ESPOFF]     ; ss
-    mov     [esp + CPUMCTXCORE.ss], eax
+    mov     [esp + CPUMCTXCORE.ss.Sel], eax
 
 %if GC_ARCH_BITS == 64
     ; zero out the high dwords
@@ -791,13 +791,13 @@ ti_GenericInterrupt:
 %endif
 
     mov     eax, es
-    mov     dword [esp + CPUMCTXCORE.es], eax
+    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
     mov     eax, ds
-    mov     dword [esp + CPUMCTXCORE.ds], eax
+    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
     mov     eax, fs
-    mov     dword [esp + CPUMCTXCORE.fs], eax
+    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
     mov     eax, gs
-    mov     dword [esp + CPUMCTXCORE.gs], eax
+    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
 
     test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
     jz short ti_SkipV86Entry
@@ -806,16 +806,16 @@ ti_GenericInterrupt:
     ; The DS, ES, FS and GS registers are zeroed in V86 mode and their real values are on the stack
     ;
     mov     eax, dword [esp + ESPOFF + 18h]
-    mov     dword [esp + CPUMCTXCORE.es], eax
+    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
 
     mov     eax, dword [esp + ESPOFF + 1Ch]
-    mov     dword [esp + CPUMCTXCORE.ds], eax
+    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
 
     mov     eax, dword [esp + ESPOFF + 20h]
-    mov     dword [esp + CPUMCTXCORE.fs], eax
+    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
 
     mov     eax, dword [esp + ESPOFF + 24h]
-    mov     dword [esp + CPUMCTXCORE.gs], eax
+    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
 
 ti_SkipV86Entry:
 
@@ -924,7 +924,7 @@ gi_NotHyperVisor:
 gi_HyperVisor:
     lea     eax, [esp + 14h + ESPOFF]      ; calc esp at trap
     mov     [esp + CPUMCTXCORE.esp], eax   ; update esp in register frame
-    mov     [esp + CPUMCTXCORE.ss], ss     ; update ss in register frame
+    mov     [esp + CPUMCTXCORE.ss.Sel], ss ; update ss in register frame
 
 %ifdef DEBUG_STUFF_INT
     mov     ebx, [esp +  4h + ESPOFF]      ; error code
@@ -963,17 +963,17 @@ gi_HyperVisor:
     test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
     jnz     short ti_SkipSelRegs
 
-    mov     eax, [esp + CPUMCTXCORE.gs]
+    mov     eax, [esp + CPUMCTXCORE.gs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS | TRPM_TRAP_IN_HYPER
     mov     gs, eax
 
-    mov     eax, [esp + CPUMCTXCORE.fs]
+    mov     eax, [esp + CPUMCTXCORE.fs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS | TRPM_TRAP_IN_HYPER
     mov     fs, eax
 
-    mov     eax, [esp + CPUMCTXCORE.es]
+    mov     eax, [esp + CPUMCTXCORE.es.Sel]
     mov     es, eax
-    mov     eax, [esp + CPUMCTXCORE.ds]
+    mov     eax, [esp + CPUMCTXCORE.ds.Sel]
     mov     ds, eax
 
 ti_SkipSelRegs:
@@ -1098,17 +1098,17 @@ BEGINPROC_EXPORTED TRPMGCHandlerTrap08
     mov     [esp + CPUMCTXCORE.eflags], eax
 
     movzx   eax, word [ecx + VBOXTSS.cs]
-    mov     dword [esp + CPUMCTXCORE.cs], eax
+    mov     dword [esp + CPUMCTXCORE.cs.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.ds]
-    mov     dword [esp + CPUMCTXCORE.ds], eax
+    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.es]
-    mov     dword [esp + CPUMCTXCORE.es], eax
+    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.fs]
-    mov     dword [esp + CPUMCTXCORE.fs], eax
+    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.gs]
-    mov     dword [esp + CPUMCTXCORE.gs], eax
+    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.ss]
-    mov     [esp + CPUMCTXCORE.ss], eax
+    mov     [esp + CPUMCTXCORE.ss.Sel], eax
     mov     eax, [ecx + VBOXTSS.esp]
     mov     [esp + CPUMCTXCORE.esp], eax
 %if GC_ARCH_BITS == 64
@@ -1259,14 +1259,14 @@ tddrf_trap_rest:
 
 tddrf_regs:
     COM_S_PRINT ' ***',10,13,'cs:eip='
-    movzx   ecx, word [eax + CPUMCTXCORE.cs]
+    movzx   ecx, word [eax + CPUMCTXCORE.cs.Sel]
     COM_S_DWORD_REG ecx
     COM_S_CHAR ':'
     mov     ecx, [eax + CPUMCTXCORE.eip]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '    ss:esp='
-    movzx   ecx, word [eax + CPUMCTXCORE.ss]
+    movzx   ecx, word [eax + CPUMCTXCORE.ss.Sel]
     COM_S_DWORD_REG ecx
     COM_S_CHAR ':'
     mov     ecx, [eax + CPUMCTXCORE.esp]
@@ -1322,19 +1322,19 @@ tddrf_regs:
 
 
     COM_S_PRINT 10,13,' ds='
-    movzx   ecx, word [eax + CPUMCTXCORE.ds]
+    movzx   ecx, word [eax + CPUMCTXCORE.ds.Sel]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '   es='
-    movzx   ecx, word [eax + CPUMCTXCORE.es]
+    movzx   ecx, word [eax + CPUMCTXCORE.es.Sel]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '   fs='
-    movzx   ecx, word [eax + CPUMCTXCORE.fs]
+    movzx   ecx, word [eax + CPUMCTXCORE.fs.Sel]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '   gs='
-    movzx   ecx, word [eax + CPUMCTXCORE.gs]
+    movzx   ecx, word [eax + CPUMCTXCORE.gs.Sel]
     COM_S_DWORD_REG ecx
 
 

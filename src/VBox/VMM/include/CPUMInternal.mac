@@ -114,36 +114,48 @@ struc CPUMCPU
     .Hyper.r13                resq    1
     .Hyper.r14                resq    1
     .Hyper.r15                resq    1
-    .Hyper.es                 resw    1
-    .Hyper.esPadding          resw    3
-    .Hyper.esHid.u64Base      resq    1
-    .Hyper.esHid.u32Limit     resd    1
-    .Hyper.esHid.Attr         resd    1
-    .Hyper.cs                 resw    1
-    .Hyper.csPadding          resw    3
-    .Hyper.csHid.u64Base      resq    1
-    .Hyper.csHid.u32Limit     resd    1
-    .Hyper.csHid.Attr         resd    1
-    .Hyper.ss                 resw    1
-    .Hyper.ssPadding          resw    3
-    .Hyper.ssHid.u64Base      resq    1
-    .Hyper.ssHid.u32Limit     resd    1
-    .Hyper.ssHid.Attr         resd    1
-    .Hyper.ds                 resw    1
-    .Hyper.dsPadding          resw    3
-    .Hyper.dsHid.u64Base      resq    1
-    .Hyper.dsHid.u32Limit     resd    1
-    .Hyper.dsHid.Attr         resd    1
-    .Hyper.fs                 resw    1
-    .Hyper.fsPadding          resw    3
-    .Hyper.fsHid.u64Base      resq    1
-    .Hyper.fsHid.u32Limit     resd    1
-    .Hyper.fsHid.Attr         resd    1
-    .Hyper.gs                 resw    1
-    .Hyper.gsPadding          resw    3
-    .Hyper.gsHid.u64Base      resq    1
-    .Hyper.gsHid.u32Limit     resd    1
-    .Hyper.gsHid.Attr         resd    1
+    .Hyper.es.Sel             resw    1
+    .Hyper.es.PaddingSel      resw    1
+    .Hyper.es.ValidSel        resw    1
+    .Hyper.es.fFlags          resw    1
+    .Hyper.es.u64Base         resq    1
+    .Hyper.es.u32Limit        resd    1
+    .Hyper.es.Attr            resd    1
+    .Hyper.cs.Sel             resw    1
+    .Hyper.cs.PaddingSel      resw    1
+    .Hyper.cs.ValidSel        resw    1
+    .Hyper.cs.fFlags          resw    1
+    .Hyper.cs.u64Base         resq    1
+    .Hyper.cs.u32Limit        resd    1
+    .Hyper.cs.Attr            resd    1
+    .Hyper.ss.Sel             resw    1
+    .Hyper.ss.PaddingSel      resw    1
+    .Hyper.ss.ValidSel        resw    1
+    .Hyper.ss.fFlags          resw    1
+    .Hyper.ss.u64Base         resq    1
+    .Hyper.ss.u32Limit        resd    1
+    .Hyper.ss.Attr            resd    1
+    .Hyper.ds.Sel             resw    1
+    .Hyper.ds.PaddingSel      resw    1
+    .Hyper.ds.ValidSel        resw    1
+    .Hyper.ds.fFlags          resw    1
+    .Hyper.ds.u64Base         resq    1
+    .Hyper.ds.u32Limit        resd    1
+    .Hyper.ds.Attr            resd    1
+    .Hyper.fs.Sel             resw    1
+    .Hyper.fs.PaddingSel      resw    1
+    .Hyper.fs.ValidSel        resw    1
+    .Hyper.fs.fFlags          resw    1
+    .Hyper.fs.u64Base         resq    1
+    .Hyper.fs.u32Limit        resd    1
+    .Hyper.fs.Attr            resd    1
+    .Hyper.gs.Sel             resw    1
+    .Hyper.gs.PaddingSel      resw    1
+    .Hyper.gs.ValidSel        resw    1
+    .Hyper.gs.fFlags          resw    1
+    .Hyper.gs.u64Base         resq    1
+    .Hyper.gs.u32Limit        resd    1
+    .Hyper.gs.Attr            resd    1
     .Hyper.eip                resq    1
     .Hyper.eflags             resq    1
     .Hyper.cr0                resq    1
@@ -159,16 +171,20 @@ struc CPUMCPU
     .Hyper.idtr               resw    0
     .Hyper.idtr.cbIdt         resw    1
     .Hyper.idtr.pIdt          resq    1
-    .Hyper.ldtr               resw    1
-    .Hyper.ldtrPadding        resw    3
-    .Hyper.ldtrHid.u64Base    resq    1
-    .Hyper.ldtrHid.u32Limit   resd    1
-    .Hyper.ldtrHid.Attr       resd    1
-    .Hyper.tr                 resw    1
-    .Hyper.trPadding          resw    3
-    .Hyper.trHid.u64Base      resq    1
-    .Hyper.trHid.u32Limit     resd    1
-    .Hyper.trHid.Attr         resd    1
+    .Hyper.ldtr.Sel           resw    1
+    .Hyper.ldtr.PaddingSel    resw    1
+    .Hyper.ldtr.ValidSel      resw    1
+    .Hyper.ldtr.fFlags        resw    1
+    .Hyper.ldtr.u64Base       resq    1
+    .Hyper.ldtr.u32Limit      resd    1
+    .Hyper.ldtr.Attr          resd    1
+    .Hyper.tr.Sel             resw    1
+    .Hyper.tr.PaddingSel      resw    1
+    .Hyper.tr.ValidSel        resw    1
+    .Hyper.tr.fFlags          resw    1
+    .Hyper.tr.u64Base         resq    1
+    .Hyper.tr.u32Limit        resd    1
+    .Hyper.tr.Attr            resd    1
     .Hyper.SysEnter.cs        resb    8
     .Hyper.SysEnter.eip       resb    8
     .Hyper.SysEnter.esp       resb    8
@@ -318,36 +334,48 @@ struc CPUMCPU
     .Guest.r13                resq    1
     .Guest.r14                resq    1
     .Guest.r15                resq    1
-    .Guest.es                 resw    1
-    .Guest.esPadding          resw    3
-    .Guest.esHid.u64Base      resq    1
-    .Guest.esHid.u32Limit     resd    1
-    .Guest.esHid.Attr         resd    1
-    .Guest.cs                 resw    1
-    .Guest.csPadding          resw    3
-    .Guest.csHid.u64Base      resq    1
-    .Guest.csHid.u32Limit     resd    1
-    .Guest.csHid.Attr         resd    1
-    .Guest.ss                 resw    1
-    .Guest.ssPadding          resw    3
-    .Guest.ssHid.u64Base      resq    1
-    .Guest.ssHid.u32Limit     resd    1
-    .Guest.ssHid.Attr         resd    1
-    .Guest.ds                 resw    1
-    .Guest.dsPadding          resw    3
-    .Guest.dsHid.u64Base      resq    1
-    .Guest.dsHid.u32Limit     resd    1
-    .Guest.dsHid.Attr         resd    1
-    .Guest.fs                 resw    1
-    .Guest.fsPadding          resw    3
-    .Guest.fsHid.u64Base      resq    1
-    .Guest.fsHid.u32Limit     resd    1
-    .Guest.fsHid.Attr         resd    1
-    .Guest.gs                 resw    1
-    .Guest.gsPadding          resw    3
-    .Guest.gsHid.u64Base      resq    1
-    .Guest.gsHid.u32Limit     resd    1
-    .Guest.gsHid.Attr         resd    1
+    .Guest.es.Sel             resw    1
+    .Guest.es.PaddingSel      resw    1
+    .Guest.es.ValidSel        resw    1
+    .Guest.es.fFlags          resw    1
+    .Guest.es.u64Base         resq    1
+    .Guest.es.u32Limit        resd    1
+    .Guest.es.Attr            resd    1
+    .Guest.cs.Sel             resw    1
+    .Guest.cs.PaddingSel      resw    1
+    .Guest.cs.ValidSel        resw    1
+    .Guest.cs.fFlags          resw    1
+    .Guest.cs.u64Base         resq    1
+    .Guest.cs.u32Limit        resd    1
+    .Guest.cs.Attr            resd    1
+    .Guest.ss.Sel             resw    1
+    .Guest.ss.PaddingSel      resw    1
+    .Guest.ss.ValidSel        resw    1
+    .Guest.ss.fFlags          resw    1
+    .Guest.ss.u64Base         resq    1
+    .Guest.ss.u32Limit        resd    1
+    .Guest.ss.Attr            resd    1
+    .Guest.ds.Sel             resw    1
+    .Guest.ds.PaddingSel      resw    1
+    .Guest.ds.ValidSel        resw    1
+    .Guest.ds.fFlags          resw    1
+    .Guest.ds.u64Base         resq    1
+    .Guest.ds.u32Limit        resd    1
+    .Guest.ds.Attr            resd    1
+    .Guest.fs.Sel             resw    1
+    .Guest.fs.PaddingSel      resw    1
+    .Guest.fs.ValidSel        resw    1
+    .Guest.fs.fFlags          resw    1
+    .Guest.fs.u64Base         resq    1
+    .Guest.fs.u32Limit        resd    1
+    .Guest.fs.Attr            resd    1
+    .Guest.gs.Sel             resw    1
+    .Guest.gs.PaddingSel      resw    1
+    .Guest.gs.ValidSel        resw    1
+    .Guest.gs.fFlags          resw    1
+    .Guest.gs.u64Base         resq    1
+    .Guest.gs.u32Limit        resd    1
+    .Guest.gs.Attr            resd    1
     .Guest.eip                resq    1
     .Guest.eflags             resq    1
     .Guest.cr0                resq    1
@@ -363,16 +391,20 @@ struc CPUMCPU
     .Guest.idtr               resw    0
     .Guest.idtr.cbIdt         resw    1
     .Guest.idtr.pIdt          resq    1
-    .Guest.ldtr               resw    1
-    .Guest.ldtrPadding        resw    3
-    .Guest.ldtrHid.u64Base    resq    1
-    .Guest.ldtrHid.u32Limit   resd    1
-    .Guest.ldtrHid.Attr       resd    1
-    .Guest.tr                 resw    1
-    .Guest.trPadding          resw    3
-    .Guest.trHid.u64Base      resq    1
-    .Guest.trHid.u32Limit     resd    1
-    .Guest.trHid.Attr         resd    1
+    .Guest.ldtr.Sel           resw    1
+    .Guest.ldtr.PaddingSel    resw    1
+    .Guest.ldtr.ValidSel      resw    1
+    .Guest.ldtr.fFlags        resw    1
+    .Guest.ldtr.u64Base       resq    1
+    .Guest.ldtr.u32Limit      resd    1
+    .Guest.ldtr.Attr          resd    1
+    .Guest.tr.Sel             resw    1
+    .Guest.tr.PaddingSel      resw    1
+    .Guest.tr.ValidSel        resw    1
+    .Guest.tr.fFlags          resw    1
+    .Guest.tr.u64Base         resq    1
+    .Guest.tr.u32Limit        resd    1
+    .Guest.tr.Attr            resd    1
     .Guest.SysEnter.cs        resb    8
     .Guest.SysEnter.eip       resb    8
     .Guest.SysEnter.esp       resb    8

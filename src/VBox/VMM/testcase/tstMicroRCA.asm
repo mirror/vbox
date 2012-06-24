@@ -501,7 +501,7 @@ tstTrapHandler_Fault:
     push    edi               ;3c       ;  0h
                               ;40
 
-    test    byte [esp + CPUMCTXCORE.cs], 3h ; check CPL of the cs selector
+    test    byte [esp + CPUMCTXCORE.cs.Sel], 3h ; check CPL of the cs selector
     jmp short tstTrapHandler_Fault_Hyper ;; @todo
     jz short tstTrapHandler_Fault_Hyper
 tstTrapHandler_Fault_Guest:
@@ -515,7 +515,7 @@ tstTrapHandler_Fault_Hyper:
     ; fix ss:esp.
     lea     ebx, [esp + 14h + 040h]     ; calc esp at trap
     mov     [esp + CPUMCTXCORE.esp], ebx; update esp in register frame
-    mov     [esp + CPUMCTXCORE.ss], ss  ; update ss in register frame
+    mov     [esp + CPUMCTXCORE.ss.Sel], ss  ; update ss in register frame
 
     mov     ecx, esp
     mov     edx, IMP(g_VM)

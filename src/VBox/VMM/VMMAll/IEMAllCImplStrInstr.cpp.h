@@ -75,7 +75,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -93,8 +93,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtSrc1Addr = (uint32_t)pSrc1Hid->u64Base   + uSrc1AddrReg;
-        ADDR2_TYPE  uVirtSrc2Addr = (uint32_t)pCtx->esHid.u64Base + uSrc2AddrReg;
+        ADDR2_TYPE  uVirtSrc1Addr = (uint32_t)pSrc1Hid->u64Base + uSrc1AddrReg;
+        ADDR2_TYPE  uVirtSrc2Addr = (uint32_t)pCtx->es.u64Base  + uSrc2AddrReg;
 #else
         uint64_t    uVirtSrc1Addr = uSrc1AddrReg;
         uint64_t    uVirtSrc2Addr = uSrc2AddrReg;
@@ -110,8 +110,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
 #if ADDR_SIZE != 64
             && uSrc1AddrReg < pSrc1Hid->u32Limit
             && uSrc1AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pSrc1Hid->u32Limit
-            && uSrc2AddrReg < pCtx->esHid.u32Limit
-            && uSrc2AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uSrc2AddrReg < pCtx->es.u32Limit
+            && uSrc2AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit
 #endif
            )
         {
@@ -232,7 +232,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -250,8 +250,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtSrc1Addr = (uint32_t)pSrc1Hid->u64Base   + uSrc1AddrReg;
-        ADDR2_TYPE  uVirtSrc2Addr = (uint32_t)pCtx->esHid.u64Base + uSrc2AddrReg;
+        ADDR2_TYPE  uVirtSrc1Addr = (uint32_t)pSrc1Hid->u64Base + uSrc1AddrReg;
+        ADDR2_TYPE  uVirtSrc2Addr = (uint32_t)pCtx->es.u64Base  + uSrc2AddrReg;
 #else
         uint64_t    uVirtSrc1Addr = uSrc1AddrReg;
         uint64_t    uVirtSrc2Addr = uSrc2AddrReg;
@@ -267,8 +267,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
 #if ADDR_SIZE != 64
             && uSrc1AddrReg < pSrc1Hid->u32Limit
             && uSrc1AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pSrc1Hid->u32Limit
-            && uSrc2AddrReg < pCtx->esHid.u32Limit
-            && uSrc2AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uSrc2AddrReg < pCtx->es.u32Limit
+            && uSrc2AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit
 #endif
            )
         {
@@ -384,7 +384,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
         return VINF_SUCCESS;
     }
 
-    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -402,7 +402,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->esHid.u64Base + uAddrReg;
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->es.u64Base + uAddrReg;
 #else
         uint64_t    uVirtAddr = uAddrReg;
 #endif
@@ -412,8 +412,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
             && cbIncr > 0    /** @todo Implement reverse direction string ops. */
 #if ADDR_SIZE != 64
-            && uAddrReg < pCtx->esHid.u32Limit
-            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uAddrReg < pCtx->es.u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit
 #endif
            )
         {
@@ -508,7 +508,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
         return VINF_SUCCESS;
     }
 
-    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -526,7 +526,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->esHid.u64Base + uAddrReg;
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->es.u64Base + uAddrReg;
 #else
         uint64_t    uVirtAddr = uAddrReg;
 #endif
@@ -536,8 +536,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
             && cbIncr > 0    /** @todo Implement reverse direction string ops. */
 #if ADDR_SIZE != 64
-            && uAddrReg < pCtx->esHid.u32Limit
-            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uAddrReg < pCtx->es.u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit
 #endif
            )
         {
@@ -639,7 +639,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -656,8 +656,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtSrcAddr = (uint32_t)pSrcHid->u64Base    + uSrcAddrReg;
-        ADDR2_TYPE  uVirtDstAddr = (uint32_t)pCtx->esHid.u64Base + uDstAddrReg;
+        ADDR2_TYPE  uVirtSrcAddr = (uint32_t)pSrcHid->u64Base + uSrcAddrReg;
+        ADDR2_TYPE  uVirtDstAddr = (uint32_t)pCtx->es.u64Base + uDstAddrReg;
 #else
         uint64_t    uVirtSrcAddr = uSrcAddrReg;
         uint64_t    uVirtDstAddr = uDstAddrReg;
@@ -673,8 +673,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 #if ADDR_SIZE != 64
             && uSrcAddrReg < pSrcHid->u32Limit
             && uSrcAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pSrcHid->u32Limit
-            && uDstAddrReg < pCtx->esHid.u32Limit
-            && uDstAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uDstAddrReg < pCtx->es.u32Limit
+            && uDstAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit
 #endif
            )
         {
@@ -763,7 +763,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
         return VINF_SUCCESS;
     }
 
-    VBOXSTRICTRC rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -780,7 +780,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->esHid.u64Base + uAddrReg;
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->es.u64Base + uAddrReg;
 #else
         uint64_t    uVirtAddr = uAddrReg;
 #endif
@@ -790,8 +790,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
             && cbIncr > 0    /** @todo Implement reverse direction string ops. */
 #if ADDR_SIZE != 64
-            && uAddrReg < pCtx->esHid.u32Limit
-            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uAddrReg < pCtx->es.u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit
 #endif
            )
         {
@@ -1047,7 +1047,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
         return VINF_SUCCESS;
     }
 
-    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -1063,7 +1063,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->esHid.u64Base + uAddrReg;
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->es.u64Base + uAddrReg;
 #else
         uint64_t    uVirtAddr = uAddrReg;
 #endif
@@ -1073,8 +1073,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
             && cbIncr > 0    /** @todo Implement reverse direction string ops. */
 #if ADDR_SIZE != 64
-            && uAddrReg < pCtx->esHid.u32Limit
-            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uAddrReg < pCtx->es.u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit
 #endif
            )
         {

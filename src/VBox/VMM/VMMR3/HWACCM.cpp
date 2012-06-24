@@ -1516,9 +1516,8 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShad
             pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
             /* After a real mode switch to protected mode we must force
-             * CPL to 0. Our real mode emulation had to set it to 3.
-             */
-            pCtx->ssHid.Attr.n.u2Dpl  = 0;
+               CPL to 0. Our real mode emulation had to set it to 3. */
+            pCtx->ss.Attr.n.u2Dpl  = 0;
         }
     }
 
@@ -2162,7 +2161,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                  GCPtrInstr += RT_MAX(cbCurInstr, 1))
             {
                 char     szOutput[256];
-                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, GCPtrInstr, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, GCPtrInstr, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                         szOutput, sizeof(szOutput), &cbCurInstr);
                 if (RT_SUCCESS(rc))
                     Log(("Patch instr %s\n", szOutput));
@@ -2304,22 +2303,22 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         {
             if (CPUMIsGuestInRealModeEx(pCtx))
             {
-                /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case.
-                 * The base must also be equal to (sel << 4).
-                 */
-                if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
-                        && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
-                    || (pCtx->csHid.u32Limit != 0xffff)
-                    || (pCtx->dsHid.u32Limit != 0xffff)
-                    || (pCtx->esHid.u32Limit != 0xffff)
-                    || (pCtx->ssHid.u32Limit != 0xffff)
-                    || (pCtx->fsHid.u32Limit != 0xffff)
-                    || (pCtx->gsHid.u32Limit != 0xffff)
-                    || pCtx->ds != (pCtx->dsHid.u64Base >> 4)
-                    || pCtx->es != (pCtx->esHid.u64Base >> 4)
-                    || pCtx->fs != (pCtx->fsHid.u64Base >> 4)
-                    || pCtx->gs != (pCtx->gsHid.u64Base >> 4)
-                    || pCtx->ss != (pCtx->ssHid.u64Base >> 4))
+                /* VT-x will not allow high selector bases in v86 mode; fall
+                   back to the recompiler in that case.
+                   The base must also be equal to (sel << 4). */
+                if (   (   pCtx->cs.Sel != (pCtx->cs.u64Base >> 4)
+                        && pCtx->cs.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
+                    || (pCtx->cs.u32Limit != 0xffff)
+                    || (pCtx->ds.u32Limit != 0xffff)
+                    || (pCtx->es.u32Limit != 0xffff)
+                    || (pCtx->ss.u32Limit != 0xffff)
+                    || (pCtx->fs.u32Limit != 0xffff)
+                    || (pCtx->gs.u32Limit != 0xffff)
+                    || pCtx->ds.Sel != (pCtx->ds.u64Base >> 4)
+                    || pCtx->es.Sel != (pCtx->es.u64Base >> 4)
+                    || pCtx->fs.Sel != (pCtx->fs.u64Base >> 4)
+                    || pCtx->gs.Sel != (pCtx->gs.u64Base >> 4)
+                    || pCtx->ss.Sel != (pCtx->ss.u64Base >> 4))
                 {
                     return false;
                 }
@@ -2327,26 +2326,26 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             else
             {
                 PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
-                /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
-                 * from real to protected mode. (all sorts of RPL & DPL assumptions)
-                 */
+                /* Verify the requirements for executing code in protected
+                   mode. VT-x can't handle the CPU state right after a switch
+                   from real to protected mode. (all sorts of RPL & DPL assumptions) */
                 if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
                     &&  enmGuestMode >= PGMMODE_PROTECTED)
                 {
-                    if (   (pCtx->cs & X86_SEL_RPL)
-                        || (pCtx->ds & X86_SEL_RPL)
-                        || (pCtx->es & X86_SEL_RPL)
-                        || (pCtx->fs & X86_SEL_RPL)
-                        || (pCtx->gs & X86_SEL_RPL)
-                        || (pCtx->ss & X86_SEL_RPL))
+                    if (   (pCtx->cs.Sel & X86_SEL_RPL)
+                        || (pCtx->ds.Sel & X86_SEL_RPL)
+                        || (pCtx->es.Sel & X86_SEL_RPL)
+                        || (pCtx->fs.Sel & X86_SEL_RPL)
+                        || (pCtx->gs.Sel & X86_SEL_RPL)
+                        || (pCtx->ss.Sel & X86_SEL_RPL))
                     {
                         return false;
                     }
                 }
                 /* VT-x also chokes on invalid tr or ldtr selectors (minix) */
                 if (    pCtx->gdtr.cbGdt
-                    &&  (   pCtx->tr > pCtx->gdtr.cbGdt
-                         || pCtx->ldtr > pCtx->gdtr.cbGdt))
+                    &&  (   pCtx->tr.Sel > pCtx->gdtr.cbGdt
+                         || pCtx->ldtr.Sel > pCtx->gdtr.cbGdt))
                 {
                         return false;
                 }
@@ -2369,30 +2368,30 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                     return false;
 
                 /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
-                if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
+                if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr.Sel == 0)
                     return false;
 
                 /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
                 /* Windows XP; switch to protected mode; all selectors are marked not present in the
                  * hidden registers (possible recompiler bug; see load_seg_vm) */
-                if (pCtx->csHid.Attr.n.u1Present == 0)
+                if (pCtx->cs.Attr.n.u1Present == 0)
                     return false;
-                if (pCtx->ssHid.Attr.n.u1Present == 0)
+                if (pCtx->ss.Attr.n.u1Present == 0)
                     return false;
 
                 /* Windows XP: possible same as above, but new recompiler requires new heuristics?
                    VT-x doesn't seem to like something about the guest state and this stuff avoids it. */
                 /** @todo This check is actually wrong, it doesn't take the direction of the
                  *        stack segment into account. But, it does the job for now. */
-                if (pCtx->rsp >= pCtx->ssHid.u32Limit)
+                if (pCtx->rsp >= pCtx->ss.u32Limit)
                     return false;
 #if 0
-                if (    pCtx->cs >= pCtx->gdtr.cbGdt
-                    ||  pCtx->ss >= pCtx->gdtr.cbGdt
-                    ||  pCtx->ds >= pCtx->gdtr.cbGdt
-                    ||  pCtx->es >= pCtx->gdtr.cbGdt
-                    ||  pCtx->fs >= pCtx->gdtr.cbGdt
-                    ||  pCtx->gs >= pCtx->gdtr.cbGdt)
+                if (    pCtx->cs.Sel >= pCtx->gdtr.cbGdt
+                    ||  pCtx->ss.Sel >= pCtx->gdtr.cbGdt
+                    ||  pCtx->ds.Sel >= pCtx->gdtr.cbGdt
+                    ||  pCtx->es.Sel >= pCtx->gdtr.cbGdt
+                    ||  pCtx->fs.Sel >= pCtx->gdtr.cbGdt
+                    ||  pCtx->gs.Sel >= pCtx->gdtr.cbGdt)
                     return false;
 #endif
             }

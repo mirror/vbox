@@ -38,7 +38,7 @@
    %define DEFINED_VMMR0_SEG.%1 1
    [section .VMMR0.%1 progbits alloc noexec nowrite align=1 ]
   %else
-   [section .VMMR0.%1 align=1 ]
+   [section .VMMR0.%1 ]
   %endif
  %endmacro
  %define VMMR0_SEG_DEFINED

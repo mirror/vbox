@@ -199,21 +199,27 @@ DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 #define SVM_HIDSEGATTR_VMX2SVM(a)     (a & 0xFF) | ((a & 0xF000) >> 4)
 #define SVM_HIDSEGATTR_SVM2VMX(a)     (a & 0xFF) | ((a & 0x0F00) << 4)
 
-#define SVM_WRITE_SELREG(REG, reg)                                                 \
-{                                                                                  \
-        pVMCB->guest.REG.u16Sel   = pCtx->reg;                                     \
-        pVMCB->guest.REG.u32Limit = pCtx->reg##Hid.u32Limit;                       \
-        pVMCB->guest.REG.u64Base  = pCtx->reg##Hid.u64Base;                        \
-        pVMCB->guest.REG.u16Attr  = SVM_HIDSEGATTR_VMX2SVM(pCtx->reg##Hid.Attr.u); \
-}
+#define SVM_WRITE_SELREG(REG, reg) \
+    do \
+    { \
+        Assert(pCtx->reg.fFlags & CPUMSELREG_FLAGS_VALID); \
+        Assert(pCtx->reg.ValidSel == pCtx->reg.Sel); \
+        pVMCB->guest.REG.u16Sel     = pCtx->reg.Sel; \
+        pVMCB->guest.REG.u32Limit   = pCtx->reg.u32Limit; \
+        pVMCB->guest.REG.u64Base    = pCtx->reg.u64Base; \
+        pVMCB->guest.REG.u16Attr    = SVM_HIDSEGATTR_VMX2SVM(pCtx->reg.Attr.u); \
+    } while (0)
 
-#define SVM_READ_SELREG(REG, reg)                                                    \
-{                                                                                    \
-        pCtx->reg                = pVMCB->guest.REG.u16Sel;                          \
-        pCtx->reg##Hid.u32Limit  = pVMCB->guest.REG.u32Limit;                        \
-        pCtx->reg##Hid.u64Base   = pVMCB->guest.REG.u64Base;                         \
-        pCtx->reg##Hid.Attr.u    = SVM_HIDSEGATTR_SVM2VMX(pVMCB->guest.REG.u16Attr); \
-}
+#define SVM_READ_SELREG(REG, reg) \
+    do \
+    { \
+        pCtx->reg.Sel       = pVMCB->guest.REG.u16Sel; \
+        pCtx->reg.ValidSel  = pVMCB->guest.REG.u16Sel; \
+        pCtx->reg.fFlags    = CPUMSELREG_FLAGS_VALID; \
+        pCtx->reg.u32Limit  = pVMCB->guest.REG.u32Limit; \
+        pCtx->reg.u64Base   = pVMCB->guest.REG.u64Base; \
+        pCtx->reg.Attr.u    = SVM_HIDSEGATTR_SVM2VMX(pVMCB->guest.REG.u16Attr); \
+    } while (0)
 
 #endif /* IN_RING0 */
 
@@ -221,5 +227,5 @@ DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 RT_C_DECLS_END
 
-#endif /* ___VMMR0_HWSVMR0_h */
+#endif /* !___VMMR0_HWSVMR0_h */
 

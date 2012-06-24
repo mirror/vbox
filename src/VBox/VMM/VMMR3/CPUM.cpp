@@ -175,17 +175,17 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, rcx),
     SSMFIELD_ENTRY(         CPUMCTX, rsp),
     SSMFIELD_ENTRY_OLD(              lss_esp, sizeof(uint32_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, ss),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.Sel),
     SSMFIELD_ENTRY_OLD(              ssPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, gs),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.Sel),
     SSMFIELD_ENTRY_OLD(              gsPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, fs),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.Sel),
     SSMFIELD_ENTRY_OLD(              fsPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, es),
+    SSMFIELD_ENTRY(         CPUMCTX, es.Sel),
     SSMFIELD_ENTRY_OLD(              esPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, ds),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.Sel),
     SSMFIELD_ENTRY_OLD(              dsPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, cs),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.Sel),
     SSMFIELD_ENTRY_OLD(              csPadding, sizeof(uint16_t)*3),
     SSMFIELD_ENTRY(         CPUMCTX, rflags),
     SSMFIELD_ENTRY(         CPUMCTX, rip),
@@ -197,24 +197,24 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, r13),
     SSMFIELD_ENTRY(         CPUMCTX, r14),
     SSMFIELD_ENTRY(         CPUMCTX, r15),
-    SSMFIELD_ENTRY(         CPUMCTX, esHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, esHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, esHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX, csHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, csHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, csHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX, ssHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, ssHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, ssHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX, dsHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, dsHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, dsHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX, fsHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, fsHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, fsHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX, gsHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, gsHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, gsHid.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, es.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, es.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, es.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.Attr),
     SSMFIELD_ENTRY(         CPUMCTX, cr0),
     SSMFIELD_ENTRY(         CPUMCTX, cr2),
     SSMFIELD_ENTRY(         CPUMCTX, cr3),
@@ -233,9 +233,9 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, idtr.cbIdt),
     SSMFIELD_ENTRY(         CPUMCTX, idtr.pIdt),
     SSMFIELD_ENTRY_OLD(              idtrPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, ldtr),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.Sel),
     SSMFIELD_ENTRY_OLD(              ldtrPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(         CPUMCTX, tr),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.Sel),
     SSMFIELD_ENTRY_OLD(              trPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY(         CPUMCTX, SysEnter.cs),
     SSMFIELD_ENTRY(         CPUMCTX, SysEnter.eip),
@@ -247,12 +247,12 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, msrCSTAR),
     SSMFIELD_ENTRY(         CPUMCTX, msrSFMASK),
     SSMFIELD_ENTRY(         CPUMCTX, msrKERNELGSBASE),
-    SSMFIELD_ENTRY(         CPUMCTX, ldtrHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, ldtrHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, ldtrHid.Attr),
-    SSMFIELD_ENTRY(         CPUMCTX, trHid.u64Base),
-    SSMFIELD_ENTRY(         CPUMCTX, trHid.u32Limit),
-    SSMFIELD_ENTRY(         CPUMCTX, trHid.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.Attr),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -304,18 +304,18 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
     SSMFIELD_ENTRY(             CPUMCTX, rdx),
     SSMFIELD_ENTRY(             CPUMCTX, rcx),
     SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, rsp),
-    SSMFIELD_ENTRY(             CPUMCTX, ss),
+    SSMFIELD_ENTRY(             CPUMCTX, ss.Sel),
     SSMFIELD_ENTRY_OLD(                  ssPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY_OLD(         CPUMCTX, sizeof(uint64_t) /*rsp_notused*/),
-    SSMFIELD_ENTRY(             CPUMCTX, gs),
+    SSMFIELD_ENTRY(             CPUMCTX, gs.Sel),
     SSMFIELD_ENTRY_OLD(                  gsPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(             CPUMCTX, fs),
+    SSMFIELD_ENTRY(             CPUMCTX, fs.Sel),
     SSMFIELD_ENTRY_OLD(                  fsPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(             CPUMCTX, es),
+    SSMFIELD_ENTRY(             CPUMCTX, es.Sel),
     SSMFIELD_ENTRY_OLD(                  esPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(             CPUMCTX, ds),
+    SSMFIELD_ENTRY(             CPUMCTX, ds.Sel),
     SSMFIELD_ENTRY_OLD(                  dsPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(             CPUMCTX, cs),
+    SSMFIELD_ENTRY(             CPUMCTX, cs.Sel),
     SSMFIELD_ENTRY_OLD(                  csPadding, sizeof(uint16_t)*3),
     SSMFIELD_ENTRY(             CPUMCTX, rflags),
     SSMFIELD_ENTRY(             CPUMCTX, rip),
@@ -327,24 +327,24 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
     SSMFIELD_ENTRY(             CPUMCTX, r13),
     SSMFIELD_ENTRY(             CPUMCTX, r14),
     SSMFIELD_ENTRY(             CPUMCTX, r15),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, esHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, esHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, esHid.Attr),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, csHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, csHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, csHid.Attr),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, ssHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, ssHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, ssHid.Attr),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, dsHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, dsHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, dsHid.Attr),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, fsHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, fsHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, fsHid.Attr),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, gsHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, gsHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, gsHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, es.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, es.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, es.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, cs.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, cs.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, cs.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, ss.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, ss.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, ss.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, ds.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, ds.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, ds.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, fs.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, fs.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, fs.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, gs.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, gs.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, gs.Attr),
     SSMFIELD_ENTRY(             CPUMCTX, cr0),
     SSMFIELD_ENTRY(             CPUMCTX, cr2),
     SSMFIELD_ENTRY(             CPUMCTX, cr3),
@@ -366,9 +366,9 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
     SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, idtr.pIdt),
     SSMFIELD_ENTRY_OLD(                  idtrPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY_OLD(                  idtrPadding64, sizeof(uint64_t)),
-    SSMFIELD_ENTRY(             CPUMCTX, ldtr),
+    SSMFIELD_ENTRY(             CPUMCTX, ldtr.Sel),
     SSMFIELD_ENTRY_OLD(                  ldtrPadding, sizeof(uint16_t)),
-    SSMFIELD_ENTRY(             CPUMCTX, tr),
+    SSMFIELD_ENTRY(             CPUMCTX, tr.Sel),
     SSMFIELD_ENTRY_OLD(                  trPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY(             CPUMCTX, SysEnter.cs),
     SSMFIELD_ENTRY(             CPUMCTX, SysEnter.eip),
@@ -382,12 +382,12 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
     SSMFIELD_ENTRY_OLD(                  msrFSBASE, sizeof(uint64_t)),
     SSMFIELD_ENTRY_OLD(                  msrGSBASE, sizeof(uint64_t)),
     SSMFIELD_ENTRY(             CPUMCTX, msrKERNELGSBASE),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, ldtrHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, ldtrHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, ldtrHid.Attr),
-    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, trHid.u64Base),
-    SSMFIELD_ENTRY(             CPUMCTX, trHid.u32Limit),
-    SSMFIELD_ENTRY(             CPUMCTX, trHid.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, ldtr.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, ldtr.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, ldtr.Attr),
+    SSMFIELD_ENTRY_U32_ZX_U64(  CPUMCTX, tr.u64Base),
+    SSMFIELD_ENTRY(             CPUMCTX, tr.u32Limit),
+    SSMFIELD_ENTRY(             CPUMCTX, tr.Attr),
     SSMFIELD_ENTRY_OLD(                  padding, sizeof(uint32_t)*2),
     SSMFIELD_ENTRY_TERM()
 };
@@ -1357,48 +1357,57 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
     pCtx->edx                       = 0x00000600;   /* P6 processor */
     pCtx->eflags.Bits.u1Reserved0   = 1;
 
-    pCtx->cs                        = 0xf000;
-    pCtx->csHid.u64Base             = UINT64_C(0xffff0000);
-    pCtx->csHid.u32Limit            = 0x0000ffff;
-    pCtx->csHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->csHid.Attr.n.u1Present    = 1;
-    pCtx->csHid.Attr.n.u4Type       = X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
+    pCtx->cs.Sel                    = 0xf000;
+    pCtx->cs.ValidSel               = 0xf000;
+    pCtx->cs.fFlags                 = CPUMSELREG_FLAGS_VALID;
+    pCtx->cs.u64Base                = UINT64_C(0xffff0000);
+    pCtx->cs.u32Limit               = 0x0000ffff;
+    pCtx->cs.Attr.n.u1DescType      = 1; /* code/data segment */
+    pCtx->cs.Attr.n.u1Present       = 1;
+    pCtx->cs.Attr.n.u4Type          = X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
 
-    pCtx->dsHid.u32Limit            = 0x0000ffff;
-    pCtx->dsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->dsHid.Attr.n.u1Present    = 1;
-    pCtx->dsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+    pCtx->ds.fFlags                 = CPUMSELREG_FLAGS_VALID;
+    pCtx->ds.u32Limit               = 0x0000ffff;
+    pCtx->ds.Attr.n.u1DescType      = 1; /* code/data segment */
+    pCtx->ds.Attr.n.u1Present       = 1;
+    pCtx->ds.Attr.n.u4Type          = X86_SEL_TYPE_RW;
 
-    pCtx->esHid.u32Limit            = 0x0000ffff;
-    pCtx->esHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->esHid.Attr.n.u1Present    = 1;
-    pCtx->esHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+    pCtx->es.fFlags                 = CPUMSELREG_FLAGS_VALID;
+    pCtx->es.u32Limit               = 0x0000ffff;
+    pCtx->es.Attr.n.u1DescType      = 1; /* code/data segment */
+    pCtx->es.Attr.n.u1Present       = 1;
+    pCtx->es.Attr.n.u4Type          = X86_SEL_TYPE_RW;
 
-    pCtx->fsHid.u32Limit            = 0x0000ffff;
-    pCtx->fsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->fsHid.Attr.n.u1Present    = 1;
-    pCtx->fsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+    pCtx->fs.fFlags                 = CPUMSELREG_FLAGS_VALID;
+    pCtx->fs.u32Limit               = 0x0000ffff;
+    pCtx->fs.Attr.n.u1DescType      = 1; /* code/data segment */
+    pCtx->fs.Attr.n.u1Present       = 1;
+    pCtx->fs.Attr.n.u4Type          = X86_SEL_TYPE_RW;
 
-    pCtx->gsHid.u32Limit            = 0x0000ffff;
-    pCtx->gsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->gsHid.Attr.n.u1Present    = 1;
-    pCtx->gsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+    pCtx->gs.fFlags                 = CPUMSELREG_FLAGS_VALID;
+    pCtx->gs.u32Limit               = 0x0000ffff;
+    pCtx->gs.Attr.n.u1DescType      = 1; /* code/data segment */
+    pCtx->gs.Attr.n.u1Present       = 1;
+    pCtx->gs.Attr.n.u4Type          = X86_SEL_TYPE_RW;
 
-    pCtx->ssHid.u32Limit            = 0x0000ffff;
-    pCtx->ssHid.Attr.n.u1Present    = 1;
-    pCtx->ssHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->ssHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+    pCtx->ss.fFlags                 = CPUMSELREG_FLAGS_VALID;
+    pCtx->ss.u32Limit               = 0x0000ffff;
+    pCtx->ss.Attr.n.u1Present       = 1;
+    pCtx->ss.Attr.n.u1DescType      = 1; /* code/data segment */
+    pCtx->ss.Attr.n.u4Type          = X86_SEL_TYPE_RW;
 
     pCtx->idtr.cbIdt                = 0xffff;
     pCtx->gdtr.cbGdt                = 0xffff;
 
-    pCtx->ldtrHid.u32Limit          = 0xffff;
-    pCtx->ldtrHid.Attr.n.u1Present  = 1;
-    pCtx->ldtrHid.Attr.n.u4Type     = X86_SEL_TYPE_SYS_LDT;
+    pCtx->ldtr.fFlags               = CPUMSELREG_FLAGS_VALID;
+    pCtx->ldtr.u32Limit             = 0xffff;
+    pCtx->ldtr.Attr.n.u1Present     = 1;
+    pCtx->ldtr.Attr.n.u4Type        = X86_SEL_TYPE_SYS_LDT;
 
-    pCtx->trHid.u32Limit            = 0xffff;
-    pCtx->trHid.Attr.n.u1Present    = 1;
-    pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;    /* Deduction, not properly documented by Intel. */
+    pCtx->tr.fFlags                 = CPUMSELREG_FLAGS_VALID;
+    pCtx->tr.u32Limit               = 0xffff;
+    pCtx->tr.Attr.n.u1Present       = 1;
+    pCtx->tr.Attr.n.u4Type          = X86_SEL_TYPE_SYS_386_TSS_BUSY;    /* Deduction, not properly documented by Intel. */
 
     pCtx->dr[6]                     = X86_DR6_INIT_VAL;
     pCtx->dr[7]                     = X86_DR7_INIT_VAL;
@@ -2613,8 +2622,8 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
                     pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
                     pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, efl);
+                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
+                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, efl);
             else
                 pHlp->pfnPrintf(pHlp,
                     "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
@@ -2622,8 +2631,8 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x                %seflags=%08x\n",
                     pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                     pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, efl);
+                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
+                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, efl);
             break;
 
         case CPUMDUMPTYPE_DEFAULT:
@@ -2641,10 +2650,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
                     pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
                     pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtx->tr, pszPrefix, efl,
+                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
+                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, pCtx->tr.Sel, pszPrefix, efl,
                     pszPrefix, pCtx->cr0, pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3, pszPrefix, pCtx->cr4,
-                    pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, (RTSEL)pCtx->ldtr);
+                    pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->ldtr.Sel);
             else
                 pHlp->pfnPrintf(pHlp,
                     "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
@@ -2654,10 +2663,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     ,
                     pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                     pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtx->tr, pszPrefix, efl,
+                    pszPrefix, pCtxCore->cs.Sel, pszPrefix, pCtxCore->ss.Sel, pszPrefix, pCtxCore->ds.Sel, pszPrefix, pCtxCore->es.Sel,
+                    pszPrefix, pCtxCore->fs.Sel, pszPrefix, pCtxCore->gs.Sel, pszPrefix, pCtx->tr.Sel, pszPrefix, efl,
                     pszPrefix, pCtx->cr0, pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3, pszPrefix, pCtx->cr4,
-                    pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, (RTSEL)pCtx->ldtr);
+                    pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->ldtr.Sel);
             break;
 
         case CPUMDUMPTYPE_VERBOSE:
@@ -2686,18 +2695,18 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
                     pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
                     pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u,
+                    pszPrefix, pCtxCore->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u,
+                    pszPrefix, pCtxCore->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u,
+                    pszPrefix, pCtxCore->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u,
+                    pszPrefix, pCtxCore->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u,
+                    pszPrefix, pCtxCore->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u,
+                    pszPrefix, pCtxCore->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u,
                     pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1], pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
                     pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5], pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
-                    pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+                    pszPrefix, pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
+                    pszPrefix, pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
                     pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
             else
                 pHlp->pfnPrintf(pHlp,
@@ -2716,15 +2725,15 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     ,
                     pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                     pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1],
-                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
-                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5],
-                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
-                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
-                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
+                    pszPrefix, pCtxCore->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u, pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1],
+                    pszPrefix, pCtxCore->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u, pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
+                    pszPrefix, pCtxCore->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u, pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5],
+                    pszPrefix, pCtxCore->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u, pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
+                    pszPrefix, pCtxCore->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
+                    pszPrefix, pCtxCore->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
-                    pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
+                    pszPrefix, pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
+                    pszPrefix, pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
                     pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
 
             pHlp->pfnPrintf(pHlp,
@@ -2963,10 +2972,10 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             ,
             /*pCtx->eax,*/ pCtx->ebx, /*pCtx->ecx, pCtx->edx,*/ pCtx->esi, pCtx->edi,
             /*pCtx->eip,*/ pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(efl), szEFlags,
-            (RTSEL)pCtx->cs, (RTSEL)pCtx->ds, (RTSEL)pCtx->es, (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, efl,
+            pCtx->cs, pCtx->ds, pCtx->es, pCtx->fs, pCtx->gs, efl,
             pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3, pCtx->cr4,
             pCtx->dr0, pCtx->dr1, pCtx->dr2, pCtx->dr3, pCtx->dr6, pCtx->dr7,
-            (uint32_t)pCtx->gdtr.uAddr, pCtx->gdtr.cb, (RTSEL)pCtx->ldtr,
+            (uint32_t)pCtx->gdtr.uAddr, pCtx->gdtr.cb, pCtx->ldtr,
             pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
     }
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
@@ -2999,7 +3008,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             pCtx->r11, pCtx->r12, pCtx->r13,
             pCtx->r14, pCtx->r15,
             X86_EFL_GET_IOPL(efl), szEFlags,
-            (RTSEL)pCtx->cs, (RTSEL)pCtx->ds, (RTSEL)pCtx->es, (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, efl,
+            pCtx->cs, pCtx->ds, pCtx->es, pCtx->fs, pCtx->gs, efl,
             pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3,
             pCtx->cr4, pCtx->ldtr, pCtx->tr,
             pCtx->dr0, pCtx->dr1, pCtx->dr2,
@@ -3826,13 +3835,13 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     {
         if (CPUMAreHiddenSelRegsValid(pVCpu))
         {
-            State.f64Bits         = enmMode >= PGMMODE_AMD64 && pCtx->csHid.Attr.n.u1Long;
-            State.GCPtrSegBase    = pCtx->csHid.u64Base;
-            State.GCPtrSegEnd     = pCtx->csHid.u32Limit + 1 + (RTGCUINTPTR)pCtx->csHid.u64Base;
-            State.cbSegLimit      = pCtx->csHid.u32Limit;
+            State.f64Bits         = enmMode >= PGMMODE_AMD64 && pCtx->cs.Attr.n.u1Long;
+            State.GCPtrSegBase    = pCtx->cs.u64Base;
+            State.GCPtrSegEnd     = pCtx->cs.u32Limit + 1 + (RTGCUINTPTR)pCtx->cs.u64Base;
+            State.cbSegLimit      = pCtx->cs.u32Limit;
             enmDisCpuMode         = (State.f64Bits)
                                     ? DISCPUMODE_64BIT
-                                    : pCtx->csHid.Attr.n.u1DefBig
+                                    : pCtx->cs.Attr.n.u1DefBig
                                     ? DISCPUMODE_32BIT
                                     : DISCPUMODE_16BIT;
         }
@@ -3840,20 +3849,20 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
         {
             DBGFSELINFO SelInfo;
 
-            rc = SELMR3GetShadowSelectorInfo(pVM, pCtx->cs, &SelInfo);
+            rc = SELMR3GetShadowSelectorInfo(pVM, pCtx->cs.Sel, &SelInfo);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("SELMR3GetShadowSelectorInfo failed for %04X:%RGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
+                AssertMsgFailed(("SELMR3GetShadowSelectorInfo failed for %04X:%RGv rc=%d\n", pCtx->cs.Sel, GCPtrPC, rc));
                 return rc;
             }
 
             /*
              * Validate the selector.
              */
-            rc = DBGFR3SelInfoValidateCS(&SelInfo, pCtx->ss);
+            rc = DBGFR3SelInfoValidateCS(&SelInfo, pCtx->ss.Sel);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("SELMSelInfoValidateCS failed for %04X:%RGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
+                AssertMsgFailed(("SELMSelInfoValidateCS failed for %04X:%RGv rc=%d\n", pCtx->cs.Sel, GCPtrPC, rc));
                 return rc;
             }
             State.GCPtrSegBase    = SelInfo.GCPtrBase;
@@ -3866,7 +3875,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     {
         /* real or V86 mode */
         enmDisCpuMode         = DISCPUMODE_16BIT;
-        State.GCPtrSegBase    = pCtx->cs * 16;
+        State.GCPtrSegBase    = pCtx->cs.Sel * 16;
         State.GCPtrSegEnd     = 0xFFFFFFFF;
         State.cbSegLimit      = 0xFFFFFFFF;
     }
@@ -3894,7 +3903,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
         rc = VINF_SUCCESS;
     }
     else
-        Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%RGv rc=%Rrc\n", pCtx->cs, GCPtrPC, rc));
+        Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%RGv rc=%Rrc\n", pCtx->cs.Sel, GCPtrPC, rc));
 
     /* Release mapping lock acquired in cpumR3DisasInstrRead. */
     if (State.fLocked)
@@ -4008,7 +4017,7 @@ VMMR3DECL(int) CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
     /*
      * Are we in Ring-0?
      */
-    if (    pCtxCore->ss && (pCtxCore->ss & X86_SEL_RPL) == 0
+    if (    pCtxCore->ss.Sel && (pCtxCore->ss.Sel & X86_SEL_RPL) == 0
         &&  !pCtxCore->eflags.Bits.u1VM)
     {
         /*
@@ -4019,13 +4028,13 @@ VMMR3DECL(int) CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
         /*
          * Set CPL to Ring-1.
          */
-        pCtxCore->ss |= 1;
-        if (pCtxCore->cs && (pCtxCore->cs & X86_SEL_RPL) == 0)
-            pCtxCore->cs |= 1;
+        pCtxCore->ss.Sel |= 1;
+        if (pCtxCore->cs.Sel && (pCtxCore->cs.Sel & X86_SEL_RPL) == 0)
+            pCtxCore->cs.Sel |= 1;
     }
     else
     {
-        AssertMsg((pCtxCore->ss & X86_SEL_RPL) >= 2 || pCtxCore->eflags.Bits.u1VM,
+        AssertMsg((pCtxCore->ss.Sel & X86_SEL_RPL) >= 2 || pCtxCore->eflags.Bits.u1VM,
                   ("ring-1 code not supported\n"));
         /*
          * PATM takes care of IOPL and IF flags for Ring-3 and Ring-2 code as well.
@@ -4042,9 +4051,9 @@ VMMR3DECL(int) CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
      * Assert sanity.
      */
     AssertMsg((pCtxCore->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
-    AssertReleaseMsg(   pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL)
+    AssertReleaseMsg(   pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss.Sel & X86_SEL_RPL)
                      || pCtxCore->eflags.Bits.u1VM,
-                     ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
+                     ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss.Sel & X86_SEL_RPL));
     Assert((pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE | X86_CR0_WP));
 
     pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
@@ -4081,14 +4090,14 @@ VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (!pCtxCore)
         pCtxCore = CPUMCTX2CORE(pCtx);
-    Assert(pCtxCore->eflags.Bits.u1VM || (pCtxCore->ss & X86_SEL_RPL));
-    AssertMsg(pCtxCore->eflags.Bits.u1VM || pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL),
-              ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
+    Assert(pCtxCore->eflags.Bits.u1VM || (pCtxCore->ss.Sel & X86_SEL_RPL));
+    AssertMsg(pCtxCore->eflags.Bits.u1VM || pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss.Sel & X86_SEL_RPL),
+              ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss.Sel & X86_SEL_RPL));
 
     /*
      * Are we executing in raw ring-1?
      */
-    if (    (pCtxCore->ss & X86_SEL_RPL) == 1
+    if (    (pCtxCore->ss.Sel & X86_SEL_RPL) == 1
         &&  !pCtxCore->eflags.Bits.u1VM)
     {
         /*
@@ -4097,21 +4106,21 @@ VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
         PATMRawLeave(pVM, pCtxCore, rc);
         /* Not quite sure if this is really required, but shouldn't harm (too much anyways). */
         /** @todo See what happens if we remove this. */
-        if ((pCtxCore->ds & X86_SEL_RPL) == 1)
-            pCtxCore->ds &= ~X86_SEL_RPL;
-        if ((pCtxCore->es & X86_SEL_RPL) == 1)
-            pCtxCore->es &= ~X86_SEL_RPL;
-        if ((pCtxCore->fs & X86_SEL_RPL) == 1)
-            pCtxCore->fs &= ~X86_SEL_RPL;
-        if ((pCtxCore->gs & X86_SEL_RPL) == 1)
-            pCtxCore->gs &= ~X86_SEL_RPL;
+        if ((pCtxCore->ds.Sel & X86_SEL_RPL) == 1)
+            pCtxCore->ds.Sel &= ~X86_SEL_RPL;
+        if ((pCtxCore->es.Sel & X86_SEL_RPL) == 1)
+            pCtxCore->es.Sel &= ~X86_SEL_RPL;
+        if ((pCtxCore->fs.Sel & X86_SEL_RPL) == 1)
+            pCtxCore->fs.Sel &= ~X86_SEL_RPL;
+        if ((pCtxCore->gs.Sel & X86_SEL_RPL) == 1)
+            pCtxCore->gs.Sel &= ~X86_SEL_RPL;
 
         /*
          * Ring-1 selector => Ring-0.
          */
-        pCtxCore->ss &= ~X86_SEL_RPL;
-        if ((pCtxCore->cs & X86_SEL_RPL) == 1)
-            pCtxCore->cs &= ~X86_SEL_RPL;
+        pCtxCore->ss.Sel &= ~X86_SEL_RPL;
+        if ((pCtxCore->cs.Sel & X86_SEL_RPL) == 1)
+            pCtxCore->cs.Sel &= ~X86_SEL_RPL;
     }
     else
     {
@@ -4122,14 +4131,14 @@ VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
         if (!pCtxCore->eflags.Bits.u1VM)
         {
             /** @todo See what happens if we remove this. */
-            if ((pCtxCore->ds & X86_SEL_RPL) == 1)
-                pCtxCore->ds &= ~X86_SEL_RPL;
-            if ((pCtxCore->es & X86_SEL_RPL) == 1)
-                pCtxCore->es &= ~X86_SEL_RPL;
-            if ((pCtxCore->fs & X86_SEL_RPL) == 1)
-                pCtxCore->fs &= ~X86_SEL_RPL;
-            if ((pCtxCore->gs & X86_SEL_RPL) == 1)
-                pCtxCore->gs &= ~X86_SEL_RPL;
+            if ((pCtxCore->ds.Sel & X86_SEL_RPL) == 1)
+                pCtxCore->ds.Sel &= ~X86_SEL_RPL;
+            if ((pCtxCore->es.Sel & X86_SEL_RPL) == 1)
+                pCtxCore->es.Sel &= ~X86_SEL_RPL;
+            if ((pCtxCore->fs.Sel & X86_SEL_RPL) == 1)
+                pCtxCore->fs.Sel &= ~X86_SEL_RPL;
+            if ((pCtxCore->gs.Sel & X86_SEL_RPL) == 1)
+                pCtxCore->gs.Sel &= ~X86_SEL_RPL;
         }
     }
 

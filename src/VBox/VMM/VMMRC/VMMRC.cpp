@@ -370,7 +370,7 @@ static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
 static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     int rc = vmmGCTestTmpPFHandler(pVM, pRegFrame);
-    pRegFrame->fs = 0x30;
+    pRegFrame->fs.Sel = 0x30;
     return rc;
 }
 

@@ -383,10 +383,17 @@ typedef struct CPUMCTXCORE *PCPUMCTXCORE;
 /** Pointer to a const CPU context core. */
 typedef const struct CPUMCTXCORE *PCCPUMCTXCORE;
 
-/** Pointer to selector hidden registers. */
-typedef struct CPUMSELREGHID *PCPUMSELREGHID;
-/** Pointer to const selector hidden registers. */
-typedef const struct CPUMSELREGHID *PCCPUMSELREGHID;
+/** Pointer to a selector register. */
+typedef struct CPUMSELREG *PCPUMSELREG;
+/** Pointer to a const selector register. */
+typedef const struct CPUMSELREG *PCCPUMSELREG;
+
+/** Pointer to selector hidden registers.
+ * @deprecated Replaced by PCPUMSELREG  */
+typedef struct CPUMSELREG *PCPUMSELREGHID;
+/** Pointer to const selector hidden registers.
+ * @deprecated Replaced by PCCPUMSELREG  */
+typedef const struct CPUMSELREG *PCCPUMSELREGHID;
 
 /** @} */
 

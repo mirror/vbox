@@ -247,7 +247,7 @@ DECLINLINE(bool)    CPUMIsGuestIn64BitCode(PVMCPU pVCpu, PCCPUMCTXCORE pCtx)
     if (!CPUMIsGuestInLongMode(pVCpu))
         return false;
 
-    return pCtx->csHid.Attr.n.u1Long;
+    return pCtx->cs.Attr.n.u1Long;
 }
 
 /**
@@ -262,7 +262,7 @@ DECLINLINE(bool)    CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
     if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
         return false;
 
-    return pCtx->csHid.Attr.n.u1Long;
+    return pCtx->cs.Attr.n.u1Long;
 }
 
 /**

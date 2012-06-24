@@ -94,16 +94,16 @@ DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
             *pGstCtxCore = *pRegFrame;
 
             pGstCtxCore->eip        = *pEsp++;
-            pGstCtxCore->cs         = (RTSEL)*pEsp++;
+            pGstCtxCore->cs.Sel     = (RTSEL)*pEsp++;
             pGstCtxCore->eflags.u32 = *pEsp++;
             pGstCtxCore->esp        = *pEsp++;
-            pGstCtxCore->ss         = (RTSEL)*pEsp++;
+            pGstCtxCore->ss.Sel     = (RTSEL)*pEsp++;
             if (pGstCtxCore->eflags.Bits.u1VM)
             {
-                pGstCtxCore->es     = (RTSEL)*pEsp++;
-                pGstCtxCore->ds     = (RTSEL)*pEsp++;
-                pGstCtxCore->fs     = (RTSEL)*pEsp++;
-                pGstCtxCore->gs     = (RTSEL)*pEsp++;
+                pGstCtxCore->es.Sel = (RTSEL)*pEsp++;
+                pGstCtxCore->ds.Sel = (RTSEL)*pEsp++;
+                pGstCtxCore->fs.Sel = (RTSEL)*pEsp++;
+                pGstCtxCore->gs.Sel = (RTSEL)*pEsp++;
             }
 
             TRPMGCHyperReturnToHost(pVM, VINF_EM_RAW_IRET_TRAP);

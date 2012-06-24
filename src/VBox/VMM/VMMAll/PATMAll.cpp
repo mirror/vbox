@@ -384,7 +384,7 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     {
         if (    pCtx->SysEnter.cs == 0
             ||  pRegFrame->eflags.Bits.u1VM
-            ||  (pRegFrame->cs & X86_SEL_RPL) != 3
+            ||  (pRegFrame->cs.Sel & X86_SEL_RPL) != 3
             ||  pVM->patm.s.pfnSysEnterPatchGC == 0
             ||  pVM->patm.s.pfnSysEnterGC != (RTRCPTR)(RTRCUINTPTR)pCtx->SysEnter.eip
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
@@ -393,11 +393,11 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
         Log2(("PATMSysCall: sysenter from %RRv to %RRv\n", pRegFrame->eip, pVM->patm.s.pfnSysEnterPatchGC));
         /** @todo the base and limit are forced to 0 & 4G-1 resp. We assume the selector is wide open here. */
         /** @note The Intel manual suggests that the OS is responsible for this. */
-        pRegFrame->cs          = (pCtx->SysEnter.cs & ~X86_SEL_RPL) | 1;
+        pRegFrame->cs.Sel      = (pCtx->SysEnter.cs & ~X86_SEL_RPL) | 1;
         pRegFrame->eip         = /** @todo ugly conversion! */(uint32_t)pVM->patm.s.pfnSysEnterPatchGC;
-        pRegFrame->ss          = pRegFrame->cs + 8;     /* SysEnter.cs + 8 */
+        pRegFrame->ss.Sel      = pRegFrame->cs.Sel + 8;     /* SysEnter.cs + 8 */
         pRegFrame->esp         = pCtx->SysEnter.esp;
-        pRegFrame->eflags.u32 &= ~(X86_EFL_VM|X86_EFL_RF);
+        pRegFrame->eflags.u32 &= ~(X86_EFL_VM | X86_EFL_RF);
         pRegFrame->eflags.u32 |= X86_EFL_IF;
 
         /* Turn off interrupts. */
@@ -407,27 +407,25 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 
         return VINF_SUCCESS;
     }
-    else
     if (pCpu->pCurInstr->uOpcode == OP_SYSEXIT)
     {
         if (    pCtx->SysEnter.cs == 0
-            ||  (pRegFrame->cs & X86_SEL_RPL) != 1
+            ||  (pRegFrame->cs.Sel & X86_SEL_RPL) != 1
             ||  pRegFrame->eflags.Bits.u1VM
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
             goto end;
 
         Log2(("PATMSysCall: sysexit from %RRv to %RRv\n", pRegFrame->eip, pRegFrame->edx));
 
-        pRegFrame->cs          = ((pCtx->SysEnter.cs + 16) & ~X86_SEL_RPL) | 3;
+        pRegFrame->cs.Sel      = ((pCtx->SysEnter.cs + 16) & ~X86_SEL_RPL) | 3;
         pRegFrame->eip         = pRegFrame->edx;
-        pRegFrame->ss          = pRegFrame->cs + 8;  /* SysEnter.cs + 24 */
+        pRegFrame->ss.Sel      = pRegFrame->cs.Sel + 8;  /* SysEnter.cs + 24 */
         pRegFrame->esp         = pRegFrame->ecx;
 
         STAM_COUNTER_INC(&pVM->patm.s.StatSysExit);
 
         return VINF_SUCCESS;
     }
-    else
     if (pCpu->pCurInstr->uOpcode == OP_SYSCALL)
     {
         /** @todo implement syscall */

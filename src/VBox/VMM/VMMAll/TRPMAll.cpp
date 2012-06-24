@@ -369,9 +369,9 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     if (pRegFrame->eflags.Bits.u1VM)
-        Log(("TRPMForwardTrap-VM: eip=%04X:%04X iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
+        Log(("TRPMForwardTrap-VM: eip=%04X:%04X iGate=%d\n", pRegFrame->cs.Sel, pRegFrame->eip, iGate));
     else
-        Log(("TRPMForwardTrap: eip=%04X:%08X iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
+        Log(("TRPMForwardTrap: eip=%04X:%08X iGate=%d\n", pRegFrame->cs.Sel, pRegFrame->eip, iGate));
 
     switch (iGate) {
     case 14:
@@ -563,7 +563,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                 else
                 if (fConforming || dpl == cpl)  /* to the same privilege level */
                 {
-                    ss_r0  = pRegFrame->ss;
+                    ss_r0  = pRegFrame->ss.Sel;
                     esp_r0 = pRegFrame->esp;
 
                     if (    eflags.Bits.u1VM    /* illegal */
@@ -583,12 +583,12 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                  */
                 uint32_t *pTrapStack;
 #ifdef IN_RC
-                Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
+                Assert(eflags.Bits.u1VM || (pRegFrame->ss.Sel & X86_SEL_RPL) != 0);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
                 pTrapStack = (uint32_t *)(uintptr_t)pTrapStackGC;
 #else
-                Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
+                Assert(eflags.Bits.u1VM || (pRegFrame->ss.Sel & X86_SEL_RPL) == 0 || (pRegFrame->ss.Sel & X86_SEL_RPL) == 3);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 if ((pTrapStackGC >> PAGE_SHIFT) != ((pTrapStackGC - 10*sizeof(uint32_t)) >> PAGE_SHIFT)) /* fail if we cross a page boundary */
                     goto failure;
@@ -605,24 +605,24 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     /** if eflags.Bits.u1VM then push gs, fs, ds, es */
                     if (eflags.Bits.u1VM)
                     {
-                        Log(("TRAP%02X: (VM) Handler %04X:%RGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVCpu->trpm.s.uActiveCR2));
-                        pTrapStack[--idx] = pRegFrame->gs;
-                        pTrapStack[--idx] = pRegFrame->fs;
-                        pTrapStack[--idx] = pRegFrame->ds;
-                        pTrapStack[--idx] = pRegFrame->es;
+                        Log(("TRAP%02X: (VM) Handler %04X:%RGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss.Sel & X86_SEL_RPL), pVCpu->trpm.s.uActiveCR2));
+                        pTrapStack[--idx] = pRegFrame->gs.Sel;
+                        pTrapStack[--idx] = pRegFrame->fs.Sel;
+                        pTrapStack[--idx] = pRegFrame->ds.Sel;
+                        pTrapStack[--idx] = pRegFrame->es.Sel;
 
                         /* clear ds, es, fs & gs in current context */
-                        pRegFrame->ds = pRegFrame->es = pRegFrame->fs = pRegFrame->gs = 0;
+                        pRegFrame->ds.Sel = pRegFrame->es.Sel = pRegFrame->fs.Sel = pRegFrame->gs.Sel = 0;
                     }
                     else
-                        Log(("TRAP%02X: Handler %04X:%RGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVCpu->trpm.s.uActiveCR2));
+                        Log(("TRAP%02X: Handler %04X:%RGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss.Sel & X86_SEL_RPL), pVCpu->trpm.s.uActiveCR2));
 
                     if (!fConforming && dpl < cpl)
                     {
-                        if ((pRegFrame->ss & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
-                            pTrapStack[--idx] = pRegFrame->ss & ~1;    /* Mask away traces of raw ring execution (ring 1). */
+                        if ((pRegFrame->ss.Sel & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
+                            pTrapStack[--idx] = pRegFrame->ss.Sel & ~1;    /* Mask away traces of raw ring execution (ring 1). */
                         else
-                            pTrapStack[--idx] = pRegFrame->ss;
+                            pTrapStack[--idx] = pRegFrame->ss.Sel;
 
                         pTrapStack[--idx] = pRegFrame->esp;
                     }
@@ -631,10 +631,10 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     /* Note: Not really necessary as we grab include those bits in the trap/irq handler trampoline */
                     pTrapStack[--idx] = eflags.u32;
 
-                    if ((pRegFrame->cs & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
-                        pTrapStack[--idx] = pRegFrame->cs & ~1;    /* Mask away traces of raw ring execution (ring 1). */
+                    if ((pRegFrame->cs.Sel & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
+                        pTrapStack[--idx] = pRegFrame->cs.Sel & ~1;    /* Mask away traces of raw ring execution (ring 1). */
                     else
-                        pTrapStack[--idx] = pRegFrame->cs;
+                        pTrapStack[--idx] = pRegFrame->cs.Sel;
 
                     if (enmType == TRPM_SOFTWARE_INT)
                     {
@@ -664,8 +664,8 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                           "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n",
                           pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx, pRegFrame->esi, pRegFrame->edi,
                           pRegFrame->eip, pRegFrame->esp, pRegFrame->ebp, eflags.Bits.u2IOPL,
-                          (RTSEL)pRegFrame->cs, (RTSEL)pRegFrame->ds, (RTSEL)pRegFrame->es,
-                          (RTSEL)pRegFrame->fs, (RTSEL)pRegFrame->gs, eflags.u32));
+                          pRegFrame->cs.Sel, pRegFrame->ds.Sel, pRegFrame->es.Sel,
+                          pRegFrame->fs.Sel, pRegFrame->gs.Sel, eflags.u32));
 #endif
 
                     Log(("PATM Handler %RRv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
@@ -704,9 +704,9 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     pRegFrame->eflags.u32 = eflags.u32;
 
                     pRegFrame->eip        = pVM->trpm.s.aGuestTrapHandler[iGate];
-                    pRegFrame->cs         = GuestIdte.Gen.u16SegSel;
+                    pRegFrame->cs.Sel     = GuestIdte.Gen.u16SegSel;
                     pRegFrame->esp        = esp_r0;
-                    pRegFrame->ss         = ss_r0 & ~X86_SEL_RPL;     /* set rpl to ring 0 */
+                    pRegFrame->ss.Sel     = ss_r0 & ~X86_SEL_RPL;     /* set rpl to ring 0 */
                     STAM_PROFILE_ADV_STOP(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
                     PGMPhysReleasePageMappingLock(pVM, &PageMappingLock);
                     NOREF(iOrgTrap);
@@ -736,7 +736,7 @@ failure:
     STAM_COUNTER_INC(&pVM->trpm.s.CTX_SUFF_Z(StatForwardFail));
     STAM_PROFILE_ADV_STOP(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
 
-    Log(("TRAP%02X: forwarding to REM (ss rpl=%d eflags=%08X VMIF=%d handler=%08X\n", iGate, pRegFrame->ss & X86_SEL_RPL, pRegFrame->eflags.u32, PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame), pVM->trpm.s.aGuestTrapHandler[iGate]));
+    Log(("TRAP%02X: forwarding to REM (ss rpl=%d eflags=%08X VMIF=%d handler=%08X\n", iGate, pRegFrame->ss.Sel & X86_SEL_RPL, pRegFrame->eflags.u32, PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame), pVM->trpm.s.aGuestTrapHandler[iGate]));
 #endif
     return VINF_EM_RAW_GUEST_TRAP;
 }
@@ -759,7 +759,7 @@ failure:
  */
 VMMDECL(int) TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt)
 {
-    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x\n", pCtxCore->cs, pCtxCore->eip, enmXcpt));
+    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x\n", pCtxCore->cs.Sel, pCtxCore->eip, enmXcpt));
 /** @todo dispatch the trap. */
     pVCpu->trpm.s.uActiveVector            = enmXcpt;
     pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
@@ -786,7 +786,7 @@ VMMDECL(int) TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt)
  */
 VMMDECL(int) TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr)
 {
-    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32\n", pCtxCore->cs, pCtxCore->eip, enmXcpt, uErr));
+    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32\n", pCtxCore->cs.Sel, pCtxCore->eip, enmXcpt, uErr));
 /** @todo dispatch the trap. */
     pVCpu->trpm.s.uActiveVector            = enmXcpt;
     pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
@@ -814,7 +814,7 @@ VMMDECL(int) TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXc
  */
 VMMDECL(int) TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr, RTGCUINTPTR uCR2)
 {
-    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32 uCR2=%RGv\n", pCtxCore->cs, pCtxCore->eip, enmXcpt, uErr, uCR2));
+    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32 uCR2=%RGv\n", pCtxCore->cs.Sel, pCtxCore->eip, enmXcpt, uErr, uCR2));
 /** @todo dispatch the trap. */
     pVCpu->trpm.s.uActiveVector            = enmXcpt;
     pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
