@@ -86,6 +86,7 @@
 /** The saved state version of 1.6, used for backwards compatibility. */
 #define CPUM_SAVED_STATE_VERSION_VER1_6         6
 
+//#define CPUM_WITH_CHANGED_CPUMCTX
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -185,7 +186,7 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, ds),
     SSMFIELD_ENTRY_OLD(              dsPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY(         CPUMCTX, cs),
-    SSMFIELD_ENTRY_OLD(              csPadding, sizeof(uint16_t)),
+    SSMFIELD_ENTRY_OLD(              csPadding, sizeof(uint16_t)*3),
     SSMFIELD_ENTRY(         CPUMCTX, rflags),
     SSMFIELD_ENTRY(         CPUMCTX, rip),
     SSMFIELD_ENTRY(         CPUMCTX, r8),
@@ -235,7 +236,7 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, ldtr),
     SSMFIELD_ENTRY_OLD(              ldtrPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY(         CPUMCTX, tr),
-    SSMFIELD_ENTRY(         CPUMCTX, trPadding),
+    SSMFIELD_ENTRY_OLD(              trPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY(         CPUMCTX, SysEnter.cs),
     SSMFIELD_ENTRY(         CPUMCTX, SysEnter.eip),
     SSMFIELD_ENTRY(         CPUMCTX, SysEnter.esp),
@@ -315,7 +316,7 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
     SSMFIELD_ENTRY(             CPUMCTX, ds),
     SSMFIELD_ENTRY_OLD(                  dsPadding, sizeof(uint16_t)),
     SSMFIELD_ENTRY(             CPUMCTX, cs),
-    SSMFIELD_ENTRY_OLD(                  csPadding, sizeof(uint16_t)),
+    SSMFIELD_ENTRY_OLD(                  csPadding, sizeof(uint16_t)*3),
     SSMFIELD_ENTRY(             CPUMCTX, rflags),
     SSMFIELD_ENTRY(             CPUMCTX, rip),
     SSMFIELD_ENTRY(             CPUMCTX, r8),
@@ -2224,8 +2225,13 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
+#ifdef CPUM_WITH_CHANGED_CPUMCTX
+        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED,
+                         g_aCpumCtxFields, NULL);
+#else
         SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper), SSMSTRUCT_FLAGS_MEM_BAND_AID,
                          g_aCpumCtxFields, NULL);
+#endif
     }
 
     SSMR3PutU32(pSSM, pVM->cCpus);
@@ -2234,8 +2240,13 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
+#ifdef CPUM_WITH_CHANGED_CPUMCTX
+        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED,
+                         g_aCpumCtxFields, NULL);
+#else
         SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest), SSMSTRUCT_FLAGS_MEM_BAND_AID,
                          g_aCpumCtxFields, NULL);
+#endif
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
         AssertCompileSizeAlignment(pVM->aCpus[i].cpum.s.GuestMsrs.msr, sizeof(uint64_t));
@@ -2295,7 +2306,11 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             paCpumCtxFields = g_aCpumCtxFieldsV16;
         uint32_t    fLoad   = 0;
         if (uVersion <= CPUM_SAVED_STATE_VERSION_MEM)
+#ifdef CPUM_WITH_CHANGED_CPUMCTX
+            fLoad = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
+#else
             fLoad = SSMSTRUCT_FLAGS_MEM_BAND_AID;
+#endif
 
         /*
          * Restore.
@@ -3888,20 +3903,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     return rc;
 }
 
-#ifdef DEBUG
 
-/**
- * Debug helper - Saves guest context on raw mode entry (for fatal dump)
- *
- * @internal
- */
-VMMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
-{
-    /** @todo SMP support!! */
-    pVM->cpum.s.GuestEntry = *CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
-}
-
-#endif /* DEBUG */
 
 /**
  * API for controlling a few of the CPU features found in CR4.
