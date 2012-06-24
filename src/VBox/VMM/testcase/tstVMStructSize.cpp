@@ -100,9 +100,11 @@ int main()
 
 #define CHECK_CPUMCTXCORE(member) \
     do { \
-        if (RT_OFFSETOF(CPUMCTX, member) - RT_OFFSETOF(CPUMCTX, edi) != RT_OFFSETOF(CPUMCTXCORE, member)) \
+        unsigned off1 = RT_OFFSETOF(CPUMCTX, member) - RT_OFFSETOF(CPUMCTX, rax); \
+        unsigned off2 = RT_OFFSETOF(CPUMCTXCORE, member); \
+        if (off1 != off2) \
         { \
-            printf("error! CPUMCTX/CORE:: %s!\n", #member); \
+            printf("error! CPUMCTX/CORE:: %s! (%#x vs %#x (ctx))\n", #member, off1, off2); \
             rc++; \
         } \
     } while (0)
@@ -268,7 +270,6 @@ int main()
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.pvApicBase, 8);
 #endif
-    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.GuestEntry, 64);
 
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.u64CallRing3Arg, 8);
 #if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
@@ -288,19 +289,20 @@ int main()
 
     /* cpumctx */
     CHECK_MEMBER_ALIGNMENT(CPUMCTX, fpu, 32);
-    CHECK_MEMBER_ALIGNMENT(CPUMCTX, edi, 32);
-    CHECK_MEMBER_ALIGNMENT(CPUMCTX, idtr, 4);
+    CHECK_MEMBER_ALIGNMENT(CPUMCTX, rax, 32);
+    CHECK_MEMBER_ALIGNMENT(CPUMCTX, idtr.pIdt, 8);
+    CHECK_MEMBER_ALIGNMENT(CPUMCTX, gdtr.pGdt, 8);
     CHECK_MEMBER_ALIGNMENT(CPUMCTX, SysEnter, 8);
-    CHECK_CPUMCTXCORE(eax);
-    CHECK_CPUMCTXCORE(ebx);
-    CHECK_CPUMCTXCORE(ecx);
-    CHECK_CPUMCTXCORE(edx);
-    CHECK_CPUMCTXCORE(ebp);
-    CHECK_CPUMCTXCORE(esp);
-    CHECK_CPUMCTXCORE(edi);
-    CHECK_CPUMCTXCORE(esi);
-    CHECK_CPUMCTXCORE(eip);
-    CHECK_CPUMCTXCORE(eflags);
+    CHECK_CPUMCTXCORE(rax);
+    CHECK_CPUMCTXCORE(rbx);
+    CHECK_CPUMCTXCORE(rcx);
+    CHECK_CPUMCTXCORE(rdx);
+    CHECK_CPUMCTXCORE(rbp);
+    CHECK_CPUMCTXCORE(rsp);
+    CHECK_CPUMCTXCORE(rdi);
+    CHECK_CPUMCTXCORE(rsi);
+    CHECK_CPUMCTXCORE(rip);
+    CHECK_CPUMCTXCORE(rflags);
     CHECK_CPUMCTXCORE(cs);
     CHECK_CPUMCTXCORE(ds);
     CHECK_CPUMCTXCORE(es);

@@ -113,7 +113,6 @@ VMMDECL(void) CPUMSetHyperGDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 {
     pVCpu->cpum.s.Hyper.gdtr.cbGdt = limit;
     pVCpu->cpum.s.Hyper.gdtr.pGdt  = addr;
-    pVCpu->cpum.s.Hyper.gdtrPadding = 0;
 }
 
 
@@ -121,7 +120,6 @@ VMMDECL(void) CPUMSetHyperIDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 {
     pVCpu->cpum.s.Hyper.idtr.cbIdt = limit;
     pVCpu->cpum.s.Hyper.idtr.pIdt = addr;
-    pVCpu->cpum.s.Hyper.idtrPadding = 0;
 }
 
 

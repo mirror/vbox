@@ -379,12 +379,12 @@ GLOBALNAME ICEnterTarget
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 5
 %endif
 
-    ; Setup stack; use the lss_esp, ss pair for lss
+    ; Setup stack.
     DEBUG_CHAR('7')
     mov     rsp, 0
-    mov     eax, [rdx + CPUMCPU.Hyper.esp]
-    mov     [rdx + CPUMCPU.Hyper.lss_esp], eax
-    lss     esp, [rdx + CPUMCPU.Hyper.lss_esp]
+    mov     eax, [rdx + CPUMCPU.Hyper.ss]
+    mov     ss, ax
+    mov     esp, [rdx + CPUMCPU.Hyper.esp]
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 6
