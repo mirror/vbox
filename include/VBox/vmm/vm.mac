@@ -137,7 +137,7 @@ struc VMCPU
 
     alignb 64
 
-    .cpum                   resb 3456
+    .cpum                   resb 3584
     .hwaccm                 resb 5376
     .em                     resb 1472
     .iem                    resb 3072

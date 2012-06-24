@@ -86,7 +86,7 @@
 /** The saved state version of 1.6, used for backwards compatibility. */
 #define CPUM_SAVED_STATE_VERSION_VER1_6         6
 
-//#define CPUM_WITH_CHANGED_CPUMCTX
+#define CPUM_WITH_CHANGED_CPUMCTX
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *

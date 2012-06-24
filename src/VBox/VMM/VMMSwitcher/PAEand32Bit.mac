@@ -384,11 +384,11 @@ GLOBALNAME FarJmpGCTarget
     mov     gs, eax
     mov     fs, eax
 
-    ; Setup stack; use the lss_esp, ss pair for lss
+    ; Setup stack.
     DEBUG_CHAR('3')
-    mov     eax, [edx + CPUMCPU.Hyper.esp]
-    mov     [edx + CPUMCPU.Hyper.lss_esp], eax
-    lss     esp, [edx + CPUMCPU.Hyper.lss_esp]
+    mov     eax, [edx + CPUMCPU.Hyper.ss]
+    mov     ss, ax
+    mov     esp, [edx + CPUMCPU.Hyper.esp]
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     DEBUG_CHAR('4')

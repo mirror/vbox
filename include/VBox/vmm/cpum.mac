@@ -31,149 +31,133 @@
 ; This is used internally in TRPM, VMMSwitcher_GuestToHost_GuestCtx
 ; and other places.
 struc CPUMCTXCORE
-    .edi            resq    1
-    .esi            resq    1
-    .ebp            resq    1
-    .eax            resq    1
-    .ebx            resq    1
-    .edx            resq    1
-    .ecx            resq    1
-    .esp            resq    1
-    .lss_esp        resd    1
-    .ss             resw    1
-    .ssPadding      resw    1
-    .gs             resw    1
-    .gsPadding      resw    1
-    .fs             resw    1
-    .fsPadding      resw    1
-    .es             resw    1
-    .esPadding      resw    1
-    .ds             resw    1
-    .dsPadding      resw    1
-    .cs             resw    1
-    .csPadding      resw    3
-    .eflags         resq    1
-    .eip            resq    1
-
-    .r8             resq    1
-    .r9             resq    1
-    .r10            resq    1
-    .r11            resq    1
-    .r12            resq    1
-    .r13            resq    1
-    .r14            resq    1
-    .r15            resq    1
-
+    .eax                resq    1
+    .ecx                resq    1
+    .edx                resq    1
+    .ebx                resq    1
+    .esp                resq    1
+    .ebp                resq    1
+    .esi                resq    1
+    .edi                resq    1
+    .r8                 resq    1
+    .r9                 resq    1
+    .r10                resq    1
+    .r11                resq    1
+    .r12                resq    1
+    .r13                resq    1
+    .r14                resq    1
+    .r15                resq    1
+    .es                 resw    1
+    .esPadding          resw    3
     .esHid.u64Base      resq    1
     .esHid.u32Limit     resd    1
     .esHid.Attr         resd    1
-
+    .cs                 resw    1
+    .csPadding          resw    3
     .csHid.u64Base      resq    1
     .csHid.u32Limit     resd    1
     .csHid.Attr         resd    1
-
+    .ss                 resw    1
+    .ssPadding          resw    3
     .ssHid.u64Base      resq    1
     .ssHid.u32Limit     resd    1
     .ssHid.Attr         resd    1
-
+    .ds                 resw    1
+    .dsPadding          resw    3
     .dsHid.u64Base      resq    1
     .dsHid.u32Limit     resd    1
     .dsHid.Attr         resd    1
-
+    .fs                 resw    1
+    .fsPadding          resw    3
     .fsHid.u64Base      resq    1
     .fsHid.u32Limit     resd    1
     .fsHid.Attr         resd    1
-
+    .gs                 resw    1
+    .gsPadding          resw    3
     .gsHid.u64Base      resq    1
     .gsHid.u32Limit     resd    1
     .gsHid.Attr         resd    1
-
+    .eip                resq    1
+    .eflags             resq    1
 endstruc
 
 
 struc CPUMCTX
-    .fpu            resb    512
-
-    .edi            resq    1
-    .esi            resq    1
-    .ebp            resq    1
-    .eax            resq    1
-    .ebx            resq    1
-    .edx            resq    1
-    .ecx            resq    1
-    .esp            resq    1
-    .lss_esp        resd    1
-    .ss             resw    1
-    .ssPadding      resw    1
-    .gs             resw    1
-    .gsPadding      resw    1
-    .fs             resw    1
-    .fsPadding      resw    1
-    .es             resw    1
-    .esPadding      resw    1
-    .ds             resw    1
-    .dsPadding      resw    1
-    .cs             resw    1
-    .csPadding      resw    3
-    .eflags         resq    1
-    .eip            resq    1
-
-    .r8             resq    1
-    .r9             resq    1
-    .r10            resq    1
-    .r11            resq    1
-    .r12            resq    1
-    .r13            resq    1
-    .r14            resq    1
-    .r15            resq    1
-
+    .fpu                resb    512
+    .eax                resq    1
+    .ecx                resq    1
+    .edx                resq    1
+    .ebx                resq    1
+    .esp                resq    1
+    .ebp                resq    1
+    .esi                resq    1
+    .edi                resq    1
+    .r8                 resq    1
+    .r9                 resq    1
+    .r10                resq    1
+    .r11                resq    1
+    .r12                resq    1
+    .r13                resq    1
+    .r14                resq    1
+    .r15                resq    1
+    .es                 resw    1
+    .esPadding          resw    3
     .esHid.u64Base      resq    1
     .esHid.u32Limit     resd    1
     .esHid.Attr         resd    1
-
+    .cs                 resw    1
+    .csPadding          resw    3
     .csHid.u64Base      resq    1
     .csHid.u32Limit     resd    1
     .csHid.Attr         resd    1
-
+    .ss                 resw    1
+    .ssPadding          resw    3
     .ssHid.u64Base      resq    1
     .ssHid.u32Limit     resd    1
     .ssHid.Attr         resd    1
-
+    .ds                 resw    1
+    .dsPadding          resw    3
     .dsHid.u64Base      resq    1
     .dsHid.u32Limit     resd    1
     .dsHid.Attr         resd    1
-
+    .fs                 resw    1
+    .fsPadding          resw    3
     .fsHid.u64Base      resq    1
     .fsHid.u32Limit     resd    1
     .fsHid.Attr         resd    1
-
+    .gs                 resw    1
+    .gsPadding          resw    3
     .gsHid.u64Base      resq    1
     .gsHid.u32Limit     resd    1
     .gsHid.Attr         resd    1
-
-
-    .cr0            resq    1
-    .cr2            resq    1
-    .cr3            resq    1
-    .cr4            resq    1
-
-    .dr             resq    8
-
-    .gdtr.cbGdt     resw    1
-    .gdtr.pGdt      resq    1
-    .gdtrPadding    resw    1
-    .idtr.cbIdt     resw    1
-    .idtr.pIdt      resq    1
-    .idtrPadding    resw    1
-    .ldtr           resw    1
-    .ldtrPadding    resw    1
-    .tr             resw    1
-    .trPadding      resw    1
-
+    .eip                resq    1
+    .eflags             resq    1
+    .cr0                resq    1
+    .cr2                resq    1
+    .cr3                resq    1
+    .cr4                resq    1
+    .dr                 resq    8
+    .gdtrPadding        resw    3
+    .gdtr               resw    0
+    .gdtr.cbGdt         resw    1
+    .gdtr.pGdt          resq    1
+    .idtrPadding        resw    3
+    .idtr               resw    0
+    .idtr.cbIdt         resw    1
+    .idtr.pIdt          resq    1
+    .ldtr               resw    1
+    .ldtrPadding        resw    3
+    .ldtrHid.u64Base    resq    1
+    .ldtrHid.u32Limit   resd    1
+    .ldtrHid.Attr       resd    1
+    .tr                 resw    1
+    .trPadding          resw    3
+    .trHid.u64Base      resq    1
+    .trHid.u32Limit     resd    1
+    .trHid.Attr         resd    1
     .SysEnter.cs        resb    8
     .SysEnter.eip       resb    8
     .SysEnter.esp       resb    8
-
     .msrEFER            resb    8
     .msrSTAR            resb    8
     .msrPAT             resb    8
@@ -181,17 +165,7 @@ struc CPUMCTX
     .msrCSTAR           resb    8
     .msrSFMASK          resb    8
     .msrKERNELGSBASE    resb    8
-
-    .ldtrHid.u64Base    resq    1
-    .ldtrHid.u32Limit   resd    1
-    .ldtrHid.Attr       resd    1
-
-    .trHid.u64Base      resq    1
-    .trHid.u32Limit     resd    1
-    .trHid.Attr         resd    1
-
-    ; padding
-;;;    .padding            resd    6
+    .au32SizePadding    resb    32
 endstruc
 
 

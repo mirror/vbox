@@ -328,14 +328,8 @@ typedef struct CPUM
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     RTHCPTR                 pvApicBase;
     uint32_t                fApicDisVectors;
-    uint8_t                 abPadding3[HC_ARCH_BITS == 32 ? 56 : 52];
+    uint8_t                 abPadding3[4];
 #endif
-
-    /**
-     * Guest context on raw mode entry. 64-byte aligned!
-     * This a debug feature, see CPUMR3SaveEntryCtx.
-     */
-    CPUMCTX                 GuestEntry;
 } CPUM;
 /** Pointer to the CPUM instance data residing in the shared VM structure. */
 typedef CPUM *PCPUM;

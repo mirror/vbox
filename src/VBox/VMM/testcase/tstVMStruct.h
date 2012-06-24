@@ -48,7 +48,6 @@
     GEN_CHECK_OFF(CPUM, pvApicBase);
     GEN_CHECK_OFF(CPUM, fApicDisVectors);
 #endif
-    GEN_CHECK_OFF(CPUM, GuestEntry);
 
     GEN_CHECK_SIZE(CPUMCPU); // has .mac
     GEN_CHECK_OFF(CPUMCPU, Hyper);
@@ -148,7 +147,6 @@
     GEN_CHECK_OFF(CPUMCTX, rdx);
     GEN_CHECK_OFF(CPUMCTX, rcx);
     GEN_CHECK_OFF(CPUMCTX, rsp);
-    GEN_CHECK_OFF(CPUMCTX, lss_esp);
     GEN_CHECK_OFF(CPUMCTX, ss);
     GEN_CHECK_OFF(CPUMCTX, gs);
     GEN_CHECK_OFF(CPUMCTX, fs);
