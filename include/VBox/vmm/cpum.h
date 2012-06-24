@@ -431,9 +431,6 @@ VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
 VMMR3DECL(void)         CPUMR3ResetCpu(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMR3IsStateRestorePending(PVM pVM);
 VMMR3DECL(void)         CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled);
-# ifdef DEBUG
-VMMR3DECL(void)         CPUMR3SaveEntryCtx(PVM pVM);
-# endif
 VMMR3DECL(int)          CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM);
 VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM);
