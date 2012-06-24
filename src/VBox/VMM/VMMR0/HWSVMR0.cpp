@@ -922,7 +922,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVMCB->guest.u64RFlags = pCtx->eflags.u32;
 
     /* Set CPL */
-    pVMCB->guest.u8CPL     = pCtx->ssHid.Attr.n.u2Dpl;
+    pVMCB->guest.u8CPL     = pCtx->ss.Attr.n.u2Dpl;
 
     /* RAX/EAX too, as VMRUN uses RAX as an implicit parameter. */
     pVMCB->guest.u64RAX    = pCtx->rax;
@@ -945,8 +945,8 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.svm.pfnVMRun = SVMR0VMRun64;
 #endif
         /* Unconditionally update these as wrmsr might have changed them. (HWACCM_CHANGED_GUEST_SEGMENT_REGS will not be set) */
-        pVMCB->guest.FS.u64Base    = pCtx->fsHid.u64Base;
-        pVMCB->guest.GS.u64Base    = pCtx->gsHid.u64Base;
+        pVMCB->guest.FS.u64Base    = pCtx->fs.u64Base;
+        pVMCB->guest.GS.u64Base    = pCtx->gs.u64Base;
     }
     else
     {
@@ -1643,19 +1643,19 @@ ResumeExecution:
      * Correct the hidden CS granularity flag. Haven't seen it being wrong in any other
      * register (yet).
      */
-    if (   !pCtx->csHid.Attr.n.u1Granularity
-        &&  pCtx->csHid.Attr.n.u1Present
-        &&  pCtx->csHid.u32Limit > UINT32_C(0xfffff))
+    if (   !pCtx->cs.Attr.n.u1Granularity
+        &&  pCtx->cs.Attr.n.u1Present
+        &&  pCtx->cs.u32Limit > UINT32_C(0xfffff))
     {
-        Assert((pCtx->csHid.u32Limit & 0xfff) == 0xfff);
-        pCtx->csHid.Attr.n.u1Granularity = 1;
+        Assert((pCtx->cs.u32Limit & 0xfff) == 0xfff);
+        pCtx->cs.Attr.n.u1Granularity = 1;
     }
 #define SVM_ASSERT_SEL_GRANULARITY(reg) \
-        AssertMsg(   !pCtx->reg##Hid.Attr.n.u1Present \
-                  || (   pCtx->reg##Hid.Attr.n.u1Granularity \
-                      ? (pCtx->reg##Hid.u32Limit & 0xfff) == 0xfff \
-                      :  pCtx->reg##Hid.u32Limit <= 0xfffff), \
-                  ("%#x %#x %#llx\n", pCtx->reg##Hid.u32Limit, pCtx->reg##Hid.Attr.u, pCtx->reg##Hid.u64Base))
+        AssertMsg(   !pCtx->reg.Attr.n.u1Present \
+                  || (   pCtx->reg.Attr.n.u1Granularity \
+                      ? (pCtx->reg.u32Limit & 0xfff) == 0xfff \
+                      :  pCtx->reg.u32Limit <= 0xfffff), \
+                  ("%#x %#x %#llx\n", pCtx->reg.u32Limit, pCtx->reg.Attr.u, pCtx->reg.u64Base))
     SVM_ASSERT_SEL_GRANULARITY(ss);
     SVM_ASSERT_SEL_GRANULARITY(cs);
     SVM_ASSERT_SEL_GRANULARITY(ds);
@@ -1671,7 +1671,7 @@ ResumeExecution:
      * SS (chapter AMD spec. 15.5.1 Basic operation).
      */
     Assert(!(pVMCB->guest.u8CPL & ~0x3));
-    pCtx->ssHid.Attr.n.u2Dpl = pVMCB->guest.u8CPL & 0x3;
+    pCtx->ss.Attr.n.u2Dpl = pVMCB->guest.u8CPL & 0x3;
 
     /*
      * Remaining guest CPU context: TR, IDTR, GDTR, LDTR;
@@ -1774,7 +1774,7 @@ ResumeExecution:
 
 #ifdef DBGFTRACE_ENABLED /** @todo DTrace */
     RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "vmexit %08x at %04:%08RX64 %RX64 %RX64 %RX64",
-                      exitCode, pCtx->cs, pCtx->rip,
+                      exitCode, pCtx->cs.Sel, pCtx->rip,
                       pVMCB->ctrl.u64ExitInfo1, pVMCB->ctrl.u64ExitInfo2, pVMCB->ctrl.ExitIntInfo.au64[0]);
 #endif
 #if ARCH_BITS == 64 /* for the time being */
@@ -1824,7 +1824,7 @@ ResumeExecution:
                 goto ResumeExecution;
             }
             /* Return to ring 3 to deal with the debug exit code. */
-            Log(("Debugger hardware BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
+            Log(("Debugger hardware BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs.Sel, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
             break;
         }
 
@@ -2030,7 +2030,7 @@ ResumeExecution:
                     Event.n.u32ErrorCode        = pVMCB->ctrl.u64ExitInfo1; /* EXITINFO1 = error code */
                     break;
             }
-            Log(("Trap %x at %04x:%RGv esi=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->esi));
+            Log(("Trap %x at %04x:%RGv esi=%x\n", vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, pCtx->esi));
             hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
             goto ResumeExecution;
         }
@@ -2970,7 +2970,7 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
     /*
      * Only allow 32 & 64 bit code.
      */
-    DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+    DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs.Sel, &pRegFrame->cs);
     if (enmMode != DISCPUMODE_16BIT)
     {
         PDISSTATE pDis = &pVCpu->hwaccm.s.DisState;

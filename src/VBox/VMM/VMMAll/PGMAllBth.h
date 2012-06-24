@@ -1078,7 +1078,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      * meditiation time.
      */
     LogRel(("%s: returns rc=%Rrc pvFault=%RGv uErr=%RX64 cs:rip=%04x:%08RX64\n",
-            __PRETTY_FUNCTION__, rc, pvFault, (uint64_t)uErr, pRegFrame->cs, pRegFrame->rip));
+            __PRETTY_FUNCTION__, rc, pvFault, (uint64_t)uErr, pRegFrame->cs.Sel, pRegFrame->rip));
     return rc;
 
 # else  /* Nested paging, EPT except PGM_GST_TYPE = PROT   */

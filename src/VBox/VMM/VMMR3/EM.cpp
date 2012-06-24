@@ -964,9 +964,9 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
 
     if (pCtx->eflags.Bits.u1VM)
-        Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF));
+        Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs.Sel, pCtx->eip, pCtx->eflags.Bits.u1IF));
     else
-        Log(("EMR%d: %04X:%08X ESP=%08X IF=%d CR0=%x eflags=%x\n", cpl, pCtx->cs, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, pCtx->eflags.u));
+        Log(("EMR%d: %04X:%08X ESP=%08X IF=%d CR0=%x eflags=%x\n", cpl, pCtx->cs.Sel, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, pCtx->eflags.u));
 #endif
     STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatREMTotal, a);
 
@@ -1242,7 +1242,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return EMSTATE_REM;
     }
 
-    unsigned uSS = pCtx->ss;
+    unsigned uSS = pCtx->ss.Sel;
     if (    pCtx->eflags.Bits.u1VM
         ||  (uSS & X86_SEL_RPL) == 3)
     {
@@ -1275,8 +1275,8 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         // Let's start with pure 32 bits ring 0 code first
         /** @todo What's pure 32-bit mode? flat? */
-        if (    !(pCtx->ssHid.Attr.n.u1DefBig)
-            ||  !(pCtx->csHid.Attr.n.u1DefBig))
+        if (    !(pCtx->ss.Attr.n.u1DefBig)
+            ||  !(pCtx->cs.Attr.n.u1DefBig))
         {
             Log2(("raw r0 mode refused: SS/CS not 32bit\n"));
             return EMSTATE_REM;

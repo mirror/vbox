@@ -184,12 +184,12 @@ static const unsigned g_aRegSegIndex[] =
 
 static const unsigned g_aRegHidSegIndex[] =
 {
-    RT_OFFSETOF(CPUMCTXCORE, esHid),         /* DISSELREG_ES */
-    RT_OFFSETOF(CPUMCTXCORE, csHid),         /* DISSELREG_CS */
-    RT_OFFSETOF(CPUMCTXCORE, ssHid),         /* DISSELREG_SS */
-    RT_OFFSETOF(CPUMCTXCORE, dsHid),         /* DISSELREG_DS */
-    RT_OFFSETOF(CPUMCTXCORE, fsHid),         /* DISSELREG_FS */
-    RT_OFFSETOF(CPUMCTXCORE, gsHid)          /* DISSELREG_GS */
+    RT_OFFSETOF(CPUMCTXCORE, es),         /* DISSELREG_ES */
+    RT_OFFSETOF(CPUMCTXCORE, cs),         /* DISSELREG_CS */
+    RT_OFFSETOF(CPUMCTXCORE, ss),         /* DISSELREG_SS */
+    RT_OFFSETOF(CPUMCTXCORE, ds),         /* DISSELREG_DS */
+    RT_OFFSETOF(CPUMCTXCORE, fs),         /* DISSELREG_FS */
+    RT_OFFSETOF(CPUMCTXCORE, gs)          /* DISSELREG_GS */
 };
 
 /**

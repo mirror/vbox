@@ -139,18 +139,18 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     }
 
 #ifdef LOG_ENABLED
-    if (Sel == (pRegFrame->cs & X86_SEL_MASK))
-        Log(("GDT write to selector in CS register %04X\n", pRegFrame->cs));
-    else if (Sel == (pRegFrame->ds & X86_SEL_MASK))
-        Log(("GDT write to selector in DS register %04X\n", pRegFrame->ds));
-    else if (Sel == (pRegFrame->es & X86_SEL_MASK))
-        Log(("GDT write to selector in ES register %04X\n", pRegFrame->es));
-    else if (Sel == (pRegFrame->fs & X86_SEL_MASK))
-        Log(("GDT write to selector in FS register %04X\n", pRegFrame->fs));
-    else if (Sel == (pRegFrame->gs & X86_SEL_MASK))
-        Log(("GDT write to selector in GS register %04X\n", pRegFrame->gs));
-    else if (Sel == (pRegFrame->ss & X86_SEL_MASK))
-        Log(("GDT write to selector in SS register %04X\n", pRegFrame->ss));
+    if (Sel == (pRegFrame->cs.Sel & X86_SEL_MASK))
+        Log(("GDT write to selector in CS register %04X\n", pRegFrame->cs.Sel));
+    else if (Sel == (pRegFrame->ds.Sel & X86_SEL_MASK))
+        Log(("GDT write to selector in DS register %04X\n", pRegFrame->ds.Sel));
+    else if (Sel == (pRegFrame->es.Sel & X86_SEL_MASK))
+        Log(("GDT write to selector in ES register %04X\n", pRegFrame->es.Sel));
+    else if (Sel == (pRegFrame->fs.Sel & X86_SEL_MASK))
+        Log(("GDT write to selector in FS register %04X\n", pRegFrame->fs.Sel));
+    else if (Sel == (pRegFrame->gs.Sel & X86_SEL_MASK))
+        Log(("GDT write to selector in GS register %04X\n", pRegFrame->gs.Sel));
+    else if (Sel == (pRegFrame->ss.Sel & X86_SEL_MASK))
+        Log(("GDT write to selector in SS register %04X\n", pRegFrame->ss.Sel));
 #endif
     return VINF_SUCCESS;
 }

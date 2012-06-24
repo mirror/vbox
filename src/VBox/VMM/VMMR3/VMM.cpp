@@ -1329,10 +1329,12 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
-    pCtx->cs                        = uVector << 8;
-    pCtx->csHid.u64Base             = uVector << 12;
-    pCtx->csHid.u32Limit            = 0x0000ffff;
-    pCtx->rip                       = 0;
+    pCtx->cs.Sel        = uVector << 8;
+    pCtx->cs.ValidSel   = uVector << 8;
+    pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
+    pCtx->cs.u64Base    = uVector << 12;
+    pCtx->cs.u32Limit   = UINT32_C(0x0000ffff);
+    pCtx->rip           = 0;
 
     Log(("vmmR3SendSipi for VCPU %d with vector %x\n", uVector));
 

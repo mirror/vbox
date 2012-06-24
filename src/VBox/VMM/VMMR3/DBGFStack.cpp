@@ -300,7 +300,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
     if (pAddrPC)
         pCur->AddrPC = *pAddrPC;
     else
-        rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrPC, pCtxCore->cs, pCtxCore->rip);
+        rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrPC, pCtxCore->cs.Sel, pCtxCore->rip);
     if (RT_SUCCESS(rc))
     {
         if (enmReturnType == DBGFRETURNTYPE_INVALID)
@@ -340,12 +340,12 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
         if (pAddrStack)
             pCur->AddrStack = *pAddrStack;
         else
-            rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrStack, pCtxCore->ss, pCtxCore->rsp & fAddrMask);
+            rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrStack, pCtxCore->ss.Sel, pCtxCore->rsp & fAddrMask);
 
         if (pAddrFrame)
             pCur->AddrFrame = *pAddrFrame;
         else if (RT_SUCCESS(rc))
-            rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrFrame, pCtxCore->ss, pCtxCore->rbp & fAddrMask);
+            rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrFrame, pCtxCore->ss.Sel, pCtxCore->rbp & fAddrMask);
     }
     else
         pCur->enmReturnType = enmReturnType;

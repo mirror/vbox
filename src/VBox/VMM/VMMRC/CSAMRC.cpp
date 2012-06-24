@@ -101,7 +101,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     if (pRegFrame->eflags.Bits.u1VM)
         cpl = 3;
     else
-        cpl = (pRegFrame->ss & X86_SEL_RPL);
+        cpl = (pRegFrame->ss.Sel & X86_SEL_RPL);
 
     Log(("CSAMGCCodePageWriteHandler: code page write at %RGv original address %RGv (cpl=%d)\n", pvFault, (RTGCUINTPTR)pvRange + offRange, cpl));
 

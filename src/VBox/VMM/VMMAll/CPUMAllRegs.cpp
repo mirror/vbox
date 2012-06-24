@@ -141,37 +141,37 @@ VMMDECL(uint32_t) CPUMGetHyperCR3(PVMCPU pVCpu)
 
 VMMDECL(void) CPUMSetHyperCS(PVMCPU pVCpu, RTSEL SelCS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs = SelCS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs.Sel = SelCS;
 }
 
 
 VMMDECL(void) CPUMSetHyperDS(PVMCPU pVCpu, RTSEL SelDS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds = SelDS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds.Sel = SelDS;
 }
 
 
 VMMDECL(void) CPUMSetHyperES(PVMCPU pVCpu, RTSEL SelES)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es = SelES;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es.Sel = SelES;
 }
 
 
 VMMDECL(void) CPUMSetHyperFS(PVMCPU pVCpu, RTSEL SelFS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs = SelFS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs.Sel = SelFS;
 }
 
 
 VMMDECL(void) CPUMSetHyperGS(PVMCPU pVCpu, RTSEL SelGS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs = SelGS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs.Sel = SelGS;
 }
 
 
 VMMDECL(void) CPUMSetHyperSS(PVMCPU pVCpu, RTSEL SelSS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss = SelSS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss.Sel = SelSS;
 }
 
 
@@ -196,13 +196,13 @@ VMMDECL(void) CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP)
 
 VMMDECL(void) CPUMSetHyperTR(PVMCPU pVCpu, RTSEL SelTR)
 {
-    pVCpu->cpum.s.Hyper.tr = SelTR;
+    pVCpu->cpum.s.Hyper.tr.Sel = SelTR;
 }
 
 
 VMMDECL(void) CPUMSetHyperLDTR(PVMCPU pVCpu, RTSEL SelLDTR)
 {
-    pVCpu->cpum.s.Hyper.ldtr = SelLDTR;
+    pVCpu->cpum.s.Hyper.ldtr.Sel = SelLDTR;
 }
 
 
@@ -250,37 +250,37 @@ VMMDECL(void) CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7)
 
 VMMDECL(RTSEL) CPUMGetHyperCS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperDS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperES(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperFS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperGS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperSS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss.Sel;
 }
 
 
@@ -368,7 +368,7 @@ VMMDECL(uint32_t) CPUMGetHyperGDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 
 VMMDECL(RTSEL) CPUMGetHyperLDTR(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Hyper.ldtr;
+    return pVCpu->cpum.s.Hyper.ldtr.Sel;
 }
 
 
@@ -490,14 +490,14 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 
 VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
-    pVCpu->cpum.s.Guest.tr  = tr;
+    pVCpu->cpum.s.Guest.tr.Sel  = tr;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_TR;
     return VINF_SUCCESS;
 }
 
 VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 {
-    pVCpu->cpum.s.Guest.ldtr = ldtr;
+    pVCpu->cpum.s.Guest.ldtr.Sel = ldtr;
     pVCpu->cpum.s.fChanged  |= CPUM_CHANGED_LDTR;
     return VINF_SUCCESS;
 }
@@ -681,42 +681,42 @@ VMMDECL(int) CPUMSetGuestEDI(PVMCPU pVCpu, uint32_t edi)
 
 VMMDECL(int) CPUMSetGuestSS(PVMCPU pVCpu, uint16_t ss)
 {
-    pVCpu->cpum.s.Guest.ss = ss;
+    pVCpu->cpum.s.Guest.ss.Sel = ss;
     return VINF_SUCCESS;
 }
 
 
 VMMDECL(int) CPUMSetGuestCS(PVMCPU pVCpu, uint16_t cs)
 {
-    pVCpu->cpum.s.Guest.cs = cs;
+    pVCpu->cpum.s.Guest.cs.Sel = cs;
     return VINF_SUCCESS;
 }
 
 
 VMMDECL(int) CPUMSetGuestDS(PVMCPU pVCpu, uint16_t ds)
 {
-    pVCpu->cpum.s.Guest.ds = ds;
+    pVCpu->cpum.s.Guest.ds.Sel = ds;
     return VINF_SUCCESS;
 }
 
 
 VMMDECL(int) CPUMSetGuestES(PVMCPU pVCpu, uint16_t es)
 {
-    pVCpu->cpum.s.Guest.es = es;
+    pVCpu->cpum.s.Guest.es.Sel = es;
     return VINF_SUCCESS;
 }
 
 
 VMMDECL(int) CPUMSetGuestFS(PVMCPU pVCpu, uint16_t fs)
 {
-    pVCpu->cpum.s.Guest.fs = fs;
+    pVCpu->cpum.s.Guest.fs.Sel = fs;
     return VINF_SUCCESS;
 }
 
 
 VMMDECL(int) CPUMSetGuestGS(PVMCPU pVCpu, uint16_t gs)
 {
-    pVCpu->cpum.s.Guest.gs = gs;
+    pVCpu->cpum.s.Guest.gs.Sel = gs;
     return VINF_SUCCESS;
 }
 
@@ -863,11 +863,11 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             break;
 
         case MSR_K8_FS_BASE:
-            *puValue = pVCpu->cpum.s.Guest.fsHid.u64Base;
+            *puValue = pVCpu->cpum.s.Guest.fs.u64Base;
             break;
 
         case MSR_K8_GS_BASE:
-            *puValue = pVCpu->cpum.s.Guest.gsHid.u64Base;
+            *puValue = pVCpu->cpum.s.Guest.gs.u64Base;
             break;
 
         case MSR_K8_KERNEL_GS_BASE:
@@ -1141,11 +1141,11 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             break;
 
         case MSR_K8_FS_BASE:
-            pVCpu->cpum.s.Guest.fsHid.u64Base   = uValue;
+            pVCpu->cpum.s.Guest.fs.u64Base      = uValue;
             break;
 
         case MSR_K8_GS_BASE:
-            pVCpu->cpum.s.Guest.gsHid.u64Base   = uValue;
+            pVCpu->cpum.s.Guest.gs.u64Base      = uValue;
             break;
 
         case MSR_K8_KERNEL_GS_BASE:
@@ -1188,50 +1188,50 @@ VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 VMMDECL(RTSEL) CPUMGetGuestTR(PVMCPU pVCpu, PCPUMSELREGHID pHidden)
 {
     if (pHidden)
-        *pHidden = pVCpu->cpum.s.Guest.trHid;
-    return pVCpu->cpum.s.Guest.tr;
+        *pHidden = pVCpu->cpum.s.Guest.tr;
+    return pVCpu->cpum.s.Guest.tr.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestCS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Guest.cs;
+    return pVCpu->cpum.s.Guest.cs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestDS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Guest.ds;
+    return pVCpu->cpum.s.Guest.ds.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestES(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Guest.es;
+    return pVCpu->cpum.s.Guest.es.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestFS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Guest.fs;
+    return pVCpu->cpum.s.Guest.fs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestGS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Guest.gs;
+    return pVCpu->cpum.s.Guest.gs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestSS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Guest.ss;
+    return pVCpu->cpum.s.Guest.ss.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestLDTR(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.Guest.ldtr;
+    return pVCpu->cpum.s.Guest.ldtr.Sel;
 }
 
 
@@ -2453,7 +2453,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
         if (RT_LIKELY(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
         {
             if (!pCtxCore->eflags.Bits.u1VM)
-                cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
+                cpl = pCtxCore->ss.Attr.n.u2Dpl;
             else
                 cpl = 3; /* REM doesn't set DPL=3 in V8086 mode. See @bugref{5130}. */
         }
@@ -2469,7 +2469,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
              * isn't necessarily equal if the segment is conforming.
              * See section 4.11.1 in the AMD manual.
              */
-            cpl = (pCtxCore->ss & X86_SEL_RPL);
+            cpl = (pCtxCore->ss.Sel & X86_SEL_RPL);
 #ifndef IN_RING0
             if (cpl == 1)
                 cpl = 0;

@@ -352,8 +352,8 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
             pCtxCore = CPUMGetGuestCtxCore(pVCpu);
         else
             pCtxCore = CPUMGetHyperCtxCore(pVCpu);
-        Sel        = pCtxCore->cs;
-        pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
+        Sel        = pCtxCore->cs.Sel;
+        pHiddenSel = (PCPUMSELREGHID)&pCtxCore->cs;
         GCPtr      = pCtxCore->rip;
     }
 
@@ -412,7 +412,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
             || CPUMAreHiddenSelRegsValid(pVCpu))
         {   /* Assume the current CS defines the execution mode. */
             pCtxCore   = CPUMGetGuestCtxCore(pVCpu);
-            pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
+            pHiddenSel = (CPUMSELREGHID *)&pCtxCore->cs;
 
             SelInfo.u.Raw.Gen.u1Present     = pHiddenSel->Attr.n.u1Present;
             SelInfo.u.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;

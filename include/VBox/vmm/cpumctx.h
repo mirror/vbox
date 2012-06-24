@@ -28,6 +28,7 @@
 
 #ifndef VBOX_FOR_DTRACE_LIB
 # include <iprt/x86.h>
+# include <VBox/types.h>
 #else
 # pragma D depends_on library x86.d
 #endif
@@ -43,11 +44,21 @@ RT_C_DECLS_BEGIN
 /**
  * Selector hidden registers.
  */
-typedef struct CPUMSELREGHID
+typedef struct CPUMSELREG
 {
+    /** The selector register. */
+    RTSEL       Sel;
+    /** Padding, don't use. */
+    RTSEL       PaddingSel;
+    /** The selector which info resides in u64Base, u32Limit and Attr, provided
+     * that CPUMSELREG_FLAGS_VALID is set. */
+    RTSEL       ValidSel;
+    /** Flags, see CPUMSELREG_FLAGS_XXX. */
+    uint16_t    fFlags;
+
     /** Base register.
      *
-     *  Long mode remarks:
+     * Long mode remarks:
      *  - Unused in long mode for CS, DS, ES, SS
      *  - 32 bits for FS & GS; FS(GS)_BASE msr used for the base address
      *  - 64 bits for TR & LDTR
@@ -59,8 +70,17 @@ typedef struct CPUMSELREGHID
      * This is the high 32-bit word of the descriptor entry.
      * Only the flags, dpl and type are used. */
     X86DESCATTR Attr;
-} CPUMSELREGHID;
+} CPUMSELREG;
 
+/** @name CPUMSELREG_FLAGS_XXX - CPUMSELREG::fFlags values.
+ * @{ */
+#define CPUMSELREG_FLAGS_VALID      UINT16_C(0x0001)
+#define CPUMSELREG_FLAGS_STALE      UINT16_C(0x0002)
+/** @} */
+
+/** Old type used for the hidden register part.
+ * @deprecated  */
+typedef CPUMSELREG CPUMSELREGHID;
 
 /**
  * The sysenter register set.
@@ -171,33 +191,13 @@ typedef struct CPUMCTXCORE
     /** @name Segment registers.
      * @note These follow the encoding order (X86_SREG_XXX) and can be accessed as
      *       an array starting a es.
-     * @todo Combine the selector and hidden bits, effectively expanding the hidden
-     *       register structure by 64-bit.
-     *
      * @{  */
-    RTSEL               es;
-    RTSEL               esPadding[3];
-    CPUMSELREGHID       esHid;
-
-    RTSEL               cs;
-    RTSEL               csPadding[3];
-    CPUMSELREGHID       csHid;
-
-    RTSEL               ss;
-    RTSEL               ssPadding[3];
-    CPUMSELREGHID       ssHid;
-
-    RTSEL               ds;
-    RTSEL               dsPadding[3];
-    CPUMSELREGHID       dsHid;
-
-    RTSEL               fs;
-    RTSEL               fsPadding[3];
-    CPUMSELREGHID       fsHid;
-
-    RTSEL               gs;
-    RTSEL               gsPadding[3];
-    CPUMSELREGHID       gsHid;
+    CPUMSELREG          es;
+    CPUMSELREG          cs;
+    CPUMSELREG          ss;
+    CPUMSELREG          ds;
+    CPUMSELREG          fs;
+    CPUMSELREG          gs;
     /** @} */
 
     /** The program counter. */
@@ -304,33 +304,13 @@ typedef struct CPUMCTX
     /** @name Segment registers.
      * @note These follow the encoding order (X86_SREG_XXX) and can be accessed as
      *       an array starting a es.
-     * @todo Combine the selector and hidden bits, effectively expanding the hidden
-     *       register structure by 64-bit.
-     *
      * @{  */
-    RTSEL               es;
-    RTSEL               esPadding[3];
-    CPUMSELREGHID       esHid;
-
-    RTSEL               cs;
-    RTSEL               csPadding[3];
-    CPUMSELREGHID       csHid;
-
-    RTSEL               ss;
-    RTSEL               ssPadding[3];
-    CPUMSELREGHID       ssHid;
-
-    RTSEL               ds;
-    RTSEL               dsPadding[3];
-    CPUMSELREGHID       dsHid;
-
-    RTSEL               fs;
-    RTSEL               fsPadding[3];
-    CPUMSELREGHID       fsHid;
-
-    RTSEL               gs;
-    RTSEL               gsPadding[3];
-    CPUMSELREGHID       gsHid;
+    CPUMSELREG          es;
+    CPUMSELREG          cs;
+    CPUMSELREG          ss;
+    CPUMSELREG          ds;
+    CPUMSELREG          fs;
+    CPUMSELREG          gs;
     /** @} */
 
     /** The program counter. */
@@ -381,14 +361,10 @@ typedef struct CPUMCTX
 
     /** The task register.
      * Only the guest context uses all the members. */
-    RTSEL           ldtr;
-    RTSEL           ldtrPadding[3];
-    CPUMSELREGHID   ldtrHid;
+    CPUMSELREG      ldtr;
     /** The task register.
      * Only the guest context uses all the members. */
-    RTSEL           tr;
-    RTSEL           trPadding[3];
-    CPUMSELREGHID   trHid;
+    CPUMSELREG      tr;
 
     /** The sysenter msr registers.
      * This member is not used by the hypervisor context. */

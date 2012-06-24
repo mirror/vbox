@@ -4087,7 +4087,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         RTRCPTR pInstrGCFlat = SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pInstrGC);
         if (pInstrGCFlat != pInstrGC)
         {
-            Log(("PATMR3InstallPatch: code selector not wide open: %04x:%RRv != %RRv eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32));
+            Log(("PATMR3InstallPatch: code selector not wide open: %04x:%RRv != %RRv eflags=%08x\n", pCtx->cs.Sel, pInstrGCFlat, pInstrGC, pCtx->eflags.u32));
             return VERR_PATCHING_REFUSED;
         }
     }
@@ -6104,7 +6104,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
 #ifdef DEBUG
         char szBuf[256];
-        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szBuf, sizeof(szBuf), NULL);
         Log(("DIRTY: %s\n", szBuf));
 #endif
@@ -6167,7 +6167,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             {
 #ifdef DEBUG
                 char szBuf[256];
-                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                    szBuf, sizeof(szBuf), NULL);
                 Log(("NEW:   %s\n", szBuf));
 #endif
@@ -6183,7 +6183,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             {
 #ifdef DEBUG
                 char szBuf[256];
-                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                    szBuf, sizeof(szBuf), NULL);
                 Log(("NEW:   %s (FAILED)\n", szBuf));
 #endif
@@ -6220,7 +6220,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                              *(uint32_t *)&pPatchFillHC[1] = cbFiller - SIZEOF_NEARJUMP32;
 #ifdef DEBUG
                             char szBuf[256];
-                            DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                            DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                                szBuf, sizeof(szBuf), NULL);
                             Log(("FILL:  %s\n", szBuf));
 #endif
@@ -6232,7 +6232,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                                 pPatchFillHC[i] = 0x90; /* NOP */
 #ifdef DEBUG
                                 char szBuf[256];
-                                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC + i,
+                                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC + i,
                                                    DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
                                 Log(("FILL:  %s\n", szBuf));
 #endif
@@ -6424,7 +6424,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         }
 
         char szBuf[256];
-        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pEip, DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
+        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pEip, DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
 
         /* Very bad. We crashed in emitted code. Probably stack? */
         if (pPatch)
@@ -6541,7 +6541,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     }
 
     Log2(("pPatchBlockGC %RRv - pEip %RRv corresponding GC address %RRv\n", PATCHCODE_PTR_GC(&pPatch->patch), pEip, pNewEip));
-    DBGFR3DisasInstrLog(pVCpu, pCtx->cs, pNewEip, "PATCHRET: ");
+    DBGFR3DisasInstrLog(pVCpu, pCtx->cs.Sel, pNewEip, "PATCHRET: ");
     if (pNewEip >= pPatch->patch.pPrivInstrGC && pNewEip < pPatch->patch.pPrivInstrGC + pPatch->patch.cbPatchJump)
     {
         /* We can't jump back to code that we've overwritten with a 5 byte jump! */

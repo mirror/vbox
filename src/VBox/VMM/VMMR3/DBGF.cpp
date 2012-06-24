@@ -587,7 +587,7 @@ VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 #else
         /* @todo SMP support!! */
         PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
-        RTGCPTR  eip = pCtx->rip + pCtx->csHid.u64Base;
+        RTGCPTR  eip = pCtx->rip + pCtx->cs.u64Base;
 #endif
         for (iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
             if (    pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_REM

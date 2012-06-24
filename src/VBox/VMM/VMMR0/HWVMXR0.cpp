@@ -903,21 +903,21 @@ static int hmR0VmxInjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t int
          */
         /** @todo Check stack limit. */
         pCtx->sp -= 2;
-        LogFlow(("ss:sp %04X:%04X eflags=%x\n", pCtx->ss, pCtx->sp, pCtx->eflags.u));
-        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->eflags, sizeof(uint16_t)); AssertRC(rc);
+        LogFlow(("ss:sp %04X:%04X eflags=%x\n", pCtx->ss.Sel, pCtx->sp, pCtx->eflags.u));
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ss.u64Base + pCtx->sp, &pCtx->eflags, sizeof(uint16_t)); AssertRC(rc);
         pCtx->sp -= 2;
-        LogFlow(("ss:sp %04X:%04X cs=%x\n", pCtx->ss, pCtx->sp, pCtx->cs));
-        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->cs, sizeof(uint16_t)); AssertRC(rc);
+        LogFlow(("ss:sp %04X:%04X cs=%x\n", pCtx->ss.Sel, pCtx->sp, pCtx->cs.Sel));
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ss.u64Base + pCtx->sp, &pCtx->cs, sizeof(uint16_t)); AssertRC(rc);
         pCtx->sp -= 2;
-        LogFlow(("ss:sp %04X:%04X ip=%x\n", pCtx->ss, pCtx->sp, ip));
-        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ssHid.u64Base + pCtx->sp, &ip, sizeof(ip)); AssertRC(rc);
+        LogFlow(("ss:sp %04X:%04X ip=%x\n", pCtx->ss.Sel, pCtx->sp, ip));
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pCtx->ss.u64Base + pCtx->sp, &ip, sizeof(ip)); AssertRC(rc);
 
         /*
          * Update the CPU state for executing the handler.
          */
         pCtx->rip           = offset;
-        pCtx->cs            = sel;
-        pCtx->csHid.u64Base = sel << 4;
+        pCtx->cs.Sel        = sel;
+        pCtx->cs.u64Base    = sel << 4;
         pCtx->eflags.u     &= ~(X86_EFL_IF | X86_EFL_TF | X86_EFL_RF | X86_EFL_AC);
 
         pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_SEGMENT_REGS;
@@ -1008,7 +1008,7 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
 
                 rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
                 Log(("CPU%d: Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc cs:rip=%04X:%RGv\n", pVCpu->idCpu,
-                     u8Interrupt, u8Interrupt, rc, pCtx->cs, (RTGCPTR)pCtx->rip));
+                     u8Interrupt, u8Interrupt, rc, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
                 if (RT_SUCCESS(rc))
                 {
                     rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
@@ -1641,23 +1641,23 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                     /*
                      * DPL of all hidden selector registers must match the current CPL (0).
                      */
-                    pCtx->csHid.Attr.n.u2Dpl  = 0;
-                    pCtx->csHid.Attr.n.u4Type = X86_SEL_TYPE_CODE | X86_SEL_TYPE_RW_ACC;
+                    pCtx->cs.Attr.n.u2Dpl  = 0;
+                    pCtx->cs.Attr.n.u4Type = X86_SEL_TYPE_CODE | X86_SEL_TYPE_RW_ACC;
 
-                    pCtx->dsHid.Attr.n.u2Dpl  = 0;
-                    pCtx->esHid.Attr.n.u2Dpl  = 0;
-                    pCtx->fsHid.Attr.n.u2Dpl  = 0;
-                    pCtx->gsHid.Attr.n.u2Dpl  = 0;
-                    pCtx->ssHid.Attr.n.u2Dpl  = 0;
+                    pCtx->ds.Attr.n.u2Dpl  = 0;
+                    pCtx->es.Attr.n.u2Dpl  = 0;
+                    pCtx->fs.Attr.n.u2Dpl  = 0;
+                    pCtx->gs.Attr.n.u2Dpl  = 0;
+                    pCtx->ss.Attr.n.u2Dpl  = 0;
                 }
                 pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = enmGuestMode;
             }
             else if (   CPUMIsGuestInRealModeEx(pCtx)
-                     && pCtx->csHid.u64Base == 0xffff0000)
+                     && pCtx->cs.u64Base == 0xffff0000)
             {
                 /* VT-x will fail with a guest invalid state otherwise... (CPU state after a reset) */
-                pCtx->csHid.u64Base = 0xf0000;
-                pCtx->cs = 0xf000;
+                pCtx->cs.u64Base = 0xf0000;
+                pCtx->cs.Sel     =  0xf000;
             }
         }
 
@@ -1685,7 +1685,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_LDTR)
     {
-        if (pCtx->ldtr == 0)
+        if (pCtx->ldtr.Sel == 0)
         {
             rc =  VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_LDTR,         0);
             rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_LDTR_LIMIT,         0);
@@ -1695,10 +1695,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else
         {
-            rc =  VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_LDTR,         pCtx->ldtr);
-            rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_LDTR_LIMIT,         pCtx->ldtrHid.u32Limit);
-            rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_LDTR_BASE,        pCtx->ldtrHid.u64Base);
-            rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, pCtx->ldtrHid.Attr.u);
+            rc =  VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_LDTR,         pCtx->ldtr.Sel);
+            rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_LDTR_LIMIT,         pCtx->ldtr.u32Limit);
+            rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_LDTR_BASE,        pCtx->ldtr.u64Base);
+            rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, pCtx->ldtr.Attr.u);
         }
         AssertRC(rc);
     }
@@ -1734,11 +1734,11 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else
         {
-            rc =  VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_TR,         pCtx->tr);
-            rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
-            rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_TR_BASE,        pCtx->trHid.u64Base);
+            rc =  VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_TR,         pCtx->tr.Sel);
+            rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_TR_LIMIT,         pCtx->tr.u32Limit);
+            rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_TR_BASE,        pCtx->tr.u64Base);
 
-            val = pCtx->trHid.Attr.u;
+            val = pCtx->tr.Attr.u;
 
             /* The TSS selector must be busy (REM bugs? see defect #XXXX). */
             if (!(val & X86_SEL_TYPE_SYS_TSS_BUSY_MASK))
@@ -2075,9 +2075,9 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_MSR)
         {
             /* Update these as wrmsr might have changed them. */
-            rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_FS_BASE, pCtx->fsHid.u64Base);
+            rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_FS_BASE, pCtx->fs.u64Base);
             AssertRC(rc);
-            rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_GS_BASE, pCtx->gsHid.u64Base);
+            rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_GS_BASE, pCtx->gs.u64Base);
             AssertRC(rc);
         }
     }
@@ -3214,7 +3214,7 @@ ResumeExecution:
         HWACCMDumpRegs(pVM, pVCpu, pCtx);
 #endif
 
-    Log2(("E%d: New EIP=%x:%RGv\n", (uint32_t)exitReason, pCtx->cs, (RTGCPTR)pCtx->rip));
+    Log2(("E%d: New EIP=%x:%RGv\n", (uint32_t)exitReason, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
     Log2(("Exit reason %d, exitQualification %RGv\n", (uint32_t)exitReason, exitQualification));
     Log2(("instrInfo=%d instrError=%d instr length=%d\n", (uint32_t)instrInfo, (uint32_t)instrError, (uint32_t)cbInstr));
     Log2(("Interruption error code %d\n", (uint32_t)errCode));
@@ -3232,7 +3232,7 @@ ResumeExecution:
 
 #ifdef DBGFTRACE_ENABLED /** @todo DTrace later. */
     RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "vmexit %08x %016RX64 at %04:%08RX64 %RX64",
-                      exitReason, (uint64_t)exitQualification, pCtx->cs, pCtx->rip, (uint64_t)intInfo);
+                      exitReason, (uint64_t)exitQualification, pCtx->cs.Sel, pCtx->rip, (uint64_t)intInfo);
 #endif
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatExit1, &pVCpu->hwaccm.s.StatExit2, x);
 
@@ -3444,7 +3444,7 @@ ResumeExecution:
                     rc = VINF_EM_RAW_EMULATE_INSTR;
                     break;
                 }
-                Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip));
+                Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
                 rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                          cbInstr, errCode);
                 AssertRC(rc2);
@@ -3505,7 +3505,7 @@ ResumeExecution:
                     goto ResumeExecution;
                 }
                 /* Return to ring 3 to deal with the debug exit code. */
-                Log(("Debugger hardware BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
+                Log(("Debugger hardware BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs.Sel, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
                 break;
             }
 
@@ -3515,7 +3515,7 @@ ResumeExecution:
                 rc = DBGFRZTrap03Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx));
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
-                    Log(("Guest #BP at %04x:%RGv\n", pCtx->cs, pCtx->rip));
+                    Log(("Guest #BP at %04x:%RGv\n", pCtx->cs.Sel, pCtx->rip));
                     rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                              cbInstr, errCode);
                     AssertRC(rc2);
@@ -3527,7 +3527,7 @@ ResumeExecution:
                     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
-                Log(("Debugger BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
+                Log(("Debugger BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs.Sel, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
                 break;
             }
 
@@ -3541,7 +3541,7 @@ ResumeExecution:
                 if (    !CPUMIsGuestInRealModeEx(pCtx)
                     ||  !pVM->hwaccm.s.vmx.pRealModeTSS)
                 {
-                    Log(("Trap %x at %04X:%RGv errorCode=%RGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, errCode));
+                    Log(("Trap %x at %04X:%RGv errorCode=%RGv\n", vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, errCode));
                     rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                              cbInstr, errCode);
                     AssertRC(rc2);
@@ -3551,7 +3551,7 @@ ResumeExecution:
 #endif
                 Assert(CPUMIsGuestInRealModeEx(pCtx));
 
-                LogFlow(("Real mode X86_XCPT_GP instruction emulation at %x:%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip));
+                LogFlow(("Real mode X86_XCPT_GP instruction emulation at %x:%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
 
                 rc2 = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
                 if (RT_SUCCESS(rc2))
@@ -3694,13 +3694,14 @@ ResumeExecution:
                             break;
                         }
                         pCtx->ip            = aIretFrame[0];
-                        pCtx->cs            = aIretFrame[1];
-                        pCtx->csHid.u64Base = pCtx->cs << 4;
+                        pCtx->cs.Sel        = aIretFrame[1];
+                        pCtx->cs.ValidSel   = aIretFrame[1];
+                        pCtx->cs.u64Base    = (uint32_t)pCtx->cs.Sel << 4;
                         pCtx->eflags.u      =   (pCtx->eflags.u & ~(X86_EFL_POPF_BITS & uMask))
                                               | (aIretFrame[2] & X86_EFL_POPF_BITS & uMask);
                         pCtx->sp           += sizeof(aIretFrame);
 
-                        LogFlow(("iret to %04x:%x\n", pCtx->cs, pCtx->ip));
+                        LogFlow(("iret to %04x:%x\n", pCtx->cs.Sel, pCtx->ip));
                         fUpdateRIP = false;
                         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIret);
                         break;
@@ -3812,7 +3813,7 @@ ResumeExecution:
                         break;
                 }
 
-                Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip));
+                Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
                 rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                          cbInstr, errCode);
                 AssertRC(rc2);
@@ -3826,7 +3827,7 @@ ResumeExecution:
                 if (    CPUMIsGuestInRealModeEx(pCtx)
                     &&  pVM->hwaccm.s.vmx.pRealModeTSS)
                 {
-                    Log(("Real Mode Trap %x at %04x:%04X error code %x\n", vector, pCtx->cs, pCtx->eip, errCode));
+                    Log(("Real Mode Trap %x at %04x:%04X error code %x\n", vector, pCtx->cs.Sel, pCtx->eip, errCode));
                     rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                             cbInstr, errCode);
                     AssertRC(VBOXSTRICTRC_VAL(rc)); /* Strict RC check below. */

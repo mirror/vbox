@@ -682,3 +682,7 @@ IEMAllInstructions.cpp.o  IEMAllInstructions.cpp.obj \
 IEMAllCImpl.cpp.o         IEMAllCImpl.cpp.obj \
 IEMAllCImplStrInstr.cpp.o IEMAllCImplStrInstr.cpp.obj: IEMAll.o
 
+# Alias the switcher templates.
+PAEand32Bit.o PAEand32Bit.obj:                 PAETo32Bit.o   PAEToPAE.o   32BitTo32Bit.o PAETo32Bit.o
+LegacyandAMD64.o LegacyandAMD64.obj:           32BitToAMD64.o PAEToAMD64.o
+AMD64andLegacy.o AMD64andLegacy.obj:           AMD64To32Bit.o AMD64ToPAE.o

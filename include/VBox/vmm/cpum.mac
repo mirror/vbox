@@ -47,36 +47,48 @@ struc CPUMCTXCORE
     .r13                resq    1
     .r14                resq    1
     .r15                resq    1
-    .es                 resw    1
-    .esPadding          resw    3
-    .esHid.u64Base      resq    1
-    .esHid.u32Limit     resd    1
-    .esHid.Attr         resd    1
-    .cs                 resw    1
-    .csPadding          resw    3
-    .csHid.u64Base      resq    1
-    .csHid.u32Limit     resd    1
-    .csHid.Attr         resd    1
-    .ss                 resw    1
-    .ssPadding          resw    3
-    .ssHid.u64Base      resq    1
-    .ssHid.u32Limit     resd    1
-    .ssHid.Attr         resd    1
-    .ds                 resw    1
-    .dsPadding          resw    3
-    .dsHid.u64Base      resq    1
-    .dsHid.u32Limit     resd    1
-    .dsHid.Attr         resd    1
-    .fs                 resw    1
-    .fsPadding          resw    3
-    .fsHid.u64Base      resq    1
-    .fsHid.u32Limit     resd    1
-    .fsHid.Attr         resd    1
-    .gs                 resw    1
-    .gsPadding          resw    3
-    .gsHid.u64Base      resq    1
-    .gsHid.u32Limit     resd    1
-    .gsHid.Attr         resd    1
+    .es.Sel             resw    1
+    .es.PaddingSel      resw    1
+    .es.ValidSel        resw    1
+    .es.fFlags          resw    1
+    .es.u64Base         resq    1
+    .es.u32Limit        resd    1
+    .es.Attr            resd    1
+    .cs.Sel             resw    1
+    .cs.PaddingSel      resw    1
+    .cs.ValidSel        resw    1
+    .cs.fFlags          resw    1
+    .cs.u64Base         resq    1
+    .cs.u32Limit        resd    1
+    .cs.Attr            resd    1
+    .ss.Sel             resw    1
+    .ss.PaddingSel      resw    1
+    .ss.ValidSel        resw    1
+    .ss.fFlags          resw    1
+    .ss.u64Base         resq    1
+    .ss.u32Limit        resd    1
+    .ss.Attr            resd    1
+    .ds.Sel             resw    1
+    .ds.PaddingSel      resw    1
+    .ds.ValidSel        resw    1
+    .ds.fFlags          resw    1
+    .ds.u64Base         resq    1
+    .ds.u32Limit        resd    1
+    .ds.Attr            resd    1
+    .fs.Sel             resw    1
+    .fs.PaddingSel      resw    1
+    .fs.ValidSel        resw    1
+    .fs.fFlags          resw    1
+    .fs.u64Base         resq    1
+    .fs.u32Limit        resd    1
+    .fs.Attr            resd    1
+    .gs.Sel             resw    1
+    .gs.PaddingSel      resw    1
+    .gs.ValidSel        resw    1
+    .gs.fFlags          resw    1
+    .gs.u64Base         resq    1
+    .gs.u32Limit        resd    1
+    .gs.Attr            resd    1
     .eip                resq    1
     .eflags             resq    1
 endstruc
@@ -100,36 +112,48 @@ struc CPUMCTX
     .r13                resq    1
     .r14                resq    1
     .r15                resq    1
-    .es                 resw    1
-    .esPadding          resw    3
-    .esHid.u64Base      resq    1
-    .esHid.u32Limit     resd    1
-    .esHid.Attr         resd    1
-    .cs                 resw    1
-    .csPadding          resw    3
-    .csHid.u64Base      resq    1
-    .csHid.u32Limit     resd    1
-    .csHid.Attr         resd    1
-    .ss                 resw    1
-    .ssPadding          resw    3
-    .ssHid.u64Base      resq    1
-    .ssHid.u32Limit     resd    1
-    .ssHid.Attr         resd    1
-    .ds                 resw    1
-    .dsPadding          resw    3
-    .dsHid.u64Base      resq    1
-    .dsHid.u32Limit     resd    1
-    .dsHid.Attr         resd    1
-    .fs                 resw    1
-    .fsPadding          resw    3
-    .fsHid.u64Base      resq    1
-    .fsHid.u32Limit     resd    1
-    .fsHid.Attr         resd    1
-    .gs                 resw    1
-    .gsPadding          resw    3
-    .gsHid.u64Base      resq    1
-    .gsHid.u32Limit     resd    1
-    .gsHid.Attr         resd    1
+    .es.Sel             resw    1
+    .es.PaddingSel      resw    1
+    .es.ValidSel        resw    1
+    .es.fFlags          resw    1
+    .es.u64Base         resq    1
+    .es.u32Limit        resd    1
+    .es.Attr            resd    1
+    .cs.Sel             resw    1
+    .cs.PaddingSel      resw    1
+    .cs.ValidSel        resw    1
+    .cs.fFlags          resw    1
+    .cs.u64Base         resq    1
+    .cs.u32Limit        resd    1
+    .cs.Attr            resd    1
+    .ss.Sel             resw    1
+    .ss.PaddingSel      resw    1
+    .ss.ValidSel        resw    1
+    .ss.fFlags          resw    1
+    .ss.u64Base         resq    1
+    .ss.u32Limit        resd    1
+    .ss.Attr            resd    1
+    .ds.Sel             resw    1
+    .ds.PaddingSel      resw    1
+    .ds.ValidSel        resw    1
+    .ds.fFlags          resw    1
+    .ds.u64Base         resq    1
+    .ds.u32Limit        resd    1
+    .ds.Attr            resd    1
+    .fs.Sel             resw    1
+    .fs.PaddingSel      resw    1
+    .fs.ValidSel        resw    1
+    .fs.fFlags          resw    1
+    .fs.u64Base         resq    1
+    .fs.u32Limit        resd    1
+    .fs.Attr            resd    1
+    .gs.Sel             resw    1
+    .gs.PaddingSel      resw    1
+    .gs.ValidSel        resw    1
+    .gs.fFlags          resw    1
+    .gs.u64Base         resq    1
+    .gs.u32Limit        resd    1
+    .gs.Attr            resd    1
     .eip                resq    1
     .eflags             resq    1
     .cr0                resq    1
@@ -145,16 +169,20 @@ struc CPUMCTX
     .idtr               resw    0
     .idtr.cbIdt         resw    1
     .idtr.pIdt          resq    1
-    .ldtr               resw    1
-    .ldtrPadding        resw    3
-    .ldtrHid.u64Base    resq    1
-    .ldtrHid.u32Limit   resd    1
-    .ldtrHid.Attr       resd    1
-    .tr                 resw    1
-    .trPadding          resw    3
-    .trHid.u64Base      resq    1
-    .trHid.u32Limit     resd    1
-    .trHid.Attr         resd    1
+    .ldtr.Sel           resw    1
+    .ldtr.PaddingSel    resw    1
+    .ldtr.ValidSel      resw    1
+    .ldtr.fFlags        resw    1
+    .ldtr.u64Base       resq    1
+    .ldtr.u32Limit      resd    1
+    .ldtr.Attr          resd    1
+    .tr.Sel             resw    1
+    .tr.PaddingSel      resw    1
+    .tr.ValidSel        resw    1
+    .tr.fFlags          resw    1
+    .tr.u64Base         resq    1
+    .tr.u32Limit        resd    1
+    .tr.Attr            resd    1
     .SysEnter.cs        resb    8
     .SysEnter.eip       resb    8
     .SysEnter.esp       resb    8
