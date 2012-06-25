@@ -263,6 +263,7 @@
 
 - (NSView*)dockTileScreen;
 - (void)reshapeDockTile;
+- (void)cleanupData;
 @end
 
 /** Helper view.
@@ -668,16 +669,16 @@
     return self;
 }
 
-- (void)dealloc
+- (void)cleanupData
 {
-    DEBUG_MSG(("OVIW(%p): dealloc OverlayView\n", (void*)self));
-
     [self deleteFBO];
 
     if (m_pGLCtx)
     {
         if ([m_pGLCtx view] == self)
             [m_pGLCtx clearDrawable];
+
+        m_pGLCtx = nil;
     }
     if (m_pSharedGLCtx)
     {
@@ -685,9 +686,18 @@
             [m_pSharedGLCtx clearDrawable];
 
         [m_pSharedGLCtx release];
+
+        m_pSharedGLCtx = nil;
     }
 
     [self clearVisibleRegions];
+}
+
+- (void)dealloc
+{
+    DEBUG_MSG(("OVIW(%p): dealloc OverlayView\n", (void*)self));
+
+    [self cleanupData];
 
     [super dealloc];
 }
@@ -700,6 +710,12 @@
 - (void)setGLCtx:(NSOpenGLContext*)pCtx
 {
     DEBUG_MSG(("OVIW(%p): setGLCtx: new ctx: %p\n", (void*)self, (void*)pCtx));
+    if (m_pGLCtx == pCtx)
+        return;
+
+    /* ensure the context drawable is cleared to avoid holding a reference to inexistent view */
+    if (m_pGLCtx)
+        [m_pGLCtx clearDrawable];
 
     m_pGLCtx = pCtx;
 }
@@ -1778,15 +1794,26 @@ void cocoaViewDestroy(NativeNSViewRef pView)
     [[NSNotificationCenter defaultCenter] removeObserver:pWin];
     [pWin setContentView: nil];
     [[pWin parentWindow] removeChildWindow: pWin];
+    
     /*
     a = [pWin retainCount];
     for (; a > 1; --a)
         [pWin performSelector:@selector(release)]
     */
+    /* We can NOT run synchronously with the main thread since this may lead to a deadlock,
+       caused by main thread waiting xpcom thread, xpcom thread waiting to main hgcm thread,
+       and main hgcm thread waiting for us, this is why use waitUntilDone:NO, 
+       which should cause no harm */ 
     [pWin performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
     /*
     [pWin release];
     */
+
+    /* We can NOT run synchronously with the main thread since this may lead to a deadlock,
+       caused by main thread waiting xpcom thread, xpcom thread waiting to main hgcm thread,
+       and main hgcm thread waiting for us, this is why use waitUntilDone:NO. 
+       We need to avoid concurrency though, so we cleanup some data right away via a cleanupData call */
+    [(OverlayView*)pView cleanupData];
 
     /* There seems to be a bug in the performSelector method which is called in
      * parentWindowChanged above. The object is retained but not released. This
