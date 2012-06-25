@@ -235,7 +235,7 @@ typedef struct CPUMCTX
 
     /** @name General Register.
      * @note  These follow the encoding order (X86_GREG_XXX) and can be accessed as
-     *        an array starting a rax.
+     *        an array starting at rax.
      * @{ */
     union
     {
@@ -303,7 +303,7 @@ typedef struct CPUMCTX
 
     /** @name Segment registers.
      * @note These follow the encoding order (X86_SREG_XXX) and can be accessed as
-     *       an array starting a es.
+     *       an array starting at es.
      * @{  */
     CPUMSELREG          es;
     CPUMSELREG          cs;
