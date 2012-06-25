@@ -1020,6 +1020,7 @@
 # define RTRandAdvCreateParkMiller                      RT_MANGLER(RTRandAdvCreateParkMiller)
 # define RTRandAdvCreateSystemFaster                    RT_MANGLER(RTRandAdvCreateSystemFaster)
 # define RTRandAdvCreateSystemTruer                     RT_MANGLER(RTRandAdvCreateSystemTruer)
+# define RTRandAdvCreateOpenssl                         RT_MANGLER(RTRandAdvCreateOpenssl)
 # define RTRandAdvDestroy                               RT_MANGLER(RTRandAdvDestroy)
 # define RTRandAdvRestoreState                          RT_MANGLER(RTRandAdvRestoreState)
 # define RTRandAdvS32                                   RT_MANGLER(RTRandAdvS32)

@@ -150,6 +150,17 @@ RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW;
 RTDECL(int) RTRandAdvCreateSystemFaster(PRTRAND phRand) RT_NO_THROW;
 
 /**
+ * Create an instance of the openssl random number generator.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED on platforms which doesn't have this feature.
+ *
+ * @param   phRand      Where to store the handle to the generator.
+ *
+ */
+RTDECL(int) RTRandAdvCreateOpenssl(PRTRAND phRand) RT_NO_THROW;
+
+/**
  * Create an instance of the truer random number generator for the OS.
  *
  * Don't use this unless you seriously need good random numbers because most
