@@ -131,7 +131,25 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     //Log(("N: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(Desc)), X86DESC_LIMIT(Desc), (Desc.au32[1] >> 8) & 0xFFFF ));
     *pShadowDescr = Desc;
 
-    /* Check if we change the LDT selector */
+    /*
+     * Detect and mark stale registers.
+     */
+    PCPUMCTX    pCtx      = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMSELREG paSRegCtx = &pCtx->es;
+    PCPUMSELREG paSRegFrm = &pRegFrame->es;
+    for (unsigned i = 0; i <= X86_SREG_GS; i++)
+        if (Sel == (paSRegFrm[i].Sel & X86_SEL_MASK))
+        {
+            /** @todo we clear the valid flag here, maybe we shouldn't... but that would
+             *        require implementing handling of stale registers in raw-mode.
+             *        Tricky, at least for SS and CS. */
+            paSRegFrm[i].fFlags = CPUMSELREG_FLAGS_STALE;
+            paSRegCtx[i].fFlags = CPUMSELREG_FLAGS_STALE;
+        }
+
+    /*
+     * Check if we change the LDT selector.
+     */
     if (Sel == CPUMGetGuestLDTR(pVCpu)) /** @todo this isn't correct in two(+) ways! 1. It shouldn't be done until the LDTR is reloaded. 2. It caused the next instruction to be emulated.  */
     {
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
@@ -152,6 +170,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     else if (Sel == (pRegFrame->ss.Sel & X86_SEL_MASK))
         Log(("GDT write to selector in SS register %04X\n", pRegFrame->ss.Sel));
 #endif
+
     return VINF_SUCCESS;
 }
 
