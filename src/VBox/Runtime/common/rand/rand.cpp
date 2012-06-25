@@ -61,9 +61,7 @@ static RTRAND g_hRand = NIL_RTRAND;
 static DECLCALLBACK(int) rtRandInitOnce(void *pvUser1, void *pvUser2)
 {
     RTRAND hRand;
-    int rc = RTRandAdvCreateOpenssl(&hRand);
-    if (RT_FAILURE(rc))
-        rc = RTRandAdvCreateSystemFaster(&hRand);
+    int rc = RTRandAdvCreateSystemFaster(&hRand);
     if (RT_FAILURE(rc))
         rc = RTRandAdvCreateParkMiller(&hRand);
     if (RT_SUCCESS(rc))
