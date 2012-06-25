@@ -42,9 +42,9 @@
 static DECLCALLBACK(void) rtRandAdvOpensslGetBytes(PRTRANDINT pThis, uint8_t *pb, size_t cb)
 {
     /** @todo proper error handling? */
-    int rc = RAND_bytes(pb, cb);
+    int rc = RAND_bytes(pb, (int)cb);
     if (RT_UNLIKELY(rc != 1))
-        rc = RAND_pseudo_bytes(pb, cb);
+        rc = RAND_pseudo_bytes(pb, (int)cb);
     AssertReleaseMsg(rc == 1, ("RAND_bytes returned %d (error %d)\n", rc, ERR_get_error()));
 }
 
