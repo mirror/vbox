@@ -386,7 +386,7 @@ GLOBALNAME FarJmpGCTarget
 
     ; Setup stack.
     DEBUG_CHAR('3')
-    mov     eax, [edx + CPUMCPU.Hyper.ss]
+    mov     eax, [edx + CPUMCPU.Hyper.ss.Sel]
     mov     ss, ax
     mov     esp, [edx + CPUMCPU.Hyper.esp]
 
@@ -395,11 +395,11 @@ GLOBALNAME FarJmpGCTarget
     FIXUP FIX_GC_TSS_GDTE_DW2, 2
     and     dword [0ffffffffh], ~0200h      ; clear busy flag (2nd type2 bit)
     DEBUG_CHAR('5')
-    ltr     word [edx + CPUMCPU.Hyper.tr]
+    ltr     word [edx + CPUMCPU.Hyper.tr.Sel]
     DEBUG_CHAR('6')
 
     ; Activate the ldt (now we can safely crash).
-    lldt    [edx + CPUMCPU.Hyper.ldtr]
+    lldt    [edx + CPUMCPU.Hyper.ldtr.Sel]
     DEBUG_CHAR('7')
 
     ;; use flags.
@@ -653,18 +653,18 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     mov     [edx + CPUMCPU.Guest.esi], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.edi]
     mov     [edx + CPUMCPU.Guest.edi], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.es]
-    mov     dword [edx + CPUMCPU.Guest.es], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.cs]
-    mov     dword [edx + CPUMCPU.Guest.cs], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.ss]
-    mov     dword [edx + CPUMCPU.Guest.ss], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.ds]
-    mov     dword [edx + CPUMCPU.Guest.ds], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.fs]
-    mov     dword [edx + CPUMCPU.Guest.fs], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.gs]
-    mov     dword [edx + CPUMCPU.Guest.gs], eax
+    mov     eax, dword [esp + 4 + CPUMCTXCORE.es.Sel]
+    mov     dword [edx + CPUMCPU.Guest.es.Sel], eax
+    mov     eax, dword [esp + 4 + CPUMCTXCORE.cs.Sel]
+    mov     dword [edx + CPUMCPU.Guest.cs.Sel], eax
+    mov     eax, dword [esp + 4 + CPUMCTXCORE.ss.Sel]
+    mov     dword [edx + CPUMCPU.Guest.ss.Sel], eax
+    mov     eax, dword [esp + 4 + CPUMCTXCORE.ds.Sel]
+    mov     dword [edx + CPUMCPU.Guest.ds.Sel], eax
+    mov     eax, dword [esp + 4 + CPUMCTXCORE.fs.Sel]
+    mov     dword [edx + CPUMCPU.Guest.fs.Sel], eax
+    mov     eax, dword [esp + 4 + CPUMCTXCORE.gs.Sel]
+    mov     dword [edx + CPUMCPU.Guest.gs.Sel], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.eflags]
     mov     dword [edx + CPUMCPU.Guest.eflags], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.eip]
@@ -733,18 +733,18 @@ BEGINPROC VMMGCGuestToHostAsmHyperCtx
     mov     eax, [ecx + CPUMCTXCORE.esp]
     mov     [edx + CPUMCPU.Hyper.esp], eax
     ; selectors
-    mov     eax, [ecx + CPUMCTXCORE.ss]
-    mov     [edx + CPUMCPU.Hyper.ss], eax
-    mov     eax, [ecx + CPUMCTXCORE.gs]
-    mov     [edx + CPUMCPU.Hyper.gs], eax
-    mov     eax, [ecx + CPUMCTXCORE.fs]
-    mov     [edx + CPUMCPU.Hyper.fs], eax
-    mov     eax, [ecx + CPUMCTXCORE.es]
-    mov     [edx + CPUMCPU.Hyper.es], eax
-    mov     eax, [ecx + CPUMCTXCORE.ds]
-    mov     [edx + CPUMCPU.Hyper.ds], eax
-    mov     eax, [ecx + CPUMCTXCORE.cs]
-    mov     [edx + CPUMCPU.Hyper.cs], eax
+    mov     eax, [ecx + CPUMCTXCORE.ss.Sel]
+    mov     [edx + CPUMCPU.Hyper.ss.Sel], eax
+    mov     eax, [ecx + CPUMCTXCORE.gs.Sel]
+    mov     [edx + CPUMCPU.Hyper.gs.Sel], eax
+    mov     eax, [ecx + CPUMCTXCORE.fs.Sel]
+    mov     [edx + CPUMCPU.Hyper.fs.Sel], eax
+    mov     eax, [ecx + CPUMCTXCORE.es.Sel]
+    mov     [edx + CPUMCPU.Hyper.es.Sel], eax
+    mov     eax, [ecx + CPUMCTXCORE.ds.Sel]
+    mov     [edx + CPUMCPU.Hyper.ds.Sel], eax
+    mov     eax, [ecx + CPUMCTXCORE.cs.Sel]
+    mov     [edx + CPUMCPU.Hyper.cs.Sel], eax
     ; flags
     mov     eax, [ecx + CPUMCTXCORE.eflags]
     mov     [edx + CPUMCPU.Hyper.eflags], eax
@@ -807,7 +807,7 @@ vmmGCGuestToHostAsm_EIPDone:
     ; special registers which may change.
 vmmGCGuestToHostAsm_SkipHyperRegs:
     ; str     [edx + CPUMCPU.Hyper.tr] - double fault only, and it won't be right then either.
-    sldt    [edx + CPUMCPU.Hyper.ldtr]
+    sldt    [edx + CPUMCPU.Hyper.ldtr.Sel]
 
     ; No need to save CRx here. They are set dynamically according to Guest/Host requirements.
     ; FPU context is saved before restore of host saving (another) branch.

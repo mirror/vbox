@@ -382,7 +382,7 @@ GLOBALNAME ICEnterTarget
     ; Setup stack.
     DEBUG_CHAR('7')
     mov     rsp, 0
-    mov     eax, [rdx + CPUMCPU.Hyper.ss]
+    mov     eax, [rdx + CPUMCPU.Hyper.ss.Sel]
     mov     ss, ax
     mov     esp, [rdx + CPUMCPU.Hyper.esp]
 
