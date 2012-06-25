@@ -589,7 +589,7 @@ static int crVBoxHGCMCall(CRConnection *conn, void *pvData, unsigned cbData)
 {
 #ifdef IN_GUEST
 # if defined(VBOX_WITH_CRHGSMI)
-    PCRVBOXHGSMI_CLIENT pClient = _crVBoxHGSMIClientGet(conn);
+    PCRVBOXHGSMI_CLIENT pClient = g_crvboxhgcm.bHgsmiOn ? _crVBoxHGSMIClientGet(conn) : NULL;
     if (pClient)
     {
         return VBoxCrHgsmiCtlConCall(pClient->pHgsmi, (struct VBoxGuestHGCMCallInfo *)pvData, cbData);
