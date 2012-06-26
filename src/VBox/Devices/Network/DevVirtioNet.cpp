@@ -317,7 +317,48 @@ DECLINLINE(void) vnetPacketDump(PVNETSTATE pState, const uint8_t *cpPacket, size
 #endif
 }
 
+/**
+ * Print features given in uFeatures to debug log.
+ *
+ * @param   pState      The device state structure.
+ * @param   uFeatures   Descriptions of which features to print.
+ * @param   pcszText    A string to print before the list of features.
+ */
+DECLINLINE(void) vnetPrintFeatures(PVNETSTATE pState, uint32_t uFeatures, const char *pcszText)
+{
+#ifdef DEBUG
+    static struct
+    {
+        uint32_t uMask;
+        const char *pcszDesc;
+    } aFeatures[] = {
+        { VNET_F_CSUM,       "host handles pkts w/ partial csum" },
+        { VNET_F_GUEST_CSUM, "guest handles pkts w/ partial csum" },
+        { VNET_F_MAC,        "host has given MAC address" },
+        { VNET_F_GSO,        "host handles pkts w/ any GSO type" },
+        { VNET_F_GUEST_TSO4, "guest can handle TSOv4 in" },
+        { VNET_F_GUEST_TSO6, "guest can handle TSOv6 in" },
+        { VNET_F_GUEST_ECN,  "guest can handle TSO[6] w/ ECN in" },
+        { VNET_F_GUEST_UFO,  "guest can handle UFO in" },
+        { VNET_F_HOST_TSO4,  "host can handle TSOv4 in" },
+        { VNET_F_HOST_TSO6,  "host can handle TSOv6 in" },
+        { VNET_F_HOST_ECN,   "host can handle TSO[6] w/ ECN in" },
+        { VNET_F_HOST_UFO,   "host can handle UFO in" },
+        { VNET_F_MRG_RXBUF,  "host can merge receive buffers" },
+        { VNET_F_STATUS,     "virtio_net_config.status available" },
+        { VNET_F_CTRL_VQ,    "control channel available" },
+        { VNET_F_CTRL_RX,    "control channel RX mode support" },
+        { VNET_F_CTRL_VLAN,  "control channel VLAN filtering" }
+    };
 
+    Log3(("%s %s:\n", INSTANCE(pState), pcszText));
+    for (unsigned i = 0; i < RT_ELEMENTS(aFeatures); ++i)
+    {
+        if (aFeatures[i].uMask & uFeatures)
+            Log3(("%s --> %s\n", INSTANCE(pState), aFeatures[i].pcszDesc));
+    }
+#endif /* DEBUG */
+}
 
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
 {
@@ -339,6 +380,9 @@ PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
         | VNET_F_HOST_TSO4
         | VNET_F_HOST_TSO6
         | VNET_F_HOST_UFO
+        | VNET_F_GUEST_TSO4
+        | VNET_F_GUEST_TSO6
+        | VNET_F_GUEST_UFO
 #endif
 #ifdef VNET_WITH_MERGEABLE_RX_BUFS
         | VNET_F_MRG_RXBUF
@@ -356,6 +400,7 @@ PDMBOTHCBDECL(void) vnetSetHostFeatures(void *pvState, uint32_t uFeatures)
     // TODO: Nothing to do here yet
     VNETSTATE *pState = (VNETSTATE *)pvState;
     LogFlow(("%s vnetSetHostFeatures: uFeatures=%x\n", INSTANCE(pState), uFeatures));
+    vnetPrintFeatures(pState, uFeatures, "The guest negotiated the following features");
 }
 
 PDMBOTHCBDECL(int) vnetGetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
@@ -855,6 +900,34 @@ static DECLCALLBACK(int) vnetNetworkDown_ReceiveGso(PPDMINETWORKDOWN pInterface,
                                                     PCPDMNETWORKGSO pGso)
 {
     VNETSTATE *pState = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
+
+    if (pGso)
+    {
+        uint32_t uFeatures = pState->VPCI.uGuestFeatures;
+
+        switch (pGso->u8Type)
+        {
+            case PDMNETWORKGSOTYPE_IPV4_TCP:
+                uFeatures &= VNET_F_GUEST_TSO4;
+                break;
+            case PDMNETWORKGSOTYPE_IPV6_TCP:
+                uFeatures &= VNET_F_GUEST_TSO6;
+                break;
+            case PDMNETWORKGSOTYPE_IPV4_UDP:
+            case PDMNETWORKGSOTYPE_IPV6_UDP:
+                uFeatures &= VNET_F_GUEST_UFO;
+                break;
+            default:
+                uFeatures = 0;
+                break;
+        }
+        if (!uFeatures)
+        {
+            Log2(("%s vnetNetworkDown_ReceiveGso: GSO type (0x%x) not supported\n",
+                  INSTANCE(pState), pGso->u8Type));
+            return VERR_NOT_SUPPORTED;
+        }
+    }
 
     Log2(("%s vnetNetworkDown_ReceiveGso: pvBuf=%p cb=%u pGso=%p\n",
           INSTANCE(pState), pvBuf, cb, pGso));
@@ -1979,6 +2052,9 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
     Log(("%s Link up delay is set to %u seconds\n",
          INSTANCE(pState), pState->cMsLinkUpDelay / 1000));
+
+
+    vnetPrintFeatures(pState, vnetGetHostFeatures(pState), "Device supports the following features");
 
     /* Initialize PCI config space */
     memcpy(pState->config.mac.au8, pState->macConfigured.au8, sizeof(pState->config.mac.au8));
