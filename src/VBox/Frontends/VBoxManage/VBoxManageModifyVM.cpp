@@ -179,6 +179,9 @@ enum
     MODIFYVM_FAULT_TOLERANCE_PASSWORD,
     MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL,
     MODIFYVM_CPU_EXECTUION_CAP,
+    MODIFYVM_AUTOSTART_ENABLED,
+    MODIFYVM_AUTOSTART_DELAY,
+    MODIFYVM_AUTOSTOP_TYPE,
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     MODIFYVM_ATTACH_PCI,
     MODIFYVM_DETACH_PCI,
@@ -321,6 +324,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancepassword",   MODIFYVM_FAULT_TOLERANCE_PASSWORD,  RTGETOPT_REQ_STRING },
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
+    { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
+    { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
+    { "--autostop-type",            MODIFYVM_AUTOSTOP_TYPE,             RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     { "--pciattach",                MODIFYVM_ATTACH_PCI,                RTGETOPT_REQ_STRING },
     { "--pcidetach",                MODIFYVM_DETACH_PCI,                RTGETOPT_REQ_STRING },
@@ -2361,6 +2367,40 @@ int handleModifyVM(HandlerArg *a)
                     errorArgument("Invalid --chipset argument '%s' (valid: piix3,ich9)", ValueUnion.psz);
                     rc = E_FAIL;
                 }
+                break;
+            }
+            case MODIFYVM_AUTOSTART_ENABLED:
+            {
+                CHECK_ERROR(machine, COMSETTER(AutostartEnabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_AUTOSTART_DELAY:
+            {
+                AutostopType_T enmAutostopType = AutostopType_Disabled;
+
+                if (!RTStrICmp(ValueUnion.psz, "disabled"))
+                    enmAutostopType = AutostopType_Disabled;
+                else if (!RTStrICmp(ValueUnion.psz, "savestate"))
+                    enmAutostopType = AutostopType_SaveState;
+                else if (!RTStrICmp(ValueUnion.psz, "poweroff"))
+                    enmAutostopType = AutostopType_PowerOff;
+                else if (!RTStrICmp(ValueUnion.psz, "acpishutdown"))
+                    enmAutostopType = AutostopType_AcpiShutdown;
+                else
+                {
+                    errorArgument("Invalid --autostop-type argument '%s' (valid: disabled, savestate, poweroff, acpishutdown)", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+
+                if (SUCCEEDED(rc))
+                    CHECK_ERROR(machine, COMSETTER(AutostopType)(enmAutostopType));
+                break;
+            }
+
+            case MODIFYVM_AUTOSTOP_TYPE:
+            {
+                CHECK_ERROR(machine, COMSETTER(AutostopType)(ValueUnion.u32));
                 break;
             }
 #ifdef VBOX_WITH_PCI_PASSTHROUGH

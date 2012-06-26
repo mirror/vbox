@@ -390,7 +390,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         ULONG u32; \
         CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf(a_szHuman "=%u", u32); \
+            RTPrintf(a_szMachine "=%u\n", u32); \
         else \
             RTPrintf("%-16s %u" a_szUnit "\n", a_szHuman ":", u32); \
     } while (0)
@@ -678,6 +678,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     SHOW_BOOLEAN_PROP(    machine,  TracingEnabled,             "tracing-enabled",          "Tracing Enabled");
     SHOW_BOOLEAN_PROP(    machine,  AllowTracingToAccessVM,     "tracing-allow-vm-access",  "Allow Tracing to Access VM");
     SHOW_STRING_PROP(     machine,  TracingConfig,              "tracing-config",           "Tracing Configuration");
+    SHOW_BOOLEAN_PROP(    machine,  AutostartEnabled,           "autostart-enabled",        "Autostart Enabled");
+    SHOW_ULONG_PROP(      machine,  AutostartDelay,             "autostart-delay",          "Autostart Delay", "");
 
 /** @todo Convert the remainder of the function to SHOW_XXX macros and add error
  *        checking where missing. */
