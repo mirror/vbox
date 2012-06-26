@@ -1762,6 +1762,7 @@ bool Snapshot::operator==(const Snapshot &s) const
                   && (storage               == s.storage)                   // deep compare
                   && (llChildSnapshots      == s.llChildSnapshots)          // deep compare
                   && debugging              == s.debugging
+                  && autostart              == s.autostart
                 )
            );
 }
@@ -3197,6 +3198,31 @@ void MachineConfigFile::readDebugging(const xml::ElementNode *pElmDebugging, Deb
 }
 
 /**
+ * Called for reading the <Autostart> element under <Machine> or <Snapshot>.
+ */
+void MachineConfigFile::readAutostart(const xml::ElementNode *pElmAutostart, Autostart *pAutostart)
+{
+    Utf8Str strAutostop;
+
+    if (!pElmAutostart || m->sv < SettingsVersion_v1_13)
+        return;
+
+    pElmAutostart->getAttributeValue("enabled", pAutostart->fAutostartEnabled);
+    pElmAutostart->getAttributeValue("delay", pAutostart->uAutostartDelay);
+    pElmAutostart->getAttributeValue("autostop", strAutostop);
+    if (strAutostop == "Disabled")
+        pAutostart->enmAutostopType = AutostopType_Disabled;
+    else if (strAutostop == "SaveState")
+        pAutostart->enmAutostopType = AutostopType_SaveState;
+    else if (strAutostop == "PowerOff")
+        pAutostart->enmAutostopType = AutostopType_PowerOff;
+    else if (strAutostop == "AcpiShutdown")
+        pAutostart->enmAutostopType = AutostopType_AcpiShutdown;
+    else
+        throw ConfigFileError(this, pElmAutostart, N_("Invalid value '%s' for Autostart/@autostop attribute"), strAutostop.c_str());
+}
+
+/**
  * Called initially for the <Snapshot> element under <Machine>, if present,
  * to store the snapshot's data into the given Snapshot structure (which is
  * then the one in the Machine struct). This might then recurse if
@@ -3270,6 +3296,7 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
         readDVDAndFloppies_pre1_9(*pelmHardware, snap.storage);
 
     readDebugging(elmSnapshot.findChildElement("Debugging"), &snap.debugging);
+    readAutostart(elmSnapshot.findChildElement("Autostart"), &snap.autostart);
 }
 
 const struct {
@@ -3420,6 +3447,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 readMediaRegistry(*pelmMachineChild, mediaRegistry);
             else if (pelmMachineChild->nameEquals("Debugging"))
                 readDebugging(pelmMachineChild, &debugging);
+            else if (pelmMachineChild->nameEquals("Autostart"))
+                readAutostart(pelmMachineChild, &autostart);
         }
 
         if (m->sv < SettingsVersion_v1_9)
@@ -4372,6 +4401,35 @@ void MachineConfigFile::buildDebuggingXML(xml::ElementNode *pElmParent, const De
 }
 
 /**
+ * Creates a <Autostart> node under elmParent and then writes out the XML
+ * keys under that. Called for both the <Machine> node and for snapshots.
+ *
+ * @param pElmParent    Pointer to the parent element.
+ * @param pAutostart    Pointer to the autostart settings.
+ */
+void MachineConfigFile::buildAutostartXML(xml::ElementNode *pElmParent, const Autostart *pAutostart)
+{
+    const char *pcszAutostop = NULL;
+
+    if (m->sv < SettingsVersion_v1_13 || pAutostart->areDefaultSettings())
+        return;
+
+    xml::ElementNode *pElmAutostart = pElmParent->createChild("Autostart");
+    pElmAutostart->setAttribute("enabled", pAutostart->fAutostartEnabled);
+    pElmAutostart->setAttribute("delay", pAutostart->uAutostartDelay);
+
+    switch (pAutostart->enmAutostopType)
+    {
+        case AutostopType_Disabled:     pcszAutostop = "Disabled";     break;
+        case AutostopType_SaveState:    pcszAutostop = "SaveState";    break;
+        case AutostopType_PowerOff:     pcszAutostop = "PowerOff";     break;
+        case AutostopType_AcpiShutdown: pcszAutostop = "AcpiShutdown"; break;
+        default:         Assert(false); pcszAutostop = "Disabled";     break;
+    }
+    pElmAutostart->setAttribute("autostop", pcszAutostop);
+}
+
+/**
  * Writes a single snapshot into the DOM tree. Initially this gets called from MachineConfigFile::write()
  * for the root snapshot of a machine, if present; elmParent then points to the <Snapshots> node under the
  * <Machine> node to which <Snapshot> must be added. This may then recurse for child snapshots.
@@ -4401,6 +4459,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
                                     // we only skip removable media for OVF, but we never get here for OVF
                                     // since snapshots never get written then
     buildDebuggingXML(pelmSnapshot, &snap.debugging);
+    buildAutostartXML(pelmSnapshot, &snap.autostart);
 
     if (snap.llChildSnapshots.size())
     {
@@ -4549,6 +4608,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
                                !!(fl & BuildMachineXML_SkipRemovableMedia),
                                pllElementsWithUuidAttributes);
     buildDebuggingXML(&elmMachine, &debugging);
+    buildAutostartXML(&elmMachine, &autostart);
 }
 
 /**
@@ -4666,8 +4726,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_13)
     {
-        // VirtualBox 4.2 adds tracing.
-        if (!debugging.areDefaultSettings())
+        // VirtualBox 4.2 adds tracing and autostart.
+        if (   !debugging.areDefaultSettings()
+            || !autostart.areDefaultSettings())
             m->sv = SettingsVersion_v1_13;
     }
 

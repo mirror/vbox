@@ -299,6 +299,7 @@ public:
         PciDeviceAssignmentList mPciDeviceAssignments;
 
         settings::Debugging  mDebugging;
+        settings::Autostart  mAutostart;
     };
 
     /**
@@ -476,6 +477,12 @@ public:
     STDMETHOD(COMSETTER(TracingConfig))(IN_BSTR bstrConfig);
     STDMETHOD(COMGETTER(AllowTracingToAccessVM))(BOOL *pfAllow);
     STDMETHOD(COMSETTER(AllowTracingToAccessVM))(BOOL fAllow);
+    STDMETHOD(COMGETTER(AutostartEnabled))(BOOL *pfEnabled);
+    STDMETHOD(COMSETTER(AutostartEnabled))(BOOL fEnabled);
+    STDMETHOD(COMGETTER(AutostartDelay))(ULONG *puDelay);
+    STDMETHOD(COMSETTER(AutostartDelay))(ULONG uDelay);
+    STDMETHOD(COMGETTER(AutostopType))(AutostopType_T *penmAutostopType);
+    STDMETHOD(COMSETTER(AutostopType))(AutostopType_T enmAutostopType);
 
     // IMachine methods
     STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);
@@ -794,8 +801,10 @@ protected:
     HRESULT loadSnapshot(const settings::Snapshot &data,
                          const Guid &aCurSnapshotId,
                          Snapshot *aParentSnapshot);
-    HRESULT loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg);
+    HRESULT loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg,
+                         const settings::Autostart *pAutostart);
     HRESULT loadDebugging(const settings::Debugging *pDbg);
+    HRESULT loadAutostart(const settings::Autostart *pAutostart);
     HRESULT loadStorageControllers(const settings::Storage &data,
                                    const Guid *puuidRegistry,
                                    const Guid *puuidSnapshot);
@@ -835,7 +844,8 @@ protected:
 
     void copyMachineDataToSettings(settings::MachineConfigFile &config);
     HRESULT saveAllSnapshots(settings::MachineConfigFile &config);
-    HRESULT saveHardware(settings::Hardware &data, settings::Debugging *pDbg);
+    HRESULT saveHardware(settings::Hardware &data, settings::Debugging *pDbg,
+                         settings::Autostart *pAutostart);
     HRESULT saveStorageControllers(settings::Storage &data);
     HRESULT saveStorageDevices(ComObjPtr<StorageController> aStorageController,
                                settings::StorageController &data);
@@ -1205,6 +1215,7 @@ public:
     HRESULT initFromSettings(Machine *aMachine,
                              const settings::Hardware &hardware,
                              const settings::Debugging *pDbg,
+                             const settings::Autostart *pAutostart,
                              const settings::Storage &storage,
                              IN_GUID aSnapshotId,
                              const Utf8Str &aStateFilePath);
