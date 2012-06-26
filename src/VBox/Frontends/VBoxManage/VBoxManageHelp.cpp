@@ -338,6 +338,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #ifdef VBOX_WITH_USB_CARDREADER
                      "                            [--usbcardreader on|off]\n"
 #endif
+                     "                            [--autostart-enabled on|off]\n"
+                     "                            [--autostart-delay <seconds>]\n"
+                     "                            [--autostop-type disabled|savestate|poweroff|acpishutdown]\n"
                      "\n");
     }
 
