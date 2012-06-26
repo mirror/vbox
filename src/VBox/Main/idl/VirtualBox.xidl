@@ -3666,10 +3666,34 @@
 
   </enum>
 
+  <enum
+    name="AutostopType" extends="$unknown"
+    uuid="6bb96740-cf34-470d-aab2-2cd48ea2e10e"
+    >
+
+    <desc>
+    Autostop types, used with <link to="IMachine::autostopType" />.
+    </desc>
+
+    <const name="Disabled"           value="1">
+      <desc>Stopping the VM during system shutdown is disabled.</desc>
+    </const>
+    <const name="SaveState"          value="2">
+      <desc>The state of the VM will be saved when the system shuts down.</desc>
+    </const>
+    <const name="PowerOff"           value="3">
+      <desc>The VM is powered off when the system shuts down.</desc>
+    </const>
+    <const name="AcpiShutdown"       value="4">
+      <desc>An ACPI shutdown event is generated.</desc>
+    </const>
+
+  </enum>
+
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="e7c78fee-f20d-4b4f-ac28-37af30d79ddf"
+    uuid="d6406544-910e-43b2-a8fb-5528e56ce3b4"
     wsmap="managed"
     >
     <desc>
@@ -4318,6 +4342,24 @@
         This is disabled by default because devices and drivers normally has no
         business accessing the VMCPU or VM structures, and are therefore unable
         to get any pointers to these.
+      </desc>
+    </attribute>
+
+    <attribute name="autostartEnabled" type="boolean">
+      <desc>
+        Enables autostart of the VM during system boot.
+      </desc>
+    </attribute>
+
+    <attribute name="autostartDelay" type="unsigned long">
+      <desc>
+        Number of seconds to wait until the VM should be started during system boot.
+      </desc>
+    </attribute>
+
+    <attribute name="autostopType" type="AutostopType">
+      <desc>
+        Action type to do when the system is shutting down.
       </desc>
     </attribute>
 

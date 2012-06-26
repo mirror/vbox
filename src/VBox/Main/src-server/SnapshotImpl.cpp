@@ -772,7 +772,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
     else
         data.strStateFile.setNull();
 
-    HRESULT rc = m->pMachine->saveHardware(data.hardware, &data.debugging);
+    HRESULT rc = m->pMachine->saveHardware(data.hardware, &data.debugging, &data.autostart);
     if (FAILED(rc)) return rc;
 
     rc = m->pMachine->saveStorageControllers(data.storage);
@@ -1080,6 +1080,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
 HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
                                           const settings::Hardware &hardware,
                                           const settings::Debugging *pDbg,
+                                          const settings::Autostart *pAutostart,
                                           const settings::Storage &storage,
                                           IN_GUID aSnapshotId,
                                           const Utf8Str &aStateFilePath)
@@ -1156,7 +1157,7 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     /* load hardware and harddisk settings */
 
-    HRESULT rc = loadHardware(hardware, pDbg);
+    HRESULT rc = loadHardware(hardware, pDbg, pAutostart);
     if (SUCCEEDED(rc))
         rc = loadStorageControllers(storage,
                                     NULL, /* puuidRegistry */

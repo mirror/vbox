@@ -946,6 +946,36 @@ struct Debugging
     com::Utf8Str            strTracingConfig;
 };
 
+/**
+ * Settings that has to do with autostart.
+ */
+struct Autostart
+{
+    Autostart()
+        : fAutostartEnabled(false),
+          uAutostartDelay(0),
+          enmAutostopType(AutostopType_Disabled)
+    { }
+
+    bool operator==(const Autostart &rOther) const
+    {
+        return fAutostartEnabled == rOther.fAutostartEnabled
+            && uAutostartDelay   == rOther.uAutostartDelay
+            && enmAutostopType   == rOther.enmAutostopType;
+    }
+
+    bool areDefaultSettings() const
+    {
+        return !fAutostartEnabled
+            && !uAutostartDelay
+            && enmAutostopType == AutostopType_Disabled;
+    }
+
+    bool                    fAutostartEnabled;
+    uint32_t                uAutostartDelay;
+    AutostopType_T          enmAutostopType;
+};
+
 struct Snapshot;
 typedef std::list<Snapshot> SnapshotsList;
 
@@ -969,6 +999,7 @@ struct Snapshot
     Storage         storage;
 
     Debugging       debugging;
+    Autostart       autostart;
 
     SnapshotsList   llChildSnapshots;
 };
@@ -1047,6 +1078,7 @@ public:
     Storage                 storageMachine;
     MediaRegistry           mediaRegistry;
     Debugging               debugging;
+    Autostart               autostart;
 
     StringsMap              mapExtraDataItems;
 
@@ -1092,7 +1124,8 @@ private:
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
     void readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware, Storage &strg);
     void readTeleporter(const xml::ElementNode *pElmTeleporter, MachineUserData *pUserData);
-    void readDebugging(const xml::ElementNode *pElmTeleporter, Debugging *pDbg);
+    void readDebugging(const xml::ElementNode *pElmDbg, Debugging *pDbg);
+    void readAutostart(const xml::ElementNode *pElmAutostart, Autostart *pAutostart);
     void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
@@ -1104,6 +1137,7 @@ private:
                                     bool fSkipRemovableMedia,
                                     std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
     void buildDebuggingXML(xml::ElementNode *pElmParent, const Debugging *pDbg);
+    void buildAutostartXML(xml::ElementNode *pElmParent, const Autostart *pAutostart);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
     void bumpSettingsVersionIfNeeded();

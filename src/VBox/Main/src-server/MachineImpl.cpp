@@ -6547,6 +6547,107 @@ STDMETHODIMP Machine::COMSETTER(AllowTracingToAccessVM)(BOOL fAllow)
     return hrc;
 }
 
+STDMETHODIMP Machine::COMGETTER(AutostartEnabled)(BOOL *pfEnabled)
+{
+    CheckComArgOutPointerValid(pfEnabled);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        *pfEnabled = mHWData->mAutostart.fAutostartEnabled;
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(AutostartEnabled)(BOOL fEnabled)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mHWData.backupEx();
+            if (SUCCEEDED(hrc))
+            {
+                setModified(IsModified_MachineData);
+                mHWData->mAutostart.fAutostartEnabled = fEnabled != FALSE;
+            }
+        }
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMGETTER(AutostartDelay)(ULONG *puDelay)
+{
+    CheckComArgOutPointerValid(puDelay);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        *puDelay = mHWData->mAutostart.uAutostartDelay;
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(AutostartDelay)(ULONG uDelay)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mHWData.backupEx();
+            if (SUCCEEDED(hrc))
+            {
+                setModified(IsModified_MachineData);
+                mHWData->mAutostart.uAutostartDelay = uDelay;
+            }
+        }
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMGETTER(AutostopType)(AutostopType_T *penmAutostopType)
+{
+    CheckComArgOutPointerValid(penmAutostopType);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        *penmAutostopType = mHWData->mAutostart.enmAutostopType;
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(AutostopType)(AutostopType_T enmAutostopType)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mHWData.backupEx();
+            if (SUCCEEDED(hrc))
+            {
+                setModified(IsModified_MachineData);
+                mHWData->mAutostart.enmAutostopType = enmAutostopType;
+            }
+        }
+    }
+    return hrc;
+}
 
 
 STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayIn(CloneOptions_T, options), IProgress **pProgress)
@@ -7892,7 +7993,7 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     }
 
     // hardware data
-    rc = loadHardware(config.hardwareMachine, &config.debugging);
+    rc = loadHardware(config.hardwareMachine, &config.debugging, &config.autostart);
     if (FAILED(rc)) return rc;
 
     // load storage controllers
@@ -7963,6 +8064,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
     rc = pSnapshotMachine->initFromSettings(this,
                                             data.hardware,
                                             &data.debugging,
+                                            &data.autostart,
                                             data.storage,
                                             data.uuid.ref(),
                                             strStateFile);
@@ -8010,10 +8112,12 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
 /**
  *  Loads settings into mHWData.
  *
- *  @param data     Reference to the hardware settings.
- *  @param pDbg     Pointer to the debugging settings.
+ *  @param data           Reference to the hardware settings.
+ *  @param pDbg           Pointer to the debugging settings.
+ *  @param pAutostart     Pointer to the autostart settings.
  */
-HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg)
+HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg,
+                              const settings::Autostart *pAutostart)
 {
     AssertReturn(!isSessionMachine(), E_FAIL);
 
@@ -8265,6 +8369,8 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         rc = loadDebugging(pDbg);
         if (FAILED(rc))
             return rc;
+
+        mHWData->mAutostart = *pAutostart;
     }
     catch(std::bad_alloc &)
     {
@@ -9105,7 +9211,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.fAborted = (mData->mMachineState == MachineState_Aborted);
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
 
-    HRESULT rc = saveHardware(config.hardwareMachine, &config.debugging);
+    HRESULT rc = saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
     if (FAILED(rc)) throw rc;
 
     rc = saveStorageControllers(config.storageMachine);
@@ -9178,11 +9284,14 @@ HRESULT Machine::saveAllSnapshots(settings::MachineConfigFile &config)
  *  Saves the VM hardware configuration. It is assumed that the
  *  given node is empty.
  *
- *  @param data     Reference to the settings object for the hardware config.
- *  @param pDbg     Pointer to the settings object for the debugging config
- *                  which happens to live in mHWData.
+ *  @param data           Reference to the settings object for the hardware config.
+ *  @param pDbg           Pointer to the settings object for the debugging config
+ *                        which happens to live in mHWData.
+ *  @param pAutostart     Pointer to the settings object for the autostart config
+ *                        which happens to live in mHWData.
  */
-HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDbg)
+HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDbg,
+                              settings::Autostart *pAutostart)
 {
     HRESULT rc = S_OK;
 
@@ -9416,6 +9525,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
         *pDbg = mHWData->mDebugging;
+        *pAutostart = mHWData->mAutostart;
     }
     catch(std::bad_alloc &)
     {
