@@ -445,6 +445,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
  */
 VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
 #ifdef VBOX_WITH_IEM
     NOREF(pvFault);
@@ -500,6 +501,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten)
 {
     LogFlow(("EMInterpretInstructionEx %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 #ifdef VBOX_WITH_IEM
     NOREF(pvFault);
     VBOXSTRICTRC rc = IEMExecOneEx(pVCpu, pRegFrame, pcbWritten);
@@ -563,6 +565,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTAT
                                                        RTGCPTR pvFault, EMCODETYPE enmCodeType)
 {
     LogFlow(("EMInterpretInstructionDisasState %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 #ifdef VBOX_WITH_IEM
     NOREF(pDis); NOREF(pvFault); NOREF(enmCodeType);
     VBOXSTRICTRC rc = IEMExecOneWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip, pDis->abInstr, pDis->cbCachedInstr);
@@ -605,6 +608,7 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
     RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs, uMask;
     int         rc;
 
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     Assert(!CPUMIsGuestIn64BitCode(pVCpu, pRegFrame));
     /** @todo Rainy day: Test what happens when VERR_EM_INTERPRETER is returned by
      *        this function.  Fear that it may guru on us, thus not converted to
@@ -670,6 +674,7 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
  */
 VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint32_t iLeaf = pRegFrame->eax;
     NOREF(pVM);
 
@@ -697,6 +702,7 @@ VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  */
 VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     unsigned uCR4 = CPUMGetGuestCR4(pVCpu);
 
     if (uCR4 & X86_CR4_TSD)
@@ -723,7 +729,8 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  */
 VMMDECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    unsigned uCR4 = CPUMGetGuestCR4(pVCpu);
+    Assert(pCtx == CPUMQueryGuestCtxPtr(pVCpu));
+    uint32_t uCR4 = CPUMGetGuestCR4(pVCpu);
 
     if (!CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
     {
@@ -757,7 +764,8 @@ VMMDECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMDECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
-    unsigned uCR4 = CPUMGetGuestCR4(pVCpu);
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
+    uint32_t uCR4 = CPUMGetGuestCR4(pVCpu);
 
     /* If X86_CR4_PCE is not set, then CPL must be zero. */
     if (    !(uCR4 & X86_CR4_PCE)
@@ -782,6 +790,7 @@ VMMDECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  */
 VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint32_t u32Dummy, u32ExtFeatures, cpl, u32MWaitFeatures;
     NOREF(pVM);
 
@@ -821,6 +830,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
 VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32ExtFeatures, cpl;
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     NOREF(pVM);
 
     if (pRegFrame->ecx != 0)
@@ -861,6 +871,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     /** @todo is addr always a flat linear address or ds based
      * (in absence of segment override prefixes)????
      */
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     NOREF(pVM); NOREF(pRegFrame);
 #ifdef IN_RC
     LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
@@ -896,6 +907,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
 
     /** @todo Clean up this mess. */
     LogFlow(("EMInterpretCRxWrite at %RGv CR%d <- %RX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     switch (DestRegCrx)
     {
     case DISCREG_CR0:
@@ -1031,6 +1043,7 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
 {
     uint64_t val;
     int      rc;
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 
     if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
     {
@@ -1061,6 +1074,7 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  */
 VMMDECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint64_t OldCr0 = CPUMGetGuestCR0(pVCpu);
 
     /* Only PE, MP, EM and TS can be changed; note that PE can't be cleared by this instruction. */
@@ -1083,6 +1097,7 @@ VMMDECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint
 VMMDECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
 {
     NOREF(pVM);
+
     uint64_t cr0 = CPUMGetGuestCR0(pVCpu);
     if (!(cr0 & X86_CR0_TS))
         return VINF_SUCCESS;
@@ -1103,6 +1118,7 @@ VMMDECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
  */
 VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint64_t val64;
     int rc = CPUMGetGuestCRx(pVCpu, SrcRegCrx, &val64);
     AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
@@ -1135,6 +1151,7 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
  */
 VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint64_t val;
     int      rc;
     NOREF(pVM);
@@ -1176,6 +1193,7 @@ VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
 VMMDECL(int) EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
 {
     uint64_t val64;
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     NOREF(pVM);
 
     int rc = CPUMGetGuestDRx(pVCpu, SrcRegDrx, &val64);
@@ -3026,6 +3044,8 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  */
 VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
+
     /* Check the current privilege level, this instruction is supervisor only. */
     if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
         return VERR_EM_INTERPRETER; /** @todo raise \#GP(0) */

@@ -2107,6 +2107,8 @@
 #define VERR_IEM_IPE_1                              (-5392)
 /** Internal processing error \#2 in the IEM code.. */
 #define VERR_IEM_IPE_2                              (-5393)
+/** Internal processing error \#3 in the IEM code.. */
+#define VERR_IEM_IPE_3                              (-5394)
 /** @} */
 
 
