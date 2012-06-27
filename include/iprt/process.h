@@ -363,6 +363,21 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
  */
 RTR3DECL(bool)  RTProcIsRunningByName(const char *pszName);
 
+/**
+ * Query the username of the given process.
+ *
+ * @returns IPRT status code.
+ * @retval VERR_BUFFER_OVERFLOW if the given buffer size is to small for the username.
+ * @param   hProcess     The process handle to query the username for.
+ * @param   pszUser      Where to store the user name on success.
+ * @param   cbUser       The size of the user name buffer.
+ * @param   pcbUser      Where to store the username length on success
+ *                       or the required buffer size if VERR_BUFFER_OVERFLOW
+ *                       is returned.
+ */
+RTR3DECL(int)   RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser,
+                                    size_t *pcbUser);
+
 #endif /* IN_RING3 */
 
 /** @} */
