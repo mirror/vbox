@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -594,171 +594,6 @@ ENDPROC vmmGCGuestToHost
 
 
 ;;
-; VMMGCGuestToHostAsmGuestCtx
-;
-; Switches from Guest Context to Host Context.
-; Of course it's only called from within the GC.
-;
-; @param    eax     Return code.
-; @param    esp + 4 Pointer to CPUMCTXCORE.
-;
-; @remark   ASSUMES interrupts disabled.
-;
-ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsmGuestCtx
-    DEBUG_CHAR('~')
-
-%ifdef VBOX_WITH_STATISTICS
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalInGC
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_STOP edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalGCToQemu
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_START edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToHC
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_START edx
-%endif
-
-    ;
-    ; Load the CPUMCPU pointer.
-    ;
-    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
-    mov     edx, 0ffffffffh
-
-    ; Skip return address (assumes called!)
-    lea     esp, [esp + 4]
-
-    ;
-    ; Guest Context (assumes esp now points to CPUMCTXCORE structure).
-    ;
-    ; general purpose registers.
-    push    eax
-
-    mov     eax, [esp + 4 + CPUMCTXCORE.eax]
-    mov     [edx + CPUMCPU.Guest.eax], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.ecx]
-    mov     [edx + CPUMCPU.Guest.ecx], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.edx]
-    mov     [edx + CPUMCPU.Guest.edx], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.ebx]
-    mov     [edx + CPUMCPU.Guest.ebx], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.esp]
-    mov     [edx + CPUMCPU.Guest.esp], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.ebp]
-    mov     [edx + CPUMCPU.Guest.ebp], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.esi]
-    mov     [edx + CPUMCPU.Guest.esi], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.edi]
-    mov     [edx + CPUMCPU.Guest.edi], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.es.Sel]
-    mov     dword [edx + CPUMCPU.Guest.es.Sel], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.cs.Sel]
-    mov     dword [edx + CPUMCPU.Guest.cs.Sel], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.ss.Sel]
-    mov     dword [edx + CPUMCPU.Guest.ss.Sel], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.ds.Sel]
-    mov     dword [edx + CPUMCPU.Guest.ds.Sel], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.fs.Sel]
-    mov     dword [edx + CPUMCPU.Guest.fs.Sel], eax
-    mov     eax, dword [esp + 4 + CPUMCTXCORE.gs.Sel]
-    mov     dword [edx + CPUMCPU.Guest.gs.Sel], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.eflags]
-    mov     dword [edx + CPUMCPU.Guest.eflags], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.eip]
-    mov     dword [edx + CPUMCPU.Guest.eip], eax
-    pop     eax
-
-    add     esp, CPUMCTXCORE_size      ; skip CPUMCTXCORE structure
-
-    jmp     vmmGCGuestToHostAsm_EIPDone
-ENDPROC VMMGCGuestToHostAsmGuestCtx
-
-
-;;
-; VMMGCGuestToHostAsmHyperCtx
-;
-; This is an alternative entry point which we'll be using
-; when the we have the hypervisor context and need to save
-; that before going to the host.
-;
-; This is typically useful when abandoning the hypervisor
-; because of a trap and want the trap state to be saved.
-;
-; @param    eax     Return code.
-; @param    ecx     Points to CPUMCTXCORE.
-; @uses     eax,edx,ecx
-ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsmHyperCtx
-    DEBUG_CHAR('#')
-
-%ifdef VBOX_WITH_STATISTICS
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalInGC
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_STOP edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalGCToQemu
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_START edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToHC
-    mov     edx, 0ffffffffh
-    STAM_PROFILE_ADV_START edx
-%endif
-
-    ;
-    ; Load the CPUM pointer.
-    ;
-    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
-    mov     edx, 0ffffffffh
-
-    push    eax                         ; save return code.
-    ; general purpose registers
-    mov     eax, [ecx + CPUMCTXCORE.edi]
-    mov     [edx + CPUMCPU.Hyper.edi], eax
-    mov     eax, [ecx + CPUMCTXCORE.esi]
-    mov     [edx + CPUMCPU.Hyper.esi], eax
-    mov     eax, [ecx + CPUMCTXCORE.ebp]
-    mov     [edx + CPUMCPU.Hyper.ebp], eax
-    mov     eax, [ecx + CPUMCTXCORE.eax]
-    mov     [edx + CPUMCPU.Hyper.eax], eax
-    mov     eax, [ecx + CPUMCTXCORE.ebx]
-    mov     [edx + CPUMCPU.Hyper.ebx], eax
-    mov     eax, [ecx + CPUMCTXCORE.edx]
-    mov     [edx + CPUMCPU.Hyper.edx], eax
-    mov     eax, [ecx + CPUMCTXCORE.ecx]
-    mov     [edx + CPUMCPU.Hyper.ecx], eax
-    mov     eax, [ecx + CPUMCTXCORE.esp]
-    mov     [edx + CPUMCPU.Hyper.esp], eax
-    ; selectors
-    mov     eax, [ecx + CPUMCTXCORE.ss.Sel]
-    mov     [edx + CPUMCPU.Hyper.ss.Sel], eax
-    mov     eax, [ecx + CPUMCTXCORE.gs.Sel]
-    mov     [edx + CPUMCPU.Hyper.gs.Sel], eax
-    mov     eax, [ecx + CPUMCTXCORE.fs.Sel]
-    mov     [edx + CPUMCPU.Hyper.fs.Sel], eax
-    mov     eax, [ecx + CPUMCTXCORE.es.Sel]
-    mov     [edx + CPUMCPU.Hyper.es.Sel], eax
-    mov     eax, [ecx + CPUMCTXCORE.ds.Sel]
-    mov     [edx + CPUMCPU.Hyper.ds.Sel], eax
-    mov     eax, [ecx + CPUMCTXCORE.cs.Sel]
-    mov     [edx + CPUMCPU.Hyper.cs.Sel], eax
-    ; flags
-    mov     eax, [ecx + CPUMCTXCORE.eflags]
-    mov     [edx + CPUMCPU.Hyper.eflags], eax
-    ; eip
-    mov     eax, [ecx + CPUMCTXCORE.eip]
-    mov     [edx + CPUMCPU.Hyper.eip], eax
-    ; jump to common worker code.
-    pop     eax                         ; restore return code.
-    jmp     vmmGCGuestToHostAsm_SkipHyperRegs
-
-ENDPROC VMMGCGuestToHostAsmHyperCtx
-
-
-;;
 ; VMMGCGuestToHostAsm
 ;
 ; This is an alternative entry point which we'll be using
@@ -793,10 +628,7 @@ BEGINPROC VMMGCGuestToHostAsm
     mov     edx, 0ffffffffh
 
     pop     dword [edx + CPUMCPU.Hyper.eip] ; call return from stack
-    jmp short vmmGCGuestToHostAsm_EIPDone
 
-ALIGNCODE(16)
-vmmGCGuestToHostAsm_EIPDone:
     ; general registers which we care about.
     mov     dword [edx + CPUMCPU.Hyper.ebx], ebx
     mov     dword [edx + CPUMCPU.Hyper.esi], esi
@@ -805,7 +637,6 @@ vmmGCGuestToHostAsm_EIPDone:
     mov     dword [edx + CPUMCPU.Hyper.esp], esp
 
     ; special registers which may change.
-vmmGCGuestToHostAsm_SkipHyperRegs:
     ; str     [edx + CPUMCPU.Hyper.tr] - double fault only, and it won't be right then either.
     sldt    [edx + CPUMCPU.Hyper.ldtr.Sel]
 
@@ -1091,8 +922,6 @@ GLOBALNAME Def
         at VMMSWITCHERDEF.offGCGuestToHost,             dd NAME(vmmGCGuestToHost)           - NAME(Start)
         at VMMSWITCHERDEF.offGCCallTrampoline,          dd NAME(vmmGCCallTrampoline)        - NAME(Start)
         at VMMSWITCHERDEF.offGCGuestToHostAsm,          dd NAME(VMMGCGuestToHostAsm)        - NAME(Start)
-        at VMMSWITCHERDEF.offGCGuestToHostAsmHyperCtx,  dd NAME(VMMGCGuestToHostAsmHyperCtx)- NAME(Start)
-        at VMMSWITCHERDEF.offGCGuestToHostAsmGuestCtx,  dd NAME(VMMGCGuestToHostAsmGuestCtx)- NAME(Start)
         ; disasm help
         at VMMSWITCHERDEF.offHCCode0,                   dd 0
 %ifdef NEED_ID

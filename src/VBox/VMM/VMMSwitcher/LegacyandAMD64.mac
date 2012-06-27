@@ -2,7 +2,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -659,39 +659,7 @@ GLOBALNAME ICExitTarget
     retf
 ENDPROC VMMGCGuestToHostAsm
 
-;;
-; VMMGCGuestToHostAsmHyperCtx
-;
-; This is an alternative entry point which we'll be using
-; when the we have the hypervisor context and need to save
-; that before going to the host.
-;
-; This is typically useful when abandoning the hypervisor
-; because of a trap and want the trap state to be saved.
-;
-; @param    eax     Return code.
-; @param    ecx     Points to CPUMCTXCORE.
-; @uses     eax,edx,ecx
-ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsmHyperCtx
-     int3
 
-;;
-; VMMGCGuestToHostAsmGuestCtx
-;
-; Switches from Guest Context to Host Context.
-; Of course it's only called from within the GC.
-;
-; @param    eax     Return code.
-; @param    esp + 4 Pointer to CPUMCTXCORE.
-;
-; @remark   ASSUMES interrupts disabled.
-;
-ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsmGuestCtx
-      int3
-
-GLOBALNAME End
 ;
 ; The description string (in the text section).
 ;
@@ -723,8 +691,6 @@ GLOBALNAME Def
         at VMMSWITCHERDEF.offGCGuestToHost,             dd NAME(vmmGCGuestToHost)           - NAME(Start)
         at VMMSWITCHERDEF.offGCCallTrampoline,          dd NAME(vmmGCCallTrampoline)        - NAME(Start)
         at VMMSWITCHERDEF.offGCGuestToHostAsm,          dd NAME(VMMGCGuestToHostAsm)        - NAME(Start)
-        at VMMSWITCHERDEF.offGCGuestToHostAsmHyperCtx,  dd NAME(VMMGCGuestToHostAsmHyperCtx)- NAME(Start)
-        at VMMSWITCHERDEF.offGCGuestToHostAsmGuestCtx,  dd NAME(VMMGCGuestToHostAsmGuestCtx)- NAME(Start)
         ; disasm help
         at VMMSWITCHERDEF.offHCCode0,                   dd 0
         at VMMSWITCHERDEF.cbHCCode0,                    dd NAME(IDEnterTarget)              - NAME(Start)

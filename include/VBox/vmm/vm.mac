@@ -54,15 +54,7 @@ struc VM
     .uCpuExecutionCap       resd 1
     .cbSelf                 resd 1
     .offVMCPU               resd 1
-    .u32Reserved            resd 5
-
-    .pfnVMMGCGuestToHostAsmGuestCtx RTRCPTR_RES 1
-    .pfnVMMGCGuestToHostAsmHyperCtx RTRCPTR_RES 1
-    .pfnVMMGCGuestToHostAsm         RTRCPTR_RES 1
-
-    .uPadding1              RTHCPTR_RES 1
-    .uPadding2              RTHCPTR_RES 1
-
+    .pfnVMMGCGuestToHostAsm resd 1
     .fRecompileUser         resb 1
     .fRecompileSupervisor   resb 1
     .fPATMEnabled           resb 1
@@ -73,7 +65,6 @@ struc VM
     .fUseLargePages         resb 1
 
     .hTraceBufRC            RTRCPTR_RES 1
-    .uPadding3              resd 1
     .hTraceBufR3            RTR3PTR_RES 1
     .hTraceBufR0            RTR0PTR_RES 1
 
@@ -101,9 +92,9 @@ struc VM
  %error "Missing HC_ARCH_BITS"
 %endif
 %if HC_ARCH_BITS == 32
-    .abAlignment1           resb 30
+    .abAlignment3           resb 24
 %else
-;    .abAlignment1           resb 0
+;    .abAlignment3           resb 16
 %endif
 
     alignb 64
