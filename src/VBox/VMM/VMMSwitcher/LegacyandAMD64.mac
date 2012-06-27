@@ -660,6 +660,7 @@ GLOBALNAME ICExitTarget
 ENDPROC VMMGCGuestToHostAsm
 
 
+GLOBALNAME End
 ;
 ; The description string (in the text section).
 ;
