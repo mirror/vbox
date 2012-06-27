@@ -205,6 +205,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetShaderHWID(GLuint id)
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetProgramHWID(GLuint id)
 {
     CRGLSLProgram *pProgram = crStateGetProgramObj(id);
+    CRASSERT(!pProgram || pProgram->hwid == id);
     return pProgram ? pProgram->hwid : 0;
 }
 
