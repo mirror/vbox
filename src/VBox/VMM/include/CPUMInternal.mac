@@ -429,13 +429,7 @@ struc CPUMCPU
     .u32RetCode           resd    1
     .fRawEntered          resb    1
     .fRemEntered          resb    1
-
-%if RTHCPTR_CB == 8
-    .abPadding2           resb    46
-%else
-    .abPadding2           resb    48
-%endif
-
+    .abPadding2           resb    (64 - 16 - 2)
 endstruc
 
 
