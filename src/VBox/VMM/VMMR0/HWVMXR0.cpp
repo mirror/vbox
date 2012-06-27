@@ -3340,7 +3340,7 @@ ResumeExecution:
                     &&  pVM->hwaccm.s.pGuestPatchMem
                     &&  (exitQualification & 0xfff) == 0x080
                     &&  !(errCode & X86_TRAP_PF_P)  /* not present */
-                    &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
+                    &&  CPUMGetGuestCPL(pVCpu) == 0
                     &&  !CPUMIsGuestInLongModeEx(pCtx)
                     &&  pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches))
                 {

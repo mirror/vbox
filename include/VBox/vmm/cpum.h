@@ -413,7 +413,7 @@ VMMDECL(bool)           CPUMIsGuestDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateGuestDebugState(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsHyperDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateHyperDebugState(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
+VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 

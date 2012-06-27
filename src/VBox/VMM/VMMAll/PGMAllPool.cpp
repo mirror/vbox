@@ -763,7 +763,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->Param1.fUse,  pDis->Param1.Base.idxGenReg));
 
     /* Non-supervisor mode write means it's used for something else. */
-    if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
+    if (CPUMGetGuestCPL(pVCpu) != 0)
         return true;
 
     switch (pDis->pCurInstr->uOpcode)

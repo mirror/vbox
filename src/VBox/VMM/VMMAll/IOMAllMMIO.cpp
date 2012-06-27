@@ -2064,7 +2064,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
     }
 
     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
-    uint32_t const cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+    uint32_t const cpl = CPUMGetGuestCPL(pVCpu);
     rc2 = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
                           X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
     if (rc2 != VINF_SUCCESS)
@@ -2226,7 +2226,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
     }
 
     /* Access verification first; we currently can't recover properly from traps inside this instruction */
-    uint32_t const cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+    uint32_t const cpl = CPUMGetGuestCPL(pVCpu);
     rc2 = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
                           (cpl == 3) ? X86_PTE_US : 0);
     if (rc2 != VINF_SUCCESS)

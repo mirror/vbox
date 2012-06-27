@@ -961,7 +961,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu);
 
     if (pCtx->eflags.Bits.u1VM)
         Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs.Sel, pCtx->eip, pCtx->eflags.Bits.u1IF));

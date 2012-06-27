@@ -3558,7 +3558,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
     uint32_t uErr;
 
     /* Get the current privilege level. */
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pCtxCore);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu);
     switch (rc)
     {
         case VINF_SUCCESS:
@@ -3747,7 +3747,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
      * Raise a #PF if we're allowed to do that.
      */
     /* Calc the error bits. */
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pCtxCore);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu);
     uint32_t uErr;
     switch (rc)
     {
@@ -3833,7 +3833,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
         {
             if (    (fFlags & X86_PTE_RW)                   /** @todo Also check reserved bits. */
                 ||  (   !(CPUMGetGuestCR0(pVCpu) & X86_CR0_WP)
-                     &&   CPUMGetGuestCPL(pVCpu, pCtxCore) <= 2) ) /** @todo it's 2, right? Check cpl check below as well. */
+                     &&   CPUMGetGuestCPL(pVCpu) <= 2) ) /** @todo it's 2, right? Check cpl check below as well. */
             {
                 void *pvDst;
                 PGMPAGEMAPLOCK Lock;
@@ -3886,7 +3886,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
                 if (    (   (fFlags1 & X86_PTE_RW)  /** @todo Also check reserved bits. */
                          && (fFlags2 & X86_PTE_RW))
                     ||  (   !(CPUMGetGuestCR0(pVCpu) & X86_CR0_WP)
-                         &&   CPUMGetGuestCPL(pVCpu, pCtxCore) <= 2) )
+                         &&   CPUMGetGuestCPL(pVCpu) <= 2) )
                 {
                     void *pvDst;
                     PGMPAGEMAPLOCK Lock;
@@ -3952,7 +3952,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
      */
     /* Calc the error bits. */
     uint32_t uErr;
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pCtxCore);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu);
     switch (rc)
     {
         case VINF_SUCCESS:

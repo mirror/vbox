@@ -437,7 +437,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
             goto failure;
 
         /* Get the current privilege level. */
-        cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+        cpl = CPUMGetGuestCPL(pVCpu);
 
         /*
          * BIG TODO: The checks are not complete. see trap and interrupt dispatching section in Intel docs for details

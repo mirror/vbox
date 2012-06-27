@@ -769,7 +769,7 @@ VMMDECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 
     /* If X86_CR4_PCE is not set, then CPL must be zero. */
     if (    !(uCR4 & X86_CR4_PCE)
-        &&  CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
+        &&  CPUMGetGuestCPL(pVCpu) != 0)
     {
         Assert(CPUMGetGuestCR0(pVCpu) & X86_CR0_PE);
         return VERR_EM_INTERPRETER; /* genuine #GP */
@@ -795,7 +795,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
     NOREF(pVM);
 
     /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVCpu);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -840,7 +840,7 @@ VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     }
 
     /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVCpu);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -2268,7 +2268,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
         rc = PGMVerifyAccess(pVCpu, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)),
                              cTransfers * cbSize,
-                             X86_PTE_RW | (CPUMGetGuestCPL(pVCpu, pRegFrame) == 3 ? X86_PTE_US : 0));
+                             X86_PTE_RW | (CPUMGetGuestCPL(pVCpu) == 3 ? X86_PTE_US : 0));
         if (rc != VINF_SUCCESS)
         {
             Log(("STOSWD will generate a trap -> recompiler, rc=%d\n", rc));
@@ -3004,7 +3004,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     NOREF(pVM);
 
     /* Get the current privilege level. */
-    if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
+    if (CPUMGetGuestCPL(pVCpu) != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
     uint64_t uValue;
@@ -3047,7 +3047,7 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 
     /* Check the current privilege level, this instruction is supervisor only. */
-    if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
+    if (CPUMGetGuestCPL(pVCpu) != 0)
         return VERR_EM_INTERPRETER; /** @todo raise \#GP(0) */
 
     int rc = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
@@ -3091,7 +3091,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
          * And no complicated prefixes.
          */
         /* Get the current privilege level. */
-        uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+        uint32_t cpl = CPUMGetGuestCPL(pVCpu);
         if (    cpl != 0
             &&  pDis->pCurInstr->uOpcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
         {
