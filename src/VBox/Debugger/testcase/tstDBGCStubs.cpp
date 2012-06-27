@@ -365,11 +365,6 @@ VMMDECL(RTSEL) CPUMGetHyperCS(PVMCPU pVCpu)
     return 0xfff8;
 }
 
-VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
-{
-    return NULL;
-}
-
 VMMDECL(uint32_t) CPUMGetHyperEIP(PVMCPU pVCpu)
 {
     return 0;
@@ -378,11 +373,6 @@ VMMDECL(uint32_t) CPUMGetHyperEIP(PVMCPU pVCpu)
 VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
 {
     return NULL;
-}
-
-VMMDECL(int) CPUMQueryHyperCtxPtr(PVMCPU pVCpu, PCPUMCTX *ppCtx)
-{
-    return VERR_INTERNAL_ERROR;
 }
 
 

@@ -423,11 +423,6 @@ struc CPUMCPU
     ;
     ; Other stuff.
     ;
-    ; hypervisor core context.
-    .pHyperCoreR3         RTR3PTR_RES   1
-    .pHyperCoreR0         RTR0PTR_RES   1
-    .pHyperCoreRC         RTRCPTR_RES   1
-
     .fUseFlags            resd    1
     .fChanged             resd    1
     .offCPUM              resd    1
@@ -436,9 +431,9 @@ struc CPUMCPU
     .fRemEntered          resb    1
 
 %if RTHCPTR_CB == 8
-    .abPadding2           resb    26
+    .abPadding2           resb    46
 %else
-    .abPadding2           resb    34
+    .abPadding2           resb    48
 %endif
 
 endstruc

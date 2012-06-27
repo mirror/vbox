@@ -368,13 +368,6 @@ typedef struct CPUMCPU
      */
     CPUMCTXMSRS             GuestMsrs;
 
-    /** Pointer to the current hypervisor core context - R3Ptr. */
-    R3PTRTYPE(PCPUMCTXCORE) pHyperCoreR3;
-    /** Pointer to the current hypervisor core context - R0Ptr. */
-    R0PTRTYPE(PCPUMCTXCORE) pHyperCoreR0;
-    /** Pointer to the current hypervisor core context - RCPtr. */
-    RCPTRTYPE(PCPUMCTXCORE) pHyperCoreRC;
-
     /** Use flags.
      * These flags indicates both what is to be used and what has been used.
      */
@@ -400,7 +393,7 @@ typedef struct CPUMCPU
     bool                    fRemEntered;
 
     /** Align the structure on a 64-byte boundary. */
-    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 34 : 26];
+    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 48 : 46];
 } CPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
