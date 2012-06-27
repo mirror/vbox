@@ -853,7 +853,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCo
      * If this isn't ring-0, we have to check for I/O privileges.
      */
     uint32_t efl = CPUMRawGetEFlags(pVCpu, pCtxCore);
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pCtxCore);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu);
 
     if (    (    cpl > 0
              &&  X86_EFL_GET_IOPL(efl) < cpl)

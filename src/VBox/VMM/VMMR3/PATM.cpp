@@ -4082,7 +4082,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
 
     /* Make sure the code selector is wide open; otherwise refuse. */
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-    if (CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0)
+    if (CPUMGetGuestCPL(pVCpu) == 0)
     {
         RTRCPTR pInstrGCFlat = SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pInstrGC);
         if (pInstrGCFlat != pInstrGC)

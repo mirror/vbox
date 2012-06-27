@@ -536,7 +536,6 @@ static const REMPARMDESC g_aArgsIsPageAccessHandled[] =
 static const REMPARMDESC g_aArgsCPUMGetGuestCpl[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTXCORE),       NULL },
 };
 
 /* CPUMQueryGuestMsr args */

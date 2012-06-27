@@ -510,7 +510,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (TRPMHasTrap(pVCpu))
             Log(("CPU%d: Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", pVCpu->idCpu, TRPMGetTrapNo(pVCpu), pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
 
-        uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
+        uint32_t cpl = CPUMGetGuestCPL(pVCpu);
 
         if (pVM->cCpus == 1)
         {

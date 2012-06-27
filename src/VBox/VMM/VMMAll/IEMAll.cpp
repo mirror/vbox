@@ -628,7 +628,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
-    pIemCpu->uCpl               = CPUMGetGuestCPL(IEMCPU_TO_VMCPU(pIemCpu), CPUMCTX2CORE(pCtx));
+    pIemCpu->uCpl               = CPUMGetGuestCPL(IEMCPU_TO_VMCPU(pIemCpu));
     IEMMODE enmMode = CPUMIsGuestIn64BitCodeEx(pCtx)
                     ? IEMMODE_64BIT
                     : pCtx->cs.Attr.n.u1DefBig /** @todo check if this is correct... */

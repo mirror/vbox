@@ -864,7 +864,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0)
         if (   !GstWalk.Core.fEffectiveUS
-            && CPUMGetGuestCPL(pVCpu, pRegFrame) == 0)
+            && CPUMGetGuestCPL(pVCpu) == 0)
         {
             /* Note: Can't check for X86_TRAP_ID bit, because that requires execute disable support on the CPU. */
             if (    pvFault == (RTGCPTR)pRegFrame->eip
@@ -980,7 +980,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
              */
             if (    !GstWalk.Core.fEffectiveRW
                 &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG
-                &&  CPUMGetGuestCPL(pVCpu, pRegFrame) == 0)
+                &&  CPUMGetGuestCPL(pVCpu) == 0)
             {
                 Assert((uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_P)) == (X86_TRAP_PF_RW | X86_TRAP_PF_P));
                 rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault));

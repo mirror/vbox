@@ -533,7 +533,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
      * but several traps isn't handled specially by TRPM in RC and we end up here
      * instead. One example is #DE.
      */
-    uint32_t uCpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
+    uint32_t uCpl = CPUMGetGuestCPL(pVCpu);
     if (    uCpl == 0
         &&  PATMIsPatchGCAddr(pVM, pCtx->eip))
     {

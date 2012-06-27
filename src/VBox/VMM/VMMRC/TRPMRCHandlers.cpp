@@ -490,7 +490,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     int     rc;
     PGMRZDynMapStartAutoSet(pVCpu);
 
-    if (CPUMGetGuestCPL(pVCpu, pRegFrame) == 0)
+    if (CPUMGetGuestCPL(pVCpu) == 0)
     {
         /*
          * Decode the instruction.
