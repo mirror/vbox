@@ -211,16 +211,32 @@
           See <xref linkend="vbox-auth" /> for details.</para>
       </sect3>
 
-      <sect3>
+      <sect3 id="security_clipboard">
         <title>Clipboard</title>
         <para>
           The shared clipboard allows users to share data between the host and
           the guest. Enabling the clipboard in "Bidirectional" mode allows
           the guest to read and write the host clipboard. The "Host to guest"
           mode and the "Guest to host" mode limit the access to one
-          direction. If the guest is able to access the host clipboard it
+          direction. If the guest is able to access the host clipboard, it
           could also access sensitive data from the host which is shared over
           the clipboard.
+        </para>
+        <para>
+          If the guest is able to read and/or write the host clipboard then
+          a remote user which is connected to the guest over the network has
+          the same level of access like a local guest user which is sometimes
+          not desired. As a consequence, the shared clipboard is disabled for
+          new VMs.
+        </para>
+      </sect3>
+
+      <sect3>
+        <title>Shared folders</title>
+        <para>If any folder of the host is shared with the guest, a remote
+          user which is connected to the guest over the network can access
+          these files too as VirtualBox cannot distinguish between local
+          guest users and remote guest users in that case.
         </para>
       </sect3>
 
