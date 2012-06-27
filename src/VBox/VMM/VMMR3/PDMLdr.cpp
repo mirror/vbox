@@ -24,6 +24,7 @@
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/trpm.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -354,10 +355,15 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
             *pValue = pVM->pVMRC;
         else if (!strcmp(pszSymbol, "g_CPUM"))
             *pValue = VM_RC_ADDR(pVM, &pVM->cpum);
-        else if (!strcmp(pszSymbol, "g_TRPM"))
-            *pValue = VM_RC_ADDR(pVM, &pVM->trpm);
-        else if (!strcmp(pszSymbol, "g_TRPMCPU"))
-            *pValue = VM_RC_ADDR(pVM, &pVM->aCpus[0].trpm);
+        else if (   !strncmp(pszSymbol, "g_TRPM", 6)
+                 || !strncmp(pszSymbol, "g_trpm", 6)
+                 || !strncmp(pszSymbol, "TRPM", 4))
+        {
+            RTRCPTR RCPtr = 0;
+            rc = TRPMR3GetImportRC(pVM, pszSymbol, &RCPtr);
+            if (RT_SUCCESS(rc))
+                *pValue = RCPtr;
+        }
         else if (   !strncmp(pszSymbol, "VMM", 3)
                  || !strcmp(pszSymbol, "g_Logger")
                  || !strcmp(pszSymbol, "g_RelLogger"))

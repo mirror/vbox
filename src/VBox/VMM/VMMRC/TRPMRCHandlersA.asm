@@ -30,13 +30,11 @@
 ;*******************************************************************************
 ;* External Symbols                                                            *
 ;*******************************************************************************
-extern IMPNAME(g_CPUM)                  ; These IMPNAME(g_*) symbols resolve to the import table
-extern IMPNAME(g_TRPM)                  ; where there is a pointer to the real symbol. PE imports
-extern IMPNAME(g_TRPMCPU)               ; are a bit confusing at first... :-)
-extern IMPNAME(g_VM)
-extern NAME(CPUMGCRestoreInt)
-extern NAME(cpumHandleLazyFPUAsm)
-extern NAME(CPUMHyperSetCtxCore)
+extern IMPNAME(g_TRPM)                  ; These IMPNAME(g_*) symbols resolve to the import table
+extern IMPNAME(g_TRPMCPU)               ; where there is a pointer to the real symbol. PE imports
+extern IMPNAME(g_VM)                    ; are a bit confusing at first... :-)
+extern IMPNAME(g_trpmGuestCtxCore)
+extern IMPNAME(g_trpmHyperCtxCore)
 extern NAME(trpmGCTrapInGeneric)
 extern NAME(TRPMGCTrap01Handler)
 extern NAME(TRPMGCHyperTrap01Handler)
@@ -55,10 +53,15 @@ extern NAME(TRPMGCHyperTrap0dHandler)
 extern NAME(TRPMGCTrap0eHandler)
 extern NAME(TRPMGCHyperTrap0eHandler)
 
-;; IMPORTANT all COM_ functions trashes esi, some edi and the LOOP_SHORT_WHILE kills ecx.
+
+;*******************************************************************************
+;*  Defined Constants And Macros                                               *
+;*******************************************************************************
+;; Some conditional COM port debugging.
 ;%define DEBUG_STUFF 1
 ;%define DEBUG_STUFF_TRPG 1
 ;%define DEBUG_STUFF_INT 1
+
 
 BEGINCODE
 
@@ -243,96 +246,127 @@ GenericTrapErrCode:
     cld
 
     ;
-    ; Setup CPUMCTXCORE frame
+    ; Save ds, es, eax and ebx so we have a context pointer (ebx) and
+    ; scratch (eax) register to work with.  A sideeffect of using ebx is that
+    ; it's preserved accross cdecl calls.
     ;
-    ;   ASSUMPTION: If trap in hypervisor, we assume that we can read two dword
-    ;               under the bottom of the stack. This is atm safe.
-    ;   ASSUMPTION: There is sufficient stack space.
-    ;   ASSUMPTION: The stack is not write protected.
+    ; In order to safely access data, we need to load our flat DS & ES selector,
+    ; and clear make sure CR0.WP is cleared.
     ;
-%define ESPOFF CPUMCTXCORE_size
+    push    ds                          ; +0ch
+    push    es                          ; +08h
+    push    eax                         ; +04h
+    push    ebx                         ; +00h
+%push foobar
+%define %$STK_SAVED_EBX   esp
+%define %$STK_SAVED_EAX   esp + 04h
+%define %$STK_SAVED_ES    esp + 08h
+%define %$STK_SAVED_DS    esp + 0ch
+%define %$ESPOFF                10h
+%define %$STK_VECTOR      esp + 00h + %$ESPOFF
+%define %$STK_ERRCD       esp + 04h + %$ESPOFF
+%define %$STK_EIP         esp + 08h + %$ESPOFF
+%define %$STK_CS          esp + 0ch + %$ESPOFF
+%define %$STK_EFLAGS      esp + 10h + %$ESPOFF
+%define %$STK_ESP         esp + 14h + %$ESPOFF
+%define %$STK_SS          esp + 18h + %$ESPOFF
+%define %$STK_V86_ES      esp + 1ch + %$ESPOFF
+%define %$STK_V86_DS      esp + 20h + %$ESPOFF
+%define %$STK_V86_FS      esp + 24h + %$ESPOFF
+%define %$STK_V86_GS      esp + 28h + %$ESPOFF
 
-    sub     esp, CPUMCTXCORE_size
-    mov     [esp + CPUMCTXCORE.eax], eax
-    mov     [esp + CPUMCTXCORE.ecx], ecx
-    mov     [esp + CPUMCTXCORE.edx], edx
-    mov     [esp + CPUMCTXCORE.ebx], ebx
-    mov     [esp + CPUMCTXCORE.esi], esi
-    mov     [esp + CPUMCTXCORE.edi], edi
-    mov     [esp + CPUMCTXCORE.ebp], ebp
+    push    ss
+    pop     ds
+    push    ss
+    pop     es
 
-    mov     eax, [esp + 14h + ESPOFF]           ; esp
-    mov     [esp + CPUMCTXCORE.esp], eax
-    mov     eax, [esp + 18h + ESPOFF]           ; ss
-    mov     dword [esp + CPUMCTXCORE.ss.Sel], eax
-
-    mov     eax, [esp + 0ch + ESPOFF]           ; cs
-    mov     dword [esp + CPUMCTXCORE.cs.Sel], eax
-    mov     eax, [esp + 08h + ESPOFF]           ; eip
-    mov     [esp + CPUMCTXCORE.eip], eax
-    mov     eax, [esp + 10h + ESPOFF]           ; eflags
-    mov     [esp + CPUMCTXCORE.eflags], eax
-
-%if GC_ARCH_BITS == 64
-    ; zero out the high dwords
-    mov     dword [esp + CPUMCTXCORE.eax + 4], 0
-    mov     dword [esp + CPUMCTXCORE.ecx + 4], 0
-    mov     dword [esp + CPUMCTXCORE.edx + 4], 0
-    mov     dword [esp + CPUMCTXCORE.ebx + 4], 0
-    mov     dword [esp + CPUMCTXCORE.esi + 4], 0
-    mov     dword [esp + CPUMCTXCORE.edi + 4], 0
-    mov     dword [esp + CPUMCTXCORE.ebp + 4], 0
-    mov     dword [esp + CPUMCTXCORE.esp + 4], 0
-    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
-%endif
-
-    mov     eax, es
-    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
-    mov     eax, ds
-    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
-    mov     eax, fs
-    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
-    mov     eax, gs
-    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
-
-    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
-    jz short gt_SkipV86Entry
-
-    ;
-    ; The DS, ES, FS and GS registers are zeroed in V86 mode and their real values are on the stack
-    ;
-    mov     eax, dword [esp + ESPOFF + 1Ch]
-    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
-
-    mov     eax, dword [esp + ESPOFF + 20h]
-    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
-
-    mov     eax, dword [esp + ESPOFF + 24h]
-    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
-
-    mov     eax, dword [esp + ESPOFF + 28h]
-    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
-
-gt_SkipV86Entry:
-    ;
-    ; Disable Ring-0 WP
-    ;
-    mov     eax, cr0                    ;; @todo elimitate this read?
+    mov     eax, cr0                        ;; @todo elimitate this read?
     and     eax, ~X86_CR0_WRITE_PROTECT
     mov     cr0, eax
 
+    mov     ebx, IMP(g_trpmGuestCtxCore)    ; Assume GC as the most common.
+    test    byte [%$STK_CS], 3h               ; check RPL of the cs selector
+    ;; @todo check this for conforming segments.
+    jnz     .save_state
+    test    dword [%$STK_EFLAGS], X86_EFL_VM  ; If in V86, then guest.
+    jnz     .save_state
+    mov     ebx, IMP(g_trpmHyperCtxCore)    ; It's raw-mode context, actually.
+
     ;
-    ; Load Hypervisor DS and ES (get it from the SS)
+    ; Save the state.
     ;
-    mov     eax, ss
-    mov     ds, eax
-    mov     es, eax
+    ;   ASSUMPTION: If trap in hypervisor, we assume that we can read two dword
+    ;               under the bottom of the stack. This is atm safe.
+    ;
+.save_state:
+    mov     eax, [%$STK_SAVED_EAX]
+    mov     [ebx + CPUMCTXCORE.eax], eax
+    mov     [ebx + CPUMCTXCORE.ecx], ecx
+    mov     [ebx + CPUMCTXCORE.edx], edx
+    mov     eax, [%$STK_SAVED_EBX]
+    mov     [ebx + CPUMCTXCORE.ebx], eax
+    mov     [ebx + CPUMCTXCORE.esi], esi
+    mov     [ebx + CPUMCTXCORE.edi], edi
+    mov     [ebx + CPUMCTXCORE.ebp], ebp
+
+    mov     eax, [%$STK_ESP]
+    mov     [ebx + CPUMCTXCORE.esp], eax
+    mov     cx, [%$STK_SS]
+    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
+
+    mov     cx, [%$STK_CS]
+    mov     [ebx + CPUMCTXCORE.cs.Sel], cx
+    mov     eax, [%$STK_EIP]
+    mov     [ebx + CPUMCTXCORE.eip], eax
+    mov     eax, [%$STK_EFLAGS]
+    mov     [ebx + CPUMCTXCORE.eflags], eax
+
+%if GC_ARCH_BITS == 64 ; zero out the high dwords - probably not necessary any more.
+    mov     dword [ebx + CPUMCTXCORE.eax + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.ecx + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.edx + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.ebx + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.esi + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.edi + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.ebp + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.esp + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.eip + 4], 0
+%endif
+
+    test    dword [%$STK_EFLAGS], X86_EFL_VM
+    jnz     .save_V86_segregs
+
+    mov     cx, [%$STK_SAVED_ES]
+    mov     [ebx + CPUMCTXCORE.es.Sel], cx
+    mov     cx, [%$STK_SAVED_DS]
+    mov     [ebx + CPUMCTXCORE.ds.Sel], cx
+    mov     cx, fs
+    mov     [ebx + CPUMCTXCORE.fs.Sel], cx
+    mov     cx, gs
+    mov     [ebx + CPUMCTXCORE.gs.Sel], cx
+    jmp     .done_saving
+
+    ;
+    ; The DS, ES, FS and GS registers are zeroed in V86 mode and their real
+    ; values are on the stack.
+    ;
+.save_V86_segregs:
+    mov     cx, [%$STK_V86_ES]
+    mov     [ebx + CPUMCTXCORE.es.Sel], cx
+    mov     cx, [%$STK_V86_DS]
+    mov     [ebx + CPUMCTXCORE.ds.Sel], cx
+    mov     cx, [%$STK_V86_FS]
+    mov     [ebx + CPUMCTXCORE.fs.Sel], cx
+    mov     cx, [%$STK_V86_GS]
+    mov     [ebx + CPUMCTXCORE.gs.Sel], cx
+
+.done_saving:
 
 %ifdef VBOX_WITH_STATISTICS
     ;
     ; Start profiling.
     ;
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
+    mov     edx, [%$STK_VECTOR]
     imul    edx, edx, byte STAMPROFILEADV_size ; assumes < 128.
     add     edx, TRPM.aStatGCTraps
     add     edx, IMP(g_TRPM)
@@ -342,106 +376,88 @@ gt_SkipV86Entry:
     ;
     ; Store the information about the active trap/interrupt.
     ;
-    mov     eax, IMP(g_TRPMCPU)
-    movzx   edx, byte [esp + 0h + ESPOFF]  ; vector number
-    mov     [eax + TRPMCPU.uActiveVector], edx
-    mov     edx, [esp + 4h + ESPOFF]       ; error code
-    mov     [eax + TRPMCPU.uActiveErrorCode], edx
-    mov     dword [eax + TRPMCPU.enmActiveType], TRPM_TRAP
+    mov     esi, IMP(g_TRPMCPU)         ; esi = TRPMCPU until resume!
+    movzx   edx, byte [%$STK_VECTOR]
+    mov     [esi + TRPMCPU.uActiveVector], edx
+    mov     edx, [%$STK_ERRCD]
+    mov     [esi + TRPMCPU.uActiveErrorCode], edx
+    mov     dword [esi + TRPMCPU.enmActiveType], TRPM_TRAP
     mov     edx, cr2                       ;; @todo Check how expensive cr2 reads are!
-    mov     dword [eax + TRPMCPU.uActiveCR2], edx
-
-%if GC_ARCH_BITS == 64
-    ; zero out the high dword
-    mov     dword [eax + TRPMCPU.uActiveErrorCode + 4], 0
-    mov     dword [eax + TRPMCPU.uActiveCR2 + 4], 0
+    mov     dword [esi + TRPMCPU.uActiveCR2], edx
+%if GC_ARCH_BITS == 64 ; zero out the high dwords.
+    mov     dword [esi + TRPMCPU.uActiveErrorCode + 4], 0
+    mov     dword [esi + TRPMCPU.uActiveCR2 + 4], 0
 %endif
 
     ;
-    ; Check if we're in Hypervisor when this happened.
+    ; Check if we're in the raw-mode context (RC / hypervisor) when this happened.
     ;
-    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
-    jnz short gt_NotHyperVisor
+    test    dword [%$STK_EFLAGS], X86_EFL_VM
+    jnz short .gc_not_raw_mode_context
 
-    test    byte [esp + 0ch + ESPOFF], 3h ; check CPL of the cs selector
-    jz      near gt_InHypervisor
+    test    byte [%$STK_CS], 3h           ; check RPL of the cs selector
+    jz      .rc_in_raw_mode_context
 
     ;
     ; Trap in guest code.
     ;
-gt_NotHyperVisor:
+.gc_not_raw_mode_context:
 %ifdef DEBUG_STUFF_TRPG
-    mov     ebx, [esp +  4h + ESPOFF]   ; error code
+    mov     eax, [%$STK_ERRCD]
     mov     ecx, 'trpG'                 ; indicate trap.
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
-    lea     eax, [esp]
+    mov     edx, [%$STK_VECTOR]
     call    trpmDbgDumpRegisterFrame
 %endif
 
     ;
     ; Do we have a GC handler for these traps?
     ;
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
+    mov     edx, [%$STK_VECTOR]
     mov     eax, [g_apfnStaticTrapHandlersGuest + edx * 4]
     or      eax, eax
-    jnz short gt_HaveHandler
+    jnz short .gc_have_static_handler
     mov     eax, VINF_EM_RAW_GUEST_TRAP
-    jmp short gt_GuestTrap
+    jmp short .gc_guest_trap
 
     ;
     ; Call static handler.
     ;
-gt_HaveHandler:
-    push    esp                         ; Param 2 - CPUMCTXCORE pointer.
-    push    dword IMP(g_TRPMCPU)        ; Param 1 - Pointer to TRPMCPU
+.gc_have_static_handler:
+    push    ebx                         ; Param 2 - CPUMCTXCORE pointer.
+    push    esi                         ; Param 1 - Pointer to TRPMCPU.
     call    eax
     add     esp, byte 8                 ; cleanup stack (cdecl)
     or      eax, eax
-    je near gt_continue_guest
+    je near .gc_continue_guest
 
     ;
     ; Switch back to the host and process it there.
     ;
-gt_GuestTrap:
+.gc_guest_trap:
 %ifdef VBOX_WITH_STATISTICS
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
+    mov     edx, [%$STK_VECTOR]
     imul    edx, edx, byte STAMPROFILEADV_size ; assume < 128
     add     edx, IMP(g_TRPM)
     add     edx, TRPM.aStatGCTraps
     STAM_PROFILE_ADV_STOP edx
 %endif
     mov     edx, IMP(g_VM)
-    call    [edx + VM.pfnVMMGCGuestToHostAsmGuestCtx]
+    call    [edx + VM.pfnVMMGCGuestToHostAsm]
 
-    ;; @todo r=bird: is this path actually every taken? if not we should replace this code with a panic.
-    ;
-    ; We've returned!
-    ; N.B. The stack has been changed now! No CPUMCTXCORE any longer. esp = vector number.
-    ; N.B. Current scheduling design causes this code path to be unused.
-    ; N.B. Better not use it when in V86 mode!
-    ;
-
-    ; Enable WP
-    mov     eax, cr0                    ;; @todo try elimiate this read.
-    or      eax, X86_CR0_WRITE_PROTECT
-    mov     cr0, eax
-    ; Restore guest context and continue execution.
-    mov     edx, IMP(g_CPUM)
-    lea     eax, [esp + 8]
-    push    eax
-    call    NAME(CPUMGCRestoreInt)
-    lea     esp, [esp + 0ch]            ; cleanup call and skip vector & error code.
-
-    iret
-
+    ; We shouldn't ever return this way. So, raise a special IPE if we do.
+.gc_panic_again:
+    mov     eax, VERR_TRPM_IPE_3
+    mov     edx, IMP(g_VM)
+    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+    jmp     .gc_panic_again
 
     ;
     ; Continue(/Resume/Restart/Whatever) guest execution.
     ;
 ALIGNCODE(16)
-gt_continue_guest:
+.gc_continue_guest:
 %ifdef VBOX_WITH_STATISTICS
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
+    mov     edx, [%$STK_VECTOR]
     imul    edx, edx, byte STAMPROFILEADV_size ; assumes < 128
     add     edx, TRPM.aStatGCTraps
     add     edx, IMP(g_TRPM)
@@ -454,86 +470,71 @@ gt_continue_guest:
     mov     cr0, eax
 
     ; restore guest state and start executing again.
-    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
-    jnz     gt_V86Return
+    mov     eax, [ebx + CPUMCTXCORE.eax]
+    mov     [%$STK_SAVED_EAX], eax
+    mov     ecx, [ebx + CPUMCTXCORE.ecx]
+    mov     edx, [ebx + CPUMCTXCORE.edx]
+    mov     eax, [ebx + CPUMCTXCORE.ebx]
+    mov     [%$STK_SAVED_EBX], eax
+    mov     ebp, [ebx + CPUMCTXCORE.ebp]
+    mov     esi, [ebx + CPUMCTXCORE.esi]
+    mov     edi, [ebx + CPUMCTXCORE.edi]
 
-    mov     ecx, [esp + CPUMCTXCORE.ecx]
-    mov     edx, [esp + CPUMCTXCORE.edx]
-    mov     ebx, [esp + CPUMCTXCORE.ebx]
-    mov     ebp, [esp + CPUMCTXCORE.ebp]
-    mov     esi, [esp + CPUMCTXCORE.esi]
-    mov     edi, [esp + CPUMCTXCORE.edi]
+    mov     eax, [ebx + CPUMCTXCORE.esp]
+    mov     [%$STK_ESP], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.ss.Sel]
+    mov     [%$STK_SS], eax
+    mov     eax, [ebx + CPUMCTXCORE.eflags]
+    mov     [%$STK_EFLAGS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.cs.Sel]
+    mov     [%$STK_CS], eax
+    mov     eax, [ebx + CPUMCTXCORE.eip]
+    mov     [%$STK_EIP], eax
 
-    mov     eax, [esp + CPUMCTXCORE.esp]
-    mov     [esp + 14h + ESPOFF], eax           ; esp
-    mov     eax, dword [esp + CPUMCTXCORE.ss.Sel]
-    mov     [esp + 18h + ESPOFF], eax           ; ss
+    test    dword [ebx + CPUMCTXCORE.eflags], X86_EFL_VM
+    jnz     .gc_V86_return
 
-    mov     eax, dword [esp + CPUMCTXCORE.gs.Sel]
+    mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
-    mov     gs, eax
+    mov     gs, ax
 
-    mov     eax, dword [esp + CPUMCTXCORE.fs.Sel]
+    mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS
-    mov     fs, eax
+    mov     fs, ax
 
-    mov     eax, dword [esp + CPUMCTXCORE.es.Sel]
+    mov     ax, [ebx + CPUMCTXCORE.es.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES
-    mov     es, eax
+    mov     es, ax
 
-    mov     eax, dword [esp + CPUMCTXCORE.ds.Sel]
+    mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS
-    mov     ds, eax
+    mov     ds, ax
 
-    mov     eax, dword [esp + CPUMCTXCORE.cs.Sel]
-    mov     [esp + 0ch + ESPOFF], eax           ; cs
-    mov     eax, [esp + CPUMCTXCORE.eflags]
-    mov     [esp + 10h + ESPOFF], eax           ; eflags
-    mov     eax, [esp + CPUMCTXCORE.eip]
-    mov     [esp + 08h + ESPOFF], eax           ; eip
+    ; finally restore our scratch register eax and ebx.
+    pop     ebx
+    pop     eax
 
-    ; finally restore our scratch register eax
-    mov     eax, [esp + CPUMCTXCORE.eax]
-
-    add     esp, ESPOFF + 8                     ; skip CPUMCTXCORE structure, error code and vector number
+    add     esp, 8 + 8                          ; skip ds, es, the error code, and vector number.
 
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET
     iret
 
 ALIGNCODE(16)
-gt_V86Return:
-    mov     ecx, [esp + CPUMCTXCORE.ecx]
-    mov     edx, [esp + CPUMCTXCORE.edx]
-    mov     ebx, [esp + CPUMCTXCORE.ebx]
-    mov     ebp, [esp + CPUMCTXCORE.ebp]
-    mov     esi, [esp + CPUMCTXCORE.esi]
-    mov     edi, [esp + CPUMCTXCORE.edi]
+.gc_V86_return:
+    mov     eax, dword [ebx + CPUMCTXCORE.es.Sel]
+    mov     [%$STK_V86_ES], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.ds.Sel]
+    mov     [%$STK_V86_DS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.fs.Sel]
+    mov     [%$STK_V86_FS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.gs.Sel]
+    mov     [%$STK_V86_GS], eax
 
-    mov     eax, [esp + CPUMCTXCORE.esp]
-    mov     [esp + 14h + ESPOFF], eax           ; esp
-    mov     eax, dword [esp + CPUMCTXCORE.ss.Sel]
-    mov     [esp + 18h + ESPOFF], eax           ; ss
+    ; finally restore our scratch register eax and ebx.
+    pop     ebx
+    pop     eax
 
-    mov     eax, dword [esp + CPUMCTXCORE.es.Sel]
-    mov     [esp + 1ch + ESPOFF], eax           ; es
-    mov     eax, dword [esp + CPUMCTXCORE.ds.Sel]
-    mov     [esp + 20h + ESPOFF], eax           ; ds
-    mov     eax, dword [esp + CPUMCTXCORE.fs.Sel]
-    mov     [esp + 24h + ESPOFF], eax           ; fs
-    mov     eax, dword [esp + CPUMCTXCORE.gs.Sel]
-    mov     [esp + 28h + ESPOFF], eax           ; gs
-
-    mov     eax, [esp + CPUMCTXCORE.eip]
-    mov     [esp + 08h + ESPOFF], eax           ; eip
-    mov     eax, dword [esp + CPUMCTXCORE.cs.Sel]
-    mov     [esp + 0ch + ESPOFF], eax           ; cs
-    mov     eax, [esp + CPUMCTXCORE.eflags]
-    mov     [esp + 10h + ESPOFF], eax           ; eflags
-
-    ; finally restore our scratch register eax
-    mov     eax, [esp + CPUMCTXCORE.eax]
-
-    add     esp, ESPOFF + 8                     ; skip CPUMCTXCORE structure, error code and vector number
+    add     esp, 8 + 8                          ; skip ds, es, the error code, and vector number.
 
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86
     iret
@@ -544,103 +545,84 @@ gt_V86Return:
     ;   (eax = pTRPMCPU)
     ;
 ALIGNCODE(16)
-gt_InHypervisor:
+.rc_in_raw_mode_context:
     ; fix ss:esp.
-    lea     ebx, [esp + 14h + ESPOFF]   ; calc esp at trap
-    mov     [esp + CPUMCTXCORE.esp], ebx; update esp in register frame
-    mov     [esp + CPUMCTXCORE.ss.Sel], ss ; update ss in register frame
-
-    ; tell cpum about the context core.
-    xchg    esi, eax                    ; save pTRPMCPU - @todo reallocate this variable to esi, edi, or ebx
-    push    esp                         ; Param 2 - The new CPUMCTXCORE pointer.
-    mov     eax, IMP(g_VM)              ; Param 1 - Pointer to the VMCPU.
-    add     eax, [eax + VM.offVMCPU]
-    push    eax
-    call    NAME(CPUMHyperSetCtxCore)
-    add     esp, byte 8                 ; stack cleanup (cdecl)
-    xchg    eax, esi                    ; restore pTRPMCPU
+    lea     ecx, [%$STK_ESP]              ; calc esp at trap
+    mov     [ebx + CPUMCTXCORE.esp], ecx; update esp in register frame
+    mov     [ebx + CPUMCTXCORE.ss.Sel], ss ; update ss in register frame
 
     ; check for temporary handler.
-    movzx   ebx, byte [eax + TRPMCPU.uActiveVector]
-    mov     esi, IMP(g_TRPM)            ; keep eax == pTRPMCPU
+    movzx   edx, byte [esi + TRPMCPU.uActiveVector]
+    mov     edi, IMP(g_TRPM)
     xor     ecx, ecx
-    xchg    ecx, [esi + TRPM.aTmpTrapHandlers + ebx * 4]    ; ecx = Temp handler pointer or 0
+    xchg    ecx, [edi + TRPM.aTmpTrapHandlers + edx * 4]    ; ecx = Temp handler pointer or 0
     or      ecx, ecx
-    jnz short gt_Hyper_HaveTemporaryHandler
+    jnz short .rc_have_temporary_handler
 
     ; check for static trap handler.
-    mov     ecx, [g_apfnStaticTrapHandlersHyper + ebx * 4]  ; ecx = Static handler pointer or 0
+    mov     ecx, [g_apfnStaticTrapHandlersHyper + edx * 4]  ; ecx = Static handler pointer or 0
     or      ecx, ecx
-    jnz short gt_Hyper_HaveStaticHandler
-    jmp     gt_Hyper_AbandonShip
+    jnz short .rc_have_static_handler
+    jmp     .rc_abandon_ship
 
 
     ;
     ; Temporary trap handler present, call it (CDECL).
     ;
-gt_Hyper_HaveTemporaryHandler:
-    push    esp                         ; Param 2 - Pointer to CPUMCTXCORE.
+.rc_have_temporary_handler:
+    push    ebx                         ; Param 2 - Pointer to CPUMCTXCORE.
     push    IMP(g_VM)                   ; Param 1 - Pointer to VM.
     call    ecx
     add     esp, byte 8                 ; cleanup stack (cdecl)
 
     cmp     eax, byte VINF_SUCCESS      ; If completely handled Then resume execution.
-    je      near gt_Hyper_Continue
-    ;; @todo Handle ALL returns types from temporary handlers!
-    jmp     gt_Hyper_AbandonShip
+    je      near .rc_continue
+    jmp     .rc_abandon_ship
 
 
     ;
     ; Static trap handler present, call it (CDECL).
     ;
-gt_Hyper_HaveStaticHandler:
-    push    esp                         ; Param 2 - Pointer to CPUMCTXCORE.
-    push    eax                         ; Param 1 - Pointer to TRPMCPU
+.rc_have_static_handler:
+    push    ebx                         ; Param 2 - Pointer to CPUMCTXCORE.
+    push    esi                         ; Param 1 - Pointer to TRPMCPU
     call    ecx
     add     esp, byte 8                 ; cleanup stack (cdecl)
 
     cmp     eax, byte VINF_SUCCESS      ; If completely handled Then resume execution.
-    je short gt_Hyper_Continue
+    je short .rc_continue
     cmp     eax, VINF_EM_DBG_HYPER_STEPPED
-    je short gt_Hyper_ToHost
+    je short .rc_to_host
     cmp     eax, VINF_EM_DBG_HYPER_BREAKPOINT
-    je short gt_Hyper_ToHost
+    je short .rc_to_host
     cmp     eax, VINF_EM_DBG_HYPER_ASSERTION
-    je short gt_Hyper_ToHost
-    jmp     gt_Hyper_AbandonShip
+    je short .rc_to_host
+    jmp     .rc_abandon_ship
 
     ;
     ; Pop back to the host to service the error.
     ;
-gt_Hyper_ToHost:
-    mov     ecx, esp
+.rc_to_host:
+    mov     ecx, ebx
     mov     edx, IMP(g_VM)
     call    [edx + VM.pfnVMMGCGuestToHostAsm]
-    jmp short gt_Hyper_Continue
+    jmp short .rc_continue
 
     ;
     ; Continue(/Resume/Restart/Whatever) hypervisor execution.
     ; Don't reset the TRPM state. Caller takes care of that.
     ;
 ALIGNCODE(16)
-gt_Hyper_Continue:
+.rc_continue:
 %ifdef DEBUG_STUFF
-    mov     ebx, [esp +  4h + ESPOFF]   ; error code
+    mov     eax, [%$STK_ERRCD]
     mov     ecx, 'resH'                 ; indicate trap.
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
-    lea     eax, [esp]
+    mov     edx, [%$STK_VECTOR]
     call    trpmDbgDumpRegisterFrame
 %endif
-    ; tell CPUM to use the default CPUMCTXCORE.
-    push    byte 0                      ; Param 2 - NULL indicating use default context core.
-    mov     eax, IMP(g_VM)              ; Param 1 - Pointer to the VMCPU.
-    add     eax, [eax + VM.offVMCPU]
-    push    eax
-    call    NAME(CPUMHyperSetCtxCore)
-    add     esp, byte 8                 ; stack cleanup (cdecl)
 
 %ifdef VBOX_WITH_STATISTICS
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
+    mov     edx, [%$STK_VECTOR]
     imul    edx, edx, byte STAMPROFILEADV_size ; assumes < 128
     add     edx, TRPM.aStatGCTraps
     add     edx, IMP(g_TRPM)
@@ -648,65 +630,70 @@ gt_Hyper_Continue:
 %endif
 
     ; restore
-    mov     ecx, [esp + CPUMCTXCORE.ecx]
-    mov     edx, [esp + CPUMCTXCORE.edx]
-    mov     ebx, [esp + CPUMCTXCORE.ebx]
-    mov     ebp, [esp + CPUMCTXCORE.ebp]
-    mov     esi, [esp + CPUMCTXCORE.esi]
-    mov     edi, [esp + CPUMCTXCORE.edi]
+    mov     eax, [ebx + CPUMCTXCORE.eax]
+    mov     [%$STK_SAVED_EAX], eax
+    mov     ecx, [ebx + CPUMCTXCORE.ecx]
+    mov     edx, [ebx + CPUMCTXCORE.edx]
+    mov     eax, [ebx + CPUMCTXCORE.ebx]
+    mov     [%$STK_SAVED_EBX], eax
+    mov     ebp, [ebx + CPUMCTXCORE.ebp]
+    mov     esi, [ebx + CPUMCTXCORE.esi]
+    mov     edi, [ebx + CPUMCTXCORE.edi]
 
-    mov     eax, dword [esp + CPUMCTXCORE.gs.Sel]
+                                                ; skipping esp & ss.
+
+    mov     eax, [ebx + CPUMCTXCORE.eflags]
+    mov     [%$STK_EFLAGS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.cs.Sel]
+    mov     [%$STK_CS], eax
+    mov     eax, [ebx + CPUMCTXCORE.eip]
+    mov     [%$STK_EIP], eax
+
+    mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS | TRPM_TRAP_IN_HYPER
-    mov     gs, eax
+    mov     gs, ax
 
-    mov     eax, dword [esp + CPUMCTXCORE.fs.Sel]
+    mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS | TRPM_TRAP_IN_HYPER
-    mov     fs, eax
+    mov     fs, ax
 
-    mov     eax, dword [esp + CPUMCTXCORE.es.Sel]
-    mov     es, eax
-    mov     eax, dword [esp + CPUMCTXCORE.ds.Sel]
-    mov     ds, eax
+    mov     ax, [ebx + CPUMCTXCORE.es.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES | TRPM_TRAP_IN_HYPER
+    mov     es, ax
 
-    ; skip esp & ss
+    mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS | TRPM_TRAP_IN_HYPER
+    mov     ds, ax
 
-    mov     eax, [esp + CPUMCTXCORE.eip]
-    mov     [esp + 08h + ESPOFF], eax           ; eip
-    mov     eax, dword [esp + CPUMCTXCORE.cs.Sel]
-    mov     [esp + 0ch + ESPOFF], eax           ; cs
-    mov     eax, [esp + CPUMCTXCORE.eflags]
-    mov     [esp + 10h + ESPOFF], eax           ; eflags
+    ; finally restore our scratch register eax and ebx.
+    pop     ebx
+    pop     eax
 
-    ; finally restore our scratch register eax
-    mov     eax, [esp + CPUMCTXCORE.eax]
-
-    add     esp, ESPOFF + 8                     ; skip CPUMCTXCORE structure, error code and vector number
+    add     esp, 8 + 8                          ; skip ds, es, the error code, and vector number.
 
     iret
 
 
     ;
-    ; ABANDON SHIP! DON'T PANIC!
+    ; Internal processing error - don't panic, start meditating!
     ;
-gt_Hyper_AbandonShip:
+.rc_abandon_ship:
 %ifdef DEBUG_STUFF
-    mov     ebx, [esp +  4h + ESPOFF]   ; error code
+    mov     eax, [%$STK_ERRCD]
     mov     ecx, 'trpH'                 ; indicate trap.
-    mov     edx, [esp +  0h + ESPOFF]   ; vector number
-    lea     eax, [esp]
+    mov     edx, [%$STK_VECTOR]
     call    trpmDbgDumpRegisterFrame
 %endif
 
-gt_Hyper_DontPanic:
-    mov     ecx, esp
+.rc_do_not_panic:
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_DONT_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsmHyperCtx]
+    call    [edx + VM.pfnVMMGCGuestToHostAsm]
 %ifdef DEBUG_STUFF
     COM_S_PRINT 'bad!!!'
 %endif
-    jmp     gt_Hyper_DontPanic          ; this shall never ever happen!
-%undef ESPOFF
+    jmp     .rc_do_not_panic            ; this shall never ever happen!
+%pop
 ENDPROC TRPMGCHandlerGeneric
 
 
@@ -747,137 +734,165 @@ ti_GenericInterrupt:
     cld
 
     ;
-    ; Setup CPUMCTXCORE frame
+    ; Save ds, es, eax and ebx so we have a context pointer (ebx) and
+    ; scratch (eax) register to work with.  A sideeffect of using ebx is that
+    ; it's preserved accross cdecl calls.
     ;
-    ;   ASSUMPTION: If trap in hypervisor, we assume that we can read two dword
-    ;               under the bottom of the stack. This is atm safe.
-    ;   ASSUMPTION: There is sufficient stack space.
-    ;   ASSUMPTION: The stack is not write protected.
+    ; In order to safely access data, we need to load our flat DS & ES selector,
+    ; and clear make sure CR0.WP is cleared.
     ;
-%define ESPOFF CPUMCTXCORE_size
+    push    ds                          ; +0ch
+    push    es                          ; +08h
+    push    eax                         ; +04h
+    push    ebx                         ; +00h
+%push foobar
+%define %$STK_SAVED_EBX   esp
+%define %$STK_SAVED_EAX   esp + 04h
+%define %$STK_SAVED_ES    esp + 08h
+%define %$STK_SAVED_DS    esp + 0ch
+%define %$ESPOFF                10h
+%define %$STK_VECTOR      esp + 00h + %$ESPOFF
+%define %$STK_EIP         esp + 04h + %$ESPOFF
+%define %$STK_CS          esp + 08h + %$ESPOFF
+%define %$STK_EFLAGS      esp + 0ch + %$ESPOFF
+%define %$STK_ESP         esp + 10h + %$ESPOFF
+%define %$STK_SS          esp + 14h + %$ESPOFF
+%define %$STK_V86_ES      esp + 18h + %$ESPOFF
+%define %$STK_V86_DS      esp + 1ch + %$ESPOFF
+%define %$STK_V86_FS      esp + 20h + %$ESPOFF
+%define %$STK_V86_GS      esp + 24h + %$ESPOFF
 
-    sub     esp, CPUMCTXCORE_size
-    mov     [esp + CPUMCTXCORE.eax], eax
-    mov     [esp + CPUMCTXCORE.ecx], ecx
-    mov     [esp + CPUMCTXCORE.edx], edx
-    mov     [esp + CPUMCTXCORE.ebx], ebx
-    mov     [esp + CPUMCTXCORE.esi], esi
-    mov     [esp + CPUMCTXCORE.edi], edi
-    mov     [esp + CPUMCTXCORE.ebp], ebp
+    push    ss
+    pop     ds
+    push    ss
+    pop     es
 
-    mov     eax, [esp + 04h + ESPOFF]           ; eip
-    mov     [esp + CPUMCTXCORE.eip], eax
-    mov     eax, dword [esp + 08h + ESPOFF]     ; cs
-    mov     [esp + CPUMCTXCORE.cs.Sel], eax
-    mov     eax, [esp + 0ch + ESPOFF]           ; eflags
-    mov     [esp + CPUMCTXCORE.eflags], eax
-
-    mov     eax, [esp + 10h + ESPOFF]           ; esp
-    mov     [esp + CPUMCTXCORE.esp], eax
-    mov     eax, dword [esp + 14h + ESPOFF]     ; ss
-    mov     [esp + CPUMCTXCORE.ss.Sel], eax
-
-%if GC_ARCH_BITS == 64
-    ; zero out the high dwords
-    mov     dword [esp + CPUMCTXCORE.eax + 4], 0
-    mov     dword [esp + CPUMCTXCORE.ecx + 4], 0
-    mov     dword [esp + CPUMCTXCORE.edx + 4], 0
-    mov     dword [esp + CPUMCTXCORE.ebx + 4], 0
-    mov     dword [esp + CPUMCTXCORE.esi + 4], 0
-    mov     dword [esp + CPUMCTXCORE.edi + 4], 0
-    mov     dword [esp + CPUMCTXCORE.ebp + 4], 0
-    mov     dword [esp + CPUMCTXCORE.esp + 4], 0
-    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
-%endif
-
-    mov     eax, es
-    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
-    mov     eax, ds
-    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
-    mov     eax, fs
-    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
-    mov     eax, gs
-    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
-
-    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
-    jz short ti_SkipV86Entry
-
-    ;
-    ; The DS, ES, FS and GS registers are zeroed in V86 mode and their real values are on the stack
-    ;
-    mov     eax, dword [esp + ESPOFF + 18h]
-    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
-
-    mov     eax, dword [esp + ESPOFF + 1Ch]
-    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
-
-    mov     eax, dword [esp + ESPOFF + 20h]
-    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
-
-    mov     eax, dword [esp + ESPOFF + 24h]
-    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
-
-ti_SkipV86Entry:
-
-    ;
-    ; Disable Ring-0 WP
-    ;
-    mov     eax, cr0                    ;; @todo try elimiate this read.
+    mov     eax, cr0                        ;; @todo elimitate this read?
     and     eax, ~X86_CR0_WRITE_PROTECT
     mov     cr0, eax
 
+    mov     ebx, IMP(g_trpmGuestCtxCore)    ; Assume GC as the most common.
+    test    byte [%$STK_CS], 3h               ; check RPL of the cs selector
+    ;; @todo check this for conforming segments.
+    jnz     .save_state
+    test    dword [%$STK_EFLAGS], X86_EFL_VM  ; If in V86, then guest.
+    jnz     .save_state
+    mov     ebx, IMP(g_trpmHyperCtxCore)    ; It's raw-mode context, actually.
+
     ;
-    ; Load Hypervisor DS and ES (get it from the SS)
+    ; Save the state.
     ;
-    mov     eax, ss
-    mov     ds, eax
-    mov     es, eax
+    ;   ASSUMPTION: If trap in hypervisor, we assume that we can read two dword
+    ;               under the bottom of the stack. This is atm safe.
+    ;
+.save_state:
+    mov     eax, [%$STK_SAVED_EAX]
+    mov     [ebx + CPUMCTXCORE.eax], eax
+    mov     [ebx + CPUMCTXCORE.ecx], ecx
+    mov     [ebx + CPUMCTXCORE.edx], edx
+    mov     eax, [%$STK_SAVED_EBX]
+    mov     [ebx + CPUMCTXCORE.ebx], eax
+    mov     [ebx + CPUMCTXCORE.esi], esi
+    mov     [ebx + CPUMCTXCORE.edi], edi
+    mov     [ebx + CPUMCTXCORE.ebp], ebp
+
+    mov     eax, [%$STK_ESP]
+    mov     [ebx + CPUMCTXCORE.esp], eax
+    mov     cx, [%$STK_SS]
+    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
+
+    mov     cx, [%$STK_CS]
+    mov     [ebx + CPUMCTXCORE.cs.Sel], cx
+    mov     eax, [%$STK_EIP]
+    mov     [ebx + CPUMCTXCORE.eip], eax
+    mov     eax, [%$STK_EFLAGS]
+    mov     [ebx + CPUMCTXCORE.eflags], eax
+
+%if GC_ARCH_BITS == 64 ; zero out the high dwords - probably not necessary any more.
+    mov     dword [ebx + CPUMCTXCORE.eax + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.ecx + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.edx + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.ebx + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.esi + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.edi + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.ebp + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.esp + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.eip + 4], 0
+%endif
+
+    test    dword [%$STK_EFLAGS], X86_EFL_VM
+    jnz     .save_V86_segregs
+
+    mov     cx, [%$STK_SAVED_ES]
+    mov     [ebx + CPUMCTXCORE.es.Sel], cx
+    mov     cx, [%$STK_SAVED_DS]
+    mov     [ebx + CPUMCTXCORE.ds.Sel], cx
+    mov     cx, fs
+    mov     [ebx + CPUMCTXCORE.fs.Sel], cx
+    mov     cx, gs
+    mov     [ebx + CPUMCTXCORE.gs.Sel], cx
+    jmp     .done_saving
+
+    ;
+    ; The DS, ES, FS and GS registers are zeroed in V86 mode and their real
+    ; values are on the stack.
+    ;
+.save_V86_segregs:
+    mov     cx, [%$STK_V86_ES]
+    mov     [ebx + CPUMCTXCORE.es.Sel], cx
+    mov     cx, [%$STK_V86_DS]
+    mov     [ebx + CPUMCTXCORE.ds.Sel], cx
+    mov     cx, [%$STK_V86_FS]
+    mov     [ebx + CPUMCTXCORE.fs.Sel], cx
+    mov     cx, [%$STK_V86_GS]
+    mov     [ebx + CPUMCTXCORE.gs.Sel], cx
+
+.done_saving:
 
     ;
     ; Store the information about the active trap/interrupt.
     ;
-    mov     eax, IMP(g_TRPMCPU)
-    movzx   edx, byte [esp + 0h + ESPOFF]  ; vector number
-    mov     [eax + TRPMCPU.uActiveVector], edx
-    xor     edx, edx
-    mov     dword [eax + TRPMCPU.enmActiveType], TRPM_HARDWARE_INT
-    dec     edx
-    mov     [eax + TRPMCPU.uActiveErrorCode], edx
-    mov     [eax + TRPMCPU.uActiveCR2], edx
-%if GC_ARCH_BITS == 64
-    ; zero out the high dword
-    mov     dword [eax + TRPMCPU.uActiveErrorCode + 4], 0
-    mov     dword [eax + TRPMCPU.uActiveCR2 + 4], 0
+    mov     esi, IMP(g_TRPMCPU)         ; esi = TRPMCPU until resume!
+    movzx   edx, byte [%$STK_VECTOR]
+    mov     [esi + TRPMCPU.uActiveVector], edx
+    mov     dword [esi + TRPMCPU.uActiveErrorCode], 0
+    mov     dword [esi + TRPMCPU.enmActiveType], TRPM_TRAP
+    mov     dword [esi + TRPMCPU.uActiveCR2], edx
+%if GC_ARCH_BITS == 64 ; zero out the high dwords.
+    mov     dword [esi + TRPMCPU.uActiveErrorCode + 4], 0
+    mov     dword [esi + TRPMCPU.uActiveCR2 + 4], 0
 %endif
 
 %ifdef VBOX_WITH_STATISTICS
     ;
     ; Update statistics.
     ;
-    mov     eax, IMP(g_TRPM)
-    movzx   edx, byte [esp + 0h + ESPOFF]   ; vector number
+    mov     edi, IMP(g_TRPM)
+    movzx   edx, byte [%$STK_VECTOR]   ; vector number
     imul    edx, edx, byte STAMCOUNTER_size
-    add     edx, [eax + TRPM.paStatHostIrqRC]
+    add     edx, [edi + TRPM.paStatHostIrqRC]
     STAM_COUNTER_INC edx
 %endif
 
     ;
-    ; Check if we're in Hypervisor when this happened.
+    ; Check if we're in the raw-mode context (RC / hypervisor) when this happened.
     ;
-    test    byte [esp + 08h + ESPOFF], 3h ; check CPL of the cs selector
-    jnz short gi_NotHyperVisor
-    jmp     gi_HyperVisor
+    test    dword [%$STK_EFLAGS], X86_EFL_VM
+    jnz short .gc_not_raw_mode_context
+
+    test    byte [%$STK_CS], 3h           ; check RPL of the cs selector
+    jz      .rc_in_raw_mode_context
 
     ;
     ; Trap in guest code.
     ;
-gi_NotHyperVisor:
-    and     dword [esp + CPUMCTXCORE.eflags], ~010000h ; Clear RF (Resume Flag). @todo make %defines for eflags.
+.gc_not_raw_mode_context:
+    and     dword [ebx + CPUMCTXCORE.eflags], ~X86_EFL_RF ; Clear RF.
                                            ; The guest shall not see this in it's state.
 %ifdef DEBUG_STUFF_INT
-    mov     ecx, 'intG'                    ; indicate trap.
-    movzx   edx, byte [esp +  0h + ESPOFF] ; vector number
-    lea     eax, [esp]
+    xor     eax, eax
+    mov     ecx, 'intG'                    ; indicate trap in GC.
+    movzx   edx, byte [%$STK_VECTOR]
     call    trpmDbgDumpRegisterFrame
 %endif
 
@@ -886,30 +901,91 @@ gi_NotHyperVisor:
     ;
     mov     edx, IMP(g_VM)
     mov     eax, VINF_EM_RAW_INTERRUPT
-    call    [edx + VM.pfnVMMGCGuestToHostAsmGuestCtx]
+    call    [edx + VM.pfnVMMGCGuestToHostAsm]
 
     ;
     ; We've returned!
-    ; NOTE that the stack has been changed now!
-    ;      there is no longer any CPUMCTXCORE around and esp points to vector number!
     ;
+
     ; Reset TRPM state
-    mov     eax, IMP(g_TRPMCPU)
     xor     edx, edx
     dec     edx                         ; edx = 0ffffffffh
-    xchg    [eax + TRPMCPU.uActiveVector], edx
-    mov     [eax + TRPMCPU.uPrevVector], edx
+    xchg    [esi + TRPMCPU.uActiveVector], edx
+    mov     [esi + TRPMCPU.uPrevVector], edx
 
-    ; Enable WP
+    ; enable WP
     mov     eax, cr0                    ;; @todo try elimiate this read.
     or      eax, X86_CR0_WRITE_PROTECT
     mov     cr0, eax
-    ; restore guest context and continue execution.
-    lea     eax, [esp + 8]
-    push    eax
-    call    NAME(CPUMGCRestoreInt)
-    lea     esp, [esp + 0ch]            ; cleanup call and skip vector & error code.
 
+    ; restore guest state and start executing again.
+    mov     eax, [ebx + CPUMCTXCORE.eax]
+    mov     [%$STK_SAVED_EAX], eax
+    mov     ecx, [ebx + CPUMCTXCORE.ecx]
+    mov     edx, [ebx + CPUMCTXCORE.edx]
+    mov     eax, [ebx + CPUMCTXCORE.ebx]
+    mov     [%$STK_SAVED_EBX], eax
+    mov     ebp, [ebx + CPUMCTXCORE.ebp]
+    mov     esi, [ebx + CPUMCTXCORE.esi]
+    mov     edi, [ebx + CPUMCTXCORE.edi]
+
+    mov     eax, [ebx + CPUMCTXCORE.esp]
+    mov     [%$STK_ESP], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.ss.Sel]
+    mov     [%$STK_SS], eax
+    mov     eax, [ebx + CPUMCTXCORE.eflags]
+    mov     [%$STK_EFLAGS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.cs.Sel]
+    mov     [%$STK_CS], eax
+    mov     eax, [ebx + CPUMCTXCORE.eip]
+    mov     [%$STK_EIP], eax
+
+    test    dword [ebx + CPUMCTXCORE.eflags], X86_EFL_VM
+    jnz     .gc_V86_return
+
+    mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
+    mov     gs, ax
+
+    mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS
+    mov     fs, ax
+
+    mov     ax, [ebx + CPUMCTXCORE.es.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES
+    mov     es, ax
+
+    mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS
+    mov     ds, ax
+
+    ; finally restore our scratch register eax and ebx.
+    pop     ebx
+    pop     eax
+
+    add     esp, 8 + 4                          ; skip ds, es, and vector number.
+
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET
+    iret
+
+ALIGNCODE(16)
+.gc_V86_return:
+    mov     eax, dword [ebx + CPUMCTXCORE.es.Sel]
+    mov     [%$STK_V86_ES], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.ds.Sel]
+    mov     [%$STK_V86_DS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.fs.Sel]
+    mov     [%$STK_V86_FS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.gs.Sel]
+    mov     [%$STK_V86_GS], eax
+
+    ; finally restore our scratch register eax and ebx.
+    pop     ebx
+    pop     eax
+
+    add     esp, 8 + 4                          ; skip ds, es, and vector number.
+
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86
     iret
 
     ; -+- Entry point -+-
@@ -921,71 +997,81 @@ gi_NotHyperVisor:
     ; ATM the only place this can happen is when entering a trap handler.
     ; We make ASSUMPTIONS about this in respects to the WP CR0 bit
     ;
-gi_HyperVisor:
-    lea     eax, [esp + 14h + ESPOFF]      ; calc esp at trap
-    mov     [esp + CPUMCTXCORE.esp], eax   ; update esp in register frame
-    mov     [esp + CPUMCTXCORE.ss.Sel], ss ; update ss in register frame
+ALIGNCODE(16)
+.rc_in_raw_mode_context:
+    ; fix ss:esp.
+    lea     ecx, [%$STK_ESP]                ; calc esp at trap
+    mov     [ebx + CPUMCTXCORE.esp], ecx    ; update esp in register frame
+    mov     [ebx + CPUMCTXCORE.ss.Sel], ss  ; update ss in register frame
 
 %ifdef DEBUG_STUFF_INT
-    mov     ebx, [esp +  4h + ESPOFF]      ; error code
-    mov     ecx, 'intH'                    ; indicate hypervisor interrupt.
-    movzx   edx, byte [esp +  0h + ESPOFF] ; vector number
-    lea     eax, [esp]
+    xor     eax, eax
+    mov     ecx, 'intH'                    ; indicate trap in RC.
+    movzx   edx, byte [%$STK_VECTOR]
     call    trpmDbgDumpRegisterFrame
 %endif
 
-    mov     ecx, esp
     mov     edx, IMP(g_VM)
     mov     eax, VINF_EM_RAW_INTERRUPT_HYPER
     call    [edx + VM.pfnVMMGCGuestToHostAsm]
 %ifdef DEBUG_STUFF_INT
-    COM_CHAR '!'
+    COM_S_CHAR '!'
 %endif
 
     ;
     ; We've returned!
+    ; Continue(/Resume/Restart/Whatever) hypervisor execution.
     ;
+
     ; Reset TRPM state - don't record this.
-    mov     eax, IMP(g_TRPMCPU)
-    mov     dword [eax + TRPMCPU.uActiveVector], 0ffffffffh
+    ;mov     esi, IMP(g_TRPMCPU)
+    mov     dword [esi + TRPMCPU.uActiveVector], 0ffffffffh
 
     ;
     ; Restore the hypervisor context and return.
     ;
-    mov     ecx, [esp + CPUMCTXCORE.ecx]
-    mov     edx, [esp + CPUMCTXCORE.edx]
-    mov     ebx, [esp + CPUMCTXCORE.ebx]
-    mov     ebp, [esp + CPUMCTXCORE.ebp]
-    mov     esi, [esp + CPUMCTXCORE.esi]
-    mov     edi, [esp + CPUMCTXCORE.edi]
+    mov     eax, [ebx + CPUMCTXCORE.eax]
+    mov     [%$STK_SAVED_EAX], eax
+    mov     ecx, [ebx + CPUMCTXCORE.ecx]
+    mov     edx, [ebx + CPUMCTXCORE.edx]
+    mov     eax, [ebx + CPUMCTXCORE.ebx]
+    mov     [%$STK_SAVED_EBX], eax
+    mov     ebp, [ebx + CPUMCTXCORE.ebp]
+    mov     esi, [ebx + CPUMCTXCORE.esi]
+    mov     edi, [ebx + CPUMCTXCORE.edi]
 
-    ; In V86 mode DS, ES, FS & GS are restored by the iret
-    test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
-    jnz     short ti_SkipSelRegs
+                                                ; skipping esp & ss.
 
-    mov     eax, [esp + CPUMCTXCORE.gs.Sel]
+    mov     eax, [ebx + CPUMCTXCORE.eflags]
+    mov     [%$STK_EFLAGS], eax
+    mov     eax, dword [ebx + CPUMCTXCORE.cs.Sel]
+    mov     [%$STK_CS], eax
+    mov     eax, [ebx + CPUMCTXCORE.eip]
+    mov     [%$STK_EIP], eax
+
+    mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS | TRPM_TRAP_IN_HYPER
-    mov     gs, eax
+    mov     gs, ax
 
-    mov     eax, [esp + CPUMCTXCORE.fs.Sel]
+    mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS | TRPM_TRAP_IN_HYPER
-    mov     fs, eax
+    mov     fs, ax
 
-    mov     eax, [esp + CPUMCTXCORE.es.Sel]
-    mov     es, eax
-    mov     eax, [esp + CPUMCTXCORE.ds.Sel]
-    mov     ds, eax
+    mov     ax, [ebx + CPUMCTXCORE.es.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES | TRPM_TRAP_IN_HYPER
+    mov     es, ax
 
-ti_SkipSelRegs:
-    ; finally restore our scratch register eax
-    mov     eax, [esp + CPUMCTXCORE.eax]
+    mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
+    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS | TRPM_TRAP_IN_HYPER
+    mov     ds, ax
 
-    ; skip esp, ss, cs, eip & eflags. Done by iret
+    ; finally restore our scratch register eax and ebx.
+    pop     ebx
+    pop     eax
 
-    add     esp, ESPOFF + 4h                    ; skip CPUMCTXCORE structure & vector number.
-
+    add     esp, 8 + 4                          ; skip ds, es, and vector number.
     iret
-%undef ESPOFF
+%pop
 ENDPROC TRPMGCHandlerInterupt
 
 
@@ -1055,6 +1141,13 @@ BEGINPROC_EXPORTED TRPMGCHandlerTrap08
     cld
 
     ;
+    ; Disable write protection.
+    ;
+    mov     eax, cr0
+    and     eax, ~X86_CR0_WRITE_PROTECT
+    mov     cr0, eax
+
+    ;
     ; Load Hypervisor DS and ES (get it from the SS) - paranoia, but the TSS could be overwritten.. :)
     ;
     mov     eax, ss
@@ -1062,14 +1155,6 @@ BEGINPROC_EXPORTED TRPMGCHandlerTrap08
     mov     es, eax
 
     COM_S_PRINT 10,13,'*** Guru Meditation 00000008 - Double Fault! ***',10,13
-
-    ;
-    ; Disable write protection.
-    ;
-    mov     eax, cr0
-    and     eax, ~X86_CR0_WRITE_PROTECT
-    mov     cr0, eax
-
 
     COM_S_PRINT 'VM='
     COM_S_DWORD_REG edx
@@ -1086,57 +1171,56 @@ BEGINPROC_EXPORTED TRPMGCHandlerTrap08
     ;
     ; Create CPUMCTXCORE structure.
     ;
-    sub     esp, CPUMCTXCORE_size
+    mov     ebx, IMP(g_trpmHyperCtxCore)    ; It's raw-mode context, actually.
 
     mov     eax, [ecx + VBOXTSS.eip]
-    mov     [esp + CPUMCTXCORE.eip], eax
+    mov     [ebx + CPUMCTXCORE.eip], eax
 %if GC_ARCH_BITS == 64
     ; zero out the high dword
-    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.eip + 4], 0
 %endif
     mov     eax, [ecx + VBOXTSS.eflags]
-    mov     [esp + CPUMCTXCORE.eflags], eax
+    mov     [ebx + CPUMCTXCORE.eflags], eax
 
     movzx   eax, word [ecx + VBOXTSS.cs]
-    mov     dword [esp + CPUMCTXCORE.cs.Sel], eax
+    mov     dword [ebx + CPUMCTXCORE.cs.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.ds]
-    mov     dword [esp + CPUMCTXCORE.ds.Sel], eax
+    mov     dword [ebx + CPUMCTXCORE.ds.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.es]
-    mov     dword [esp + CPUMCTXCORE.es.Sel], eax
+    mov     dword [ebx + CPUMCTXCORE.es.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.fs]
-    mov     dword [esp + CPUMCTXCORE.fs.Sel], eax
+    mov     dword [ebx + CPUMCTXCORE.fs.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.gs]
-    mov     dword [esp + CPUMCTXCORE.gs.Sel], eax
+    mov     dword [ebx + CPUMCTXCORE.gs.Sel], eax
     movzx   eax, word [ecx + VBOXTSS.ss]
-    mov     [esp + CPUMCTXCORE.ss.Sel], eax
+    mov     [ebx + CPUMCTXCORE.ss.Sel], eax
     mov     eax, [ecx + VBOXTSS.esp]
-    mov     [esp + CPUMCTXCORE.esp], eax
+    mov     [ebx + CPUMCTXCORE.esp], eax
 %if GC_ARCH_BITS == 64
     ; zero out the high dword
-    mov     dword [esp + CPUMCTXCORE.esp + 4], 0
+    mov     dword [ebx + CPUMCTXCORE.esp + 4], 0
 %endif
     mov     eax, [ecx + VBOXTSS.ecx]
-    mov     [esp + CPUMCTXCORE.ecx], eax
+    mov     [ebx + CPUMCTXCORE.ecx], eax
     mov     eax, [ecx + VBOXTSS.edx]
-    mov     [esp + CPUMCTXCORE.edx], eax
+    mov     [ebx + CPUMCTXCORE.edx], eax
     mov     eax, [ecx + VBOXTSS.ebx]
-    mov     [esp + CPUMCTXCORE.ebx], eax
+    mov     [ebx + CPUMCTXCORE.ebx], eax
     mov     eax, [ecx + VBOXTSS.eax]
-    mov     [esp + CPUMCTXCORE.eax], eax
+    mov     [ebx + CPUMCTXCORE.eax], eax
     mov     eax, [ecx + VBOXTSS.ebp]
-    mov     [esp + CPUMCTXCORE.ebp], eax
+    mov     [ebx + CPUMCTXCORE.ebp], eax
     mov     eax, [ecx + VBOXTSS.esi]
-    mov     [esp + CPUMCTXCORE.esi], eax
+    mov     [ebx + CPUMCTXCORE.esi], eax
     mov     eax, [ecx + VBOXTSS.edi]
-    mov     [esp + CPUMCTXCORE.edi], eax
+    mov     [ebx + CPUMCTXCORE.edi], eax
 
     ;
     ; Show regs
     ;
-    mov     ebx, 0ffffffffh
+    mov     eax, 0ffffffffh
     mov     ecx, 'trpH'                 ; indicate trap.
     mov     edx, 08h                    ; vector number
-    lea     eax, [esp]
     call    trpmDbgDumpRegisterFrame
 
     ;
@@ -1153,10 +1237,9 @@ df_Count: dd 0
     ;
 df_to_host:
     COM_S_PRINT 'Trying to return to host...',10,13
-    mov     ecx, esp
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsmHyperCtx]
+    call    [edx + VM.pfnVMMGCGuestToHostAsm]
     jmp short df_to_host
 
     ;
@@ -1181,10 +1264,10 @@ ENDPROC TRPMGCHandlerTrap08
 ;;
 ; Internal procedure used to dump registers.
 ;
-; @param    eax     Pointer to CPUMCTXCORE.
+; @param    ebx     Pointer to CPUMCTXCORE.
 ; @param    edx     Vector number
 ; @param    ecx     'trap' if trap, 'int' if interrupt.
-; @param    ebx     Error code if trap.
+; @param    eax     Error code if trap.
 ;
 trpmDbgDumpRegisterFrame:
     sub     esp, byte 8                 ; working space for sidt/sgdt/etc
@@ -1252,24 +1335,24 @@ tddrf_resH:
 tddrf_trap_rest:
     COM_S_DWORD_REG edx
     COM_S_PRINT ' ErrorCode='
-    COM_S_DWORD_REG ebx
+    COM_S_DWORD_REG eax
     COM_S_PRINT ' cr2='
     mov ecx, cr2
     COM_S_DWORD_REG ecx
 
 tddrf_regs:
     COM_S_PRINT ' ***',10,13,'cs:eip='
-    movzx   ecx, word [eax + CPUMCTXCORE.cs.Sel]
+    movzx   ecx, word [ebx + CPUMCTXCORE.cs.Sel]
     COM_S_DWORD_REG ecx
     COM_S_CHAR ':'
-    mov     ecx, [eax + CPUMCTXCORE.eip]
+    mov     ecx, [ebx + CPUMCTXCORE.eip]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '    ss:esp='
-    movzx   ecx, word [eax + CPUMCTXCORE.ss.Sel]
+    movzx   ecx, word [ebx + CPUMCTXCORE.ss.Sel]
     COM_S_DWORD_REG ecx
     COM_S_CHAR ':'
-    mov     ecx, [eax + CPUMCTXCORE.esp]
+    mov     ecx, [ebx + CPUMCTXCORE.esp]
     COM_S_DWORD_REG ecx
 
 
@@ -1301,7 +1384,7 @@ tddrf_regs:
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '  eflags='
-    mov     ecx, [eax + CPUMCTXCORE.eflags]
+    mov     ecx, [ebx + CPUMCTXCORE.eflags]
     COM_S_DWORD_REG ecx
 
 
@@ -1322,49 +1405,49 @@ tddrf_regs:
 
 
     COM_S_PRINT 10,13,' ds='
-    movzx   ecx, word [eax + CPUMCTXCORE.ds.Sel]
+    movzx   ecx, word [ebx + CPUMCTXCORE.ds.Sel]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '   es='
-    movzx   ecx, word [eax + CPUMCTXCORE.es.Sel]
+    movzx   ecx, word [ebx + CPUMCTXCORE.es.Sel]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '   fs='
-    movzx   ecx, word [eax + CPUMCTXCORE.fs.Sel]
+    movzx   ecx, word [ebx + CPUMCTXCORE.fs.Sel]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '   gs='
-    movzx   ecx, word [eax + CPUMCTXCORE.gs.Sel]
+    movzx   ecx, word [ebx + CPUMCTXCORE.gs.Sel]
     COM_S_DWORD_REG ecx
 
 
     COM_S_PRINT 10,13,'eax='
-    mov     ecx, [eax + CPUMCTXCORE.eax]
+    mov     ecx, [ebx + CPUMCTXCORE.eax]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '  ebx='
-    mov     ecx, [eax + CPUMCTXCORE.ebx]
+    mov     ecx, [ebx + CPUMCTXCORE.ebx]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '  ecx='
-    mov     ecx, [eax + CPUMCTXCORE.ecx]
+    mov     ecx, [ebx + CPUMCTXCORE.ecx]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '  edx='
-    mov     ecx, [eax + CPUMCTXCORE.edx]
+    mov     ecx, [ebx + CPUMCTXCORE.edx]
     COM_S_DWORD_REG ecx
 
 
     COM_S_PRINT 10,13,'esi='
-    mov     ecx, [eax + CPUMCTXCORE.esi]
+    mov     ecx, [ebx + CPUMCTXCORE.esi]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '  edi='
-    mov     ecx, [eax + CPUMCTXCORE.edi]
+    mov     ecx, [ebx + CPUMCTXCORE.edi]
     COM_S_DWORD_REG ecx
 
     COM_S_PRINT '  ebp='
-    mov     ecx, [eax + CPUMCTXCORE.ebp]
+    mov     ecx, [ebx + CPUMCTXCORE.ebp]
     COM_S_DWORD_REG ecx
 
 

@@ -60,7 +60,6 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     if (RT_FAILURE(rc))
         return rc;
 
-    CPUMHyperSetCtxCore(pVCpu, NULL);
     memset(pVCpu->vmm.s.pbEMTStackR3, 0xaa, VMM_STACK_SIZE);
     CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
     CPUMPushHyper(pVCpu, uVariation);
@@ -100,7 +99,6 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     if (RT_FAILURE(rc))
         return rc;
 
-    CPUMHyperSetCtxCore(pVCpu, NULL);
     memset(pVCpu->vmm.s.pbEMTStackR3, 0xaa, VMM_STACK_SIZE);
     CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
     CPUMPushHyper(pVCpu, uVariation);
@@ -338,7 +336,6 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         /*
          * Interrupt forwarding.
          */
-        CPUMHyperSetCtxCore(pVCpu, NULL);
         CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
         CPUMPushHyper(pVCpu, 0);
         CPUMPushHyper(pVCpu, VMMGC_DO_TESTCASE_HYPER_INTERRUPT);
@@ -402,7 +399,6 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
         for (i = 0; i < 1000000; i++)
         {
-            CPUMHyperSetCtxCore(pVCpu, NULL);
             CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
             CPUMPushHyper(pVCpu, 0);
             CPUMPushHyper(pVCpu, VMMGC_DO_TESTCASE_NOP);
@@ -494,7 +490,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     rc = PGMR3MappingsFix(pVM, MM_HYPER_AREA_ADDRESS, cb);
     AssertRCReturn(rc, rc);
 
-    CPUMQueryHyperCtxPtr(pVCpu, &pHyperCtx);
+    pHyperCtx = CPUMGetHyperCtxPtr(pVCpu);
 
     pHyperCtx->cr0 = X86_CR0_PE | X86_CR0_WP | X86_CR0_PG | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
     pHyperCtx->cr4 = X86_CR4_PGE | X86_CR4_OSFSXR | X86_CR4_OSXMMEEXCPT;
@@ -515,7 +511,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     {
         RTPrintf("VMM: VMMGCEntry=%RRv\n", RCPtrEP);
 
-        CPUMQueryHyperCtxPtr(pVCpu, &pHyperCtx);
+        pHyperCtx = CPUMGetHyperCtxPtr(pVCpu);
 
         /* Fill in hidden selector registers for the hypervisor state. */
         SYNC_SEL(pHyperCtx, cs);
@@ -536,8 +532,6 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
         uint64_t TickStart = ASMReadTSC();
         for (i = 0; i < 1000000; i++)
         {
-            CPUMHyperSetCtxCore(pVCpu, NULL);
-
             CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
             CPUMPushHyper(pVCpu, 0);
             CPUMPushHyper(pVCpu, VMMGC_DO_TESTCASE_HWACCM_NOP);
@@ -546,7 +540,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             CPUMPushHyper(pVCpu, RCPtrEP);                /* what to call */
             CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
 
-            CPUMQueryHyperCtxPtr(pVCpu, &pHyperCtx);
+            pHyperCtx = CPUMGetHyperCtxPtr(pVCpu);
             pGuestCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
             /* Copy the hypervisor context to make sure we have a valid guest context. */

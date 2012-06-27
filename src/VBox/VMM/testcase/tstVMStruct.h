@@ -58,9 +58,6 @@
 #endif
     GEN_CHECK_OFF(CPUMCPU, Guest);
     GEN_CHECK_OFF(CPUMCPU, GuestMsrs);
-    GEN_CHECK_OFF(CPUMCPU, pHyperCoreR3);
-    GEN_CHECK_OFF(CPUMCPU, pHyperCoreR0);
-    GEN_CHECK_OFF(CPUMCPU, pHyperCoreRC);
     GEN_CHECK_OFF(CPUMCPU, fUseFlags);
     GEN_CHECK_OFF(CPUMCPU, fChanged);
     GEN_CHECK_OFF(CPUMCPU, offCPUM);

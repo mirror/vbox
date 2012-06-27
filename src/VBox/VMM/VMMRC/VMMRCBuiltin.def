@@ -24,6 +24,8 @@ EXPORTS
     g_Logger                        DATA
     g_RelLogger                     DATA
     g_pSUPGlobalInfoPage            DATA
+    g_trpmGuestCtxCore              DATA ; for TRPMRCHandlersA.asm only
+    g_trpmHyperCtxCore              DATA ; for TRPMRCHandlersA.asm only
 
     ; code
 

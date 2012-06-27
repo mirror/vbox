@@ -47,65 +47,27 @@
 
 
 /**
- * Sets or resets an alternative hypervisor context core.
+ * Obsolete.
  *
- * This is called when we get a hypervisor trap set switch the context
- * core with the trap frame on the stack. It is called again to reset
- * back to the default context core when resuming hypervisor execution.
- *
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtxCore    Pointer to the alternative context core or NULL
- *                      to go back to the default context core.
- */
-VMMDECL(void) CPUMHyperSetCtxCore(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
-    LogFlow(("CPUMHyperSetCtxCore: %p/%p/%p -> %p\n", pVCpu->cpum.s.CTX_SUFF(pHyperCore), pCtxCore));
-    if (!pCtxCore)
-    {
-        pCtxCore = CPUMCTX2CORE(&pVCpu->cpum.s.Hyper);
-        pVCpu->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))VM_R3_ADDR(pVM, pCtxCore);
-        pVCpu->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))VM_R0_ADDR(pVM, pCtxCore);
-        pVCpu->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))VM_RC_ADDR(pVM, pCtxCore);
-    }
-    else
-    {
-        pVCpu->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))MMHyperCCToR3(pVM, pCtxCore);
-        pVCpu->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))MMHyperCCToR0(pVM, pCtxCore);
-        pVCpu->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))MMHyperCCToRC(pVM, pCtxCore);
-    }
-}
-
-
-/**
- * Gets the pointer to the internal CPUMCTXCORE structure for the hypervisor.
- * This is only for reading in order to save a few calls.
+ * We don't support nested hypervisor context interrupts or traps.  Life is much
+ * simpler when we don't.  It's also slightly faster at times.
  *
  * @param   pVM         Handle to the virtual machine.
  */
 VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore);
+    return CPUMCTX2CORE(&pVCpu->cpum.s.Hyper);
 }
 
 
 /**
- * Queries the pointer to the internal CPUMCTX structure for the hypervisor.
+ * Gets the pointer to the hypervisor CPU context structure of a virtual CPU.
  *
- * @returns VBox status code.
- * @param   pVM         Handle to the virtual machine.
- * @param   ppCtx       Receives the hyper CPUMCTX pointer when successful.
- *
- * @deprecated  This will *not* (and has never) given the right picture of the
- *              hypervisor register state. With CPUMHyperSetCtxCore() this is
- *              getting much worse. So, use the individual functions for getting
- *              and esp. setting the hypervisor registers.
+ * @param   pVCpu       Pointer to the virtual CPU.
  */
-VMMDECL(int) CPUMQueryHyperCtxPtr(PVMCPU pVCpu, PCPUMCTX *ppCtx)
+VMMDECL(PCPUMCTX) CPUMGetHyperCtxPtr(PVMCPU pVCpu)
 {
-    *ppCtx = &pVCpu->cpum.s.Hyper;
-    return VINF_SUCCESS;
+    return &pVCpu->cpum.s.Hyper;
 }
 
 
@@ -119,7 +81,7 @@ VMMDECL(void) CPUMSetHyperGDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 VMMDECL(void) CPUMSetHyperIDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 {
     pVCpu->cpum.s.Hyper.idtr.cbIdt = limit;
-    pVCpu->cpum.s.Hyper.idtr.pIdt = addr;
+    pVCpu->cpum.s.Hyper.idtr.pIdt  = addr;
 }
 
 
@@ -141,56 +103,56 @@ VMMDECL(uint32_t) CPUMGetHyperCR3(PVMCPU pVCpu)
 
 VMMDECL(void) CPUMSetHyperCS(PVMCPU pVCpu, RTSEL SelCS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs.Sel = SelCS;
+    pVCpu->cpum.s.Hyper.cs.Sel = SelCS;
 }
 
 
 VMMDECL(void) CPUMSetHyperDS(PVMCPU pVCpu, RTSEL SelDS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds.Sel = SelDS;
+    pVCpu->cpum.s.Hyper.ds.Sel = SelDS;
 }
 
 
 VMMDECL(void) CPUMSetHyperES(PVMCPU pVCpu, RTSEL SelES)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es.Sel = SelES;
+    pVCpu->cpum.s.Hyper.es.Sel = SelES;
 }
 
 
 VMMDECL(void) CPUMSetHyperFS(PVMCPU pVCpu, RTSEL SelFS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs.Sel = SelFS;
+    pVCpu->cpum.s.Hyper.fs.Sel = SelFS;
 }
 
 
 VMMDECL(void) CPUMSetHyperGS(PVMCPU pVCpu, RTSEL SelGS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs.Sel = SelGS;
+    pVCpu->cpum.s.Hyper.gs.Sel = SelGS;
 }
 
 
 VMMDECL(void) CPUMSetHyperSS(PVMCPU pVCpu, RTSEL SelSS)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss.Sel = SelSS;
+    pVCpu->cpum.s.Hyper.ss.Sel = SelSS;
 }
 
 
 VMMDECL(void) CPUMSetHyperESP(PVMCPU pVCpu, uint32_t u32ESP)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->esp = u32ESP;
+    pVCpu->cpum.s.Hyper.esp = u32ESP;
 }
 
 
 VMMDECL(int) CPUMSetHyperEFlags(PVMCPU pVCpu, uint32_t Efl)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32 = Efl;
+    pVCpu->cpum.s.Hyper.eflags.u32 = Efl;
     return VINF_SUCCESS;
 }
 
 
 VMMDECL(void) CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP)
 {
-    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eip = u32EIP;
+    pVCpu->cpum.s.Hyper.eip = u32EIP;
 }
 
 
@@ -250,103 +212,103 @@ VMMDECL(void) CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7)
 
 VMMDECL(RTSEL) CPUMGetHyperCS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs.Sel;
+    return pVCpu->cpum.s.Hyper.cs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperDS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds.Sel;
+    return pVCpu->cpum.s.Hyper.ds.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperES(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es.Sel;
+    return pVCpu->cpum.s.Hyper.es.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperFS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs.Sel;
+    return pVCpu->cpum.s.Hyper.fs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperGS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs.Sel;
+    return pVCpu->cpum.s.Hyper.gs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetHyperSS(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss.Sel;
+    return pVCpu->cpum.s.Hyper.ss.Sel;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperEAX(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eax;
+    return pVCpu->cpum.s.Hyper.eax;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperEBX(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ebx;
+    return pVCpu->cpum.s.Hyper.ebx;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperECX(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ecx;
+    return pVCpu->cpum.s.Hyper.ecx;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperEDX(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->edx;
+    return pVCpu->cpum.s.Hyper.edx;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperESI(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->esi;
+    return pVCpu->cpum.s.Hyper.esi;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperEDI(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->edi;
+    return pVCpu->cpum.s.Hyper.edi;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperEBP(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ebp;
+    return pVCpu->cpum.s.Hyper.ebp;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperESP(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->esp;
+    return pVCpu->cpum.s.Hyper.esp;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperEFlags(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32;
+    return pVCpu->cpum.s.Hyper.eflags.u32;
 }
 
 
 VMMDECL(uint32_t) CPUMGetHyperEIP(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eip;
+    return pVCpu->cpum.s.Hyper.eip;
 }
 
 
 VMMDECL(uint64_t) CPUMGetHyperRIP(PVMCPU pVCpu)
 {
-    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->rip;
+    return pVCpu->cpum.s.Hyper.rip;
 }
 
 
