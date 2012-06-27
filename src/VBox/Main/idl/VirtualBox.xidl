@@ -14721,7 +14721,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="c2b4cd5f-d3ce-4dd6-b915-123272163ef5"
+    uuid="9ddb5449-f463-47cb-a717-d6f22da3b3a2"
     internal="yes"
     wsmap="suppress"
     >
@@ -14912,6 +14912,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="remove" type="boolean" dir="in">
         <desc>TRUE if the device is removed, FALSE if it was added.</desc>
+      </param>
+    </method>
+    
+    <method name="onClipboardModeChange">
+      <desc>
+        Notification when the shared clipboard mode changes.
+      </desc>
+      <param name="clipboardMode" type="ClipboardMode" dir="in">
+        <desc>The new shared clipboard mode.</desc>
       </param>
     </method>
 
@@ -16664,7 +16673,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="cce48db6-8561-479d-8d46-1358bab45d4e"
+    uuid="100cf5c8-7dd4-4600-8d75-636d211479c9"
     >
 
     <desc>
@@ -16922,9 +16931,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IStorageDeviceChangedEvent">IStorageDeviceChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnClipboardModeChanged" value="72">
+      <desc>
+        See <link to="IClipboardModeChangedEvent">IClipboardModeChangedEvent</link>.
+      </desc>
+    </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="72">
+    <const name="Last" value="73">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -17665,6 +17679,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="mediumAttachment" type="IMediumAttachment" readonly="yes">
       <desc>
         Medium attachment that is subject to change.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IClipboardModeChangedEvent" extends="IEvent"
+    uuid="cac21692-7997-4595-a731-3a509db604e5"
+    wsmap="managed" autogen="VBoxEvent" id="OnClipboardModeChanged"
+    >
+    <desc>
+      Notification when the shared clipboard mode changes.
+    </desc>
+    <attribute name="clipboardMode" type="ClipboardMode" readonly="yes">
+      <desc>
+        The new clipboard mode.
       </desc>
     </attribute>
   </interface>

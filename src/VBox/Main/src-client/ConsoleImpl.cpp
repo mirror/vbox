@@ -4853,6 +4853,46 @@ HRESULT Console::onCPUExecutionCapChange(ULONG aExecutionCap)
 }
 
 /**
+ * Called by IInternalSessionControl::OnClipboardModeChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::onClipboardModeChange(ClipboardMode_T aClipboardMode)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    /* don't trigger the Clipboard mode change if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        if (   mMachineState == MachineState_Running
+            || mMachineState == MachineState_Teleporting
+            || mMachineState == MachineState_LiveSnapshotting)
+            changeClipboardMode(aClipboardMode);
+        else
+            rc = setInvalidMachineStateError();
+        ptrVM.release();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+    {
+        alock.release();
+        fireClipboardModeChangedEvent(mEventSource, aClipboardMode);
+    }
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
  * Called by IInternalSessionControl::OnVRDEServerChange().
  *
  * @note Locks this object for writing.
@@ -7626,6 +7666,43 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
         default: /* shut up gcc */
             break;
     }
+}
+
+/**
+ * Changes the clipboard mode.
+ *
+ * @param aClipboardMode  new clipboard mode.
+ */
+void Console::changeClipboardMode(ClipboardMode_T aClipboardMode)
+{
+    VMMDev *pVMMDev = m_pVMMDev;
+    Assert(pVMMDev);
+
+    VBOXHGCMSVCPARM parm;
+    parm.type = VBOX_HGCM_SVC_PARM_32BIT;
+
+    switch (aClipboardMode)
+    {
+        default:
+        case ClipboardMode_Disabled:
+            LogRel(("VBoxSharedClipboard mode: Off\n"));
+            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_OFF;
+            break;
+        case ClipboardMode_GuestToHost:
+            LogRel(("VBoxSharedClipboard mode: Guest to Host\n"));
+            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST;
+            break;
+        case ClipboardMode_HostToGuest:
+            LogRel(("VBoxSharedClipboard mode: Host to Guest\n"));
+            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST;
+            break;
+        case ClipboardMode_Bidirectional:
+            LogRel(("VBoxSharedClipboard mode: Bidirectional\n"));
+            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
+            break;
+    }
+
+    pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
 }
 
 #ifdef VBOX_WITH_USB
