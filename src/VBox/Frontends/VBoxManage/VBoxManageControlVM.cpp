@@ -162,6 +162,34 @@ int handleControlVM(HandlerArg *a)
 
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(CPUExecutionCap)(n));
         }
+        else if (!strcmp(a->argv[1], "clipboard"))
+        {
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected clipboard mode.", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            ClipboardMode_T mode;
+            if (!strcmp(a->argv[2], "disabled"))
+                mode = ClipboardMode_Disabled;
+            else if (!strcmp(a->argv[2], "hosttoguest"))
+                mode = ClipboardMode_HostToGuest;
+            else if (!strcmp(a->argv[2], "guesttohost"))
+                mode = ClipboardMode_GuestToHost;
+            else if (!strcmp(a->argv[2], "bidirectional"))
+                mode = ClipboardMode_Bidirectional;
+            else
+            {
+                errorArgument("Invalid '%s' argument '%s'.", a->argv[1], a->argv[2]);
+                rc = E_FAIL;
+            }
+            if (SUCCEEDED(rc))
+            {
+                CHECK_ERROR_BREAK(sessionMachine, COMSETTER(ClipboardMode)(mode));
+            }
+        }
         else if (!strcmp(a->argv[1], "poweroff"))
         {
             ComPtr<IProgress> progress;

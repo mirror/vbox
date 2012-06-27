@@ -2561,12 +2561,12 @@ Machine::COMSETTER(ClipboardMode)(ClipboardMode_T aClipboardMode)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
+
+    alock.release();
+    onClipboardModeChange(aClipboardMode);
 
     return S_OK;
 }
@@ -8359,7 +8359,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
             const settings::GuestProperty &prop = *it;
             uint32_t fFlags = guestProp::NILFLAG;
             guestProp::validateFlags(prop.strFlags.c_str(), &fFlags);
-            HWData::GuestProperty property = { prop.strName, prop.strValue, prop.timestamp, fFlags };
+            HWData::GuestProperty property = { prop.strName, prop.strValue, (LONG64) prop.timestamp, fFlags };
             mHWData->mGuestProperties.push_back(property);
         }
 
@@ -12742,6 +12742,29 @@ HRESULT SessionMachine::onSharedFolderChange()
         return S_OK;
 
     return directControl->OnSharedFolderChange(FALSE /* aGlobal */);
+}
+
+/**
+ * @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onClipboardModeChange(ClipboardMode_T aClipboardMode)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnClipboardModeChange(aClipboardMode);
 }
 
 /**

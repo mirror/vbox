@@ -2437,7 +2437,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             ClipboardMode_T mode = ClipboardMode_Disabled;
             hrc = pMachine->COMGETTER(ClipboardMode)(&mode);                                H();
 
-            if (mode != ClipboardMode_Disabled)
+            if (/* mode != ClipboardMode_Disabled */ true)
             {
                 /* Load the service */
                 rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
@@ -2450,44 +2450,12 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 }
                 else
                 {
+                    changeClipboardMode(mode);
+
                     /* Setup the service. */
                     VBOXHGCMSVCPARM parm;
-
                     parm.type = VBOX_HGCM_SVC_PARM_32BIT;
-
-                    switch (mode)
-                    {
-                        default:
-                        case ClipboardMode_Disabled:
-                        {
-                            LogRel(("VBoxSharedClipboard mode: Off\n"));
-                            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_OFF;
-                            break;
-                        }
-                        case ClipboardMode_GuestToHost:
-                        {
-                            LogRel(("VBoxSharedClipboard mode: Guest to Host\n"));
-                            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST;
-                            break;
-                        }
-                        case ClipboardMode_HostToGuest:
-                        {
-                            LogRel(("VBoxSharedClipboard mode: Host to Guest\n"));
-                            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST;
-                            break;
-                        }
-                        case ClipboardMode_Bidirectional:
-                        {
-                            LogRel(("VBoxSharedClipboard mode: Bidirectional\n"));
-                            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
-                            break;
-                        }
-                    }
-
-                    pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
-
                     parm.setUInt32(!useHostClipboard());
-
                     pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
 
                     Log(("Set VBoxSharedClipboard mode\n"));
