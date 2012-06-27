@@ -3781,6 +3781,8 @@ typedef BOOL (WINAPI *WINED3D_PFNWGLSETPIXELFORMATWINE)(HDC hdc, int iPixelForma
 #define GL_RCUSAGE_TEXTURE_SET_CR     0x8B29
 /*report that the shared resource is no longer used by this context, the parameter value is a texture name*/
 #define GL_RCUSAGE_TEXTURE_CLEAR_CR   0x8B2A
+/*configures host to create windows initially hidden*/
+#define GL_HOST_WND_CREATED_HIDDEN    0x8B2B
 
 typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
 

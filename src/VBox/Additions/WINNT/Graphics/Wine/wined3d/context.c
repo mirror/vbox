@@ -1843,6 +1843,10 @@ struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3
 #if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
     GL_EXTCALL(glChromiumParameteriCR(GL_FLUSH_ON_THREAD_SWITCH_CR,  GL_TRUE));
 #endif
+#if defined(VBOX_WITH_WDDM)
+    GL_EXTCALL(glChromiumParameteriCR(GL_HOST_WND_CREATED_HIDDEN,  GL_TRUE));
+#endif
+
     LEAVE_GL();
 
     device->frag_pipe->enable_extension((IWineD3DDevice *)device, TRUE);
