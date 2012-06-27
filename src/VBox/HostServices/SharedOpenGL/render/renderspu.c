@@ -296,7 +296,8 @@ renderspuWindowCreate( const char *dpyName, GLint visBits )
     window->width  = render_spu.defaultWidth;
     window->height = render_spu.defaultHeight;
 
-    if ((render_spu.render_to_app_window || render_spu.render_to_crut_window) && !crGetenv("CRNEWSERVER"))
+    if (render_spu.force_hidden_wdn_create
+            || ((render_spu.render_to_app_window || render_spu.render_to_crut_window) && !crGetenv("CRNEWSERVER")))
         showIt = 0;
     else
         showIt = window->id > 0;
@@ -695,18 +696,16 @@ static void RENDER_APIENTRY renderspuSemaphoreVCR( GLuint name )
 
 static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint value)
 {
-    (void) target;
-    (void) value;
 
-
-#if 0
     switch (target)
     {
+        case GL_HOST_WND_CREATED_HIDDEN:
+            render_spu.force_hidden_wdn_create = value ? GL_TRUE : GL_FALSE;
+            break;
         default:
-            crWarning("Unhandled target in renderspuChromiumParameteriCR()");
+//            crWarning("Unhandled target in renderspuChromiumParameteriCR()");
             break;
     }
-#endif
 }
 
 static void RENDER_APIENTRY
