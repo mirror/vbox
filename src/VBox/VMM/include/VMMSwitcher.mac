@@ -49,8 +49,6 @@ struc VMMSWITCHERDEF
     .offGCGuestToHost:              resd 1
     .offGCCallTrampoline:           resd 1
     .offGCGuestToHostAsm:           resd 1
-    .offGCGuestToHostAsmHyperCtx:   resd 1
-    .offGCGuestToHostAsmGuestCtx:   resd 1
     ; disasm help
     .offHCCode0:                    resd 1
     .cbHCCode0:                     resd 1

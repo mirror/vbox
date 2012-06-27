@@ -260,8 +260,6 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->vmm.s.pfnGuestToHostRC         = RCPtr + pSwitcher->offGCGuestToHost;
     pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offGCCallTrampoline;
     pVM->pfnVMMGCGuestToHostAsm         = RCPtr + pSwitcher->offGCGuestToHostAsm;
-    pVM->pfnVMMGCGuestToHostAsmHyperCtx = RCPtr + pSwitcher->offGCGuestToHostAsmHyperCtx;
-    pVM->pfnVMMGCGuestToHostAsmGuestCtx = RCPtr + pSwitcher->offGCGuestToHostAsmGuestCtx;
 
 //    AssertFailed();
 #else
@@ -825,10 +823,6 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                     RTLogPrintf(" *GCCallTrampoline:\n");
                 if (pSwitcher->offGCGuestToHostAsm == offCode)
                     RTLogPrintf(" *GCGuestToHostAsm:\n");
-                if (pSwitcher->offGCGuestToHostAsmHyperCtx == offCode)
-                    RTLogPrintf(" *GCGuestToHostAsmHyperCtx:\n");
-                if (pSwitcher->offGCGuestToHostAsmGuestCtx == offCode)
-                    RTLogPrintf(" *GCGuestToHostAsmGuestCtx:\n");
 
                 /* disas */
                 uint32_t    cbInstr = 0;
@@ -975,12 +969,10 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
         RTR0PTR     pbCodeR0 = (RTR0PTR)pVM->vmm.s.pvCoreCodeR0 + pVM->vmm.s.aoffSwitchers[enmSwitcher]; /** @todo fix the pvCoreCodeR0 type */
         pVM->vmm.s.pfnHostToGuestR0 = pbCodeR0 + pSwitcher->offR0HostToGuest;
 
-        RTGCPTR     GCPtr = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[enmSwitcher];
-        pVM->vmm.s.pfnGuestToHostRC         = GCPtr + pSwitcher->offGCGuestToHost;
-        pVM->vmm.s.pfnCallTrampolineRC      = GCPtr + pSwitcher->offGCCallTrampoline;
-        pVM->pfnVMMGCGuestToHostAsm         = GCPtr + pSwitcher->offGCGuestToHostAsm;
-        pVM->pfnVMMGCGuestToHostAsmHyperCtx = GCPtr + pSwitcher->offGCGuestToHostAsmHyperCtx;
-        pVM->pfnVMMGCGuestToHostAsmGuestCtx = GCPtr + pSwitcher->offGCGuestToHostAsmGuestCtx;
+        RTRCPTR     RCPtr = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[enmSwitcher];
+        pVM->vmm.s.pfnGuestToHostRC         = RCPtr + pSwitcher->offGCGuestToHost;
+        pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offGCCallTrampoline;
+        pVM->pfnVMMGCGuestToHostAsm         = RCPtr + pSwitcher->offGCGuestToHostAsm;
         return VINF_SUCCESS;
     }
 

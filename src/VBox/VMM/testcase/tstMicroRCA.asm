@@ -126,6 +126,7 @@ gabStackCopy resb  4096
 
 extern NAME(idtOnly42)
 extern IMPNAME(g_VM)
+extern IMPNAME(VMMGCGuestToHostAsm)
 
 BEGINCODE
 EXPORTEDNAME tstMicroRCAsmStart
@@ -479,6 +480,7 @@ tstTrapHandler_Common:
 tstTrapHandler_Fault:
     cld
 
+%if 0 ; this has been broken for quite some time
     ;
     ; Setup CPUMCTXCORE frame
     ;
@@ -500,15 +502,16 @@ tstTrapHandler_Fault:
     push    esi               ;38       ;  4h
     push    edi               ;3c       ;  0h
                               ;40
+%endif
 
-    test    byte [esp + CPUMCTXCORE.cs.Sel], 3h ; check CPL of the cs selector
+    test    byte [esp + 0ch +  4h], 3h ; check CPL of the cs selector
     jmp short tstTrapHandler_Fault_Hyper ;; @todo
     jz short tstTrapHandler_Fault_Hyper
 tstTrapHandler_Fault_Guest:
     mov     ecx, esp
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_DONT_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsmGuestCtx]
+    call    [edx + VM.pfnVMMGCGuestToHostAsm]
     jmp short tstTrapHandler_Fault_Guest
 
 tstTrapHandler_Fault_Hyper:
@@ -520,7 +523,7 @@ tstTrapHandler_Fault_Hyper:
     mov     ecx, esp
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_DONT_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsmHyperCtx]
+    call    [edx + VM.pfnVMMGCGuestToHostAsm]
     jmp short tstTrapHandler_Fault_Hyper
 
 BEGINPROC tstInterrupt42

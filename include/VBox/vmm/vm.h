@@ -788,58 +788,17 @@ typedef struct VM
     /** Offset to the VMCPU array starting from beginning of this structure. */
     uint32_t                    offVMCPU;
 
-    /** Reserved; alignment. */
-    uint32_t                    u32Reserved[5];
-
-    /** @name Public VMM Switcher APIs
-     * @{ */
     /**
-     * Assembly switch entry point for returning to host context.
-     * This function will clean up the stack frame.
+     * VMMSwitcher assembly entry point returning to host context.
      *
-     * @param   eax         The return code, register.
-     * @param   Ctx         The guest core context.
-     * @remark  Assume interrupts disabled.
-     */
-    RTRCPTR                     pfnVMMGCGuestToHostAsmGuestCtx/*(int32_t eax, CPUMCTXCORE Ctx)*/;
-
-    /**
-     * Assembly switch entry point for returning to host context.
-     *
-     * This is an alternative entry point which we'll be using when the we have the
-     * hypervisor context and need to save  that before going to the host.
-     *
-     * This is typically useful when abandoning the hypervisor because of a trap
-     * and want the trap state to be saved.
-     *
-     * @param   eax         The return code, register.
-     * @param   ecx         Pointer to the  hypervisor core context, register.
-     * @remark  Assume interrupts disabled.
-     */
-    RTRCPTR                     pfnVMMGCGuestToHostAsmHyperCtx/*(int32_t eax, PCPUMCTXCORE ecx)*/;
-
-    /**
-     * Assembly switch entry point for returning to host context.
-     *
-     * This is an alternative to the two *Ctx APIs and implies that the context has already
-     * been saved, or that it's just a brief return to HC and that the caller intends to resume
-     * whatever it is doing upon 'return' from this call.
+     * Depending on how the host handles the rc status given in @a eax, this may
+     * return and let the caller resume whatever it was doing prior to the call.
+     * This method pointer lives here because TRPM needs it.
      *
      * @param   eax         The return code, register.
      * @remark  Assume interrupts disabled.
      */
     RTRCPTR                     pfnVMMGCGuestToHostAsm/*(int32_t eax)*/;
-    /** @} */
-
-
-    /** @name Various VM data owned by VM.
-     * @{ */
-    RTTHREAD                    uPadding1;
-    /** The native handle of ThreadEMT. Getting the native handle
-     * is generally faster than getting the IPRT one (except on OS/2 :-). */
-    RTNATIVETHREAD              uPadding2;
-    /** @} */
-
 
     /** @name Various items that are frequently accessed.
      * @{ */
@@ -869,8 +828,6 @@ typedef struct VM
      * @{ */
     /** Raw-mode Context VM Pointer. */
     RCPTRTYPE(RTTRACEBUF)       hTraceBufRC;
-    /** Alignment padding */
-    uint32_t                    uPadding3;
     /** Ring-3 Host Context VM Pointer. */
     R3PTRTYPE(RTTRACEBUF)       hTraceBufR3;
     /** Ring-0 Host Context VM Pointer. */
@@ -879,7 +836,7 @@ typedef struct VM
 
 #if HC_ARCH_BITS == 32
     /** Alignment padding.. */
-    uint32_t                    uPadding4;
+    uint32_t                    uPadding2;
 #endif
 
     /** @name Switcher statistics (remove)
@@ -909,11 +866,9 @@ typedef struct VM
     STAMPROFILEADV              StatSwitcherTSS;
     /** @} */
 
-#if HC_ARCH_BITS != 64
     /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
-    uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 32 : 0];
-#endif
+    uint8_t                     abAlignment3[(HC_ARCH_BITS == 32 ? 24 : 0) + 48];
 
     /** CPUM part. */
     union

@@ -105,10 +105,6 @@ typedef struct VMMSWITCHERDEF
     uint32_t    offGCCallTrampoline;
     /** vmmGCGuestToHostAsm assembly entrypoint. */
     uint32_t    offGCGuestToHostAsm;
-    /** vmmGCGuestToHostAsmHyperCtx assembly entrypoint taking HyperCtx. */
-    uint32_t    offGCGuestToHostAsmHyperCtx;
-    /** vmmGCGuestToHostAsmGuestCtx assembly entrypoint taking GuestCtx. */
-    uint32_t    offGCGuestToHostAsmGuestCtx;
     /** @name Disassembly Regions.
      * @{ */
     uint32_t    offHCCode0;
