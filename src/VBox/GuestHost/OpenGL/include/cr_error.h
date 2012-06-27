@@ -40,7 +40,7 @@ DECLEXPORT(void) crError(const char *format, ... ) NORETURN_PRINTF;
 //extern int g_VBoxFbgFBreakDdi;
 #  define CR_DDI_PROLOGUE() do { /*if (g_VBoxFbgFBreakDdi) {Assert(0);}*/ } while (0)
 # else
-#  define CRASSERT( PRED ) ((PRED)?(void)0:crError( "Assertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
+#  define CRASSERT( PRED ) ((PRED)?(void)0:crWarning( "Assertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
 #  define CR_DDI_PROLOGUE() do {} while (0)
 # endif
 # define THREADASSERT( PRED ) ((PRED)?(void)0:crError( "Are you trying to run a threaded app ?\nBuild with 'make threadsafe'\nAssertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))

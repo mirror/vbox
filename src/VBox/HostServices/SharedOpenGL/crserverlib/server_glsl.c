@@ -40,8 +40,12 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchCompileShader(GLuint shader)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteShader(GLuint shader)
 {
+    GLuint shaderHW = crStateGetShaderHWID(shader);
     crStateDeleteShader(shader);
-    cr_server.head_spu->dispatch_table.DeleteShader(crStateGetShaderHWID(shader));
+    if (shaderHW)
+        cr_server.head_spu->dispatch_table.DeleteShader(shaderHW);
+    else
+        crWarning("crServerDispatchDeleteShader: hwid not found for shader(%d)", shader);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchAttachShader(GLuint program, GLuint shader)
@@ -70,8 +74,12 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchUseProgram(GLuint program)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteProgram(GLuint program)
 {
+    GLuint hwId = crStateGetProgramHWID(program);
     crStateDeleteProgram(program);
-    cr_server.head_spu->dispatch_table.DeleteProgram(crStateGetProgramHWID(program));
+    if (hwId)
+        cr_server.head_spu->dispatch_table.DeleteProgram(hwId);
+    else
+        crWarning("crServerDispatchDeleteProgram: hwid not found for program(%d)", program);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchValidateProgram(GLuint program)
@@ -93,6 +101,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteObjectARB(GLhandleARB obj)
     if (!hwid)
     {
         hwid = crStateGetShaderHWID(obj);
+        CRASSERT(hwid);
         crStateDeleteShader(obj);
     }
     else
@@ -100,7 +109,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteObjectARB(GLhandleARB obj)
         crStateDeleteProgram(obj);
     }
 
-    cr_server.head_spu->dispatch_table.DeleteObjectARB(hwid);
+    if (hwid)
+        cr_server.head_spu->dispatch_table.DeleteObjectARB(hwid);
 }
 
 GLint SERVER_DISPATCH_APIENTRY crServerDispatchGetAttribLocation( GLuint program, const char * name )
