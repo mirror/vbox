@@ -472,7 +472,7 @@ static int dbgcCmdHelpCmdOrFunc(PDBGCCMDHLP pCmdHlp, const char *pszName, bool f
         ssize_t cchCurWidth = cchMaxWidth - off - 1;
         if (cchCurWidth != (ssize_t)cchCol3)
             DBGCCmdHlpPrintf(pCmdHlp, "\n");
-        else if (cchDesc <= cchCurWidth)
+        else if ((ssize_t)cchDesc <= cchCurWidth)
             return DBGCCmdHlpPrintf(pCmdHlp, "%*s %s\n", cchPadding, "", pszDescription);
         else
         {
