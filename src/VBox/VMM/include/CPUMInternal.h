@@ -393,7 +393,7 @@ typedef struct CPUMCPU
     bool                    fRemEntered;
 
     /** Align the structure on a 64-byte boundary. */
-    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 48 : 46];
+    uint8_t                 abPadding2[64 - 16 - 2];
 } CPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
