@@ -4282,7 +4282,8 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
 	-g $(VBOX_GCC_pipe) $(filter-out -Wno-unused,$(VBOX_GCC_WARN)) -frtti -fno-exceptions -Wno-non-virtual-dtor \
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
-	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
+	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) \
+	$(VBOX_GCC_Wno-delete-non-virtual-dtor)
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.x86 = -m32
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.amd64 = -m64
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.linux = -pthread
