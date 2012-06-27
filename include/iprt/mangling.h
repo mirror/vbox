@@ -962,6 +962,7 @@
 # define RTProcGetExecutablePath                        RT_MANGLER(RTProcGetExecutablePath)
 # define RTProcGetPriority                              RT_MANGLER(RTProcGetPriority)
 # define RTProcIsRunningByName                          RT_MANGLER(RTProcIsRunningByName)
+# define RTProcQueryUsername                            RT_MANGLER(RTProcQueryUsername)
 # define RTProcSelf                                     RT_MANGLER(RTProcSelf)
 # define RTProcSetPriority                              RT_MANGLER(RTProcSetPriority)
 # define RTProcShortName                                RT_MANGLER(RTProcShortName)
