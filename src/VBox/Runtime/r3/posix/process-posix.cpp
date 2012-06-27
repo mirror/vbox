@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <pwd.h>
 
 #include <iprt/process.h>
 #include "internal/iprt.h"
@@ -144,4 +145,47 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void)
     /// @todo
     return 1;
 }
+
+
+RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser,
+                                  size_t *pcbUser)
+{
+    AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
+    AssertReturn(cbUser > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbUser, VERR_INVALID_POINTER);
+
+    if (hProcess != RTProcSelf())
+        return VERR_NOT_SUPPORTED;
+
+    int32_t cbPwdMax = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (cbPwdMax == -1)
+        return RTErrConvertFromErrno(errno);
+
+    char *pbBuf = (char *)RTMemAllocZ(cbPwdMax);
+    if (!pbBuf)
+        return VERR_NO_MEMORY;
+
+    struct passwd Pwd, *pPwd;
+    int rc = getpwuid_r(geteuid(), &Pwd, pbBuf, cbPwdMax, &pPwd);
+    if (!rc)
+    {
+        size_t cbPwdUser = strlen(pPwd->pw_name) + 1;
+
+        *pcbUser = cbPwdUser;
+
+        if (cbPwdUser > cbUser)
+            rc = VERR_BUFFER_OVERFLOW;
+        else
+        {
+            memcpy(pszUser, pPwd->pw_name, cbPwdUser);
+            rc = VINF_SUCCESS;
+        }
+    }
+    else
+        rc = RTErrConvertFromErrno(rc);
+
+    RTMemFree(pbBuf);
+    return rc;
+}
+
 
