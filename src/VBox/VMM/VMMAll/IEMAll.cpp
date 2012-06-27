@@ -7776,6 +7776,36 @@ static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port,
 
 
 /**
+ * Updates the real CPU context structure with the context core (from the trap
+ * stack frame) before interpreting any instructions.
+ *
+ * @param   pCtx        The real CPU context.
+ * @param   pCtxCore    The trap stack CPU core context.
+ */
+DECLINLINE(void) iemCtxCoreToCtx(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore)
+{
+    PCPUMCTXCORE pDst = CPUMCTX2CORE(pCtx);
+    if (pDst != pCtxCore)
+        *pDst = *pCtxCore;
+}
+
+
+/**
+ * Updates the context core (from the trap stack frame) with the updated values
+ * from the real CPU context structure after instruction emulation.
+ *
+ * @param   pCtx        The real CPU context.
+ * @param   pCtxCore    The trap stack CPU core context.
+ */
+DECLINLINE(void) iemCtxToCtxCore(PCPUMCTXCORE pCtxCore, PCCPUMCTX pCtx)
+{
+    PCCPUMCTXCORE pSrc = CPUMCTX2CORE(pCtx);
+    if (pSrc != pCtxCore)
+        *pCtxCore = *pSrc;
+}
+
+
+/**
  * The actual code execution bits of IEMExecOne, IEMExecOneEx, and
  * IEMExecOneWithPrefetchedByPC.
  *
@@ -7885,8 +7915,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
 {
     PIEMCPU  pIemCpu = &pVCpu->iem.s;
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
-    AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
 
+    iemCtxCoreToCtx(pCtx, pCtxCore);
     iemInitDecoder(pIemCpu);
     uint32_t const cbOldWritten = pIemCpu->cbWritten;
 
@@ -7894,6 +7924,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = iemExecOneInner(pVCpu, pIemCpu);
+        if (rcStrict == VINF_SUCCESS)
+            iemCtxToCtxCore(pCtxCore, pCtx);
         if (pcbWritten)
             *pcbWritten = pIemCpu->cbWritten - cbOldWritten;
     }
@@ -7906,7 +7938,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
 {
     PIEMCPU  pIemCpu = &pVCpu->iem.s;
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
-    AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
+
+    iemCtxCoreToCtx(pCtx, pCtxCore);
 
     VBOXSTRICTRC rcStrict;
     if (   cbOpcodeBytes
@@ -7922,6 +7955,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = iemExecOneInner(pVCpu, pIemCpu);
+        if (rcStrict == VINF_SUCCESS)
+            iemCtxToCtxCore(pCtxCore, pCtx);
     }
     return rcStrict;
 }
