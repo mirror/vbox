@@ -194,7 +194,7 @@ Machine::HWData::HWData()
     for (size_t i = 3; i < RT_ELEMENTS(mBootOrder); ++i)
         mBootOrder[i] = DeviceType_Null;
 
-    mClipboardMode = ClipboardMode_Bidirectional;
+    mClipboardMode = ClipboardMode_Disabled;
     mGuestPropertyNotificationPatterns = "";
 
     mFirmwareType = FirmwareType_BIOS;
