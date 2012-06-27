@@ -402,6 +402,8 @@ extensions_num_get_values = {
     'GL_RENDERBUFFER_BINDING_EXT': (1, 'CR_EXT_framebuffer_object'),
     'GL_MAX_COLOR_ATTACHMENTS_EXT': (1, 'CR_EXT_framebuffer_object'),
     'GL_MAX_RENDERBUFFER_SIZE_EXT': (1, 'CR_EXT_framebuffer_object'),
+    # ARB_shader_objects
+    'GL_CURRENT_PROGRAM': (1, 'CR_ARB_shader_objects'),
 }
 
 get_keys = num_get_values.keys() + extensions_num_get_values.keys()
