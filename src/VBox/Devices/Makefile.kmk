@@ -377,6 +377,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/lwip/src/netif/etharp.c \
  	Network/lwip/vbox/sys_arch.c \
  	Network/DevINIP.cpp
+  ifneq ($(KBUILD_TARGET),win)
+   Network/lwip/src/api/sockets.c_CFLAGS = $(VBOX_GCC_Wno-address)
+  endif
  endif
 
  ifdef VBOX_WITH_E1000
