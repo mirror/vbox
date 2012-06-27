@@ -147,7 +147,8 @@ solaris-doc_INST    = bin/
 solaris-doc_MODE    = a+r,u+w
 solaris-doc_SOURCES = \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE \
-	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png
+	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png \
+	$(PATH_ROOT)/src/VBox/Resources/$(if $(VBOX_OSE),OSE,NonOSE)/virtualbox-128px.png=>virtualbox.png
 
 solaris-bin_INST = bin/
 solaris-bin_MODE = a+rx,u+w
@@ -310,6 +311,7 @@ SOLARIS_COMMON_EXES = \
 SOLARIS_EXTRAS = \
 	LICENSE \
 	VBox.png \
+	virtualbox.png \
 	autoresponse \
 	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_setup.sh,) \
@@ -652,6 +654,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.mime                                    $(SOLARIS_USRSHR_MIMEINFO_DIR)/virtualbox.mime
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_USRSHR_PIXMAPS_DIR)/VBox.png
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/virtualbox.png                                            $(SOLARIS_USRSHR_PIXMAPS_DIR)/virtualbox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/checkinstall.sh                                    $(SOLARIS_BASEINST_DIR)/checkinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/preremove.sh                                       $(SOLARIS_BASEINST_DIR)/preremove.sh
