@@ -405,7 +405,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
     /* Retrieve the eflags including the virtualized bits. */
     /* Note: hackish as the cpumctxcore structure doesn't contain the right value */
-    eflags.u32 = CPUMRawGetEFlags(pVCpu, pRegFrame);
+    eflags.u32 = CPUMRawGetEFlags(pVCpu);
 
     /* VMCPU_FF_INHIBIT_INTERRUPTS should be cleared upfront or don't call this function at all for dispatching hardware interrupts. */
     Assert(enmType != TRPM_HARDWARE_INT || !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
@@ -679,7 +679,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
                     /* Turn off interrupts for interrupt gates. */
                     if (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
-                        CPUMRawSetEFlags(pVCpu, pRegFrame, eflags.u32 & ~X86_EFL_IF);
+                        CPUMRawSetEFlags(pVCpu, eflags.u32 & ~X86_EFL_IF);
 
                     /* The virtualized bits must be removed again!! */
                     eflags.Bits.u1IF   = 1;
