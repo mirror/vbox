@@ -42,7 +42,7 @@ using namespace com;
 #include <VBox/err.h>
 #include <VBox/VBoxVideo.h>
 
-#ifdef VBOX_WITH_VIDEO_REC ||
+#ifdef VBOX_WITH_VIDEO_REC 
 #include <cstdlib>
 #include <cerrno>
 #include "VBoxHeadless.h"
