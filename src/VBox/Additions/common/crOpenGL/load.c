@@ -830,7 +830,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
     WindowInfo *pWindow = (WindowInfo *) data1;
     PVBOXCR_UPDATEWNDCB pCbData = (PVBOXCR_UPDATEWNDCB) data2;
     VBOXDISPMP_REGIONS *pRegions = &pCbData->Regions;
-    bool bChanged = false;
+    bool bChanged = false, bDoMap = false;
     HRGN hNewRgn = INVALID_HANDLE_VALUE;
 
     if (pRegions->hWnd != pWindow->hWnd)
@@ -846,16 +846,13 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         return;
     }
 
-    if (!pWindow->mapped)
-    {
-        pWindow->mapped = GL_TRUE;
-        bChanged = true;
-        crDebug("Dispatched: WindowShow(%i, %i)", pWindow->spuWindow, pWindow->mapped);
-        stub.spu->dispatch_table.WindowShow(pWindow->spuWindow, pWindow->mapped);
-    }
-
     if (pRegions->pRegions->fFlags.bAddVisibleRects || pRegions->pRegions->fFlags.bSetViewRect)
     {
+        if (!pWindow->mapped)
+        {
+            bDoMap = true;
+        }
+
         /* ensure data integrity */
         Assert(!pRegions->pRegions->fFlags.bAddHiddenRects);
 
@@ -870,7 +867,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
             winW = pRegions->pRegions->RectsInfo.aRects[0].right - winX;
             winH = pRegions->pRegions->RectsInfo.aRects[0].bottom - winY;
 
-            if (stub.trackWindowPos && (winX!=pWindow->x || winY!=pWindow->y))
+            if (stub.trackWindowPos && (bDoMap || winX!=pWindow->x || winY!=pWindow->y))
             {
                 crDebug("Dispatched WindowPosition (%i)", pWindow->spuWindow);
                 stub.spuDispatch.WindowPosition(pWindow->spuWindow, winX, winY);
@@ -879,7 +876,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
                 bChanged = true;
             }
 
-            if (stub.trackWindowSize && (winW!=pWindow->width || winH!=pWindow->height))
+            if (stub.trackWindowSize && (bDoMap || winW!=pWindow->width || winH!=pWindow->height))
             {
                 crDebug("Dispatched WindowSize (%i)", pWindow->spuWindow);
                 stub.spuDispatch.WindowSize(pWindow->spuWindow, winW, winH);
@@ -961,6 +958,14 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
                 bChanged = true;
             }
         }
+    }
+
+    if (bDoMap)
+    {
+        pWindow->mapped = GL_TRUE;
+        bChanged = true;
+        crDebug("Dispatched: WindowShow(%i, %i)", pWindow->spuWindow, pWindow->mapped);
+        stub.spu->dispatch_table.WindowShow(pWindow->spuWindow, pWindow->mapped);
     }
 
     if (bChanged)
