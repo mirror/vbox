@@ -74,7 +74,9 @@ if defined(VBOX_WITH_MAIN) \
    include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
   endif
   if1of ($(KBUILD_TARGET), darwin linux)
-   include $(PATH_SUB_CURRENT)/libvpx/Makefile.kmk
+   if1of ($(KBUILD_TARGET_ARCH), x86)   
+    include $(PATH_SUB_CURRENT)/libvpx/Makefile.kmk
+   endif
   endif
  endif
 endif
