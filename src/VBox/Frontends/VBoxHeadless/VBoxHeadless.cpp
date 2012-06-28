@@ -42,7 +42,7 @@ using namespace com;
 #include <VBox/err.h>
 #include <VBox/VBoxVideo.h>
 
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC ||
 #include <cstdlib>
 #include <cerrno>
 #include "VBoxHeadless.h"
@@ -470,7 +470,7 @@ static void show_usage()
              "                                         two port numbers to specify a range\n"
              "                                         \"TCP/Address\" - interface IP the VRDE server\n"
              "                                         will bind to\n"
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
              "   -c, -capture, --capture               Record the VM screen output to a file\n"
              "   -w, --width                           Frame width when recording\n"
              "   -h, --height                          Frame height when recording\n"
@@ -482,7 +482,7 @@ static void show_usage()
              "\n");
 }
 
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
 /**
  * Parse the environment for variables which can influence the FFMPEG settings.
  * purely for backwards compatibility.
@@ -526,7 +526,7 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
     if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREFILE")) != 0)
         *ppszFileName = pszEnvTemp;
 }
-#endif /* VBOX_FFMPEG defined */
+#endif /* VBOX_WITH_VIDEO_REC defined */
 
 #ifdef RT_OS_WINDOWS
 // Required for ATL
@@ -547,21 +547,21 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fRawR3 = ~0U;
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
     unsigned fFFMPEG = 0;
     unsigned long ulFrameWidth = 800;
     unsigned long ulFrameHeight = 600;
     unsigned long ulBitRate = 300000;
     char pszMPEGFile[RTPATH_MAX];
     const char *pszFileNameParam = "VBox-%d.vob";
-#endif /* VBOX_FFMPEG */
+#endif /* VBOX_WITH_VIDEO_REC */
 
     LogFlow (("VBoxHeadless STARTED.\n"));
     RTPrintf (VBOX_PRODUCT " Headless Interface " VBOX_VERSION_STRING "\n"
               "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
               "All rights reserved.\n\n");
 
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
     /* Parse the environment */
     parse_environ(&ulFrameWidth, &ulFrameHeight, &ulBitRate, &pszFileNameParam);
 #endif
@@ -609,14 +609,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--csam", OPT_CSAM, 0 },
         { "-nocsam", OPT_NO_CSAM, 0 },
         { "--nocsam", OPT_NO_CSAM, 0 },
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
         { "-capture", 'c', 0 },
         { "--capture", 'c', 0 },
         { "--width", 'w', RTGETOPT_REQ_UINT32 },
         { "--height", 'h', RTGETOPT_REQ_UINT32 }, /* great choice of short option! */
         { "--bitrate", 'r', RTGETOPT_REQ_UINT32 },
         { "--filename", 'f', RTGETOPT_REQ_STRING },
-#endif /* VBOX_FFMPEG defined */
+#endif /* VBOX_WITH_VIDEO_REC defined */
         { "-comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
         { "--comment", OPT_COMMENT, RTGETOPT_REQ_STRING }
     };
@@ -676,7 +676,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case OPT_NO_CSAM:
                 fCSAM = false;
                 break;
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
             case 'c':
                 fFFMPEG = true;
                 break;
@@ -689,9 +689,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case 'f':
                 pszFileNameParam = ValueUnion.psz;
                 break;
-#endif /* VBOX_FFMPEG defined */
+#endif /* VBOX_WITH_VIDEO_REC defined */
             case 'h':
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
                 if ((GetState.pDef->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
                 {
                     ulFrameHeight = ValueUnion.u32;
@@ -713,7 +713,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
     if (ulFrameWidth < 512 || ulFrameWidth > 2048 || ulFrameWidth % 2)
     {
         LogError("VBoxHeadless: ERROR: please specify an even frame width between 512 and 2048", 0);
@@ -743,7 +743,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
     RTStrPrintf(&pszMPEGFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
-#endif /* defined VBOX_FFMPEG */
+#endif /* defined VBOX_WITH_VIDEO_REC */
 
     if (!pcszNameOrUUID)
     {
@@ -839,7 +839,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         ComPtr<IDisplay> display;
         CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
         IFramebuffer *pFramebuffer = 0;
         RTLDRMOD hLdrFFmpegFB;
         PFNREGISTERFFMPEGFB pfnRegisterFFmpegFB;
@@ -850,7 +850,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             int             rrc = VINF_SUCCESS;
             RTERRINFOSTATIC ErrInfo;
 
-            Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
+            Log2(("VBoxHeadless: loading VBoxFFmpegFB and libvpx shared library\n"));
             RTErrInfoInitStatic(&ErrInfo);
             rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
 
@@ -886,14 +886,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             break;
         }
-#endif /* defined(VBOX_FFMPEG) */
+#endif /* defined(VBOX_WITH_VIDEO_REC) */
         ULONG cMonitors = 1;
         machine->COMGETTER(MonitorCount)(&cMonitors);
 
         unsigned uScreenId;
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
-# ifdef VBOX_FFMPEG
+# ifdef VBOX_WITH_VIDEO_REC
             if (fFFMPEG && uScreenId == 0)
             {
                 /* Already registered. */
@@ -1178,14 +1178,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: event loop has terminated...\n"));
 
-#ifdef VBOX_FFMPEG
+#ifdef VBOX_WITH_VIDEO_REC
         if (pFramebuffer)
         {
             pFramebuffer->Release();
             Log(("Released framebuffer\n"));
             pFramebuffer = NULL;
         }
-#endif /* defined(VBOX_FFMPEG) */
+#endif /* defined(VBOX_WITH_VIDEO_REC) */
 
         /* we don't have to disable VRDE here because we don't save the settings of the VM */
     }
