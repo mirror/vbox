@@ -1393,7 +1393,7 @@ static void crVBoxServerUpdateScreenViewportCB(unsigned long key, void *data1, v
     CRMuralInfo *mural = (CRMuralInfo*) data1;
     int *sIndex = (int*) data2;
 
-    if (mural->screenId != sIndex)
+    if (mural->screenId != *sIndex)
         return;
 
     if (!mural->width || !mural->height)
@@ -1431,7 +1431,7 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
         pVieport->x = x;
         pVieport->y = y;
 
-        crHashtableWalk(cr_server.muralTable, crVBoxServerUpdateScreenViewportCB, NULL);
+        crHashtableWalk(cr_server.muralTable, crVBoxServerUpdateScreenViewportCB, &sIndex);
     }
 
     if (fSizeChanged)
