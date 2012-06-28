@@ -161,6 +161,7 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  	tstLdr-3 \
  	tstLdr-4 \
  	tstNoCrt-1 \
+	tstRTR0DbgKrnlInfoDriver \
 	tstRTR0MemUserKernelDriver \
 	tstRTR0SemMutexDriver \
 	tstRTR0TimerDriver \
@@ -168,6 +169,7 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 	tstTSC
  SYSMODS += \
  	tstLdrObjR0 \
+ 	tstRTR0DbgKrnlInfo \
  	tstRTR0MemUserKernel \
  	tstRTR0SemMutex \
  	tstRTR0Timer \
@@ -589,6 +591,19 @@ tstVector_SOURCES = tstVector.cpp
 #
 
 ## @todo create a template for compiling the ring-0 part.
+tstRTR0DbgKrnlInfo_TEMPLATE = VBoxR0
+tstRTR0DbgKrnlInfo_INST = $(INST_TESTCASE)
+tstRTR0DbgKrnlInfo_DEFS = IN_RT_R0
+tstRTR0DbgKrnlInfo_SYSSUFF = .r0
+tstRTR0DbgKrnlInfo_SOURCES = tstRTR0DbgKrnlInfo.cpp
+tstRTR0DbgKrnlInfo_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstRTR0DbgKrnlInfo_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+tstRTR0DbgKrnlInfoDriver_TEMPLATE = VBOXR3TSTEXE
+tstRTR0DbgKrnlInfoDriver_SOURCES = tstRTR0DbgKrnlInfoDriver.cpp
+
+
 tstRTR0MemUserKernel_TEMPLATE = VBoxR0
 tstRTR0MemUserKernel_INST = $(INST_TESTCASE)
 tstRTR0MemUserKernel_DEFS = IN_RT_R0
