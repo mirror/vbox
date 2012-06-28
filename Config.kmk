@@ -2599,7 +2599,7 @@ if1of ($(KBUILD_TARGET), darwin linux os2 solaris)
      $(PATH_ROOT)/src/libs/libvpx/vpx_mem
 SDK_VBOX_VPX_LIBS ?=  $(PATH_STAGE_BIN)/VBox-libvpx.so
  else
-  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_STAGE_BIN)/VBox-libvpx$(SUFF_DLL)
+ SDK_VBOX_VPX_LIBS  ?= $(PATH_STAGE_BIN)/VBox-libvpx$(SUFF_DLL)
 endif
 
 SDK_VBOX_BOOST        = .
