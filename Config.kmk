@@ -2592,7 +2592,7 @@ endif
 
 #VPXLIB
 SDK_VBOX_VPX       = .
-if1of ($(KBUILD_TARGET), darwin linux os2 solaris win)
+if1of ($(KBUILD_TARGET), darwin linux os2 )
  SDK_VBOX_VPX_INCS ?=  \
      $(PATH_ROOT)/src/libs/libvpx/vpx \
      $(PATH_ROOT)/src/libs/libvpx/vp8 \
