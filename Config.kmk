@@ -2592,12 +2592,14 @@ endif
 
 #VPXLIB
 SDK_VBOX_VPX       = .
-if1of ($(KBUILD_TARGET), darwin linux os2 )
+if1of ($(KBUILD_TARGET), darwin linux os2 solaris)
  SDK_VBOX_VPX_INCS ?=  \
      $(PATH_ROOT)/src/libs/libvpx/vpx \
      $(PATH_ROOT)/src/libs/libvpx/vp8 \
      $(PATH_ROOT)/src/libs/libvpx/vpx_mem
 SDK_VBOX_VPX_LIBS ?=  $(PATH_STAGE_BIN)/VBox-libvpx.so
+ else
+  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_STAGE_BIN)/VBox-libvpx$(SUFF_DLL)
 endif
 
 SDK_VBOX_BOOST        = .
