@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * TRPM - Guest Context Trap Handlers, CPP part
+ * TRPM - Raw-mode Context Trap Handlers, CPP part
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -113,7 +113,7 @@ RT_C_DECLS_END
 *   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN /* addressed from asm (not called so no DECLASM). */
-DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser);
+DECLCALLBACK(int) trpmRCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser);
 RT_C_DECLS_END
 
 
@@ -1270,116 +1270,48 @@ DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 /**
  * Deal with hypervisor traps occurring when resuming execution on a trap.
  *
- * @returns VBox status code.
+ * There is a little problem with recursive RC (hypervisor) traps.  We deal with
+ * this by not allowing recursion without it being the subject of a guru
+ * meditation.  (We used to / tried to handle this but there isn't any reason
+ * for it.)
+ *
+ * So, do NOT use this for handling RC traps!
+ *
+ * @returns VBox status code.  (Anything but VINF_SUCCESS will cause guru.)
  * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Register frame.
  * @param   uUser       User arg.
  */
-DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser)
+DECLCALLBACK(int) trpmRCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser)
 {
     Log(("********************************************************\n"));
-    Log(("trpmGCTrapInGeneric: eip=%RX32 uUser=%#x\n", pRegFrame->eip, uUser));
+    Log(("trpmRCTrapInGeneric: eip=%RX32 uUser=%#x\n", pRegFrame->eip, uUser));
     Log(("********************************************************\n"));
 
-    if (uUser & TRPM_TRAP_IN_HYPER)
+    /*
+     * This used to be kind of complicated, but since we stopped storing
+     * the register frame on the stack and instead storing it directly
+     * in the CPUMCPU::Guest structure, we just have to figure out which
+     * status to hand on to the host and let the recompiler/IEM do its
+     * job.
+     */
+    switch (uUser)
     {
-        /*
-         * Check that there is still some stack left, if not we'll flag
-         * a guru meditation (the alternative is a triple fault).
-         */
-        RTRCUINTPTR cbStackUsed = (RTRCUINTPTR)VMMGetStackRC(VMMGetCpu(pVM)) - pRegFrame->esp;
-        if (cbStackUsed > VMM_STACK_SIZE - _1K)
-        {
-            LogRel(("trpmGCTrapInGeneric: ran out of stack: esp=#x cbStackUsed=%#x\n", pRegFrame->esp, cbStackUsed));
-            return VERR_TRPM_DONT_PANIC;
-        }
+        case TRPM_TRAP_IN_MOV_GS:
+        case TRPM_TRAP_IN_MOV_FS:
+        case TRPM_TRAP_IN_MOV_ES:
+        case TRPM_TRAP_IN_MOV_DS:
+            TRPMGCHyperReturnToHost(pVM, VINF_EM_RAW_STALE_SELECTOR);
+            break;
 
-        /*
-         * Just zero the register containing the selector in question.
-         * We'll deal with the actual stale or troublesome selector value in
-         * the outermost trap frame.
-         */
-        switch (uUser & TRPM_TRAP_IN_OP_MASK)
-        {
-            case TRPM_TRAP_IN_MOV_GS:
-                pRegFrame->eax    = 0;
-                pRegFrame->gs.Sel = 0; /* prevent recursive trouble. */
-                break;
-            case TRPM_TRAP_IN_MOV_FS:
-                pRegFrame->eax    = 0;
-                pRegFrame->fs.Sel = 0; /* prevent recursive trouble. */
-                return VINF_SUCCESS;
+        case TRPM_TRAP_IN_IRET:
+        case TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86:
+            TRPMGCHyperReturnToHost(pVM, VINF_EM_RAW_IRET_TRAP);
+            break;
 
-            default:
-                AssertMsgFailed(("Invalid uUser=%#x\n", uUser));
-                return VERR_TRPM_BAD_TRAP_IN_OP;
-        }
-    }
-    else
-    {
-        /*
-         * Reconstruct the guest context and switch to the recompiler.
-         * We ASSUME we're only at
-         */
-        CPUMCTXCORE  CtxCore = *pRegFrame;
-        uint32_t    *pEsp = (uint32_t *)pRegFrame->esp;
-        int          rc;
-
-        switch (uUser)
-        {
-            /*
-             * This will only occur when resuming guest code in a trap handler!
-             */
-            /* @note ASSUMES esp points to the temporary guest CPUMCTXCORE!!! */
-            case TRPM_TRAP_IN_MOV_GS:
-            case TRPM_TRAP_IN_MOV_FS:
-            case TRPM_TRAP_IN_MOV_ES:
-            case TRPM_TRAP_IN_MOV_DS:
-            {
-                PCPUMCTXCORE pTempGuestCtx = (PCPUMCTXCORE)pEsp;
-
-                /* Just copy the whole thing; several selector registers, eip (etc) and eax are not yet in pRegFrame. */
-                CtxCore = *pTempGuestCtx;
-                rc = VINF_EM_RAW_STALE_SELECTOR;
-                break;
-            }
-
-            /*
-             * This will only occur when resuming guest code!
-             */
-            case TRPM_TRAP_IN_IRET:
-                CtxCore.eip        = *pEsp++;
-                CtxCore.cs.Sel     = (RTSEL)*pEsp++;
-                CtxCore.eflags.u32 = *pEsp++;
-                CtxCore.esp        = *pEsp++;
-                CtxCore.ss.Sel     = (RTSEL)*pEsp++;
-                rc = VINF_EM_RAW_IRET_TRAP;
-                break;
-
-            /*
-             * This will only occur when resuming V86 guest code!
-             */
-            case TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86:
-                CtxCore.eip        = *pEsp++;
-                CtxCore.cs.Sel     = (RTSEL)*pEsp++;
-                CtxCore.eflags.u32 = *pEsp++;
-                CtxCore.esp        = *pEsp++;
-                CtxCore.ss.Sel     = (RTSEL)*pEsp++;
-                CtxCore.es.Sel     = (RTSEL)*pEsp++;
-                CtxCore.ds.Sel     = (RTSEL)*pEsp++;
-                CtxCore.fs.Sel     = (RTSEL)*pEsp++;
-                CtxCore.gs.Sel     = (RTSEL)*pEsp++;
-                rc = VINF_EM_RAW_IRET_TRAP;
-                break;
-
-            default:
-                AssertMsgFailed(("Invalid uUser=%#x\n", uUser));
-                return VERR_TRPM_BAD_TRAP_IN_OP;
-        }
-
-
-        CPUMSetGuestCtxCore(VMMGetCpu0(pVM), &CtxCore);
-        TRPMGCHyperReturnToHost(pVM, rc);
+        default:
+            AssertMsgFailed(("Invalid uUser=%#x\n", uUser));
+            return VERR_TRPM_BAD_TRAP_IN_OP;
     }
 
     AssertMsgFailed(("Impossible!\n"));

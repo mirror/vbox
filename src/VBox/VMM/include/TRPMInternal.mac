@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,6 @@
 %define TRPM_TRAP_IN_MOV_DS     4
 %define TRPM_TRAP_IN_IRET       5
 %define TRPM_TRAP_IN_V86        RT_BIT(30)
-%define TRPM_TRAP_IN_HYPER      RT_BIT(31)
 
 struc TRPM
     .offVM              resd 1

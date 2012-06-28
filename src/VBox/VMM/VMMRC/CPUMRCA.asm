@@ -1,9 +1,9 @@
 ; $Id$
 ;; @file
-; CPUM - Guest Context Assembly Routines.
+; CPUM - Raw-mode Context Assembly Routines.
 ;
 
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -31,7 +31,7 @@
 ;*******************************************************************************
 extern IMPNAME(g_CPUM)                 ; VMM GC Builtin import
 extern IMPNAME(g_VM)                   ; VMM GC Builtin import
-extern NAME(cpumGCHandleNPAndGP)       ; CPUMGC.cpp
+extern NAME(cpumRCHandleNPAndGP)       ; CPUMGC.cpp
 
 ;
 ; Enables write protection of Hypervisor memory pages.
@@ -85,19 +85,19 @@ BEGINPROC_EXPORTED CPUMGCCallGuestTrapHandler
     mov     edi, [ebp + CPUMCTXCORE.edi]
 
     ;; @todo  load segment registers *before* enabling WP.
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_GS | CPUM_HANDLER_CTXCORE_IN_EBP
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_GS | CPUM_HANDLER_CTXCORE_IN_EBP
     mov     gs, [ebp + CPUMCTXCORE.gs.Sel]
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_FS | CPUM_HANDLER_CTXCORE_IN_EBP
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_FS | CPUM_HANDLER_CTXCORE_IN_EBP
     mov     fs, [ebp + CPUMCTXCORE.fs.Sel]
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_ES | CPUM_HANDLER_CTXCORE_IN_EBP
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_ES | CPUM_HANDLER_CTXCORE_IN_EBP
     mov     es, [ebp + CPUMCTXCORE.es.Sel]
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_DS | CPUM_HANDLER_CTXCORE_IN_EBP
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_DS | CPUM_HANDLER_CTXCORE_IN_EBP
     mov     ds, [ebp + CPUMCTXCORE.ds.Sel]
 
     mov     eax, [ebp + CPUMCTXCORE.eax]
     mov     ebp, [ebp + CPUMCTXCORE.ebp]
 
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_IRET
     iret
 ENDPROC CPUMGCCallGuestTrapHandler
 
@@ -144,7 +144,7 @@ BEGINPROC CPUMGCCallV86Code
     mov     edi, [ebp + CPUMCTXCORE.edi]
     mov     ebp, [ebp + CPUMCTXCORE.ebp]
 
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_IRET
     iret
 ENDPROC CPUMGCCallV86Code
 
@@ -176,11 +176,11 @@ BEGINPROC_EXPORTED CPUMGCResumeGuest
     ;
     ; Restore registers.
     ;
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_ES
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_ES
     mov     es,  [edx + CPUMCPU.Guest.es.Sel]
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_FS
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_FS
     mov     fs,  [edx + CPUMCPU.Guest.fs.Sel]
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_GS
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_GS
     mov     gs,  [edx + CPUMCPU.Guest.gs.Sel]
 
 %ifdef VBOX_WITH_STATISTICS
@@ -218,11 +218,11 @@ BEGINPROC_EXPORTED CPUMGCResumeGuest
     mov     eax, [edx + CPUMCPU.Guest.eax]
     push    dword [edx + CPUMCPU.Guest.ds.Sel]
     mov     edx, [edx + CPUMCPU.Guest.edx]
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_DS
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_DS
     pop     ds
 
     ; restart execution.
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_IRET
     iretd
 ENDPROC     CPUMGCResumeGuest
 
@@ -297,7 +297,7 @@ BEGINPROC_EXPORTED CPUMGCResumeGuestV86
     mov     edx, [edx + CPUMCPU.Guest.edx]
 
     ; restart execution.
-    TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
+    TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_IRET
     iretd
 ENDPROC     CPUMGCResumeGuestV86
 

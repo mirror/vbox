@@ -1,9 +1,10 @@
 ; $Id$
 ;; @file
-; TRPM - Guest Context Trap Handlers
+; TRPM - Raw-mode Context Trap Handlers
 ;
 
-; Copyright (C) 2006-2010 Oracle Corporation
+;
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -35,7 +36,7 @@ extern IMPNAME(g_TRPMCPU)               ; where there is a pointer to the real s
 extern IMPNAME(g_VM)                    ; are a bit confusing at first... :-)
 extern IMPNAME(g_trpmGuestCtxCore)
 extern IMPNAME(g_trpmHyperCtxCore)
-extern NAME(trpmGCTrapInGeneric)
+extern NAME(trpmRCTrapInGeneric)
 extern NAME(TRPMGCTrap01Handler)
 extern NAME(TRPMGCHyperTrap01Handler)
 %ifdef VBOX_WITH_NMI
@@ -246,23 +247,28 @@ GenericTrapErrCode:
     cld
 
     ;
-    ; Save ds, es, eax and ebx so we have a context pointer (ebx) and
+    ; Save ds, es, fs, gs, eax and ebx so we have a context pointer (ebx) and
     ; scratch (eax) register to work with.  A sideeffect of using ebx is that
     ; it's preserved accross cdecl calls.
     ;
     ; In order to safely access data, we need to load our flat DS & ES selector,
-    ; and clear make sure CR0.WP is cleared.
+    ; clear FS and GS (stale guest selector prevention), and clear make sure
+    ; that CR0.WP is cleared.
     ;
-    push    ds                          ; +0ch
-    push    es                          ; +08h
+    push    ds                          ; +14h
+    push    es                          ; +10h
+    push    fs                          ; +0ch
+    push    gs                          ; +08h
     push    eax                         ; +04h
     push    ebx                         ; +00h
-%push foobar
+%push StackFrame
 %define %$STK_SAVED_EBX   esp
 %define %$STK_SAVED_EAX   esp + 04h
-%define %$STK_SAVED_ES    esp + 08h
-%define %$STK_SAVED_DS    esp + 0ch
-%define %$ESPOFF                10h
+%define %$STK_SAVED_GS    esp + 08h
+%define %$STK_SAVED_FS    esp + 0ch
+%define %$STK_SAVED_ES    esp + 10h
+%define %$STK_SAVED_DS    esp + 14h
+%define %$ESPOFF                18h
 %define %$STK_VECTOR      esp + 00h + %$ESPOFF
 %define %$STK_ERRCD       esp + 04h + %$ESPOFF
 %define %$STK_EIP         esp + 08h + %$ESPOFF
@@ -275,20 +281,23 @@ GenericTrapErrCode:
 %define %$STK_V86_FS      esp + 24h + %$ESPOFF
 %define %$STK_V86_GS      esp + 28h + %$ESPOFF
 
-    push    ss
-    pop     ds
-    push    ss
-    pop     es
+    mov     bx, ss                      ; load
+    mov     ds, bx
+    mov     es, bx
+
+    xor     bx, bx                      ; load 0 into gs and fs.
+    mov     gs, bx
+    mov     fs, bx
 
     mov     eax, cr0                        ;; @todo elimitate this read?
     and     eax, ~X86_CR0_WRITE_PROTECT
     mov     cr0, eax
 
     mov     ebx, IMP(g_trpmGuestCtxCore)    ; Assume GC as the most common.
-    test    byte [%$STK_CS], 3h               ; check RPL of the cs selector
+    test    byte [%$STK_CS], 3h             ; check RPL of the cs selector
     ;; @todo check this for conforming segments.
     jnz     .save_state
-    test    dword [%$STK_EFLAGS], X86_EFL_VM  ; If in V86, then guest.
+    test    dword [%$STK_EFLAGS], X86_EFL_VM; If in V86, then guest.
     jnz     .save_state
     mov     ebx, IMP(g_trpmHyperCtxCore)    ; It's raw-mode context, actually.
 
@@ -340,9 +349,9 @@ GenericTrapErrCode:
     mov     [ebx + CPUMCTXCORE.es.Sel], cx
     mov     cx, [%$STK_SAVED_DS]
     mov     [ebx + CPUMCTXCORE.ds.Sel], cx
-    mov     cx, fs
+    mov     cx, [%$STK_SAVED_FS]
     mov     [ebx + CPUMCTXCORE.fs.Sel], cx
-    mov     cx, gs
+    mov     cx, [%$STK_SAVED_GS]
     mov     [ebx + CPUMCTXCORE.gs.Sel], cx
     jmp     .done_saving
 
@@ -495,28 +504,27 @@ ALIGNCODE(16)
     jnz     .gc_V86_return
 
     mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
     mov     gs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_FS
     mov     fs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.es.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_ES
     mov     es, ax
 
     mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_DS
     mov     ds, ax
 
     ; finally restore our scratch register eax and ebx.
     pop     ebx
     pop     eax
+    add     esp, 16 + 8                 ; skip segregs, error code, and vector number.
 
-    add     esp, 8 + 8                          ; skip ds, es, the error code, and vector number.
-
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_IRET
     iret
 
 ALIGNCODE(16)
@@ -533,10 +541,9 @@ ALIGNCODE(16)
     ; finally restore our scratch register eax and ebx.
     pop     ebx
     pop     eax
+    add     esp, 16 + 8                 ; skip segregs, error code, and vector number.
 
-    add     esp, 8 + 8                          ; skip ds, es, the error code, and vector number.
-
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86
     iret
 
     ;
@@ -650,26 +657,21 @@ ALIGNCODE(16)
     mov     [%$STK_EIP], eax
 
     mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS | TRPM_TRAP_IN_HYPER
     mov     gs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS | TRPM_TRAP_IN_HYPER
     mov     fs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.es.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES | TRPM_TRAP_IN_HYPER
     mov     es, ax
 
     mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS | TRPM_TRAP_IN_HYPER
     mov     ds, ax
 
     ; finally restore our scratch register eax and ebx.
     pop     ebx
     pop     eax
-
-    add     esp, 8 + 8                          ; skip ds, es, the error code, and vector number.
+    add     esp, 16 + 8                 ; skip segregs, error code, and vector number.
 
     iret
 
@@ -734,23 +736,28 @@ ti_GenericInterrupt:
     cld
 
     ;
-    ; Save ds, es, eax and ebx so we have a context pointer (ebx) and
+    ; Save ds, es, fs, gs, eax and ebx so we have a context pointer (ebx) and
     ; scratch (eax) register to work with.  A sideeffect of using ebx is that
     ; it's preserved accross cdecl calls.
     ;
     ; In order to safely access data, we need to load our flat DS & ES selector,
-    ; and clear make sure CR0.WP is cleared.
+    ; clear FS and GS (stale guest selector prevention), and clear make sure
+    ; that CR0.WP is cleared.
     ;
-    push    ds                          ; +0ch
-    push    es                          ; +08h
+    push    ds                          ; +14h
+    push    es                          ; +10h
+    push    fs                          ; +0ch
+    push    gs                          ; +08h
     push    eax                         ; +04h
     push    ebx                         ; +00h
-%push foobar
+%push StackFrame
 %define %$STK_SAVED_EBX   esp
 %define %$STK_SAVED_EAX   esp + 04h
-%define %$STK_SAVED_ES    esp + 08h
-%define %$STK_SAVED_DS    esp + 0ch
-%define %$ESPOFF                10h
+%define %$STK_SAVED_GS    esp + 08h
+%define %$STK_SAVED_FS    esp + 0ch
+%define %$STK_SAVED_ES    esp + 10h
+%define %$STK_SAVED_DS    esp + 14h
+%define %$ESPOFF                18h
 %define %$STK_VECTOR      esp + 00h + %$ESPOFF
 %define %$STK_EIP         esp + 04h + %$ESPOFF
 %define %$STK_CS          esp + 08h + %$ESPOFF
@@ -762,10 +769,13 @@ ti_GenericInterrupt:
 %define %$STK_V86_FS      esp + 20h + %$ESPOFF
 %define %$STK_V86_GS      esp + 24h + %$ESPOFF
 
-    push    ss
-    pop     ds
-    push    ss
-    pop     es
+    mov     bx, ss                      ; load
+    mov     ds, bx
+    mov     es, bx
+
+    xor     bx, bx                      ; load 0 into gs and fs.
+    mov     gs, bx
+    mov     fs, bx
 
     mov     eax, cr0                        ;; @todo elimitate this read?
     and     eax, ~X86_CR0_WRITE_PROTECT
@@ -827,9 +837,9 @@ ti_GenericInterrupt:
     mov     [ebx + CPUMCTXCORE.es.Sel], cx
     mov     cx, [%$STK_SAVED_DS]
     mov     [ebx + CPUMCTXCORE.ds.Sel], cx
-    mov     cx, fs
+    mov     cx, [%$STK_SAVED_FS]
     mov     [ebx + CPUMCTXCORE.fs.Sel], cx
-    mov     cx, gs
+    mov     cx, [%$STK_SAVED_GS]
     mov     [ebx + CPUMCTXCORE.gs.Sel], cx
     jmp     .done_saving
 
@@ -944,28 +954,27 @@ ti_GenericInterrupt:
     jnz     .gc_V86_return
 
     mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
     mov     gs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_FS
     mov     fs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.es.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_ES
     mov     es, ax
 
     mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_DS
     mov     ds, ax
 
     ; finally restore our scratch register eax and ebx.
     pop     ebx
     pop     eax
+    add     esp, 16 + 4                 ; skip segregs, and vector number.
 
-    add     esp, 8 + 4                          ; skip ds, es, and vector number.
-
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_IRET
     iret
 
 ALIGNCODE(16)
@@ -982,10 +991,9 @@ ALIGNCODE(16)
     ; finally restore our scratch register eax and ebx.
     pop     ebx
     pop     eax
+    add     esp, 16 + 4                 ; skip segregs, and vector number.
 
-    add     esp, 8 + 4                          ; skip ds, es, and vector number.
-
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86
+    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86
     iret
 
     ; -+- Entry point -+-
@@ -1040,7 +1048,7 @@ ALIGNCODE(16)
     mov     esi, [ebx + CPUMCTXCORE.esi]
     mov     edi, [ebx + CPUMCTXCORE.edi]
 
-                                                ; skipping esp & ss.
+                                        ; skipping esp & ss.
 
     mov     eax, [ebx + CPUMCTXCORE.eflags]
     mov     [%$STK_EFLAGS], eax
@@ -1050,26 +1058,22 @@ ALIGNCODE(16)
     mov     [%$STK_EIP], eax
 
     mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_GS | TRPM_TRAP_IN_HYPER
     mov     gs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.fs.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_FS | TRPM_TRAP_IN_HYPER
     mov     fs, ax
 
     mov     ax, [ebx + CPUMCTXCORE.es.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_ES | TRPM_TRAP_IN_HYPER
     mov     es, ax
 
     mov     ax, [ebx + CPUMCTXCORE.ds.Sel]
-    TRPM_NP_GP_HANDLER NAME(trpmGCTrapInGeneric), TRPM_TRAP_IN_MOV_DS | TRPM_TRAP_IN_HYPER
     mov     ds, ax
 
     ; finally restore our scratch register eax and ebx.
     pop     ebx
     pop     eax
+    add     esp, 16 + 4                 ; skip segregs, and vector number.
 
-    add     esp, 8 + 4                          ; skip ds, es, and vector number.
     iret
 %pop
 ENDPROC TRPMGCHandlerInterupt
