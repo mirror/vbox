@@ -888,7 +888,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_STI:
         case OP_CLI:
         {
-            uint32_t efl = CPUMRawGetEFlags(pVCpu, pRegFrame);
+            uint32_t efl = CPUMRawGetEFlags(pVCpu);
             if (X86_EFL_GET_IOPL(efl) >= (unsigned)(pRegFrame->ss.Sel & X86_SEL_RPL))
             {
                 LogFlow(("trpmGCTrap0dHandlerRing3: CLI/STI -> REM\n"));
@@ -1022,7 +1022,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
      * that's the case. To get the correct we must use CPUMRawGetEFlags.
      */
     X86EFLAGS eflags;
-    eflags.u32 = CPUMRawGetEFlags(pVCpu, pRegFrame); /* Get the correct value. */
+    eflags.u32 = CPUMRawGetEFlags(pVCpu); /* Get the correct value. */
     Log3(("TRPM #GP V86: cs:eip=%04x:%08x IOPL=%d efl=%08x\n", pRegFrame->cs.Sel, pRegFrame->eip, eflags.Bits.u2IOPL, eflags.u));
     if (eflags.Bits.u2IOPL != 3)
     {

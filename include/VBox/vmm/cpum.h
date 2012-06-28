@@ -359,8 +359,8 @@ VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
 VMMDECL(void)           CPUMSetGuestCtxCore(PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore);
 VMMR3DECL(int)          CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 VMMR3DECL(int)          CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc);
-VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
-VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t eflags);
+VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu);
+VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
 VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
 
 /** @name Changed flags

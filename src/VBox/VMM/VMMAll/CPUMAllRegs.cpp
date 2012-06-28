@@ -2203,19 +2203,14 @@ VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
  * Updates the EFLAGS while we're in raw-mode.
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtxCore    The context core.
- * @param   eflags      The new EFLAGS value.
+ * @param   fEfl        The new EFLAGS value.
  */
-VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t eflags)
+VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
     if (!pVCpu->cpum.s.fRawEntered)
-    {
-        pCtxCore->eflags.u32 = eflags;
-        return;
-    }
-    PATMRawSetEFlags(pVM, pCtxCore, eflags);
+        pVCpu->cpum.s.Guest.eflags.u32 = fEfl;
+    else
+        PATMRawSetEFlags(pVCpu->CTX_SUFF(pVM), CPUMCTX2CORE(&pVCpu->cpum.s.Guest), fEfl);
 }
 #endif /* !IN_RING0 */
 
@@ -2224,20 +2219,17 @@ VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t efl
  * Gets the EFLAGS while we're in raw-mode.
  *
  * @returns The eflags.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtxCore    The context core.
+ * @param   pVCpu       Pointer to the current virtual CPU.
  */
-VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
+VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu)
 {
 #ifdef IN_RING0
-    NOREF(pVCpu);
-    return pCtxCore->eflags.u32;
+    return pVCpu->cpum.s.Guest.eflags.u32;
 #else
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     if (!pVCpu->cpum.s.fRawEntered)
-        return pCtxCore->eflags.u32;
-    return PATMRawGetEFlags(pVM, pCtxCore);
+        return pVCpu->cpum.s.Guest.eflags.u32;
+    return PATMRawGetEFlags(pVCpu->CTX_SUFF(pVM), CPUMCTX2CORE(&pVCpu->cpum.s.Guest));
 #endif
 }
 
@@ -2245,7 +2237,7 @@ VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 /**
  * Sets the specified changed flags (CPUM_CHANGED_*).
  *
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       Pointer to the current virtual CPU.
  */
 VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags)
 {
