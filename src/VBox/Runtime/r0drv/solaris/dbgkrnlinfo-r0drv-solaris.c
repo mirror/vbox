@@ -140,6 +140,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
     AssertPtrReturn(phKrnlInfo, VERR_INVALID_POINTER);
     RT_ASSERT_PREEMPTIBLE();
 
+    *phKrnlInfo = NIL_RTDBGKRNLINFO;
     PRTDBGKRNLINFOINT pThis = (PRTDBGKRNLINFOINT)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
