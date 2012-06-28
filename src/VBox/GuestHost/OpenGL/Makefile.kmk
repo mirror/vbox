@@ -103,7 +103,7 @@ VBoxOGLcrutil_CLEAN = \
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
-if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS) && defined(VBOX_WITH_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
 # VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build
 #
