@@ -126,7 +126,6 @@ gabStackCopy resb  4096
 
 extern NAME(idtOnly42)
 extern IMPNAME(g_VM)
-extern IMPNAME(VMMGCGuestToHostAsm)
 
 BEGINCODE
 EXPORTEDNAME tstMicroRCAsmStart
