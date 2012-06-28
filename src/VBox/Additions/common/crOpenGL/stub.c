@@ -248,7 +248,12 @@ GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate)
         if (stub.trackWindowSize) {
             if (bForceUpdate || winW != pWindow->width || winH != pWindow->height) {
                 crDebug("Dispatched WindowSize (%i)", pWindow->spuWindow);
-                stub.spuDispatch.WindowSize(pWindow->spuWindow, winW, winH);
+#ifdef VBOX_WITH_WDDM
+                if (!stub.bRunningUnderWDDM || pWindow->mapped)
+#endif
+                {
+                    stub.spuDispatch.WindowSize(pWindow->spuWindow, winW, winH);
+                }
                 pWindow->width = winW;
                 pWindow->height = winH;
                 res = GL_TRUE;
@@ -257,7 +262,12 @@ GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate)
         if (stub.trackWindowPos) {
             if (bForceUpdate || winX != pWindow->x || winY != pWindow->y) {
                 crDebug("Dispatched WindowPosition (%i)", pWindow->spuWindow);
-                stub.spuDispatch.WindowPosition(pWindow->spuWindow, winX, winY);
+#ifdef VBOX_WITH_WDDM
+                if (!stub.bRunningUnderWDDM || pWindow->mapped)
+#endif
+                {
+                    stub.spuDispatch.WindowPosition(pWindow->spuWindow, winX, winY);
+                }
                 pWindow->x = winX;
                 pWindow->y = winY;
                 res = GL_TRUE;

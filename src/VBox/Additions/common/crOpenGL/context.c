@@ -120,7 +120,14 @@ stubNewWindow( const char *dpyName, GLint visBits )
     }
     winInfo->width = size[0];
     winInfo->height = size[1];
-    winInfo->mapped = 1;
+#ifdef VBOX_WITH_WDDM
+    if (stub.bRunningUnderWDDM)
+        winInfo->mapped = 0;
+    else
+#endif
+    {
+        winInfo->mapped = 1;
+    }
 
     if (!dpyName)
     dpyName = "";
@@ -165,6 +172,10 @@ GLboolean
 stubIsWindowVisible(WindowInfo *win)
 {
 #if defined(WINDOWS)
+# ifdef VBOX_WITH_WDDM
+    if (stub.bRunningUnderWDDM)
+        return win->mapped;
+# endif
     return GL_TRUE;
 #elif defined(Darwin)
     return GL_TRUE;
@@ -288,7 +299,14 @@ stubGetWindowInfo( Display *dpy, GLXDrawable drawable )
     winInfo->drawable = drawable;
     winInfo->type = UNDECIDED;
     winInfo->spuWindow = -1;
-    winInfo->mapped = -1; /* don't know */
+#ifdef VBOX_WITH_WDDM
+    if (stub.bRunningUnderWDDM)
+        winInfo->mapped = 0;
+    else
+#endif
+    {
+        winInfo->mapped = -1; /* don't know */
+    }
     winInfo->pOwner = NULL;
 #ifdef CR_NEWWINTRACK
     winInfo->u32ClientID = -1;
@@ -1145,12 +1163,17 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
          */
         window->width = winW;
         window->height = winH;
-        if (stub.trackWindowSize)
-            stub.spuDispatch.WindowSize( window->spuWindow, winW, winH );
-        if (stub.trackWindowPos)
-            stub.spuDispatch.WindowPosition(window->spuWindow, x, y);
-        if (winW > 0 && winH > 0)
-            stub.spu->dispatch_table.Viewport( 0, 0, winW, winH );
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+        if (stubIsWindowVisible(window))
+#endif
+        {
+            if (stub.trackWindowSize)
+                stub.spuDispatch.WindowSize( window->spuWindow, winW, winH );
+            if (stub.trackWindowPos)
+                stub.spuDispatch.WindowPosition(window->spuWindow, x, y);
+            if (winW > 0 && winH > 0)
+                stub.spu->dispatch_table.Viewport( 0, 0, winW, winH );
+        }
 #ifdef VBOX_WITH_WDDM
         stub.spu->dispatch_table.WindowVisibleRegion(window->spuWindow, 0, NULL);
 #endif
