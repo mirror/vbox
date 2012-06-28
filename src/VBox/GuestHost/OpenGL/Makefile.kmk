@@ -256,7 +256,7 @@ VBoxOGLcrpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h
 
-if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
 # VBoxOGLcrpacker-x86 - x86 VBoxOGLcrpacker version built for amd64 build
 #
@@ -335,7 +335,7 @@ VBoxOGLspuload_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 
 
-if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
 # VBoxOGLspuload-x86 - x86 VBoxOGLspuload version built for amd64 build
 #
@@ -464,7 +464,7 @@ VBoxOGLcrstate_CFLAGS +=
 endif
 
 
-if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
 # VBoxOGLcrstate-x86 - x86 VBoxOGLcrstate version built for amd64 build
 #
@@ -586,7 +586,7 @@ VBoxOGLerrorspu_CLEAN = \
 VBoxOGLerrorspu_LIBS = \
 	$(VBOX_LIB_OGL_CRUTIL)
 
-if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
 # VBoxOGLerrorspu-x86 - x86 VBoxOGLerrorspu version built for amd64 build
 #
