@@ -68,10 +68,13 @@ if defined(VBOX_WITH_MAIN) \
   include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk
  endif
 
- # FFmpeg for test videos.
+ # FFmpeg & VP8 for test videos.
  if defined(VBOX_WITH_FFMPEG) && !defined(VBOX_OSE) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK)
   if1of ($(KBUILD_TARGET), darwin linux solaris)
    include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
+  endif
+  if1of ($(KBUILD_TARGET), darwin linux solaris)
+   include $(PATH_SUB_CURRENT)/libvpx/Makefile.kmk
   endif
  endif
 endif
