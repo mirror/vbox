@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,8 +57,6 @@ RT_C_DECLS_BEGIN
 #define TRPM_TRAP_IN_IRET       5
 /** Set if this is a V86 resume. */
 #define TRPM_TRAP_IN_V86        RT_BIT(30)
-/** If set this is a hypervisor register set. If cleared it's a guest set. */
-#define TRPM_TRAP_IN_HYPER      RT_BIT(31)
 /** @} */
 
 

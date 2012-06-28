@@ -383,47 +383,6 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
 
 
 /**
- * Sets the guest context core registers.
- *
- * @param   pVCpu       Handle to the virtual cpu.
- * @param   pCtxCore    The new context core values.
- */
-VMMDECL(void) CPUMSetGuestCtxCore(PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore)
-{
-    /** @todo #1410 requires selectors to be checked. (huh? 1410?) */
-
-    PCPUMCTXCORE pCtxCoreDst = CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
-    *pCtxCoreDst = *pCtxCore;
-
-    /* Mask away invalid parts of the cpu context. */
-    if (!CPUMIsGuestInLongMode(pVCpu))
-    {
-        uint64_t u64Mask = UINT64_C(0xffffffff);
-
-        pCtxCoreDst->rip        &= u64Mask;
-        pCtxCoreDst->rax        &= u64Mask;
-        pCtxCoreDst->rbx        &= u64Mask;
-        pCtxCoreDst->rcx        &= u64Mask;
-        pCtxCoreDst->rdx        &= u64Mask;
-        pCtxCoreDst->rsi        &= u64Mask;
-        pCtxCoreDst->rdi        &= u64Mask;
-        pCtxCoreDst->rbp        &= u64Mask;
-        pCtxCoreDst->rsp        &= u64Mask;
-        pCtxCoreDst->rflags.u   &= u64Mask;
-
-        pCtxCoreDst->r8         = 0;
-        pCtxCoreDst->r9         = 0;
-        pCtxCoreDst->r10        = 0;
-        pCtxCoreDst->r11        = 0;
-        pCtxCoreDst->r12        = 0;
-        pCtxCoreDst->r13        = 0;
-        pCtxCoreDst->r14        = 0;
-        pCtxCoreDst->r15        = 0;
-    }
-}
-
-
-/**
  * Queries the pointer to the internal CPUMCTX structure
  *
  * @returns The CPUMCTX pointer.
