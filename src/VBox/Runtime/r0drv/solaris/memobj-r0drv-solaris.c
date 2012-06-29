@@ -155,7 +155,8 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr)
     {
         /*
          * Lock this page into memory "long term" to prevent this page from being paged out
-         * when we drop the page lock temporarily (during free).
+         * when we drop the page lock temporarily (during free). Downgrade to a shared lock
+         * to prevent page relocation.
          */
         page_pp_lock(pPage, 0 /* COW */, 1 /* Kernel */);
         page_io_unlock(pPage);
@@ -169,16 +170,16 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr)
 
 /**
  * Destroys an allocated page.
- * 
- * @param pPage         Pointer to the page to be destroyed. 
+ *
+ * @param pPage         Pointer to the page to be destroyed.
  * @remarks This function expects page in @c pPage to be shared locked.
  */
 static void rtR0MemObjSolPageDestroy(page_t *pPage)
 {
     /*
-     * We need to exclusive lock the pages before freeing them, if upgrading the shared lock to exclusive fails, 
-     * drop the page lock and look it up  from the hash. Record the page offset before we drop the page lock as 
-     * we cannot touch any page_t members once the lock is dropped. 
+     * We need to exclusive lock the pages before freeing them, if upgrading the shared lock to exclusive fails,
+     * drop the page lock and look it up from the hash. Record the page offset before we drop the page lock as
+     * we cannot touch any page_t members once the lock is dropped.
      */
     AssertPtr(pPage);
     Assert(PAGE_LOCKED_SE(pPage, SE_SHARED));
@@ -243,7 +244,7 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t *puPhys, size_t cb)
             {
                 /*
                  * Get a page from the free list locked exclusively. The page will be named (hashed in)
-                 * and we rely on it during free. Downgrade the page to a shared lock to prevent the page
+                 * and we rely on it during free. The page we get will be shared locked to prevent the page
                  * from being relocated.
                  */
                 page_t *pPage = rtR0MemObjSolPageAlloc(virtAddr);
