@@ -24,5 +24,5 @@
 #define CTL_GUEST       15
 #define CTL_BROADCAST   255
 
-#define CTL_CHECK(x, ctl) ((RT_N2H_U32((x)) & ~pData->netmask) == (ctl) \
+#define CTL_CHECK(x, ctl) (   ((RT_N2H_U32((x)) & ~pData->netmask) == (ctl)) \
                            && (((x) & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr))

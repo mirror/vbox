@@ -47,17 +47,30 @@ struct arp_cache_entry
 LIST_HEAD(arp_cache_head, arp_cache_entry);
 
 /** TFTP session entry. */
-struct tftp_session
+typedef enum ENMTFTPSESSIONFMT
 {
-    int in_use;
-    unsigned char filename[TFTP_FILENAME_MAX];
+    TFTPFMT_NONE = 0,
+    TFTPFMT_OCTET,
+    TFTPFMT_NETASCII,
+    TFTPFMT_MAIL,
+    TFTPFMT_NOT_FMT = 0xffff
+} ENMTFTPSESSIONFMT;
 
-    struct in_addr client_ip;
-    u_int16_t client_port;
+typedef struct TFTPSESSION
+{
+    int         fInUse;
+    unsigned char pszFilename[TFTP_FILENAME_MAX];
+    struct      in_addr IpClientAddress;
+    uint16_t    u16ClientPort;
+    int         iTimestamp;
+    ENMTFTPSESSIONFMT enmTftpFmt;
+    uint16_t    u16BlkSize;
+    uint16_t    u16TSize;
+    uint16_t    u16Size;
+    uint16_t    u16Timeout;
+} TFTPSESSION, *PTFTPSESSION;
 
-    int timestamp;
-    uint64_t u64Offset;
-};
+typedef const PTFTPSESSION PCTFTPSESSION;
 
 struct dns_domain_entry
 {
@@ -182,7 +195,7 @@ typedef struct NATState
     int tcp_reass_maxseg;
     int tcp_reass_overflows;
     /* Stuff from tftp.c */
-    struct tftp_session tftp_sessions[TFTP_SESSIONS_MAX];
+    TFTPSESSION aTftpSessions[TFTP_SESSIONS_MAX];
     const char *tftp_prefix;
     /* Stuff from udp.c */
     struct udpstat_t udpstat;
@@ -398,7 +411,6 @@ typedef struct NATState
 #define tcpstat pData->tcpstat
 #define tcp_now pData->tcp_now
 
-#define tftp_sessions pData->tftp_sessions
 #define tftp_prefix pData->tftp_prefix
 
 #define udpstat pData->udpstat
