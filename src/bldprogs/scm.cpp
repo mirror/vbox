@@ -1248,18 +1248,8 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
      */
     if (pSettingsStack->Base.fOnlySvnDirs)
     {
-        rc = RTPathAppend(pszBuf, RTPATH_MAX, ".svn");
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("RTPathAppend: %Rrc\n", rc);
-            return rc;
-        }
-        if (!RTDirExists(pszBuf))
+        if (!ScmSvnIsDirInWorkingCopy(pszBuf))
             return VINF_SUCCESS;
-
-        Assert(RTPATH_IS_SLASH(pszBuf[cchDir]));
-        pszBuf[cchDir]     = '\0';
-        pszBuf[cchDir - 1] = '.';
     }
 
     /*
