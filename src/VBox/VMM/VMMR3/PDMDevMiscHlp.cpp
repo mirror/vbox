@@ -255,7 +255,7 @@ static DECLCALLBACK(uint32_t) pdmR3ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_
 
 
     pdmUnlock(pVM);
-    LogFlow(("pdmR3ApicHlp_CalcIrqTag: caller='%s'/%d: returns %#x (u8Level=%d)\n", 
+    LogFlow(("pdmR3ApicHlp_CalcIrqTag: caller='%s'/%d: returns %#x (u8Level=%d)\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uTagSrc, u8Level));
     return uTagSrc;
 }
