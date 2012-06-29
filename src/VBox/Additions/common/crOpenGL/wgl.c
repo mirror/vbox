@@ -16,9 +16,22 @@
 #include <windows.h>
 #include <stdio.h>
 
+/* Currently host part will misbehave re-creating context with proper visual bits
+ * if contexts with alternative visual bits is requested.
+ * For now we just report a superset of all visual bits to avoid that.
+ * Better to it on the host side as well?
+ * We could also implement properly multiple pixel formats,
+ * which should be done by implementing offscreen rendering or multiple host contexts.
+ * */
+#define VBOX_CROGL_USE_VBITS_SUPERSET
+
+#ifdef VBOX_CROGL_USE_VBITS_SUPERSET
+static GLuint desiredVisual = CR_RGB_BIT | CR_ALPHA_BIT | CR_DEPTH_BIT | CR_STENCIL_BIT | CR_ACCUM_BIT | CR_DOUBLE_BIT;
+#else
 static GLuint desiredVisual = CR_RGB_BIT;
+#endif
 
-
+#ifndef VBOX_CROGL_USE_VBITS_SUPERSET
 /**
  * Compute a mask of CR_*_BIT flags which reflects the attributes of
  * the pixel format of the given hdc.
@@ -50,6 +63,7 @@ static GLuint ComputeVisBits( HDC hdc )
 
     return b;
 }
+#endif
 
 int WINAPI wglChoosePixelFormat_prox( HDC hdc, CONST PIXELFORMATDESCRIPTOR *pfd )
 {
@@ -120,12 +134,8 @@ int WINAPI wglChoosePixelFormat_prox( HDC hdc, CONST PIXELFORMATDESCRIPTOR *pfd 
         crWarning( "wglChoosePixelFormat: asked for accumulation buffer, ignoring\n" );
     }
 
-    /* @todo: although this is not needed by VSG Open Inventor interop,
-     * still it does not make any sense actually since reporting this
-     * as well as choosing a pixel format with this cap would not do anything
-     * since ICD stuff has its own pixelformat state var */
-//    if ( pfd->cAccumBits > 0 )
-//        desiredVisual |= CR_ACCUM_BIT;
+    if ( pfd->cAccumBits > 0 )
+        desiredVisual |= CR_ACCUM_BIT;
 
     if ( pfd->cDepthBits > 32 ) {
         crError( "wglChoosePixelFormat; asked for too many depth bits\n" );
@@ -296,8 +306,10 @@ HGLRC WINAPI wglCreateContext_prox( HDC hdc )
     CRASSERT(stub.contextTable);
 
     sprintf(dpyName, "%d", hdc);
+#ifndef VBOX_CROGL_USE_VBITS_SUPERSET
     if (stub.haveNativeOpenGL)
         desiredVisual |= ComputeVisBits( hdc );
+#endif
 
     context = stubNewContext(dpyName, desiredVisual, UNDECIDED, 0);
     if (!context)
@@ -493,15 +505,7 @@ BOOL WINAPI wglChoosePixelFormatEXT_prox
             case WGL_ACCUM_GREEN_BITS_EXT:
             case WGL_ACCUM_BLUE_BITS_EXT:
                 if (pi[1] > 0)
-                {
-                    /* @todo: although this is not needed by VSG Open Inventor interop,
-                     * still it does not make any sense actually since reporting this
-                     * as well as choosing a pixel format with this cap would not do anything
-                     * since ICD stuff has its own pixelformat state var */
-                    crWarning("WGL_ACCUM_XXX not supporteed!");
-                    return 0;
-//                    desiredVisual |= CR_ACCUM_BIT;
-                }
+                    desiredVisual |= CR_ACCUM_BIT;
                 pi++;
                 break;
 
