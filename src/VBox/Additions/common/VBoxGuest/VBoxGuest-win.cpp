@@ -21,6 +21,7 @@
 #include "VBoxGuestInternal.h"
 
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
@@ -1396,3 +1397,119 @@ static void vboxguestwinDoTests()
 
 #endif /* DEBUG */
 
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+#pragma pack(1)
+typedef struct DPCSAMPLE
+{
+    LARGE_INTEGER PerfDelta;
+    LARGE_INTEGER PerfCounter;
+    LARGE_INTEGER PerfFrequency;
+    uint64_t u64TSC;
+} DPCSAMPLE;
+
+typedef struct DPCDATA
+{
+    KDPC Dpc;
+    KTIMER Timer;
+    KSPIN_LOCK SpinLock;
+
+    ULONG ulTimerRes;
+
+    LARGE_INTEGER DueTime;
+
+    BOOLEAN fFinished;
+
+    LARGE_INTEGER PerfCounterPrev;
+
+    int iSampleCount;
+    DPCSAMPLE aSamples[8192];
+} DPCDATA;
+#pragma pack(1)
+
+#define VBOXGUEST_DPC_TAG 'DPCS'
+
+static VOID DPCDeferredRoutine(struct _KDPC *Dpc,
+                               PVOID DeferredContext,
+                               PVOID SystemArgument1,
+                               PVOID SystemArgument2)
+{
+    DPCDATA *pData = (DPCDATA *)DeferredContext;
+
+    KeAcquireSpinLockAtDpcLevel(&pData->SpinLock);
+
+    if (pData->iSampleCount >= RT_ELEMENTS(pData->aSamples))
+    {
+        pData->fFinished = 1;
+        KeReleaseSpinLockFromDpcLevel(&pData->SpinLock);
+        return;
+    }
+
+    DPCSAMPLE *pSample = &pData->aSamples[pData->iSampleCount++];
+
+    pSample->u64TSC = ASMReadTSC();
+    pSample->PerfCounter = KeQueryPerformanceCounter(&pSample->PerfFrequency);
+    pSample->PerfDelta.QuadPart = pSample->PerfCounter.QuadPart - pData->PerfCounterPrev.QuadPart;
+
+    pData->PerfCounterPrev.QuadPart = pSample->PerfCounter.QuadPart;
+
+    KeSetTimer(&pData->Timer, pData->DueTime, &pData->Dpc);
+
+    KeReleaseSpinLockFromDpcLevel(&pData->SpinLock);
+}
+
+int VBoxGuestCommonIOCtl_DPC(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                             void *pvData, size_t cbData, size_t *pcbDataReturned)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Allocate a non paged memory for samples and related data. */
+    DPCDATA *pData = (DPCDATA *)ExAllocatePoolWithTag(NonPagedPool, sizeof(DPCDATA), VBOXGUEST_DPC_TAG);
+
+    if (!pData)
+    {
+        RTLogBackdoorPrintf("VBoxGuest: DPC: DPCDATA allocation failed.\n");
+        return VERR_NO_MEMORY;
+    }
+
+    KeInitializeDpc(&pData->Dpc, DPCDeferredRoutine, pData);
+    KeInitializeTimer(&pData->Timer);
+    KeInitializeSpinLock(&pData->SpinLock);
+
+    pData->fFinished = 0;
+    pData->iSampleCount = 0;
+    pData->PerfCounterPrev.QuadPart = 0;
+
+    pData->ulTimerRes = ExSetTimerResolution(1000 * 10, 1);
+    pData->DueTime.QuadPart = -(int64_t)pData->ulTimerRes / 10;
+
+    /* Start the DPC measurements. */
+    KeSetTimer(&pData->Timer, pData->DueTime, &pData->Dpc);
+
+    while (!pData->fFinished)
+    {
+        LARGE_INTEGER Interval;
+        Interval.QuadPart = -100 * 1000 * 10;
+        KeDelayExecutionThread(KernelMode, TRUE, &Interval);
+    }
+
+    ExSetTimerResolution(0, 0);
+
+    /* Log everything to the host. */
+    RTLogBackdoorPrintf("DPC: ulTimerRes = %d\n", pData->ulTimerRes);
+    int i;
+    for (i = 0; i < pData->iSampleCount; i++)
+    {
+        DPCSAMPLE *pSample = &pData->aSamples[i];
+
+        RTLogBackdoorPrintf("[%d] pd %lld pc %lld pf %lld t %lld\n",
+                i,
+                pSample->PerfDelta.QuadPart,
+                pSample->PerfCounter.QuadPart,
+                pSample->PerfFrequency.QuadPart,
+                pSample->u64TSC);
+    }
+
+    ExFreePoolWithTag(pData, VBOXGUEST_DPC_TAG);
+    return rc;
+}
+#endif /* VBOX_WITH_DPC_LATENCY_CHECKER */
