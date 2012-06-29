@@ -44,6 +44,8 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   VBoxGuest_DEFS.win    += VBOX_WITH_GUEST_BUGCHECK_DETECTION
  endif
  #VBoxGuest_DEFS.win     += LOG_ENABLED LOG_TO_BACKDOOR
+ VBoxGuest_DEFS.win += \
+	$(if $(VBOX_WITH_DPC_LATENCY_CHECKER),VBOX_WITH_DPC_LATENCY_CHECKER,)
  VBoxGuest_DEPS.solaris += $(VBOX_SVN_REV_KMK)
  VBoxGuest_DEPS.linux   += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.freebsd += $(VBOX_SVN_REV_HEADER)

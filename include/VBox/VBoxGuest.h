@@ -353,6 +353,10 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** @} */
 # endif /* RT_ARCH_AMD64 */
 
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+#define VBOXGUEST_IOCTL_DPC VBOXGUEST_IOCTL_CODE(30, 0)
+#endif
+
 /** Get the pointer to the first HGCM parameter.  */
 # define VBOXGUEST_HGCM_CALL_PARMS(a)             ( (HGCMFunctionParameter   *)((uint8_t *)(a) + sizeof(VBoxGuestHGCMCallInfo)) )
 /** Get the pointer to the first HGCM parameter in a 32-bit request.  */
