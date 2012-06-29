@@ -30,6 +30,7 @@
 
 #define TFTP_FILENAME_MAX 512
 
+#if 0
 struct tftp_t
 {
     struct ip ip;
@@ -50,5 +51,31 @@ struct tftp_t
         u_int8_t tp_buf[512 + 2];
     } x;
 };
+#else
+#pragma pack(0)
+typedef struct TFTPCOREHDR
+{
+    uint16_t    u16TftpOpCode;
+#if 0
+    union {
+        uint16_t u16BlockNum;
+        uint16_t u16TftpErrorCode;
+    } X;
+#endif
+    /* Data lays here (might be raw uint8_t* or header of payload ) */
+} TFTPCOREHDR, *PTFTPCOREHDR;
+
+typedef struct TFTPIPHDR
+{
+    struct ip       IPv4Hdr;
+    struct udphdr   UdpHdr;
+    uint16_t        u16TftpOpType;
+    TFTPCOREHDR     Core;
+    /* Data lays here */
+} TFTPIPHDR, *PTFTPIPHDR;
+#pragma pack()
+
+typedef const PTFTPIPHDR PCTFTPIPHDR;
+#endif
 
 void tftp_input(PNATState pData, struct mbuf *m);
