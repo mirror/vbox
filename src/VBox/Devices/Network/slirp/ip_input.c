@@ -165,15 +165,15 @@ ip_input(PNATState pData, struct mbuf *m)
     /*
      * Convert fields to host representation.
      */
-    NTOHS(ip->ip_len);
+    RT_N2H_U16(ip->ip_len);
     if (ip->ip_len < hlen)
     {
         ipstat.ips_badlen++;
         goto bad_free_m;
     }
 
-    NTOHS(ip->ip_id);
-    NTOHS(ip->ip_off);
+    RT_N2H_U16(ip->ip_id);
+    RT_N2H_U16(ip->ip_off);
 
     /*
      * Check that the amount of data in the buffers
