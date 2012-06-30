@@ -207,15 +207,16 @@ static int vboxVDMACrCtlPost(PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd
 
 static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
 {
-    PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pCmd = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP)vboxVDMACrCtlCreate(
-            VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP, sizeof (*pCmd));
+    PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pCmd;
+    pCmd = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP) vboxVDMACrCtlCreate (VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP,
+                                                                          sizeof (*pCmd));
     if (pCmd)
     {
         PVGASTATE pVGAState = pVdma->pVGAState;
         pCmd->pvVRamBase = pVGAState->vram_ptrR3;
         pCmd->cbVRam = pVGAState->vram_size;
         int rc = vboxVDMACrCtlPost(pVGAState, &pCmd->Hdr, sizeof (*pCmd));
-        AssertRC(rc);
+        Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
         if (RT_SUCCESS(rc))
         {
             rc = vboxVDMACrCtlGetRc(&pCmd->Hdr);
@@ -1110,9 +1111,9 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 {
     int rc;
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
-    PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ (RT_OFFSETOF(VBOXVDMAHOST, CmdPool.aCmds[cPipeElements]));
+    PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ(RT_OFFSETOF(VBOXVDMAHOST, CmdPool.aCmds[cPipeElements]));
 #else
-    PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ (sizeof (*pVdma));
+    PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ(sizeof(*pVdma));
 #endif
     Assert(pVdma);
     if (pVdma)
@@ -1148,7 +1149,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 #endif
                 pVGAState->pVdma = pVdma;
 #ifdef VBOX_WITH_CRHGSMI
-                rc = vboxVDMACrCtlHgsmiSetup(pVdma);
+                int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
 #endif
                 return VINF_SUCCESS;
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD

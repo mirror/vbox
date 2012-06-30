@@ -6610,7 +6610,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_VDMA
-    if(rc == VINF_SUCCESS)
+    if (rc == VINF_SUCCESS)
     {
         rc = vboxVDMAConstruct(pThis, 1024);
         AssertRC(rc);
