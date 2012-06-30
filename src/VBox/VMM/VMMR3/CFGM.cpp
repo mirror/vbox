@@ -2921,7 +2921,10 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
  * buffer allocated from the MM heap.
  *
  * @returns VBox status code.
- * @param   pNode           Which node to search for pszName in.
+ * @param   pNode           Which node to search for pszName in.  This cannot be
+ *                          NULL if @a pszDef is not NULL, because we need
+ *                          somewhere way to get to the VM in order to call
+ *                          MMR3HeapStrDup.
  * @param   pszName         Value name. This value must be of zero terminated character string type.
  * @param   ppszString      Where to store the string pointer. Not set on failure.
  *                          Free this using MMR3HeapFree().
@@ -2929,6 +2932,8 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
  */
 VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
 {
+    Assert(pNode || !pszDef); /* We need pVM if we need to duplicate the string later. */
+
     /*
      * (Don't call CFGMR3QuerySize and CFGMR3QueryStringDef here as the latter
      * cannot handle pszDef being NULL.)
