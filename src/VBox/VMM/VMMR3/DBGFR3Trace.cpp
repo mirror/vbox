@@ -164,14 +164,23 @@ int dbgfR3TraceInit(PVM pVM)
         rc = dbgfR3TraceEnable(pVM, 0, 0);
         if (RT_SUCCESS(rc))
         {
-            char       *pszTracingConfig;
-            rc = CFGMR3QueryStringAllocDef(pDbgfNode, "TracingConfig", &pszTracingConfig, pszConfigDefault);
-            if (RT_SUCCESS(rc))
+            if (pDbgfNode)
             {
-                rc = DBGFR3TraceConfig(pVM, pszTracingConfig);
+                char       *pszTracingConfig;
+                rc = CFGMR3QueryStringAllocDef(pDbgfNode, "TracingConfig", &pszTracingConfig, pszConfigDefault);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = DBGFR3TraceConfig(pVM, pszTracingConfig);
+                    if (RT_FAILURE(rc))
+                        rc = VMSetError(pVM, rc, RT_SRC_POS, "TracingConfig=\"%s\" -> %Rrc", pszTracingConfig, rc);
+                    MMR3HeapFree(pszTracingConfig);
+                }
+            }
+            else
+            {
+                rc = DBGFR3TraceConfig(pVM, pszConfigDefault);
                 if (RT_FAILURE(rc))
-                    rc = VMSetError(pVM, rc, RT_SRC_POS, "TracingConfig=\"%s\" -> %Rrc", pszTracingConfig, rc);
-                MMR3HeapFree(pszTracingConfig);
+                    rc = VMSetError(pVM, rc, RT_SRC_POS, "TracingConfig=\"%s\" (default) -> %Rrc", pszConfigDefault, rc);
             }
         }
     }
