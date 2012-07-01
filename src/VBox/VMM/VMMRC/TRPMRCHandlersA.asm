@@ -451,13 +451,13 @@ GenericTrapErrCode:
     STAM_PROFILE_ADV_STOP edx
 %endif
     mov     edx, IMP(g_VM)
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+    call    [edx + VM.pfnVMMRCToHostAsm]
 
     ; We shouldn't ever return this way. So, raise a special IPE if we do.
 .gc_panic_again:
     mov     eax, VERR_TRPM_IPE_3
     mov     edx, IMP(g_VM)
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+    call    [edx + VM.pfnVMMRCToHostAsm]
     jmp     .gc_panic_again
 
     ;
@@ -610,10 +610,14 @@ ALIGNCODE(16)
     ; Pop back to the host to service the error.
     ;
 .rc_to_host:
-    mov     ecx, ebx
     mov     edx, IMP(g_VM)
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
-    jmp short .rc_continue
+%if 0
+    call    [edx + VM.pfnVMMRCToHostAsm]
+%else
+    call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
+%endif
+    mov     eax, VERR_TRPM_DONT_PANIC
+    jmp     .rc_to_host
 
     ;
     ; Continue(/Resume/Restart/Whatever) hypervisor execution.
@@ -690,7 +694,11 @@ ALIGNCODE(16)
 .rc_do_not_panic:
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_DONT_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+%if 0
+    call    [edx + VM.pfnVMMRCToHostAsm]
+%else
+    call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
+%endif
 %ifdef DEBUG_STUFF
     COM_S_PRINT 'bad!!!'
 %endif
@@ -911,7 +919,7 @@ ti_GenericInterrupt:
     ;
     mov     edx, IMP(g_VM)
     mov     eax, VINF_EM_RAW_INTERRUPT
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+    call    [edx + VM.pfnVMMRCToHostAsm]
 
     ;
     ; We've returned!
@@ -1021,7 +1029,11 @@ ALIGNCODE(16)
 
     mov     edx, IMP(g_VM)
     mov     eax, VINF_EM_RAW_INTERRUPT_HYPER
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+%if 0
+    call    [edx + VM.pfnVMMRCToHostAsm]
+%else
+    call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
+%endif
 %ifdef DEBUG_STUFF_INT
     COM_S_CHAR '!'
 %endif
@@ -1243,7 +1255,11 @@ df_to_host:
     COM_S_PRINT 'Trying to return to host...',10,13
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+%if 0
+    call    [edx + VM.pfnVMMRCToHostAsm]
+%else
+    call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
+%endif
     jmp short df_to_host
 
     ;

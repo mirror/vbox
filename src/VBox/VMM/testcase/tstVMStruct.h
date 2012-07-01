@@ -1106,8 +1106,8 @@
     GEN_CHECK_OFF(VMM, enmSwitcher);
     GEN_CHECK_OFF(VMM, aoffSwitchers);
     GEN_CHECK_OFF_DOT(VMM, aoffSwitchers[1]);
-    GEN_CHECK_OFF(VMM, pfnHostToGuestR0);
-    GEN_CHECK_OFF(VMM, pfnGuestToHostRC);
+    GEN_CHECK_OFF(VMM, pfnR0ToRawMode);
+    GEN_CHECK_OFF(VMM, pfnRCToHost);
     GEN_CHECK_OFF(VMM, pfnCallTrampolineRC);
     GEN_CHECK_OFF(VMM, pfnCPUMRCResumeGuest);
     GEN_CHECK_OFF(VMM, pfnCPUMRCResumeGuestV86);
@@ -1320,7 +1320,8 @@
     GEN_CHECK_OFF(VM, uCpuExecutionCap);
     GEN_CHECK_OFF(VM, cbSelf);
     GEN_CHECK_OFF(VM, offVMCPU);
-    GEN_CHECK_OFF(VM, pfnVMMGCGuestToHostAsm);
+    GEN_CHECK_OFF(VM, pfnVMMRCToHostAsm);
+    GEN_CHECK_OFF(VM, pfnVMMRCToHostAsmNoReturn);
     GEN_CHECK_OFF(VM, fRecompileUser);
     GEN_CHECK_OFF(VM, fRecompileSupervisor);
     GEN_CHECK_OFF(VM, fPATMEnabled);

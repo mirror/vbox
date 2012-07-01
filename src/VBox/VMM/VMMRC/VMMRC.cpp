@@ -204,7 +204,7 @@ VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
  */
 VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
 {
-    pVM->vmm.s.pfnGuestToHostRC(rc);
+    pVM->vmm.s.pfnRCToHost(rc);
 }
 
 
@@ -215,7 +215,7 @@ VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
  */
 DECLASM(void) vmmRCProbeFireHelper(PVM pVM)
 {
-    pVM->vmm.s.pfnGuestToHostRC(VINF_VMM_CALL_TRACER);
+    pVM->vmm.s.pfnRCToHost(VINF_VMM_CALL_TRACER);
 }
 
 

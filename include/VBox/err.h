@@ -1105,6 +1105,8 @@
 #define VERR_VMM_RING3_CALL_NO_RC           (-2711)
 /** Reason for leaving RC: Caller the tracer in ring-0. */
 #define VINF_VMM_CALL_TRACER                (2712)
+/** Internal processing error \#1 in the switcher code. */
+#define VERR_VMM_SWITCHER_IPE_1             (-2713)
 /** @} */
 
 

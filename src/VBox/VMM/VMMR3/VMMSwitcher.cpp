@@ -257,9 +257,10 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
      */
     PVMMSWITCHERDEF pSwitcher   = s_apSwitchers[pVM->vmm.s.enmSwitcher];
     RTRCPTR         RCPtr       = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[pVM->vmm.s.enmSwitcher];
-    pVM->vmm.s.pfnGuestToHostRC         = RCPtr + pSwitcher->offGCGuestToHost;
-    pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offGCCallTrampoline;
-    pVM->pfnVMMGCGuestToHostAsm         = RCPtr + pSwitcher->offGCGuestToHostAsm;
+    pVM->vmm.s.pfnRCToHost              = RCPtr + pSwitcher->offRCToHost;
+    pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offRCCallTrampoline;
+    pVM->pfnVMMRCToHostAsm              = RCPtr + pSwitcher->offRCToHostAsm;
+    pVM->pfnVMMRCToHostAsmNoReturn      = RCPtr + pSwitcher->offRCToHostAsmNoReturn;
 
 //    AssertFailed();
 #else
@@ -815,14 +816,16 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
             while (cbCode > 0)
             {
                 /* try label it */
-                if (pSwitcher->offR0HostToGuest == offCode)
-                    RTLogPrintf(" *R0HostToGuest:\n");
-                if (pSwitcher->offGCGuestToHost == offCode)
-                    RTLogPrintf(" *GCGuestToHost:\n");
-                if (pSwitcher->offGCCallTrampoline == offCode)
-                    RTLogPrintf(" *GCCallTrampoline:\n");
-                if (pSwitcher->offGCGuestToHostAsm == offCode)
-                    RTLogPrintf(" *GCGuestToHostAsm:\n");
+                if (pSwitcher->offR0ToRawMode == offCode)
+                    RTLogPrintf(" *R0ToRawMode:\n");
+                if (pSwitcher->offRCToHost == offCode)
+                    RTLogPrintf(" *RCToHost:\n");
+                if (pSwitcher->offRCCallTrampoline == offCode)
+                    RTLogPrintf(" *RCCallTrampoline:\n");
+                if (pSwitcher->offRCToHostAsm == offCode)
+                    RTLogPrintf(" *RCToHostAsm:\n");
+                if (pSwitcher->offRCToHostAsmNoReturn == offCode)
+                    RTLogPrintf(" *RCToHostAsmNoReturn:\n");
 
                 /* disas */
                 uint32_t    cbInstr = 0;
@@ -967,12 +970,13 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
         pVM->vmm.s.enmSwitcher = enmSwitcher;
 
         RTR0PTR     pbCodeR0 = (RTR0PTR)pVM->vmm.s.pvCoreCodeR0 + pVM->vmm.s.aoffSwitchers[enmSwitcher]; /** @todo fix the pvCoreCodeR0 type */
-        pVM->vmm.s.pfnHostToGuestR0 = pbCodeR0 + pSwitcher->offR0HostToGuest;
+        pVM->vmm.s.pfnR0ToRawMode           = pbCodeR0 + pSwitcher->offR0ToRawMode;
 
         RTRCPTR     RCPtr = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[enmSwitcher];
-        pVM->vmm.s.pfnGuestToHostRC         = RCPtr + pSwitcher->offGCGuestToHost;
-        pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offGCCallTrampoline;
-        pVM->pfnVMMGCGuestToHostAsm         = RCPtr + pSwitcher->offGCGuestToHostAsm;
+        pVM->vmm.s.pfnRCToHost              = RCPtr + pSwitcher->offRCToHost;
+        pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offRCCallTrampoline;
+        pVM->pfnVMMRCToHostAsm              = RCPtr + pSwitcher->offRCToHostAsm;
+        pVM->pfnVMMRCToHostAsmNoReturn      = RCPtr + pSwitcher->offRCToHostAsmNoReturn;
         return VINF_SUCCESS;
     }
 
@@ -1026,7 +1030,7 @@ VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwit
     if (pSwitcher)
     {
         RTR0PTR     pbCodeR0 = (RTR0PTR)pVM->vmm.s.pvCoreCodeR0 + pVM->vmm.s.aoffSwitchers[enmSwitcher]; /** @todo fix the pvCoreCodeR0 type */
-        return pbCodeR0 + pSwitcher->offR0HostToGuest;
+        return pbCodeR0 + pSwitcher->offR0ToRawMode;
     }
     return NIL_RTR0PTR;
 }

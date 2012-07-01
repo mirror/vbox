@@ -1204,12 +1204,16 @@ VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
     AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
 
     /*
-     * Set the EIP and ESP.
+     * Set the hypervisor to resume executing a CPUM resume function
+     * in CPUMRCA.asm.
      */
-    CPUMSetHyperEIP(pVCpu, CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM
-                    ? pVM->vmm.s.pfnCPUMRCResumeGuestV86
-                    : pVM->vmm.s.pfnCPUMRCResumeGuest);
-    CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC);
+    CPUMSetHyperState(pVCpu,
+                        CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM
+                      ? pVM->vmm.s.pfnCPUMRCResumeGuestV86
+                      : pVM->vmm.s.pfnCPUMRCResumeGuest,  /* eip */
+                      pVCpu->vmm.s.pbEMTStackBottomRC,    /* esp */
+                      0,                                  /* eax */
+                      VM_RC_ADDR(pVM, &pVCpu->cpum)       /* edx */);
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).
@@ -1872,8 +1876,14 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
     /*
      * Setup the call frame using the trampoline.
      */
+    CPUMSetHyperState(pVCpu,
+                      pVM->vmm.s.pfnCallTrampolineRC, /* eip */
+                      pVCpu->vmm.s.pbEMTStackBottomRC - cArgs * sizeof(RTGCUINTPTR32),  /* esp */
+                      RCPtrEntry,  /* eax */
+                      cArgs        /* edx */
+                      );
+
     memset(pVCpu->vmm.s.pbEMTStackR3, 0xaa, VMM_STACK_SIZE); /* Clear the stack. */
-    CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC - cArgs * sizeof(RTGCUINTPTR32));
     PRTGCUINTPTR32 pFrame = (PRTGCUINTPTR32)(pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE) - cArgs;
     int i = cArgs;
     while (i-- > 0)
@@ -1881,7 +1891,6 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
 
     CPUMPushHyper(pVCpu, cArgs * sizeof(RTGCUINTPTR32));                          /* stack frame size */
     CPUMPushHyper(pVCpu, RCPtrEntry);                                             /* what to call */
-    CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).
@@ -1902,7 +1911,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
         /*
-         * Flush the logs.
+         * Flush the loggers.
          */
 #ifdef LOG_ENABLED
         PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
@@ -2010,7 +2019,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
         /*
-         * Flush the loggers,
+         * Flush the loggers.
          */
 #ifdef LOG_ENABLED
         PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;

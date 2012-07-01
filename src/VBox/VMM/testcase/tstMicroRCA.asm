@@ -510,7 +510,7 @@ tstTrapHandler_Fault_Guest:
     mov     ecx, esp
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_DONT_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+    call    [edx + VM.pfnVMMRCToHostAsm]
     jmp short tstTrapHandler_Fault_Guest
 
 tstTrapHandler_Fault_Hyper:
@@ -522,7 +522,7 @@ tstTrapHandler_Fault_Hyper:
     mov     ecx, esp
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_DONT_PANIC
-    call    [edx + VM.pfnVMMGCGuestToHostAsm]
+    call    [edx + VM.pfnVMMRCToHostAsm]
     jmp short tstTrapHandler_Fault_Hyper
 
 BEGINPROC tstInterrupt42

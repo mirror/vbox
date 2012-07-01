@@ -793,12 +793,29 @@ typedef struct VM
      *
      * Depending on how the host handles the rc status given in @a eax, this may
      * return and let the caller resume whatever it was doing prior to the call.
+     *
+     *
+     * @param   eax         The return code, register.
+     * @remark  Assume interrupts disabled.
+     * @remark  This method pointer lives here because TRPM needs it.
+     */
+    RTRCPTR                     pfnVMMRCToHostAsm/*(int32_t eax)*/;
+
+    /**
+     * VMMSwitcher assembly entry point returning to host context without saving the
+     * raw-mode context (hyper) registers.
+     *
+     * Unlike pfnVMMRC2HCAsm, this will not return to the caller.  Instead it
+     * expects the caller to save a RC context in CPUM where one might return if the
+     * return code indicate that this is possible.
+     *
      * This method pointer lives here because TRPM needs it.
      *
      * @param   eax         The return code, register.
      * @remark  Assume interrupts disabled.
+     * @remark  This method pointer lives here because TRPM needs it.
      */
-    RTRCPTR                     pfnVMMGCGuestToHostAsm/*(int32_t eax)*/;
+    RTRCPTR                     pfnVMMRCToHostAsmNoReturn/*(int32_t eax)*/;
 
     /** @name Various items that are frequently accessed.
      * @{ */
@@ -823,6 +840,9 @@ typedef struct VM
     /** Large page enabled flag. */
     bool                        fUseLargePages;
     /** @} */
+
+    /** Alignment padding.. */
+    uint32_t                    uPadding1;
 
     /** @name Debugging
      * @{ */
@@ -868,7 +888,7 @@ typedef struct VM
 
     /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
-    uint8_t                     abAlignment3[(HC_ARCH_BITS == 32 ? 24 : 0) + 48];
+    uint8_t                     abAlignment3[(HC_ARCH_BITS == 32 ? 24 : 0) + 40];
 
     /** CPUM part. */
     union
