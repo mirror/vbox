@@ -237,9 +237,9 @@ typedef struct VMM
     /** Call Trampoline. See vmmGCCallTrampoline(). */
     RTRCPTR                     pfnCallTrampolineRC;
     /** Guest to host switcher entry point. */
-    RCPTRTYPE(PFNVMMSWITCHERRC) pfnGuestToHostRC;
+    RCPTRTYPE(PFNVMMSWITCHERRC) pfnRCToHost;
     /** Host to guest switcher entry point. */
-    R0PTRTYPE(PFNVMMSWITCHERHC) pfnHostToGuestR0;
+    R0PTRTYPE(PFNVMMSWITCHERHC) pfnR0ToRawMode;
     /** @}  */
 
     /** @name Logging

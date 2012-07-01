@@ -45,10 +45,11 @@ struc VMMSWITCHERDEF
     .pfnRelocate:                   RTCCPTR_RES 1
     .enmType:                       resd 1
     .cbCode:                        resd 1
-    .offR0HostToGuest:              resd 1
-    .offGCGuestToHost:              resd 1
-    .offGCCallTrampoline:           resd 1
-    .offGCGuestToHostAsm:           resd 1
+    .offR0ToRawMode:                resd 1
+    .offRCToHost:                   resd 1
+    .offRCCallTrampoline:           resd 1
+    .offRCToHostAsm:                resd 1
+    .offRCToHostAsmNoReturn:        resd 1
     ; disasm help
     .offHCCode0:                    resd 1
     .cbHCCode0:                     resd 1
@@ -128,7 +129,7 @@ BEGINCODE
 
 %ifdef DEBUG_STUFF
     %define DEBUG_CHAR(ch) COM_CHAR ch
-    %define DEBUG_S_CHAR(ch) COM_CHAR ch
+    %define DEBUG_S_CHAR(ch) COM_S_CHAR ch
 %else
     %define DEBUG_CHAR(ch)
     %define DEBUG_S_CHAR(ch)

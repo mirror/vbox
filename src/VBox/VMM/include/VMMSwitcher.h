@@ -97,14 +97,19 @@ typedef struct VMMSWITCHERDEF
     VMMSWITCHER enmType;
     /** Size of the entire code chunk. */
     uint32_t    cbCode;
-    /** vmmR0HostToGuest C entrypoint. */
-    uint32_t    offR0HostToGuest;
-    /** vmmGCGuestToHost C entrypoint. */
-    uint32_t    offGCGuestToHost;
-    /** vmmGCCallTrampoline address. */
-    uint32_t    offGCCallTrampoline;
-    /** vmmGCGuestToHostAsm assembly entrypoint. */
-    uint32_t    offGCGuestToHostAsm;
+    /** vmmR0ToRawMode C entrypoint. */
+    uint32_t    offR0ToRawMode;
+    /** vmmRCToHost C entrypoint. */
+    uint32_t    offRCToHost;
+    /** vmmRCCallTrampoline address. */
+    uint32_t    offRCCallTrampoline;
+    /** vmmRCToHostAsm - Assembly language entry point for switching from raw-mode
+     *  context to host-context.  This saves the RC register context.  */
+    uint32_t    offRCToHostAsm;
+    /** vmmRCToHostNoReturn - Assembly language entry point for switching from
+     *  raw-mode context to host-context.  This does not save any RC register
+     *  context and expects the caller to have done that already. */
+    uint32_t    offRCToHostAsmNoReturn;
     /** @name Disassembly Regions.
      * @{ */
     uint32_t    offHCCode0;

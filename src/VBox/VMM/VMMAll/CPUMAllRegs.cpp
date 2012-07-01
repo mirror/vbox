@@ -143,6 +143,12 @@ VMMDECL(void) CPUMSetHyperESP(PVMCPU pVCpu, uint32_t u32ESP)
 }
 
 
+VMMDECL(void) CPUMSetHyperEDX(PVMCPU pVCpu, uint32_t u32ESP)
+{
+    pVCpu->cpum.s.Hyper.esp = u32ESP;
+}
+
+
 VMMDECL(int) CPUMSetHyperEFlags(PVMCPU pVCpu, uint32_t Efl)
 {
     pVCpu->cpum.s.Hyper.eflags.u32 = Efl;
@@ -153,6 +159,35 @@ VMMDECL(int) CPUMSetHyperEFlags(PVMCPU pVCpu, uint32_t Efl)
 VMMDECL(void) CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP)
 {
     pVCpu->cpum.s.Hyper.eip = u32EIP;
+}
+
+
+/**
+ * Used by VMMR3RawRunGC to reinitialize the general raw-mode context registers,
+ * EFLAGS and EIP prior to resuming guest execution.
+ *
+ * All general register not given as a parameter will be set to 0.  The EFLAGS
+ * register will be set to sane values for C/C++ code execution with interrupts
+ * disabled and IOPL 0.
+ *
+ * @param   pVCpu               The current virtual CPU.
+ * @param   u32EIP              The EIP value.
+ * @param   u32ESP              The ESP value.
+ * @param   u32EAX              The EAX value.
+ * @param   u32EDX              The EDX value.
+ */
+VMM_INT_DECL(void) CPUMSetHyperState(PVMCPU pVCpu, uint32_t u32EIP, uint32_t u32ESP, uint32_t u32EAX, uint32_t u32EDX)
+{
+    pVCpu->cpum.s.Hyper.eip      = u32EIP;
+    pVCpu->cpum.s.Hyper.esp      = u32ESP;
+    pVCpu->cpum.s.Hyper.eax      = u32EAX;
+    pVCpu->cpum.s.Hyper.edx      = u32EDX;
+    pVCpu->cpum.s.Hyper.ecx      = 0;
+    pVCpu->cpum.s.Hyper.ebx      = 0;
+    pVCpu->cpum.s.Hyper.ebp      = 0;
+    pVCpu->cpum.s.Hyper.esi      = 0;
+    pVCpu->cpum.s.Hyper.edi      = 0;
+    pVCpu->cpum.s.Hyper.eflags.u = X86_EFL_1;
 }
 
 

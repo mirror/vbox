@@ -55,7 +55,7 @@ BITS 32
 ; @param    [esp + 04h]  Param 1 - VM handle
 ; @param    [esp + 08h]  Param 2 - VMCPU offset
 ;
-BEGINPROC vmmR0HostToGuest
+BEGINPROC vmmR0ToRawMode
 %ifdef DEBUG_STUFF
     COM32_S_NEWLINE
     COM32_S_CHAR '^'
@@ -83,7 +83,7 @@ BEGINPROC vmmR0HostToGuest
     FIXUP FIX_HC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
     push    cs                          ; allow for far return and restore cs correctly.
-    call    NAME(vmmR0HostToGuestAsm)
+    call    NAME(vmmR0ToRawModeAsm)
 
 %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     CPUM_FROM_CPUMCPU(edx)
@@ -123,10 +123,10 @@ gth_notherm:
 
     ret
 
-ENDPROC vmmR0HostToGuest
+ENDPROC vmmR0ToRawMode
 
 ; *****************************************************************************
-; vmmR0HostToGuestAsm
+; vmmR0ToRawModeAsm
 ;
 ; Phase one of the switch from host to guest context (host MMU context)
 ;
@@ -142,7 +142,7 @@ ENDPROC vmmR0HostToGuest
 ;
 ; *****************************************************************************
 ALIGNCODE(16)
-BEGINPROC vmmR0HostToGuestAsm
+BEGINPROC vmmR0ToRawModeAsm
     ;;
     ;; Save CPU host context
     ;;      Skip eax, edx and ecx as these are not preserved over calls.
@@ -456,9 +456,9 @@ gth_debug_no:
     mov     dword [rdx + CPUMCPU.u32RetCode], eax
 
     ; now let's switch back
-    jmp     NAME(VMMGCGuestToHostAsm)   ; rax = returncode.
+    jmp     NAME(vmmRCToHostAsm)   ; rax = returncode.
 
-ENDPROC vmmR0HostToGuestAsm
+ENDPROC vmmR0ToRawModeAsm
 
 
 ;;
@@ -472,14 +472,14 @@ ENDPROC vmmR0HostToGuestAsm
 ;
 BITS 64
 ALIGNCODE(16)
-BEGINPROC vmmGCCallTrampoline
+BEGINPROC vmmRCCallTrampoline
 %ifdef DEBUG_STUFF
     COM64_S_CHAR 'c'
     COM64_S_CHAR 't'
     COM64_S_CHAR '!'
 %endif
     int3
-ENDPROC vmmGCCallTrampoline
+ENDPROC vmmRCCallTrampoline
 
 
 ;;
@@ -487,7 +487,7 @@ ENDPROC vmmGCCallTrampoline
 ;
 BITS 64
 ALIGNCODE(16)
-BEGINPROC vmmGCGuestToHost
+BEGINPROC vmmRCToHost
 %ifdef DEBUG_STUFF
     push    rsi
     COM_NEWLINE
@@ -500,10 +500,10 @@ BEGINPROC vmmGCGuestToHost
     pop     rsi
 %endif
     int3
-ENDPROC vmmGCGuestToHost
+ENDPROC vmmRCToHost
 
 ;;
-; VMMGCGuestToHostAsm
+; vmmRCToHostAsm
 ;
 ; This is an alternative entry point which we'll be using
 ; when the we have saved the guest state already or we haven't
@@ -514,7 +514,8 @@ ENDPROC vmmGCGuestToHost
 ;
 BITS 64
 ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsm
+BEGINPROC vmmRCToHostAsm
+NAME(vmmRCToHostAsmNoReturn):
     ;; We're still in the intermediate memory context!
 
     ;;
@@ -657,7 +658,7 @@ GLOBALNAME ICExitTarget
     ; store the return code in eax
     mov     eax, [edx + CPUMCPU.u32RetCode]
     retf
-ENDPROC VMMGCGuestToHostAsm
+ENDPROC vmmRCToHostAsm
 
 
 GLOBALNAME End
@@ -688,10 +689,11 @@ GLOBALNAME Def
         at VMMSWITCHERDEF.pfnRelocate,                  RTCCPTR_DEF NAME(Relocate)
         at VMMSWITCHERDEF.enmType,                      dd SWITCHER_TYPE
         at VMMSWITCHERDEF.cbCode,                       dd NAME(End)                        - NAME(Start)
-        at VMMSWITCHERDEF.offR0HostToGuest,             dd NAME(vmmR0HostToGuest)           - NAME(Start)
-        at VMMSWITCHERDEF.offGCGuestToHost,             dd NAME(vmmGCGuestToHost)           - NAME(Start)
-        at VMMSWITCHERDEF.offGCCallTrampoline,          dd NAME(vmmGCCallTrampoline)        - NAME(Start)
-        at VMMSWITCHERDEF.offGCGuestToHostAsm,          dd NAME(VMMGCGuestToHostAsm)        - NAME(Start)
+        at VMMSWITCHERDEF.offR0ToRawMode,               dd NAME(vmmR0ToRawMode)             - NAME(Start)
+        at VMMSWITCHERDEF.offRCToHost,                  dd NAME(vmmRCToHost)                - NAME(Start)
+        at VMMSWITCHERDEF.offRCCallTrampoline,          dd NAME(vmmRCCallTrampoline)        - NAME(Start)
+        at VMMSWITCHERDEF.offRCToHostAsm,               dd NAME(vmmRCToHostAsm)             - NAME(Start)
+        at VMMSWITCHERDEF.offRCToHostAsmNoReturn,       dd NAME(vmmRCToHostAsmNoReturn)     - NAME(Start)
         ; disasm help
         at VMMSWITCHERDEF.offHCCode0,                   dd 0
         at VMMSWITCHERDEF.cbHCCode0,                    dd NAME(IDEnterTarget)              - NAME(Start)
