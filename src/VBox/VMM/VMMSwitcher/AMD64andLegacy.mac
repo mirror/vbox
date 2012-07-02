@@ -582,8 +582,9 @@ htg_debug_regs_guest_done:
     ;; Return to the VMM code which either called the switcher or
     ;; the code set up to run by HC.
     ;;
-    push    dword [edx + CPUMCPU.Hyper.eip]
     push    dword [edx + CPUMCPU.Hyper.eflags]
+    push    cs
+    push    dword [edx + CPUMCPU.Hyper.eip]
     mov     edx, [edx + CPUMCPU.Hyper.edx]      ; !! edx is no longer pointing to CPUMCPU here !!
 
 %ifdef DEBUG_STUFF
@@ -602,8 +603,7 @@ htg_debug_regs_guest_done:
     pop     eax
 %endif
 
-    popfd
-    ret
+    iret                                ; Use iret to make debugging and TF/RF work.
 
 ;;
 ; Detour for saving host DR0-3 and loading hypervisor debug registers.
