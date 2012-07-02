@@ -268,6 +268,7 @@ int inet_aton (const char *cp, struct in_addr *ia);
 #include "tftp.h"
 
 #include "slirp_state.h"
+#include "slirp_dns.h"
 
 #undef PVM /* XXX Mac OS X hack */
 
