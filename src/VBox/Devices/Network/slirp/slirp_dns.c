@@ -322,10 +322,10 @@ int slirpInitializeDnsSettings(PNATState pData)
 
 int slirpReleaseDnsSettings(PNATState pData)
 {
-    AssertPtrReturn(pData, VERR_INVALID_PARAMETER);
     struct dns_entry *pDns = NULL;
     struct dns_domain_entry *pDomain = NULL;
     int rc = VINF_SUCCESS;
+    AssertPtrReturn(pData, VERR_INVALID_PARAMETER);
     LogFlowFuncEnter();
 
     while (!TAILQ_EMPTY(&pData->pDnsList))
