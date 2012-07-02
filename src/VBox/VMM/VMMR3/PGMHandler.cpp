@@ -554,8 +554,12 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     {
         pHlp->pfnPrintf(pHlp,
             "Physical handlers: (PhysHandlers=%d (%#x))\n"
-            "From     - To (incl) HandlerHC UserHC    HandlerGC UserGC    Type     Description\n",
-            pVM->pgm.s.pTreesR3->PhysHandlers, pVM->pgm.s.pTreesR3->PhysHandlers);
+            "%*s %*s %*s %*s HandlerGC UserGC    Type     Description\n",
+            pVM->pgm.s.pTreesR3->PhysHandlers, pVM->pgm.s.pTreesR3->PhysHandlers,
+            - sizeof(RTGCPHYS) * 2,     "From",
+            - sizeof(RTGCPHYS) * 2 - 3, "- To (incl)",
+            - sizeof(RTHCPTR)  * 2 - 1, "HandlerHC",
+            - sizeof(RTHCPTR)  * 2 - 1, "UserHC");
         RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3InfoHandlersPhysicalOne, &Args);
     }
 
@@ -563,7 +567,11 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     {
         pHlp->pfnPrintf(pHlp,
             "Virtual handlers:\n"
-            "From     - To (excl) HandlerHC HandlerGC Type     Description\n");
+            "%*s %*s %*s %*s Type       Description\n",
+            - sizeof(RTGCPTR) * 2,     "From",
+            - sizeof(RTGCPTR) * 2 - 3, "- To (excl)",
+            - sizeof(RTHCPTR) * 2 - 1, "HandlerHC",
+            - sizeof(RTRCPTR) * 2 - 1, "HandlerGC");
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
     }
 
@@ -571,7 +579,11 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     {
         pHlp->pfnPrintf(pHlp,
             "Hypervisor Virtual handlers:\n"
-            "From     - To (excl) HandlerHC HandlerGC Type     Description\n");
+            "%*s %*s %*s %*s Type       Description\n",
+            - sizeof(RTGCPTR) * 2,     "From", 
+            - sizeof(RTGCPTR) * 2 - 3, "- To (excl)", 
+            - sizeof(RTHCPTR) * 2 - 1, "HandlerHC", 
+            - sizeof(RTRCPTR) * 2 - 1, "HandlerGC");
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
     }
 }
