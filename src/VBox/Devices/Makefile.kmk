@@ -523,6 +523,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/slirp/misc.c \
  	Network/slirp/sbuf.c \
  	Network/slirp/slirp.c \
+ 	Network/slirp/slirp_dns.c \
  	Network/slirp/socket.c \
  	Network/slirp/tcp_input.c \
  	Network/slirp/tcp_output.c \
