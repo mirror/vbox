@@ -611,11 +611,7 @@ ALIGNCODE(16)
     ;
 .rc_to_host:
     mov     edx, IMP(g_VM)
-%if 0
-    call    [edx + VM.pfnVMMRCToHostAsm]
-%else
     call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
-%endif
     mov     eax, VERR_TRPM_DONT_PANIC
     jmp     .rc_to_host
 
@@ -694,11 +690,7 @@ ALIGNCODE(16)
 .rc_do_not_panic:
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_DONT_PANIC
-%if 0
-    call    [edx + VM.pfnVMMRCToHostAsm]
-%else
     call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
-%endif
 %ifdef DEBUG_STUFF
     COM_S_PRINT 'bad!!!'
 %endif
@@ -1029,11 +1021,7 @@ ALIGNCODE(16)
 
     mov     edx, IMP(g_VM)
     mov     eax, VINF_EM_RAW_INTERRUPT_HYPER
-%if 0
-    call    [edx + VM.pfnVMMRCToHostAsm]
-%else
     call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
-%endif
 %ifdef DEBUG_STUFF_INT
     COM_S_CHAR '!'
 %endif
@@ -1255,11 +1243,7 @@ df_to_host:
     COM_S_PRINT 'Trying to return to host...',10,13
     mov     edx, IMP(g_VM)
     mov     eax, VERR_TRPM_PANIC
-%if 0
-    call    [edx + VM.pfnVMMRCToHostAsm]
-%else
     call    [edx + VM.pfnVMMRCToHostAsmNoReturn]
-%endif
     jmp short df_to_host
 
     ;
