@@ -20,7 +20,6 @@
 #define _H_FFMPEGFB
 
 #include <VBox/com/VirtualBox.h>
-#include "EbmlWriter.h"
 #include <iprt/uuid.h>
 
 #include <VBox/com/com.h>
@@ -30,6 +29,7 @@
 #include <iprt/critsect.h>
 
 #ifdef VBOX_WITH_VPX
+#include "EbmlWriter.h"
 #include <stdarg.h>
 #include <string.h>
 #define VPX_CODEC_DISABLE_COMPAT 1
