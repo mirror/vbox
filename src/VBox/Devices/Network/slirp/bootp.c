@@ -707,8 +707,8 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         {
             if (parameter_list[i] == RFC1533_DNS)
             {
-                slirp_release_dns_list(pData);
-                slirp_init_dns_list(pData);
+                slirpReleaseDnsSettings(pData);
+                slirpInitializeDnsSettings(pData);
                 pData->dnsLastUpdate = curtime;
                 break;
             }
