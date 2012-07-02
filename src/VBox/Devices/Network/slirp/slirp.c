@@ -353,6 +353,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     inet_aton("127.0.0.1", &loopback_addr);
     rc = slirpInitializeDnsSettings(pData);
     AssertRCReturn(rc, VINF_NAT_DNS);
+    rc = slirpTftpInit(pData);
+    AssertRCReturn(rc, VINF_NAT_DNS);
 
     if (i32AliasMode & ~(PKT_ALIAS_LOG|PKT_ALIAS_SAME_PORTS|PKT_ALIAS_PROXY_ONLY))
     {
