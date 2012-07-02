@@ -18,6 +18,10 @@
 
 #include "VBoxDispD3DCmn.h"
 
+#ifndef NT_SUCCESS
+# define NT_SUCCESS(_Status) ((_Status) >= 0)
+#endif
+
 HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks)
 {
     HRESULT hr = S_OK;
@@ -28,6 +32,7 @@ HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks)
     if (pCallbacks->hGdi32 != NULL)
     {
         bool bSupported = true;
+        bool bSupportedWin8 = true;
         pCallbacks->pfnD3DKMTOpenAdapterFromHdc = (PFND3DKMT_OPENADAPTERFROMHDC)GetProcAddress(pCallbacks->hGdi32, "D3DKMTOpenAdapterFromHdc");
         Log((__FUNCTION__"pfnD3DKMTOpenAdapterFromHdc = %p\n", pCallbacks->pfnD3DKMTOpenAdapterFromHdc));
         bSupported &= !!(pCallbacks->pfnD3DKMTOpenAdapterFromHdc);
@@ -80,9 +85,34 @@ HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks)
         Log((__FUNCTION__": pfnD3DKMTUnlock = %p\n", pCallbacks->pfnD3DKMTUnlock));
         bSupported &= !!(pCallbacks->pfnD3DKMTUnlock);
 
+        pCallbacks->pfnD3DKMTEnumAdapters = (PFND3DKMT_ENUMADAPTERS)GetProcAddress(pCallbacks->hGdi32, "D3DKMTEnumAdapters");
+        Log((__FUNCTION__": pfnD3DKMTEnumAdapters = %p\n", pCallbacks->pfnD3DKMTEnumAdapters));
+        /* this present starting win8 release preview only, so keep going if it is not available,
+         * i.e. do not clear the bSupported on its absence */
+        bSupportedWin8 &= !!(pCallbacks->pfnD3DKMTEnumAdapters);
+#ifdef DEBUG_misha
+        /* just a debug assertion to test it on win8 */
+        Assert(pCallbacks->pfnD3DKMTEnumAdapters);
+#endif
+
+        pCallbacks->pfnD3DKMTOpenAdapterFromLuid = (PFND3DKMT_OPENADAPTERFROMLUID)GetProcAddress(pCallbacks->hGdi32, "D3DKMTOpenAdapterFromLuid");
+        Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromLuid = %p\n", pCallbacks->pfnD3DKMTOpenAdapterFromLuid));
+        /* this present starting win8 release preview only, so keep going if it is not available,
+         * i.e. do not clear the bSupported on its absence */
+        bSupportedWin8 &= !!(pCallbacks->pfnD3DKMTOpenAdapterFromLuid);
+#ifdef DEBUG_misha
+        /* just a debug assertion to test it on win8 */
+        Assert(pCallbacks->pfnD3DKMTOpenAdapterFromLuid);
+        Assert(bSupportedWin8);
+#endif
+
         /*Assert(bSupported);*/
         if (bSupported)
         {
+            if (bSupportedWin8)
+                pCallbacks->enmVersion = VBOXDISPKMT_CALLBACKS_VERSION_WIN8;
+            else
+                pCallbacks->enmVersion = VBOXDISPKMT_CALLBACKS_VERSION_VISTA_WIN7;
             return S_OK;
         }
         else
@@ -164,33 +194,96 @@ HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
     return hr;
 }
 
-HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+static HRESULT vboxDispKmtOpenAdapterViaHdc(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
 {
     D3DKMT_OPENADAPTERFROMHDC OpenAdapterData = {0};
     HRESULT hr = vboxDispKmtAdpHdcCreate(&OpenAdapterData.hDc);
-    if (hr == S_OK)
-    {
-        Assert(OpenAdapterData.hDc);
-        NTSTATUS Status = pCallbacks->pfnD3DKMTOpenAdapterFromHdc(&OpenAdapterData);
-#ifdef DEBUG_misha
-        /* may fail with xpdm driver */
-        Assert(!Status);
-#endif
-        if (!Status)
-        {
-            pAdapter->hAdapter = OpenAdapterData.hAdapter;
-            pAdapter->hDc = OpenAdapterData.hDc;
-            pAdapter->pCallbacks = pCallbacks;
-            return S_OK;
-        }
-        else
-        {
-            Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
-            hr = E_FAIL;
-        }
+    if (!SUCCEEDED(hr))
+        return hr;
 
-        DeleteDC(OpenAdapterData.hDc);
+    Assert(OpenAdapterData.hDc);
+    NTSTATUS Status = pCallbacks->pfnD3DKMTOpenAdapterFromHdc(&OpenAdapterData);
+#ifdef DEBUG_misha
+    /* may fail with xpdm driver */
+    Assert(NT_SUCCESS(Status));
+#endif
+    if (NT_SUCCESS(Status))
+    {
+        pAdapter->hAdapter = OpenAdapterData.hAdapter;
+        pAdapter->hDc = OpenAdapterData.hDc;
+        pAdapter->pCallbacks = pCallbacks;
+        memset(&pAdapter->Luid, 0, sizeof (pAdapter->Luid));
+        return S_OK;
     }
+    else
+    {
+        Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
+        hr = E_FAIL;
+    }
+
+    DeleteDC(OpenAdapterData.hDc);
+
+    return hr;
+}
+
+static HRESULT vboxDispKmtOpenAdapterViaLuid(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+{
+    if (pCallbacks->enmVersion < VBOXDISPKMT_CALLBACKS_VERSION_WIN8)
+        return E_NOTIMPL;
+
+    D3DKMT_ENUMADAPTERS EnumAdapters = {0};
+    EnumAdapters.NumAdapters = RT_ELEMENTS(EnumAdapters.Adapters);
+
+    NTSTATUS Status = pCallbacks->pfnD3DKMTEnumAdapters(&EnumAdapters);
+#ifdef DEBUG_misha
+    Assert(!Status);
+#endif
+    if (!NT_SUCCESS(Status))
+        return E_FAIL;
+
+    Assert(EnumAdapters.NumAdapters);
+
+    /* try the same twice: if we fail to open the adapter containing present sources,
+     * try to open any adapter */
+    for (ULONG f = 0; f < 2; ++f)
+    {
+        for (ULONG i = 0; i < EnumAdapters.NumAdapters; ++i)
+        {
+            if (f || EnumAdapters.Adapters[i].NumOfSources)
+            {
+                D3DKMT_OPENADAPTERFROMLUID OpenAdapterData = {0};
+                OpenAdapterData.AdapterLuid = EnumAdapters.Adapters[i].AdapterLuid;
+                Status = pCallbacks->pfnD3DKMTOpenAdapterFromLuid(&OpenAdapterData);
+    #ifdef DEBUG_misha
+                Assert(!Status);
+    #endif
+                if (NT_SUCCESS(Status))
+                {
+                    pAdapter->hAdapter = OpenAdapterData.hAdapter;
+                    pAdapter->hDc = NULL;
+                    pAdapter->Luid = EnumAdapters.Adapters[i].AdapterLuid;
+                    pAdapter->pCallbacks = pCallbacks;
+                    return S_OK;
+                }
+            }
+        }
+    }
+
+#ifdef DEBUG_misha
+    Assert(0);
+#endif
+    return E_FAIL;
+}
+
+HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+{
+    HRESULT hr = vboxDispKmtOpenAdapterViaHdc(pCallbacks, pAdapter);
+    if (SUCCEEDED(hr))
+        return S_OK;
+
+    hr = vboxDispKmtOpenAdapterViaLuid(pCallbacks, pAdapter);
+    if (SUCCEEDED(hr))
+        return S_OK;
 
     return hr;
 }
