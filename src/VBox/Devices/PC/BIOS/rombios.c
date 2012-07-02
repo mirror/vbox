@@ -248,7 +248,7 @@
 // undef enables PCIBIOS when at least one PCI device is found
 // i440FX is emulated by Bochs and QEMU
 #define PCI_FIXED_HOST_BRIDGE_1  0x12378086 ;; i440FX PCI bridge
-#define PCI_FIXED_HOST_BRIDGE_2  0x244e8086 ;; ICH9 PCI bridge
+#define PCI_FIXED_HOST_BRIDGE_2  0x24488086 ;; ICH9 PCI bridge
 
 // #20  is dec 20
 // #$20 is hex 20 = 32
@@ -10202,8 +10202,16 @@ pcibios_real:
 #endif
 
 #ifdef PCI_FIXED_HOST_BRIDGE_2
-  /* 0x1e << 11 */
-  mov eax, #0x8000f000
+  /* 0x18 << 11 */
+  mov eax, #0x8000c000
+  mov dx, #0x0cf8
+  out dx, eax
+  mov dx, #0x0cfc
+  in  eax, dx
+  cmp eax, #PCI_FIXED_HOST_BRIDGE_2
+  je pci_present
+  /* 0x19 << 11 */
+  mov eax, #0x8000c800
   mov dx, #0x0cf8
   out dx, eax
   mov dx, #0x0cfc
