@@ -989,6 +989,7 @@ ifdef VBOX_OSE
  ## @todo remove once the iPXE code is in public tree
  VBOX_WITHOUT_IPXE=1
  VBOX_WITH_FFMPEG=
+ VBOX_WITH_VPX=
  # Disable for OSE, requires snv_159+.
  VBOX_WITH_NETFLT_CROSSBOW=
  ifn1of ($(KBUILD_TARGET), darwin linux solaris win)
