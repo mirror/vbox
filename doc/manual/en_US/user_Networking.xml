@@ -448,6 +448,20 @@
     AirPort" (which is the wireless interface) and "en0: Ethernet", which
     represents the interface with a network cable.</para>
 
+    <note><para>Bridging to a wireless interface is done differently from
+        bridging to a wired interface, because most wireless adapters do not support
+        promiscuous mode. Since a MAC address of host wireless adapter is different
+        from MAC addresses of virtual machine adapters VirtualBox needs to
+        replace the source MAC address in the Ethernet header of an outgoing
+        packet to make sure the reply will be sent to the host interface.
+        Otherwise the wireless card would drop the reply and VirtualBox would
+        never get it. When VirtualBox sees an incoming packet with the
+        destination IP address that belongs to one of virtual machine adapters
+        it replaces the destination MAC address in the Ethernet header with
+        VM adapter's MAC address and passes the packet to the VM adapter.
+        VirtualBox examines ARP and DHCP packets in order to learn IP addresses
+        of virtual machines.</para></note>
+
     <para>Depending on your host operating system, the following limitations
     should be kept in mind:<itemizedlist>
         <listitem>
