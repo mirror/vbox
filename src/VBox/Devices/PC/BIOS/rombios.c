@@ -10002,8 +10002,16 @@ bios32_entry_point:
 #endif
 
 #ifdef PCI_FIXED_HOST_BRIDGE_2
-  /* 0x1e << 11 */
-  mov eax, #0x8000f000
+  /* 0x18 << 11 */
+  mov eax, #0x8000c000
+  mov dx, #0x0cf8
+  out dx, eax
+  mov dx, #0x0cfc
+  in  eax, dx
+  cmp eax, #PCI_FIXED_HOST_BRIDGE_2
+  je device_ok
+  /* 0x19 << 11 */
+  mov eax, #0x8000c800
   mov dx, #0x0cf8
   out dx, eax
   mov dx, #0x0cfc

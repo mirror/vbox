@@ -74,8 +74,16 @@ ifdef PCI_FIXED_HOST_BRIDGE_1
 endif
 
 ifdef PCI_FIXED_HOST_BRIDGE_2
-		; 1Eh << 11
-		mov	eax, 8000f000h
+		; 18h << 11
+		mov	eax, 8000c000h
+		mov	dx, PCI_CFG1
+		out	dx, eax
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		cmp	eax, PCI_FIXED_HOST_BRIDGE_2
+		je	device_ok
+		; 19h << 11
+		mov	eax, 8000c800h
 		mov	dx, PCI_CFG1
 		out	dx, eax
 		mov	dx, PCI_CFG2
