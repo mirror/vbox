@@ -328,6 +328,7 @@ VBoxSVC_SOURCES = \
 	src-server/VFSExplorerImpl.cpp \
 	src-server/VirtualBoxImpl.cpp \
 	src-server/VRDEServerImpl.cpp \
+	src-server/generic/AutostartDb-generic.cpp \
 	xml/ovfreader.cpp \
 	xml/Settings.cpp \
 	$(VBOX_XML_SCHEMADEFS_CPP) \

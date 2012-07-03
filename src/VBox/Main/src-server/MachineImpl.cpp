@@ -50,6 +50,7 @@
 #include "DisplayUtils.h"
 #include "BandwidthControlImpl.h"
 #include "MachineImplCloneVM.h"
+#include "AutostartDb.h"
 
 // generated header
 #include "VBoxEvents.h"
@@ -6576,14 +6577,34 @@ STDMETHODIMP Machine::COMSETTER(AutostartEnabled)(BOOL fEnabled)
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         hrc = checkStateDependency(MutableStateDep);
-        if (SUCCEEDED(hrc))
+        if (   SUCCEEDED(hrc)
+            && mHWData->mAutostart.fAutostartEnabled != fEnabled)
         {
-            hrc = mHWData.backupEx();
-            if (SUCCEEDED(hrc))
+            AutostartDb *autostartDb = mParent->getAutostartDb();
+            int vrc;
+
+            if (fEnabled)
+                vrc = autostartDb->addAutostartVM(mUserData->s.strName.c_str());
+            else
+                vrc = autostartDb->removeAutostartVM(mUserData->s.strName.c_str());
+
+            if (RT_SUCCESS(vrc))
             {
-                setModified(IsModified_MachineData);
-                mHWData->mAutostart.fAutostartEnabled = fEnabled != FALSE;
+                hrc = mHWData.backupEx();
+                if (SUCCEEDED(hrc))
+                {
+                    setModified(IsModified_MachineData);
+                    mHWData->mAutostart.fAutostartEnabled = fEnabled != FALSE;
+                }
             }
+            else if (vrc == VERR_NOT_SUPPORTED)
+                hrc = setError(VBOX_E_NOT_SUPPORTED,
+                               tr("The VM autostart feature is not supported on this platform"));
+            else
+                hrc = setError(E_UNEXPECTED,
+                               tr("%s machine '%s' to the autostart database failed with %Rrc"),
+                               fEnabled ? "Adding" : "Removing",
+                               mUserData->s.strName.c_str(), vrc);
         }
     }
     return hrc;
@@ -6644,14 +6665,34 @@ STDMETHODIMP Machine::COMSETTER(AutostopType)(AutostopType_T enmAutostopType)
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         hrc = checkStateDependency(MutableStateDep);
-        if (SUCCEEDED(hrc))
+        if (   SUCCEEDED(hrc)
+            && mHWData->mAutostart.enmAutostopType != enmAutostopType)
         {
-            hrc = mHWData.backupEx();
-            if (SUCCEEDED(hrc))
+            AutostartDb *autostartDb = mParent->getAutostartDb();
+            int vrc;
+
+            if (enmAutostopType != AutostopType_Disabled)
+                vrc = autostartDb->addAutostopVM(mUserData->s.strName.c_str());
+            else
+                vrc = autostartDb->removeAutostopVM(mUserData->s.strName.c_str());
+
+            if (RT_SUCCESS(vrc))
             {
-                setModified(IsModified_MachineData);
-                mHWData->mAutostart.enmAutostopType = enmAutostopType;
+                hrc = mHWData.backupEx();
+                if (SUCCEEDED(hrc))
+                {
+                    setModified(IsModified_MachineData);
+                    mHWData->mAutostart.enmAutostopType = enmAutostopType;
+                }
             }
+            else if (vrc == VERR_NOT_SUPPORTED)
+                hrc = setError(VBOX_E_NOT_SUPPORTED,
+                               tr("The VM autostop feature is not supported on this platform"));
+            else
+                hrc = setError(E_UNEXPECTED,
+                               tr("%s machine '%s' to the autostop database failed with %Rrc"),
+                               fEnabled ? "Adding" : "Removing",
+                               mUserData->s.strName.c_str(), vrc);
         }
     }
     return hrc;

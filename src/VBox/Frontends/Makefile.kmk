@@ -25,6 +25,7 @@ endif
 ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_MAIN
   include $(PATH_SUB_CURRENT)/VBoxBalloonCtrl/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/VBoxAutostart/Makefile.kmk
  endif
  ifdef VBOX_WITH_VBOXSDL
   include $(PATH_SUB_CURRENT)/VBoxSDL/Makefile.kmk
