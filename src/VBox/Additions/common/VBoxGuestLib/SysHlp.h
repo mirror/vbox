@@ -87,6 +87,15 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size);
 int vbglDriverOpen (VBGLDRIVER *pDriver);
 
 /**
+ * Answers whether the VBoxGuest driver is opened
+ *
+ * @param pDriver      Pointer to the driver structure.
+ *
+ * @return true - if opened, false - otherwise
+ */
+bool vbglDriverIsOpened (VBGLDRIVER *pDriver);
+
+/**
  * Call VBoxGuest driver.
  *
  * @param pDriver      Pointer to the driver structure.
