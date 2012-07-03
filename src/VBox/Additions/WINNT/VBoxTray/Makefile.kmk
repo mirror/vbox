@@ -50,6 +50,11 @@ ifdef VBOX_WITH_SHARED_FOLDERS
  VBoxTray_LIBS.win += \
 	mpr.lib
 endif
+ifdef VBOX_WITH_MMR
+ VBoxTray_DEFS     += VBOX_WITH_MMR
+ VBoxTray_SOURCES  += \
+        VBoxMMR.cpp
+endif
 
 VBoxTray_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
