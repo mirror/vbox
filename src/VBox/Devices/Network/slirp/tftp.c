@@ -434,7 +434,6 @@ DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, 
     return rc;
 }
 
-/* @todo: rewrite this */
 DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSession)
 {
     int rc = VINF_SUCCESS;
