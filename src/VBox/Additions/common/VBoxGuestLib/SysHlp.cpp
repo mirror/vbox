@@ -329,12 +329,15 @@ void vbglDriverClose (VBGLDRIVER *pDriver)
 # ifdef RT_OS_WINDOWS
     Log(("vbglDriverClose pDeviceObject=%x\n", pDriver->pDeviceObject));
     ObDereferenceObject (pDriver->pFileObject);
+    pDriver->pFileObject = NULL;
+    pDriver->pDeviceObject = NULL;
 
 # elif defined (RT_OS_OS2)
     pDriver->u32Session = 0;
 
 # else
     VBoxGuestIDCClose (pDriver->pvOpaque);
+    pDriver->pvOpaque = NULL;
 # endif
 }
 
