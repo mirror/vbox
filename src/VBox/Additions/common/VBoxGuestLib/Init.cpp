@@ -282,7 +282,10 @@ DECLVBGL(void) VbglTerminate (void)
 # endif
 
     vbglTerminateCommon ();
-    vbglDriverClose(&g_vbgldata.driver);
+    /* driver open could fail, which does not prevent VbglInit from succeeding,
+     * close the driver only if it is opened */
+    if (vbglDriverIsOpened(&g_vbgldata.driver))
+        vbglDriverClose(&g_vbgldata.driver);
     RTSemFastMutexDestroy(g_vbgldata.mutexDriverInit);
     g_vbgldata.mutexDriverInit = NIL_RTSEMFASTMUTEX;
 
