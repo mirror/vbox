@@ -31,6 +31,7 @@
 #include "VBoxSharedFolders.h"
 #include "VBoxIPC.h"
 #include "VBoxLA.h"
+#include "VBoxMMR.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -113,6 +114,14 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxLAThread,
         VBoxLADestroy
     },
+#ifdef VBOX_WITH_MMR
+    {
+        "Multimedia Redirection",
+        VBoxMMRInit,
+        VBoxMMRThread,
+        VBoxMMRDestroy
+    },
+#endif
     {
         NULL
     }

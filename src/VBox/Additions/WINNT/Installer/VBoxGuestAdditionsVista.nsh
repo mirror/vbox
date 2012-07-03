@@ -76,7 +76,7 @@ Function Vista_CopyFiles
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.sys"
 
 !ifdef VBOX_WITH_MMR
-  FILE "$%PATH_OUT%\bin\additions\VBoxMMR.dll"
+  FILE "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll"
 !endif
 
 FunctionEnd
@@ -89,8 +89,8 @@ Function Vista_InstallFiles
   ; Nothing here yet
 
 !ifdef VBOX_WITH_MMR
-  DetailPrint "Registering VBoxMMR.dll ..."
-  nsExec::ExecToLog '"$g_strSystemDir\regsvr32.exe" -s "$INSTDIR\VBoxMMR.dll"'
+  !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll" "$g_strSystemDir\VBoxMMRHook.dll" "$INSTDIR"
+  AccessControl::GrantOnFile "$g_strSystemDir\VBoxMMRHook.dll" "(BU)" "GenericRead"
 !endif
 
   Goto done
@@ -134,10 +134,8 @@ Function ${un}Vista_Uninstall
    Delete /REBOOTOK "$g_strSystemDir\VBoxCredProv.dll"
 
 !ifdef VBOX_WITH_MMR
-   DetailPrint "Unregistering VBoxMMR.dll ..."
-   nsExec::ExecToLog '"$g_strSystemDir\regsvr32.exe" -s -u "$INSTDIR\VBoxMMR.dll"'
-
-   Delete /REBOOTOK "$INSTDIR\VBoxMMR.dll"
+   Delete /REBOOTOK "$g_strSystemDir\VBoxMMRHook.dll"
+   Delete /REBOOTOK "$INSTDIR\VBoxMMRHook.dll"
 !endif
 
 FunctionEnd
