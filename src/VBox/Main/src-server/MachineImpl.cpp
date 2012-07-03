@@ -6691,7 +6691,7 @@ STDMETHODIMP Machine::COMSETTER(AutostopType)(AutostopType_T enmAutostopType)
             else
                 hrc = setError(E_UNEXPECTED,
                                tr("%s machine '%s' to the autostop database failed with %Rrc"),
-                               fEnabled ? "Adding" : "Removing",
+                               enmAutostopType != AutostopType_Disabled ? "Adding" : "Removing",
                                mUserData->s.strName.c_str(), vrc);
         }
     }
