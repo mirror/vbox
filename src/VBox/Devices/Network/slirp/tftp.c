@@ -54,6 +54,12 @@ typedef enum ENMTFTPSESSIONFMT
     TFTPFMT_NOT_FMT = 0xffff
 } ENMTFTPSESSIONFMT;
 
+typedef struct TFPTPSESSIONOPTDESC
+{
+    int fRequested;
+    int u16Value;
+} TFPTPSESSIONOPTDESC, *PTFPTPSESSIONOPTDESC;
+
 typedef struct TFTPSESSION
 {
     int         fInUse;
@@ -62,10 +68,10 @@ typedef struct TFTPSESSION
     uint16_t    u16ClientPort;
     int         iTimestamp;
     ENMTFTPSESSIONFMT enmTftpFmt;
-    uint16_t    u16BlkSize;
-    uint16_t    u16TSize;
-    uint16_t    u16Size;
-    uint16_t    u16Timeout;
+    TFPTPSESSIONOPTDESC OptionBlkSize;
+    TFPTPSESSIONOPTDESC OptionTSize;
+    TFPTPSESSIONOPTDESC OptionSize;
+    TFPTPSESSIONOPTDESC OptionTimeout;
 } TFTPSESSION, *PTFTPSESSION, **PPTFTPSESSION;
 
 #pragma pack(1)
@@ -112,16 +118,6 @@ static TFTPOPTIONDESC g_TftpDesc[] =
     {"timeout", TFTPFMT_NOT_FMT, 7, true}, /* RFC2349 */
     {"tsize", TFTPFMT_NOT_FMT, 5, true}, /* RFC2349 */
     {"size", TFTPFMT_NOT_FMT, 4, true}, /* RFC2349 */
-};
-
-static uint16_t g_au16RFC2348TftpSessionBlkSize[] =
-{
-    512,
-    1024,
-    1428,
-    2048,
-    4096,
-    8192
 };
 
 /**
@@ -263,6 +259,15 @@ DECLINLINE(void) tftpSessionTerminate(PTFTPSESSION pTftpSession)
     pTftpSession->fInUse = 0;
 }
 
+DECLINLINE(int)tftpSessionParseAndMarkOption(const char *pcszRawOption, PTFPTPSESSIONOPTDESC pTftpSessionOption)
+{
+    int rc  = VINF_SUCCESS;
+    rc = RTStrToInt16Full(pcszRawOption, 0, (int16_t *)&pTftpSessionOption->u16Value);
+    AssertRCReturn(rc, rc);
+    pTftpSessionOption->fRequested = 1;
+    return rc;
+}
+
 DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pcTftpIpHeader)
 {
     int rc = VINF_SUCCESS;
@@ -305,13 +310,13 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
         else if (fWithArg)
         {
             if (!RTStrICmp("blksize", g_TftpDesc[idxOptionArg].pszName))
-                rc = RTStrToInt16Full(pszTftpRRQRaw, 0, (int16_t *)&pTftpSession->u16BlkSize);
+                rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionBlkSize);
             else if (!RTStrICmp("size", g_TftpDesc[idxOptionArg].pszName))
-                rc = RTStrToInt16Full(pszTftpRRQRaw, 0, (int16_t *)&pTftpSession->u16Size);
+                rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionSize);
             else if (!RTStrICmp("tsize", g_TftpDesc[idxOptionArg].pszName))
-                rc = RTStrToInt16Full(pszTftpRRQRaw, 0, (int16_t *)&pTftpSession->u16TSize);
+                rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionTSize);
             else if (!RTStrICmp("timeoute", g_TftpDesc[idxOptionArg].pszName))
-                rc = RTStrToInt16Full(pszTftpRRQRaw, 0, (int16_t *)&pTftpSession->u16Timeout);
+                rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionSize);
             else
                 rc = VERR_INVALID_PARAMETER;
             if (RT_FAILURE(rc))
@@ -430,13 +435,11 @@ DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, 
 }
 
 /* @todo: rewrite this */
-DECLINLINE(int) tftpSessionEvaluateBlkSize(PNATState pData, PTFTPSESSION pTftpSession)
+DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSession)
 {
     int rc = VINF_SUCCESS;
     RTFILE hSessionFile;
     uint64_t cbSessionFile = 0;
-    int      idxRFC2348TftpSessionBlkSize = 0;
-    uint32_t cBlockSessionFile = 0;
     LogFlowFunc(("pTftpSession:%p\n", pTftpSession));
 
     rc = pftpSessionOpenFile(pData, pTftpSession, &hSessionFile);
@@ -454,30 +457,12 @@ DECLINLINE(int) tftpSessionEvaluateBlkSize(PNATState pData, PTFTPSESSION pTftpSe
         return rc;
     }
 
-    if (!pTftpSession->u16BlkSize)
+    if (pTftpSession->OptionTSize.fRequested)
+        pTftpSession->OptionTSize.u16Value = (uint16_t)cbSessionFile;
+    if (   !pTftpSession->OptionBlkSize.u16Value
+        && !pTftpSession->OptionBlkSize.fRequested)
     {
-        pTftpSession->u16BlkSize = 1428;
-    }
-    cBlockSessionFile = ASMDivU64ByU32RetU32(cbSessionFile, pTftpSession->u16BlkSize);
-    while (   cBlockSessionFile >= UINT16_MAX
-           && idxRFC2348TftpSessionBlkSize < RT_ELEMENTS(g_au16RFC2348TftpSessionBlkSize))
-    {
-        if (pTftpSession->u16BlkSize > g_au16RFC2348TftpSessionBlkSize[idxRFC2348TftpSessionBlkSize])
-        {
-            idxRFC2348TftpSessionBlkSize++;
-            continue;
-        }
-
-
-        idxRFC2348TftpSessionBlkSize++;
-        /* No bigger values in RFC2348 */
-        AssertReturn(idxRFC2348TftpSessionBlkSize < RT_ELEMENTS(g_au16RFC2348TftpSessionBlkSize), VERR_INTERNAL_ERROR);
-        if (g_au16RFC2348TftpSessionBlkSize[idxRFC2348TftpSessionBlkSize] >= if_maxlinkhdr)
-        {
-            /* Buffer size is too large for current settings */
-            rc = VERR_BUFFER_OVERFLOW;
-            LogFlowFuncLeaveRC(rc);
-        }
+        pTftpSession->OptionBlkSize.u16Value = 1428;
     }
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -507,20 +492,26 @@ DECLINLINE(int) tftpSend(PNATState pData,
 DECLINLINE(int) tftpSendError(PNATState pData, PTFTPSESSION pTftpSession, uint16_t errorcode, const char *msg, PCTFTPIPHDR pcTftpIpHeaderRecv);
 
 DECLINLINE(int) tftpReadDataBlock(PNATState pData,
-                                  PTFTPSESSION pTftpSession,
+                                  PTFTPSESSION pcTftpSession,
                                   uint16_t u16BlockNr,
                                   uint8_t *pu8Data,
                                   int *pcbReadData)
 {
     RTFILE  hSessionFile;
     int rc = VINF_SUCCESS;
-    LogFlowFunc(("pTftpSession:%p, u16BlockNr:%RX16, pu8Data:%p, pcbReadData:%p\n",
-                    pTftpSession,
+    uint16_t u16BlkSize = 0;
+    AssertPtrReturn(pData, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcTftpSession, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pu8Data, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbReadData, VERR_INVALID_PARAMETER);
+    LogFlowFunc(("pcTftpSession:%p, u16BlockNr:%RX16, pu8Data:%p, pcbReadData:%p\n",
+                    pcTftpSession,
                     u16BlockNr,
                     pu8Data,
                     pcbReadData));
 
-    rc = pftpSessionOpenFile(pData, pTftpSession, &hSessionFile);
+    u16BlkSize = pcTftpSession->OptionBlkSize.u16Value;
+    rc = pftpSessionOpenFile(pData, pcTftpSession, &hSessionFile);
     if (RT_FAILURE(rc))
     {
         LogFlowFuncLeaveRC(rc);
@@ -530,7 +521,7 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
     if (pcbReadData)
     {
         rc = RTFileSeek(hSessionFile,
-                        u16BlockNr * pTftpSession->u16BlkSize,
+                        u16BlockNr * u16BlkSize,
                         RTFILE_SEEK_BEGIN,
                         NULL);
         if (RT_FAILURE(rc))
@@ -539,7 +530,7 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
             LogFlowFuncLeaveRC(rc);
             return rc;
         }
-        rc = RTFileRead(hSessionFile, pu8Data, pTftpSession->u16BlkSize, (size_t *)pcbReadData);
+        rc = RTFileRead(hSessionFile, pu8Data, u16BlkSize, (size_t *)pcbReadData);
         if (RT_FAILURE(rc))
         {
             RTFileClose(hSessionFile);
@@ -586,7 +577,7 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     PTFTPIPHDR pTftpIpHeader;
     int rc = VINF_SUCCESS;
 
-    rc = tftpSessionEvaluateBlkSize(pData, pTftpSession);
+    rc = tftpSessionEvaluateOptions(pData, pTftpSession);
     if (RT_FAILURE(rc))
     {
         tftpSendError(pData, pTftpSession, 2, "Internal Error (blksize evaluation)", pcTftpIpHeaderRecv);
@@ -607,14 +598,12 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
 
     pTftpIpHeader->u16TftpOpType = RT_H2N_U16_C(TFTP_OACK);
 
-    if (pTftpSession->u16BlkSize)
-        rc = tftpAddOptionToOACK(pData, m, "blksize", pTftpSession->u16BlkSize);
-    if (   RT_SUCCESS(rc)
-        && pTftpSession->u16Size)
-        rc = tftpAddOptionToOACK(pData, m, "size", pTftpSession->u16Size);
-    if (   RT_SUCCESS(rc)
-        && pTftpSession->u16TSize)
-        rc = tftpAddOptionToOACK(pData, m, "tsize", pTftpSession->u16TSize);
+    if (pTftpSession->OptionBlkSize.fRequested)
+        rc = tftpAddOptionToOACK(pData, m, "blksize", pTftpSession->OptionBlkSize.u16Value);
+    else if (pTftpSession->OptionSize.fRequested)
+        rc = tftpAddOptionToOACK(pData, m, "size", pTftpSession->OptionSize.u16Value);
+    else if (pTftpSession->OptionTSize.fRequested)
+        rc = tftpAddOptionToOACK(pData, m, "tsize", pTftpSession->OptionTSize.u16Value);
 
     rc = tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
     return RT_SUCCESS(rc) ? 0 : -1;
