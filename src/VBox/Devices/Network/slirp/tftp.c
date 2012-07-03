@@ -765,7 +765,7 @@ static void tftpProcessACK(PNATState pData, PTFTPIPHDR pTftpIpHeader)
 
     AssertReturnVoid(tftpSendData(pData,
                                     pTftpSession,
-                                    RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode) + 1, pTftpIpHeader));
+                                    RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode) + 1, pTftpIpHeader) == 0);
 }
 
 DECLCALLBACK(int) slirpTftpInit(PNATState pData)
