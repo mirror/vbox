@@ -67,6 +67,7 @@
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
+#include "AutostartDb.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -199,7 +200,8 @@ struct VirtualBox::Data
           updateReq(UPDATEREQARG),
           threadClientWatcher(NIL_RTTHREAD),
           threadAsyncEvent(NIL_RTTHREAD),
-          pAsyncEventQ(NULL)
+          pAsyncEventQ(NULL),
+          pAutostartDb(NULL)
     {
     }
 
@@ -289,6 +291,9 @@ struct VirtualBox::Data
     /** The extension pack manager object lives here. */
     const ComObjPtr<ExtPackManager>     ptrExtPackManager;
 #endif
+
+    /** The global autostart database for the user. */
+    AutostartDb * const                 pAutostartDb;
 };
 
 // constructor / destructor
@@ -476,6 +481,8 @@ HRESULT VirtualBox::init()
         if (FAILED(rc))
             throw rc;
 #endif
+
+        unconst(m->pAutostartDb) = new AutostartDb;
     }
     catch (HRESULT err)
     {
@@ -803,6 +810,8 @@ void VirtualBox::uninit()
 #else
 # error "Port me!"
 #endif
+
+    delete m->pAutostartDb;
 
     // clean up our instance data
     delete m;
@@ -3075,6 +3084,14 @@ ExtPackManager* VirtualBox::getExtPackManager() const
     return m->ptrExtPackManager;
 }
 #endif
+
+/**
+ * Getter that machines can talk to the autostart database.
+ */
+AutostartDb* VirtualBox::getAutostartDb() const
+{
+    return m->pAutostartDb;
+}
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 const ComObjPtr<PerformanceCollector>& VirtualBox::performanceCollector() const

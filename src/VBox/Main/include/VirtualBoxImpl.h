@@ -42,6 +42,7 @@ class VirtualBoxCallbackRegistration; /* see VirtualBoxImpl.cpp */
 #ifdef VBOX_WITH_EXTPACK
 class ExtPackManager;
 #endif
+class AutostartDb;
 
 typedef std::list< ComObjPtr<SessionMachine> > SessionMachinesList;
 
@@ -279,6 +280,8 @@ public:
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
 
     const Utf8Str& settingsFilePath();
+
+    AutostartDb* getAutostartDb() const;
 
     RWLockHandle& getMediaTreeLockHandle();
 
