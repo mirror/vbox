@@ -2658,7 +2658,10 @@ if1of ($(KBUILD_TARGET), linux)
  endif
  # Since Linux 2.6.15, <linux/autoconf.h> is included like this. It cannot hurt to do the
  # same for older Linux kernels
- ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/generated/autoconf.h),)
+ ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/linux/kconfig.h),)
+  # Linux >= 3.1
+  export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/linux/kconfig.h
+ else ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/generated/autoconf.h),)
   # Linux >= 2.6.33
   export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/generated/autoconf.h
  else ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/linux/autoconf.h),)
