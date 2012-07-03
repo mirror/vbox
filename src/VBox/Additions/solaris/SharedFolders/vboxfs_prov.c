@@ -54,6 +54,8 @@ static int sfprov_vbox2errno(int rc)
 {
 	if (rc == VERR_ACCESS_DENIED)
 		return (EACCES);
+	if (rc == VERR_INVALID_NAME)
+	    return (ENOENT);
 	return (RTErrConvertToErrno(rc));
 }
 
