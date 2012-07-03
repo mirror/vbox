@@ -383,10 +383,6 @@ int main(int argc, char *argv[])
                 RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
                 return 0;
 
-            case 'P':
-                pszPidFile = ValueUnion.psz;
-                break;
-
             case 'F':
                 pszLogFile = ValueUnion.psz;
                 break;
@@ -461,7 +457,7 @@ int main(int argc, char *argv[])
             pszLogFile = szLogFile;
         }
 
-        rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, pszPidFile);
+        rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, NULL);
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
         /* create release logger, to file */
