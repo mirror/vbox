@@ -214,27 +214,6 @@ DECLINLINE(bool) tftpIsAcceptableOption(const char *pszOptionName)
     return false;
 }
 
-/**
- * This function returns the tftp transfer mode
- * @param pTftpIpHeader header of tftp (includes IP, UDP and TFTP) it's required for validating that buffer comming
- *      in pcu8Options is comes right after header.
- * @param pcu8Options pointer to options buffer
- * @param cbOptions size of the options buffer
- */
-DECLINLINE(char *) tftpOptionMode(PCTFTPIPHDR pTftpIpHeader, const uint8_t *pcu8Options, int cbOptions)
-{
-    int idxOptDesc = 0;
-    AssertPtrReturn(pTftpIpHeader, NULL);
-    AssertPtrReturn(pcu8Options, NULL);
-    AssertReturn(cbOptions >= 4, NULL);
-    /* @todo validate that Mode Option just after filename of TFTP */
-    for (idxOptDesc = 0; idxOptDesc < RT_ELEMENTS(g_TftpTransferFmtDesc); ++idxOptDesc)
-    {
-        if (!RTStrNICmp(g_TftpTransferFmtDesc[idxOptDesc].pszName, (const char *)pcu8Options, cbOptions))
-            return (char *)g_TftpTransferFmtDesc[idxOptDesc].pszName;
-    }
-    return NULL;
-}
 
 /**
  * This helper function that validate if client want to operate in supported by server mode.
