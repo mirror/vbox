@@ -1012,27 +1012,7 @@ int handleStorageController(HandlerArg *a)
 
     if (fRemoveCtl)
     {
-        com::SafeIfaceArray<IMediumAttachment> mediumAttachments;
-
-        CHECK_ERROR(machine,
-                     GetMediumAttachmentsOfController(Bstr(pszCtl).raw(),
-                                                      ComSafeArrayAsOutParam(mediumAttachments)));
-        for (size_t i = 0; i < mediumAttachments.size(); ++ i)
-        {
-            ComPtr<IMediumAttachment> mediumAttach = mediumAttachments[i];
-            LONG port = 0;
-            LONG device = 0;
-
-            CHECK_ERROR(mediumAttach, COMGETTER(Port)(&port));
-            CHECK_ERROR(mediumAttach, COMGETTER(Device)(&device));
-            CHECK_ERROR(machine, DetachDevice(Bstr(pszCtl).raw(), port, device));
-        }
-
-        if (SUCCEEDED(rc))
-            CHECK_ERROR(machine, RemoveStorageController(Bstr(pszCtl).raw()));
-        else
-            errorArgument("Can't detach the devices connected to '%s' Controller\n"
-                          "and thus its removal failed.", pszCtl);
+        CHECK_ERROR(machine, RemoveStorageController(Bstr(pszCtl).raw()));
     }
     else
     {
