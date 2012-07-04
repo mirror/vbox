@@ -73,7 +73,7 @@ if defined(VBOX_WITH_MAIN) \
   if1of ($(KBUILD_TARGET), darwin linux solaris)
    include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
   endif
-  if1of ($(KBUILD_TARGET), darwin linux solaris)
+  if1of ($(KBUILD_TARGET), darwin linux solaris win)
    include $(PATH_SUB_CURRENT)/libvpx/Makefile.kmk
   endif
  endif
