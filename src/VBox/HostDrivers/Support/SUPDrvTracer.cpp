@@ -1182,6 +1182,7 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
     PSUPDRVDEVEXT       pDevExt;
     PSUPDRVTPPROVIDER   pProv;
     int                 rc;
+    int                 rc2;
 
     /*
      * Validate input and context.
@@ -1244,7 +1245,7 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
             {
                 Assert(!pProv->fRegistered);
                 pProv->fRegistered = true;
-                int rc2 = pDevExt->pTracerOps->pfnProviderRegister(pDevExt->pTracerOps, &pProv->Core);
+                rc2 = pDevExt->pTracerOps->pfnProviderRegister(pDevExt->pTracerOps, &pProv->Core);
                 if (RT_FAILURE(rc2))
                 {
                     pProv->fRegistered = false;
