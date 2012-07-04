@@ -67,7 +67,7 @@ typedef struct TFTPSESSION
     struct      in_addr IpClientAddress;
     uint16_t    u16ClientPort;
     int         iTimestamp;
-    int         cbTransfered;
+    uint64_t    cbTransfered;
     ENMTFTPSESSIONFMT enmTftpFmt;
     TFPTPSESSIONOPTDESC OptionBlkSize;
     TFPTPSESSIONOPTDESC OptionTSize;
