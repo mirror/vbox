@@ -5826,21 +5826,28 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     rc = getStorageControllerByName(aName, ctrl, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
-    {/* find all attached devices to the appropriate storage controller and detach them all*/
-        MediaData::AttachmentList::const_iterator beginList = mMediaData->mAttachments.begin();
+    {
+        /* find all attached devices to the appropriate storage controller and detach them all*/
         MediaData::AttachmentList::const_iterator endList = mMediaData->mAttachments.end();
+        MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
+        MediumAttachment *pAttachTemp=NULL;
         LONG port = 0;
         LONG device = 0;
 
-        for (MediaData::AttachmentList::const_iterator it = beginList;
-             it != endList;
-             it++)
+        for (;it != endList; it++)
         {
-            if ((*it)->getControllerName() == aName)
-            {
-                port = (*it)->getPort();
+            pAttachTemp = *it;
+            AutoCaller localAutoCaller(pAttachTemp);
+            if (FAILED(localAutoCaller.rc())) return localAutoCaller.rc();
 
-                device = (*it)->getDevice();
+            AutoReadLock local_alock(pAttachTemp COMMA_LOCKVAL_SRC_POS);
+
+            if (pAttachTemp->getControllerName() == aName)
+            {
+
+                port = pAttachTemp->getPort();
+
+                device = pAttachTemp->getDevice();
 
                 rc = DetachDevice(aName, port, device);
                 if (FAILED(rc)) return rc;
