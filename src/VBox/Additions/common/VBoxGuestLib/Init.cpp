@@ -175,8 +175,6 @@ DECLVBGL(void) vbglTerminateCommon (void)
 {
     VbglPhysHeapTerminate ();
 
-    RT_ZERO(g_vbgldata);
-
     return;
 }
 
@@ -281,13 +279,17 @@ DECLVBGL(void) VbglTerminate (void)
     vbglR0HGCMTerminate ();
 # endif
 
-    vbglTerminateCommon ();
     /* driver open could fail, which does not prevent VbglInit from succeeding,
      * close the driver only if it is opened */
     if (vbglDriverIsOpened(&g_vbgldata.driver))
         vbglDriverClose(&g_vbgldata.driver);
     RTSemFastMutexDestroy(g_vbgldata.mutexDriverInit);
     g_vbgldata.mutexDriverInit = NIL_RTSEMFASTMUTEX;
+
+    /* note: do vbglTerminateCommon as a last step since it zeroez up the g_vbgldata
+     * conceptually, doing vbglTerminateCommon last is correct
+     * since this is the reverse order to how init is done */
+    vbglTerminateCommon ();
 
     return;
 }
