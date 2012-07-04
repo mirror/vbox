@@ -5201,7 +5201,7 @@
 
     <method name="removeStorageController">
       <desc>
-        Removes a storage controller from the machine.
+        Removes a storage controller from the machine with all devices attache to one.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           A storage controller with given name doesn't exist.

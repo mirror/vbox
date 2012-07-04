@@ -3275,25 +3275,10 @@ bool UIMachineSettingsStorage::removeStorageController(const UICacheSettingsMach
         /* If controller exists: */
         if (fSuccess && !controller.isNull())
         {
-            /* Remove storage attachments first: */
-            // TODO: Later, it will be possible to remove controller with all the attachments at one shot!
-            /* For each storage attachment: */
-            for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
-            {
-                /* Get attachment cache: */
-                const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
-
-                /* Remove attachment if it was not just 'created': */
-                if (!attachmentCache.wasCreated())
-                    fSuccess = removeStorageAttachment(controllerCache, attachmentCache);
-            }
-            /* Remove storage controller finally: */
-            if (fSuccess)
-            {
-                m_machine.RemoveStorageController(strControllerName);
-                /* Check that machine is OK: */
-                fSuccess = m_machine.isOk();
-            }
+            /*remove controller with all the attachments at one shot*/
+            m_machine.RemoveStorageController(strControllerName);
+            /* Check that machine is OK: */
+            fSuccess = m_machine.isOk();
         }
     }
     /* Return result: */
