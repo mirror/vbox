@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,6 +67,7 @@ typedef struct TFTPSESSION
     struct      in_addr IpClientAddress;
     uint16_t    u16ClientPort;
     int         iTimestamp;
+    int         cbTransfered;
     ENMTFTPSESSIONFMT enmTftpFmt;
     TFPTPSESSIONOPTDESC OptionBlkSize;
     TFPTPSESSIONOPTDESC OptionTSize;
@@ -492,7 +493,6 @@ DECLINLINE(int) tftpSendError(PNATState pData, PTFTPSESSION pTftpSession, uint16
 
 DECLINLINE(int) tftpReadDataBlock(PNATState pData,
                                   PTFTPSESSION pcTftpSession,
-                                  uint16_t u16BlockNr,
                                   uint8_t *pu8Data,
                                   int *pcbReadData)
 {
@@ -520,7 +520,7 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
     if (pcbReadData)
     {
         rc = RTFileSeek(hSessionFile,
-                        u16BlockNr * u16BlkSize,
+                        pcTftpSession->cbTransfered,
                         RTFILE_SEEK_BEGIN,
                         NULL);
         if (RT_FAILURE(rc))
@@ -646,12 +646,8 @@ static int tftpSendData(PNATState pData,
 {
     struct mbuf *m;
     PTFTPIPHDR pTftpIpHeader;
-    int nobytes;
+    int cbRead;
     int rc = VINF_SUCCESS;
-
-    /* we should be sure that we don't talk about file offset prior 0 ;) */
-    if (block_nr < 1)
-        return -1;
 
     m = slirpTftpMbufAlloc(pData);
     if (!m)
@@ -665,13 +661,14 @@ static int tftpSendData(PNATState pData,
     pTftpIpHeader->u16TftpOpType = RT_H2N_U16_C(TFTP_DATA);
     pTftpIpHeader->Core.u16TftpOpCode = RT_H2N_U16(block_nr);
 
-    rc = tftpReadDataBlock(pData, pTftpSession, block_nr - 1, (uint8_t *)&pTftpIpHeader->Core.u16TftpOpCode + sizeof(uint16_t), &nobytes);
+    rc = tftpReadDataBlock(pData, pTftpSession, (uint8_t *)&pTftpIpHeader->Core.u16TftpOpCode + sizeof(uint16_t), &cbRead);
 
     if (RT_SUCCESS(rc))
     {
-        m->m_len += nobytes;
+        pTftpSession->cbTransfered += cbRead;
+        m->m_len += cbRead;
         tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
-        if (nobytes > 0)
+        if (cbRead > 0)
             tftpSessionUpdate(pData, pTftpSession);
         else
             tftpSessionTerminate(pTftpSession);
