@@ -3693,7 +3693,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="d6406544-910e-43b2-a8fb-5528e56ce3b4"
+    uuid="019d7a7b-1e2d-4008-b954-4b5d72d103b8"
     wsmap="managed"
     >
     <desc>
@@ -4761,7 +4761,8 @@
           No medium attached to given slot/bus.
         </result>
         <result name="VBOX_E_NOT_SUPPORTED">
-          Medium format does not support storage deletion.
+          Medium format does not support storage deletion (only for implicitly
+          created differencing media, should not happen).
         </result>
 
       </desc>
@@ -5201,10 +5202,14 @@
 
     <method name="removeStorageController">
       <desc>
-        Removes a storage controller from the machine with all devices attache to one.
+        Removes a storage controller from the machine with all devices attached to it.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           A storage controller with given name doesn't exist.
+        </result>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Medium format does not support storage deletion (only for implicitly
+          created differencing media, should not happen).
         </result>
       </desc>
       <param name="name" type="wstring" dir="in"/>
