@@ -5826,16 +5826,26 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     rc = getStorageControllerByName(aName, ctrl, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
-    /* We can remove the controller only if there is no device attached. */
-    /* check if the device slot is already busy */
-    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-         it != mMediaData->mAttachments.end();
-         ++it)
-    {
-        if ((*it)->getControllerName() == aName)
-            return setError(VBOX_E_OBJECT_IN_USE,
-                            tr("Storage controller named '%ls' has still devices attached"),
-                            aName);
+    {/* find all attached devices to the appropriate storage controller and detach them all*/
+        MediaData::AttachmentList::const_iterator beginList = mMediaData->mAttachments.begin();
+        MediaData::AttachmentList::const_iterator endList = mMediaData->mAttachments.end();
+        LONG port = 0;
+        LONG device = 0;
+
+        for (MediaData::AttachmentList::const_iterator it = beginList;
+             it != endList;
+             it++)
+        {
+            if ((*it)->getControllerName() == aName)
+            {
+                port = (*it)->getPort();
+
+                device = (*it)->getDevice();
+
+                rc = DetachDevice(aName, port, device);
+                if (FAILED(rc)) return rc;
+            }
+        }
     }
 
     /* We can remove it now. */
