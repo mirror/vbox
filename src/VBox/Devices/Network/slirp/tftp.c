@@ -131,7 +131,7 @@ static TFTPOPTIONDESC g_TftpDesc[] =
  */
 DECLINLINE(int) tftpSecurityFilenameCheck(PNATState pData, PCTFTPSESSION pcTftpSession)
 {
-    int cbSessionFilename = 0;
+    size_t cbSessionFilename = 0;
     int rc = VINF_SUCCESS;
     AssertPtrReturn(pcTftpSession, VERR_INVALID_PARAMETER);
     cbSessionFilename = RTStrNLen((const char *)pcTftpSession->pszFilename, TFTP_FILENAME_MAX);
@@ -273,7 +273,7 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
 {
     int rc = VINF_SUCCESS;
     char *pszTftpRRQRaw;
-    int idxTftpRRQRaw = 0;
+    size_t idxTftpRRQRaw = 0;
     int cbTftpRRQRaw = 0;
     int fWithArg = 0;
     int idxOptionArg = 0;
@@ -414,7 +414,7 @@ static int tftpSessionFind(PNATState pData, PCTFTPIPHDR pcTftpIpHeader, PPTFTPSE
 DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, PRTFILE pSessionFile)
 {
     char aszSessionFileName[TFTP_FILENAME_MAX];
-    int cbSessionFileName;
+    size_t cbSessionFileName;
     int rc = VINF_SUCCESS;
     cbSessionFileName = RTStrPrintf(aszSessionFileName, TFTP_FILENAME_MAX, "%s/%s",
                     tftp_prefix, pTftpSession->pszFilename);
@@ -546,7 +546,7 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
 DECLINLINE(int) tftpAddOptionToOACK(PNATState pData, struct mbuf *pMBuf, const char *pszOptName, uint16_t u16OptValue)
 {
     char aszOptionBuffer[256];
-    int iOptLength = 0;
+    size_t iOptLength = 0;
     int rc = VINF_SUCCESS;
     int cbMBufCurrent = pMBuf->m_len;
     LogFlowFunc(("pMBuf:%p, pszOptName:%s, u16OptValue:%u\n", pMBuf, pszOptName, u16OptValue));
@@ -688,7 +688,7 @@ DECLINLINE(void) tftpProcessRRQ(PNATState pData, PCTFTPIPHDR pTftpIpHeader, int 
     PTFTPSESSION pTftpSession = NULL;
     uint8_t *pu8Payload = NULL;
     int     cbPayload = 0;
-    int cbFileName = 0;
+    size_t cbFileName = 0;
     int rc = VINF_SUCCESS;
 
     AssertPtrReturnVoid(pTftpIpHeader);
