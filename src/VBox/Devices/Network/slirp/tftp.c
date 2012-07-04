@@ -68,6 +68,7 @@ typedef struct TFTPSESSION
     uint16_t    u16ClientPort;
     int         iTimestamp;
     uint64_t    cbTransfered;
+    uint16_t    cTftpAck;
     ENMTFTPSESSIONFMT enmTftpFmt;
     TFPTPSESSIONOPTDESC OptionBlkSize;
     TFPTPSESSIONOPTDESC OptionTSize;
@@ -619,13 +620,22 @@ DECLINLINE(int) tftpSendError(PNATState pData,
 
 static int tftpSendData(PNATState pData,
                           PTFTPSESSION pTftpSession,
-                          u_int16_t block_nr,
+                          uint16_t u16Block,
                           PCTFTPIPHDR pcTftpIpHeaderRecv)
 {
     struct mbuf *m;
     PTFTPIPHDR pTftpIpHeader;
     int cbRead;
     int rc = VINF_SUCCESS;
+
+    if (u16Block == pTftpSession->cTftpAck)
+        pTftpSession->cTftpAck++;
+    else
+    {
+        tftpSendError(pData, pTftpSession, 6, "ACK is wrong", pcTftpIpHeaderRecv);
+        tftpSessionTerminate(pTftpSession);
+        return -1;
+    }
 
     m = slirpTftpMbufAlloc(pData);
     if (!m)
@@ -637,7 +647,7 @@ static int tftpSendData(PNATState pData,
     m->m_len = sizeof(TFTPIPHDR);
 
     pTftpIpHeader->u16TftpOpType = RT_H2N_U16_C(TFTP_DATA);
-    pTftpIpHeader->Core.u16TftpOpCode = RT_H2N_U16(block_nr);
+    pTftpIpHeader->Core.u16TftpOpCode = RT_H2N_U16(pTftpSession->cTftpAck);
 
     rc = tftpReadDataBlock(pData, pTftpSession, (uint8_t *)&pTftpIpHeader->Core.u16TftpOpCode + sizeof(uint16_t), &cbRead);
 
@@ -728,7 +738,7 @@ static void tftpProcessACK(PNATState pData, PTFTPIPHDR pTftpIpHeader)
 
     AssertReturnVoid(tftpSendData(pData,
                                     pTftpSession,
-                                    RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode) + 1, pTftpIpHeader) == 0);
+                                    RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode), pTftpIpHeader) == 0);
 }
 
 DECLCALLBACK(int) slirpTftpInit(PNATState pData)
