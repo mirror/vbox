@@ -80,6 +80,12 @@ static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, cons
     _vsnprintf(szBuffer + cbWritten, cbBuffer - cbWritten, szString, pArgList);
 }
 
+#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+LONG g_VBoxVDbgFIsDwm = -1;
+
+DWORD g_VBoxVDbgPid = 0;
+#endif
+
 #ifdef VBOXWDDMDISP_DEBUG
 #define VBOXWDDMDISP_DEBUG_DUMP_DEFAULT 0
 DWORD g_VBoxVDbgFDumpSetTexture = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
@@ -108,10 +114,6 @@ DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate = 1;
 DWORD g_VBoxVDbgFLogRel = 1;
 DWORD g_VBoxVDbgFLog = 1;
 DWORD g_VBoxVDbgFLogFlow = 0;
-
-LONG g_VBoxVDbgFIsDwm = -1;
-
-DWORD g_VBoxVDbgPid = 0;
 
 DWORD g_VBoxVDbgCfgMaxDirectRts = 0;
 DWORD g_VBoxVDbgCfgForceDummyDevCreate = 0;
@@ -641,21 +643,6 @@ void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * p
     vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
 }
 
-BOOL vboxVDbgDoCheckExe(const char * pszName)
-{
-    char *pszModule = vboxVDbgDoGetModuleName();
-    if (!pszModule)
-        return FALSE;
-    DWORD cbModule, cbName;
-    cbModule = strlen(pszModule);
-    cbName = strlen(pszName);
-    if (cbName > cbModule)
-        return FALSE;
-    if (_stricmp(pszName, pszModule + (cbModule - cbName)))
-        return FALSE;
-    return TRUE;
-}
-
 static VOID CALLBACK vboxVDbgTimerCb(__in PVOID lpParameter, __in BOOLEAN TimerOrWaitFired)
 {
     Assert(0);
@@ -685,6 +672,23 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer)
         AssertMsg(winEr == ERROR_IO_PENDING, ("DeleteTimerQueueTimer failed, winEr (%d)\n", winEr));
     }
     return S_OK;
+}
+#endif
+
+#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+BOOL vboxVDbgDoCheckExe(const char * pszName)
+{
+    char *pszModule = vboxVDbgDoGetModuleName();
+    if (!pszModule)
+        return FALSE;
+    DWORD cbModule, cbName;
+    cbModule = strlen(pszModule);
+    cbName = strlen(pszName);
+    if (cbName > cbModule)
+        return FALSE;
+    if (_stricmp(pszName, pszModule + (cbModule - cbName)))
+        return FALSE;
+    return TRUE;
 }
 #endif
 
