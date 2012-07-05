@@ -540,6 +540,8 @@ typedef union
 #define VMX_EXIT_EPT_MISCONFIG      49
 /** 50 INVEPT. Guest software attempted to execute INVEPT. */
 #define VMX_EXIT_INVEPT             50
+/** 51 RDTSCP. Guest software attempted to execute RDTSCP. */
+#define VMX_EXIT_RDTSCP             51
 /** 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
 #define VMX_EXIT_PREEMPTION_TIMER   52
 /** 53 INVVPID. Guest software attempted to execute INVVPID. */
@@ -859,7 +861,7 @@ typedef union
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT             RT_BIT(10)
 /** VM Exit when executing the RDPMC instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT             RT_BIT(11)
-/** VM Exit when executing the RDTSC instruction. */
+/** VM Exit when executing the RDTSC/RDTSCP instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT             RT_BIT(12)
 /** VM Exit when executing the MOV to CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT          RT_BIT(15)
@@ -900,8 +902,8 @@ typedef union
 #define VMX_VMCS_CTRL_PROC_EXEC2_EPT                            RT_BIT(1)
 /** Descriptor table instructions cause VM-exits. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT          RT_BIT(2)
-/** RDTSCP causes a VM-exit. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP_EXIT                    RT_BIT(3)
+/** RDTSCP supported/enabled. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP                         RT_BIT(3)
 /** Virtualize x2APIC mode. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_X2APIC                         RT_BIT(4)
 /** VPID supported/enabled. */

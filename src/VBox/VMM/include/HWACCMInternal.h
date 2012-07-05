@@ -791,6 +791,7 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatExitInvd;
     STAMCOUNTER             StatExitCpuid;
     STAMCOUNTER             StatExitRdtsc;
+    STAMCOUNTER             StatExitRdtscp;
     STAMCOUNTER             StatExitRdpmc;
     STAMCOUNTER             StatExitCli;
     STAMCOUNTER             StatExitSti;

@@ -291,14 +291,14 @@ HRESULT Host::init(VirtualBox *aParent)
         uint32_t u32FeaturesECX;
         uint32_t u32Dummy;
         uint32_t u32FeaturesEDX;
-        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32AMDFeatureEDX, u32AMDFeatureECX;
+        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32ExtFeatureEDX, u32ExtFeatureECX;
 
         ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
         ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
-        /* Query AMD features. */
-        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
+        /* Query Extended features. */
+        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32ExtFeatureECX, &u32ExtFeatureEDX);
 
-        m->fLongModeSupported = !!(u32AMDFeatureEDX & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE);
+        m->fLongModeSupported = !!(u32ExtFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
         m->fPAESupported      = !!(u32FeaturesEDX & X86_CPUID_FEATURE_EDX_PAE);
 
         if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
@@ -306,6 +306,7 @@ HRESULT Host::init(VirtualBox *aParent)
             &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
            )
         {
+            /* Intel. */
             if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
@@ -322,7 +323,8 @@ HRESULT Host::init(VirtualBox *aParent)
             &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
            )
         {
-            if (   (u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
+            /* AMD. */
+            if (   (u32ExtFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )

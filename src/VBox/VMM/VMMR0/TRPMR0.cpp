@@ -61,7 +61,7 @@ VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
     /*
      * Check if we're in long mode or not.
      */
-    if (    (ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+    if (    (ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
         &&  (ASMRdMsr(MSR_K6_EFER) & MSR_K6_EFER_LMA))
     {
         trpmR0DispatchHostInterruptSimple(uActiveVector);

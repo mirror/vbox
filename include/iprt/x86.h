@@ -457,7 +457,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_EDX_CX8       RT_BIT(8)
 /** Bit 9 - APIC - APIC On-Chip. */
 #define X86_CPUID_FEATURE_EDX_APIC      RT_BIT(9)
-/** Bit 11 - SEP - SYSENTER and SYSEXIT. */
+/** Bit 11 - SEP - SYSENTER and SYSEXIT Present. */
 #define X86_CPUID_FEATURE_EDX_SEP       RT_BIT(11)
 /** Bit 12 - MTRR - Memory Type Range Registers. */
 #define X86_CPUID_FEATURE_EDX_MTRR      RT_BIT(12)
@@ -508,6 +508,25 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** @} */
 
 
+/** @name CPUID Extended Feature information.
+ *  CPUID query with EAX=0x80000001.
+ *  @{
+ */
+/** ECX Bit 0 - LAHF/SAHF support in 64-bit mode. */
+#define X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF     RT_BIT(0)
+
+/** EDX Bit 11 - SYSCALL/SYSRET. */
+#define X86_CPUID_EXT_FEATURE_EDX_SYSCALL       RT_BIT(11)
+/** EDX Bit 20 - No-Execute/Execute-Disable. */
+#define X86_CPUID_EXT_FEATURE_EDX_NX            RT_BIT(20)
+/** EDX Bit 26 - 1 GB large page. */
+#define X86_CPUID_EXT_FEATURE_EDX_PAGE1GB       RT_BIT(26)
+/** EDX Bit 27 - RDTSCP. */
+#define X86_CPUID_EXT_FEATURE_EDX_RDTSCP        RT_BIT(27)
+/** EDX Bit 29 - AMD Long Mode/Intel-64 Instructions. */
+#define X86_CPUID_EXT_FEATURE_EDX_LONG_MODE     RT_BIT(29)
+/** @}*/
+
 /** @name CPUID AMD Feature information.
  * CPUID query with EAX=0x80000001.
  * @{
@@ -532,8 +551,6 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_FEATURE_EDX_CX8       RT_BIT(8)
 /** Bit 9 - APIC - APIC On-Chip. */
 #define X86_CPUID_AMD_FEATURE_EDX_APIC      RT_BIT(9)
-/** Bit 11 - SEP - AMD SYSCALL and SYSRET. */
-#define X86_CPUID_AMD_FEATURE_EDX_SEP       RT_BIT(11)
 /** Bit 12 - MTRR - Memory Type Range Registers. */
 #define X86_CPUID_AMD_FEATURE_EDX_MTRR      RT_BIT(12)
 /** Bit 13 - PGE - PTE Global Bit. */
@@ -546,8 +563,6 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_FEATURE_EDX_PAT       RT_BIT(16)
 /** Bit 17 - PSE-36 - 36-bit Page Size Extention. */
 #define X86_CPUID_AMD_FEATURE_EDX_PSE36     RT_BIT(17)
-/** Bit 20 - NX - AMD No-Execute Page Protection. */
-#define X86_CPUID_AMD_FEATURE_EDX_NX        RT_BIT(20)
 /** Bit 22 - AXMMX - AMD Extensions to MMX Instructions. */
 #define X86_CPUID_AMD_FEATURE_EDX_AXMMX     RT_BIT(22)
 /** Bit 23 - MMX - Intel MMX Technology. */
@@ -556,19 +571,11 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_FEATURE_EDX_FXSR      RT_BIT(24)
 /** Bit 25 - FFXSR - AMD fast FXSAVE and FXRSTOR Instructions. */
 #define X86_CPUID_AMD_FEATURE_EDX_FFXSR     RT_BIT(25)
-/** Bit 26 - PAGE1GB - AMD 1GB large page support. */
-#define X86_CPUID_AMD_FEATURE_EDX_PAGE1GB   RT_BIT(26)
-/** Bit 27 - RDTSCP - AMD RDTSCP instruction. */
-#define X86_CPUID_AMD_FEATURE_EDX_RDTSCP    RT_BIT(27)
-/** Bit 29 - LM - AMD Long Mode. */
-#define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE RT_BIT(29)
 /** Bit 30 - 3DNOWEXT - AMD Extensions to 3DNow. */
 #define X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX  RT_BIT(30)
 /** Bit 31 - 3DNOW - AMD 3DNow. */
 #define X86_CPUID_AMD_FEATURE_EDX_3DNOW     RT_BIT(31)
 
-/** Bit 0 - LAHF/SAHF - AMD LAHF and SAHF in 64-bit mode. */
-#define X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF RT_BIT(0)
 /** Bit 1 - CMPL - Core multi-processing legacy mode. */
 #define X86_CPUID_AMD_FEATURE_ECX_CMPL      RT_BIT(1)
 /** Bit 2 - SVM - AMD VM extensions. */
