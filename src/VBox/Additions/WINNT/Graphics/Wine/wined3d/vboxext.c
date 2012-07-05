@@ -286,10 +286,25 @@ static HRESULT vboxExtInit()
     return hr;
 }
 
+
+static HRESULT vboxExtWndCleanup();
+
 static HRESULT vboxExtTerm()
 {
-    HRESULT hr = VBoxExtWorkerDestroy(&g_VBoxExtGlobal.Worker);
-    return hr;
+    HRESULT hr = vboxExtWndCleanup();
+    if (!SUCCEEDED(hr))
+    {
+        ERR("vboxExtWndCleanup failed, hr %d", hr);
+        return hr;
+    }
+
+    hr = VBoxExtWorkerDestroy(&g_VBoxExtGlobal.Worker);
+    if (!SUCCEEDED(hr))
+    {
+        ERR("VBoxExtWorkerDestroy failed, hr %d", hr);
+        return hr;
+    }
+    return S_OK;
 }
 
 /* wine serializes all calls to us, so no need for any synchronization here */
@@ -464,7 +479,24 @@ static LRESULT CALLBACK vboxExtWndProc(HWND hwnd,
 
 #define VBOXEXTWND_NAME "VboxDispD3DWineWnd"
 
-HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd, HDC *phDC)
+static HRESULT vboxExtWndDoCleanup()
+{
+    HRESULT hr = S_OK;
+    HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
+    WNDCLASS wc;
+    if (GetClassInfo(hInstance, VBOXEXTWND_NAME, &wc))
+    {
+        if (!UnregisterClass(VBOXEXTWND_NAME, hInstance))
+        {
+            DWORD winEr = GetLastError();
+            ERR("UnregisterClass failed, winErr(%d)\n", winEr);
+            hr = E_FAIL;
+        }
+    }
+    return hr;
+}
+
+static HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd, HDC *phDC)
 {
     HRESULT hr = S_OK;
     HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
@@ -556,18 +588,29 @@ typedef struct VBOXEXTWND_DESTROY_INFO
     HDC hDC;
 } VBOXEXTWND_DESTROY_INFO;
 
-DECLCALLBACK(void) vboxExtWndDestroyWorker(void *pvUser)
+typedef struct VBOXEXTWND_CLEANUP_INFO
+{
+    int hr;
+} VBOXEXTWND_CLEANUP_INFO;
+
+static DECLCALLBACK(void) vboxExtWndDestroyWorker(void *pvUser)
 {
     VBOXEXTWND_DESTROY_INFO *pInfo = (VBOXEXTWND_DESTROY_INFO*)pvUser;
     pInfo->hr = vboxExtWndDoDestroy(pInfo->hWnd, pInfo->hDC);
     Assert(pInfo->hr == S_OK);
 }
 
-DECLCALLBACK(void) vboxExtWndCreateWorker(void *pvUser)
+static DECLCALLBACK(void) vboxExtWndCreateWorker(void *pvUser)
 {
     VBOXEXTWND_CREATE_INFO *pInfo = (VBOXEXTWND_CREATE_INFO*)pvUser;
     pInfo->hr = vboxExtWndDoCreate(pInfo->width, pInfo->height, &pInfo->hWnd, &pInfo->hDC);
     Assert(pInfo->hr == S_OK);
+}
+
+static DECLCALLBACK(void) vboxExtWndCleanupWorker(void *pvUser)
+{
+    VBOXEXTWND_CLEANUP_INFO *pInfo = (VBOXEXTWND_CLEANUP_INFO*)pvUser;
+    pInfo-> hr = vboxExtWndDoCleanup();
 }
 
 HRESULT VBoxExtWndDestroy(HWND hWnd, HDC hDC)
@@ -578,13 +621,19 @@ HRESULT VBoxExtWndDestroy(HWND hWnd, HDC hDC)
     Info.hWnd = hWnd;
     Info.hDC = hDC;
     hr = VBoxExtDwSubmitProcSync(vboxExtWndDestroyWorker, &Info);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    if (!SUCCEEDED(hr))
     {
-        Assert(Info.hr == S_OK);
+        ERR("VBoxExtDwSubmitProcSync-vboxExtWndDestroyWorker failed hr %d", hr);
+        return hr;
+    }
+
+    if (!SUCCEEDED(Info.hr))
+    {
+        ERR("vboxExtWndDestroyWorker failed hr %d", Info.hr);
         return Info.hr;
     }
-    return hr;
+
+    return S_OK;
 }
 
 HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd, HDC *phDC)
@@ -595,16 +644,41 @@ HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd, HDC *phDC)
     Info.width = width;
     Info.height = height;
     hr = VBoxExtDwSubmitProcSync(vboxExtWndCreateWorker, &Info);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    if (!SUCCEEDED(hr))
     {
-        Assert(Info.hr == S_OK);
-        if (Info.hr == S_OK)
-        {
-            *phWnd = Info.hWnd;
-            *phDC = Info.hDC;
-        }
+        ERR("VBoxExtDwSubmitProcSync-vboxExtWndCreateWorker failed hr %d", hr);
+        return hr;
+    }
+
+    Assert(Info.hr == S_OK);
+    if (!SUCCEEDED(Info.hr))
+    {
+        ERR("vboxExtWndCreateWorker failed hr %d", Info.hr);
         return Info.hr;
     }
-    return hr;
+
+    *phWnd = Info.hWnd;
+    *phDC = Info.hDC;
+    return S_OK;
+}
+
+static HRESULT vboxExtWndCleanup()
+{
+    HRESULT hr;
+    VBOXEXTWND_CLEANUP_INFO Info;
+    Info.hr = E_FAIL;
+    hr = VBoxExtDwSubmitProcSync(vboxExtWndCleanupWorker, &Info);
+    if (!SUCCEEDED(hr))
+    {
+        ERR("VBoxExtDwSubmitProcSync-vboxExtWndCleanupWorker failed hr %d", hr);
+        return hr;
+    }
+
+    if (!SUCCEEDED(Info.hr))
+    {
+        ERR("vboxExtWndCleanupWorker failed hr %d", Info.hr);
+        return Info.hr;
+    }
+
+    return S_OK;
 }
