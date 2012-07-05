@@ -2572,7 +2572,7 @@ Machine::COMSETTER(ClipboardMode)(ClipboardMode_T aClipboardMode)
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
-    
+
     /* Save settings if online - todo why is this required?? */
     if (Global::IsOnline(mData->mMachineState))
         saveSettings(NULL);
@@ -5830,13 +5830,9 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
         /* find all attached devices to the appropriate storage controller and detach them all*/
         MediaData::AttachmentList::const_iterator endList = mMediaData->mAttachments.end();
         MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-        MediumAttachment *pAttachTemp=NULL;
-        LONG port = 0;
-        LONG device = 0;
-
         for (;it != endList; it++)
         {
-            pAttachTemp = *it;
+            MediumAttachment *pAttachTemp = *it;
             AutoCaller localAutoCaller(pAttachTemp);
             if (FAILED(localAutoCaller.rc())) return localAutoCaller.rc();
 
@@ -5844,11 +5840,8 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
 
             if (pAttachTemp->getControllerName() == aName)
             {
-
-                port = pAttachTemp->getPort();
-
-                device = pAttachTemp->getDevice();
-
+                LONG port = pAttachTemp->getPort();
+                LONG device = pAttachTemp->getDevice();
                 rc = DetachDevice(aName, port, device);
                 if (FAILED(rc)) return rc;
             }
