@@ -1041,11 +1041,11 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             uint64_t        fMask        = 0;
 
             /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
-            if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)
+            if (fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_NX)
                 fMask |= MSR_K6_EFER_NXE;
-            if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+            if (fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
                 fMask |= MSR_K6_EFER_LME;
-            if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_SEP)
+            if (fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)
                 fMask |= MSR_K6_EFER_SCE;
             if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
                 fMask |= MSR_K6_EFER_FFXSR;
@@ -1583,15 +1583,15 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_SYSCALL:
         {
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
-                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_SEP))
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_SYSCALL))
             {
 #if HC_ARCH_BITS == 32
-                /* X86_CPUID_AMD_FEATURE_EDX_SEP not set it seems in 32 bits mode.
+                /* X86_CPUID_EXT_FEATURE_EDX_SYSCALL not set it seems in 32 bits mode.
                  * Even when the cpu is capable of doing so in 64 bits mode.
                  */
                 if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
-                    ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
-                    ||  !(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SEP))
+                    ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
+                    ||  !(ASMCpuId_EDX(1) & X86_CPUID_EXT_FEATURE_EDX_SYSCALL))
 #endif
                 {
                     LogRel(("WARNING: Can't turn on SYSCALL/SYSRET when the host doesn't support it!!\n"));
@@ -1599,7 +1599,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 }
             }
             /* Valid for both Intel and AMD CPUs, although only in 64 bits mode for Intel. */
-            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_SEP;
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_EXT_FEATURE_EDX_SYSCALL;
             LogRel(("CPUMSetGuestCpuIdFeature: Enabled syscall/ret\n"));
             break;
         }
@@ -1632,47 +1632,52 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_LONG_MODE:
         {
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
-                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
             {
                 LogRel(("WARNING: Can't turn on LONG MODE when the host doesn't support it!!\n"));
                 return;
             }
 
             /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_LONG_MODE;
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
             LogRel(("CPUMSetGuestCpuIdFeature: Enabled LONG MODE\n"));
             break;
         }
 
         /*
-         * Set the NXE bit in the extended feature mask.
+         * Set the NX/XD bit in the extended feature mask.
          * Assumes the caller knows what it's doing! (host must support these)
          */
-        case CPUMCPUIDFEATURE_NXE:
+        case CPUMCPUIDFEATURE_NX:
         {
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
-                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_NX))
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_NX))
             {
-                LogRel(("WARNING: Can't turn on NXE when the host doesn't support it!!\n"));
+                LogRel(("WARNING: Can't turn on NX/XD when the host doesn't support it!!\n"));
                 return;
             }
 
             /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_NX;
-            LogRel(("CPUMSetGuestCpuIdFeature: Enabled NXE\n"));
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_EXT_FEATURE_EDX_NX;
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled NX\n"));
             break;
         }
 
+        /*
+         * Set the LAHF/SAHF support in 64-bit mode.
+         * Assumes the caller knows what it's doing! (host must support this)
+         */
         case CPUMCPUIDFEATURE_LAHF:
         {
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
-                ||  !(ASMCpuId_ECX(0x80000001) & X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF))
+                ||  !(ASMCpuId_ECX(0x80000001) & X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF))
             {
                 LogRel(("WARNING: Can't turn on LAHF/SAHF when the host doesn't support it!!\n"));
                 return;
             }
 
-            pVM->cpum.s.aGuestCpuIdExt[1].ecx |= X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF;
+            /* Valid for both Intel and AMD. */
+            pVM->cpum.s.aGuestCpuIdExt[1].ecx |= X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
             LogRel(("CPUMSetGuestCpuIdFeature: Enabled LAHF/SAHF\n"));
             break;
         }
@@ -1688,10 +1693,14 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
         }
 
+        /*
+         * Set the RDTSCP support bit.
+         * Assumes the caller knows what it's doing! (host must support this)
+         */
         case CPUMCPUIDFEATURE_RDTSCP:
         {
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
-                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_RDTSCP)
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
                 ||  pVM->cpum.s.u8PortableCpuIdLevel > 0)
             {
                 if (!pVM->cpum.s.u8PortableCpuIdLevel)
@@ -1699,8 +1708,8 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 return;
             }
 
-            /* Valid for AMD only (for now). */
-            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_RDTSCP;
+            /* Valid for both Intel and AMD. */
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
             LogRel(("CPUMSetGuestCpuIdFeature: Enabled RDTSCP.\n"));
             break;
         }
@@ -1744,23 +1753,23 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
         }
 
-        case CPUMCPUIDFEATURE_NXE:
+        case CPUMCPUIDFEATURE_NX:
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
-                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_NX);
+                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_EXT_FEATURE_EDX_NX);
         }
 
         case CPUMCPUIDFEATURE_RDTSCP:
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
-                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_RDTSCP);
+                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
             break;
         }
 
         case CPUMCPUIDFEATURE_LONG_MODE:
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
-                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE);
+                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
             break;
         }
 
@@ -1828,14 +1837,14 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_LONG_MODE:
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
-                pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_AMD_FEATURE_EDX_LONG_MODE;
+                pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
             break;
         }
 
         case CPUMCPUIDFEATURE_LAHF:
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
-                pVM->cpum.s.aGuestCpuIdExt[1].ecx &= ~X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF;
+                pVM->cpum.s.aGuestCpuIdExt[1].ecx &= ~X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
             break;
         }
 

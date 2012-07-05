@@ -3105,13 +3105,13 @@ SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
         uint32_t fNXEPlusLMA = 0;
         if (cr4 & X86_CR4_PAE)
         {
-            uint32_t fAmdFeatures = ASMCpuId_EDX(0x80000001);
-            if (fAmdFeatures & (X86_CPUID_AMD_FEATURE_EDX_NX | X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+            uint32_t fExtFeatures = ASMCpuId_EDX(0x80000001);
+            if (fExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
             {
                 uint64_t efer = ASMRdMsr(MSR_K6_EFER);
-                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)        && (efer & MSR_K6_EFER_NXE))
+                if ((fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_NX)        && (efer & MSR_K6_EFER_NXE))
                     fNXEPlusLMA |= RT_BIT(0);
-                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE) && (efer & MSR_K6_EFER_LMA))
+                if ((fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE) && (efer & MSR_K6_EFER_LMA))
                     fNXEPlusLMA |= RT_BIT(1);
             }
         }

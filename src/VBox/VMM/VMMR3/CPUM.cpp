@@ -683,10 +683,11 @@ static int cpumR3CpuIdInit(PVM pVM)
      * been overridden).
      */
     /** @cfgm{CPUM/HostCPUID/[000000xx|800000xx|c000000x]/[eax|ebx|ecx|edx],32-bit}
-     * Overrides the host CPUID leaf values used for calculating the guest CPUID
-     * leaves.  This can be used to preserve the CPUID values when moving a VM
-     * to a different machine.  Another use is restricting (or extending) the
-     * feature set exposed to the guest. */
+     * Loads the host CPUID leaves to the guest copy. Overrides, if any, the host
+     * CPUID leaf values used for calculating the guest CPUID leaves.  This can be
+     * used to preserve the CPUID values when moving a VM to a different machine.
+     * Another use is restricting (or extending) the feature set exposed to the
+     * guest. */
     PCFGMNODE pHostOverrideCfg = CFGMR3GetChild(pCpumCfg, "HostCPUID");
     rc = cpumR3CpuIdInitHostSet(UINT32_C(0x00000000), &pCPUM->aGuestCpuIdStd[0],     RT_ELEMENTS(pCPUM->aGuestCpuIdStd),     pHostOverrideCfg);
     AssertRCReturn(rc, rc);
@@ -824,26 +825,26 @@ static int cpumR3CpuIdInit(PVM pVM)
                                   | X86_CPUID_AMD_FEATURE_EDX_CX8
                                   //| X86_CPUID_AMD_FEATURE_EDX_APIC   - set by the APIC device if present.
                                   /* Note! we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see @bugref{1757}) */
-                                  //| X86_CPUID_AMD_FEATURE_EDX_SEP
+                                  //| X86_CPUID_EXT_FEATURE_EDX_SEP
                                   | X86_CPUID_AMD_FEATURE_EDX_MTRR
                                   | X86_CPUID_AMD_FEATURE_EDX_PGE
                                   | X86_CPUID_AMD_FEATURE_EDX_MCA
                                   | X86_CPUID_AMD_FEATURE_EDX_CMOV
                                   | X86_CPUID_AMD_FEATURE_EDX_PAT
                                   | X86_CPUID_AMD_FEATURE_EDX_PSE36
-                                  //| X86_CPUID_AMD_FEATURE_EDX_NX     - not virtualized, requires PAE.
+                                  //| X86_CPUID_EXT_FEATURE_EDX_NX     - not virtualized, requires PAE.
                                   //| X86_CPUID_AMD_FEATURE_EDX_AXMMX
                                   | X86_CPUID_AMD_FEATURE_EDX_MMX
                                   | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                   | X86_CPUID_AMD_FEATURE_EDX_FFXSR
-                                  //| X86_CPUID_AMD_FEATURE_EDX_PAGE1GB
-                                  //| X86_CPUID_AMD_FEATURE_EDX_RDTSCP - AMD only; turned on when necessary
-                                  //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - turned on when necessary
+                                  //| X86_CPUID_EXT_FEATURE_EDX_PAGE1GB
+                                  | X86_CPUID_EXT_FEATURE_EDX_RDTSCP
+                                  //| X86_CPUID_EXT_FEATURE_EDX_LONG_MODE - turned on when necessary
                                   | X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX
                                   | X86_CPUID_AMD_FEATURE_EDX_3DNOW
                                   | 0;
     pCPUM->aGuestCpuIdExt[1].ecx &= 0
-                                  //| X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF
+                                  //| X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF
                                   //| X86_CPUID_AMD_FEATURE_ECX_CMPL
                                   //| X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
                                   //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
@@ -865,8 +866,8 @@ static int cpumR3CpuIdInit(PVM pVM)
         PORTABLE_DISABLE_FEATURE_BIT(1, Ext[1].edx, 3DNOW,      X86_CPUID_AMD_FEATURE_EDX_3DNOW);
         PORTABLE_DISABLE_FEATURE_BIT(1, Ext[1].edx, 3DNOW_EX,   X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
         PORTABLE_DISABLE_FEATURE_BIT(1, Ext[1].edx, FFXSR,      X86_CPUID_AMD_FEATURE_EDX_FFXSR);
-        PORTABLE_DISABLE_FEATURE_BIT(1, Ext[1].edx, RDTSCP,     X86_CPUID_AMD_FEATURE_EDX_RDTSCP);
-        PORTABLE_DISABLE_FEATURE_BIT(2, Ext[1].ecx, LAHF_SAHF,  X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF);
+        PORTABLE_DISABLE_FEATURE_BIT(1, Ext[1].edx, RDTSCP,     X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
+        PORTABLE_DISABLE_FEATURE_BIT(2, Ext[1].ecx, LAHF_SAHF,  X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);
         PORTABLE_DISABLE_FEATURE_BIT(3, Ext[1].ecx, CMOV,       X86_CPUID_AMD_FEATURE_EDX_CMOV);
 
         Assert(!(pCPUM->aGuestCpuIdExt[1].ecx & (  X86_CPUID_AMD_FEATURE_ECX_CMPL
@@ -885,12 +886,12 @@ static int cpumR3CpuIdInit(PVM pVM)
                                                  | UINT32_C(0xffffc000)
                                                  )));
         Assert(!(pCPUM->aGuestCpuIdExt[1].edx & (  RT_BIT(10)
-                                                 | X86_CPUID_AMD_FEATURE_EDX_SEP
+                                                 | X86_CPUID_EXT_FEATURE_EDX_SYSCALL
                                                  | RT_BIT(18)
                                                  | RT_BIT(19)
                                                  | RT_BIT(21)
                                                  | X86_CPUID_AMD_FEATURE_EDX_AXMMX
-                                                 | X86_CPUID_AMD_FEATURE_EDX_PAGE1GB
+                                                 | X86_CPUID_EXT_FEATURE_EDX_PAGE1GB
                                                  | RT_BIT(28)
                                                  )));
     }
@@ -928,7 +929,7 @@ static int cpumR3CpuIdInit(PVM pVM)
         /* AMD only - set to zero. */
         pCPUM->aGuestCpuIdExt[0].ebx = pCPUM->aGuestCpuIdExt[0].ecx = pCPUM->aGuestCpuIdExt[0].edx = 0;
 
-        /* 0x800000001: AMD only; shared feature bits are set dynamically. */
+        /* 0x800000001: shared feature bits are set dynamically. */
         memset(&pCPUM->aGuestCpuIdExt[1], 0, sizeof(pCPUM->aGuestCpuIdExt[1]));
 
         /* 0x800000002-4: Processor Name String Identifier. */
@@ -1219,7 +1220,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableNX", &fEnable, false);                 AssertRCReturn(rc, rc);
     if (fEnable)
-        CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
+        CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
     /*
      * We don't enable the Hypervisor Present bit by default, but it may
@@ -1926,7 +1927,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             CPUID_CHECK2_WRN("PkgType",             (aHostRawExt[1].ebx >> 28) &   0xf, (aRawExt[1].ebx >> 28) &   0xf);
 
             /* CPUID(0x80000001).ecx */
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);
             CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CMPL);
             CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SVM);
             CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);
@@ -1971,7 +1972,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_CX8);
             CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_APIC);
             CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(10) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_SEP);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_SEP);
             CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MTRR);
             CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PGE);
             CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MCA);
@@ -1980,16 +1981,16 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PSE36);
             CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(18) /*reserved*/);
             CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(19) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_NX);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_NX);
             CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(21) /*reserved*/);
             CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
             CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MMX);
             CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FXSR);
             CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAGE1GB);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_RDTSCP);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_PAGE1GB);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
             CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(28) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_LONG_MODE);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
             CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
             CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
 
@@ -2088,7 +2089,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].ebx, aGuestCpuIdExt[0].ecx, aGuestCpuIdExt[0].edx);
 
         /* CPUID(0x80000001).ecx */
-        CPUID_GST_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF);   // -> EMU
+        CPUID_GST_FEATURE_WRN(Ext, ecx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);   // -> EMU
         CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CMPL);    // -> EMU
         CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SVM);     // -> EMU
         CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);// ???
@@ -2133,7 +2134,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_CX8,   X86_CPUID_FEATURE_EDX_CX8);     // -> EMU?
         CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_APIC,  X86_CPUID_FEATURE_EDX_APIC);
         CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(10) /*reserved*/);
-        CPUID_GST_FEATURE_IGN(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_SEP);                                  // Intel: long mode only.
+        CPUID_GST_FEATURE_IGN(    Ext, edx, X86_CPUID_EXT_FEATURE_EDX_SYSCALL);                              // On Intel: long mode only.
         CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MTRR,  X86_CPUID_FEATURE_EDX_MTRR);
         CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PGE,   X86_CPUID_FEATURE_EDX_PGE);
         CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MCA,   X86_CPUID_FEATURE_EDX_MCA);
@@ -2142,16 +2143,16 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PSE36, X86_CPUID_FEATURE_EDX_PSE36);
         CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(18) /*reserved*/);
         CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(19) /*reserved*/);
-        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_NX);
+        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_EXT_FEATURE_EDX_NX);
         CPUID_GST_FEATURE_WRN(    Ext, edx, RT_BIT_32(21) /*reserved*/);
         CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
         CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_MMX,   X86_CPUID_FEATURE_EDX_MMX);     // -> EMU
         CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_FXSR,  X86_CPUID_FEATURE_EDX_FXSR);    // -> EMU
         CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
-        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAGE1GB);
-        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_RDTSCP);
+        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_PAGE1GB);
+        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
         CPUID_GST_FEATURE_IGN(    Ext, edx, RT_BIT_32(28) /*reserved*/);
-        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_LONG_MODE);
+        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
         CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
         CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
     }
@@ -3435,13 +3436,13 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             pHlp->pfnPrintf(pHlp, "AXMMX - AMD Extensions to MMX Instr.   = %d (%d)\n",  !!(uEdxGst & RT_BIT(22)),  !!(uEdxHst & RT_BIT(22)));
             pHlp->pfnPrintf(pHlp, "MMX - Intel MMX Technology             = %d (%d)\n",  !!(uEdxGst & RT_BIT(23)),  !!(uEdxHst & RT_BIT(23)));
             pHlp->pfnPrintf(pHlp, "FXSR - FXSAVE and FXRSTOR Instructions = %d (%d)\n",  !!(uEdxGst & RT_BIT(24)),  !!(uEdxHst & RT_BIT(24)));
-            pHlp->pfnPrintf(pHlp, "25 - AMD fast FXSAVE and FXRSTOR Instr.= %d (%d)\n",  !!(uEdxGst & RT_BIT(25)),  !!(uEdxHst & RT_BIT(25)));
-            pHlp->pfnPrintf(pHlp, "26 - 1 GB large page support           = %d (%d)\n",  !!(uEdxGst & RT_BIT(26)),  !!(uEdxHst & RT_BIT(26)));
-            pHlp->pfnPrintf(pHlp, "27 - RDTSCP instruction                = %d (%d)\n",  !!(uEdxGst & RT_BIT(27)),  !!(uEdxHst & RT_BIT(27)));
+            pHlp->pfnPrintf(pHlp, "AMD fast FXSAVE and FXRSTOR Instr.     = %d (%d)\n",  !!(uEdxGst & RT_BIT(25)),  !!(uEdxHst & RT_BIT(25)));
+            pHlp->pfnPrintf(pHlp, "1 GB large page support                = %d (%d)\n",  !!(uEdxGst & RT_BIT(26)),  !!(uEdxHst & RT_BIT(26)));
+            pHlp->pfnPrintf(pHlp, "RDTSCP instruction                     = %d (%d)\n",  !!(uEdxGst & RT_BIT(27)),  !!(uEdxHst & RT_BIT(27)));
             pHlp->pfnPrintf(pHlp, "28 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(28)),  !!(uEdxHst & RT_BIT(28)));
-            pHlp->pfnPrintf(pHlp, "29 - AMD Long Mode                     = %d (%d)\n",  !!(uEdxGst & RT_BIT(29)),  !!(uEdxHst & RT_BIT(29)));
-            pHlp->pfnPrintf(pHlp, "30 - AMD Extensions to 3DNow           = %d (%d)\n",  !!(uEdxGst & RT_BIT(30)),  !!(uEdxHst & RT_BIT(30)));
-            pHlp->pfnPrintf(pHlp, "31 - AMD 3DNow                         = %d (%d)\n",  !!(uEdxGst & RT_BIT(31)),  !!(uEdxHst & RT_BIT(31)));
+            pHlp->pfnPrintf(pHlp, "AMD Long Mode / Intel 64 ISA           = %d (%d)\n",  !!(uEdxGst & RT_BIT(29)),  !!(uEdxHst & RT_BIT(29)));
+            pHlp->pfnPrintf(pHlp, "AMD Extensions to 3DNow!               = %d (%d)\n",  !!(uEdxGst & RT_BIT(30)),  !!(uEdxHst & RT_BIT(30)));
+            pHlp->pfnPrintf(pHlp, "AMD 3DNow!                             = %d (%d)\n",  !!(uEdxGst & RT_BIT(31)),  !!(uEdxHst & RT_BIT(31)));
 
             uint32_t uEcxGst = Guest.ecx;
             uint32_t uEcxHst = Host.ecx;

@@ -568,6 +568,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             if (pVM->hwaccm.s.vmx.fUnrestrictedGuest)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE;
 
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+                val |= VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP;
+
             /* Mask away the bits that the CPU doesn't support */
             /** @todo make sure they don't conflict with the above requirements. */
             val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
@@ -1315,13 +1318,13 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         /*
          * Check if EFER MSR present.
          */
-        if (ASMCpuId_EDX(0x80000001) & (X86_CPUID_AMD_FEATURE_EDX_NX|X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+        if (ASMCpuId_EDX(0x80000001) & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
         {
-            if (ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_SEP)
+            if (ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)
             {
                 pMsr->u32IndexMSR = MSR_K6_STAR;
                 pMsr->u32Reserved = 0;
-                pMsr->u64Value    = ASMRdMsr(MSR_K6_STAR);                   /* legacy syscall eip, cs & ss */
+                pMsr->u64Value    = ASMRdMsr(MSR_K6_STAR);          /* legacy syscall eip, cs & ss */
                 pMsr++; idxMsr++;
             }
 
@@ -2097,17 +2100,17 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     uint32_t ulTemp;
     CPUMGetGuestCpuId(pVCpu, 0x80000001, &ulTemp, &ulTemp, &ulTemp, &ulEdx);
     /* EFER MSR present? */
-    if (ulEdx & (X86_CPUID_AMD_FEATURE_EDX_NX|X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+    if (ulEdx & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
     {
         pMsr->u32IndexMSR = MSR_K6_EFER;
         pMsr->u32Reserved = 0;
         pMsr->u64Value    = pCtx->msrEFER;
         /* VT-x will complain if only MSR_K6_EFER_LME is set. */
         if (!CPUMIsGuestInLongModeEx(pCtx))
-            pMsr->u64Value &= ~(MSR_K6_EFER_LMA|MSR_K6_EFER_LME);
+            pMsr->u64Value &= ~(MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
         pMsr++; idxMsr++;
 
-        if (ulEdx & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+        if (ulEdx & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
         {
             pMsr->u32IndexMSR = MSR_K8_LSTAR;
             pMsr->u32Reserved = 0;
@@ -2160,7 +2163,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         uint64_t u64CurTSC = ASMReadTSC();
         if (u64CurTSC + pVCpu->hwaccm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
-            /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET */
+            /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
             rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, pVCpu->hwaccm.s.vmx.u64TSCOffset);
             AssertRC(rc);
 
@@ -2171,7 +2174,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else
         {
-            /* Fall back to rdtsc emulation as we would otherwise pass decreasing tsc values to the guest. */
+            /* Fall back to rdtsc, rdtscp emulation as we would otherwise pass decreasing tsc values to the guest. */
             LogFlow(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC,
                      pVCpu->hwaccm.s.vmx.u64TSCOffset, u64CurTSC + pVCpu->hwaccm.s.vmx.u64TSCOffset,
                      TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVCpu->hwaccm.s.vmx.u64TSCOffset,
@@ -2331,25 +2334,25 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         switch (pMsr->u32IndexMSR)
         {
-        case MSR_K8_LSTAR:
-            pCtx->msrLSTAR = pMsr->u64Value;
-            break;
-        case MSR_K6_STAR:
-            pCtx->msrSTAR = pMsr->u64Value;
-            break;
-        case MSR_K8_SF_MASK:
-            pCtx->msrSFMASK = pMsr->u64Value;
-            break;
-        case MSR_K8_KERNEL_GS_BASE:
-            pCtx->msrKERNELGSBASE = pMsr->u64Value;
-            break;
-        case MSR_K6_EFER:
-            /* EFER can't be changed without causing a VM-exit. */
-            /* Assert(pCtx->msrEFER == pMsr->u64Value); */
-            break;
-        default:
-            AssertFailed();
-            return VERR_HM_UNEXPECTED_LD_ST_MSR;
+            case MSR_K8_LSTAR:
+                pCtx->msrLSTAR = pMsr->u64Value;
+                break;
+            case MSR_K6_STAR:
+                pCtx->msrSTAR = pMsr->u64Value;
+                break;
+            case MSR_K8_SF_MASK:
+                pCtx->msrSFMASK = pMsr->u64Value;
+                break;
+            case MSR_K8_KERNEL_GS_BASE:
+                pCtx->msrKERNELGSBASE = pMsr->u64Value;
+                break;
+            case MSR_K6_EFER:
+                /* EFER can't be changed without causing a VM-exit. */
+                /* Assert(pCtx->msrEFER == pMsr->u64Value); */
+                break;
+            default:
+                AssertFailed();
+                return VERR_HM_UNEXPECTED_LD_ST_MSR;
         }
     }
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
@@ -2452,8 +2455,10 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
     }
     else
     {
-        AssertMsg(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID, ("hwaccm uCurrentASID=%lu cpu uCurrentASID=%lu\n",
-                                                                       pVCpu->hwaccm.s.uCurrentASID, pCpu->uCurrentASID));
+        AssertMsg(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID,
+                  ("hwaccm->uCurrentASID=%lu hwaccm->cTLBFlushes=%lu cpu->uCurrentASID=%lu cpu->cTLBFlushes=%lu\n",
+                   pVCpu->hwaccm.s.uCurrentASID, pVCpu->hwaccm.s.cTLBFlushes,
+                   pCpu->uCurrentASID, pCpu->cTLBFlushes));
 
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hwaccmQueueInvlPage() where it is commented
@@ -4052,6 +4057,22 @@ ResumeExecution:
         break;
     }
 
+    case VMX_EXIT_RDTSCP:                /* 51 Guest software attempted to execute RDTSCP. */
+    {
+        Log2(("VMX: Rdtscp\n"));
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdtscp);
+        rc = EMInterpretRdtscp(pVM, pVCpu, pCtx);
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            Assert(cbInstr == 3);
+            pCtx->rip += cbInstr;
+            goto ResumeExecution;
+        }
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+        break;
+    }
+
     case VMX_EXIT_INVPG:                /* 14 Guest software attempted to execute INVPG. */
     {
         Log2(("VMX: invlpg\n"));
@@ -4625,6 +4646,7 @@ ResumeExecution:
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */
     case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
+    case VMX_EXIT_RDTSCP:               /* 51 Guest software attempted to execute RDTSCP. */
         /* already handled above */
         AssertMsg(   rc == VINF_PGM_CHANGE_MODE
                   || rc == VINF_EM_RAW_INTERRUPT

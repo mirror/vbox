@@ -185,11 +185,11 @@ VMMR0DECL(int) CPUMR0Init(PVM pVM)
             &&  cExt <= 0x8000ffff)
         {
             uint32_t fExtFeaturesEDX = ASMCpuId_EDX(0x80000001);
-            if (fExtFeaturesEDX & X86_CPUID_AMD_FEATURE_EDX_SEP)
+            if (fExtFeaturesEDX & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)
             {
 #ifdef RT_ARCH_X86
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-                if (fExtFeaturesEDX & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+                if (fExtFeaturesEDX & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
 # else
                 if (!ASMIsIntelCpu())
 # endif

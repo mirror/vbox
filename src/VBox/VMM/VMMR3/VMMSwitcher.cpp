@@ -535,8 +535,11 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
             case FIX_EFER_OR_MASK:
             {
                 uint32_t u32OrMask = MSR_K6_EFER_LME | MSR_K6_EFER_SCE;
-                /** note: we don't care if cpuid 0x8000001 isn't supported as that implies long mode isn't either, so this switcher would never be used. */
-                if (!!(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_NX))
+                /*
+                 * We don't care if cpuid 0x8000001 isn't supported as that implies
+                 * long mode isn't supported either, so this switched would never be used.
+                 */
+                if (!!(ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_NX))
                     u32OrMask |= MSR_K6_EFER_NXE;
 
                 *uSrc.pu32 = u32OrMask;

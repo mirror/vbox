@@ -2218,7 +2218,7 @@ ResumeExecution:
     case SVM_EXIT_RDTSCP:                /* Guest software attempted to execute RDTSCP. */
     {
         Log2(("SVM: Rdtscp\n"));
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdtsc);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdtscp);
         rc = EMInterpretRdtscp(pVM, pVCpu, pCtx);
         if (rc == VINF_SUCCESS)
         {

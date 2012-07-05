@@ -50,8 +50,8 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_SYSCALL,
     /** The PAE feature bit. (Std+Ext) */
     CPUMCPUIDFEATURE_PAE,
-    /** The NXE feature bit. (Ext) */
-    CPUMCPUIDFEATURE_NXE,
+    /** The NX feature bit. (Ext) */
+    CPUMCPUIDFEATURE_NX,
     /** The LAHF/SAHF feature bit (64 bits mode only). (Ext) */
     CPUMCPUIDFEATURE_LAHF,
     /** The LONG MODE feature bit. (Ext) */
