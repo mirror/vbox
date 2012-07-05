@@ -567,6 +567,19 @@ def MakeDeclarationString(params):
 	#endif
 #enddef
 
+def MakeDeclarationStringWithContext(ctx_macro_prefix, params):
+    """Same as MakeDeclarationString, but adds a context macro
+    """
+    
+    n = len(params)
+    if n == 0:
+        return ctx_macro_prefix + '_ARGSINGLEDECL'
+    else:
+        result = MakeDeclarationString(params)
+        return ctx_macro_prefix + '_ARGDECL ' + result
+    #endif
+#enddef
+
 
 def MakePrototypeString(params):
 	"""Given a list of (name, type, vectorSize) parameters, make a C-style

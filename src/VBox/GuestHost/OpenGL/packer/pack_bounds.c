@@ -8,7 +8,7 @@
 #include "cr_opcodes.h"
 #include "cr_mem.h"
 
-void PACK_APIENTRY crPackBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload, GLint len, GLint num_opcodes )
+void PACK_APIENTRY crPackBoundsInfoCR( CR_PACKER_CONTEXT_ARGDECL const CRrecti *bounds, const GLbyte *payload, GLint len, GLint num_opcodes )
 {
     CR_GET_PACKER_CONTEXT(pc);
     /* Don't get the buffered_ptr here because we've already 
