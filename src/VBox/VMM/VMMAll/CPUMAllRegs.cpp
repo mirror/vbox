@@ -63,7 +63,7 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
 /**
  * Gets the pointer to the hypervisor CPU context structure of a virtual CPU.
  *
- * @param   pVCpu       Pointer to the virtual CPU.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(PCPUMCTX) CPUMGetHyperCtxPtr(PVMCPU pVCpu)
 {
@@ -418,7 +418,7 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
 
 
 /**
- * Queries the pointer to the internal CPUMCTX structure
+ * Queries the pointer to the internal CPUMCTX structure.
  *
  * @returns The CPUMCTX pointer.
  * @param   pVCpu       Handle to the virtual cpu.
@@ -1392,7 +1392,7 @@ VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
 
 
 /**
- * Gets a CpuId leaf.
+ * Gets a CPUID leaf.
  *
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   iLeaf   The CPUID leaf to get.
@@ -1874,9 +1874,9 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
 
 
 /**
- * Gets the host CPU vendor
+ * Gets the host CPU vendor.
  *
- * @returns CPU vendor
+ * @returns CPU vendor.
  * @param   pVM     Pointer to the VM.
  */
 VMMDECL(CPUMCPUVENDOR) CPUMGetHostCpuVendor(PVM pVM)
@@ -1884,10 +1884,11 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetHostCpuVendor(PVM pVM)
     return pVM->cpum.s.enmHostCpuVendor;
 }
 
+
 /**
- * Gets the CPU vendor
+ * Gets the CPU vendor.
  *
- * @returns CPU vendor
+ * @returns CPU vendor.
  * @param   pVM     Pointer to the VM.
  */
 VMMDECL(CPUMCPUVENDOR) CPUMGetGuestCpuVendor(PVM pVM)
@@ -2294,7 +2295,7 @@ VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
 #ifndef IN_RING3
 
 /**
- * Lazily sync in the FPU/XMM state
+ * Lazily sync in the FPU/XMM state.
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
@@ -2307,7 +2308,7 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
 #endif /* !IN_RING3 */
 
 /**
- * Checks if we activated the FPU/XMM state of the guest OS
+ * Checks if we activated the FPU/XMM state of the guest OS.
  * @returns true if we did.
  * @returns false if not.
  * @param   pVCpu   Pointer to the VMCPU.
@@ -2319,7 +2320,7 @@ VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 
 
 /**
- * Deactivate the FPU/XMM state of the guest OS
+ * Deactivate the FPU/XMM state of the guest OS.
  * @param   pVCpu       Pointer to the VMCPU.
  */
 VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
@@ -2329,7 +2330,7 @@ VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
 
 
 /**
- * Checks if the guest debug state is active
+ * Checks if the guest debug state is active.
  *
  * @returns boolean
  * @param   pVM         Pointer to the VM.
@@ -2340,7 +2341,7 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 }
 
 /**
- * Checks if the hyper debug state is active
+ * Checks if the hyper debug state is active.
  *
  * @returns boolean
  * @param   pVM         Pointer to the VM.
