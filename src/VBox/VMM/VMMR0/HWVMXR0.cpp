@@ -165,7 +165,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
     /*
      * Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}.
      */
-    pCpu->cTLBFlushes++;
+    pCpu->uCurrentASID = 0;
 
     return VINF_SUCCESS;
 }
@@ -2398,8 +2398,9 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
      * so we cannot reuse the current ASID anymore.
      */
     bool fNewASID = false;
-    if (    pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
-        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+    if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
+        || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes
+        || pCpu->uCurrentASID == 0)
     {
         pVCpu->hwaccm.s.fForceTLBFlush = true;
         fNewASID = true;
@@ -2523,8 +2524,9 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
      * This can happen both for start & resume due to long jumps back to ring-3.
      * If the TLB flush count shouldn't really change in this EPT-only case.
      */
-    if (    pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
-        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+    if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
+        || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes
+        || pCpu->uCurrentASID == 0)
     {
         pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
@@ -2588,8 +2590,9 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB,
      * so we cannot reuse the current ASID anymore.
      */
-    if (    pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
-        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+    if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
+        || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes
+        || pCpu->uCurrentASID == 0)
     {
         /* Force a TLB flush on VM entry. */
         pVCpu->hwaccm.s.fForceTLBFlush = true;
