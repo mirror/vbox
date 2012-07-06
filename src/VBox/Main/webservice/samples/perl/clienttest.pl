@@ -5,7 +5,7 @@
 # webservice and calls various methods on it. Please refer to the SDK
 # programming reference (SDKRef.pdf) for how to use this sample.
 #
-# Copyright (C) 2008-2010 Oracle Corporation
+# Copyright (C) 2008-2012 Oracle Corporation
 #
 # The following license applies to this file only:
 #
@@ -50,7 +50,8 @@ while (my $this = shift(@ARGV))
               "with <mode> being one of 'version', 'list', 'start'; default is 'list'.\n".
               "    $cmd version: print version of VirtualBox web service.\n".
               "    $cmd list: list installed virtual machines.\n".
-              "    $cmd startvm <vm>: start the virtual machine named <vm>.\n";
+              "    $cmd startvm <vm>: start the virtual machine named <vm>.\n".
+              "    $cmd acpipowerbutton <vm>: shutdown of the irtual machine named <vm>.\n";
         exit 0;
     }
     elsif (    ($this eq 'version')
@@ -59,7 +60,9 @@ while (my $this = shift(@ARGV))
     {
         $optMode = $this;
     }
-    elsif ($this eq 'startvm')
+    elsif (    ($this eq 'startvm')
+            || ($this eq 'acpipowerbutton')
+          )
     {
         $optMode = $this;
 
@@ -112,13 +115,7 @@ elsif ($optMode eq "list")
 }
 elsif ($optMode eq "startvm")
 {
-    # assume it's a UUID
-    my $machine = vboxService->IVirtualBox_getMachine($vbox, $vmname);
-    if (!$machine)
-    {
-        # no: then try a name
-        $machine = vboxService->IVirtualBox_findMachine($vbox, $vmname);
-    }
+    my $machine = vboxService->IVirtualBox_findMachine($vbox, $vmname);
 
     die "[$cmd] Cannot find VM \"$vmname\"; stopped"
         if (!$machine);
@@ -133,15 +130,14 @@ elsif ($optMode eq "startvm")
 
     print "[$cmd] UUID: $uuid\n";
 
-    my $progress = vboxService->IVirtualBox_openRemoteSession($vbox,
-                                                              $session,
-                                                              $uuid,
-                                                              "vrdp",
-                                                              "");
-    die "[$cmd] Cannot open remote session; stopped"
+    my $progress = vboxService->IMachine_launchVMProcess($machine,
+                                                         $session,
+                                                         "headless",
+                                                         "");
+    die "[$cmd] Cannot launch VM; stopped"
         if (!$progress);
 
-    print("[$cmd] Waiting for the remote session to open...\n");
+    print("[$cmd] Waiting for the VM to start...\n");
     vboxService->IProgress_waitForCompletion($progress, -1);
 
     my $fCompleted;
@@ -153,11 +149,38 @@ elsif ($optMode eq "startvm")
 
     print("[$cmd] Result: $resultCode\n");
 
-    vboxService->ISession_close($session);
+    vboxService->ISession_unlockMachine($session);
+
+    vboxService->IWebsessionManager_logoff($vbox);
+}
+elsif ($optMode eq "acpipowerbutton")
+{
+    my $machine = vboxService->IVirtualBox_findMachine($vbox, $vmname);
+
+    die "[$cmd] Cannot find VM \"$vmname\"; stopped"
+        if (!$machine);
+
+    my $session = vboxService->IWebsessionManager_getSessionObject($vbox);
+    die "[$cmd] Cannot get session object; stopped"
+        if (!$session);
+
+    my $shared = SOAP::Data->type('vbox:LockType')->name('session')->value('Shared');
+    vboxService->IMachine_lockMachine($machine, $session, $shared);
+
+    my $console = vboxService->ISession_getConsole($session);
+
+    vboxService->IConsole_powerButton($console);
+
+    vboxService->ISession_unlockMachine($session);
 
     vboxService->IWebsessionManager_logoff($vbox);
 }
 elsif ($optMode eq "openhd")
 {
-    my $harddisk = vboxService->IVirtualBox_openHardDisk($vbox, $disk, 1, 0, "", 0, "");
+    my $medium = vboxService->IVirtualBox_openMedium($vbox, $disk, 3, # DeviceType_HardDisk
+                                                     1, # AccessMode_ReadWrite
+                                                     0, # false
+                                                     "", # empty uuid
+                                                     0, # false
+                                                     ""); #empty uuid
 }
