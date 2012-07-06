@@ -78,7 +78,7 @@
 # define DEBUG_VERBOSE /* Define this to get some debug info about the messages flow. */
 #endif
 
-#ifdef DEBUG_poetzsch
+#ifdef DEBUG_misha
 # define DEBUG_MSG(text) \
     printf text
 #else
@@ -1231,7 +1231,8 @@
             glDrawBuffer(m_FBOAttFrontId);
     }
 
-    [self tryDraw];
+    if (m_cClipRects)
+        [self tryDraw];
 #else
     [m_pGLCtx flushBuffer];
 #endif
@@ -1258,7 +1259,8 @@
         if (!(   (GLuint)FBOId  == m_FBOId
               && (GLuint)drawId == m_FBOAttFrontId))
             m_fFrontDrawing = false;
-        [self tryDraw];
+        if (m_cClipRects)
+            [self tryDraw];
     }
 #endif
 }
@@ -1269,7 +1271,7 @@
 
     glFinish();
 #ifdef FBO
-    if ([self isCurrentFBO])
+    if (m_cClipRects && [self isCurrentFBO])
         [self tryDraw];
 #endif
 }
@@ -1569,6 +1571,8 @@
 
 - (void)setVisibleRegions:(GLint)cRects paRects:(GLint*)paRects
 {
+    GLint cOldRects = m_cClipRects;
+
     DEBUG_MSG_1(("OVIW(%p): setVisibleRegions: cRects=%d\n", (void*)self, cRects));
 
     [self clearVisibleRegions];
@@ -1585,7 +1589,7 @@
         m_cClipRects = cRects;
         memcpy(m_paClipRects, paRects, sizeof(GLint) * 4 * cRects);
     }
-    else
+    else if (cOldRects)
         [self tryDraw];
 }
 
