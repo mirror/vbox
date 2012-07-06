@@ -220,7 +220,7 @@ static void rtR0MemObjDarwinReadPhys(RTHCPHYS HCPhys, size_t cb, void *pvDst)
 {
     memset(pvDst, '\0', cb);
 
-    IOAddressRange      aRanges[1]  = { { (mach_vm_address_t)HCPhys, RT_ALIGN(cb, PAGE_SIZE) } };
+    IOAddressRange      aRanges[1]  = { { (mach_vm_address_t)HCPhys, RT_ALIGN_Z(cb, PAGE_SIZE) } };
     IOMemoryDescriptor *pMemDesc    = IOMemoryDescriptor::withAddressRanges(&aRanges[0], RT_ELEMENTS(aRanges),
                                                                             kIODirectionIn, NULL /*task*/);
     if (pMemDesc)
