@@ -1122,6 +1122,17 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                 pVM->hwaccm.s.vmx.fVPID = pVM->hwaccm.s.vmx.fAllowVPID;
 
+            /*
+             * Disallow RDTSCP in the guest if there is no secondary process-based VM execution controls as otherwise
+             * RDTSCP would cause a #UD. There might be no CPUs out there where this happens, as RDTSCP was introduced
+             * in Nehalems and secondary VM exec. controls should be supported in all of them, but nonetheless it's Intel...
+             */
+            if (!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                && CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
+            {
+                CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
+            }
+
             /* Unrestricted guest execution relies on EPT. */
             if (    pVM->hwaccm.s.fNestedPaging
                 &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE))
