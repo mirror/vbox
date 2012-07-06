@@ -1848,6 +1848,14 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
         }
 
+        case CPUMCPUIDFEATURE_RDTSCP:
+        {
+            if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
+                pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
+            LogRel(("CPUMClearGuestCpuIdFeature: Disabled RDTSCP!\n"));
+            break;
+        }
+
         case CPUMCPUIDFEATURE_HVP:
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].ecx &= ~X86_CPUID_FEATURE_ECX_HVP;
