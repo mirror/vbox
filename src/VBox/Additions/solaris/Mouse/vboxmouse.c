@@ -217,23 +217,26 @@ static void *g_vbmsSolModLinkage;
 typedef struct
 {
     /** Device handle. */
-    dev_info_t        *pDip;
+    dev_info_t           *pDip;
     /** Mutex protecting the guest library against multiple initialistation or
      * uninitialisation. */
-    kmutex_t           InitMtx;
+    kmutex_t              InitMtx;
     /** Initialisation counter for the guest library. */
-    size_t             cInits;
+    size_t                cInits;
     /** The STREAMS write queue which we need for sending messages up to
      * user-space. */
-    queue_t           *pWriteQueue;
+    queue_t              *pWriteQueue;
+    /** Pre-allocated mouse status VMMDev request for use in the IRQ
+     * handler. */
+    VMMDevReqMouseStatus *pMouseStatusReq;
     /* The current greatest horizontal pixel offset on the screen, used for
      * absolute mouse position reporting.
      */
-    int                cMaxScreenX;
+    int                   cMaxScreenX;
     /* The current greatest vertical pixel offset on the screen, used for
      * absolute mouse position reporting.
      */
-    int                cMaxScreenY;
+    int                   cMaxScreenY;
 } VBMSSTATE, *PVBMSSTATE;
 
 
@@ -442,7 +445,18 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
      */
     mutex_enter(&g_OpenNodeState.InitMtx);
     if (!g_OpenNodeState.cInits)
+    {
         rc = VbglInit();
+        if (RT_SUCCESS(rc))
+        {
+            rc = VbglGRAlloc((VMMDevRequestHeader **)
+                             &g_OpenNodeState.pMouseStatusReq,
+                             sizeof(*g_OpenNodeState.pMouseStatusReq),
+                             VMMDevReq_GetMouseStatus);
+            if (RT_FAILURE(rc))
+                VbglTerminate();
+        }
+    }
     ++g_OpenNodeState.cInits;
     mutex_exit(&g_OpenNodeState.InitMtx);
     if (RT_FAILURE(rc))
@@ -501,14 +515,18 @@ void vbmsSolNotify(void *pvState)
 {
     PVBMSSTATE pState = (PVBMSSTATE)pvState;
     int rc;
-    uint32_t x, y;
     LogRelFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
 
-    rc = VbglGetMouseStatus(NULL, &x, &y);
+    pState->pMouseStatusReq->mouseFeatures = 0;
+    pState->pMouseStatusReq->pointerXPos = 0;
+    pState->pMouseStatusReq->pointerYPos = 0;
+    rc = VbglGRPerform(&pState->pMouseStatusReq->header);
     if (RT_SUCCESS(rc))
     {
         int cMaxScreenX  = pState->cMaxScreenX;
         int cMaxScreenY  = pState->cMaxScreenY;
+        int x = pState->pMouseStatusReq->pointerXPos;
+        int y = pState->pMouseStatusReq->pointerYPos;
 
         if (cMaxScreenX && cMaxScreenY)
         {
@@ -540,8 +558,8 @@ void vbmsSolVUIDPutAbsEvent(PVBMSSTATE pState, ushort_t cEvent,
     /* Put the message on the queue immediately if it is not blocked. */
     if (canput(pReadQueue->q_next))
         putnext(pReadQueue, pMBlk);
-    else
-        putbq(pReadQueue, pMBlk);
+    // else
+    //     putq(pReadQueue, pMBlk);
 }
 
 
@@ -576,7 +594,10 @@ int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
     mutex_enter(&g_OpenNodeState.InitMtx);
     --g_OpenNodeState.cInits;
     if (!g_OpenNodeState.cInits)
+    {
+        VbglGRFree(&g_OpenNodeState.pMouseStatusReq->header);
         VbglTerminate();
+    }
     mutex_exit(&g_OpenNodeState.InitMtx);
     return 0;
 }
