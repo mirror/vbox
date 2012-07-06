@@ -1232,40 +1232,42 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pShaIo = 0;
-    PVDINTERFACEIO pFileIo = 0;
-    void *pvMfBuf = 0;
+    PVDINTERFACEIO pShaIo = NULL;
+    PVDINTERFACEIO pFileIo = NULL;
+    void *pvMfBuf = NULL;
     writeLock.release();
     try
     {
         /* Create the necessary file access interfaces. */
-        pShaIo = ShaCreateInterface();
-        if (!pShaIo)
-            throw setError(E_OUTOFMEMORY);
         pFileIo = FileCreateInterface();
         if (!pFileIo)
             throw setError(E_OUTOFMEMORY);
 
-        SHASTORAGE storage;
-        RT_ZERO(storage);
-        storage.fCreateDigest = true;
-        int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
-                                 VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                 &storage.pVDImageIfaces);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-
-        size_t cbMfSize = 0;
         Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
         /* Create the import stack for the rollback on errors. */
         ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
-        /* Do we need the digest information? */
-        storage.fCreateDigest = RTFileExists(strMfFile.c_str());
-        /* Now import the appliance. */
-        importMachines(stack, pShaIo, &storage);
-        /* Read & verify the manifest file, if there is one. */
-        if (storage.fCreateDigest)
+
+        if (RTFileExists(strMfFile.c_str()))
         {
+            SHASTORAGE storage;
+            RT_ZERO(storage);
+
+            pShaIo = ShaCreateInterface();
+            if (!pShaIo)
+                throw setError(E_OUTOFMEMORY);
+
+            storage.fCreateDigest = true;
+            int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
+                                     VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
+                                     &storage.pVDImageIfaces);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
+
+            size_t cbMfSize = 0;
+            storage.fCreateDigest = true;
+            /* Now import the appliance. */
+            importMachines(stack, pShaIo, &storage);
+            /* Read & verify the manifest file. */
             /* Add the ovf file to the digest list. */
             stack.llSrcDisksDigest.push_front(STRPAIR(pTask->locInfo.strPath, m->strOVFSHADigest));
             rc = readManifestFile(strMfFile, &pvMfBuf, &cbMfSize, pShaIo, &storage);
@@ -1273,6 +1275,8 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
             if (FAILED(rc)) throw rc;
         }
+        else
+            importMachines(stack, pFileIo, NULL);
     }
     catch (HRESULT rc2)
     {
@@ -1911,7 +1915,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
 
     /* Add the newly create disk path + a corresponding digest the our list for
      * later manifest verification. */
-    stack.llSrcDisksDigest.push_back(STRPAIR(strSrcFilePath, pStorage->strDigest));
+    stack.llSrcDisksDigest.push_back(STRPAIR(strSrcFilePath, pStorage ? pStorage->strDigest : ""));
 }
 
 /**
