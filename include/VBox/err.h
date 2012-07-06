@@ -1540,6 +1540,8 @@
 /** Reading from the image was not possible because the offset is out of the image range.
  * This usually indicates that there is a minor corruption in the image meta data. */
 #define VERR_VD_READ_OUT_OF_RANGE                   (-3282)
+/** Block read was marked as free in the image and returned as a zero block. */
+#define VINF_VD_NEW_ZEROED_BLOCK                    3283
 /** @} */
 
 

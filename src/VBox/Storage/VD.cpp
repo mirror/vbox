@@ -989,7 +989,10 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
             else
                 cbBufClear += cbThisRead;
 
-            rc = VINF_SUCCESS;
+            if (pImage->uOpenFlags & VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS)
+                rc = VINF_VD_NEW_ZEROED_BLOCK;
+            else
+                rc = VINF_SUCCESS;
         }
         else if (RT_SUCCESS(rc))
         {

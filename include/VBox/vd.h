@@ -209,8 +209,15 @@ typedef struct VBOXHDDRAW
  * unusable images.
  */
 #define VD_OPEN_FLAGS_IGNORE_FLUSH  RT_BIT(8)
+/**
+ * Return VINF_VD_NEW_ZEROED_BLOCK for reads from unallocated blocks.
+ * The caller who uses the flag has to make sure that the read doesn't cross
+ * a block boundary. Because the block size can differ between images reading one
+ * sector at a time is the safest solution.
+ */
+#define VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS RT_BIT(9)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS)
 /** @}*/
 
 /**
