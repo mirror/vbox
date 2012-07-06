@@ -34,6 +34,7 @@
 
 #include <iprt/asm.h>
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/x86.h>
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
@@ -259,14 +260,14 @@ static uint64_t rtR0MemObjDarwinGetPTE(void *pvPage)
     RTCCUINTREG cr4 = ASMGetCR4();
     bool        fPAE = false;
     bool        fLMA = false;
-    if (cr4 & RT_BIT(5) /*X86_CR4_PAE*/)
+    if (cr4 & X86_CR4_PAE)
     {
         fPAE = true;
         uint32_t fExtFeatures = ASMCpuId_EDX(0x80000001);
-        if (fExtFeatures & RT_BIT(29) /* X86_CPUID_EXT_FEATURE_EDX_LONG_MODE */)
+        if (fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
         {
-            uint64_t efer = ASMRdMsr(0xc0000080 /*MSR_K6_EFER*/);
-            if (efer & RT_BIT(10) /*MSR_K6_EFER_LMA*/)
+            uint64_t efer = ASMRdMsr(MSR_K6_EFER);
+            if (efer & MSR_K6_EFER_LMA)
                 fLMA = true;
         }
     }
@@ -274,36 +275,36 @@ static uint64_t rtR0MemObjDarwinGetPTE(void *pvPage)
     if (fLMA)
     {
         /* PML4 */
-        rtR0MemObjDarwinReadPhys((cr3 & ~(RTCCUINTREG)PAGE_OFFSET_MASK) | (((uint64_t)(uintptr_t)pvPage >> 39) & 0x1ff) * 8, 8, &u64);
-        if (!(u64.u & RT_BIT(0) /* present */))
+        rtR0MemObjDarwinReadPhys((cr3 & ~(RTCCUINTREG)PAGE_OFFSET_MASK) | (((uint64_t)(uintptr_t)pvPage >> X86_PML4_SHIFT) & X86_PML4_MASK) * 8, 8, &u64);
+        if (!(u64.u & X86_PML4E_P))
         {
             printf("rtR0MemObjDarwinGetPTE: %p -> PML4E !p\n", pvPage);
             return 0;
         }
 
         /* PDPTR */
-        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> 30) & 0x1ff) * 8, 8, &u64);
-        if (!(u64.u & RT_BIT(0) /* present */))
+        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64) * 8, 8, &u64);
+        if (!(u64.u & X86_PDPE_P))
         {
             printf("rtR0MemObjDarwinGetPTE: %p -> PDPTE !p\n", pvPage);
             return 0;
         }
-        if (u64.u & RT_BIT(7) /* big */)
+        if (u64.u & X86_PDPE_LM_PS)
             return (u64.u & ~(uint64_t)(_1G -1)) | ((uintptr_t)pvPage & (_1G -1));
 
         /* PD */
-        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> 21) & 0x1ff) * 8, 8, &u64);
-        if (!(u64.u & RT_BIT(0) /* present */))
+        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK) * 8, 8, &u64);
+        if (!(u64.u & X86_PDE_P))
         {
             printf("rtR0MemObjDarwinGetPTE: %p -> PDE !p\n", pvPage);
             return 0;
         }
-        if (u64.u & RT_BIT(7) /* big */)
+        if (u64.u & X86_PDE_PS)
             return (u64.u & ~(uint64_t)(_2M -1)) | ((uintptr_t)pvPage & (_2M -1));
 
-        /* PD */
-        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> 12) & 0x1ff) * 8, 8, &u64);
-        if (!(u64.u & RT_BIT(0) /* present */))
+        /* PT */
+        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK) * 8, 8, &u64);
+        if (!(u64.u &  X86_PTE_P))
         {
             printf("rtR0MemObjDarwinGetPTE: %p -> PTE !p\n", pvPage);
             return 0;
@@ -314,34 +315,34 @@ static uint64_t rtR0MemObjDarwinGetPTE(void *pvPage)
     if (fPAE)
     {
         /* PDPTR */
-        rtR0MemObjDarwinReadPhys((u64.u & 0xffffffe0 /*X86_CR3_PAE_PAGE_MASK*/) | (((uintptr_t)pvPage >> 30) & 0x3) * 8, 8, &u64);
-        if (!(u64.u & RT_BIT(0) /* present */))
+        rtR0MemObjDarwinReadPhys((u64.u & X86_CR3_PAE_PAGE_MASK) | (((uintptr_t)pvPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE) * 8, 8, &u64);
+        if (!(u64.u & X86_PDE_P))
             return 0;
 
         /* PD */
-        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> 21) & 0x1ff) * 8, 8, &u64);
-        if (!(u64.u & RT_BIT(0) /* present */))
+        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK) * 8, 8, &u64);
+        if (!(u64.u & X86_PDE_P))
             return 0;
-        if (u64.u & RT_BIT(7) /* big */)
+        if (u64.u & X86_PDE_PS)
             return (u64.u & ~(uint64_t)(_2M -1)) | ((uintptr_t)pvPage & (_2M -1));
 
-        /* PD */
-        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> 12) & 0x1ff) * 8, 8, &u64);
-        if (!(u64.u & RT_BIT(0) /* present */))
+        /* PT */
+        rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK) * 8, 8, &u64);
+        if (!(u64.u & X86_PTE_P))
             return 0;
         return u64.u;
     }
 
     /* PD */
-    rtR0MemObjDarwinReadPhys((u64.au32[0] & ~(uint32_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> 22) & 0x3ff) * 4, 4, &u64);
-    if (!(u64.au32[0] & RT_BIT(0) /* present */))
+    rtR0MemObjDarwinReadPhys((u64.au32[0] & ~(uint32_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PD_SHIFT) & X86_PD_MASK) * 4, 4, &u64);
+    if (!(u64.au32[0] & X86_PDE_P))
         return 0;
-    if (u64.au32[0] & RT_BIT(7) /* big */)
+    if (u64.au32[0] & X86_PDE_PS)
         return (u64.u & ~(uint64_t)(_2M -1)) | ((uintptr_t)pvPage & (_2M -1));
 
-    /* PD */
-    rtR0MemObjDarwinReadPhys((u64.au32[0] & ~(uint32_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> 12) & 0x3ff) * 4, 4, &u64);
-    if (!(u64.au32[0] & RT_BIT(0) /* present */))
+    /* PT */
+    rtR0MemObjDarwinReadPhys((u64.au32[0] & ~(uint32_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PT_SHIFT) & X86_PT_MASK) * 4, 4, &u64);
+    if (!(u64.au32[0] & X86_PTE_P))
         return 0;
     return u64.au32[0];
 
