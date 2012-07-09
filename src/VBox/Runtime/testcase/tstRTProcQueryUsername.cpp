@@ -38,16 +38,24 @@ static void tstRTProcQueryUsername(void)
 {
     char abUser[1024];
     size_t cbUser;
+    char *pszUser = NULL;
+
     RTTestISub("Basics");
 
     memset(abUser, 0, sizeof(abUser));
-    RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), NULL, 8, &cbUser), VERR_INVALID_POINTER);
+    RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), NULL, 8, &cbUser), VERR_INVALID_PARAMETER);
     RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), abUser, 0, &cbUser), VERR_INVALID_PARAMETER);
-    RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), abUser, sizeof(abUser), NULL), VERR_INVALID_POINTER);
+    RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), NULL, 0, NULL), VERR_BUFFER_OVERFLOW);
+    RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), NULL, 0, &cbUser), VERR_BUFFER_OVERFLOW);
 
     RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), abUser, sizeof(abUser), &cbUser), VINF_SUCCESS);
     RTTestPrintf(NULL, RTTESTLVL_ALWAYS, "Username: %s\n", abUser);
     RTTESTI_CHECK_RC(RTProcQueryUsername(RTProcSelf(), abUser, cbUser - 1, &cbUser), VERR_BUFFER_OVERFLOW);
+
+    RTTESTI_CHECK_RC(RTProcQueryUsernameA(RTProcSelf(), NULL), VERR_INVALID_POINTER);
+    RTTESTI_CHECK_RC(RTProcQueryUsernameA(RTProcSelf(), &pszUser), VINF_SUCCESS);
+    RTTestPrintf(NULL, RTTESTLVL_ALWAYS, "Username: %s\n", pszUser);
+    RTStrFree(pszUser);
 }
 
 int main(int argc, char **argv)
