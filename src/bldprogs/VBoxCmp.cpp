@@ -72,9 +72,11 @@ static RTEXITCODE compareFiles(FILE *pFile1, FILE *pFile2)
     uint64_t    off;
     for (;;)
     {
-        uint8_t b1, b2;
-        if (   fread(&b1, sizeof(b1), 1, pFile1) != 1
-            || fread(&b2, sizeof(b2), 1, pFile2) != 1)
+        uint8_t b1;
+        size_t cb1 = fread(&b1, sizeof(b1), 1, pFile1);
+        uint8_t b2;
+        size_t cb2 = fread(&b2, sizeof(b2), 1, pFile2);
+        if (cb1 != 1 || cb2 != 1)
             break;
         if (b1 != b2)
         {
@@ -93,13 +95,13 @@ static RTEXITCODE compareFiles(FILE *pFile1, FILE *pFile2)
     if (!feof(pFile1) || !feof(pFile2))
     {
         if (!feof(pFile1) && ferror(pFile1))
-            printErr("Read error on file #1.\n");
+            rcRet = printErr("Read error on file #1.\n");
         else if (!feof(pFile2) && ferror(pFile2))
-            printErr("Read error on file #2.\n");
-        else if (!feof(pFile1))
-            printErr("0x%x%08x: file #1 ends before file #2\n", (uint32_t)(off >> 32), (uint32_t)off);
+            rcRet = printErr("Read error on file #2.\n");
+        else if (!feof(pFile2))
+            rcRet = printErr("0x%x%08x: file #1 ends before file #2\n", (uint32_t)(off >> 32), (uint32_t)off);
         else
-            printErr("0x%x%08x: file #2 ends before file #1\n", (uint32_t)(off >> 32), (uint32_t)off);
+            rcRet = printErr("0x%x%08x: file #2 ends before file #1\n", (uint32_t)(off >> 32), (uint32_t)off);
     }
 
     return rcRet;
