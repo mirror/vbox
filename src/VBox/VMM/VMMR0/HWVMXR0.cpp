@@ -165,7 +165,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
     /*
      * Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}.
      */
-    pCpu->uCurrentASID = 0;
+    pCpu->fASIDState = !pCpu->fASIDState;
 
     return VINF_SUCCESS;
 }
@@ -2400,7 +2400,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
     bool fNewASID = false;
     if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
         || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes
-        || pCpu->uCurrentASID == 0)
+        || pVCpu->hwaccm.s.fASIDState != pCpu->fASIDState)
     {
         pVCpu->hwaccm.s.fForceTLBFlush = true;
         fNewASID = true;
@@ -2451,15 +2451,17 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
 #endif
         }
 
+        pVCpu->hwaccm.s.fASIDState     = pCpu->fASIDState;
         pVCpu->hwaccm.s.cTLBFlushes    = pCpu->cTLBFlushes;
         pVCpu->hwaccm.s.fForceTLBFlush = false;
     }
     else
     {
         AssertMsg(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID,
-                  ("hwaccm->uCurrentASID=%lu hwaccm->cTLBFlushes=%lu cpu->uCurrentASID=%lu cpu->cTLBFlushes=%lu\n",
+                  ("hwaccm->uCurrentASID=%lu hwaccm->cTLBFlushes=%lu cpu->uCurrentASID=%lu cpu->cTLBFlushes=%lu"
+                   "hwaccm->fASIDState=%d cpu->fASIDState=%d\n",
                    pVCpu->hwaccm.s.uCurrentASID, pVCpu->hwaccm.s.cTLBFlushes,
-                   pCpu->uCurrentASID, pCpu->cTLBFlushes));
+                   pCpu->uCurrentASID, pCpu->cTLBFlushes, pVCpu->hwaccm.s.fASIDState, pCpu->fASIDState));
 
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hwaccmQueueInvlPage() where it is commented
@@ -2526,7 +2528,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
      */
     if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
         || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes
-        || pCpu->uCurrentASID == 0)
+        || pVCpu->hwaccm.s.fASIDState != pCpu->fASIDState)
     {
         pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
@@ -2539,6 +2541,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
 
     pVCpu->hwaccm.s.idLastCpu   = pCpu->idCpu;
     pVCpu->hwaccm.s.cTLBFlushes = pCpu->cTLBFlushes;
+    pVCpu->hwaccm.s.fASIDState  = pCpu->fASIDState;
 
     if (pVCpu->hwaccm.s.fForceTLBFlush)
         hmR0VmxFlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushEPT);
@@ -2592,7 +2595,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
      */
     if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
         || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes
-        || pCpu->uCurrentASID == 0)
+        || pVCpu->hwaccm.s.fASIDState != pCpu->fASIDState)
     {
         /* Force a TLB flush on VM entry. */
         pVCpu->hwaccm.s.fForceTLBFlush = true;
@@ -2621,12 +2624,17 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
         pVCpu->hwaccm.s.fForceTLBFlush = false;
         pVCpu->hwaccm.s.cTLBFlushes    = pCpu->cTLBFlushes;
         pVCpu->hwaccm.s.uCurrentASID   = pCpu->uCurrentASID;
+        pVCpu->hwaccm.s.fASIDState     = pCpu->fASIDState;
         if (pCpu->fFlushASIDBeforeUse)
             hmR0VmxFlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
     }
     else
     {
-        Assert(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID);
+        AssertMsg(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID,
+                  ("hwaccm->uCurrentASID=%lu hwaccm->cTLBFlushes=%lu cpu->uCurrentASID=%lu cpu->cTLBFlushes=%lu"
+                   "hwaccm->fASIDState=%d cpu->fASIDState=%d\n",
+                   pVCpu->hwaccm.s.uCurrentASID, pVCpu->hwaccm.s.cTLBFlushes,
+                   pCpu->uCurrentASID, pCpu->cTLBFlushes, pVCpu->hwaccm.s.fASIDState, pCpu->fASIDState));
 
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hwaccmQueueInvlPage() where it is commented
