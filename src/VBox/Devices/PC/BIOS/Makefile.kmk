@@ -100,10 +100,10 @@ ifdef VBOX_WITH_OPEN_WATCOM
 		--output $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(QUIET)yasm -f bin -o $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(VBOX_VBOXCMP) $< $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
-	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm
+	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS/VBoxBiosAlternative.asm
 	$(REDIRECT) -C $(dir $(VBoxPcBios_1_TARGET)) -- \
 		$(MD5SUM_EXT) -bo $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(notdir $(VBoxPcBios_1_TARGET))
-	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.md5sum
+	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/PC/BIOS/VBoxBiosAlternative.md5sum
 	$(RM) -f -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum
  else
 	$(QUIET)$(ECHO) "Fatal error: Can only update VBoxBiosAlternative.asm/md5sum with a release build."
