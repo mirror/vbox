@@ -378,6 +378,16 @@ RTR3DECL(bool)  RTProcIsRunningByName(const char *pszName);
 RTR3DECL(int)   RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUser,
                                     size_t *pcbUser);
 
+/**
+ * Query the username of the given process allocating the string for the username.
+ *
+ * @returns IPRT status code.
+ * @param   hProcess     The process handle to query the username for.
+ * @param   ppszUser     Where to store the pointer to the string containing
+ *                       the username on success. Free with RTStrFree().
+ */
+RTR3DECL(int)   RTProcQueryUsernameA(RTPROCESS hProcess, char **ppszUser);
+
 #endif /* IN_RING3 */
 
 /** @} */
