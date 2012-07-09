@@ -336,7 +336,7 @@ VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
     return rc;
 }
 
-VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
+VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
 {
     return pdmNsAllocateBandwidth(pFilter, cbTransfer);
 }

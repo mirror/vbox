@@ -37,7 +37,7 @@
  * @param   pFilter         Pointer to the filter that allocates bandwidth.
  * @param   cbTransfer      Number of bytes to allocate.
  */
-VMMR0DECL(bool) PDMR0NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
+VMMR0DECL(bool) PDMR0NsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
 {
     return pdmNsAllocateBandwidth(pFilter, cbTransfer);
 }
