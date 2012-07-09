@@ -838,16 +838,6 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
            )
         && pCpuState->ModRM.Bits.Reg != 0)
         fDifferent = true;
-    /** @todo "TEST Eb,Ib" (f6 0f 08) ends up with no mnemonic as well as
-     *        wrong length (2 instead of 3)! */
-    else if (   pCpuState->bOpCode == 0xf6
-             && pb[1] == 0x0f
-             && pb[2] == 0x08
-             && RT_C_IS_SPACE(*pszBuf) )
-        fDifferent = true;
-    /** @todo "INSB Yb,DX" (6c) ends up with no mnemonic here. */
-    else if (pCpuState->bOpCode == 0x6c && RT_C_IS_SPACE(*pszBuf))
-        fDifferent = true;
     /*
      * Check these out and consider adding them to DISFormatYasmIsOddEncoding.
      */
@@ -859,26 +849,6 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
              && pb[1] == 0xc5
              && pb[2] == 0xba)
         fDifferent = true; /* mov ch, 0bah  - yasm uses a short sequence: 0xb5 0xba. */
-    /*
-     * Switch table fun (.sym may help):
-     */
-#if 0
-    else if (   pb[0] == 0x64
-             && pb[1] == 0x65
-             && pb[2] == 0x05
-             /*&& pb[3] == 0x61
-             && pb[4] == 0x19*/)
-        fDifferent = true; /* gs add ax, 01961h - both fs and gs prefix. Probably some switch table. */
-    else if (   pb[0] == 0x65
-             && pb[1] == 0x36
-             && pb[2] == 0x65
-             && pb[3] == 0xae)
-        fDifferent = true; /* gs scasb - switch table or smth. */
-    else if (   pb[0] == 0x67
-             && pb[1] == 0xe7
-             /*&& pb[2] == 0x67*/)
-        fDifferent = true; /* out 067h, ax - switch table or smth. */
-#endif
 
 
     /*
@@ -971,7 +941,9 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
             int rc = DISInstrWithReader(uFlatAddr, fIs16Bit ? DISCPUMODE_16BIT : DISCPUMODE_32BIT,
                                         disReadOpcodeBytes, NULL, &CpuState, &cbInstr);
             if (   RT_SUCCESS(rc)
-                && cbInstr <= cb)
+                && cbInstr <= cb
+                && CpuState.pCurInstr
+                && CpuState.pCurInstr->uOpcode != OP_INVALID)
             {
                 char szTmp[4096];
                 size_t cch = DISFormatYasmEx(&CpuState, szTmp, sizeof(szTmp),
