@@ -31,44 +31,6 @@
 
 #if defined(RT_OS_LINUX)
 /**
- * Return the username of the current process.
- *
- * @returns Pointer to the string containing the username of
- *          NULL in case of an error. Free with RTMemFree().
- */
-static int autostartGetProcessUser(char **ppszUser)
-{
-    int rc = VINF_SUCCESS;
-    size_t cbUser = 128;
-    char *pszUser = (char *)RTMemAllocZ(cbUser);
-
-    if (pszUser)
-    {
-        rc = RTProcQueryUsername(RTProcSelf(), pszUser, cbUser, &cbUser);
-        if (rc == VERR_BUFFER_OVERFLOW)
-        {
-            char *pszTmp = (char *)RTMemRealloc(pszUser, cbUser);
-            if (pszTmp)
-            {
-                pszUser = pszTmp;
-                rc = RTProcQueryUsername(RTProcSelf(), pszUser, cbUser, &cbUser);
-                Assert(rc != VERR_BUFFER_OVERFLOW);
-            }
-        }
-
-        if (RT_FAILURE(rc))
-        {
-            RTMemFree(pszUser);
-            pszUser = NULL;
-        }
-        else
-            *ppszUser = pszUser;
-    }
-
-    return rc;
-}
-
-/**
  * Modifies the autostart database.
  *
  * @returns VBox status code.
@@ -80,13 +42,14 @@ static int autostartModifyDb(bool fAutostart, bool fAddVM)
     int rc = VINF_SUCCESS;
     char *pszUser = NULL;
 
-    rc = autostartGetProcessUser(&pszUser);
-    if (   RT_SUCCESS(rc)
-        && pszUser)
+    rc = RTProcQueryUsernameA(RTProcSelf(), &pszUser);
+    if (RT_SUCCESS(rc))
     {
         char *pszFile;
         uint64_t fOpen = RTFILE_O_DENY_ALL | RTFILE_O_READWRITE;
         RTFILE hAutostartFile;
+
+        AssertPtr(pszUser);
 
         if (fAddVM)
             fOpen |= RTFILE_O_OPEN_CREATE;
@@ -161,9 +124,9 @@ static int autostartModifyDb(bool fAutostart, bool fAddVM)
             }
             RTStrFree(pszFile);
         }
+
+        RTStrFree(pszUser);
     }
-    else if (pszUser)
-        rc = VERR_NOT_SUPPORTED;
 
     return rc;
 }
