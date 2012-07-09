@@ -972,6 +972,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Network/DevVirtioNet.cpp
  endif
 
+ ifdef VBOX_WITH_NETSHAPER
+  VBoxDDR0_DEFS         += VBOX_WITH_NETSHAPER
+  VBoxDDR0_SOURCES      += \
+ 	Network/DrvNetShaper.cpp
+ endif
+
  ifdef VBOX_WITH_HGSMI
   VBoxDDR0_DEFS         += VBOX_WITH_HGSMI
  endif

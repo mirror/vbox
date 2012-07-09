@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007-2012 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,13 +41,15 @@ RT_C_DECLS_BEGIN
 typedef struct PDMNSFILTER
 {
     /** [R3] Pointer to the next group in the list. */
-    struct PDMNSFILTER      *pNext;
+    struct PDMNSFILTER              *pNext;
     /** [R3] Pointer to the bandwidth group. */
-    struct PDMNSBWGROUP     *pBwGroupR3;
+    struct PDMNSBWGROUP             *pBwGroupR3;
+    /** [R0] Pointer to the bandwidth group. */
+    R0PTRTYPE(struct PDMNSBWGROUP *) pBwGroupR0;
     /** Becomes true when filter fails to obtain bandwidth. */
-    bool                     fChoked;
-    /** The driver this filter is aggregated into. */
-    PPDMINETWORKDOWN         pIDrvNet;
+    bool                             fChoked;
+    /** [R3] The driver this filter is aggregated into. */
+    PPDMINETWORKDOWN                 pIDrvNet;
 } PDMNSFILTER;
 
 /** @defgroup grp_pdm_net_shaper  The PDM Network Shaper API
@@ -60,6 +62,15 @@ typedef struct PDMNSFILTER *PPDMNSFILTER;
 /** Pointer to a network shaper. */
 typedef struct PDMNETSHAPER *PPDMNETSHAPER;
 
+
+/**
+ * Obtain bandwidth in a bandwidth group (R0 version).
+ *
+ * @returns VBox status code.
+ * @param   pFilter         Pointer to the filter that allocates bandwidth.
+ * @param   cbTransfer      Number of bytes to allocate.
+ */
+VMMR0DECL(bool) PDMR0NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer);
 
 /**
  * Obtain bandwidth in a bandwidth group.

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,40 +42,12 @@
 #include <iprt/string.h>
 
 #include <VBox/vmm/pdmnetshaper.h>
+#include <VBox/vmm/pdmnetshaperint.h>
 
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-
-/**
- * Bandwidth group instance data
- */
-typedef struct PDMNSBWGROUP
-{
-    /** Pointer to the next group in the list. */
-    struct PDMNSBWGROUP                        *pNext;
-    /** Pointer to the shared UVM structure. */
-    struct PDMNETSHAPER                        *pShaper;
-    /** Critical section protecting all members below. */
-    RTCRITSECT               cs;
-    /** Pointer to the first filter attached to this group. */
-    struct PDMNSFILTER                         *pFiltersHead;
-    /** Bandwidth group name. */
-    char                                       *pszName;
-    /** Maximum number of bytes filters are allowed to transfer. */
-    volatile uint64_t                           cbTransferPerSecMax;
-    /** Number of bytes we are allowed to transfer in one burst. */
-    volatile uint32_t                           cbBucketSize;
-    /** Number of bytes we were allowed to transfer at the last update. */
-    volatile uint32_t                           cbTokensLast;
-    /** Timestamp of the last update */
-    volatile uint64_t                           tsUpdatedLast;
-    /** Reference counter - How many filters are associated with this group. */
-    volatile uint32_t                           cRefs;
-} PDMNSBWGROUP;
-/** Pointer to a bandwidth group. */
-typedef PDMNSBWGROUP *PPDMNSBWGROUP;
 
 /**
  * Network shaper data. One instance per VM.
@@ -156,13 +128,13 @@ static void pdmNsBwGroupSetLimit(PPDMNSBWGROUP pBwGroup, uint64_t cbTransferPerS
     pBwGroup->cbTransferPerSecMax = cbTransferPerSecMax;
     pBwGroup->cbBucketSize        = RT_MAX(PDM_NETSHAPER_MIN_BUCKET_SIZE,
                                            cbTransferPerSecMax * PDM_NETSHAPER_MAX_LATENCY / 1000);
-    LogFlowFunc(("New rate limit is %d bytes per second, adjusted bucket size to %d bytes\n",
+    LogFlowFunc(("New rate limit is %llu bytes per second, adjusted bucket size to %d bytes\n",
                  pBwGroup->cbTransferPerSecMax, pBwGroup->cbBucketSize));
 }
 
 static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, uint64_t cbTransferPerSecMax)
 {
-    LogFlowFunc(("pShaper=%#p pcszBwGroup=%#p{%s} cbTransferPerSecMax=%u\n",
+    LogFlowFunc(("pShaper=%#p pcszBwGroup=%#p{%s} cbTransferPerSecMax=%llu\n",
                  pShaper, pcszBwGroup, pcszBwGroup, cbTransferPerSecMax));
 
     AssertPtrReturn(pShaper, VERR_INVALID_POINTER);
@@ -173,12 +145,11 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, ui
     PPDMNSBWGROUP pBwGroup = pdmNsBwGroupFindById(pShaper, pcszBwGroup);
     if (!pBwGroup)
     {
-        rc = MMR3HeapAllocZEx(pShaper->pVM, MM_TAG_PDM_NET_SHAPER,
-                              sizeof(PDMNSBWGROUP),
-                              (void **)&pBwGroup);
+        rc = MMHyperAlloc(pShaper->pVM, sizeof(PDMNSBWGROUP), 64,
+                          MM_TAG_PDM_NET_SHAPER, (void **)&pBwGroup);
         if (RT_SUCCESS(rc))
         {
-            rc = RTCritSectInit(&pBwGroup->cs);
+            rc = PDMR3CritSectInit(pShaper->pVM, &pBwGroup->cs, RT_SRC_POS, "BWGRP");
             if (RT_SUCCESS(rc))
             {
                 pBwGroup->pszName = RTStrDup(pcszBwGroup);
@@ -197,9 +168,9 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, ui
                     pdmNsBwGroupLink(pBwGroup);
                     return VINF_SUCCESS;
                 }
-                RTCritSectDelete(&pBwGroup->cs);
+                PDMR3CritSectDelete(&pBwGroup->cs);
             }
-            MMR3HeapFree(pBwGroup);
+            MMHyperFree(pShaper->pVM, pBwGroup);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -214,8 +185,8 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, ui
 static void pdmNsBwGroupTerminate(PPDMNSBWGROUP pBwGroup)
 {
     Assert(pBwGroup->cRefs == 0);
-    if (RTCritSectIsInitialized(&pBwGroup->cs))
-        RTCritSectDelete(&pBwGroup->cs);
+    if (PDMCritSectIsInitialized(&pBwGroup->cs))
+        PDMR3CritSectDelete(&pBwGroup->cs);
 }
 
 
@@ -266,12 +237,12 @@ static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
 static void pdmNsFilterLink(PPDMNSFILTER pFilter)
 {
     PPDMNSBWGROUP pBwGroup = pFilter->pBwGroupR3;
-    int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
+    int rc = PDMCritSectEnter(&pBwGroup->cs, VERR_SEM_BUSY); AssertRC(rc);
 
     pFilter->pNext = pBwGroup->pFiltersHead;
     pBwGroup->pFiltersHead = pFilter;
 
-    rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
+    rc = PDMCritSectLeave(&pBwGroup->cs); AssertRC(rc);
 }
 
 static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
@@ -285,7 +256,7 @@ static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
     AssertPtr(pBwGroup);
     AssertPtr(pBwGroup->pShaper);
     Assert(RTCritSectIsOwner(&pBwGroup->pShaper->cs));
-    int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
+    int rc = PDMCritSectEnter(&pBwGroup->cs, VERR_SEM_BUSY); AssertRC(rc);
 
     if (pFilter == pBwGroup->pFiltersHead)
         pBwGroup->pFiltersHead = pFilter->pNext;
@@ -300,7 +271,7 @@ static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
         pPrev->pNext = pFilter->pNext;
     }
 
-    rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
+    rc = PDMCritSectLeave(&pBwGroup->cs); AssertRC(rc);
 }
 
 VMMR3DECL(int) PDMR3NsAttach(PVM pVM, PPDMDRVINS pDrvIns, const char *pcszBwGroup,
@@ -332,6 +303,7 @@ VMMR3DECL(int) PDMR3NsAttach(PVM pVM, PPDMDRVINS pDrvIns, const char *pcszBwGrou
         if (RT_SUCCESS(rc))
         {
             pBwGroupOld = ASMAtomicXchgPtrT(&pFilter->pBwGroupR3, pBwGroupNew, PPDMNSBWGROUP);
+            ASMAtomicWritePtr(&pFilter->pBwGroupR0, MMHyperR3ToR0(pVM, pBwGroupNew));
             if (pBwGroupOld)
                 pdmNsBwGroupUnref(pBwGroupOld);
             pdmNsFilterLink(pFilter);
@@ -366,39 +338,7 @@ VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
 
 VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
 {
-    AssertPtrReturn(pFilter, true);
-    if (!VALID_PTR(pFilter->pBwGroupR3))
-        return true;
-
-    PPDMNSBWGROUP pBwGroup = ASMAtomicReadPtrT(&pFilter->pBwGroupR3, PPDMNSBWGROUP);
-    int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
-    bool fAllowed = true;
-    if (pBwGroup->cbTransferPerSecMax)
-    {
-        /* Re-fill the bucket first */
-        uint64_t tsNow = RTTimeSystemNanoTS();
-        uint32_t uTokensAdded = (tsNow - pBwGroup->tsUpdatedLast)*pBwGroup->cbTransferPerSecMax/(1000*1000*1000);
-        uint32_t uTokens = RT_MIN(pBwGroup->cbBucketSize, uTokensAdded + pBwGroup->cbTokensLast);
-
-        if (cbTransfer > uTokens)
-        {
-            fAllowed = false;
-            ASMAtomicWriteBool(&pFilter->fChoked, true);
-        }
-        else
-        {
-            pBwGroup->tsUpdatedLast = tsNow;
-            pBwGroup->cbTokensLast = uTokens - cbTransfer;
-        }
-        Log2((LOG_FN_FMT "BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
-              __PRETTY_FUNCTION__, pBwGroup, pBwGroup->pszName, cbTransfer, uTokens, uTokensAdded, fAllowed));
-    }
-    else
-        Log2((LOG_FN_FMT "BwGroup=%#p{%s} disabled fAllowed=%RTbool\n",
-              __PRETTY_FUNCTION__, pBwGroup, pBwGroup->pszName, fAllowed));
-
-    rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
-    return fAllowed;
+    return pdmNsAllocateBandwidth(pFilter, cbTransfer);
 }
 
 VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint64_t cbTransferPerSecMax)
@@ -412,12 +352,12 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint64_t
         PPDMNSBWGROUP pBwGroup = pdmNsBwGroupFindById(pShaper, pcszBwGroup);
         if (pBwGroup)
         {
-            rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
+            rc = PDMCritSectEnter(&pBwGroup->cs, VERR_SEM_BUSY); AssertRC(rc);
             pdmNsBwGroupSetLimit(pBwGroup, cbTransferPerSecMax);
             /* Drop extra tokens */
             if (pBwGroup->cbTokensLast > pBwGroup->cbBucketSize)
                 pBwGroup->cbTokensLast = pBwGroup->cbBucketSize;
-            rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
+            rc = PDMCritSectLeave(&pBwGroup->cs); AssertRC(rc);
         }
         rc = RTCritSectLeave(&pShaper->cs); AssertRC(rc);
     }
@@ -485,7 +425,7 @@ int pdmR3NetShaperTerm(PVM pVM)
         PPDMNSBWGROUP pFree = pBwGroup;
         pBwGroup = pBwGroup->pNext;
         pdmNsBwGroupTerminate(pFree);
-        MMR3HeapFree(pFree);
+        MMHyperFree(pVM, pFree);
     }
 
     RTCritSectDelete(&pShaper->cs);
