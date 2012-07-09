@@ -135,8 +135,7 @@ PDMBOTHCBDECL(int) drvNetShaperUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbM
         return VERR_TRY_AGAIN;
     }
 #endif
-#if 0
-//def IN_RING0
+#ifdef IN_RING0
     if (!PDMR0NsAllocateBandwidth(&pThis->Filter, cbMin))
     {
         STAM_REL_COUNTER_ADD(&pThis->StatXmitBytesDenied, cbMin);
