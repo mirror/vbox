@@ -815,7 +815,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                                 break;
 
                             case DISUSE_IMMEDIATE16_SX8:
-                                PUT_SZ_STRICT("strict byte ", "byte ");
+                                if (   !(pDis->fPrefix & DISPREFIX_OPSIZE)
+                                    || pDis->pCurInstr->uOpcode != OP_PUSH)
+                                    PUT_SZ_STRICT("strict byte ", "byte ");
+                                else
+                                    PUT_SZ("word ");
                                 PUT_NUM_16(pParam->uValue);
                                 break;
 
@@ -838,12 +842,20 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                                 break;
 
                             case DISUSE_IMMEDIATE32_SX8:
-                                PUT_SZ_STRICT("strict byte ", "byte ");
+                                if (   !(pDis->fPrefix & DISPREFIX_OPSIZE)
+                                    || pDis->pCurInstr->uOpcode != OP_PUSH)
+                                    PUT_SZ_STRICT("strict byte ", "byte ");
+                                else
+                                    PUT_SZ("dword ");
                                 PUT_NUM_32(pParam->uValue);
                                 break;
 
                             case DISUSE_IMMEDIATE64_SX8:
-                                PUT_SZ_STRICT("strict byte ", "byte ");
+                                if (   !(pDis->fPrefix & DISPREFIX_OPSIZE)
+                                    || pDis->pCurInstr->uOpcode != OP_PUSH)
+                                    PUT_SZ_STRICT("strict byte ", "byte ");
+                                else
+                                    PUT_SZ("qword ");
                                 PUT_NUM_64(pParam->uValue);
                                 break;
 
@@ -1236,6 +1248,9 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
     /*
      * Check for multiple prefixes of the same kind.
      */
+    uint8_t  off1stSeg = UINT8_MAX;
+    uint8_t  offOpSize = UINT8_MAX;
+    uint8_t  offAddrSize = UINT8_MAX;
     uint32_t fPrefixes = 0;
     for (uint32_t offOpcode = 0; offOpcode < RT_ELEMENTS(pDis->abInstr); offOpcode++)
     {
@@ -1257,14 +1272,20 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
             case 0x36:
             case 0x64:
             case 0x65:
+                if (off1stSeg == UINT8_MAX)
+                    off1stSeg = offOpcode;
                 f = DISPREFIX_SEG;
                 break;
 
             case 0x66:
+                if (offOpSize == UINT8_MAX)
+                    offOpSize = offOpcode;
                 f = DISPREFIX_OPSIZE;
                 break;
 
             case 0x67:
+                if (offAddrSize == UINT8_MAX)
+                    offAddrSize = offOpcode;
                 f = DISPREFIX_ADDRSIZE;
                 break;
 
@@ -1293,6 +1314,11 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
             &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param3.fUse))
             return true;
+
+        /* Yasm puts the segment prefixes before the operand prefix with no
+           way of overriding it. */
+        if (offOpSize < off1stSeg)
+            return true;
     }
 
     /* fixed register + addr override doesn't go down all that well. */
@@ -1306,7 +1332,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
             return true;
     }
 
-    /* Almost all prefixes are bad. */
+    /* Almost all prefixes are bad for jumps. */
     if (fPrefixes)
     {
         switch (pDis->pCurInstr->uOpcode)
@@ -1342,7 +1368,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
 
     }
 
-    /* All but the segment prefix is bad news. */
+    /* All but the segment prefix is bad news for push/pop. */
     if (fPrefixes & ~DISPREFIX_SEG)
     {
         switch (pDis->pCurInstr->uOpcode)
@@ -1386,6 +1412,28 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
             case OP_SUB:
             case OP_XOR:
             case OP_CMP:
+                return true;
+            default:
+                break;
+        }
+    }
+
+    /* Instructions taking no address or operand which thus may be annoyingly
+       difficult to format for yasm. */
+    if (fPrefixes)
+    {
+        switch (pDis->pCurInstr->uOpcode)
+        {
+            case OP_STI:
+            case OP_STC:
+            case OP_CLI:
+            case OP_CLD:
+            case OP_CLC:
+            case OP_INT:
+            case OP_INT3:
+            case OP_INTO:
+            case OP_HLT:
+            /* Many more to can be added... */
                 return true;
             default:
                 break;
