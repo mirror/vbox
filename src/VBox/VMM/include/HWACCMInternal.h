@@ -631,6 +631,9 @@ typedef struct HWACCMCPU
         uint32_t                    cCachedMSRs;
         uint32_t                    uAlignement;
 
+        /* Host's IA32_TSC_AUX MSR (for RDTSCP in VMX non-root). */
+        uint64_t                    u64HostTSCAux;
+
         /* Last use TSC offset value. (cached) */
         uint64_t                    u64TSCOffset;
 
