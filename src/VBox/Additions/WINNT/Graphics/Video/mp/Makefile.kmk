@@ -147,6 +147,30 @@ ifdef VBOX_WITH_WDDM
  	$(VBOX_LIB_VBGL_R0) \
  	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
+
+ ifdef VBOX_WDDM_WIN8
+  #
+  # VBoxVideoW8 - Windows Guest Additions WDDM 1.2 Miniport Video Driver for Win8
+  #
+  SYSMODS += VBoxVideoW8
+  VBoxVideoW8_EXTENDS    = VBoxVideoWddm
+  VBoxVideoW8_TEMPLATE   = VBOXGUESTWIN8R0
+  VBoxVideoW8_DEFS      += $(VBoxVideoWddm_DEFS) VBOX_WDDM_WIN8
+  VBoxVideoW8_SDKS       = WINDDKW8
+  VBoxVideoW8_SOURCES    = $(subst VBoxMPWddm.rc,VBoxMPW8.rc,$(VBoxVideoWddm_SOURCES))
+  VBoxVideoW8_LIBS.x86   = \
+    $(PATH_SDK_WINDDKW8_LIB)/BufferOverflowK.lib
+  #VBoxVideoW8_LIBS.x86   += \
+  #  $(PATH_SDK_WINDDKW8_LIB)/exsup.lib
+  VBoxVideoW8_LIBS        = \
+     $(PATH_SDK_WINDDKW8_LIB)/ntoskrnl.lib \
+     $(PATH_SDK_WINDDKW8_LIB)/hal.lib \
+     $(PATH_SDK_WINDDKW8_LIB)/displib.lib \
+     $(VBOX_LIB_VBGL_R0) \
+     $(VBOX_LIB_IPRT_GUEST_R0_NT4) \
+     $(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB) 
+ endif # VBOX_WDDM_WIN8
+ 
 endif # VBOX_WITH_WDDM
 
 # Signing requires both miniport and display drivers
@@ -158,6 +182,6 @@ ifdef VBOX_SIGN_ADDITIONS
   VBoxVideoWddm_INSTTYPE       = none
   VBoxVideoWddm_DEBUG_INSTTYPE = both
  endif
-endif
+endif # VBOX_SIGN_ADDITIONS
 
 include $(FILE_KBUILD_SUB_FOOTER)
