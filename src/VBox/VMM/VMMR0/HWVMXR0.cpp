@@ -2394,8 +2394,8 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last
      * This can happen both for start & resume due to long jumps back to ring-3.
-     * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB,
-     * so we cannot reuse the current ASID anymore.
+     * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB
+     * or the host Cpu is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
     bool fNewASID = false;
     if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
@@ -2521,7 +2521,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last
      * This can happen both for start & resume due to long jumps back to ring-3.
-     * If the TLB flush count shouldn't really change in this EPT-only case.
+     * A change in the TLB flush count implies the host Cpu is online after a suspend/resume.
      */
     if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
         || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
@@ -2585,8 +2585,8 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last
      * This can happen both for start & resume due to long jumps back to ring-3.
-     * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB,
-     * so we cannot reuse the current ASID anymore.
+     * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB
+     * or the host Cpu is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
     if (   pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
         || pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
