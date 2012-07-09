@@ -90,7 +90,8 @@ ifdef VBOX_WITH_OPEN_WATCOM
  #
  update-bios-source | $(PATH_SUB_CURRENT)/VBoxBiosAlternative.asm $(PATH_SUB_CURRENT)/VBoxBiosAlternative.md5sum: \
  		$$(VBoxPcBios_1_TARGET) \
- 		$$(MakeDebianBiosAssembly_1_TARGET)
+ 		$$(MakeDebianBiosAssembly_1_TARGET) \
+		$(VBOX_VBOXCMP)
  if1of ($(KBUILD_TYPE), release)
 	$(MakeDebianBiosAssembly_1_TARGET) \
 		--bios-image $< \
@@ -98,7 +99,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
 		--bios-sym $(basename $<).sym \
 		--output $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
 	$(QUIET)yasm -f bin -o $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm
-	$(CMP) -l -- $< $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
+	$(VBOX_VBOXCMP) $< $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.bin
 	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS-new/VBoxBiosAlternative.asm
 	$(REDIRECT) -C $(dir $(VBoxPcBios_1_TARGET)) -- \
 		$(MD5SUM_EXT) -bo $(VBoxPcBios_0_OUTDIR)/VBoxBiosAlternative.md5sum $(notdir $(VBoxPcBios_1_TARGET))
