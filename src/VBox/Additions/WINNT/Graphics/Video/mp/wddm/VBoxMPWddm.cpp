@@ -1127,6 +1127,16 @@ NTSTATUS DxgkDdiStartDevice(
                         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
                         KeInitializeSpinLock(&pSource->AllocationLock);
                     }
+
+#ifdef VBOX_WDDM_WIN8
+                    DXGK_DISPLAY_INFORMATION DisplayInfo;
+                    Status = pDevExt->u.primary.DxgkInterface.DxgkCbAcquirePostDisplayOwnership(pDevExt->u.primary.DxgkInterface.DeviceHandle,
+                            &DisplayInfo);
+                    if (!NT_SUCCESS(Status))
+                    {
+                        WARN(("DxgkCbAcquirePostDisplayOwnership failed, Status 0x%x", Status));
+                    }
+#endif
                 }
                 else
                 {
@@ -1772,7 +1782,10 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         {
             DXGK_DRIVERCAPS *pCaps = (DXGK_DRIVERCAPS*)pQueryAdapterInfo->pOutputData;
 
+            memset(pCaps, 0, sizeof (*pCaps));
+
             pCaps->HighestAcceptableAddress.QuadPart = ~((uintptr_t)0);
+#ifndef VBOX_WDDM_WIN8
             pCaps->MaxAllocationListSlotId = 16;
             pCaps->ApertureSegmentCommitLimit = 0;
             pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;
@@ -1806,9 +1819,12 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             pCaps->MemoryManagementCaps.PagingNode = 0;
             /* @todo: this correlates with pCaps->SchedulingCaps.MultiEngineAware */
             pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = VBOXWDDM_NUM_NODES;
-
+#else
+            pCaps->WDDMVersion = DXGKDDI_WDDMv1_2;
+#endif
             break;
         }
+#ifndef VBOX_WDDM_WIN8
         case DXGKQAITYPE_QUERYSEGMENT:
         {
             /* no need for DXGK_QUERYSEGMENTIN as it contains AGP aperture info, which (AGP aperture) we do not support
@@ -1885,9 +1901,9 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 Status = STATUS_BUFFER_TOO_SMALL;
             }
             break;
+#endif /* #ifndef VBOX_WDDM_WIN8 */
         default:
-            LOGREL(("unsupported Type (%d)", pQueryAdapterInfo->Type));
-            AssertBreakpoint();
+            WARN(("unsupported Type (%d)", pQueryAdapterInfo->Type));
             Status = STATUS_NOT_SUPPORTED;
             break;
     }
