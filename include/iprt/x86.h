@@ -1080,6 +1080,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_K8_GS_BASE                      0xc0000101
 /** K8 KernelGSbase - Used with SWAPGS. */
 #define MSR_K8_KERNEL_GS_BASE               0xc0000102
+/** K8 TSC_AUX - Used with RDTSCP. */
 #define MSR_K8_TSC_AUX                      0xc0000103
 #define MSR_K8_SYSCFG                       0xc0010010
 #define MSR_K8_HWCR                         0xc0010015

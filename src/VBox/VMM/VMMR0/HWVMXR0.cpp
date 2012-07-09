@@ -3097,6 +3097,21 @@ ResumeExecution:
     }
 
     TMNotifyStartOfExecution(pVCpu);
+
+    /*
+     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
+     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
+     */
+    if (    (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        && !(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
+    {
+        pVCpu->hwaccm.s.vmx.u64HostTSCAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64GuestTSCAux = 0;
+        rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTSCAux);
+        AssertRC(rc2);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTSCAux);
+    }
+
 #ifdef VBOX_WITH_KERNEL_USING_XMM
     rc = hwaccmR0VMXStartVMWrapXMM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hwaccm.s.vmx.pfnStartVM);
 #else
@@ -3104,6 +3119,16 @@ ResumeExecution:
 #endif
     ASMAtomicWriteBool(&pVCpu->hwaccm.s.fCheckedTLBFlush, false);
     ASMAtomicIncU32(&pVCpu->hwaccm.s.cWorldSwitchExits);
+
+    /*
+     * Restore host's TSC_AUX.
+     */
+    if (    (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        && !(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
+    {
+        ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hwaccm.s.vmx.u64HostTSCAux);
+    }
+
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in TSC offset mode). */
     if (!(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
     {
