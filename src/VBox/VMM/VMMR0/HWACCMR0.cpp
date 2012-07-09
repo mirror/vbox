@@ -865,8 +865,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 
     pCpu->idCpu         = idCpu;
     pCpu->uCurrentASID  = 0;    /* we'll aways increment this the first time (host uses ASID 0) */
-    pCpu->cTLBFlushes   = 0;
-    pCpu->fASIDState    = true;
+    /* Do NOT reset cTLBFlushes here, see @bugref{6255}. */
 
     /* Should never happen */
     AssertLogRelMsgReturn(pCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
@@ -939,6 +938,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
             for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo); iCpu++)
             {
                 g_HvmR0.aCpuInfo[iCpu].fConfigured = true;
+                g_HvmR0.aCpuInfo[iCpu].cTLBFlushes = 0;
                 Assert(g_HvmR0.aCpuInfo[iCpu].hMemObj == NIL_RTR0MEMOBJ);
             }
 
@@ -946,7 +946,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
             g_HvmR0.fGlobalInit = pVM->hwaccm.s.fGlobalInit = true;
         }
         else
-            AssertMsgFailed(("HWACCMR0EnableAllCpus/SUPR0EnableVTx: rc=%Rrc\n", rc));
+            AssertMsgFailed(("hmR0EnableAllCpuOnce/SUPR0EnableVTx: rc=%Rrc\n", rc));
     }
     else
     {
@@ -967,6 +967,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
                 ASMMemZeroPage(pvR0);
             }
             g_HvmR0.aCpuInfo[i].fConfigured = false;
+            g_HvmR0.aCpuInfo[i].cTLBFlushes = 0;
         }
 
         if (g_HvmR0.fGlobalInit)
@@ -977,7 +978,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
             rc = RTMpOnAll(hmR0EnableCpuCallback, (void *)pVM, &FirstRc);
             if (RT_SUCCESS(rc))
                 rc = hmR0FirstRcGetStatus(&FirstRc);
-            AssertMsgRC(rc, ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", hmR0FirstRcGetCpuId(&FirstRc), rc));
+            AssertMsgRC(rc, ("hmR0EnableAllCpuOnce failed for cpu %d with rc=%d\n", hmR0FirstRcGetCpuId(&FirstRc), rc));
         }
         else
             rc = VINF_SUCCESS;
