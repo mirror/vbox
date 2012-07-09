@@ -70,7 +70,7 @@ NOWEBSVC ?= $(ose)
 NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(MAKECMDGOALS),clean)
- rpmrel   := $(shell cat /etc/distname)
+ rpmrel   := $(subst rhel,el,$(shell cat /etc/distname))
  ifeq ($(rpmrel),)
  # look for fedora
   rpmrel  := $(shell cat /etc/fedora-release | sed -e 's/^Fedora  *release  *\([1-9][0-9]*\) .*/fedora\1/')
@@ -84,7 +84,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(error Cannot detect package distribution (rpmrel=$(rpmrel)))
  endif
 
- ifeq ($(filter-out rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 fedora9 fedora11 fedora12 fedora13 fedora14 fedora15 fedora16 fedora17 turbolinux11,$(rpmrel)),)
+ ifeq ($(filter-out el4 el5 el6 ol4 ol5 ol6 centos4 centos5 centos6 fedora9 fedora11 fedora12 fedora13 fedora14 fedora15 fedora16 fedora17 turbolinux11,$(rpmrel)),)
   rpmspec := rpm_redhat
  endif
  ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 sles10.1 sles11.0,$(rpmrel)),)
@@ -110,7 +110,7 @@ archdir  := $(current)/rpm/VirtualBox-$(ver)
 rpmname  := $(verpkg)-$(rpmver)_$(rpmrel)
 
 # Fedora13/14 is bleeding edge, the other jails have outdated kernel headers
-instmod  := $(if $(filter rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 fedora13 fedora14 fedora15 fedora16 fedora17,$(rpmrel)),,install_rpm)
+instmod  := $(if $(filter el4 el5 el6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 fedora13 fedora14 fedora15 fedora16 fedora17,$(rpmrel)),,install_rpm)
 
 ifneq ($(STAGEDISO),)
  ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
@@ -132,13 +132,13 @@ else
 endif
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
-	     $(if $(filter rhel4 sles10.1,$(rpmrel)),--build-libxml2,) \
-	     $(if $(filter rhel4,$(rpmrel)),--build-libssl,) \
-	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 sles10.1,$(rpmrel)),--build-libcurl,) \
-	     $(if $(filter rhel5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
+	     $(if $(filter el4 sles10.1,$(rpmrel)),--build-libxml2,) \
+	     $(if $(filter el4,$(rpmrel)),--build-libssl,) \
+	     $(if $(filter el4 el5 ol4 ol5 centos4 centos5 sles10.1,$(rpmrel)),--build-libcurl,) \
+	     $(if $(filter el5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
 	     $(if $(filter sles10.1 turbolinux11,$(rpmrel)),--disable-pulse,) \
-	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5,$(rpmrel)),--enable-pulse,) \
-	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 mdv2010.0 sles10.1 sles11.0 turbolinux11,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.7.4-stdc++6-$(arch)) \
+	     $(if $(filter el4 el5 ol4 ol5 centos4 centos5,$(rpmrel)),--enable-pulse,) \
+	     $(if $(filter el4 el5 ol4 ol5 centos4 centos5 mdv2010.0 sles10.1 sles11.0 turbolinux11,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.7.4-stdc++6-$(arch)) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
@@ -163,7 +163,7 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
 	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
-	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 fedora9 fedora10 sles10.1 turbolinux11,$(rpmrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
+	     $(if $(filter el4 el5 ol4 ol5 centos4 centos5 fedora9 fedora10 sles10.1 turbolinux11,$(rpmrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
 
 rpm/configure-stamp:
 	cd $(vboxroot) && ./configure --odir=$(current)/rpm $(cfg_flags)
