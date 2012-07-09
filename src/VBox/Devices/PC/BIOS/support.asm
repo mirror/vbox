@@ -20,8 +20,11 @@
 ;*  Exported Symbols                                                           *
 ;*******************************************************************************
 public          __U4D
-public          __I4D
 public          __U4M
+ifndef          VBOX_PC_BIOS
+public          __I4D
+public          __I4M
+endif
 public          _fmemset_
 public          _fmemcpy_
 
@@ -73,6 +76,48 @@ __U4D:
                 ret
 
 
+ifndef          VBOX_PC_BIOS
+;;
+; 32-bit signed division.
+;
+; @param    dx:ax   Dividend.
+; @param    cx:bx   Divisor.
+; @returns  dx:ax   Quotient.
+;           cx:bx   Reminder.
+;
+__I4D:
+                pushf
+                push    eax
+                push    edx
+                push    ecx
+
+                rol     eax, 16
+                mov     ax, dx
+                ror     eax, 16
+                xor     edx, edx
+
+                shr     ecx, 16
+                mov     cx, bx
+
+                idiv    ecx                 ; eax:edx / ecx -> eax=quotient, edx=reminder.
+
+                mov     bx, dx
+                pop     ecx
+                shr     edx, 16
+                mov     cx, dx
+
+                pop     edx
+                ror     eax, 16
+                mov     dx, ax
+                add     sp, 2
+                pop     ax
+                rol     eax, 16
+
+                popf
+                ret
+endif           ; VBOX_PC_BIOS
+
+
 ;;
 ; 32-bit unsigned multiplication.
 ;
@@ -107,6 +152,48 @@ __U4M:
 
                 popf
                 ret
+
+
+ifndef          VBOX_PC_BIOS
+;;
+; 32-bit unsigned multiplication.
+; memset taking a far pointer.
+;
+; @param    dx:ax   Factor 1.
+; @param    cx:bx   Factor 2.
+; @returns  dx:ax   Result.
+; cx, es may be modified; di is preserved
+;
+__I4M:
+                pushf
+                push    eax
+                push    edx
+                push    ecx
+                push    ebx
+
+                rol     eax, 16
+                mov     ax, dx
+                ror     eax, 16
+                xor     edx, edx
+
+                shr     ecx, 16
+                mov     cx, bx
+
+                imul    ecx                 ; eax * ecx -> edx:eax
+
+                pop     ebx
+                pop     ecx
+
+                pop     edx
+                ror     eax, 16
+                mov     dx, ax
+                add     sp, 2
+                pop     ax
+                rol     eax, 16
+
+                popf
+                ret
+endif           ; VBOX_PC_BIOS
 
 
 ;;
