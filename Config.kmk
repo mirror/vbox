@@ -1729,6 +1729,9 @@ VBOX_BIOSSUMS   ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
 # RTManifest (extension pack manifest utility)
 VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
 
+# VBoxCmp (simple /bin/cmp with more sensible output)
+VBOX_VBOXCMP    ?= $(PATH_OBJ)/VBoxCmp/VBoxCmp$(HOSTSUFF_EXE)
+
 # VBoxCPP (special purpose C preprocessor)
 VBOX_VBOXCPP    ?= $(PATH_OBJ)/VBoxCPP/VBoxCPP$(HOSTSUFF_EXE)
 
