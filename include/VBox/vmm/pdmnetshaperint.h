@@ -45,7 +45,7 @@ typedef struct PDMNSBWGROUP
 /** Pointer to a bandwidth group. */
 typedef PDMNSBWGROUP *PPDMNSBWGROUP;
 
-DECLINLINE(bool) pdmNsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
+DECLINLINE(bool) pdmNsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
 {
     AssertPtrReturn(pFilter, true);
     if (!VALID_PTR(pFilter->CTX_SUFF(pBwGroup)))
