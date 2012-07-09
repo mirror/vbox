@@ -148,18 +148,16 @@ typedef struct HMGLOBLCPUINFO
     uint32_t            uCurrentASID;
     /** TLB flush count. */
     uint32_t            cTLBFlushes;
-
     /** Whether to flush each new ASID/VPID before use. */
     bool                fFlushASIDBeforeUse;
-
     /** Configured for VT-x or AMD-V. */
     bool                fConfigured;
-
     /** Set if the VBOX_HWVIRTEX_IGNORE_SVM_IN_USE hack is active. */
     bool                fIgnoreAMDVInUseError;
-
     /** In use by our code. (for power suspend) */
     volatile bool       fInUse;
+    /** Toggle bit for signaling new ASIDs (during suspend/resume)  */
+    bool                fASIDState;
 } HMGLOBLCPUINFO;
 /** Pointer to the per-cpu global information. */
 typedef HMGLOBLCPUINFO *PHMGLOBLCPUINFO;
@@ -547,12 +545,15 @@ typedef struct HWACCMCPU
     /** Set if we need to flush the TLB during the world switch. */
     bool                        fForceTLBFlush;
 
+    /** Toggle bit for acquiring a new ASID (during host CPU suspend/resume) */
+    bool                        fASIDState;
+
     /** Set when we're using VT-x or AMD-V at that moment. */
     bool                        fActive;
 
     /** Set when the TLB has been checked until we return from the world switch. */
     volatile bool               fCheckedTLBFlush;
-    uint8_t                     bAlignment[3];
+    uint8_t                     bAlignment[2];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;

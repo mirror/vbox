@@ -866,6 +866,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     pCpu->idCpu         = idCpu;
     pCpu->uCurrentASID  = 0;    /* we'll aways increment this the first time (host uses ASID 0) */
     pCpu->cTLBFlushes   = 0;
+    pCpu->fASIDState    = true;
 
     /* Should never happen */
     AssertLogRelMsgReturn(pCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
@@ -1238,7 +1239,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
         /* Invalidate the last cpu we were running on. */
         pVCpu->hwaccm.s.idLastCpu           = NIL_RTCPUID;
 
-        /* we'll aways increment this the first time (host uses ASID 0) */
+        /* We'll aways increment this the first time (host uses ASID 0) */
         pVCpu->hwaccm.s.uCurrentASID        = 0;
     }
 
