@@ -542,6 +542,10 @@ ifndef VBOX_ONLY_EXTPACKS
 	VMMAll/IEMAllAImpl.asm \
 	VMMAll/IEMAllAImplC.cpp
  endif
+ ifdef VBOX_WITH_NETSHAPER
+  VMMR0_SOURCES += \
+ 	VMMR0/PDMNetShaperR0.cpp
+ endif
  VMMR0_SOURCES.amd64 = \
  	VMMR0/VMMR0JmpA-amd64.asm
  VMMR0_SOURCES.x86 = \
