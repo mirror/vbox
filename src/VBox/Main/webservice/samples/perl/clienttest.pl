@@ -52,6 +52,7 @@ while (my $this = shift(@ARGV))
               "    $cmd list: list installed virtual machines.\n".
               "    $cmd startvm <vm>: start the virtual machine named <vm>.\n".
               "    $cmd acpipowerbutton <vm>: shutdown of the irtual machine named <vm>.\n";
+              "    $cmd openhd <disk>: open disk image <disk>.\n";
         exit 0;
     }
     elsif (    ($this eq 'version')
@@ -88,6 +89,50 @@ while (my $this = shift(@ARGV))
 
 $optMode = "list"
     if (!$optMode);
+
+# SOAP::Lite hacking to make it serialize the enum types we use correctly.
+# In the long run, this needs to be done either by stubmaker.pl or something
+# else, because the WSDL clearly says they're restricted strings. Quite silly
+# that the default behavior is to ignore the parameter and just let the server
+# use the default value for the type.
+
+sub SOAP::Serializer::as_LockType
+{
+    my ($self, $value, $name, $type, $attr) = @_;
+    die "String value expected instead of @{[ref $value]} reference\n"
+        if ref $value;
+    return [
+        $name,
+        {'xsi:type' => 'vbox:LockType', %$attr},
+        SOAP::Utils::encode_data($value)
+    ];
+}
+
+sub SOAP::Serializer::as_DeviceType
+{
+    my ($self, $value, $name, $type, $attr) = @_;
+    die "String value expected instead of @{[ref $value]} reference\n"
+        if ref $value;
+    return [
+        $name,
+        {'xsi:type' => 'vbox:DeviceType', %$attr},
+        SOAP::Utils::encode_data($value)
+    ];
+}
+
+sub SOAP::Serializer::as_AccessMode
+{
+    my ($self, $value, $name, $type, $attr) = @_;
+    die "String value expected instead of @{[ref $value]} reference\n"
+        if ref $value;
+    return [
+        $name,
+        {'xsi:type' => 'vbox:AccessMode', %$attr},
+        SOAP::Utils::encode_data($value)
+    ];
+}
+
+## @todo needs much more error handling, e.g. openhd never complains
 
 my $vbox = vboxService->IWebsessionManager_logon("test", "test");
 
@@ -164,8 +209,7 @@ elsif ($optMode eq "acpipowerbutton")
     die "[$cmd] Cannot get session object; stopped"
         if (!$session);
 
-    my $shared = SOAP::Data->type('vbox:LockType')->name('session')->value('Shared');
-    vboxService->IMachine_lockMachine($machine, $session, $shared);
+    vboxService->IMachine_lockMachine($machine, $session, 'Shared');
 
     my $console = vboxService->ISession_getConsole($session);
 
@@ -177,10 +221,8 @@ elsif ($optMode eq "acpipowerbutton")
 }
 elsif ($optMode eq "openhd")
 {
-    my $medium = vboxService->IVirtualBox_openMedium($vbox, $disk, 3, # DeviceType_HardDisk
-                                                     1, # AccessMode_ReadWrite
-                                                     0, # false
-                                                     "", # empty uuid
-                                                     0, # false
-                                                     ""); #empty uuid
+    my $medium = vboxService->IVirtualBox_openMedium($vbox, $disk,
+                                                     'HardDisk',
+                                                     'ReadWrite',
+                                                     0);
 }
