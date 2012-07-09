@@ -71,7 +71,7 @@ DECLINLINE(bool) pdmNsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
         else
         {
             pBwGroup->tsUpdatedLast = tsNow;
-            pBwGroup->cbTokensLast = uTokens - cbTransfer;
+            pBwGroup->cbTokensLast = uTokens - (uint32_t)cbTransfer;
         }
         Log2((LOG_FN_FMT "BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
               __PRETTY_FUNCTION__, pBwGroup, pBwGroup->pszName, cbTransfer, uTokens, uTokensAdded, fAllowed));
