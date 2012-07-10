@@ -2297,50 +2297,6 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     return rc;
 }
 
-PDMBOTHCBDECL(int) ahciIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    uint32_t iChannel = (uint32_t)(uintptr_t)pvUser;
-    PAHCI    pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIATACONTROLLER pCtl = &pAhci->aCts[iChannel];
-
-    Assert(iChannel < 2);
-
-    return ataControllerIOPortWrite1(pCtl, Port, u32, cb);
-}
-
-PDMBOTHCBDECL(int) ahciIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
-{
-    uint32_t iChannel = (uint32_t)(uintptr_t)pvUser;
-    PAHCI    pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIATACONTROLLER pCtl = &pAhci->aCts[iChannel];
-
-    Assert(iChannel < 2);
-
-    return ataControllerIOPortRead1(pCtl, Port, pu32, cb);
-}
-
-PDMBOTHCBDECL(int) ahciIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    uint32_t iChannel = (uint32_t)(uintptr_t)pvUser;
-    PAHCI    pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIATACONTROLLER pCtl = &pAhci->aCts[iChannel];
-
-    Assert(iChannel < 2);
-
-    return ataControllerIOPortWrite2(pCtl, Port, u32, cb);
-}
-
-PDMBOTHCBDECL(int) ahciIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
-{
-    uint32_t iChannel = (uint32_t)(uintptr_t)pvUser;
-    PAHCI    pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIATACONTROLLER pCtl = &pAhci->aCts[iChannel];
-
-    Assert(iChannel < 2);
-
-    return ataControllerIOPortRead2(pCtl, Port, pu32, cb);
-}
-
 PDMBOTHCBDECL(int) ahciLegacyFakeWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     AssertMsgFailed(("Should not happen\n"));
@@ -2437,39 +2393,6 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
           pDevIns->iInstance, pu32, cb, pu32, cb, Port, rc));
     return rc;
 }
-
-#ifndef IN_RING0
-/**
- * Port I/O Handler for primary port range IN string operations.
- * @see FNIOMIOPORTINSTRING for details.
- */
-PDMBOTHCBDECL(int) ahciIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb)
-{
-    uint32_t       iChannel = (uint32_t)(uintptr_t)pvUser;
-    PAHCI          pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIATACONTROLLER pCtl = &pAhci->aCts[iChannel];
-
-    Assert(iChannel < 2);
-
-    return ataControllerIOPortReadStr1(pCtl, Port, pGCPtrDst, pcTransfer, cb);
-}
-
-
-/**
- * Port I/O Handler for primary port range OUT string operations.
- * @see FNIOMIOPORTOUTSTRING for details.
- */
-PDMBOTHCBDECL(int) ahciIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
-{
-    uint32_t       iChannel = (uint32_t)(uintptr_t)pvUser;
-    PAHCI          pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIATACONTROLLER pCtl = &pAhci->aCts[iChannel];
-
-    Assert(iChannel < 2);
-
-    return ataControllerIOPortReadStr1(pCtl, Port, pGCPtrSrc, pcTransfer, cb);
-}
-#endif /* !IN_RING0 */
 
 #ifdef IN_RING3
 
@@ -6660,12 +6583,6 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
                return false;
         }
     }
-
-    if (pThis->fBootable)
-        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-            if (!ataControllerIsIdle(&pThis->aCts[i]))
-                return false;
-
     return true;
 }
 
@@ -6789,14 +6706,6 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutMem(pSSM, &pThis->ahciPort[i].abATAPISense[0], sizeof(pThis->ahciPort[i].abATAPISense));
         SSMR3PutU8(pSSM, pThis->ahciPort[i].cNotifiedMediaChange);
         SSMR3PutU32(pSSM, pThis->ahciPort[i].MediaEventStatus);
-    }
-
-    /* Now the emulated ata controllers. */
-    for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        rc = ataControllerSaveExec(&pThis->aCts[i], pSSM);
-        if (RT_FAILURE(rc))
-            return rc;
     }
 
     return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
@@ -6976,19 +6885,6 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pAhciPort->fRedo = true;
             }
         }
-
-        /* Now the emulated ata controllers. */
-        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-        {
-            rc = ataControllerLoadExec(&pThis->aCts[i], pSSM);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        rc = SSMR3GetU32(pSSM, &u32);
-        if (RT_FAILURE(rc))
-            return rc;
-        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
 
     return VINF_SUCCESS;
@@ -7012,10 +6908,6 @@ static DECLCALLBACK(void) ahciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
         pAhciPort->pAhciRC += offDelta;
         pAhciPort->pDevInsRC += offDelta;
     }
-
-    /* Relocate emulated ATA controllers. */
-    for (i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-        ataControllerRelocate(&pAhci->aCts[i], offDelta);
 }
 
 /**
@@ -7064,10 +6956,6 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
                     RTMemFree(pAhciPort->aCachedTasks[i]);
             }
         }
-
-        /* Destroy emulated ATA controllers. */
-        for (unsigned i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-            ataControllerDestroy(&pAhci->aCts[i]);
 
         PDMR3CritSectDelete(&pAhci->lock);
     }
@@ -7345,9 +7233,6 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
     }
 
     Log(("%s:\n", __FUNCTION__));
-    if (pAhci->fBootable)
-        for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-            ataControllerResume(&pAhci->aCts[i]);
 }
 
 /**
@@ -7512,9 +7397,6 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             }
         }
 
-    if (pCtl)
-        ataControllerDetach(pCtl, fMaster);
-
     if (pAhciPort->fATAPI)
         ahciMediumRemoved(pAhciPort);
 
@@ -7603,74 +7485,6 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
                     fMaster = j == 0 ? true : false;
                 }
             }
-
-        /* Attach to the controller if available */
-        if (pCtl)
-            rc = ataControllerAttach(pCtl, pAhciPort->pDrvBase, fMaster);
-
-        if (RT_SUCCESS(rc))
-        {
-            char szName[24];
-            RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
-
-            if (   pAhciPort->pDrvBlockAsync
-                && !pAhciPort->fATAPI)
-            {
-                pAhciPort->fAsyncInterface = true;
-            }
-            else
-            {
-                pAhciPort->fAsyncInterface = false;
-
-                /* Create event semaphore. */
-                rc = RTSemEventCreate(&pAhciPort->AsyncIORequestSem);
-                if (RT_FAILURE(rc))
-                {
-                    Log(("%s: Failed to create event semaphore for %s.\n", __FUNCTION__, szName));
-                    return rc;
-                }
-
-                /* Create the async IO thread. */
-                rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
-                                           RTTHREADTYPE_IO, szName);
-                if (RT_FAILURE(rc))
-                {
-                    AssertMsgFailed(("%s: Async IO Thread creation for %s failed rc=%d\n", __FUNCTION__, szName, rc));
-                    return rc;
-                }
-            }
-
-            /*
-             * Init vendor product data.
-             */
-            if (RT_SUCCESS(rc))
-                rc = ahciR3VpdInit(pDevIns, pAhciPort, szName);
-
-            /* Inform the guest about the added device in case of hotplugging. */
-            if (   RT_SUCCESS(rc)
-                && !(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG))
-            {
-                /*
-                 * Initialize registers
-                 */
-                ASMAtomicOrU32(&pAhciPort->regCMD, AHCI_PORT_CMD_CPS);
-                ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS | AHCI_PORT_IS_PCS);
-                ASMAtomicOrU32(&pAhciPort->regSERR, AHCI_PORT_SERR_X | AHCI_PORT_SERR_N);
-
-                if (pAhciPort->fATAPI)
-                    pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
-                else
-                    pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
-                pAhciPort->regSSTS = (0x01 << 8) | /* Interface is active. */
-                                     (0x02 << 4) | /* Generation 2 (3.0GBps) speed. */
-                                     (0x03 << 0);  /* Device detected and communication established. */
-
-                if (   (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
-                    || (pAhciPort->regIE & AHCI_PORT_IE_PCE)
-                    || (pAhciPort->regIE & AHCI_PORT_IE_PRCE))
-                    ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
-            }
-        }
     }
 
     return rc;
@@ -7690,10 +7504,6 @@ static int ahciR3ResetCommon(PPDMDEVINS pDevIns, bool fConstructor)
     /* Hardware reset for the ports. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
         ahciPortHwReset(&pAhci->ahciPort[i]);
-
-    if (pAhci->fBootable)
-        for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-            ataControllerReset(&pAhci->aCts[i]);
     return VINF_SUCCESS;
 }
 
@@ -8092,125 +7902,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot attach to status driver"));
     }
-
-    if (pThis->fBootable)
-    {
-        /*
-         * Setup IDE emulation.
-         * We only emulate the I/O ports but not bus master DMA.
-         * If the configuration values are not found the setup of the ports is as follows:
-         *     Primary Master:   Port 0
-         *     Primary Slave:    Port 1
-         *     Secondary Master: Port 2
-         *     Secondary Slave:  Port 3
-         */
-
-        /*
-         * Setup I/O ports for the PCI device.
-         */
-        pThis->aCts[0].irq          = 12;
-        pThis->aCts[0].IOPortBase1  = 0x1e8;
-        pThis->aCts[0].IOPortBase2  = 0x3e6;
-        pThis->aCts[1].irq          = 11;
-        pThis->aCts[1].IOPortBase1  = 0x168;
-        pThis->aCts[1].IOPortBase2  = 0x366;
-
-        for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-        {
-            PAHCIATACONTROLLER pCtl = &pThis->aCts[i];
-            uint32_t iPortMaster, iPortSlave;
-            uint32_t cbSSMState = 0;
-            static const char *s_apszDescs[RT_ELEMENTS(pThis->aCts)][RT_ELEMENTS(pCtl->aIfs)] =
-            {
-                { "PrimaryMaster", "PrimarySlave" },
-                { "SecondaryMaster", "SecondarySlave" }
-            };
-
-            rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][0], &iPortMaster, 2 * i);
-            if (RT_FAILURE(rc))
-                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                           N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][0]);
-
-            rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][1], &iPortSlave, 2 * i + 1);
-            if (RT_FAILURE(rc))
-                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                           N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][1]);
-
-            char szName[24];
-            RTStrPrintf(szName, sizeof(szName), "EmulatedATA%d", i);
-            rc = ataControllerInit(pDevIns, pCtl, pThis->pMediaNotify,
-                                   iPortMaster, pThis->ahciPort[iPortMaster].pDrvBase,
-                                   &pThis->ahciPort[iPortMaster].Led,
-                                   &pThis->ahciPort[iPortMaster].StatBytesRead,
-                                   &pThis->ahciPort[iPortMaster].StatBytesWritten,
-                                   pThis->ahciPort[iPortMaster].szSerialNumber,
-                                   pThis->ahciPort[iPortMaster].szFirmwareRevision,
-                                   pThis->ahciPort[iPortMaster].szModelNumber,
-                                   pThis->ahciPort[iPortMaster].szInquiryVendorId,
-                                   pThis->ahciPort[iPortMaster].szInquiryProductId,
-                                   pThis->ahciPort[iPortMaster].szInquiryRevision,
-                                   pThis->ahciPort[iPortMaster].fNonRotational,
-                                   iPortSlave, pThis->ahciPort[iPortSlave].pDrvBase,
-                                   &pThis->ahciPort[iPortSlave].Led,
-                                   &pThis->ahciPort[iPortSlave].StatBytesRead,
-                                   &pThis->ahciPort[iPortSlave].StatBytesWritten,
-                                   pThis->ahciPort[iPortSlave].szSerialNumber,
-                                   pThis->ahciPort[iPortSlave].szFirmwareRevision,
-                                   pThis->ahciPort[iPortSlave].szModelNumber,
-                                   pThis->ahciPort[iPortSlave].szInquiryVendorId,
-                                   pThis->ahciPort[iPortSlave].szInquiryProductId,
-                                   pThis->ahciPort[iPortSlave].szInquiryRevision,
-                                   pThis->ahciPort[iPortSlave].fNonRotational,
-                                   &cbSSMState, szName);
-            if (RT_FAILURE(rc))
-                return rc;
-
-            cbTotalBufferSize += cbSSMState;
-
-            rc = PDMDevHlpIOPortRegister(pDevIns, pCtl->IOPortBase1, 8, (RTHCPTR)i,
-                                         ahciIOPortWrite1, ahciIOPortRead1, ahciIOPortWriteStr1, ahciIOPortReadStr1, "AHCI");
-            if (RT_FAILURE(rc))
-                return rc;
-
-            if (pThis->fR0Enabled)
-            {
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pCtl->IOPortBase1, 8, (RTR0PTR)i,
-                                               "ahciIOPortWrite1", "ahciIOPortRead1", NULL, NULL, "AHCI R0");
-                if (RT_FAILURE(rc))
-                    return rc;
-            }
-
-            if (pThis->fGCEnabled)
-            {
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase1, 8, (RTGCPTR)i,
-                                                "ahciIOPortWrite1", "ahciIOPortRead1", NULL, NULL, "AHCI GC");
-                if (RT_FAILURE(rc))
-                    return rc;
-            }
-
-            rc = PDMDevHlpIOPortRegister(pDevIns, pCtl->IOPortBase2, 1, (RTHCPTR)i,
-                                         ahciIOPortWrite2, ahciIOPortRead2, NULL, NULL, "AHCI");
-            if (RT_FAILURE(rc))
-                return rc;
-
-            if (pThis->fR0Enabled)
-            {
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pCtl->IOPortBase2, 1, (RTR0PTR)i,
-                                                "ahciIOPortWrite2", "ahciIOPortRead2", NULL, NULL, "AHCI R0");
-                if (RT_FAILURE(rc))
-                    return rc;
-            }
-
-            if (pThis->fGCEnabled)
-            {
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase2, 1, (RTGCPTR)i,
-                                                "ahciIOPortWrite2", "ahciIOPortRead2", NULL, NULL, "AHCI GC");
-                if (RT_FAILURE(rc))
-                    return rc;
-            }
-        }
-    }
-
     rc = PDMDevHlpSSMRegisterEx(pDevIns, AHCI_SAVED_STATE_VERSION, sizeof(*pThis)+cbTotalBufferSize, NULL,
                                 NULL,           ahciR3LiveExec, NULL,
                                 ahciR3SavePrep, ahciR3SaveExec, NULL,

@@ -417,8 +417,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_AHCI
   VBoxDD_DEFS           += VBOX_WITH_AHCI IN_AHCI_R3
   VBoxDD_SOURCES        += \
- 	Storage/DevAHCI.cpp \
- 	Storage/ATAController.cpp
+ 	Storage/DevAHCI.cpp 
  endif
 
  ifdef VBOX_WITH_BUSLOGIC
@@ -866,8 +865,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   ifdef VBOX_WITH_AHCI
   VBoxDDGC_DEFS         += VBOX_WITH_AHCI IN_AHCI_GC
   VBoxDDGC_SOURCES      += \
-  	Storage/DevAHCI.cpp \
-  	Storage/ATAController.cpp
+  	Storage/DevAHCI.cpp 
   endif
 
   ifdef VBOX_WITH_BUSLOGIC
@@ -1019,8 +1017,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_AHCI
  VBoxDDR0_DEFS          += VBOX_WITH_AHCI IN_AHCI_R0
  VBoxDDR0_SOURCES       += \
- 	Storage/DevAHCI.cpp \
- 	Storage/ATAController.cpp
+ 	Storage/DevAHCI.cpp 
  endif
 
  ifdef VBOX_WITH_BUSLOGIC
