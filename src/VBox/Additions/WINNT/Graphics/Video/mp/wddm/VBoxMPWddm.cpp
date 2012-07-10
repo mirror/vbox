@@ -6576,10 +6576,10 @@ DriverEntry(
             }
         }
 
-#ifdef VBOX_WDDM_WIN8
-        LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
-        g_VBoxDisplayOnly = 1;
-#endif
+//#ifdef VBOX_WDDM_WIN8
+//        LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
+//        g_VBoxDisplayOnly = 1;
+//#endif
 
         if (NT_SUCCESS(Status))
         {
