@@ -79,6 +79,11 @@ VBox-kStuffStatic_TEMPLATE = VBoxR3Static
 VBox-kStuffStatic_EXTENDS = VBox-kStuff
 
 
+LIBRARIES += VBox-kStuffStaticBldProg
+VBox-kStuffStaticBldProg_TEMPLATE = VBOXBLDPROG
+VBox-kStuffStaticBldProg_EXTENDS = VBox-kStuff
+
+
 #
 # Generate the error constants.
 #
