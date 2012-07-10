@@ -86,15 +86,32 @@ typedef struct VBOXWDDM_VHWA
 } VBOXWDDM_VHWA;
 #endif
 
+typedef struct VBOXWDDM_ADDR
+{
+    /* if SegmentId == NULL - the sysmem data is presented with pvMem */
+    UINT SegmentId;
+    union {
+        VBOXVIDEOOFFSET offVram;
+        void * pvMem;
+    };
+} VBOXWDDM_ADDR, *PVBOXWDDM_ADDR;
+
+typedef struct VBOXWDDM_ALLOC_DATA
+{
+    VBOXWDDM_SURFACE_DESC SurfDesc;
+    VBOXWDDM_ADDR Addr;
+} VBOXWDDM_ALLOC_DATA, *PVBOXWDDM_ALLOC_DATA;
+
 typedef struct VBOXWDDM_SOURCE
 {
     struct VBOXWDDM_ALLOCATION * pPrimaryAllocation;
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
     struct VBOXWDDM_ALLOCATION * pShadowAllocation;
-    VBOXVIDEOOFFSET offVram;
-    VBOXWDDM_SURFACE_DESC SurfDesc;
-    VBOXVBVAINFO Vbva;
 #endif
+    VBOXWDDM_ALLOC_DATA AllocData;
+    BOOLEAN bVisible;
+    BOOLEAN bGhSynced;
+    VBOXVBVAINFO Vbva;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* @todo: in our case this seems more like a target property,
      * but keep it here for now */
@@ -124,8 +141,6 @@ typedef struct VBOXWDDM_ALLOCATION
     VBOXWDDM_ALLOC_TYPE enmType;
     volatile uint32_t cRefs;
     D3DDDI_RESOURCEFLAGS fRcFlags;
-    UINT SegmentId;
-    VBOXVIDEOOFFSET offVram;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     VBOXVHWA_SURFHANDLE hHostHandle;
 #endif
@@ -136,7 +151,7 @@ typedef struct VBOXWDDM_ALLOCATION
     /* current for shared rc handling assumes that once resource has no opens, it can not be openned agaion */
     BOOLEAN fAssumedDeletion;
 #endif
-    VBOXWDDM_SURFACE_DESC SurfDesc;
+    VBOXWDDM_ALLOC_DATA AllocData;
     struct VBOXWDDM_RESOURCE *pResource;
     /* to return to the Runtime on DxgkDdiCreateAllocation */
     DXGK_ALLOCATIONUSAGEHINT UsageHint;

@@ -539,14 +539,14 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD
     if (pDevExt->pvVisibleVram)
     {
         PVBOXWDDM_ALLOCATION pAlloc = pCF->ClrFill.Alloc.pAlloc;
-        Assert(pAlloc->offVram != VBOXVIDEOOFFSET_VOID);
-        if (pAlloc->offVram != VBOXVIDEOOFFSET_VOID)
+        Assert(pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
+        if (pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID)
         {
             RECT UnionRect = {0};
-            uint8_t *pvMem = pDevExt->pvVisibleVram + pAlloc->offVram;
-            UINT bpp = pAlloc->SurfDesc.bpp;
+            uint8_t *pvMem = pDevExt->pvVisibleVram + pAlloc->AllocData.Addr.offVram;
+            UINT bpp = pAlloc->AllocData.SurfDesc.bpp;
             Assert(bpp);
-            Assert(((bpp * pAlloc->SurfDesc.width) >> 3) == pAlloc->SurfDesc.pitch);
+            Assert(((bpp * pAlloc->AllocData.SurfDesc.width) >> 3) == pAlloc->AllocData.SurfDesc.pitch);
             switch (bpp)
             {
                 case 32:
@@ -557,12 +557,12 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD
                         RECT *pRect = &pCF->ClrFill.Rects.aRects[i];
                         for (LONG ir = pRect->top; ir < pRect->bottom; ++ir)
                         {
-                            uint32_t * pvU32Mem = (uint32_t*)(pvMem + (ir * pAlloc->SurfDesc.pitch) + (pRect->left * bytestPP));
+                            uint32_t * pvU32Mem = (uint32_t*)(pvMem + (ir * pAlloc->AllocData.SurfDesc.pitch) + (pRect->left * bytestPP));
                             uint32_t cRaw = pRect->right - pRect->left;
                             Assert(pRect->left >= 0);
-                            Assert(pRect->right <= (LONG)pAlloc->SurfDesc.width);
+                            Assert(pRect->right <= (LONG)pAlloc->AllocData.SurfDesc.width);
                             Assert(pRect->top >= 0);
-                            Assert(pRect->bottom <= (LONG)pAlloc->SurfDesc.height);
+                            Assert(pRect->bottom <= (LONG)pAlloc->AllocData.SurfDesc.height);
                             for (UINT j = 0; j < cRaw; ++j)
                             {
                                 *pvU32Mem = pCF->ClrFill.Color;
@@ -583,7 +583,7 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD
 
             if (Status == STATUS_SUCCESS)
             {
-                if (pAlloc->SurfDesc.VidPnSourceId != D3DDDI_ID_UNINITIALIZED
+                if (pAlloc->AllocData.SurfDesc.VidPnSourceId != D3DDDI_ID_UNINITIALIZED
                         && pAlloc->bAssigned
 #if 0//def VBOXWDDM_RENDER_FROM_SHADOW
                         && pAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE
@@ -594,7 +594,7 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD
                 {
                     if (!vboxWddmRectIsEmpty(&UnionRect))
                     {
-                        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pCF->ClrFill.Alloc.pAlloc->SurfDesc.VidPnSourceId];
+                        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pCF->ClrFill.Alloc.pAlloc->AllocData.SurfDesc.VidPnSourceId];
                         uint32_t cUnlockedVBVADisabled = ASMAtomicReadU32(&pDevExt->cUnlockedVBVADisabled);
                         if (!cUnlockedVBVADisabled)
                         {
@@ -617,8 +617,8 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD
     return Status;
 }
 
-NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pSrcAlloc, RECT* pSrcRect,
-        PVBOXWDDM_ALLOCATION pDstAlloc, RECT* pDstRect)
+NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOC_DATA pSrcAlloc, RECT* pSrcRect,
+        PVBOXWDDM_ALLOC_DATA pDstAlloc, RECT* pDstRect)
 {
     uint8_t* pvVramBase = pDevExt->pvVisibleVram;
     /* we do not support stretching */
@@ -628,8 +628,8 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pS
     uint32_t dstHeight = pDstRect->bottom - pDstRect->top;
     Assert(srcHeight == dstHeight);
     Assert(dstWidth == srcWidth);
-    Assert(pDstAlloc->offVram != VBOXVIDEOOFFSET_VOID);
-    Assert(pSrcAlloc->offVram != VBOXVIDEOOFFSET_VOID);
+    Assert(pDstAlloc->Addr.offVram != VBOXVIDEOOFFSET_VOID);
+    Assert(pSrcAlloc->Addr.offVram != VBOXVIDEOOFFSET_VOID);
     D3DDDIFORMAT enmSrcFormat, enmDstFormat;
 
     enmSrcFormat = pSrcAlloc->SurfDesc.format;
@@ -651,13 +651,13 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pS
             return STATUS_INVALID_PARAMETER;
     if (srcWidth != dstWidth)
             return STATUS_INVALID_PARAMETER;
-    if (pDstAlloc->offVram == VBOXVIDEOOFFSET_VOID)
+    if (pDstAlloc->Addr.offVram == VBOXVIDEOOFFSET_VOID)
         return STATUS_INVALID_PARAMETER;
-    if (pSrcAlloc->offVram == VBOXVIDEOOFFSET_VOID)
+    if (pSrcAlloc->Addr.offVram == VBOXVIDEOOFFSET_VOID)
         return STATUS_INVALID_PARAMETER;
 
-    uint8_t *pvDstSurf = pvVramBase + pDstAlloc->offVram;
-    uint8_t *pvSrcSurf = pvVramBase + pSrcAlloc->offVram;
+    uint8_t *pvDstSurf = pDstAlloc->Addr.SegmentId ? pvVramBase + pDstAlloc->Addr.offVram : (uint8_t*)pDstAlloc->Addr.pvMem;
+    uint8_t *pvSrcSurf = pSrcAlloc->Addr.SegmentId ? pvVramBase + pSrcAlloc->Addr.offVram : (uint8_t*)pSrcAlloc->Addr.pvMem;
 
     if (pDstAlloc->SurfDesc.width == dstWidth
             && pSrcAlloc->SurfDesc.width == srcWidth
@@ -721,8 +721,8 @@ static NTSTATUS vboxVdmaGgDmaBlt(PVBOXMP_DEVEXT pDevExt, PVBOXVDMA_BLT pBlt)
             RECT SrcRect;
             vboxWddmRectTranslated(&SrcRect, &pBlt->DstRects.UpdateRects.aRects[i], -pBlt->DstRects.ContextRect.left, -pBlt->DstRects.ContextRect.top);
 
-            Status = vboxVdmaGgDmaBltPerform(pDevExt, pBlt->SrcAlloc.pAlloc, &SrcRect,
-                    pBlt->DstAlloc.pAlloc, &pBlt->DstRects.UpdateRects.aRects[i]);
+            Status = vboxVdmaGgDmaBltPerform(pDevExt, &pBlt->SrcAlloc.pAlloc->AllocData, &SrcRect,
+                    &pBlt->DstAlloc.pAlloc->AllocData, &pBlt->DstRects.UpdateRects.aRects[i]);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
                 return Status;
@@ -730,8 +730,8 @@ static NTSTATUS vboxVdmaGgDmaBlt(PVBOXMP_DEVEXT pDevExt, PVBOXVDMA_BLT pBlt)
     }
     else
     {
-        Status = vboxVdmaGgDmaBltPerform(pDevExt, pBlt->SrcAlloc.pAlloc, &pBlt->SrcRect,
-                pBlt->DstAlloc.pAlloc, &pBlt->DstRects.ContextRect);
+        Status = vboxVdmaGgDmaBltPerform(pDevExt, &pBlt->SrcAlloc.pAlloc->AllocData, &pBlt->SrcRect,
+                &pBlt->DstAlloc.pAlloc->AllocData, &pBlt->DstRects.ContextRect);
         Assert(Status == STATUS_SUCCESS);
         if (Status != STATUS_SUCCESS)
             return Status;
@@ -771,8 +771,8 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessFast(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
                         || pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
                         && pDstAlloc->bAssigned)
                 {
-                    VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->SurfDesc.VidPnSourceId];
-                    Assert(pDstAlloc->SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
+                    VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
+                    Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
                     Assert(pSource->pPrimaryAllocation == pDstAlloc);
 
                     RECT UpdateRect;
@@ -809,8 +809,8 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessFast(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
             Assert(pFlip->Hdr.fFlags.fVisibleRegions);
             Assert(!pFlip->Hdr.fFlags.fRealOp);
             PVBOXWDDM_ALLOCATION pAlloc = pFlip->Flip.Alloc.pAlloc;
-            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAlloc->SurfDesc.VidPnSourceId];
-            vboxWddmAssignPrimary(pDevExt, pSource, pAlloc, pAlloc->SurfDesc.VidPnSourceId);
+            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAlloc->AllocData.SurfDesc.VidPnSourceId];
+            vboxWddmAssignPrimary(pDevExt, pSource, pAlloc, pAlloc->AllocData.SurfDesc.VidPnSourceId);
             if (pFlip->Hdr.fFlags.fVisibleRegions)
             {
                 Status = STATUS_MORE_PROCESSING_REQUIRED;
@@ -866,8 +866,8 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessSlow(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
             PVBOXWDDM_ALLOCATION pDstAlloc = pBlt->Blt.DstAlloc.pAlloc;
             PVBOXWDDM_ALLOCATION pSrcAlloc = pBlt->Blt.SrcAlloc.pAlloc;
             BOOLEAN bComplete = TRUE;
-            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->SurfDesc.VidPnSourceId];
-            Assert(pDstAlloc->SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
+            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
+            Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
 
             if (pBlt->Hdr.fFlags.fVisibleRegions)
             {
@@ -900,7 +900,7 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessSlow(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
         {
             PVBOXVDMAPIPE_CMD_DMACMD_FLIP pFlip = (PVBOXVDMAPIPE_CMD_DMACMD_FLIP)pDmaCmd;
             PVBOXWDDM_ALLOCATION pAlloc = pFlip->Flip.Alloc.pAlloc;
-            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAlloc->SurfDesc.VidPnSourceId];
+            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAlloc->AllocData.SurfDesc.VidPnSourceId];
             if (pFlip->Hdr.fFlags.fVisibleRegions)
             {
                 PVBOXWDDM_SWAPCHAIN pSwapchain;
@@ -912,12 +912,12 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessSlow(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
                     VBOXVDMAPIPE_RECTS Rects;
                     SrcRect.left = 0;
                     SrcRect.top = 0;
-                    SrcRect.right = pAlloc->SurfDesc.width;
-                    SrcRect.bottom = pAlloc->SurfDesc.height;
+                    SrcRect.right = pAlloc->AllocData.SurfDesc.width;
+                    SrcRect.bottom = pAlloc->AllocData.SurfDesc.height;
                     Rects.ContextRect.left = pos.x;
                     Rects.ContextRect.top = pos.y;
-                    Rects.ContextRect.right = pAlloc->SurfDesc.width + pos.x;
-                    Rects.ContextRect.bottom = pAlloc->SurfDesc.height + pos.y;
+                    Rects.ContextRect.right = pAlloc->AllocData.SurfDesc.width + pos.x;
+                    Rects.ContextRect.bottom = pAlloc->AllocData.SurfDesc.height + pos.y;
                     Rects.UpdateRects.cRects = 1;
                     Rects.UpdateRects.aRects[0] = Rects.ContextRect;
                     Status = vboxVdmaGgDirtyRectsProcess(pDevExt, pContext, pSwapchain, &SrcRect, &Rects);
@@ -1854,14 +1854,14 @@ NTSTATUS vboxVdmaHlpUpdatePrimary(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_S
     if (!pSource->pShadowAllocation)
         return STATUS_INVALID_PARAMETER;
 
-    Assert(pSource->pPrimaryAllocation->offVram != VBOXVIDEOOFFSET_VOID);
-    Assert(pSource->pShadowAllocation->offVram != VBOXVIDEOOFFSET_VOID);
-    if (pSource->pPrimaryAllocation->offVram == VBOXVIDEOOFFSET_VOID)
+    Assert(pSource->pPrimaryAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
+    Assert(pSource->pShadowAllocation->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
+    if (pSource->pPrimaryAllocation->AllocData.Addr.offVram == VBOXVIDEOOFFSET_VOID)
         return STATUS_INVALID_PARAMETER;
-    if (pSource->pShadowAllocation->offVram == VBOXVIDEOOFFSET_VOID)
+    if (pSource->pShadowAllocation->AllocData.Addr.offVram == VBOXVIDEOOFFSET_VOID)
         return STATUS_INVALID_PARAMETER;
 
-    NTSTATUS Status = vboxVdmaGgDmaBltPerform(pDevExt, pSource->pShadowAllocation, pRect, pSource->pPrimaryAllocation, pRect);
+    NTSTATUS Status = vboxVdmaGgDmaBltPerform(pDevExt, &pSource->pShadowAllocation->AllocData, pRect, &pSource->pPrimaryAllocation->AllocData, pRect);
     Assert(Status == STATUS_SUCCESS);
     return Status;
 }

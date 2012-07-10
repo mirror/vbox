@@ -519,9 +519,9 @@ VBoxMPValidateVideoModeParams(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t &
         yres = yres ? yres:pExt->CurrentModeHeight;
         bpp  = bpp  ? bpp :pExt->CurrentModeBPP;
 #else
-        xres = xres ? xres:pExt->aSources[iDisplay].pPrimaryAllocation->SurfDesc.width;
-        yres = yres ? yres:pExt->aSources[iDisplay].pPrimaryAllocation->SurfDesc.height;
-        bpp  = bpp  ? bpp :pExt->aSources[iDisplay].pPrimaryAllocation->SurfDesc.bpp;
+        xres = xres ? xres:pExt->aSources[iDisplay].pPrimaryAllocation->AllocData.SurfDesc.width;
+        yres = yres ? yres:pExt->aSources[iDisplay].pPrimaryAllocation->AllocData.SurfDesc.height;
+        bpp  = bpp  ? bpp :pExt->aSources[iDisplay].pPrimaryAllocation->AllocData.SurfDesc.bpp;
 #endif
     }
 

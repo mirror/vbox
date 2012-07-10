@@ -472,7 +472,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
         }
         else if (pSwapchainInfo->SwapchainInfo.cAllocs)
         {
-            pSwapchain = vboxWddmSwapchainCreate(apAlloc[0]->SurfDesc.width, apAlloc[0]->SurfDesc.height);
+            pSwapchain = vboxWddmSwapchainCreate(apAlloc[0]->AllocData.SurfDesc.width, apAlloc[0]->AllocData.SurfDesc.height);
             if (!pSwapchain)
             {
                 Status = STATUS_NO_MEMORY;
@@ -2583,14 +2583,14 @@ static VOID vboxWddmSlVSyncDpc(
         PVBOXWDDM_ALLOCATION pPrimary = vboxWddmAquirePrimary(pDevExt, pSource, i);
         if (pPrimary)
         {
-            VBOXVIDEOOFFSET offVram = pPrimary->offVram;
+            VBOXVIDEOOFFSET offVram = pPrimary->AllocData.Addr.offVram;
             if (offVram != VBOXVIDEOOFFSET_VOID)
             {
                 memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
                 notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
                 /* @todo: !!!this is not correct in case we want source[i]->target[i!=j] mapping */
                 notify.CrtcVsync.VidPnTargetId = i;
-                notify.CrtcVsync.PhysicalAddress.QuadPart = pPrimary->offVram;
+                notify.CrtcVsync.PhysicalAddress.QuadPart = offVram;
                 /* yes, we can report VSync at dispatch */
                 pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
                 bNeedDpc = TRUE;
