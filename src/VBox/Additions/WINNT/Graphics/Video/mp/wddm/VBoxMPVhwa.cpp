@@ -538,14 +538,14 @@ int vboxVhwaHlpPopulateSurInfo(VBOXVHWA_SURFACEDESC *pInfo, PVBOXWDDM_ALLOCATION
 {
     memset(pInfo, 0, sizeof(VBOXVHWA_SURFACEDESC));
 
-    pInfo->height = pSurf->SurfDesc.height;
-    pInfo->width = pSurf->SurfDesc.width;
+    pInfo->height = pSurf->AllocData.SurfDesc.height;
+    pInfo->width = pSurf->AllocData.SurfDesc.width;
     pInfo->flags |= VBOXVHWA_SD_HEIGHT | VBOXVHWA_SD_WIDTH;
     if (fFlags & VBOXVHWA_SD_PITCH)
     {
-        pInfo->pitch = pSurf->SurfDesc.pitch;
+        pInfo->pitch = pSurf->AllocData.SurfDesc.pitch;
         pInfo->flags |= VBOXVHWA_SD_PITCH;
-        pInfo->sizeX = pSurf->SurfDesc.cbSize;
+        pInfo->sizeX = pSurf->AllocData.SurfDesc.cbSize;
         pInfo->sizeY = 1;
     }
 
@@ -562,14 +562,14 @@ int vboxVhwaHlpPopulateSurInfo(VBOXVHWA_SURFACEDESC *pInfo, PVBOXWDDM_ALLOCATION
 //                        pInfo->DstBltCK;
 //                        pInfo->SrcOverlayCK;
 //                        pInfo->SrcBltCK;
-    int rc = vboxVhwaHlpTranslateFormat(&pInfo->PixelFormat, pSurf->SurfDesc.format);
+    int rc = vboxVhwaHlpTranslateFormat(&pInfo->PixelFormat, pSurf->AllocData.SurfDesc.format);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         pInfo->flags |= VBOXVHWA_SD_PIXELFORMAT;
         pInfo->surfCaps = fSCaps;
         pInfo->flags |= VBOXVHWA_SD_CAPS;
-        pInfo->offSurface = pSurf->offVram;
+        pInfo->offSurface = pSurf->AllocData.Addr.offVram;
     }
 
     return rc;
@@ -583,22 +583,22 @@ int vboxVhwaHlpCheckApplySurfInfo(PVBOXWDDM_ALLOCATION pSurf, VBOXVHWA_SURFACEDE
     {
         /* should be set by host */
 //        Assert(pInfo->flags & VBOXVHWA_SD_PITCH);
-        pSurf->SurfDesc.cbSize = pInfo->sizeX * pInfo->sizeY;
-        Assert(pSurf->SurfDesc.cbSize);
-        pSurf->SurfDesc.pitch = pInfo->pitch;
-        Assert(pSurf->SurfDesc.pitch);
+        pSurf->AllocData.SurfDesc.cbSize = pInfo->sizeX * pInfo->sizeY;
+        Assert(pSurf->AllocData.SurfDesc.cbSize);
+        pSurf->AllocData.SurfDesc.pitch = pInfo->pitch;
+        Assert(pSurf->AllocData.SurfDesc.pitch);
         /* @todo: make this properly */
-        pSurf->SurfDesc.bpp = pSurf->SurfDesc.pitch * 8 / pSurf->SurfDesc.width;
-        Assert(pSurf->SurfDesc.bpp);
+        pSurf->AllocData.SurfDesc.bpp = pSurf->AllocData.SurfDesc.pitch * 8 / pSurf->AllocData.SurfDesc.width;
+        Assert(pSurf->AllocData.SurfDesc.bpp);
     }
     else
     {
-        Assert(pSurf->SurfDesc.cbSize ==  pInfo->sizeX);
+        Assert(pSurf->AllocData.SurfDesc.cbSize ==  pInfo->sizeX);
         Assert(pInfo->sizeY == 1);
-        Assert(pInfo->pitch == pSurf->SurfDesc.pitch);
-        if (pSurf->SurfDesc.cbSize !=  pInfo->sizeX
+        Assert(pInfo->pitch == pSurf->AllocData.SurfDesc.pitch);
+        if (pSurf->AllocData.SurfDesc.cbSize !=  pInfo->sizeX
                 || pInfo->sizeY != 1
-                || pInfo->pitch != pSurf->SurfDesc.pitch)
+                || pInfo->pitch != pSurf->AllocData.SurfDesc.pitch)
         {
             rc = VERR_INVALID_PARAMETER;
         }
@@ -809,7 +809,7 @@ int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY
     PVBOXWDDM_ALLOCATION pFbSurf = VBOXVHWA_PRIMARY_ALLOCATION(pSource);
     Assert(pFbSurf);
     Assert(pFbSurf->hHostHandle);
-    Assert(pFbSurf->offVram != VBOXVIDEOOFFSET_VOID);
+    Assert(pFbSurf->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
     Assert(pOverlay->pCurentAlloc);
     Assert(pOverlay->pCurentAlloc->pResource == pOverlay->pResource);
     Assert(pOverlay->pCurentAlloc != pAlloc);
@@ -831,9 +831,9 @@ int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY
 //            pBody->CurrGuestSurfInfo;
             pBody->u.in.hTargSurf = pAlloc->hHostHandle;
             pBody->u.in.offTargSurface = pFlipInfo->SrcPhysicalAddress.QuadPart;
-            pAlloc->offVram = pFlipInfo->SrcPhysicalAddress.QuadPart;
+            pAlloc->AllocData.Addr.offVram = pFlipInfo->SrcPhysicalAddress.QuadPart;
             pBody->u.in.hCurrSurf = pOverlay->pCurentAlloc->hHostHandle;
-            pBody->u.in.offCurrSurface = pOverlay->pCurentAlloc->offVram;
+            pBody->u.in.offCurrSurface = pOverlay->pCurentAlloc->AllocData.Addr.offVram;
             if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
             {
                 pBody->u.in.xUpdatedTargMemValid = 1;
@@ -841,8 +841,8 @@ int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY
                     pBody->u.in.xUpdatedTargMemRect = *(VBOXVHWA_RECTL*)((void*)&pOurInfo->DirtyRegion.Rect);
                 else
                 {
-                    pBody->u.in.xUpdatedTargMemRect.right = pAlloc->SurfDesc.width;
-                    pBody->u.in.xUpdatedTargMemRect.bottom = pAlloc->SurfDesc.height;
+                    pBody->u.in.xUpdatedTargMemRect.right = pAlloc->AllocData.SurfDesc.width;
+                    pBody->u.in.xUpdatedTargMemRect.bottom = pAlloc->AllocData.SurfDesc.height;
                     /* top & left are zero-inited with the above memset */
                 }
             }
@@ -891,7 +891,7 @@ int vboxVhwaHlpColorFill(PVBOXWDDM_OVERLAY pOverlay, PVBOXWDDM_DMA_PRIVATEDATA_C
 #endif
     Assert(pAlloc->hHostHandle);
     Assert(pAlloc->pResource);
-    Assert(pAlloc->offVram != VBOXVIDEOOFFSET_VOID);
+    Assert(pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
 
     int rc;
     VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
@@ -904,7 +904,7 @@ int vboxVhwaHlpColorFill(PVBOXWDDM_OVERLAY pOverlay, PVBOXWDDM_DMA_PRIVATEDATA_C
         memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_COLORFILL));
 
         pBody->u.in.hSurf = pAlloc->hHostHandle;
-        pBody->u.in.offSurface = pAlloc->offVram;
+        pBody->u.in.offSurface = pAlloc->AllocData.Addr.offVram;
         pBody->u.in.cRects = pCF->ClrFill.Rects.cRects;
         memcpy (pBody->u.in.aRects, pCF->ClrFill.Rects.aRects, pCF->ClrFill.Rects.cRects * sizeof (pCF->ClrFill.Rects.aRects[0]));
         vboxVhwaCommandSubmitAsynchAndComplete(pOverlay->pDevExt, pCmd);
@@ -969,7 +969,7 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
     PVBOXWDDM_ALLOCATION pFbSurf = VBOXVHWA_PRIMARY_ALLOCATION(pSource);
     Assert(pFbSurf);
     Assert(pFbSurf->hHostHandle);
-    Assert(pFbSurf->offVram != VBOXVIDEOOFFSET_VOID);
+    Assert(pFbSurf->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
     int rc = VINF_SUCCESS;
     if (pOverlayInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_OVERLAY_INFO))
     {
@@ -985,11 +985,11 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
             memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
 
             pBody->u.in.hDstSurf = pFbSurf->hHostHandle;
-            pBody->u.in.offDstSurface = pFbSurf->offVram;
+            pBody->u.in.offDstSurface = pFbSurf->AllocData.Addr.offVram;
             pBody->u.in.dstRect = *(VBOXVHWA_RECTL*)((void*)&pOverlayInfo->DstRect);
             pBody->u.in.hSrcSurf = pAlloc->hHostHandle;
             pBody->u.in.offSrcSurface = pOverlayInfo->PhysicalAddress.QuadPart;
-            pAlloc->offVram = pOverlayInfo->PhysicalAddress.QuadPart;
+            pAlloc->AllocData.Addr.offVram = pOverlayInfo->PhysicalAddress.QuadPart;
             pBody->u.in.srcRect = *(VBOXVHWA_RECTL*)((void*)&pOverlayInfo->SrcRect);
             pBody->u.in.flags |= VBOXVHWA_OVER_SHOW;
             if (pOurInfo->OverlayDesc.fFlags & VBOXWDDM_OVERLAY_F_CKEY_DST)
@@ -1013,8 +1013,8 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
                     pBody->u.in.xUpdatedSrcMemRect = *(VBOXVHWA_RECTL*)((void*)&pOurInfo->DirtyRegion.Rect);
                 else
                 {
-                    pBody->u.in.xUpdatedSrcMemRect.right = pAlloc->SurfDesc.width;
-                    pBody->u.in.xUpdatedSrcMemRect.bottom = pAlloc->SurfDesc.height;
+                    pBody->u.in.xUpdatedSrcMemRect.right = pAlloc->AllocData.SurfDesc.width;
+                    pBody->u.in.xUpdatedSrcMemRect.bottom = pAlloc->AllocData.SurfDesc.height;
                     /* top & left are zero-inited with the above memset */
                 }
             }
