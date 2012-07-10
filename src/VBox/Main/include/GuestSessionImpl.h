@@ -52,12 +52,12 @@ public:
 
     /** @name IGuestSession properties.
      * @{ */
-    STDMETHOD(COMGETTER(User))(IN_BSTR *aName);
-    STDMETHOD(COMGETTER(Domain))(IN_BSTR *aDomain);
-    STDMETHOD(COMGETTER(Name))(IN_BSTR *aName);
+    STDMETHOD(COMGETTER(User))(BSTR *aName);
+    STDMETHOD(COMGETTER(Domain))(BSTR *aDomain);
+    STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMGETTER(Id))(ULONG *aId);
     STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout);
-    STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(IN_BSTR, aEnvironment));
+    STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
     STDMETHOD(COMGETTER(Processes))(ComSafeArrayOut(IGuestProcess *, aProcesses));
     STDMETHOD(COMGETTER(Directories))(ComSafeArrayOut(IGuestDirectory *, aDirectories));
     STDMETHOD(COMGETTER(Files))(ComSafeArrayOut(IGuestFile *, aFiles));
@@ -74,8 +74,8 @@ public:
     STDMETHOD(DirectoryOpen)(IN_BSTR aPath, IN_BSTR aFilter, IN_BSTR aFlags, IGuestDirectory **aDirectory);
     STDMETHOD(DirectoryQueryInfo)(IN_BSTR aPath, IGuestFsObjInfo **aInfo);
     STDMETHOD(DirectoryRemove)(IN_BSTR aPath);
-    STDMETHOD(DirectoryRemoveRecursive)(IN_BSTR aPath, ComSafeArrayIn(DirectoryRemoveRecFlag, aFlags), IProgress **aProgress);
-    STDMETHOD(DirectoryRename)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag, aFlags));
+    STDMETHOD(DirectoryRemoveRecursive)(IN_BSTR aPath, ComSafeArrayIn(DirectoryRemoveRecFlag_T, aFlags), IProgress **aProgress);
+    STDMETHOD(DirectoryRename)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag_T, aFlags));
     STDMETHOD(DirectorySetACL)(IN_BSTR aPath, IN_BSTR aACL);
     STDMETHOD(EnvironmentClear)(void);
     STDMETHOD(EnvironmentSet)(IN_BSTR aName, IN_BSTR aValue);
@@ -87,19 +87,19 @@ public:
     STDMETHOD(FileQueryInfo)(IN_BSTR aPath, IGuestFsObjInfo **aInfo);
     STDMETHOD(FileQuerySize)(IN_BSTR aPath, LONG64 *aSize);
     STDMETHOD(FileRemove)(IN_BSTR aPath);
-    STDMETHOD(FileRename)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag, aFlags));
+    STDMETHOD(FileRename)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag_T, aFlags));
     STDMETHOD(FileSetACL)(IN_BSTR aPath, IN_BSTR aACL);
     STDMETHOD(ProcessCreate)(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                             ComSafeArrayIn(ProcessCreateFlag, aFlags), ULONG aTimeoutMS, IGuestProcess **IGuestProcess);
+                             ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS, IGuestProcess **IGuestProcess);
     STDMETHOD(ProcessCreateEx)(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                               ComSafeArrayIn(ProcessCreateFlag, aFlags), ULONG aTimeoutMS,
-                               ProcessPriority aPriority, ComSafeArrayIn(ULONG, aAffinity),
+                               ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
+                               ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
                                IGuestProcess **IGuestProcess);
     STDMETHOD(ProcessGet)(ULONG aPID, IGuestProcess **IGuestProcess);
     STDMETHOD(SetTimeout)(ULONG aTimeoutMS);
-    STDMETHOD(SymlinkCreate)(IN_BSTR aSource, IN_BSTR aTarget, SymlinkType aType);
+    STDMETHOD(SymlinkCreate)(IN_BSTR aSource, IN_BSTR aTarget, SymlinkType_T aType);
     STDMETHOD(SymlinkExists)(IN_BSTR aSymlink, BOOL *aExists);
-    STDMETHOD(SymlinkRead)(IN_BSTR aSymlink, ComSafeArrayIn(SymlinkReadFlag, aFlags), IN_BSTR *aTarget);
+    STDMETHOD(SymlinkRead)(IN_BSTR aSymlink, ComSafeArrayIn(SymlinkReadFlag_T, aFlags), BSTR *aTarget);
     STDMETHOD(SymlinkRemoveDirectory)(IN_BSTR aPath);
     STDMETHOD(SymlinkRemoveFile)(IN_BSTR aFile);
     /** @}  */
