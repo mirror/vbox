@@ -14,5 +14,6 @@
     <key>CFBundleIconFile</key>                 <string>virtualbox</string>
     <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>
     <key>LSCanProvideIMVideoDataSource</key>    <true/>
+    <key>NSHighResolutionCapable</key>          <true/>
 </dict>
 </plist>
