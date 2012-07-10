@@ -221,9 +221,9 @@ $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 	
  ifdef VBOX_WDDM_WIN8
-# VBOXWDDMW8_WITH_DISPD3D = 1
+  VBOXWDDMW8_WITH_DISPD3D = 1
  ifdef VBOX_WITH_CROGL
-#  VBOXWDDMW8_WITH_GL = 1
+  VBOXWDDMW8_WITH_GL = 1
  endif
  
  
