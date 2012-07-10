@@ -52,7 +52,7 @@ RTR3DECL(int)   RTProcQueryUsernameA(RTPROCESS hProcess, char **ppszUser)
         char *pszUser = (char *)RTStrAlloc(cbUser);
         if (pszUser)
         {
-            rc = RTProcQueryUsername(RTProcSelf(), pszUser, cbUser, NULL);
+            rc = RTProcQueryUsername(hProcess, pszUser, cbUser, NULL);
             Assert(rc != VERR_BUFFER_OVERFLOW);
             if (RT_SUCCESS(rc))
                 *ppszUser = pszUser;
