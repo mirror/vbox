@@ -620,6 +620,11 @@ VBoxC_SOURCES = \
 	src-client/ConsoleVRDPServer.cpp \
 	src-client/DisplayImpl.cpp \
 	src-client/GuestImpl.cpp \
+	src-client/GuestDirectoryImpl.cpp \
+	src-client/GuestFileImpl.cpp \
+	src-client/GuestFsObjInfoImpl.cpp \
+	src-client/GuestProcessImpl.cpp \
+	src-client/GuestSessionImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
 	src-client/GuestCtrlIO.cpp \
 	src-client/GuestCtrlImplDir.cpp \

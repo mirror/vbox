@@ -24,6 +24,7 @@
 
 #include "AdditionsFacilityImpl.h"
 #include "GuestCtrlImplPrivate.h"
+#include "GuestSessionImpl.h"
 #include "HGCM.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include <iprt/fs.h>
@@ -83,7 +84,8 @@ public:
     STDMETHOD(COMGETTER(AdditionsRunLevel)) (AdditionsRunLevelType_T *aRunLevel);
     STDMETHOD(COMGETTER(AdditionsVersion))(BSTR *a_pbstrAdditionsVersion);
     STDMETHOD(COMGETTER(AdditionsRevision))(ULONG *a_puAdditionsRevision);
-    STDMETHOD(COMGETTER(Facilities)) (ComSafeArrayOut(IAdditionsFacility*, aFacilities));
+    STDMETHOD(COMGETTER(Facilities)) (ComSafeArrayOut(IAdditionsFacility *, aFacilities));
+    STDMETHOD(COMGETTER(Sessions)) (ComSafeArrayOut(IGuestSession *, aSessions));
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
@@ -130,6 +132,7 @@ public:
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
     STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress);
+    STDMETHOD(OpenSession)(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession);
 
     // Public methods that are not in IDL (only called internally).
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
@@ -293,6 +296,8 @@ private:
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::iterator FacilityMapIter;
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::const_iterator FacilityMapIterConst;
 
+    typedef std::list <ComObjPtr<GuestSession> > GuestSessions;
+
     struct Data
     {
         Data() : mAdditionsRunLevel(AdditionsRunLevelType_None)
@@ -307,6 +312,7 @@ private:
         uint32_t                mAdditionsRevision;
         uint32_t                mAdditionsFeatures;
         Bstr                    mInterfaceVersion;
+        GuestSessions           mGuestSessions;
     };
 
     ULONG mMemoryBalloonSize;

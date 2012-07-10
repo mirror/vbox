@@ -8667,6 +8667,22 @@
       <desc>Something went wrong (error code in flags).</desc>
     </const>
   </enum>
+  
+  <enum
+    name="FileSeekType"
+    uuid="1b73f4f3-3515-4073-a506-76878d9e2541"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="Set"                     value="0">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Current"                 value="1">
+      <desc>TODO</desc>
+    </const>    
+  </enum>
 
   <enum
     name="ProcessInputFlag"
@@ -8697,6 +8713,65 @@
     <const name="StdErr"                   value="1">
       <desc>Get output from stderr.</desc>
     </const>
+  </enum>
+  
+  <enum
+    name="ProcessWaitForFlag"
+    uuid="858a99aa-4b3c-4863-9726-87386671f408"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Exit"                    value="1">
+      <desc>TODO</desc>
+    </const>    
+    <const name="StdIn"                   value="2">
+      <desc>TODO</desc>
+    </const>    
+    <const name="StdOut"                  value="4">
+      <desc>TODO</desc>
+    </const>    
+    <const name="StdErr"                  value="8">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Start"                   value="16">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Status"                  value="32">
+      <desc>TODO</desc>
+    </const>    
+  </enum>
+  
+  <enum
+    name="ProcessWaitReason"
+    uuid="3fcbabf5-27e0-407a-9881-421b36c23978"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="Status"                 value="0">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Error"                  value="10">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Timeout"                value="50">
+      <desc>TODO</desc>
+    </const>    
+    <const name="StdIn"                  value="100">
+      <desc>TODO</desc>
+    </const>    
+    <const name="StdOut"                 value="150">
+      <desc>TODO</desc>
+    </const>    
+    <const name="StdErr"                 value="200">
+      <desc>TODO</desc>
+    </const>    
   </enum>
 
   <enum
@@ -8734,6 +8809,207 @@
     <const name="Parents"                 value="1">
       <desc>No error if existing, make parent directories as needed.</desc>
     </const>
+  </enum>
+  
+  <enum
+    name="DirectoryRemoveRecFlag"
+    uuid="455aabf0-7692-48f6-9061-f21579b65769"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No flag set.</desc>
+    </const>    
+    <const name="ContentAndDir"           value="1">
+      <desc>TODO</desc>
+    </const>    
+    <const name="ContentOnly"             value="2">
+      <desc>TODO</desc>
+    </const>    
+  </enum>
+  
+  <enum
+    name="PathRenameFlag"
+    uuid="f3baa09f-c758-453d-b91c-c7787d76351d"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No flag set.</desc>
+    </const>    
+    <const name="NoReplace"               value="1">
+      <desc>TODO</desc>
+    </const>  
+    <const name="Replace"                 value="2">
+      <desc>TODO</desc>
+    </const>  
+    <const name="NoSymlinks"              value="4">
+      <desc>TODO</desc>
+    </const>  
+  </enum>
+  
+  <enum
+    name="ProcessCreateFlag"
+    uuid="1497c881-70b4-42dd-8b42-2ad76f004e3f"
+    >
+    <desc>
+      Guest process execution flags.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No flag set.</desc>
+    </const>
+    <const name="WaitForProcessStartOnly" value="1">
+      <desc>Only use the specified timeout value to wait for starting the guest process - the guest
+        process itself then uses an infinite timeout.</desc>
+    </const>
+    <const name="IgnoreOrphanedProcesses" value="2">
+      <desc>Do not report an error when executed processes are still alive when VBoxService or the guest OS is shutting down.</desc>
+    </const>
+    <const name="Hidden"                  value="4">
+      <desc>Do not show the started process according to the guest OS guidelines.</desc>
+    </const>
+    <const name="NoProfile"               value="8">
+      <desc>Do not use the user's profile data when exeuting a process. Only available for Windows guests.</desc>
+    </const>
+  </enum>
+  
+  <enum
+    name="ProcessPriority"
+    uuid="ee8cac50-e232-49fe-806b-d1214d9c2e49"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="Invalid"                 value="0">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Default"                 value="1">
+      <desc>TODO</desc>
+    </const>    
+  </enum>
+  
+  <enum
+    name="SymlinkType"
+    uuid="37794668-f8f1-4714-98a5-6f8fa2ed0118"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="Unknown"                 value="0">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Directory"               value="1">
+      <desc>TODO</desc>
+    </const>    
+    <const name="File"                    value="2">
+      <desc>TODO</desc>
+    </const>    
+  </enum>
+  
+  <enum
+    name="SymlinkReadFlag"
+    uuid="b7fe2b9d-790e-4b25-8adf-1ca33026931f"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>TODO.</desc>
+    </const>    
+    <const name="NoSymlinks"              value="1">
+      <desc>TODO</desc>
+    </const>    
+  </enum>
+  
+  <enum
+    name="ProcessStatus"
+    uuid="4d52368f-5b48-4bfe-b486-acf89139b52f"
+    >
+    <desc>
+      Guest process execution status.
+    </desc>
+    <const name="Undefined"               value="0">
+      <desc>Process is in an undefined state.</desc>
+    </const>
+
+    <const name="Starting"                value="10">
+      <desc>TODO</desc>
+    </const>
+    <const name="Started"                 value="100">
+      <desc>Process has been started.</desc>
+    </const>
+    <const name="Paused"                  value="110">
+      <desc>TODO</desc>
+    </const>
+    <const name="Terminating"             value="480">
+      <desc>TODO</desc>
+    </const>
+    <const name="TerminatedNormally"      value="500">
+      <desc>Process terminated normally.</desc>
+    </const>
+    <const name="TerminatedSignal"        value="510">
+      <desc>Process terminated via signal.</desc>
+    </const>
+    <const name="TerminatedAbnormally"    value="511">
+      <desc>Process terminated abnormally.</desc>
+    </const>
+     <const name="TimedOutKilled"         value="512">
+      <desc>Process timed out and was killed.</desc>
+    </const>
+    <const name="TimedOutAbnormally"      value="513">
+      <desc>Process timed out and was not killed successfully.</desc>
+    </const>
+    <const name="Down"                    value="600">
+      <desc>Service/OS is stopping, process was killed.</desc>
+    </const>
+    <const name="Error"                   value="800">
+      <desc>Something went wrong (error code in flags).</desc>
+    </const>
+  </enum>
+  
+  <enum
+    name="FsObjType"
+    uuid="a1ed437c-b3c3-4ca2-b19c-4239d658d5e8"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <const name="Undefined"               value="0">
+      <desc>TODO</desc>
+    </const>    
+    <const name="FIFO"                    value="1">
+      <desc>TODO</desc>
+    </const>    
+    <const name="DevChar"                 value="10">
+      <desc>TODO</desc>
+    </const>    
+    <const name="DevBlock"                value="11">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Directory"               value="50">
+      <desc>TODO</desc>
+    </const>    
+    <const name="File"                    value="80">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Symlink"                 value="100">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Socket"                  value="200">
+      <desc>TODO</desc>
+    </const>    
+    <const name="Whiteout"                value="400">
+      <desc>TODO</desc>
+    </const>    
   </enum>
 
   <enum
@@ -8812,10 +9088,1204 @@
       <desc>The entry type.</desc>
     </attribute>
   </interface>
+  
+  <interface
+    name="IGuestSession" extends="$unknown"
+    uuid="158aff3c-5258-4994-88cb-6fd679c7e3ed"
+    wsmap="managed"
+    >
+    
+    <attribute name="user" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <attribute name="domain" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <attribute name="id" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <attribute name="timeout" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+    <attribute name="processes" type="IGuestProcess" readonly="yes" safearray="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+    <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+    <attribute name="files" type="IGuestFile" readonly="yes" safearray="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+    <method name="Close">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+    </method>
+    
+    <method name="CopyFrom">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="source" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="dest" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="CopyFileFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+    
+    <method name="CopyTo">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="source" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="dest" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="CopyFileFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryCreate">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="mode" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="directory" type="IGuestDirectory" dir="return">
+        <desc>Optional.</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryCreateTemp">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="templateName" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="mode" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="directory" type="IGuestDirectory" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryExists">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="exists" type="boolean" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryOpen">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="filter" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="directory" type="IGuestDirectory" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryQueryInfo">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="info" type="IGuestFsObjInfo" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryRemove">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryRemoveRecursive">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="DirectoryRemoveRecFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="DirectoryRename">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="source" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="dest" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="PathRenameFlag" dir="in" safearray="yes"> 
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="DirectorySetACL">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="acl" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="EnvironmentClear">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+    </method>
+    
+    <method name="EnvironmentSet">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="EnvironmentSetArray">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="environment" type="wstring" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="EnvironmentUnset">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="FileCreateTemp">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="templateName" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="mode" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="file" type="IGuestFile" dir="return">
+        <desc>Optional.</desc>
+      </param>
+    </method>
+    
+    <method name="FileExists">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="exists" type="boolean" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="FileOpen">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="openMode" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="disposition" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="creationMode" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="offset" type="long long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="file" type="IGuestFile" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="FileQueryInfo">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="info" type="IGuestFsObjInfo" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="FileQuerySize">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="size" type="long long" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="FileRename">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="source" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="dest" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="PathRenameFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="FileSetACL">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="file" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="acl" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="ProcessCreate">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="command" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="arguments" type="wstring" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="environment" type="wstring" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="guestProcess" type="IGuestProcess" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="ProcessCreateEx">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="command" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="arguments" type="wstring" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="environment" type="wstring" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="priority" type="ProcessPriority" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="affinity" type="long" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="guestProcess" type="IGuestProcess" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="ProcessGet">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="pid" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="guestProcess" type="IGuestProcess" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="SetTimeout">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="SymlinkCreate">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="source" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="target" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="type" type="SymlinkType" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="SymlinkExists">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="symlink" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="exists" type="boolean" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="SymlinkRead">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="symlink" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="SymlinkReadFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="target" type="wstring" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="SymlinkRemoveDirectory">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="SymlinkRemoveFile">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="file" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+  </interface>    
 
   <interface
+    name="IProcess" extends="$unknown"
+    uuid="47b9d1f3-6728-4d29-830b-6a31bf5581d8"
+    wsmap="suppress"
+    >
+    <desc>
+      TODO
+    </desc>
+    <attribute name="pid" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="status" type="ProcessStatus" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="exitCode" type="long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="arguments" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="executablePath" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <method name="WaitFor">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="waitFor" type="ProcessWaitForFlag" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="reason" type="ProcessWaitReason" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="Read">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="handle" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="Write">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="handle" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="written" type="unsigned long" dir="out">
+        <desc>TODO</desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="Terminate">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+    </method>
+  </interface>
+  
+  <interface
+    name="IGuestProcess" extends="IProcess"
+    uuid="dfa39a36-5d43-4840-a025-67ea956b3111"
+    wsmap="managed"
+    >
+    <desc>
+      TODO
+    </desc>
+  </interface>
+  
+  <interface
+    name="IDirectory" extends="$unknown"
+    uuid="9659f46a-32f2-40e0-ab27-cc2e23fa5def"
+    wsmap="suppress"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="directoryName" type="wstring" readonly="yes">
+      <desc>
+        Full path of directory.
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <method name="Read">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="objInfo" type="IFsObjInfo" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+  </interface>
+  
+  <interface
+    name="IGuestDirectory" extends="IDirectory"
+    uuid="af4a8ce0-0725-42b7-8826-46e3c7ba7357"
+    wsmap="managed"
+    >
+    <desc>
+      TODO
+    </desc>
+  </interface>
+    
+  <interface
+    name="IFile" extends="$unknown"
+    uuid="df475838-6898-4bd7-bcb5-75f91d85c239"
+    wsmap="suppress"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="fileName" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="initialSize" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="openMode" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="offset" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <method name="Close">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+    </method>
+    
+    <method name="QueryInfo">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="objInfo" type="IFsObjInfo" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>  
+        
+    <method name="Read">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="toRead" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="read" type="unsigned long" dir="out">
+        <desc>TODO</desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+    </method>
+        
+    <method name="ReadAt">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="offset" type="long long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="toRead" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="read" type="unsigned long" dir="out">
+        <desc>TODO</desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="Seek">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="offset" type="long long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="whence" type="FileSeekType" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="SetACL">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="acl" type="wstring" dir="in">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="Write">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="written" type="unsigned long" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="WriteAt">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="offset" type="long long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="written" type="unsigned long" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+
+  </interface>
+  
+  <interface
+    name="IGuestFile" extends="IFile"
+    uuid="60661aec-145f-4d11-b80e-8ea151598093"
+    wsmap="managed"
+    >
+    <desc>
+      TODO
+    </desc>
+  </interface>
+  
+  <interface
+    name="IFsObjInfo" extends="$unknown"
+    uuid="0b53ef38-2462-4796-a680-7f6f0dd3680a"
+    wsmap="suppress"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="accessTime" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="allocatedSize" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="birthTime" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+        <attribute name="changeTime" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="deviceNumber" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="fileAtttributes" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="generationId" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="gid" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="groupName" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="hardLinks" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="modificationTime" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="nodeId" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="nodeIdDevice" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>      
+    <attribute name="objectSize" type="long long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="type" type="FsObjType" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>      
+    <attribute name="uid" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="userFlags" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="userName" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>  
+    
+  </interface>
+  
+  <interface
+    name="IGuestFsObjInfo" extends="IFsObjInfo"
+    uuid="d5cf678e-3484-4e4a-ac55-329e15462e18"
+    wsmap="managed"
+    >
+    <desc>
+      TODO
+    </desc>
+  </interface>
+  
+  <interface
     name="IGuest" extends="$unknown"
-    uuid="88696240-7411-4fe6-bb5e-ef56fb8a61f3"
+    uuid="a115744a-0e0b-4193-b40c-40e0d66d0f8d"
     wsmap="managed"
     >
     <desc>
@@ -8870,6 +10340,10 @@
       </desc>
     </attribute>
 
+    <attribute name="sessions" type="IGuestSession" readonly="yes" safearray="yes">
+      <desc>TODO</desc>
+    </attribute>
+    
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
     </attribute>
@@ -9199,6 +10673,37 @@
       </param>
     </method>
 
+    <method name="openSession">
+      <desc>
+        TODO
+      </desc>
+      <param name="user" type="wstring" dir="in">
+        <desc>
+          TODO
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          TODO
+        </desc>
+      </param>
+      <param name="domain" type="wstring" dir="in">
+        <desc>
+          TODO
+        </desc>
+      </param>
+      <param name="sessionName" type="wstring" dir="in">
+        <desc>
+          TODO
+        </desc>
+      </param>
+      <param name="guestSession" type="IGuestSession" dir="return">
+        <desc>
+          TODO
+        </desc>
+      </param>
+    </method>    
+    
     <method name="executeProcess">
       <desc>
         Executes an existing program inside the guest VM.
