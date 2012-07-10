@@ -69,7 +69,7 @@ static RTEXITCODE compareFiles(FILE *pFile1, FILE *pFile2)
 
     uint32_t    cMismatches = 1;
     RTEXITCODE  rcRet       = RTEXITCODE_SUCCESS;
-    uint64_t    off;
+    uint64_t    off         = 0;
     for (;;)
     {
         uint8_t b1;
