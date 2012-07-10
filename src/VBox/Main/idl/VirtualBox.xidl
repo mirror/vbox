@@ -9743,8 +9743,8 @@
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="47b9d1f3-6728-4d29-830b-6a31bf5581d8"
-    wsmap="suppress"
+    uuid="031c6ba4-9005-486d-8333-b27bb009bba9"
+    wsmap="managed"
     >
     <desc>
       TODO
@@ -9887,8 +9887,8 @@
   
   <interface
     name="IDirectory" extends="$unknown"
-    uuid="9659f46a-32f2-40e0-ab27-cc2e23fa5def"
-    wsmap="suppress"
+    uuid="edb0fb3b-9c74-40a6-9c54-ed7abd9d7533"
+    wsmap="managed"
     >
     <desc>
       TODO
@@ -9929,8 +9929,8 @@
     
   <interface
     name="IFile" extends="$unknown"
-    uuid="df475838-6898-4bd7-bcb5-75f91d85c239"
-    wsmap="suppress"
+    uuid="3f067338-2490-47e4-ae81-45a65300f3b1"
+    wsmap="managed"
     >
     <desc>
       TODO
@@ -10111,8 +10111,8 @@
   
   <interface
     name="IFsObjInfo" extends="$unknown"
-    uuid="0b53ef38-2462-4796-a680-7f6f0dd3680a"
-    wsmap="suppress"
+    uuid="fbcde6d8-69a4-41a3-950f-f98aed6ade52"
+    wsmap="managed"
     >
     <desc>
       TODO
