@@ -34,7 +34,7 @@
 
 DEFINE_EMPTY_CTOR_DTOR(GuestFsObjInfo)
 
-HRESULT GuestFsObjInfo::FinalConstruct()
+HRESULT GuestFsObjInfo::FinalConstruct(void)
 {
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();
@@ -253,7 +253,7 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(ObjectSize)(ULONG *aObjectSize)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFsObjInfo::COMGETTER(Type)(FsObjType *aType)
+STDMETHODIMP GuestFsObjInfo::COMGETTER(Type)(FsObjType_T *aType)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

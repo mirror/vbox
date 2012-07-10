@@ -34,7 +34,7 @@
 
 DEFINE_EMPTY_CTOR_DTOR(GuestDirectory)
 
-HRESULT GuestDirectory::FinalConstruct()
+HRESULT GuestDirectory::FinalConstruct(void)
 {
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();
