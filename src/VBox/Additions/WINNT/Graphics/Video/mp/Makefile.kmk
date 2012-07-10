@@ -181,6 +181,10 @@ ifdef VBOX_SIGN_ADDITIONS
  ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_INSTTYPE       = none
   VBoxVideoWddm_DEBUG_INSTTYPE = both
+  ifdef VBOX_WDDM_WIN8
+   VBoxVideoW8_INSTTYPE       = none
+   VBoxVideoW8_DEBUG_INSTTYPE = both
+  endif
  endif
 endif # VBOX_SIGN_ADDITIONS
 
