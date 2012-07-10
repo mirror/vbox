@@ -150,7 +150,7 @@ MakeDebianBiosAssembly_TEMPLATE = VBoxAdvBldProg
 MakeDebianBiosAssembly_DEFS     = IN_DIS
 MakeDebianBiosAssembly_SOURCES  = MakeDebianBiosAssembly.cpp
 MakeDebianBiosAssembly_LIBS     = \
-	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/DisasmBldProg$(VBOX_SUFF_LIB)
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
