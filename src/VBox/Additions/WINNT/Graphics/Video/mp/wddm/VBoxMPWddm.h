@@ -89,7 +89,7 @@ DECLINLINE(bool) vboxWddmAddrVramEqual(PVBOXWDDM_ADDR pAddr1, PVBOXWDDM_ADDR pAd
 DECLINLINE(VBOXVIDEOOFFSET) vboxWddmVramAddrToOffset(PVBOXMP_DEVEXT pDevExt, PHYSICAL_ADDRESS Addr)
 {
     PVBOXMP_COMMON pCommon = VBoxCommonFromDeviceExt(pDevExt);
-    AssertRelease(pCommon->phVRAM.QuadPart < Addr.QuadPart);
+    AssertRelease(pCommon->phVRAM.QuadPart <= Addr.QuadPart);
     return (VBOXVIDEOOFFSET)Addr.QuadPart - pCommon->phVRAM.QuadPart;
 }
 
