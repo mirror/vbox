@@ -210,6 +210,7 @@ typedef struct
     NTSTATUS Status;
     PVBOXDISPIFESCAPE pEscape;
     int cbData;
+    D3DDDI_ESCAPEFLAGS EscapeFlags;
 } VBOXDISPIFWDDM_ESCAPEOP_CONTEXT, *PVBOXDISPIFWDDM_ESCAPEOP_CONTEXT;
 
 DECLCALLBACK(BOOLEAN) vboxDispIfEscapeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, DISPLAY_DEVICE *pDev, PVOID pContext)
@@ -220,7 +221,7 @@ DECLCALLBACK(BOOLEAN) vboxDispIfEscapeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAd
     EscapeData.hAdapter = hAdapter;
     //EscapeData.hDevice = NULL;
     EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    EscapeData.Flags.HardwareAccess = 1;
+    EscapeData.Flags = pCtx->EscapeFlags;
     EscapeData.pPrivateDriverData = pCtx->pEscape;
     EscapeData.PrivateDriverDataSize = VBOXDISPIFESCAPE_SIZE(pCtx->cbData);
     //EscapeData.hContext = NULL;
@@ -230,11 +231,13 @@ DECLCALLBACK(BOOLEAN) vboxDispIfEscapeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAd
     return TRUE;
 }
 
-static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
+static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData, BOOL fHwAccess)
 {
     VBOXDISPIFWDDM_ESCAPEOP_CONTEXT Ctx = {0};
     Ctx.pEscape = pEscape;
     Ctx.cbData = cbData;
+    if (fHwAccess)
+        Ctx.EscapeFlags.HardwareAccess = 1;
     DWORD err = vboxDispIfWDDMAdapterOp(pIf, -1 /* iDisplay, -1 means primary */, vboxDispIfEscapeWDDMOp, &Ctx);
     if (err == NO_ERROR)
     {
@@ -331,7 +334,7 @@ DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
             return vboxDispIfEscapeXPDM(pIf, pEscape, cbData);
 #ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
-            return vboxDispIfEscapeWDDM(pIf, pEscape, cbData);
+            return vboxDispIfEscapeWDDM(pIf, pEscape, cbData, TRUE /* BOOL fHwAccess */);
 #endif
         default:
             Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
@@ -460,6 +463,20 @@ static BOOL vboxDispIfValidateResize(DISPLAY_DEVICE *paDisplayDevices, DEVMODE *
 }
 
 #ifdef VBOX_WITH_WDDM
+static DWORD vboxDispIfReinitVideoModes(PCVBOXDISPIF const pIf)
+{
+    VBOXDISPIFESCAPE escape = {0};
+    escape.escapeCode = VBOXESC_REINITVIDEOMODES;
+    DWORD err = vboxDispIfEscapeWDDM(pIf, &escape, 0, FALSE /* hw access must be false here,
+                                                             * otherwise the miniport driver would fail
+                                                             * request to prevent a deadlock */);
+    if (err != NO_ERROR)
+    {
+        Log((__FUNCTION__": VBoxDispIfEscape failed with err (%d)\n", err));
+    }
+    return err;
+}
+
 DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
     UINT cbVidPnInfo = VBOXWDDM_RECOMMENDVIDPN_SIZE(cDevModes);
@@ -509,6 +526,8 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDispla
         }
     }
 
+    BOOL fAbleToInvalidateVidPn = FALSE;
+
     if (winEr == NO_ERROR)
     {
         Assert(hAdapter);
@@ -526,6 +545,10 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDispla
             Log((__FUNCTION__": pfnD3DKMTInvalidateActiveVidPn failed, Status (0x%x)\n", Status));
             winEr = ERROR_GEN_FAILURE;
         }
+        else
+        {
+            fAbleToInvalidateVidPn = TRUE;
+        }
     }
 
     if (hAdapter)
@@ -534,6 +557,17 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDispla
         ClosaAdapterData.hAdapter = hAdapter;
         Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
         Assert(!Status);
+    }
+
+    if (!fAbleToInvalidateVidPn)
+    {
+        /* fallback impl: make the driver invalidate VidPn,
+         * which is done by emulating a monitor re-plug currently */
+        vboxDispIfReinitVideoModes(pIf);
+
+        /* sleep 2 seconds: dirty hack to wait for the new monitor info to be picked up,
+         * @todo: implement it properly by monitoring monitor device arrival/removal */
+        Sleep(2 * 1000);
     }
 
     /* ignore any prev errors and just check if resize is OK */
@@ -555,6 +589,12 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDispla
                   paDeviceModes[i].dmBitsPerPel,
                   paDeviceModes[i].dmPosition.x,
                   paDeviceModes[i].dmPosition.y));
+
+            if (!fAbleToInvalidateVidPn)
+            {
+                /* @todo: the miniport might have been adjusted the display mode stuff,
+                 * adjust the paDeviceModes[i] by picking the closest available one */
+            }
 
             LONG status = pIf->modeData.wddm.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
                                             &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
