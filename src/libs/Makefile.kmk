@@ -44,7 +44,7 @@ if defined(VBOX_WITH_LIBCURL) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && !de
 endif
 
 # The kStuff lib used by IPRT and the debugger.
-if defined(IPRT_WITH_KSTUFF) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
+if defined(IPRT_WITH_KSTUFF)
  include $(PATH_SUB_CURRENT)/kStuff/Makefile.kmk
 endif
 
