@@ -59,8 +59,8 @@ public:
     STDMETHOD(QueryInfo)(IGuestFsObjInfo **aInfo);
     STDMETHOD(Read)(ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(ReadAt)(LONG64 aOffset, ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData));
-    STDMETHOD(Seek)(LONG64 aOffset, FileSeekType aType);
-    STDMETHOD(SetACL)(BSTR aACL);
+    STDMETHOD(Seek)(LONG64 aOffset, FileSeekType_T aType);
+    STDMETHOD(SetACL)(IN_BSTR aACL);
     STDMETHOD(Write)(ComSafeArrayIn(BYTE, aData), ULONG *aWritten);
     STDMETHOD(WriteAt)(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG *aWritten);
     /** @}  */

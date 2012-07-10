@@ -179,7 +179,7 @@ STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG *aRead, ComS
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType aType)
+STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType_T aType)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -191,7 +191,7 @@ STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType aType)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::SetACL(BSTR aACL)
+STDMETHODIMP GuestFile::SetACL(IN_BSTR aACL)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
