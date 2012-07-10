@@ -38,15 +38,7 @@ DisasmR3_SOURCES        = \
 
 LIBRARIES              += DisasmBldProg
 DisasmBldProg_TEMPLATE  = VBOXBLDPROG
-DisasmBldProg_DEFS      = IN_DIS
-DisasmBldProg_SOURCES   = \
-	Disasm.cpp \
-	DisasmCore.cpp \
-	DisasmReg.cpp \
-	DisasmTables.cpp \
-	DisasmTablesX64.cpp \
-	DisasmFormatBytes.cpp \
-	DisasmFormatYasm.cpp
+DisasmBldProg_EXTENDS   = DisasmR3
 
 LIBRARIES              += DisasmCoreR3
 DisasmCoreR3_TEMPLATE   = VBOXR3
