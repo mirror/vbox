@@ -509,6 +509,39 @@ static NTSTATUS vboxWddmChildStatusReportPerform(PVBOXMP_DEVEXT pDevExt, PVBOXVD
     return STATUS_SUCCESS;
 }
 
+static NTSTATUS vboxWddmChildStatusDoReportReconnected(PVBOXMP_DEVEXT pDevExt, VBOXVDMACMD_CHILD_STATUS_IRQ *pBody)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    for (UINT i = 0; i < pBody->cInfos; ++i)
+    {
+        PVBOXVDMA_CHILD_STATUS pInfo = &pBody->aInfos[i];
+        if (pBody->fFlags & VBOXVDMACMD_CHILD_STATUS_IRQ_F_APPLY_TO_ALL)
+        {
+            for (D3DDDI_VIDEO_PRESENT_TARGET_ID iChild = 0; iChild < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++iChild)
+            {
+                Status = vboxWddmChildStatusReportPerform(pDevExt, pInfo, iChild);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("vboxWddmChildStatusReportPerform failed with Status (0x%x)", Status));
+                    break;
+                }
+            }
+        }
+        else
+        {
+            Status = vboxWddmChildStatusReportPerform(pDevExt, pInfo, D3DDDI_ID_UNINITIALIZED);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("vboxWddmChildStatusReportPerform failed with Status (0x%x)", Status));
+                break;
+            }
+        }
+    }
+
+    return Status;
+}
+
 typedef struct VBOXWDDMCHILDSTATUSCB
 {
     PVBOXVDMACBUF_DR pDr;
@@ -525,31 +558,7 @@ static DECLCALLBACK(VOID) vboxWddmChildStatusReportCompletion(PVBOXMP_DEVEXT pDe
     PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
     VBOXVDMACMD_CHILD_STATUS_IRQ *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHILD_STATUS_IRQ);
 
-    for (UINT i = 0; i < pBody->cInfos; ++i)
-    {
-        PVBOXVDMA_CHILD_STATUS pInfo = &pBody->aInfos[i];
-        if (pBody->fFlags & VBOXVDMACMD_CHILD_STATUS_IRQ_F_APPLY_TO_ALL)
-        {
-            for (D3DDDI_VIDEO_PRESENT_TARGET_ID iChild = 0; iChild < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++iChild)
-            {
-                NTSTATUS Status = vboxWddmChildStatusReportPerform(pDevExt, pInfo, iChild);
-                if (!NT_SUCCESS(Status))
-                {
-                    WARN(("vboxWddmChildStatusReportPerform failed with Status (0x%x)", Status));
-                    break;
-                }
-            }
-        }
-        else
-        {
-            NTSTATUS Status = vboxWddmChildStatusReportPerform(pDevExt, pInfo, D3DDDI_ID_UNINITIALIZED);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("vboxWddmChildStatusReportPerform failed with Status (0x%x)", Status));
-                break;
-            }
-        }
-    }
+    vboxWddmChildStatusDoReportReconnected(pDevExt, pBody);
 
     vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
 
@@ -561,6 +570,7 @@ static DECLCALLBACK(VOID) vboxWddmChildStatusReportCompletion(PVBOXMP_DEVEXT pDe
 
 static NTSTATUS vboxWddmChildStatusReportReconnected(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_TARGET_ID idTarget)
 {
+#ifdef VBOX_WDDM_MONITOR_REPLUG_IRQ
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
     UINT cbCmd = VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (VBOXVDMACMD_CHILD_STATUS_IRQ));
 
@@ -584,7 +594,6 @@ static NTSTATUS vboxWddmChildStatusReportReconnected(PVBOXMP_DEVEXT pDevExt, D3D
         }
         pBody->aInfos[0].iChild = idTarget;
         pBody->aInfos[0].fFlags = VBOXVDMA_CHILD_STATUS_F_DISCONNECTED | VBOXVDMA_CHILD_STATUS_F_CONNECTED;
-
         /* we're going to KeWaitForSingleObject */
         Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
 
@@ -619,6 +628,18 @@ static NTSTATUS vboxWddmChildStatusReportReconnected(PVBOXMP_DEVEXT pDevExt, D3D
     }
 
     return Status;
+#else
+    VBOXVDMACMD_CHILD_STATUS_IRQ Body = {0};
+    Body.cInfos = 1;
+    if (idTarget == D3DDDI_ID_ALL)
+    {
+        Body.fFlags |= VBOXVDMACMD_CHILD_STATUS_IRQ_F_APPLY_TO_ALL;
+    }
+    Body.aInfos[0].iChild = idTarget;
+    Body.aInfos[0].fFlags = VBOXVDMA_CHILD_STATUS_F_DISCONNECTED | VBOXVDMA_CHILD_STATUS_F_CONNECTED;
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    return vboxWddmChildStatusDoReportReconnected(pDevExt, &Body);
+#endif
 }
 
 static NTSTATUS vboxWddmChildStatusCheck(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_VIDEOMODES_INFO paInfos)
@@ -628,7 +649,7 @@ static NTSTATUS vboxWddmChildStatusCheck(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_VIDEO
     int i;
 
     Assert(!bChanged[0]);
-    for (i = 1; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
         /* @todo: check that we actually need the current source->target */
         PVBOXWDDM_VIDEOMODES_INFO pInfo = &paInfos[i];
@@ -4082,9 +4103,12 @@ DxgkDdiEscape(
             }
             case VBOXESC_REINITVIDEOMODES:
             {
-                /* clear driver's internal videomodes cache */
-                VBoxWddmInvalidateVideoModesInfo(pDevExt);
-                Status = STATUS_SUCCESS;
+                PVBOXWDDM_VIDEOMODES_INFO pInfo = VBoxWddmUpdateVideoModesInfo(pDevExt, NULL);
+                Status = vboxWddmChildStatusCheck(pDevExt, pInfo);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("vboxWddmChildStatusCheck failed, Status 0x%x", Status));
+                }
                 break;
             }
             case VBOXESC_SHRC_ADDREF:
@@ -6174,7 +6198,6 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
 {
     LOGF(("ENTER, hAdapter(0x%x)", hAdapter));
     vboxVDbgBreakF();
-    AssertBreakpoint();
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pPresentDisplayOnly->VidPnSourceId];
@@ -6576,10 +6599,11 @@ DriverEntry(
             }
         }
 
-//#ifdef VBOX_WDDM_WIN8
-//        LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
-//        g_VBoxDisplayOnly = 1;
-//#endif
+#ifdef DEBUG_misha
+        /* force g_VBoxDisplayOnly for debugging purposes */
+        LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
+        g_VBoxDisplayOnly = 1;
+#endif
 
         if (NT_SUCCESS(Status))
         {

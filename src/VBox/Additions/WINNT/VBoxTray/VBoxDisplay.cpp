@@ -40,19 +40,6 @@ typedef struct _VBOXDISPLAYCONTEXT
 static VBOXDISPLAYCONTEXT gCtx = {0};
 
 #ifdef VBOX_WITH_WDDM
-static bool vboxWddmReinitVideoModes(VBOXDISPLAYCONTEXT *pCtx)
-{
-    VBOXDISPIFESCAPE escape = {0};
-    escape.escapeCode = VBOXESC_REINITVIDEOMODES;
-    DWORD err = VBoxDispIfEscape(&pCtx->pEnv->dispIf, &escape, 0);
-    if (err != NO_ERROR)
-    {
-        Log((__FUNCTION__": VBoxDispIfEscape failed with err (%d)\n", err));
-        return false;
-    }
-    return true;
-}
-
 typedef enum
 {
     VBOXDISPLAY_DRIVER_TYPE_UNKNOWN = 0,
@@ -172,7 +159,10 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
                     result = true;
 #else
                     enmType = VBOXDISPLAY_DRIVER_TYPE_XPDM;
-                else if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter (Microsoft Corporation - WDDM)") == 0)
+                /* WDDM driver can now have multiple incarnations,
+                 * if the driver name contains VirtualBox, and does NOT match the XPDM name,
+                 * assume it to be WDDM */
+                else if (strstr(&dispDevice.DeviceString[0], "VirtualBox"))
                     enmType = VBOXDISPLAY_DRIVER_TYPE_WDDM;
 #endif
                 break;

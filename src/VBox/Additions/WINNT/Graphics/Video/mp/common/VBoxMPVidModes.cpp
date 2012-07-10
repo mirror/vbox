@@ -492,7 +492,11 @@ static BOOLEAN VBoxMPIsStartingUp(PVBOXMP_DEVEXT pExt, uint32_t iDisplay)
 #ifdef VBOX_XPDM_MINIPORT
     return (pExt->CurrentMode == 0);
 #else
-    return (!VBoxCommonFromDeviceExt(pExt)->cDisplays || !pExt->aSources[iDisplay].pPrimaryAllocation);
+    return (!VBoxCommonFromDeviceExt(pExt)->cDisplays
+# ifndef VBOX_WDDM_MINIPORT
+            || !pExt->aSources[iDisplay].pPrimaryAllocation
+# endif
+                    );
 #endif
 }
 
@@ -519,9 +523,12 @@ VBoxMPValidateVideoModeParams(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t &
         yres = yres ? yres:pExt->CurrentModeHeight;
         bpp  = bpp  ? bpp :pExt->CurrentModeBPP;
 #else
-        xres = xres ? xres:pExt->aSources[iDisplay].pPrimaryAllocation->AllocData.SurfDesc.width;
-        yres = yres ? yres:pExt->aSources[iDisplay].pPrimaryAllocation->AllocData.SurfDesc.height;
-        bpp  = bpp  ? bpp :pExt->aSources[iDisplay].pPrimaryAllocation->AllocData.SurfDesc.bpp;
+        PVBOXWDDM_ALLOC_DATA pAllocData = pExt->aSources[iDisplay].pPrimaryAllocation ?
+                  &pExt->aSources[iDisplay].pPrimaryAllocation->AllocData
+                : &pExt->aSources[iDisplay].AllocData;
+        xres = xres ? xres:pAllocData->SurfDesc.width;
+        yres = yres ? yres:pAllocData->SurfDesc.height;
+        bpp  = bpp  ? bpp :pAllocData->SurfDesc.bpp;
 #endif
     }
 
