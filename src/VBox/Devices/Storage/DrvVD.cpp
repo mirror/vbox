@@ -2297,7 +2297,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
-                                      N_("DrvVD: Configuration error: Querying \"Discard\" as boolean failed"));
+                                      N_("DrvVD: Configuration error: Querying \"InformAboutZeroBlocks\" as boolean failed"));
                 break;
             }
 
