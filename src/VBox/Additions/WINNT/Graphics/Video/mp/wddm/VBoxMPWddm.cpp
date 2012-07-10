@@ -6215,7 +6215,10 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
     for (UINT i = 0; i < pPresentDisplayOnly->NumMoves; ++i)
     {
         if (!bUpdateRectInited)
+        {
             UpdateRect = pPresentDisplayOnly->pMoves[i].DestRect;
+            bUpdateRectInited = TRUE;
+        }
         else
             vboxWddmRectUnite(&UpdateRect, &pPresentDisplayOnly->pMoves[i].DestRect);
         vboxVdmaGgDmaBltPerform(pDevExt, &SrcAllocData, &pPresentDisplayOnly->pMoves[i].DestRect, &pSource->AllocData, &pPresentDisplayOnly->pMoves[i].DestRect);
@@ -6225,7 +6228,10 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
     {
         vboxVdmaGgDmaBltPerform(pDevExt, &SrcAllocData, &pPresentDisplayOnly->pDirtyRect[i], &pSource->AllocData, &pPresentDisplayOnly->pDirtyRect[i]);
         if (!bUpdateRectInited)
+        {
             UpdateRect = pPresentDisplayOnly->pDirtyRect[i];
+            bUpdateRectInited = TRUE;
+        }
         else
             vboxWddmRectUnite(&UpdateRect, &pPresentDisplayOnly->pDirtyRect[i]);
     }
