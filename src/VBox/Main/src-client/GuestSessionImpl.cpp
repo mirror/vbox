@@ -108,7 +108,7 @@ void GuestSession::uninit(void)
 // implementation of public getters/setters for attributes
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP GuestSession::COMGETTER(User)(IN_BSTR *aUser)
+STDMETHODIMP GuestSession::COMGETTER(User)(BSTR *aUser)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -126,7 +126,7 @@ STDMETHODIMP GuestSession::COMGETTER(User)(IN_BSTR *aUser)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::COMGETTER(Domain)(IN_BSTR *aDomain)
+STDMETHODIMP GuestSession::COMGETTER(Domain)(BSTR *aDomain)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -144,7 +144,7 @@ STDMETHODIMP GuestSession::COMGETTER(Domain)(IN_BSTR *aDomain)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::COMGETTER(Name)(IN_BSTR *aName)
+STDMETHODIMP GuestSession::COMGETTER(Name)(BSTR *aName)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -198,7 +198,7 @@ STDMETHODIMP GuestSession::COMGETTER(Timeout)(ULONG *aTimeout)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(IN_BSTR, aEnvironment))
+STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnvironment))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -297,7 +297,7 @@ STDMETHODIMP GuestSession::Close(void)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::CopyFrom(IN_BSTR aSource, BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress)
+STDMETHODIMP GuestSession::CopyFrom(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -309,7 +309,7 @@ STDMETHODIMP GuestSession::CopyFrom(IN_BSTR aSource, BSTR aDest, ComSafeArrayIn(
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress)
+STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -333,7 +333,7 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode, ULONG aFl
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, BSTR aName, IGuestDirectory **aDirectory)
+STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestDirectory **aDirectory)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -357,7 +357,7 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, BSTR aFilter, BSTR aFlags, IGuestDirectory **aDirectory)
+STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, IN_BSTR aFlags, IGuestDirectory **aDirectory)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -393,7 +393,7 @@ STDMETHODIMP GuestSession::DirectoryRemove(IN_BSTR aPath)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectoryRemoveRecursive(IN_BSTR aPath, ComSafeArrayIn(DirectoryRemoveRecFlag, aFlags), IProgress **aProgress)
+STDMETHODIMP GuestSession::DirectoryRemoveRecursive(IN_BSTR aPath, ComSafeArrayIn(DirectoryRemoveRecFlag_T, aFlags), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -405,7 +405,7 @@ STDMETHODIMP GuestSession::DirectoryRemoveRecursive(IN_BSTR aPath, ComSafeArrayI
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectoryRename(IN_BSTR aSource, BSTR aDest, ComSafeArrayIn(PathRenameFlag, aFlags))
+STDMETHODIMP GuestSession::DirectoryRename(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag_T, aFlags))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -417,7 +417,7 @@ STDMETHODIMP GuestSession::DirectoryRename(IN_BSTR aSource, BSTR aDest, ComSafeA
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectorySetACL(IN_BSTR aPath, BSTR aACL)
+STDMETHODIMP GuestSession::DirectorySetACL(IN_BSTR aPath, IN_BSTR aACL)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -441,7 +441,7 @@ STDMETHODIMP GuestSession::EnvironmentClear(void)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::EnvironmentSet(IN_BSTR aName, BSTR aValue)
+STDMETHODIMP GuestSession::EnvironmentSet(IN_BSTR aName, IN_BSTR aValue)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -477,7 +477,7 @@ STDMETHODIMP GuestSession::EnvironmentUnset(IN_BSTR aName)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::FileCreateTemp(IN_BSTR aTemplate, ULONG aMode, BSTR aName, IGuestFile **aFile)
+STDMETHODIMP GuestSession::FileCreateTemp(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestFile **aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -501,7 +501,7 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, BSTR aOpenMode, BSTR aDisposition, ULONG aCreationMode, LONG64 aOffset, IGuestFile **aFile)
+STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aDisposition, ULONG aCreationMode, LONG64 aOffset, IGuestFile **aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -549,7 +549,7 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::FileRename(IN_BSTR aSource, BSTR aDest, ComSafeArrayIn(PathRenameFlag, aFlags))
+STDMETHODIMP GuestSession::FileRename(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag_T, aFlags))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -561,7 +561,7 @@ STDMETHODIMP GuestSession::FileRename(IN_BSTR aSource, BSTR aDest, ComSafeArrayI
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::FileSetACL(IN_BSTR aPath, BSTR aACL)
+STDMETHODIMP GuestSession::FileSetACL(IN_BSTR aPath, IN_BSTR aACL)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -574,7 +574,7 @@ STDMETHODIMP GuestSession::FileSetACL(IN_BSTR aPath, BSTR aACL)
 }
 
 STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                         ComSafeArrayIn(ProcessCreateFlag, aFlags), ULONG aTimeoutMS, IGuestProcess **IGuestProcess)
+                                         ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS, IGuestProcess **IGuestProcess)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -587,8 +587,8 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 }
 
 STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                           ComSafeArrayIn(ProcessCreateFlag, aFlags), ULONG aTimeoutMS,
-                                           ProcessPriority aPriority, ComSafeArrayIn(ULONG, aAffinity),
+                                           ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
+                                           ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
                                            IGuestProcess **IGuestProcess)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -625,7 +625,7 @@ STDMETHODIMP GuestSession::SetTimeout(ULONG aTimeoutMS)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::SymlinkCreate(IN_BSTR aSource, BSTR aTarget, SymlinkType aType)
+STDMETHODIMP GuestSession::SymlinkCreate(IN_BSTR aSource, IN_BSTR aTarget, SymlinkType_T aType)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -649,7 +649,7 @@ STDMETHODIMP GuestSession::SymlinkExists(IN_BSTR aSymlink, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::SymlinkRead(IN_BSTR aSymlink, ComSafeArrayIn(SymlinkReadFlag, aFlags), BSTR *aTarget)
+STDMETHODIMP GuestSession::SymlinkRead(IN_BSTR aSymlink, ComSafeArrayIn(SymlinkReadFlag_T, aFlags), BSTR *aTarget)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
