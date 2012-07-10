@@ -2140,6 +2140,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     bool        fUseNewIo = false;
     bool        fUseBlockCache = false;
     bool        fDiscard = false;
+    bool        fInformAboutZeroBlocks = false;
     unsigned    iLevel = 0;
     PCFGMNODE   pCurNode = pCfg;
     VDTYPE      enmType = VDTYPE_HDD;
@@ -2157,7 +2158,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
                                           "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0BlockCache\0"
-                                          "CachePath\0CacheFormat\0Discard\0");
+                                          "CachePath\0CacheFormat\0Discard\0InformAboutZeroBlocks\0");
         }
         else
         {
@@ -2290,6 +2291,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"Discard\" are set"));
+                break;
+            }
+            rc = CFGMR3QueryBoolDef(pCurNode, "InformAboutZeroBlocks", &fInformAboutZeroBlocks, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"Discard\" as boolean failed"));
                 break;
             }
 
@@ -2592,6 +2600,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
         if (fDiscard && iLevel == 0)
             uOpenFlags |= VD_OPEN_FLAGS_DISCARD;
+        if (fInformAboutZeroBlocks)
+            uOpenFlags |= VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS;
 
         /* Try to open backend in async I/O mode first. */
         rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
