@@ -41,6 +41,7 @@
 # include "GuestDirEntryImpl.h"
 # include "GuestFileImpl.h"
 # include "GuestFsObjInfoImpl.h"
+# include "GuestProcessImpl.h"
 # include "GuestSessionImpl.h"
 #endif
 #include "KeyboardImpl.h"
@@ -71,6 +72,8 @@ NS_DECL_CLASSINFO(GuestFile)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestFile, IGuestFile)
 NS_DECL_CLASSINFO(GuestFsObjInfo)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestFsObjInfo, IGuestFsObjInfo)
+NS_DECL_CLASSINFO(GuestProcess)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestProcess, IGuestProcess)
 NS_DECL_CLASSINFO(GuestSession)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestSession, IGuestSession)
 #endif
