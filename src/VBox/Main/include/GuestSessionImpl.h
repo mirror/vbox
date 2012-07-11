@@ -26,6 +26,8 @@
 #include "GuestFileImpl.h"
 #include "GuestFsObjInfoImpl.h"
 
+class Guest;
+
 /**
  * TODO
  */
@@ -44,7 +46,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestSession)
 
-    HRESULT init(const ComPtr<IGuest> pGuest, Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName);
+    int     init(Guest *aGuest, Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -90,12 +92,12 @@ public:
     STDMETHOD(FileRename)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag_T, aFlags));
     STDMETHOD(FileSetACL)(IN_BSTR aPath, IN_BSTR aACL);
     STDMETHOD(ProcessCreate)(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                             ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS, IGuestProcess **IGuestProcess);
+                             ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS, IGuestProcess **aProcess);
     STDMETHOD(ProcessCreateEx)(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
                                ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
-                               IGuestProcess **IGuestProcess);
-    STDMETHOD(ProcessGet)(ULONG aPID, IGuestProcess **IGuestProcess);
+                               IGuestProcess **aProcess);
+    STDMETHOD(ProcessGet)(ULONG aPID, IGuestProcess **aProcess);
     STDMETHOD(SetTimeout)(ULONG aTimeoutMS);
     STDMETHOD(SymlinkCreate)(IN_BSTR aSource, IN_BSTR aTarget, SymlinkType_T aType);
     STDMETHOD(SymlinkExists)(IN_BSTR aSymlink, BOOL *aExists);
@@ -107,28 +109,44 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
+    int directoryClose(ComObjPtr<GuestDirectory> pDirectory);
+    int fileClose(ComObjPtr<GuestFile> pFile);
+    int processClose(ComObjPtr<GuestProcess> pProcess);
+    int processCreateExInteral(const Utf8Str &aCommand, ComSafeArrayIn(Utf8Str, aArguments), ComSafeArrayIn(Utf8Str, aEnvironment),
+                               ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
+                               ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
+                               IGuestProcess **aProcess);
     /** @}  */
 
 private:
 
     typedef std::map <Utf8Str, Utf8Str> SessionEnvironment;
-    typedef std::list <ComObjPtr<GuestProcess> > SessionProcesses;
+
     typedef std::list <ComObjPtr<GuestDirectory> > SessionDirectories;
     typedef std::list <ComObjPtr<GuestFile> > SessionFiles;
+    typedef std::list <ComObjPtr<GuestProcess> > SessionProcesses;
 
     struct Data
     {
-        ComPtr<IGuest>       mParent;
+        /** Flag indicating if this is an internal session
+         *  or not. Internal session are not accessible by clients. */
+        bool                 fInternal;
+        /** Pointer to the parent (IGuest). */
+        Guest               *mParent;
+        /** The session credentials. */
         Utf8Str              mUser;
-        Utf8Str              mDomain;
         Utf8Str              mPassword;
+        Utf8Str              mDomain;
+        /** The (optional) session name. */
         Utf8Str              mName;
+        /** The session ID. */
         ULONG                mId;
+        /** The session timeout. Default is 30s. */
         ULONG                mTimeout;
         SessionEnvironment   mEnvironment;
-        SessionProcesses     mProcesses;
         SessionDirectories   mDirectories;
         SessionFiles         mFiles;
+        SessionProcesses     mProcesses;
     } mData;
 };
 

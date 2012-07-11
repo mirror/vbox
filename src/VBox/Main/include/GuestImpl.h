@@ -132,7 +132,7 @@ public:
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
     STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress);
-    STDMETHOD(OpenSession)(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession);
+    STDMETHOD(CreateSession)(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession);
 
     // Public methods that are not in IDL (only called internally).
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
@@ -200,6 +200,12 @@ public:
     HRESULT taskUpdateGuestAdditions(GuestTask *aTask);
 #endif
     void enableVMMStatistics(BOOL aEnable) { mCollectVMMStats = aEnable; };
+
+public:
+    /** @name Public internal methods.
+     * @{ */
+    int sessionClose(ComObjPtr<GuestSession> pSession);
+    /** @}  */
 
 private:
 
@@ -352,4 +358,4 @@ private:
 #define GUEST_MAGIC 0xCEED2006u
 
 #endif // ____H_GUESTIMPL
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+

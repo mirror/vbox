@@ -20,6 +20,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include "GuestImpl.h"
 #include "GuestSessionImpl.h"
 
 #include "Global.h"
@@ -51,14 +52,14 @@ void GuestSession::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT GuestSession::init(const ComPtr<IGuest> pGuest,
-                           Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName)
+int GuestSession::init(Guest *aGuest,
+                       Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName)
 {
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+    AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
-    mData.mParent = pGuest;
+    mData.mParent = aGuest;
 
     mData.mUser = aUser;
     mData.mPassword = aPassword;
@@ -68,7 +69,7 @@ HRESULT GuestSession::init(const ComPtr<IGuest> pGuest,
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
 
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -85,23 +86,31 @@ void GuestSession::uninit(void)
         return;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-    for (SessionFiles::const_iterator itFiles = mData.mFiles.begin();
-         itFiles != mData.mFiles.end(); ++itFiles)
-    {
-        /** @todo */
-    }
-
-    for (SessionDirectories::const_iterator itDirs = mData.mDirectories.begin();
+    for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
          itDirs != mData.mDirectories.end(); ++itDirs)
     {
-        /** @todo */
+        (*itDirs)->uninit();
+        (*itDirs).setNull();
     }
+    mData.mDirectories.clear();
 
-    for (SessionProcesses::const_iterator itProcs = mData.mProcesses.begin();
+    for (SessionFiles::iterator itFiles = mData.mFiles.begin();
+         itFiles != mData.mFiles.end(); ++itFiles)
+    {
+        (*itFiles)->uninit();
+        (*itFiles).setNull();
+    }
+    mData.mFiles.clear();
+
+    for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
          itProcs != mData.mProcesses.end(); ++itProcs)
     {
-        /** @todo */
+        (*itProcs)->uninit();
+        (*itProcs).setNull();
     }
+    mData.mProcesses.clear();
+
+    mData.mParent->sessionClose(this);
 #endif
 }
 
@@ -282,6 +291,175 @@ STDMETHODIMP GuestSession::COMGETTER(Files)(ComSafeArrayOut(IGuestFile *, aFiles
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+// private methods
+/////////////////////////////////////////////////////////////////////////////
+
+int GuestSession::directoryClose(ComObjPtr<GuestDirectory> pDirectory)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
+         itDirs != mData.mDirectories.end(); ++itDirs)
+    {
+        if (pDirectory == (*itDirs))
+        {
+            mData.mDirectories.remove((*itDirs));
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (SessionFiles::iterator itFiles = mData.mFiles.begin();
+         itFiles != mData.mFiles.end(); ++itFiles)
+    {
+        if (pFile == (*itFiles))
+        {
+            mData.mFiles.remove((*itFiles));
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
+         itProcs != mData.mProcesses.end(); ++itProcs)
+    {
+        if (pProcess == (*itProcs))
+        {
+            mData.mProcesses.remove((*itProcs));
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+int GuestSession::processCreateExInteral(const Utf8Str &aCommand, ComSafeArrayIn(Utf8Str, aArguments), ComSafeArrayIn(Utf8Str, aEnvironment),
+                                         ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
+                                         ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
+                                         IGuestProcess **aProcess)
+{
+    AssertPtrReturn(aProcess, VERR_INVALID_POINTER);
+
+    /* Validate flags. */
+    com::SafeArray<ProcessCreateFlag_T> arrFlags(ComSafeArrayInArg(aFlags));
+    for (size_t i = 0; i < arrFlags.size(); i++)
+    {
+        if (arrFlags[i] == ExecuteProcessFlag_None)
+            continue;
+
+        if (   !(arrFlags[i] & ExecuteProcessFlag_IgnoreOrphanedProcesses)
+            && !(arrFlags[i] & ExecuteProcessFlag_WaitForProcessStartOnly)
+            && !(arrFlags[i] & ExecuteProcessFlag_Hidden)
+            && !(arrFlags[i] & ExecuteProcessFlag_NoProfile))
+        {
+            return VERR_INVALID_PARAMETER;
+        }
+    }
+
+    /* Adjust timeout. If set to 0, we define
+     * an infinite timeout. */
+    if (aTimeoutMS == 0)
+        aTimeoutMS = UINT32_MAX;
+
+    /** @tood Implement process priority + affinity. */
+
+    int rc;
+    ComObjPtr<GuestProcess> pGuestProcess;
+    try
+    {
+        /* Create the session object. */
+        HRESULT hr = pGuestProcess.createObject();
+        if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
+
+        rc = pGuestProcess->init(this,
+                                 aCommand, aArguments, aEnvironment,
+                                 aFlags, aTimeoutMS, aPriority, aAffinity);
+        if (RT_FAILURE(rc)) throw rc;
+
+        mData.mProcesses.push_back(pGuestProcess);
+
+        /* Return guest session to the caller. */
+        hr = pGuestProcess.queryInterfaceTo(aProcess);
+        if (FAILED(hr)) throw VERR_COM_OBJECT_NOT_FOUND;
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    return rc;
+
+#if 0
+    int rc = VINF_SUCCESS;
+
+    char **papszArgv = NULL;
+    try
+    {
+        /* Prepare arguments. */
+        uint32_t uNumArgs = 0;
+        if (aArguments)
+        {
+            com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
+            uNumArgs = args.size();
+            papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
+            AssertReturn(papszArgv, VERR_NO_MEMORY);
+            for (unsigned i = 0; RT_SUCCESS(rc) && i < uNumArgs; i++)
+                rc = RTUtf16ToUtf8(args[i], &papszArgv[i]);
+            papszArgv[uNumArgs] = NULL;
+
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        char *pszArgs = NULL;
+        if (uNumArgs)
+        {
+            rc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+            if (RT_FAILURE(rc)) throw rc;
+        }
+
+        /* Get number of arguments. */
+        uint32_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
+
+        /* Prepare environment. */
+        void *pvEnv = NULL;
+        uint32_t uNumEnv = 0;
+        uint32_t cbEnv = 0;
+        if (aEnvironment)
+        {
+            com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
+
+            for (unsigned i = 0; RT_SUCCESS(rc) && i < env.size(); i++)
+                rc = prepareExecuteEnv(Utf8Str(env[i]).c_str(), &pvEnv, &cbEnv, &uNumEnv);
+        }
+    }
+    catch (int eRc)
+    {
+
+
+        rc = exRc;
+    }
+
+    for (unsigned i = 0; i < uNumArgs; i++)
+        RTMemFree(papszArgv[i]);
+            RTMemFree(papszArgv);
+#endif
+
+    return rc;
+}
+
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -290,10 +468,9 @@ STDMETHODIMP GuestSession::Close(void)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     uninit();
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -574,7 +751,7 @@ STDMETHODIMP GuestSession::FileSetACL(IN_BSTR aPath, IN_BSTR aACL)
 }
 
 STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                         ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS, IGuestProcess **IGuestProcess)
+                                         ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS, IGuestProcess **aProcess)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -582,14 +759,20 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aProcess);
+
+    com::SafeArray<LONG> aAffinity; /** @todo Process affinity, not used yet. */
+
+    int rc = processCreateExInteral(aCommand, aArguments, aEnvironment, aFlags, aTimeoutMS,
+                                    ProcessPriority_Default, ComSafeArrayAsInParam(aAffinity), aProcess);
+    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                            ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
                                            ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
-                                           IGuestProcess **IGuestProcess)
+                                           IGuestProcess **aProcess)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -597,11 +780,15 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aProcess);
+
+    int rc = processCreateExInteral(aCommand, aArguments, aEnvironment, aFlags, aTimeoutMS,
+                                    aPriority, aAffinity, aProcess);
+    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **IGuestProcess)
+STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **aProcess)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
