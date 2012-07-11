@@ -49,14 +49,22 @@ void GuestProcess::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT GuestProcess::init(void)
+int GuestProcess::init(GuestSession *pSession,
+                       const Utf8Str &aCommand, ComSafeArrayIn(Utf8Str, aArguments), ComSafeArrayIn(Utf8Str, aEnvironment),
+                       ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
+                       ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity))
 {
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+    AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
+
+    int rc = VINF_SUCCESS;
+
+    mData.mParent = pSession;
 
     /* Confirm a successful initialization when it's the case. */
-    autoInitSpan.setSucceeded();
+    if (RT_SUCCESS(rc))
+        autoInitSpan.setSucceeded();
 
     return S_OK;
 }
@@ -130,7 +138,7 @@ STDMETHODIMP GuestProcess::COMGETTER(ExitCode)(LONG *aExitCode)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestProcess::COMGETTER(PID)(ULONG *aPID)
+STDMETHODIMP GuestProcess::COMGETTER(Pid)(ULONG *aPID)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -181,7 +189,7 @@ STDMETHODIMP GuestProcess::Terminate(void)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestProcess::WaitFor(ComSafeArrayOut(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitReason_T *aReason)
+STDMETHODIMP GuestProcess::WaitFor(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitReason_T *aReason)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

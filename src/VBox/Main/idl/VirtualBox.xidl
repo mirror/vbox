@@ -9743,7 +9743,7 @@
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="031c6ba4-9005-486d-8333-b27bb009bba9"
+    uuid="8a308a2f-bea6-4786-80a0-4d07cd4bacaa"
     wsmap="managed"
     >
     <desc>
@@ -9850,16 +9850,13 @@
       <param name="handle" type="unsigned long" dir="in">
         <desc>TODO</desc>
       </param>
-      <param name="size" type="unsigned long" dir="in">
+      <param name="data" type="octet" dir="in" safearray="yes">
         <desc>TODO</desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
         <desc>TODO</desc>
       </param>
-      <param name="written" type="unsigned long" dir="out">
-        <desc>TODO</desc>
-      </param>
-      <param name="data" type="octet" dir="return" safearray="yes">
+      <param name="written" type="unsigned long" dir="return">
         <desc>TODO</desc>
       </param>
     </method>
@@ -10285,7 +10282,7 @@
   
   <interface
     name="IGuest" extends="$unknown"
-    uuid="a115744a-0e0b-4193-b40c-40e0d66d0f8d"
+    uuid="1413d910-e533-47af-a71b-919c106d2472"
     wsmap="managed"
     >
     <desc>
@@ -10673,7 +10670,7 @@
       </param>
     </method>
 
-    <method name="openSession">
+    <method name="createSession">
       <desc>
         TODO
       </desc>

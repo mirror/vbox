@@ -2660,7 +2660,30 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::OpenSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession)
+// private methods
+/////////////////////////////////////////////////////////////////////////////
+
+int Guest::sessionClose(ComObjPtr<GuestSession> pSession)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
+         itSessions != mData.mGuestSessions.end(); ++itSessions)
+    {
+        if (pSession == (*itSessions))
+        {
+            mData.mGuestSessions.remove((*itSessions));
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+// implementation of public methods
+/////////////////////////////////////////////////////////////////////////////
+
+STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2669,7 +2692,7 @@ STDMETHODIMP Guest::OpenSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomai
     /* Do not allow anonymous sessions (with system rights). */
     if (RT_UNLIKELY((aUser) == NULL || *(aUser) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
-    CheckComArgOutPointerValid(aSessionName);
+    CheckComArgOutPointerValid(aGuestSession);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2684,9 +2707,9 @@ STDMETHODIMP Guest::OpenSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomai
         hr = pGuestSession.createObject();
         if (FAILED(hr)) throw hr;
 
-        hr = pGuestSession->init(static_cast<IGuest*>(this),
-                                 aUser, aPassword, aDomain, aSessionName);
-        if (FAILED(hr)) throw hr;
+        int rc = pGuestSession->init(this,
+                                     aUser, aPassword, aDomain, aSessionName);
+        if (RT_FAILURE(rc)) throw VBOX_E_IPRT_ERROR;
 
         mData.mGuestSessions.push_back(pGuestSession);
 
