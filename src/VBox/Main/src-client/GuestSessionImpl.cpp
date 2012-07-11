@@ -762,11 +762,21 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 
     CheckComArgOutPointerValid(aProcess);
 
-    com::SafeArray<LONG> aAffinity; /** @todo Process affinity, not used yet. */
+    com::SafeArray<LONG> affinity; /** @todo Process affinity, not used yet. */
 
-    int rc = processCreateExInteral(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
+    com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
+    com::SafeArray<Utf8Str> argumentsUtf8(arguments.size());
+    for (size_t i = 0; i < arguments.size(); i++)
+        argumentsUtf8[i] = arguments[i];
+
+    com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
+    com::SafeArray<Utf8Str> environmentUtf8(environment.size());
+    for (size_t i = 0; i < environment.size(); i++)
+        environmentUtf8[i] = environment[i];
+
+    int rc = processCreateExInteral(Utf8Str(aCommand), ComSafeArrayAsInParam(argumentsUtf8), ComSafeArrayAsInParam(environmentUtf8),
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
-                                    ProcessPriority_Default, ComSafeArrayAsInParam(aAffinity), aProcess);
+                                    ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
     return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -784,7 +794,17 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
 
     CheckComArgOutPointerValid(aProcess);
 
-    int rc = processCreateExInteral(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
+    com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
+    com::SafeArray<Utf8Str> argumentsUtf8(arguments.size());
+    for (size_t i = 0; i < arguments.size(); i++)
+        argumentsUtf8[i] = arguments[i];
+
+    com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
+    com::SafeArray<Utf8Str> environmentUtf8(environment.size());
+    for (size_t i = 0; i < environment.size(); i++)
+        environmentUtf8[i] = environment[i];
+
+    int rc = processCreateExInteral(Utf8Str(aCommand), ComSafeArrayAsInParam(argumentsUtf8), ComSafeArrayAsInParam(environmentUtf8),
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
                                     aPriority, ComSafeArrayInArg(aAffinity), aProcess);
     return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
