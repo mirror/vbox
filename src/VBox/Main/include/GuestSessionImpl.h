@@ -26,6 +26,11 @@
 #include "GuestFileImpl.h"
 #include "GuestFsObjInfoImpl.h"
 
+#include <map>
+#include <vector>
+
+typedef std::vector<Utf8Str> StringsArray;
+
 class Guest;
 
 /**
@@ -112,7 +117,7 @@ public:
     int directoryClose(ComObjPtr<GuestDirectory> pDirectory);
     int fileClose(ComObjPtr<GuestFile> pFile);
     int processClose(ComObjPtr<GuestProcess> pProcess);
-    int processCreateExInteral(const Utf8Str &aCommand, ComSafeArrayIn(Utf8Str, aArguments), ComSafeArrayIn(Utf8Str, aEnvironment),
+    int processCreateExInteral(const Utf8Str &aCommand, const StringsArray &aArguments, const StringsArray &aEnvironment,
                                ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
                                ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
                                IGuestProcess **aProcess);

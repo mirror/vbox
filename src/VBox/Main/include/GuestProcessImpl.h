@@ -21,6 +21,10 @@
 
 #include "VirtualBoxBase.h"
 
+#include <vector>
+
+typedef std::vector<Utf8Str> StringsArray;
+
 class GuestSession;
 
 /**
@@ -43,7 +47,7 @@ public:
     DECLARE_EMPTY_CTOR_DTOR(GuestProcess)
 
     int     init(GuestSession *pSession,
-                 const Utf8Str &aCommand, ComSafeArrayIn(Utf8Str, aArguments), ComSafeArrayIn(Utf8Str, aEnvironment),
+                 const Utf8Str &aCommand, const StringsArray &aArguments, const StringsArray &aEnvironment,
                  ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
                  ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity));
     void    uninit(void);
