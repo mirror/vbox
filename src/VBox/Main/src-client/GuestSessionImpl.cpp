@@ -759,6 +759,7 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+#if 0
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -780,6 +781,7 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
                                     ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
     return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+#endif
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -791,13 +793,14 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+#if 0
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     CheckComArgOutPointerValid(aProcess);
 
     com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
-    com::SafeArray<Utf8Str> argumentsUtf8(arguments.size());
+    com::SafeArray<Utf8Str> argumentsUtf8;
     for (size_t i = 0; i < arguments.size(); i++)
         argumentsUtf8[i] = Utf8Str(Bstr(arguments[i]));
 
@@ -810,6 +813,7 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
                                     aPriority, ComSafeArrayInArg(aAffinity), aProcess);
     return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+#endif
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
