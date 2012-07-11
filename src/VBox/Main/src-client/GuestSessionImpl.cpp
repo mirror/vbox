@@ -767,12 +767,12 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
     com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
     com::SafeArray<Utf8Str> argumentsUtf8(arguments.size());
     for (size_t i = 0; i < arguments.size(); i++)
-        argumentsUtf8[i] = Bstr(arguments[i]);
+        argumentsUtf8[i] = Utf8Str(arguments[i]);
 
     com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
     com::SafeArray<Utf8Str> environmentUtf8(environment.size());
     for (size_t i = 0; i < environment.size(); i++)
-        environmentUtf8[i] = Bstr(environment[i]);
+        environmentUtf8[i] = Utf8Str(environment[i]);
 
     int rc = processCreateExInteral(Utf8Str(aCommand), ComSafeArrayAsInParam(argumentsUtf8), ComSafeArrayAsInParam(environmentUtf8),
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
@@ -797,12 +797,12 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
     com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
     com::SafeArray<Utf8Str> argumentsUtf8(arguments.size());
     for (size_t i = 0; i < arguments.size(); i++)
-        argumentsUtf8[i] = Bstr(arguments[i]);
+        argumentsUtf8[i] = Utf8Str(arguments[i]);
 
     com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
     com::SafeArray<Utf8Str> environmentUtf8(environment.size());
     for (size_t i = 0; i < environment.size(); i++)
-        environmentUtf8[i] = Bstr(environment[i]);
+        environmentUtf8[i] = Utf8Str(environment[i]);
 
     int rc = processCreateExInteral(Utf8Str(aCommand), ComSafeArrayAsInParam(argumentsUtf8), ComSafeArrayAsInParam(environmentUtf8),
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
