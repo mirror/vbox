@@ -298,7 +298,8 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     /* clobber input socket cache if we're closing the cached connection */
     if (so == tcp_last_so)
         tcp_last_so = &tcb;
-    closesocket(so->s);
+    if (so->s != -1)
+        closesocket(so->s);
     /* Avoid double free if the socket is listening and therefore doesn't have
      * any sbufs reserved. */
     if (!(so->so_state & SS_FACCEPTCONN))
