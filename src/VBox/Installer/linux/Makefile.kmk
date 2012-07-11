@@ -52,6 +52,7 @@ OTHER_CLEAN   += \
 		uninstall.sh \
 		deffiles \
 		routines.sh \
+		vboxautostart-service.sh \
 		vboxballoonctrl-service.sh \
 		vboxdrv.sh \
 		vboxweb-service.sh \
@@ -322,6 +323,7 @@ $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_PATH_LNX_INST_SRC)/routines.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/deffiles \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
+		$(VBOX_LNX_INST_OUT_DIR)/vboxautostart-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh \
@@ -334,6 +336,7 @@ $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/routines.sh          $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/deffiles             $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxautostart-service.sh $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh    $(VBOX_LNX_INST_STAGE_DIR)/
@@ -345,6 +348,15 @@ $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
 
 # files that needs editing before they can be included in the generic installer.
+$(VBOX_LNX_INST_OUT_DIR)/vboxautostart-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxautostart-service.sh.in | $$(dir $$@)
+	$(QUIET)$(SED_EXT) \
+		-e "s|%NOLSB%|yes|g" \
+		-e "s|%DEBIAN%||g" \
+		-e "s|%PACKAGE%|virtualbox|g" \
+		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
+		--output $@ \
+		$<
+
 $(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxballoonctrl-service.sh.in | $$(dir $$@)
 	$(QUIET)$(SED_EXT) \
 		-e "s|%NOLSB%|yes|g" \
