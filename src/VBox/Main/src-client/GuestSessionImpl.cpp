@@ -347,7 +347,7 @@ int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
     return VERR_NOT_FOUND;
 }
 
-int GuestSession::processCreateExInteral(const Utf8Str &aCommand, ComSafeArrayIn(Utf8Str, aArguments), ComSafeArrayIn(Utf8Str, aEnvironment),
+int GuestSession::processCreateExInteral(const Utf8Str &aCommand, const StringsArray &aArguments, const StringsArray &aEnvironment,
                                          ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
                                          ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
                                          IGuestProcess **aProcess)
@@ -386,7 +386,7 @@ int GuestSession::processCreateExInteral(const Utf8Str &aCommand, ComSafeArrayIn
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
         rc = pGuestProcess->init(this,
-                                 aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
+                                 aCommand, aArguments, aEnvironment,
                                  ComSafeArrayInArg(aFlags), aTimeoutMS,
                                  aPriority, ComSafeArrayInArg(aAffinity));
         if (RT_FAILURE(rc)) throw rc;
@@ -759,7 +759,6 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-#if 0
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -768,20 +767,19 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
     com::SafeArray<LONG> affinity; /** @todo Process affinity, not used yet. */
 
     com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
-    com::SafeArray<Utf8Str> argumentsUtf8(arguments.size());
+    StringsArray argumentsUtf8(arguments.size());
     for (size_t i = 0; i < arguments.size(); i++)
         argumentsUtf8[i] = Utf8Str(Bstr(arguments[i]));
 
     com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
-    com::SafeArray<Utf8Str> environmentUtf8(environment.size());
+    StringsArray environmentUtf8(environment.size());
     for (size_t i = 0; i < environment.size(); i++)
         environmentUtf8[i] = Utf8Str(Bstr(environment[i]));
 
-    int rc = processCreateExInteral(Utf8Str(aCommand), ComSafeArrayAsInParam(argumentsUtf8), ComSafeArrayAsInParam(environmentUtf8),
+    int rc = processCreateExInteral(Utf8Str(aCommand), argumentsUtf8, environmentUtf8,
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
                                     ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
     return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-#endif
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -793,27 +791,25 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-#if 0
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     CheckComArgOutPointerValid(aProcess);
 
     com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
-    com::SafeArray<Utf8Str> argumentsUtf8;
+    StringsArray argumentsUtf8(arguments.size());
     for (size_t i = 0; i < arguments.size(); i++)
         argumentsUtf8[i] = Utf8Str(Bstr(arguments[i]));
 
     com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
-    com::SafeArray<Utf8Str> environmentUtf8(environment.size());
+    StringsArray environmentUtf8(environment.size());
     for (size_t i = 0; i < environment.size(); i++)
         environmentUtf8[i] = Utf8Str(Bstr(environment[i]));
 
-    int rc = processCreateExInteral(Utf8Str(aCommand), ComSafeArrayAsInParam(argumentsUtf8), ComSafeArrayAsInParam(environmentUtf8),
+    int rc = processCreateExInteral(Utf8Str(aCommand), argumentsUtf8, environmentUtf8,
                                     ComSafeArrayInArg(aFlags), aTimeoutMS,
                                     aPriority, ComSafeArrayInArg(aAffinity), aProcess);
     return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-#endif
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

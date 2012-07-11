@@ -50,7 +50,7 @@ void GuestProcess::FinalRelease(void)
 /////////////////////////////////////////////////////////////////////////////
 
 int GuestProcess::init(GuestSession *pSession,
-                       const Utf8Str &aCommand, ComSafeArrayIn(Utf8Str, aArguments), ComSafeArrayIn(Utf8Str, aEnvironment),
+                       const Utf8Str &aCommand, const StringsArray &aArguments, const StringsArray &aEnvironment,
                        ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
                        ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity))
 {
