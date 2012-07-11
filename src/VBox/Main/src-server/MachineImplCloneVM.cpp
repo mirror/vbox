@@ -1394,6 +1394,9 @@ HRESULT MachineCloneVM::run()
             RTDirRemove(strTrgSnapshotFolder.c_str());
         /* Delete the machine folder when not empty. */
         RTDirRemove(strTrgMachineFolder.c_str());
+
+        /* Must save the modified registries */
+        p->mParent->saveModifiedRegistries();
     }
 
     return mrc;

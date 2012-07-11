@@ -4240,7 +4240,6 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
         // no longer need lock
         multilock.release();
         markRegistriesModified();
-        m->pVirtualBox->saveModifiedRegistries();
 
         if (aProgress != NULL)
         {
