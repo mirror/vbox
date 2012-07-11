@@ -477,6 +477,60 @@ static DWORD vboxDispIfReinitVideoModes(PCVBOXDISPIF const pIf)
     return err;
 }
 
+static DWORD vboxDispIfAdjustMode(DISPLAY_DEVICE *pDisplayDevice, DEVMODE *pDeviceMode)
+{
+    DEVMODE CurMode;
+    DEVMODE BestMatchMode;
+    DWORD i = 0;
+    int64_t diffWH = INT64_MAX;
+    int diffBpp = INT32_MAX;
+    for (; ; ++i)
+    {
+        CurMode.dmSize = sizeof (CurMode);
+        CurMode.dmDriverExtra = 0;
+
+        if (!EnumDisplaySettings(pDisplayDevice->DeviceName, i, &CurMode))
+            break;
+
+        if (CurMode.dmPelsWidth == pDeviceMode->dmPelsWidth
+                && CurMode.dmPelsHeight == pDeviceMode->dmPelsHeight
+                && CurMode.dmBitsPerPel == pDeviceMode->dmBitsPerPel)
+        {
+            Log(("Exact match found"));
+            *pDeviceMode = CurMode;
+            return NO_ERROR;
+        }
+
+        int diffCurrW = RT_ABS((int)(CurMode.dmPelsWidth - pDeviceMode->dmPelsWidth));
+        int diffCurrH = RT_ABS((int)(CurMode.dmPelsHeight - pDeviceMode->dmPelsHeight));
+        int diffCurrBpp = RT_ABS((int)(CurMode.dmBitsPerPel - pDeviceMode->dmBitsPerPel)
+                                - 1 /* <- to make higher bpp take precedence over lower ones */
+                                );
+
+        int64_t diffCurrHW = (int64_t)diffCurrW*diffCurrW + (int64_t)diffCurrH*diffCurrH;
+
+        if (i == 0
+               || diffCurrHW < diffWH
+               || (diffCurrHW == diffWH && diffCurrBpp < diffBpp))
+        {
+            /* first run */
+            BestMatchMode = CurMode;
+            diffWH = diffCurrHW;
+            diffBpp = diffCurrBpp;
+            continue;
+        }
+    }
+
+    if (i == 0)
+    {
+        Log(("No modes found!"));
+        return NO_ERROR;
+    }
+
+    *pDeviceMode = BestMatchMode;
+    return NO_ERROR;
+}
+
 DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
     UINT cbVidPnInfo = VBOXWDDM_RECOMMENDVIDPN_SIZE(cDevModes);
@@ -590,14 +644,13 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDispla
                   paDeviceModes[i].dmPosition.x,
                   paDeviceModes[i].dmPosition.y));
 
-            if (!fAbleToInvalidateVidPn)
-            {
-                /* @todo: the miniport might have been adjusted the display mode stuff,
-                 * adjust the paDeviceModes[i] by picking the closest available one */
-            }
+            /* the miniport might have been adjusted the display mode stuff,
+             * adjust the paDeviceModes[i] by picking the closest available one */
+            DEVMODE AdjustedMode = paDeviceModes[i];
+            vboxDispIfAdjustMode(&paDisplayDevices[i], &AdjustedMode);
 
             LONG status = pIf->modeData.wddm.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
-                                            &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
+                                            &AdjustedMode, NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
             Log(("VBoxTray: ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError ()));
         }
 
