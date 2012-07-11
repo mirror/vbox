@@ -16,12 +16,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "VBoxDispD3DCmn.h"
 #include "VBoxDispMp.h"
 
 #include <iprt/thread.h>
 #include <iprt/err.h>
-
-#include "VBoxDispD3DCmn.h"
 
 #ifdef VBOXWDDM_TEST_UHGSMI
 #include "VBoxDispProfile.h"

@@ -6599,7 +6599,7 @@ DriverEntry(
             }
         }
 
-#ifdef DEBUG_misha
+#if defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
         /* force g_VBoxDisplayOnly for debugging purposes */
         LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
         g_VBoxDisplayOnly = 1;
