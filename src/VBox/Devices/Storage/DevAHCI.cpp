@@ -6885,6 +6885,10 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pAhciPort->fRedo = true;
             }
         }
+		rc = SSMR3GetU32(pSSM, &u32);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
 
     return VINF_SUCCESS;
@@ -7485,6 +7489,67 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
                     fMaster = j == 0 ? true : false;
                 }
             }
+		char szName[24];
+		RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
+
+		if (   pAhciPort->pDrvBlockAsync
+			&& !pAhciPort->fATAPI)
+		{
+			pAhciPort->fAsyncInterface = true;
+		}
+		else
+		{
+			pAhciPort->fAsyncInterface = false;
+
+			/* Create event semaphore. */
+			rc = RTSemEventCreate(&pAhciPort->AsyncIORequestSem);
+			if (RT_FAILURE(rc))
+			{
+				Log(("%s: Failed to create event semaphore for %s.\n", __FUNCTION__, szName));
+				return rc;
+			}
+
+			/* Create the async IO thread. */
+			rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
+									   RTTHREADTYPE_IO, szName);
+			if (RT_FAILURE(rc))
+			{
+				AssertMsgFailed(("%s: Async IO Thread creation for %s failed rc=%d\n", __FUNCTION__, szName, rc));
+				return rc;
+			}
+		}
+
+		/*
+		 * Init vendor product data.
+		 */
+		if (RT_SUCCESS(rc))
+			rc = ahciR3VpdInit(pDevIns, pAhciPort, szName);
+
+		/* Inform the guest about the added device in case of hotplugging. */
+		if (   RT_SUCCESS(rc)
+			&& !(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG))
+		{
+			/*
+			 * Initialize registers
+			 */
+			ASMAtomicOrU32(&pAhciPort->regCMD, AHCI_PORT_CMD_CPS);
+			ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS | AHCI_PORT_IS_PCS);
+			ASMAtomicOrU32(&pAhciPort->regSERR, AHCI_PORT_SERR_X | AHCI_PORT_SERR_N);
+
+			if (pAhciPort->fATAPI)
+				pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
+			else
+				pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
+			pAhciPort->regSSTS = (0x01 << 8) | /* Interface is active. */
+								 (0x02 << 4) | /* Generation 2 (3.0GBps) speed. */
+								 (0x03 << 0);  /* Device detected and communication established. */
+
+			if (   (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
+				|| (pAhciPort->regIE & AHCI_PORT_IE_PCE)
+				|| (pAhciPort->regIE & AHCI_PORT_IE_PRCE))
+				ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+		}
+
     }
 
     return rc;
