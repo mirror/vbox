@@ -234,6 +234,18 @@ static DECLCALLBACK(int) drvR3NetShaperDown_Receive(PPDMINETWORKDOWN pInterface,
 
 
 /**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnReceiveGso}
+ */
+static DECLCALLBACK(int) drvR3NetShaperDown_ReceiveGso(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb, PCPDMNETWORKGSO pGso)
+{
+    PDRVNETSHAPER pThis = RT_FROM_MEMBER(pInterface, DRVNETSHAPER, INetworkDown);
+    if (pThis->pIAboveNet->pfnReceiveGso)
+        return pThis->pIAboveNet->pfnReceiveGso(pThis->pIAboveNet, pvBuf, cb, pGso);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
  * @interface_method_impl{PDMINETWORKDOWN,pfnXmitPending}
  */
 static DECLCALLBACK(void) drvR3NetShaperDown_XmitPending(PPDMINETWORKDOWN pInterface)
@@ -432,6 +444,7 @@ static DECLCALLBACK(int) drvR3NetShaperConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     /* INetworkDown */
     pThis->INetworkDown.pfnWaitReceiveAvail         = drvR3NetShaperDown_WaitReceiveAvail;
     pThis->INetworkDown.pfnReceive                  = drvR3NetShaperDown_Receive;
+    pThis->INetworkDown.pfnReceiveGso               = drvR3NetShaperDown_ReceiveGso;
     pThis->INetworkDown.pfnXmitPending              = drvR3NetShaperDown_XmitPending;
     /* INetworkConfig */
     pThis->INetworkConfig.pfnGetMac                 = drvR3NetShaperDownCfg_GetMac;
