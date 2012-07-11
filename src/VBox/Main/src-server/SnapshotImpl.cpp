@@ -1894,8 +1894,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             }
         }
 
-        int saveFlags = 0;
-
         /* we have already deleted the current state, so set the execution
          * state accordingly no matter of the delete snapshot result */
         if (mSSData->strStateFilePath.isNotEmpty())
@@ -1945,7 +1943,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         // save machine settings, reset the modified flag and commit;
         bool fNeedsGlobalSaveSettings = false;
         rc = saveSettings(&fNeedsGlobalSaveSettings,
-                          SaveS_ResetCurStateModified | saveFlags);
+                          SaveS_ResetCurStateModified);
         if (FAILED(rc))
             throw rc;
         // unconditionally add the parent registry. We do similar in SessionMachine::EndTakingSnapshot
