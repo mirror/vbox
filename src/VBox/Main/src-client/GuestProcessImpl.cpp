@@ -66,7 +66,7 @@ int GuestProcess::init(GuestSession *pSession,
     if (RT_SUCCESS(rc))
         autoInitSpan.setSucceeded();
 
-    return S_OK;
+    return rc;
 }
 
 /**
