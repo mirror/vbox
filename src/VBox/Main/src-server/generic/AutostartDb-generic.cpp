@@ -53,6 +53,8 @@ static int autostartModifyDb(bool fAutostart, bool fAddVM)
 
         if (fAddVM)
             fOpen |= RTFILE_O_OPEN_CREATE;
+        else
+            fOpen |= RTFILE_O_OPEN;
 
         rc = RTStrAPrintf(&pszFile, "%s/%s.%s",
                           AUTOSTART_DATABASE, pszUser, fAutostart ? "start" : "stop");
