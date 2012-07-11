@@ -30,11 +30,11 @@ VBoxVideo.GL  = 11 ; system32
 ;amd64 VBoxVideo.GL_wow64  = 10,SysWow64 ; SysWow64
 
 [Manufacturer]
-;x86   %ORACLE%=Model, NTx86.6.0
-;amd64 %ORACLE%=Model, NTamd64.6.0
+;x86   %ORACLE%=Model, NTx86.6.2
+;amd64 %ORACLE%=Model, NTamd64.6.2
 
-;amd64 [Model.NTamd64.6.0]
-;x86   [Model.NTx86.6.0]
+;amd64 [Model.NTamd64.6.2]
+;x86   [Model.NTx86.6.2]
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
 [VBoxVideo]
@@ -81,12 +81,12 @@ VBoxVideoW8.sys
 ;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
 ;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
 ;amd64 ;dispd3d HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D-x86.dll
-;gl HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxOGL.dll
-;amd64 ;gl HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxOGL-x86.dll
-;gl        HKR,, OpenGLFlags,         %REG_DWORD%,    0x00000001
-;amd64 ;gl HKR,, OpenGLFlagsWoW,      %REG_DWORD%,    0x00000001
-;gl        HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
-;amd64 ;gl HKR,, OpenGLVersionWoW,    %REG_DWORD%,    0x00000001
+;icd HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxOGL.dll
+;amd64 ;icd HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxOGL-x86.dll
+;icd        HKR,, OpenGLFlags,         %REG_DWORD%,    0x00000001
+;amd64 ;icd HKR,, OpenGLFlagsWoW,      %REG_DWORD%,    0x00000001
+;icd        HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
+;amd64 ;icd HKR,, OpenGLVersionWoW,    %REG_DWORD%,    0x00000001
 HKR,, VgaCompatible, %REG_DWORD%, 0
 
 [VBoxVideo_RegisterDlls]
@@ -144,4 +144,4 @@ REG_DWORD = 0x00010001
 
 ORACLE = "Oracle Corporation"
 VBoxVideo.Disk = "VirtualBox Video Driver Disk"
-VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter WDDM 1.2"
+VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter for Windows 8"

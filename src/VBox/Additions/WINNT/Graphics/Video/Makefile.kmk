@@ -308,10 +308,11 @@ VBoxVideoW8-inf_BLDDIRS = \
 
 VBOXWDDMW8_EDIT_INF_DISPD3D_FN_ARG = $(if $(VBOXWDDMW8_WITH_DISPD3D),-e 's/^;dispd3d  *//', -e '/^;dispd3d /d')
 VBOXWDDMW8_EDIT_INF_GL_FN_ARG      = $(if $(VBOXWDDMW8_WITH_GL),-e 's/^;gl  *//', -e '/^;gl /d')
+VBOXWDDMW8_EDIT_INF_ICD_FN_ARG      = $(if $(VBOXWDDMW8_WITH_ICD),-e 's/^;icd  *//', -e '/^;icd /d')
 
 $(PATH_TARGET)/VBoxVideoW8Cat.dir/VBoxVideoW8.inf: $(PATH_SUB_CURRENT)/mp/wddm/VBoxVideoW8.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxVideoW8-inf,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDMW8_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDMW8_EDIT_INF_GL_FN_ARG))
+	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDMW8_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDMW8_EDIT_INF_GL_FN_ARG) $(VBOXWDDMW8_EDIT_INF_ICD_FN_ARG))
 
 $(PATH_TARGET)/VBoxVideoW8Cat.dir/VBoxVideoW8.sys: $$(VBoxVideoW8_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)

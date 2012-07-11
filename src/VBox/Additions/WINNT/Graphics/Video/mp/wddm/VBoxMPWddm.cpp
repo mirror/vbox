@@ -6532,7 +6532,11 @@ DriverEntry(
     RTLogGroupSettings(0, "+default.e.l.f.l2.l3");
 #endif
 
-    LOGREL(("Built %s %s", __DATE__, __TIME__));
+#ifdef VBOX_WDDM_WIN8
+    LOGREL(("VBox WDDM Driver for Windows 8; Built %s %s", __DATE__, __TIME__));
+#else
+    LOGREL(("VBox WDDM Driver for Windows Vista and 7; Built %s %s", __DATE__, __TIME__));
+#endif
 
     if (! ARGUMENT_PRESENT(DriverObject) ||
         ! ARGUMENT_PRESENT(RegistryPath))
@@ -6586,7 +6590,7 @@ DriverEntry(
 
         if (f3DCheckRequired)
         {
-            LOG(("3D is required, doing the 3D check.."));
+            LOG(("3D check is required, doing the 3D check.."));
             if (!VBoxMpCrCtlConIs3DSupported())
             {
 #ifdef VBOX_WDDM_WIN8
@@ -6599,7 +6603,7 @@ DriverEntry(
             }
         }
 
-#if defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
+#if 0 //defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
         /* force g_VBoxDisplayOnly for debugging purposes */
         LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
         g_VBoxDisplayOnly = 1;
