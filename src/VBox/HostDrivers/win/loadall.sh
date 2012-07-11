@@ -61,7 +61,7 @@ done
 #
 # Invoke the installers.
 #
-for inst in SUPInstall.exe USBInstall.exe NetFltInstall.exe NetAdpInstall.exe;
+for inst in SUPInstall.exe USBInstall.exe NetFltInstall.exe ; #NetAdpInstall.exe; - busted
 do
     if test -f ${MY_DIR}/$inst; then
         ${MY_DIR}/$inst
