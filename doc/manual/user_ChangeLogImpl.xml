@@ -88,7 +88,7 @@
        </listitem>
 
       <listitem>
-        <para>Snapshots: fixed a crash when reverting to an old
+        <para>Snapshots: fixed a crash when restoring an old
           snapshot when powering off a VM (bug #10491)</para>
       </listitem>
 
@@ -1067,7 +1067,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: when reverting to a snapshot, ask for taking a snapshot
+        <para>GUI: when restoring a snapshot, ask for taking a snapshot
           of the current state</para>
       </listitem>
 
