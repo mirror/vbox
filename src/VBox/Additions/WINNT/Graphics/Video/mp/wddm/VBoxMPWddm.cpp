@@ -178,6 +178,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreen(PVBOXMP_DEVEXT pDevExt, const PVBOXWDDM
 
 NTSTATUS vboxWddmGhDisplayHideScreen(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
 {
+    Assert(0);
     VBOXWDDM_SURFACE_DESC SurfDesc = {0};
     POINT VScreenPos = {0};
     SurfDesc.VidPnSourceId = VidPnTargetId;
@@ -1127,21 +1128,31 @@ NTSTATUS DxgkDdiStartDevice(
                     if (NT_SUCCESS(Status))
                     {
                         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[0];
-                        pSource->AllocData.SurfDesc.width = DisplayInfo.Width;
-                        pSource->AllocData.SurfDesc.height = DisplayInfo.Height;
-                        pSource->AllocData.SurfDesc.format = DisplayInfo.ColorFormat;
-                        pSource->AllocData.SurfDesc.bpp = vboxWddmCalcBitsPerPixel(DisplayInfo.ColorFormat);
-                        pSource->AllocData.SurfDesc.pitch = DisplayInfo.Pitch;
-                        pSource->AllocData.SurfDesc.depth = 1;
-                        pSource->AllocData.SurfDesc.slicePitch = DisplayInfo.Pitch;
-                        pSource->AllocData.SurfDesc.cbSize = DisplayInfo.Pitch * DisplayInfo.Height;
-                        pSource->AllocData.SurfDesc.VidPnSourceId = 0;
-                        pSource->AllocData.SurfDesc.RefreshRate.Numerator = 60000;
-                        pSource->AllocData.SurfDesc.RefreshRate.Denominator = 1000;
+                        PHYSICAL_ADDRESS PhAddr;
+                        /* display info may sometimes not be valid, e.g. on from-full-graphics wddm driver update
+                         * ensure we have something meaningful here */
+                        if (!DisplayInfo.Width)
+                        {
+                            PhAddr = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
+                            vboxWddmDiInitDefault(&DisplayInfo, PhAddr, 0);
+                        }
+                        else
+                        {
+                            PhAddr = DisplayInfo.PhysicAddress;
+                            DisplayInfo.TargetId = 0;
+                        }
 
-                        /* the address here is not a VRAM offset! so convert it to offset */
-                        vboxWddmAddrSetVram(&pSource->AllocData.Addr, 1,
-                                vboxWddmVramAddrToOffset(pDevExt, DisplayInfo.PhysicAddress));
+                        vboxWddmDiToAllocData(pDevExt, &DisplayInfo, &pSource->AllocData);
+
+                        /* init the rest source infos with some default values */
+                        for (UINT i = 1; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                        {
+                            PhAddr.QuadPart += pSource->AllocData.SurfDesc.cbSize;
+                            PhAddr.QuadPart = ROUND_TO_PAGES(PhAddr.QuadPart);
+                            vboxWddmDiInitDefault(&DisplayInfo, PhAddr, i);
+                            pSource = &pDevExt->aSources[i];
+                            vboxWddmDiToAllocData(pDevExt, &DisplayInfo, &pSource->AllocData);
+                        }
                     }
                     else
                     {
@@ -6603,7 +6614,7 @@ DriverEntry(
             }
         }
 
-#if 0 //defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
+#if defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
         /* force g_VBoxDisplayOnly for debugging purposes */
         LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
         g_VBoxDisplayOnly = 1;
@@ -6659,3 +6670,4 @@ DriverEntry(
 
     return Status;
 }
+
