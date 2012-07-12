@@ -152,6 +152,7 @@ public:
     STDMETHOD(GetExtraDataKeys)(ComSafeArrayOut(BSTR, aKeys));
     STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
+    STDMETHOD(SetSettingsSecret)(IN_BSTR aKey);
 
     STDMETHOD(CreateDHCPServer)(IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(FindDHCPServerByNetworkName)(IN_BSTR aName, IDHCPServer ** aServer);
@@ -285,6 +286,10 @@ public:
 
     RWLockHandle& getMediaTreeLockHandle();
 
+    int  encryptSetting(const Utf8Str &aPlaintext, Utf8Str *aCiphertext);
+    int  decryptSetting(Utf8Str *aPlaintext, const Utf8Str &aCiphertext);
+    void storeSettingsKey(const Utf8Str &aKey);
+
 private:
 
     static HRESULT setErrorStatic(HRESULT aResultCode,
@@ -304,6 +309,13 @@ private:
                                bool aSaveRegistry = true);
     HRESULT unregisterDHCPServer(DHCPServer *aDHCPServer,
                                  bool aSaveRegistry = true);
+    
+    void decryptSettings();
+    void decryptMediumSettings(Medium *pMedium);
+    int  decryptSettingBytes(uint8_t *aPlaintext, const uint8_t *aCiphertext,
+                             size_t aCiphertextSize) const;
+    int  encryptSettingBytes(const uint8_t *aPlaintext, uint8_t *aCiphertext,
+                             size_t aPlaintextSize, size_t aCiphertextSize) const;
 
     struct Data;            // opaque data structure, defined in VirtualBoxImpl.cpp
     Data *m;

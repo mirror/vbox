@@ -3770,7 +3770,18 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
 
     /* Validate configuration, detect unknown keys. */
     if (!VDCFGAreKeysValid(pImage->pIfConfig,
-                           "TargetName\0InitiatorName\0LUN\0TargetAddress\0InitiatorUsername\0InitiatorSecret\0TargetUsername\0TargetSecret\0WriteSplit\0Timeout\0HostIPStack\0"))
+                           "TargetName\0"
+                           "InitiatorName\0"
+                           "LUN\0"
+                           "TargetAddress\0"
+                           "InitiatorUsername\0"
+                           "InitiatorSecret\0"
+                           "InitiatorSecretEncrypted\0"
+                           "TargetUsername\0"
+                           "TargetSecret\0"
+                           "WriteSplit\0"
+                           "Timeout\0"
+                           "HostIPStack\0"))
     {
         rc = vdIfError(pImage->pIfError, VERR_VD_ISCSI_UNKNOWN_CFG_VALUES, RT_SRC_POS, N_("iSCSI: configuration error: unknown configuration keys present"));
         goto out;

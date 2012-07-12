@@ -182,11 +182,14 @@ public:
     bool isInRegistry(const Guid& id);
     bool getFirstRegistryMachineId(Guid &uuid) const;
     void markRegistriesModified();
+    
+    HRESULT setPropertyDirect(const Utf8Str &aName, const Utf8Str &aValue);
 
     HRESULT addBackReference(const Guid &aMachineId,
                              const Guid &aSnapshotId = Guid::Empty);
     HRESULT removeBackReference(const Guid &aMachineId,
                                 const Guid &aSnapshotId = Guid::Empty);
+
 
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getAnyMachineBackref() const;

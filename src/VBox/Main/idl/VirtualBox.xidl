@@ -2102,6 +2102,23 @@
       </param>
     </method>
 
+    <method name="setSettingsSecret">
+      <desc>
+        Unlocks the secret data by passing the unlock password to the
+        server. The server will cache the password for that machine.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable.
+        </result>
+
+      </desc>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          The cipher key.
+        </desc>
+      </param>
+    </method>
+
     <!--method name="createDHCPServerForInterface">
       <desc>
         Creates a dhcp server settings to be used for the given interface
