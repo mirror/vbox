@@ -679,7 +679,7 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(ULONG cbBuf, PWCHAR pBuf, PULONG pcbRes
                 struct
                 {
                     KEY_VALUE_PARTIAL_INFORMATION Info;
-                    UCHAR Buf[sizeof (L"VBoxVideoWddm")]; /* should be enough */
+                    UCHAR Buf[sizeof (VBOX_WDDM_DRIVERNAME)]; /* should be enough */
                 } KeyData;
                 ULONG cbResult;
                 UNICODE_STRING RtlStr;
@@ -695,9 +695,9 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(ULONG cbBuf, PWCHAR pBuf, PULONG pcbRes
                 {
                     if (KeyData.Info.Type == REG_SZ)
                     {
-                        if (KeyData.Info.DataLength == sizeof (L"VBoxVideoWddm"))
+                        if (KeyData.Info.DataLength == sizeof (VBOX_WDDM_DRIVERNAME))
                         {
-                            if (!wcscmp(L"VBoxVideoWddm", (PWCHAR)KeyData.Info.Data))
+                            if (!wcscmp(VBOX_WDDM_DRIVERNAME, (PWCHAR)KeyData.Info.Data))
                             {
                                 bFound = TRUE;
                                 *pcbResult = Buf.Name.NameLength + 2;
@@ -809,6 +809,7 @@ NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDeviceExtension, D3D
         NTSTATUS tmpStatus = ZwClose(hKey);
         Assert(tmpStatus == STATUS_SUCCESS);
     }
+
     return Status;
 }
 

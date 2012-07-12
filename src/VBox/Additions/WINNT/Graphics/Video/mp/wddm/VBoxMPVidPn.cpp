@@ -206,7 +206,7 @@ NTSTATUS vboxVidPnCheckSourceModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
     else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
         Status = STATUS_SUCCESS;
     else
-        LOGREL(("VBoxVideoWddm: pfnAcquireFirstModeInfo failed Status(0x%x)", Status));
+        LOGREL(("pfnAcquireFirstModeInfo failed Status(0x%x)", Status));
 
     *pbSupported = bSupported;
     return Status;

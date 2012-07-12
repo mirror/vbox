@@ -138,7 +138,7 @@ static void vboxWddmPopulateDmaAllocInfoWithOffset(PVBOXWDDM_DMA_ALLOCINFO pInfo
     pInfo->srcId = pAlloc->AllocData.SurfDesc.VidPnSourceId;
 }
 
-NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SURFACE_DESC pDesc, POINT * pVScreenPos, uint16_t fFlags)
+NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PVBOXMP_DEVEXT pDevExt, const PVBOXWDDM_SURFACE_DESC pDesc, const POINT * pVScreenPos, uint16_t fFlags)
 {
     void *p = VBoxHGSMIBufferAlloc (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx,
                                       sizeof (VBVAINFOSCREEN),
@@ -168,7 +168,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PVBOXMP_DEVEXT pDevExt, PVBOXWD
 
 }
 
-NTSTATUS vboxWddmGhDisplayPostInfoScreen(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOC_DATA pAllocData, POINT * pVScreenPos)
+NTSTATUS vboxWddmGhDisplayPostInfoScreen(PVBOXMP_DEVEXT pDevExt, const PVBOXWDDM_ALLOC_DATA pAllocData, const POINT * pVScreenPos)
 {
     NTSTATUS Status = vboxWddmGhDisplayPostInfoScreenBySDesc(pDevExt, &pAllocData->SurfDesc, pVScreenPos, VBVA_SCREEN_F_ACTIVE);
     if (!NT_SUCCESS(Status))
@@ -257,7 +257,7 @@ NTSTATUS vboxWddmGhDisplaySetMode(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOC_DATA p
     return STATUS_SUCCESS;
 }
 
-NTSTATUS vboxWddmGhDisplayUpdateScreenPos(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, POINT *pVScreenPos)
+NTSTATUS vboxWddmGhDisplayUpdateScreenPos(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, const POINT *pVScreenPos)
 {
     if (pSource->VScreenPos.x == pVScreenPos->x
             && pSource->VScreenPos.y == pVScreenPos->y)
