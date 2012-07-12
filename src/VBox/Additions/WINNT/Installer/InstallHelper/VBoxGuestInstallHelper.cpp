@@ -21,8 +21,8 @@
 #include <windows.h>
 #include <atlconv.h>
 #include <stdlib.h>
-#include <Strsafe.h>
 #include <tchar.h>
+#include <strsafe.h>
 #include "exdll.h"
 
 /* Required structures/defines of VBoxTray. */
