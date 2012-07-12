@@ -248,10 +248,11 @@ int handleCreateVM(HandlerArg *a)
                                                  bstrBaseFolder.raw(),
                                                  bstrSettingsFile.asOutParam()));
         ComPtr<IMachine> machine;
+        com::SafeArray<BSTR> groups; /* no groups */
         CHECK_ERROR_BREAK(a->virtualBox,
                           CreateMachine(bstrSettingsFile.raw(),
                                         bstrName.raw(),
-                                        NULL /* aGroups */,
+                                        ComSafeArrayAsInParam(groups),
                                         bstrOsTypeId.raw(),
                                         bstrUuid.raw(),
                                         FALSE /* forceOverwrite */,
@@ -442,9 +443,10 @@ int handleCloneVM(HandlerArg *a)
                     RTEXITCODE_FAILURE);
 
     ComPtr<IMachine> trgMachine;
+    com::SafeArray<BSTR> groups; /* no groups */
     CHECK_ERROR_RET(a->virtualBox, CreateMachine(bstrSettingsFile.raw(),
                                                  Bstr(pszTrgName).raw(),
-                                                 NULL /* aGroups */,
+                                                 ComSafeArrayAsInParam(groups),
                                                  NULL,
                                                  bstrUuid.raw(),
                                                  FALSE,

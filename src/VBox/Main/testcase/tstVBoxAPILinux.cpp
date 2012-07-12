@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -190,6 +190,7 @@ void createVM(IVirtualBox *virtualBox)
     nsCOMPtr<IMachine> machine;
     rc = virtualBox->CreateMachine(NULL,        /* settings file */
                                    NS_LITERAL_STRING("A brand new name").get(),
+                                   0, nsnull,   /* groups (safearray)*/
                                    nsnull,      /* ostype */
                                    nsnull,      /* machine uuid */
                                    false,       /* forceOverwrite */
