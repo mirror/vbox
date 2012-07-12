@@ -110,6 +110,7 @@ extrn		_int17_function:near
 extrn		_int19_function:near
 extrn		_int1a_function:near
 extrn		_int1a_function_pci:near
+extrn		_pci16_function:near
 extrn		_int70_function:near
 extrn		_int74_function:near
 extrn		_ata_init:near
@@ -1644,6 +1645,7 @@ int1a_handler:
 		cmp	ah, 0B1h
 		jne	int1a_normal
 
+if 0
 		call	pcibios_real
 		jc	pcibios_error
 
@@ -1659,6 +1661,19 @@ pcibios_error:
 		call	_int1a_function_pci
 		popa
 		iret
+else
+		push	es
+		push	ds
+		C_SETUP
+		.386
+		pushad
+		call	_pci16_function
+		popad
+		.286
+		pop	ds
+		pop	es
+		iret
+endif
 
 int1a_normal:
 		push	es

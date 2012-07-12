@@ -107,6 +107,20 @@ bios32_end:
 
 align 16
 pcibios_protected:
+if 1
+;; The old implementation of pcibios_protected will eventually go,
+;; replaced by C code.
+else
+
+extrn	_pci32_function:near
+
+		pushfd
+		pushad
+		call	_pci32_function
+		popad
+		popfd
+		retf
+endif
 		pushfd
 		cli
 		push	esi

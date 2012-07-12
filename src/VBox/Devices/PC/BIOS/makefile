@@ -9,17 +9,19 @@
 #  -ecc default to __cdecl calling convention (bad idea)
 #
 !ifdef __UNIX__
-QUOTE=\"
+Q=\"
 !else
-QUOTE="
+Q="
 !endif
-CFLAGS = -q -0 -wx -zu -s -oas -d1+ -ms
-DEFS   = -DVBOX -DVBOX_LANBOOT_SEG=0xE200 -DVBOX_VERSION_STRING=$(QUOTE)0.9$(QUOTE) &
+CFLAGS   = -q -0 -wx -zu -s -oas -d1+ -ms
+CFLAGS32 = -q -wx -zu -s -oas -d1+ -nt=BIOS32 -nd=BIOS32
+
+DEFS = -DVBOX -DVBOX_LANBOOT_SEG=0xE200 -DVBOX_VERSION_STRING=$(Q)0.9$(Q) &
  -DVBOX_WITH_SCSI -DVBOX_WITH_AHCI
 
 AFLAGS = -q -0 -wx
 
-INCLS  = -I$(QUOTE)../../../../../include$(QUOTE)
+INCLS  = -I$(Q)../../../../../include$(Q)
 
 .c.obj : .autodepend
 	wcc -fo=.obj $(CFLAGS) $(DEFS) $<
@@ -30,7 +32,7 @@ INCLS  = -I$(QUOTE)../../../../../include$(QUOTE)
 OBJS = 	bios.obj print.obj ata.obj floppy.obj eltorito.obj boot.obj &
 	keyboard.obj disk.obj serial.obj system.obj timepci.obj &
 	ps2mouse.obj parallel.obj logo.obj scsi.obj ahci.obj &
-	pciutil.obj vds.obj pcibio32.obj orgs.obj
+	pcibios.obj pciutil.obj vds.obj pcibio32.obj pci32.obj orgs.obj
 
 vbxbios.rom : vbxbios.bin
 	biossums $< $@
@@ -42,7 +44,7 @@ vbxbios.bin : $(OBJS) $(__MAKEFILES__)
 	 clname DATA segaddr=0xF000 segment _DATA &
 	 clname CODE &
 	 segment _TEXT segaddr=0xF000 offset=0x1600 &
-	 segment BIOS32 segaddr=0xF000 offset=0xDE00 &
+	 segment BIOS32 segaddr=0xF000 offset=0xDB00 &
 	 segment BIOSSEG segaddr=0xF000 offset=0xE000 &
 	 file { $(OBJS) } &
 	 library clibs.lib &
@@ -50,6 +52,9 @@ vbxbios.bin : $(OBJS) $(__MAKEFILES__)
 
 logo.obj : logo.c .autodepend
 	wcc -fo=.obj $(INCLS) $(CFLAGS) $(DEFS) -DVBOX_PC_BIOS $<
+
+pci32.obj : pci32.c .autodepend
+	wcc386 -fo=.obj $(INCLS) $(DEFS) $(CFLAGS32) $<
 
 clean : .symbolic
 	@rm -f *.obj *.err
