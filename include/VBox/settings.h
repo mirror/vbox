@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2007-2011 Oracle Corporation
+ * Copyright (C) 2007-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -99,6 +99,7 @@ struct USBDeviceFilter
 };
 
 typedef std::map<com::Utf8Str, com::Utf8Str> StringsMap;
+typedef std::list<com::Utf8Str> StringsList;
 
 // ExtraDataItem (used by both VirtualBox.xml and machines XML)
 struct USBDeviceFilter;
@@ -1014,7 +1015,9 @@ struct MachineUserData
           uFaultTolerancePort(0),
           uFaultToleranceInterval(0),
           fRTCUseUTC(false)
-    { }
+    {
+        llGroups.push_back("/");
+    }
 
     bool operator==(const MachineUserData &c) const
     {
@@ -1038,6 +1041,7 @@ struct MachineUserData
     com::Utf8Str            strName;
     bool                    fNameSync;
     com::Utf8Str            strDescription;
+    StringsList             llGroups;
     com::Utf8Str            strOsType;
     com::Utf8Str            strSnapshotFolder;
     bool                    fTeleporterEnabled;

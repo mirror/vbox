@@ -182,7 +182,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Get default machines directory: */
     QString strDefaultMachinesFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
     /* Compose machine filename: */
-    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(), strDefaultMachinesFolder);
+    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(), QString::null /**< @todo group support */, strDefaultMachinesFolder);
     /* Compose machine folder/basename: */
     QFileInfo fileInfo(strMachineFilename);
     QString strMachineFolder = fileInfo.absolutePath();

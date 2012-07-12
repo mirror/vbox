@@ -5,7 +5,7 @@
  *  A template to generate a MS IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-     Copyright (C) 2006-2010 Oracle Corporation
+     Copyright (C) 2006-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -287,18 +287,13 @@
     <xsl:call-template name="capitalize">
       <xsl:with-param name="str" select="@name"/>
     </xsl:call-template>
-    <xsl:text> ([in</xsl:text>
-    <xsl:if test="@safearray='yes'">
-      <!-- VB supports only [in, out], [out] and [out, retval] arrays -->
-      <xsl:text>, out</xsl:text>
-    </xsl:if>
-    <xsl:text>] </xsl:text>
+    <xsl:text> ([in] </xsl:text>
     <xsl:if test="@safearray='yes'">
       <xsl:text>SAFEARRAY(</xsl:text>
     </xsl:if>
     <xsl:apply-templates select="@type"/>
     <xsl:if test="@safearray='yes'">
-      <xsl:text>) *</xsl:text>
+      <xsl:text>)</xsl:text>
     </xsl:if>
     <xsl:text> a</xsl:text>
     <xsl:call-template name="capitalize">

@@ -1397,7 +1397,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="867664ba-41ce-4099-a10d-b7a8e34057c7"
+    uuid="53789455-fad2-425a-94c8-eb6dc4ceaa05"
     wsmap="managed"
     >
     <desc>
@@ -1494,6 +1494,15 @@
       </desc>
     </attribute>
 
+    <attribute name="machineGroups" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Array of all machine group names which are used by the machines which
+        are accessible. Each group is only listed once, however they are listed
+        in no particular order and there is no guarantee that there are no gaps
+        in the group hierarchy (i.e. "/", "/group/subgroup" is a valid result).
+      </desc>
+    </attribute>
+
     <attribute name="hardDisks" type="IMedium" readonly="yes" safearray="yes">
       <desc>
         Array of medium objects known to this VirtualBox installation.
@@ -1581,9 +1590,10 @@
         This API serves two purposes:
 
         <ul>
-          <li>It gets called by <link to="#createMachine" /> if NULL is specified
-          for the @a settingsFile argument there, which means that API should use
-          a recommended default file name.</li>
+          <li>It gets called by <link to="#createMachine" /> if @c null or
+            empty string (which is recommended) is specified for the
+            @a settingsFile argument there, which means that API should use
+            a recommended default file name.</li>
 
           <li>It can be called manually by a client software before creating a machine,
             e.g. if that client wants to pre-create the machine directory to create
@@ -1596,6 +1606,11 @@
         See <link to="IMachine::name"/> and <link to="#createMachine"/> for more
         details about the machine name.
 
+        @a groupName defines which additional subdirectory levels should be
+        included. It must be either a valid group name or @c null or empty
+        string which designates that the machine will not be related to a
+        machine group.
+
         If @a baseFolder is a @c null or empty string (which is recommended), the
         default machine settings folder
         (see <link to="ISystemProperties::defaultMachineFolder" />) will be used as
@@ -1604,10 +1619,14 @@
         will be used.
 
         This method does not access the host disks. In particular, it does not check
-        for whether a machine of this name already exists.
+        for whether a machine with this name already exists.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Suggested machine name.</desc>
+      </param>
+      <param name="group" type="wstring" dir="in">
+        <desc>Machine group name for the new machine or machine group. It is
+        used to determine the right subdirectory.</desc>
       </param>
       <param name="baseFolder" type="wstring" dir="in">
         <desc>Base machine folder (optional).</desc>
@@ -1626,12 +1645,13 @@
         with VirtualBox 4.0, a ".vbox" extension is recommended, but not enforced,
         and machine files can be created at arbitrary locations.
 
-        However, it is is recommended that machines be created in the default
+        However, it is recommended that machines are created in the default
         machine folder (e.g. "/home/user/VirtualBox VMs/name/name.vbox"; see
         <link to="ISystemProperties::defaultMachineFolder" />). If you specify
-        NULL for the @a settingsFile argument, <link to="#composeMachineFilename" />
-        is called automatically to have such a recommended name composed based
-        on the machine name given in the @a name argument.
+        @c null or empty string (which is recommended) for the @a settingsFile
+        argument, <link to="#composeMachineFilename" /> is called automatically
+        to have such a recommended name composed based on the machine name
+        given in the @a name argument and the primary group.
 
         If the resulting settings file already exists, this method will fail,
         unless @a forceOverwrite is set.
@@ -1692,11 +1712,17 @@
 
       <param name="settingsFile" type="wstring" dir="in">
         <desc>Fully qualified path where the settings file should be created,
-        or NULL for a default folder and file based on the @a name argument
+          empty string or @c null for a default folder and file based on the
+          @a name argument and the primary group.
         (see <link to="#composeMachineFilename" />).</desc>
       </param>
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
+      </param>
+      <param name="groups" type="wstring" safearray="yes" dir="in">
+        <desc>Array of group names. @c null or an empty array have the same
+          meaning as an array with just the empty string or "/", i.e. create a
+          machine without group association.</desc>
       </param>
       <param name="osTypeId" type="wstring" dir="in">
         <desc>Guest OS Type ID.</desc>
@@ -3710,7 +3736,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="019d7a7b-1e2d-4008-b954-4b5d72d103b8"
+    uuid="1d03031a-ce63-4641-9d67-3a16e03778d5"
     wsmap="managed"
     >
     <desc>
@@ -3864,6 +3890,16 @@
       <desc>UUID of the virtual machine.</desc>
     </attribute>
 
+    <attribute name="groups" type="wstring" safearray="yes">
+      <desc>
+        Array of machine group names of which this machine is a member. "" and
+        "/" are synonyms for the toplevel group. Each group is only listed
+        once, however they are listed in no particular order and there is no
+        guarantee that there are no gaps in the group hierarchy
+        (i.e. "/group", "/group/subgroup/subsubgroup" is a valid result).
+      </desc>
+    </attribute>
+
     <attribute name="OSTypeId" type="wstring">
       <desc>
         User-defined identifier of the Guest OS type.
@@ -3887,7 +3923,7 @@
         The UUID presented to the guest via memory tables, hardware and guest
         properties.  For most VMs this is the same as the @a id, but for VMs
         which have been cloned or teleported it may be the same as the source
-        VM.  This latter is because the guest shouldn't notice that it was
+        VM. The latter is because the guest shouldn't notice that it was
         cloned or teleported.
       </desc>
     </attribute>
@@ -4353,8 +4389,8 @@
       <desc>
         Enables tracepoints in PDM devices and drivers to use the VMCPU or VM
         structures when firing off trace points.  This is especially useful
-        with DTrace tracepoints, as it allow you to use the VMCPU or VM pointer
-        to obtail useful information such as guest register state.
+        with DTrace tracepoints, as it allows you to use the VMCPU or VM
+        pointer to obtain useful information such as guest register state.
 
         This is disabled by default because devices and drivers normally has no
         business accessing the VMCPU or VM structures, and are therefore unable
@@ -4573,9 +4609,9 @@
             <li><tt>"sdl"</tt>: VirtualBox SDL front-end</li>
             <li><tt>"emergencystop"</tt>: reserved value, used for aborting
               the currently running VM or session owner. In this case the
-              @a session parameter may be @c NULL (if it is non-null it isn't
+              @a session parameter may be @c null (if it is non-null it isn't
               used in any way), and the @a progress return value will be always
-              NULL. The operation completes immediately.</li>
+              @c null. The operation completes immediately.</li>
           </ul>
         </desc>
       </param>
@@ -4744,7 +4780,7 @@
         specified there.</desc>
       </param>
       <param name="medium" type="IMedium" dir="in">
-        <desc>Medium to mount or NULL for an empty drive.</desc>
+        <desc>Medium to mount or @c null for an empty drive.</desc>
       </param>
     </method>
 
@@ -4974,7 +5010,7 @@
         <desc>Device slot in the given port.</desc>
       </param>
       <param name="bandwidthGroup" type="IBandwidthGroup" dir="in">
-        <desc>New value for the bandwidth group or NULL for no group.</desc>
+        <desc>New value for the bandwidth group or @c null for no group.</desc>
       </param>
     </method>
 
@@ -5024,7 +5060,7 @@
         <desc>Device slot in the given port to attach the medium to.</desc>
       </param>
       <param name="medium" type="IMedium" dir="in">
-        <desc>Medium to mount or NULL for an empty drive.</desc>
+        <desc>Medium to mount or @c null for an empty drive.</desc>
       </param>
       <param name="force" type="boolean" dir="in">
         <desc>Allows to force unmount/mount of a medium which is locked by
@@ -7062,7 +7098,7 @@
         <link to="#saveState"/>), Running or
         Paused virtual machine. When the machine is PoweredOff, an
         offline snapshot is created. When the machine is Running a live
-        snapshot is created, and an online snapshot is is created when Paused.
+        snapshot is created, and an online snapshot is created when Paused.
 
         The taken snapshot is always based on the
         <link to="IMachine::currentSnapshot">current snapshot</link>
@@ -11530,7 +11566,7 @@
               to contain the disk data associated with the snapshot being deleted.
 
               When deleting the current snapshot, the <link to="IMachine::currentSnapshot" />
-              attribute is set to the current snapshot's parent or NULL if it
+              attribute is set to the current snapshot's parent or @c null if it
               has no parent. Otherwise the attribute is unchanged.
           </li>
       </ul>
@@ -11735,7 +11771,7 @@
     </const>
     <const name="MultiAttach"       value="5">
       <desc>
-        A medium which is is indirectly attached, so that one base medium can
+        A medium which is indirectly attached, so that one base medium can
         be used for several VMs which have their own differencing medium to
         store their modifications. In some sense a variant of Immutable
         with unset AutoReset flag in each differencing medium.

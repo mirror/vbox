@@ -533,7 +533,7 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:param name="type" />
   <xsl:param name="safearray" />
 
-  <xsl:value-of select="concat('        // convert input arg ', $name)" />
+  <xsl:value-of select="concat('        // convert input arg ', $name, '(safearray: ', $safearray, ')')" />
   <xsl:call-template name="emitNewlineIndent8" />
 
   <xsl:choose>
@@ -708,6 +708,30 @@ const char *g_pcszIUnknown = "IUnknown";
 </xsl:template>
 
 <!--
+    emitInParam:
+-->
+<xsl:template name="emitInParam">
+  <xsl:param name="name" />
+  <xsl:param name="type" />
+  <xsl:param name="safearray" />
+  <xsl:param name="varprefix" />      <!-- only with nested set-attribute calls -->
+
+  <xsl:variable name="varname" select="concat('comcall_', $varprefix, $name)" />
+
+  <xsl:choose>
+    <xsl:when test="@safearray='yes'">
+      <xsl:value-of select="concat('ComSafeArrayAsInParam(', $varname, ')')" />
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="$varname" />
+      <xsl:if test="@type='wstring' or @type='uuid'">
+        <xsl:text>.raw()</xsl:text>
+      </xsl:if>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<!--
     emitOutParam:
 -->
 <xsl:template name="emitOutParam">
@@ -767,10 +791,12 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:if test="$attrtype">
     <xsl:choose>
       <xsl:when test="$attrdir='in'">
-        <xsl:value-of select="concat('comcall_', $varprefix, @name)" />
-        <xsl:if test="$attrtype='wstring' or $attrtype='uuid'">
-          <xsl:text>.raw()</xsl:text>
-        </xsl:if>
+        <xsl:call-template name="emitInParam">
+          <xsl:with-param name="name" select="$attrname" />
+          <xsl:with-param name="type" select="$attrtype" />
+          <xsl:with-param name="safearray" select="$attrsafearray" />
+          <xsl:with-param name="varprefix" select="$varprefix" />
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="$attrdir='return'">
         <xsl:call-template name="emitOutParam">
@@ -793,17 +819,12 @@ const char *g_pcszIUnknown = "IUnknown";
     <xsl:text>                                   </xsl:text>
     <xsl:choose>
       <xsl:when test="@dir='in'">
-        <xsl:choose>
-          <xsl:when test="@safearray='yes'">
-            <xsl:value-of select="concat('ComSafeArrayAsInParam(comcall_', $varprefix, @name, ')')" />
-          </xsl:when>
-          <xsl:otherwise>
-            <xsl:value-of select="concat('comcall_', $varprefix, @name)" />
-            <xsl:if test="@type='wstring' or @type='uuid'">
-              <xsl:text>.raw()</xsl:text>
-            </xsl:if>
-          </xsl:otherwise>
-        </xsl:choose>
+        <xsl:call-template name="emitInParam">
+          <xsl:with-param name="name" select="@name" />
+          <xsl:with-param name="type" select="@type" />
+          <xsl:with-param name="safearray" select="@safearray" />
+          <xsl:with-param name="varprefix" select="$varprefix" />
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="@dir='out'">
         <xsl:call-template name="emitOutParam">
@@ -1203,6 +1224,7 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:param name="attrname" select="$attrname" />
   <xsl:param name="attrtype" select="$attrtype" />
   <xsl:param name="attrreadonly" select="$attrreadonly" />
+  <xsl:param name="attrsafearray" select="$attrsafearray" />
 
   <xsl:variable name="settername"><xsl:call-template name="makeSetterName"><xsl:with-param name="attrname" select="$attrname" /></xsl:call-template></xsl:variable>
 
@@ -1243,6 +1265,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:with-param name="object" select='"pObj"' />
         <xsl:with-param name="attrname"><xsl:value-of select="$attrname" /></xsl:with-param>
         <xsl:with-param name="attrtype"><xsl:value-of select="$attrtype" /></xsl:with-param>
+        <xsl:with-param name="attrsafearray"><xsl:value-of select="$attrsafearray" /></xsl:with-param>
       </xsl:call-template>
     <!-- </xsl:otherwise>
   </xsl:choose> -->
@@ -1315,6 +1338,7 @@ const char *g_pcszIUnknown = "IUnknown";
               <xsl:with-param name="attrname" select="$attrname" />
               <xsl:with-param name="attrtype" select="$attrtype" />
               <xsl:with-param name="attrreadonly" select="$attrreadonly" />
+              <xsl:with-param name="attrsafearray" select="$attrsafearray" />
             </xsl:call-template>
           </xsl:if>
         </xsl:otherwise> <!-- not wsmap=suppress -->

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -170,77 +170,90 @@ int handleUnregisterVM(HandlerArg *a)
     return RTEXITCODE_SUCCESS;
 }
 
+static const RTGETOPTDEF g_aCreateVMOptions[] =
+{
+    { "--name",           'n', RTGETOPT_REQ_STRING },
+    { "-name",            'n', RTGETOPT_REQ_STRING },
+    { "--groups",         'g', RTGETOPT_REQ_STRING },
+    { "--basefolder",     'p', RTGETOPT_REQ_STRING },
+    { "-basefolder",      'p', RTGETOPT_REQ_STRING },
+    { "--ostype",         'o', RTGETOPT_REQ_STRING },
+    { "-ostype",          'o', RTGETOPT_REQ_STRING },
+    { "--uuid",           'u', RTGETOPT_REQ_UUID },
+    { "-uuid",            'u', RTGETOPT_REQ_UUID },
+    { "--register",       'r', RTGETOPT_REQ_NOTHING },
+    { "-register",        'r', RTGETOPT_REQ_NOTHING },
+};
+
 int handleCreateVM(HandlerArg *a)
 {
     HRESULT rc;
-    Bstr baseFolder;
-    Bstr name;
-    Bstr osTypeId;
-    RTUUID id;
+    Bstr bstrBaseFolder;
+    Bstr bstrName;
+    Bstr bstrGroups;
+    Bstr bstrOsTypeId;
+    Bstr bstrUuid;
     bool fRegister = false;
 
-    RTUuidClear(&id);
-    for (int i = 0; i < a->argc; i++)
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aCreateVMOptions, RT_ELEMENTS(g_aCreateVMOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-        if (   !strcmp(a->argv[i], "--basefolder")
-            || !strcmp(a->argv[i], "-basefolder"))
+        switch (c)
         {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            baseFolder = a->argv[i];
+            case 'n':   // --name
+                bstrName = ValueUnion.psz;
+                break;
+
+            case 'g':   // --groups
+                bstrGroups = ValueUnion.psz;
+                /// @todo implement group string parsing to safearray
+                break;
+
+            case 'p':   // --basefolder
+                bstrBaseFolder = ValueUnion.psz;
+                break;
+
+            case 'o':   // --ostype
+                bstrOsTypeId = ValueUnion.psz;
+                break;
+
+            case 'u':   // --uuid
+                bstrUuid = Guid(ValueUnion.Uuid).toUtf16().raw();
+                break;
+
+            case 'r':   // --register
+                fRegister = true;
+                break;
+
+            default:
+                return errorGetOpt(USAGE_CREATEVM, c, &ValueUnion);
         }
-        else if (   !strcmp(a->argv[i], "--name")
-                 || !strcmp(a->argv[i], "-name"))
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            name = a->argv[i];
-        }
-        else if (   !strcmp(a->argv[i], "--ostype")
-                 || !strcmp(a->argv[i], "-ostype"))
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            osTypeId = a->argv[i];
-        }
-        else if (   !strcmp(a->argv[i], "--uuid")
-                 || !strcmp(a->argv[i], "-uuid"))
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            if (RT_FAILURE(RTUuidFromStr(&id, a->argv[i])))
-                return errorArgument("Invalid UUID format %s\n", a->argv[i]);
-        }
-        else if (   !strcmp(a->argv[i], "--register")
-                 || !strcmp(a->argv[i], "-register"))
-        {
-            fRegister = true;
-        }
-        else
-            return errorSyntax(USAGE_CREATEVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
     }
 
     /* check for required options */
-    if (name.isEmpty())
+    if (bstrName.isEmpty())
         return errorSyntax(USAGE_CREATEVM, "Parameter --name is required");
 
     do
     {
         Bstr bstrSettingsFile;
         CHECK_ERROR_BREAK(a->virtualBox,
-                          ComposeMachineFilename(name.raw(),
-                                                 baseFolder.raw(),
+                          ComposeMachineFilename(bstrName.raw(),
+                                                 NULL /* aGroup */,
+                                                 bstrBaseFolder.raw(),
                                                  bstrSettingsFile.asOutParam()));
         ComPtr<IMachine> machine;
         CHECK_ERROR_BREAK(a->virtualBox,
                           CreateMachine(bstrSettingsFile.raw(),
-                                        name.raw(),
-                                        osTypeId.raw(),
-                                        Guid(id).toUtf16().raw(),
+                                        bstrName.raw(),
+                                        NULL /* aGroups */,
+                                        bstrOsTypeId.raw(),
+                                        bstrUuid.raw(),
                                         FALSE /* forceOverwrite */,
                                         machine.asOutParam()));
 
@@ -256,7 +269,7 @@ int handleCreateVM(HandlerArg *a)
         RTPrintf("Virtual machine '%ls' is created%s.\n"
                  "UUID: %s\n"
                  "Settings file: '%ls'\n",
-                 name.raw(), fRegister ? " and registered" : "",
+                 bstrName.raw(), fRegister ? " and registered" : "",
                  Utf8Str(uuid).c_str(), settingsFile.raw());
     }
     while (0);
@@ -268,11 +281,12 @@ static const RTGETOPTDEF g_aCloneVMOptions[] =
 {
     { "--snapshot",       's', RTGETOPT_REQ_STRING },
     { "--name",           'n', RTGETOPT_REQ_STRING },
+    { "--groups",         'g', RTGETOPT_REQ_STRING },
     { "--mode",           'm', RTGETOPT_REQ_STRING },
     { "--options",        'o', RTGETOPT_REQ_STRING },
     { "--register",       'r', RTGETOPT_REQ_NOTHING },
     { "--basefolder",     'p', RTGETOPT_REQ_STRING },
-    { "--uuid",           'u', RTGETOPT_REQ_STRING },
+    { "--uuid",           'u', RTGETOPT_REQ_UUID },
 };
 
 static int parseCloneMode(const char *psz, CloneMode_T *pMode)
@@ -331,6 +345,7 @@ int handleCloneVM(HandlerArg *a)
     CloneMode_T                    mode             = CloneMode_MachineState;
     com::SafeArray<CloneOptions_T> options;
     const char                    *pszTrgName       = NULL;
+    const char                    *pszTrgGroups     = NULL;
     const char                    *pszTrgBaseFolder = NULL;
     bool                           fRegister        = false;
     Bstr                           bstrUuid;
@@ -349,6 +364,19 @@ int handleCloneVM(HandlerArg *a)
                 pszSnapshotName = ValueUnion.psz;
                 break;
 
+            case 'n':   // --name
+                pszTrgName = ValueUnion.psz;
+                break;
+
+            case 'g':   // --groups
+                pszTrgGroups = ValueUnion.psz;
+                /// @todo implement group string parsing to safearray
+                break;
+
+            case 'p':   // --basefolder
+                pszTrgBaseFolder = ValueUnion.psz;
+                break;
+
             case 'm':   // --mode
                 if (RT_FAILURE(parseCloneMode(ValueUnion.psz, &mode)))
                     return errorArgument("Invalid clone mode '%s'\n", ValueUnion.psz);
@@ -359,20 +387,8 @@ int handleCloneVM(HandlerArg *a)
                     return errorArgument("Invalid clone options '%s'\n", ValueUnion.psz);
                 break;
 
-            case 'n':   // --name
-                pszTrgName = ValueUnion.psz;
-                break;
-
-            case 'p':   // --basefolder
-                pszTrgBaseFolder = ValueUnion.psz;
-                break;
-
             case 'u':   // --uuid
-                RTUUID trgUuid;
-                if (RT_FAILURE(RTUuidFromStr(&trgUuid, ValueUnion.psz)))
-                    return errorArgument("Invalid UUID format %s\n", ValueUnion.psz);
-                else
-                    bstrUuid = Guid(trgUuid).toUtf16().raw();
+                bstrUuid = Guid(ValueUnion.Uuid).toUtf16().raw();
                 break;
 
             case 'r':   // --register
@@ -420,6 +436,7 @@ int handleCloneVM(HandlerArg *a)
     Bstr bstrSettingsFile;
     CHECK_ERROR_RET(a->virtualBox,
                     ComposeMachineFilename(Bstr(pszTrgName).raw(),
+                                           NULL /* aGroup */,
                                            Bstr(pszTrgBaseFolder).raw(),
                                            bstrSettingsFile.asOutParam()),
                     RTEXITCODE_FAILURE);
@@ -427,6 +444,7 @@ int handleCloneVM(HandlerArg *a)
     ComPtr<IMachine> trgMachine;
     CHECK_ERROR_RET(a->virtualBox, CreateMachine(bstrSettingsFile.raw(),
                                                  Bstr(pszTrgName).raw(),
+                                                 NULL /* aGroups */,
                                                  NULL,
                                                  bstrUuid.raw(),
                                                  FALSE,

@@ -341,6 +341,7 @@ public:
     HRESULT init(VirtualBox *aParent,
                  const Utf8Str &strConfigFile,
                  const Utf8Str &strName,
+                 const StringsList &llGroups,
                  GuestOSType *aOsType,
                  const Guid &aId,
                  bool fForceOverwrite);
@@ -380,6 +381,8 @@ public:
     STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
     STDMETHOD(COMSETTER(Description))(IN_BSTR aDescription);
     STDMETHOD(COMGETTER(Id))(BSTR *aId);
+    STDMETHOD(COMGETTER(Groups))(ComSafeArrayOut(BSTR, aGroups));
+    STDMETHOD(COMSETTER(Groups))(ComSafeArrayIn(IN_BSTR, aGroups));
     STDMETHOD(COMGETTER(OSTypeId))(BSTR *aOSTypeId);
     STDMETHOD(COMSETTER(OSTypeId))(IN_BSTR aOSTypeId);
     STDMETHOD(COMGETTER(HardwareVersion))(BSTR *aVersion);
