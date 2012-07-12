@@ -44,7 +44,7 @@ class ExtPackManager;
 #endif
 class AutostartDb;
 
-typedef std::list< ComObjPtr<SessionMachine> > SessionMachinesList;
+typedef std::list<ComObjPtr<SessionMachine> > SessionMachinesList;
 
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
@@ -67,7 +67,7 @@ class ATL_NO_VTABLE VirtualBox :
 
 public:
 
-    typedef std::list< ComPtr<IInternalSessionControl> > InternalControlList;
+    typedef std::list<ComPtr<IInternalSessionControl> > InternalControlList;
 
     class CallbackEvent;
     friend class CallbackEvent;
@@ -110,6 +110,7 @@ public:
     STDMETHOD(COMGETTER(Host))(IHost **aHost);
     STDMETHOD(COMGETTER(SystemProperties))(ISystemProperties **aSystemProperties);
     STDMETHOD(COMGETTER(Machines))(ComSafeArrayOut(IMachine *, aMachines));
+    STDMETHOD(COMGETTER(MachineGroups))(ComSafeArrayOut(BSTR, aMachineGroups));
     STDMETHOD(COMGETTER(HardDisks))(ComSafeArrayOut(IMedium *, aHardDisks));
     STDMETHOD(COMGETTER(DVDImages))(ComSafeArrayOut(IMedium *, aDVDImages));
     STDMETHOD(COMGETTER(FloppyImages))(ComSafeArrayOut(IMedium *, aFloppyImages));
@@ -124,9 +125,10 @@ public:
     STDMETHOD(COMGETTER(GenericNetworkDrivers))(ComSafeArrayOut(BSTR, aGenericNetworkDrivers));
 
     /* IVirtualBox methods */
-    STDMETHOD(ComposeMachineFilename)(IN_BSTR aName, IN_BSTR aBaseFolder, BSTR *aFilename);
+    STDMETHOD(ComposeMachineFilename)(IN_BSTR aName, IN_BSTR aGroup, IN_BSTR aBaseFolder, BSTR *aFilename);
     STDMETHOD(CreateMachine)(IN_BSTR aSettingsFile,
                              IN_BSTR aName,
+                             ComSafeArrayIn(IN_BSTR, aGroups),
                              IN_BSTR aOsTypeId,
                              IN_BSTR aId,
                              BOOL forceOverwrite,
@@ -218,6 +220,8 @@ public:
                         bool fPermitInaccessible,
                         bool aSetError,
                         ComObjPtr<Machine> *machine = NULL);
+
+    HRESULT convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups), StringsList *pllMachineGroups);
 
     HRESULT findHardDiskById(const Guid &id,
                              bool aSetError,

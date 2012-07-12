@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -381,6 +381,25 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
     } while (0)
 
+#define SHOW_STRINGARRAY_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
+    do \
+    { \
+        SafeArray<BSTR> array; \
+        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(ComSafeArrayAsOutParam(array)), hrcCheck); \
+        Utf8Str str; \
+        for (size_t i = 0; i < array.size(); i++) \
+        { \
+            if (i != 0) \
+                str.append(","); \
+            str.append(Utf8Str(array[i]).c_str()); \
+        } \
+        Bstr bstr(str); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_szMachine, &bstr); \
+        else \
+            RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
+    } while (0)
+
 #define SHOW_UUID_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
     SHOW_STRING_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman)
 
@@ -469,6 +488,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     CHECK_ERROR2_RET(machine, COMGETTER(OSTypeId)(osTypeId.asOutParam()), hrcCheck);
     ComPtr<IGuestOSType> osType;
     CHECK_ERROR2_RET(virtualBox, GetGuestOSType(osTypeId.raw(), osType.asOutParam()), hrcCheck);
+    SHOW_STRINGARRAY_PROP( machine, Groups,                     "groups",               "Groups");
     SHOW_STRING_PROP(       osType, Description,                "ostype",               "Guest OS");
     SHOW_UUID_PROP(        machine, Id,                         "UUID",                 "UUID");
     SHOW_STRING_PROP(      machine, SettingsFilePath,           "CfgFile",              "Config file");
@@ -1319,9 +1339,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             else
             {
                 ULONG ulIRQ, ulIOBase;
-                PortMode_T HostMode;
                 Bstr path;
-                BOOL fServer;
                 lpt->COMGETTER(IRQ)(&ulIRQ);
                 lpt->COMGETTER(IOBase)(&ulIOBase);
                 lpt->COMGETTER(Path)(path.asOutParam());

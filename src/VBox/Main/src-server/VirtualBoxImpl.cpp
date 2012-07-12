@@ -929,8 +929,7 @@ VirtualBox::COMGETTER(SystemProperties)(ISystemProperties **aSystemProperties)
 STDMETHODIMP
 VirtualBox::COMGETTER(Machines)(ComSafeArrayOut(IMachine *, aMachines))
 {
-    if (ComSafeArrayOutIsNull(aMachines))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aMachines);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -942,10 +941,64 @@ VirtualBox::COMGETTER(Machines)(ComSafeArrayOut(IMachine *, aMachines))
     return S_OK;
 }
 
+STDMETHODIMP
+VirtualBox::COMGETTER(MachineGroups)(ComSafeArrayOut(BSTR, aMachineGroups))
+{
+    CheckComArgOutSafeArrayPointerValid(aMachineGroups);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    std::list<Bstr> allGroups;
+
+    /* get copy of all machine references, to avoid holding the list lock */
+    MachinesOList::MyList allMachines;
+    {
+        AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+        allMachines = m->allMachines.getList();
+    }
+    for (MachinesOList::MyList::const_iterator it = allMachines.begin();
+         it != allMachines.end();
+         ++it)
+    {
+        const ComObjPtr<Machine> &pMachine = *it;
+        AutoCaller autoMachineCaller(pMachine);
+        if (FAILED(autoMachineCaller.rc()))
+            continue;
+        AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
+
+        if (pMachine->isAccessible())
+        {
+            SafeArray<BSTR> thisGroups;
+            HRESULT rc = pMachine->COMGETTER(Groups)(ComSafeArrayAsOutParam(thisGroups));
+            if (FAILED(rc))
+                continue;
+
+            for (size_t i = 0; i < thisGroups.size(); i++)
+                allGroups.push_back(thisGroups[i]);
+        }
+    }
+
+    /* throw out any duplicates */
+    allGroups.sort();
+    allGroups.unique();
+    com::SafeArray<BSTR> machineGroups(allGroups.size());
+    size_t i = 0;
+    for (std::list<Bstr>::const_iterator it = allGroups.begin();
+         it != allGroups.end();
+         ++it, i++)
+    {
+        const Bstr &tmp = *it;
+        tmp.cloneTo(&machineGroups[i]);
+    }
+    machineGroups.detachTo(ComSafeArrayOutArg(aMachineGroups));
+
+    return S_OK;
+}
+
 STDMETHODIMP VirtualBox::COMGETTER(HardDisks)(ComSafeArrayOut(IMedium *, aHardDisks))
 {
-    if (ComSafeArrayOutIsNull(aHardDisks))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aHardDisks);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -959,8 +1012,7 @@ STDMETHODIMP VirtualBox::COMGETTER(HardDisks)(ComSafeArrayOut(IMedium *, aHardDi
 
 STDMETHODIMP VirtualBox::COMGETTER(DVDImages)(ComSafeArrayOut(IMedium *, aDVDImages))
 {
-    if (ComSafeArrayOutIsNull(aDVDImages))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aDVDImages);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -974,8 +1026,7 @@ STDMETHODIMP VirtualBox::COMGETTER(DVDImages)(ComSafeArrayOut(IMedium *, aDVDIma
 
 STDMETHODIMP VirtualBox::COMGETTER(FloppyImages)(ComSafeArrayOut(IMedium *, aFloppyImages))
 {
-    if (ComSafeArrayOutIsNull(aFloppyImages))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aFloppyImages);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1051,8 +1102,7 @@ VirtualBox::COMGETTER(PerformanceCollector)(IPerformanceCollector **aPerformance
 STDMETHODIMP
 VirtualBox::COMGETTER(DHCPServers)(ComSafeArrayOut(IDHCPServer *, aDHCPServers))
 {
-    if (ComSafeArrayOutIsNull(aDHCPServers))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aDHCPServers);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1100,8 +1150,7 @@ VirtualBox::COMGETTER(ExtensionPackManager)(IExtPackManager **aExtPackManager)
 
 STDMETHODIMP VirtualBox::COMGETTER(InternalNetworks)(ComSafeArrayOut(BSTR, aInternalNetworks))
 {
-    if (ComSafeArrayOutIsNull(aInternalNetworks))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aInternalNetworks);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1162,8 +1211,7 @@ STDMETHODIMP VirtualBox::COMGETTER(InternalNetworks)(ComSafeArrayOut(BSTR, aInte
 
 STDMETHODIMP VirtualBox::COMGETTER(GenericNetworkDrivers)(ComSafeArrayOut(BSTR, aGenericNetworkDrivers))
 {
-    if (ComSafeArrayOutIsNull(aGenericNetworkDrivers))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aGenericNetworkDrivers);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1322,9 +1370,12 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
 static void sanitiseMachineFilename(Utf8Str &aName);
 
 STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
+                                                IN_BSTR aGroup,
                                                 IN_BSTR aBaseFolder,
                                                 BSTR *aFilename)
 {
+    /// @todo implement aGroup
+    NOREF(aGroup);
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName=\"%ls\",aBaseFolder=\"%ls\"\n", aName, aBaseFolder));
 
@@ -1464,6 +1515,7 @@ namespace
 /** @note Locks mSystemProperties object for reading. */
 STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
                                        IN_BSTR aName,
+                                       ComSafeArrayIn(IN_BSTR, aGroups),
                                        IN_BSTR aOsTypeId,
                                        IN_BSTR aId,
                                        BOOL forceOverwrite,
@@ -1479,13 +1531,18 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    StringsList llGroups;
+    HRESULT rc = convertMachineGroups(ComSafeArrayInArg(aGroups), &llGroups);
+    if (FAILED(rc))
+        return rc;
+
     /* NULL settings file means compose automatically */
-    HRESULT rc;
     Bstr bstrSettingsFile(aSettingsFile);
     if (bstrSettingsFile.isEmpty())
     {
         rc = ComposeMachineFilename(aName,
-                                    NULL,
+                                    Bstr(llGroups.front()).raw(),
+                                    NULL /* aBaseFolder */,
                                     bstrSettingsFile.asOutParam());
         if (FAILED(rc)) return rc;
     }
@@ -1508,6 +1565,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
     rc = machine->init(this,
                        Utf8Str(bstrSettingsFile),
                        Utf8Str(aName),
+                       llGroups,
                        osType,
                        id,
                        !!forceOverwrite);
@@ -1849,8 +1907,7 @@ STDMETHODIMP VirtualBox::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 {
     using namespace settings;
 
-    if (ComSafeArrayOutIsNull(aKeys))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aKeys);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2962,6 +3019,58 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
                       aId.raw());
 
     return rc;
+}
+
+/**
+ * Takes a list of machine groups, and sanitizes/validates it.
+ *
+ * @param aMachineGroups    Safearray with the machine groups.
+ * @param pllMachineGroups  Pointer to list of strings for the result.
+ *
+ * @return S_OK or E_INVALIDARG
+ */
+
+HRESULT VirtualBox::convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups), StringsList *pllMachineGroups)
+{
+    pllMachineGroups->clear();
+    if (aMachineGroups)
+    {
+        com::SafeArray<BSTR> machineGroups(ComSafeArrayInArg(aMachineGroups));
+        for (size_t i = 0; i < machineGroups.size(); i++)
+            pllMachineGroups->push_back(machineGroups[i]);
+        pllMachineGroups->sort();
+        pllMachineGroups->unique();
+        if (pllMachineGroups->size() > 0)
+            pllMachineGroups->push_back("/");
+        else if (pllMachineGroups->front().equals(""))
+        {
+            pllMachineGroups->pop_front();
+            if (pllMachineGroups->size() == 0 || !pllMachineGroups->front().equals("/"))
+                pllMachineGroups->push_front("/");
+        }
+    }
+    else
+        pllMachineGroups->push_back("/");
+
+    for (StringsList::const_iterator it = pllMachineGroups->begin();
+         it != pllMachineGroups->end();
+         ++it)
+    {
+        const Utf8Str &str = *it;
+        /* no empty strings (shouldn't happen after the translation above) */
+        if (str.length() == 0)
+            return E_INVALIDARG;
+        /* must start with a slash */
+        if (str.c_str()[0] != '/')
+            return E_INVALIDARG;
+        /* must not end with a slash */
+        if (str.c_str()[str.length() - 1] != '/')
+            return E_INVALIDARG;
+
+        /** @todo validate each component of the group hierarchy */
+    }
+
+    return S_OK;
 }
 
 /**

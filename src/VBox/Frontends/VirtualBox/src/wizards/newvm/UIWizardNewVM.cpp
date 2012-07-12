@@ -61,7 +61,7 @@ bool UIWizardNewVM::createVM()
     /* Create virtual machine: */
     if (m_machine.isNull())
     {
-        m_machine = vbox.CreateMachine(QString(), field("name").toString(), strTypeId, QString(), false);
+        m_machine = vbox.CreateMachine(QString(), field("name").toString(), QVector<QString>() /**< @todo group support */, strTypeId, QString(), false);
         if (!vbox.isOk())
         {
             msgCenter().cannotCreateMachine(vbox, this);

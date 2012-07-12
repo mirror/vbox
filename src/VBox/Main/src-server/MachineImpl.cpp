@@ -270,8 +270,9 @@ void Machine::FinalRelease()
  *  @param strConfigFile  Local file system path to the VM settings file (can
  *                      be relative to the VirtualBox config directory).
  *  @param strName      name for the machine
- *  @param aId          UUID for the new machine.
+ *  @param llGroups     list of groups for the machine
  *  @param aOsType      OS Type of this machine or NULL.
+ *  @param aId          UUID for the new machine.
  *  @param fForceOverwrite Whether to overwrite an existing machine settings file.
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
@@ -279,6 +280,7 @@ void Machine::FinalRelease()
 HRESULT Machine::init(VirtualBox *aParent,
                       const Utf8Str &strConfigFile,
                       const Utf8Str &strName,
+                      const StringsList &llGroups,
                       GuestOSType *aOsType,
                       const Guid &aId,
                       bool fForceOverwrite)
@@ -312,6 +314,8 @@ HRESULT Machine::init(VirtualBox *aParent,
         unconst(mData->mUuid) = aId;
 
         mUserData->s.strName = strName;
+        
+        mUserData->s.llGroups = llGroups;
 
         // the "name sync" flag determines whether the machine directory gets renamed along
         // with the machine file; say so if the settings file name is the same as the
@@ -1047,6 +1051,50 @@ STDMETHODIMP Machine::COMGETTER(Id)(BSTR *aId)
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(Groups)(ComSafeArrayOut(BSTR, aGroups))
+{
+    CheckComArgOutSafeArrayPointerValid(aGroups);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    SafeArray<BSTR> groups(mUserData->s.llGroups.size());
+    size_t i = 0;
+    for (StringsList::const_iterator it = mUserData->s.llGroups.begin();
+         it != mUserData->s.llGroups.end();
+         ++it, i++)
+    {
+        Bstr tmp = *it;
+        tmp.cloneTo(&groups[i]);
+    }
+    groups.detachTo(ComSafeArrayOutArg(aGroups));
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(Groups)(ComSafeArrayIn(IN_BSTR, aGroups))
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    StringsList llGroups;
+    HRESULT rc = mParent->convertMachineGroups(ComSafeArrayInArg(aGroups), &llGroups);
+    if (FAILED(rc))
+        return rc;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mUserData.backup();
+    mUserData->s.llGroups = llGroups;
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(OSTypeId)(BSTR *aOSTypeId)
 {
     CheckComArgOutPointerValid(aOSTypeId);
@@ -1112,7 +1160,7 @@ STDMETHODIMP Machine::COMSETTER(FirmwareType)(FirmwareType_T aFirmwareType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = checkStateDependency(MutableStateDep);
+    HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -1142,7 +1190,7 @@ STDMETHODIMP Machine::COMSETTER(KeyboardHidType)(KeyboardHidType_T  aKeyboardHid
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = checkStateDependency(MutableStateDep);
+    HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -1172,7 +1220,7 @@ STDMETHODIMP Machine::COMSETTER(PointingHidType)(PointingHidType_T  aPointingHid
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = checkStateDependency(MutableStateDep);
+    HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -1202,7 +1250,7 @@ STDMETHODIMP Machine::COMSETTER(ChipsetType)(ChipsetType_T aChipsetType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = checkStateDependency(MutableStateDep);
+    HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
     if (aChipsetType != mHWData->mChipsetType)
@@ -1232,8 +1280,7 @@ STDMETHODIMP Machine::COMSETTER(ChipsetType)(ChipsetType_T aChipsetType)
 
 STDMETHODIMP Machine::COMGETTER(HardwareVersion)(BSTR *aHWVersion)
 {
-    if (!aHWVersion)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHWVersion);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1312,8 +1359,7 @@ STDMETHODIMP Machine::COMSETTER(HardwareUUID)(IN_BSTR aUUID)
 
 STDMETHODIMP Machine::COMGETTER(MemorySize)(ULONG *memorySize)
 {
-    if (!memorySize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(memorySize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1352,8 +1398,7 @@ STDMETHODIMP Machine::COMSETTER(MemorySize)(ULONG memorySize)
 
 STDMETHODIMP Machine::COMGETTER(CPUCount)(ULONG *CPUCount)
 {
-    if (!CPUCount)
-        return E_POINTER;
+    CheckComArgOutPointerValid(CPUCount);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1405,8 +1450,7 @@ STDMETHODIMP Machine::COMSETTER(CPUCount)(ULONG CPUCount)
 
 STDMETHODIMP Machine::COMGETTER(CPUExecutionCap)(ULONG *aExecutionCap)
 {
-    if (!aExecutionCap)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aExecutionCap);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1454,8 +1498,7 @@ STDMETHODIMP Machine::COMSETTER(CPUExecutionCap)(ULONG aExecutionCap)
 
 STDMETHODIMP Machine::COMGETTER(CPUHotPlugEnabled)(BOOL *enabled)
 {
-    if (!enabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(enabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1551,7 +1594,7 @@ STDMETHODIMP Machine::COMSETTER(EmulatedUSBCardReaderEnabled)(BOOL enabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = checkStateDependency(MutableStateDep);
+    HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -1611,8 +1654,7 @@ STDMETHODIMP Machine::COMSETTER(HpetEnabled)(BOOL enabled)
 
 STDMETHODIMP Machine::COMGETTER(VRAMSize)(ULONG *memorySize)
 {
-    if (!memorySize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(memorySize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1651,8 +1693,7 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize)(ULONG memorySize)
 /** @todo this method should not be public */
 STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize)(ULONG *memoryBalloonSize)
 {
-    if (!memoryBalloonSize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(memoryBalloonSize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1698,8 +1739,7 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 
 STDMETHODIMP Machine::COMGETTER(PageFusionEnabled) (BOOL *enabled)
 {
-    if (!enabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(enabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1731,8 +1771,7 @@ STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL enabled)
 
 STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
 {
-    if (!enabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(enabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1766,8 +1805,7 @@ STDMETHODIMP Machine::COMSETTER(Accelerate3DEnabled)(BOOL enable)
 
 STDMETHODIMP Machine::COMGETTER(Accelerate2DVideoEnabled)(BOOL *enabled)
 {
-    if (!enabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(enabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1800,8 +1838,7 @@ STDMETHODIMP Machine::COMSETTER(Accelerate2DVideoEnabled)(BOOL enable)
 
 STDMETHODIMP Machine::COMGETTER(MonitorCount)(ULONG *monitorCount)
 {
-    if (!monitorCount)
-        return E_POINTER;
+    CheckComArgOutPointerValid(monitorCount);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1838,8 +1875,7 @@ STDMETHODIMP Machine::COMSETTER(MonitorCount)(ULONG monitorCount)
 
 STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
 {
-    if (!biosSettings)
-        return E_POINTER;
+    CheckComArgOutPointerValid(biosSettings);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1852,8 +1888,7 @@ STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
 
 STDMETHODIMP Machine::GetCPUProperty(CPUPropertyType_T property, BOOL *aVal)
 {
-    if (!aVal)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aVal);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2110,8 +2145,7 @@ STDMETHODIMP Machine::RemoveAllCPUIDLeaves()
 
 STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL *aVal)
 {
-    if (!aVal)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aVal);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2268,8 +2302,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder)(IN_BSTR aSnapshotFolder)
 
 STDMETHODIMP Machine::COMGETTER(MediumAttachments)(ComSafeArrayOut(IMediumAttachment*, aAttachments))
 {
-    if (ComSafeArrayOutIsNull(aAttachments))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aAttachments);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2284,8 +2317,7 @@ STDMETHODIMP Machine::COMGETTER(MediumAttachments)(ComSafeArrayOut(IMediumAttach
 
 STDMETHODIMP Machine::COMGETTER(VRDEServer)(IVRDEServer **vrdeServer)
 {
-    if (!vrdeServer)
-        return E_POINTER;
+    CheckComArgOutPointerValid(vrdeServer);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2300,8 +2332,7 @@ STDMETHODIMP Machine::COMGETTER(VRDEServer)(IVRDEServer **vrdeServer)
 
 STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
 {
-    if (!audioAdapter)
-        return E_POINTER;
+    CheckComArgOutPointerValid(audioAdapter);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2418,8 +2449,7 @@ STDMETHODIMP Machine::COMGETTER(SessionPid)(ULONG *aSessionPid)
 
 STDMETHODIMP Machine::COMGETTER(State)(MachineState_T *machineState)
 {
-    if (!machineState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(machineState);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -4480,8 +4510,7 @@ STDMETHODIMP Machine::GetNetworkAdapter(ULONG slot, INetworkAdapter **adapter)
 
 STDMETHODIMP Machine::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 {
-    if (ComSafeArrayOutIsNull(aKeys))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aKeys);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -4802,8 +4831,8 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
 struct Machine::DeleteTask
 {
     ComObjPtr<Machine>          pMachine;
-    RTCList< ComPtr<IMedium> >  llMediums;
-    std::list<Utf8Str>          llFilesToDelete;
+    RTCList<ComPtr<IMedium> >   llMediums;
+    StringsList                 llFilesToDelete;
     ComObjPtr<Progress>         pProgress;
 };
 
@@ -4968,7 +4997,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
         // (this includes saved states of the machine and snapshots and
         // medium storage files from the IMedium list passed in, and the
         // machine XML file)
-        std::list<Utf8Str>::const_iterator it = task.llFilesToDelete.begin();
+        StringsList::const_iterator it = task.llFilesToDelete.begin();
         while (it != task.llFilesToDelete.end())
         {
             const Utf8Str &strFile = *it;
@@ -6588,7 +6617,7 @@ STDMETHODIMP Machine::COMSETTER(AutostartEnabled)(BOOL fEnabled)
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         hrc = checkStateDependency(MutableStateDep);
         if (   SUCCEEDED(hrc)
-            && mHWData->mAutostart.fAutostartEnabled != fEnabled)
+            && mHWData->mAutostart.fAutostartEnabled != !!fEnabled)
         {
             AutostartDb *autostartDb = mParent->getAutostartDb();
             int vrc;
@@ -8906,6 +8935,8 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
     HRESULT rc = S_OK;
 
     bool fSettingsFileIsNew = !mData->pMachineConfigFile->fileExists();
+
+    /// @todo need to handle primary group change, too
 
     /* attempt to rename the settings file if machine name is changed */
     if (    mUserData->s.fNameSync
@@ -12227,10 +12258,10 @@ STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(!ComSafeArrayOutIsNull(aNames), E_POINTER);
-    AssertReturn(!ComSafeArrayOutIsNull(aValues), E_POINTER);
-    AssertReturn(!ComSafeArrayOutIsNull(aTimestamps), E_POINTER);
-    AssertReturn(!ComSafeArrayOutIsNull(aFlags), E_POINTER);
+    CheckComArgOutSafeArrayPointerValid(aNames);
+    CheckComArgOutSafeArrayPointerValid(aValues);
+    CheckComArgOutSafeArrayPointerValid(aTimestamps);
+    CheckComArgOutSafeArrayPointerValid(aFlags);
 
     size_t cEntries = mHWData->mGuestProperties.size();
     com::SafeArray<BSTR> names(cEntries);
@@ -12595,7 +12626,7 @@ HRESULT SessionMachine::onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRemov
      * instead acting like callback we ask IVirtualBox deliver corresponding event
      */
 
-    mParent->onNatRedirectChange(getId(), ulSlot, RT_BOOL(aNatRuleRemove), aRuleName, aProto, aHostIp, aHostPort, aGuestIp, aGuestPort);
+    mParent->onNatRedirectChange(getId(), ulSlot, RT_BOOL(aNatRuleRemove), aRuleName, aProto, aHostIp, (uint16_t)aHostPort, aGuestIp, (uint16_t)aGuestPort);
     return S_OK;
 }
 

@@ -51,7 +51,8 @@ class VirtualBox;
 class Machine;
 class Medium;
 class Host;
-typedef std::list< ComObjPtr<Medium> > MediaList;
+typedef std::list<ComObjPtr<Medium> > MediaList;
+typedef std::list<Utf8Str> StringsList;
 
 ////////////////////////////////////////////////////////////////////////////////
 //

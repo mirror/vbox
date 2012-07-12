@@ -204,7 +204,8 @@ STDMETHODIMP Appliance::Interpret()
             /* Based on the VM name, create a target machine path. */
             Bstr bstrMachineFilename;
             rc = mVirtualBox->ComposeMachineFilename(Bstr(nameVBox).raw(),
-                                                     NULL,
+                                                     NULL /* aGroup */,
+                                                     NULL /* aBaseFolder */,
                                                      bstrMachineFilename.asOutParam());
             if (FAILED(rc)) throw rc;
             /* Determine the machine folder from that */
@@ -1949,6 +1950,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     /* Create the machine */
     rc = mVirtualBox->CreateMachine(NULL, /* machine name: use default */
                                     Bstr(stack.strNameVBox).raw(),
+                                    NULL, /* no groups */
                                     Bstr(stack.strOsTypeVBox).raw(),
                                     NULL, /* uuid */
                                     FALSE, /* fForceOverwrite */
@@ -2863,7 +2865,8 @@ void Appliance::importMachines(ImportStack &stack,
         // put the disk images in the same directory
         Bstr bstrMachineFilename;
         rc = mVirtualBox->ComposeMachineFilename(Bstr(stack.strNameVBox).raw(),
-                                                 NULL,
+                                                 NULL /* aGroup */,
+                                                 NULL /* aBaseFolder */,
                                                  bstrMachineFilename.asOutParam());
         if (FAILED(rc)) throw rc;
         // and determine the machine folder from that
