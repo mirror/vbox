@@ -912,7 +912,7 @@ static uint32_t calc_line_width(uint16_t bpp, uint32_t pitch)
 }
 #endif
 
-static void recaltulate_data(VGAState *s, bool fVirtHeightOnly)
+static void recalculate_data(VGAState *s, bool fVirtHeightOnly)
 {
     uint16_t cBPP        = s->vbe_regs[VBE_DISPI_INDEX_BPP];
     uint16_t cVirtWidth  = s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH];
@@ -1168,7 +1168,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
         }
         if (fRecalculate)
         {
-            recaltulate_data(s, false);
+            recalculate_data(s, false);
         }
     }
     return VINF_SUCCESS;
@@ -2466,7 +2466,7 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     for(i = 0; i < VBE_DISPI_INDEX_NB_SAVED; i++)
         qemu_get_be16s(f, &s->vbe_regs[i]);
     if (version_id <= VGA_SAVEDSTATE_VERSION_INV_VHEIGHT)
-        recaltulate_data(s, false); /* <- re-calculate the s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] since it might be invalid */
+        recalculate_data(s, false); /* <- re-calculate the s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] since it might be invalid */
     qemu_get_be32s(f, &s->vbe_start_addr);
     qemu_get_be32s(f, &s->vbe_line_offset);
     if (version_id < 2)
