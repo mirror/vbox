@@ -16,6 +16,7 @@
  */
 
 #include <iprt/asm.h>
+#include <iprt/base64.h>
 #include <iprt/buildconfig.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/dir.h>
@@ -23,6 +24,8 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
+#include <iprt/rand.h>
+#include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/thread.h>
@@ -294,7 +297,12 @@ struct VirtualBox::Data
 
     /** The global autostart database for the user. */
     AutostartDb * const                 pAutostartDb;
+
+    /** Settings secret */
+    bool                                fSettingsCipherKeySet;
+    uint8_t                             SettingsCipherKey[RTSHA512_HASH_SIZE];
 };
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -445,7 +453,6 @@ HRESULT VirtualBox::init()
         /* machines */
         if (FAILED(rc = initMachines()))
             throw rc;
-
 
 #ifdef DEBUG
         LogFlowThisFunc(("Dumping media backreferences\n"));
@@ -1964,6 +1971,190 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
         onExtraDataChange(Guid::Empty, aKey, aValue);
 
     return S_OK;
+}
+
+/**
+ *
+ */
+STDMETHODIMP VirtualBox::SetSettingsSecret(IN_BSTR aValue)
+{
+    storeSettingsKey(aValue);
+    decryptSettings();
+    return S_OK;
+}
+
+void VirtualBox::decryptMediumSettings(Medium *pMedium)
+{
+    Bstr bstrCipher;
+    HRESULT hrc = pMedium->GetProperty(Bstr("InitiatorSecretEncrypted").raw(),
+                                       bstrCipher.asOutParam());
+    if (SUCCEEDED(hrc))
+    {
+        Bstr bstrName;
+        pMedium->COMGETTER(Name)(bstrName.asOutParam());
+        Utf8Str strPlaintext;
+        int rc = decryptSetting(&strPlaintext, bstrCipher);
+        if (RT_SUCCESS(rc))
+            pMedium->setPropertyDirect("InitiatorSecret", strPlaintext);
+    }
+}
+
+/**
+ * Decrypt all encrypted settings.
+ *
+ * So far we only have encrypted iSCSI initiator secrets so we just go through
+ * all hard disk mediums and determine the plain 'InitiatorSecret' from
+ * 'InitiatorSecretEncrypted. The latter is stored as Base64 because medium
+ * properties need to be null-terminated strings.
+ */
+void VirtualBox::decryptSettings()
+{
+    AutoReadLock al(m->allHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+    for (MediaList::const_iterator mt = m->allHardDisks.begin();
+         mt != m->allHardDisks.end();
+         ++mt)
+    {
+        ComObjPtr<Medium> pMedium = *mt;
+        AutoCaller medCaller(pMedium);
+        if (FAILED(medCaller.rc()))
+            continue;
+        AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
+        decryptMediumSettings(pMedium);
+    }
+}
+
+/**
+ * Encode.
+ *
+ * @param aPlaintext      plaintext to be encrypted
+ * @param aCiphertext     resulting ciphertext (base64-encoded)
+ */
+int VirtualBox::encryptSetting(const Utf8Str &aPlaintext, Utf8Str *aCiphertext)
+{
+    uint8_t abCiphertext[32];
+    char    szCipherBase64[128];
+    size_t  cchCipherBase64;
+    int rc = encryptSettingBytes((uint8_t*)aPlaintext.c_str(), abCiphertext,
+                                 aPlaintext.length()+1, sizeof(abCiphertext));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTBase64Encode(abCiphertext, sizeof(abCiphertext),
+                            szCipherBase64, sizeof(szCipherBase64),
+                            &cchCipherBase64);
+        if (RT_SUCCESS(rc))
+            *aCiphertext = szCipherBase64;
+    }
+    return rc;
+}
+
+/**
+ * Decode.
+ *
+ * @param aPlaintext      resulting plaintext
+ * @param aCiphertext     ciphertext (base64-encoded) to decrypt
+ */
+int VirtualBox::decryptSetting(Utf8Str *aPlaintext, const Utf8Str &aCiphertext)
+{
+    uint8_t abPlaintext[64];
+    uint8_t abCiphertext[64];
+    size_t  cbCiphertext;
+    int rc = RTBase64Decode(aCiphertext.c_str(),
+                            abCiphertext, sizeof(abCiphertext),
+                            &cbCiphertext, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = decryptSettingBytes(abPlaintext, abCiphertext, cbCiphertext);
+        if (RT_SUCCESS(rc))
+        {
+            /* check if this is really a Null-terminated string. */
+            for (unsigned i = 0; i < cbCiphertext; i++)
+            {
+                if (abPlaintext[i] == '\0')
+                {
+                    *aPlaintext = Utf8Str((const char*)abPlaintext);
+                    return VINF_SUCCESS;
+                }
+            }
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    return rc;
+}
+
+/**
+ * Encrypt secret bytes. Use the m->SettingsCipherKey as key.
+ *
+ * @param aPlaintext      clear text to be encrypted
+ * @param aCiphertext     resulting encrypted text
+ * @param aPlaintextSize  size of the plaintext
+ * @param aCiphertextSize size of the ciphertext
+ */
+int VirtualBox::encryptSettingBytes(const uint8_t *aPlaintext, uint8_t *aCiphertext,
+                                    size_t aPlaintextSize, size_t aCiphertextSize) const
+{
+    unsigned i, j;
+    uint8_t aBytes[64];
+
+    if (!m->fSettingsCipherKeySet)
+        return VERR_INVALID_STATE;
+
+    if (aCiphertextSize > sizeof(aBytes))
+        return VERR_BUFFER_OVERFLOW;
+
+    for (i = 0, j = 0; i < aPlaintextSize && i < aCiphertextSize; i++)
+    {
+        aCiphertext[i] = (aPlaintext[i] ^ m->SettingsCipherKey[j]);
+        if (++j >= sizeof(m->SettingsCipherKey))
+            j = 0;
+    }
+
+    /* fill with random data to have a minimal length */
+    if (i < aCiphertextSize)
+    {
+        RTRandBytes(aBytes, aCiphertextSize - i);
+        for (; i < aCiphertextSize; i++)
+        {
+            aCiphertext[i] = aBytes[i] ^ m->SettingsCipherKey[j];
+            if (++j >= sizeof(m->SettingsCipherKey))
+                j = 0;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Decrypt secret bytes. Use the m->SettingsCipherKey as key.
+ *
+ * @param aPlaintext      resulting plaintext
+ * @param aCiphertext     ciphertext to be decrypted
+ * @param aCiphertextSize size of the ciphertext == size of the plaintext
+ */
+int VirtualBox::decryptSettingBytes(uint8_t *aPlaintext,
+                                    const uint8_t *aCiphertext, size_t aCiphertextSize) const
+{
+    if (!m->fSettingsCipherKeySet)
+        return VERR_INVALID_STATE;
+
+    for (unsigned i = 0, j = 0; i < aCiphertextSize; i++)
+    {
+        aPlaintext[i] = aCiphertext[i] ^ m->SettingsCipherKey[j];
+        if (++j >= sizeof(m->SettingsCipherKey))
+            j = 0;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Store a settings key.
+ *
+ * @param aKey          the key to store
+ */
+void VirtualBox::storeSettingsKey(const Utf8Str &aKey)
+{
+    RTSha512(aKey.c_str(), aKey.length(), m->SettingsCipherKey);
+    m->fSettingsCipherKeySet = true;
 }
 
 // public methods only for internal purposes
@@ -3997,6 +4188,7 @@ void VirtualBox::saveModifiedRegistries()
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         rc = saveSettings();
     }
+    NOREF(rc); /* XXX */
 }
 
 /**

@@ -36,6 +36,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
+#include <iprt/ctype.h>
 #include <iprt/initterm.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
@@ -244,6 +245,48 @@ static CComModule _Module;
 #endif /* !VBOX_ONLY_DOCS */
 
 
+#ifndef VBOX_ONLY_DOCS
+static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszFile)
+{
+    size_t cbFile;
+    char szPasswd[512];
+    int vrc = VINF_SUCCESS;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    bool fStdIn = !strcmp(pszFile, "stdin");
+    PRTSTREAM pStrm;
+    if (!fStdIn)
+        vrc = RTStrmOpen(pszFile, "r", &pStrm);
+    else
+        pStrm = g_pStdIn;
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTStrmReadEx(pStrm, szPasswd, sizeof(szPasswd)-1, &cbFile);
+        if (RT_SUCCESS(vrc))
+        {
+            if (cbFile >= sizeof(szPasswd)-1)
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Provided password too long");
+            else
+            {
+                unsigned i;
+                for (i = 0; i < cbFile && !RT_C_IS_CNTRL(szPasswd[i]); i++)
+                    ;
+                szPasswd[i] = '\0';
+                int rc;
+                CHECK_ERROR(virtualBox, SetSettingsSecret(com::Bstr(szPasswd).raw()));
+                if (FAILED(rc))
+                    rcExit = RTEXITCODE_FAILURE;
+            }
+        }
+        if (!fStdIn)
+            RTStrmClose(pStrm);
+    }
+    else
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot open password file '%s' (%Rrc)", pszFile);
+
+    return rcExit;
+}
+#endif
+
 int main(int argc, char *argv[])
 {
     /*
@@ -259,6 +302,8 @@ int main(int argc, char *argv[])
     bool fShowHelp = false;
     int  iCmd      = 1;
     int  iCmdArg;
+    const char *g_pszSettingsPw = NULL;
+    const char *g_pszSettingsPwFile = NULL;
 
     for (int i = 1; i < argc || argc <= iCmd; i++)
     {
@@ -315,10 +360,25 @@ int main(int argc, char *argv[])
             g_fDetailedProgress = true;
             iCmd++;
         }
-        else
+        else if (!strcmp(argv[i], "--settingspw"))
         {
-            break;
+            if (i >= argc-1)
+                return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                      "Password expected");
+            /* password for certain settings */
+            g_pszSettingsPw = argv[i+1];
+            iCmd += 2;
         }
+        else if (!strcmp(argv[i], "--settingspwfile"))
+        {
+            if (i >= argc-1)
+                return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                      "No password file specified");
+            g_pszSettingsPwFile = argv[i+1];
+            iCmd += 2;
+        }
+        else
+            break;
     }
 
     iCmdArg = iCmd + 1;
@@ -445,6 +505,23 @@ int main(int argc, char *argv[])
             { "debugvm",          USAGE_DEBUGVM,           handleDebugVM},
             { NULL,               0,                       NULL }
         };
+
+        if (g_pszSettingsPw)
+        {
+            int rc;
+            CHECK_ERROR(virtualBox, SetSettingsSecret(Bstr(g_pszSettingsPw).raw()));
+            if (FAILED(rc))
+            {
+                rcExit = RTEXITCODE_FAILURE;
+                break;
+            }
+        }
+        else if (g_pszSettingsPwFile)
+        {
+            rcExit = settingsPasswordFile(virtualBox, g_pszSettingsPwFile);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
+        }
 
         HandlerArg  handlerArg = { 0, NULL, virtualBox, session };
         int         commandIndex;

@@ -98,8 +98,10 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd == USAGE_ALL)
         RTStrmPrintf(pStrm,
-                     "VBoxManage [-v|--version]    print version number and exit\n"
-                     "VBoxManage [-q|--nologo] ... suppress the logo\n"
+                     "VBoxManage [-v|--version]          print version number and exit\n"
+                     "VBoxManage [-q|--nologo]       ... suppress the logo\n"
+                     "VBoxManage [--settingspw <pw>] ...\n"
+                     "VBoxManage [--settingspwfile]  ... provide the settings password\n"
                      "\n");
 
     if (u64Cmd & USAGE_LIST)
