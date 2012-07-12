@@ -87,6 +87,11 @@
            (bug #9973)</para>
        </listitem>
 
+      <listitem>
+        <para>Snapshots: fixed a crash when reverting to an old
+          snapshot when powering off a VM (bug #10491)</para>
+      </listitem>
+
        <listitem>
          <para>Storage: implemented burning of audio CDs in passthrough mode</para>
        </listitem>
