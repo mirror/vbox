@@ -2626,3 +2626,54 @@ NTSTATUS VBoxWddmSlTerm(PVBOXMP_DEVEXT pDevExt)
     KeCancelTimer(&pDevExt->VSyncTimer);
     return STATUS_SUCCESS;
 }
+
+#ifdef VBOX_WDDM_WIN8
+void vboxWddmDiInitDefault(DXGK_DISPLAY_INFORMATION *pInfo, PHYSICAL_ADDRESS PhAddr, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    pInfo->Width = 1024;
+    pInfo->Height = 768;
+    pInfo->Pitch = pInfo->Width * 4;
+    pInfo->ColorFormat = D3DDDIFMT_A8R8G8B8;
+    pInfo->PhysicAddress = PhAddr;
+    pInfo->TargetId = VidPnSourceId;
+    pInfo->AcpiId = 0;
+}
+
+void vboxWddmDiToAllocData(PVBOXMP_DEVEXT pDevExt, const DXGK_DISPLAY_INFORMATION *pInfo, PVBOXWDDM_ALLOC_DATA pAllocData)
+{
+    pAllocData->SurfDesc.width = pInfo->Width;
+    pAllocData->SurfDesc.height = pInfo->Height;
+    pAllocData->SurfDesc.format = pInfo->ColorFormat;
+    pAllocData->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pInfo->ColorFormat);
+    pAllocData->SurfDesc.pitch = pInfo->Pitch;
+    pAllocData->SurfDesc.depth = 1;
+    pAllocData->SurfDesc.slicePitch = pInfo->Pitch;
+    pAllocData->SurfDesc.cbSize = pInfo->Pitch * pInfo->Height;
+    pAllocData->SurfDesc.VidPnSourceId = pInfo->TargetId;
+    pAllocData->SurfDesc.RefreshRate.Numerator = 60000;
+    pAllocData->SurfDesc.RefreshRate.Denominator = 1000;
+
+    /* the address here is not a VRAM offset! so convert it to offset */
+    vboxWddmAddrSetVram(&pAllocData->Addr, 1,
+            vboxWddmVramAddrToOffset(pDevExt, pInfo->PhysicAddress));
+}
+
+void vboxWddmDmAdjustDefaultVramLocations(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID ModifiedVidPnSourceId)
+{
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[ModifiedVidPnSourceId];
+    PHYSICAL_ADDRESS PhAddr;
+    AssertRelease(pSource->AllocData.Addr.SegmentId);
+    AssertRelease(pSource->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
+    PhAddr.QuadPart = pSource->AllocData.Addr.offVram;
+
+    for (UINT i = ModifiedVidPnSourceId + 1; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    {
+        /* increaze the phaddr based on the previous source size info */
+        PhAddr.QuadPart += pSource->AllocData.SurfDesc.cbSize;
+        PhAddr.QuadPart = ROUND_TO_PAGES(PhAddr.QuadPart);
+        pSource = &pDevExt->aSources[i];
+        pSource->AllocData.Addr.SegmentId = 1;
+        pSource->AllocData.Addr.offVram = PhAddr.QuadPart;
+    }
+}
+#endif

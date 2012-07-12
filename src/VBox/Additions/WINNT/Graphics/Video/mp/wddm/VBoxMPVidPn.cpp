@@ -2071,6 +2071,16 @@ NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_S
         pSource->AllocData.SurfDesc.depth = 1;
         pSource->AllocData.SurfDesc.slicePitch = pVidPnSourceModeInfo->Format.Graphics.Stride;
         pSource->AllocData.SurfDesc.cbSize = pVidPnSourceModeInfo->Format.Graphics.Stride * pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy;
+#ifdef VBOX_WDDM_WIN8
+        if (g_VBoxDisplayOnly)
+        {
+            vboxWddmDmAdjustDefaultVramLocations(pDevExt, srcId);
+        }
+#endif
+    }
+    else
+    {
+        Assert(!pAllocation);
     }
     Assert(pSource->AllocData.SurfDesc.VidPnSourceId == srcId);
     pSource->bGhSynced = FALSE;

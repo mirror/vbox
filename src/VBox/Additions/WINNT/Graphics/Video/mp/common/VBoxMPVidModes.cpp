@@ -491,12 +491,11 @@ static BOOLEAN VBoxMPIsStartingUp(PVBOXMP_DEVEXT pExt, uint32_t iDisplay)
 {
 #ifdef VBOX_XPDM_MINIPORT
     return (pExt->CurrentMode == 0);
-#else
+#elif defined(VBOX_WDDM_WIN8)
+    return FALSE;
+#else /* VBOX_WDDM_MINIPORT && !VBOX_WDDM_MINIPORT */
     return (!VBoxCommonFromDeviceExt(pExt)->cDisplays
-# ifndef VBOX_WDDM_MINIPORT
-            || !pExt->aSources[iDisplay].pPrimaryAllocation
-# endif
-                    );
+            || !pExt->aSources[iDisplay].pPrimaryAllocation);
 #endif
 }
 
