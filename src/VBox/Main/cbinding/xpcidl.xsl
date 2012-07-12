@@ -1270,23 +1270,22 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
       <xsl:text>);&#x0A;</xsl:text>
       <!-- setter -->
       <xsl:if test="not(@readonly='yes')">
-        <xsl:text>    nsresult set</xsl:text>
+        <xsl:text>    nsresult (*Set</xsl:text>
         <xsl:call-template name="capitalize">
           <xsl:with-param name="str" select="@name"/>
         </xsl:call-template>
-        <xsl:text> (&#x0A;</xsl:text>
+        <xsl:text>)(</xsl:text>
+        <xsl:value-of select="../@name" />
+        <xsl:text> *pThis, </xsl:text>
         <!-- array size -->
-        <xsl:text>        in unsigned long </xsl:text>
+        <xsl:text>PRUint32 </xsl:text>
         <xsl:value-of select="@name"/>
-        <xsl:text>Size,&#x0A;</xsl:text>
+        <xsl:text>Size, </xsl:text>
         <!-- array pointer -->
-        <xsl:text>        [array, size_is(</xsl:text>
-        <xsl:value-of select="@name"/>
-        <xsl:text>Size)] in </xsl:text>
         <xsl:apply-templates select="@type" mode="forwarder"/>
-        <xsl:text> </xsl:text>
+        <xsl:text> *</xsl:text>
         <xsl:value-of select="@name"/>
-        <xsl:text>&#x0A;    );&#x0A;</xsl:text>
+        <xsl:text>);&#x0A;</xsl:text>
       </xsl:if>
     </xsl:when>
     <!-- normal attribute -->

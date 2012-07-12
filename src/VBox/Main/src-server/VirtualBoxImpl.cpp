@@ -3035,7 +3035,7 @@ HRESULT VirtualBox::convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups)
     pllMachineGroups->clear();
     if (aMachineGroups)
     {
-        com::SafeArray<BSTR> machineGroups(ComSafeArrayInArg(aMachineGroups));
+        com::SafeArray<IN_BSTR> machineGroups(ComSafeArrayInArg(aMachineGroups));
         for (size_t i = 0; i < machineGroups.size(); i++)
             pllMachineGroups->push_back(machineGroups[i]);
         pllMachineGroups->sort();
