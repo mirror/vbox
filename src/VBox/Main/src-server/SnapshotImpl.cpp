@@ -1904,8 +1904,12 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         updateMachineStateOnClient();
         stateRestored = true;
 
+        /* Paranoia: no one must have saved the settings in the mean time. If
+         * it happens nevertheless we'll close our eyes and continue below. */
+        Assert(mMediaData.isBackedUp());
+
         /* assign the timestamp from the snapshot */
-        Assert(RTTimeSpecGetMilli (&snapshotTimeStamp) != 0);
+        Assert(RTTimeSpecGetMilli(&snapshotTimeStamp) != 0);
         mData->mLastStateChange = snapshotTimeStamp;
 
         // detach the current-state diffs that we detected above and build a list of
@@ -1931,9 +1935,12 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             // the time in our case so instead we force a detachment here:
             // remove from machine data
             mMediaData->mAttachments.remove(pAttach);
-            // remove it from the backup or else saveSettings will try to detach
-            // it again and assert
-            mMediaData.backedUpData()->mAttachments.remove(pAttach);
+            // Remove it from the backup or else saveSettings will try to detach
+            // it again and assert. The paranoia check avoids crashes (see
+            // assert above) if this code is buggy and saves settings in the
+            // wrong place.
+            if (mMediaData.isBackedUp())
+                mMediaData.backedUpData()->mAttachments.remove(pAttach);
             // then clean up backrefs
             pMedium->removeBackReference(mData->mUuid);
 
