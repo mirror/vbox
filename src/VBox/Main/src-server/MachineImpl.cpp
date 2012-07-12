@@ -13186,6 +13186,10 @@ void SessionMachine::unlockMedia()
  * Helper to change the machine state (reimplementation).
  *
  * @note Locks this object for writing.
+ * @note This method must not call saveSettings or SaveSettings, otherwise
+ *       it can cause crashes in random places due to unexpectedly committing
+ *       the current settings. The caller is responsible for that. The call
+ *       to saveStateSettings is fine, because this method does not commit.
  */
 HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
 {
@@ -13384,7 +13388,6 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
         {
             mData->mCurrentStateModified = TRUE;
             stsFlags |= SaveSTS_CurStateModified;
-            SaveSettings();     // @todo r=dj why the public method? why first SaveSettings and then saveStateSettings?
         }
     }
 #endif
