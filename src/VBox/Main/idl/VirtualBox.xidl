@@ -1499,7 +1499,8 @@
         Array of all machine group names which are used by the machines which
         are accessible. Each group is only listed once, however they are listed
         in no particular order and there is no guarantee that there are no gaps
-        in the group hierarchy (i.e. "/", "/group/subgroup" is a valid result).
+        in the group hierarchy (i.e. <tt>"/"</tt>, <tt>"/group/subgroup"</tt>
+        is a valid result).
       </desc>
     </attribute>
 
@@ -1721,8 +1722,8 @@
       </param>
       <param name="groups" type="wstring" safearray="yes" dir="in">
         <desc>Array of group names. @c null or an empty array have the same
-          meaning as an array with just the empty string or "/", i.e. create a
-          machine without group association.</desc>
+          meaning as an array with just the empty string or <tt>"/"</tt>, i.e.
+          create a machine without group association.</desc>
       </param>
       <param name="osTypeId" type="wstring" dir="in">
         <desc>Guest OS Type ID.</desc>
@@ -3892,11 +3893,12 @@
 
     <attribute name="groups" type="wstring" safearray="yes">
       <desc>
-        Array of machine group names of which this machine is a member. "" and
-        "/" are synonyms for the toplevel group. Each group is only listed
-        once, however they are listed in no particular order and there is no
-        guarantee that there are no gaps in the group hierarchy
-        (i.e. "/group", "/group/subgroup/subsubgroup" is a valid result).
+        Array of machine group names of which this machine is a member.
+        <tt>""</tt> and <tt>"/"</tt> are synonyms for the toplevel group. Each
+        group is only listed once, however they are listed in no particular
+        order and there is no guarantee that there are no gaps in the group
+        hierarchy (i.e. <tt>"/group"</tt>,
+        <tt>"/group/subgroup/subsubgroup"</tt> is a valid result).
       </desc>
     </attribute>
 
