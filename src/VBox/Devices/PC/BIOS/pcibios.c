@@ -62,7 +62,6 @@ enum pci_error {
 #define DI      r.gr.u.r16.di
 #define BP      r.gr.u.r16.bp
 #define SP      r.gr.u.r16.sp
-#define FLAGS   r.ra.flags.u.r16.flags
 #define EAX     r.gr.u.r32.eax
 #define EBX     r.gr.u.r32.ebx
 #define ECX     r.gr.u.r32.ecx
@@ -90,6 +89,50 @@ enum pci_error {
 #define PCI_CFG_ADDR    0xCF8
 #define PCI_CFG_DATA    0xCFC
 
+#ifdef __386__
+
+#define PCIxx(x)    pci32_##x
+
+/* The stack layout is different in 32-bit mode. */
+typedef struct {
+    pushad_regs_t   gr;
+    uint32_t        flags;
+} pci_regs_t;
+
+#define FLAGS   r.flags
+
+/* In 32-bit mode, don't do any output; not technically impossible but needs
+ * a lot of extra code.
+ */
+#undef  BX_INFO
+#define BX_INFO(...)
+#undef  BX_DEBUG_PCI
+#define BX_DEBUG_PCI(...)
+
+#else
+
+#define PCIxx(x)    pci16_##x
+
+typedef struct {
+    pushad_regs_t   gr;
+    uint16_t        es;
+    uint16_t        ds;
+    iret_addr_t     ra;
+} pci_regs_t;
+
+#define FLAGS   r.ra.flags.u.r16.flags
+
+#endif
+
+#ifdef __386__
+
+/* 32-bit code can just use the compiler intrinsics. */
+extern unsigned inpd(unsigned port);
+extern unsigned outpd(unsigned port, unsigned value);
+#pragma intrinsic(inpd,outpd)
+
+#else
+
 //@todo: merge with AHCI code
 
 /* Warning: Destroys high bits of EAX. */
@@ -112,6 +155,8 @@ void outpd(uint16_t port, uint32_t val);
     "out    dx, eax"    \
     parm [dx] [cx ax] modify nomemory;
 
+#endif
+
 /* Write the CONFIG_ADDRESS register to prepare for data access. Requires
  * the register offset to be DWORD aligned (low two bits clear). Warning:
  * destroys high bits of EAX.
@@ -130,17 +175,24 @@ void pci16_w_addr(uint16_t bus_dev_fn, uint16_t ofs, uint16_t cfg_addr);
 /* Select a PCI configuration register given its offset and bus/dev/fn.
  * This is largely a wrapper to avoid excessive inlining.
  */
-void pci16_select_reg(uint16_t bus_dev_fn, uint16_t ofs)
+void PCIxx(select_reg)(uint16_t bus_dev_fn, uint16_t ofs)
 {
     pci16_w_addr(bus_dev_fn, ofs & ~3, PCI_CFG_ADDR);
 }
 
+/* Selected configuration space offsets. */
 #define PCI_VEN_ID          0x00
 #define PCI_DEV_ID          0x02
 #define PCI_REV_ID          0x08
 #define PCI_CLASS_CODE      0x09
 #define PCI_HEADER_TYPE     0x0E
+#define PCI_BRIDGE_SUBORD   0x1A
 
+/* To avoid problems with 16-bit code, we reserve the last possible
+ * bus/dev/fn combination (65,535). Upon reaching this location, the
+ * probing will end.
+ */
+#define INDEX_NOT_FOUND     0xFFFF
 
 /* Find a specified PCI device, either by vendor+device ID or class.
  * If index is non-zero, the n-th device will be located.
@@ -150,12 +202,13 @@ void pci16_select_reg(uint16_t bus_dev_fn, uint16_t ofs)
  * amount of time in cases where the caller is looking for a number of
  * non-present devices.
  */
-uint16_t pci16_find_device(uint32_t search_item, uint16_t index, int search_class)
+uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_class)
 {
     uint32_t    data;
     uint16_t    bus_dev_fn;
     uint8_t     max_bus;
     uint8_t     hdr_type;
+    uint8_t     subordinate;
     int         step;
     int         found;
 
@@ -178,7 +231,7 @@ uint16_t pci16_find_device(uint32_t search_item, uint16_t index, int search_clas
          * skip probing the next 7 sub-functions.
          */
         if ((bus_dev_fn & 7) == 0) {
-            pci16_select_reg(bus_dev_fn, PCI_HEADER_TYPE);
+            PCIxx(select_reg)(bus_dev_fn, PCI_HEADER_TYPE);
             hdr_type = inp(PCI_CFG_DATA + (PCI_HEADER_TYPE & 3));
             if (hdr_type == 0xFF) {
                 bus_dev_fn += 8;    /* Skip to next device. */
@@ -195,14 +248,19 @@ uint16_t pci16_find_device(uint32_t search_item, uint16_t index, int search_clas
          * thus we can determine the highest bus number. In the common case, 
          * there will be only the primary bus (i.e. bus 0) and we can avoid
          * looking at the remaining 255 theoretically present buses. This check
-         * only needs to be done on the primary bus (bridges must report all
-         * bridges behind them).
+         * only needs to be done on the primary bus, since bridges must report
+         * all bridges potentially behind them.
          */
         if ((hdr_type & 7) == 1 && (bus_dev_fn >> 8) == 0) {
+            /* Read the subordinate (last) bridge number. */
+            PCIxx(select_reg)(bus_dev_fn, PCI_BRIDGE_SUBORD);
+            subordinate = inp(PCI_CFG_DATA + (PCI_BRIDGE_SUBORD & 3));
+            if (subordinate > max_bus)
+                max_bus = subordinate;
         }
 
         /* Select the appropriate register. */
-        pci16_select_reg(bus_dev_fn, search_class ? PCI_REV_ID : PCI_VEN_ID);
+        PCIxx(select_reg)(bus_dev_fn, search_class ? PCI_REV_ID : PCI_VEN_ID);
         data  = inpd(PCI_CFG_DATA);
         found = 0;
 
@@ -225,14 +283,14 @@ uint16_t pci16_find_device(uint32_t search_item, uint16_t index, int search_clas
         bus_dev_fn += step;
     } while ((bus_dev_fn >> 8) <= max_bus);
 
-    if (index == ~0)
+    if (index == INDEX_NOT_FOUND)
         BX_DEBUG_PCI("PCI: Device found (%02X:%%02X:%01X)\n", bus_dev_fn >> 8,
                      bus_dev_fn >> 3 & 31, bus_dev_fn & 7);
 
-    return index == ~0 ? bus_dev_fn : ~0;
+    return index == INDEX_NOT_FOUND ? bus_dev_fn : INDEX_NOT_FOUND;
 }
 
-void BIOSCALL pci16_function(volatile pci_regs_t r)
+void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
 {
     uint16_t    device;
 
@@ -253,12 +311,12 @@ void BIOSCALL pci16_function(volatile pci_regs_t r)
         /* Vendor ID FFFFh is reserved so that non-present devices can
          * be easily detected.
          */
-        if (DX == ~0) {
+        if (DX == 0xFFFF) {
             SET_AH(BAD_VENDOR_ID);
             SET_CF();
         } else {
-            device = pci16_find_device(DX | (uint32_t)CX << 16, SI, 0);
-            if (device == ~0) {
+            device = PCIxx(find_device)(DX | (uint32_t)CX << 16, SI, 0);
+            if (device == INDEX_NOT_FOUND) {
                 SET_AH(DEVICE_NOT_FOUND);
                 SET_CF();
             } else {
@@ -267,8 +325,8 @@ void BIOSCALL pci16_function(volatile pci_regs_t r)
         }
         break;
     case FIND_PCI_CLASS_CODE:
-        device = pci16_find_device(ECX, SI, 1);
-        if (device == ~0) {
+        device = PCIxx(find_device)(ECX, SI, 1);
+        if (device == INDEX_NOT_FOUND) {
             SET_AH(DEVICE_NOT_FOUND);
             SET_CF();
         } else {
@@ -285,7 +343,7 @@ void BIOSCALL pci16_function(volatile pci_regs_t r)
             SET_AH(BAD_REGISTER_NUMBER);
             SET_CF();
         } else {
-            pci16_select_reg(BX, DI);
+            PCIxx(select_reg)(BX, DI);
             switch (GET_AL()) {
             case READ_CONFIG_BYTE:
                 SET_CL(inp(PCI_CFG_DATA + (DI & 3)));

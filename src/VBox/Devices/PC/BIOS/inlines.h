@@ -68,6 +68,8 @@ void rep_movsw(void __far *d, void __far *s, int nwords);
     "pop    ds"             \
     parm [es di] [dx si] [cx];
 
+#ifndef __386__
+
 char __far *rep_insb(char __far *buffer, unsigned nbytes, unsigned port);
 #pragma aux rep_insb = ".286" "rep insb" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
 
@@ -95,3 +97,5 @@ uint32_t __far swap_32(uint32_t val);
     "xchg   dh, dl"     \
     "xchg   ax, dx"     \
     parm [dx ax] value [dx ax] modify exact [dx ax] nomemory;
+
+#endif

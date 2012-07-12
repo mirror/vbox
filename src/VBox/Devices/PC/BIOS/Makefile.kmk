@@ -74,6 +74,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	serial.c \
  	system.c \
  	timepci.c \
+ 	pcibios.c \
  	ps2mouse.c \
  	parallel.c \
  	logo.c \
