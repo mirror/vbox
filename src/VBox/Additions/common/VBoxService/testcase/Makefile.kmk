@@ -27,7 +27,6 @@ PROGRAMS.win += tstUserInfo
 # tstUserInfo
 #
 tstUserInfo_TEMPLATE    = VBOXGUESTR3EXE
-tstUserInfo_DEFS.win    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
 tstUserInfo_SOURCES     = \
 	tstUserInfo.cpp
 tstUserInfo_LIBS        = \
