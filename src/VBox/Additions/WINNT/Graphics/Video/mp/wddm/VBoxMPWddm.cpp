@@ -284,7 +284,7 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSour
             Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, &pSource->AllocData, &pSource->VScreenPos);
             Assert(Status == STATUS_SUCCESS);
             if (Status == STATUS_SUCCESS)
-                pSource->bGhSynced;
+                pSource->bGhSynced = TRUE;
             else
                 WARN(("vboxWddmGhDisplayPostInfoScreen failed"));
         }
@@ -6614,7 +6614,7 @@ DriverEntry(
             }
         }
 
-#if defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
+#if 0 //defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
         /* force g_VBoxDisplayOnly for debugging purposes */
         LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
         g_VBoxDisplayOnly = 1;
