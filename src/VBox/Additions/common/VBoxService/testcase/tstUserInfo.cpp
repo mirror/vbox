@@ -21,7 +21,6 @@
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
-# include <stdio.h>
 # include <Shlobj.h>
 #endif
 
@@ -44,7 +43,7 @@ int main()
     int rc = VbglR3Init();
     if (RT_FAILURE(rc))
     {
-        printf("VbglR3Init failed with rc=%Rrc.\n", rc);
+        RTPrintf("VbglR3Init failed with rc=%Rrc.\n", rc);
         return -1;
     }
 #ifdef RT_OS_WINDOWS
