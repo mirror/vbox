@@ -19,16 +19,16 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-if 0
 #
-# libWine - ???.
+# Template for building wine stuff.
 #
-DLLS.x86 += libWine
-libWine_TEMPLATE     = VBOXGUESTR3NPDLL
-libWine_DEFS         = \
+TEMPLATE_VBoxGuestWineDLL = Template for building a wine DLL.
+TEMPLATE_VBoxGuestWineDLL_EXTENDS = VBOXGUESTR3NPDLL
+TEMPLATE_VBoxGuestWineDLL_DEFS = $(TEMPLATE_VBOXGUESTR3NPDLL_DEFS) \
 	__WINESRC__ \
 	WINE_UNICODE_API="" \
-	_REENTRANT WINE_NOWINSOCK \
+	_REENTRANT \
+	WINE_NOWINSOCK \
 	USE_WIN32_OPENGL \
 	__i386__ \
 	DLLDIR=\"\" \
@@ -38,7 +38,32 @@ libWine_DEFS         = \
 	BIN_TO_DLLDIR=\"\" \
 	LIB_TO_DATADIR=\"\" \
 	BIN_TO_DATADIR=\"\"
-libWine_INCS         := include
+
+#
+# Template for building the D3D[89] stuff.
+#
+TEMPLATE_VBoxGuestWineD3DxDLL = Template for building the D3D8/9 stuff.
+TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS    = VBOXGUESTR3NPDLL
+TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS_BY = appending
+TEMPLATE_VBoxGuestWineD3DxDLL_SDKS.amd64 = WINDDKWLH
+TEMPLATE_VBoxGuestWineD3DxDLL_DEFS.x86   = __i386__
+TEMPLATE_VBoxGuestWineD3DxDLL_INCS.x86   = include
+ifdef VBOX_WINE_WITH_IPRT
+ TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = VBOX_WINE_WITH_IPRT
+ TEMPLATE_VBoxGuestWineD3DxDLL_LIBS = \
+ 	$(VBOX_LIB_IPRT_GUEST_R3) \
+ 	$(VBOX_LIB_VBGL_R3)
+endif
+
+
+if 0
+#
+# libWine - ???.
+#
+DLLS.x86 += libWine
+libWine_TEMPLATE     = VBoxGuestWineDLL
+libWine_INCS         = \
+	include
 libWine_SOURCES      := \
 	libWine/wine.def \
 	libWine/casemap.c \
@@ -127,24 +152,12 @@ endif # 0
 # wined3d - ???.
 #
 DLLS += wined3d
-wined3d_TEMPLATE     = VBOXGUESTR3NPDLL
+wined3d_TEMPLATE     = VBoxGuestWineDLL
 wined3d_SDKS         = WINDDKWLH
 wined3d_DEFS         = \
-	__WINESRC__ \
-	WINE_UNICODE_API="" \
-	_REENTRANT \
-	WINE_NOWINSOCK \
-	USE_WIN32_OPENGL \
 	_USE_MATH_DEFINES \
-	DLLDIR=\"\" \
-	BINDIR=\"\" \
-	LIB_TO_BINDIR=\"\" \
-	LIB_TO_DLLDIR=\"\" \
-	BIN_TO_DLLDIR=\"\" \
-	LIB_TO_DATADIR=\"\" \
-	BIN_TO_DATADIR=\"\" \
-	VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT \
 	VBOX_WINE_WITHOUT_LIBWINE \
+	VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT \
 	VBOX_WINE_WITH_IPRT
 # 	^^^^ wined3d is now using iprt/asm.h, which includes iprt/assert.h, so iprt is required.
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
@@ -204,7 +217,9 @@ ifdef VBOX_WITH_WDDM
   wined3dwddm_DEBUG_INSTTYPE.win = both
  endif
  wined3dwddm_DEFS           = $(subst VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT,,$(wined3d_DEFS)) \
- 	VBOX_WITH_WDDM VBOX_WINE_WITH_SINGLE_CONTEXT IN_VBOXLIBWINE
+ 	VBOX_WITH_WDDM \
+	VBOX_WINE_WITH_SINGLE_CONTEXT \
+	IN_VBOXLIBWINE
  wined3dwddm_INCS           = $(wined3d_INCS) \
  	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
  wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES)) \
@@ -217,7 +232,7 @@ ifdef VBOX_WITH_WDDM
  # wined3dwddm-x86 - ???.
  #
  DLLS.amd64 += wined3dwddm-x86
- wined3dwddm-x86_EXTENDS      = wined3dwddm
+ wined3dwddm-x86_EXTENDS    = wined3dwddm
  wined3dwddm-x86_BLD_TRG_ARCH = x86
  wined3dwddm-x86_DEFS       = $(wined3dwddm_DEFS) VBOX_WDDM_WOW64
  wined3dwddm-x86_LIBS       = \
@@ -231,21 +246,9 @@ endif # ifdef VBOX_WITH_WDDM
 # VBoxD3D8 - ???.
 #
 DLLS += VBoxD3D8
-VBoxD3D8_TEMPLATE     = VBOXGUESTR3NPDLL
+VBoxD3D8_TEMPLATE     = VBoxGuestWineDLL
 VBoxD3D8_SDKS         = WINDDKWLH
-VBoxD3D8_DEFS         = \
-	__WINESRC__ \
-	WINE_UNICODE_API="" \
-	_REENTRANT WINE_NOWINSOCK \
-	USE_WIN32_OPENGL \
-	_USE_MATH_DEFINES \
-	DLLDIR=\"\" \
-	BINDIR=\"\" \
-	LIB_TO_BINDIR=\"\" \
-	LIB_TO_DLLDIR=\"\" \
-	BIN_TO_DLLDIR=\"\" \
-	LIB_TO_DATADIR=\"\" \
-	BIN_TO_DATADIR=\"\" \
+VBoxD3D8_DEFS         = _USE_MATH_DEFINES \
 	VBOX_WINE_WITHOUT_LIBWINE
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
  VBoxD3D8_DEFS       += WINE_NO_DEBUG_MSGS
@@ -282,22 +285,9 @@ endif
 # VBoxD3D9 - ???.
 #
 DLLS += VBoxD3D9
-VBoxD3D9_TEMPLATE     = VBOXGUESTR3NPDLL
+VBoxD3D9_TEMPLATE     = VBoxGuestWineDLL
 VBoxD3D9_SDKS         = WINDDKWLH
-VBoxD3D9_DEFS         = \
-	__WINESRC__ \
-	WINE_UNICODE_API="" \
-	_REENTRANT \
-	WINE_NOWINSOCK \
-	USE_WIN32_OPENGL \
-	_USE_MATH_DEFINES\
-	DLLDIR=\"\" \
-	BINDIR=\"\" \
-	LIB_TO_BINDIR=\"\" \
-	LIB_TO_DLLDIR=\"\" \
-	BIN_TO_DLLDIR=\"\" \
-	LIB_TO_DATADIR=\"\" \
-	BIN_TO_DATADIR=\"\" \
+VBoxD3D9_DEFS         = _USE_MATH_DEFINES \
 	VBOX_WINE_WITHOUT_LIBWINE
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
  VBoxD3D9_DEFS        += WINE_NO_DEBUG_MSGS
@@ -373,32 +363,18 @@ endif # VBOX_WITH_WDDM
 # d3d8 - ???.
 #
 DLLS += d3d8
-d3d8_TEMPLATE      = VBOXGUESTR3NPDLL
-d3d8_SDKS.amd64    = WINDDKWLH
-d3d8_DEFS.x86      = __i386__
-d3d8_INCS.x86      = \
-	include
+d3d8_TEMPLATE      = VBoxGuestWineD3DxDLL
 d3d8_SOURCES       = \
 	switcher/d3d8_main.c \
 	switcher/sw_common.c \
 	switcher/sw_d3d8.def \
 	switcher/d3d8.rc
-ifdef VBOX_WINE_WITH_IPRT
- d3d8_DEFS        += VBOX_WINE_WITH_IPRT
- d3d8_LIBS        += \
- 	$(VBOX_LIB_IPRT_GUEST_R3) \
- 	$(VBOX_LIB_VBGL_R3)
-endif
 
 #
 # d3d9 - ???.
 #
 DLLS += d3d9
-d3d9_TEMPLATE      = VBOXGUESTR3NPDLL
-d3d9_SDKS.amd64    = WINDDKWLH
-d3d9_DEFS.x86      = __i386__
-d3d9_INCS.x86      =
-	include
+d3d9_TEMPLATE      = VBoxGuestWineD3DxDLL
 d3d9_SOURCES       =  \
 	switcher/d3d9_main.c \
 	switcher/sw_common.c \
@@ -407,11 +383,5 @@ d3d9_SOURCES.x86   =  \
 	switcher/sw_d3d9.def
 d3d9_SOURCES.amd64 =  \
 	switcher/sw_d3d9xpdm.def
-ifdef VBOX_WINE_WITH_IPRT
- d3d9_DEFS        += VBOX_WINE_WITH_IPRT
- d3d9_LIBS        += \
- 	$(VBOX_LIB_IPRT_GUEST_R3) \
- 	$(VBOX_LIB_VBGL_R3)
-endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
