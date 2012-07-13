@@ -209,11 +209,24 @@ Function W2K_CopyFiles
     ; WDDM Video driver
     SetOutPath "$INSTDIR"
 
-    !ifdef VBOX_SIGN_ADDITIONS
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
-    !endif
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
+  !if $%VBOX_WDDM_WIN8% == "1"
+    ${If} $g_strWinVersion == "8"
+      !ifdef VBOX_SIGN_ADDITIONS
+        FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
+      !endif
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.sys"
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.inf"
+    ${Else}
+  !endif
+      !ifdef VBOX_SIGN_ADDITIONS
+        FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
+      !endif
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
+  !if $%VBOX_WDDM_WIN8% == "1"
+    ${EndIf}
+  !endif
+
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
 
     !if $%VBOX_WITH_CROGL% == "1"
@@ -359,8 +372,17 @@ Function W2K_InstallFiles
 
   ${If} $g_bNoVideoDrv == "false"
     ${If} $g_bWithWDDM == "true"
-      DetailPrint "Installing WDDM video driver ..."
-      nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf" "$INSTDIR\install_drivers.log"'
+  !if $%VBOX_WDDM_WIN8% == "1"
+      ${If} $g_strWinVersion == "8"
+        DetailPrint "Installing WDDM video driver for Windows 8..."
+        nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoW8.inf" "$INSTDIR\install_drivers.log"'
+      ${Else}
+  !endif
+        DetailPrint "Installing WDDM video driver for Windows Vista and 7..."
+        nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf" "$INSTDIR\install_drivers.log"'
+  !if $%VBOX_WDDM_WIN8% == "1"
+      ${EndIf}
+  !endif
     ${Else}
       DetailPrint "Installing video driver ..."
       nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideo.inf" "$INSTDIR\install_drivers.log"'
@@ -506,6 +528,11 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
+  !if $%VBOX_WDDM_WIN8% == "1"
+  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
+  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.sys"
+  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.inf"
+  !endif
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
 
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
@@ -567,7 +594,20 @@ Function ${un}W2K_Uninstall
 
   ; Remove video driver
 !if $%VBOX_WITH_WDDM% == "1"
-  DetailPrint "Uninstalling WDDM video driver ..."
+
+  !if $%VBOX_WDDM_WIN8% == "1"
+  DetailPrint "Uninstalling WDDM video driver for Windows 8..."
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver uninstall "$INSTDIR\VBoxVideoW8.inf"'
+  Pop $0 ; Ret value
+  ; Always try to remove both VBoxVideoW8 & VBoxVideoWddm services no matter what is installed currently
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxVideoW8'
+  Pop $0 ; Ret value
+  ;misha> @todo driver file removal (as well as service removal) should be done as driver package uninstall
+  ;       could be done with "VBoxDrvInst.exe /u", e.g. by passing additional arg to it denoting that driver package is to be uninstalled
+  Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideoW8.sys"
+  !endif ; $%VBOX_WDDM_WIN8% == "1"
+
+  DetailPrint "Uninstalling WDDM video driver for Windows Vista and 7..."
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver uninstall "$INSTDIR\VBoxVideoWddm.inf"'
   Pop $0 ; Ret value
   ; Always try to remove both VBoxVideoWddm & VBoxVideo services no matter what is installed currently
