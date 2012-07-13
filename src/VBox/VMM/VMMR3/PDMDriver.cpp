@@ -395,8 +395,8 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
      * Gather the attributes used in the matching process.
      */
     const char *pszDevice = pLun->pDevIns
-                          ? pLun->pDevIns->pReg->szName
-                          : pLun->pUsbIns->pReg->szName;
+                          ? pLun->pDevIns->Internal.s.pDevR3->pReg->szName
+                          : pLun->pUsbIns->Internal.s.pUsbDev->pReg->szName;
     char        szLun[32];
     RTStrPrintf(szLun, sizeof(szLun), "%u", pLun->iLun);
     const char *pszAbove  = pDrvAbove ? pDrvAbove->Internal.s.pDrv->pReg->szName : "<top>";
