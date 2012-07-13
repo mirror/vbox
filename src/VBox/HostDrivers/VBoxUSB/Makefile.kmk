@@ -31,10 +31,10 @@ endif
 #
 LIBRARIES += USBLib
 USBLib_TEMPLATE       = VBOXR3
-USBLib_SDKS.win       = WINPSDK W2K3DDK
+USBLib_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 USBLib_DEFS           = IN_USBLIB
 USBLib_DEFS.os2       = STATIC_USBCALLS
-USBLib_DEFS.win       = _WIN32_WINNT=0x0500
+USBLib_DEFS.win       = _WIN32_WINNT=0x0501
 USBLib_SOURCES        = \
 	USBLib.cpp \
 	USBFilter.cpp
@@ -65,4 +65,5 @@ endif # VBOX_WITH_TESTCASES
 
 # generate rules
 include $(FILE_KBUILD_SUB_FOOTER)
+
 

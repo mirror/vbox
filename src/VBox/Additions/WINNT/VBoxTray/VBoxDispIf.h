@@ -17,6 +17,7 @@
 
 #include <windows.h>
 #ifdef VBOX_WITH_WDDM
+# define D3DKMDT_SPECIAL_MULTIPLATFORM_TOOL
 # include <d3dkmthk.h>
 #endif
 

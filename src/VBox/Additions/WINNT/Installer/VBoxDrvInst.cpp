@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,14 +19,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-
 #ifndef UNICODE
-#define UNICODE
+# define UNICODE
 #endif
 
 #include <VBox/version.h>
 
-#include <windows.h>
+#include <Windows.h>
 #include <setupapi.h>
 #include <stdio.h>
 #include <tchar.h>
@@ -78,10 +77,13 @@ fnDIFXAPISetLogCallback g_pfnDIFXAPISetLogCallback = NULL;
 #define DRIVER_PACKAGE_DELETE_FILES           0x00000020
 
 /* DIFx error codes */
+/** @todo any reason why we're not using difxapi.h instead of these redefinitions? */
+#ifndef ERROR_DRIVER_STORE_ADD_FAILED
+# define ERROR_DRIVER_STORE_ADD_FAILED \
+    (APPLICATION_ERROR_MASK | ERROR_SEVERITY_ERROR | 0x0247L)
+#endif
 #define ERROR_DEPENDENT_APPLICATIONS_EXIST \
     (APPLICATION_ERROR_MASK|ERROR_SEVERITY_ERROR|0x300)
-#define ERROR_DRIVER_STORE_ADD_FAILED \
-    (APPLICATION_ERROR_MASK | ERROR_SEVERITY_ERROR | 0x0247L)
 #define ERROR_DRIVER_PACKAGE_NOT_IN_STORE \
     (APPLICATION_ERROR_MASK|ERROR_SEVERITY_ERROR|0x302)
 
@@ -90,7 +92,7 @@ fnDIFXAPISetLogCallback g_pfnDIFXAPISetLogCallback = NULL;
 #define VBOX_REG_STRINGLIST_ALLOW_DUPLICATES  0x00000001        /* Allows duplicates in list when adding a value. */
 
 #ifdef DEBUG
-    #define VBOX_DRVINST_LOGFILE              "C:\\Temp\\VBoxDrvInstDIFx.log"
+# define VBOX_DRVINST_LOGFILE                 "C:\\Temp\\VBoxDrvInstDIFx.log"
 #endif
 
 bool GetErrorMsg(DWORD dwLastError, _TCHAR *pszMsg, DWORD dwBufSize)

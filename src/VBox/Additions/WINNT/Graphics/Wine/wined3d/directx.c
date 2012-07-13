@@ -3021,10 +3021,7 @@ static HRESULT WINAPI IWineD3DImpl_GetAdapterDisplayModeEx(IWineD3D *iface,
             pMode->ScanLineOrdering = WINED3DSCANLINEORDERING_PROGRESSIVE;
             if (DevModeW.dmFields&DM_DISPLAYFLAGS)
             {
-#if 0 //defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
-# ifndef DM_INTERLACED
-#  define DM_INTERLACED 0x00000002
-# endif
+#ifdef VBOX_USING_WINDDK_W7_OR_LATER
                 if (DevModeW.dmDisplayFlags&DM_INTERLACED)
 #else
                 if (DevModeW.u2.dmDisplayFlags&DM_INTERLACED)
@@ -3040,7 +3037,7 @@ static HRESULT WINAPI IWineD3DImpl_GetAdapterDisplayModeEx(IWineD3D *iface,
             *pRotation = WINED3DDISPLAYROTATION_IDENTITY;
             if (DevModeW.dmFields&DM_DISPLAYORIENTATION)
             {
-#if 0 //defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
+#ifdef VBOX_USING_WINDDK_W7_OR_LATER
                 switch (DevModeW.dmDisplayOrientation)
 #else
                 switch (DevModeW.u.s2.dmDisplayOrientation)
@@ -3059,7 +3056,7 @@ static HRESULT WINAPI IWineD3DImpl_GetAdapterDisplayModeEx(IWineD3D *iface,
                         *pRotation = WINED3DDISPLAYROTATION_270;
                         break;
                     default:
-#if 0 //defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
+#ifdef VBOX_USING_WINDDK_W7_OR_LATER
                         WARN("Unexpected display orientation %#x", DevModeW.dmDisplayOrientation);
 #else
                         WARN("Unexpected display orientation %#x", DevModeW.u.s2.dmDisplayOrientation);

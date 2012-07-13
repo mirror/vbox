@@ -37,7 +37,7 @@ ifdef VBOX_SIGNING_MODE
  VBoxUSB_INSTTYPE   = none
  VBoxUSB_DEBUG_INSTTYPE = both
 endif
-VBoxUSB_SDKS        = W2K3DDK WINPSDKINCS
+VBoxUSB_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
 VBoxUSB_DEFS        = IN_RT_R0 IN_SUP_R0 VBOX_DBG_LOG_NAME=\"USBDev\"
 VBoxUSB_LDFLAGS.x86 = -Entry:DriverEntry@8
 VBoxUSB_LDFLAGS.amd64 = -Entry:DriverEntry
@@ -50,8 +50,8 @@ VBoxUSB_SOURCES     = \
 	cmn/VBoxDrvTool.cpp \
 	dev/VBoxUsbDev.rc
 VBoxUSB_LIBS        = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/hal.lib \
 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
 	$(usbd_1_TARGET)
 
@@ -64,7 +64,7 @@ ifdef VBOX_SIGNING_MODE
  VBoxUSBMon_DEBUG_INSTTYPE = both
 endif
 VBoxUSBMon_INCS       := $(PATH_SUB_CURRENT)/..
-VBoxUSBMon_SDKS        = W2K3DDK WINPSDKINCS
+VBoxUSBMon_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
 VBoxUSBMon_DEFS        = IN_RT_R0 IN_SUP_R0 i386=1 STD_CALL CONDITION_HANDLING=1 NT_INST=0 \
 	WIN32=100 _NT1X_=100 WINNT=1 _WIN32_WINNT=0x0501 WINVER=0x0501 _WIN32_IE=0x0600 WIN32_LEAN_AND_MEAN=1 \
 	VBOXUSBFILTERMGR_USB_SPINLOCK VBOX_DBG_LOG_NAME=\"USBMon\"
@@ -83,8 +83,8 @@ VBoxUSBMon_SOURCES     = \
 	../VBoxUSBFilterMgr.cpp \
 	mon/VBoxUsbMon.rc
 VBoxUSBMon_LIBS        = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/hal.lib \
 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
 	$(usbd_1_TARGET)
 if1of ($(KBUILD_TYPE), debug)
@@ -96,16 +96,16 @@ endif
 #
 USBInstall_TEMPLATE = VBOXR3EXE
 USBInstall_DEFS     = IN_RT_R3
-USBInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+USBInstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 USBInstall_CXXFLAGS = -Gz
 USBInstall_CFLAGS   = -Gz
 USBInstall_SOURCES  = \
 	Install/USBInstall.cpp
 USBInstall_LIBS = \
-	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-	$(VBoxDrvCfg_1_TARGET)
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
 
 
 #
@@ -113,32 +113,32 @@ USBInstall_LIBS = \
 #
 USBUninstall_TEMPLATE = VBOXR3EXE
 USBUninstall_DEFS     = IN_RT_R3
-USBUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+USBUninstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 USBUninstall_CXXFLAGS = -Gz
 USBUninstall_CFLAGS   = -Gz
 USBUninstall_SOURCES  = \
 	Install/USBUninstall.cpp
 USBUninstall_LIBS = \
-	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-    $(VBoxDrvCfg_1_TARGET)
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
 
 #
 # USBTest
 #
 USBTest_TEMPLATE = VBOXR3EXE
 USBTest_DEFS     = IN_RT_R3
-USBTest_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+USBTest_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 USBTest_CXXFLAGS = -Gz
 USBTest_CFLAGS   = -Gz
 USBTest_SOURCES  = \
 	testcase/USBTest.cpp
 USBTest_LIBS = \
-	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-	$(VBoxDrvCfg_1_TARGET)
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
 
 #
 # Install the INF files.

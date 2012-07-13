@@ -16,11 +16,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define WIN9X_COMPAT_SPINLOCK /* Avoid duplicate _KeInitializeSpinLock@4 error on x86. */
+#include <iprt/asm.h>
 #include "VBoxMF.h"
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/VBoxGuest.h>
 #include <iprt/assert.h>
-#include <iprt/asm.h>
 
 typedef struct VBOXGDC
 {

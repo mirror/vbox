@@ -18,10 +18,10 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifeq ($(KBUILD_TARGET_ARCH),x86)
-SYSMODS += VBoxMouseNT
+SYSMODS.x86 += VBoxMouseNT
 VBoxMouseNT_TEMPLATE    = VBOXGUESTR0
 VBoxMouseNT_DEFS        = LOG_TO_BACKDOOR
+VBoxMouseNT_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
 VBoxMouseNT_INCS        = \
 	$(VBoxMouseNT_0_OUTDIR)
 VBoxMouseNT_LDFLAGS     = -Entry:DriverEntry@8
@@ -29,14 +29,13 @@ VBoxMouseNT_SOURCES     = \
 	VBoxPS2NT.cpp \
 	VBoxPS2NT.rc
 VBoxMouseNT_LIBS        = \
-	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
 VBoxMouseNT_CLEAN       = \
 	$(VBoxMouseNT_0_OUTDIR)/VBoxMouseNT.pdb
-endif # x86
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

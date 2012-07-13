@@ -35,7 +35,7 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  VBoxNetFlt_INCS = .
  VBoxNetFlt_SOURCES.darwin = \
  	darwin/VBoxNetFlt-darwin.cpp
- VBoxNetFlt_SDKS.win = WINDDKWLH WINPSDKINCS
+ VBoxNetFlt_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
  VBoxNetFlt_SOURCES.win = \
  	win/drv/VBoxNetFltP-win.cpp \
  	win/drv/VBoxNetFltM-win.cpp \
@@ -57,9 +57,9 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  VBoxNetFlt_LDFLAGS.win.x86 = -Entry:DriverEntry@8
  VBoxNetFlt_LDFLAGS.win.amd64 = -Entry:DriverEntry
  VBoxNetFlt_LIBS.win = \
- 	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
- 	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
- 	$(PATH_SDK_WINDDKWLH_LIB)/ndis.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/hal.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_WLH)_LIB)/ndis.lib \
  	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
  VBoxNetFlt_LIBS = \
  	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
@@ -145,7 +145,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  LIBRARIES.win += WinNetConfig
  WinNetConfig_TEMPLATE = VBOXR3STATIC
  WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
- WinNetConfig_SDKS     = WINPSDK W2K3DDK
+ WinNetConfig_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  WinNetConfig_SOURCES  = \
  	win/cfg/VBoxNetCfg.cpp
  WinNetConfig_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
@@ -155,14 +155,14 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  #
  PROGRAMS.win  += NetFltInstall
  NetFltInstall_TEMPLATE = VBOXR3STATIC
- NetFltInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetFltInstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
  NetFltInstall_SOURCES  = win/tools/VBoxNetFltInstall.cpp
  NetFltInstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
- 	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
- 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 
 
  #
@@ -170,28 +170,28 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  #
  PROGRAMS.win  += NetFltUninstall
  NetFltUninstall_TEMPLATE = VBOXR3STATIC
- NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetFltUninstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
  NetFltUninstall_SOURCES  = win/tools/VBoxNetFltUninstall.cpp
  NetFltUninstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
- 	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
- 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 
  #
  # NetAdpInstall
  #
  PROGRAMS.win  += NetAdpInstall
  NetAdpInstall_TEMPLATE = VBOXR3STATIC
- NetAdpInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetAdpInstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
  NetAdpInstall_SOURCES  = win/tools/VBoxNetAdpInstall.cpp
  NetAdpInstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
- 	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
- 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 
 
  #
@@ -199,14 +199,14 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  #
  PROGRAMS.win  += NetAdpUninstall
  NetAdpUninstall_TEMPLATE = VBOXR3STATIC
- NetAdpUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetAdpUninstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
  NetAdpUninstall_SOURCES  = win/tools/VBoxNetAdpUninstall.cpp
  NetAdpUninstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
- 	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
- 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 
  #
  # VBoxNetFltNobj
@@ -217,7 +217,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
   VBoxNetFltNobj_INSTTYPE  = none
   VBoxNetFltNobj_DEBUG_INSTTYPE = both
  endif
- VBoxNetFltNobj_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
+ VBoxNetFltNobj_SDKS       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
  VBoxNetFltNobj_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
  VBoxNetFltNobj_INCS       = \
  	$(VBoxNetFltNobj_0_OUTDIR)
@@ -237,8 +237,8 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  VBoxNetFltNobj_CLEAN      = $(VBoxNetFltNobj_DEPS)
 
  VBOXNETFLT_NOBJ_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
- 	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
- 	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/Midl.Exe\
+ 	$(PATH_SDK_$(VBOX_WINPSDK))/Bin/Midl.Exe\
  	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
  	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
@@ -252,7 +252,7 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 	$(VBOXNETFLT_NOBJ_IDL) /nologo \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
-		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_W2K3DDK_INCS))) \
+		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_$(VBOX_WINDDK)_INCS))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 
  #
@@ -267,7 +267,7 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
  endif
  VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
- VBoxNetAdp_SDKS = WINDDKWLH WINPSDKINCS
+ VBoxNetAdp_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
  VBoxNetAdp_SOURCES = \
  	VBoxNetFlt.c \
  	win/drv/VBoxNetFltM-win.cpp \
@@ -280,9 +280,9 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
  VBoxNetAdp_LDFLAGS.win.x86 = -Entry:DriverEntry@8
  VBoxNetAdp_LDFLAGS.win.amd64 = -Entry:DriverEntry
  VBoxNetAdp_LIBS.win = \
- 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
- 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
- 	$(PATH_SDK_W2K3DDK_LIB)/ndis.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/hal.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ndis.lib \
  	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
  VBoxNetAdp_LIBS = \
  	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)

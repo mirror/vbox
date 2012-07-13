@@ -54,7 +54,7 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
          ByteCount, ByteOffset, FileSize));
 
     /* @todo check if this is necessary. */
-#if (NTDDI_VERSION >= NTDDI_VISTA)      /* Correct spelling for Vista 6001 SDK. */
+#ifdef FCB_STATE_READCACHING_ENABLED    /* Correct spelling for Vista 6001 SDK. */
     if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHING_ENABLED))
 #else
     if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHEING_ENABLED))

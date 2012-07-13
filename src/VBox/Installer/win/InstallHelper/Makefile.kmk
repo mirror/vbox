@@ -33,15 +33,19 @@ VBoxInstallHelper_SOURCES  = \
 ifndef VBOX_OSE
  VBoxInstallHelper_SOURCES += internal/VBoxSerial.cpp
 endif
-VBoxInstallHelper_SDKS     = WINPSDK W2K3DDK
-VBoxInstallHelper_LIBS     = $(PATH_SDK_W2K3DDK_LIB)/Msi.lib
+VBoxInstallHelper_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+if defined(VBOX_USE_VCC100) || defined(VBOX_USE_VCC110)
+ VBoxInstallHelper_LIBS    = $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
+else
+ VBoxInstallHelper_LIBS    = $(PATH_SDK_$(VBOX_WINDDK)_LIB)/Msi.lib
+endif
 ifdef VBOX_WITH_NETFLT
  VBoxInstallHelper_LIBS   += \
 	$(PATH_STAGE_LIB)/WinNetConfig.lib \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
- 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 endif
 
 ifeq ($(KBUILD_TARGET),win)

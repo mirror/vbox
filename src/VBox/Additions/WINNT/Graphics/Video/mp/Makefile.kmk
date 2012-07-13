@@ -21,12 +21,12 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # VBoxVideo - Windows Guest Additions XPDM Miniport Video Driver
 #
-# Note. This has to run on NT4!
-#       (VBOX_LIB_IPRT_GUEST_R0_NT4 == VBOX_LIB_IPRT_GUEST_R0 on 64-bit)
+# Note. This has to run on NT4! (*_NT4 => *_W2K3 when targetting 64-bit.)
 #
 SYSMODS += VBoxVideo
 VBoxVideo_TEMPLATE      = VBOXGUESTR0
-VBoxVideo_DEFS          = VBOX_XPDM_MINIPORT VBOX_WITH_8BPP_MODES
+VBoxVideo_SDKS          = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
+VBoxVideo_DEFS          = VBOX_XPDM_MINIPORT VBOX_WITH_8BPP_MODES VBOX_USING_$(VBOX_WINDDK_GST_NT4)
 VBoxVideo_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxVideo_DEFS        += VBOX_WITH_VIDEOHWACCEL
@@ -38,25 +38,25 @@ VBoxVideo_SOURCES       = \
 	xpdm/VBoxMPDriver.cpp \
 	xpdm/VBoxMP.def \
 	xpdm/VBoxMP.rc \
-    xpdm/VBoxMPVideoPortAPI.cpp \
-    xpdm/VBoxMPInternal.cpp \
-    xpdm/VBoxMPRegistry.cpp \
-    xpdm/VBoxMPIOCTL.cpp \
+	xpdm/VBoxMPVideoPortAPI.cpp \
+	xpdm/VBoxMPInternal.cpp \
+	xpdm/VBoxMPRegistry.cpp \
+	xpdm/VBoxMPIOCTL.cpp \
 	common/VBoxMPUtils.cpp \
 	common/VBoxMPCommon.cpp \
-    common/VBoxMPHGSMI.cpp \
-    common/VBoxMPVidModes.cpp \
+	common/VBoxMPHGSMI.cpp \
+	common/VBoxMPVidModes.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 VBoxVideo_LIBS          = \
-	$(PATH_SDK_W2K3DDK_LIB)/videoprt.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/videoprt.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
 	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
 VBoxVideo_LIBS.x86      = \
-	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib
 
 ifdef VBOX_WITH_WDDM
  #
@@ -64,6 +64,7 @@ ifdef VBOX_WITH_WDDM
  #
  SYSMODS += VBoxVideoWddm
  VBoxVideoWddm_TEMPLATE    = VBOXGUESTR0
+ VBoxVideoWddm_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
  VBoxVideoWddm_DEFS       += VBOX_WITH_8BPP_MODES
  VBoxVideoWddm_DEFS       += VBOX_WDDM_MINIPORT VBOX_WITH_WDDM VBOX_WITH_HGCM
  ifdef VBOX_WITH_VIDEOHWACCEL
@@ -94,16 +95,17 @@ ifdef VBOX_WITH_WDDM
  endif
  
  VBoxVideoWddm_INCS       += \
-    ../../../include \
-    .. \
-    . \
-    ../../../../common/VBoxGuestLib \
-    $(VBOX_PATH_CROGL_INCLUDE) \
-    $(VBOX_PATH_CROGL_GENFILES) \
-    $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer
+ 	../../../include \
+ 	.. \
+ 	. \
+ 	../../../../common/VBoxGuestLib \
+ 	$(VBOX_PATH_CROGL_INCLUDE) \
+ 	$(VBOX_PATH_CROGL_GENFILES) \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer
+
  VBoxVideoWddm_LDFLAGS.x86 += /Entry:DriverEntry@8
  VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry
- VBoxVideoWddm_SDKS        = WINDDKWLH
+
  VBoxVideoWddm_SOURCES     = \
  	wddm/VBoxMPWddm.cpp \
 	wddm/VBoxMPVidPn.cpp \
@@ -136,16 +138,17 @@ ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_SOURCES   += \
     wddm/VBoxMPVhwa.cpp
  endif
+
  VBoxVideoWddm_LIBS.x86   = \
- 	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/BufferOverflowK.lib
  #VBoxVideoWddm_LIBS.x86   += \
- #	$(PATH_SDK_WINDDKWLH_LIB)/exsup.lib
+ #	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/exsup.lib
  VBoxVideoWddm_LIBS        = \
- 	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
- 	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
- 	$(PATH_SDK_WINDDKWLH_LIB)/displib.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/hal.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/displib.lib \
  	$(VBOX_LIB_VBGL_R0) \
- 	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
+ 	$(VBOX_LIB_IPRT_GUEST_R0) \
  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
 
  ifdef VBOX_WDDM_WIN8
@@ -155,21 +158,19 @@ ifdef VBOX_WITH_WDDM
   SYSMODS += VBoxVideoW8
   VBoxVideoW8_EXTENDS    = VBoxVideoWddm
   VBoxVideoW8_TEMPLATE   = VBOXGUESTWIN8R0
+  VBoxVideoW8_SDKS       = ReorderCompilerIncs $(VBOX_WINDDK_GST_W8)
   VBoxVideoW8_DEFS      += $(VBoxVideoWddm_DEFS) VBOX_WDDM_WIN8
-  VBoxVideoW8_SDKS       = WINDDKW8
   VBoxVideoW8_SOURCES    = $(subst VBoxMPWddm.rc,VBoxMPW8.rc,$(VBoxVideoWddm_SOURCES))
   VBoxVideoW8_LIBS.x86   = \
-    $(PATH_SDK_WINDDKW8_LIB)/BufferOverflowK.lib
-  #VBoxVideoW8_LIBS.x86   += \
-  #  $(PATH_SDK_WINDDKW8_LIB)/exsup.lib
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib
   VBoxVideoW8_LIBS        = \
-     $(PATH_SDK_WINDDKW8_LIB)/ntoskrnl.lib \
-     $(PATH_SDK_WINDDKW8_LIB)/hal.lib \
-     $(PATH_SDK_WINDDKW8_LIB)/displib.lib \
-     $(VBOX_LIB_VBGL_R0) \
-     $(VBOX_LIB_IPRT_GUEST_R0_NT4) \
-     $(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
-  VBoxVideoW8_LIBS.amd64  = $(PATH_SDK_WINDDKW8_LIB)/BufferOverflowK.lib
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/ntoskrnl.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/hal.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/displib.lib \
+  	$(VBOX_LIB_VBGL_R0) \
+  	$(VBOX_LIB_IPRT_GUEST_R0) \
+  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
+  VBoxVideoW8_LIBS.amd64  = $(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib
  endif # VBOX_WDDM_WIN8
  
 endif # VBOX_WITH_WDDM

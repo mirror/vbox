@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VirtualBox Windows Guest Shared Folders
+ * VirtualBox Windows Guest Shared Folders.
  *
  * File System Driver initialization and generic routines
  */
@@ -1381,12 +1381,13 @@ NTSTATUS VBoxMRxSetSdInfo(IN OUT struct _RX_CONTEXT * RxContext)
 /*
  * WML stubs which are referenced by rdbsslib.
  */
-NTSTATUS WmlTinySystemControl(void)
+NTSTATUS WmlTinySystemControl(IN OUT PVOID pWmiLibInfo, IN PVOID pDevObj, IN PVOID pIrp)
 {
     return STATUS_WMI_GUID_NOT_FOUND;
 }
 
-ULONG WmlTrace(void)
+ULONG WmlTrace(IN ULONG ulType, IN PVOID pTraceUuid, IN ULONG64 ullLogger, ...)
 {
     return STATUS_SUCCESS;
 }
+

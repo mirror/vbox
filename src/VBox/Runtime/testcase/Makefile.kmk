@@ -672,7 +672,7 @@ tstRTDarwinMachKernel_SOURCES  = \
 	../r0drv/darwin/dbgkrnlinfo-r0drv-darwin.cpp
 
 ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
-ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK VBOX_NTDLL
+ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 
 endif # VBOX_WITH_TESTCASES
 

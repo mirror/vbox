@@ -206,7 +206,7 @@ ifdef VBOX_GSOAP_INSTALLED
  #
  LIBRARIES += vboxsoap
  vboxsoap_TEMPLATE = VBOXWEBR3EXE
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
   vboxsoap_CXXFLAGS.win += -bigobj
  endif
  ifn1of ($(KBUILD_TARGET), win)
@@ -291,7 +291,7 @@ endif
 	$(VBOX_GSOAP_INCS) \
 	$(VBOXWEB_OUT_DIR) \
 	.
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
   vboxwebsrv_CXXFLAGS.win += -bigobj
  endif
  ifn1of ($(KBUILD_TARGET), win)
@@ -434,7 +434,7 @@ $$(VBOX_JWSSRC_JAR): $$(VBOX_JWS_JAR) | $$(dir $$@)
  #
  PROGRAMS += webtest
  webtest_TEMPLATE = VBOXWEBR3EXE
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
   webtest_CXXFLAGS.win += -bigobj
  endif
  ifn1of ($(KBUILD_TARGET), win)

@@ -29,6 +29,9 @@
 
 #include <iprt/cdefs.h>
 
+#if defined(RT_ARCH_X86) && !defined(NO_INTERLOCKED_INTRINSICS)
+# define NO_INTERLOCKED_INTRINSICS /* avoid trouble */
+#endif
 #if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
 # include <iprt/asm.h>
 # define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap

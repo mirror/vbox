@@ -37,10 +37,10 @@ ifdef VBOX_WITH_WDDM
  VBoxDrvInst_DEFS  += VBOX_WITH_WDDM
 endif
 VBoxDrvInst_DEPS    = $(VBOX_SVN_REV_KMK)
-VBoxDrvInst_SDKS    = WINPSDK W2K3DDK
+VBoxDrvInst_SDKS    = ReorderCompilerIncs $(VBOX_WINPSDK_GST) $(VBOX_WINDDK_GST)
 VBoxDrvInst_LIBS    = \
-	$(PATH_SDK_W2K3DDK_LIB)/setupapi.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib
+	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/setupapi.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/newdev.lib
 VBoxDrvInst_SOURCES = \
 	VBoxDrvInst.cpp \
 	VBoxDrvInst.rc
