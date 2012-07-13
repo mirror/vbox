@@ -18,6 +18,10 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# Make sure our Config.kmk is included.
+ifndef VBOX_DEVICES_CONFIG_KMK_INCLUDED
+ include $(PATH_SUB_CURRENT)/Config.kmk
+endif
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
@@ -32,8 +36,13 @@ else if defined(VBOX_WITH_PXE_ROM)
  endif
 endif
 if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
+ include $(PATH_SUB_CURRENT)/BiosCommonCode/Makefile.kmk
  include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
- include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
+ ifdef VBOX_WITH_NEW_VGABIOS
+  include $(PATH_SUB_CURRENT)/Graphics/BIOS-new/Makefile.kmk
+ else
+  include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
+ endif
  ifdef VBOX_WITH_EFI
   include $(PATH_SUB_CURRENT)/EFI/Thunk/Makefile.kmk
  endif

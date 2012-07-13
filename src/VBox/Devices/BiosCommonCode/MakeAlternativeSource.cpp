@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * MakeDebianBiosAssembly - Generate Assembly Source for Debian-minded Distros.
+ * MakeAlternative - Generate an Alternative BIOS Source that requires less tools.
  */
 
 /*
@@ -34,13 +34,6 @@
 #include <iprt/x86.h>
 
 #include <VBox/dis.h>
-
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** The flat ROM base address. */
-#define VBOX_BIOS_BASE      UINT32_C(0xf0000)
 
 
 /*******************************************************************************
@@ -102,6 +95,7 @@ typedef BIOSMAP *PBIOSMAP;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** The verbosity level.*/
 static unsigned         g_cVerbose = 1 /*0*/;
 /** Pointer to the BIOS image. */
 static uint8_t const   *g_pbImg;
@@ -119,6 +113,15 @@ static RTLISTANCHOR     g_ObjList;
 
 /** The output stream. */
 static PRTSTREAM        g_hStrmOutput = NULL;
+
+/** The type of BIOS we're working on. */
+static enum BIOSTYPE
+{
+    kBiosType_System = 0,
+    kBiosType_Vga
+}                       g_enmBiosType = kBiosType_System;
+/** The flat ROM base address. */
+static uint32_t         g_uBiosFlatBase = 0xf0000;
 
 
 static bool outputPrintfV(const char *pszFormat, va_list va)
@@ -287,7 +290,7 @@ static bool disIsString(uint32_t uFlatAddr, uint32_t cb)
     if (cb < 6)
         return false;
 
-    uint8_t const *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint8_t const *pb = &g_pbImg[uFlatAddr - g_uBiosFlatBase];
     while (cb > 0)
     {
         if (   !RT_C_IS_PRINT(*pb)
@@ -322,13 +325,13 @@ static bool disIsString(uint32_t uFlatAddr, uint32_t cb)
  */
 static bool disIsFarBiosAddr(uint32_t uFlatAddr)
 {
-    uint16_t const *pu16 = (uint16_t const *)&g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint16_t const *pu16 = (uint16_t const *)&g_pbImg[uFlatAddr - g_uBiosFlatBase];
     if (pu16[1] < 0xf000)
         return false;
     if (pu16[1] > 0xfff0)
         return false;
     uint32_t uFlatAddr2 = (uint32_t)(pu16[1] << 4) | pu16[0];
-    if (uFlatAddr2 >= VBOX_BIOS_BASE + _64K)
+    if (uFlatAddr2 >= g_uBiosFlatBase + g_cbImg)
         return false;
     return true;
 }
@@ -336,7 +339,7 @@ static bool disIsFarBiosAddr(uint32_t uFlatAddr)
 
 static bool disByteData(uint32_t uFlatAddr, uint32_t cb)
 {
-    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - g_uBiosFlatBase];
     size_t          cbOnLine = 0;
     while (cb-- > 0)
     {
@@ -370,7 +373,7 @@ static bool disWordData(uint32_t uFlatAddr, uint32_t cb)
     if (cb & 1)
         return disError("disWordData expects word aligned size: cb=%#x uFlatAddr=%#x", uFlatAddr, cb);
 
-    uint16_t const *pu16 = (uint16_t const *)&g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint16_t const *pu16 = (uint16_t const *)&g_pbImg[uFlatAddr - g_uBiosFlatBase];
     size_t          cbOnLine = 0;
     while (cb > 0)
     {
@@ -405,7 +408,7 @@ static bool disDWordData(uint32_t uFlatAddr, uint32_t cb)
     if (cb & 3)
         return disError("disWordData expects dword aligned size: cb=%#x uFlatAddr=%#x", uFlatAddr, cb);
 
-    uint32_t const *pu32 = (uint32_t const *)&g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint32_t const *pu32 = (uint32_t const *)&g_pbImg[uFlatAddr - g_uBiosFlatBase];
     size_t          cbOnLine = 0;
     while (cb > 0)
     {
@@ -437,7 +440,7 @@ static bool disDWordData(uint32_t uFlatAddr, uint32_t cb)
 
 static bool disStringData(uint32_t uFlatAddr, uint32_t cb)
 {
-    uint8_t const  *pb        = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint8_t const  *pb        = &g_pbImg[uFlatAddr - g_uBiosFlatBase];
     uint32_t        cchOnLine = 0;
     while (cb > 0)
     {
@@ -508,7 +511,7 @@ static bool disStringData(uint32_t uFlatAddr, uint32_t cb)
  */
 static bool disStringsData(uint32_t uFlatAddr, uint32_t cb)
 {
-    uint8_t const  *pb        = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint8_t const  *pb        = &g_pbImg[uFlatAddr - g_uBiosFlatBase];
     uint32_t        cchOnLine = 0;
     uint8_t         bPrev     = 255;
     while (cb > 0)
@@ -587,7 +590,7 @@ static bool disCopySegmentGap(uint32_t uFlatAddr, uint32_t cbPadding)
     if (g_cVerbose > 0)
         outputPrintf("\n"
                      "  ; Padding %#x bytes at %#x\n", cbPadding, uFlatAddr);
-    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - g_uBiosFlatBase];
     if (!ASMMemIsAll8(pb, cbPadding, 0))
         return outputPrintf("  times %u db 0\n", cbPadding);
 
@@ -787,25 +790,39 @@ static bool disDataSegment(uint32_t iSeg)
 
 static bool disIsCodeAndAdjustSize(uint32_t uFlatAddr, PRTDBGSYMBOL pSym, PBIOSSEG pSeg)
 {
-    if (!strcmp(pSeg->szName, "BIOSSEG"))
+    switch (g_enmBiosType)
     {
-        if (   !strcmp(pSym->szName, "rom_fdpt")
-            || !strcmp(pSym->szName, "pmbios_gdt")
-            || !strcmp(pSym->szName, "pmbios_gdt_desc")
-            || !strcmp(pSym->szName, "_pmode_IDT")
-            || !strcmp(pSym->szName, "_rmode_IDT")
-            || !strncmp(pSym->szName, RT_STR_TUPLE("font"))
-            || !strcmp(pSym->szName, "bios_string")
-            || !strcmp(pSym->szName, "vector_table")
-            || !strcmp(pSym->szName, "pci_routing_table_structure")
-            )
-            return false;
-    }
+        /*
+         * This is for the PC BIOS.
+         */
+        case kBiosType_System:
+            if (!strcmp(pSeg->szName, "BIOSSEG"))
+            {
+                if (   !strcmp(pSym->szName, "rom_fdpt")
+                    || !strcmp(pSym->szName, "pmbios_gdt")
+                    || !strcmp(pSym->szName, "pmbios_gdt_desc")
+                    || !strcmp(pSym->szName, "_pmode_IDT")
+                    || !strcmp(pSym->szName, "_rmode_IDT")
+                    || !strncmp(pSym->szName, RT_STR_TUPLE("font"))
+                    || !strcmp(pSym->szName, "bios_string")
+                    || !strcmp(pSym->szName, "vector_table")
+                    || !strcmp(pSym->szName, "pci_routing_table_structure")
+                    )
+                    return false;
+            }
 
-    if (!strcmp(pSym->szName, "cpu_reset"))
-        pSym->cb = RT_MIN(pSym->cb, 5);
-    else if (!strcmp(pSym->szName, "pci_init_end"))
-        pSym->cb = RT_MIN(pSym->cb, 3);
+            if (!strcmp(pSym->szName, "cpu_reset"))
+                pSym->cb = RT_MIN(pSym->cb, 5);
+            else if (!strcmp(pSym->szName, "pci_init_end"))
+                pSym->cb = RT_MIN(pSym->cb, 3);
+            break;
+
+        /*
+         * This is for the VGA BIOS.
+         */
+        case kBiosType_Vga:
+            break;
+    }
 
     return true;
 }
@@ -824,7 +841,7 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
                                        char *pszBuf, size_t cbBuf, size_t cchUsed)
 {
     bool fDifferent = DISFormatYasmIsOddEncoding(pCpuState);
-    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - g_uBiosFlatBase];
 
     /*
      * Disassembler bugs.
@@ -879,14 +896,14 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
  */
 static DECLCALLBACK(int) disReadOpcodeBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    RTUINTPTR   offBios  = pDis->uInstrAddr + offInstr - VBOX_BIOS_BASE;
+    RTUINTPTR   offBios  = pDis->uInstrAddr + offInstr - g_uBiosFlatBase;
     size_t      cbToRead = cbMaxRead;
-    if (offBios + cbToRead > _64K)
+    if (offBios + cbToRead > g_cbImg)
     {
-        if (offBios >= _64K)
+        if (offBios >= g_cbImg)
             cbToRead = 0;
         else
-            cbToRead = _64K - offBios;
+            cbToRead = g_cbImg - offBios;
     }
     memcpy(&pDis->abInstr[offInstr], &g_pbImg[offBios], cbToRead);
     pDis->cbCachedInstr = offInstr + cbToRead;
@@ -904,7 +921,7 @@ static DECLCALLBACK(int) disReadOpcodeBytes(PDISCPUSTATE pDis, uint8_t offInstr,
  */
 static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
 {
-    uint8_t const  *pb = &g_pbImg[uFlatAddr - VBOX_BIOS_BASE];
+    uint8_t const  *pb = &g_pbImg[uFlatAddr - g_uBiosFlatBase];
 
     while (cb > 0)
     {
@@ -1041,7 +1058,7 @@ static RTEXITCODE DisassembleBiosImage(void)
      * Work the image segment by segment.
      */
     bool        fRc       = true;
-    uint32_t    uFlatAddr = VBOX_BIOS_BASE;
+    uint32_t    uFlatAddr = g_uBiosFlatBase;
     for (uint32_t iSeg = 0; iSeg < g_cSegs && fRc; iSeg++)
     {
         /* Is there a gap between the segments? */
@@ -1058,7 +1075,7 @@ static RTEXITCODE DisassembleBiosImage(void)
         /* Disassemble the segment. */
         fRc = outputPrintf("\n"
                            "section %s progbits vstart=%#x align=1 ; size=%#x class=%s group=%s\n",
-                           g_aSegs[iSeg].szName, g_aSegs[iSeg].uFlatAddr - VBOX_BIOS_BASE,
+                           g_aSegs[iSeg].szName, g_aSegs[iSeg].uFlatAddr - g_uBiosFlatBase,
                            g_aSegs[iSeg].cb, g_aSegs[iSeg].szClass, g_aSegs[iSeg].szGroup);
         if (!fRc)
             return RTEXITCODE_FAILURE;
@@ -1074,9 +1091,9 @@ static RTEXITCODE DisassembleBiosImage(void)
     }
 
     /* Final gap. */
-    if (uFlatAddr < VBOX_BIOS_BASE + _64K)
-        fRc = disCopySegmentGap(uFlatAddr, VBOX_BIOS_BASE + _64K - uFlatAddr);
-    else if (uFlatAddr > VBOX_BIOS_BASE + _64K)
+    if (uFlatAddr < g_uBiosFlatBase + g_cbImg)
+        fRc = disCopySegmentGap(uFlatAddr, g_uBiosFlatBase + g_cbImg - uFlatAddr);
+    else if (uFlatAddr > g_uBiosFlatBase + g_cbImg)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Last segment spills beyond 1MB; uFlatAddr=%#x\n", uFlatAddr);
 
     if (!fRc)
@@ -1356,7 +1373,7 @@ static bool mapParseAddress(char **ppszCursor, PRTFAR16 pAddr)
     /* Drop flag if present. */
     if (cchWord > cchAddr)
     {
-        if (RT_C_IS_XDIGIT(szWord[4+1+4]))
+        if (RT_C_IS_XDIGIT(szWord[cchAddr]))
             return false;
         szWord[cchAddr] = '\0';
         cchWord = cchAddr;
@@ -1708,7 +1725,12 @@ static bool mapParseSymbols(PBIOSMAP pMap)
             {
                 int rc = RTDbgModSymbolAdd(g_hMapMod, szName, RTDBGSEGIDX_RVA, uFlatAddr, 0 /*cb*/,  0 /*fFlags*/, NULL);
                 if (RT_FAILURE(rc) && rc != VERR_DBG_ADDRESS_CONFLICT)
-                    return mapError(pMap, "RTDbgModSymbolAdd failed: %Rrc", rc);
+                {
+                    /* HACK ALERT! For dealing with lables at segment size. */ /** @todo fix end labels. */
+                    rc = RTDbgModSymbolAdd(g_hMapMod, szName, RTDBGSEGIDX_RVA, uFlatAddr - 1, 0 /*cb*/,  0 /*fFlags*/, NULL);
+                    if (RT_FAILURE(rc) && rc != VERR_DBG_ADDRESS_CONFLICT)
+                        return mapError(pMap, "RTDbgModSymbolAdd failed: %Rrc", rc);
+                }
 
                 if (g_cVerbose > 2)
                     RTStrmPrintf(g_pStdErr, "read symbol - %08x %s\n", uFlatAddr, szName);
@@ -1817,10 +1839,18 @@ static RTEXITCODE ReadBiosImage(const char *pszBiosImg)
     int rc = RTFileReadAll(pszBiosImg, &pvImg, &cbImg);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error reading '%s': %Rrc", pszBiosImg, rc);
-    if (cbImg != _64K)
+
+    size_t cbImgExpect;
+    switch (g_enmBiosType)
+    {
+        case kBiosType_System:  cbImgExpect = _64K; break;
+        case kBiosType_Vga:     cbImgExpect = _32K; break;
+        default:                cbImgExpect = 0; break;
+    }
+    if (cbImg != cbImgExpect)
     {
         RTFileReadAllFree(pvImg, cbImg);
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The BIOS image %u bytes intead of 64KB", cbImg);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The BIOS image %u bytes intead of %u bytes", cbImg, cbImgExpect);
     }
 
     g_pbImg = (uint8_t *)pvImg;
@@ -1845,6 +1875,7 @@ int main(int argc, char **argv)
         { "--bios-image",               'i',                    RTGETOPT_REQ_STRING },
         { "--bios-map",                 'm',                    RTGETOPT_REQ_STRING },
         { "--bios-sym",                 's',                    RTGETOPT_REQ_STRING },
+        { "--bios-type",                't',                    RTGETOPT_REQ_STRING },
         { "--output",                   'o',                    RTGETOPT_REQ_STRING },
         { "--verbose",                  'v',                    RTGETOPT_REQ_NOTHING },
         { "--quiet",                    'q',                    RTGETOPT_REQ_NOTHING },
@@ -1889,6 +1920,21 @@ int main(int argc, char **argv)
                 if (pszOutput)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--output is given more than once");
                 pszOutput = ValueUnion.psz;
+                break;
+
+            case 't':
+                if (!strcmp(ValueUnion.psz, "system"))
+                {
+                    g_enmBiosType = kBiosType_System;
+                    g_uBiosFlatBase = 0xf0000;
+                }
+                else if (!strcmp(ValueUnion.psz, "vga"))
+                {
+                    g_enmBiosType = kBiosType_Vga;
+                    g_uBiosFlatBase = 0xc0000;
+                }
+                else
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown bios type '%s'", ValueUnion.psz);
                 break;
 
             case 'v':

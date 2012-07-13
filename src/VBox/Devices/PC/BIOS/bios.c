@@ -42,6 +42,7 @@
 #include <stdint.h>
 #include "inlines.h"
 #include "biosint.h"
+#include <VBox/version.h>
 
 static  const char  bios_cvs_version_string[] = "VirtualBox " VBOX_VERSION_STRING;
 
