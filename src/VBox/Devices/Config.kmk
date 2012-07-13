@@ -1,0 +1,47 @@
+# $Id$
+## @file
+# kBuild Configuration file for the Devices.
+#
+
+#
+# Copyright (C) 2006-2012 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+VBOX_DEVICES_CONFIG_KMK_INCLUDED = 1
+
+# Include the top-level configure file.
+ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
+ include $(PATH_ROOT)/Config.kmk
+endif
+
+#
+# VBoxBios - Template for building the BIOS bits.
+#
+TEMPLATE_VBoxBios = ROM
+TEMPLATE_VBoxBios_TOOL    = OPENWATCOM-16
+TEMPLATE_VBoxBios_LDTOOL  = OPENWATCOM-WL
+TEMPLATE_VBoxBios_ASTOOL  = OPENWATCOM-16
+TEMPLATE_VBoxBios_BLD_TRG = os-agnostic
+TEMPLATE_VBoxBios_BLD_TRG_ARCH = x86
+TEMPLATE_VBoxBios_BINSUFF = .rom
+TEMPLATE_VBoxBios_INCS    = .
+TEMPLATE_VBoxBios_ASFLAGS = -q -wx ## @todo add -0?
+TEMPLATE_VBoxBios_CFLAGS  = -q -3 -wx -zl -zu -s -oas -d1+ -ms
+TEMPLATE_VBoxBios_DEPS    = $(VBOX_VERSION_HEADER)
+TEMPLATE_VBoxBios_LDFLAGS = system dos  \
+	debug all \
+	option quiet, nofarcalls, map, verbose, statics, symfile \
+	disable 1014, 1023, 2120
+TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS)
+TEMPLATE_VBoxBios_POST_CMDS = \
+	$(QUIET)$(MV_EXT) -f $(out) $(out).tmp \
+	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
+	&& $(RM_EXT) -f $(out).tmp
