@@ -394,7 +394,9 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
     /*
      * Gather the attributes used in the matching process.
      */
-    const char *pszDevice = pLun->pDevIns->Internal.s.pDevR3->pReg->szName;
+    const char *pszDevice = pLun->pDevIns
+                          ? pLun->pDevIns->Internal.s.pDevR3->pReg->szName
+                          : pLun->pUsbIns->Internal.s.pUsbDev->pReg->szName;
     char        szLun[32];
     RTStrPrintf(szLun, sizeof(szLun), "%u", pLun->iLun);
     const char *pszAbove  = pDrvAbove ? pDrvAbove->Internal.s.pDrv->pReg->szName : "<top>";
@@ -833,7 +835,10 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
      */
     if (pDrvIns->Internal.s.pUp
         ? !pDrvIns->Internal.s.pUp->pReg->pfnDetach
-        : !pDrvIns->Internal.s.pLun->pDevIns->pReg->pfnDetach)
+        :   pDrvIns->Internal.s.pLun->pDevIns
+          ? !pDrvIns->Internal.s.pLun->pDevIns->Internal.s.pDevR3->pReg->pfnDetach
+          : !pDrvIns->Internal.s.pLun->pUsbIns->Internal.s.pUsbDev->pReg->pfnDriverDetach
+       )
     {
         AssertMsgFailed(("Cannot detach driver instance because the driver/device above doesn't support it!\n"));
         return VERR_PDM_DRIVER_DETACH_NOT_POSSIBLE;
@@ -900,11 +905,26 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
             /* device parent */
             Assert(pLun->pTop == pCur);
             pLun->pTop = NULL;
-            if (!(fFlags & PDM_TACH_FLAGS_NO_CALLBACKS) && pLun->pDevIns->pReg->pfnDetach)
+            if (!(fFlags & PDM_TACH_FLAGS_NO_CALLBACKS))
             {
-                PDMCritSectEnter(pLun->pDevIns->pCritSectRoR3, VERR_IGNORED);
-                pLun->pDevIns->pReg->pfnDetach(pLun->pDevIns, pLun->iLun, fFlags);
-                PDMCritSectLeave(pLun->pDevIns->pCritSectRoR3);
+                if (pLun->pDevIns)
+                {
+                    if (pLun->pDevIns->Internal.s.pDevR3->pReg->pfnDetach)
+                    {
+                        PDMCritSectEnter(pLun->pDevIns->pCritSectRoR3, VERR_IGNORED);
+                        pLun->pDevIns->Internal.s.pDevR3->pReg->pfnDetach(pLun->pDevIns, pLun->iLun, fFlags);
+                        PDMCritSectLeave(pLun->pDevIns->pCritSectRoR3);
+                    }
+                }
+                else
+                {
+                    if (pLun->pUsbIns->Internal.s.pUsbDev->pReg->pfnDriverDetach)
+                    {
+                        /** @todo USB device locking? */
+                        /** @todo add flags to pfnDriverDetach. */
+                        pLun->pUsbIns->Internal.s.pUsbDev->pReg->pfnDriverDetach(pLun->pUsbIns, pLun->iLun);
+                    }
+                }
             }
         }
 
