@@ -31,11 +31,11 @@ RT_C_DECLS_END
  * windbg seems to have some issues when there is a lot ( >~50) of sw breakpoints defined
  * to simplify things we just insert breaks for the case of intensive debugging WDDM driver*/
 #ifndef VBOX_WDDM_WIN8
-bool g_bVBoxVDbgBreakF = false;
-bool g_bVBoxVDbgBreakFv = false;
+int g_bVBoxVDbgBreakF = false;
+int g_bVBoxVDbgBreakFv = false;
 #else
-bool g_bVBoxVDbgBreakF = true;
-bool g_bVBoxVDbgBreakFv = true;
+int g_bVBoxVDbgBreakF = false;
+int g_bVBoxVDbgBreakFv = false;
 #endif
 #endif
 

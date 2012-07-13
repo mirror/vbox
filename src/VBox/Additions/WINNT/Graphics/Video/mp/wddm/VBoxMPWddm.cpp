@@ -271,21 +271,19 @@ NTSTATUS vboxWddmGhDisplayUpdateScreenPos(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOUR
     return Status;
 }
 
-NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, const PVBOXWDDM_ALLOC_DATA pAllocData, const POINT * pVScreenPos)
 {
-    NTSTATUS Status = vboxWddmGhDisplaySetMode(pDevExt, &pSource->AllocData);
+    NTSTATUS Status = vboxWddmGhDisplaySetMode(pDevExt, pAllocData);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
-        Status = vboxWddmGhDisplayPostInfoView(pDevExt, &pSource->AllocData);
+        Status = vboxWddmGhDisplayPostInfoView(pDevExt, pAllocData);
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, &pSource->AllocData, &pSource->VScreenPos);
+            Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, pAllocData, pVScreenPos);
             Assert(Status == STATUS_SUCCESS);
-            if (Status == STATUS_SUCCESS)
-                pSource->bGhSynced = TRUE;
-            else
+            if (!NT_SUCCESS(Status))
                 WARN(("vboxWddmGhDisplayPostInfoScreen failed"));
         }
         else
@@ -295,6 +293,34 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSour
         WARN(("vboxWddmGhDisplaySetMode failed"));
 
     return Status;
+}
+
+bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource)
+{
+    Assert(VBOXVIDEOOFFSET_VOID != pSource->AllocData.Addr.offVram);
+
+    if (pSource->bGhSynced)
+        return false;
+
+    PVBOXWDDM_ALLOCATION pFbAlloc = VBOXWDDM_FB_ALLOCATION(pDevExt, pSource);
+
+#ifdef VBOX_WDDM_WIN8
+    Assert(!g_VBoxDisplayOnly == !!pFbAlloc);
+#else
+    Assert(pFbAlloc);
+#endif
+#ifndef VBOXWDDM_RENDER_FROM_SHADOW
+    Assert(!pFbAlloc || pFbAlloc->AllocData.Addr.offVram == pSource->AllocData.Addr.offVram);
+#endif
+    Assert(!pFbAlloc || pFbAlloc->AllocData.Addr.SegmentId == pSource->AllocData.Addr.SegmentId);
+
+    NTSTATUS Status = vboxWddmGhDisplaySetInfo(pDevExt, pFbAlloc ? &pFbAlloc->AllocData : &pSource->AllocData, &pSource->VScreenPos);
+    if (NT_SUCCESS(Status))
+        pSource->bGhSynced = TRUE;
+    else
+        WARN(("vboxWddmGhDisplaySetInfo failed, Status (0x%x)", Status));
+
+    return true;
 }
 
 static VOID vboxWddmModeRenderFromShadowDisableOnSubmitCommand(PVBOXMP_DEVEXT pDevExt, BOOLEAN fDisable)
@@ -374,7 +400,7 @@ static VOID vboxWddmModeRenderFromShadowDisableUnregister(PVBOXMP_DEVEXT pDevExt
 }
 
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
-bool vboxWddmCheckUpdateFramebufferAddress(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+bool vboxWddmCheckUpdateFramebufferAddress(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource)
 {
     if (pSource->pPrimaryAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
     {
@@ -382,16 +408,7 @@ bool vboxWddmCheckUpdateFramebufferAddress(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOU
         return false;
     }
 
-    Assert(VBOXVIDEOOFFSET_VOID != pSource->AllocData.Addr.offVram);
-
-    if (pSource->bGhSynced)
-        return false;
-
-    NTSTATUS Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, VidPnSourceId);
-    if (!NT_SUCCESS(Status))
-        WARN(("vboxWddmGhDisplaySetInfo failed, Status (0x%x)", Status));
-
-    return true;
+    return vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
 }
 #endif
 
@@ -2963,7 +2980,7 @@ DxgkDdiSubmitCommand(
             vboxWddmAddrSetVram(&pSrcAlloc->AllocData.Addr, pS2P->Shadow2Primary.ShadowAlloc.segmentIdAlloc, pS2P->Shadow2Primary.ShadowAlloc.offAlloc);
             vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pS2P->Shadow2Primary.VidPnSourceId);
             fRenderFromSharedDisabled = vboxWddmModeRenderFromShadowCheckOnSubmitCommand(pDevExt, NULL);
-            vboxWddmCheckUpdateFramebufferAddress(pDevExt, pSource, pS2P->Shadow2Primary.VidPnSourceId);
+            vboxWddmCheckUpdateFramebufferAddress(pDevExt, pSource);
             uint32_t cUnlockedVBVADisabled = ASMAtomicReadU32(&pDevExt->cUnlockedVBVADisabled);
             if (!cUnlockedVBVADisabled)
                 VBOXVBVA_OP(ReportDirtyRect, pDevExt, pSource, &pS2P->Shadow2Primary.SrcRect);
@@ -3006,7 +3023,7 @@ DxgkDdiSubmitCommand(
                 fRenderFromSharedDisabled = vboxWddmModeRenderFromShadowCheckOnSubmitCommand(pDevExt, NULL);
                 if(pContext->enmType != VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D
                         || pDstAlloc->enmType !=VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
-                    vboxWddmCheckUpdateFramebufferAddress(pDevExt, pSource, pDstAlloc->AllocData.SurfDesc.VidPnSourceId);
+                    vboxWddmCheckUpdateFramebufferAddress(pDevExt, pSource);
             }
             else if (pSrcAlloc->bAssigned &&
                     (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
@@ -3018,7 +3035,7 @@ DxgkDdiSubmitCommand(
                 fRenderFromSharedDisabled = vboxWddmModeRenderFromShadowCheckOnSubmitCommand(pDevExt, NULL);
                 if(pContext->enmType != VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D
                         || pSrcAlloc->enmType !=VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
-                    vboxWddmCheckUpdateFramebufferAddress(pDevExt, pSource, pSrcAlloc->AllocData.SurfDesc.VidPnSourceId);
+                    vboxWddmCheckUpdateFramebufferAddress(pDevExt, pSource);
             }
 
             if (pContext->enmType != VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D && fRenderFromSharedDisabled)
@@ -4626,16 +4643,20 @@ DxgkDdiSetVidPnSourceAddress(
 
     pSource->bGhSynced = FALSE; /* force guest->host notification */
 
-#if defined(VBOXWDDM_RENDER_FROM_SHADOW) && defined(VBOX_WDDM_WIN8)
-    if (g_VBoxDisplayOnly && !pSource->bGhSynced && pSource->bVisible)
-    {
-        Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, pSetVidPnSourceAddress->VidPnSourceId);
-        if (!NT_SUCCESS(Status))
-        {
-            WARN(("vboxWddmGhDisplaySetInfo failed, Status (0x%x)", Status));
-        }
-    }
+    if (pSource->bVisible
+#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
+            && (
+# if defined(VBOX_WDDM_WIN8)
+            g_VBoxDisplayOnly
+                    ||
+# endif
+                    pDevExt->fRenderToShadowDisabled
+                    )
 #endif
+            )
+    {
+        vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
+    }
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
@@ -4678,16 +4699,20 @@ DxgkDdiSetVidPnSourceVisibility(
     if (pSource->bVisible != pSetVidPnSourceVisibility->Visible)
     {
         pSource->bVisible = pSetVidPnSourceVisibility->Visible;
-#if defined(VBOXWDDM_RENDER_FROM_SHADOW) && defined(VBOX_WDDM_WIN8)
-        if (g_VBoxDisplayOnly && pSource->bVisible)
-        {
-            Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, pSetVidPnSourceVisibility->VidPnSourceId);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("vboxWddmGhDisplaySetInfo failed, Status (0x%x)", Status));
-            }
-        }
+        if (pSource->bVisible
+#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
+                && (
+# if defined(VBOX_WDDM_WIN8)
+                g_VBoxDisplayOnly
+                        ||
+# endif
+                        pDevExt->fRenderToShadowDisabled
+                        )
 #endif
+                )
+        {
+            vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
+        }
     }
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
