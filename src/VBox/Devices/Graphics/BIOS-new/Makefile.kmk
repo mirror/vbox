@@ -1,0 +1,141 @@
+# $Id$
+## @file
+# Sub-Makefile for the New VGA BIOS ROM.
+#
+
+#
+# Copyright (C) 2012 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+
+ifdef VBOX_WITH_OPEN_WATCOM
+
+ #
+ # VBoxVgaBios - Template for building the BIOS bits.
+ #
+ TEMPLATE_VBoxVgaBios = PXE ROM
+ TEMPLATE_VBoxVgaBios_TOOL    = OPENWATCOM-16
+ TEMPLATE_VBoxVgaBios_LDTOOL  = OPENWATCOM-WL
+ TEMPLATE_VBoxVgaBios_ASTOOL  = OPENWATCOM-16
+ TEMPLATE_VBoxVgaBios_BLD_TRG = os-agnostic
+ TEMPLATE_VBoxVgaBios_BLD_TRG_ARCH = x86
+ TEMPLATE_VBoxVgaBios_BINSUFF = .rom
+ TEMPLATE_VBoxVgaBios_INCS    = .
+ TEMPLATE_VBoxVgaBios_ASFLAGS = -q -0 -wx
+ TEMPLATE_VBoxVgaBios_CFLAGS  = -q -3 -wx -zl -zu -s -oas -d1+ -ms
+ TEMPLATE_VBoxVgaBios_DEFS    = VBE
+# TEMPLATE_VBoxVgaBios_DEFS.debug = VGA_DEBUG - later
+ TEMPLATE_VBoxVgaBios_CDEFS   = \
+	'VBOX_VERSION_STRING="$(VBOX_VERSION_STRING)"' \
+	'VBOX_VENDOR="$(VBOX_VENDOR)"' \
+	'VBOX_PRODUCT="$(VBOX_PRODUCT)"'
+ TEMPLATE_VBoxVgaBios_LDFLAGS = system dos  \
+ 	debug all \
+ 	option quiet, nofarcalls, map, verbose, statics, symfile \
+ 	output raw offset=0xC0000 order \
+ 	clname CODE  \
+	 segment VGAROM segaddr=0xC000 \
+ 	 segment _TEXT  segaddr=0xC000 offset=0xA00 \
+ 	 segment VBE32  segaddr=0xC000 offset=0x4600 \
+ 	clname DATA \
+ 	 segment _DATA  segaddr=0xC000 offset=0x4800 \
+ 	disable 1014, 1023, 2120
+
+ TEMPLATE_VBoxVgaBios_LNK_DEPS = $(VBOX_BIOSSUMS)
+ TEMPLATE_VBoxVgaBios_POST_CMDS = \
+ 	$(QUIET)$(MV_EXT) -f $(out) $(out).tmp \
+ 	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
+ 	&& $(RM_EXT) -f $(out).tmp
+
+
+ #
+ # VBoxPcBios - The PC BIOS.
+ #
+ MISCBINS += VBoxPcBios
+ VBoxPcBios_TEMPLATE = VBoxVgaBios
+ VBoxPcBios_SOURCES = \
+ 	vgarom.asm \
+ 	vberom.asm \
+ 	vgabios.c \
+ 	vbe.c
+
+ #
+ # Updates the alternative source file.
+ #
+ update-bios-source | $(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.asm $(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.md5sum: \
+ 		$$(VBoxPcBios_1_TARGET) \
+ 		$$(MakeDebianBiosAssembly_1_TARGET) \
+		$(VBOX_VBOXCMP)
+ if1of ($(KBUILD_TYPE), release)
+	$(MakeDebianBiosAssembly_1_TARGET) \
+		--bios-image $< \
+		--bios-map $(basename $<).map \
+		--bios-sym $(basename $<).sym \
+		--output $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm
+	$(QUIET)yasm -f bin -o $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm
+	$(VBOX_VBOXCMP) $< $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin
+	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/PC/BIOS/VBoxVgaBiosAlternative.asm
+	$(REDIRECT) -C $(dir $(VBoxPcBios_1_TARGET)) -- \
+		$(MD5SUM_EXT) -bo $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum $(notdir $(VBoxPcBios_1_TARGET))
+	$(CP) --changed -- $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/PC/BIOS/VBoxVgaBiosAlternative.md5sum
+	$(RM) -f -- $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin $(VBoxPcBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum
+ else
+	$(QUIET)$(ECHO) "Fatal error: Can only update VBoxVgaBiosAlternative.asm/md5sum with a release build."
+	$(QUIET)exit 1
+ endif
+
+endif # VBOX_WITH_OPEN_WATCOM
+
+
+#
+# The library containing the VGA BIOS image.
+#
+LIBRARIES += VgaBiosBin
+VgaBiosBin_TEMPLATE  = VBOXR3
+VgaBiosBin_DEFS      = IN_VBOXDD2
+VgaBiosBin_SOURCES   = $(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c
+VgaBiosBin_CLEAN     = $(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c
+
+ifdef VBOX_WITH_OPEN_WATCOM
+ $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c: $$(VBoxPcBios_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
+	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary $< $@
+else
+ VgaBiosBin_CLEAN    += $(VgaBiosBin_0_OUTDIR)/VBoxPcBios.rom
+
+ $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c + $$(VgaBiosBin_0_OUTDIR)/VBoxPcBios.rom: \
+		$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.asm \
+		$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative.md5sum \
+		$(VBOX_BIN2C) | $$(dir $$@)
+	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
+	$(QUIET)yasm -f bin -o $(VgaBiosBin_0_OUTDIR)/VBoxPcBios.rom $<
+	$(QUIET)$(REDIRECT) -C $(VgaBiosBin_0_OUTDIR) -- \
+		$(MD5SUM_EXT) -c $(basename $<).md5sum
+	$(QUIET)$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary $(VgaBiosBin_0_OUTDIR)/VBoxPcBios.rom $@
+	$(QUIET)$(RM) -f -- $$(VgaBiosBin_0_OUTDIR)/VBoxPcBios.rom
+endif
+
+
+#
+# MakeDebianBiosAssembly - For distros without OpenWatcom.
+#
+##BLDPROGS += MakeDebianVgaBiosAssembly
+MakeDebianVgaBiosAssembly_TEMPLATE = VBoxAdvBldProg
+MakeDebianVgaBiosAssembly_DEFS     = IN_DIS
+MakeDebianVgaBiosAssembly_SOURCES  = MakeDebianVgaBiosAssembly.cpp
+MakeDebianVgaBiosAssembly_LIBS     = \
+	$(PATH_STAGE_LIB)/DisasmBldProg$(VBOX_SUFF_LIB)
+
+include $(FILE_KBUILD_SUB_FOOTER)
+
