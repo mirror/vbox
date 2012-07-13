@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox Mouse drivers, logging helper
  */
@@ -20,7 +19,7 @@
 #define VBOXMOUSELOG_H
 
 #ifdef DEBUG_misha
-#include <iprt/assert.h>
+# include <iprt/assert.h>
 #endif
 
 #define VBOX_MOUSE_LOG_NAME "VBoxMouse"
@@ -68,4 +67,5 @@
 #define LOGF_ENTER() LOGF(("ENTER"))
 #define LOGF_LEAVE() LOGF(("LEAVE"))
 
-#endif /*VBOXMOUSELOG_H*/
+#endif /* !VBOXMOUSELOG_H */
+
