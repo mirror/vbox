@@ -24,11 +24,13 @@
 #include <stdarg.h>
 #include <string.h>
 RT_C_DECLS_BEGIN
+#define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
 #undef PAGE_SIZE
 #undef PAGE_SHIFT
 #include <ntddk.h>
 #include <ntddkbd.h>
 #include <ntddmou.h>
+#undef _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
 RT_C_DECLS_END
 
 /* not available on NT4 */

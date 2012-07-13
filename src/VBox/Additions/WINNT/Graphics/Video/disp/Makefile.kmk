@@ -21,12 +21,12 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # VBoxDisp - Windows Guest Additions XPDM Display Driver
 #
-# Note. This has to run on NT4!
-#       (VBOX_LIB_IPRT_GUEST_R0_NT4 == VBOX_LIB_IPRT_GUEST_R0 on 64-bit)
+# Note. This has to run on NT4! (*_NT4 => *_W2K3 when targetting 64-bit.)
 #
 SYSMODS += VBoxDisp
 VBoxDisp_TEMPLATE      = VBOXGUESTR0
 VBoxDisp_SYSSUFF       = .dll
+VBoxDisp_SDKS          = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
 VBoxDisp_DEFS          = _WIN32_WINNT=0x0501 VBOX_WITH_DDRAW
 VBoxDisp_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
 ifdef VBOX_WITH_VIDEOHWACCEL
@@ -62,7 +62,7 @@ ifdef VBOX_WITH_VIDEOHWACCEL
  	xpdm/VBoxDispDDrawVHWA.cpp
 endif
 VBoxDisp_LIBS = \
-	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/win32k.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
 	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
 
@@ -83,6 +83,7 @@ ifdef VBOX_WITH_WDDM
 #
 DLLS += VBoxDispD3D
 VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
+VBoxDispD3D_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXWDDMDISP LOG_TO_BACKDOOR LOG_TO_BACKDOOR_DRV VBOX_WITH_HGCM
 ifdef DEBUG_misha
 VBoxDispD3D_DEFS    += LOG_ENABLED
@@ -102,7 +103,9 @@ endif
 ifdef VBOX_WITH_CROGL
  VBoxDispD3D_DEFS   += VBOX_WITH_CROGL
 endif
-VBoxDispD3D_INCS     = ../../../include ..
+VBoxDispD3D_INCS     = \
+	../../../include \
+	..
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
 	wddm/VBoxDispD3DIf.cpp \
@@ -120,7 +123,6 @@ VBoxDispD3D_SOURCES  = \
 #    wddm/VBoxUhgsmiKmt.cpp
 #VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
 #endif
-VBoxDispD3D_SDKS     = WINDDKWLH
 VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
@@ -146,6 +148,7 @@ ifdef VBOX_WITH_CRHGSMI
 #
 LIBRARIES += VBoxCrHgsmi
 VBoxCrHgsmi_TEMPLATE    = VBOXGUESTR3LIB
+VBoxCrHgsmi_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxCrHgsmi_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
 VBoxCrHgsmi_INCS        = ../../../include ..
 VBoxCrHgsmi_SOURCES     = \
@@ -153,7 +156,6 @@ VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxDispKmt.cpp \
 	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxUhgsmiKmt.cpp
-VBoxCrHgsmi_SDKS        = WINDDKWLH
 
 #
 # 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
@@ -170,11 +172,11 @@ endif #VBOX_WITH_CRHGSMI
 #
 LIBRARIES += VBoxDispMpLogger
 VBoxDispMpLogger_TEMPLATE    = VBOXGUESTR3LIB
+VBoxDispMpLogger_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxDispMpLogger_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
 VBoxDispMpLogger_INCS        = ../../../include ..
 VBoxDispMpLogger_SOURCES     = \
     wddm/VBoxDispMpLogger.cpp
-VBoxDispMpLogger_SDKS        = WINDDKWLH
 
 #
 # 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
@@ -190,28 +192,28 @@ endif #ifdef VBOX_WITH_WDDM
 ifdef VBOXVIDEOWINDBG
 DLLS += vbvdbg
 vbvdbg_TEMPLATE = VBOXR3STATIC
+vbvdbg_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 vbvdbg_DEFS     = UNICODE _UNICODE
 vbvdbg_SOURCES  = \
 	wddm/dbg/VBoxVideoWinDbg.cpp \
 	wddm/dbg/VBoxVideoWinDbg.def
-vbvdbg_SDKS     = WINDDKWLH
 
 PROGRAMS += tstMvWnd
 tstMvWnd_TEMPLATE = VBOXR3EXE
-tstMvWnd_DEFS = UNICODE _UNICODE
+tstMvWnd_DEFS     = UNICODE _UNICODE
 tstMvWnd_SOURCES  = \
 	wddm/dbg/tstMvWnd.cpp
-tstMvWnd_LIBS  = $(LIB_RUNTIME)
+tstMvWnd_LIBS     = $(LIB_RUNTIME)
 tstMvWnd_LDFLAGS.win = /SUBSYSTEM:windows
 
 PROGRAMS += DumpD3DCaps9
 DumpD3DCaps9_TEMPLATE = VBOXR3EXE
-DumpD3DCaps9_DEFS = UNICODE _UNICODE
+DumpD3DCaps9_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
+DumpD3DCaps9_DEFS     = UNICODE _UNICODE
 DumpD3DCaps9_SOURCES  = \
 	wddm/dbg/DumpD3DCaps9.cpp
-DumpD3DCaps9_LIBS  = $(LIB_RUNTIME)
+DumpD3DCaps9_LIBS     = $(LIB_RUNTIME)
 DumpD3DCaps9_LDFLAGS.win = /SUBSYSTEM:CONSOLE
-DumpD3DCaps9_SDKS     = WINDDKWLH
 
 endif #VBOXVIDEOWINDBG
 

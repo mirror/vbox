@@ -45,7 +45,8 @@ TEMPLATE_VBoxGuestWineDLL_DEFS = $(TEMPLATE_VBOXGUESTR3NPDLL_DEFS) \
 TEMPLATE_VBoxGuestWineD3DxDLL = Template for building the D3D8/9 stuff.
 TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS    = VBOXGUESTR3NPDLL
 TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS_BY = appending
-TEMPLATE_VBoxGuestWineD3DxDLL_SDKS.amd64 = WINDDKWLH
+TEMPLATE_VBoxGuestWineD3DxDLL_SDKS.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
+TEMPLATE_VBoxGuestWineD3DxDLL_DEFS.amd64 = $(if-expr $(VBOX_WINDDK_GST_WLH) != WINDDKWLH,VBOX_USING_WINDDK_W7_OR_LATER,)
 TEMPLATE_VBoxGuestWineD3DxDLL_DEFS.x86   = __i386__
 TEMPLATE_VBoxGuestWineD3DxDLL_INCS.x86   = include
 ifdef VBOX_WINE_WITH_IPRT
@@ -153,9 +154,10 @@ endif # 0
 #
 DLLS += wined3d
 wined3d_TEMPLATE     = VBoxGuestWineDLL
-wined3d_SDKS         = WINDDKWLH
+wined3d_SDKS         = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 wined3d_DEFS         = \
 	_USE_MATH_DEFINES \
+	$(if-expr $(VBOX_WINDDK_GST_WLH) != WINDDKWLH,VBOX_USING_WINDDK_W7_OR_LATER,) \
 	VBOX_WINE_WITHOUT_LIBWINE \
 	VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT \
 	VBOX_WINE_WITH_IPRT
@@ -163,7 +165,8 @@ wined3d_DEFS         = \
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
  wined3d_DEFS       += WINE_NO_DEBUG_MSGS
 endif
-wined3d_INCS        := vbox/libWineStub/include
+wined3d_INCS        := \
+	vbox/libWineStub/include
 wined3d_SOURCES     := \
 	wined3d/arb_program_shader.c \
 	wined3d/ati_fragment_shader.c \
@@ -247,8 +250,9 @@ endif # ifdef VBOX_WITH_WDDM
 #
 DLLS += VBoxD3D8
 VBoxD3D8_TEMPLATE     = VBoxGuestWineDLL
-VBoxD3D8_SDKS         = WINDDKWLH
+VBoxD3D8_SDKS         = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxD3D8_DEFS         = _USE_MATH_DEFINES \
+	VBOX_USING_WINDDK \
 	VBOX_WINE_WITHOUT_LIBWINE
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
  VBoxD3D8_DEFS       += WINE_NO_DEBUG_MSGS
@@ -286,8 +290,9 @@ endif
 #
 DLLS += VBoxD3D9
 VBoxD3D9_TEMPLATE     = VBoxGuestWineDLL
-VBoxD3D9_SDKS         = WINDDKWLH
+VBoxD3D9_SDKS         = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxD3D9_DEFS         = _USE_MATH_DEFINES \
+	VBOX_USING_WINDDK \
 	VBOX_WINE_WITHOUT_LIBWINE
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
  VBoxD3D9_DEFS        += WINE_NO_DEBUG_MSGS

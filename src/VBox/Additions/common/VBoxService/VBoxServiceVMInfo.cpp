@@ -21,6 +21,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
+# ifdef TARGET_NT4 /* HACK ALERT! PMIB_IPSTATS undefined if 0x0400 with newer SDKs. */
+#  undef _WIN32_WINNT
+#  define _WIN32_WINNT 0x0500
+# endif
 # include <winsock2.h>
 # include <iphlpapi.h>
 # include <ws2tcpip.h>

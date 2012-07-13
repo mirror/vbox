@@ -18,41 +18,43 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+
 # This has to be 32-bit, so don't include it in the 64-bit build.
-if "$(KBUILD_TARGET_ARCH)" == "x86"
- PROGRAMS.x86 += VBoxWindowsAdditions
- VBoxWindowsAdditions_TEMPLATE= VBOXGUESTR3EXE
- VBoxWindowsAdditions_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
- VBoxWindowsAdditions_SOURCES = \
- 	VBoxWindowsAdditions.cpp \
- 	VBoxWindowsAdditions.rc
+PROGRAMS.x86 += VBoxWindowsAdditions
+VBoxWindowsAdditions_TEMPLATE= VBOXGUESTR3EXE
+VBoxWindowsAdditions_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
+VBoxWindowsAdditions_SOURCES = \
+	VBoxWindowsAdditions.cpp \
+	VBoxWindowsAdditions.rc
 
- VBoxWindowsAdditions_LDFLAGS  = \
- 	/DISALLOWLIB:msvcrt.lib \
- 	/DISALLOWLIB:msvcprt.lib \
- 	/DISALLOWLIB:libcmt.lib
+VBoxWindowsAdditions_LDFLAGS  = \
+	/DISALLOWLIB:msvcrt.lib \
+	/DISALLOWLIB:msvcprt.lib \
+	/DISALLOWLIB:libcmt.lib
 
- VBoxWindowsAdditions_LIBS     = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcmt.lib \
+VBoxWindowsAdditions_LIBS     = \
+	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/oldnames.lib \
+	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcmt.lib \
 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcpmt.lib
 
- # Version stuff.
- VBoxWindowsAdditions.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
- VBoxWindowsAdditions.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+# Version stuff.
+VBoxWindowsAdditions.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxWindowsAdditions.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
- # The icon location is configurable.
- VBoxWindowsAdditions.rc_INCS += $(VBoxWindowsAdditions_0_OUTDIR)
- VBoxWindowsAdditions.rc_DEPS += $(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc
- VBoxWindowsAdditions.rc_CLEAN = $(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc
+# The icon location is configurable.
+VBoxWindowsAdditions.rc_INCS += $(VBoxWindowsAdditions_0_OUTDIR)
+VBoxWindowsAdditions.rc_DEPS += $(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc
+VBoxWindowsAdditions.rc_CLEAN = $(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc
 
 
- # Icon include file.
+# Icon include file.
 $$(VBoxWindowsAdditions_0_OUTDIR)/VBoxWindowsAdditions-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 
-endif # x86 only
+endif # (x86 only because of the above rule)
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

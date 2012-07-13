@@ -64,14 +64,14 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
    VBoxGuest_LDFLAGS.x86 = -Entry:DriverEntry@8
    VBoxGuest_LDFLAGS.amd64 = -Entry:DriverEntry
    VBoxGuest_LIBS        = \
-  	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-  	$(PATH_SDK_W2K3DDK_LIB)/hal.lib
+  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
    ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
     VBoxGuest_LIBS      += \
-      	$(PATH_SDK_WINDDKWLH_LIB)/aux_klib.lib \
-      	$(PATH_SDK_WINDDKWLH_LIB)/ksecdd.lib \
-      	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib
-    VBoxGuest.cpp_SDKS   = WINDDKWLH
+      	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/aux_klib.lib \
+      	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/ksecdd.lib \
+      	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB)/BufferOverflowK.lib
+    VBoxGuest.cpp_SDKS   = $(VBOX_WINDDK_GST_WLH)
    endif
   endif # win
   ifn1of ($(KBUILD_TARGET), linux freebsd solaris)
@@ -134,6 +134,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   SYSMODS.x86 += VBoxGuestNT
   VBoxGuestNT_EXTENDS = VBoxGuest
   VBoxGuestNT_INSTTYPE.win = both
+  VBoxGuestNT_SDKS    = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
   VBoxGuestNT_DEFS    = $(VBoxGuest_DEFS) TARGET_NT4
   VBoxGuestNT_SOURCES = \
   	VBoxGuest.cpp \
@@ -142,9 +143,9 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   	VBoxGuest-$(KBUILD_TARGET)-legacy.cpp \
   	win/VBoxGuest.rc
   VBoxGuestNT_LIBS    = \
-  	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib \
-  	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-  	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
  endif # win

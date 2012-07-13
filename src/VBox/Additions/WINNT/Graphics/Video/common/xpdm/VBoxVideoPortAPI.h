@@ -26,7 +26,11 @@
 
 /*Basic datatypes*/
 typedef long VBOXVP_STATUS;
+#ifndef VBOX_USING_W2K3DDK
+typedef struct _ENG_EVENT *VBOXPEVENT;
+#else
 typedef struct _VIDEO_PORT_EVENT *VBOXPEVENT;
+#endif
 typedef struct _VIDEO_PORT_SPIN_LOCK *VBOXPSPIN_LOCK;
 typedef union _LARGE_INTEGER *VBOXPLARGE_INTEGER;
 

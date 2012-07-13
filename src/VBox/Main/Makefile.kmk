@@ -38,7 +38,7 @@ ifdef VBOX_ONLY_SDK
  VBoxCOM_0_OUTDIR = $(PATH_TARGET)/VBoxCOM
  BLDDIRS += $(VBoxCOM_0_OUTDIR) $(PATH_STAGE_BIN)/components
  include $(KBUILD_PATH)/tools/VCC70.kmk
- include $(KBUILD_PATH)/sdks/WINPSDK.kmk
+ include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk
 endif # !VBOX_ONLY_SDK
 
 
@@ -244,8 +244,7 @@ ifdef VBOX_WITH_USB
 	$(if $(VBOX_WITH_NEW_USB_CODE_ON_DARWIN),VBOX_WITH_NEW_USB_CODE_ON_DARWIN,)
 endif
 VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
-VBoxSVC_DEFS.win.x86 += _WIN32_WINNT=0x0500
-VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
+VBoxSVC_DEFS.win += _WIN32_WINNT=0x0510
 # Try to load and use libhal at runtime for probing removable media
 # VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
@@ -375,18 +374,12 @@ ifdef VBOX_WITH_USB
 endif
 
 ifdef VBOX_WITH_NETFLT
- # Note! The includes from the TOOL has lower priority than the SDKs,
- #       since comdef.h is in both the DDK and VCC we want to make sure
- #       we're using the VCC since we're not using the DDK compiler/crt.
- #       Since this is potentially risky, restrict it to the source file
- #       needing it.
- src-server/win/NetIf-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
  VBoxSVC_LIBS.win += \
 	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
-	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 endif
 VBoxSVC_LDFLAGS.darwin    = -framework IOKit -framework SystemConfiguration
 
@@ -565,7 +558,7 @@ VBoxC_LDFLAGS.darwin = \
 	-exported_symbols_list $(VBoxC_0_OUTDIR)/VBoxC.def \
 	-framework IOKit
 VBoxC_LDFLAGS.win += /DELAYLOAD:VBoxVMM.dll
-ifdef VBOX_USE_VCC80
+ifndef VBOX_USE_VCC70
  VBoxC_LDFLAGS.win += /MANIFEST
 endif
 
@@ -576,10 +569,10 @@ VBoxC_LIBS += \
 ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
-	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
 	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 endif
 
@@ -802,6 +795,8 @@ $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 
 
 VBOX_MAIN_IDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
+	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/Midl.Exe\
+	$(PATH_SDK_$(VBOX_WINPSDK))/Bin/Midl.Exe\
 	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
 	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
@@ -827,7 +822,7 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 	$(VBOX_MAIN_IDL) $(IDL_DEFS) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
-		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_WINPSDK_INC)) \
+		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 

@@ -212,7 +212,7 @@ endif
 #
 RuntimeR3_TEMPLATE      = VBoxR3Static
 RuntimeR3_SDKS          = VBOX_LIBXML2 VBOX_OPENSSL VBOX_BOOST ## @todo why is BOOST and XML2 here? r3/xml.cpp is not in this lib...
-RuntimeR3_SDKS.win      = WINPSDK $(VBOX_WINDDK)
+RuntimeR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
 ifdef IPRT_WITH_KSTUFF
@@ -1248,7 +1248,7 @@ VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_BOOST
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBOX_LIBCURL
 endif
-VBoxRT_SDKS.win                = WINPSDK $(VBOX_WINDDK) VBOX_NTDLL
+VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
@@ -1581,7 +1581,7 @@ RuntimeR0Stub_SOURCES.solaris = \
 # RuntimeR0Drv - Ring-0 library for host drivers.
 #
 RuntimeR0Drv_TEMPLATE   = VBoxR0DrvLib
-RuntimeR0Drv_SDKS.win   = $(VBOX_WINDDK) WINPSDKINCS
+RuntimeR0Drv_SDKS.win   = $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0
@@ -2119,7 +2119,7 @@ $(IPRT_OUT_DIR)/errmsgdata.h: \
 ## @todo r=bird: rename this to indicate that it's not only COM errors, but all win32/64 errors.
 $(IPRT_OUT_DIR)/errmsgcomdata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgcom.sed \
-		$$(PATH_SDK_WINPSDK_INC)/WinError.h \
+		$$(PATH_SDK_$(VBOX_WINPSDK)_INC)/WinError.h \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)

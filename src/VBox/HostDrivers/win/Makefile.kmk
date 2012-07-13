@@ -20,7 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBoxDrvCfg
 VBoxDrvCfg_TEMPLATE       = VBOXR3STATIC
-VBoxDrvCfg_SDKS           = WINPSDK W2K3DDK
+VBoxDrvCfg_SDKS           = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxDrvCfg_DEFS           = _WIN32_WINNT=0x0501 _UNICODE UNICODE
 VBoxDrvCfg_SOURCES        = cfg/VBoxDrvCfg.cpp
 

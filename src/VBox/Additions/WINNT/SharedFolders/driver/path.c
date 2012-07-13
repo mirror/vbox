@@ -497,7 +497,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
          RemainingName, RemainingName->Length, SrvOpen->Flags));
 
     /* Disable FastIO. It causes a verifier bugcheck. */
-#if (NTDDI_VERSION >= NTDDI_VISTA)
+#ifdef SRVOPEN_FLAG_DONTUSE_READ_CACHING
     SetFlag(SrvOpen->Flags, SRVOPEN_FLAG_DONTUSE_READ_CACHING | SRVOPEN_FLAG_DONTUSE_WRITE_CACHING);
 #else
     SetFlag(SrvOpen->Flags, SRVOPEN_FLAG_DONTUSE_READ_CACHEING | SRVOPEN_FLAG_DONTUSE_WRITE_CACHEING);
