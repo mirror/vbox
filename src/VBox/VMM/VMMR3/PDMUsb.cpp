@@ -1077,7 +1077,8 @@ VMMR3DECL(bool) PDMR3USBHasHub(PVM pVM)
  */
 
 /** @interface_method_impl{PDMUSBHLPR3,pfnDriverAttach} */
-static DECLCALLBACK(int) pdmR3UsbHlp_DriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
+static DECLCALLBACK(int) pdmR3UsbHlp_DriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE pBaseInterface,
+                                                  PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
     PDMUSB_ASSERT_USBINS(pUsbIns);
     PVM pVM = pUsbIns->Internal.s.pVM;
