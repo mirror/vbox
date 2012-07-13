@@ -318,6 +318,17 @@ int slirpInitializeDnsSettings(PNATState pData)
             pData->fUseHostResolver = 1;
         else
             dnsproxy_init(pData);
+
+        if (!pData->fUseHostResolver)
+        {
+            struct dns_entry *pDNSEntry = NULL;
+            int cDNSListEntry = 0;
+            TAILQ_FOREACH_REVERSE(pDNSEntry, &pData->pDnsList, dns_list_head, de_list)
+            {
+                LogRel(("NAT: DNS#%i: %RTnaipv4\n", cDNSListEntry, pDNSEntry->de_addr.s_addr));
+                cDNSListEntry++;
+            }
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
