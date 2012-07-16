@@ -78,6 +78,10 @@ typedef struct CPUMSELREG
 #define CPUMSELREG_FLAGS_STALE      UINT16_C(0x0002)
 /** @} */
 
+/** Checks if the hidden parts of the selector register are valid. */
+#define CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pSelReg) (   ((a_pSelReg)->fFlags & CPUMSELREG_FLAGS_VALID) \
+                                                      && (a_pSelReg)->ValidSel == (a_pSelReg)->Sel )
+
 /** Old type used for the hidden register part.
  * @deprecated  */
 typedef CPUMSELREG CPUMSELREGHID;

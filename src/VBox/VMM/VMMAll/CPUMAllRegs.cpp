@@ -26,6 +26,9 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
+#if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
+# include <VBox/vmm/selm.h>
+#endif
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
@@ -43,6 +46,115 @@
 /** Disable stack frame pointer generation here. */
 #if defined(_MSC_VER) && !defined(DEBUG)
 # pragma optimize("y", off)
+#endif
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/**
+ * Converts a CPUMCPU::Guest pointer into a VMCPU pointer.
+ *
+ * @returns Pointer to the Virtual CPU.
+ * @param   a_pGuestCtx     Pointer to the guest context.
+ */
+#define CPUM_GUEST_CTX_TO_VMCPU(a_pGuestCtx) RT_FROM_MEMBER(a_pGuestCtx, VMCPU, cpum.s.Guest)
+
+/**
+ * Lazily loads the hidden parts of a selector register when using raw-mode.
+ */
+#if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
+# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg, a_fIsCS) \
+    do \
+    { \
+        if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pSReg)) \
+            cpumGuestLazyLoadHiddenSelectorReg(a_pVCpu, a_pSReg, a_fIsCS); \
+    } while (0)
+#else
+# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg, a_fIsCS) \
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pSReg));
+#endif
+
+
+
+#if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
+
+
+/**
+ * Does the lazy hidden selector register loading.
+ *
+ * @param   pVCpu       The current Virtual CPU.
+ * @param   pSReg       The selector register to lazily load hidden parts of.
+ * @param   fIsCS
+ */
+static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg, bool fIsCS)
+{
+    Assert(!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg));
+    Assert(!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+
+    if (pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
+    {
+        /* V8086 mode - Tightly controlled environment, no question about the limit or flags. */
+        pSReg->Attr.u               = 0;
+        pSReg->Attr.n.u1DescType    = 1; /* code/data segment */
+        pSReg->Attr.n.u1Present     = 1;
+        pSReg->Attr.n.u4Type        = fIsCS ? X86_SEL_TYPE_ER_ACC : X86_SEL_TYPE_RW_ACC;
+        pSReg->u32Limit             = 0x0000ffff;
+        pSReg->u64Base              = (uint32_t)pSReg->Sel << 4;
+        pSReg->ValidSel             = pSReg->Sel;
+        pSReg->fFlags               = CPUMSELREG_FLAGS_VALID;
+        /** @todo Check what the accessed bit should be (VT-x and AMD-V). */
+    }
+    else if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
+    {
+        /* Real mode - leave the limit and flags alone here, at least for now. */
+        pSReg->u64Base              = (uint32_t)pSReg->Sel << 4;
+        pSReg->ValidSel             = pSReg->Sel;
+        pSReg->fFlags               = CPUMSELREG_FLAGS_VALID;
+    }
+    else
+    {
+        /* Protected mode - get it from the selector descriptor tables. */
+        if (!(pSReg->Sel & X86_SEL_MASK))
+        {
+            Assert(!CPUMIsGuestInLongMode(pVCpu));
+            pSReg->Sel              = 0;
+            pSReg->u64Base          = 0;
+            pSReg->u32Limit         = 0;
+            pSReg->Attr.u           = 0;
+            pSReg->ValidSel         = 0;
+            pSReg->fFlags           = CPUMSELREG_FLAGS_VALID;
+            /** @todo see todo in iemHlpLoadNullDataSelectorProt. */
+        }
+        else
+            SELMLoadHiddenSelectorReg(pVCpu, &pVCpu->cpum.s.Guest, pSReg);
+    }
+}
+
+
+/**
+ * Makes sure the hidden CS and SS selector registers are valid, loading them if
+ * necessary.
+ *
+ * @param   pVCpu               The current virtual CPU.
+ */
+VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu)
+{
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.ss, false);
+}
+
+
+/**
+ * Loads a the hidden parts of a selector register.
+ *
+ * @param   pVCpu               The current virtual CPU.
+ */
+VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
+{
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, pSReg, pSReg == &pVCpu->cpum.s.Guest.cs);
+}
+
 #endif
 
 
@@ -2210,6 +2322,34 @@ VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 }
 
 
+/**
+ * Tests if the guest is running in 64 bits mode or not.
+ *
+ * @returns true if in 64 bits protected mode, otherwise false.
+ * @param   pVCpu       The current virtual CPU.
+ */
+VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
+{
+    if (!CPUMIsGuestInLongMode(pVCpu))
+        return false;
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
+    return pVCpu->cpum.s.Guest.cs.Attr.n.u1Long;
+}
+
+
+/**
+ * Helper for CPUMIsGuestIn64BitCodeEx that handles lazy resolving of hidden CS
+ * registers.
+ *
+ * @returns true if in 64 bits protected mode, otherwise false.
+ * @param   pCtx        Pointer to the current guest CPU context.
+ */
+VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx)
+{
+    return CPUMIsGuestIn64BitCode(CPUM_GUEST_CTX_TO_VMCPU(pCtx));
+}
+
+
 #ifndef IN_RING0
 /**
  * Updates the EFLAGS while we're in raw-mode.
@@ -2402,7 +2542,11 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
 {
     uint32_t uCpl;
 
+#if 1
     if (CPUMAreHiddenSelRegsValid(pVCpu))
+#else
+    if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pVCpu->cpum.s.Guest.ss))
+#endif
     {
         /*
          * CPL can reliably be found in SS.DPL.
@@ -2426,9 +2570,9 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
         else
             uCpl = 0;  /* CPL set to 3 for VT-x real-mode emulation. */
     }
-    else if (RT_LIKELY(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
+    else if (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
     {
-        if (RT_LIKELY(!pVCpu->cpum.s.Guest.eflags.Bits.u1VM))
+        if (!pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
         {
             /*
              * The SS RPL is always equal to the CPL, while the CS RPL

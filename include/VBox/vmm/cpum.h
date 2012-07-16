@@ -169,6 +169,8 @@ VMMDECL(void)       CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeatur
 VMMDECL(void)       CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMDECL(bool)       CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMDECL(void)       CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
+VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu);
+VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg);
 /** @} */
 
 
@@ -177,6 +179,7 @@ VMMDECL(void)       CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 
 VMMDECL(bool)       CPUMIsGuestIn16BitCode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestIn32BitCode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestIn64BitCode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestNXEnabled(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestPagingEnabled(PVMCPU pVCpu);
@@ -235,33 +238,21 @@ DECLINLINE(bool)    CPUMIsGuestInLongModeEx(PCPUMCTX pCtx)
     return (pCtx->msrEFER & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
 }
 
-/**
- * Tests if the guest is running in 64 bits mode or not.
- *
- * @returns true if in 64 bits protected mode, otherwise false.
- * @param   pVM     The VM handle.
- * @param   pCtx    Current CPU context
- */
-DECLINLINE(bool)    CPUMIsGuestIn64BitCode(PVMCPU pVCpu, PCCPUMCTXCORE pCtx)
-{
-    if (!CPUMIsGuestInLongMode(pVCpu))
-        return false;
-
-    return pCtx->cs.Attr.n.u1Long;
-}
+VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx);
 
 /**
  * Tests if the guest is running in 64 bits mode or not.
  *
  * @returns true if in 64 bits protected mode, otherwise false.
- * @param   pVM     The VM handle.
+ * @param   pVCpu   The current virtual CPU.
  * @param   pCtx    Current CPU context
  */
-DECLINLINE(bool)    CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
+DECLINLINE(bool)    CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
 {
     if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
         return false;
-
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pCtx->cs))
+        return CPUMIsGuestIn64BitCodeSlow(pCtx);
     return pCtx->cs.Attr.n.u1Long;
 }
 

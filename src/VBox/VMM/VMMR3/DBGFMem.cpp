@@ -398,13 +398,13 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
                                          | DBGFSELINFO_FLAGS_INVALID   | DBGFSELINFO_FLAGS_NOT_PRESENT))
                      == DBGFSELINFO_FLAGS_LONG_MODE
                 &&  pSelInfo->cbLimit != ~(RTGCPTR)0
-                &&  CPUMIsGuestIn64BitCode(pVCpu, CPUMGetGuestCtxCore(pVCpu)) )
+                &&  CPUMIsGuestIn64BitCode(pVCpu) )
             {
                 pSelInfo->GCPtrBase = 0;
                 pSelInfo->cbLimit   = ~(RTGCPTR)0;
             }
             else if (   Sel == 0
-                     && CPUMIsGuestIn64BitCode(pVCpu, CPUMGetGuestCtxCore(pVCpu)))
+                     && CPUMIsGuestIn64BitCode(pVCpu))
             {
                 pSelInfo->GCPtrBase = 0;
                 pSelInfo->cbLimit   = ~(RTGCPTR)0;

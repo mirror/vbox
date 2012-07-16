@@ -658,6 +658,99 @@ VMMDECL(int) SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPT
 #endif /* !IN_RING0 */
 
 
+#ifdef VBOX_WITH_RAW_MODE
+/**
+ * CPUM helper that loads the hidden selector register from the descriptor table
+ * when executing with raw-mode.
+ *
+ * @remarks This is only used when in legacy protected mode!
+ *
+ * @param   pVCpu       Pointer to the current virtual CPU.
+ * @param   pCtx        The guest CPU context.
+ * @param   pSReg       The selector register.
+ *
+ * @todo    Deal 100% correctly with stale selectors.  What's more evil is
+ *          invalid page table entries, which isn't impossible to imagine for
+ *          LDT entries for instance, though unlikely.  Currently, we turn a
+ *          blind eye to these issues and return the old hidden registers,
+ *          though we don't set the valid flag, so that we'll try loading them
+ *          over and over again till we succeed loading something.
+ */
+VMM_INT_DECL(void) SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg)
+{
+    Assert(pCtx->cr0 & X86_CR0_PE);
+    Assert(!(pCtx->msrEFER & MSR_K6_EFER_LMA));
+
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Assert(pVM->cCpus == 1);
+
+    RTSEL const Sel = pSReg->Sel;
+
+    /*
+     * Calculate descriptor table entry address.
+     */
+    RTGCPTR GCPtrDesc;
+    if (!(Sel & X86_SEL_LDT))
+    {
+        if ((Sel & X86_SEL_MASK) >= pCtx->gdtr.cbGdt)
+        {
+            AssertFailed(); /** @todo count these. */
+            return;
+        }
+        GCPtrDesc = pCtx->gdtr.pGdt + (Sel & X86_SEL_MASK);
+        /** @todo Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT]; for cases
+         *        where we don't change it too much. */
+    }
+    else
+    {
+        if ((Sel & X86_SEL_MASK) >= pCtx->ldtr.u32Limit)
+        {
+            AssertFailed(); /** @todo count these. */
+            return;
+        }
+        GCPtrDesc = pCtx->ldtr.u64Base + (Sel & X86_SEL_MASK);
+    }
+
+    /*
+     * Try read the entry.
+     */
+    X86DESC Desc;
+    int rc = PGMPhysReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(Desc));
+    if (RT_FAILURE(rc))
+    {
+        //RT_ZERO(Desc);
+        //if (!(Sel & X86_SEL_LDT))
+        //    Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+        //if (!Desc.Gen.u1Present)
+        {
+            AssertFailed(); /** @todo count these. */
+            return;
+        }
+    }
+
+    /*
+     * Digest it and store the result.
+     */
+    if (   !Desc.Gen.u1Present
+        || !Desc.Gen.u1DescType)
+    {
+        AssertFailed(); /** @todo count these. */
+        return;
+    }
+
+    uint32_t u32Limit = X86DESC_LIMIT(Desc);
+    if (Desc.Gen.u1Granularity)
+        u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+    pSReg->u32Limit = u32Limit;
+
+    pSReg->u64Base  = X86DESC_BASE(Desc);
+    pSReg->Attr.u   = X86DESC_GET_HID_ATTR(Desc);
+    pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
+    pSReg->ValidSel = Sel;
+}
+#endif /* VBOX_WITH_RAW_MODE */
+
+
 /**
  * Validates and converts a GC selector based code address to a flat
  * address when in real or v8086 mode.

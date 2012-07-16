@@ -609,7 +609,7 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
     int         rc;
 
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    Assert(!CPUMIsGuestIn64BitCode(pVCpu, pRegFrame));
+    Assert(!CPUMIsGuestIn64BitCode(pVCpu));
     /** @todo Rainy day: Test what happens when VERR_EM_INTERPRETER is returned by
      *        this function.  Fear that it may guru on us, thus not converted to
      *        IEM. */
@@ -1045,10 +1045,8 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
     int      rc;
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 
-    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
-    {
+    if (CPUMIsGuestIn64BitCode(pVCpu))
         rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
-    }
     else
     {
         uint32_t val32;
@@ -1124,7 +1122,7 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
     AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
     NOREF(pVM);
 
-    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
+    if (CPUMIsGuestIn64BitCode(pVCpu))
         rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
     else
         rc = DISWriteReg32(pRegFrame, DestRegGen, val64);
@@ -1156,10 +1154,8 @@ VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
     int      rc;
     NOREF(pVM);
 
-    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
-    {
+    if (CPUMIsGuestIn64BitCode(pVCpu))
         rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
-    }
     else
     {
         uint32_t val32;
@@ -1198,10 +1194,8 @@ VMMDECL(int) EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
 
     int rc = CPUMGetGuestDRx(pVCpu, SrcRegDrx, &val64);
     AssertMsgRCReturn(rc, ("CPUMGetGuestDRx %d failed\n", SrcRegDrx), VERR_EM_INTERPRETER);
-    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
-    {
+    if (CPUMIsGuestIn64BitCode(pVCpu))
         rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
-    }
     else
         rc = DISWriteReg32(pRegFrame, DestRegGen, (uint32_t)val64);
 
@@ -3080,6 +3074,7 @@ static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                    RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)
 {
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     Assert(enmCodeType == EMCODETYPE_SUPERVISOR || enmCodeType == EMCODETYPE_ALL);
     Assert(pcbSize);
     *pcbSize = 0;
@@ -3142,7 +3137,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
      * Whitelisted instructions are safe.
      */
     if (    pDis->Param1.cb > 4
-        &&  CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
+        &&  CPUMIsGuestIn64BitCode(pVCpu))
     {
         uint32_t uOpCode = pDis->pCurInstr->uOpcode;
         if (    uOpCode != OP_STOSWD

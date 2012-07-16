@@ -1932,7 +1932,7 @@ VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Format the registers.
      */
-    if (CPUMIsGuestIn64BitCode(pVCpu, CPUMCTX2CORE(pCtx)))
+    if (CPUMIsGuestIn64BitCode(pVCpu))
     {
         Log(("rax=%016RX64 rbx=%016RX64 rcx=%016RX64 rdx=%016RX64\n"
              "rsi=%016RX64 rdi=%016RX64 r8 =%016RX64 r9 =%016RX64\n"
