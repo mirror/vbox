@@ -819,4 +819,55 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen></para>
       group. For example, for the bandwidth group named "Limit" use:
       <screen>VBoxManage bandwidthctl "VM name" set Limit --limit 0</screen></para>
   </sect1>
+  <sect1 id="network_performance">
+    <title>Improving network performance</title>
+
+    <para>VirtualBox provides a variety of virtual network adapters that can be
+      "attached" to the host's network in a number of ways. Depending on which
+      types of adapters and attachments are used the network performance will
+      be different. Performance-wise the <emphasis>virtio</emphasis> network
+      adapter is preferrable over <emphasis>Intel PRO/1000</emphasis> emulated
+      adapters, which are preferred over <emphasis>PCNet</emphasis> family of
+      adapters. Both <emphasis>virtio</emphasis> and <emphasis>Intel PRO/1000
+      </emphasis> adapters enjoy the benefit of segmentation and checksum
+      offloading. Segmentation offloading is essential for high performance as
+      it allows for less context switches, drammatically increasing the sizes
+      of packets that cross VM/host bondary.</para>
+    <note><para>Neither <emphasis>virtio</emphasis> nor <emphasis>Intel PRO/1000
+        </emphasis> drivers for Windows XP do not support segmentation
+        offloading. Therefore Windows XP guests never reach the same
+        transmission rates as other guest types. Refer to MS Knowledge base
+        article 842264 for additional information.</para>
+    </note>
+    <para>Three attachment types: <emphasis>internal</emphasis>,
+      <emphasis>bridged</emphasis> and <emphasis>host-only</emphasis>, have
+      nearly identical performance, the <emphasis>internal</emphasis> type
+      being a little bit faster and using less CPU cycles as the packets never
+      reach the host's network stack. The <emphasis>NAT</emphasis> attachment
+      is the slowest (and safest) of all attachment types as it provides
+      network address translation. The generic driver attachment is special and
+      cannot be considered as an alternative to other attachment types.</para>
+    <para>The number of CPUs assigned to VM does not improve network
+      performance and in some cases may hurt it due to increased concurency in
+      the guest.</para>
+    <para>Here is the short summary of things to check in order to improve
+      network performance:</para>
+    <para><orderedlist>
+        <listitem>
+          <para>Whenever possible use <emphasis>virtio</emphasis> network
+            adapter, otherwise use one of <emphasis>Intel PRO/1000</emphasis>
+            adapters;</para>
+        </listitem>
+        <listitem>
+          <para>Use <emphasis>bridged</emphasis> attachment instead of
+            <emphasis>NAT</emphasis></para>;
+        </listitem>
+        <listitem>
+          <para>Make sure segmentation offloading is enabled in the guest OS.
+            Usually it will be enabled by default. You can check and modify
+            offloading settings using <computeroutput>ethtool</computeroutput>
+            command in Linux guests.</para>
+        </listitem>
+        </orderedlist></para>
+  </sect1>
 </chapter>
