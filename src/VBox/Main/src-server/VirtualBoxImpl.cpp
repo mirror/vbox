@@ -3037,38 +3037,29 @@ HRESULT VirtualBox::convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups)
     {
         com::SafeArray<IN_BSTR> machineGroups(ComSafeArrayInArg(aMachineGroups));
         for (size_t i = 0; i < machineGroups.size(); i++)
-            pllMachineGroups->push_back(machineGroups[i]);
-        pllMachineGroups->sort();
-        pllMachineGroups->unique();
-        if (pllMachineGroups->size() > 0)
-            pllMachineGroups->push_back("/");
-        else if (pllMachineGroups->front().equals(""))
         {
-            pllMachineGroups->pop_front();
-            if (pllMachineGroups->size() == 0 || !pllMachineGroups->front().equals("/"))
-                pllMachineGroups->push_front("/");
+            Utf8Str group(machineGroups[i]);
+            if (group.length() == 0)
+                group = "/";
+            /* must start with a slash */
+            if (group.c_str()[0] != '/')
+                return E_INVALIDARG;
+            /* must not end with a slash */
+            if (group.length() > 1 && group.c_str()[group.length() - 1] == '/')
+                return E_INVALIDARG;
+
+            /** @todo validate each component of the group hierarchy */
+
+            /* no duplicates please */
+            if (   find(pllMachineGroups->begin(), pllMachineGroups->end(), group)
+                == pllMachineGroups->end())
+                pllMachineGroups->push_back(group);
         }
+        if (pllMachineGroups->size() == 0)
+            pllMachineGroups->push_back("/");
     }
     else
         pllMachineGroups->push_back("/");
-
-    for (StringsList::const_iterator it = pllMachineGroups->begin();
-         it != pllMachineGroups->end();
-         ++it)
-    {
-        const Utf8Str &str = *it;
-        /* no empty strings (shouldn't happen after the translation above) */
-        if (str.length() == 0)
-            return E_INVALIDARG;
-        /* must start with a slash */
-        if (str.c_str()[0] != '/')
-            return E_INVALIDARG;
-        /* must not end with a slash */
-        if (str.c_str()[str.length() - 1] != '/')
-            return E_INVALIDARG;
-
-        /** @todo validate each component of the group hierarchy */
-    }
 
     return S_OK;
 }
