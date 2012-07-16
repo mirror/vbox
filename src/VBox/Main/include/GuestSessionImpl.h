@@ -107,24 +107,25 @@ public:
     STDMETHOD(SymlinkRemoveFile)(IN_BSTR aFile);
     /** @}  */
 
+private:
+
+    typedef std::vector <ComObjPtr<GuestDirectory> > SessionDirectories;
+    typedef std::vector <ComObjPtr<GuestFile> > SessionFiles;
+    typedef std::map <uint32_t, ComObjPtr<GuestProcess> > SessionProcesses;
+
 public:
     /** @name Public internal methods.
      * @{ */
     int                     directoryClose(ComObjPtr<GuestDirectory> pDirectory);
     int                     fileClose(ComObjPtr<GuestFile> pFile);
     const GuestCredentials &getCredentials(void);
+    const GuestEnvironment &getEnvironment(void);
     int                     processClose(ComObjPtr<GuestProcess> pProcess);
     int                     processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProcess **aProcess);
     inline bool             processExists(uint32_t uProcessID);
     /** @}  */
 
 private:
-
-    typedef std::map <Utf8Str, Utf8Str> SessionEnvironment;
-
-    typedef std::vector <ComObjPtr<GuestDirectory> > SessionDirectories;
-    typedef std::vector <ComObjPtr<GuestFile> > SessionFiles;
-    typedef std::map <uint32_t, ComObjPtr<GuestProcess> > SessionProcesses;
 
     struct Data
     {
@@ -141,7 +142,7 @@ private:
         ULONG                mId;
         /** The session timeout. Default is 30s. */
         ULONG                mTimeout;
-        SessionEnvironment   mEnvironment;
+        GuestEnvironment     mEnvironment;
         SessionDirectories   mDirectories;
         SessionFiles         mFiles;
         SessionProcesses     mProcesses;

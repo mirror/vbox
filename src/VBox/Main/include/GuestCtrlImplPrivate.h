@@ -47,7 +47,6 @@ using namespace guestControl;
 
 typedef std::vector <LONG> ProcessAffinity;
 typedef std::vector <Utf8Str> ProcessArguments;
-typedef std::map <Utf8Str, Utf8Str> ProcessEnvironmentMap;
 
 
 /**
@@ -107,6 +106,49 @@ public:
     Utf8Str                     mDomain;
 };
 
+typedef std::vector <Utf8Str> GuestEnvironmentArray;
+class GuestEnvironment
+{
+public:
+
+    int BuildEnvironmentBlock(void **ppvEnv, uint32_t *pcbEnv, uint32_t *pcEnvVars);
+
+    void Clear(void);
+
+    int CopyFrom(const GuestEnvironmentArray &environment);
+
+    int CopyTo(GuestEnvironmentArray &environment);
+
+    static void FreeEnvironmentBlock(void *pvEnv);
+
+    Utf8Str Get(size_t nPos);
+
+    bool Has(const Utf8Str &strKey);
+
+    int Set(const Utf8Str &strKey, const Utf8Str &strValue);
+
+    int Set(const Utf8Str &strPair);
+
+    size_t Size(void);
+
+    int Unset(const Utf8Str &strKey);
+
+public:
+
+    GuestEnvironment& operator=(const GuestEnvironmentArray &that);
+
+    GuestEnvironment& operator=(const GuestEnvironment &that);
+
+protected:
+
+    int appendToEnvBlock(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars);
+
+protected:
+
+    std::map <Utf8Str, Utf8Str> mEnvironment;
+};
+
+
 /**
  * Structure for keeping all the relevant process
  * starting parameters around.
@@ -115,7 +157,7 @@ struct GuestProcessInfo
 {
     Utf8Str                     mCommand;
     ProcessArguments            mArguments;
-    ProcessEnvironmentMap       mEnvironment;
+    GuestEnvironment            mEnvironment;
     uint32_t                    mFlags;
     ULONG                       mTimeoutMS;
     ProcessPriority_T           mPriority;
