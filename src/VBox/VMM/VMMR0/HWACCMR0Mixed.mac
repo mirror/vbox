@@ -403,14 +403,16 @@ ALIGN(16)
     push    xBX
 %endif
 
-    ; Save the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the guest MSRs
-    ;; @todo use the automatic load feature for MSRs
+%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    ; Save the host MSRs and load the guest MSRs
     LOADGUESTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
 %if 0  ; not supported on Intel CPUs
     LOADGUESTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
 %endif
     LOADGUESTMSR MSR_K6_STAR, CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+%endif
+    ; Kernel GS Base is special, we need to manually load/store it, see @bugref{6208}
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
     ; Save the pCtx pointer
@@ -537,15 +539,17 @@ ALIGNCODE(16)
 
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
-    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ;; @todo use the automatic load feature for MSRs
+    ; Kernel GS Base is special, we need to manually load/store it, see @bugref{6208}.
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    ; Save the guest MSRs and load the host MSRs
     LOADHOSTMSREX MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
     LOADHOSTMSREX MSR_K6_STAR, CPUMCTX.msrSTAR
 %if 0  ; not supported on Intel CPUs
     LOADHOSTMSREX MSR_K8_CSTAR, CPUMCTX.msrCSTAR
 %endif
     LOADHOSTMSREX MSR_K8_LSTAR, CPUMCTX.msrLSTAR
+%endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; saved pCache
@@ -608,15 +612,17 @@ ALIGN(16)
 
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
-    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ;; @todo use the automatic load feature for MSRs
+    ; Kernel GS base is special, we need to manually load/store it See @bugref{6208}.
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    ; Load the host MSRs
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K6_STAR
 %if 0  ; not supported on Intel CPUs
     LOADHOSTMSR MSR_K8_CSTAR
 %endif
     LOADHOSTMSR MSR_K8_LSTAR
+%endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xS     ; pCache
@@ -655,15 +661,17 @@ ALIGN(16)
 
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
-    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ;; @todo use the automatic load feature for MSRs
+    ; Kernel GS base is special, load it manually. See @bugref{6208}.
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    ; Load the host MSRs
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K6_STAR
 %if 0  ; not supported on Intel CPUs
     LOADHOSTMSR MSR_K8_CSTAR
 %endif
     LOADHOSTMSR MSR_K8_LSTAR
+%endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xS     ; pCache
