@@ -15,6 +15,7 @@
 ;
 
 %define VMX_USE_CACHED_VMCS_ACCESSES
+%define VBOX_WITH_AUTO_MSR_LOAD_RESTORE
 
 ;Maximum number of cached entries.
 %define VMCSCACHE_MAX_ENTRY                             128
