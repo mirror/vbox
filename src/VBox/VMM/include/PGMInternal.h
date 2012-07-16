@@ -2065,7 +2065,7 @@ typedef enum PGMPOOLKIND
     /** Shw: 64-bit page directory table;           Gst: 64-bit page directory table. */
     PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD,
     /** Shw: 64-bit page directory table;           Gst: no paging  */
-    PGMPOOLKIND_64BIT_PD_FOR_PHYS, /* 22 */
+    PGMPOOLKIND_64BIT_PD_FOR_PHYS, /* 24 */
 
     /** Shw: 64-bit PML4;                           Gst: 64-bit PML4. */
     PGMPOOLKIND_64BIT_PML4,
