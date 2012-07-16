@@ -2980,15 +2980,17 @@ DxgkDdiSubmitCommand(
             vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pS2P->Shadow2Primary.VidPnSourceId);
             fRenderFromSharedDisabled = vboxWddmModeRenderFromShadowCheckOnSubmitCommand(pDevExt, NULL);
             vboxWddmCheckUpdateFramebufferAddress(pDevExt, pSource);
-            uint32_t cUnlockedVBVADisabled = ASMAtomicReadU32(&pDevExt->cUnlockedVBVADisabled);
-            if (!cUnlockedVBVADisabled)
-                VBOXVBVA_OP(ReportDirtyRect, pDevExt, pSource, &pS2P->Shadow2Primary.SrcRect);
-            else
+            if (pSrcAlloc->bVisible)
             {
-                Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
-                VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &pS2P->Shadow2Primary.SrcRect);
+                uint32_t cUnlockedVBVADisabled = ASMAtomicReadU32(&pDevExt->cUnlockedVBVADisabled);
+                if (!cUnlockedVBVADisabled)
+                    VBOXVBVA_OP(ReportDirtyRect, pDevExt, pSource, &pS2P->Shadow2Primary.SrcRect);
+                else
+                {
+                    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
+                    VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &pS2P->Shadow2Primary.SrcRect);
+                }
             }
-            /* get DPC data at IRQL */
 
             Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, DXGK_INTERRUPT_DMA_COMPLETED);
             break;
@@ -3000,9 +3002,6 @@ DxgkDdiSubmitCommand(
             PVBOXWDDM_DMA_PRIVATEDATA_BLT pBlt = (PVBOXWDDM_DMA_PRIVATEDATA_BLT)pPrivateData;
             PVBOXWDDM_ALLOCATION pDstAlloc = pBlt->Blt.DstAlloc.pAlloc;
             PVBOXWDDM_ALLOCATION pSrcAlloc = pBlt->Blt.SrcAlloc.pAlloc;
-            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
-
-            Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
 
             vboxWddmAddrSetVram(&pDstAlloc->AllocData.Addr, pBlt->Blt.DstAlloc.segmentIdAlloc, pBlt->Blt.DstAlloc.offAlloc);
             vboxWddmAddrSetVram(&pSrcAlloc->AllocData.Addr, pBlt->Blt.SrcAlloc.segmentIdAlloc, pBlt->Blt.SrcAlloc.offAlloc);
@@ -3017,6 +3016,9 @@ DxgkDdiSubmitCommand(
                         || pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
                     )
             {
+                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
+                Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
+
                 if (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE)
                     vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pDstAlloc->AllocData.SurfDesc.VidPnSourceId);
                 fRenderFromSharedDisabled = vboxWddmModeRenderFromShadowCheckOnSubmitCommand(pDevExt, NULL);
@@ -3029,6 +3031,9 @@ DxgkDdiSubmitCommand(
                         || pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
                     )
             {
+                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
+                Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
+
                 if (pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE)
                     vboxWddmAssignShadow(pDevExt, pSource, pDstAlloc, pSrcAlloc->AllocData.SurfDesc.VidPnSourceId);
                 fRenderFromSharedDisabled = vboxWddmModeRenderFromShadowCheckOnSubmitCommand(pDevExt, NULL);
@@ -3047,7 +3052,7 @@ DxgkDdiSubmitCommand(
                 {
                     if (pDstAlloc->bAssigned)
                     {
-                        Assert(pSource->pPrimaryAllocation == pDstAlloc);
+//                        Assert(pSource->pPrimaryAllocation == pDstAlloc);
 
                         switch (pSrcAlloc->enmType)
                         {
@@ -3055,8 +3060,10 @@ DxgkDdiSubmitCommand(
                             {
                                 fBltFlags.fVisibleRegions = !!cContexts3D;
                                 Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
+                                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
+                                Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
 
-                                if (!fRenderFromSharedDisabled)
+                                if (!fRenderFromSharedDisabled && pSource->bVisible)
                                 {
                                     RECT rect;
                                     if (pBlt->Blt.DstRects.UpdateRects.cRects)
@@ -4354,7 +4361,7 @@ DxgkDdiIsSupportedVidPn(
 
     if (fDisabledFound)
     {
-        WARN(("found unsupported path"));
+        LOG(("found unsupported path"));
         bSupported = FALSE;
     }
 
@@ -4650,6 +4657,7 @@ DxgkDdiSetVidPnSourceAddress(
                     ||
 # endif
                     pDevExt->fRenderToShadowDisabled
+                    || (pAllocation && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
                     )
 #endif
             )
@@ -4706,6 +4714,7 @@ DxgkDdiSetVidPnSourceVisibility(
                         ||
 # endif
                         pDevExt->fRenderToShadowDisabled
+                        || (pAllocation && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
                         )
 #endif
                 )
@@ -5491,9 +5500,7 @@ DxgkDdiPresent(
                         {
                             Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
                             Assert(pDstAlloc->bAssigned);
-                            Assert(pDstAlloc->bVisible);
-                            if (pDstAlloc->bAssigned
-                                    && pDstAlloc->bVisible)
+                            if (pDstAlloc->bAssigned)
                             {
 #ifdef VBOX_WITH_VIDEOHWACCEL
 //                                if (vboxVhwaHlpOverlayListIsEmpty(pDevExt, pDstAlloc->AllocData.SurfDesc.VidPnSourceId))
@@ -6294,7 +6301,7 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
             vboxWddmRectUnite(&UpdateRect, &pPresentDisplayOnly->pDirtyRect[i]);
     }
 
-    if (bUpdateRectInited)
+    if (bUpdateRectInited && pSource->bVisible)
     {
         VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
     }

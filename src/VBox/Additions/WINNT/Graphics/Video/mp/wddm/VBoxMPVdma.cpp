@@ -584,12 +584,8 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD
             if (Status == STATUS_SUCCESS)
             {
                 if (pAlloc->AllocData.SurfDesc.VidPnSourceId != D3DDDI_ID_UNINITIALIZED
-                        && pAlloc->bAssigned
-#if 0//def VBOXWDDM_RENDER_FROM_SHADOW
-                        && pAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE
-#else
-                        && pAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
-#endif
+                        && VBOXWDDM_IS_FB_ALLOCATION(pDevExt, pAlloc)
+                        && pAlloc->bVisible
                         )
                 {
                     if (!vboxWddmRectIsEmpty(&UnionRect))
@@ -767,9 +763,8 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessFast(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
             {
                 vboxVdmaGgDmaBlt(pDevExt, &pBlt->Blt);
 
-                if ((pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
-                        || pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
-                        && pDstAlloc->bAssigned)
+                if (VBOXWDDM_IS_FB_ALLOCATION(pDevExt, pDstAlloc)
+                        && pDstAlloc->bVisible)
                 {
                     VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
                     Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
