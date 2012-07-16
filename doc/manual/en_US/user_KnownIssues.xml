@@ -281,6 +281,15 @@
         </listitem>
     
         <listitem>
+          <para>Neither <emphasis>virtio</emphasis> nor <emphasis>Intel PRO/1000
+            </emphasis> drivers for <emphasis role="bold">Windows XP guests
+            </emphasis> do not support segmentation offloading. Therefore
+            Windows XP guests have slower transmission rates comparing to other
+            guest types. Refer to MS Knowledge base article 842264 for additional
+            information.</para>
+        </listitem>
+    
+        <listitem>
           <para><emphasis role="bold">Guest Additions for OS/2.</emphasis> Shared
           folders are not yet supported with OS/2 guests. In addition, seamless
           windows and automatic guest resizing will probably never be implemented
