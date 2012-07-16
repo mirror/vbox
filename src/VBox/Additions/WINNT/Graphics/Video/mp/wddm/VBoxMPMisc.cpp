@@ -2672,6 +2672,9 @@ void vboxWddmDmAdjustDefaultVramLocations(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_P
         PhAddr.QuadPart += pSource->AllocData.SurfDesc.cbSize;
         PhAddr.QuadPart = ROUND_TO_PAGES(PhAddr.QuadPart);
         pSource = &pDevExt->aSources[i];
+        if (pSource->AllocData.Addr.offVram != PhAddr.QuadPart
+                || pSource->AllocData.Addr.SegmentId != 1)
+            pSource->bGhSynced = FALSE;
         pSource->AllocData.Addr.SegmentId = 1;
         pSource->AllocData.Addr.offVram = PhAddr.QuadPart;
     }
