@@ -619,7 +619,6 @@ VBoxC_SOURCES = \
 	src-client/GuestProcessImpl.cpp \
 	src-client/GuestSessionImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
-	src-client/GuestCtrlIO.cpp \
 	src-client/GuestCtrlImplDir.cpp \
 	src-client/GuestCtrlImplFile.cpp \
 	src-client/KeyboardImpl.cpp \
@@ -640,6 +639,7 @@ VBoxC_SOURCES.win = \
 
 ifdef VBOX_WITH_GUEST_CONTROL
 VBoxC_SOURCES += \
+	src-client/GuestCtrlPrivate.cpp \
 	src-client/GuestCtrlImplTasks.cpp \
 	src-client/GuestDirEntryImpl.cpp
 endif

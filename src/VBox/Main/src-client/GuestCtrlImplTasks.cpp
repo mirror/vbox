@@ -48,12 +48,12 @@ GuestTask::GuestTask(TaskType aTaskType, Guest *aThat, Progress *aProgress)
 
 }
 
-GuestTask::~GuestTask()
+GuestTask::~GuestTask(void)
 {
 
 }
 
-int GuestTask::startThread()
+int GuestTask::startThread(void)
 {
     return RTThreadCreate(NULL, GuestTask::taskThread, this,
                           0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
