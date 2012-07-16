@@ -372,6 +372,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_VENDOR_AMD_EBX        0x68747541      /* Auth */
 #define X86_CPUID_VENDOR_AMD_ECX        0x444d4163      /* cAMD */
 #define X86_CPUID_VENDOR_AMD_EDX        0x69746e65      /* enti */
+
+#define X86_CPUID_VENDOR_VIA_EBX        0x746e6543      /* Cent */
+#define X86_CPUID_VENDOR_VIA_ECX        0x736c7561      /* auls */
+#define X86_CPUID_VENDOR_VIA_EDX        0x48727561      /* aurH */
 /** @} */
 
 
