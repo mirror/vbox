@@ -125,11 +125,12 @@ DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE p
     {
         Assert(!pAllocation->bAssigned);
         Assert(!pAllocation->bVisible);
-        pAllocation->bVisible = FALSE;
         /* this check ensures the shadow is not used for other source simultaneously */
         Assert(pAllocation->AllocData.SurfDesc.VidPnSourceId == D3DDDI_ID_UNINITIALIZED);
         pAllocation->AllocData.SurfDesc.VidPnSourceId = srcId;
         pAllocation->bAssigned = TRUE;
+        pAllocation->bVisible = pSource->bVisible;
+
         if(!vboxWddmAddrVramEqual(&pSource->AllocData.Addr, &pAllocation->AllocData.Addr))
             pSource->bGhSynced = FALSE; /* force guest->host notification */
         pSource->AllocData.Addr = pAllocation->AllocData.Addr;
@@ -158,9 +159,9 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
 
     if (pAllocation)
     {
-        pAllocation->bVisible = FALSE;
         Assert(pAllocation->AllocData.SurfDesc.VidPnSourceId == srcId);
         pAllocation->bAssigned = TRUE;
+        pAllocation->bVisible = pSource->bVisible;
 
         if(!vboxWddmAddrVramEqual(&pSource->AllocData.Addr, &pAllocation->AllocData.Addr))
             pSource->bGhSynced = FALSE; /* force guest->host notification */
@@ -191,10 +192,24 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
 
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
 # ifdef VBOX_WDDM_WIN8
-#  define VBOXWDDM_FB_ALLOCATION(_pDevExt, _pSrc) ( (g_VBoxDisplayOnly || (_pDevExt)->fRenderToShadowDisabled) ? (_pSrc)->pPrimaryAllocation : (_pSrc)->pShadowAllocation)
+#  define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
+        && (  (_pAlloc)->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC \
+           || (_pAlloc)->enmType == \
+               ((g_VBoxDisplayOnly || (_pDevExt)->fRenderToShadowDisabled) ? VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE : VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE) \
+               ))
 # else
-#  define VBOXWDDM_FB_ALLOCATION(_pDevExt, _pSrc) ((_pDevExt)->fRenderToShadowDisabled ? (_pSrc)->pPrimaryAllocation : (_pSrc)->pShadowAllocation)
+#  define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
+        && (  (_pAlloc)->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC \
+           || (_pAlloc)->enmType == \
+               (((_pDevExt)->fRenderToShadowDisabled) ? VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE : VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE) \
+               ))
 # endif
+# define VBOXWDDM_FB_ALLOCATION(_pDevExt, _pSrc) ( ((_pSrc)->pPrimaryAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pPrimaryAllocation)) ? \
+                (_pSrc)->pPrimaryAllocation : ( \
+                        ((_pSrc)->pShadowAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pShadowAllocation)) ? \
+                                (_pSrc)->pShadowAllocation : NULL \
+                        ) \
+                )
 #else
 # define VBOXWDDM_FB_ALLOCATION(_pDevExt, _pSrc) ((_pSrc)->pPrimaryAllocation)
 #endif

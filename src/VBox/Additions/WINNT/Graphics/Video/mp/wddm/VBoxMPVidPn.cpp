@@ -1570,7 +1570,7 @@ static BOOLEAN vboxVidPnIsPathSupported(const D3DKMDT_VIDPN_PRESENT_PATH *pNewVi
 {
     if (pNewVidPnPresentPathInfo->VidPnSourceId != pNewVidPnPresentPathInfo->VidPnTargetId)
     {
-        WARN(("unsupported source(%d)->target(%d) pair", pNewVidPnPresentPathInfo->VidPnSourceId, pNewVidPnPresentPathInfo->VidPnTargetId));
+        LOG(("unsupported source(%d)->target(%d) pair", pNewVidPnPresentPathInfo->VidPnSourceId, pNewVidPnPresentPathInfo->VidPnTargetId));
         return FALSE;
     }
 
