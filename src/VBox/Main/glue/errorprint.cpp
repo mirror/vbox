@@ -107,23 +107,29 @@ static void glueHandleComErrorInternal(com::ErrorInfo &info,
                                        const char *pcszSourceFile,
                                        uint32_t ulLine)
 {
-    const com::ErrorInfo *pInfo = &info;
-    do
+    if (info.isFullAvailable() || info.isBasicAvailable())
     {
-        if (pInfo->isFullAvailable() || pInfo->isBasicAvailable())
+        const com::ErrorInfo *pInfo = &info;
+        do
+        {
             GluePrintErrorInfo(*pInfo);
-        else
-#if defined (RT_OS_WIN)
-            GluePrintRCMessage(rc);
-#else /* defined (RT_OS_WIN) */
-            GluePrintRCMessage(pInfo->getResultCode());
-#endif
-        pInfo = pInfo->getNext();
-        /* If there is more than one error, separate them visually. */
-        if (pInfo)
-            RTMsgError("--------\n");
+
+            pInfo = pInfo->getNext();
+            /* If there is more than one error, separate them visually. */
+            if (pInfo)
+            {
+                /* If there are several errors then at least basic error
+                 * information must be available, otherwise something went
+                 * horribly wrong. */
+                Assert(pInfo->isFullAvailable() || pInfo->isBasicAvailable());
+
+                RTMsgError("--------\n");
+            }
+        }
+        while (pInfo);
     }
-    while(pInfo);
+    else
+        GluePrintRCMessage(rc);
 
     GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine);
 }
