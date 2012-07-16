@@ -2540,57 +2540,43 @@ VMMDECL(bool) CPUMAreHiddenSelRegsValid(PVMCPU pVCpu)
  */
 VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
 {
+    /*
+     * CPL can reliably be found in SS.DPL (hidden regs valid) or SS if not.
+     *
+     * Note! We used to check CS.DPL here, assuming it was always equal to
+     * CPL even if a conforming segment was loaded.  But this truned out to
+     * only apply to older AMD-V.  With VT-x we had an ACP2 regression
+     * during install after a far call to ring 2 with VT-x.  Then on newer
+     * AMD-V CPUs we have to move the VMCB.guest.u8CPL into cs.Attr.n.u2Dpl
+     * as well as ss.Attr.n.u2Dpl to make this (and other) code work right.
+     *
+     * So, forget CS.DPL, always use SS.DPL.
+     *
+     * Note! The SS RPL is always equal to the CPL, while the CS RPL
+     * isn't necessarily equal if the segment is conforming.
+     * See section 4.11.1 in the AMD manual.
+     */
     uint32_t uCpl;
-
-#if 1
-    if (CPUMAreHiddenSelRegsValid(pVCpu))
-#else
-    if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pVCpu->cpum.s.Guest.ss))
-#endif
-    {
-        /*
-         * CPL can reliably be found in SS.DPL.
-         *
-         * Note! We used to check CS.DPL here, assuming it was always equal to
-         * CPL even if a conforming segment was loaded.  But this truned out to
-         * only apply to older AMD-V.  With VT-x we had an ACP2 regression
-         * during install after a far call to ring 2 with VT-x.  Then on newer
-         * AMD-V CPUs we have to move the VMCB.guest.u8CPL into cs.Attr.n.u2Dpl
-         * as well as ss.Attr.n.u2Dpl to make this (and other) code work right.
-         *
-         * So, forget CS.DPL, always use SS.DPL.
-         */
-        if (RT_LIKELY(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
-        {
-            if (!pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
-                uCpl = pVCpu->cpum.s.Guest.ss.Attr.n.u2Dpl;
-            else
-                uCpl = 3; /* REM doesn't set DPL=3 in V8086 mode. See @bugref{5130}. */
-        }
-        else
-            uCpl = 0;  /* CPL set to 3 for VT-x real-mode emulation. */
-    }
-    else if (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
+    if (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
     {
         if (!pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
         {
-            /*
-             * The SS RPL is always equal to the CPL, while the CS RPL
-             * isn't necessarily equal if the segment is conforming.
-             * See section 4.11.1 in the AMD manual.
-             */
-            uCpl = (pVCpu->cpum.s.Guest.ss.Sel & X86_SEL_RPL);
+            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pVCpu->cpum.s.Guest.ss))
+                uCpl = pVCpu->cpum.s.Guest.ss.Attr.n.u2Dpl;
+            else
+            {
+                uCpl = (pVCpu->cpum.s.Guest.ss.Sel & X86_SEL_RPL);
 #ifndef IN_RING0
-            if (uCpl == 1)
-                uCpl = 0;
+                if (uCpl == 1)
+                    uCpl = 0;
 #endif
+            }
         }
         else
-            uCpl = 3;
+            uCpl = 3; /* V86 has CPL=3; REM doesn't set DPL=3 in V8086 mode. See @bugref{5130}. */
     }
     else
-        uCpl = 0;        /* real mode; CPL is zero */
-
+        uCpl = 0;     /* Real mode is zero; CPL set to 3 for VT-x real-mode emulation. */
     return uCpl;
 }
 
