@@ -74,7 +74,7 @@ public:
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars);
     int readData(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
     int startProcess(void);
-    static DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser);
+    static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
     int terminateProcess(void);
     int waitFor(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitReason_T *aReason);
     int writeData(ULONG aHandle, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
