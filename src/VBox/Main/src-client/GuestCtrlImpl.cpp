@@ -2759,7 +2759,8 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-
+    int rc = sessionCreate(aUser, aPassword, aDomain, aSessionName, aGuestSession);
+    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

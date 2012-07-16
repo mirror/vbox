@@ -183,17 +183,10 @@ STDMETHODIMP GuestProcess::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> collection(mData.mProcess.mEnvironment.size());
-    size_t s = 0;
-    for (ProcessEnvironmentMap::const_iterator it = mData.mProcess.mEnvironment.begin();
-         it != mData.mProcess.mEnvironment.end();
-         it++, s++)
-    {
-        Bstr strEnv = it->first + Utf8Str("=") + it->second;
-        collection[s] = strEnv.raw();
-    }
-
-    collection.detachTo(ComSafeArrayOutArg(aEnvironment));
+    com::SafeArray<BSTR> arguments(mData.mProcess.mEnvironment.Size());
+    for (size_t i = 0; i < arguments.size(); i++)
+        arguments[i] = Bstr(mData.mProcess.mEnvironment.Get(i)).raw();
+    arguments.detachTo(ComSafeArrayOutArg(aEnvironment));
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -346,62 +339,6 @@ bool GuestProcess::isReady(void)
     return false;
 }
 
-/**
- * Appends environment variables to the environment block.
- *
- * Each var=value pair is separated by the null character ('\\0').  The whole
- * block will be stored in one blob and disassembled on the guest side later to
- * fit into the HGCM param structure.
- *
- * @returns VBox status code.
- *
- * @param   pszEnvVar       The environment variable=value to append to the
- *                          environment block.
- * @param   ppvList         This is actually a pointer to a char pointer
- *                          variable which keeps track of the environment block
- *                          that we're constructing.
- * @param   pcbList         Pointer to the variable holding the current size of
- *                          the environment block.  (List is a misnomer, go
- *                          ahead a be confused.)
- * @param   pcEnvVars       Pointer to the variable holding count of variables
- *                          stored in the environment block.
- */
-int GuestProcess::prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars)
-{
-    int rc = VINF_SUCCESS;
-    uint32_t cchEnv = strlen(pszEnv); Assert(cchEnv >= 2);
-    if (*ppvList)
-    {
-        uint32_t cbNewLen = *pcbList + cchEnv + 1; /* Include zero termination. */
-        char *pvTmp = (char *)RTMemRealloc(*ppvList, cbNewLen);
-        if (pvTmp == NULL)
-            rc = VERR_NO_MEMORY;
-        else
-        {
-            memcpy(pvTmp + *pcbList, pszEnv, cchEnv);
-            pvTmp[cbNewLen - 1] = '\0'; /* Add zero termination. */
-            *ppvList = (void **)pvTmp;
-        }
-    }
-    else
-    {
-        char *pszTmp;
-        if (RTStrAPrintf(&pszTmp, "%s", pszEnv) >= 0)
-        {
-            *ppvList = (void **)pszTmp;
-            /* Reset counters. */
-            *pcEnvVars = 0;
-            *pcbList = 0;
-        }
-    }
-    if (RT_SUCCESS(rc))
-    {
-        *pcbList += cchEnv + 1; /* Include zero termination. */
-        *pcEnvVars += 1;        /* Increase env variable count. */
-    }
-    return rc;
-}
-
 int GuestProcess::readData(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData))
 {
     LogFlowFuncEnter();
@@ -459,27 +396,8 @@ int GuestProcess::startProcess(void)
 
         /* Prepare environment. */
         void *pvEnv = NULL;
-        size_t cEnv = mData.mProcess.mEnvironment.size();
         uint32_t cbEnv = 0;
-        if (   RT_SUCCESS(rc)
-            && cEnv)
-        {
-            uint32_t cEnvBuild = 0;
-            ProcessEnvironmentMap::const_iterator itEnv = mData.mProcess.mEnvironment.begin();
-            for (; itEnv != mData.mProcess.mEnvironment.end() && RT_SUCCESS(rc); itEnv++)
-            {
-                char *pszEnv;
-                if (!RTStrAPrintf(&pszEnv, "%s=%s", itEnv->first.c_str(), itEnv->second.c_str()))
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-                AssertPtr(pszEnv);
-                rc = prepareExecuteEnv(pszEnv, &pvEnv, &cbEnv, &cEnvBuild);
-                RTStrFree(pszEnv);
-            }
-            Assert(cEnv == cEnvBuild);
-        }
+        rc = mData.mProcess.mEnvironment.BuildEnvironmentBlock(&pvEnv, &cbEnv, NULL /* cEnv */);
 
         if (RT_SUCCESS(rc))
         {
@@ -492,7 +410,7 @@ int GuestProcess::startProcess(void)
             paParms[i++].setUInt32(mData.mProcess.mFlags);
             paParms[i++].setUInt32(mData.mProcess.mArguments.size());
             paParms[i++].setPointer((void*)pszArgs, cbArgs);
-            paParms[i++].setUInt32(mData.mProcess.mEnvironment.size());
+            paParms[i++].setUInt32(mData.mProcess.mEnvironment.Size());
             paParms[i++].setUInt32(cbEnv);
             paParms[i++].setPointer((void*)pvEnv, cbEnv);
             paParms[i++].setPointer((void*)sessionCreds.mUser.c_str(), (uint32_t)sessionCreds.mUser.length() + 1);
@@ -528,8 +446,7 @@ int GuestProcess::startProcess(void)
                                        i, paParms);
         }
 
-        if (pvEnv)
-            RTMemFree(pvEnv);
+        GuestEnvironment::FreeEnvironmentBlock(pvEnv);
         if (pszArgs)
             RTStrFree(pszArgs);
     }

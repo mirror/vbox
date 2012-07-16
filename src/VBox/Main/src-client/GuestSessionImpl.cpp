@@ -27,6 +27,8 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <iprt/env.h>
+
 #include <VBox/com/array.h>
 
 
@@ -222,16 +224,10 @@ STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> collection(mData.mEnvironment.size());
-    size_t s = 0;
-    for (SessionEnvironment::const_iterator it = mData.mEnvironment.begin();
-         it != mData.mEnvironment.end();
-         ++it, ++s)
-    {
-        collection[s] = Bstr(it->first + "=" + it->second).raw();
-    }
-
-    collection.detachTo(ComSafeArrayOutArg(aEnvironment));
+    com::SafeArray<BSTR> arguments(mData.mEnvironment.Size());
+    for (size_t i = 0; i < arguments.size(); i++)
+        arguments[i] = Bstr(mData.mEnvironment.Get(i)).raw();
+    arguments.detachTo(ComSafeArrayOutArg(aEnvironment));
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -334,6 +330,11 @@ int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
 const GuestCredentials& GuestSession::getCredentials(void)
 {
     return mData.mCredentials;
+}
+
+const GuestEnvironment& GuestSession::getEnvironment(void)
+{
+    return mData.mEnvironment;
 }
 
 int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
@@ -588,7 +589,11 @@ STDMETHODIMP GuestSession::EnvironmentClear(void)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData.mEnvironment.Clear();
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -600,7 +605,11 @@ STDMETHODIMP GuestSession::EnvironmentSet(IN_BSTR aName, IN_BSTR aValue)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData.mEnvironment.Set(Utf8Str(aName), Utf8Str(aValue));
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -612,7 +621,15 @@ STDMETHODIMP GuestSession::EnvironmentSetArray(ComSafeArrayIn(IN_BSTR, aValues))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aValues));
+
+    int rc = VINF_SUCCESS;
+    for (size_t i = 0; i < environment.size() && RT_SUCCESS(rc); i++)
+        rc = mData.mEnvironment.Set(Utf8Str(environment[i]));
+
+    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -624,7 +641,11 @@ STDMETHODIMP GuestSession::EnvironmentUnset(IN_BSTR aName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData.mEnvironment.Unset(Utf8Str(aName));
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -760,41 +781,36 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
     for (size_t i = 0; i < arguments.size(); i++)
         procInfo.mArguments[i] = Utf8Str(Bstr(arguments[i]));
 
+    int rc = VINF_SUCCESS;
+
+    /* Create the process environment:
+     * - Apply the session environment in a first step, and
+     * - Apply environment variables specified by this call to
+     *   have the chance of overwriting/deleting session entries.
+     */
+    procInfo.mEnvironment = mData.mEnvironment;
     com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
-    for (size_t i = 0; i < environment.size(); i++)
+    for (size_t i = 0; i < environment.size() && RT_SUCCESS(rc); i++)
+        rc = mData.mEnvironment.Set(Utf8Str(environment[i]));
+
+    if (RT_SUCCESS(rc))
     {
-        Utf8Str strEnv = Bstr(environment[i]);
-        RTCList<RTCString> listPair = strEnv.split("=", RTCString::KeepEmptyParts);
-        size_t p = 0;
-        while(p < listPair.size())
-        {
-            Utf8Str strKey = listPair.at(p++);
-            if (strKey.isEmpty()) /* Skip pairs with empty keys (e.g. "=FOO"). */
-            {
-                p++;
-                continue;
-            }
-            Utf8Str strValue;
-            if (p < listPair.size())
-                strValue = listPair.at(p++);
-            procInfo.mEnvironment[strKey] = strValue;
-        }
+
+        com::SafeArray<ProcessCreateFlag_T> flags(ComSafeArrayInArg(aFlags));
+        for (size_t i = 0; i < flags.size(); i++)
+            procInfo.mFlags |= flags[i];
+
+        procInfo.mTimeoutMS = aTimeoutMS;
+
+        com::SafeArray<LONG> affinity(ComSafeArrayInArg(aAffinity));
+        procInfo.mAffinity.reserve(affinity.size());
+        for (size_t i = 0; i < affinity.size(); i++)
+            procInfo.mAffinity[i] = affinity[i]; /** @todo Really necessary? Later. */
+
+        procInfo.mPriority = aPriority;
+
+        rc = processCreateExInteral(procInfo, aProcess);
     }
-
-    com::SafeArray<ProcessCreateFlag_T> flags(ComSafeArrayInArg(aFlags));
-    for (size_t i = 0; i < flags.size(); i++)
-        procInfo.mFlags |= flags[i];
-
-    procInfo.mTimeoutMS = aTimeoutMS;
-
-    com::SafeArray<LONG> affinity(ComSafeArrayInArg(aAffinity));
-    procInfo.mAffinity.reserve(affinity.size());
-    for (size_t i = 0; i < affinity.size(); i++)
-        procInfo.mAffinity[i] = affinity[i]; /** @todo Really necessary? Later. */
-
-    procInfo.mPriority = aPriority;
-
-    int rc = processCreateExInteral(procInfo, aProcess);
     return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
