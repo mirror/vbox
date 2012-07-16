@@ -1777,7 +1777,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                     /* Default if no TR selector has been set (otherwise vmlaunch will fail!) */
                     val = (val & ~0xF) | X86_SEL_TYPE_SYS_386_TSS_BUSY;
             }
-            AssertMsg((val & 0xf) == X86_SEL_TYPE_SYS_386_TSS_BUSY || (val & 0xf) == X86_SEL_TYPE_SYS_286_TSS_BUSY, ("%#x\n", val));
+            AssertMsg((val & 0xf) == X86_SEL_TYPE_SYS_386_TSS_BUSY || (val & 0xf) == X86_SEL_TYPE_SYS_286_TSS_BUSY,
+                      ("%#x\n", val));
         }
         rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, val);
         AssertRC(rc);
@@ -1835,7 +1836,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
-        /* Note: protected mode & paging are always enabled; we use them for emulating real and protected mode without paging too. */
+        /* Protected mode & paging are always enabled; we use them for emulating real and protected mode without paging too. */
         if (!pVM->hwaccm.s.vmx.fUnrestrictedGuest)
             val |= X86_CR0_PE | X86_CR0_PG;
 
@@ -2709,9 +2710,12 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     pVCpu->hwaccm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
-    AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
-    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
+    AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes,
+              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID,
+              ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
+    AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID,
+              ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
 
     int rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hwaccm.s.uCurrentASID);
     AssertRC(rc);
@@ -2760,13 +2764,15 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     uint64_t    u64LastTime = RTTimeMilliTS();
 #endif
 
-    Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) || (pVCpu->hwaccm.s.vmx.pbVAPIC && pVM->hwaccm.s.vmx.pAPIC));
+    Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+           || (pVCpu->hwaccm.s.vmx.pbVAPIC && pVM->hwaccm.s.vmx.pAPIC));
 
     /*
      * Check if we need to use TPR shadowing.
      */
     if (    CPUMIsGuestInLongModeEx(pCtx)
-        || (   ((pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) || pVM->hwaccm.s.fTRPPatchingAllowed)
+        || (   ((   pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+                 || pVM->hwaccm.s.fTRPPatchingAllowed)
             &&  pVM->hwaccm.s.fHasIoApic)
        )
     {
@@ -3017,7 +3023,9 @@ ResumeExecution:
          * - no pending interrupts
          *   -> We don't need to be explicitely notified. There are enough world switches for detecting pending interrupts.
          */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? (u8LastTPR >> 4) : 0);     /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+
+        /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? (u8LastTPR >> 4) : 0);
         AssertRC(VBOXSTRICTRC_VAL(rc));
 
         if (pVM->hwaccm.s.fTPRPatchingActive)
@@ -3048,13 +3056,15 @@ ResumeExecution:
         ||  pVM->hwaccm.s.vmx.fVPID)
     {
         PHMGLOBLCPUINFO pCpu = HWACCMR0GetCurrentCpu();
-        if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
-            ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        if (pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu)
         {
-            if (pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu)
-                LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu, pCpu->idCpu));
-            else
-                LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+            LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu,
+                     pCpu->idCpu));
+        }
+        else if (pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        {
+            LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes,
+                     pCpu->cTLBFlushes));
         }
         else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
             LogFlow(("Manual TLB flush\n"));
@@ -3221,7 +3231,8 @@ ResumeExecution:
     uOldEFlags = ~(RTCCUINTREG)0;
 #endif
 
-    AssertMsg(!pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries, ("pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries=%d\n", pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries));
+    AssertMsg(!pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries, ("pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries=%d\n",
+                                                                   pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries));
 
     /* In case we execute a goto ResumeExecution later on. */
     pVCpu->hwaccm.s.fResumeVM  = true;
@@ -3881,7 +3892,8 @@ ResumeExecution:
                 else
                     rc = VERR_EM_INTERPRETER;
 
-                AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT, ("Unexpected rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
+                AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT,
+                          ("Unexpected rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
                 break;
             }
 
@@ -3892,7 +3904,7 @@ ResumeExecution:
             case X86_XCPT_SS:   /* Stack segment exception. */
             case X86_XCPT_NP:   /* Segment not present exception. */
             {
-                switch(vector)
+                switch (vector)
                 {
                     case X86_XCPT_DE:
                         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDE);
