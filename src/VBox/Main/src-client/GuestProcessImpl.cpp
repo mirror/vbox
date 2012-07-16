@@ -29,6 +29,8 @@
 #include "Logging.h"
 #include "VMMDev.h"
 
+#include <memory> /* For auto_ptr. */
+
 #include <iprt/asm.h>
 #include <iprt/getopt.h>
 #include <VBox/VMMDev.h>
@@ -158,9 +160,9 @@ STDMETHODIMP GuestProcess::COMGETTER(Arguments)(ComSafeArrayOut(BSTR, aArguments
     size_t s = 0;
     for (ProcessArguments::const_iterator it = mData.mProcess.mArguments.begin();
          it != mData.mProcess.mArguments.end();
-         ++it, ++s)
+         it++, s++)
     {
-        collection[s] = Bstr((*it)).raw();
+        collection[s] = Bstr(*it).raw();
     }
 
     collection.detachTo(ComSafeArrayOutArg(aArguments));
@@ -185,9 +187,10 @@ STDMETHODIMP GuestProcess::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
     size_t s = 0;
     for (ProcessEnvironmentMap::const_iterator it = mData.mProcess.mEnvironment.begin();
          it != mData.mProcess.mEnvironment.end();
-         ++it, ++s)
+         it++, s++)
     {
-        collection[s] = Bstr(it->first + "=" + it->second).raw();
+        Bstr strEnv = it->first + Utf8Str("=") + it->second;
+        collection[s] = strEnv.raw();
     }
 
     collection.detachTo(ComSafeArrayOutArg(aEnvironment));
@@ -466,8 +469,11 @@ int GuestProcess::startProcess(void)
             for (; itEnv != mData.mProcess.mEnvironment.end() && RT_SUCCESS(rc); itEnv++)
             {
                 char *pszEnv;
-                if (!RTStrAPrintf(&pszEnv, "%s=%s", itEnv->first, itEnv->second))
+                if (!RTStrAPrintf(&pszEnv, "%s=%s", itEnv->first.c_str(), itEnv->second.c_str()))
+                {
+                    rc = VERR_NO_MEMORY;
                     break;
+                }
                 AssertPtr(pszEnv);
                 rc = prepareExecuteEnv(pszEnv, &pvEnv, &cbEnv, &cEnvBuild);
                 RTStrFree(pszEnv);
