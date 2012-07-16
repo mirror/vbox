@@ -622,7 +622,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
     g_HvmR0.pfnTermVM           = hmR0DummyTermVM;
     g_HvmR0.pfnSetupVM          = hmR0DummySetupVM;
 
-    /* Default is global VT-x/AMD-V init */
+    /* Default is global VT-x/AMD-V init. */
     g_HvmR0.fGlobalInit         = true;
 
     /*
@@ -635,7 +635,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
     }
 
     /*
-     * Check for VT-x and AMD-V capabilities
+     * Check for VT-x and AMD-V capabilities.
      */
     int rc;
     if (ASMHasCpuId())
@@ -654,9 +654,12 @@ VMMR0DECL(int) HWACCMR0Init(void)
                  &g_HvmR0.cpuid.u32AMDFeatureEDX);
 
         /* Go to CPU specific initialization code. */
-        if (   u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
-            && u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
-            && u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX)
+        if (   (   u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
+                && u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
+                && u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX)
+            || (   u32VendorEBX == X86_CPUID_VENDOR_VIA_EBX
+                && u32VendorECX == X86_CPUID_VENDOR_VIA_ECX
+                && u32VendorEDX == X86_CPUID_VENDOR_VIA_EDX))
         {
             rc = hmR0InitIntel(u32FeaturesECX, u32FeaturesEDX);
             if (RT_FAILURE(rc))
@@ -782,7 +785,7 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
             == MSR_IA32_FEATURE_CONTROL_VMXON ) /* Some BIOSes forget to set the locked bit. */
        )
     {
-        /* MSR is not yet locked; we can change it ourselves here */
+        /* MSR is not yet locked; we can change it ourselves here. */
         ASMWrMsr(MSR_IA32_FEATURE_CONTROL,
                  g_HvmR0.vmx.msr.feature_ctrl | MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK);
         fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
