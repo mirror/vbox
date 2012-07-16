@@ -177,7 +177,6 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreen(PVBOXMP_DEVEXT pDevExt, const PVBOXWDDM
 
 NTSTATUS vboxWddmGhDisplayHideScreen(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
 {
-    Assert(0);
     VBOXWDDM_SURFACE_DESC SurfDesc = {0};
     POINT VScreenPos = {0};
     SurfDesc.VidPnSourceId = VidPnTargetId;
