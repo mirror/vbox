@@ -150,9 +150,10 @@ tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 # tstGuestCtrlParseBuffer
 #
 tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTEXE
+tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL
 tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
-	../src-client/GuestCtrlIO.cpp
+	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlParseBuffer_INCS     = ../include
 ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
  tstGuestCtrlParseBuffer_DEPS    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h

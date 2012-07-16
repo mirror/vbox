@@ -20,11 +20,9 @@
 #define ____H_GUESTPROCESSIMPL
 
 #include "VirtualBoxBase.h"
+#include "GuestCtrlImplPrivate.h"
 
-#include <vector>
-
-typedef std::vector<Utf8Str> StringsArray;
-
+class Console;
 class GuestSession;
 
 /**
@@ -46,10 +44,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestProcess)
 
-    int     init(GuestSession *pSession,
-                 const Utf8Str &aCommand, const StringsArray &aArguments, const StringsArray &aEnvironment,
-                 ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
-                 ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity));
+    int     init(Console *aConsole, GuestSession *aSession, uint32_t aProcessID, const GuestProcessInfo &aProcInfo);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -73,16 +68,43 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
+    int callbackAdd(const GuestCtrlCallback& theCallback, uint32_t *puContextID);
+    bool callbackExists(uint32_t uContextID);
+    bool isReady(void);
+    int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars);
+    int readData(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
+    int startProcess(void);
+    static DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser);
+    int terminateProcess(void);
+    int waitFor(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitReason_T *aReason);
+    int writeData(ULONG aHandle, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
     /** @}  */
 
 private:
 
-    typedef std::map <Utf8Str, Utf8Str> MyStringMap;
-
     struct Data
     {
-        GuestSession        *mParent;
-        Bstr                 mName;
+        /** Pointer to parent session. */
+        GuestSession            *mParent;
+        /** Pointer to the console object. Needed
+         *  for HGCM (VMMDev) communication. */
+        Console                 *mConsole;
+        /** All related callbacks to this process. */
+        GuestCtrlCallbacks       mCallbacks;
+        /** The process start information. */
+        GuestProcessInfo         mProcess;
+        /** Exit code if process has been terminated. */
+        LONG                     mExitCode;
+        /** PID reported from the guest. */
+        ULONG                    mPID;
+        /** Internal, host-side process ID. */
+        uint32_t                 mProcessID;
+        /** The current process status. */
+        ProcessStatus_T          mStatus;
+        /** Flag indicating whether the process has been started. */
+        bool                     mStarted;
+        /** The next upcoming context ID. */
+        uint32_t                 mNextContextID;
     } mData;
 };
 

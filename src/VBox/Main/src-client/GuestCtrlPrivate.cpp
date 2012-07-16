@@ -1,11 +1,11 @@
 /* $Id$ */
 /** @file
  *
- * IO helper for IGuest COM class implementations.
+ * Internal helpers/structures for guest control functionality.
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,10 +29,109 @@
  *   Structures and Typedefs                                                  *
  ******************************************************************************/
 
+GuestCtrlCallback::GuestCtrlCallback(void)
+    : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      pvData(NULL),
+      cbData(0),
+      mEventSem(NIL_RTSEMEVENT)
+{
+}
+
+GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
+    : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      pvData(NULL),
+      cbData(0),
+      mEventSem(NIL_RTSEMEVENT)
+{
+    int rc = Init(enmType);
+    AssertRC(rc);
+}
+
+GuestCtrlCallback::~GuestCtrlCallback(void)
+{
+    Destroy();
+}
+
+int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
+{
+    AssertReturn(enmType > VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN, VERR_INVALID_PARAMETER);
+    Assert((pvData == NULL) && !cbData);
+
+    int rc = VINF_SUCCESS;
+    switch (enmType)
+    {
+        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_START:
+        {
+            pvData = (PCALLBACKDATAEXECSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECSTATUS));
+            AssertPtrReturn(pvData, VERR_NO_MEMORY);
+            RT_BZERO(pvData, sizeof(CALLBACKDATAEXECSTATUS));
+            cbData = sizeof(CALLBACKDATAEXECSTATUS);
+            break;
+        }
+
+        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
+        {
+            pvData = (PCALLBACKDATAEXECOUT)RTMemAlloc(sizeof(CALLBACKDATAEXECOUT));
+            AssertPtrReturn(pvData, VERR_NO_MEMORY);
+            RT_BZERO(pvData, sizeof(CALLBACKDATAEXECOUT));
+            cbData = sizeof(CALLBACKDATAEXECOUT);
+            break;
+        }
+
+        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS:
+        {
+            PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
+            AssertPtrReturn(pData, VERR_NO_MEMORY);
+            RT_BZERO(pData, sizeof(CALLBACKDATAEXECINSTATUS));
+            cbData = sizeof(CALLBACKDATAEXECINSTATUS);
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Unknown callback type specified (%d)\n", enmType));
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTSemEventCreate(&mEventSem);
+        if (RT_SUCCESS(rc))
+            mType  = enmType;
+    }
+
+    return rc;
+}
+
+void GuestCtrlCallback::Destroy(void)
+{
+    mType = VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN;
+    if (pvData)
+    {
+        RTMemFree(pvData);
+        pvData = NULL;
+    }
+    cbData = 0;
+    if (mEventSem != NIL_RTSEMEVENT)
+        RTSemEventDestroy(mEventSem);
+}
+
+eVBoxGuestCtrlCallbackType GuestCtrlCallback::Type(void)
+{
+    return mType;
+}
+
+int GuestCtrlCallback::Wait(RTMSINTERVAL timeoutMS)
+{
+    Assert(mEventSem != NIL_RTSEMEVENT);
+    return RTSemEventWait(mEventSem, timeoutMS);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 /** @todo *NOT* thread safe yet! */
 /** @todo Add exception handling for STL stuff! */
 
-GuestProcessStreamBlock::GuestProcessStreamBlock()
+GuestProcessStreamBlock::GuestProcessStreamBlock(void)
 {
 
 }
@@ -222,7 +321,7 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-GuestProcessStream::GuestProcessStream()
+GuestProcessStream::GuestProcessStream(void)
     : m_cbAllocated(0),
       m_cbSize(0),
       m_cbOffset(0),
@@ -231,7 +330,7 @@ GuestProcessStream::GuestProcessStream()
 
 }
 
-GuestProcessStream::~GuestProcessStream()
+GuestProcessStream::~GuestProcessStream(void)
 {
     Destroy();
 }
@@ -310,7 +409,7 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
 /**
  * Destroys the internal data buffer.
  */
-void GuestProcessStream::Destroy()
+void GuestProcessStream::Destroy(void)
 {
     if (m_pbBuffer)
     {

@@ -2670,14 +2670,76 @@ int Guest::sessionClose(ComObjPtr<GuestSession> pSession)
     for (GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
          itSessions != mData.mGuestSessions.end(); ++itSessions)
     {
-        if (pSession == (*itSessions))
+        if (pSession == itSessions->second)
         {
-            mData.mGuestSessions.remove((*itSessions));
+            mData.mGuestSessions.erase(itSessions);
             return VINF_SUCCESS;
         }
     }
 
     return VERR_NOT_FOUND;
+}
+
+int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, const Utf8Str &strDomain,
+                         const Utf8Str &strSessionName, IGuestSession **aGuestSession)
+{
+    AssertPtrReturn(aGuestSession, VERR_INVALID_POINTER);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = VERR_MAX_PROCS_REACHED;
+    ComObjPtr<GuestSession> pGuestSession;
+    try
+    {
+        /* Create a new session ID and assign it. */
+        uint32_t uNewSessionID = 0;
+        uint32_t uTries = 0;
+
+        for (;;)
+        {
+            /* Is the context ID already used?  Try next ID ... */
+            if (!sessionExists(uNewSessionID++))
+            {
+                /* Callback with context ID was not found. This means
+                 * we can use this context ID for our new callback we want
+                 * to add below. */
+                rc = VINF_SUCCESS;
+                break;
+            }
+
+            if (++uTries == UINT32_MAX)
+                break; /* Don't try too hard. */
+        }
+        if (RT_FAILURE(rc)) throw rc;
+
+        /* Create the session object. */
+        HRESULT hr = pGuestSession.createObject();
+        if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
+
+        rc = pGuestSession->init(this, uNewSessionID,
+                                 strUser, strPassword, strDomain, strSessionName);
+        if (RT_FAILURE(rc)) throw VBOX_E_IPRT_ERROR;
+
+        mData.mGuestSessions[uNewSessionID] = pGuestSession;
+
+        /* Return guest session to the caller. */
+        hr = pGuestSession.queryInterfaceTo(aGuestSession);
+        if (FAILED(hr)) throw VERR_COM_OBJECT_NOT_FOUND;
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    return rc;
+}
+
+inline bool Guest::sessionExists(uint32_t uSessionID)
+{
+    AssertReturn(uSessionID, false);
+
+    GuestSessions::const_iterator itSessions = mData.mGuestSessions.find(uSessionID);
+    return (itSessions == mData.mGuestSessions.end()) ? false : true;
 }
 
 // implementation of public methods
@@ -2697,31 +2759,7 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT hr;
-    ComObjPtr<GuestSession> pGuestSession;
-    try
-    {
-        /* Create the session object. */
-        hr = pGuestSession.createObject();
-        if (FAILED(hr)) throw hr;
-
-        int rc = pGuestSession->init(this,
-                                     aUser, aPassword, aDomain, aSessionName);
-        if (RT_FAILURE(rc)) throw VBOX_E_IPRT_ERROR;
-
-        mData.mGuestSessions.push_back(pGuestSession);
-
-        /* Return guest session to the caller. */
-        hr = pGuestSession.queryInterfaceTo(aGuestSession);
-    }
-    catch (HRESULT aRC)
-    {
-        hr = aRC;
-    }
-
-    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

@@ -21,15 +21,11 @@
 
 #include "VirtualBoxBase.h"
 
+#include "GuestCtrlImplPrivate.h"
 #include "GuestProcessImpl.h"
 #include "GuestDirectoryImpl.h"
 #include "GuestFileImpl.h"
 #include "GuestFsObjInfoImpl.h"
-
-#include <map>
-#include <vector>
-
-typedef std::vector<Utf8Str> StringsArray;
 
 class Guest;
 
@@ -51,7 +47,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestSession)
 
-    int     init(Guest *aGuest, Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName);
+    int     init(Guest *aGuest, uint32_t aSessionID, Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -114,34 +110,31 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
-    int directoryClose(ComObjPtr<GuestDirectory> pDirectory);
-    int fileClose(ComObjPtr<GuestFile> pFile);
-    int processClose(ComObjPtr<GuestProcess> pProcess);
-    int processCreateExInteral(const Utf8Str &aCommand, const StringsArray &aArguments, const StringsArray &aEnvironment,
-                               ComSafeArrayIn(ProcessCreateFlag_T, aFlags), ULONG aTimeoutMS,
-                               ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
-                               IGuestProcess **aProcess);
+    int                     directoryClose(ComObjPtr<GuestDirectory> pDirectory);
+    int                     fileClose(ComObjPtr<GuestFile> pFile);
+    const GuestCredentials &getCredentials(void);
+    int                     processClose(ComObjPtr<GuestProcess> pProcess);
+    int                     processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProcess **aProcess);
+    inline bool             processExists(uint32_t uProcessID);
     /** @}  */
 
 private:
 
     typedef std::map <Utf8Str, Utf8Str> SessionEnvironment;
 
-    typedef std::list <ComObjPtr<GuestDirectory> > SessionDirectories;
-    typedef std::list <ComObjPtr<GuestFile> > SessionFiles;
-    typedef std::list <ComObjPtr<GuestProcess> > SessionProcesses;
+    typedef std::vector <ComObjPtr<GuestDirectory> > SessionDirectories;
+    typedef std::vector <ComObjPtr<GuestFile> > SessionFiles;
+    typedef std::map <uint32_t, ComObjPtr<GuestProcess> > SessionProcesses;
 
     struct Data
     {
         /** Flag indicating if this is an internal session
          *  or not. Internal session are not accessible by clients. */
         bool                 fInternal;
-        /** Pointer to the parent (IGuest). */
+        /** Pointer to the parent (Guest). */
         Guest               *mParent;
         /** The session credentials. */
-        Utf8Str              mUser;
-        Utf8Str              mPassword;
-        Utf8Str              mDomain;
+        GuestCredentials     mCredentials;
         /** The (optional) session name. */
         Utf8Str              mName;
         /** The session ID. */

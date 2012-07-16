@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,12 +72,12 @@ enum eProcessStatus
  * handling flags on the guest side.
  * Note: Has to match Main's ProcessInputFlag_* flags!
  */
-#define INPUT_FLAG_NONE             0
-#define INPUT_FLAG_EOF              RT_BIT(0)
+#define INPUT_FLAG_NONE                     0x0
+#define INPUT_FLAG_EOF                      RT_BIT(0)
 
 /**
  * Execution flags.
- * Note: Has to match Main's ExecuteProcessFlag_* flags!
+ * Note: Has to match Main's CreateProcessFlag_* flags!
  */
 #define EXECUTEPROCESSFLAG_NONE             0x0
 #define EXECUTEPROCESSFLAG_WAIT_START       RT_BIT(0)

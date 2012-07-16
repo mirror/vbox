@@ -1,10 +1,10 @@
 /** @file
  *
- * VirtualBox Guest Control - Private data definitions / classes.
+ * Internal helpers/structures for guest control functionality.
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +18,10 @@
 #ifndef ____H_GUESTIMPLPRIVATE
 #define ____H_GUESTIMPLPRIVATE
 
+#include <iprt/semaphore.h>
+
 #include <VBox/com/com.h>
+#include <VBox/com/ErrorInfo.h>
 #include <VBox/com/string.h>
 #include <VBox/com/VirtualBox.h>
 
@@ -32,10 +35,96 @@ using namespace com;
 using namespace guestControl;
 #endif
 
-class Guest;
-class Progress;
 
-/** Structure representing the "value" side of a "key=value" pair. */
+/* Builds a context ID out of the session ID, process ID and an
+ * increasing count. */
+#define VBOX_GUESTCTRL_CONTEXTID_MAKE(uSession, uProcess, uCount) \
+    (  (uint32_t)((uSession) &   0xff) << 24 \
+     | (uint32_t)((uProcess) &   0xff) << 16 \
+     | (uint32_t)((uCount)   & 0xffff)       \
+    )
+
+
+typedef std::vector <LONG> ProcessAffinity;
+typedef std::vector <Utf8Str> ProcessArguments;
+typedef std::map <Utf8Str, Utf8Str> ProcessEnvironmentMap;
+
+
+/**
+ * Generic class for a all guest control callbacks.
+ */
+class GuestCtrlCallback
+{
+public:
+
+    GuestCtrlCallback(void);
+
+    GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType);
+
+    virtual ~GuestCtrlCallback(void);
+
+    /** @todo Copy/comparison operator? */
+
+public:
+
+    int Init(eVBoxGuestCtrlCallbackType enmType);
+
+    void Destroy(void);
+
+    eVBoxGuestCtrlCallbackType Type(void);
+
+    int Wait(RTMSINTERVAL timeoutMS);
+
+protected:
+
+    /** The callback type. */
+    eVBoxGuestCtrlCallbackType  mType;
+    /** Callback flags. */
+    uint32_t                    mFlags;
+    /** Pointer to user-supplied data. */
+    void                       *pvData;
+    /** Size of user-supplied data. */
+    size_t                      cbData;
+    /** The event semaphore triggering the*/
+    RTSEMEVENT                  mEventSem;
+    /** Extended error information, if any. */
+    ErrorInfo                   mErrorInfo;
+};
+typedef std::map <uint32_t, GuestCtrlCallback> GuestCtrlCallbacks;
+
+/**
+ * Simple structure mantaining guest credentials.
+ */
+class GuestCredentials
+{
+public:
+
+
+public:
+
+    Utf8Str                     mUser;
+    Utf8Str                     mPassword;
+    Utf8Str                     mDomain;
+};
+
+/**
+ * Structure for keeping all the relevant process
+ * starting parameters around.
+ */
+struct GuestProcessInfo
+{
+    Utf8Str                     mCommand;
+    ProcessArguments            mArguments;
+    ProcessEnvironmentMap       mEnvironment;
+    uint32_t                    mFlags;
+    ULONG                       mTimeoutMS;
+    ProcessPriority_T           mPriority;
+    ProcessAffinity             mAffinity;
+};
+
+/**
+ * Class representing the "value" side of a "key=value" pair.
+ */
 class GuestProcessStreamValue
 {
 public:
@@ -143,6 +232,9 @@ protected:
     /** Internal stream buffer. */
     BYTE *m_pbBuffer;
 };
+
+class Guest;
+class Progress;
 
 class GuestTask
 {

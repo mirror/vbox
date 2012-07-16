@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -204,7 +204,11 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
-    int sessionClose(ComObjPtr<GuestSession> pSession);
+    Console    *getConsole(void) { return mParent; }
+    int         sessionClose(ComObjPtr<GuestSession> pSession);
+    int         sessionCreate(const Utf8Str &strUser, const Utf8Str &aPassword, const Utf8Str &aDomain,
+                              const Utf8Str &aSessionName, IGuestSession **aGuestSession);
+    inline bool sessionExists(uint32_t uSessionID);
     /** @}  */
 
 private:
@@ -302,7 +306,8 @@ private:
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::iterator FacilityMapIter;
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::const_iterator FacilityMapIterConst;
 
-    typedef std::list <ComObjPtr<GuestSession> > GuestSessions;
+    /** Map for keeping the guest sessions. The primary key marks the guest session ID. */
+    typedef std::map <uint32_t, ComObjPtr<GuestSession> > GuestSessions;
 
     struct Data
     {
@@ -319,6 +324,7 @@ private:
         uint32_t                mAdditionsFeatures;
         Bstr                    mInterfaceVersion;
         GuestSessions           mGuestSessions;
+        uint32_t                mNextSessionID;
     };
 
     ULONG mMemoryBalloonSize;
