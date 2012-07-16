@@ -331,7 +331,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
             if (CpuMode == CPUMMODE_REAL)
                 fAddrMask = UINT16_MAX;
             else if (   CpuMode == CPUMMODE_PROTECTED
-                     || !CPUMIsGuestIn64BitCode(pVCpu, pCtxCore))
+                     || !CPUMIsGuestIn64BitCode(pVCpu))
                 fAddrMask = UINT32_MAX;
             else
                 fAddrMask = UINT64_MAX;

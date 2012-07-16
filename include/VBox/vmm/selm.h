@@ -82,6 +82,9 @@ VMMDECL(int)        SELMValidateAndConvertCSAddrGCTrap(PVMCPU pVCpu, X86EFLAGS e
                                                        PRTGCPTR ppvFlat, uint32_t *pcBits);
 VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, PCCPUMSELREGHID pHiddenSel);
 VMMDECL(int)        SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit);
+#ifdef VBOX_WITH_RAW_MODE
+VMM_INT_DECL(void)  SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg);
+#endif
 
 
 #ifdef IN_RING3

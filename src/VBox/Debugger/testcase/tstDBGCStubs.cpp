@@ -375,6 +375,10 @@ VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
     return NULL;
 }
 
+VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
+{
+    return false;
+}
 
 
 #include <VBox/vmm/mm.h>
