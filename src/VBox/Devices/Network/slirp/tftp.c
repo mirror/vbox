@@ -290,16 +290,22 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
         else if (fWithArg)
         {
             if (!RTStrICmp("blksize", g_TftpDesc[idxOptionArg].pszName))
+            {
                 rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionBlkSize);
-            if (!RTStrICmp("tsize", g_TftpDesc[idxOptionArg].pszName))
+                if (pTftpSession->OptionBlkSize.u64Value > UINT16_MAX)
+                    rc = VERR_INVALID_PARAMETER;
+            }
+
+            if (   RT_SUCCESS(rc)
+                && !RTStrICmp("tsize", g_TftpDesc[idxOptionArg].pszName))
                 rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionTSize);
-            if (!RTStrICmp("timeoute", g_TftpDesc[idxOptionArg].pszName))
+
+            /* @todo: we don't use timeout, but its value in the range 0-255 */
+            if (   RT_SUCCESS(rc)
+                && !RTStrICmp("timeout", g_TftpDesc[idxOptionArg].pszName))
                 rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionTimeout);
-/*
-            @todo: process unrecognized options ??
-            else
-                rc = VERR_INVALID_PARAMETER;
-*/
+
+            /* @todo: unknown option detection */
             if (RT_FAILURE(rc))
             {
                 LogFlowFuncLeaveRC(rc);
