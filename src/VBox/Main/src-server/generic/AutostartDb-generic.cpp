@@ -26,9 +26,6 @@
 
 #include "AutostartDb.h"
 
-/** @todo: Make configurable through kmk/installer. */
-#define AUTOSTART_DATABASE "/etc/vbox/autostart.d"
-
 #if defined(RT_OS_LINUX)
 /**
  * Modifies the autostart database.
@@ -37,10 +34,14 @@
  * @param   fAutostart    Flag whether the autostart or autostop database is modified.
  * @param   fAddVM        Flag whether a VM is added or removed from the database.
  */
-static int autostartModifyDb(bool fAutostart, bool fAddVM)
+int AutostartDb::autostartModifyDb(bool fAutostart, bool fAddVM)
 {
     int rc = VINF_SUCCESS;
     char *pszUser = NULL;
+
+    /* Check if the path is set. */
+    if (!m_pszAutostartDbPath)
+        return VERR_PATH_NOT_FOUND;
 
     rc = RTProcQueryUsernameA(RTProcSelf(), &pszUser);
     if (RT_SUCCESS(rc))
@@ -57,7 +58,7 @@ static int autostartModifyDb(bool fAutostart, bool fAddVM)
             fOpen |= RTFILE_O_OPEN;
 
         rc = RTStrAPrintf(&pszFile, "%s/%s.%s",
-                          AUTOSTART_DATABASE, pszUser, fAutostart ? "start" : "stop");
+                          m_pszAutostartDbPath, pszUser, fAutostart ? "start" : "stop");
         if (RT_SUCCESS(rc))
         {
             rc = RTFileOpen(&hAutostartFile, pszFile, fOpen);
@@ -140,6 +141,7 @@ AutostartDb::AutostartDb()
 #ifdef RT_OS_LINUX
     int rc = RTCritSectInit(&this->CritSect);
     NOREF(rc);
+    m_pszAutostartDbPath = NULL;
 #endif
 }
 
@@ -147,6 +149,33 @@ AutostartDb::~AutostartDb()
 {
 #ifdef RT_OS_LINUX
     RTCritSectDelete(&this->CritSect);
+    if (m_pszAutostartDbPath)
+        RTStrFree(m_pszAutostartDbPath);
+#endif
+}
+
+int AutostartDb::setAutostartDbPath(const char *pszAutostartDbPathNew)
+{
+#if defined(RT_OS_LINUX)
+    char *pszAutostartDbPathTmp = NULL;
+
+    if (pszAutostartDbPathNew)
+    {
+        pszAutostartDbPathTmp = RTStrDup(pszAutostartDbPathNew);
+        if (!pszAutostartDbPathTmp)
+            return VERR_NO_MEMORY;
+    }
+
+    RTCritSectEnter(&this->CritSect);
+    if (m_pszAutostartDbPath)
+        RTStrFree(m_pszAutostartDbPath);
+
+    m_pszAutostartDbPath = pszAutostartDbPathTmp;
+    RTCritSectLeave(&this->CritSect);
+    return VINF_SUCCESS;
+#else
+    NOREF(pszAutostartDbPathNew);
+    return VERR_NOT_SUPPORTED
 #endif
 }
 
