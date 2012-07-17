@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -1180,7 +1179,7 @@ HRESULT SystemProperties::setAutostartDatabasePath(const Utf8Str &aPath)
     else
     {
         int vrc = autostartDb->setAutostartDbPath(NULL);
-        AssertRC(vrc);
+        /* AssertRC(vrc); - VERR_NOT_IMPLEMENTED on Mac OS X and thus strict builds crashes. */
         m->strAutostartDatabasePath = "";
     }
 
