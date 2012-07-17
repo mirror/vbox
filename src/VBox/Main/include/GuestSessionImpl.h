@@ -81,6 +81,7 @@ public:
     STDMETHOD(DirectoryRename)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag_T, aFlags));
     STDMETHOD(DirectorySetACL)(IN_BSTR aPath, IN_BSTR aACL);
     STDMETHOD(EnvironmentClear)(void);
+    STDMETHOD(EnvironmentGet)(IN_BSTR aName, BSTR *aValue);
     STDMETHOD(EnvironmentSet)(IN_BSTR aName, IN_BSTR aValue);
     STDMETHOD(EnvironmentSetArray)(ComSafeArrayIn(IN_BSTR, aValues));
     STDMETHOD(EnvironmentUnset)(IN_BSTR aName);
