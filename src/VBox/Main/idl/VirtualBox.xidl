@@ -7980,7 +7980,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="8a0ab9ab-48c1-4d04-954b-4a751413d084"
+    uuid="20fc263c-e1e9-4e86-b9b0-835950790d13"
     wsmap="managed"
     >
     <desc>
@@ -8230,6 +8230,12 @@
       system.</desc>
     </attribute>
 
+    <attribute name="autostartDatabasePath" type="wstring">
+      <desc>
+        The path to the autostart database. Depending on the host this might
+        be a filesystem path or something else.
+      </desc>
+    </attribute>
 
     <method name="getMaxNetworkAdapters">
       <desc>

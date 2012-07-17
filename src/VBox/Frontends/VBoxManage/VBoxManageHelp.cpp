@@ -590,6 +590,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            vrdeauthlibrary default|<library> |\n"
                      "                            websrvauthlibrary default|null|<library> |\n"
                      "                            vrdeextpack null|<library> |\n"
+                     "                            autostartdbpath null|<folder> |\n"
                      "                            loghistorycount <value>\n"
                      "\n");
 

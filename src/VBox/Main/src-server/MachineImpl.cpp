@@ -6639,6 +6639,9 @@ STDMETHODIMP Machine::COMSETTER(AutostartEnabled)(BOOL fEnabled)
             else if (vrc == VERR_NOT_SUPPORTED)
                 hrc = setError(VBOX_E_NOT_SUPPORTED,
                                tr("The VM autostart feature is not supported on this platform"));
+            else if (vrc == VERR_PATH_NOT_FOUND)
+                hrc = setError(E_FAIL,
+                               tr("The path to the autostart database is not set"));
             else
                 hrc = setError(E_UNEXPECTED,
                                tr("%s machine '%s' to the autostart database failed with %Rrc"),
@@ -6727,6 +6730,9 @@ STDMETHODIMP Machine::COMSETTER(AutostopType)(AutostopType_T enmAutostopType)
             else if (vrc == VERR_NOT_SUPPORTED)
                 hrc = setError(VBOX_E_NOT_SUPPORTED,
                                tr("The VM autostop feature is not supported on this platform"));
+            else if (vrc == VERR_PATH_NOT_FOUND)
+                hrc = setError(E_FAIL,
+                               tr("The path to the autostart database is not set"));
             else
                 hrc = setError(E_UNEXPECTED,
                                tr("%s machine '%s' to the autostop database failed with %Rrc"),

@@ -856,6 +856,14 @@ int handleSetProperty(HandlerArg *a)
             return errorArgument("Error parsing Log history count '%s'", a->argv[1]);
         CHECK_ERROR(systemProperties, COMSETTER(LogHistoryCount)(uVal));
     }
+    else if (!strcmp(a->argv[0], "autostartdbpath"))
+    {
+        /* disable? */
+        if (!strcmp(a->argv[1], "null"))
+            CHECK_ERROR(systemProperties, COMSETTER(AutostartDatabasePath)(NULL));
+        else
+            CHECK_ERROR(systemProperties, COMSETTER(AutostartDatabasePath)(Bstr(a->argv[1]).raw()));
+    }
     else
         return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", a->argv[0]);
 

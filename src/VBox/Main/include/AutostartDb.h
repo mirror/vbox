@@ -29,9 +29,18 @@ class AutostartDb
         ~AutostartDb();
 
         /**
+         * Sets the path to the autostart database.
+         *
+         * @returns VBox status code.
+         * @param   pszAutostartDbPathNew    Path to the autostart database.
+         */
+        int setAutostartDbPath(const char *pszAutostartDbPathNew);
+
+        /**
          * Add a autostart VM to the global database.
          *
          * @returns VBox status code.
+         * @retval VERR_PATH_NOT_FOUND if the autostart database directory is not set.
          * @param   pszVMId    ID of the VM to add.
          */
         int addAutostartVM(const char *pszVMId);
@@ -40,6 +49,7 @@ class AutostartDb
          * Remove a autostart VM from the global database.
          *
          * @returns VBox status code.
+         * @retval VERR_PATH_NOT_FOUND if the autostart database directory is not set.
          * @param   pszVMId    ID of the VM to remove.
          */
         int removeAutostartVM(const char *pszVMId);
@@ -48,6 +58,7 @@ class AutostartDb
          * Add a autostop VM to the global database.
          *
          * @returns VBox status code.
+         * @retval VERR_PATH_NOT_FOUND if the autostart database directory is not set.
          * @param   pszVMId    ID of the VM to add.
          */
         int addAutostopVM(const char *pszVMId);
@@ -56,6 +67,7 @@ class AutostartDb
          * Remove a autostop VM from the global database.
          *
          * @returns VBox status code.
+         * @retval VERR_PATH_NOT_FOUND if the autostart database directory is not set.
          * @param   pszVMId    ID of the VM to remove.
          */
         int removeAutostopVM(const char *pszVMId);
@@ -65,6 +77,17 @@ class AutostartDb
 #ifdef RT_OS_LINUX
         /** Critical section protecting the database against concurrent access. */
         RTCRITSECT      CritSect;
+        /** Path to the autostart database. */
+        char           *m_pszAutostartDbPath;
+
+        /**
+         * Autostart database modification worker.
+         *
+         * @returns VBox status code.
+         * @param   fAutostart    Flag whether the autostart or autostop database is modified.
+         * @param   fAddVM        Flag whether a VM is added or removed from the database.
+         */
+        int autostartModifyDb(bool fAutostart, bool fAddVM);
 #endif
 };
 
