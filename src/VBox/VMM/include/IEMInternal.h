@@ -310,6 +310,13 @@ typedef struct IEMCPU
 #endif
     } aMemMappings[3];
 
+    /** Locking records for the mapped memory. */
+    union
+    {
+        PGMPAGEMAPLOCK      Lock;
+        uint64_t            au64Padding[2];
+    } aMemMappingLocks[3];
+
     /** Bounce buffer info.
      * This runs in parallel to aMemMappings. */
     struct

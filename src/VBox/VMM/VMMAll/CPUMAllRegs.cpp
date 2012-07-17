@@ -77,8 +77,7 @@
 
 
 
-#if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
-
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
 
 /**
  * Does the lazy hidden selector register loading.
@@ -155,7 +154,7 @@ VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG 
     CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, pSReg, pSReg == &pVCpu->cpum.s.Guest.cs);
 }
 
-#endif
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
 
 /**
