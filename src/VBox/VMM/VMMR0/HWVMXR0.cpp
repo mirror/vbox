@@ -1371,9 +1371,9 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         }
 # endif
 
-        if (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        if (   (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+            && pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
         {
-            Assert(u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
             pMsr->u32IndexMSR = MSR_K8_TSC_AUX;
             pMsr->u32Reserved = 0;
             pMsr->u64Value    = ASMRdMsr(MSR_K8_TSC_AUX);
@@ -2167,9 +2167,9 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
     }
 
-    if (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+    if (   pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP
+        && (u32GstExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP))
     {
-        Assert(u32GstExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
         pMsr->u32IndexMSR = MSR_K8_TSC_AUX;
         pMsr->u32Reserved = 0;
         rc = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pMsr->u64Value);
@@ -3970,7 +3970,7 @@ ResumeExecution:
     }
 
     /*
-     * 48 EPT violation. An attemp to access memory with a guest-physical address was disallowed
+     * 48 EPT violation. An attempt to access memory with a guest-physical address was disallowed
      * by the configuration of the EPT paging structures.
      */
     case VMX_EXIT_EPT_VIOLATION:
