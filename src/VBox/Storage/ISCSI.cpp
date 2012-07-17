@@ -3874,6 +3874,22 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to read InitiatorSecret as byte string"));
         goto out;
     }
+    void *pvInitiatorSecretEncrypted;
+    size_t cbInitiatorSecretEncrypted;
+    rc = VDCFGQueryBytesAlloc(pImage->pIfConfig,
+                              "InitiatorSecretEncrypted",
+                              &pvInitiatorSecretEncrypted,
+                              &cbInitiatorSecretEncrypted);
+    if (RT_SUCCESS(rc))
+    {
+        RTMemFree(pvInitiatorSecretEncrypted);
+        if (!pImage->pbInitiatorSecret)
+        {
+            /* we have an encrypted initiator secret but not an unencrypted one */
+            rc = vdIfError(pImage->pIfError, VERR_VD_ISCSI_SECRET_ENCRYPTED, RT_SRC_POS, N_("iSCSI: initiator secret not decrypted"));
+            goto out;
+        }
+    }
     pImage->pszTargetUsername = NULL;
     rc = VDCFGQueryStringAlloc(pImage->pIfConfig,
                                "TargetUsername",

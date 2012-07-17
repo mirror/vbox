@@ -1507,6 +1507,8 @@
 #define VERR_VD_ISCSI_INVALID_STATE                 (-3253)
 /** iSCSI: Invalid device type (not a disk). */
 #define VERR_VD_ISCSI_INVALID_TYPE                  (-3254)
+/** iSCSI: Initiator secret not decrypted */
+#define VERR_VD_ISCSI_SECRET_ENCRYPTED              (-3255)
 /** VHD: Invalid image file header. */
 #define VERR_VD_VHD_INVALID_HEADER                  (-3260)
 /** Parallels HDD: Invalid image file header. */
