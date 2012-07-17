@@ -190,10 +190,10 @@ int handleCreateVM(HandlerArg *a)
     HRESULT rc;
     Bstr bstrBaseFolder;
     Bstr bstrName;
-    Bstr bstrGroups;
     Bstr bstrOsTypeId;
     Bstr bstrUuid;
     bool fRegister = false;
+    com::SafeArray<BSTR> groups;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -210,8 +210,7 @@ int handleCreateVM(HandlerArg *a)
                 break;
 
             case 'g':   // --groups
-                bstrGroups = ValueUnion.psz;
-                /// @todo implement group string parsing to safearray
+                parseGroups(ValueUnion.psz, &groups);
                 break;
 
             case 'p':   // --basefolder
@@ -241,14 +240,16 @@ int handleCreateVM(HandlerArg *a)
 
     do
     {
+        Bstr bstrPrimaryGroup;
+        if (groups.size())
+            bstrPrimaryGroup = groups[0];
         Bstr bstrSettingsFile;
         CHECK_ERROR_BREAK(a->virtualBox,
                           ComposeMachineFilename(bstrName.raw(),
-                                                 NULL /* aGroup */,
+                                                 bstrPrimaryGroup.raw(),
                                                  bstrBaseFolder.raw(),
                                                  bstrSettingsFile.asOutParam()));
         ComPtr<IMachine> machine;
-        com::SafeArray<BSTR> groups; /* no groups */
         CHECK_ERROR_BREAK(a->virtualBox,
                           CreateMachine(bstrSettingsFile.raw(),
                                         bstrName.raw(),
@@ -346,10 +347,10 @@ int handleCloneVM(HandlerArg *a)
     CloneMode_T                    mode             = CloneMode_MachineState;
     com::SafeArray<CloneOptions_T> options;
     const char                    *pszTrgName       = NULL;
-    const char                    *pszTrgGroups     = NULL;
     const char                    *pszTrgBaseFolder = NULL;
     bool                           fRegister        = false;
     Bstr                           bstrUuid;
+    com::SafeArray<BSTR> groups;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -370,8 +371,7 @@ int handleCloneVM(HandlerArg *a)
                 break;
 
             case 'g':   // --groups
-                pszTrgGroups = ValueUnion.psz;
-                /// @todo implement group string parsing to safearray
+                parseGroups(ValueUnion.psz, &groups);
                 break;
 
             case 'p':   // --basefolder
@@ -434,16 +434,18 @@ int handleCloneVM(HandlerArg *a)
     if (!pszTrgName)
         pszTrgName = RTStrAPrintf2("%s Clone", pszSrcName);
 
+    Bstr bstrPrimaryGroup;
+    if (groups.size())
+        bstrPrimaryGroup = groups[0];
     Bstr bstrSettingsFile;
     CHECK_ERROR_RET(a->virtualBox,
                     ComposeMachineFilename(Bstr(pszTrgName).raw(),
-                                           NULL /* aGroup */,
+                                           bstrPrimaryGroup.raw(),
                                            Bstr(pszTrgBaseFolder).raw(),
                                            bstrSettingsFile.asOutParam()),
                     RTEXITCODE_FAILURE);
 
     ComPtr<IMachine> trgMachine;
-    com::SafeArray<BSTR> groups; /* no groups */
     CHECK_ERROR_RET(a->virtualBox, CreateMachine(bstrSettingsFile.raw(),
                                                  Bstr(pszTrgName).raw(),
                                                  ComSafeArrayAsInParam(groups),

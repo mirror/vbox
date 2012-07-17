@@ -136,6 +136,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_CREATEVM)
         RTStrmPrintf(pStrm,
                      "VBoxManage createvm         --name <name>\n"
+                     "                            [--groups <group>, ...]\n"
                      "                            [--ostype <ostype>]\n"
                      "                            [--register]\n"
                      "                            [--basefolder <path>]\n"
@@ -147,6 +148,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                      "VBoxManage modifyvm         <uuid|name>\n"
                      "                            [--name <name>]\n"
+                     "                            [--groups <group>, ...]\n"
                      "                            [--ostype <ostype>]\n"
                      "                            [--memory <memorysize in MB>]\n"
                      "                            [--pagefusion on|off]\n"
@@ -354,6 +356,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--options link|keepallmacs|keepnatmacs|\n"
                      "                                       keepdisknames]\n"
                      "                            [--name <name>]\n"
+                     "                            [--groups <group>, ...]\n"
                      "                            [--basefolder <basefolder>]\n"
                      "                            [--uuid <uuid>]\n"
                      "                            [--register]\n"

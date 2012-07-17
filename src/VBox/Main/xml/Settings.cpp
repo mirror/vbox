@@ -16,6 +16,9 @@
  * highest value to see which code in here needs adjusting.
  *
  * Certainly ConfigFileBase::ConfigFileBase() will. Change VBOX_XML_VERSION below as well.
+ * VBOX_XML_VERSION does not have to be changed if the settings for a default VM do not
+ * touch newly introduced attributes or tags. It has the benefit that older VirtualBox
+ * versions do not trigger their "newer" code path.
  *
  * Once a new settings version has been added, these are the rules for introducing a new
  * setting: If an XML element or attribute or value is introduced that was not present in
@@ -322,7 +325,9 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_11;
                 else if (ulMinor == 12)
                     m->sv = SettingsVersion_v1_12;
-                else if (ulMinor > 12)
+                else if (ulMinor == 13)
+                    m->sv = SettingsVersion_v1_13;
+                else if (ulMinor > 13)
                     m->sv = SettingsVersion_Future;
             }
             else if (ulMajor > 1)
@@ -3223,6 +3228,32 @@ void MachineConfigFile::readAutostart(const xml::ElementNode *pElmAutostart, Aut
 }
 
 /**
+ * Called for reading the <Groups> element under <Machine>.
+ */
+void MachineConfigFile::readGroups(const xml::ElementNode *pElmGroups, StringsList *pllGroups)
+{
+    pllGroups->clear();
+    if (!pElmGroups || m->sv < SettingsVersion_v1_13)
+    {
+        pllGroups->push_back("/");
+        return;
+    }
+
+    xml::NodesLoop nlGroups(*pElmGroups);
+    const xml::ElementNode *pelmGroup;
+    while ((pelmGroup = nlGroups.forAllNodes()))
+    {
+        if (pelmGroup->nameEquals("Group"))
+        {
+            Utf8Str strGroup;
+            if (!pelmGroup->getAttributeValue("name", strGroup))
+                throw ConfigFileError(this, pelmGroup, N_("Required Group/@name attribute is missing"));
+            pllGroups->push_back(strGroup);
+        }
+    }
+}
+
+/**
  * Called initially for the <Snapshot> element under <Machine>, if present,
  * to store the snapshot's data into the given Snapshot structure (which is
  * then the one in the Machine struct). This might then recurse if
@@ -3297,6 +3328,7 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
 
     readDebugging(elmSnapshot.findChildElement("Debugging"), &snap.debugging);
     readAutostart(elmSnapshot.findChildElement("Autostart"), &snap.autostart);
+    // note: Groups exist only for Machine, not for Snapshot
 }
 
 const struct {
@@ -3449,6 +3481,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 readDebugging(pelmMachineChild, &debugging);
             else if (pelmMachineChild->nameEquals("Autostart"))
                 readAutostart(pelmMachineChild, &autostart);
+            else if (pelmMachineChild->nameEquals("Groups"))
+                readGroups(pelmMachineChild, &machineUserData.llGroups);
         }
 
         if (m->sv < SettingsVersion_v1_9)
@@ -4430,6 +4464,30 @@ void MachineConfigFile::buildAutostartXML(xml::ElementNode *pElmParent, const Au
 }
 
 /**
+ * Creates a <Groups> node under elmParent and then writes out the XML
+ * keys under that. Called for the <Machine> node only.
+ *
+ * @param pElmParent    Pointer to the parent element.
+ * @param pllGroups     Pointer to the groups list.
+ */
+void MachineConfigFile::buildGroupsXML(xml::ElementNode *pElmParent, const StringsList *pllGroups)
+{
+    if (   m->sv < SettingsVersion_v1_13 || pllGroups->size() == 0
+        || (pllGroups->size() == 1 && pllGroups->front() == "/"))
+        return;
+
+    xml::ElementNode *pElmGroups = pElmParent->createChild("Groups");
+    for (StringsList::const_iterator it = pllGroups->begin();
+         it != pllGroups->end();
+         ++it)
+    {
+        const Utf8Str &group = *it;
+        xml::ElementNode *pElmGroup = pElmGroups->createChild("Group");
+        pElmGroup->setAttribute("name", group);
+    }
+}
+
+/**
  * Writes a single snapshot into the DOM tree. Initially this gets called from MachineConfigFile::write()
  * for the root snapshot of a machine, if present; elmParent then points to the <Snapshots> node under the
  * <Machine> node to which <Snapshot> must be added. This may then recurse for child snapshots.
@@ -4460,6 +4518,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
                                     // since snapshots never get written then
     buildDebuggingXML(pelmSnapshot, &snap.debugging);
     buildAutostartXML(pelmSnapshot, &snap.autostart);
+    // note: Groups exist only for Machine, not for Snapshot
 
     if (snap.llChildSnapshots.size())
     {
@@ -4609,6 +4668,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
                                pllElementsWithUuidAttributes);
     buildDebuggingXML(&elmMachine, &debugging);
     buildAutostartXML(&elmMachine, &autostart);
+    buildGroupsXML(&elmMachine, &machineUserData.llGroups);
 }
 
 /**
@@ -4726,9 +4786,11 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_13)
     {
-        // VirtualBox 4.2 adds tracing and autostart.
+        // VirtualBox 4.2 adds tracing, autostart and groups.
         if (   !debugging.areDefaultSettings()
-            || !autostart.areDefaultSettings())
+            || !autostart.areDefaultSettings()
+            || machineUserData.llGroups.size() > 1
+            || machineUserData.llGroups.front() != "/")
             m->sv = SettingsVersion_v1_13;
     }
 

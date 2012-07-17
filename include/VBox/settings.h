@@ -1024,6 +1024,7 @@ struct MachineUserData
         return    (strName                    == c.strName)
                && (fNameSync                  == c.fNameSync)
                && (strDescription             == c.strDescription)
+               && (llGroups                   == c.llGroups)
                && (strOsType                  == c.strOsType)
                && (strSnapshotFolder          == c.strSnapshotFolder)
                && (fTeleporterEnabled         == c.fTeleporterEnabled)
@@ -1130,6 +1131,7 @@ private:
     void readTeleporter(const xml::ElementNode *pElmTeleporter, MachineUserData *pUserData);
     void readDebugging(const xml::ElementNode *pElmDbg, Debugging *pDbg);
     void readAutostart(const xml::ElementNode *pElmAutostart, Autostart *pAutostart);
+    void readGroups(const xml::ElementNode *elmGroups, StringsList *pllGroups);
     void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
@@ -1142,6 +1144,7 @@ private:
                                     std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
     void buildDebuggingXML(xml::ElementNode *pElmParent, const Debugging *pDbg);
     void buildAutostartXML(xml::ElementNode *pElmParent, const Autostart *pAutostart);
+    void buildGroupsXML(xml::ElementNode *pElmParent, const StringsList *pllGroups);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
     void bumpSettingsVersionIfNeeded();
