@@ -73,14 +73,12 @@ VMMDECL(void)       SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 #define SELMTOFLAT_FLAGS_HYPER      RT_BIT(10)
 /** @} */
 
-VMMDECL(int)        SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC);
-VMMDECL(int)        SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, PCCPUMSELREGHID pHiddenSel,
-                                      uint32_t fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
-VMMDECL(int)        SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS,
-                                                 PCCPUMSELREGHID pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat);
-VMMDECL(int)        SELMValidateAndConvertCSAddrGCTrap(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr,
-                                                       PRTGCPTR ppvFlat, uint32_t *pcBits);
-VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, PCCPUMSELREGHID pHiddenSel);
+VMMDECL(int)        SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, uint32_t fFlags,
+                                 PRTGCPTR ppvGC);
+VMMDECL(int)        SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, uint32_t fFlags,
+                                      PRTGCPTR ppvGC, uint32_t *pcb);
+VMMDECL(int)        SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREG pSRegCS,
+                                                 RTGCPTR Addr, PRTGCPTR ppvFlat);
 VMMDECL(int)        SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit);
 #ifdef VBOX_WITH_RAW_MODE
 VMM_INT_DECL(void)  SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg);

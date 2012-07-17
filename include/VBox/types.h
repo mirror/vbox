@@ -1028,6 +1028,19 @@ typedef enum CPUMMODE
 } CPUMMODE;
 
 
+/**
+ * CPU mode flags (DISSTATE::mode).
+ */
+typedef enum DISCPUMODE
+{
+    DISCPUMODE_INVALID = 0,
+    DISCPUMODE_16BIT,
+    DISCPUMODE_32BIT,
+    DISCPUMODE_64BIT,
+    /** hack forcing the size of the enum to 32-bits. */
+    DISCPUMODE_MAKE_32BIT_HACK = 0x7fffffff
+} DISCPUMODE;
+
 /** Pointer to the disassembler state. */
 typedef struct DISSTATE *PDISSTATE;
 /** Pointer to a const disassembler state. */

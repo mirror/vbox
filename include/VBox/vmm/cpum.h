@@ -407,6 +407,8 @@ VMMDECL(void)           CPUMDeactivateHyperDebugState(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
+VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
+VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
 
 
 #ifdef IN_RING3

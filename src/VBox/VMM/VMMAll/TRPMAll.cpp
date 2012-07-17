@@ -340,7 +340,7 @@ VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
 }
 
 
-#ifndef IN_RING0
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
 /**
  * Forward trap or interrupt to the guest's handler
  *
@@ -553,7 +553,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     if (   !esp_r0
                         || !ss_r0
                         || (ss_r0 & X86_SEL_RPL) != ((dpl == 0) ? 1 : dpl)
-                        || SELMToFlatBySelEx(pVCpu, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1,
+                        || SELMToFlatBySelEx(pVCpu, fakeflags, ss_r0, (RTGCPTR)esp_r0, SELMTOFLAT_FLAGS_CPL1,
                                              (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
                        )
                     {
@@ -568,7 +568,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     esp_r0 = pRegFrame->esp;
 
                     if (    eflags.Bits.u1VM    /* illegal */
-                        ||  SELMToFlatBySelEx(pVCpu, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1,
+                        ||  SELMToFlatBySelEx(pVCpu, fakeflags, ss_r0, (RTGCPTR)esp_r0, SELMTOFLAT_FLAGS_CPL1,
                                               (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
                     {
                         AssertMsgFailed(("Invalid stack %04X:%08RX32??? (VM=%d)\n", ss_r0, esp_r0, eflags.Bits.u1VM));
@@ -742,7 +742,7 @@ failure:
 #endif
     return VINF_EM_RAW_GUEST_TRAP;
 }
-#endif /* !IN_RING0 */
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
 
 /**
