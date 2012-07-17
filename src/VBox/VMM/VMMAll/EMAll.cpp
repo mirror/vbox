@@ -364,7 +364,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
 
 
 /**
- * Disassembles one instruction.
+ * Disassembles the current instruction.
  *
  * @returns VBox status code, see SELMToFlatEx and EMInterpretDisasOneEx for
  *          details.
@@ -372,19 +372,19 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
  *
  * @param   pVM             Pointer to the VM.
  * @param   pVCpu           Pointer to the VMCPU.
- * @param   pCtxCore        The context core (used for both the mode and instruction).
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, unsigned *pcbInstr)
+VMMDECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
+    PCPUMCTXCORE pCtxCore = CPUMCTX2CORE(CPUMQueryGuestCtxPtr(pVCpu));
     RTGCPTR GCPtrInstr;
 #if 0
     int rc = SELMToFlatEx(pVCpu, DISSELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
 #else
 /** @todo Get the CPU mode as well while we're at it! */
-    int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtxCore->eflags, pCtxCore->ss.Sel, pCtxCore->cs.Sel,
-                                          &pCtxCore->cs, pCtxCore->rip, &GCPtrInstr);
+    int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtxCore->eflags, pCtxCore->ss.Sel, pCtxCore->cs.Sel, &pCtxCore->cs,
+                                          pCtxCore->rip, &GCPtrInstr);
 #endif
     if (RT_FAILURE(rc))
     {
@@ -414,7 +414,8 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
 VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                    PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
-    DISCPUMODE enmCpuMode = SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs.Sel, (PCPUMSELREGHID)&pCtxCore->cs);
+    Assert(pCtxCore == CPUMGetGuestCtxCore(pVCpu));
+    DISCPUMODE enmCpuMode = CPUMGetGuestDisMode(pVCpu);
     /** @todo Deal with too long instruction (=> \#GP), opcode read errors (=>
      *        \#PF, \#GP, \#??), undefined opcodes (=> \#UD), and such. */
     int rc = DISInstrWithReader(GCPtrInstr, enmCpuMode, emReadBytes, pVCpu, pDis, pcbInstr);
@@ -461,7 +462,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs.Sel, &pRegFrame->cs);
+        pDis->uCpuMode = CPUMGetGuestDisMode(pVCpu);
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
@@ -516,7 +517,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->uCpuMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs.Sel, &pRegFrame->cs);
+        pDis->uCpuMode = CPUMGetGuestDisMode(pVCpu);
         rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
@@ -1546,7 +1547,7 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
             RTGCPTR pStackVal;
 
             /* Read stack value first */
-            if (SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, &pRegFrame->ss) == DISCPUMODE_16BIT)
+            if (CPUMGetGuestCodeBits(pVCpu) == 16)
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */

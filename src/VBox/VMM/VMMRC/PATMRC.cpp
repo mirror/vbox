@@ -506,7 +506,8 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            DISCPUMODE enmCpuMode = SELMGetCpuModeFromSelector(VMMGetCpu0(pVM), pRegFrame->eflags, pRegFrame->cs.Sel, 0);
+            PVMCPU     pVCpu      = VMMGetCpu0(pVM);
+            DISCPUMODE enmCpuMode = CPUMGetGuestDisMode(pVCpu);
             if (enmCpuMode != DISCPUMODE_32BIT)
             {
                 AssertFailed();
@@ -515,7 +516,7 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
 #ifdef VBOX_WITH_IEM
             VBOXSTRICTRC rcStrict;
-            rcStrict = IEMExecOneWithPrefetchedByPC(VMMGetCpu0(pVM), pRegFrame, pRegFrame->rip,
+            rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip,
                                                     pRec->patch.aPrivInstr, pRec->patch.cbPrivInstr);
             rc = VBOXSTRICTRC_TODO(rcStrict);
 #else
@@ -530,7 +531,7 @@ VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            rc = EMInterpretInstructionDisasState(VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */,
+            rc = EMInterpretInstructionDisasState(pVCpu, &cpu, pRegFrame, 0 /* not relevant here */,
                                                   EMCODETYPE_SUPERVISOR);
 #endif
             if (RT_FAILURE(rc))

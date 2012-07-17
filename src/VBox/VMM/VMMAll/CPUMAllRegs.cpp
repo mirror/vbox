@@ -2601,3 +2601,56 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 
     return enmMode;
 }
+
+
+/**
+ * Figure whether the CPU is currently executing 16, 32 or 64 bit code.
+ *
+ * @returns 16, 32 or 64.
+ * @param   pVCpu               The current virtual CPU.
+ */
+VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu)
+{
+    if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
+        return 16;
+
+    if (pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
+    {
+        Assert(!(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA));
+        return 16;
+    }
+
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
+    if (   pVCpu->cpum.s.Guest.cs.Attr.n.u1Long
+        && (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA))
+        return 64;
+
+    if (pVCpu->cpum.s.Guest.cs.Attr.n.u1DefBig)
+        return 32;
+
+    return 16;
+}
+
+
+VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu)
+{
+    if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
+        return DISCPUMODE_16BIT;
+
+    if (pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
+    {
+        Assert(!(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA));
+        return DISCPUMODE_16BIT;
+    }
+
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
+    if (   pVCpu->cpum.s.Guest.cs.Attr.n.u1Long
+        && (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA))
+        return DISCPUMODE_64BIT;
+
+    if (pVCpu->cpum.s.Guest.cs.Attr.n.u1DefBig)
+        return DISCPUMODE_32BIT;
+
+    return DISCPUMODE_16BIT;
+}
+

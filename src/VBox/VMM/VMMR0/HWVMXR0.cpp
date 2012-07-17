@@ -3656,7 +3656,7 @@ ResumeExecution:
 
                 LogFlow(("Real mode X86_XCPT_GP instruction emulation at %x:%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
 
-                rc2 = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
+                rc2 = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
                 if (RT_SUCCESS(rc2))
                 {
                     bool fUpdateRIP = true;
@@ -4441,7 +4441,7 @@ ResumeExecution:
             /* Disassemble manually to deal with segment prefixes. */
             /** @todo VMX_VMCS_EXIT_GUEST_LINEAR_ADDR contains the flat pointer operand of the instruction. */
             /** @todo VMX_VMCS32_RO_EXIT_INSTR_INFO also contains segment prefix info. */
-            rc2 = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, NULL);
+            rc2 = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
             if (RT_SUCCESS(rc))
             {
                 if (fIOWrite)

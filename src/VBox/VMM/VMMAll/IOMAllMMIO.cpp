@@ -1520,7 +1520,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
     PVMCPU          pVCpu = VMMGetCpu(pVM);
     PDISCPUSTATE    pDis  = &pVCpu->iom.s.DisState;
     unsigned        cbOp;
-    rc = EMInterpretDisasOne(pVM, pVCpu, pCtxCore, pDis, &cbOp);
+    rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
     if (RT_FAILURE(rc))
     {
         iomMmioReleaseRange(pVM, pRange);

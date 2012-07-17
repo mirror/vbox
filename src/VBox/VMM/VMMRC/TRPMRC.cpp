@@ -178,7 +178,7 @@ VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
      * the writes and pretend success.
      */
     DISSTATE Dis;
-    int rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, &Dis, NULL);
+    int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, NULL);
     if (rc == VINF_SUCCESS)
     {
         /* Just ignore the write. */

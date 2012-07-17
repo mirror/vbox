@@ -952,9 +952,8 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
      */
     STAM_PROFILE_START(&pVM->trpm.s.StatTrap0dDisasm, a);
     RTGCPTR PC;
-    uint32_t cBits;
-    int rc = SELMValidateAndConvertCSAddrGCTrap(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, pRegFrame->cs.Sel,
-                                                pRegFrame->rip, &PC, &cBits);
+    int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, pRegFrame->cs.Sel, &pRegFrame->cs,
+                                          pRegFrame->rip, &PC);
     if (RT_FAILURE(rc))
     {
         Log(("trpmGCTrap0dHandler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Rrc !!\n",

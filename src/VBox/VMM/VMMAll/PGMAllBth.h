@@ -907,7 +907,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                  */
                 PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
                 uint32_t     cbOp;
-                rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, &cbOp);
+                rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
 
                 /* For now we'll restrict this to rep movsw/d instructions */
                 if (    rc == VINF_SUCCESS
