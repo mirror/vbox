@@ -3525,9 +3525,21 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
-      <title>Incompatible API changes with version 4.1</title>
+      <title>Incompatible API changes with version 4.2</title>
 
       <itemizedlist>
+        <listitem>
+          <para>Machines can be put in groups (actually an array of groups).
+          The primary group affects the default placement of files belonging
+          to a VM. <xref linkend="IVirtualBox__createMachine"
+          xreflabel="IVirtualBox::createMachine()"/> and
+          <xref linkend="IVirtualBox__composeMachineFilename"
+          xreflabel="IVirtualBox::composeMachineFilename()"/> have been
+          adjusted accordingly, the former taking an array of groups as an
+          additional parameter and the latter taking a group as an additional
+          parameter.</para>
+        </listitem>
+
         <listitem>
           <para>The method IVirtualBox::findMedium() has been removed, since
           it provides a subset of the functionality of <xref linkend="IVirtualBox__openMedium"
