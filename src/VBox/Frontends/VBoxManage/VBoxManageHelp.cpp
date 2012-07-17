@@ -113,7 +113,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            bridgedifs|dhcpservers|hostinfo|\n"
 #endif
                      "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
-                     "                            usbhost|usbfilters|systemproperties|extpacks\n"
+                     "                            usbhost|usbfilters|systemproperties|extpacks|\n"
+                     "                            groups\n"
                      "\n");
 
     if (u64Cmd & USAGE_SHOWVMINFO)
