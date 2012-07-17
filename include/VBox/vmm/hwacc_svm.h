@@ -284,59 +284,59 @@
 /** @name SVM_VMCB.ctrl.u32InterceptCtrl1
  * @{
  */
-/** 0 Intercept INTR (physical maskable interrupt) */
+/** 0 Intercept INTR (physical maskable interrupt). */
 #define SVM_CTRL1_INTERCEPT_INTR              RT_BIT(0)
-/** 1 Intercept NMI */
+/** 1 Intercept NMI. */
 #define SVM_CTRL1_INTERCEPT_NMI               RT_BIT(1)
-/** 2 Intercept SMI */
+/** 2 Intercept SMI. */
 #define SVM_CTRL1_INTERCEPT_SMI               RT_BIT(2)
-/** 3 Intercept INIT */
+/** 3 Intercept INIT. */
 #define SVM_CTRL1_INTERCEPT_INIT              RT_BIT(3)
-/** 4 Intercept VINTR (virtual maskable interrupt) */
+/** 4 Intercept VINTR (virtual maskable interrupt). */
 #define SVM_CTRL1_INTERCEPT_VINTR             RT_BIT(4)
 /** 5 Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
 #define SVM_CTRL1_INTERCEPT_CR0               RT_BIT(5)
-/** 6 Intercept reads of IDTR */
+/** 6 Intercept reads of IDTR. */
 #define SVM_CTRL1_INTERCEPT_IDTR_READS        RT_BIT(6)
-/** 7 Intercept reads of GDTR */
+/** 7 Intercept reads of GDTR. */
 #define SVM_CTRL1_INTERCEPT_GDTR_READS        RT_BIT(7)
-/** 8 Intercept reads of LDTR */
+/** 8 Intercept reads of LDTR. */
 #define SVM_CTRL1_INTERCEPT_LDTR_READS        RT_BIT(8)
-/** 9 Intercept reads of TR */
+/** 9 Intercept reads of TR. */
 #define SVM_CTRL1_INTERCEPT_TR_READS          RT_BIT(9)
-/** 10 Intercept writes of IDTR */
+/** 10 Intercept writes of IDTR. */
 #define SVM_CTRL1_INTERCEPT_IDTR_WRITES       RT_BIT(10)
-/** 11 Intercept writes of GDTR */
+/** 11 Intercept writes of GDTR. */
 #define SVM_CTRL1_INTERCEPT_GDTR_WRITES       RT_BIT(11)
-/** 12 Intercept writes of LDTR */
+/** 12 Intercept writes of LDTR. */
 #define SVM_CTRL1_INTERCEPT_LDTR_WRITES       RT_BIT(12)
-/** 13 Intercept writes of TR */
+/** 13 Intercept writes of TR. */
 #define SVM_CTRL1_INTERCEPT_TR_WRITES         RT_BIT(13)
-/** 14 Intercept RDTSC instruction */
+/** 14 Intercept RDTSC instruction. */
 #define SVM_CTRL1_INTERCEPT_RDTSC             RT_BIT(14)
-/** 15 Intercept RDPMC instruction */
+/** 15 Intercept RDPMC instruction. */
 #define SVM_CTRL1_INTERCEPT_RDPMC             RT_BIT(15)
-/** 16 Intercept PUSHF instruction */
+/** 16 Intercept PUSHF instruction. */
 #define SVM_CTRL1_INTERCEPT_PUSHF             RT_BIT(16)
-/** 17 Intercept POPF instruction */
+/** 17 Intercept POPF instruction. */
 #define SVM_CTRL1_INTERCEPT_POPF              RT_BIT(17)
-/** 18 Intercept CPUID instruction */
+/** 18 Intercept CPUID instruction. */
 #define SVM_CTRL1_INTERCEPT_CPUID             RT_BIT(18)
-/** 19 Intercept RSM instruction */
+/** 19 Intercept RSM instruction. */
 #define SVM_CTRL1_INTERCEPT_RSM               RT_BIT(19)
-/** 20 Intercept IRET instruction */
+/** 20 Intercept IRET instruction. */
 #define SVM_CTRL1_INTERCEPT_IRET              RT_BIT(20)
-/** 21 Intercept INTn instruction */
+/** 21 Intercept INTn instruction. */
 #define SVM_CTRL1_INTERCEPT_INTN              RT_BIT(21)
-/** 22 Intercept INVD instruction */
+/** 22 Intercept INVD instruction. */
 #define SVM_CTRL1_INTERCEPT_INVD              RT_BIT(22)
-/** 23 Intercept PAUSE instruction */
+/** 23 Intercept PAUSE instruction. */
 #define SVM_CTRL1_INTERCEPT_PAUSE             RT_BIT(23)
-/** 24 Intercept HLT instruction */
+/** 24 Intercept HLT instruction. */
 #define SVM_CTRL1_INTERCEPT_HLT               RT_BIT(24)
-/** 25 Intercept INVLPG instruction */
+/** 25 Intercept INVLPG instruction. */
 #define SVM_CTRL1_INTERCEPT_INVLPG            RT_BIT(25)
-/** 26 Intercept INVLPGA instruction */
+/** 26 Intercept INVLPGA instruction. */
 #define SVM_CTRL1_INTERCEPT_INVLPGA           RT_BIT(26)
 /** 27 IOIO_PROT Intercept IN/OUT accesses to selected ports. */
 #define SVM_CTRL1_INTERCEPT_INOUT_BITMAP      RT_BIT(27)
@@ -354,31 +354,31 @@
 /** @name SVM_VMCB.ctrl.u32InterceptCtrl2
  * @{
  */
-/** 0 Intercept VMRUN instruction */
+/** 0 Intercept VMRUN instruction. */
 #define SVM_CTRL2_INTERCEPT_VMRUN             RT_BIT(0)
-/** 1 Intercept VMMCALL instruction */
+/** 1 Intercept VMMCALL instruction. */
 #define SVM_CTRL2_INTERCEPT_VMMCALL           RT_BIT(1)
-/** 2 Intercept VMLOAD instruction */
+/** 2 Intercept VMLOAD instruction. */
 #define SVM_CTRL2_INTERCEPT_VMLOAD            RT_BIT(2)
-/** 3 Intercept VMSAVE instruction */
+/** 3 Intercept VMSAVE instruction. */
 #define SVM_CTRL2_INTERCEPT_VMSAVE            RT_BIT(3)
-/** 4 Intercept STGI instruction */
+/** 4 Intercept STGI instruction. */
 #define SVM_CTRL2_INTERCEPT_STGI              RT_BIT(4)
-/** 5 Intercept CLGI instruction */
+/** 5 Intercept CLGI instruction. */
 #define SVM_CTRL2_INTERCEPT_CLGI              RT_BIT(5)
-/** 6 Intercept SKINIT instruction */
+/** 6 Intercept SKINIT instruction. */
 #define SVM_CTRL2_INTERCEPT_SKINIT            RT_BIT(6)
-/** 7 Intercept RDTSCP instruction */
+/** 7 Intercept RDTSCP instruction. */
 #define SVM_CTRL2_INTERCEPT_RDTSCP            RT_BIT(7)
-/** 8 Intercept ICEBP instruction */
+/** 8 Intercept ICEBP instruction. */
 #define SVM_CTRL2_INTERCEPT_ICEBP             RT_BIT(8)
-/** 9 Intercept WBINVD instruction */
+/** 9 Intercept WBINVD instruction. */
 #define SVM_CTRL2_INTERCEPT_WBINVD            RT_BIT(9)
-/** 10 Intercept MONITOR instruction */
+/** 10 Intercept MONITOR instruction. */
 #define SVM_CTRL2_INTERCEPT_MONITOR           RT_BIT(10)
-/** 11 Intercept MWAIT instruction unconditionally */
+/** 11 Intercept MWAIT instruction unconditionally. */
 #define SVM_CTRL2_INTERCEPT_MWAIT_UNCOND      RT_BIT(11)
-/** 12 Intercept MWAIT instruction when armed */
+/** 12 Intercept MWAIT instruction when armed. */
 #define SVM_CTRL2_INTERCEPT_MWAIT_ARMED       RT_BIT(12)
 /** @} */
 
@@ -424,7 +424,7 @@
 
 
 /**
- * SVM Selector type; includes hidden parts
+ * SVM Selector type; includes hidden parts.
  */
 #pragma pack(1)
 typedef struct
@@ -437,7 +437,7 @@ typedef struct
 #pragma pack()
 
 /**
- * SVM GDTR/IDTR type
+ * SVM GDTR/IDTR type.
  */
 #pragma pack(1)
 typedef struct
@@ -452,7 +452,7 @@ typedef struct
 typedef SVMGDTR SVMIDTR;
 
 /**
- * SVM Event injection structure
+ * SVM Event injection structure.
  */
 #pragma pack(1)
 typedef union
@@ -472,7 +472,7 @@ typedef union
 
 
 /**
- * SVM Interrupt control structure
+ * SVM Interrupt control structure.
  */
 #pragma pack(1)
 typedef union
@@ -496,7 +496,7 @@ typedef union
 
 
 /**
- * SVM TLB control structure
+ * SVM TLB control structure.
  */
 #pragma pack(1)
 typedef union
@@ -513,7 +513,7 @@ typedef union
 
 
 /**
- * SVM IOIO exit structure
+ * SVM IOIO exit structure.
  */
 #pragma pack(1)
 typedef union
@@ -538,7 +538,7 @@ typedef union
 #pragma pack()
 
 /**
- * SVM nested paging structure
+ * SVM nested paging structure.
  */
 #pragma pack(1)
 typedef union
