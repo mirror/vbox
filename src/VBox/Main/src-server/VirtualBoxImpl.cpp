@@ -1374,8 +1374,6 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
                                                 IN_BSTR aBaseFolder,
                                                 BSTR *aFilename)
 {
-    /// @todo implement aGroup
-    NOREF(aGroup);
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName=\"%ls\",aBaseFolder=\"%ls\"\n", aName, aBaseFolder));
 
@@ -1385,9 +1383,16 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    Utf8Str strGroup(aGroup);
+    if (strGroup.isEmpty())
+        strGroup = "/";
+    HRESULT rc = validateMachineGroup(strGroup);
+    if (FAILED(rc))
+        return rc;
+
     /* Compose the settings file name using the following scheme:
      *
-     *     <base_folder>/<machine_name>/<machine_name>.xml
+     *     <base_folder><group>/<machine_name>/<machine_name>.xml
      *
      * If a non-null and non-empty base folder is specified, the default
      * machine folder will be used as a base folder.
@@ -1404,22 +1409,16 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
 
     calculateFullPath(strBase, strBase);
 
-    Bstr bstrSettingsFile = BstrFmt("%s%c%s%c%s.vbox",
+    /* eliminate toplevel group to avoid // in the result */
+    if (strGroup == "/")
+        strGroup.setNull();
+    Bstr bstrSettingsFile = BstrFmt("%s%s%c%s%c%s.vbox",
                                     strBase.c_str(),
+                                    strGroup.c_str(),
                                     RTPATH_DELIMITER,
                                     strName.c_str(),
                                     RTPATH_DELIMITER,
                                     strName.c_str());
-
-#if 0  /* Try to get a unique name. */
-    for (unsigned i = 1; RTFileExists(bstrSettingsFile.c_str() && i < 100; ++i)
-        bstrSettingsFile = BstrFmt("%s%c%s%u%c%s%u.vbox",
-                                   strBase.c_str(),
-                                   RTPATH_DELIMITER,
-                                   strName.c_str(), i,
-                                   RTPATH_DELIMITER,
-                                   strName.c_str());
-#endif
 
     bstrSettingsFile.detachTo(aFilename);
 
@@ -3021,6 +3020,74 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
     return rc;
 }
 
+static HRESULT validateMachineGroupHelper(const Utf8Str &aGroup)
+{
+    /* empty strings are invalid */
+    if (aGroup.isEmpty())
+        return E_INVALIDARG;
+    /* the toplevel group is valid */
+    if (aGroup == "/")
+        return S_OK;
+    /* any other strings of length 1 are invalid */
+    if (aGroup.length() == 1)
+        return E_INVALIDARG;
+    /* must start with a slash */
+    if (aGroup.c_str()[0] != '/')
+        return E_INVALIDARG;
+    /* must not end with a slash */
+    if (aGroup.c_str()[aGroup.length() - 1] == '/')
+        return E_INVALIDARG;
+    /* check the group components */
+    const char *pStr = aGroup.c_str() + 1;  /* first char is /, skip it */
+    while (pStr)
+    {
+        char *pSlash = RTStrStr(pStr, "/");
+        if (pSlash)
+        {
+            /* no empty components (or // sequences in other words) */
+            if (pSlash == pStr)
+                return E_INVALIDARG;
+            /* check if the machine name rules are violated, because that means
+             * the group components is too close to the limits. */
+            Utf8Str tmp((const char *)pStr, (size_t)(pSlash - pStr));
+            Utf8Str tmp2(tmp);
+            sanitiseMachineFilename(tmp);
+            if (tmp != tmp2)
+                return E_INVALIDARG;
+            pStr = pSlash + 1;
+        }
+        else
+        {
+            /* check if the machine name rules are violated, because that means
+             * the group components is too close to the limits. */
+            Utf8Str tmp(pStr);
+            Utf8Str tmp2(tmp);
+            sanitiseMachineFilename(tmp);
+            if (tmp != tmp2)
+                return E_INVALIDARG;
+            pStr = NULL;
+        }
+    }
+    return S_OK;
+}
+
+/**
+ * Validates a machine group.
+ *
+ * @param aMachineGroup     Machine group.
+ *
+ * @return S_OK or E_INVALIDARG
+ */
+HRESULT VirtualBox::validateMachineGroup(const Utf8Str &aGroup)
+{
+    HRESULT rc = validateMachineGroupHelper(aGroup);
+    if (FAILED(rc))
+        rc = setError(rc,
+                      tr("Invalid machine group '%s'"),
+                      aGroup.c_str());
+    return rc;
+}
+
 /**
  * Takes a list of machine groups, and sanitizes/validates it.
  *
@@ -3029,7 +3096,6 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
  *
  * @return S_OK or E_INVALIDARG
  */
-
 HRESULT VirtualBox::convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups), StringsList *pllMachineGroups)
 {
     pllMachineGroups->clear();
@@ -3041,14 +3107,10 @@ HRESULT VirtualBox::convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups)
             Utf8Str group(machineGroups[i]);
             if (group.length() == 0)
                 group = "/";
-            /* must start with a slash */
-            if (group.c_str()[0] != '/')
-                return E_INVALIDARG;
-            /* must not end with a slash */
-            if (group.length() > 1 && group.c_str()[group.length() - 1] == '/')
-                return E_INVALIDARG;
 
-            /** @todo validate each component of the group hierarchy */
+            HRESULT rc = validateMachineGroup(group);
+            if (FAILED(rc))
+                return rc;
 
             /* no duplicates please */
             if (   find(pllMachineGroups->begin(), pllMachineGroups->end(), group)
