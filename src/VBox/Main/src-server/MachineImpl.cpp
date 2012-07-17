@@ -314,7 +314,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         unconst(mData->mUuid) = aId;
 
         mUserData->s.strName = strName;
-        
+
         mUserData->s.llGroups = llGroups;
 
         // the "name sync" flag determines whether the machine directory gets renamed along
@@ -8941,7 +8941,8 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
     /* attempt to rename the settings file if machine name is changed */
     if (    mUserData->s.fNameSync
          && mUserData.isBackedUp()
-         && mUserData.backedUpData()->s.strName != mUserData->s.strName
+         && (   mUserData.backedUpData()->s.strName != mUserData->s.strName
+             || mUserData.backedUpData()->s.llGroups.front() != mUserData->s.llGroups.front())
        )
     {
         bool dirRenamed = false;
@@ -8957,18 +8958,29 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 
             Utf8Str name = mUserData.backedUpData()->s.strName;
             Utf8Str newName = mUserData->s.strName;
+            Utf8Str group = mUserData.backedUpData()->s.llGroups.front();
+            if (group == "/")
+                group.setNull();
+            Utf8Str newGroup = mUserData->s.llGroups.front();
+            if (newGroup == "/")
+                newGroup.setNull();
 
             configFile = mData->m_strConfigFileFull;
 
-            /* first, rename the directory if it matches the machine name */
+            /* first, rename the directory if it matches the group and machine name */
+            Utf8Str groupPlusName = Utf8StrFmt("%s%c%s",
+                group.c_str(), RTPATH_DELIMITER, name.c_str());
+            Utf8Str newGroupPlusName = Utf8StrFmt("%s%c%s",
+                newGroup.c_str(), RTPATH_DELIMITER, newName.c_str());
             configDir = configFile;
             configDir.stripFilename();
             newConfigDir = configDir;
-            if (!strcmp(RTPathFilename(configDir.c_str()), name.c_str()))
+            if (   configDir.length() >= groupPlusName.length()
+                && configDir.substr(configDir.length() - groupPlusName.length(), groupPlusName.length()).equals(groupPlusName.c_str()))
             {
-                newConfigDir.stripFilename();
-                newConfigDir.append(RTPATH_DELIMITER);
-                newConfigDir.append(newName);
+                newConfigDir = newConfigDir.substr(0, configDir.length() - groupPlusName.length());
+                Utf8Str newConfigBaseDir(newConfigDir);
+                newConfigDir.append(newGroupPlusName);
                 /* new dir and old dir cannot be equal here because of 'if'
                  * above and because name != newName */
                 Assert(configDir != newConfigDir);
@@ -8976,6 +8988,14 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 {
                     /* perform real rename only if the machine is not new */
                     vrc = RTPathRename(configDir.c_str(), newConfigDir.c_str(), 0);
+                    if (vrc == VERR_FILE_NOT_FOUND)
+                    {
+                        /* create the parent directory, then retry renaming */
+                        Utf8Str parent(newConfigDir);
+                        parent.stripFilename();
+                        (void)RTDirCreateFullPath(parent.c_str(), 0700);
+                        vrc = RTPathRename(configDir.c_str(), newConfigDir.c_str(), 0);
+                    }
                     if (RT_FAILURE(vrc))
                     {
                         rc = setError(E_FAIL,
@@ -8984,6 +9004,16 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                                       newConfigDir.c_str(),
                                       vrc);
                         break;
+                    }
+                    /* delete subdirectories which are no longer needed */
+                    Utf8Str dir(configDir);
+                    dir.stripFilename();
+                    while (dir != newConfigBaseDir && dir != ".")
+                    {
+                        vrc = RTDirRemove(dir.c_str());
+                        if (RT_FAILURE(vrc))
+                            break;
+                        dir.stripFilename();
                     }
                     dirRenamed = true;
                 }
