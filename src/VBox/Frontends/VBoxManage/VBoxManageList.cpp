@@ -252,6 +252,25 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &rptrVirtualBox)
 
 
 /**
+ * List machine groups.
+ *
+ * @returns See produceList.
+ * @param   rptrVirtualBox      Reference to the IVirtualBox smart pointer.
+ */
+static HRESULT listGroups(const ComPtr<IVirtualBox> &rptrVirtualBox)
+{
+    SafeArray<BSTR> groups;
+    CHECK_ERROR2_RET(rptrVirtualBox, COMGETTER(MachineGroups)(ComSafeArrayAsOutParam(groups)), hrcCheck);
+
+    for (size_t i = 0; i < groups.size(); i++)
+    {
+        RTPrintf("\"%ls\"\n", groups[i]);
+    }
+    return S_OK;
+}
+
+
+/**
  * The type of lists we can produce.
  */
 enum enmListType
@@ -276,7 +295,8 @@ enum enmListType
     kListUsbFilters,
     kListSystemProperties,
     kListDhcpServers,
-    kListExtPacks
+    kListExtPacks,
+    kListGroups
 };
 
 
@@ -968,6 +988,10 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             rc = listExtensionPacks(rptrVirtualBox);
             break;
 
+        case kListGroups:
+            rc = listGroups(rptrVirtualBox);
+            break;
+
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -1012,6 +1036,7 @@ int handleList(HandlerArg *a)
         { "systemproperties",   kListSystemProperties,   RTGETOPT_REQ_NOTHING },
         { "dhcpservers",        kListDhcpServers,        RTGETOPT_REQ_NOTHING },
         { "extpacks",           kListExtPacks,           RTGETOPT_REQ_NOTHING },
+        { "groups",             kListGroups,             RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -1054,6 +1079,7 @@ int handleList(HandlerArg *a)
             case kListSystemProperties:
             case kListDhcpServers:
             case kListExtPacks:
+            case kListGroups:
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)
                 {
