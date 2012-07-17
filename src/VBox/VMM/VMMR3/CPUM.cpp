@@ -540,6 +540,12 @@ static CPUMCPUVENDOR cpumR3DetectVendor(uint32_t uEAX, uint32_t uEBX, uint32_t u
         &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
         return CPUMCPUVENDOR_INTEL;
 
+    if (    uEAX >= 1
+        &&  uEBX == X86_CPUID_VENDOR_VIA_EBX
+        &&  uECX == X86_CPUID_VENDOR_VIA_ECX
+        &&  uEDX == X86_CPUID_VENDOR_VIA_EDX)
+        return CPUMCPUVENDOR_VIA;
+
     /** @todo detect the other buggers... */
     return CPUMCPUVENDOR_UNKNOWN;
 }
