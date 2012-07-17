@@ -1371,8 +1371,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         }
 # endif
 
-        if (   (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
-            && pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        if (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
         {
             pMsr->u32IndexMSR = MSR_K8_TSC_AUX;
             pMsr->u32Reserved = 0;
@@ -3177,7 +3176,7 @@ ResumeExecution:
     if (    (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
         && !(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
     {
-        pVCpu->hwaccm.s.vmx.u64HostTSCAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        pVCpu->hwaccm.s.u64HostTSCAux = ASMRdMsr(MSR_K8_TSC_AUX);
         uint64_t u64GuestTSCAux = 0;
         rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTSCAux);
         AssertRC(rc2);
@@ -3193,20 +3192,15 @@ ResumeExecution:
     ASMAtomicWriteBool(&pVCpu->hwaccm.s.fCheckedTLBFlush, false);
     ASMAtomicIncU32(&pVCpu->hwaccm.s.cWorldSwitchExits);
 
-#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    /*
-     * Restore host's TSC_AUX.
-     */
-    if (    (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-        && !(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
-    {
-        ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hwaccm.s.vmx.u64HostTSCAux);
-    }
-#endif
-
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in TSC offset mode). */
     if (!(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
     {
+#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+        /* Restore host's TSC_AUX. */
+        if (pVCpu->hwaccm.s.vmx.proc_ctls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hwaccm.s.u64HostTSCAux);
+#endif
+
         TMCpuTickSetLastSeen(pVCpu,
                              ASMReadTSC() + pVCpu->hwaccm.s.vmx.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
     }
