@@ -590,11 +590,12 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     if (pTftpSession->OptionBlkSize.fRequested)
     {
         if (pTftpSession->OptionBlkSize.u64Value > UINT16_MAX)
-            return -1;
+            rc = VERR_INVALID_PARAMETER;
         else
             rc = tftpAddOptionToOACK(pData, m, "blksize", pTftpSession->OptionBlkSize.u64Value);
     }
-    if (pTftpSession->OptionTSize.fRequested)
+    if (   RT_SUCCESS(rc)
+        && pTftpSession->OptionTSize.fRequested)
         rc = tftpAddOptionToOACK(pData, m, "tsize", pTftpSession->OptionTSize.u64Value);
 
     rc = tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
