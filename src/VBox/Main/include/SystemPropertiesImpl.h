@@ -91,6 +91,8 @@ public:
     STDMETHOD(COMGETTER(LogHistoryCount))(ULONG *count);
     STDMETHOD(COMSETTER(LogHistoryCount))(ULONG count);
     STDMETHOD(COMGETTER(DefaultAudioDriver))(AudioDriverType_T *aAudioDriver);
+    STDMETHOD(COMGETTER(AutostartDatabasePath))(BSTR *aAutostartDbPath);
+    STDMETHOD(COMSETTER(AutostartDatabasePath))(IN_BSTR aAutostartDbPath);
 
     STDMETHOD(GetMaxNetworkAdapters)(ChipsetType_T aChipset, ULONG *aMaxInstances);
     STDMETHOD(GetMaxNetworkAdaptersOfType)(ChipsetType_T aChipset, NetworkAttachmentType_T aType, ULONG *aMaxInstances);
@@ -123,6 +125,7 @@ private:
     HRESULT setVRDEAuthLibrary(const Utf8Str &aPath);
     HRESULT setWebServiceAuthLibrary(const Utf8Str &aPath);
     HRESULT setDefaultVRDEExtPack(const Utf8Str &aPath);
+    HRESULT setAutostartDatabasePath(const Utf8Str &aPath);
 
     VirtualBox * const  mParent;
 

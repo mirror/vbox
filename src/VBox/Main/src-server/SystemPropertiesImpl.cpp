@@ -25,6 +25,7 @@
 #include "AutoCaller.h"
 #include "Global.h"
 #include "Logging.h"
+#include "AutostartDb.h"
 
 // generated header
 #include "SchemaDefs.h"
@@ -917,6 +918,39 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver)(AudioDriverType_T *
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(AutostartDatabasePath)(BSTR *aAutostartDbPath)
+{
+    CheckComArgOutPointerValid(aAutostartDbPath);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->strAutostartDatabasePath.cloneTo(aAutostartDbPath);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(AutostartDatabasePath)(IN_BSTR aAutostartDbPath)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = setAutostartDatabasePath(aAutostartDbPath);
+    alock.release();
+
+    if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->saveSettings();
+    }
+
+    return rc;
+}
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -945,6 +979,9 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
     if (FAILED(rc)) return rc;
 
     m->ulLogHistoryCount = data.ulLogHistoryCount;
+
+    rc = setAutostartDatabasePath(data.strAutostartDatabasePath);
+    if (FAILED(rc)) return rc;
 
     return S_OK;
 }
@@ -1122,4 +1159,30 @@ HRESULT SystemProperties::setDefaultVRDEExtPack(const Utf8Str &aExtPack)
     m->strDefaultVRDEExtPack = aExtPack;
 
     return S_OK;
+}
+
+HRESULT SystemProperties::setAutostartDatabasePath(const Utf8Str &aPath)
+{
+    HRESULT rc = S_OK;
+    AutostartDb *autostartDb = this->mParent->getAutostartDb();
+
+    if (!aPath.isEmpty())
+    {
+        /* Update path in the autostart database. */
+        int vrc = autostartDb->setAutostartDbPath(aPath.c_str());
+        if (RT_SUCCESS(vrc))
+            m->strAutostartDatabasePath = aPath;
+        else
+            rc = setError(E_FAIL,
+                          tr("Cannot set the autostart database path (%Rrc)"),
+                          vrc);
+    }
+    else
+    {
+        int vrc = autostartDb->setAutostartDbPath(NULL);
+        AssertRC(vrc);
+        m->strAutostartDatabasePath = "";
+    }
+
+    return rc;
 }

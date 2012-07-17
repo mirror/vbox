@@ -422,6 +422,12 @@ HRESULT VirtualBox::init()
         rc = m->pHost->loadSettings(m->pMainConfigFile->host);
         if (FAILED(rc)) throw rc;
 
+        /*
+         * Create autostart database object early, because the system properties
+         * might need it.
+         */
+        unconst(m->pAutostartDb) = new AutostartDb;
+
         /* create the system properties object, someone may need it too */
         unconst(m->pSystemProperties).createObject();
         rc = m->pSystemProperties->init(this);
@@ -488,8 +494,6 @@ HRESULT VirtualBox::init()
         if (FAILED(rc))
             throw rc;
 #endif
-
-        unconst(m->pAutostartDb) = new AutostartDb;
     }
     catch (HRESULT err)
     {
