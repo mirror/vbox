@@ -175,7 +175,7 @@ int AutostartDb::setAutostartDbPath(const char *pszAutostartDbPathNew)
     return VINF_SUCCESS;
 #else
     NOREF(pszAutostartDbPathNew);
-    return VERR_NOT_SUPPORTED
+    return VERR_NOT_SUPPORTED;
 #endif
 }
 
