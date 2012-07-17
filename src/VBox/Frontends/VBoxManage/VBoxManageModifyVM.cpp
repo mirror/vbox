@@ -52,6 +52,7 @@ using namespace com;
 enum
 {
     MODIFYVM_NAME = 1000,
+    MODIFYVM_GROUPS,
     MODIFYVM_OSTYPE,
     MODIFYVM_MEMORY,
     MODIFYVM_PAGEFUSION,
@@ -195,6 +196,7 @@ enum
 static const RTGETOPTDEF g_aModifyVMOptions[] =
 {
     { "--name",                     MODIFYVM_NAME,                      RTGETOPT_REQ_STRING },
+    { "--groups",                   MODIFYVM_GROUPS,                    RTGETOPT_REQ_STRING },
     { "--ostype",                   MODIFYVM_OSTYPE,                    RTGETOPT_REQ_STRING },
     { "--memory",                   MODIFYVM_MEMORY,                    RTGETOPT_REQ_UINT32 },
     { "--pagefusion",               MODIFYVM_PAGEFUSION,                RTGETOPT_REQ_BOOL_ONOFF },
@@ -363,6 +365,24 @@ static int32_t parsePci(const char* szPciAddr)
     return (aVals[0] << 8) | (aVals[1] << 3) | (aVals[2] << 0);
 }
 
+void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups)
+{
+    while (pcszGroups)
+    {
+        char *pComma = RTStrStr(pcszGroups, ",");
+        if (pComma)
+        {
+            Bstr(pcszGroups, pComma - pcszGroups).detachTo(pGroups->appendedRaw());
+            pcszGroups = pComma + 1;
+        }
+        else
+        {
+            Bstr(pcszGroups).detachTo(pGroups->appendedRaw());
+            pcszGroups = NULL;
+        }
+    }
+}
+
 int handleModifyVM(HandlerArg *a)
 {
     int c;
@@ -404,6 +424,13 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_NAME:
             {
                 CHECK_ERROR(machine, COMSETTER(Name)(Bstr(ValueUnion.psz).raw()));
+                break;
+            }
+            case MODIFYVM_GROUPS:
+            {
+                com::SafeArray<BSTR> groups;
+                parseGroups(ValueUnion.psz, &groups);
+                CHECK_ERROR(machine, COMSETTER(Groups)(ComSafeArrayAsInParam(groups)));
                 break;
             }
             case MODIFYVM_OSTYPE:
