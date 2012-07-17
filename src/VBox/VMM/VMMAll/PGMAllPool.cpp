@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -266,7 +266,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 {
                     for (unsigned i = 0; i < 2; i++)
                     {
-#  ifndef IN_RING0
+#  ifdef VBOX_WITH_RAW_MODE_NOT_R0
                         if ((uShw.pPDPae->a[iShw + i].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                         {
                             Assert(pgmMapAreMappingsEnabled(pVM));
@@ -274,7 +274,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw+i));
                             break;
                         }
-#  endif /* !IN_RING0 */
+#  endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                         if (uShw.pPDPae->a[iShw+i].n.u1Present)
                         {
                             LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw+i, uShw.pPDPae->a[iShw+i].u));
@@ -292,7 +292,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                             const unsigned iShw2 = iShw + 2 + i;
                             if (iShw2 < RT_ELEMENTS(uShw.pPDPae->a))
                             {
-#  ifndef IN_RING0
+#  ifdef VBOX_WITH_RAW_MODE_NOT_R0
                                 if ((uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                                 {
                                     Assert(pgmMapAreMappingsEnabled(pVM));
@@ -300,7 +300,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
                                     break;
                                 }
-#  endif /* !IN_RING0 */
+#  endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                                 if (uShw.pPDPae->a[iShw2].n.u1Present)
                                 {
                                     LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
@@ -370,7 +370,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 
                 LogFlow(("pgmPoolMonitorChainChanging: PGMPOOLKIND_32BIT_PD %x\n", iShw));
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPD));
-#  ifndef IN_RING0
+#  ifdef VBOX_WITH_RAW_MODE_NOT_R0
                 if (uShw.pPD->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(pVM));
@@ -379,10 +379,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     break;
                 }
-#  endif /* !IN_RING0 */
-#   ifndef IN_RING0
                 else
-#   endif /* !IN_RING0 */
+#  endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                 {
                     if (uShw.pPD->a[iShw].n.u1Present)
                     {
@@ -402,7 +400,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     if (    iShw2 != iShw
                         &&  iShw2 < RT_ELEMENTS(uShw.pPD->a))
                     {
-#   ifndef IN_RING0
+#   ifdef VBOX_WITH_RAW_MODE_NOT_R0
                         if (uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                         {
                             Assert(pgmMapAreMappingsEnabled(pVM));
@@ -411,7 +409,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                             break;
                         }
-#   endif /* !IN_RING0 */
+#   endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                         if (uShw.pPD->a[iShw2].n.u1Present)
                         {
                             LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPD->a[iShw2].u));
@@ -443,7 +441,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPD));
-#ifndef IN_RING0
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(pVM));
@@ -452,15 +450,15 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     break;
                 }
-#endif /* !IN_RING0 */
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                 /*
                  * Causes trouble when the guest uses a PDE to refer to the whole page table level
                  * structure. (Invalidate here; faults later on when it tries to change the page
                  * table entries -> recheck; probably only applies to the RC case.)
                  */
-# ifndef IN_RING0
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
                 else
-# endif /* !IN_RING0 */
+#endif
                 {
                     if (uShw.pPDPae->a[iShw].n.u1Present)
                     {
@@ -479,7 +477,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDEPAE);
                     AssertBreak(iShw2 < RT_ELEMENTS(uShw.pPDPae->a));
 
-#ifndef IN_RING0
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
                     if (    iShw2 != iShw
                         &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                     {
@@ -489,10 +487,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                         break;
                     }
-#endif /* !IN_RING0 */
-# ifndef IN_RING0
                     else
-# endif /* !IN_RING0 */
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
@@ -521,7 +517,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 const unsigned iShw = offPdpt / sizeof(X86PDPE);
                 if (iShw < X86_PG_PAE_PDPE_ENTRIES)          /* don't use RT_ELEMENTS(uShw.pPDPT->a), because that's for long mode only */
                 {
-# ifndef IN_RING0
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
                     if (uShw.pPDPT->a[iShw].u & PGM_PLXFLAGS_MAPPING)
                     {
                         Assert(pgmMapAreMappingsEnabled(pVM));
@@ -530,10 +526,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         LogFlow(("pgmPoolMonitorChainChanging: Detected pdpt conflict at iShw=%#x!\n", iShw));
                         break;
                     }
-# endif /* !IN_RING0 */
-#  ifndef IN_RING0
                     else
-#  endif /* !IN_RING0 */
+# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                     if (uShw.pPDPT->a[iShw].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
@@ -552,7 +546,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         if (    iShw2 != iShw
                             &&  iShw2 < X86_PG_PAE_PDPE_ENTRIES)
                         {
-# ifndef IN_RING0
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
                             if (uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
                             {
                                 Assert(pgmMapAreMappingsEnabled(pVM));
@@ -561,10 +555,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                 LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                                 break;
                             }
-# endif /* !IN_RING0 */
-#  ifndef IN_RING0
                             else
-#  endif /* !IN_RING0 */
+# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
                             if (uShw.pPDPT->a[iShw2].n.u1Present)
                             {
                                 LogFlow(("pgmPoolMonitorChainChanging: pae pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));

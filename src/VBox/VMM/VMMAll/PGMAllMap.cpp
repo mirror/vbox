@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -259,8 +259,7 @@ VMMDECL(int) PGMMapGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS 
 }
 
 
-
-#ifndef IN_RING0
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
 /**
  * Sets all PDEs involved with the mapping in the shadow page table.
  *
@@ -540,7 +539,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pCurrentShwPdpt);
 }
-#endif /* !IN_RING0 */
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
 #if defined(VBOX_STRICT) && !defined(IN_RING0)
 /**
@@ -651,7 +650,7 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
 }
 #endif /* defined(VBOX_STRICT) && !defined(IN_RING0) */
 
-#ifndef IN_RING0
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
 
 /**
  * Apply the hypervisor mappings to the active CR3.
@@ -925,5 +924,5 @@ int pgmMapResolveConflicts(PVM pVM)
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING0 */
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
