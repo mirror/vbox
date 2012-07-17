@@ -25,6 +25,9 @@ if [ "$2" = "--without-hardening" ]; then
     VBOX_WITH_HARDENING=
 fi
 
+PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
+PATH_OUT=$PATH_TMP
+FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
 PATH_ROOT="`cd \`dirname $0\`/../../../..; pwd`"
 PATH_LINUX="$PATH_ROOT/src/VBox/HostDrivers/linux"
 PATH_VBOXDRV="$PATH_ROOT/src/VBox/HostDrivers/Support"
