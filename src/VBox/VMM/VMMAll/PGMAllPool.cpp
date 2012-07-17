@@ -3163,7 +3163,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
             /* Update the counter if we're removing references. */
             if (!u32AndMask)
             {
-                Assert(pPage->cPresent );
+                Assert(pPage->cPresent);
                 Assert(pPool->cPresent);
                 pPage->cPresent--;
                 pPool->cPresent--;
