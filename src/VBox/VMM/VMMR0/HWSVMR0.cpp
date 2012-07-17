@@ -1177,6 +1177,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     bool        fSyncTPR    = false;
     unsigned    cResume     = 0;
     uint8_t     u8LastTPR   = 0; /* Initialized for potentially stupid compilers. */
+    uint32_t    u32HostExtFeatures = 0;
     PHMGLOBLCPUINFO pCpu    = 0;
     RTCCUINTREG uOldEFlags  = ~(RTCCUINTREG)0;
 #ifdef VBOX_STRICT
@@ -1395,20 +1396,10 @@ ResumeExecution:
 
 #ifdef LOG_ENABLED
     pCpu = HWACCMR0GetCurrentCpu();
-    if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
-        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
-    {
-        if (pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu)
-        {
-            LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu,
-                     pCpu->idCpu));
-        }
-        else
-        {
-            LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes,
-                     pCpu->cTLBFlushes));
-        }
-    }
+    if (pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu)
+        LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu, pCpu->idCpu));
+    else if (pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
         LogFlow(("Manual TLB flush\n"));
 #endif
@@ -1459,6 +1450,22 @@ ResumeExecution:
     Assert(idCpuCheck == RTMpCpuId());
 #endif
     TMNotifyStartOfExecution(pVCpu);
+
+    /*
+     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
+     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
+     */
+    u32HostExtFeatures = ASMCpuId_EDX(0x80000001);  /** @todo Move this elsewhere, not needed on every world switch */
+    if (    (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+        && !(pVMCB->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
+    {
+        pVCpu->hwaccm.s.u64HostTSCAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64GuestTSCAux = 0;
+        rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTSCAux);
+        AssertRC(rc2);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTSCAux);
+    }
+
 #ifdef VBOX_WITH_KERNEL_USING_XMM
     hwaccmR0SVMRunWrapXMM(pVCpu->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu,
                           pVCpu->hwaccm.s.svm.pfnVMRun);
@@ -1470,6 +1477,10 @@ ResumeExecution:
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in TSC offset mode). */
     if (!(pVMCB->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
     {
+        /* Restore host's TSC_AUX. */
+        if (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hwaccm.s.u64HostTSCAux);
+
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() +
                              pVMCB->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
     }
