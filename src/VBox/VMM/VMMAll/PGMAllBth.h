@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1978,7 +1978,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                             {
                                 RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
                                 NOREF(GCPtrCurPage);
-#ifndef IN_RING0
+#  ifdef VBOX_WITH_RAW_MODE_NOT_R0
                                 /*
                                  * Assuming kernel code will be marked as supervisor - and not as user level
                                  * and executed using a conforming code selector - And marked as readonly.
@@ -1991,7 +1991,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                                     ||  (   (pPage = pgmPhysGetPage(pVM, pPteSrc->u & GST_PTE_PG_MASK))
                                          && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                                    )
-#endif /* else: CSAM not active */
+#  endif /* else: CSAM not active */
                                    PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, *pPteSrc, pShwPage, iPTDst);
                                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                                       GCPtrCurPage, pPteSrc->n.u1Present,
@@ -2431,7 +2431,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
         GSTPTE const  *pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
         const GSTPTE   PteSrc  = *pPteSrc;
 
-#ifndef IN_RING0
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
         /* Bail out here as pgmPoolGetPage will return NULL and we'll crash below.
          * Our individual shadow handlers will provide more information and force a fatal exit.
          */
@@ -2822,7 +2822,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 
                     if (PteSrc.n.u1Present)
                     {
-# ifndef IN_RING0
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
                         /*
                          * Assuming kernel code will be marked as supervisor - and not as user level
                          * and executed using a conforming code selector - And marked as readonly.
@@ -2949,7 +2949,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                             PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage, SHW_PTE_GET_U(PteDstBase), &PteDst);
                         else if (PGM_PAGE_IS_BALLOONED(pPage))
                             SHW_PTE_SET(PteDst, 0); /* Handle ballooned pages at #PF time. */
-# ifndef IN_RING0
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
                         /*
                          * Assuming kernel code will be marked as supervisor and not as user level and executed
                          * using a conforming code selector. Don't check for readonly, as that implies the whole
@@ -3416,7 +3416,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
     && PGM_SHW_TYPE != PGM_TYPE_NESTED \
     && PGM_SHW_TYPE != PGM_TYPE_EPT
 
-# ifndef IN_RING0
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (!(fPage & X86_PTE_US))
     {
         /*
