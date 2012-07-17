@@ -231,6 +231,7 @@ struct SystemProperties
     com::Utf8Str            strVRDEAuthLibrary;
     com::Utf8Str            strWebServiceAuthLibrary;
     com::Utf8Str            strDefaultVRDEExtPack;
+    com::Utf8Str            strAutostartDatabasePath;
     uint32_t                ulLogHistoryCount;
 };
 
