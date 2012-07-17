@@ -57,7 +57,7 @@ typedef enum ENMTFTPSESSIONFMT
 typedef struct TFPTPSESSIONOPTDESC
 {
     int fRequested;
-    int u16Value;
+    uint64_t u64Value;
 } TFPTPSESSIONOPTDESC, *PTFPTPSESSIONOPTDESC;
 
 typedef struct TFTPSESSION
@@ -72,7 +72,6 @@ typedef struct TFTPSESSION
     ENMTFTPSESSIONFMT enmTftpFmt;
     TFPTPSESSIONOPTDESC OptionBlkSize;
     TFPTPSESSIONOPTDESC OptionTSize;
-    TFPTPSESSIONOPTDESC OptionSize;
     TFPTPSESSIONOPTDESC OptionTimeout;
 } TFTPSESSION, *PTFTPSESSION, **PPTFTPSESSION;
 
@@ -243,7 +242,7 @@ DECLINLINE(void) tftpSessionTerminate(PTFTPSESSION pTftpSession)
 DECLINLINE(int)tftpSessionParseAndMarkOption(const char *pcszRawOption, PTFPTPSESSIONOPTDESC pTftpSessionOption)
 {
     int rc  = VINF_SUCCESS;
-    rc = RTStrToInt16Full(pcszRawOption, 0, (int16_t *)&pTftpSessionOption->u16Value);
+    rc = RTStrToInt64Full(pcszRawOption, 0, (int64_t *)&pTftpSessionOption->u64Value);
     AssertRCReturn(rc, rc);
     pTftpSessionOption->fRequested = 1;
     return rc;
@@ -292,14 +291,15 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
         {
             if (!RTStrICmp("blksize", g_TftpDesc[idxOptionArg].pszName))
                 rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionBlkSize);
-            else if (!RTStrICmp("size", g_TftpDesc[idxOptionArg].pszName))
-                rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionSize);
-            else if (!RTStrICmp("tsize", g_TftpDesc[idxOptionArg].pszName))
+            if (!RTStrICmp("tsize", g_TftpDesc[idxOptionArg].pszName))
                 rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionTSize);
-            else if (!RTStrICmp("timeoute", g_TftpDesc[idxOptionArg].pszName))
-                rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionSize);
+            if (!RTStrICmp("timeoute", g_TftpDesc[idxOptionArg].pszName))
+                rc = tftpSessionParseAndMarkOption(pszTftpRRQRaw, &pTftpSession->OptionTimeout);
+/*
+            @todo: process unrecognized options ??
             else
                 rc = VERR_INVALID_PARAMETER;
+*/
             if (RT_FAILURE(rc))
             {
                 LogFlowFuncLeaveRC(rc);
@@ -396,6 +396,7 @@ DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, 
     char aszSessionFileName[TFTP_FILENAME_MAX];
     size_t cbSessionFileName;
     int rc = VINF_SUCCESS;
+    LogFlowFuncEnter();
     cbSessionFileName = RTStrPrintf(aszSessionFileName, TFTP_FILENAME_MAX, "%s/%s",
                     tftp_prefix, pTftpSession->pszFilename);
     if (cbSessionFileName >= TFTP_FILENAME_MAX)
@@ -403,6 +404,7 @@ DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, 
         LogFlowFuncLeaveRC(VERR_INTERNAL_ERROR);
         return VERR_INTERNAL_ERROR;
     }
+    LogFunc(("aszSessionFileName: %s\n", aszSessionFileName));
 
     if (!RTFileExists(aszSessionFileName))
     {
@@ -438,11 +440,13 @@ DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSe
     }
 
     if (pTftpSession->OptionTSize.fRequested)
-        pTftpSession->OptionTSize.u16Value = (uint16_t)cbSessionFile;
-    if (   !pTftpSession->OptionBlkSize.u16Value
+    {
+       pTftpSession->OptionTSize.u64Value = cbSessionFile;
+    }
+    if (   !pTftpSession->OptionBlkSize.u64Value
         && !pTftpSession->OptionBlkSize.fRequested)
     {
-        pTftpSession->OptionBlkSize.u16Value = 1428;
+        pTftpSession->OptionBlkSize.u64Value = 1428;
     }
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -483,12 +487,13 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
     AssertPtrReturn(pcTftpSession, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pu8Data, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbReadData, VERR_INVALID_PARAMETER);
+    AssertReturn(pcTftpSession->OptionBlkSize.u64Value < UINT16_MAX, VERR_INVALID_PARAMETER);
     LogFlowFunc(("pcTftpSession:%p, pu8Data:%p, pcbReadData:%p\n",
                     pcTftpSession,
                     pu8Data,
                     pcbReadData));
 
-    u16BlkSize = pcTftpSession->OptionBlkSize.u16Value;
+    u16BlkSize = (uint16_t)pcTftpSession->OptionBlkSize.u64Value;
     rc = pftpSessionOpenFile(pData, pcTftpSession, &hSessionFile);
     if (RT_FAILURE(rc))
     {
@@ -523,19 +528,19 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
     return rc;
 }
 
-DECLINLINE(int) tftpAddOptionToOACK(PNATState pData, struct mbuf *pMBuf, const char *pszOptName, uint16_t u16OptValue)
+DECLINLINE(int) tftpAddOptionToOACK(PNATState pData, struct mbuf *pMBuf, const char *pszOptName, uint64_t u64OptValue)
 {
     char aszOptionBuffer[256];
     size_t iOptLength = 0;
     int rc = VINF_SUCCESS;
     int cbMBufCurrent = pMBuf->m_len;
-    LogFlowFunc(("pMBuf:%p, pszOptName:%s, u16OptValue:%u\n", pMBuf, pszOptName, u16OptValue));
+    LogFlowFunc(("pMBuf:%p, pszOptName:%s, u16OptValue:%ld\n", pMBuf, pszOptName, u64OptValue));
     AssertPtrReturn(pMBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszOptName, VERR_INVALID_PARAMETER);
 
     RT_ZERO(aszOptionBuffer);
     iOptLength += RTStrPrintf(aszOptionBuffer, 256 , "%s", pszOptName) + 1;
-    iOptLength += RTStrPrintf(aszOptionBuffer + iOptLength, 256 - iOptLength , "%u", u16OptValue) + 1;
+    iOptLength += RTStrPrintf(aszOptionBuffer + iOptLength, 256 - iOptLength , "%u", u64OptValue) + 1;
     if (iOptLength > M_TRAILINGSPACE(pMBuf))
         rc = VERR_BUFFER_OVERFLOW; /* buffer too small */
     else
@@ -577,11 +582,14 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     pTftpIpHeader->u16TftpOpType = RT_H2N_U16_C(TFTP_OACK);
 
     if (pTftpSession->OptionBlkSize.fRequested)
-        rc = tftpAddOptionToOACK(pData, m, "blksize", pTftpSession->OptionBlkSize.u16Value);
-    else if (pTftpSession->OptionSize.fRequested)
-        rc = tftpAddOptionToOACK(pData, m, "size", pTftpSession->OptionSize.u16Value);
-    else if (pTftpSession->OptionTSize.fRequested)
-        rc = tftpAddOptionToOACK(pData, m, "tsize", pTftpSession->OptionTSize.u16Value);
+    {
+        if (pTftpSession->OptionBlkSize.u64Value > UINT16_MAX)
+            return -1;
+        else
+            rc = tftpAddOptionToOACK(pData, m, "blksize", pTftpSession->OptionBlkSize.u64Value);
+    }
+    if (pTftpSession->OptionTSize.fRequested)
+        rc = tftpAddOptionToOACK(pData, m, "tsize", pTftpSession->OptionTSize.u64Value);
 
     rc = tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
     return RT_SUCCESS(rc) ? 0 : -1;
@@ -596,9 +604,13 @@ DECLINLINE(int) tftpSendError(PNATState pData,
     struct mbuf *m = NULL;
     PTFTPIPHDR pTftpIpHeader = NULL;
 
+    LogFlowFunc(("ENTER: errorcode: %RX16, msg: %s\n", errorcode, msg));
     m = slirpTftpMbufAlloc(pData);
     if (!m)
+    {
+        LogFlowFunc(("LEAVE: Can't allocate mbuf\n"));
         return -1;
+    }
 
     m->m_data += if_maxlinkhdr;
     m->m_len = sizeof(TFTPIPHDR)
@@ -615,6 +627,7 @@ DECLINLINE(int) tftpSendError(PNATState pData,
 
     tftpSessionTerminate(pTftpSession);
 
+    LogFlowFuncLeave();
     return 0;
 }
 
@@ -625,7 +638,7 @@ static int tftpSendData(PNATState pData,
 {
     struct mbuf *m;
     PTFTPIPHDR pTftpIpHeader;
-    int cbRead;
+    int cbRead = 0;
     int rc = VINF_SUCCESS;
 
     if (u16Block == pTftpSession->cTftpAck)
