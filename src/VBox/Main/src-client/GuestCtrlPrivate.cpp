@@ -20,6 +20,8 @@
  *   Header Files                                                             *
  ******************************************************************************/
 #include "GuestCtrlImplPrivate.h"
+
+#include <iprt/ctype.h>
 #ifdef DEBUG
 # include "Logging.h"
 # include <iprt/file.h>
@@ -209,12 +211,21 @@ Utf8Str GuestEnvironment::Get(size_t nPos)
     size_t curPos = 0;
     std::map<Utf8Str, Utf8Str>::const_iterator it = mEnvironment.begin();
     for (; it != mEnvironment.end() && curPos < nPos;
-         ++it) { }
+         ++it, ++curPos) { }
 
     if (it != mEnvironment.end())
         return Utf8Str(it->first + "=" + it->second);
 
     return Utf8Str("");
+}
+
+Utf8Str GuestEnvironment::Get(const Utf8Str &strKey)
+{
+    std::map <Utf8Str, Utf8Str>::const_iterator itEnv = mEnvironment.find(strKey);
+    Utf8Str strRet;
+    if (itEnv != mEnvironment.end())
+        strRet = itEnv->second;
+    return strRet;
 }
 
 bool GuestEnvironment::Has(const Utf8Str &strKey)
@@ -225,29 +236,50 @@ bool GuestEnvironment::Has(const Utf8Str &strKey)
 
 int GuestEnvironment::Set(const Utf8Str &strKey, const Utf8Str &strValue)
 {
-    mEnvironment[strValue] = strValue;
-    return VINF_SUCCESS;
+    /** @todo Do some validation using regex. */
+    if (strKey.isEmpty())
+        return VERR_INVALID_PARAMETER;
+
+    int rc = VINF_SUCCESS;
+    const char *pszString = strKey.c_str();
+    while (*pszString != '\0' && RT_SUCCESS(rc))
+    {
+         if (!RT_C_IS_ALNUM(*pszString++))
+             rc = VERR_INVALID_PARAMETER;
+    }
+
+    if (RT_SUCCESS(rc))
+        mEnvironment[strKey] = strValue;
+
+    return rc;
 }
 
 int GuestEnvironment::Set(const Utf8Str &strPair)
 {
     RTCList<RTCString> listPair = strPair.split("=", RTCString::KeepEmptyParts);
+    /* Skip completely empty pairs. Note that we still need pairs with a valid
+     * (set) key and an empty value. */
+    if (listPair.size() <= 1)
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
     size_t p = 0;
-    while(p < listPair.size())
+    while(p < listPair.size() && RT_SUCCESS(rc))
     {
         Utf8Str strKey = listPair.at(p++);
-        if (strKey.isEmpty()) /* Skip pairs with empty keys (e.g. "=FOO"). */
+        if (   strKey.isEmpty()
+            || strKey.equals("=")) /* Skip pairs with empty keys (e.g. "=FOO"). */
         {
-            p++;
-            continue;
+            break;
         }
         Utf8Str strValue;
-        if (p < listPair.size())
+        if (p < listPair.size()) /* Does the list also contain a value? */
             strValue = listPair.at(p++);
-       mEnvironment[strKey] = strValue;
+
+       rc = Set(strKey, strValue);
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 size_t GuestEnvironment::Size(void)

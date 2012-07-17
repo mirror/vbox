@@ -57,7 +57,10 @@ void GuestSession::FinalRelease(void)
 int GuestSession::init(Guest *aGuest, uint32_t aSessionID,
                        Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName)
 {
+    LogFlowThisFuncEnter();
+
     AssertPtrReturn(aGuest, VERR_INVALID_POINTER);
+    AssertReturn(aSessionID, VERR_INVALID_PARAMETER);
 
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
@@ -74,6 +77,7 @@ int GuestSession::init(Guest *aGuest, uint32_t aSessionID,
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
 
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -83,7 +87,7 @@ int GuestSession::init(Guest *aGuest, uint32_t aSessionID,
  */
 void GuestSession::uninit(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFuncEnter();
 
     /* Enclose the state transition Ready->InUninit->NotReady. */
     AutoUninitSpan autoUninitSpan(this);
@@ -116,6 +120,8 @@ void GuestSession::uninit(void)
     mData.mProcesses.clear();
 
     mData.mParent->sessionClose(this);
+
+    LogFlowThisFuncLeave();
 #endif
 }
 
@@ -127,6 +133,8 @@ STDMETHODIMP GuestSession::COMGETTER(User)(BSTR *aUser)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aUser);
 
     AutoCaller autoCaller(this);
@@ -136,6 +144,7 @@ STDMETHODIMP GuestSession::COMGETTER(User)(BSTR *aUser)
 
     mData.mCredentials.mUser.cloneTo(aUser);
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -145,6 +154,8 @@ STDMETHODIMP GuestSession::COMGETTER(Domain)(BSTR *aDomain)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aDomain);
 
     AutoCaller autoCaller(this);
@@ -154,6 +165,7 @@ STDMETHODIMP GuestSession::COMGETTER(Domain)(BSTR *aDomain)
 
     mData.mCredentials.mDomain.cloneTo(aDomain);
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -163,6 +175,8 @@ STDMETHODIMP GuestSession::COMGETTER(Name)(BSTR *aName)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller(this);
@@ -172,6 +186,7 @@ STDMETHODIMP GuestSession::COMGETTER(Name)(BSTR *aName)
 
     mData.mName.cloneTo(aName);
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -181,6 +196,8 @@ STDMETHODIMP GuestSession::COMGETTER(Id)(ULONG *aId)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller(this);
@@ -190,6 +207,7 @@ STDMETHODIMP GuestSession::COMGETTER(Id)(ULONG *aId)
 
     *aId = mData.mId;
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -199,6 +217,8 @@ STDMETHODIMP GuestSession::COMGETTER(Timeout)(ULONG *aTimeout)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aTimeout);
 
     AutoCaller autoCaller(this);
@@ -208,6 +228,7 @@ STDMETHODIMP GuestSession::COMGETTER(Timeout)(ULONG *aTimeout)
 
     *aTimeout = mData.mTimeout;
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -217,6 +238,8 @@ STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutSafeArrayPointerValid(aEnvironment);
 
     AutoCaller autoCaller(this);
@@ -224,11 +247,18 @@ STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> arguments(mData.mEnvironment.Size());
-    for (size_t i = 0; i < arguments.size(); i++)
-        arguments[i] = Bstr(mData.mEnvironment.Get(i)).raw();
-    arguments.detachTo(ComSafeArrayOutArg(aEnvironment));
+    size_t cEnvVars = mData.mEnvironment.Size();
+    LogFlowThisFunc(("%s cEnvVars=%RU32\n", mData.mName.c_str(), cEnvVars));
+    com::SafeArray<BSTR> environment(cEnvVars);
 
+    for (size_t i = 0; i < cEnvVars; i++)
+    {
+        Bstr strEnv(mData.mEnvironment.Get(i));
+        strEnv.cloneTo(&environment[i]);
+    }
+    environment.detachTo(ComSafeArrayOutArg(aEnvironment));
+
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -238,6 +268,8 @@ STDMETHODIMP GuestSession::COMGETTER(Processes)(ComSafeArrayOut(IGuestProcess *,
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutSafeArrayPointerValid(aProcesses);
 
     AutoCaller autoCaller(this);
@@ -248,6 +280,7 @@ STDMETHODIMP GuestSession::COMGETTER(Processes)(ComSafeArrayOut(IGuestProcess *,
     SafeIfaceArray<IGuestProcess> collection(mData.mProcesses);
     collection.detachTo(ComSafeArrayOutArg(aProcesses));
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -257,6 +290,8 @@ STDMETHODIMP GuestSession::COMGETTER(Directories)(ComSafeArrayOut(IGuestDirector
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutSafeArrayPointerValid(aDirectories);
 
     AutoCaller autoCaller(this);
@@ -267,6 +302,7 @@ STDMETHODIMP GuestSession::COMGETTER(Directories)(ComSafeArrayOut(IGuestDirector
     SafeIfaceArray<IGuestDirectory> collection(mData.mDirectories);
     collection.detachTo(ComSafeArrayOutArg(aDirectories));
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -276,6 +312,8 @@ STDMETHODIMP GuestSession::COMGETTER(Files)(ComSafeArrayOut(IGuestFile *, aFiles
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutSafeArrayPointerValid(aFiles);
 
     AutoCaller autoCaller(this);
@@ -286,6 +324,7 @@ STDMETHODIMP GuestSession::COMGETTER(Files)(ComSafeArrayOut(IGuestFile *, aFiles
     SafeIfaceArray<IGuestFile> collection(mData.mFiles);
     collection.detachTo(ComSafeArrayOutArg(aFiles));
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -443,8 +482,11 @@ STDMETHODIMP GuestSession::Close(void)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     uninit();
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -454,6 +496,8 @@ STDMETHODIMP GuestSession::CopyFrom(IN_BSTR aSource, IN_BSTR aDest, ComSafeArray
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -466,6 +510,8 @@ STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -478,6 +524,8 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode, ULONG aFl
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -490,6 +538,8 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -502,6 +552,8 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -514,6 +566,8 @@ STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, IN_BSTR
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -526,6 +580,8 @@ STDMETHODIMP GuestSession::DirectoryQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **a
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -538,6 +594,8 @@ STDMETHODIMP GuestSession::DirectoryRemove(IN_BSTR aPath)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -550,6 +608,8 @@ STDMETHODIMP GuestSession::DirectoryRemoveRecursive(IN_BSTR aPath, ComSafeArrayI
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -562,6 +622,8 @@ STDMETHODIMP GuestSession::DirectoryRename(IN_BSTR aSource, IN_BSTR aDest, ComSa
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -574,6 +636,8 @@ STDMETHODIMP GuestSession::DirectorySetACL(IN_BSTR aPath, IN_BSTR aACL)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -586,6 +650,8 @@ STDMETHODIMP GuestSession::EnvironmentClear(void)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -593,6 +659,32 @@ STDMETHODIMP GuestSession::EnvironmentClear(void)
 
     mData.mEnvironment.Clear();
 
+    LogFlowFuncLeaveRC(S_OK);
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP GuestSession::EnvironmentGet(IN_BSTR aName, BSTR *aValue)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY((aName) == NULL || *(aName) == '\0'))
+        return setError(E_INVALIDARG, tr("No value name specified"));
+
+    CheckComArgOutPointerValid(aValue);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Bstr strValue(mData.mEnvironment.Get(Utf8Str(aName)));
+    strValue.cloneTo(aValue);
+
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -602,14 +694,21 @@ STDMETHODIMP GuestSession::EnvironmentSet(IN_BSTR aName, IN_BSTR aValue)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY((aName) == NULL || *(aName) == '\0'))
+        return setError(E_INVALIDARG, tr("No value name specified"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mEnvironment.Set(Utf8Str(aName), Utf8Str(aValue));
+    int rc = mData.mEnvironment.Set(Utf8Str(aName), Utf8Str(aValue));
 
-    return S_OK;
+    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+    LogFlowFuncLeaveRC(hr);
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -618,6 +717,8 @@ STDMETHODIMP GuestSession::EnvironmentSetArray(ComSafeArrayIn(IN_BSTR, aValues))
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -627,9 +728,15 @@ STDMETHODIMP GuestSession::EnvironmentSetArray(ComSafeArrayIn(IN_BSTR, aValues))
 
     int rc = VINF_SUCCESS;
     for (size_t i = 0; i < environment.size() && RT_SUCCESS(rc); i++)
-        rc = mData.mEnvironment.Set(Utf8Str(environment[i]));
+    {
+        Utf8Str strEnv(environment[i]);
+        if (!strEnv.isEmpty()) /* Silently skip empty entries. */
+            rc = mData.mEnvironment.Set(strEnv);
+    }
 
-    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+    LogFlowFuncLeaveRC(hr);
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -638,6 +745,8 @@ STDMETHODIMP GuestSession::EnvironmentUnset(IN_BSTR aName)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -645,6 +754,7 @@ STDMETHODIMP GuestSession::EnvironmentUnset(IN_BSTR aName)
 
     mData.mEnvironment.Unset(Utf8Str(aName));
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -654,6 +764,8 @@ STDMETHODIMP GuestSession::FileCreateTemp(IN_BSTR aTemplate, ULONG aMode, IN_BST
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -666,6 +778,8 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -678,6 +792,8 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -690,6 +806,8 @@ STDMETHODIMP GuestSession::FileQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **aInfo)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -702,6 +820,8 @@ STDMETHODIMP GuestSession::FileQuerySize(IN_BSTR aPath, LONG64 *aSize)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -714,6 +834,8 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -726,6 +848,8 @@ STDMETHODIMP GuestSession::FileRename(IN_BSTR aSource, IN_BSTR aDest, ComSafeArr
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -738,6 +862,8 @@ STDMETHODIMP GuestSession::FileSetACL(IN_BSTR aPath, IN_BSTR aACL)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -751,6 +877,7 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
 
     com::SafeArray<LONG> affinity;
 
@@ -767,6 +894,8 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -811,7 +940,10 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
 
         rc = processCreateExInteral(procInfo, aProcess);
     }
-    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+
+    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+    LogFlowFuncLeaveRC(hr);
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -820,6 +952,8 @@ STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **aProcess)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -832,6 +966,8 @@ STDMETHODIMP GuestSession::SetTimeout(ULONG aTimeoutMS)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -844,6 +980,8 @@ STDMETHODIMP GuestSession::SymlinkCreate(IN_BSTR aSource, IN_BSTR aTarget, Symli
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -856,6 +994,8 @@ STDMETHODIMP GuestSession::SymlinkExists(IN_BSTR aSymlink, BOOL *aExists)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -868,6 +1008,8 @@ STDMETHODIMP GuestSession::SymlinkRead(IN_BSTR aSymlink, ComSafeArrayIn(SymlinkR
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -880,6 +1022,8 @@ STDMETHODIMP GuestSession::SymlinkRemoveDirectory(IN_BSTR aPath)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -892,6 +1036,8 @@ STDMETHODIMP GuestSession::SymlinkRemoveFile(IN_BSTR aFile)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 

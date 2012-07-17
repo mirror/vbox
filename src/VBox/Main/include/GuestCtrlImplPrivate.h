@@ -121,6 +121,8 @@ public:
 
     static void FreeEnvironmentBlock(void *pvEnv);
 
+    Utf8Str Get(const Utf8Str &strKey);
+
     Utf8Str Get(size_t nPos);
 
     bool Has(const Utf8Str &strKey);

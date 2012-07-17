@@ -2688,7 +2688,6 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int rc = VERR_MAX_PROCS_REACHED;
-    ComObjPtr<GuestSession> pGuestSession;
     try
     {
         /* Create a new session ID and assign it. */
@@ -2698,11 +2697,8 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
         for (;;)
         {
             /* Is the context ID already used?  Try next ID ... */
-            if (!sessionExists(uNewSessionID++))
+            if (!sessionExists(++uNewSessionID))
             {
-                /* Callback with context ID was not found. This means
-                 * we can use this context ID for our new callback we want
-                 * to add below. */
                 rc = VINF_SUCCESS;
                 break;
             }
@@ -2713,18 +2709,19 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
         if (RT_FAILURE(rc)) throw rc;
 
         /* Create the session object. */
+        ComObjPtr<GuestSession> pGuestSession;
         HRESULT hr = pGuestSession.createObject();
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
         rc = pGuestSession->init(this, uNewSessionID,
                                  strUser, strPassword, strDomain, strSessionName);
-        if (RT_FAILURE(rc)) throw VBOX_E_IPRT_ERROR;
-
-        mData.mGuestSessions[uNewSessionID] = pGuestSession;
+        if (RT_FAILURE(rc)) throw rc;
 
         /* Return guest session to the caller. */
         hr = pGuestSession.queryInterfaceTo(aGuestSession);
         if (FAILED(hr)) throw VERR_COM_OBJECT_NOT_FOUND;
+
+        mData.mGuestSessions[uNewSessionID] = pGuestSession;
     }
     catch (int rc2)
     {
