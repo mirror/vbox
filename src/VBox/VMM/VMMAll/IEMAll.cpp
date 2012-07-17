@@ -76,12 +76,16 @@
 *******************************************************************************/
 #define LOG_GROUP   LOG_GROUP_IEM
 #include <VBox/vmm/iem.h>
+#include <VBox/vmm/cpum.h>
 #include <VBox/vmm/pgm.h>
 #include <internal/pgm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+# include <VBox/vmm/patm.h>
+#endif
 #ifdef IEM_VERIFICATION_MODE
 # include <VBox/vmm/rem.h>
 # include <VBox/vmm/mm.h>
@@ -628,7 +632,9 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
     CPUMGuestLazyLoadHiddenCsAndSs(IEMCPU_TO_VMCPU(pIemCpu));
+#endif
     pIemCpu->uCpl               = CPUMGetGuestCPL(IEMCPU_TO_VMCPU(pIemCpu));
     IEMMODE enmMode = CPUMIsGuestIn64BitCodeEx(pCtx)
                     ? IEMMODE_64BIT
@@ -696,6 +702,22 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
     int rc = PGMGstGetPage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrPC, &fFlags, &GCPhys);
     if (RT_FAILURE(rc))
     {
+#if defined(IN_RC) && defined(VBOX_WITH_RAW_MODE)
+        /* Allow interpretation of patch manager code blocks since they can for
+           instance throw #PFs for perfectly good reasons. */
+        if (   (pCtx->cs.Sel & X86_SEL_RPL) == 1
+            && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), GCPtrPC))
+        {
+            uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
+            if (cbToTryRead > cbLeftOnPage)
+                cbToTryRead = cbLeftOnPage;
+            if (cbToTryRead > sizeof(pIemCpu->abOpcode))
+                cbToTryRead = sizeof(pIemCpu->abOpcode);
+            memcpy(pIemCpu->abOpcode, (void const *)(uintptr_t)GCPtrPC, cbToTryRead);
+            pIemCpu->cbOpcode = cbToTryRead;
+            return VINF_SUCCESS;
+        }
+#endif
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - rc=%Rrc\n", GCPtrPC, rc));
         return iemRaisePageFault(pIemCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, rc);
     }
@@ -2643,19 +2665,28 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
  * @param   pIemCpu             The per CPU data.
  * @param   iSegReg             The segment register.
  */
-static PCPUMSELREGHID iemSRegGetHid(PIEMCPU pIemCpu, uint8_t iSegReg)
+static PCPUMSELREG iemSRegGetHid(PIEMCPU pIemCpu, uint8_t iSegReg)
 {
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
+    PCPUMSELREG pSReg;
     switch (iSegReg)
     {
-        case X86_SREG_ES: return &pCtx->es;
-        case X86_SREG_CS: return &pCtx->cs;
-        case X86_SREG_SS: return &pCtx->ss;
-        case X86_SREG_DS: return &pCtx->ds;
-        case X86_SREG_FS: return &pCtx->fs;
-        case X86_SREG_GS: return &pCtx->gs;
+        case X86_SREG_ES: pSReg = &pCtx->es; break;
+        case X86_SREG_CS: pSReg = &pCtx->cs; break;
+        case X86_SREG_SS: pSReg = &pCtx->ss; break;
+        case X86_SREG_DS: pSReg = &pCtx->ds; break;
+        case X86_SREG_FS: pSReg = &pCtx->fs; break;
+        case X86_SREG_GS: pSReg = &pCtx->gs; break;
+        default:
+            AssertFailedReturn(NULL);
     }
-    AssertFailedReturn(NULL);
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg))
+        CPUMGuestLazyLoadHiddenSelectorReg(IEMCPU_TO_VMCPU(pIemCpu), pSReg);
+#else
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg));
+#endif
+    return pSReg;
 }
 
 
@@ -4407,8 +4438,9 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
  * @param   GCPhysMem           The physical address.
  * @param   fAccess             The intended access.
  * @param   ppvMem              Where to return the mapping address.
+ * @param   pLock               The PGM lock.
  */
-static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, void **ppvMem)
+static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, void **ppvMem, PPGMPAGEMAPLOCK pLock)
 {
 #ifdef IEM_VERIFICATION_MODE
     /* Force the alternative path so we can ignore writes. */
@@ -4422,21 +4454,21 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
      */
     /** @todo need some better API. */
 #ifdef IN_RING3
+    RT_ZERO(*pLock);
     return PGMR3PhysTlbGCPhys2Ptr(IEMCPU_TO_VM(pIemCpu),
                                   GCPhysMem,
                                   RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
                                   ppvMem);
 #else
-//# error "Implement me"
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
         return PGMPhysGCPhys2CCPtr(IEMCPU_TO_VM(pIemCpu),
                                    GCPhysMem,
                                    ppvMem,
-                                   /** @todo pLock */ NULL);
+                                   pLock);
     return PGMPhysGCPhys2CCPtrReadOnly(IEMCPU_TO_VM(pIemCpu),
                                        GCPhysMem,
                                        (void const **)ppvMem,
-                                       /** @todo pLock */ NULL);
+                                       pLock);
 #endif
 }
 
@@ -4450,13 +4482,17 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
  * @param   GCPhysMem           The physical address.
  * @param   fAccess             The intended access.
  * @param   pvMem               What iemMemPageMap returned.
+ * @param   pLock               The PGM lock.
  */
-DECLINLINE(void) iemMemPageUnmap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, const void *pvMem)
+DECLINLINE(void) iemMemPageUnmap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, const void *pvMem, PPGMPAGEMAPLOCK pLock)
 {
     NOREF(pIemCpu);
     NOREF(GCPhysMem);
     NOREF(fAccess);
     NOREF(pvMem);
+#ifndef IN_RING3
+    PGMPhysReleasePageMappingLock(IEMCPU_TO_VM(pIemCpu), pLock);
+#endif
 }
 
 
@@ -4856,7 +4892,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
         return rcStrict;
 
     void *pvMem;
-    rcStrict = iemMemPageMap(pIemCpu, GCPhysFirst, fAccess, &pvMem);
+    rcStrict = iemMemPageMap(pIemCpu, GCPhysFirst, fAccess, &pvMem, &pIemCpu->aMemMappingLocks[iMemMap].Lock);
     if (rcStrict != VINF_SUCCESS)
         return iemMemBounceBufferMapPhys(pIemCpu, iMemMap, ppvMem, cbMem, GCPhysFirst, fAccess, rcStrict);
 
@@ -4895,6 +4931,11 @@ static VBOXSTRICTRC iemMemCommitAndUnmap(PIEMCPU pIemCpu, void *pvMem, uint32_t 
     if (   (pIemCpu->aMemMappings[iMemMap].fAccess & (IEM_ACCESS_BOUNCE_BUFFERED | IEM_ACCESS_TYPE_WRITE))
         == (IEM_ACCESS_BOUNCE_BUFFERED | IEM_ACCESS_TYPE_WRITE))
         return iemMemBounceBufferCommitAndUnmap(pIemCpu, iMemMap);
+
+#ifndef IN_RING3
+    /* Unlock it. */
+    PGMPhysReleasePageMappingLock(IEMCPU_TO_VM(pIemCpu), &pIemCpu->aMemMappingLocks[iMemMap].Lock);
+#endif
 
     /* Free the entry. */
     pIemCpu->aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;

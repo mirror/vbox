@@ -129,12 +129,14 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
              * If we can map the page without trouble, do a block processing
              * until the end of the current page.
              */
+            PGMPAGEMAPLOCK PgLockSrc2Mem;
             OP_TYPE const *puSrc2Mem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, (void **)&puSrc2Mem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, (void **)&puSrc2Mem, &PgLockSrc2Mem);
             if (rcStrict == VINF_SUCCESS)
             {
+                PGMPAGEMAPLOCK PgLockSrc1Mem;
                 OP_TYPE const *puSrc1Mem;
-                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, (void **)&puSrc1Mem);
+                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, (void **)&puSrc1Mem, &PgLockSrc1Mem);
                 if (rcStrict == VINF_SUCCESS)
                 {
                     if (!memcmp(puSrc2Mem, puSrc1Mem, cLeftPage * (OP_SIZE / 8)))
@@ -167,12 +169,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
                     pCtx->ADDR_rDI = uSrc2AddrReg;
                     pCtx->eflags.u = uEFlags;
 
-                    iemMemPageUnmap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, puSrc1Mem);
-                    iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, puSrc1Mem, &PgLockSrc1Mem);
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem, &PgLockSrc2Mem);
                     continue;
                 }
             }
-            iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
+            iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem, &PgLockSrc2Mem);
         }
 
         /*
@@ -287,11 +289,13 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
              * until the end of the current page.
              */
             OP_TYPE const *puSrc2Mem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, (void **)&puSrc2Mem);
+            PGMPAGEMAPLOCK PgLockSrc2Mem;
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, (void **)&puSrc2Mem, &PgLockSrc2Mem);
             if (rcStrict == VINF_SUCCESS)
             {
                 OP_TYPE const *puSrc1Mem;
-                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, (void **)&puSrc1Mem);
+                PGMPAGEMAPLOCK PgLockSrc1Mem;
+                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, (void **)&puSrc1Mem, &PgLockSrc1Mem);
                 if (rcStrict == VINF_SUCCESS)
                 {
                     if (memcmp(puSrc2Mem, puSrc1Mem, cLeftPage * (OP_SIZE / 8)))
@@ -324,11 +328,11 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
                     pCtx->ADDR_rDI = uSrc2AddrReg;
                     pCtx->eflags.u = uEFlags;
 
-                    iemMemPageUnmap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, puSrc1Mem);
-                    iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, puSrc1Mem, &PgLockSrc1Mem);
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem, &PgLockSrc2Mem);
                     continue;
                 }
-                iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
+                iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem, &PgLockSrc2Mem);
             }
         }
 
@@ -426,8 +430,9 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
              * If we can map the page without trouble, do a block processing
              * until the end of the current page.
              */
+            PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE const *puMem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
                 /* Search till we find a mismatching item. */
@@ -446,7 +451,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
                 pCtx->ADDR_rDI = uAddrReg    += i * cbIncr;
                 pCtx->eflags.u = uEFlags;
                 Assert(!(uEFlags & X86_EFL_ZF) == (i < cLeftPage));
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
                 if (fQuit)
                     break;
 
@@ -550,8 +555,9 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
              * If we can map the page without trouble, do a block processing
              * until the end of the current page.
              */
+            PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE const *puMem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
                 /* Search till we find a mismatching item. */
@@ -570,7 +576,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
                 pCtx->ADDR_rDI = uAddrReg    += i * cbIncr;
                 pCtx->eflags.u = uEFlags;
                 Assert((!(uEFlags & X86_EFL_ZF) != (i < cLeftPage)) || (i == cLeftPage));
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
                 if (fQuit)
                     break;
 
@@ -692,12 +698,14 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
              * If we can map the page without trouble, do a block processing
              * until the end of the current page.
              */
+            PGMPAGEMAPLOCK PgLockDstMem;
             OP_TYPE *puDstMem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, (void **)&puDstMem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, (void **)&puDstMem, &PgLockDstMem);
             if (rcStrict == VINF_SUCCESS)
             {
+                PGMPAGEMAPLOCK PgLockSrcMem;
                 OP_TYPE const *puSrcMem;
-                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, (void **)&puSrcMem);
+                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, (void **)&puSrcMem, &PgLockSrcMem);
                 if (rcStrict == VINF_SUCCESS)
                 {
                     /* Perform the operation. */
@@ -708,11 +716,11 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                     pCtx->ADDR_rDI = uDstAddrReg += cLeftPage * cbIncr;
                     pCtx->ADDR_rCX = uCounterReg -= cLeftPage;
 
-                    iemMemPageUnmap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, puSrcMem);
-                    iemMemPageUnmap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, puDstMem);
+                    iemMemPageUnmap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, puSrcMem, &PgLockSrcMem);
+                    iemMemPageUnmap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, puDstMem, &PgLockDstMem);
                     continue;
                 }
-                iemMemPageUnmap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, puDstMem);
+                iemMemPageUnmap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, puDstMem, &PgLockDstMem);
             }
         }
 
@@ -804,8 +812,9 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
              * If we can map the page without trouble, do a block processing
              * until the end of the current page.
              */
+            PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE *puMem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, (void **)&puMem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
                 /* Update the regs first so we can loop on cLeftPage. */
@@ -822,7 +831,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
                     *puMem++ = uValue;
 #endif
 
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem);
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -916,8 +925,9 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
              * If we can map the page without trouble, we can get away with
              * just reading the last value on the page.
              */
+            PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE const *puMem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
                 /* Only get the last byte, the rest doesn't matter in direct access mode. */
@@ -928,7 +938,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
 #endif
                 pCtx->ADDR_rCX = uCounterReg -= cLeftPage;
                 pCtx->ADDR_rSI = uAddrReg    += cLeftPage * cbIncr;
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -1092,8 +1102,9 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
             /** @todo Change the I/O manager interface to make use of
              *        mapped buffers instead of leaving those bits to the
              *        device implementation? */
+            PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE *puMem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, (void **)&puMem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
                 uint32_t off = 0;
@@ -1115,12 +1126,12 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                         /** @todo massage rc */
                         if (uCounterReg == 0)
                             iemRegAddToRip(pIemCpu, cbInstr);
-                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem);
+                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
                         return rcStrict;
                     }
                     off++;
                 }
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem);
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -1292,8 +1303,9 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             /** @todo Change the I/O manager interface to make use of
              *        mapped buffers instead of leaving those bits to the
              *        device implementation? */
+            PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE const *puMem;
-            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
                 uint32_t off = 0;
@@ -1314,12 +1326,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                         /** @todo massage IOM rc */
                         if (uCounterReg == 0)
                             iemRegAddToRip(pIemCpu, cbInstr);
-                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
+                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
                         return rcStrict;
                     }
                     off++;
                 }
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
