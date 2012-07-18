@@ -28,7 +28,8 @@ ifndef VBOX_ONLY_SDK
 	$(if $(VBOX_OSE),,tstOVF) \
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
-	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,)
+	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
+	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,)
   PROGRAMS.linux += \
 	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
@@ -159,6 +160,22 @@ ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
  tstGuestCtrlParseBuffer_DEPS    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 else
  tstGuestCtrlParseBuffer_DEPS    = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+endif
+
+
+#
+# tstGuestCtrlContextID
+#
+tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTEXE
+tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL
+tstGuestCtrlContextID_SOURCES  = \
+	tstGuestCtrlContextID.cpp \
+	../src-client/GuestCtrlPrivate.cpp
+tstGuestCtrlContextID_INCS     = ../include
+ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
+ tstGuestCtrlContextID_DEPS    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+else
+ tstGuestCtrlContextID_DEPS    = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 endif
 
 

@@ -36,13 +36,29 @@ using namespace guestControl;
 #endif
 
 
-/* Builds a context ID out of the session ID, process ID and an
- * increasing count. */
+/** Maximum number of guest sessions a VM can have. */
+#define VBOX_GUESTCTRL_MAX_SESSIONS     255
+/** Maximum of guest processes a guest session can have. */
+#define VBOX_GUESTCTRL_MAX_PROCESSES    255
+/** Maximum of callback contexts a guest process can have. */
+#define VBOX_GUESTCTRL_MAX_CONTEXTS     _64K - 1
+
+/** Builds a context ID out of the session ID, process ID and an
+ *  increasing count. */
 #define VBOX_GUESTCTRL_CONTEXTID_MAKE(uSession, uProcess, uCount) \
     (  (uint32_t)((uSession) &   0xff) << 24 \
      | (uint32_t)((uProcess) &   0xff) << 16 \
      | (uint32_t)((uCount)   & 0xffff)       \
     )
+/** Gets the session ID out of a context ID. */
+#define VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID) \
+    ((uContextID) >> 24)
+/** Gets the process ID out of a context ID. */
+#define VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID) \
+    (((uContextID) >> 16) & 0xff)
+/** Gets the conext count of a process out of a context ID. */
+#define VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID) \
+    ((uContextID) & 0xffff)
 
 
 typedef std::vector <LONG> ProcessAffinity;
@@ -66,30 +82,36 @@ public:
 
 public:
 
+    int Cancel(void);
+
+    bool Canceled(void);
+
     int Init(eVBoxGuestCtrlCallbackType enmType);
 
     void Destroy(void);
 
     eVBoxGuestCtrlCallbackType Type(void);
 
-    int Wait(RTMSINTERVAL timeoutMS);
+    int Wait(ULONG uTimeoutMS);
 
 protected:
 
     /** The callback type. */
     eVBoxGuestCtrlCallbackType  mType;
     /** Callback flags. */
-    uint32_t                    mFlags;
+    uint32_t                    uFlags;
+    /** Was the callback canceled? */
+    bool                        fCanceled;
     /** Pointer to user-supplied data. */
     void                       *pvData;
     /** Size of user-supplied data. */
     size_t                      cbData;
     /** The event semaphore triggering the*/
-    RTSEMEVENT                  mEventSem;
+    RTSEMEVENT                  hEventSem;
     /** Extended error information, if any. */
     ErrorInfo                   mErrorInfo;
 };
-typedef std::map <uint32_t, GuestCtrlCallback> GuestCtrlCallbacks;
+typedef std::map < uint32_t, GuestCtrlCallback* > GuestCtrlCallbacks;
 
 /**
  * Simple structure mantaining guest credentials.
@@ -111,7 +133,7 @@ class GuestEnvironment
 {
 public:
 
-    int BuildEnvironmentBlock(void **ppvEnv, uint32_t *pcbEnv, uint32_t *pcEnvVars);
+    int BuildEnvironmentBlock(void **ppvEnv, size_t *pcbEnv, uint32_t *pcEnvVars);
 
     void Clear(void);
 
@@ -143,7 +165,7 @@ public:
 
 protected:
 
-    int appendToEnvBlock(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars);
+    int appendToEnvBlock(const char *pszEnv, void **ppvList, size_t *pcbList, uint32_t *pcEnvVars);
 
 protected:
 

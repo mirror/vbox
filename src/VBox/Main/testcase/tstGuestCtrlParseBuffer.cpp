@@ -204,12 +204,12 @@ int main()
             iResult = stream.ParseBlock(curBlock);
             if (iResult != aTestBlock[iTest].iResult)
             {
-                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
+                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc\n",
                              iResult, aTestBlock[iTest].iResult);
             }
             else if (stream.GetOffset() != aTestBlock[iTest].uOffsetAfter)
             {
-                RTTestFailed(hTest, "\tOffset %u wrong, expected %u",
+                RTTestFailed(hTest, "\tOffset %u wrong, expected %u\n",
                              stream.GetOffset(), aTestBlock[iTest].uOffsetAfter);
             }
             else if (iResult == VERR_MORE_DATA)
@@ -222,7 +222,7 @@ int main()
             {
                 if (curBlock.GetCount() != aTestBlock[iTest].uMapElements)
                 {
-                    RTTestFailed(hTest, "\tMap has %u elements, expected %u",
+                    RTTestFailed(hTest, "\tMap has %u elements, expected %u\n",
                                  curBlock.GetCount(), aTestBlock[iTest].uMapElements);
                 }
             }
@@ -274,7 +274,7 @@ int main()
 
             if (iResult != aTestStream[iTest].iResult)
             {
-                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
+                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc\n",
                              iResult, aTestStream[iTest].iResult);
             }
             else if (uNumBlocks != aTestStream[iTest].uNumBlocks)

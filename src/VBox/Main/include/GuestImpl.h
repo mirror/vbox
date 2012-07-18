@@ -204,6 +204,7 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
+    int         dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     Console    *getConsole(void) { return mParent; }
     int         sessionClose(ComObjPtr<GuestSession> pSession);
     int         sessionCreate(const Utf8Str &strUser, const Utf8Str &aPassword, const Utf8Str &aDomain,

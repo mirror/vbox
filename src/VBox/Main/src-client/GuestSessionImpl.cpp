@@ -54,7 +54,7 @@ void GuestSession::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestSession::init(Guest *aGuest, uint32_t aSessionID,
+int GuestSession::init(Guest *aGuest, ULONG aSessionID,
                        Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName)
 {
     LogFlowThisFuncEnter();
@@ -349,6 +349,26 @@ int GuestSession::directoryClose(ComObjPtr<GuestDirectory> pDirectory)
     return VERR_NOT_FOUND;
 }
 
+int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    SessionProcesses::const_iterator itProc
+        = mData.mProcesses.find(VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID));
+    if (itProc != mData.mProcesses.end())
+    {
+        ComObjPtr<GuestProcess> pProcess(itProc->second);
+        Assert(!pProcess.isNull());
+
+        alock.release();
+        return pProcess->callbackDispatcher(uContextID, uFunction, pvData, cbData);
+    }
+    return VERR_NOT_FOUND;
+}
+
 int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -421,13 +441,13 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProc
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Create a new (host-based) process ID and assign it. */
-    uint32_t uNewProcessID = 0;
-    uint32_t uTries = 0;
+    ULONG uNewProcessID = 0;
+    ULONG uTries = 0;
 
     for (;;)
     {
         /* Is the context ID already used?  Try next ID ... */
-        if (!processExists(uNewProcessID++))
+        if (!processExists(uNewProcessID++, NULL /* pProgress */))
         {
             /* Callback with context ID was not found. This means
              * we can use this context ID for our new callback we want
@@ -466,12 +486,42 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProc
     return rc;
 }
 
-inline bool GuestSession::processExists(uint32_t uProcessID)
+inline bool GuestSession::processExists(ULONG uProcessID, ComObjPtr<GuestProcess> *pProcess)
 {
     AssertReturn(uProcessID, false);
 
-    SessionProcesses::const_iterator itProcesses = mData.mProcesses.find(uProcessID);
-    return (itProcesses == mData.mProcesses.end()) ? false : true;
+    SessionProcesses::const_iterator it = mData.mProcesses.find(uProcessID);
+    if (it != mData.mProcesses.end())
+    {
+        if (pProcess)
+            *pProcess = it->second;
+        return true;
+    }
+    return false;
+}
+
+inline int GuestSession::processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess)
+{
+    AssertReturn(uPID, false);
+    /* pProcess is optional. */
+
+    SessionProcesses::iterator it = mData.mProcesses.begin();
+    for (; it != mData.mProcesses.end(); it++)
+    {
+        ComObjPtr<GuestProcess> pCurProc = it->second;
+        AutoCaller procCaller(pCurProc);
+        if (procCaller.rc())
+            return VERR_COM_INVALID_OBJECT_STATE;
+
+        if (it->second->getPID() == uPID)
+        {
+            if (pProcess)
+                *pProcess = pCurProc;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
 }
 
 // implementation of public methods
@@ -896,10 +946,12 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aCommand) == NULL || *(aCommand) == '\0'))
+        return setError(E_INVALIDARG, tr("No command to execute specified"));
+    CheckComArgOutPointerValid(aProcess);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    CheckComArgOutPointerValid(aProcess);
 
     GuestProcessInfo procInfo;
 
@@ -924,7 +976,6 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
 
     if (RT_SUCCESS(rc))
     {
-
         com::SafeArray<ProcessCreateFlag_T> flags(ComSafeArrayInArg(aFlags));
         for (size_t i = 0; i < flags.size(); i++)
             procInfo.mFlags |= flags[i];
@@ -952,12 +1003,31 @@ STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **aProcess)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("aPID=%RU32\n", aPID));
+
+    CheckComArgOutPointerValid(aProcess);
+    if (aPID == 0)
+        return setError(E_INVALIDARG, tr("No valid process ID (PID) specified"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hr = S_OK;
+
+    ComObjPtr<GuestProcess> pProcess;
+    int rc = processGetByPID(aPID, &pProcess);
+    if (RT_FAILURE(rc))
+        hr = setError(E_INVALIDARG, tr("No process with PID %RU32 found"), aPID);
+
+    /* This will set (*aProcess) to NULL if pProgress is NULL. */
+    HRESULT hr2 = pProcess.queryInterfaceTo(aProcess);
+    if (SUCCEEDED(hr))
+        hr = hr2;
+
+    LogFlowThisFunc(("aProcess=%p, hr=%Rrc\n", *aProcess, hr));
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -971,7 +1041,13 @@ STDMETHODIMP GuestSession::SetTimeout(ULONG aTimeoutMS)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    if (aTimeoutMS < 1000)
+        return setError(E_INVALIDARG, tr("Invalid timeout value specified"));
+
+    mData.mTimeout = aTimeoutMS;
+
+    LogFlowThisFunc(("aTimeoutMS=%RU32\n", mData.mTimeout));
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
