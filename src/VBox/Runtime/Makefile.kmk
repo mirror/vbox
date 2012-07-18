@@ -1581,7 +1581,7 @@ RuntimeR0Stub_SOURCES.solaris = \
 # RuntimeR0Drv - Ring-0 library for host drivers.
 #
 RuntimeR0Drv_TEMPLATE   = VBoxR0DrvLib
-RuntimeR0Drv_SDKS.win   = $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
+RuntimeR0Drv_SDKS.win   = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0
