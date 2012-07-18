@@ -43,7 +43,7 @@
 #define ct_assert(a)    extern int ct_ass_arr[!!(a) == 1];
 
 /* For functions called from assembly code. */
-#define BIOSCALL	__cdecl
+#define BIOSCALL    __cdecl
 
 #define BX_ELTORITO_BOOT    1
 #define BX_PCIBIOS          1
