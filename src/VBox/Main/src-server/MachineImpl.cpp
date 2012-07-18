@@ -8994,7 +8994,8 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 {
                     /* perform real rename only if the machine is not new */
                     vrc = RTPathRename(configDir.c_str(), newConfigDir.c_str(), 0);
-                    if (vrc == VERR_FILE_NOT_FOUND)
+                    if (   vrc == VERR_FILE_NOT_FOUND
+                        || vrc == VERR_PATH_NOT_FOUND)
                     {
                         /* create the parent directory, then retry renaming */
                         Utf8Str parent(newConfigDir);
