@@ -352,8 +352,8 @@ int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, vo
         = mData.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
     if (it != mData.mCallbacks.end())
     {
-        std::auto_ptr<GuestCtrlCallback> pCallback = it->second;
-        AssertPtr(pCallback.get());
+        GuestCtrlCallback *pCallback = it->second;
+        AssertPtr(pCallback);
 
         int rc;
 
@@ -744,7 +744,7 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ComSafeArrayIn(BYTE, aData), ULO
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BYTE> data(aData);
+    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
     int rc = writeData(aHandle, data.raw(), data.size(), aTimeoutMS, aWritten);
     /** @todo Do setError() here. */
     HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
