@@ -515,7 +515,6 @@ void vbmsSolNotify(void *pvState)
 {
     PVBMSSTATE pState = (PVBMSSTATE)pvState;
     int rc;
-    LogRelFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
 
     pState->pMouseStatusReq->mouseFeatures = 0;
     pState->pMouseStatusReq->pointerXPos = 0;
