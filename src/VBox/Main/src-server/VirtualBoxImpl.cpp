@@ -2040,8 +2040,8 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
 STDMETHODIMP VirtualBox::SetSettingsSecret(IN_BSTR aValue)
 {
     storeSettingsKey(aValue);
-    int vrc = decryptSettings();
-    return RT_SUCCESS(vrc) ? S_OK : E_FAIL;
+    decryptSettings();
+    return S_OK;
 }
 
 int VirtualBox::decryptMediumSettings(Medium *pMedium)
@@ -2051,8 +2051,6 @@ int VirtualBox::decryptMediumSettings(Medium *pMedium)
                                        bstrCipher.asOutParam());
     if (SUCCEEDED(hrc))
     {
-        Bstr bstrName;
-        pMedium->COMGETTER(Name)(bstrName.asOutParam());
         Utf8Str strPlaintext;
         int rc = decryptSetting(&strPlaintext, bstrCipher);
         if (RT_SUCCESS(rc))
@@ -2180,9 +2178,9 @@ int VirtualBox::encryptSettingBytes(const uint8_t *aPlaintext, uint8_t *aCiphert
     if (i < aCiphertextSize)
     {
         RTRandBytes(aBytes, aCiphertextSize - i);
-        for (; i < aCiphertextSize; i++)
+        for (int k = 0; i < aCiphertextSize; i++, k++)
         {
-            aCiphertext[i] = aBytes[i] ^ m->SettingsCipherKey[j];
+            aCiphertext[i] = aBytes[k] ^ m->SettingsCipherKey[j];
             if (++j >= sizeof(m->SettingsCipherKey))
                 j = 0;
         }
