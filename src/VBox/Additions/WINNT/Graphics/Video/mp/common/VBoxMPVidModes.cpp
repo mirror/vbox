@@ -1089,66 +1089,116 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
     VBoxWddmBuildResolutionTableForModes(pModes);
 }
 
-void VBoxWddmInvalidateVideoModesInfo(PVBOXMP_DEVEXT pExt)
+void VBoxWddmInvalidateVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
 {
+    if (VidPnTargetId != D3DDDI_ID_ALL)
+    {
+        if (VidPnTargetId >= RT_ELEMENTS(g_aVBoxVideoModeInfos))
+        {
+            WARN(("VidPnTargetId (%d) must be less than (%d)", VidPnTargetId, RT_ELEMENTS(g_aVBoxVideoModeInfos)));
+            return;
+        }
+        g_aVBoxVideoModeInfos[VidPnTargetId].cModes = 0;
+        return;
+    }
+
     for (UINT i = 0; i < RT_ELEMENTS(g_aVBoxVideoModeInfos); ++i)
     {
         g_aVBoxVideoModeInfos[i].cModes = 0;
     }
 }
 
-PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateVideoModesInfo(PVBOXMP_DEVEXT pExt, PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo)
+void VBoxWddmInvalidateAllVideoModesInfos(PVBOXMP_DEVEXT pExt)
 {
-    VBoxWddmInvalidateVideoModesInfo(pExt);
+    VBoxWddmInvalidateVideoModesInfo(pExt, D3DDDI_ID_ALL);
+}
 
-    if (pVidPnInfo)
+PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateVideoModesInfoByMask(PVBOXMP_DEVEXT pExt, uint8_t *pScreenIdMask)
+{
+    for (int i = 0; i < VBoxCommonFromDeviceExt(pExt)->cDisplays; ++i)
     {
-        for (UINT i = 0; i < pVidPnInfo->cScreenInfos; ++i)
-        {
-            PVBOXWDDM_RECOMMENDVIDPN_SCREEN_INFO pScreenInfo = &pVidPnInfo->aScreenInfos[i];
-            Assert(pScreenInfo->Id < (DWORD)VBoxCommonFromDeviceExt(pExt)->cDisplays);
-            if (pScreenInfo->Id < (DWORD)VBoxCommonFromDeviceExt(pExt)->cDisplays)
-            {
-                PVBOXWDDM_VIDEOMODES_INFO pInfo = &g_aVBoxVideoModeInfos[pScreenInfo->Id];
-                VIDEO_MODE_INFORMATION ModeInfo = {0};
-                D3DDDIFORMAT enmFormat;
-                switch (pScreenInfo->BitsPerPixel)
-                {
-                    case 32:
-                        enmFormat = D3DDDIFMT_A8R8G8B8;
-                        break;
-                    case 24:
-                        enmFormat = D3DDDIFMT_R8G8B8;
-                        break;
-                    case 16:
-                        enmFormat = D3DDDIFMT_R5G6B5;
-                        break;
-                    case 8:
-                        enmFormat = D3DDDIFMT_P8;
-                        break;
-                    default:
-                        Assert(0);
-                        enmFormat = D3DDDIFMT_UNKNOWN;
-                        break;
-                }
-                if (enmFormat != D3DDDIFMT_UNKNOWN)
-                {
-                    if (VBoxWddmFillMode(pExt, pScreenInfo->Id, &ModeInfo, enmFormat, pScreenInfo->Width, pScreenInfo->Height))
-                    {
-                        VBoxWddmBuildVideoModesInfo(pExt, pScreenInfo->Id, pInfo, &ModeInfo, 1);
-                    }
-                    else
-                    {
-                        Assert(0);
-                    }
-                }
-            }
-        }
+        if (ASMBitTest(pScreenIdMask, i))
+            VBoxWddmInvalidateVideoModesInfo(pExt, i);
     }
 
     /* ensure we have all the rest populated */
     VBoxWddmGetAllVideoModesInfos(pExt);
     return g_aVBoxVideoModeInfos;
+}
+
+PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateAllVideoModesInfos(PVBOXMP_DEVEXT pExt)
+{
+    VBoxWddmInvalidateAllVideoModesInfos(pExt);
+
+    /* ensure we have all the rest populated */
+    VBoxWddmGetAllVideoModesInfos(pExt);
+    return g_aVBoxVideoModeInfos;
+}
+
+void VBoxWddmAdjustMode(PVBOXMP_DEVEXT pExt, PVBOXWDDM_ADJUSTVIDEOMODE pMode)
+{
+    pMode->fFlags = 0;
+
+    if (pMode->Mode.Id >= (UINT)VBoxCommonFromDeviceExt(pExt)->cDisplays)
+    {
+        WARN(("invalid screen id (%d)", pMode->Mode.Id));
+        pMode->fFlags = VBOXWDDM_ADJUSTVIDEOMODE_F_INVALISCREENID;
+        return;
+    }
+
+    PVBOXWDDM_TARGET pTarget = &pExt->aTargets[pMode->Mode.Id];
+    /* @todo: this info should go from the target actually */
+    PVBOXWDDM_SOURCE pSource = &pExt->aSources[pMode->Mode.Id];
+    if (pTarget->HeightVisible /* <- active */
+            && pSource->AllocData.SurfDesc.width == pMode->Mode.Width
+            && pSource->AllocData.SurfDesc.height == pMode->Mode.Height
+            && pSource->AllocData.SurfDesc.bpp == pMode->Mode.BitsPerPixel)
+    {
+        pMode->fFlags = VBOXWDDM_ADJUSTVIDEOMODE_F_CURRENT;
+        return;
+    }
+
+    UINT newWidth = pMode->Mode.Width;
+    UINT newHeight = pMode->Mode.Height;
+    UINT newBpp = pMode->Mode.BitsPerPixel;
+
+    if (!VBoxMPValidateVideoModeParams(pExt, pMode->Mode.Id, newWidth, newHeight, newBpp))
+    {
+        PVBOXWDDM_SOURCE pSource = &pExt->aSources[pMode->Mode.Id];
+        pMode->fFlags = VBOXWDDM_ADJUSTVIDEOMODE_F_UNSUPPORTED;
+    }
+
+    if (pMode->Mode.Width != newWidth
+            || pMode->Mode.Height != newHeight
+            || pMode->Mode.BitsPerPixel != newBpp)
+    {
+        pMode->fFlags |= VBOXWDDM_ADJUSTVIDEOMODE_F_ADJUSTED;
+        pMode->Mode.Width = newWidth;
+        pMode->Mode.Height = newHeight;
+        pMode->Mode.BitsPerPixel = newBpp;
+    }
+
+    if (pTarget->HeightVisible /* <- active */
+            && pSource->AllocData.SurfDesc.width == pMode->Mode.Width
+            && pSource->AllocData.SurfDesc.height == pMode->Mode.Height
+            && pSource->AllocData.SurfDesc.bpp == pMode->Mode.BitsPerPixel)
+    {
+        pMode->fFlags |= VBOXWDDM_ADJUSTVIDEOMODE_F_CURRENT;
+        if (pMode->fFlags & VBOXWDDM_ADJUSTVIDEOMODE_F_UNSUPPORTED)
+        {
+            WARN(("current mode is reported as unsupported, cleaning the unsupported flag"));
+            pMode->fFlags &= ~VBOXWDDM_ADJUSTVIDEOMODE_F_UNSUPPORTED;
+        }
+    }
+}
+
+void VBoxWddmAdjustModes(PVBOXMP_DEVEXT pExt, uint32_t cModes, PVBOXWDDM_ADJUSTVIDEOMODE aModes)
+{
+    for (UINT i = 0; i < cModes; ++i)
+    {
+        PVBOXWDDM_ADJUSTVIDEOMODE pMode = &aModes[i];
+        VBoxWddmAdjustMode(pExt, pMode);
+    }
 }
 
 NTSTATUS VBoxWddmGetModesForResolution(VIDEO_MODE_INFORMATION *pAllModes, uint32_t cAllModes, int iSearchPreferredMode,

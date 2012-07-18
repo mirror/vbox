@@ -680,23 +680,26 @@ static NTSTATUS vboxWddmChildStatusCheck(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_VIDEO
         }
 
         bChanged[i] = !fMatch;
-
-        if (!fMatch)
-        {
-            Status = vboxWddmChildStatusReportReconnected(pDevExt, i);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("vboxWddmChildStatusReportReconnected failed Status(0x%x)", Status));
-                /* ignore the failures here, although we probably should not?? */
-                break;
-            }
-        }
     }
 
     if (!NT_SUCCESS(Status))
     {
         WARN(("updating monitor modes failed, Status(0x%x)", Status));
         return Status;
+    }
+
+    for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    {
+        if (bChanged[i])
+        {
+            NTSTATUS tmpStatus = vboxWddmChildStatusReportReconnected(pDevExt, i);
+            if (!NT_SUCCESS(tmpStatus))
+            {
+                WARN(("vboxWddmChildStatusReportReconnected failed Status(0x%x)", Status));
+                /* ignore the failures here, although we probably should not?? */
+                break;
+            }
+        }
     }
 
     /* wait for the reconnected monitor data to be picked up */
@@ -1120,7 +1123,9 @@ NTSTATUS DxgkDdiStartDevice(
                     KeInitializeSpinLock(&pDevExt->SynchLock);
 
                     VBoxMPCmnInitCustomVideoModes(pDevExt);
-                    VBoxWddmInvalidateVideoModesInfo(pDevExt);
+                    VBoxWddmInvalidateAllVideoModesInfos(pDevExt);
+
+                    pDevExt->fAnyX = VBoxVideoAnyWidthAllowed();
 #if 0
                     vboxShRcTreeInit(pDevExt);
 #endif
@@ -4136,13 +4141,69 @@ DxgkDdiEscape(
             }
             case VBOXESC_REINITVIDEOMODES:
             {
-                PVBOXWDDM_VIDEOMODES_INFO pInfo = VBoxWddmUpdateVideoModesInfo(pDevExt, NULL);
-                Status = vboxWddmChildStatusCheck(pDevExt, pInfo);
+                if (pEscape->Flags.HardwareAccess)
+                {
+                    WARN(("VBOXESC_REINITVIDEOMODES called with HardwareAccess flag set, failing"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+                WARN(("VBOXESC_REINITVIDEOMODESBYMASK should be called instead"));
+                PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateAllVideoModesInfos(pDevExt);
+                Status = vboxWddmChildStatusCheck(pDevExt, pInfos);
                 if (!NT_SUCCESS(Status))
                 {
                     WARN(("vboxWddmChildStatusCheck failed, Status 0x%x", Status));
                 }
                 break;
+            }
+            case VBOXESC_REINITVIDEOMODESBYMASK:
+            {
+                BOOLEAN fCheckDisplayRecconect = (pEscapeHdr->u32CmdSpecific & VBOXWDDM_REINITVIDEOMODESBYMASK_F_RECONNECT_DISPLAYS_ON_CHANGE);
+                if (fCheckDisplayRecconect && pEscape->Flags.HardwareAccess)
+                {
+                    WARN(("VBOXESC_REINITVIDEOMODESBYMASK called with HardwareAccess flag set, failing"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+                if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK))
+                {
+                    WARN(("invalid private driver size %d", pEscape->PrivateDriverDataSize));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+                PVBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK pData = (PVBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK)pEscapeHdr;
+                PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateVideoModesInfoByMask(pDevExt, pData->ScreenMask);
+                if (fCheckDisplayRecconect)
+                {
+                    Status = vboxWddmChildStatusCheck(pDevExt, pInfos);
+                    if (!NT_SUCCESS(Status))
+                    {
+                        WARN(("vboxWddmChildStatusCheck failed, Status 0x%x", Status));
+                    }
+                }
+                break;
+            }
+            case VBOXESC_ADJUSTVIDEOMODES:
+            {
+                if (!pEscape->Flags.HardwareAccess)
+                {
+                    WARN(("VBOXESC_ADJUSTVIDEOMODES called without HardwareAccess flag set, failing"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                uint32_t cModes = pEscapeHdr->u32CmdSpecific;
+                if (cModes > VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(VBOXDISPIFESCAPE_ADJUSTVIDEOMODES, aScreenInfos)
+                        || pEscape->PrivateDriverDataSize != RT_OFFSETOF(VBOXDISPIFESCAPE_ADJUSTVIDEOMODES, aScreenInfos[cModes]))
+                {
+                    WARN(("invalid modes count passed"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                PVBOXDISPIFESCAPE_ADJUSTVIDEOMODES pPodesInfo = (PVBOXDISPIFESCAPE_ADJUSTVIDEOMODES)pEscapeHdr;
+                VBoxWddmAdjustModes(pDevExt, cModes, pPodesInfo->aScreenInfos);
+                Status = STATUS_SUCCESS;
             }
             case VBOXESC_SHRC_ADDREF:
             case VBOXESC_SHRC_RELEASE:
@@ -4393,7 +4454,7 @@ DxgkDdiRecommendFunctionalVidPn(
     NTSTATUS Status;
     PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo = pRecommendFunctionalVidPnArg->PrivateDriverDataSize >= sizeof (VBOXWDDM_RECOMMENDVIDPN) ?
             (PVBOXWDDM_RECOMMENDVIDPN)pRecommendFunctionalVidPnArg->pPrivateDriverData : NULL;
-    PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateVideoModesInfo(pDevExt, NULL /*pVidPnInfo*/);
+    PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateAllVideoModesInfos(pDevExt);
     int i;
 
     for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
@@ -4409,10 +4470,9 @@ DxgkDdiRecommendFunctionalVidPn(
 #else
         Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, pInfo->aResolutions, pInfo->cResolutions, pInfo->iPreferredResolution);
 #endif
-        Assert(Status == STATUS_SUCCESS);
         if (Status != STATUS_SUCCESS)
         {
-            LOGREL(("vboxVidPnCheckAddMonitorModes failed Status(0x%x)", Status));
+            WARN(("vboxVidPnCheckAddMonitorModes failed Status(0x%x)", Status));
             break;
         }
     }
