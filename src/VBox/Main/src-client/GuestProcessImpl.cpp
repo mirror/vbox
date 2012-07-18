@@ -162,7 +162,8 @@ STDMETHODIMP GuestProcess::COMGETTER(Arguments)(ComSafeArrayOut(BSTR, aArguments
          it != mData.mProcess.mArguments.end();
          it++, s++)
     {
-        collection[s] = Bstr(*it).raw();
+        Bstr tmp = *it;
+        tmp.cloneTo(&collection[s]);
     }
 
     collection.detachTo(ComSafeArrayOutArg(aArguments));
@@ -185,7 +186,10 @@ STDMETHODIMP GuestProcess::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
 
     com::SafeArray<BSTR> arguments(mData.mProcess.mEnvironment.Size());
     for (size_t i = 0; i < arguments.size(); i++)
-        arguments[i] = Bstr(mData.mProcess.mEnvironment.Get(i)).raw();
+    {
+        Bstr tmp = mData.mProcess.mEnvironment.Get(i);
+        tmp.cloneTo(&arguments[i]);
+    }
     arguments.detachTo(ComSafeArrayOutArg(aEnvironment));
 
     return S_OK;
