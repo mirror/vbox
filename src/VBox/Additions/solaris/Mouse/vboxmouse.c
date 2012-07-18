@@ -558,8 +558,8 @@ void vbmsSolVUIDPutAbsEvent(PVBMSSTATE pState, ushort_t cEvent,
     /* Put the message on the queue immediately if it is not blocked. */
     if (canput(pReadQueue->q_next))
         putnext(pReadQueue, pMBlk);
-    // else
-    //     putq(pReadQueue, pMBlk);
+    else
+        putq(pReadQueue, pMBlk);
 }
 
 
@@ -624,7 +624,7 @@ static void testOpenClose(RTTEST hTest)
 
 
 /* Helper for vbmsSolWPut. */
-static int vbmsSolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk);
+static int vbmsSolDispatchIOCtl(PVBMSSTATE pState, mblk_t *pMBlk);
 
 /**
  * Handler for messages sent from above (user-space and upper modules) which
@@ -632,10 +632,12 @@ static int vbmsSolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk);
  */
 int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
-    LogRelFlowFunc((DEVICE_NAME "::\n"));
+    LogRelFlowFunc((DEVICE_NAME "::"));
     switch (pMBlk->b_datap->db_type)
     {
         case M_FLUSH:
+            LogRelFlow(("M_FLUSH, FLUSHW=%RTbool, FLUSHR=%RTbool\n",
+                        *pMBlk->b_rptr & FLUSHW, *pMBlk->b_rptr & FLUSHR));
             /* Flush the write queue if so requested. */
             if (*pMBlk->b_rptr & FLUSHW)
                 flushq(pWriteQueue, FLUSHDATA);
@@ -652,13 +654,20 @@ int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
         case M_IOCTL:
         case M_IOCDATA:
         {
-            int err = vbmsSolDispatchIOCtl(pWriteQueue, pMBlk);
+            PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
+            int err;
+
+            LogRelFlow((  pMBlk->b_datap->db_type == M_IOCTL
+                        ? "M_IOCTL\n" : "M_IOCDATA\n"));
+            err = vbmsSolDispatchIOCtl(pState, pMBlk);
             if (!err)
                 qreply(pWriteQueue, pMBlk);
             else
                 miocnak(pWriteQueue, pMBlk, 0, err);
             break;
         }
+        default:
+            LogRelFlow(("Unknown command, not acknowledging.\n"));
     }
     return 0;
 }
@@ -1020,9 +1029,9 @@ typedef int FNVBMSSOLIOCTL(PVBMSSTATE pState, int iCmd, void *pvData,
 typedef FNVBMSSOLIOCTL *PFNVBMSSOLIOCTL;
 
 /* Helpers for vbmsSolDispatchIOCtl. */
-static int vbmsSolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+static int vbmsSolHandleIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
                                PFNVBMSSOLIOCTL pfnHandler,
-                               int iCmd, size_t cbTransparent,
+                               int iCmd, size_t cbCmd,
                                enum IOCTLDIRECTION enmDirection);
 static int vbmsSolVUIDIOCtl(PVBMSSTATE pState, int iCmd, void *pvData,
                              size_t cbBuffer, size_t *pcbData, int *prc);
@@ -1060,18 +1069,18 @@ struct
  * miocnak() at all - the caller must call these on success or failure
  * respectively.
  * @returns  0 on success or the IOCtl error code on failure.
- * @param  pWriteQueue  pointer to the STREAMS write queue structure.
+ * @param  pState       pointer to the state structure.
  * @param  pMBlk        pointer to the STREAMS message block structure.
  */
-static int vbmsSolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
+static int vbmsSolDispatchIOCtl(PVBMSSTATE pState, mblk_t *pMBlk)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
     int iCmd = pIOCBlk->ioc_cmd, iCmdType = iCmd & (0xff << 8);
     size_t cbBuffer;
     enum IOCTLDIRECTION enmDirection;
 
-    LogRelFlowFunc((DEVICE_NAME "::iCmdType=%c, iCmd=0x%x\n",
-                 (char) (iCmdType >> 8), (unsigned)iCmd));
+    LogRelFlowFunc((DEVICE_NAME "::pIOCBlk=%p, iCmdType=%c, iCmd=0x%x\n",
+                    pIOCBlk, (char) (iCmdType >> 8), (unsigned)iCmd));
     switch (iCmdType)
     {
         case MSIOC:
@@ -1084,9 +1093,9 @@ static int vbmsSolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
                 {
                     cbBuffer     = g_aVUIDIOCtlDescriptions[i].cbBuffer;
                     enmDirection = g_aVUIDIOCtlDescriptions[i].enmDirection;
-                    return vbmsSolHandleIOCtl(pWriteQueue, pMBlk,
-                                               vbmsSolVUIDIOCtl, iCmd,
-                                               cbBuffer, enmDirection);
+                    return vbmsSolHandleIOCtl(pState, pMBlk,
+                                              vbmsSolVUIDIOCtl, iCmd,
+                                              cbBuffer, enmDirection);
                 }
             return EINVAL;
         }
@@ -1097,18 +1106,28 @@ static int vbmsSolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
 
 
 /* Helpers for vbmsSolHandleIOCtl. */
-static int vbmsSolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd,
-                                   size_t cbTransparent,
-                                   enum IOCTLDIRECTION enmDirection);
+static int vbmsSolHandleIOCtlData(PVBMSSTATE pState, mblk_t *pMBlk,
+                                  PFNVBMSSOLIOCTL pfnHandler, int iCmd,
+                                  size_t cbCmd,
+                                  enum IOCTLDIRECTION enmDirection);
 
-static int vbmsSolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                          PFNVBMSSOLIOCTL pfnHandler,
-                                          int iCmd, size_t cbTransparent,
-                                          enum IOCTLDIRECTION enmDirection);
+static int vbmsSolHandleTransparentIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
+                                         PFNVBMSSOLIOCTL pfnHandler,
+                                         int iCmd, size_t cbCmd,
+                                         enum IOCTLDIRECTION enmDirection);
 
-static int vbmsSolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+static int vbmsSolHandleIStrIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
                                    PFNVBMSSOLIOCTL pfnHandler, int iCmd);
+
+static void vbmsSolAcknowledgeIOCtl(mblk_t *pMBlk, int cbData, int rc)
+{
+    struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
+
+    pMBlk->b_datap->db_type = M_IOCACK;
+    pIOCBlk->ioc_count = cbData;
+    pIOCBlk->ioc_rval = rc;
+    pIOCBlk->ioc_error = 0;
+}
 
 /**
  * Generic code for handling STREAMS-specific IOCtl logic and boilerplate.  It
@@ -1119,37 +1138,35 @@ static int vbmsSolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * single buffer of a fixed size (I_STR IOCtls are restricted to a single
  * buffer anyway, but the caller can choose the buffer size).
  * @returns  0 on success or the IOCtl error code on failure.
- * @param  pWriteQueue    pointer to the STREAMS write queue structure.
+ * @param  pState         pointer to the state structure.
  * @param  pMBlk          pointer to the STREAMS message block structure.
  * @param  pfnHandler     pointer to the right IOCtl handler function for this
  *                        IOCtl number.
  * @param  iCmd           IOCtl command number.
- * @param  cbTransparent  size of the user space buffer for this IOCtl number,
+ * @param  cbCmd          size of the user space buffer for this IOCtl number,
  *                        used for processing transparent IOCtls.  Pass zero
  *                        for IOCtls with no maximum buffer size (which will
  *                        not be able to be handled as transparent) or with
  *                        no argument.
  * @param  enmDirection   data transfer direction of the IOCtl.
  */
-static int vbmsSolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                               PFNVBMSSOLIOCTL pfnHandler, int iCmd,
-                               size_t cbTransparent,
-                               enum IOCTLDIRECTION enmDirection)
+static int vbmsSolHandleIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
+                              PFNVBMSSOLIOCTL pfnHandler, int iCmd,
+                              size_t cbCmd, enum IOCTLDIRECTION enmDirection)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
 
     LogFlowFunc(("iCmd=0x%x, cbBuffer=%d, enmDirection=%d\n",
-                 (unsigned)iCmd, (int)cbTransparent, (int)enmDirection));
+                 (unsigned)iCmd, (int)cbCmd, (int)enmDirection));
     if (pMBlk->b_datap->db_type == M_IOCDATA)
-        return vbmsSolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, iCmd,
-                                       cbTransparent, enmDirection);
+        return vbmsSolHandleIOCtlData(pState, pMBlk, pfnHandler, iCmd,
+                                      cbCmd, enmDirection);
     else if (   pMBlk->b_datap->db_type == M_IOCTL
              && pIOCBlk->ioc_count == TRANSPARENT)
-        return vbmsSolHandleTransparentIOCtl(pWriteQueue, pMBlk, pfnHandler,
-                                              iCmd, cbTransparent,
-                                              enmDirection);
+        return vbmsSolHandleTransparentIOCtl(pState, pMBlk, pfnHandler,
+                                             iCmd, cbCmd, enmDirection);
     else if (pMBlk->b_datap->db_type == M_IOCTL)
-        return vbmsSolHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler, iCmd);
+        return vbmsSolHandleIStrIOCtl(pState, pMBlk, pfnHandler, iCmd);
     return EINVAL;
 }
 
@@ -1160,16 +1177,15 @@ static int vbmsSolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * additional data, which we currently only use for transparent IOCtls.
  * @copydoc vbmsSolHandleIOCtl
  */
-static int vbmsSolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd,
-                                   size_t cbTransparent,
-                                   enum IOCTLDIRECTION enmDirection)
+static int vbmsSolHandleIOCtlData(PVBMSSTATE pState, mblk_t *pMBlk,
+                                  PFNVBMSSOLIOCTL pfnHandler, int iCmd,
+                                  size_t cbCmd,
+                                  enum IOCTLDIRECTION enmDirection)
 {
     struct copyresp *pCopyResp = (struct copyresp *)pMBlk->b_rptr;
-    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
 
     LogFlowFunc(("iCmd=0x%x, cbBuffer=%d, enmDirection=%d, cp_rval=%d, cp_private=%p\n",
-                 (unsigned)iCmd, (int)cbTransparent, (int)enmDirection,
+                 (unsigned)iCmd, (int)cbCmd, (int)enmDirection,
                  (int)(uintptr_t)pCopyResp->cp_rval,
                  (void *)pCopyResp->cp_private));
     if (pCopyResp->cp_rval)  /* cp_rval is a pointer used as a boolean. */
@@ -1188,17 +1204,17 @@ static int vbmsSolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
         if (enmDirection == BOTH && !pCopyResp->cp_private)
             return EINVAL;
         pvData = pMBlk->b_cont->b_rptr;
-        err = pfnHandler(pState, iCmd, pvData, cbTransparent, &cbData, NULL);
+        err = pfnHandler(pState, iCmd, pvData, cbCmd, &cbData, NULL);
         if (!err && enmDirection == BOTH)
             mcopyout(pMBlk, NULL, cbData, pCopyResp->cp_private, NULL);
         else if (!err && enmDirection == IN)
-            miocack(pWriteQueue, pMBlk, 0, 0);
+            vbmsSolAcknowledgeIOCtl(pMBlk, 0, 0);
         return err;
     }
     else
     {
         AssertReturn(enmDirection == OUT || enmDirection == BOTH, EINVAL);
-        miocack(pWriteQueue, pMBlk, 0, 0);
+        vbmsSolAcknowledgeIOCtl(pMBlk, 0, 0);
         return 0;
     }
 }
@@ -1209,17 +1225,16 @@ static int vbmsSolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
  * that is, IOCtls which are not re-packed inside STREAMS IOCtls.
  * @copydoc vbmsSolHandleIOCtl
  */
-int vbmsSolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd,
-                                   size_t cbTransparent,
-                                   enum IOCTLDIRECTION enmDirection)
+int vbmsSolHandleTransparentIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
+                                  PFNVBMSSOLIOCTL pfnHandler, int iCmd,
+                                  size_t cbCmd,
+                                  enum IOCTLDIRECTION enmDirection)
 {
     int err = 0, rc = 0;
     size_t cbData = 0;
-    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
 
     LogFlowFunc(("iCmd=0x%x, cbBuffer=%d, enmDirection=%d\n",
-                 (unsigned)iCmd, (int)cbTransparent, (int)enmDirection));
+                 (unsigned)iCmd, (int)cbCmd, (int)enmDirection));
     if (   (enmDirection != NONE && !pMBlk->b_cont)
         || enmDirection == UNSPECIFIED)
         return EINVAL;
@@ -1229,17 +1244,17 @@ int vbmsSolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
         /* We only need state data if there is something to copy back. */
         if (enmDirection == BOTH)
             pUserAddr = *(void **)pMBlk->b_cont->b_rptr;
-	    mcopyin(pMBlk, pUserAddr /* state data */, cbTransparent, NULL);
+	    mcopyin(pMBlk, pUserAddr /* state data */, cbCmd, NULL);
 	}
 	else if (enmDirection == OUT)
     {
-        mblk_t *pMBlkOut = allocb(cbTransparent, BPRI_MED);
+        mblk_t *pMBlkOut = allocb(cbCmd, BPRI_MED);
         void *pvData;
 
         if (!pMBlkOut)
             return EAGAIN;
         pvData = pMBlkOut->b_rptr;
-        err = pfnHandler(pState, iCmd, pvData, cbTransparent, &cbData, NULL);
+        err = pfnHandler(pState, iCmd, pvData, cbCmd, &cbData, NULL);
         if (!err)
             mcopyout(pMBlk, NULL, cbData, NULL, pMBlkOut);
         else
@@ -1250,7 +1265,7 @@ int vbmsSolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
         AssertReturn(enmDirection == NONE, EINVAL);
         err = pfnHandler(pState, iCmd, NULL, 0, NULL, &rc);
         if (!err)
-            miocack(pWriteQueue, pMBlk, 0, rc);
+            vbmsSolAcknowledgeIOCtl(pMBlk, 0, rc);
     }
     return err;
 }
@@ -1260,11 +1275,10 @@ int vbmsSolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * code is basically the standard boilerplate for handling any streams IOCtl.
  * @copydoc vbmsSolHandleIOCtl
  */
-static int vbmsSolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBMSSOLIOCTL pfnHandler, int iCmd)
+static int vbmsSolHandleIStrIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
+                                  PFNVBMSSOLIOCTL pfnHandler, int iCmd)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
-    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
     uint_t cbBuffer = pIOCBlk->ioc_count;
     void *pvData = NULL;
     int err, rc = 0;
@@ -1280,15 +1294,21 @@ static int vbmsSolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
         err = miocpullup(pMBlk, cbBuffer);
         if (err)
             return err;
+        pvData = pMBlk->b_cont->b_rptr;
     }
-    if (pMBlk->b_cont)  /* consms forgets to set ioc_count. */
+    else if (pMBlk->b_cont)  /* consms forgets to set ioc_count. */
     {
         pvData = pMBlk->b_cont->b_rptr;
-        cbBuffer = pMBlk->b_cont->b_wptr - pMBlk->b_cont->b_rptr;
+        cbBuffer =   pMBlk->b_cont->b_datap->db_lim
+                   - pMBlk->b_cont->b_datap->db_base;
     }
     err = pfnHandler(pState, iCmd, pvData, cbBuffer, &cbData, &rc);
     if (!err)
-        miocack(pWriteQueue, pMBlk, cbData, rc);
+    {
+        LogRelFlowFunc(("pMBlk=%p, pMBlk->b_datap=%p, pMBlk->b_rptr=%p\n",
+                        pMBlk, pMBlk->b_datap, pMBlk->b_rptr));
+        vbmsSolAcknowledgeIOCtl(pMBlk, cbData, rc);
+    }
     return err;
 }
 
@@ -1300,7 +1320,7 @@ static int vbmsSolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
 static int vbmsSolVUIDIOCtl(PVBMSSTATE pState, int iCmd, void *pvData,
                              size_t cbBuffer, size_t *pcbData, int *prc)
 {
-    LogRelFlowFunc((DEVICE_NAME ":: " /* no '\n' */));
+    LogRelFlowFunc((DEVICE_NAME "::pvData=%p " /* no '\n' */, pvData));
     switch (iCmd)
     {
         case VUIDGFORMAT:
