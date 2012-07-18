@@ -69,13 +69,18 @@
 #define AHCI_MAX_ALLOC_TOO_MUCH 20
 
 /** The current saved state version. */
-#define AHCI_SAVED_STATE_VERSION                5
+#define AHCI_SAVED_STATE_VERSION                6
+/** Saved state version before legacy ATA emulation was dropped. */
+#define AHCI_SAVED_STATE_VERSION_IDE_EMULATION  5
 /** Saved state version before ATAPI support was added. */
 #define AHCI_SAVED_STATE_VERSION_PRE_ATAPI      3
 /** The saved state version use in VirtualBox 3.0 and earlier.
  * This was before the config was added and ahciIOTasks was dropped. */
 #define AHCI_SAVED_STATE_VERSION_VBOX_30        2
-
+/* for Older ATA state Read handling */
+#define ATA_CTL_SAVED_STATE_VERSION 3
+#define ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE 1
+#define ATA_CTL_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS 2
 /**
  * Maximum number of sectors to transfer in a READ/WRITE MULTIPLE request.
  * Set to 1 to disable multi-sector read support. According to the ATA
@@ -6712,6 +6717,77 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
+ * Loads a saved legacy ATA emulated device state.
+ *
+ * @returns VBox status code.
+ * @param   pSSM  The handle to the saved state.
+ */
+int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
+{
+    int             rc;
+    uint32_t        u32Version;
+    uint32_t        u32;
+    uint32_t        u32IOBuffer;
+
+	/* Test for correct version. */
+    rc = SSMR3GetU32(pSSM, &u32Version);
+    AssertRCReturn(rc, rc);
+    LogFlow(("LoadOldSavedStates u32Version = %d\n", u32Version));
+
+    if (u32Version != ATA_CTL_SAVED_STATE_VERSION
+        && u32Version != ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
+        && u32Version != ATA_CTL_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
+    {
+        AssertMsgFailed(("u32Version=%d\n", u32Version));
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    }
+
+    SSMR3Skip(pSSM, 19 + 5 * sizeof(bool) + sizeof(BMDMAState));
+
+    for (uint32_t j = 0; j < 2; j++)
+    {
+        SSMR3Skip(pSSM, 88 + 5 * sizeof(bool) );
+
+        if (u32Version > ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
+        {
+            SSMR3Skip(pSSM, 64);
+        }
+        else
+        {
+            SSMR3Skip(pSSM, 2);
+        }
+        /** @todo triple-check this hack after passthrough is working */
+        SSMR3Skip(pSSM, 1);
+
+        if (u32Version > ATA_CTL_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
+            SSMR3Skip(pSSM, 4);
+
+        SSMR3Skip(pSSM, sizeof(PDMLED));
+        SSMR3GetU32(pSSM, &u32IOBuffer);
+        if (u32IOBuffer)
+        {
+            /* skip the buffer . IO Buffer is not required.. */
+            uint8_t u8Ignored;
+            size_t cbLeft = u32IOBuffer;
+            while (cbLeft-- > 0)
+                SSMR3GetU8(pSSM, &u8Ignored);
+        }
+    }
+
+    rc = SSMR3GetU32(pSSM, &u32);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (u32 != ~0U)
+    {
+        AssertMsgFailed(("u32=%#x expected ~0\n", u32));
+        rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Loads a saved AHCI device state.
  *
  * @returns VBox status code.
@@ -6848,7 +6924,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             if (uVersion <= AHCI_SAVED_STATE_VERSION_VBOX_30)
                 SSMR3Skip(pSSM, AHCI_NR_COMMAND_SLOTS * sizeof(uint8_t)); /* no active data here */
 
-            if (uVersion < AHCI_SAVED_STATE_VERSION)
+            if (uVersion < AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
             {
                 /* The old positions in the FIFO, not required. */
                 SSMR3Skip(pSSM, 2*sizeof(uint8_t));
@@ -6857,7 +6933,8 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             SSMR3GetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32TasksFinished);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32QueuedTasksFinished);
-            if (uVersion >= AHCI_SAVED_STATE_VERSION)
+
+            if (uVersion >= AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
                 SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32CurrentCommandSlot);
 
             if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_ATAPI)
@@ -6885,6 +6962,18 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pAhciPort->fRedo = true;
             }
         }
+
+        if (uVersion <= AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
+        {
+
+            for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+			{
+				rc = ahciR3LoadLegacyEmulationState(pSSM);
+				if(RT_FAILURE(rc))
+					return rc;
+			}
+		}
+
 		rc = SSMR3GetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             return rc;
