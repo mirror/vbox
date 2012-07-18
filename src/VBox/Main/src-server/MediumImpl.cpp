@@ -3772,11 +3772,11 @@ HRESULT Medium::saveSettings(settings::Medium &data,
     if (   itPln != m->mapProperties.end()
         && !itPln->second.isEmpty())
     {
-        /* Encrypt the plain secret. If that does not work (i.e. no settings key specified),
-         * just use the encrypted secret (if there is any). */
+        /* Encrypt the plain secret. If that does not work (i.e. no or wrong settings key
+         * specified), just use the encrypted secret (if there is any). */
         int rc = m->pVirtualBox->encryptSetting(itPln->second, &strCiphertext);
-        NOREF(rc);
-        fHaveInitiatorSecretEncrypted = true;
+        if (RT_SUCCESS(rc))
+            fHaveInitiatorSecretEncrypted = true;
     }
     for (settings::StringsMap::const_iterator it = m->mapProperties.begin();
          it != m->mapProperties.end();
@@ -3792,9 +3792,9 @@ HRESULT Medium::saveSettings(settings::Medium &data,
                 || !name.equals("InitiatorSecret"))
                 data.properties[name] = value;
         }
-        if (fHaveInitiatorSecretEncrypted)
-            data.properties["InitiatorSecretEncrypted"] = strCiphertext;
     }
+    if (fHaveInitiatorSecretEncrypted)
+        data.properties["InitiatorSecretEncrypted"] = strCiphertext;
 
     /* only for base media */
     if (m->pParent.isNull())
