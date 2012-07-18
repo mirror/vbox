@@ -17,17 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "../include/GuestCtrlImplPrivate.h"
-
-using namespace com;
-
 #define LOG_ENABLED
 #define LOG_GROUP LOG_GROUP_MAIN
 #define LOG_INSTANCE NULL
 #include <VBox/log.h>
+
+#include "../include/GuestCtrlImplPrivate.h"
+
+using namespace com;
 
 #include <iprt/env.h>
 #include <iprt/test.h>
