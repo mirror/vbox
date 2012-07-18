@@ -2040,11 +2040,11 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
 STDMETHODIMP VirtualBox::SetSettingsSecret(IN_BSTR aValue)
 {
     storeSettingsKey(aValue);
-    decryptSettings();
-    return S_OK;
+    int vrc = decryptSettings();
+    return RT_SUCCESS(vrc) ? S_OK : E_FAIL;
 }
 
-void VirtualBox::decryptMediumSettings(Medium *pMedium)
+int VirtualBox::decryptMediumSettings(Medium *pMedium)
 {
     Bstr bstrCipher;
     HRESULT hrc = pMedium->GetProperty(Bstr("InitiatorSecretEncrypted").raw(),
@@ -2057,7 +2057,10 @@ void VirtualBox::decryptMediumSettings(Medium *pMedium)
         int rc = decryptSetting(&strPlaintext, bstrCipher);
         if (RT_SUCCESS(rc))
             pMedium->setPropertyDirect("InitiatorSecret", strPlaintext);
+        else
+            return rc;
     }
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2068,8 +2071,9 @@ void VirtualBox::decryptMediumSettings(Medium *pMedium)
  * 'InitiatorSecretEncrypted. The latter is stored as Base64 because medium
  * properties need to be null-terminated strings.
  */
-void VirtualBox::decryptSettings()
+int VirtualBox::decryptSettings()
 {
+    bool fFailure = false;
     AutoReadLock al(m->allHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     for (MediaList::const_iterator mt = m->allHardDisks.begin();
          mt != m->allHardDisks.end();
@@ -2080,8 +2084,11 @@ void VirtualBox::decryptSettings()
         if (FAILED(medCaller.rc()))
             continue;
         AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
-        decryptMediumSettings(pMedium);
+        int vrc = decryptMediumSettings(pMedium);
+        if (RT_FAILURE(vrc))
+            fFailure = true;
     }
+    return fFailure ? VERR_INVALID_PARAMETER : VINF_SUCCESS;
 }
 
 /**
