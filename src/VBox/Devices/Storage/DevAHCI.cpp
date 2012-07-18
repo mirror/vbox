@@ -53,9 +53,8 @@
 # include <iprt/uuid.h>
 # include <iprt/time.h>
 #endif
-
+#include "PIIX3ATABmDma.h"
 #include "ide.h"
-#include "ATAController.h"
 #include "VBoxDD.h"
 
 /** Maximum number of ports available.
@@ -81,6 +80,7 @@
 #define ATA_CTL_SAVED_STATE_VERSION 3
 #define ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE 1
 #define ATA_CTL_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS 2
+#define MAX_LOG_REL_ERRORS 1024
 /**
  * Maximum number of sectors to transfer in a READ/WRITE MULTIPLE request.
  * Set to 1 to disable multi-sector read support. According to the ATA
@@ -649,9 +649,6 @@ typedef struct AHCI
 
     /** Register structure per port */
     AHCIPort                        ahciPort[AHCI_MAX_NR_PORTS_IMPL];
-
-    /** Needed values for the emulated ide channels. */
-    AHCIATACONTROLLER               aCts[2];
 
     /** The critical section. */
     PDMCRITSECT                     lock;
@@ -6959,7 +6956,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
         if (uVersion <= AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
         {
-            for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+            for (uint32_t i = 0; i < 2; i++)
             {
                 rc = ahciR3LoadLegacyEmulationState(pSSM);
                 if(RT_FAILURE(rc))
@@ -7468,21 +7465,6 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             AssertMsgFailed(("%s: Failed to destroy the event semaphore rc=%Rrc.\n", __FUNCTION__, rc));
     }
 
-    /* Check if the changed port uses IDE emulation. */
-    bool fMaster = false;
-    PAHCIATACONTROLLER pCtl = NULL;
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-        for (unsigned j = 0; j < RT_ELEMENTS(pAhci->aCts[0].aIfs); j++)
-        {
-            PAHCIATACONTROLLER pTmp = &pAhci->aCts[i];
-            if (pTmp->aIfs[j].iLUN == iLUN)
-            {
-                pCtl = pTmp;
-                fMaster = j == 0 ? true : false;
-            }
-        }
-
     if (pAhciPort->fATAPI)
         ahciMediumRemoved(pAhciPort);
 
@@ -7557,20 +7539,6 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     }
     else
     {
-        /* Check if the changed port uses IDE emulation. */
-        bool fMaster = false;
-        PAHCIATACONTROLLER pCtl = NULL;
-
-        for (unsigned i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-            for (unsigned j = 0; j < RT_ELEMENTS(pAhci->aCts[0].aIfs); j++)
-            {
-                PAHCIATACONTROLLER pTmp = &pAhci->aCts[i];
-                if (pTmp->aIfs[j].iLUN == iLUN)
-                {
-                    pCtl = pTmp;
-                    fMaster = j == 0 ? true : false;
-                }
-            }
         char szName[24];
         RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
 
