@@ -25,6 +25,9 @@
 #include <iprt/assert.h>
 #include <malloc.h>
 #include <VBoxGuestInternal.h>
+#ifdef VBOX_WITH_WDDM
+#include <iprt/asm.h>
+#endif
 
 typedef struct _VBOXDISPLAYCONTEXT
 {
@@ -406,7 +409,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
 
         }
 
-        DWORD err = VBoxDispIfResizeModes(&pCtx->pEnv->dispIf, paDisplayDevices, paDeviceModes, NumDevices);
+        DWORD err = VBoxDispIfResizeModes(&pCtx->pEnv->dispIf, Id, paDisplayDevices, paDeviceModes, NumDevices);
         if (err == NO_ERROR || err != ERROR_RETRY)
         {
             if (err == NO_ERROR)
