@@ -47,7 +47,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestSession)
 
-    int     init(Guest *aGuest, uint32_t aSessionID, Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName);
+    int     init(Guest *aGuest, ULONG aSessionID, Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -112,18 +112,22 @@ private:
 
     typedef std::vector <ComObjPtr<GuestDirectory> > SessionDirectories;
     typedef std::vector <ComObjPtr<GuestFile> > SessionFiles;
-    typedef std::map <uint32_t, ComObjPtr<GuestProcess> > SessionProcesses;
+    /** Map of guest processes. The key specifies the internal process number.
+     *  To retrieve the process' guest PID use the Id() method of the IProgress interface. */
+    typedef std::map <ULONG, ComObjPtr<GuestProcess> > SessionProcesses;
 
 public:
     /** @name Public internal methods.
      * @{ */
     int                     directoryClose(ComObjPtr<GuestDirectory> pDirectory);
+    int                     dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     int                     fileClose(ComObjPtr<GuestFile> pFile);
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
     int                     processClose(ComObjPtr<GuestProcess> pProcess);
     int                     processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProcess **aProcess);
-    inline bool             processExists(uint32_t uProcessID);
+    inline bool             processExists(ULONG uProcessID, ComObjPtr<GuestProcess> *pProcess);
+    inline int              processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
     /** @}  */
 
 private:

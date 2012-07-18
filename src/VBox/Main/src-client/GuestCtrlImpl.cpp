@@ -683,19 +683,33 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
      * No locking, as this is purely a notification which does not make any
      * changes to the object state.
      */
-#ifdef DEBUG_andy
-    LogFlowFunc(("pvExtension=%p, u32Function=%d, pvParms=%p, cbParms=%d\n",
+    LogFlowFunc(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
                  pvExtension, u32Function, pvParms, cbParms));
-#endif
     ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
+    Assert(!pGuest.isNull());
 
-    int rc = VINF_SUCCESS;
+    /*
+     * For guest control 2.0 using the legacy commands we need to do the following here:
+     * - Get the callback header to access the context ID
+     * - Get the context ID of the callback
+     * - Extract the session ID out of the context ID
+     * - Dispatch the whole stuff to the appropriate session (if still exists)
+     */
+
+    PCALLBACKHEADER pHeader = (PCALLBACKHEADER)pvParms;
+    AssertPtr(pHeader);
+
+    int rc = pGuest->dispatchToSession(pHeader->u32ContextID, u32Function, pvParms, cbParms);
+
+#ifdef VBOX_WITH_GUEST_CONTROL_LEGACY
+    if (RT_SUCCESS(rc))
+        return rc;
+
+    /* Legacy handling. */
     switch (u32Function)
     {
         case GUEST_DISCONNECTED:
         {
-            //LogFlowFunc(("GUEST_DISCONNECTED\n"));
-
             PCALLBACKDATACLIENTDISCONNECTED pCBData = reinterpret_cast<PCALLBACKDATACLIENTDISCONNECTED>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATACLIENTDISCONNECTED) == cbParms, VERR_INVALID_PARAMETER);
@@ -707,8 +721,6 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
 
         case GUEST_EXEC_SEND_STATUS:
         {
-            //LogFlowFunc(("GUEST_EXEC_SEND_STATUS\n"));
-
             PCALLBACKDATAEXECSTATUS pCBData = reinterpret_cast<PCALLBACKDATAEXECSTATUS>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATAEXECSTATUS) == cbParms, VERR_INVALID_PARAMETER);
@@ -720,8 +732,6 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
 
         case GUEST_EXEC_SEND_OUTPUT:
         {
-            //LogFlowFunc(("GUEST_EXEC_SEND_OUTPUT\n"));
-
             PCALLBACKDATAEXECOUT pCBData = reinterpret_cast<PCALLBACKDATAEXECOUT>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATAEXECOUT) == cbParms, VERR_INVALID_PARAMETER);
@@ -733,8 +743,6 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
 
         case GUEST_EXEC_SEND_INPUT_STATUS:
         {
-            //LogFlowFunc(("GUEST_EXEC_SEND_INPUT_STATUS\n"));
-
             PCALLBACKDATAEXECINSTATUS pCBData = reinterpret_cast<PCALLBACKDATAEXECINSTATUS>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATAEXECINSTATUS) == cbParms, VERR_INVALID_PARAMETER);
@@ -745,10 +753,11 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
         }
 
         default:
-            AssertMsgFailed(("Unknown guest control notification received, u32Function=%u\n", u32Function));
-            rc = VERR_INVALID_PARAMETER;
+            /* Silently ignore not implemented functions. */
+            rc = VERR_NOT_IMPLEMENTED;
             break;
     }
+#endif /* VBOX_WITH_GUEST_CONTROL_LEGACY */
     return rc;
 }
 
@@ -2663,6 +2672,26 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
+int Guest::dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    GuestSessions::const_iterator itSession
+        = mData.mGuestSessions.find(VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID));
+    if (itSession != mData.mGuestSessions.end())
+    {
+        ComObjPtr<GuestSession> pSession(itSession->second);
+        Assert(!pSession.isNull());
+
+        alock.release();
+        return pSession->dispatchToProcess(uContextID, uFunction, pvData, cbData);
+    }
+    return VERR_NOT_FOUND;
+}
+
 int Guest::sessionClose(ComObjPtr<GuestSession> pSession)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -2748,16 +2777,24 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     ReturnComNotImplemented();
 #else /* VBOX_WITH_GUEST_CONTROL */
 
-    /* Do not allow anonymous sessions (with system rights). */
+    LogFlowFuncEnter();
+
+    /* Do not allow anonymous sessions (with system rights) with official API. */
     if (RT_UNLIKELY((aUser) == NULL || *(aUser) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
     CheckComArgOutPointerValid(aGuestSession);
+    /* Rest is optional. */
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     int rc = sessionCreate(aUser, aPassword, aDomain, aSessionName, aGuestSession);
-    return RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+
+    /** @todo Do setError() here. */
+    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
+    LogFlowFuncLeaveRC(hr);
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

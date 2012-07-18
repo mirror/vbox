@@ -21,6 +21,7 @@
  ******************************************************************************/
 #include "GuestCtrlImplPrivate.h"
 
+#include <iprt/asm.h>
 #include <iprt/ctype.h>
 #ifdef DEBUG
 # include "Logging.h"
@@ -33,17 +34,21 @@
 
 GuestCtrlCallback::GuestCtrlCallback(void)
     : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      uFlags(0),
+      fCanceled(false),
       pvData(NULL),
       cbData(0),
-      mEventSem(NIL_RTSEMEVENT)
+      hEventSem(NIL_RTSEMEVENT)
 {
 }
 
 GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
     : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      uFlags(0),
+      fCanceled(false),
       pvData(NULL),
       cbData(0),
-      mEventSem(NIL_RTSEMEVENT)
+      hEventSem(NIL_RTSEMEVENT)
 {
     int rc = Init(enmType);
     AssertRC(rc);
@@ -52,6 +57,22 @@ GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
 GuestCtrlCallback::~GuestCtrlCallback(void)
 {
     Destroy();
+}
+
+int GuestCtrlCallback::Cancel(void)
+{
+    if (!ASMAtomicReadBool(&fCanceled))
+    {
+        int rc = RTSemEventSignal(hEventSem);
+        if (RT_SUCCESS(rc))
+            ASMAtomicXchgBool(&fCanceled, true);
+    }
+    return VINF_SUCCESS;
+}
+
+bool GuestCtrlCallback::Canceled(void)
+{
+    return ASMAtomicReadBool(&fCanceled);
 }
 
 int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
@@ -96,7 +117,7 @@ int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTSemEventCreate(&mEventSem);
+        rc = RTSemEventCreate(&hEventSem);
         if (RT_SUCCESS(rc))
             mType  = enmType;
     }
@@ -113,8 +134,8 @@ void GuestCtrlCallback::Destroy(void)
         pvData = NULL;
     }
     cbData = 0;
-    if (mEventSem != NIL_RTSEMEVENT)
-        RTSemEventDestroy(mEventSem);
+    if (hEventSem != NIL_RTSEMEVENT)
+        RTSemEventDestroy(hEventSem);
 }
 
 eVBoxGuestCtrlCallbackType GuestCtrlCallback::Type(void)
@@ -122,20 +143,24 @@ eVBoxGuestCtrlCallbackType GuestCtrlCallback::Type(void)
     return mType;
 }
 
-int GuestCtrlCallback::Wait(RTMSINTERVAL timeoutMS)
+int GuestCtrlCallback::Wait(ULONG uTimeoutMS)
 {
-    Assert(mEventSem != NIL_RTSEMEVENT);
-    return RTSemEventWait(mEventSem, timeoutMS);
+    Assert(hEventSem != NIL_RTSEMEVENT);
+
+    RTMSINTERVAL msInterval = uTimeoutMS;
+    if (!uTimeoutMS)
+        msInterval = RT_INDEFINITE_WAIT;
+    return RTSemEventWait(hEventSem, msInterval);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int GuestEnvironment::BuildEnvironmentBlock(void **ppvEnv, uint32_t *pcbEnv, uint32_t *pcEnvVars)
+int GuestEnvironment::BuildEnvironmentBlock(void **ppvEnv, size_t *pcbEnv, uint32_t *pcEnvVars)
 {
     AssertPtrReturn(ppvEnv, VERR_INVALID_POINTER);
     /* Rest is optional. */
 
-    uint32_t cbEnv = 0;
+    size_t cbEnv = 0;
     uint32_t cEnvVars = 0;
 
     int rc = VINF_SUCCESS;
@@ -337,13 +362,13 @@ GuestEnvironment& GuestEnvironment::operator=(const GuestEnvironment &that)
  * @param   pcEnvVars       Pointer to the variable holding count of variables
  *                          stored in the environment block.
  */
-int GuestEnvironment::appendToEnvBlock(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars)
+int GuestEnvironment::appendToEnvBlock(const char *pszEnv, void **ppvList, size_t *pcbList, uint32_t *pcEnvVars)
 {
     int rc = VINF_SUCCESS;
-    uint32_t cchEnv = strlen(pszEnv); Assert(cchEnv >= 2);
+    size_t cchEnv = strlen(pszEnv); Assert(cchEnv >= 2);
     if (*ppvList)
     {
-        uint32_t cbNewLen = *pcbList + cchEnv + 1; /* Include zero termination. */
+        size_t cbNewLen = *pcbList + cchEnv + 1; /* Include zero termination. */
         char *pvTmp = (char *)RTMemRealloc(*ppvList, cbNewLen);
         if (pvTmp == NULL)
             rc = VERR_NO_MEMORY;

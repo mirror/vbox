@@ -44,7 +44,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestProcess)
 
-    int     init(Console *aConsole, GuestSession *aSession, uint32_t aProcessID, const GuestProcessInfo &aProcInfo);
+    int     init(Console *aConsole, GuestSession *aSession, ULONG aProcessID, const GuestProcessInfo &aProcInfo);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -68,16 +68,22 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
-    int callbackAdd(const GuestCtrlCallback& theCallback, uint32_t *puContextID);
-    bool callbackExists(uint32_t uContextID);
+    int callbackAdd(GuestCtrlCallback *pCallback, ULONG *puContextID);
+    int callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
+    bool callbackExists(ULONG uContextID);
     bool isReady(void);
-    int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars);
-    int readData(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
+    ULONG getPID(void) { return mData.mPID; }
+    int onGuestDisconnected(void);
+    int onProcessInputStatus(uint32_t uStatus, uint32_t uFlags, uint32_t cbDataProcessed);
+    int onProcessStatusChange(uint32_t uStatus, uint32_t uFlags, uint32_t uPID);
+    int onProcessOutput(uint32_t uHandle, uint32_t uFlags, void *pvData, uint32_t cbData);
+    int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
+    int readData(ULONG uHandle, ULONG uSize, ULONG uTimeoutMS, BYTE *pbData, size_t cbData);
     int startProcess(void);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
     int terminateProcess(void);
-    int waitFor(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitReason_T *aReason);
-    int writeData(ULONG aHandle, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
+    int waitFor(uint32_t fFlags, ULONG uTimeoutMS, ProcessWaitReason_T *penmReason);
+    int writeData(ULONG uHandle, BYTE const *pbData, size_t cbData, ULONG uTimeoutMS, ULONG *puWritten);
     /** @}  */
 
 private:
@@ -98,14 +104,18 @@ private:
         /** PID reported from the guest. */
         ULONG                    mPID;
         /** Internal, host-side process ID. */
-        uint32_t                 mProcessID;
+        ULONG                 mProcessID;
         /** The current process status. */
         ProcessStatus_T          mStatus;
         /** Flag indicating whether the process has been started. */
         bool                     mStarted;
         /** The next upcoming context ID. */
-        uint32_t                 mNextContextID;
+        ULONG                    mNextContextID;
+        /** The waiting event. */
+        RTSEMEVENT               mEvent;
     } mData;
+
+    friend GuestSession; /* Let's be friends! */
 };
 
 #endif /* !____H_GUESTPROCESSIMPL */
