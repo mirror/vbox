@@ -315,8 +315,8 @@ private:
     HRESULT unregisterDHCPServer(DHCPServer *aDHCPServer,
                                  bool aSaveRegistry = true);
 
-    void decryptSettings();
-    void decryptMediumSettings(Medium *pMedium);
+    int  decryptSettings();
+    int  decryptMediumSettings(Medium *pMedium);
     int  decryptSettingBytes(uint8_t *aPlaintext, const uint8_t *aCiphertext,
                              size_t aCiphertextSize) const;
     int  encryptSettingBytes(const uint8_t *aPlaintext, uint8_t *aCiphertext,
