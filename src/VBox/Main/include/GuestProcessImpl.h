@@ -114,8 +114,6 @@ private:
         /** The waiting event. */
         RTSEMEVENT               mEvent;
     } mData;
-
-    friend GuestSession; /* Let's be friends! */
 };
 
 #endif /* !____H_GUESTPROCESSIMPL */
