@@ -80,7 +80,10 @@
 #define ATA_CTL_SAVED_STATE_VERSION 3
 #define ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE 1
 #define ATA_CTL_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS 2
+
+/** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS 1024
+
 /**
  * Maximum number of sectors to transfer in a READ/WRITE MULTIPLE request.
  * Set to 1 to disable multi-sector read support. According to the ATA

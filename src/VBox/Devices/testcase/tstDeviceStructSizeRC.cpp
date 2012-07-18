@@ -1114,8 +1114,6 @@ int main()
     GEN_CHECK_OFF(SerialState, char_transmit_time);
 
 #ifdef VBOX_WITH_AHCI
-    /* Storage/ATAController.h */
-
     /* Storage/DevAHCI.cpp */
 
     GEN_CHECK_SIZE(AHCIPort);
