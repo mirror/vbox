@@ -534,6 +534,9 @@ private:
     QString m_strPidfile;
 #endif
 
+    char mSettingsPw[256];
+    bool mSettingsPwSet;
+
     friend VBoxGlobal &vboxGlobal();
 };
 
