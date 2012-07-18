@@ -90,11 +90,9 @@ typedef struct VBOXWATCHDOG_MACHINE
 #ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
     ComPtr<IPerformanceCollector> collector;
 #endif
-    /** The VM group(s) this machine belongs to.
-     *  Contains groups from per-machine "VBoxInternal2/VMGroup". */
+    /** The group(s) this machine belongs to. */
     mapGroups groups;
-    /** Map containing the individual
-     *  module payloads. */
+    /** Map containing the individual module payloads. */
     mapPayload payload;
 } VBOXWATCHDOG_MACHINE, *PVBOXWATCHDOG_MACHINE;
 typedef std::map<Bstr, VBOXWATCHDOG_MACHINE> mapVM;
