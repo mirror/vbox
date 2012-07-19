@@ -4266,6 +4266,20 @@ DxgkDdiEscape(
                 Status = STATUS_SUCCESS;
                 break;
             }
+            case VBOXESC_ISANYX:
+            {
+                if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_ISANYX))
+                {
+                    WARN(("invalid private driver size %d", pEscape->PrivateDriverDataSize));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                PVBOXDISPIFESCAPE_ISANYX pIsAnyX = (PVBOXDISPIFESCAPE_ISANYX)pEscapeHdr;
+                pIsAnyX->u32IsAnyX = pDevExt->fAnyX;
+                Status = STATUS_SUCCESS;
+                break;
+            }
             case VBOXESC_DBGPRINT:
             {
                 /* use RT_OFFSETOF instead of sizeof since sizeof will give an aligned size that might

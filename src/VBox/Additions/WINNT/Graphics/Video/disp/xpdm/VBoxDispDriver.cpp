@@ -1000,6 +1000,21 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
             }
             break;
         }
+        case VBOXESC_ISANYX:
+        {
+            if (pvOut && cjOut == sizeof(DWORD))
+            {
+                /* @todo: impl */
+                *(DWORD *)pvOut = TRUE;
+                return 1;
+            }
+            else
+            {
+                WARN(("VBOXESC_ISANYX invalid parms"));
+                return 0;
+            }
+            break;
+        }
         default:
         {
             LOG(("unsupported iEsc %#x", iEsc));
