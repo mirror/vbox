@@ -94,6 +94,22 @@ endif
 
 # The compiler runtime DLLs.
 ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
+ ifdef VBOX_USE_VCC100
+   VBOX_PATH_VCC_REDIST         = $(PATH_TOOL_$(VBOX_VCC_TOOL))/redist/
+   VBOX_PATH_VCC_REDIST_CRT     = $(VBOX_PATH_VCC_REDIST)/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.CRT
+   VBOX_PATH_VCC_REDIST_CRT_DBG = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.DebugCRT
+   bin_SOURCES += \
+   	$(VBOX_PATH_VCC_REDIST_CRT)/msvcr100.dll \
+   	$(VBOX_PATH_VCC_REDIST_CRT)/msvcp100.dll \
+   	$(VBOX_PATH_VCC_REDIST_CRT)/msvcr100.dll=>testcase/msvcr100.dll \
+   	$(VBOX_PATH_VCC_REDIST_CRT)/msvcp100.dll=>testcase/msvcp100.dll
+  ifeq ($(VBOX_VCC_CRT_TYPE),d)
+   	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr100.dll \
+   	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp100.dll \
+   	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr100.dll=>testcase/msvcr100.dll \
+   	$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp100.dll=>testcase/msvcp100.dll
+  endif
+ endif
  ifdef VBOX_USE_VCC80
   include $(KBUILD_PATH)/tools/VCC80X86.kmk
   include $(KBUILD_PATH)/tools/VCC80AMD64.kmk
@@ -128,11 +144,13 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
    	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcp80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcp80d.dll
   endif
  endif
- ifndef VBOX_USE_VCC80
-  VBOX_INSTALL_VCC70_RT = 1
- endif
- ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
-  VBOX_INSTALL_VCC70_RT = 1
+ ifndef VBOX_USE_VCC100
+  ifndef VBOX_USE_VCC80
+   VBOX_INSTALL_VCC70_RT = 1
+  endif
+  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
+   VBOX_INSTALL_VCC70_RT = 1
+  endif
  endif
  ifdef VBOX_INSTALL_VCC70_RT
   include $(KBUILD_PATH)/tools/VCC70.kmk
