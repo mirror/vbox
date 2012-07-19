@@ -112,6 +112,10 @@ VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
 	VBoxServiceClipboard-os2.cpp
 
+VBoxService_LIBS        += \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)       # (The joy of unix linkers.)
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_LIBS        += \
 	crypt
@@ -122,7 +126,9 @@ ifdef VBOX_WITH_GUEST_PROPS
  	WtsApi32.lib \
  	Psapi.lib
  VBoxService_LIBS.solaris += \
- 	nsl kstat contract
+ 	nsl \
+	kstat \
+	contract
 endif
 
 #
