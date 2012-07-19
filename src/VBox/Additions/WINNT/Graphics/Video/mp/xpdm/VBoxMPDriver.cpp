@@ -534,6 +534,16 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
             break;
         }
 #endif
+
+        case IOCTL_VIDEO_VBOX_ISANYX:
+        {
+            STARTIO_OUT(uint32_t, pu32AnyX);
+            *pu32AnyX = pExt->fAnyX;
+            pStatus->Information = sizeof (uint32_t);
+            bResult = TRUE;
+            break;
+        }
+
         default:
         {
             WARN(("unsupported IOCTL %p, fn(%#x)",
