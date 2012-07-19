@@ -673,7 +673,7 @@ void Console::uninit()
     if (mVRDEServerInfo)
     {
         mVRDEServerInfo->uninit();
-        unconst(mVRDEServerInfo).setNull();;
+        unconst(mVRDEServerInfo).setNull();
     }
 
     if (mDebugger)
@@ -697,13 +697,13 @@ void Console::uninit()
     if (mKeyboard)
     {
         mKeyboard->uninit();
-        unconst(mKeyboard).setNull();;
+        unconst(mKeyboard).setNull();
     }
 
     if (mGuest)
     {
         mGuest->uninit();
-        unconst(mGuest).setNull();;
+        unconst(mGuest).setNull();
     }
 
     if (mConsoleVRDPServer)
