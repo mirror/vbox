@@ -636,7 +636,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
                         break;
                 }
 
-                AssertMsg(!strErrDetail.isEmpty());
+                Assert(!strErrDetail.isEmpty());
                 rc = pCallback->Signal(pData->u32Flags /* rc from guest. */, strErrDetail);
             }
             fSignal = mData.mWaitFlags & ProcessWaitForFlag_Status;
