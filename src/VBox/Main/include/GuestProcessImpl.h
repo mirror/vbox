@@ -73,12 +73,13 @@ public:
     bool callbackExists(ULONG uContextID);
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
-    int onGuestDisconnected(void);
-    int onProcessInputStatus(uint32_t uStatus, uint32_t uFlags, uint32_t cbDataProcessed);
-    int onProcessStatusChange(uint32_t uStatus, uint32_t uFlags, uint32_t uPID);
-    int onProcessOutput(uint32_t uHandle, uint32_t uFlags, void *pvData, uint32_t cbData);
+    int onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDATACLIENTDISCONNECTED pData);
+    int onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECINSTATUS pData);
+    int onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECSTATUS pData);
+    int onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECOUT pData);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
     int readData(ULONG uHandle, ULONG uSize, ULONG uTimeoutMS, BYTE *pbData, size_t cbData);
+    int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
     int startProcess(void);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
     int terminateProcess(void);
@@ -104,15 +105,21 @@ private:
         /** PID reported from the guest. */
         ULONG                    mPID;
         /** Internal, host-side process ID. */
-        ULONG                 mProcessID;
+        ULONG                    mProcessID;
         /** The current process status. */
         ProcessStatus_T          mStatus;
         /** Flag indicating whether the process has been started. */
         bool                     mStarted;
         /** The next upcoming context ID. */
         ULONG                    mNextContextID;
+        /** Flag indicating someone is waiting for an event. */
+        bool                     mWaiting;
+        /** The waiting mutex. */
+        RTSEMMUTEX               mWaitMutex;
+        /** The waiting flag(s). */
+        uint32_t                 mWaitFlags;
         /** The waiting event. */
-        RTSEMEVENT               mEvent;
+        RTSEMEVENT               mWaitEvent;
     } mData;
 };
 
