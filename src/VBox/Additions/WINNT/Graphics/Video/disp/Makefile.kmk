@@ -28,6 +28,7 @@ VBoxDisp_TEMPLATE      = VBOXGUESTR0
 VBoxDisp_SYSSUFF       = .dll
 VBoxDisp_SDKS          = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
 VBoxDisp_DEFS.x86     = _WIN32_WINNT=0x0501
+VBoxDisp_DEFS.amd64   = _WIN32_WINNT=0x0500 # <- otherwise the build will fail due to DDK header inconsistencies
 VBoxDisp_DEFS          = VBOX_WITH_DDRAW
 VBoxDisp_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
 ifdef VBOX_WITH_VIDEOHWACCEL
