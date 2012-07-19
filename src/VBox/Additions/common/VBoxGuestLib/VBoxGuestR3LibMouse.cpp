@@ -66,7 +66,9 @@ VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_
  *
  * @returns VBox status code.
  *
- * @param   fFeatures  Supported mouse pointer features.
+ * @param   fFeatures  Supported mouse pointer features.  The main guest driver
+ *                     will mediate different callers and show the host any
+ *                     feature enabled by any guest caller.
  */
 VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t fFeatures)
 {

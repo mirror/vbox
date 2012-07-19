@@ -26,6 +26,20 @@
 
 #include "VBGLInternal.h"
 
+/**
+ * Sets the function which is called back on each mouse pointer event.  Only
+ * one callback can be active at once, so if you need several for any reason
+ * you must multiplex yourself.  Call backs can be disabled by passing NULL
+ * as the function pointer.
+ *
+ * @remarks Ring-0.
+ * @returns iprt status code.
+ * @returns VERR_TRY_AGAIN if the main guest driver hasn't finished
+ *          initialising.
+ *
+ * @param   pfnNotify  the function to call back.  NULL to disable call backs.
+ * @param   pvUser     user supplied data/cookie to be passed to the function.
+ */
 DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify,
                                          void *pvUser)
 {
@@ -42,6 +56,16 @@ DECLVBGL(int) VbglSetMouseNotifyCallback(PFNVBOXGUESTMOUSENOTIFY pfnNotify,
                            &NotifyCallback, sizeof(NotifyCallback));
 }
 
+/**
+ * Retrieve mouse coordinates and features from the host.
+ *
+ * @remarks Ring-0.
+ * @returns VBox status code.
+ *
+ * @param   pfFeatures  Where to store the mouse features.
+ * @param   px          Where to store the X co-ordinate.
+ * @param   py          Where to store the Y co-ordinate.
+ */
 DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px,
                                  uint32_t *py)
 {
@@ -69,6 +93,16 @@ DECLVBGL(int) VbglGetMouseStatus(uint32_t *pfFeatures, uint32_t *px,
     return VINF_SUCCESS;
 }
 
+/**
+ * Send mouse features to the host.
+ *
+ * @remarks Ring-0.
+ * @returns VBox status code.
+ *
+ * @param   fFeatures  Supported mouse pointer features.  The main guest driver
+ *                     will mediate different callers and show the host any
+ *                     feature enabled by any guest caller.
+ */
 DECLVBGL(int) VbglSetMouseStatus(uint32_t fFeatures)
 {
     VBGLDRIVER *pDriver;
