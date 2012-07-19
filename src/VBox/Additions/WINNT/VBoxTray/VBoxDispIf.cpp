@@ -54,11 +54,15 @@ DWORD VBoxDispIfTerm(PVBOXDISPIF pIf)
     return NO_ERROR;
 }
 
-static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
+static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData, int iDirection)
 {
     HDC  hdc = GetDC(HWND_DESKTOP);
     VOID *pvData = cbData ? VBOXDISPIFESCAPE_DATA(pEscape, VOID) : NULL;
-    int iRet = ExtEscape(hdc, pEscape->escapeCode, cbData, (LPCSTR)pvData, 0, NULL);
+    int iRet = ExtEscape(hdc, pEscape->escapeCode,
+            iDirection >= 0 ? cbData : 0,
+            iDirection >= 0 ? (LPSTR)pvData : NULL,
+            iDirection <= 0 ? cbData : 0,
+            iDirection <= 0 ? (LPSTR)pvData : NULL);
     ReleaseDC(HWND_DESKTOP, hdc);
     if (iRet > 0)
         return VINF_SUCCESS;
@@ -352,7 +356,24 @@ DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
     {
         case VBOXDISPIF_MODE_XPDM_NT4:
         case VBOXDISPIF_MODE_XPDM:
-            return vboxDispIfEscapeXPDM(pIf, pEscape, cbData);
+            return vboxDispIfEscapeXPDM(pIf, pEscape, cbData, 1);
+#ifdef VBOX_WITH_WDDM
+        case VBOXDISPIF_MODE_WDDM:
+            return vboxDispIfEscapeWDDM(pIf, pEscape, cbData, TRUE /* BOOL fHwAccess */);
+#endif
+        default:
+            Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            return ERROR_INVALID_PARAMETER;
+    }
+}
+
+DWORD VBoxDispIfEscapeInOut(PCVBOXDISPIF const pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
+{
+    switch (pIf->enmMode)
+    {
+        case VBOXDISPIF_MODE_XPDM_NT4:
+        case VBOXDISPIF_MODE_XPDM:
+            return vboxDispIfEscapeXPDM(pIf, pEscape, cbData, 0);
 #ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
             return vboxDispIfEscapeWDDM(pIf, pEscape, cbData, TRUE /* BOOL fHwAccess */);

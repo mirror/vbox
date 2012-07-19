@@ -32,6 +32,8 @@ typedef struct _VBOXDISPLAYCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
 
+    BOOL fAnyX;
+
     /* ChangeDisplaySettingsEx does not exist in NT. ResizeDisplayDevice uses the function. */
     LONG (WINAPI * pfnChangeDisplaySettingsEx)(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
 
@@ -105,6 +107,14 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
         Log(("VBoxTray: VBoxDisplayInit: Warning, display for platform not handled yet!\n"));
         return VERR_NOT_IMPLEMENTED;
     }
+
+    VBOXDISPIFESCAPE_ISANYX IsAnyX = {0};
+    IsAnyX.EscapeHdr.escapeCode = VBOXESC_ISANYX;
+    DWORD err = VBoxDispIfEscapeInOut(&pEnv->dispIf, &IsAnyX.EscapeHdr, sizeof (uint32_t));
+    if (err == NO_ERROR)
+        gCtx.fAnyX = !!IsAnyX.u32IsAnyX;
+    else
+        gCtx.fAnyX = TRUE;
 
     Log(("VBoxTray: VBoxDisplayInit: Display init successful\n"));
 
@@ -207,6 +217,9 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
                                         VBOXDISPLAYCONTEXT *pCtx)
 {
     BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0);
+
+    if (!gCtx.fAnyX)
+        Width &= 0xFFF8;
 
     DISPLAY_DEVICE DisplayDevice;
 
