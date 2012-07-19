@@ -32,7 +32,7 @@ PROGRAMS.win.x86 += VBoxServiceNT
 #
 # VBoxService
 #
-VBoxService_TEMPLATE      = VBOXGUESTR3EXE
+VBoxService_TEMPLATE      = NewVBoxGuestR3Exe
 VBoxService_DEFS          = VBOX_WITH_HGCM VBOXSERVICE_TIMESYNC VBOXSERVICE_MANAGEMENT VBOXSERVICE_TOOLBOX
 VBoxService_DEFS         += \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
@@ -112,10 +112,6 @@ VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
 	VBoxServiceClipboard-os2.cpp
 
-VBoxService_LIBS          = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3)
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_LIBS        += \
 	crypt
@@ -132,7 +128,7 @@ endif
 #
 # VBoxServiceNT - NT4 version of VBoxService.
 #
-VBoxServiceNT_TEMPLATE = VBOXGUESTR3EXE
+VBoxServiceNT_TEMPLATE = NewVBoxGuestR3Exe
 VBoxServiceNT_EXTENDS  = VBoxService
 VBoxServiceNT_DEFS.win = _WIN32_WINNT=0x0400 TARGET_NT4 VBOXSERVICE_MANAGEMENT
 

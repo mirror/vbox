@@ -30,7 +30,7 @@ VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
 PROGRAMS += VBoxDrvInst
-VBoxDrvInst_TEMPLATE= VBOXGUESTR3EXE
+VBoxDrvInst_TEMPLATE= NewVBoxGuestR3Exe
 VBoxDrvInst_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
 VBoxDrvInst_DEFS   += VBOX_SVN_REV=$(VBOX_SVN_REV)
 ifdef VBOX_WITH_WDDM
@@ -46,14 +46,14 @@ VBoxDrvInst_SOURCES = \
 	VBoxDrvInst.rc
 
 PROGRAMS += VBoxGuestDrvInst
-VBoxGuestDrvInst_TEMPLATE= VBOXGUESTR3EXE
+VBoxGuestDrvInst_TEMPLATE= NewVBoxGuestR3Exe
 VBoxGuestDrvInst_DEFS    =  _WIN32_WINNT=0x0400 UNICODE
 VBoxGuestDrvInst_SOURCES = \
 	VBoxGuestDrvInst.cpp \
 	VBoxGuestDrvInst.rc
 
 PROGRAMS += RegCleanup
-RegCleanup_TEMPLATE = VBOXGUESTR3EXE
+RegCleanup_TEMPLATE = NewVBoxGuestR3Exe
 RegCleanup_DEFS     = _WIN32_WINNT=0x0400 UNICODE
 RegCleanup_SOURCES  = \
 	RegCleanup.cpp \
@@ -211,7 +211,8 @@ $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.exe: \
 		$(DRIVER_FILES) \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		$(VBOX_NSIS_ICON_FILE) \
-		$(VBOX_VERSION_STAMP)\
+		$(VBOX_VERSION_STAMP) \
+               $$(VBoxDrvInst_1_STAGE_TARGET) \
 		| $$(dir $$@)
 	$(call MSG_L1,Creating $@, from $<)
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
@@ -249,7 +250,8 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		$(VBOX_NSIS_ICON_FILE) \
 		$(if $(VBOX_SIGNING_MODE),$(PATH_TARGET)/uninst.exe) \
-		$(VBOX_VERSION_STAMP)
+		$(VBOX_VERSION_STAMP) \
+               $$(VBoxDrvInst_1_STAGE_TARGET)
 	$(call MSG_L1,Creating $@, from $<)
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
 		$(VB_WIN_ADD_NSIS_ENV) \

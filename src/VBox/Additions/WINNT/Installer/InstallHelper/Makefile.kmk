@@ -23,7 +23,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 ## @todo kBuild: This needs the WINPSDK fix to work for cross building.
 DLLS.x86 += VBoxGuestInstallHelper
-VBoxGuestInstallHelper_TEMPLATE = VBOXGUESTR3DLL
+VBoxGuestInstallHelper_TEMPLATE = NewVBoxGuestR3Dll
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxGuestInstallHelper_INSTTYPE = none
  VBoxGuestInstallHelper_DEBUG_INSTTYPE = both

@@ -23,7 +23,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 PROGRAMS += VBoxClient
 
-VBoxClient_TEMPLATE = VBOXGUESTR3EXE
+VBoxClient_TEMPLATE = NewVBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
 ifdef VBOX_WITH_DBUS
  VBoxClient_DEFS += VBOX_WITH_DBUS
@@ -44,9 +44,6 @@ VBoxClient_LIBS.linux = \
 VBoxClient_LIBS.solaris = \
 	dl
 VBoxClient_LIBS = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
 	X11 \
 	Xrandr \
 	Xt

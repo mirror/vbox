@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxTray
-VBoxTray_TEMPLATE = VBOXGUESTR3EXE
+VBoxTray_TEMPLATE = NewVBoxGuestR3Exe
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxTray_INSTTYPE = none
  VBoxTray_DEBUG_INSTTYPE = both
@@ -62,10 +62,6 @@ ifdef VBOX_WITH_MMR
  VBoxTray_SOURCES  += \
         VBoxMMR.cpp
 endif
-
-VBoxTray_LIBS     = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3)
 
 ifdef VBOX_WITH_WDDM
  VBoxTray_DEFS   += VBOX_WITH_WDDM
