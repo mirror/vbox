@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #define _WIN32_WINNT 0x0500
-#include <windows.h>
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 #include "VBoxSeamless.h"

@@ -14,7 +14,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxDispIf.h"
+#include "VBoxTray.h"
 
 #include <iprt/log.h>
 #include <iprt/err.h>

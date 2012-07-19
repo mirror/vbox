@@ -18,7 +18,26 @@
 #ifndef ___VBOXTRAY_H
 #define ___VBOXTRAY_H
 
+#       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
+#       define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap
+#       define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKVsCompilerCrap
+#       define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandset      _interlockedbittestandset_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandreset    _interlockedbittestandreset_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandset64    _interlockedbittestandset64_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandreset64  _interlockedbittestandreset64_StupidDDKVsCompilerCrap
+#       pragma warning(disable : 4163)
 #include <windows.h>
+#       pragma warning(default : 4163)
+#       undef  _InterlockedExchange
+#       undef  _InterlockedExchangeAdd
+#       undef  _InterlockedCompareExchange
+#       undef  _InterlockedAddLargeStatistic
+#       undef  _interlockedbittestandset
+#       undef  _interlockedbittestandreset
+#       undef  _interlockedbittestandset64
+#       undef  _interlockedbittestandreset64
+
 #include <tchar.h>
 #include <stdio.h>
 #include <stdarg.h>
