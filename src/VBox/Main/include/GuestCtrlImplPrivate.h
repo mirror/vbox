@@ -90,7 +90,11 @@ public:
 
     void Destroy(void);
 
-    eVBoxGuestCtrlCallbackType Type(void);
+    int Signal(int rc = VINF_SUCCESS, const Utf8Str &strMsg = "");
+
+    Utf8Str GetMessage(void) { return mMessage; }
+
+    eVBoxGuestCtrlCallbackType GetType(void) { return mType; }
 
     int Wait(ULONG uTimeoutMS);
 
@@ -108,8 +112,11 @@ protected:
     size_t                      cbData;
     /** The event semaphore triggering the*/
     RTSEMEVENT                  hEventSem;
-    /** Extended error information, if any. */
-    ErrorInfo                   mErrorInfo;
+    /** Overall result code. */
+    int                         mRC;
+    /** Error / information message to the
+     *  result code. */
+    Utf8Str                     mMessage;
 };
 typedef std::map < uint32_t, GuestCtrlCallback* > GuestCtrlCallbacks;
 
