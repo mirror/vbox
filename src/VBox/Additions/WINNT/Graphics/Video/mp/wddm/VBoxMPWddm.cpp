@@ -658,15 +658,17 @@ static NTSTATUS vboxWddmChildStatusReportReconnected(PVBOXMP_DEVEXT pDevExt, D3D
 #endif
 }
 
-static NTSTATUS vboxWddmChildStatusCheck(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_VIDEOMODES_INFO paInfos)
+static NTSTATUS vboxWddmChildStatusCheckByMask(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_VIDEOMODES_INFO paInfos, uint8_t *pMask)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     bool bChanged[VBOX_VIDEO_MAX_SCREENS] = {0};
     int i;
 
-    Assert(!bChanged[0]);
     for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
+        if (pMask && !ASMBitTest(pMask, i))
+            continue;
+
         /* @todo: check that we actually need the current source->target */
         PVBOXWDDM_VIDEOMODES_INFO pInfo = &paInfos[i];
         VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
@@ -4149,10 +4151,10 @@ DxgkDdiEscape(
                 }
                 WARN(("VBOXESC_REINITVIDEOMODESBYMASK should be called instead"));
                 PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateAllVideoModesInfos(pDevExt);
-                Status = vboxWddmChildStatusCheck(pDevExt, pInfos);
+                Status = vboxWddmChildStatusCheckByMask(pDevExt, pInfos, NULL);
                 if (!NT_SUCCESS(Status))
                 {
-                    WARN(("vboxWddmChildStatusCheck failed, Status 0x%x", Status));
+                    WARN(("vboxWddmChildStatusCheckByMask failed, Status 0x%x", Status));
                 }
                 break;
             }
@@ -4175,10 +4177,10 @@ DxgkDdiEscape(
                 PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateVideoModesInfoByMask(pDevExt, pData->ScreenMask);
                 if (fCheckDisplayRecconect)
                 {
-                    Status = vboxWddmChildStatusCheck(pDevExt, pInfos);
+                    Status = vboxWddmChildStatusCheckByMask(pDevExt, pInfos, pData->ScreenMask);
                     if (!NT_SUCCESS(Status))
                     {
-                        WARN(("vboxWddmChildStatusCheck failed, Status 0x%x", Status));
+                        WARN(("vboxWddmChildStatusCheckByMask failed, Status 0x%x", Status));
                     }
                 }
                 break;

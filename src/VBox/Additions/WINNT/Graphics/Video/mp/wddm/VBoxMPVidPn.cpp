@@ -1318,21 +1318,16 @@ static NTSTATUS vboxVidPnCofuncModalityForPathTarget(PVBOXVIDPNCOFUNCMODALITY pC
                         if (NT_SUCCESS(Status))
                         {
                             Status = pNewVidPnTargetModeSetInterface->pfnAddMode(hNewVidPnTargetModeSet, pNewVidPnTargetModeInfo);
-                            Assert(Status == STATUS_SUCCESS);
                             if (NT_SUCCESS(Status))
                             {
                                 /* success */
                                 continue;
                             }
                             else
-                            {
                                 WARN(("pfnAddMode failed, Status 0x%x", Status));
-                            }
                         }
                         else
-                        {
                             WARN(("vboxVidPnPopulateTargetModeInfoFromLegacy failed, Status 0x%x", Status));
-                        }
 
                         NTSTATUS tmpStatus = pNewVidPnTargetModeSetInterface->pfnReleaseModeInfo(hNewVidPnTargetModeSet, pNewVidPnTargetModeInfo);
                         Assert(tmpStatus == STATUS_SUCCESS);
@@ -1450,7 +1445,6 @@ static NTSTATUS vboxVidPnCofuncModalityForPathSource(PVBOXVIDPNCOFUNCMODALITY pC
 
                     D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo;
                     Status = pNewVidPnSourceModeSetInterface->pfnCreateNewModeInfo(hNewVidPnSourceModeSet, &pNewVidPnSourceModeInfo);
-                    Assert(Status == STATUS_SUCCESS);
                     if (NT_SUCCESS(Status))
                     {
                         Status = vboxVidPnPopulateSourceModeInfoFromLegacy(pNewVidPnSourceModeInfo, pMode);
@@ -1458,20 +1452,25 @@ static NTSTATUS vboxVidPnCofuncModalityForPathSource(PVBOXVIDPNCOFUNCMODALITY pC
                         if (NT_SUCCESS(Status))
                         {
                             Status = pNewVidPnSourceModeSetInterface->pfnAddMode(hNewVidPnSourceModeSet, pNewVidPnSourceModeInfo);
-                            Assert(Status == STATUS_SUCCESS);
                             if (NT_SUCCESS(Status))
                             {
                                 /* success */
                                 continue;
                             }
+                            else
+                                WARN(("pfnAddMode failed, Status 0x%x", Status));
                         }
 
                         NTSTATUS tmpStatus = pNewVidPnSourceModeSetInterface->pfnReleaseModeInfo(hNewVidPnSourceModeSet, pNewVidPnSourceModeInfo);
                         Assert(tmpStatus == STATUS_SUCCESS);
                     }
+                    else
+                        WARN(("pfnCreateNewModeInfo failed, Status 0x%x", Status));
                     /* we're here because of an error */
                     Assert(!NT_SUCCESS(Status));
-                    break;
+                    /* ignore mode addition failure */
+                    Status = STATUS_SUCCESS;
+                    continue;
                 }
             }
         }
