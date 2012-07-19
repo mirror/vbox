@@ -438,70 +438,75 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
 
     NOREF(fFlag);
     NOREF(pCred);
-    LogRelFlow((DEVICE_NAME "::Open\n"));
+    LogRelFlow((DEVICE_NAME "::Open, pWriteQueue=%p\n", WR(pReadQueue)));
 
-    /*
-     * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
-     */
-    mutex_enter(&g_OpenNodeState.InitMtx);
-    if (!g_OpenNodeState.cInits)
-    {
-        rc = VbglInit();
-        if (RT_SUCCESS(rc))
-        {
-            rc = VbglGRAlloc((VMMDevRequestHeader **)
-                             &g_OpenNodeState.pMouseStatusReq,
-                             sizeof(*g_OpenNodeState.pMouseStatusReq),
-                             VMMDevReq_GetMouseStatus);
-            if (RT_FAILURE(rc))
-                VbglTerminate();
-        }
-    }
-    ++g_OpenNodeState.cInits;
-    mutex_exit(&g_OpenNodeState.InitMtx);
-    if (RT_FAILURE(rc))
-    {
-        cmn_err(CE_NOTE, "_init: VbglInit failed. rc=%d\n", rc);
-        return EINVAL;
-    }
     /*
      * Sanity check on the mode parameter - only open as a driver, not a
      * module, and we do cloning ourselves.
      */
     if (fMode)
     {
-        LogRelFlow((DEVICE_NAME "::Open: invalid attempt to clone device."));
+        LogRel(("::Open: invalid attempt to clone device."));
         return EINVAL;
     }
 
-    if (!ASMAtomicCmpXchgPtr(&g_OpenNodeState.pWriteQueue,
-                             WR(pReadQueue), NULL))
-    {
-        LogRelFlow((DEVICE_NAME "::Open: only one instance allowed."));
-        return ENXIO;
-    }
     pState = &g_OpenNodeState;
-
+    mutex_enter(&pState->InitMtx);
     /*
-     * Create a new session.
+     * Check and remember our STREAM queue.
      */
-    if (VbglIsReady())
+    if (   pState->pWriteQueue
+        && (pState->pWriteQueue != WR(pReadQueue)))
     {
-        /* Initialise user data for the queues to our state and vice-versa. */
-        WR(pReadQueue)->q_ptr = (char *)pState;
-        pReadQueue->q_ptr = (char *)pState;
-        /* Enable our IRQ handler. */
-        VbglSetMouseNotifyCallback(vbmsSolNotify, (void *)pState);
-        qprocson(pReadQueue);
-        LogRel((DEVICE_NAME "::Open\n"));
-        return 0;
+        mutex_exit(&pState->InitMtx);
+        LogRel((DEVICE_NAME "::Open: unexpectedly called with a different queue to previous calls.  Exiting.\n"));
+        return EINVAL;
     }
-
-    /* Failed, clean up. */
-    ASMAtomicWriteNullPtr(&pState->pWriteQueue);
-
-    LogRel((DEVICE_NAME "::Open: VBoxGuestCreateUserSession failed. rc=EFAULT\n"));
-    return EFAULT;
+    if (!pState->cInits)
+    {
+        /*
+         * Initialize IPRT R0 driver, which internally calls OS-specific r0
+         * init, and create a new session.
+         */
+        rc = VbglInit();
+        if (RT_SUCCESS(rc))
+        {
+            rc = VbglGRAlloc((VMMDevRequestHeader **)
+                             &pState->pMouseStatusReq,
+                             sizeof(*pState->pMouseStatusReq),
+                             VMMDevReq_GetMouseStatus);
+            if (RT_FAILURE(rc))
+                VbglTerminate();
+            else
+            {
+                int rc2;
+                /* Initialise user data for the queues to our state and
+                 * vice-versa. */
+                pState->pWriteQueue = WR(pReadQueue);
+                WR(pReadQueue)->q_ptr = (char *)pState;
+                pReadQueue->q_ptr = (char *)pState;
+                qprocson(pReadQueue);
+                /* Enable our IRQ handler. */
+                rc2 = VbglSetMouseNotifyCallback(vbmsSolNotify,
+                                                 (void *)pState);
+                if (RT_FAILURE(rc2))
+                    /* Log the failure.  I may well have not understood what
+                     * is going on here, and the logging may help me. */
+                    LogRelFlow(("Failed to install the event handler call-back, rc=%Rrc\n",
+                                rc2));
+            }
+        }
+    }
+    if (RT_SUCCESS(rc))
+        ++pState->cInits;
+    mutex_exit(&pState->InitMtx);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("open time initialisation failed. rc=%d\n", rc));
+        ASMAtomicWriteNullPtr(&pState->pWriteQueue);
+        return EINVAL;
+    }
+    return 0;
 }
 
 
@@ -570,7 +575,7 @@ int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
 {
     PVBMSSTATE pState = (PVBMSSTATE)pReadQueue->q_ptr;
 
-    LogRelFlow((DEVICE_NAME "::Close\n"));
+    LogRelFlow((DEVICE_NAME "::Close, pWriteQueue=%p\n", WR(pReadQueue)));
     NOREF(fFlag);
     NOREF(pCred);
 
@@ -580,24 +585,24 @@ int vbmsSolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
         return EFAULT;
     }
 
-    VbglSetMouseStatus(0);
-    /* Disable our IRQ handler. */
-    VbglSetMouseNotifyCallback(NULL, NULL);
-    qprocsoff(pReadQueue);
-
-    /*
-     * Close the session.
-     */
-    ASMAtomicWriteNullPtr(&pState->pWriteQueue);
-    pReadQueue->q_ptr = NULL;
-    mutex_enter(&g_OpenNodeState.InitMtx);
-    --g_OpenNodeState.cInits;
-    if (!g_OpenNodeState.cInits)
+    mutex_enter(&pState->InitMtx);
+    --pState->cInits;
+    if (!pState->cInits)
     {
-        VbglGRFree(&g_OpenNodeState.pMouseStatusReq->header);
+        VbglSetMouseStatus(0);
+        /* Disable our IRQ handler. */
+        VbglSetMouseNotifyCallback(NULL, NULL);
+        qprocsoff(pReadQueue);
+
+        /*
+         * Close the session.
+         */
+        ASMAtomicWriteNullPtr(&pState->pWriteQueue);
+        pReadQueue->q_ptr = NULL;
+        VbglGRFree(&pState->pMouseStatusReq->header);
         VbglTerminate();
     }
-    mutex_exit(&g_OpenNodeState.InitMtx);
+    mutex_exit(&pState->InitMtx);
     return 0;
 }
 
@@ -631,6 +636,7 @@ static int vbmsSolDispatchIOCtl(PVBMSSTATE pState, mblk_t *pMBlk);
  */
 int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
+    PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
     LogRelFlowFunc((DEVICE_NAME "::"));
     switch (pMBlk->b_datap->db_type)
     {
@@ -653,7 +659,6 @@ int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
         case M_IOCTL:
         case M_IOCDATA:
         {
-            PVBMSSTATE pState = (PVBMSSTATE)pWriteQueue->q_ptr;
             int err;
 
             LogRelFlow((  pMBlk->b_datap->db_type == M_IOCTL
