@@ -75,7 +75,7 @@ VirtualBox_NAME = VirtualBox
 ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
  VirtualBox_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
-VirtualBox_SDKS.win = WINPSDK DXSDK
+VirtualBox_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) DXSDK
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd os2) # X11 + os2 ## @todo solaris
  VirtualBox_SDKS += LIBSDL
 endif
@@ -216,7 +216,7 @@ ifdef VBOX_WITH_ICHAT_THEATER
 endif
 
 VirtualBox_LIBS.win       = \
-	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
@@ -224,7 +224,7 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- VirtualBox_LIBS.win       += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
+ VirtualBox_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
  VirtualBox_LIBS.solaris   += GL
  VirtualBox_LIBS.linux     += GL
  VirtualBox_LIBS.freebsd   += GL
