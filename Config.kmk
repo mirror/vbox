@@ -2158,10 +2158,6 @@ else
   VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-vista.ico
   VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-vista.ico
   VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-nsis.ico
-  TOOL_VCC110X86_RC   := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC110AMD64_RC := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC100X86_RC   := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC100AMD64_RC := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
   TOOL_VCC80X86_RC    := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
   TOOL_VCC80AMD64_RC  := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
   TOOL_VCC70_RC       := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
@@ -2868,11 +2864,11 @@ ifdef VBOX_WITH_RAW_MODE
    TEMPLATE_VBoxRc_LIBS               = \
    	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
   else
-   ifndef VBOX_NOINC_MISC
+   if !defined(VBOX_NOINC_MISC) && !defined(VBOX_USE_VCC100)
     include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
    endif
   TEMPLATE_VBoxRc_LIBS               = \
-	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
   endif
   TEMPLATE_VBoxRc_LIBS              += \
   	$(PATH_STAGE_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
@@ -2929,7 +2925,11 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRcExe_LDFLAGS = -Incremental:NO -MapInfo:Exports -NoD -Debug
-  TEMPLATE_VBoxRcExe_SDKS    = WIN32SDK
+  ifdef VBOX_USE_VCC100
+   TEMPLATE_VBoxRcExe_SDKS   = ReorderCompilerIncs $(VBOX_WINPSDK)
+  else
+   TEMPLATE_VBoxRcExe_SDKS   = WIN32SDK
+  endif
   ifndef VBOX_USE_VCC70
    TEMPLATE_VBoxRcExe_LIBS   = \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/libcmt.lib \
@@ -4662,14 +4662,13 @@ TEMPLATE_VBoxAdvBldProg_LIBS.solaris = \
 # (Some (old) Wine versions fails loading msvcrt.dll from the VCC bin directory.)
 #
 ifneq ($(KBUILD_HOST),win)
- TOOL_VCC100X86_RC   := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
- TOOL_VCC100AMD64_RC := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
  TOOL_VCC80X86_RC    := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
  TOOL_VCC80AMD64_RC  := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
  TOOL_VCC70_RC       := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
  WIN32_MC = $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/mc.exe
 else
  WIN32_MC = $(EXEC_X86_WIN32) $(firstword $(wildcard \
+	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/MC.Exe\
 	$(PATH_SDK_WINPSDK_BIN)/MC.Exe\
 	$(PATH_SDK_WINPSDK)/Bin/MC.Exe\
 	$(PATH_SDK_WIN32SDK_BIN)/MC.Exe\

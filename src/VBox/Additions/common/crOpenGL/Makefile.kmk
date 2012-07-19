@@ -87,7 +87,7 @@ endif
 
 ifdef VBOX_WITH_WDDM
  VBoxOGL_DEFS.win += VBOX_WITH_WDDM
- VBoxOGL_SDKS.win += WINDDKWLH
+ VBoxOGL_SDKS.win += $(VBOX_WINDDK_GST_WLH)
 endif
 
 ifeq ($(KBUILD_TARGET),win)

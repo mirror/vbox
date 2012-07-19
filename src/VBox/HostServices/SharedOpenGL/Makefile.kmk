@@ -295,20 +295,20 @@ if (   defined(VBOX_WITH_QTGUI) \
   VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE),VBOXMAINEXE)
   VBoxTestOGL_SOURCES = OpenGLTest/OpenGLTestApp.cpp
   VBoxTestOGL_LIBS = \
-    $(if $(VBOX_WITH_CROGL), \
-      $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-      $(VBOX_LIB_OGL_HOSTCRUTIL),) \
-    $(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
-    $(LIB_RUNTIME)
+  	$(if $(VBOX_WITH_CROGL), \
+  	    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+  	    $(VBOX_LIB_OGL_HOSTCRUTIL),) \
+  	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
+  	$(LIB_RUNTIME)
   VBoxTestOGL_DEFS += \
+    VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
     $(if $(VBOX_WITH_CROGL), VBOX_WITH_CROGL,) \
     $(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL,) \
-    VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
     $(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
   ifdef VBOX_WITH_VIDEOHWACCEL
-   VBoxTestOGL_QT_MODULES += Core Gui OpenGL
+   VBoxTestOGL_QT_MODULES     += Core Gui OpenGL
    VBoxTestOGL_LDFLAGS.darwin += -framework OpenGL
-   VBoxTestOGL_LIBS.win += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
+   VBoxTestOGL_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    if1of ($(KBUILD_TARGET), solaris linux freebsd)
     # must come after VBoxOGL2D, therefore don't set the arch-specific LIBS variable here!
     VBoxTestOGL_LIBS += GL
