@@ -2132,16 +2132,20 @@ int VirtualBox::decryptSetting(Utf8Str *aPlaintext, const Utf8Str &aCiphertext)
         rc = decryptSettingBytes(abPlaintext, abCiphertext, cbCiphertext);
         if (RT_SUCCESS(rc))
         {
-            /* check if this is really a Null-terminated string. */
             for (unsigned i = 0; i < cbCiphertext; i++)
             {
+                /* sanity check: null-terminated string? */
                 if (abPlaintext[i] == '\0')
                 {
-                    *aPlaintext = Utf8Str((const char*)abPlaintext);
-                    return VINF_SUCCESS;
+                    /* sanity check: valid UTF8 string? */
+                    if (RTStrIsValidEncoding((const char*)abPlaintext))
+                    {
+                        *aPlaintext = Utf8Str((const char*)abPlaintext);
+                        return VINF_SUCCESS;
+                    }
                 }
             }
-            rc = VERR_INVALID_PARAMETER;
+            rc = VERR_INVALID_MAGIC;
         }
     }
     return rc;
@@ -2167,9 +2171,18 @@ int VirtualBox::encryptSettingBytes(const uint8_t *aPlaintext, uint8_t *aCiphert
     if (aCiphertextSize > sizeof(aBytes))
         return VERR_BUFFER_OVERFLOW;
 
-    for (i = 0, j = 0; i < aPlaintextSize && i < aCiphertextSize; i++)
+    if (aCiphertextSize < 32)
+        return VERR_INVALID_PARAMETER;
+
+    AssertCompile(sizeof(m->SettingsCipherKey) >= 32);
+
+    /* store the first 8 bytes of the cipherkey for verification */
+    for (i = 0, j = 0; i < 8; i++, j++)
+        aCiphertext[i] = m->SettingsCipherKey[j];
+
+    for (unsigned k = 0; k < aPlaintextSize && i < aCiphertextSize; i++, k++)
     {
-        aCiphertext[i] = (aPlaintext[i] ^ m->SettingsCipherKey[j]);
+        aCiphertext[i] = (aPlaintext[k] ^ m->SettingsCipherKey[j]);
         if (++j >= sizeof(m->SettingsCipherKey))
             j = 0;
     }
@@ -2199,12 +2212,24 @@ int VirtualBox::encryptSettingBytes(const uint8_t *aPlaintext, uint8_t *aCiphert
 int VirtualBox::decryptSettingBytes(uint8_t *aPlaintext,
                                     const uint8_t *aCiphertext, size_t aCiphertextSize) const
 {
+    unsigned i, j;
+
     if (!m->fSettingsCipherKeySet)
         return VERR_INVALID_STATE;
 
-    for (unsigned i = 0, j = 0; i < aCiphertextSize; i++)
+    if (aCiphertextSize < 32)
+        return VERR_INVALID_PARAMETER;
+
+    /* key verification */
+    for (i = 0, j = 0; i < 8; i++, j++)
+        if (aCiphertext[i] != m->SettingsCipherKey[j])
+            return VERR_INVALID_MAGIC;
+
+    /* poison */
+    memset(aPlaintext, 0xff, aCiphertextSize);
+    for (int k = 0; i < aCiphertextSize; i++, k++)
     {
-        aPlaintext[i] = aCiphertext[i] ^ m->SettingsCipherKey[j];
+        aPlaintext[k] = aCiphertext[i] ^ m->SettingsCipherKey[j];
         if (++j >= sizeof(m->SettingsCipherKey))
             j = 0;
     }
