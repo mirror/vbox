@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -153,25 +153,20 @@ RTDECL(int) RTTimerLRDestroy(RTTIMERLR hTimerLR)
     AssertReturn(!pThis->fDestroyed, VERR_INVALID_HANDLE);
 
     /*
-     * If the timer is active, we just flag it to self destruct on the next tick.
-     * If it's suspended we can safely set the destroy flag and signal it.
+     * If the timer is active, we stop and destruct it in one go, to avoid
+     * unnecessary waiting for the next tick. If it's suspended we can safely
+     * set the destroy flag and signal it.
      */
     RTTHREAD hThread = pThis->hThread;
     if (!pThis->fSuspended)
-    {
         ASMAtomicWriteBool(&pThis->fSuspended, true);
-        ASMAtomicWriteBool(&pThis->fDestroyed, true);
-    }
-    else
-    {
-        ASMAtomicWriteBool(&pThis->fDestroyed, true);
-        int rc = RTSemEventSignal(pThis->hEvent);
-        if (rc == VERR_ALREADY_POSTED)
-            rc = VINF_SUCCESS;
-        AssertRC(rc);
-    }
+    ASMAtomicWriteBool(&pThis->fDestroyed, true);
+    int rc = RTSemEventSignal(pThis->hEvent);
+    if (rc == VERR_ALREADY_POSTED)
+        rc = VINF_SUCCESS;
+    AssertRC(rc);
 
-    RTThreadWait(hThread, 500, NULL); /* 250 ms was not enough for valgrind! */
+    RTThreadWait(hThread, 250, NULL);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTTimerLRDestroy);
