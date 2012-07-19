@@ -1004,9 +1004,13 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
         {
             if (pvOut && cjOut == sizeof(DWORD))
             {
-                /* @todo: impl */
-                *(DWORD *)pvOut = TRUE;
-                return 1;
+                DWORD cbReturned;
+                DWORD dwrc = EngDeviceIoControl(pDev->hDriver, IOCTL_VIDEO_VBOX_ISANYX, NULL, 0,
+                        pvOut, sizeof (uint32_t), &cbReturned);
+                if (dwrc == NO_ERROR && cbReturned == sizeof (uint32_t))
+                    return 1;
+                WARN(("EngDeviceIoControl failed, dwrc(%d), cbReturned(%d)", dwrc, cbReturned));
+                return 0;
             }
             else
             {
