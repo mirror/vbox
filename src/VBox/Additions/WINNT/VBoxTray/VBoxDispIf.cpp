@@ -875,15 +875,7 @@ static DWORD vboxDispIfWddmValidateFixResize(PCVBOXDISPIF const pIf, DISPLAY_DEV
         tmpStatus = status;
     }
 
-    if (tmpStatus == DISP_CHANGE_BADMODE)
-    {
-        /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
-        winEr = ERROR_RETRY;
-    }
-    else
-    {
-        winEr = ERROR_GEN_FAILURE;
-    }
+    winEr = ERROR_GEN_FAILURE;
     return winEr;
 }
 
