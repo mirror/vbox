@@ -79,7 +79,7 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPat
     }
 
     LogFlow(("RTPathReal(%p:{%s}, %p:{%s}, %u): returns %Rrc\n", pszPath, pszPath,
-             pszRealPath, RT_SUCCESS(rc) ? pszRealPath : "<failed>",  cchRealPath));
+             pszRealPath, RT_SUCCESS(rc) ? pszRealPath : "<failed>",  cchRealPath, rc));
     return rc;
 }
 
