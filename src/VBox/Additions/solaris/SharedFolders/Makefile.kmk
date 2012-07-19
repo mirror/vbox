@@ -90,7 +90,7 @@ endif # VBOX_OSE
 # mount - Userland mount wrapper for vboxfs
 #
 PROGRAMS                += vboxfsmount
-vboxfsmount_TEMPLATE    = VBOXGUESTR3EXE
+vboxfsmount_TEMPLATE    = NewVBoxGuestR3Exe
 vboxfsmount_SOURCES     = vboxfs_mount.c
 
 include $(FILE_KBUILD_SUB_FOOTER)

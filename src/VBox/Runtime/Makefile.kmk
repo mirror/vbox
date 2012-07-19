@@ -1065,7 +1065,11 @@ RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOU
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).amd64:= $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
-
+ifdef VBOX_USE_VCC100
+ RuntimeGuestR3_SOURCES.win.x86              += \
+ 	r3/win/vcc100-kernel32-fakes.cpp \
+ 	r3/win/vcc100-kernel32-fakesA.asm
+endif
 
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.

@@ -25,7 +25,7 @@ ifdef VBOX_WITH_TESTCASES
 #
 PROGRAMS += tstHook
 
-tstHook_TEMPLATE = VBOXGUESTR3EXE
+tstHook_TEMPLATE = NewVBoxGuestR3Exe
 tstHook_DEFS     = VBOX_WITH_HGCM
 tstHook_SOURCES  = tstHook.cpp
 tstHook_INCS     = ../../include

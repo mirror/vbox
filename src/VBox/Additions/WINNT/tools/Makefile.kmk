@@ -19,11 +19,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxCertUtil
 
-VBoxCertUtil_TEMPLATE = VBOXGUESTR3EXE
+VBoxCertUtil_TEMPLATE = NewVBoxGuestR3Exe
 VBoxCertUtil_SOURCES = VBoxCertUtil.cpp
 VBoxCertUtil_LIBS = \
-    $(VBOX_LIB_IPRT_GUEST_R3) \
-    $(VBOX_LIB_VBGL_R3) \
     crypt32.lib
 
 include $(FILE_KBUILD_SUB_FOOTER)

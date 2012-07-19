@@ -22,7 +22,7 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
 
 # This has to be 32-bit, so don't include it in the 64-bit build.
 PROGRAMS.x86 += VBoxWindowsAdditions
-VBoxWindowsAdditions_TEMPLATE= VBOXGUESTR3EXE
+VBoxWindowsAdditions_TEMPLATE= NewVBoxGuestR3Exe
 VBoxWindowsAdditions_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
 VBoxWindowsAdditions_SOURCES = \
 	VBoxWindowsAdditions.cpp \

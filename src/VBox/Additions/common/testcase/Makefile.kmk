@@ -26,16 +26,10 @@ PROGRAMS += tstPageFusion
 #
 # tstPageFusion
 #
-tstPageFusion_TEMPLATE      = VBOXGUESTR3EXE
+tstPageFusion_TEMPLATE      = NewVBoxGuestR3Exe
 tstPageFusion_DEFS.win     += _WIN32_WINNT=0x0501
-
 tstPageFusion_SOURCES       = \
 	tstPageFusion.cpp
-
-tstPageFusion_LIBS          = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3)
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

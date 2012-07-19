@@ -26,13 +26,9 @@ PROGRAMS.win += tstUserInfo
 #
 # tstUserInfo
 #
-tstUserInfo_TEMPLATE    = VBOXGUESTR3EXE
+tstUserInfo_TEMPLATE    = NewVBoxGuestR3Exe
 tstUserInfo_SOURCES     = \
 	tstUserInfo.cpp
-tstUserInfo_LIBS        = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3)
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

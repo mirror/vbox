@@ -211,7 +211,7 @@ ifeq ($(KBUILD_TARGET),win)
 # VBoxGuestInst - The installer.
 #
 #PROGRAMS += VBoxGuestInst
-VBoxGuestInst_TEMPLATE= VBOXGUESTR3EXE
+VBoxGuestInst_TEMPLATE= NewVBoxGuestR3Exe
 VBoxGuestInst_SOURCES = win/VBoxGuestInst.cpp
 endif
 

@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for test cases.
+# Sub-Makefile for VBoxCredProv test cases.
 #
 
 #
@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstCredentialProvider
-tstCredentialProvider_TEMPLATE = VBOXGUESTR3EXE
+tstCredentialProvider_TEMPLATE = NewVBoxGuestR3Exe
 tstCredentialProvider_SOURCES  = \
 	tstCredentialProvider.cpp
 tstCredentialProvider_SDKS.x86 = WINDDK

@@ -25,7 +25,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 # VBoxControl
 #
 PROGRAMS += VBoxControl
-VBoxControl_TEMPLATE = VBOXGUESTR3EXE
+VBoxControl_TEMPLATE = NewVBoxGuestR3Exe
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_SIGN_ADDITIONS # (See the main Windows Additions makefile.)
   VBoxControl_INSTTYPE = none
@@ -42,10 +42,6 @@ VBoxControl_SOURCES = \
 	VBoxControl.cpp
 VBoxControl_SOURCES.win = \
 	VBoxControl.rc
-VBoxControl_LIBS = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3)
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

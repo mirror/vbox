@@ -60,5 +60,9 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
 
 endif
 
+BLDPROGS.win += VBoxPeSetVersion
+VBoxPeSetVersion_TEMPLATE = VBOXBLDPROG
+VBoxPeSetVersion_SOURCES  = VBoxPeSetVersion.cpp
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -75,7 +75,7 @@ endif
 # The mount util.
 #
 PROGRAMS += mount.vboxsf
-mount.vboxsf_TEMPLATE    = VBOXGUESTR3EXE
+mount.vboxsf_TEMPLATE    = NewVBoxGuestR3Exe
 mount.vboxsf_DEFS        = _GNU_SOURCE
 mount.vboxsf_SOURCES     = \
 	mount.vboxsf.c \
