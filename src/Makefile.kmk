@@ -26,12 +26,8 @@ endif
 if defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && defined(VBOX_WITH_REM)
  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
 
-else if !defined(VBOX_ONLY_ADDITIONS) \
-     && !defined(VBOX_ONLY_DOCS) \
-     && !defined(VBOX_ONLY_EXTPACKS) \
-     && !defined(VBOX_ONLY_SDK) \
-     && !defined(VBOX_ONLY_TESTSUITE)
- # Normal build, no VBOX_ONLY_*.
+else if !defined(VBOX_ONLY_BUILD)
+ # Normal build.
  if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
   ifdef VBOX_WITH_REM
    include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
@@ -46,7 +42,7 @@ else if !defined(VBOX_ONLY_ADDITIONS) \
  ifdef VBOX_WITH_TESTCASES
   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  endif
-endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK && !VBOX_ONLY_TESTSUITE
+endif # !VBOX_ONLY_BUILD
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
