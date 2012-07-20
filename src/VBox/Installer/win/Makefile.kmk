@@ -450,7 +450,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_WINDOWS_ICON_FILE=$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))' \
 		-E 'BUILD_TYPE=$(KBUILD_TYPE)' \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
-		-E 'VBOX_USE_$(VBOX_VCC_TOOL_STEM)=yes' \
+		-E 'VBOX_VCC_TOOL_STEM=$(VBOX_VCC_TOOL_STEM)' \
 		-- \
 		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) \
 			-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
