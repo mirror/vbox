@@ -689,6 +689,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
 #ifdef VBOX_WITH_WDDM
     if (VBOXSHRC_IS_SHARED(texture))
     {
+        struct wined3d_context * context;
         Assert(shared_handle);
         for (i = 0; i < texture->baseTexture.levels; ++i)
         {
@@ -722,25 +723,20 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         }
 #endif
 
-        if (!VBOXSHRC_IS_SHARED(texture))
+        Assert(!device->isInDraw);
+
+        /* flush to ensure the texture is allocated/referenced before it is used/released by another
+         * process opening/creating it */
+        context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+        if (context->valid)
         {
-            struct wined3d_context * context;
-
-            Assert(!device->isInDraw);
-
-            /* flush to ensure the texture is allocated/referenced before it is used/released by another
-             * process opening/creating it */
-            context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
-            if (context->valid)
-            {
-                wglFlush();
-            }
-            else
-            {
-                ERR("invalid context!");
-            }
-            context_release(context);
+            wglFlush();
         }
+        else
+        {
+            ERR("invalid context!");
+        }
+        context_release(context);
     }
     else
     {
