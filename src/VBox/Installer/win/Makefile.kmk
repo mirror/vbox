@@ -323,19 +323,29 @@ endif
 ifndef VBOX_SIGNING_MODE
  VBOX_MSI_DEPENDENCIES := $(filer-out %.cat, $(VBOX_MSI_DEPENDENCIES))
 endif
-ifdef VBOX_USE_VCC80
+if !defined(VBOX_USE_VCC70) && !defined(VBOX_USE_VCC80) && !defined(VBOX_USE_VCC100)
+$(error One VBOX_USE_VCC* must be defined)
+endif
+ifndef VBOX_USE_VCC100
  VBOX_MSI_DEPENDENCIES := $(filter-out \
-	$(PATH_OUT)/bin/msvcrt.dll \
-	$(PATH_OUT)/bin/msvcr71.dll \
-	$(PATH_OUT)/bin/msvcp71.dll \
-	$(PATH_OUT)/bin/SDL_ttf.dll \
+	$(PATH_OUT)/bin/msvcr100.dll \
+	$(PATH_OUT)/bin/msvcp100.dll \
 	, $(VBOX_MSI_DEPENDENCIES))
-else
+endif
+ifndef VBOX_USE_VCC80
  VBOX_MSI_DEPENDENCIES := $(filter-out \
 	$(PATH_OUT)/bin/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
 	$(PATH_OUT)/bin/Microsoft.VC80.CRT/msvcr80.dll \
 	$(PATH_OUT)/bin/Microsoft.VC80.CRT/msvcp80.dll \
 	$(PATH_OUT)/bin/Microsoft.VC80.CRT/msvcm80.dll \
+	, $(VBOX_MSI_DEPENDENCIES))
+endif
+ifndef VBOX_USE_VCC70
+ VBOX_MSI_DEPENDENCIES := $(filter-out \
+	$(PATH_OUT)/bin/msvcrt.dll \
+	$(PATH_OUT)/bin/msvcr71.dll \
+	$(PATH_OUT)/bin/msvcp71.dll \
+	$(PATH_OUT)/bin/SDL_ttf.dll \
 	, $(VBOX_MSI_DEPENDENCIES))
 endif
 # TODO: Add filtering out more dependencies here!
@@ -454,7 +464,9 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_WINDOWS_ICON_FILE=$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))' \
 		-E 'BUILD_TYPE=$(KBUILD_TYPE)' \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
+		-E 'VBOX_USE_VCC100=$(if $(VBOX_USE_VCC100),yes,no)' \
 		-E 'VBOX_USE_VCC80=$(if $(VBOX_USE_VCC80),yes,no)' \
+		-E 'VBOX_USE_VCC70=$(if $(VBOX_USE_VCC70),yes,no)' \
 		-- \
 		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) \
 			-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \

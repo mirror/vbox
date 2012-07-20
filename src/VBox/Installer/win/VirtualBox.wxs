@@ -526,8 +526,16 @@
                               Source="$(env.PATH_OUT)\bin\QtOpenGLVBox4.dll" />
 <?endif?>
 
+<?if $(env.VBOX_USE_VCC100) = "yes" ?>
+                        <!-- MS C/C++ v10.0 Runtime DLL files. -->
+                        <File Id="file_msvcr100.dll" Name="msvcr100.dll"
+                              Source="$(env.PATH_OUT)\bin\msvcr100.dll" />
+                        <File Id="file_msvcp100.dll" Name="msvcp100.dll"
+                              Source="$(env.PATH_OUT)\bin\msvcp100.dll" />
+<?endif?>
+
 <?if $(env.VBOX_USE_VCC80) = "yes" ?>
-                        <!-- MS v8 Runtime DLL files (private assembly) -->
+                        <!-- MS C/C++ v8 Runtime DLL files (private assembly). -->
                         <File Id="file_Microsoft.VC80.CRT.manifest" Name="Microsoft.VC80.CRT.manifest"
                               Source="$(env.PATH_OUT)\bin\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest" />
                         <File Id="file_msvcr80.dll" Name="msvcr80.dll"
@@ -536,17 +544,20 @@
                               Source="$(env.PATH_OUT)\bin\Microsoft.VC80.CRT\msvcp80.dll" />
 <?endif?>
 
-                        <!-- MS v7 Runtime DLL files -->
-<?if $(env.VBOX_USE_VCC80) != "yes" ?>
+<?if $(env.VBOX_USE_VCC70) = "yes" ?>
+                        <!-- MS C/C++ v7 Runtime DLL files. -->
                         <File Id="file_msvcp71.dll" Name="msvcp71.dll"
                               Source="$(env.PATH_OUT)\bin\msvcp71.dll" />
                         <File Id="file_msvcrt.dll" Name="msvcrt.dll"
                               Source="$(env.PATH_OUT)\bin\msvcrt.dll" />
 <?endif?>
-<?if $(env.BUILD_TARGET_ARCH) != "amd64" ?>
+<?if $(env.VBOX_USE_VCC100) != "yes" ?>
+    <?if $(env.BUILD_TARGET_ARCH) != "amd64" ?>
                         <File Id="msvcrdll" Name="msvcr71.dll"
                               Source="$(env.PATH_OUT)\bin\msvcr71.dll" />
+    <?endif?>
 <?endif?>
+
                         <!-- EFI firmware -->
 <?if $(env.VBOX_WITH_EFIFW_PACKING) = "yes" ?>
                         <File Id="file_VBoxEFI32.fd" Name="VBoxEFI32.fd" DiskId="$(var.Property_DiskIdCommon)"
