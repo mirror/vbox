@@ -4260,9 +4260,9 @@ ifdef VBOX_WITH_QTGUI
    endif
   else if1of ($(KBUILD_TARGET), win)
    ifdef VBOX_USE_VCC100
-    VBOX_PATH_QT4 ?= $(lastword $(filter %-vcc10,$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
+    VBOX_PATH_QT4 ?= $(lastword $(filter %-vcc100,$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
    else
-    VBOX_PATH_QT4 ?= $(lastword $(filter-out %-vcc10,$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
+    VBOX_PATH_QT4 ?= $(lastword $(filter-out %-vcc100,$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
    endif
   else if1of ($(KBUILD_TARGET), linux solaris)
    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
