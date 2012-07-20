@@ -18,7 +18,7 @@
 #define ____H_GUESTDND
 
 /* Forward declaration of the d-pointer. */
-struct GuestDnDPrivate;
+class GuestDnDPrivate;
 
 class GuestDnD
 {
