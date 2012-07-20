@@ -384,7 +384,7 @@ void GuestDnDPrivate::adjustCoords(ULONG uScreenId, ULONG *puX, ULONG *puY) cons
     if (FAILED(rc)) throw rc;
     ComPtr<IFramebuffer> pFramebuffer;
     LONG xShift, yShift;
-    rc = pDisplay->COMGETTER(Framebuffer)(uScreenId, pFramebuffer.asOutParam(), &xShift, &yShift);
+    rc = pDisplay->GetFramebuffer(uScreenId, pFramebuffer.asOutParam(), &xShift, &yShift);
     if (FAILED(rc)) throw rc;
     *puX += xShift;
     *puY += yShift;
