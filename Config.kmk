@@ -968,7 +968,6 @@ endif
 #
 VBOX_ONLY_BUILD := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK TESTSUITE\
 	, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
-$(warning VBOX_ONLY_BUILD=$(VBOX_ONLY_BUILD))
 if $(words $(VBOX_ONLY_BUILD)) > 1
  $(error VBox: More than one VBOX_ONLY build enabled! $(VBOX_ONLY_BUILD))
 endif
