@@ -1853,15 +1853,17 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 #
 ifeq ($(KBUILD_TARGET),darwin)
  ## The Xcode version.
- ifndef VBOX_XCODE_VERSION
-  VBOX_XCODE_VERSION  := $(word 2, $(shell xcodebuild -version))
-  if "$(VBOX_XCODE_VERSION)" == ""
-   VBOX_XCODE_VERSION := 4.2
+ ifeq ($(KBUILD_HOST),darwin)
+  ifndef VBOX_XCODE_VERSION
+   VBOX_XCODE_VERSION := $(word 2, $(shell xcodebuild -version))
+   VBOX_XCODE_VERSION ?= 4.1
   endif
- endif
- ifeq ($(VBOX_XCODE_VERSION),4.2)
-  $(warning Xcode 4.2 is not able to correctly build the recompiler!)
-  $(warning Please downgrade to Xcode 4.1 if you want a working VMM!)
+  ifeq ($(VBOX_XCODE_VERSION),4.2)
+   $(warning Xcode 4.2 is not able to correctly build the recompiler!)
+   $(warning Please downgrade to Xcode 4.1 if you want a working VMM!)
+  endif
+ else
+  VBOX_XCODE_VERSION ?= 4.1
  endif
  VBOX_XCODE_VERSION_MAJOR := $(word 1, $(subst ., ,$(VBOX_XCODE_VERSION)))
  VBOX_XCODE_VERSION_MINOR := $(word 2, $(subst ., ,$(VBOX_XCODE_VERSION)))
