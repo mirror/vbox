@@ -96,7 +96,7 @@ DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
 {
     /* Don't filter if formatting is desired. */
     if (uFilter !=  DISOPTYPE_ALL && pszOutput && cbOutput)
-        uFilter == DISOPTYPE_ALL;
+        uFilter = DISOPTYPE_ALL;
 
     int rc = DISInstrEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pDis, pcbInstr);
     if (RT_SUCCESS(rc) && pszOutput && cbOutput)
