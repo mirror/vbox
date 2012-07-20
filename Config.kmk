@@ -3024,6 +3024,7 @@ TEMPLATE_VBoxR0_LDFLAGS            += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:V
 TEMPLATE_VBoxR0_LIBS                = \
 	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
  ifdef VBOX_USE_WINDDK
+  include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
 TEMPLATE_VBoxR0_LIBS.x86            = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
  else
