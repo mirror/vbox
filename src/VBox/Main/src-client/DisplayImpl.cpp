@@ -2167,12 +2167,10 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     if (aDisplay >= cMonitors)
         return E_INVALIDARG;
 
-// sunlover 20070614: It is up to the guest to decide whether the hint is valid.
-//    ULONG vramSize;
-//    mParent->machine()->COMGETTER(VRAMSize)(&vramSize);
-//    /* enough VRAM? */
-//    if ((width * height * (bpp / 8)) > (vramSize * 1024 * 1024))
-//        return setError(E_FAIL, tr("Not enough VRAM for the selected video mode"));
+   /*
+    * sunlover 20070614: It is up to the guest to decide whether the hint is
+    * valid. Therefore don't do any VRAM sanity checks here!
+    */
 
     /* Have to release the lock because the pfnRequestDisplayChange
      * will call EMT.  */
