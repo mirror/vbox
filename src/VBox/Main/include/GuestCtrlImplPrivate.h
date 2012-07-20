@@ -35,7 +35,6 @@ using namespace com;
 using namespace guestControl;
 #endif
 
-
 /** Maximum number of guest sessions a VM can have. */
 #define VBOX_GUESTCTRL_MAX_SESSIONS     255
 /** Maximum of guest processes a guest session can have. */
@@ -60,8 +59,9 @@ using namespace guestControl;
 #define VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID) \
     ((uContextID) & 0xffff)
 
-
+/** Vector holding a process' CPU affinity. */
 typedef std::vector <LONG> ProcessAffinity;
+/** Vector holding process startup arguments. */
 typedef std::vector <Utf8Str> ProcessArguments;
 
 
@@ -94,6 +94,8 @@ public:
 
     Utf8Str GetMessage(void) { return mMessage; }
 
+    int GetResultCode(void) { return mRC; }
+
     eVBoxGuestCtrlCallbackType GetType(void) { return mType; }
 
     int Wait(ULONG uTimeoutMS);
@@ -106,6 +108,8 @@ protected:
     uint32_t                    uFlags;
     /** Was the callback canceled? */
     bool                        fCanceled;
+    /** Did the callback complete? */
+    bool                        fCompleted;
     /** Pointer to user-supplied data. */
     void                       *pvData;
     /** Size of user-supplied data. */
@@ -123,13 +127,8 @@ typedef std::map < uint32_t, GuestCtrlCallback* > GuestCtrlCallbacks;
 /**
  * Simple structure mantaining guest credentials.
  */
-class GuestCredentials
+struct GuestCredentials
 {
-public:
-
-
-public:
-
     Utf8Str                     mUser;
     Utf8Str                     mPassword;
     Utf8Str                     mDomain;

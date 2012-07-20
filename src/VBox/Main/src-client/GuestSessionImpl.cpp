@@ -60,12 +60,12 @@ int GuestSession::init(Guest *aGuest, ULONG aSessionID,
     LogFlowThisFuncEnter();
 
     AssertPtrReturn(aGuest, VERR_INVALID_POINTER);
-    AssertReturn(aSessionID, VERR_INVALID_PARAMETER);
 
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
+    mData.mTimeout = 30 * 60 * 1000; /* Session timeout is 30 mins by default. */
     mData.mParent = aGuest;
     mData.mId = aSessionID;
 
@@ -351,11 +351,14 @@ int GuestSession::directoryClose(ComObjPtr<GuestDirectory> pDirectory)
 
 int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
 {
+    LogFlowFuncEnter();
+
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    int rc;
     SessionProcesses::const_iterator itProc
         = mData.mProcesses.find(VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID));
     if (itProc != mData.mProcesses.end())
@@ -364,9 +367,13 @@ int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, voi
         Assert(!pProcess.isNull());
 
         alock.release();
-        return pProcess->callbackDispatcher(uContextID, uFunction, pvData, cbData);
+        rc = pProcess->callbackDispatcher(uContextID, uFunction, pvData, cbData);
     }
-    return VERR_NOT_FOUND;
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
@@ -413,10 +420,8 @@ int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
     return VERR_NOT_FOUND;
 }
 
-int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProcess **aProcess)
+int GuestSession::processCreateExInteral(const GuestProcessInfo &aProcInfo, IGuestProcess **aProcess)
 {
-    AssertPtrReturn(aProcess, VERR_INVALID_POINTER);
-
     /* Validate flags. */
     if (aProcInfo.mFlags)
     {
@@ -429,14 +434,18 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProc
         }
     }
 
+    GuestProcessInfo procInfo = aProcInfo;
+
     /* Adjust timeout. If set to 0, we define
      * an infinite timeout. */
-    if (aProcInfo.mTimeoutMS == 0)
-        aProcInfo.mTimeoutMS = UINT32_MAX;
+    if (procInfo.mTimeoutMS == 0)
+        procInfo.mTimeoutMS = UINT32_MAX;
 
     /** @tood Implement process priority + affinity. */
 
-    int rc = VERR_MAX_THRDS_REACHED;
+    int rc = VERR_MAX_PROCS_REACHED;
+    if (mData.mProcesses.size() >= VBOX_GUESTCTRL_MAX_PROCESSES)
+        return rc;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -446,8 +455,8 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProc
 
     for (;;)
     {
-        /* Is the context ID already used?  Try next ID ... */
-        if (!processExists(uNewProcessID++, NULL /* pProgress */))
+        /* Is the context ID already used? */
+        if (!processExists(uNewProcessID, NULL /* pProgress */))
         {
             /* Callback with context ID was not found. This means
              * we can use this context ID for our new callback we want
@@ -455,6 +464,7 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProc
             rc = VINF_SUCCESS;
             break;
         }
+        uNewProcessID++;
 
         if (++uTries == UINT32_MAX)
             break; /* Don't try too hard. */
@@ -469,7 +479,7 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProc
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
         rc = pGuestProcess->init(mData.mParent->getConsole() /* Console */, this /* Session */,
-                                 uNewProcessID, aProcInfo);
+                                 uNewProcessID, procInfo);
         if (RT_FAILURE(rc)) throw rc;
 
         mData.mProcesses[uNewProcessID] = pGuestProcess;
@@ -488,8 +498,6 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &aProcInfo, IGuestProc
 
 inline bool GuestSession::processExists(ULONG uProcessID, ComObjPtr<GuestProcess> *pProcess)
 {
-    AssertReturn(uProcessID, false);
-
     SessionProcesses::const_iterator it = mData.mProcesses.find(uProcessID);
     if (it != mData.mProcesses.end())
     {
@@ -931,8 +939,10 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 
     com::SafeArray<LONG> affinity;
 
-    return ProcessCreateEx(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
-                           ComSafeArrayInArg(aFlags), aTimeoutMS, ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
+    HRESULT hr = ProcessCreateEx(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
+                                 ComSafeArrayInArg(aFlags), aTimeoutMS, ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
+    LogFlowFuncLeaveRC(hr);
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -956,36 +966,50 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
     GuestProcessInfo procInfo;
 
     procInfo.mCommand = Utf8Str(aCommand);
+    procInfo.mFlags = ProcessCreateFlag_None;
 
-    com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
-    procInfo.mArguments.reserve(arguments.size());
-    for (size_t i = 0; i < arguments.size(); i++)
-        procInfo.mArguments[i] = Utf8Str(Bstr(arguments[i]));
+    if (aArguments)
+    {
+        com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
+        procInfo.mArguments.reserve(arguments.size());
+        for (size_t i = 0; i < arguments.size(); i++)
+            procInfo.mArguments[i] = Utf8Str(Bstr(arguments[i]));
+    }
 
     int rc = VINF_SUCCESS;
 
-    /* Create the process environment:
+    /*
+     * Create the process environment:
      * - Apply the session environment in a first step, and
      * - Apply environment variables specified by this call to
      *   have the chance of overwriting/deleting session entries.
      */
-    procInfo.mEnvironment = mData.mEnvironment;
-    com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
-    for (size_t i = 0; i < environment.size() && RT_SUCCESS(rc); i++)
-        rc = mData.mEnvironment.Set(Utf8Str(environment[i]));
+    procInfo.mEnvironment = mData.mEnvironment; /* Apply original session environment. */
+    if (aEnvironment) /* Apply/overwrite environment, if set. */
+    {
+        com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
+        for (size_t i = 0; i < environment.size() && RT_SUCCESS(rc); i++)
+            rc = mData.mEnvironment.Set(Utf8Str(environment[i]));
+    }
 
     if (RT_SUCCESS(rc))
     {
-        com::SafeArray<ProcessCreateFlag_T> flags(ComSafeArrayInArg(aFlags));
-        for (size_t i = 0; i < flags.size(); i++)
-            procInfo.mFlags |= flags[i];
+        if (aFlags)
+        {
+            com::SafeArray<ProcessCreateFlag_T> flags(ComSafeArrayInArg(aFlags));
+            for (size_t i = 0; i < flags.size(); i++)
+                procInfo.mFlags |= flags[i];
+        }
 
         procInfo.mTimeoutMS = aTimeoutMS;
 
-        com::SafeArray<LONG> affinity(ComSafeArrayInArg(aAffinity));
-        procInfo.mAffinity.reserve(affinity.size());
-        for (size_t i = 0; i < affinity.size(); i++)
-            procInfo.mAffinity[i] = affinity[i]; /** @todo Really necessary? Later. */
+        if (aAffinity)
+        {
+            com::SafeArray<LONG> affinity(ComSafeArrayInArg(aAffinity));
+            procInfo.mAffinity.reserve(affinity.size());
+            for (size_t i = 0; i < affinity.size(); i++)
+                procInfo.mAffinity[i] = affinity[i]; /** @todo Really necessary? Later. */
+        }
 
         procInfo.mPriority = aPriority;
 

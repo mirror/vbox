@@ -699,6 +699,12 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
     PCALLBACKHEADER pHeader = (PCALLBACKHEADER)pvParms;
     AssertPtr(pHeader);
 
+#ifdef DEBUG
+    LogFlowFunc(("uSession=%RU32, uProcess=%RU32, uCount=%RU32\n",
+                 VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHeader->u32ContextID),
+                 VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(pHeader->u32ContextID),
+                 VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pHeader->u32ContextID)));
+#endif
     int rc = pGuest->dispatchToSession(pHeader->u32ContextID, u32Function, pvParms, cbParms);
 
 #ifdef VBOX_WITH_GUEST_CONTROL_LEGACY
@@ -2674,11 +2680,14 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
 
 int Guest::dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
 {
+    LogFlowFuncEnter();
+
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    int rc;
     GuestSessions::const_iterator itSession
         = mData.mGuestSessions.find(VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID));
     if (itSession != mData.mGuestSessions.end())
@@ -2687,9 +2696,13 @@ int Guest::dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvDa
         Assert(!pSession.isNull());
 
         alock.release();
-        return pSession->dispatchToProcess(uContextID, uFunction, pvData, cbData);
+        rc = pSession->dispatchToProcess(uContextID, uFunction, pvData, cbData);
     }
-    return VERR_NOT_FOUND;
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int Guest::sessionClose(ComObjPtr<GuestSession> pSession)
@@ -2717,6 +2730,9 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int rc = VERR_MAX_PROCS_REACHED;
+    if (mData.mGuestSessions.size() >= VBOX_GUESTCTRL_MAX_SESSIONS)
+        return rc;
+
     try
     {
         /* Create a new session ID and assign it. */
@@ -2725,12 +2741,13 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
 
         for (;;)
         {
-            /* Is the context ID already used?  Try next ID ... */
-            if (!sessionExists(++uNewSessionID))
+            /* Is the context ID already used? */
+            if (!sessionExists(uNewSessionID))
             {
                 rc = VINF_SUCCESS;
                 break;
             }
+            uNewSessionID++;
 
             if (++uTries == UINT32_MAX)
                 break; /* Don't try too hard. */
@@ -2762,8 +2779,6 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
 
 inline bool Guest::sessionExists(uint32_t uSessionID)
 {
-    AssertReturn(uSessionID, false);
-
     GuestSessions::const_iterator itSessions = mData.mGuestSessions.find(uSessionID);
     return (itSessions == mData.mGuestSessions.end()) ? false : true;
 }

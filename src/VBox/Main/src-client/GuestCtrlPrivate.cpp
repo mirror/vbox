@@ -36,6 +36,7 @@ GuestCtrlCallback::GuestCtrlCallback(void)
     : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
       uFlags(0),
       fCanceled(false),
+      fCompleted(false),
       pvData(NULL),
       cbData(0),
       hEventSem(NIL_RTSEMEVENT)
@@ -46,6 +47,7 @@ GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
     : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
       uFlags(0),
       fCanceled(false),
+      fCompleted(false),
       pvData(NULL),
       cbData(0),
       hEventSem(NIL_RTSEMEVENT)
@@ -61,9 +63,12 @@ GuestCtrlCallback::~GuestCtrlCallback(void)
 
 int GuestCtrlCallback::Cancel(void)
 {
+    if (ASMAtomicReadBool(&fCompleted))
+        return VINF_SUCCESS;
     if (!ASMAtomicReadBool(&fCanceled))
     {
-        int rc = RTSemEventSignal(hEventSem);
+        int rc = hEventSem != NIL_RTSEMEVENT
+               ? RTSemEventSignal(hEventSem) : VINF_SUCCESS;
         if (RT_SUCCESS(rc))
             ASMAtomicXchgBool(&fCanceled, true);
     }
@@ -127,6 +132,9 @@ int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
 
 void GuestCtrlCallback::Destroy(void)
 {
+    int rc = Cancel();
+    AssertRC(rc);
+
     mType = VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN;
     if (pvData)
     {
@@ -151,14 +159,7 @@ int GuestCtrlCallback::Wait(ULONG uTimeoutMS)
     RTMSINTERVAL msInterval = uTimeoutMS;
     if (!uTimeoutMS)
         msInterval = RT_INDEFINITE_WAIT;
-    int rc = RTSemEventWait(hEventSem, msInterval);
-    if (RT_SUCCESS(rc))
-    {
-        /* Assign overall callback result. */
-        rc = mRC;
-    }
-
-    return rc;
+    return RTSemEventWait(hEventSem, msInterval);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
