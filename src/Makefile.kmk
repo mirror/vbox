@@ -18,30 +18,20 @@
 SUB_DEPTH = ..
 include $(KBUILD_PATH)/subheader.kmk
 
-if defined(VBOX_ONLY_ADDITIONS)
- include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
-
-else if defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)
- include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+if !defined(VBOX_ONLY_ADDITIONS)
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+endif
+if defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && defined(VBOX_WITH_REM)
+ include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
 
-else if defined(VBOX_ONLY_EXTPACKS)
- include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
- include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
- if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && defined(VBOX_WITH_REM)
-  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
- endif
-
-else if defined(VBOX_ONLY_TESTSUITE)
- include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
-
-else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK && !VBOX_ONLY_TESTSUITE
- include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
- include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+else if !defined(VBOX_ONLY_ADDITIONS) \
+     && !defined(VBOX_ONLY_DOCS) \
+     && !defined(VBOX_ONLY_EXTPACKS) \
+     && !defined(VBOX_ONLY_SDK) \
+     && !defined(VBOX_ONLY_TESTSUITE)
+ # Normal build, no VBOX_ONLY_*.
  if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
   ifdef VBOX_WITH_REM
    include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
