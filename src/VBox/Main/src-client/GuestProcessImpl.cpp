@@ -778,7 +778,7 @@ int GuestProcess::signalWaiters(int rc, const Utf8Str strMessage)
     if (RT_FAILURE(rc))
     {
         HRESULT hr = setError(VBOX_E_IPRT_ERROR, strMessage.c_str());
-        ComAssertRC(hr);
+        ComAssertComRC(hr);
     }
 
     int rc2 = VINF_SUCCESS;
