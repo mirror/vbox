@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,7 @@ struct UIDataSettingsMachineGeneral
         , m_strSnapshotsFolder(QString())
         , m_strSnapshotsHomeDir(QString())
         , m_clipboardMode(KClipboardMode_Disabled)
+        , m_dragAndDropMode(KDragAndDropMode_Disabled)
         , m_strDescription(QString()) {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineGeneral &other) const
@@ -48,6 +49,7 @@ struct UIDataSettingsMachineGeneral
                (m_strSnapshotsFolder == other.m_strSnapshotsFolder) &&
                (m_strSnapshotsHomeDir == other.m_strSnapshotsHomeDir) &&
                (m_clipboardMode == other.m_clipboardMode) &&
+               (m_dragAndDropMode == other.m_dragAndDropMode) &&
                (m_strDescription == other.m_strDescription);
     }
     /* Operators: */
@@ -62,6 +64,7 @@ struct UIDataSettingsMachineGeneral
     QString m_strSnapshotsFolder;
     QString m_strSnapshotsHomeDir;
     KClipboardMode m_clipboardMode;
+    KDragAndDropMode m_dragAndDropMode;
     QString m_strDescription;
 };
 typedef UISettingsCache<UIDataSettingsMachineGeneral> UICacheSettingsMachineGeneral;

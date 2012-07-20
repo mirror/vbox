@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -98,7 +98,8 @@ void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewI
         aPainter->setPen (topLineColor);
         aPainter->drawLine (r.left(), r.top() - 1, r.right(), r.top() - 1);
         aPainter->fillRect (r, linearGrad);
-    }else
+    }
+    else
     {
         /* Color for items and no focus on the application at all */
         QColor bgColor (212, 221, 229);

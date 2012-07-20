@@ -1512,6 +1512,48 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("Clipboard Mode:  %s\n", psz);
     }
 
+    /* Drag'n'drop */
+    {
+        const char *psz = "Unknown";
+        DragAndDropMode_T enmMode;
+        rc = machine->COMGETTER(DragAndDropMode)(&enmMode);
+        switch (enmMode)
+        {
+            case DragAndDropMode_Disabled:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "disabled";
+                else
+                    psz = "disabled";
+                break;
+            case DragAndDropMode_HostToGuest:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "hosttoguest";
+                else
+                    psz = "HostToGuest";
+                break;
+            case DragAndDropMode_GuestToHost:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "guesttohost";
+                else
+                    psz = "GuestToHost";
+                break;
+            case DragAndDropMode_Bidirectional:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "bidirectional";
+                else
+                    psz = "Bidirectional";
+                break;
+            default:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "unknown";
+                break;
+        }
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("draganddrop=\"%s\"\n", psz);
+        else
+            RTPrintf("Drag'n'drop Mode:  %s\n", psz);
+    }
+
     if (console)
     {
         do

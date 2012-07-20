@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -100,7 +100,8 @@ protected:
             linearGrad.setColorAt(0, gradientStart);
             linearGrad.setColorAt(1, gradientStop);
             painter.fillRect(QRect(QPoint(0,1), size() - QSize(0, 2)), QBrush(linearGrad));
-        }else
+        }
+        else
         {
             painter.setPen(topColor);
             painter.drawLine(0, 0, 0, height());
@@ -247,7 +248,8 @@ QSplitterHandle* QISplitter::createHandle()
 #else /* RT_OS_DARWIN */
         return new QSplitterHandle(orientation(), this);
 #endif /* RT_OS_DARWIN */
-    }else
+    }
+    else
         return new QIShadeSplitterHandle(orientation(), this);
 }
 

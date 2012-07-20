@@ -196,6 +196,7 @@ Machine::HWData::HWData()
         mBootOrder[i] = DeviceType_Null;
 
     mClipboardMode = ClipboardMode_Disabled;
+    mDragAndDropMode = DragAndDropMode_Disabled;
     mGuestPropertyNotificationPatterns = "";
 
     mFirmwareType = FirmwareType_BIOS;
@@ -2602,6 +2603,46 @@ Machine::COMSETTER(ClipboardMode)(ClipboardMode_T aClipboardMode)
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
+
+    /* Save settings if online - todo why is this required?? */
+    if (Global::IsOnline(mData->mMachineState))
+        saveSettings(NULL);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(DragAndDropMode)(DragAndDropMode_T *aDragAndDropMode)
+{
+    CheckComArgOutPointerValid(aDragAndDropMode);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aDragAndDropMode = mHWData->mDragAndDropMode;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMSETTER(DragAndDropMode)(DragAndDropMode_T aDragAndDropMode)
+{
+    HRESULT rc = S_OK;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    alock.release();
+    rc = onDragAndDropModeChange(aDragAndDropMode);
+    alock.acquire();
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mDragAndDropMode = aDragAndDropMode;
 
     /* Save settings if online - todo why is this required?? */
     if (Global::IsOnline(mData->mMachineState))
@@ -8419,6 +8460,9 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         // Clipboard
         mHWData->mClipboardMode = data.clipboardMode;
 
+        // drag'n'drop
+        mHWData->mDragAndDropMode = data.dragAndDropMode;
+
         // guest settings
         mHWData->mMemoryBalloonSize = data.ulMemoryBalloonSize;
 
@@ -9592,6 +9636,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         // clipboard
         data.clipboardMode = mHWData->mClipboardMode;
 
+        // drag'n'drop
+        data.dragAndDropMode = mHWData->mDragAndDropMode;
+
         /* Guest */
         data.ulMemoryBalloonSize = mHWData->mMemoryBalloonSize;
 
@@ -10441,7 +10488,8 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
                             && pParent->getType() == MediumType_Normal
                             && find(llMedia.begin(), llMedia.end(), pParent) == llMedia.end())
                             llMedia.push_back(pParent);
-                    }else
+                    }
+                    else
                         break;
                     pParent = pParent->getParent();
                 }
@@ -12892,6 +12940,29 @@ HRESULT SessionMachine::onClipboardModeChange(ClipboardMode_T aClipboardMode)
         return S_OK;
 
     return directControl->OnClipboardModeChange(aClipboardMode);
+}
+
+/**
+ * @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnDragAndDropModeChange(aDragAndDropMode);
 }
 
 /**

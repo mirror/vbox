@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2364,7 +2364,8 @@ void UIMessageCenter::cannotImportAppliance(CAppliance *pAppliance,
         message(pParent ? pParent : mainWindowShown(),
                 Error,
                 tr("Failed to open appliance."));
-    }else
+    }
+    else
     {
         /* Preserve the current error info before calling the object again */
         COMResult res(*pAppliance);
@@ -2439,7 +2440,8 @@ void UIMessageCenter::cannotExportAppliance(CAppliance *pAppliance,
         message(pParent ? pParent : mainWindowShown(),
                 Error,
                 tr("Failed to create appliance."));
-    }else
+    }
+    else
     {
         /* Preserve the current error info before calling the object again */
         COMResult res(*pAppliance);
@@ -2461,7 +2463,8 @@ void UIMessageCenter::cannotExportAppliance(const CMachine &machine,
         message(pParent ? pParent : mainWindowShown(),
                 Error,
                 tr("Failed to create an appliance."));
-    }else
+    }
+    else
     {
         message(pParent ? pParent : mainWindowShown(),
                 Error,

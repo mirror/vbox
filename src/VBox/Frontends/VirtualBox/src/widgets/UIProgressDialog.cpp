@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -276,7 +276,8 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
                                        .arg(m_iCurrentOperation).arg(m_cOperations));
         }
         m_progressBar->setValue(m_progress.GetPercent());
-    }else
+    }
+    else
         m_pEtaLbl->setText(m_strCancel);
 }
 

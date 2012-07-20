@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -297,7 +297,7 @@ static int tarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
          *
          */
         bool fFound = false;
-        for(;;)
+        for (;;)
         {
             char *pszFilename = 0;
             rc = RTTarCurrentFile(tar, &pszFilename);
@@ -313,7 +313,8 @@ static int tarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
                     if (RT_FAILURE(rc))
                         break;
                 }
-            }else
+            }
+            else
                 break;
         }
         if (fFound)
@@ -499,7 +500,7 @@ DECLCALLBACK(int) shaCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                 size_t cbMemAllRead = 0;
                 /* First loop over all the free memory in the circular
                  * memory buffer (could be turn around at the end). */
-                for(;;)
+                for (;;)
                 {
                     if (   cbMemAllRead == cbAvail
                         || fLoop == false)
@@ -513,7 +514,7 @@ DECLCALLBACK(int) shaCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                     /* Second, write as long as used memory is there. The write
                      * method could also split the writes up into to smaller
                      * parts. */
-                    for(;;)
+                    for (;;)
                     {
                         if (cbAllWritten == cbMemRead)
                             break;
@@ -556,7 +557,7 @@ DECLCALLBACK(int) shaCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                 size_t cbMemAllWrite = 0;
                 /* First loop over all the available memory in the circular
                  * memory buffer (could be turn around at the end). */
-                for(;;)
+                for (;;)
                 {
                     if (   cbMemAllWrite == cbAvail
                         || fLoop == false)
@@ -570,7 +571,7 @@ DECLCALLBACK(int) shaCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                      * read method could also split the reads up into to
                      * smaller parts. */
                     size_t cbAllRead = 0;
-                    for(;;)
+                    for (;;)
                     {
                         if (cbAllRead == cbMemWrite)
                             break;
@@ -637,7 +638,7 @@ DECLINLINE(int) shaWaitForManifestThreadFinished(PSHASTORAGEINTERNAL pInt)
 {
 //    RTPrintf("start\n");
     int rc = VINF_SUCCESS;
-    for(;;)
+    for (;;)
     {
 //        RTPrintf(" wait\n");
         uint32_t u32Status = ASMAtomicReadU32(&pInt->u32Status);
@@ -980,7 +981,7 @@ static int shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     {
         size_t cbSize = (size_t)(uOffset - pInt->cbCurAll);
         size_t cbAllWritten = 0;
-        for(;;)
+        for (;;)
         {
             /* Finished? */
             if (cbAllWritten == cbSize)
@@ -999,7 +1000,7 @@ static int shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
 //    RTPrintf("Write uOffset: %7lu cbWrite: %7lu = %7lu\n", uOffset, cbWrite, uOffset + cbWrite);
 
     size_t cbAllWritten = 0;
-    for(;;)
+    for (;;)
     {
         /* Finished? */
         if (cbAllWritten == cbWrite)
@@ -1081,7 +1082,7 @@ static int shaReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     }
 
     size_t cbAllRead = 0;
-    for(;;)
+    for (;;)
     {
         /* Finished? */
         if (cbAllRead == cbRead)
@@ -1255,7 +1256,7 @@ int ShaReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTE
             break;
         }
 
-        for(;;)
+        for (;;)
         {
             size_t cbRead = 0;
             rc = pIfIo->pfnReadSync(pvUser, pvStorage, cbAllRead, pvTmpBuf, cbTmpSize, &cbRead);
@@ -1285,7 +1286,8 @@ int ShaReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTE
     {
         *ppvBuf = pvBuf;
         *pcbSize = cbAllRead;
-    }else
+    }
+    else
     {
         if (pvBuf)
             RTMemFree(pvBuf);
@@ -1309,7 +1311,7 @@ int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFA
         return rc;
 
     size_t cbAllWritten = 0;
-    for(;;)
+    for (;;)
     {
         if (cbAllWritten >= cbSize)
             break;

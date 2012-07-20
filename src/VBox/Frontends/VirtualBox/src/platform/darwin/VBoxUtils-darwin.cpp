@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -530,7 +530,8 @@ QString darwinResolveAlias(const QString &strFile)
             if ((err = FSRefMakePath(&fileRef, (UInt8*)pszPath, 1024)) != noErr)
                 break;
             strTarget = QString::fromUtf8(pszPath);
-        }else
+        }
+        else
             strTarget = strFile;
     }while(0);
 

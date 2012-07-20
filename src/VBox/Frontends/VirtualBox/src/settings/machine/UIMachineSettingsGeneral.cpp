@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +42,12 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     mCbClipboard->addItem (""); /* KClipboardMode_HostToGuest */
     mCbClipboard->addItem (""); /* KClipboardMode_GuestToHost */
     mCbClipboard->addItem (""); /* KClipboardMode_Bidirectional */
+
+    /* Drag'n'drop mode */
+    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_Disabled */
+    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_HostToGuest */
+    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_GuestToHost */
+    mCbDragAndDrop->addItem (""); /* KDragAndDropMode_Bidirectional */
 
 #ifdef Q_WS_MAC
     mTeDescription->setMinimumHeight (150);
@@ -98,6 +104,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     generalData.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
     generalData.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
     generalData.m_clipboardMode = m_machine.GetClipboardMode();
+    generalData.m_dragAndDropMode = m_machine.GetDragAndDropMode();
     generalData.m_strDescription = m_machine.GetDescription();
 
     /* Cache general data: */
@@ -123,6 +130,7 @@ void UIMachineSettingsGeneral::getFromCache()
     mPsSnapshot->setPath(generalData.m_strSnapshotsFolder);
     mPsSnapshot->setHomeDir(generalData.m_strSnapshotsHomeDir);
     mCbClipboard->setCurrentIndex(generalData.m_clipboardMode);
+    mCbDragAndDrop->setCurrentIndex(generalData.m_dragAndDropMode);
     mTeDescription->setPlainText(generalData.m_strDescription);
 
     /* Polish page finally: */
@@ -148,6 +156,7 @@ void UIMachineSettingsGeneral::putToCache()
     generalData.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
     generalData.m_strSnapshotsFolder = mPsSnapshot->path();
     generalData.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
+    generalData.m_dragAndDropMode = (KDragAndDropMode)mCbDragAndDrop->currentIndex();
     generalData.m_strDescription = mTeDescription->toPlainText().isEmpty() ?
                                    QString::null : mTeDescription->toPlainText();
 
@@ -173,6 +182,7 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
         {
             /* Advanced tab: */
             m_machine.SetClipboardMode(generalData.m_clipboardMode);
+            m_machine.SetDragAndDropMode(generalData.m_dragAndDropMode);
             m_machine.SetExtraData(GUI_SaveMountedAtRuntime, generalData.m_fSaveMountedAtRuntime ? "yes" : "no");
             m_machine.SetExtraData(GUI_ShowMiniToolBar, generalData.m_fShowMiniToolBar ? "yes" : "no");
             m_machine.SetExtraData(GUI_MiniToolBarAlignment, generalData.m_fMiniToolBarAtTop ? "top" : "bottom");
@@ -220,7 +230,8 @@ void UIMachineSettingsGeneral::setOrderAfter (QWidget *aWidget)
     /* Advanced tab-order */
     setTabOrder (m_pNameAndSystemEditor, mPsSnapshot);
     setTabOrder (mPsSnapshot, mCbClipboard);
-    setTabOrder (mCbClipboard, mCbSaveMounted);
+    setTabOrder (mCbClipboard, mCbDragAndDrop);
+    setTabOrder (mCbDragAndDrop, mCbSaveMounted);
     setTabOrder (mCbSaveMounted, mCbShowToolBar);
     setTabOrder (mCbShowToolBar, mCbToolBarAlignment);
 
@@ -244,6 +255,12 @@ void UIMachineSettingsGeneral::retranslateUi()
     mCbClipboard->setItemText (1, gpConverter->toString (KClipboardMode_HostToGuest));
     mCbClipboard->setItemText (2, gpConverter->toString (KClipboardMode_GuestToHost));
     mCbClipboard->setItemText (3, gpConverter->toString (KClipboardMode_Bidirectional));
+
+    /* Drag'n'drop mode */
+    mCbDragAndDrop->setItemText (0, gpConverter->toString (KDragAndDropMode_Disabled));
+    mCbDragAndDrop->setItemText (1, gpConverter->toString (KDragAndDropMode_HostToGuest));
+    mCbDragAndDrop->setItemText (2, gpConverter->toString (KDragAndDropMode_GuestToHost));
+    mCbDragAndDrop->setItemText (3, gpConverter->toString (KDragAndDropMode_Bidirectional));
 }
 
 void UIMachineSettingsGeneral::polishPage()
@@ -255,6 +272,8 @@ void UIMachineSettingsGeneral::polishPage()
     mPsSnapshot->setEnabled(isMachineOffline());
     mLbClipboard->setEnabled(isMachineInValidMode());
     mCbClipboard->setEnabled(isMachineInValidMode());
+    mLbDragAndDrop->setEnabled(isMachineInValidMode());
+    mCbDragAndDrop->setEnabled(isMachineInValidMode());
     mLbMedia->setEnabled(isMachineInValidMode());
     mCbSaveMounted->setEnabled(isMachineInValidMode());
     mLbToolBar->setEnabled(isMachineInValidMode());

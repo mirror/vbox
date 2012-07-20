@@ -1067,6 +1067,20 @@
   </enum>
 
   <enum
+    name="DragAndDropMode"
+    uuid="b618ea0e-b6fb-4f8d-97f7-5e237e49b547"
+    >
+    <desc>
+      Drag'n'Drop interchange mode.
+    </desc>
+
+    <const name="Disabled"          value="0"/>
+    <const name="HostToGuest"       value="1"/>
+    <const name="GuestToHost"       value="2"/>
+    <const name="Bidirectional"     value="3"/>
+  </enum>
+
+  <enum
     name="Scope"
     uuid="7c91096e-499e-4eca-9f9b-9001438d7855"
     >
@@ -3738,7 +3752,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="1d03031a-ce63-4641-9d67-3a16e03778d5"
+    uuid="0e84a036-73bf-49c8-b587-c558d4daa788"
     wsmap="managed"
     >
     <desc>
@@ -4241,6 +4255,12 @@
       <desc>
         Synchronization mode between the host OS clipboard
         and the guest OS clipboard.
+      </desc>
+    </attribute>
+
+    <attribute name="dragAndDropMode" type="DragAndDropMode">
+      <desc>
+        Which mode is allowed for drag'n'drop.
       </desc>
     </attribute>
 
@@ -16332,7 +16352,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="9ddb5449-f463-47cb-a717-d6f22da3b3a2"
+    uuid="3e83963a-1c3b-400d-8c5f-f2d077b0a597"
     internal="yes"
     wsmap="suppress"
     >
@@ -16532,6 +16552,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="clipboardMode" type="ClipboardMode" dir="in">
         <desc>The new shared clipboard mode.</desc>
+      </param>
+    </method>
+
+    <method name="onDragAndDropModeChange">
+      <desc>
+        Notification when the drag'n'drop mode changes.
+      </desc>
+      <param name="dragAndDropMode" type="DragAndDropMode" dir="in">
+        <desc>The new mode for drag'n'drop.</desc>
       </param>
     </method>
 
@@ -18284,7 +18313,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="100cf5c8-7dd4-4600-8d75-636d211479c9"
+    uuid="b627520a-6b1a-4a9a-914d-f31434d3d10f"
     >
 
     <desc>
@@ -18547,9 +18576,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IClipboardModeChangedEvent">IClipboardModeChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnDragAndDropModeChanged" value="73">
+      <desc>
+        See <link to="IDragAndDropModeChangedEvent">IDragAndDropModeChangedEvent</link>.
+      </desc>
+    </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="73">
+    <const name="Last" value="74">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -19305,6 +19339,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="clipboardMode" type="ClipboardMode" readonly="yes">
       <desc>
         The new clipboard mode.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IDragAndDropModeChangedEvent" extends="IEvent"
+    uuid="e90b8850-ac8e-4dff-8059-4100ae2c3c3d"
+    wsmap="managed" autogen="VBoxEvent" id="OnDragAndDropModeChanged"
+    >
+    <desc>
+      Notification when the drag'n'drop mode changes.
+    </desc>
+    <attribute name="dragAndDropMode" type="DragAndDropMode" readonly="yes">
+      <desc>
+        The new drag'n'drop mode.
       </desc>
     </attribute>
   </interface>

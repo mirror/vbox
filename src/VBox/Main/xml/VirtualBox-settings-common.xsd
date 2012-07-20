@@ -6,7 +6,7 @@
  *  Oracle VM VirtualBox Settings Schema
  *  Common definitions
 
-     Copyright (C) 2004-2011 Oracle Corporation
+     Copyright (C) 2004-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -171,6 +171,15 @@
 </xsd:simpleType>
 
 <xsd:simpleType name="TClipboardMode">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="Disabled"/>
+    <xsd:enumeration value="HostToGuest"/>
+    <xsd:enumeration value="GuestToHost"/>
+    <xsd:enumeration value="Bidirectional"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="TDragAndDropMode">
   <xsd:restriction base="xsd:string">
     <xsd:enumeration value="Disabled"/>
     <xsd:enumeration value="HostToGuest"/>
@@ -792,6 +801,10 @@
   <xsd:attribute name="mode" type="TClipboardMode" use="required"/>
 </xsd:complexType>
 
+<xsd:complexType name="TDragAndDrop">
+  <xsd:attribute name="mode" type="TDragAndDropMode" use="required"/>
+</xsd:complexType>
+
 <xsd:complexType name="TGuest">
   <xsd:attribute name="memoryBalloonSize"        type="xsd:unsignedInt" default="0"/>
   <xsd:attribute name="statisticsUpdateInterval" type="xsd:unsignedInt" default="0"/>
@@ -864,6 +877,7 @@
       </xsd:unique>
     </xsd:element>
     <xsd:element name="Clipboard" type="TClipboard"/>
+    <xsd:element name="DragAndDrop" type="TDragAndDrop"/>
     <xsd:element name="Guest" type="TGuest"/>
     <xsd:element name="GuestProperties" type="TGuestProperties" minOccurs="0">
       <xsd:unique name="THardware-GuestProperties-GuestProperty">

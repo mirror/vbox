@@ -139,6 +139,7 @@ enum
     MODIFYVM_AUDIOCONTROLLER,
     MODIFYVM_AUDIO,
     MODIFYVM_CLIPBOARD,
+    MODIFYVM_DRAGANDDROP,
     MODIFYVM_VRDPPORT,                /* VRDE: deprecated */
     MODIFYVM_VRDPADDRESS,             /* VRDE: deprecated */
     MODIFYVM_VRDPAUTHTYPE,            /* VRDE: deprecated */
@@ -285,6 +286,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
     { "--clipboard",                MODIFYVM_CLIPBOARD,                 RTGETOPT_REQ_STRING },
+    { "--draganddrop",              MODIFYVM_DRAGANDDROP,               RTGETOPT_REQ_STRING },
     { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },     /* deprecated */
     { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },     /* deprecated */
     { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },     /* deprecated */
@@ -1997,6 +1999,29 @@ int handleModifyVM(HandlerArg *a)
                 if (SUCCEEDED(rc))
                 {
                     CHECK_ERROR(machine, COMSETTER(ClipboardMode)(mode));
+                }
+                break;
+            }
+
+            case MODIFYVM_DRAGANDDROP:
+            {
+                DragAndDropMode_T mode;
+                if (!strcmp(ValueUnion.psz, "disabled"))
+                    mode = DragAndDropMode_Disabled;
+                else if (!strcmp(ValueUnion.psz, "hosttoguest"))
+                    mode = DragAndDropMode_HostToGuest;
+                else if (!strcmp(ValueUnion.psz, "guesttohost"))
+                    mode = DragAndDropMode_GuestToHost;
+                else if (!strcmp(ValueUnion.psz, "bidirectional"))
+                    mode = DragAndDropMode_Bidirectional;
+                else
+                {
+                    errorArgument("Invalid --draganddrop argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                if (SUCCEEDED(rc))
+                {
+                    CHECK_ERROR(machine, COMSETTER(DragAndDropMode)(mode));
                 }
                 break;
             }

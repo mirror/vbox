@@ -56,7 +56,8 @@ HRESULT VirtualBoxErrorInfo::init(const com::ErrorInfo &info,
         rc = nextEI->init(*pInfo, aNext);
         if (FAILED(rc)) return rc;
         mNext = nextEI;
-    }else
+    }
+    else
         mNext = aNext;
 
     return S_OK;

@@ -2468,6 +2468,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
          * Drag & Drop
          */
         {
+            DragAndDropMode_T mode = DragAndDropMode_Disabled;
+            hrc = pMachine->COMGETTER(DragAndDropMode)(&mode);                              H();
+
             /* Load the service */
             rc = pVMMDev->hgcmLoadService("VBoxDragAndDropSvc", "VBoxDragAndDropSvc");
 
@@ -2486,7 +2489,10 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 if (RT_FAILURE(rc))
                     Log(("Cannot register VBoxDragAndDropSvc extension!\n"));
                 else
+                {
+                    changeDragAndDropMode(mode);
                     Log(("VBoxDragAndDropSvc loaded\n"));
+                }
             }
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
