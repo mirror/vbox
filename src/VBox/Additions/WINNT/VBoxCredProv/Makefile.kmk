@@ -21,11 +21,7 @@ include $(KBUILD_PATH)/subheader.kmk
 DLLS += VBoxCredProv
 VBoxCredProv_TEMPLATE    = VBOXGUESTR3DLL
 VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM VBOX_WITH_SENS UNICODE
-ifdef VBOX_USE_VCC100
 VBoxCredProv_SDKS        = ReorderCompilerIncs $(VBOX_WINPSDK_GST_WLH)
-else
-VBoxCredProv_SDKS.x86    = WINDDK
-endif
 VBoxCredProv_SOURCES  = \
 	VBoxCredentialProvider.cpp \
 	VBoxCredentialProvider.def \
@@ -36,38 +32,13 @@ VBoxCredProv_SOURCES  = \
 	VBoxCredProvPoller.cpp \
 	VBoxCredProvUtils.cpp
 
-ifndef VBOX_USE_VCC100
-#
-# Since this is not the default SDK we have to navigate manually to it.
-#
-VBOX_PATH_PSDK_200702    := \
-	$(PATH_DEVTOOLS)/win.x86/sdk/x200702/
-
-VBoxCredProv_INCS        := \
-	$(VBOX_PATH_PSDK_200702)/Include
-VBoxCredProv_LIBS.x86  := \
-	$(VBOX_PATH_PSDK_200702)/Lib/Uuid.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/credui.lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/Secur32.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/ShLwApi.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/NetAPI32.Lib
-VBoxCredProv_LIBS.amd64  := \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/Uuid.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/credui.lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/Secur32.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/ShLwApi.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/NetAPI32.Lib
-endif
-
 VBoxCredProv_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
-ifdef VBOX_USE_VCC100
 VBoxCredProv_LIBS    += \
 	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/credui.lib \
 	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/Secur32.Lib \
 	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/NetAPI32.Lib
-endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

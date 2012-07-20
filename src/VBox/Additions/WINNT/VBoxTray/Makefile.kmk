@@ -24,15 +24,9 @@ ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxTray_INSTTYPE = none
  VBoxTray_DEBUG_INSTTYPE = both
 endif
-if defined(VBOX_USE_VCC100) || defined(VBOX_USE_VCC110)
- VBoxTray_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_GST)
-endif
+VBoxTray_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST)
 VBoxTray_DEFS     = VBOX_WITH_HGCM LOG_TO_BACKDOOR
 VBoxTray_INCS     = ../include
-if !defined(VBOX_USE_VCC100) && !defined(VBOX_USE_VCC110)
- include $(KBUILD_PATH)/sdks/WINDDK.kmk # WTF is this about?
- VBoxTray_INCS   += $(PATH_SDK_WINDDK_INC_API) $(PATH_SDK_WINDDK_INC_DDK)
-endif
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
 	VBoxDispIf.cpp \
