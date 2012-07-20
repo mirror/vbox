@@ -964,6 +964,16 @@ ifdef VBOX_WITHOUT_LINUX_COMPILER_H
 endif
 
 #
+# Indicate VBOX_ONLY build if any of the VBOX_ONLY_* variables are set.
+#
+VBOX_ONLY_BUILD := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK TESTSUITE\
+	, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
+$(warning VBOX_ONLY_BUILD=$(VBOX_ONLY_BUILD))
+if $(words $(VBOX_ONLY_BUILD)) > 1
+ $(error VBox: More than one VBOX_ONLY build enabled! $(VBOX_ONLY_BUILD))
+endif
+
+#
 # For the docs build box.
 #
 ifdef VBOX_ONLY_DOCS
