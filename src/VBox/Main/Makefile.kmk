@@ -559,10 +559,7 @@ VBoxC_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxC.dylib \
 	-exported_symbols_list $(VBoxC_0_OUTDIR)/VBoxC.def \
 	-framework IOKit
-VBoxC_LDFLAGS.win += /DELAYLOAD:VBoxVMM.dll
-ifndef VBOX_USE_VCC70
- VBoxC_LDFLAGS.win += /MANIFEST
-endif
+VBoxC_LDFLAGS.win += /DELAYLOAD:VBoxVMM.dll /MANIFEST
 
 VBoxC_LIBS += \
 	$(LIB_VMM) \

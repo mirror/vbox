@@ -1065,11 +1065,9 @@ RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOU
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).amd64:= $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
-ifdef VBOX_USE_VCC100
- RuntimeGuestR3_SOURCES.win.x86              += \
+RuntimeGuestR3_SOURCES.win.x86               += \
  	r3/win/vcc100-kernel32-fakes.cpp \
  	r3/win/vcc100-kernel32-fakesA.asm
-endif
 
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.
@@ -1329,9 +1327,7 @@ VBoxRT_LIBS.win                = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/vccomsup.lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/wbemuuid.lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -framework CoreFoundation -framework CoreServices -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
-ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
-endif
 VBoxRT_LDFLAGS.l4              = \
 	-Wl,-whole-archive \
 	$(PATH_STAGE_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB) \

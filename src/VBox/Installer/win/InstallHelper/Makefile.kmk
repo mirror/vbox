@@ -34,11 +34,7 @@ ifndef VBOX_OSE
  VBoxInstallHelper_SOURCES += internal/VBoxSerial.cpp
 endif
 VBoxInstallHelper_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
-if defined(VBOX_USE_VCC100) || defined(VBOX_USE_VCC110)
- VBoxInstallHelper_LIBS    = $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
-else
- VBoxInstallHelper_LIBS    = $(PATH_SDK_$(VBOX_WINDDK)_LIB)/Msi.lib
-endif
+VBoxInstallHelper_LIBS     = $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
 ifdef VBOX_WITH_NETFLT
  VBoxInstallHelper_LIBS   += \
 	$(PATH_STAGE_LIB)/WinNetConfig.lib \
@@ -48,12 +44,8 @@ ifdef VBOX_WITH_NETFLT
  	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 endif
 
-ifeq ($(KBUILD_TARGET),win)
- ifdef VBOX_WITH_TESTCASES
-  ifndef VBOX_OSE
-   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-  endif
- endif
+if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_TESTCASES) && !defined(VBOX_OSE)
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -21,11 +21,6 @@
 # Marker.
 VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 
-## TEMPORARY
-# Enable Visual C++ 2010 for everyone. Support for older compiler version will be removed shortly.
-VBOX_USE_VCC100 = 1
-## TEMPORARY
-
 #
 # kBuild stuff
 #
@@ -410,9 +405,7 @@ endif
 # Enable Wddm Video driver for Vista+ guests.
 VBOX_WITH_WDDM = 1
 # Enable Wddm Video driver for Windows 8 guests.
-ifdef VBOX_USE_VCC100
- VBOX_WITH_WDDM_W8 = 1
-endif
+VBOX_WITH_WDDM_W8 = 1
 # Lazy developer!!
 VBOXWDDM_WITH_VBVA = 1
 # Lazy developer!!
@@ -1321,31 +1314,13 @@ endif
 #
 # Decide which Visual C++ compiler version we're using by default.
 #
-ifndef VBOX_VCC_TOOL
- ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
-  if !defined(VBOX_USE_VCC100) && !defined(VBOx_USE_VCC110)
-   VBOX_USE_VCC80 ?= 1 # the default for win.amd64
-  endif
- endif
- ifdef VBOX_USE_VCC110
-  VBOX_VCC_TOOL_STEM = VCC110
- else ifdef VBOX_USE_VCC100
-  VBOX_VCC_TOOL_STEM = VCC100
- else ifdef VBOX_USE_VCC80
-  VBOX_VCC_TOOL_STEM = VCC80
- else
-  VBOX_VCC_TOOL := VCC70
-  VBOX_VCC_TOOL_STEM := VCC70
- endif
- ifndef VBOX_VCC_TOOL
-  VBOX_VCC_TOOL := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
- endif
-else ifndef VBOX_VCC_TOOL_STEM
-$(error VBOX_VCC_TOOL_STEM is not defined)
+ifndef VBOX_VCC_TOOL_STEM
+ VBOX_VCC_TOOL_STEM := VCC100
+else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110)
+ $(error VBox: VBOX_VCC_TOOL_STEM='$(VBOX_VCC_TOOL_STEM)' is not supported, only VCC100 and VCC110 is)
 endif
-# VCC70 is hopefully the most special case here...
-if !defined(VBOX_USE_VCC100) && !defined(VBOX_USE_VCC90) && !defined(VBOX_USE_VCC80) && !defined(VBOX_USE_VCC70)
- VBOX_USE_VCC70 := 1
+ifndef VBOX_VCC_TOOL
+ VBOX_VCC_TOOL := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
 endif
 
 #
@@ -1359,12 +1334,8 @@ PATH_DEVTOOLS_TRG ?= $(PATH_DEVTOOLS)/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)
 
 ## @todo Remove the default tool crap here!
 TOOL = $(VBOX_GCC_TOOL)
-ifdef VBOX_USE_VCC70
- TOOL.win = VCC70
-else
- TOOL.win.x86 = $(VBOX_VCC_TOOL_STEM)X86
- TOOL.win.amd64 = $(VBOX_VCC_TOOL_STEM)AMD64
-endif
+TOOL.win.x86 = $(VBOX_VCC_TOOL_STEM)X86
+TOOL.win.amd64 = $(VBOX_VCC_TOOL_STEM)AMD64
 ASTOOL = $(VBOX_ASTOOL)
 
 #
@@ -1385,7 +1356,7 @@ ifdef L4_DIR
    CFLAGS.l4   = -mno-red-zone
    CXXFLAGS.l4 = -mno-red-zone
   else
-   $(error L4_ARCH=$(L4_ARCH))
+   $(error VBox: L4_ARCH=$(L4_ARCH))
   endif
   L4_OBJ := $(L4_DIR)/build-$(L4_ARCH)-$(L4_CPU)-$(L4_API)
   # support split Linux kernels (make O=<build directory>)
@@ -1524,27 +1495,15 @@ else
  VBOX_GCC_FP     ?= -fno-omit-frame-pointer
  VBOX_GCC_OPT    ?= -O2 $(VBOX_GCC_mtune-generic)
  VBOX_VCC_FP     ?= -Oy-
- ifndef VBOX_USE_VCC70
  VBOX_VCC_OPT    ?= -O2 -GS-
- else
- VBOX_VCC_OPT    ?= -Ogitb2
- endif
  VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer
  VBOX_GCC_R0_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
  VBOX_VCC_R0_FP  ?= -Oy-
- ifndef VBOX_USE_VCC70
  VBOX_VCC_R0_OPT ?= -O2 -GS-
- else
- VBOX_VCC_R0_OPT ?= -Ogitb2
- endif
  VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer
  VBOX_GCC_GC_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
  VBOX_VCC_GC_FP  ?= -Oy-
- ifndef VBOX_USE_VCC70
  VBOX_VCC_GC_OPT ?= -O2
- else
- VBOX_VCC_GC_OPT ?= -Ogitb2
- endif
 endif
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  ifneq ($(KBUILD_TARGET),darwin)
@@ -1568,68 +1527,48 @@ endif
 #
 # Decide which Windows DDK to use by default.
 #
-ifdef VBOX_USE_VCC110
- VBOX_WINDDK          ?= WINDDK80
- VBOX_WINDDK_WLH      ?= $(VBOX_WINDDK)WLH
- VBOX_WINDDK_GST_W2K3 ?= $(VBOX_WINDDK)WNET
- VBOX_WINDDK_GST_W7   ?= $(VBOX_WINDDK)W7
-else ifdef VBOX_USE_VCC100
- VBOX_WINDDK          ?= WINDDK71
- VBOX_WINDDK_WLH      ?= $(VBOX_WINDDK)WLH
- VBOX_WINDDK_GST_W2K3 ?= $(VBOX_WINDDK)WNET
- VBOX_WINDDK_GST_W7   ?= $(VBOX_WINDDK)W7
-else ifdef VBOX_USE_WINDDK
- VBOX_WINDDK          ?= WINDDK
- VBOX_WINDDK_WLH      ?= $(VBOX_WINDDK)WLH
- VBOX_WINDDK_GST_W2K3 ?= $(VBOX_WINDDK)WNET
- VBOX_WINDDK_GST_W7   ?= WINDDK71W7
+ifeq ($(VBOX_VCC_TOOL_STEM),VCC110)
+ VBOX_WINDDK         ?= WINDDK80
 else
- VBOX_WINDDK          ?= W2K3DDK
- VBOX_WINDDK_WLH      ?= WINDDKWLH
- VBOX_WINDDK_GST_W2K3 ?= W2K3DDK
- VBOX_WINDDK_GST_W7   ?= WINDDK71W7
+ VBOX_WINDDK         ?= WINDDK71
 endif
-VBOX_WINDDK_GST       ?= $(VBOX_WINDDK)
-VBOX_WINDDK_GST_WLH   ?= $(VBOX_WINDDK_WLH)
-VBOX_WINDDK_GST_W8    ?= WINDDK80W8
+VBOX_WINDDK_WLH      ?= $(VBOX_WINDDK)WLH
+
+VBOX_WINDDK_GST      ?= $(VBOX_WINDDK)
+VBOX_WINDDK_GST_W8   ?= WINDDK80W8
+VBOX_WINDDK_GST_W7   ?= $(VBOX_WINDDK_GST)W7
+VBOX_WINDDK_GST_WLH  ?= $(VBOX_WINDDK_GST)WLH
+VBOX_WINDDK_GST_W2K3 ?= WINDDK71WNET
 ifeq ($(KBUILD_TARGET_ARCH),x86)
- ifneq ($(VBOX_WINDDK_GST),W2K3DDK)
-  VBOX_WINDDK_GST_WXP ?= $(VBOX_WINDDK_GST)WXP
-  VBOX_WINDDK_GST_W2K ?= $(VBOX_WINDDK_GST_WXP)
-  VBOX_WINDDK_GST_NT4 ?= $(VBOX_WINDDK_GST_WXP)
- else
-  VBOX_WINDDK_GST_WXP ?= $(VBOX_WINDDK_GST)
-  VBOX_WINDDK_GST_W2K ?= $(VBOX_WINDDK_GST)
-  VBOX_WINDDK_GST_NT4 ?= $(VBOX_WINDDK_GST)
- endif
+ VBOX_WINDDK_GST_WXP ?= WINDDK71WXP
+ VBOX_WINDDK_GST_W2K ?= $(VBOX_WINDDK_GST_WXP)
+ VBOX_WINDDK_GST_NT4 ?= $(VBOX_WINDDK_GST_WXP)
 else
- VBOX_WINDDK_GST_WXP   = $(VBOX_WINDDK_GST_W2K3)
- VBOX_WINDDK_GST_W2K   = $(VBOX_WINDDK_GST_W2K3)
- VBOX_WINDDK_GST_NT4   = $(VBOX_WINDDK_GST_W2K3)
+ VBOX_WINDDK_GST_WXP ?= $(VBOX_WINDDK_GST_W2K3)
+ VBOX_WINDDK_GST_W2K ?= $(VBOX_WINDDK_GST_W2K3)
+ VBOX_WINDDK_GST_NT4 ?= $(VBOX_WINDDK_GST_W2K3)
 endif
 
 
 #
 # Decide which Windows SDK to use by default.
 #
-ifdef VBOX_USE_VCC110
+ifeq ($(VBOX_VCC_TOOL_STEM),VCC110)
  VBOX_WINPSDK ?= WINPSDK80
-else ifdef VBOX_USE_VCC100
- VBOX_WINPSDK ?= WINPSDK71
 else
- VBOX_WINPSDK ?= WINPSDK
+ VBOX_WINPSDK ?= WINPSDK71
 endif
-VBOX_WINPSDK_GST     ?= $(VBOX_WINPSDK)
-VBOX_WINPSDK_GST_W8  ?= $(VBOX_WINPSDK_GST)
-VBOX_WINPSDK_GST_W7  ?= $(VBOX_WINPSDK_GST)
-VBOX_WINPSDK_GST_WLH ?= $(VBOX_WINPSDK_GST)
-VBOX_WINPSDK_GST_WXP ?= $(VBOX_WINPSDK_GST)
+VBOX_WINPSDK_GST      ?= $(VBOX_WINPSDK)
+VBOX_WINPSDK_GST_W8   ?= WINPSDK80
+VBOX_WINPSDK_GST_W7   ?= $(VBOX_WINPSDK_GST)
+VBOX_WINPSDK_GST_WLH  ?= $(VBOX_WINPSDK_GST)
+VBOX_WINPSDK_GST_WXP  ?= $(VBOX_WINPSDK_GST)
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  VBOX_WINPSDK_GST_W2K ?= $(VBOX_WINPSDK_GST)
  VBOX_WINPSDK_GST_NT4 ?= $(VBOX_WINPSDK_GST)
 else
- VBOX_WINPSDK_GST_W2K = $(VBOX_WINPSDK_GST_WXP)
- VBOX_WINPSDK_GST_NT4 = $(VBOX_WINPSDK_GST_WXP)
+ VBOX_WINPSDK_GST_W2K ?= $(VBOX_WINPSDK_GST_WXP)
+ VBOX_WINPSDK_GST_NT4 ?= $(VBOX_WINPSDK_GST_WXP)
 endif
 
 
@@ -1643,7 +1582,7 @@ else ifeq ($(KBUILD_TARGET_ARCH),x86)
  VBOX_HC_ARCH_BITS := 32
  ARCH_BITS_DEFS    := HC_ARCH_BITS=32
 else
- error KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)
+ $(error VBox: KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH))
 endif
 
 ifdef VBOX_WITH_64_BITS_GUESTS
@@ -1859,17 +1798,10 @@ VBOX_PATH_AUTOIT3 ?= $(PATH_DEVTOOLS)/win.x86/autoit/v3.2.10.0
 # Windows install tools...
 # Note! The scripts has been moved to Bin in v8.0.
 VBOX_PATH_WIX       ?= $(PATH_DEVTOOLS)/win.x86/wix/v3.5.2519.0
-ifdef VBOX_USE_VCC100
 VBOX_PATH_MSITRAN   ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiTran.Exe
 VBOX_PATH_MSIDB     ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiDb.Exe
 VBOX_PATH_WISUBSTG  ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSubStg.vbs
 VBOX_PATH_WISUMINFO ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSumInf.vbs
-else
-VBOX_PATH_MSITRAN   ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Bin/MsiTran.Exe
-VBOX_PATH_MSIDB     ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Bin/MsiDb.Exe
-VBOX_PATH_WISUBSTG  ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Samples/SysMgmt/Msi/Scripts/WiSubStg.vbs
-VBOX_PATH_WISUMINFO ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Samples/SysMgmt/Msi/Scripts/WiSumInf.vbs
-endif
 VBOX_PATH_DIFX      ?= $(PATH_DEVTOOLS)/win.$(KBUILD_TARGET_ARCH)/DIFx/v2.1-r3
 VBOX_PATH_CABSDK    ?= $(PATH_DEVTOOLS)/win.x86/cabsdk/r1
 VBOX_PATH_MAKECAB   ?= $(VBOX_PATH_CABSDK)/BIN/MAKECAB.EXE
@@ -1953,7 +1885,7 @@ ifeq ($(KBUILD_TARGET),darwin)
    endif
   else
    if $(VBOX_XCODE_VERSION_MAJOR) >= 4
-    $(error Too new Xcode version ($(VBOX_XCODE_VERSION)) for non-Cocoa builds.)
+    $(error VBox: Too new Xcode version ($(VBOX_XCODE_VERSION)) for non-Cocoa builds.)
    endif
    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
    VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
@@ -1961,7 +1893,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   endif
  else
   if $(VBOX_XCODE_VERSION_MAJOR) < 4 && "$(VBOX_XCODE_VERSION)" != "3.2"
-   $(error 64-bit darwin builds require Xcode 3.2 or later, you have $(VBOX_XCODE_VERSION))
+   $(error VBox: 64-bit darwin builds require Xcode 3.2 or later, you have $(VBOX_XCODE_VERSION))
   endif
   VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
   TOOL_GXX4MACHO_SUFFIX ?= -4.2
@@ -2010,8 +1942,8 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS     := -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_4) \
 	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_CLASSIC_LINKER)
  else
-  VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.4 SDK)
-  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.4 SDK)
+  VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
+  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5)
@@ -2024,8 +1956,8 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS     := -mmacosx-version-min=10.5 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_5) \
 	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
  else
-  VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.5 SDK)
-  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.5 SDK)
+  VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
+  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6)
@@ -2038,8 +1970,8 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS     := -mmacosx-version-min=10.6 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_6) \
          -Wl,-headerpad_max_install_names
  else
-  VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.6 SDK)
-  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.6 SDK)
+  VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
+  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6 10.7)
@@ -2058,8 +1990,8 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_7) \
          -Wl,-headerpad_max_install_names
  else
-  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.7 SDK)
-  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.7 SDK)
+  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
+  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
  endif
 
 
@@ -2086,16 +2018,16 @@ endif
 # Check for incompatible rpath combinations.
 #
 if defined(VBOX_WITH_RUNPATH) && defined(VBOX_WITH_ORIGIN)
- $(error VBOX_WITH_RUNPATH and VBOX_WITH_ORIGIN are mutually exclusive)
+ $(error VBox: VBOX_WITH_RUNPATH and VBOX_WITH_ORIGIN are mutually exclusive)
 endif
 if defined(VBOX_WITH_RELATIVE_RUNPATH) && defined(VBOX_WITH_ORIGIN)
- $(error VBOX_WITH_RELATIVE_RUNPATH and VBOX_WITH_ORIGIN are mutually exclusive)
+ $(error VBox: VBOX_WITH_RELATIVE_RUNPATH and VBOX_WITH_ORIGIN are mutually exclusive)
 endif
 if defined(VBOX_WITH_RUNPATH) && defined(VBOX_WITH_RELATIVE_RUNPATH)
- $(error VBOX_WITH_RUNPATH and VBOX_WITH_RELATIVE_RUNPATH are mutually exclusive)
+ $(error VBox: VBOX_WITH_RUNPATH and VBOX_WITH_RELATIVE_RUNPATH are mutually exclusive)
 endif
 if defined(VBOX_WITH_RELATIVE_RUNPATH) && defined(VBOX_WITH_HARDENING)
- $(error VBOX_WITH_RELATIVE_RUNPATH and VBOX_WITH_HARDENING are mutually exclusive)
+ $(error VBox: VBOX_WITH_RELATIVE_RUNPATH and VBOX_WITH_HARDENING are mutually exclusive)
 endif
 
 #
@@ -2504,7 +2436,7 @@ ifdef VBOX_SIGNING_MODE
    VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timestamp.dll
    VBOX_TSA_URL_ARGS ?= /t "$(VBOX_TSA_URL)"
   else
-   $(error Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
+   $(error VBox: Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
   endif
   VBOX_CERTIFICATE_STORE ?= my
   VBOX_CERTIFICATE_STORE_ARGS ?= /s "$(VBOX_CERTIFICATE_STORE)"
@@ -2875,33 +2807,16 @@ ifdef VBOX_WITH_RAW_MODE
  endif
 
  ifeq ($(VBOX_LDR_FMT32),pe)
-  ifndef VBOX_USE_VCC70
-   TEMPLATE_VBoxRc_TOOL              = $(VBOX_VCC_TOOL_STEM)X86
-   ifdef TODO_MORE_WARNINGS
-    TEMPLATE_VBoxRc_CXXFLAGS         = -Zi -Zl -GR- -EHs- -GF -W4 -wd4244 -wd4127 -wd4100 -wd4214 -wd4706 -GS- -wd4996 -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
-   else
-    TEMPLATE_VBoxRc_CXXFLAGS         = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
-   endif
+  TEMPLATE_VBoxRc_TOOL               = $(VBOX_VCC_TOOL_STEM)X86
+  ifdef TODO_MORE_WARNINGS
+   TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) -W4 -wd4244 -wd4996 -wd4127 -wd4100 -wd4214 -wd4706 $(VBOX_VCC_WERR)
   else
-   TEMPLATE_VBoxRc_TOOL              = VCC70
-   ifdef TODO_MORE_WARNINGS
-    TEMPLATE_VBoxRc_CXXFLAGS         = -Zi -Zl -GR- -EHs- -GF -W4 -wd4244 -wd4127 -wd4100 -wd4214 -wd4706 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
-   else
-    TEMPLATE_VBoxRc_CXXFLAGS         = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
-   endif
+   TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) -W3 -wd4244 -wd4996 $(VBOX_VCC_WERR)
   endif
   TEMPLATE_VBoxRc_CFLAGS             = $(TEMPLATE_VBoxRc_CXXFLAGS)
   TEMPLATE_VBoxRc_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
-  ifdef VBOX_USE_VCC100
-   TEMPLATE_VBoxRc_LIBS               = \
-   	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
-  else
-   if !defined(VBOX_NOINC_MISC) && !defined(VBOX_USE_VCC100)
-    include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
-   endif
   TEMPLATE_VBoxRc_LIBS               = \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
-  endif
+  	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
   TEMPLATE_VBoxRc_LIBS              += \
   	$(PATH_STAGE_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
   TEMPLATE_VBoxRc_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
@@ -2957,20 +2872,10 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRcExe_LDFLAGS = -Incremental:NO -MapInfo:Exports -NoD -Debug
-  ifdef VBOX_USE_VCC100
-   TEMPLATE_VBoxRcExe_SDKS   = ReorderCompilerIncs $(VBOX_WINPSDK)
-  else
-   TEMPLATE_VBoxRcExe_SDKS   = WIN32SDK
-  endif
-  ifndef VBOX_USE_VCC70
-   TEMPLATE_VBoxRcExe_LIBS   = \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/libcmt.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/oldnames.lib
-  else
-   TEMPLATE_VBoxRcExe_LIBS   = \
-   	$(PATH_TOOL_VCC70_LIB)/libcmt.lib \
-   	$(PATH_TOOL_VCC70_LIB)/oldnames.lib
-  endif
+  TEMPLATE_VBoxRcExe_SDKS    = ReorderCompilerIncs $(VBOX_WINPSDK)
+  TEMPLATE_VBoxRcExe_LIBS    = \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/libcmt.lib \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/oldnames.lib
  endif
 
  ifeq ($(VBOX_LDR_FMT32),elf)
@@ -3025,18 +2930,10 @@ endif
 
 ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
- ifndef VBOX_USE_VCC70
-  ifdef TODO_MORE_WARNINGS
-TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W4 -wd4244 -wd4127 -wd4100 -wd4214 -wd4706 -GS- -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_WERR)
-  else
-TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_WERR)
-  endif
+ ifdef TODO_MORE_WARNINGS
+TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -W4 -wd4244 -wd4127 -wd4100 -wd4214 -wd4706 -wd4996 $(VBOX_VCC_WERR)
  else
-  ifdef TODO_MORE_WARNINGS
-TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W4 -wd4244 -wd4127 -wd4100 -wd4214 -wd4706 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)	$(VBOX_VCC_WERR)
-  else
-TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)	$(VBOX_VCC_WERR)
-  endif
+TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -W3 -wd4244 -wd4996 $(VBOX_VCC_WERR)
  endif
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
 TEMPLATE_VBoxR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
@@ -3045,14 +2942,9 @@ TEMPLATE_VBoxR0_LDFLAGS            += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:V
  endif
 TEMPLATE_VBoxR0_LIBS                = \
 	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
- ifdef VBOX_USE_VCC100
-  include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
+ include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
 TEMPLATE_VBoxR0_LIBS.x86            = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
- else
-TEMPLATE_VBoxR0_LIBS.x86            = \
-	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
- endif
 TEMPLATE_VBoxR0_POST_CMDS           = $(VBOX_SIGN_DRIVER_CMDS)
 endif # pe
 
@@ -3147,11 +3039,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_DEFS.x86          += NO_INTERLOCKED_INTRINSICS # Avoids intrisic VC/WDK trouble
  TEMPLATE_VBOXR0DRV_DEFS.x86          += WIN9X_COMPAT_SPINLOCK     # Avoid multiply defined _KeInitializeSpinLock@4
  TEMPLATE_VBOXR0DRV_DEFS.amd64         = _AMD64_
- ifndef VBOX_USE_VCC70
-  TEMPLATE_VBOXR0DRV_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -Gz -W3 -GS- -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
- else
-  TEMPLATE_VBOXR0DRV_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -Gz -W3 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
- endif
+ TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -W3 -GS- -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
  TEMPLATE_VBOXR0DRV_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Debug
  ifdef VBOX_WITH_DTRACE_R0DRV
@@ -3400,13 +3288,8 @@ endif
 TEMPLATE_VBOXR3EXE_LIBS.kprofile       = $(LIB_KPROFILE)
 ifeq ($(KBUILD_TARGET),win)
 # TEMPLATE_VBOXR3EXE_TOOL               = $(VBOX_VCC_TOOL)
-ifdef VBOX_USE_VCC70
- TEMPLATE_VBOXR3EXE_TOOL.win.x86       = $(VBOX_VCC_TOOL)
- TEMPLATE_VBOXR3EXE_TOOL.win.amd64     = VCC80AMD64
-else
  TEMPLATE_VBOXR3EXE_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBOXR3EXE_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
-endif
  TEMPLATE_VBOXR3EXE_RCDEFS             = \
 	VBOX_VERSION_MAJOR=\"$(VBOX_VERSION_MAJOR)\" \
 	VBOX_VERSION_MINOR=\"$(VBOX_VERSION_MINOR)\" \
@@ -3417,13 +3300,8 @@ endif
 	VBOX_VERSION_BUILD_NR=$(VBOX_VERSION_BUILD) \
 	VBOX_SVN_REV_NR=$(VBOX_SVN_REV)
  TEMPLATE_VBOXR3EXE_SDKS               = ReorderCompilerIncs $(VBOX_WINPSDK)
- ifndef VBOX_USE_VCC70
-  TEMPLATE_VBOXR3EXE_CXXFLAGS          = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4244 -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
-  TEMPLATE_VBOXR3EXE_CXXFLAGS.debug    = -RTCsu
- else
-  TEMPLATE_VBOXR3EXE_CXXFLAGS          = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4244 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
-  TEMPLATE_VBOXR3EXE_CXXFLAGS.debug    = -GZ
- endif
+ TEMPLATE_VBOXR3EXE_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4244 -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
+ TEMPLATE_VBOXR3EXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile  = -Gh -GH
  TEMPLATE_VBOXR3EXE_CFLAGS             = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
  TEMPLATE_VBOXR3EXE_CFLAGS.debug       = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.debug)
@@ -3932,15 +3810,9 @@ ifeq ($(KBUILD_TARGET),win)
  # Note: C4250 is the dominance warning, see r32789.
  #       C4065 is about default only switches.
  #       C4996 is about deprected function (CRT only?).
- ifndef VBOX_USE_VCC70
-  TEMPLATE_VBOXMAINEXE_TOOL              = $(VBOX_VCC_TOOL)
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS          = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4996 -wd4250 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug    = -RTCsu
- else
-  TEMPLATE_VBOXMAINEXE_TOOL              = VCC70
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS          = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4250 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug    = -GZ
- endif
+ TEMPLATE_VBOXMAINEXE_TOOL               = $(VBOX_VCC_TOOL)
+ TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4996 -wd4250 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
+ TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile  = -Gh -GH
  TEMPLATE_VBOXMAINEXE_CFLAGS             = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
  TEMPLATE_VBOXMAINEXE_CFLAGS.debug       = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
@@ -4280,11 +4152,7 @@ ifdef VBOX_WITH_QTGUI
     endif
    endif
   else if1of ($(KBUILD_TARGET), win)
-   ifdef VBOX_USE_VCC100
-    VBOX_PATH_QT4 ?= $(lastword $(filter %-vcc100,$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
-   else
-    VBOX_PATH_QT4 ?= $(lastword $(filter-out %-vcc100,$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
-   endif
+   VBOX_PATH_QT4 ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
   else if1of ($(KBUILD_TARGET), linux solaris)
    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
    ifneq ($(VBOX_PATH_QT4),)
@@ -4339,16 +4207,8 @@ ifdef VBOX_WITH_QTGUI
      _WIN32_WINNT=0x0500 UNICODE _UNICODE \
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
      $(QMAKE_PRL_DEFINES)
-  ## @todo VCC70 flags?
-  ifndef VBOX_USE_VCC70
-   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
-	-nologo -Zm200 -W3 -MD -Zi -EHsc -Zc:wchar_t-
-   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.debug = -RTCsu
-  else
-   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
-	-nologo -Zm200 -W3 -MD -Zi -GX
-   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.debug = -GZ
-  endif
+  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = -nologo -Zm200 -W3 -MD -Zi -EHsc -Zc:wchar_t-
+  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQT4GUIEXE_INCS += \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS = \
@@ -4516,27 +4376,11 @@ TEMPLATE_VBOXBLDPROG_ASTOOL             := YASM
 TEMPLATE_VBOXBLDPROG_ASFLAGS.x86        := $(VBOX_ASFLAGS32)
 TEMPLATE_VBOXBLDPROG_ASFLAGS.amd64      := $(VBOX_ASFLAGS64)
 ifeq ($(KBUILD_HOST),win)
- ifndef VBOX_USE_VCC70
-  TEMPLATE_VBOXBLDPROG_TOOL             := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
-  TEMPLATE_VBOXBLDPROG_SDKS             := ReorderCompilerIncs $(VBOX_WINPSDK)
- else if1of ($(KBUILD_HOST_ARCH), x86)
-  TEMPLATE_VBOXBLDPROG_TOOL             := VCC70
-  TEMPLATE_VBOXBLDPROG_SDKS             := ReorderCompilerIncs WIN32SDK
- else if1of ($(KBUILD_HOST_ARCH), amd64)
-  TEMPLATE_VBOXBLDPROG_TOOL             := VCC80AMD64
-  TEMPLATE_VBOXBLDPROG_SDKS             := ReorderCompilerIncs WIN64SDK
- else
-  $(error KBUILD_HOST_ARCH=$(KBUILD_HOST_ARCH))
- endif
- ifneq ($(TEMPLATE_VBOXBLDPROG_TOOL),VCC70)
-  TEMPLATE_VBOXBLDPROG_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -MT$(VBOX_VCC_CRT_TYPE) -W3 -wd4996 -Zc:wchar_t-
-  TEMPLATE_VBOXBLDPROG_CXXFLAGS.debug    = -RTCsu
-  TEMPLATE_VBOXBLDPROG_CXXFLAGS.release  = -O2 -Oy- -GS-
- else
-  TEMPLATE_VBOXBLDPROG_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -MT$(VBOX_VCC_CRT_TYPE) -W3
-  TEMPLATE_VBOXBLDPROG_CXXFLAGS.debug    = -GZ
-  TEMPLATE_VBOXBLDPROG_CXXFLAGS.release  = -Ogitb2 -Oy-
- endif
+ TEMPLATE_VBOXBLDPROG_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
+ TEMPLATE_VBOXBLDPROG_SDKS              := ReorderCompilerIncs $(VBOX_WINPSDK)
+ TEMPLATE_VBOXBLDPROG_CXXFLAGS          := -Zi -Zl -GR- -EHs- -GF -MT$(VBOX_VCC_CRT_TYPE) -W3 -wd4996 -Zc:wchar_t-
+ TEMPLATE_VBOXBLDPROG_CXXFLAGS.debug    := -RTCsu
+ TEMPLATE_VBOXBLDPROG_CXXFLAGS.release  := -O2 -Oy- -GS-
  TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
  TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile  = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
  TEMPLATE_VBOXBLDPROG_CFLAGS             = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS)
@@ -4757,10 +4601,9 @@ ifeq ($(KBUILD_TARGET),win)
  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib \
  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
- ifdef VBOX_USE_VCC100
-  TEMPLATE_VBOXGUESTR3EXE_POST_CMDS.win.x86 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out))
-  TEMPLATE_VBOXGUESTR3EXE_LNK_DEPS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
- endif
+ # Hack for running on NT4, W2K and XP w/o SP: Change OS and subsystem version in the image.
+ TEMPLATE_VBOXGUESTR3EXE_POST_CMDS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out))
+ TEMPLATE_VBOXGUESTR3EXE_LNK_DEPS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
 else # the gcc guys
  TEMPLATE_VBOXGUESTR3EXE_EXTENDS  = VBOXR3EXE
  TEMPLATE_VBOXGUESTR3EXE_TOOL    := $(subst GXX,GCC,$(TEMPLATE_VBOXR3EXE_TOOL))
@@ -4928,13 +4771,8 @@ TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.freebsd += \
 TEMPLATE_VBOXGUESTR0             = VBox Guest Driver
 TEMPLATE_VBOXGUESTR0_EXTENDS     = VBOXR0DRV
 TEMPLATE_VBOXGUESTR0_INST        = $(INST_ADDITIONS)
-if defined(VBOX_USE_VCC100) || defined(VBOX_USE_VCC110)
 TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST)INCS
 TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST)INCS
-else
-TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = ReorderCompilerIncs WIN32SDK $(VBOX_WINDDK)
-TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST)INCS
-endif
 TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/int64.lib
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
@@ -5081,33 +4919,33 @@ endif
 VBOX_VERSION_COMP_VALID_CHAR_SET = ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz()[]{}+-.,
 ifneq ($(VBOX_BUILD_PUBLISHER),)
  if $(length $(VBOX_BUILD_PUBLISHER)) > 10
-  $(error VBOX_BUILD_PUBLISHER must not be longer than 10 characters!)
+  $(error VBox: VBOX_BUILD_PUBLISHER must not be longer than 10 characters!)
  endif
  if "$(substr $(VBOX_BUILD_PUBLISHER), 1, 1)" != "_"
-  $(error VBOX_BUILD_PUBLISHER must start with an underscore!)
+  $(error VBox: VBOX_BUILD_PUBLISHER must start with an underscore!)
  endif
  if "$(translate $(substr $(VBOX_BUILD_PUBLISHER),2),$(VBOX_VERSION_COMP_VALID_CHAR_SET),)" != ""
-  $(error VBOX_BUILD_PUBLISHER='$(VBOX_BUILD_PUBLISHER)' contains bad characters! Valid set is:$(NLTAB)$(VBOX_VERSION_COMP_VALID_CHAR_SET))
+  $(error VBox: VBOX_BUILD_PUBLISHER='$(VBOX_BUILD_PUBLISHER)' contains bad characters! Valid set is:$(NLTAB)$(VBOX_VERSION_COMP_VALID_CHAR_SET))
  endif
 endif
 
 if $(words $(VBOX_VERSION_STRING)) != 1
- $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains spaces or is empty.)
+ $(error VBox: VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains spaces or is empty.)
 endif
 if "$(subst __,-,$(VBOX_VERSION_STRING))" != "$(VBOX_VERSION_STRING)"
- $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains double underscores.)
+ $(error VBox: VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains double underscores.)
 endif
 
 VBOX_VER_TMP1 := $(subst _,$(SP),$(VBOX_VERSION_STRING))
 
 if $(words $(VBOX_VER_TMP1)) > 3
- $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains too many parts (underscores), max 3!)
+ $(error VBox: VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains too many parts (underscores), max 3!)
 endif
 if "$(translate $(word 1,$(VBOX_VER_TMP1)),0123456789,)" != ".."
- $(error The x.y.z part of VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' is malformed: '$(word 1,$(VBOX_VER_TMP1))')
+ $(error VBox: The x.y.z part of VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' is malformed: '$(word 1,$(VBOX_VER_TMP1))')
 endif
 if "$(word 1,$(VBOX_VER_TMP1))" != "$(VBOX_VERSION_STRING_RAW)"
- $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' does not start with VBOX_VERSION_STRING_RAW='$(VBOX_VERSION_STRING_RAW)')
+ $(error VBox: VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' does not start with VBOX_VERSION_STRING_RAW='$(VBOX_VERSION_STRING_RAW)')
 endif
 
 if $(words $(VBOX_VER_TMP1)) == 3 || ($(words $(VBOX_VER_TMP1)) == 2 && "$(VBOX_BUILD_PUBLISHER)" == "")
@@ -5118,10 +4956,10 @@ if $(words $(VBOX_VER_TMP1)) == 3 || ($(words $(VBOX_VER_TMP1)) == 2 && "$(VBOX_
  else if "$(substr $(word 2,$(VBOX_VER_TMP1)),1,2)" == "RC"
   VBOX_VER_TMP2 = 3
  else
-  $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' uses an unknown build type: '$(word 2,$(VBOX_VER_TMP1))')
+  $(error VBox: VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' uses an unknown build type: '$(word 2,$(VBOX_VER_TMP1))')
  endif
  if "$(translate $(substr $(word 2,$(VBOX_VER_TMP1)),$(VBOX_VER_TMP2)),0123456789)" != ""
-  $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' uses an unknown build type: '$(word 2,$(VBOX_VER_TMP1))')
+  $(error VBox: VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' uses an unknown build type: '$(word 2,$(VBOX_VER_TMP1))')
  endif
 endif
 

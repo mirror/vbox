@@ -33,15 +33,9 @@ VBoxStub_SOURCES = \
 	VBoxStub.rc
 VBoxStub_SDKS += \
 	VBOX_NTDLL
-if defined(VBOX_USE_VCC100) || defined(VBOX_USE_VCC110)
 VBoxStub_LIBS = \
 	$(VBOX_LIB_RUNTIME_STATIC) \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
-else
-VBoxStub_LIBS = \
-	$(VBOX_LIB_RUNTIME_STATIC) \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Msi.lib
-endif
 
 VBoxStub.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxStub.cpp_DEPS = $(VBOX_SVN_REV_KMK)
