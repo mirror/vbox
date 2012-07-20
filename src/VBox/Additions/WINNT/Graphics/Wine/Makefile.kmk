@@ -215,7 +215,7 @@ ifdef VBOX_WITH_WDDM
  #
  DLLS += wined3dwddm
  wined3dwddm_EXTENDS        = wined3d
- if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
+ if defined(VBOX_SIGNING_MODE)
   wined3dwddm_INSTTYPE.win  = none
   wined3dwddm_DEBUG_INSTTYPE.win = both
  endif
@@ -339,7 +339,11 @@ ifdef VBOX_WITH_WDDM
  endif
  VBoxD3D9wddm_INCS     = $(VBoxD3D9_INCS) \
  	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
- VBoxD3D9wddm_DEFS    += $(VBoxD3D9_DEFS) VBOX_WITH_WDDM VBOX_WINE_WITHOUT_LIBWINE IN_VBOXWINEEX
+ VBoxD3D9wddm_DEFS    += $(VBoxD3D9_DEFS) \
+ 	VBOX_WITH_WDDM \
+ 	VBOX_WINE_WITHOUT_LIBWINE \
+ 	IN_VBOXWINEEX \
+ 	VBOX_WINE_NO_LOCK
  VBoxD3D9wddm_SOURCES  = $(subst d3d9xpdm.def,d3d9wddm.def,$(VBoxD3D9_SOURCES))
  VBoxD3D9wddm_LIBS     = \
  	$(subst $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/wined3dwddm$(VBOX_SUFF_LIB),$(VBoxD3D9_LIBS)) \
