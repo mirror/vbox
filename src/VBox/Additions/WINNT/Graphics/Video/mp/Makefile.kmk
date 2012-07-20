@@ -151,7 +151,7 @@ ifdef VBOX_WITH_WDDM
  	$(VBOX_LIB_IPRT_GUEST_R0) \
  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
 
- ifdef VBOX_WDDM_WIN8
+ ifdef VBOX_WITH_WDDM_W8
   #
   # VBoxVideoW8 - Windows Guest Additions WDDM 1.2 Miniport Video Driver for Win8
   #
@@ -171,21 +171,23 @@ ifdef VBOX_WITH_WDDM
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/hal.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/displib.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib
- endif # VBOX_WDDM_WIN8
+ endif # VBOX_WITH_WDDM_W8
  
 endif # VBOX_WITH_WDDM
 
+#
 # Signing requires both miniport and display drivers
 # so it'd be dealt with in the parent makefile.
+#
 ifdef VBOX_SIGN_ADDITIONS
  VBoxVideo_INSTTYPE            = none
  VBoxVideo_DEBUG_INSTTYPE      = both
  ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_INSTTYPE       = none
   VBoxVideoWddm_DEBUG_INSTTYPE = both
-  ifdef VBOX_WDDM_WIN8
-   VBoxVideoW8_INSTTYPE       = none
-   VBoxVideoW8_DEBUG_INSTTYPE = both
+  ifdef VBOX_WITH_WDDM_W8
+   VBoxVideoW8_INSTTYPE        = none
+   VBoxVideoW8_DEBUG_INSTTYPE  = both
   endif
  endif
 endif # VBOX_SIGN_ADDITIONS

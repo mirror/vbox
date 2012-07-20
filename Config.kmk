@@ -382,13 +382,13 @@ VBOX_WITH_VIRTIO = 1
 VBOX_WITH_ALSA = 1
 # Enable Pulse support for Linux.
 VBOX_WITH_PULSE = 1
-# Enable PCI passthrough support
+# Enable PCI passthrough support.
 VBOX_WITH_PCI_PASSTHROUGH = 1
-# Enable statically linked dbus support
+# Enable statically linked dbus support.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_DBUS = 1
 endif
-# Enable building PAM modules
+# Enable building PAM modules.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_PAM = 1
 endif
@@ -396,21 +396,25 @@ endif
 VBOX_WITH_WINMM =
 # Enabled internal networking.
 VBOX_WITH_INTERNAL_NETWORKING = 1
-# Enable Host Guest Shared Memory Interface
+# Enable Host Guest Shared Memory Interface.
 VBOX_WITH_HGSMI = 1
-# Enable Video 2D Acceleration
+# Enable Video 2D Acceleration.
 if1of ($(KBUILD_TARGET), darwin linux win freebsd)
  VBOX_WITH_VIDEOHWACCEL = 1
 endif
-# Enable Wddm Video driver for Vista+ guests
+# Enable Wddm Video driver for Vista+ guests.
 VBOX_WITH_WDDM = 1
+# Enable Wddm Video driver for Windows 8 guests.
+ifdef VBOX_WITH_VCC100
+ VBOX_WITH_WDDM_W8 = 1
+endif
+# Lazy developer!!
 VBOXWDDM_WITH_VBVA = 1
+# Lazy developer!!
 ifdef VBOX_WITH_WDDM
  VBOX_WITH_VDMA = 1
-else
- ifdef VBOX_WITH_VDMA
+else ifdef VBOX_WITH_VDMA
   undef VBOX_WITH_VDMA
- endif
 endif
 # Disable the Intel PXE ROM (uses Etherboot).
 VBOX_WITH_INTEL_PXE =
