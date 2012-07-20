@@ -823,6 +823,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             cpnt.setY((int)(cpnt.y() * yRatio));
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
+# ifdef VBOX_WITH_DRAG_AND_DROP_GH
             if (   cpnt.x() < 0
                 || cpnt.x() > iCw - 1
                 || cpnt.y() < 0
@@ -835,6 +836,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                     return false;
                 }
             }
+# endif
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
             /* Bound coordinates: */

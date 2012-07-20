@@ -33,6 +33,7 @@ template<> bool canConvert<KMachineState>() { return true; }
 template<> bool canConvert<KSessionState>() { return true; }
 template<> bool canConvert<KDeviceType>() { return true; }
 template<> bool canConvert<KClipboardMode>() { return true; }
+template<> bool canConvert<KDragAndDropMode>() { return true; }
 template<> bool canConvert<KMediumType>() { return true; }
 template<> bool canConvert<KMediumVariant>() { return true; }
 template<> bool canConvert<KNetworkAttachmentType>() { return true; }
@@ -194,6 +195,20 @@ template<> QString toString(const KClipboardMode &mode)
         case KClipboardMode_HostToGuest:   return QApplication::translate("VBoxGlobal", "Host To Guest", "ClipboardType");
         case KClipboardMode_GuestToHost:   return QApplication::translate("VBoxGlobal", "Guest To Host", "ClipboardType");
         case KClipboardMode_Bidirectional: return QApplication::translate("VBoxGlobal", "Bidirectional", "ClipboardType");
+        default: AssertMsgFailed(("No text for %d", mode)); break;
+    }
+    return QString();
+}
+
+/* QString <= KDragAndDropMode: */
+template<> QString toString(const KDragAndDropMode &mode)
+{
+    switch (mode)
+    {
+        case KDragAndDropMode_Disabled:      return QApplication::translate("VBoxGlobal", "Disabled", "DragAndDropType");
+        case KDragAndDropMode_HostToGuest:   return QApplication::translate("VBoxGlobal", "Host To Guest", "DragAndDropType");
+        case KDragAndDropMode_GuestToHost:   return QApplication::translate("VBoxGlobal", "Guest To Host", "DragAndDropType");
+        case KDragAndDropMode_Bidirectional: return QApplication::translate("VBoxGlobal", "Bidirectional", "DragAndDropType");
         default: AssertMsgFailed(("No text for %d", mode)); break;
     }
     return QString();

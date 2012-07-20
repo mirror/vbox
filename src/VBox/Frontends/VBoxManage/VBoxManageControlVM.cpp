@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -188,6 +188,34 @@ int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 CHECK_ERROR_BREAK(sessionMachine, COMSETTER(ClipboardMode)(mode));
+            }
+        }
+        else if (!strcmp(a->argv[1], "draganddrop"))
+        {
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected drag'n'drop mode.", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            DragAndDropMode_T mode;
+            if (!strcmp(a->argv[2], "disabled"))
+                mode = DragAndDropMode_Disabled;
+            else if (!strcmp(a->argv[2], "hosttoguest"))
+                mode = DragAndDropMode_HostToGuest;
+            else if (!strcmp(a->argv[2], "guesttohost"))
+                mode = DragAndDropMode_GuestToHost;
+            else if (!strcmp(a->argv[2], "bidirectional"))
+                mode = DragAndDropMode_Bidirectional;
+            else
+            {
+                errorArgument("Invalid '%s' argument '%s'.", a->argv[1], a->argv[2]);
+                rc = E_FAIL;
+            }
+            if (SUCCEEDED(rc))
+            {
+                CHECK_ERROR_BREAK(sessionMachine, COMSETTER(DragAndDropMode)(mode));
             }
         }
         else if (!strcmp(a->argv[1], "poweroff"))

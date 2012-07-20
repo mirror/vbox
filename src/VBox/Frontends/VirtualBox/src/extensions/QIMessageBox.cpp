@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -349,7 +349,8 @@ QPixmap QIMessageBox::standardPixmap (QIMessageBox::Icon aIcon)
     {
         int size = style()->pixelMetric (QStyle::PM_MessageBoxIconSize, 0, this);
         return icon.pixmap (size, size);
-    }else
+    }
+    else
         return QPixmap();
 }
 

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -130,7 +130,8 @@ void VBoxFilePathSelectorWidget::setEditable (bool aOn)
 
         /* Installing necessary event filters */
         lineEdit()->installEventFilter (this);
-    }else
+    }
+    else
     {
         if (lineEdit())
         {

@@ -110,6 +110,7 @@
 #include <VBox/VMMDev.h>
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+#include <VBox/HostServices/DragAndDropSvc.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/array.h>
@@ -4893,6 +4894,46 @@ HRESULT Console::onClipboardModeChange(ClipboardMode_T aClipboardMode)
 }
 
 /**
+ * Called by IInternalSessionControl::OnDragAndDropModeChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    /* don't trigger the Drag'n'drop mode change if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        if (   mMachineState == MachineState_Running
+            || mMachineState == MachineState_Teleporting
+            || mMachineState == MachineState_LiveSnapshotting)
+            changeDragAndDropMode(aDragAndDropMode);
+        else
+            rc = setInvalidMachineStateError();
+        ptrVM.release();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+    {
+        alock.release();
+        fireDragAndDropModeChangedEvent(mEventSource, aDragAndDropMode);
+    }
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
  * Called by IInternalSessionControl::OnVRDEServerChange().
  *
  * @note Locks this object for writing.
@@ -7685,24 +7726,61 @@ void Console::changeClipboardMode(ClipboardMode_T aClipboardMode)
     {
         default:
         case ClipboardMode_Disabled:
-            LogRel(("VBoxSharedClipboard mode: Off\n"));
+            LogRel(("Shared cipboard mode: Off\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_OFF;
             break;
         case ClipboardMode_GuestToHost:
-            LogRel(("VBoxSharedClipboard mode: Guest to Host\n"));
+            LogRel(("Shared clipboard mode: Guest to Host\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST;
             break;
         case ClipboardMode_HostToGuest:
-            LogRel(("VBoxSharedClipboard mode: Host to Guest\n"));
+            LogRel(("Shared clipboard mode: Host to Guest\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST;
             break;
         case ClipboardMode_Bidirectional:
-            LogRel(("VBoxSharedClipboard mode: Bidirectional\n"));
+            LogRel(("Shared clipboard mode: Bidirectional\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
             break;
     }
 
     pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
+}
+
+/**
+ * Changes the drag'n_drop mode.
+ *
+ * @param aDragAndDropMode  new drag'n'drop mode.
+ */
+void Console::changeDragAndDropMode(DragAndDropMode_T aDragAndDropMode)
+{
+    VMMDev *pVMMDev = m_pVMMDev;
+    Assert(pVMMDev);
+
+    VBOXHGCMSVCPARM parm;
+    parm.type = VBOX_HGCM_SVC_PARM_32BIT;
+
+    switch (aDragAndDropMode)
+    {
+        default:
+        case DragAndDropMode_Disabled:
+            LogRel(("Drag'n'drop mode: Off\n"));
+            parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_OFF;
+            break;
+        case ClipboardMode_GuestToHost:
+            LogRel(("Drag'n'drop mode: Guest to Host\n"));
+            parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST;
+            break;
+        case ClipboardMode_HostToGuest:
+            LogRel(("Drag'n'drop mode: Host to Guest\n"));
+            parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST;
+            break;
+        case ClipboardMode_Bidirectional:
+            LogRel(("Drag'n'drop mode: Bidirectional\n"));
+            parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL;
+            break;
+    }
+
+    pVMMDev->hgcmHostCall("VBoxDragAndDropSvc", DragAndDropSvc::HOST_DND_SET_MODE, 1, &parm);
 }
 
 #ifdef VBOX_WITH_USB

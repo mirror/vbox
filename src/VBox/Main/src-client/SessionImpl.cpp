@@ -674,6 +674,20 @@ STDMETHODIMP Session::OnClipboardModeChange(ClipboardMode_T aClipboardMode)
     return mConsole->onClipboardModeChange(aClipboardMode);
 }
 
+STDMETHODIMP Session::OnDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->onDragAndDropModeChange(aDragAndDropMode);
+}
+
 STDMETHODIMP Session::OnUSBDeviceAttach(IUSBDevice *aDevice,
                                         IVirtualBoxErrorInfo *aError,
                                         ULONG aMaskedIfs)

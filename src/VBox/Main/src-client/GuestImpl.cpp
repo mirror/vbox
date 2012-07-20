@@ -844,7 +844,7 @@ STDMETHODIMP Guest::DragGHPending(ULONG uScreenId, ComSafeArrayOut(BSTR, formats
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-#ifdef VBOX_WITH_DRAG_AND_DROP
+#if defined(VBOX_WITH_DRAG_AND_DROP) && defined(VBOX_WITH_DRAG_AND_DROP_GH)
     return m_pGuestDnD->dragGHPending(uScreenId, ComSafeArrayOutArg(formats), ComSafeArrayOutArg(allowedActions), pDefaultAction);
 #else /* VBOX_WITH_DRAG_AND_DROP */
     ReturnComNotImplemented();
@@ -860,7 +860,7 @@ STDMETHODIMP Guest::DragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-#ifdef VBOX_WITH_DRAG_AND_DROP
+#if defined(VBOX_WITH_DRAG_AND_DROP) && defined(VBOX_WITH_DRAG_AND_DROP_GH)
     return m_pGuestDnD->dragGHDropped(bstrFormat, action, ppProgress);
 #else /* VBOX_WITH_DRAG_AND_DROP */
     ReturnComNotImplemented();
@@ -875,7 +875,7 @@ STDMETHODIMP Guest::DragGHGetData(ComSafeArrayOut(BYTE, data))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-#ifdef VBOX_WITH_DRAG_AND_DROP
+#if defined(VBOX_WITH_DRAG_AND_DROP) && defined(VBOX_WITH_DRAG_AND_DROP_GH)
     return m_pGuestDnD->dragGHGetData(ComSafeArrayOutArg(data));
 #else /* VBOX_WITH_DRAG_AND_DROP */
     ReturnComNotImplemented();

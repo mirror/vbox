@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,7 +107,8 @@ public:
         {
             if (m_regWindows.contains(pActive->windowTitle()))
                 m_regWindows[pActive->windowTitle()]->setChecked(true);
-        }else
+        }
+        else
         {
             if (QAction *pChecked = m_pGroup->checkedAction())
                 pChecked->setChecked(false);

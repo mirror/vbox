@@ -1614,7 +1614,8 @@ Hardware::Hardware()
           keyboardHidType(KeyboardHidType_PS2Keyboard),
           chipsetType(ChipsetType_PIIX3),
           fEmulatedUSBCardReader(false),
-          clipboardMode(ClipboardMode_Bidirectional),
+          clipboardMode(ClipboardMode_Disabled),
+          dragAndDropMode(DragAndDropMode_Disabled),
           ulMemoryBalloonSize(0),
           fPageFusionEnabled(false)
 {
@@ -1686,6 +1687,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (audioAdapter              == h.audioAdapter)
                   && (llSharedFolders           == h.llSharedFolders)
                   && (clipboardMode             == h.clipboardMode)
+                  && (dragAndDropMode           == h.dragAndDropMode)
                   && (ulMemoryBalloonSize       == h.ulMemoryBalloonSize)
                   && (fPageFusionEnabled        == h.fPageFusionEnabled)
                   && (llGuestProperties         == h.llGuestProperties)
@@ -2761,6 +2763,23 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     hw.clipboardMode = ClipboardMode_Bidirectional;
                 else
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in Clipboard/@mode attribute"), strTemp.c_str());
+            }
+        }
+        else if (pelmHwChild->nameEquals("DragAndDrop"))
+        {
+            Utf8Str strTemp;
+            if (pelmHwChild->getAttributeValue("mode", strTemp))
+            {
+                if (strTemp == "Disabled")
+                    hw.dragAndDropMode = DragAndDropMode_Disabled;
+                else if (strTemp == "HostToGuest")
+                    hw.dragAndDropMode = DragAndDropMode_HostToGuest;
+                else if (strTemp == "GuestToHost")
+                    hw.dragAndDropMode = DragAndDropMode_GuestToHost;
+                else if (strTemp == "Bidirectional")
+                    hw.dragAndDropMode = DragAndDropMode_Bidirectional;
+                else
+                    throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in DragAndDrop/@mode attribute"), strTemp.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("Guest"))
@@ -4065,12 +4084,23 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     const char *pcszClip;
     switch (hw.clipboardMode)
     {
-        case ClipboardMode_Disabled: pcszClip = "Disabled"; break;
+        default: /*case ClipboardMode_Disabled:*/ pcszClip = "Disabled"; break;
         case ClipboardMode_HostToGuest: pcszClip = "HostToGuest"; break;
         case ClipboardMode_GuestToHost: pcszClip = "GuestToHost"; break;
-        default: /*case ClipboardMode_Bidirectional:*/ pcszClip = "Bidirectional"; break;
+        case ClipboardMode_Bidirectional: pcszClip = "Bidirectional"; break;
     }
     pelmClip->setAttribute("mode", pcszClip);
+
+    xml::ElementNode *pelmDragAndDrop = pelmHardware->createChild("DragAndDrop");
+    const char *pcszDragAndDrop;
+    switch (hw.dragAndDropMode)
+    {
+        default: /*case DragAndDropMode_Disabled:*/ pcszDragAndDrop = "Disabled"; break;
+        case DragAndDropMode_HostToGuest: pcszDragAndDrop = "HostToGuest"; break;
+        case DragAndDropMode_GuestToHost: pcszDragAndDrop = "GuestToHost"; break;
+        case DragAndDropMode_Bidirectional: pcszDragAndDrop = "Bidirectional"; break;
+    }
+    pelmDragAndDrop->setAttribute("mode", pcszDragAndDrop);
 
     if (m->sv >= SettingsVersion_v1_10)
     {

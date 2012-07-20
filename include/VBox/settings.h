@@ -798,6 +798,7 @@ struct Hardware
     // clever reason <Hardware> is where they are in the XML....
     SharedFoldersList   llSharedFolders;
     ClipboardMode_T     clipboardMode;
+    DragAndDropMode_T   dragAndDropMode;
 
     uint32_t            ulMemoryBalloonSize;
     bool                fPageFusionEnabled;

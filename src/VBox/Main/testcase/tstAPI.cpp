@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1416,7 +1416,8 @@ int main(int argc, char *argv[])
                     RTPrintf("Error: failed to import appliance. Error message: %ls\n", info.getText().raw());
                 else
                     RTPrintf("Error: failed to import appliance. No error message available!\n");
-            }else
+            }
+            else
                 RTPrintf("Successfully imported the appliance.\n");
         }
 

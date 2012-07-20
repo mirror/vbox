@@ -304,7 +304,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                      "                            [--audiocontroller ac97|hda|sb16]\n"
                      "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
-                     "                                         bidirectional]\n");
+                     "                                         bidirectional]\n"
+                     "                            [--draganddrop disabled|hosttoguest\n");
         RTStrmPrintf(pStrm,
                      "                            [--vrde on|off]\n"
                      "                            [--vrdeextpack default|<name>\n"
@@ -428,6 +429,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            usbdetach <uuid>|<address> |\n"
                      "                            clipboard disabled|hosttoguest|guesttohost|\n"
                      "                                         bidirectional]\n"
+                     "                            draganddrop disabled|hosttoguest]\n"
                      "                            vrde on|off |\n"
                      "                            vrdeport <port> |\n"
                      "                            vrdeproperty <name=[value]> |\n"

@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2008 Oracle Corporation
+     Copyright (C) 2008-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -131,6 +131,45 @@
            </spacer>
           </item>
           <item row="2" column="0" >
+           <widget class="QLabel" name="mLbDragAndDrop" >
+            <property name="text" >
+             <string>&amp;Drag'n'Drop:</string>
+            </property>
+            <property name="alignment" >
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buddy" >
+             <cstring>mCbDragAndDrop</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" >
+           <widget class="QComboBox" name="mCbDragAndDrop" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis" >
+                <string>Selects which data will be copied between the guest and the host OS by drag'n'drop. This feature requires Guest Additions to be installed in the guest OS.</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2" >
+           <spacer name="mSpHor2" >
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="3" column="0" >
            <widget class="QLabel" name="mLbMedia" >
             <property name="text" >
              <string>Removable Media:</string>
@@ -140,7 +179,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1" >
+          <item row="3" column="1" >
            <widget class="QCheckBox" name="mCbSaveMounted" >
             <property name="sizePolicy" >
              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -159,7 +198,7 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0" >
+          <item row="4" column="0" >
            <widget class="QLabel" name="mLbToolBar" >
             <property name="text" >
              <string>Mini ToolBar:</string>
@@ -169,7 +208,7 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="1" >
+          <item row="4" column="1" >
            <widget class="QCheckBox" name="mCbShowToolBar" >
             <property name="sizePolicy" >
              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -188,7 +227,7 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="1" >
+          <item row="5" column="1" >
            <widget class="QCheckBox" name="mCbToolBarAlignment" >
             <property name="sizePolicy" >
              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -211,7 +250,7 @@
         </widget>
        </item>
        <item>
-        <spacer name="mSpVer2" >
+        <spacer name="mSpVer3" >
          <property name="orientation" >
           <enum>Qt::Vertical</enum>
          </property>
