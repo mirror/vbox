@@ -571,7 +571,7 @@ endif
 # Enable S3 support (requires libcurl)
 VBOX_WITH_S3 = 1
 # Enable Host=>Guest Drag'n'Drop
-if1of ($(KBUILD_TARGET), linux)
+if1of ($(KBUILD_TARGET), darin linux solaris)
  VBOX_WITH_DRAG_AND_DROP = 1
  # Guest=>Host drag'n'drop doesn't work
  #VBOX_WITH_DRAG_AND_DROP_GH = 1
