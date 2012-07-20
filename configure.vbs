@@ -9,7 +9,7 @@
 '
 
 '
-' Copyright (C) 2006-2011 Oracle Corporation
+' Copyright (C) 2006-2012 Oracle Corporation
 '
 ' This file is part of VirtualBox Open Source Edition (OSE), as
 ' available from http://www.virtualbox.org. This file is free software;
@@ -35,12 +35,15 @@ dim g_objShell, g_objFileSys
 Set g_objShell = WScript.CreateObject("WScript.Shell")
 Set g_objFileSys = WScript.CreateObject("Scripting.FileSystemObject")
 
-dim g_strPathkBuild, g_strPathkBuildBin, g_strPathDev, g_strPathVCC, g_strPathPSDK, g_strPathDDK, g_strSubOutput
+dim g_strPathkBuild, g_strPathkBuildBin, g_strPathDev, g_strPathVCC, g_strPathPSDK, g_strVerPSDK, g_strPathDDK, g_strSubOutput
 g_strPathkBuild = ""
 g_strPathDev = ""
 g_strPathVCC = ""
 g_strPathPSDK = ""
 g_strPathDDK = ""
+
+dim g_strTargetArch
+g_strTargetArch = "x86"
 
 dim g_blnDisableCOM, g_strDisableCOM
 g_blnDisableCOM = False
@@ -53,10 +56,6 @@ g_blnInternalMode = False
 ' Whether to try the internal stuff first or last.
 dim g_blnInternalFirst
 g_blnInternalFirst = True
-
-' Whether to try the new tools: Visual Studio 10.0, Windows 7 SDK and WDK.
-dim g_blnNewTools
-g_blnNewTools = False 'True
 
 
 
@@ -382,6 +381,15 @@ sub EnvPrepend(strName, strValue)
    g_objShell.Environment("PROCESS")(strName) =  strValue & str
    LogPrint "EnvPrepend: " & strName & "=" & strValue & str
 end sub
+
+''
+' Gets the first non-empty environment variable of the given two.
+function EnvGetFirst(strName1, strName2)
+   EnvGetFirst = g_objShell.Environment("PROCESS")(strName1)
+   if EnvGetFirst = "" then
+      EnvGetFirst = g_objShell.Environment("PROCESS")(strName2)
+   end if
+end function
 
 
 ''
@@ -799,31 +807,31 @@ sub CheckForkBuild(strOptkBuild)
 
    '
    ' Check if there is a 'kmk' in the path somewhere without
-   ' any PATH_KBUILD* stuff around.
+   ' any KBUILD_*PATH stuff around.
    '
    blnNeedEnvVars = True
    g_strPathkBuild = strOptkBuild
    g_strPathkBuildBin = ""
    if   (g_strPathkBuild = "") _
-    And (EnvGet("PATH_KBUILD") = "") _
-    And (EnvGet("PATH_KBUILD_BIN") = "") _
+    And (EnvGetFirst("KBUILD_PATH", "PATH_KBUILD") = "") _
+    And (EnvGetFirst("KBUILD_BIN_PATH", "PATH_KBUILD_BIN") = "") _
     And (Shell("kmk.exe --version", True) = 0) _
     And (InStr(1,g_strShellOutput, "kBuild Make 0.1") > 0) _
-    And (InStr(1,g_strShellOutput, "PATH_KBUILD") > 0) _
-    And (InStr(1,g_strShellOutput, "PATH_KBUILD_BIN") > 0) then
-      '' @todo Need to parse out the PATH_KBUILD and PATH_KBUILD_BIN values to complete the other tests.
+    And (InStr(1,g_strShellOutput, "KBUILD_PATH") > 0) _
+    And (InStr(1,g_strShellOutput, "KBUILD_BIN_PATH") > 0) then
+      '' @todo Need to parse out the KBUILD_PATH and KBUILD_BIN_PATH values to complete the other tests.
       'blnNeedEnvVars = False
       MsgWarning "You've installed kBuild it seems. configure.vbs hasn't been updated to " _
          & "deal with that yet and will use the one it ships with. Sorry."
    end if
 
    '
-   ' Check for the PATH_KBUILD env.var. and fall back on root/kBuild otherwise.
+   ' Check for the KBUILD_PATH env.var. and fall back on root/kBuild otherwise.
    '
    if g_strPathkBuild = "" then
-      g_strPathkBuild = EnvGet("PATH_KBUILD")
+      g_strPathkBuild = EnvGetFirst("KBUILD_PATH", "PATH_KBUILD")
       if (g_strPathkBuild <> "") and (FileExists(g_strPathkBuild & "/footer.kmk") = False) then
-         MsgWarning "Ignoring incorrect kBuild path (PATH_KBUILD=" & g_strPathkBuild & ")"
+         MsgWarning "Ignoring incorrect kBuild path (KBUILD_PATH=" & g_strPathkBuild & ")"
          g_strPathkBuild = ""
       end if
 
@@ -835,18 +843,80 @@ sub CheckForkBuild(strOptkBuild)
    g_strPathkBuild = UnixSlashes(PathAbs(g_strPathkBuild))
 
    '
+   ' Check for env.vars that kBuild uses (do this early to set g_strTargetArch).
+   '
+   str = EnvGetFirst("KBUILD_TYPE", "BUILD_TYPE")
+   if   (str <> "") _
+    And (InStr(1, "|release|debug|profile|kprofile", str) <= 0) then
+      EnvPrint "set KBUILD_TYPE=release"
+      EnvSet "KBUILD_TYPE", "release"
+      MsgWarning "Found unknown KBUILD_TYPE value '" & str &"' in your environment. Setting it to 'release'."
+   end if
+
+   str = EnvGetFirst("KBUILD_TARGET", "BUILD_TARGET")
+   if   (str <> "") _
+    And (InStr(1, "win|win32|win64", str) <= 0) then '' @todo later only 'win' will be valid. remember to fix this check!
+      EnvPrint "set KBUILD_TARGET=win"
+      EnvSet "KBUILD_TARGET", "win"
+      MsgWarning "Found unknown KBUILD_TARGET value '" & str &"' in your environment. Setting it to 'win32'."
+   end if
+
+   str = EnvGetFirst("KBUILD_TARGET_ARCH", "BUILD_TARGET_ARCH")
+   if   (str <> "") _
+    And (InStr(1, "x86|amd64", str) <= 0) then
+      EnvPrint "set KBUILD_TARGET_ARCH=x86"
+      EnvSet "KBUILD_TARGET_ARCH", "x86"
+      MsgWarning "Found unknown KBUILD_TARGET_ARCH value '" & str &"' in your environment. Setting it to 'x86'."
+      str = "x86"
+   end if
+   if str <> "" then
+      g_strTargetArch = str
+   elseif (EnvGet("PROCESSOR_ARCHITEW6432") = "AMD64" ) _
+       Or (EnvGet("PROCESSOR_ARCHITECTURE") = "AMD64" ) then
+      g_strTargetArch = "amd64"
+   else
+      g_strTargetArch = "x86"
+   end if
+
+   str = EnvGetFirst("KBUILD_TARGET_CPU", "BUILD_TARGET_CPU")
+    ' perhaps a bit pedantic this since this isn't clearly define nor used much...
+   if   (str <> "") _
+    And (InStr(1, "i386|i486|i686|i786|i868|k5|k6|k7|k8", str) <= 0) then
+      EnvPrint "set BUILD_TARGET_CPU=i386"
+      EnvSet "KBUILD_TARGET_CPU", "i386"
+      MsgWarning "Found unknown KBUILD_TARGET_CPU value '" & str &"' in your environment. Setting it to 'i386'."
+   end if
+
+   str = EnvGetFirst("KBUILD_HOST", "BUILD_PLATFORM")
+   if   (str <> "") _
+    And (InStr(1, "win|win32|win64", str) <= 0) then '' @todo later only 'win' will be valid. remember to fix this check!
+      EnvPrint "set KBUILD_HOST=win"
+      EnvSet "KBUILD_HOST", "win"
+      MsgWarning "Found unknown KBUILD_HOST value '" & str &"' in your environment. Setting it to 'win32'."
+   end if
+
+   str = EnvGetFirst("KBUILD_HOST_ARCH", "BUILD_PLATFORM_ARCH")
+   if   (str <> "") _
+    And (InStr(1, "x86|amd64", str) <= 0) then
+      EnvPrint "set KBUILD_HOST_ARCH=x86"
+      EnvSet "KBUILD_HOST_ARCH", "x86"
+      MsgWarning "Found unknown KBUILD_HOST_ARCH value '" & str &"' in your environment. Setting it to 'x86'."
+   end if
+
+   str = EnvGetFirst("KBUILD_HOST_CPU", "BUILD_PLATFORM_CPU")
+    ' perhaps a bit pedantic this since this isn't clearly define nor used much...
+   if   (str <> "") _
+    And (InStr(1, "i386|i486|i686|i786|i868|k5|k6|k7|k8", str) <= 0) then
+      EnvPrint "set KBUILD_HOST_CPU=i386"
+      EnvSet "KBUILD_HOST_CPU", "i386"
+      MsgWarning "Found unknown KBUILD_HOST_CPU value '" & str &"' in your environment. Setting it to 'i386'."
+   end if
+
+   '
    ' Determin the location of the kBuild binaries.
    '
    if g_strPathkBuildBin = "" then
-      dim str2
-      if EnvGet("PROCESSOR_ARCHITECTURE") = "x86" then
-         g_strPathkBuildBin = g_strPathkBuild & "/bin/win.x86"
-      else ' boldly assumes there is only x86 and amd64.
-         g_strPathkBuildBin = g_strPathkBuild & "/bin/win.amd64"
-         if FileExists(g_strPathkBuild & "/kmk.exe") = False then
-            g_strPathkBuildBin = g_strPathkBuild & "/bin/win.x86"
-         end if
-      end if
+      g_strPathkBuildBin = g_strPathkBuild & "/bin/win." & g_strTargetArch
       if FileExists(g_strPathkBuild & "/kmk.exe") = False then
          g_strPathkBuildBin = g_strPathkBuild & "/bin/win.x86"
       end if
@@ -859,80 +929,19 @@ sub CheckForkBuild(strOptkBuild)
     Or (FileExists(g_strPathkBuild & "/header.kmk") = False) _
     Or (FileExists(g_strPathkBuild & "/rules.kmk") = False) then
       MsgFatal "Can't find valid kBuild at '" & g_strPathkBuild & "'. Either there is an " _
-         & "incorrect PATH_KBUILD in the environment or the checkout didn't succeed."
+         & "incorrect KBUILD_PATH in the environment or the checkout didn't succeed."
       exit sub
    end if
    if  (FileExists(g_strPathkBuildBin & "/kmk.exe") = False) _
     Or (FileExists(g_strPathkBuildBin & "/kmk_ash.exe") = False) then
       MsgFatal "Can't find valid kBuild binaries at '" & g_strPathkBuildBin & "'. Either there is an " _
-         & "incorrect PATH_KBUILD in the environment or the checkout didn't succeed."
+         & "incorrect KBUILD_PATH in the environment or the checkout didn't succeed."
       exit sub
    end if
 
    if (Shell(DosSlashes(g_strPathkBuildBin & "/kmk.exe") & " --version", True) <> 0) Then
       MsgFatal "Can't execute '" & g_strPathkBuildBin & "/kmk.exe --version'. check configure.log for the out."
       exit sub
-   end if
-
-   '
-   ' Check for env.vars that kBuild uses.
-   '
-   str = EnvGet("BUILD_TYPE")
-   if   (str <> "") _
-    And (InStr(1, "|release|debug|profile|kprofile", str) <= 0) then
-      EnvPrint "set BUILD_TYPE=release"
-      EnvSet "BUILD_TYPE", "release"
-      MsgWarning "Found unknown BUILD_TYPE value '" & str &"' in your environment. Setting it to 'release'."
-   end if
-
-   str = EnvGet("BUILD_TARGET")
-   if   (str <> "") _
-    And (InStr(1, "win|win32|win64", str) <= 0) then '' @todo later only 'win' will be valid. remember to fix this check!
-      EnvPrint "set BUILD_TARGET=win"
-      EnvSet "BUILD_TARGET", "win"
-      MsgWarning "Found unknown BUILD_TARGET value '" & str &"' in your environment. Setting it to 'win32'."
-   end if
-
-   str = EnvGet("BUILD_TARGET_ARCH")
-   if   (str <> "") _
-    And (InStr(1, "x86|amd64", str) <= 0) then
-      EnvPrint "set BUILD_TARGET_ARCH=x86"
-      EnvSet "BUILD_TARGET_ARCH", "x86"
-      MsgWarning "Found unknown BUILD_TARGET_ARCH value '" & str &"' in your environment. Setting it to 'x86'."
-   end if
-
-   str = EnvGet("BUILD_TARGET_CPU")
-    ' perhaps a bit pedantic this since this isn't clearly define nor used much...
-   if   (str <> "") _
-    And (InStr(1, "i386|i486|i686|i786|i868|k5|k6|k7|k8", str) <= 0) then
-      EnvPrint "set BUILD_TARGET_CPU=i386"
-      EnvSet "BUILD_TARGET_CPU", "i386"
-      MsgWarning "Found unknown BUILD_TARGET_CPU value '" & str &"' in your environment. Setting it to 'i386'."
-   end if
-
-   str = EnvGet("BUILD_PLATFORM")
-   if   (str <> "") _
-    And (InStr(1, "win|win32|win64", str) <= 0) then '' @todo later only 'win' will be valid. remember to fix this check!
-      EnvPrint "set BUILD_PLATFORM=win"
-      EnvSet "BUILD_PLATFORM", "win"
-      MsgWarning "Found unknown BUILD_PLATFORM value '" & str &"' in your environment. Setting it to 'win32'."
-   end if
-
-   str = EnvGet("BUILD_PLATFORM_ARCH")
-   if   (str <> "") _
-    And (InStr(1, "x86|amd64", str) <= 0) then
-      EnvPrint "set BUILD_PLATFORM_ARCH=x86"
-      EnvSet "BUILD_PLATFORM_ARCH", "x86"
-      MsgWarning "Found unknown BUILD_PLATFORM_ARCH value '" & str &"' in your environment. Setting it to 'x86'."
-   end if
-
-   str = EnvGet("BUILD_PLATFORM_CPU")
-    ' perhaps a bit pedantic this since this isn't clearly define nor used much...
-   if   (str <> "") _
-    And (InStr(1, "i386|i486|i686|i786|i868|k5|k6|k7|k8", str) <= 0) then
-      EnvPrint "set BUILD_PLATFORM_CPU=i386"
-      EnvSet "BUILD_PLATFORM_CPU", "i386"
-      MsgWarning "Found unknown BUILD_PLATFORM_CPU value '" & str &"' in your environment. Setting it to 'i386'."
    end if
 
    '
@@ -951,11 +960,11 @@ sub CheckForkBuild(strOptkBuild)
    if g_strPathDev = "" then g_strPathDev = UnixSlashes(g_strPath & "/tools")
 
    '
-   ' Write PATH_KBUILD to the environment script if necessary.
+   ' Write KBUILD_PATH to the environment script if necessary.
    '
    if blnNeedEnvVars = True then
-      EnvPrint "set PATH_KBUILD=" & g_strPathkBuild
-      EnvSet "PATH_KBUILD", g_strPathkBuild
+      EnvPrint "set KBUILD_PATH=" & g_strPathkBuild
+      EnvSet "KBUILD_PATH", g_strPathkBuild
       EnvPrint "set PATH=" & g_strPathkBuildBin & ";%PATH%"
       EnvPrepend "PATH", g_strPathkBuildBin & ";"
    end if
@@ -966,7 +975,7 @@ end sub
 
 
 ''
-' Checks for Visual C++ version 7.1, 8 or 10.
+' Checks for Visual C++ version 10 (2010).
 sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
    dim strPathVC, strPathVCCommon, str, str2, blnNeedMsPDB
    PrintHdr "Visual C++"
@@ -984,20 +993,9 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
    end if
 
    if (strPathVC = "") And (g_blnInternalFirst = True) Then
-      if g_blnNewTools Then
-         strPathVC = g_strPathDev & "/win.x86/vcc/v10"
-         if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-            strPathVC = ""
-         end if
-      end if
-      if strPathVC = "" then
-         strPathVC = g_strPathDev & "/win.x86/vcc/v8"
-         if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-            strPathVC = g_strPathDev & "/win.x86/vcc/v7"
-            if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-               strPathVC = ""
-            end if
-         end if
+      strPathVC = g_strPathDev & "/win.x86/vcc/v10sp1"
+      if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
+         strPathVC = ""
       end if
    end if
 
@@ -1013,7 +1011,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       end if
    end if
 
-   if (strPathVC = "") And g_blnNewTools then
+   if (strPathVC = "") then
       str = RegGetString("HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\10.0\Setup\VS\ProductDir")
       if str <> "" Then
          str2 = str & "Common7"
@@ -1025,7 +1023,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       end if
    end if
 
-   if (strPathVC = "") And g_blnNewTools then
+   if (strPathVC = "") then
       str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\10.0\Setup\VS\ProductDir")
       if str <> "" Then
          str2 = str & "Common7"
@@ -1037,101 +1035,10 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       end if
    end if
 
-   if strPathVC = "" then
-      str = RegGetString("HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\8.0\Setup\VS\ProductDir")
-      str2 = RegGetString("HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\8.0\Setup\VS\EnvironmentDirectory")
-      if str <> "" And str2 <> "" Then
-         str = str & "VC"
-         str2 = PathParent(str2)
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   if strPathVC = "" then
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\8.0\Setup\VS\ProductDir")
-      str2 = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\8.0\Setup\VS\EnvironmentDirectory")
-      if str <> "" And str2 <> "" Then
-         str = str & "VC"
-         str2 = PathParent(str2)
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   if strPathVC = "" then
-      '' @todo check what this really looks like on 7.1
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\7.1\Setup\VS\ProductDir")
-      str2 = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\7.1\Setup\VS\EnvironmentDirectory")
-      if str <> "" And str2 <> "" Then
-         str = str & "VC7"
-         str2 = PathParent(str2)
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   if strPathVC = "" then
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\7.0\Setup\VS\ProductDir")
-      str2 = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\7.0\Setup\VS\EnvironmentDirectory")
-      if str <> "" And str2 <> "" Then
-         str = str & "VC7"
-         str2 = PathParent(str2)
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   if strPathVC = "" then
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\Wow6432Node\VisualStudio\SxS\VC7\8.0")
-      if str <> "" then
-         str2 = PathParent(str) & "/Common7"
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   if strPathVC = "" then
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\SxS\VC7\8.0")
-      if str <> "" then
-         str2 = PathParent(str) & "/Common7"
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   ' finally check for the express edition.
-   if strPathVC = "" then
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Visual C++ 2005 Express Edition - ENU\InstallLocation")
-      if str <> "" then
-         str2 = str & "Common7"
-         str = str & "VC/"
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
    if (strPathVC = "") And (g_blnInternalFirst = False) Then
-      strPathVC = g_strPathDev & "/win.x86/vcc/v8"
+      strPathVC = g_strPathDev & "/win.x86/vcc/v10sp1"
       if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-         strPathVC = g_strPathDev & "/win.x86/vcc/v7"
-         if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-            strPathVC = ""
-         end if
+         strPathVC = ""
       end if
    end if
 
@@ -1158,10 +1065,9 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       exit sub
    end if
 
-   if   (InStr(1, g_strShellOutput, "Version 13.10") <= 0) _
-    And (InStr(1, g_strShellOutput, "Version 14.") <= 0) _
-    And (InStr(1, g_strShellOutput, "Version 16.") <= 0) then
-      MsgError "The Visual C++ compiler we found ('" & strPathVC & "') isn't 7.1, 8.0 or 10.0. Check the build requirements."
+   if   (InStr(1, g_strShellOutput, "Version 16.") <= 0) _
+    And (InStr(1, g_strShellOutput, "Version 17.") <= 0) then
+      MsgError "The Visual C++ compiler we found ('" & strPathVC & "') isn't 10.0 or 11.0. Check the build requirements."
       exit sub
    end if
 
@@ -1169,16 +1075,13 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
    ' Ok, emit build config variables.
    '
    if InStr(1, g_strShellOutput, "Version 16.") > 0 then
-      CfgPrint "VBOX_USE_VCC100       := 1"
       CfgPrint "PATH_TOOL_VCC100      := " & g_strPathVCC
-      CfgPrint "PATH_TOOL_VCC100X86    = $(PATH_TOOL_VCC100)"
-      CfgPrint "PATH_TOOL_VCC100AMD64  = $(PATH_TOOL_VCC100)"
+      CfgPrint "PATH_TOOL_VCC100X86   := $(PATH_TOOL_VCC100)"
+      CfgPrint "PATH_TOOL_VCC100AMD64 := $(PATH_TOOL_VCC100)"
       if LogFileExists(strPathVC, "atlmfc/include/atlbase.h") then
          PrintResult "Visual C++ v10 with ATL", g_strPathVCC
       elseif   LogFileExists(g_strPathDDK, "inc/atl71/atlbase.h") _
            And LogFileExists(g_strPathDDK, "lib/ATL/i386/atls.lib") then
-         CfgPrint "TOOL_VCC100X86_MT   = $(PATH_SDK_WINPSDK)/Bin/mt.exe"
-         CfgPrint "TOOL_VCC100AMD64_MT = $(TOOL_VCC100X86_MT)"
          CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
          CfgPrint "PATH_TOOL_VCC100_ATLMFC_INC       = " & g_strPathDDK & "/inc/atl71"
          CfgPrint "PATH_TOOL_VCC100_ATLMFC_LIB.amd64 = " & g_strPathDDK & "/lib/ATL/amd64"
@@ -1189,39 +1092,21 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
          CfgPrint "PATH_TOOL_VCC100X86_ATLMFC_LIB    = " & g_strPathDDK & "/lib/ATL/i386"
          PrintResult "Visual C++ v10 with DDK ATL", g_strPathVCC
       else
-         CfgPrint "TOOL_VCC100X86_MT   = $(PATH_SDK_WINPSDK)/Bin/mt.exe"
-         CfgPrint "TOOL_VCC100AMD64_MT = $(TOOL_VCC100X86_MT)"
          CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
          DisableCOM "No ATL"
          PrintResult "Visual C++ v10 (or later) without ATL", g_strPathVCC
       end if
-   elseif InStr(1, g_strShellOutput, "Version 14.") > 0 then
-      CfgPrint "VBOX_USE_VCC80        := 1"
-      CfgPrint "PATH_TOOL_VCC80       := " & g_strPathVCC
-      CfgPrint "PATH_TOOL_VCC80X86     = $(PATH_TOOL_VCC80)"
-      CfgPrint "PATH_TOOL_VCC80AMD64   = $(PATH_TOOL_VCC80)"
-      if   blnOptVCExpressEdition _
-       And LogFileExists(strPathVC, "atlmfc/include/atlbase.h") = False _
-         then
-         CfgPrint "TOOL_VCC80X86_MT = $(PATH_SDK_WINPSDK)/Bin/mt.exe"
-         CfgPrint "TOOL_VCC80AMD64_MT = $(TOOL_VCC80X86_MT)"
-         CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
-         DisableCOM "No ATL"
-         PrintResult "Visual C++ v8 (or later) without ATL", g_strPathVCC
-      else
-         PrintResult "Visual C++ v8 (or later)", g_strPathVCC
-      end if
+
+   elseif InStr(1, g_strShellOutput, "Version 17.") > 0 then
+      CfgPrint "PATH_TOOL_VCC110      := " & g_strPathVCC
+      CfgPrint "PATH_TOOL_VCC110X86   := $(PATH_TOOL_VCC110)"
+      CfgPrint "PATH_TOOL_VCC110AMD64 := $(PATH_TOOL_VCC110)"
+      PrintResult "Visual C++ v11", g_strPathVCC
+      MsgWarning "The support for Visual C++ v11 (aka 2012) is experimental"
+
    else
-      CfgPrint "PATH_TOOL_VCC70 := " & g_strPathVCC
-      if   blnOptVCExpressEdition _
-       And LogFileExists(strPathVC, "atlmfc/include/atlbase.h") = False _
-         then
-         CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
-         DisableCOM "No ATL"
-         PrintResult "Visual C++ v7.1 without ATL", g_strPathVCC
-      else
-         PrintResult "Visual C++ v7.1", g_strPathVCC
-      end if
+      MsgError "The Visual C++ compiler we found ('" & strPathVC & "') isn't 10.0 or 11.0. Check the build requirements."
+      exit sub
    end if
 
    ' and the env.bat path fix.
@@ -1271,17 +1156,12 @@ sub CheckForPlatformSDK(strOptSDK)
 
    ' The tools location (first).
    if strPathPSDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/sdk/200604"
+      str = g_strPathDev & "/win.x86/sdk/v7.1"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
    if strPathPSDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/sdk/200504"
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
-
-   if strPathPSDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/sdk/200209"
+      str = g_strPathDev & "/win.x86/sdk/v8.0"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
@@ -1302,7 +1182,7 @@ sub CheckForPlatformSDK(strOptSDK)
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   ' Check the registry next (ASSUMES sorting). (first pair is vista, second is pre-vista)
+   ' Check the registry next (ASSUMES sorting).
    arrSubKeys = RegEnumSubKeysRSort("HKLM", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
    for each strSubKey in arrSubKeys
       str = RegGetString("HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
@@ -1318,34 +1198,14 @@ sub CheckForPlatformSDK(strOptSDK)
       end if
    Next
 
-   arrSubKeys = RegEnumSubKeysRSort("HKLM", "SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs")
-   for each strSubKey in arrSubKeys
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs\" & strSubKey & "\Install Dir")
-      if strPathPSDK = "" And str <> "" then
-         if CheckForPlatformSDKSub(str) then strPathPSDK = str
-      end if
-   Next
-   arrSubKeys = RegEnumSubKeysRSort("HKCU", "SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs")
-   for each strSubKey in arrSubKeys
-      str = RegGetString("HKCU\SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs\" & strSubKey & "\Install Dir")
-      if strPathPSDK = "" And str <> "" then
-         if CheckForPlatformSDKSub(str) then strPathPSDK = str
-      end if
-   Next
-
    ' The tools location (post).
    if (strPathPSDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/sdk/200604"
+      str = g_strPathDev & "/win.x86/sdk/v7.1"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
    if (strPathPSDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/sdk/200504"
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
-
-   if (strPathPSDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/sdk/200209"
+      str = g_strPathDev & "/win.x86/sdk/v8.0"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
@@ -1359,12 +1219,10 @@ sub CheckForPlatformSDK(strOptSDK)
    ' Emit the config.
    '
    strPathPSDK = UnixSlashes(PathAbs(strPathPSDK))
-   CfgPrint "PATH_SDK_WINPSDK      := " & strPathPSDK
-   CfgPrint "PATH_SDK_WINPSDKINCS   = $(PATH_SDK_WINPSDK)"
-   CfgPrint "PATH_SDK_WIN32SDK      = $(PATH_SDK_WINPSDK)"
-   CfgPrint "PATH_SDK_WIN64SDK      = $(PATH_SDK_WINPSDK)"
+   CfgPrint "PATH_SDK_WINPSDK" & g_strVerPSDK & "    := " & strPathPSDK
+   CfgPrint "VBOX_WINPSDK          := WINPSDK" & g_strVerPSDK
 
-   PrintResult "Windows Platform SDK", strPathPSDK
+   PrintResult "Windows Platform SDK (v" & g_strVerPSDK & ")", strPathPSDK
    g_strPathPSDK = strPathPSDK
 end sub
 
@@ -1376,17 +1234,25 @@ function CheckForPlatformSDKSub(strPathPSDK)
    if    LogFileExists(strPathPSDK, "include/Windows.h") _
     And  LogFileExists(strPathPSDK, "lib/Kernel32.Lib") _
     And  LogFileExists(strPathPSDK, "lib/User32.Lib") _
+    And  LogFileExists(strPathPSDK, "bin/rc.exe") _
+    And  Shell("""" & DosSlashes(strPathPSDK & "/bin/rc.exe") & """" , True) <> 0 _
       then
-      CheckForPlatformSDKSub = True
+      if InStr(1, g_strShellOutput, "Resource Compiler Version 6.2.") > 0 then
+         g_strVerPSDK = "80"
+         CheckForPlatformSDKSub = True
+      elseif InStr(1, g_strShellOutput, "Resource Compiler Version 6.1.") > 0 then
+         g_strVerPSDK = "71"
+         CheckForPlatformSDKSub = True
+      end if
    end if
 end function
 
 
 ''
-' Checks for a Windows 2003 DDK or Windows 7 Driver Kit.
-sub CheckForWin2k3DDK(strOptDDK)
+' Checks for a Windows 7 Driver Kit.
+sub CheckForWinDDK(strOptDDK)
    dim strPathDDK, str, strSubKeys
-   PrintHdr "Windows 2003 DDK, build 3790 or later"
+   PrintHdr "Windows DDK v7.1"
 
    '
    ' Find the DDK.
@@ -1394,30 +1260,25 @@ sub CheckForWin2k3DDK(strOptDDK)
    strPathDDK = ""
    ' The specified path.
    if strPathDDK = "" And strOptDDK <> "" then
-      if CheckForWin2k3DDKSub(strOptDDK, True) then strPathDDK = strOptDDK
+      if CheckForWinDDKSub(strOptDDK, True) then strPathDDK = strOptDDK
    end if
 
    ' The tools location (first).
    if strPathDDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/ddkwin2k3/200503"
-      if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
-   end if
-
-   if strPathDDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/ddkwin2k3/2004"
-      if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
+      str = g_strPathDev & "/win.x86/ddk/7600.16385.1"
+      if CheckForWinDDKSub(str, False) then strPathDDK = str
    end if
 
    ' Check the environment
    str = EnvGet("DDK_INC_PATH")
    if strPathDDK = "" And str <> "" then
       str = PathParent(PathParent(str))
-      if CheckForWin2k3DDKSub(str, True) then strPathDDK = str
+      if CheckForWinDDKSub(str, True) then strPathDDK = str
    end if
 
    str = EnvGet("BASEDIR")
    if strPathDDK = "" And str <> "" then
-      if CheckForWin2k3DDKSub(str, True) then strPathDDK = str
+      if CheckForWinDDKSub(str, True) then strPathDDK = str
    end if
 
    ' Some array constants to ease the work.
@@ -1438,43 +1299,22 @@ sub CheckForWin2k3DDK(strOptDDK)
    next
    arrLocations = ArrayRSortStrings(arrLocations)
 
-   ' Vista WDK.
-   for each strRoot in arrRoots
-      for each strSubKey in RegEnumSubKeysFullRSort(strRoot, "SOFTWARE\Microsoft\WINDDK")
-         str = RegGetString(strRoot & "\" & strSubKey & "\Setup\BUILD")
-         if str <> "" then arrLocations = ArrayAppend(arrLocations, PathAbsLong(str))
-      Next
-   next
-
-   ' Pre-Vista WDK?
-   for each strRoot in arrRoots
-      for each strSubKey in RegEnumSubKeysFullRSort(strRoot, "SOFTWARE\Microsoft\WINDDK")
-         str = RegGetString(strRoot & "\" & strSubKey & "\SFNDirectory")
-         if str <> "" then arrLocations = ArrayAppend(arrLocations, PathAbsLong(str))
-      Next
-   next
-
    ' Check the locations we've gathered.
    for each str in arrLocations
       if strPathDDK = "" then
-         if CheckForWin2k3DDKSub(str, True) then strPathDDK = str
+         if CheckForWinDDKSub(str, True) then strPathDDK = str
       end if
    next
 
    ' The tools location (post).
    if (strPathDDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/ddkwin2k3/200503"
-      if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
-   end if
-
-   if (strPathDDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/ddkwin2k3/2004"
-      if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
+      str = g_strPathDev & "/win.x86/ddk/7600.16385.1"
+      if CheckForWinDDKSub(str, False) then strPathDDK = str
    end if
 
    ' Give up.
    if strPathDDK = "" then
-      MsgError "Cannot find a suitable Windows 2003 DDK. Check configure.log and the build requirements."
+      MsgError "Cannot find the Windows DDK v7.1. Check configure.log and the build requirements."
       exit sub
    end if
 
@@ -1482,36 +1322,31 @@ sub CheckForWin2k3DDK(strOptDDK)
    ' Emit the config.
    '
    strPathDDK = UnixSlashes(PathAbs(strPathDDK))
-   if LogFileExists(strPathDDK, "inc/api/ntdef.h") then
-      CfgPrint "VBOX_USE_WINDDK       := 1"
-      CfgPrint "PATH_SDK_WINDDK       := " & strPathDDK
-   else
-      CfgPrint "PATH_SDK_W2K3DDK      := " & strPathDDK
-      CfgPrint "PATH_SDK_W2K3DDKX86    = $(PATH_SDK_W2K3DDK)"
-      CfgPrint "PATH_SDK_W2K3DDKAMD64  = $(PATH_SDK_W2K3DDK)"
-   end if
+   CfgPrint "PATH_SDK_WINDDK71     := " & strPathDDK
 
-   PrintResult "Windows 2003 DDK", strPathDDK
+   PrintResult "Windows DDK v7.1", strPathDDK
    g_strPathDDK = strPathDDK
 end sub
 
 '' Quick check if the DDK is in the specified directory or not.
-function CheckForWin2k3DDKSub(strPathDDK, blnCheckBuild)
-   CheckForWin2k3DDKSub = False
+function CheckForWinDDKSub(strPathDDK, blnCheckBuild)
+   CheckForWinDDKSub = False
    LogPrint "trying: strPathDDK=" & strPathDDK & " blnCheckBuild=" & blnCheckBuild
-   if   g_blnNewTools _
-    And LogFileExists(strPathDDK, "inc/api/ntdef.h") _
+   if   LogFileExists(strPathDDK, "inc/api/ntdef.h") _
+    And LogFileExists(strPathDDK, "lib/win7/i386/int64.lib") _
+    And LogFileExists(strPathDDK, "lib/wlh/i386/int64.lib") _
     And LogFileExists(strPathDDK, "lib/wnet/i386/int64.lib") _
+    And LogFileExists(strPathDDK, "lib/wxp/i386/int64.lib") _
+    And Not LogFileExists(strPathDDK, "lib/win8/i386/int64.lib") _
+    And LogFileExists(strPathDDK, "bin/x86/rc.exe") _
       then
-      '' @todo figure out a way we can verify the version/build!
-      CheckForWin2k3DDKSub = True
-   end if
-
-   if   LogFileExists(strPathDDK, "inc/ddk/wnet/ntdef.h") _
-    And LogFileExists(strPathDDK, "lib/wnet/i386/int64.lib") _
-      then
-      '' @todo figure out a way we can verify the version/build!
-      CheckForWin2k3DDKSub = True
+      if Not blnCheckBuild then
+         CheckForWinDDKSub = True
+      '' @todo Find better build check.
+      elseif Shell("""" & DosSlashes(strPathPSDK & "bin/x86/rc.exe") & """" , True) <> 0 _
+         And InStr(1, g_strShellOutput, "Resource Compiler Version 6.1.") > 0 then
+         CheckForWinDDKSub = True
+      end if
    end if
 end function
 
@@ -1543,7 +1378,7 @@ sub CheckForMidl()
       exit sub
    end if
 
-   CfgPrint "VBOX_MAIN_IDL = " & strMidl
+   CfgPrint "VBOX_MAIN_IDL         := " & strMidl
    PrintResult "Midl.exe", strMidl
 end sub
 
@@ -1606,8 +1441,8 @@ sub CheckForDirectXSDK(strOptDXSDK)
    '
    strPathDXSDK = UnixSlashes(PathAbs(strPathDXSDK))
    CfgPrint "PATH_SDK_DXSDK        := " & strPathDXSDK
-   CfgPrint "PATH_SDK_DXSDKX86      = $(PATH_SDK_DXSDK)"
-   CfgPrint "PATH_SDK_DXSDKAMD64    = $(PATH_SDK_DXSDK)"
+   CfgPrint "PATH_SDK_DXSDKX86     := $(PATH_SDK_DXSDK)"
+   CfgPrint "PATH_SDK_DXSDKAMD64   := $(PATH_SDK_DXSDK)"
 
    PrintResult "Direct X SDK", strPathDXSDK
 end sub
@@ -1702,9 +1537,9 @@ sub CheckForMingW(strOptMingw, strOptW32API)
    CfgPrint "PATH_TOOL_MINGW32     := " & strPathMingW
    PrintResult "MinGW (GCC v" & g_strSubOutput & ")", strPathMingW
    if (strPathMingW = strPathW32API) Or strPathW32API = "" then
-      CfgPrint "PATH_SDK_W32API        = $(PATH_TOOL_MINGW32)"
+      CfgPrint "PATH_SDK_W32API       := $(PATH_TOOL_MINGW32)"
    else
-      CfgPrint "PATH_SDK_W32API        = " & strPathW32API
+      CfgPrint "PATH_SDK_W32API       := " & strPathW32API
       PrintResult "W32API", strPathW32API
    end if
 end sub
@@ -2134,7 +1969,6 @@ end function
 
 
 ''
-''
 ' Checks for any Qt4 binaries.
 sub CheckForQt4(strOptQt4)
    dim strPathQt4
@@ -2152,20 +1986,27 @@ sub CheckForQt4(strOptQt4)
       if CheckForQt4Sub(strOptQt4) then strPathQt4 = strOptQt4
    end if
 
+   ' Check the dev tools
+   if (strPathQt4 = "") Then
+      strPathQt4 = g_strPathDev & "/win." & g_strTargetArch & "/qt/v4.7.3-vcc100"
+      if CheckForQt4Sub(strPathQt4) = False then strPathQt4 = ""
+   end if
+
+   ' Display the result.
    if strPathQt4 = "" then
       CfgPrint "VBOX_WITH_QT4GUI="
       PrintResultMsg "Qt4", "not found"
    else
       CfgPrint "PATH_SDK_QT4          := " & strPathQt4
-      CfgPrint "PATH_TOOL_QT4          = $(PATH_SDK_QT4)"
-      CfgPrint "VBOX_PATH_QT4          = $(PATH_SDK_QT4)"
+      CfgPrint "PATH_TOOL_QT4         := $(PATH_SDK_QT4)"
+      CfgPrint "VBOX_PATH_QT4         := $(PATH_SDK_QT4)"
       PrintResult "Qt4 ", strPathQt4
    end if
 end sub
 
 
-'
-'
+''
+' Checks if the specified path points to an usable Qt library.
 function CheckForQt4Sub(strPathQt4)
 
    CheckForQt4Sub = False
@@ -2380,7 +2221,8 @@ Sub Main
       MsgFatal "shell execution test failed!"
    end if
    if g_strShellOutput <> "TESTING_ENVIRONMENT_INHERITANCE=This works" & CHR(13) & CHR(10)  then
-      MsgFatal "shell inheritance or shell execution isn't working right."
+      Print "Shell test Test -> '" & g_strShellOutput & "'"
+      MsgFatal "shell inheritance or shell execution isn't working right. Make sure you use cmd.exe."
    end if
    g_objShell.Environment("PROCESS")("TESTING_ENVIRONMENT_INHERITANCE") = ""
    Print "Shell inheritance test: OK"
@@ -2396,7 +2238,8 @@ Sub Main
    end if
    CheckSourcePath
    CheckForkBuild strOptkBuild
-   CheckForWin2k3DDK strOptDDK
+   CheckForWinDDK strOptDDK
+   CfgPrint "VBOX_WITH_WDDM_W8     := " '' @todo look for WinDDKv8; Check with Misha if we _really_ need the v8 DDK...
    CheckForVisualCPP strOptVC, strOptVCCommon, blnOptVCExpressEdition
    CheckForPlatformSDK strOptSDK
    CheckForMidl
