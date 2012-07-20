@@ -826,9 +826,15 @@ static void vbvaFetchBytes (VBVAMEMORY *pVbvaMemory, uint8_t *pu8Dst, uint32_t c
     return;
 }
 
-void Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay)
+void Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
+                               BOOL aChangeOrigin, LONG aOriginX, LONG aOriginY,
+                               ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel)
 {
     PPDMIVMMDEVPORT pVMMDevPort = gVMMDev->getVMMDevPort ();
+    NOREF(aEnabled);
+    NOREF(aChangeOrigin);
+    NOREF(aOriginX);
+    NOREF(aOriginY);
 
     if (pVMMDevPort)
         pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aBitsPerPixel, aDisplay);

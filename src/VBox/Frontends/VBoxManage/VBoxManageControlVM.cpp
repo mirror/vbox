@@ -881,22 +881,45 @@ int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "setvideomodehint"))
         {
-            if (a->argc != 5 && a->argc != 6)
+            if (a->argc != 5 && a->argc != 6 && a->argc != 7 && a->argc != 9)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
             }
-            uint32_t xres = RTStrToUInt32(a->argv[2]);
-            uint32_t yres = RTStrToUInt32(a->argv[3]);
-            uint32_t bpp  = RTStrToUInt32(a->argv[4]);
-            uint32_t displayIdx = 0;
-            if (a->argc == 6)
-                displayIdx = RTStrToUInt32(a->argv[5]);
+            bool fEnabled = true;
+            uint32_t uXRes = RTStrToUInt32(a->argv[2]);
+            uint32_t uYRes = RTStrToUInt32(a->argv[3]);
+            uint32_t uBpp  = RTStrToUInt32(a->argv[4]);
+            uint32_t uDisplayIdx = 0;
+            bool fChangeOrigin = false;
+            int32_t iOriginX = 0;
+            int32_t iOriginY = 0;
+            if (a->argc >= 6)
+                uDisplayIdx = RTStrToUInt32(a->argv[5]);
+            if (a->argc >= 7)
+            {
+                int vrc = parseBool(a->argv[6], &fEnabled);
+                if (RT_FAILURE(vrc))
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Either \"yes\" or \"no\" is expected");
+                    rc = E_FAIL;
+                    break;
+                }
+                fEnabled = !RTStrICmp(a->argv[6], "yes");
+            }
+            if (a->argc == 9)
+            {
+                iOriginX = RTStrToInt32(a->argv[7]);
+                iOriginY = RTStrToInt32(a->argv[8]);
+                fChangeOrigin = true;
+            }
 
             ComPtr<IDisplay> display;
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
-            CHECK_ERROR_BREAK(display, SetVideoModeHint(xres, yres, bpp, displayIdx));
+            CHECK_ERROR_BREAK(display, SetVideoModeHint(uDisplayIdx, fEnabled,
+                                                        fChangeOrigin, iOriginX, iOriginY,
+                                                        uXRes, uYRes, uBpp));
         }
         else if (!strcmp(a->argv[1], "setcredentials"))
         {

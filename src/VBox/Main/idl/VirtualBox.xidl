@@ -14213,7 +14213,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="4b75c45c-e22e-4b75-b7cd-7ce9a83bb36e"
+    uuid="b83ee395-8679-40ca-8d60-1a0cbe724930"
     wsmap="managed"
     >
     <desc>
@@ -14277,10 +14277,36 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+      <param name="display" type="unsigned long" dir="in">
+        <desc>
+          The number of the guest display to send the hint to.
+        </desc>
+      </param>
+      <param name="enabled" type="boolean" dir="in">
+        <desc>
+          @c True, if this guest screen is enabled,
+          @c False otherwise.
+        </desc>
+      </param>
+      <param name="changeOrigin" type="boolean" dir="in">
+        <desc>
+          @c True, if the origin of the guest screen should be changed,
+          @c False otherwise.
+        </desc>
+      </param>
+      <param name="originX" type="long" dir="in">
+        <desc>
+          The X origin of the guest screen.
+        </desc>
+      </param>
+      <param name="originY" type="long" dir="in">
+        <desc>
+          The Y origin of the guest screen.
+        </desc>
+      </param>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
       <param name="bitsPerPixel" type="unsigned long" dir="in"/>
-      <param name="display" type="unsigned long" dir="in"/>
     </method>
 
     <method name="setSeamlessMode">
