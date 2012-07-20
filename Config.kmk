@@ -23,7 +23,7 @@ VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 
 ## TEMPORARY
 # Enable Visual C++ 2010 for everyone. Support for older compiler version will be removed shortly.
-VBOX_WITH_VCC100 = 1
+VBOX_USE_VCC100 = 1
 ## TEMPORARY
 
 #
