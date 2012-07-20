@@ -239,8 +239,17 @@ VBOXMANAGEPATH       ?= $(PATH_STAGE_BIN)/VBoxManageHelp$(SUFF_EXE)
  #                                        without catting the log a million times.
  PDFLATEX_INTERACTION ?= batchmode
 ifeq ($(KBUILD_HOST),win)
- # tell MiKTeX to automatically download packages
- PDFLATEX             = pdflatex -halt-on-error -interaction $(PDFLATEX_INTERACTION) --enable-installer
+ ifndef VBOX_PDFLATEX
+  VBOX_PDFLATEX      := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/miktex-portable/*/miktex/bin/pdflatex.exe)))
+  ifneq ($(VBOX_PDFLATEX),)
+   PDFLATEX           = $(VBOX_PDFLATEX) -halt-on-error -interaction $(PDFLATEX_INTERACTION)
+  endif
+ endif
+ ifndef PDFLATEX
+  # Tell MiKTeX to automatically download packages if system wide install.
+  VBOX_PDFLATEX      := pdflatex
+  PDFLATEX            = $(VBOX_PDFLATEX) -halt-on-error -interaction $(PDFLATEX_INTERACTION) --enable-installer
+ endif
 else
  PDFLATEX_HALT        = $(shell \
  	( pdflatex -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
