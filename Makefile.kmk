@@ -21,10 +21,13 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Sub-makefiles / Sub-directories.
 #
-if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_TESTSUITE)
+if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
  include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
 endif
 include $(PATH_SUB_CURRENT)/src/Makefile.kmk
+
+
+## @todo split up this file!
 
 
 #
@@ -45,47 +48,44 @@ OTHER_CLEAN += \
 if  !defined(VBOX_ONLY_ADDITIONS) \
  && !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
- && !defined(VBOX_ONLY_TESTSUITE) # -> line 418b ;-)
+ && !defined(VBOX_ONLY_TESTSUITE) # -> line 426b ;-)
 
-ifndef VBOX_OSE
- #
- # Install the license (and misc non-executable stuff).
- #
- INSTALLS += nobin
- nobin_INST = $(INST_BIN)
- nobin_MODE = 0644
- nobin_SOURCES =
- ifdef VBOX_LICENSE_FILES
-  nobin_SOURCES += \
+ if !defined(VBOX_OSE) && defined(VBOX_LICENSE_FILES)
+  #
+  # Install the license (and misc non-executable stuff).
+  #
+  INSTALLS += InstallLicenseFiles
+  InstallLicenseFiles_INST = $(INST_BIN)
+  InstallLicenseFiles_MODE = 0644
+  InstallLicenseFiles_SOURCES =
+  InstallLicenseFiles_SOURCES += \
   	$(VBOX_BRAND_LICENSE_HTML)=>License-$(VBOX_LICENSE_VER).html \
-	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),$(VBOX_BRAND_$(f)_LICENSE_HTML)=>License-$(VBOX_LICENSE_VER)-$(f).html)
+ 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),$(VBOX_BRAND_$(f)_LICENSE_HTML)=>License-$(VBOX_LICENSE_VER)-$(f).html)
  endif
-endif # !OSE
 
 
 #
 # Install external binaries (mostly redistributable parts of tools we use).
-# This must be done *before* we build the manual.
 #
 # To avoid dragging in unnecessary tools and sdks here, we don't use the .win
 # and .linux property suffixes.
 #
-INSTALLS += bin
+INSTALLS += InstallExternalLibs
 
-bin_INST = $(INST_BIN)
+InstallExternalLibs_INST = $(INST_BIN)
 
 # The SDL DLLs
 if1of ($(KBUILD_TARGET), win os2)
  ifneq ($(VBOX_WITH_VBOXSDL)$(VBOX_WITH_VBOXBFE),)
   include $(KBUILD_PATH)/sdks/LIBSDL.kmk
-  bin_SOURCES += \
+  InstallExternalLibs_SOURCES += \
 	$(DLL_SDK_LIBSDL_SDL)
   ifdef VBOX_WITH_SECURELABEL
-   bin_SOURCES += \
+   InstallExternalLibs_SOURCES += \
 	$(DLL_SDK_LIBSDL_SDLTTF)
   endif
   ifeq ($(KBUILD_TARGET),os2)
-   bin_SOURCES += \
+   InstallExternalLibs_SOURCES += \
 	$(DLL_SDK_LIBSDL_FSLIB)
   endif
  endif
@@ -98,7 +98,7 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
    VBOX_PATH_VCC_REDIST         = $(PATH_TOOL_$(VBOX_VCC_TOOL))/redist/
    VBOX_PATH_VCC_REDIST_CRT     = $(VBOX_PATH_VCC_REDIST)/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.CRT
    VBOX_PATH_VCC_REDIST_CRT_DBG = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/Microsoft.VC100.DebugCRT
-   bin_SOURCES += \
+   InstallExternalLibs_SOURCES += \
    	$(VBOX_PATH_VCC_REDIST_CRT)/msvcr100.dll \
    	$(VBOX_PATH_VCC_REDIST_CRT)/msvcp100.dll \
    	$(VBOX_PATH_VCC_REDIST_CRT)/msvcr100.dll=>testcase/msvcr100.dll \
@@ -113,14 +113,14 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  ifdef VBOX_USE_VCC80
   include $(KBUILD_PATH)/tools/VCC80X86.kmk
   include $(KBUILD_PATH)/tools/VCC80AMD64.kmk
-  bin_SOURCES.x86 += \
+  InstallExternalLibs_SOURCES.x86 += \
   	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
   	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
   	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
   	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
   	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
   	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
-  bin_SOURCES.amd64 += \
+  InstallExternalLibs_SOURCES.amd64 += \
   	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
   	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
   	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
@@ -128,14 +128,14 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
   	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
   	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
   ifeq ($(VBOX_VCC_CRT_TYPE),d)
-   bin_SOURCES.x86 += \
+   InstallExternalLibs_SOURCES.x86 += \
    	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
    	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcr80d.dll=>Microsoft.VC80.DebugCRT/msvcr80d.dll \
    	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcp80d.dll=>Microsoft.VC80.DebugCRT/msvcp80d.dll \
    	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>testcase/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
    	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcr80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcr80d.dll \
    	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcp80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcp80d.dll
-   bin_SOURCES.amd64 += \
+   InstallExternalLibs_SOURCES.amd64 += \
    	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
    	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcr80d.dll=>Microsoft.VC80.DebugCRT/msvcr80d.dll \
    	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcp80d.dll=>Microsoft.VC80.DebugCRT/msvcp80d.dll \
@@ -158,14 +158,14 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
   ## @todo Move these defines to VCC70.
   DLL_TOOL_VCC70_MSVCR71 ?= $(PATH_TOOL_VCC70)/bin/msvcr71.dll
   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCR71)),)
-   bin_SOURCES += \
+   InstallExternalLibs_SOURCES += \
    	$(DLL_TOOL_VCC70_MSVCR71)=>msvcr71.dll \
    	$(DLL_TOOL_VCC70_MSVCR71)=>testcase/msvcr71.dll
   endif
   ifeq ($(VBOX_VCC_CRT_TYPE),d)
    DLL_TOOL_VCC70_MSVCR71D ?= $(PATH_TOOL_VCC70)/bin/msvcr71d.dll
    ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCR71D)),)
-    bin_SOURCES += \
+    InstallExternalLibs_SOURCES += \
     	$(DLL_TOOL_VCC70_MSVCR71D)=>msvcr71d.dll \
     	$(DLL_TOOL_VCC70_MSVCR71D)=>testcase/msvcr71d.dll
    endif
@@ -173,14 +173,14 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
 
   DLL_TOOL_VCC70_MSVCP71 ?= $(PATH_TOOL_VCC70)/bin/msvcp71.dll
   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCP71)),)
-   bin_SOURCES += \
+   InstallExternalLibs_SOURCES += \
 	$(DLL_TOOL_VCC70_MSVCP71)=>msvcp71.dll \
 	$(DLL_TOOL_VCC70_MSVCP71)=>testcase/msvcp71.dll
   endif
   ifeq ($(VBOX_VCC_CRT_TYPE),d)
    DLL_TOOL_VCC70_MSVCP71D ?= $(PATH_TOOL_VCC70)/bin/msvcp71d.dll
    ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCP71D)),)
-    bin_SOURCES += \
+    InstallExternalLibs_SOURCES += \
  	$(DLL_TOOL_VCC70_MSVCP71D)=>msvcp71d.dll \
  	$(DLL_TOOL_VCC70_MSVCP71D)=>testcase/msvcp71d.dll
    endif
@@ -188,7 +188,7 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
 
   DLL_TOOL_VCC70_MSVCRT  ?= $(PATH_TOOL_VCC70)/bin/msvcrt.dll
   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCRT)),)
-   bin_SOURCES += \
+   InstallExternalLibs_SOURCES += \
 	$(DLL_TOOL_VCC70_MSVCRT)=>msvcrt.dll \
 	$(DLL_TOOL_VCC70_MSVCRT)=>testcase/msvcrt.dll
   endif
