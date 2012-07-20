@@ -73,7 +73,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
  BLDPROGS += uniread
- LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC RuntimeGuestR3
+ LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
  ifdef VBOX_WITH_RAW_MODE
@@ -84,7 +84,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
-  LIBRARIES += RuntimeGuestR3Shared RuntimeGuestR3Mini
+  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
   LIBRARIES.win.amd64 += RuntimeGuestR3-x86 RuntimeGuestR3Shared-x86
   ifdef VBOX_WITH_ADDITION_DRIVERS
    LIBRARIES += RuntimeGuestR0
