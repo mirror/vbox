@@ -70,7 +70,7 @@ public:
      * @{ */
     int callbackAdd(GuestCtrlCallback *pCallback, ULONG *puContextID);
     int callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
-    bool callbackExists(ULONG uContextID);
+    inline bool callbackExists(ULONG uContextID);
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
     int onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDATACLIENTDISCONNECTED pData);
@@ -80,7 +80,8 @@ public:
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
     int readData(ULONG uHandle, ULONG uSize, ULONG uTimeoutMS, BYTE *pbData, size_t cbData);
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
-    int startProcess(void);
+    int signalWaiters(int rc, const Utf8Str strMessage = "");
+    int startProcess(int *pRC = NULL, Utf8Str *pstrMessage = NULL);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
     int terminateProcess(void);
     int waitFor(uint32_t fFlags, ULONG uTimeoutMS, ProcessWaitReason_T *penmReason);
