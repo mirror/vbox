@@ -35,8 +35,6 @@
 
 #include <memory>  /* for auto_ptr */
 
-#include <iprt/stream.h> /* remove */
-
 namespace HGCM
 {
 
@@ -64,16 +62,12 @@ public:
         {
             LogFlowFunc(("Message type does not match (%u (buffer), %u (guest))\n",
                          m_uMsg, uMsg));
-            RTPrintf("Message type does not match (%u (buffer), %u (guest))\n",
-                        m_uMsg, uMsg);
             return VERR_INVALID_PARAMETER;
         }
         if (m_cParms != cParms)
         {
             LogFlowFunc(("Parameter count does not match (%u (buffer), %u (guest))\n",
                          m_cParms, cParms));
-            RTPrintf("Parameter count does not match (%u (buffer), %u (guest))\n",
-                         m_cParms, cParms);
             return VERR_INVALID_PARAMETER;
         }
 
