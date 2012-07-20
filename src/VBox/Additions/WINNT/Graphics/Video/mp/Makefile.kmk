@@ -157,20 +157,20 @@ ifdef VBOX_WITH_WDDM
   #
   SYSMODS += VBoxVideoW8
   VBoxVideoW8_EXTENDS    = VBoxVideoWddm
-  VBoxVideoW8_TEMPLATE   = VBOXGUESTWIN8R0
-  VBoxVideoW8_SDKS       = ReorderCompilerIncs $(VBOX_WINDDK_GST_W8)
-  VBoxVideoW8_DEFS      += $(VBoxVideoWddm_DEFS) VBOX_WDDM_WIN8
+  VBoxVideoW8_TEMPLATE   = VBOXGUESTR0
+  VBoxVideoW8_SDKS       = $(VBOX_WINDDK_GST_W8) # No ReorderCompilerIncs here!
+  VBoxVideoW8_DEFS       = $(VBoxVideoWddm_DEFS) VBOX_WDDM_WIN8
   VBoxVideoW8_SOURCES    = $(subst VBoxMPWddm.rc,VBoxMPW8.rc,$(VBoxVideoWddm_SOURCES))
-  VBoxVideoW8_LIBS.x86   = \
-  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib
-  VBoxVideoW8_LIBS        = \
+  VBoxVideoW8_LIBS.x86   = $(NO_SUCH_VARIABLE)
+  VBoxVideoW8_LIBS.amd64 = $(NO_SUCH_VARIABLE)
+  VBoxVideoW8_LIBS       = \
+  	$(VBOX_LIB_VBGL_R0) \
+  	$(VBOX_LIB_IPRT_GUEST_R0) \
+  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB) \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/ntoskrnl.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/hal.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/displib.lib \
-  	$(VBOX_LIB_VBGL_R0) \
-  	$(VBOX_LIB_IPRT_GUEST_R0) \
-  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
-  VBoxVideoW8_LIBS.amd64  = $(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib
  endif # VBOX_WDDM_WIN8
  
 endif # VBOX_WITH_WDDM
@@ -191,3 +191,4 @@ ifdef VBOX_SIGN_ADDITIONS
 endif # VBOX_SIGN_ADDITIONS
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
