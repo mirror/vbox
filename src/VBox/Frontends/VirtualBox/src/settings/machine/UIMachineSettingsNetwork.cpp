@@ -216,18 +216,20 @@ bool UIMachineSettingsNetwork::revalidate(QString &strWarning, QString &strTitle
             break;
     }
 
-    /* Validate MAC-address: */
+    /* Validate MAC-address length: */
     if (m_pMACEditor->text().size() < 12)
     {
         strWarning = tr("the value of the MAC address field in not complete.");
         fValid = false;
     }
-    else
+    /* Make sure MAC-address is unicast: */
+    if (m_pMACEditor->text().size() >= 2)
     {
-        QRegExp validator("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}");
-        if (!validator.exactMatch(m_pMACEditor->text()))
+        QRegExp validator("^[0-9A-Fa-f][02468ACEace]");
+        if (validator.indexIn(m_pMACEditor->text()) != 0)
         {
-            strWarning = tr("the second digit cannot be odd, as only unicast MAC addresses allowed.");
+            strWarning = tr("the second digit in the MAC Address field cannot be odd, "
+                            "as only unicast addresses are allowed.");
             fValid = false;
         }
     }
