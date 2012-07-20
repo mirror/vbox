@@ -1546,8 +1546,10 @@ struct wined3d_adapter
     int                     nCfgs;
     WineD3D_PixelFormat     *cfgs;
     BOOL                    brokenStencil; /* Set on cards which only offer mixed depth+stencil */
+#ifndef VBOX_WITH_WDDM
     unsigned int            TextureRam; /* Amount of texture memory both video ram + AGP/TurboCache/HyperMemory/.. */
     unsigned int            UsedTextureRam;
+#endif
     LUID luid;
 
     const struct fragment_pipeline *fragment_pipe;
@@ -1557,7 +1559,9 @@ struct wined3d_adapter
 
 BOOL initPixelFormats(struct wined3d_gl_info *gl_info, enum wined3d_pci_vendor vendor) DECLSPEC_HIDDEN;
 BOOL initPixelFormatsNoGL(struct wined3d_gl_info *gl_info) DECLSPEC_HIDDEN;
+#ifndef VBOX_WITH_WDDM
 extern long WineD3DAdapterChangeGLRam(IWineD3DDeviceImpl *D3DDevice, long glram) DECLSPEC_HIDDEN;
+#endif
 extern void add_gl_compat_wrappers(struct wined3d_gl_info *gl_info) DECLSPEC_HIDDEN;
 
 /*****************************************************************************

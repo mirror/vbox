@@ -1222,17 +1222,19 @@ void context_clear_on_thread_detach()
     if (!old)
         return;
 
-    /* there is a currently assigned context,
-     * 2. now increase its ref count to ensure its dtor routine is not called while making set_current(NULL).
-     * This is needed since dtor can only be run with a wined3d lock held */
-    VBoxTlsRefAddRef(old);
+//    /* there is a currently assigned context,
+//     * 2. now increase its ref count to ensure its dtor routine is not called while making set_current(NULL).
+//     * This is needed since dtor can only be run with a wined3d lock held */
+//    VBoxTlsRefAddRef(old);
+
+    /* context_tls_dtor now does only memfree, so just call it right away */
 
     /* 3. now we can call context_set_current(NULL) */
     context_set_current(NULL);
 
-    /* 4. to avoid possible deadlocks we make an asynchronous call to a worker thread to make
-     * wined3d lock - context release - wined3d unlock from there. */
-    VBoxExtReleaseContextAsync(old);
+//    /* 4. to avoid possible deadlocks we make an asynchronous call to a worker thread to make
+//     * wined3d lock - context release - wined3d unlock from there. */
+//    VBoxExtReleaseContextAsync(old);
 }
 #endif
 

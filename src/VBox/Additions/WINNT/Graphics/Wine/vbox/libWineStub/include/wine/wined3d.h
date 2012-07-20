@@ -2116,9 +2116,9 @@ typedef struct _WINED3DDISPLAYMODE {
     WINED3DFORMAT Format;
 } WINED3DDISPLAYMODE;
 typedef enum _WINED3DSCANLINEORDERING {
-  WINED3DSCANLINEORDERING_UNKNOWN    = 0, 
+  WINED3DSCANLINEORDERING_UNKNOWN    = 0,
   WINED3DSCANLINEORDERING_PROGRESSIVE   = 1,
-  WINED3DSCANLINEORDERING_INTERLACED    = 2 
+  WINED3DSCANLINEORDERING_INTERLACED    = 2
 } WINED3DSCANLINEORDERING;
 typedef struct _WINED3DDISPLAYMODEEX {
     UINT Size;
@@ -2132,7 +2132,7 @@ typedef enum _WINED3DDISPLAYROTATION {
   WINED3DDISPLAYROTATION_IDENTITY   = 1,
   WINED3DDISPLAYROTATION_90         = 2,
   WINED3DDISPLAYROTATION_180        = 3,
-  WINED3DDISPLAYROTATION_270        = 4 
+  WINED3DDISPLAYROTATION_270        = 4
 } WINED3DDISPLAYROTATION;
 typedef struct _WINED3DCOLORVALUE {
     float r;
@@ -9626,10 +9626,14 @@ IWineD3D * STDMETHODCALLTYPE  WineDirect3DCreate(UINT dxVersion,IUnknown *parent
 
 IWineD3DClipper * STDMETHODCALLTYPE  WineDirect3DCreateClipper(IUnknown *parent);
 
+#ifdef VBOX_WINE_NO_LOCK
+#define wined3d_mutex_lock() do {} while (0)
+#define wined3d_mutex_unlock() do {} while (0)
+#else
 void STDMETHODCALLTYPE  wined3d_mutex_lock(void);
 
 void STDMETHODCALLTYPE  wined3d_mutex_unlock(void);
-
+#endif
 /* Begin additional prototypes for all interfaces */
 
 

@@ -96,19 +96,19 @@ HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type
         resource->allocatedMemory = (BYTE *)(((ULONG_PTR)resource->heapMemory + (RESOURCE_ALIGNMENT - 1)) & ~(RESOURCE_ALIGNMENT - 1));
     }
 
+#ifndef VBOX_WITH_WDDM
     /* Check that we have enough video ram left */
     if (pool == WINED3DPOOL_DEFAULT)
     {
-#ifndef VBOX_WITH_WDDM
         if (size > IWineD3DDevice_GetAvailableTextureMem((IWineD3DDevice *)device))
         {
             ERR("Out of adapter memory\n");
             HeapFree(GetProcessHeap(), 0, resource->heapMemory);
             return WINED3DERR_OUTOFVIDEOMEMORY;
         }
-#endif
         WineD3DAdapterChangeGLRam(device, size);
     }
+#endif
 
     device_resource_add(device, iface);
 
@@ -123,10 +123,12 @@ void resource_cleanup(IWineD3DResource *iface)
     HRESULT hr;
 
     TRACE("(%p) Cleaning up resource\n", This);
+#ifndef VBOX_WITH_WDDM
     if (This->resource.pool == WINED3DPOOL_DEFAULT) {
         TRACE("Decrementing device memory pool by %u\n", This->resource.size);
         WineD3DAdapterChangeGLRam(This->resource.device, -This->resource.size);
     }
+#endif
 
     LIST_FOR_EACH_SAFE(e1, e2, &This->resource.privateData) {
         data = LIST_ENTRY(e1, PrivateData, entry);

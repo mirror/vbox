@@ -2056,6 +2056,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetDirect3D(IWineD3DDevice *iface, IWin
 }
 
 static UINT WINAPI IWineD3DDeviceImpl_GetAvailableTextureMem(IWineD3DDevice *iface) {
+#ifndef VBOX_WITH_WDDM
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
 
     TRACE("(%p) : simulating %dMB, returning %dMB left\n",  This,
@@ -2063,6 +2064,10 @@ static UINT WINAPI IWineD3DDeviceImpl_GetAvailableTextureMem(IWineD3DDevice *ifa
          ((This->adapter->TextureRam - This->adapter->UsedTextureRam) / (1024*1024)));
     /* return simulated texture memory left */
     return (This->adapter->TextureRam - This->adapter->UsedTextureRam);
+#else
+    ERR("Should not be here!");
+    return 0;
+#endif
 }
 
 /*****
