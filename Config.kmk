@@ -405,7 +405,7 @@ endif
 # Enable Wddm Video driver for Vista+ guests.
 VBOX_WITH_WDDM = 1
 # Enable Wddm Video driver for Windows 8 guests.
-ifdef VBOX_WITH_VCC100
+ifdef VBOX_USE_VCC100
  VBOX_WITH_WDDM_W8 = 1
 endif
 # Lazy developer!!
