@@ -55,7 +55,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
 
     /* Setup widgets: */
     m_pAdapterNameCombo->setInsertPolicy(QComboBox::NoInsert);
-    m_pMACEditor->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
+    m_pMACEditor->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f]{12}"), this));
     m_pMACEditor->setMinimumWidthByText(QString().fill('0', 12));
 
     /* Setup connections: */
@@ -163,6 +163,7 @@ void UIMachineSettingsNetwork::uploadAdapterCache(UICacheSettingsMachineNetworkA
 void UIMachineSettingsNetwork::setValidator(QIWidgetValidator *pValidator)
 {
     m_pValidator = pValidator;
+    connect(m_pMACEditor, SIGNAL(textEdited(const QString &)), m_pValidator, SLOT(revalidate()));
 }
 
 bool UIMachineSettingsNetwork::revalidate(QString &strWarning, QString &strTitle)
@@ -214,6 +215,23 @@ bool UIMachineSettingsNetwork::revalidate(QString &strWarning, QString &strTitle
         default:
             break;
     }
+
+    /* Validate MAC-address: */
+    if (m_pMACEditor->text().size() < 12)
+    {
+        strWarning = tr("the value of the Mac address field in not complete.");
+        fValid = false;
+    }
+    else
+    {
+        QRegExp validator("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}");
+        if (!validator.exactMatch(m_pMACEditor->text()))
+        {
+            strWarning = tr("the second digit cannot be odd, as only unicast Mac addresses allowed.");
+            fValid = false;
+        }
+    }
+
     if (!fValid)
         strTitle += ": " + vboxGlobal().removeAccelMark(tabTitle());
 
