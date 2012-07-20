@@ -121,7 +121,7 @@ int parseDiskType(const char *psz, MediumType_T *pDiskType)
 }
 
 /** @todo move this into getopt, as getting bool values is generic */
-static int parseBool(const char *psz, bool *pb)
+int parseBool(const char *psz, bool *pb)
 {
     int rc = VINF_SUCCESS;
     if (    !RTStrICmp(psz, "on")

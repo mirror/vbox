@@ -2622,7 +2622,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  *       when the mouse button was released.
                  */
                 /* communicate the resize event to the guest */
-                gpDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0, 0);
+                gpDisplay->SetVideoModeHint(0 /*=display*/, true /*=enabled*/, false /*=changeOrigin*/,
+                                            0 /*=originX*/, 0 /*=originY*/,
+                                            uResizeWidth, uResizeHeight, 0 /*=don't change bpp*/);
                 break;
 
             }
@@ -4945,7 +4947,9 @@ static void SetFullscreen(bool enable)
         {
             gpFramebuffer[0]->setFullscreen(enable);
             gfIgnoreNextResize = TRUE;
-            gpDisplay->SetVideoModeHint(NewWidth, NewHeight, 0, 0);
+            gpDisplay->SetVideoModeHint(0 /*=display*/, true /*=enabled*/,
+                                        false /*=changeOrigin*/, 0 /*=originX*/, 0 /*=originY*/,
+                                        NewWidth, NewHeight, 0 /*don't change bpp*/);
         }
     }
 }

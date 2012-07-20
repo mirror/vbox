@@ -42,7 +42,7 @@ public:
     bool VideoAccelAllowed (void);
 
     void updatePointerShape(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t width, uint32_t height, void *pShape);
-    void SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay);
+    void SetVideoModeHint(ULONG aDisplay, BOOL aEnabled, BOOL aChangeOrigin, LONG aOriginX, LONG aOriginY, ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel);
 
     static const PDMDRVREG  DrvReg;
 

@@ -242,6 +242,7 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
 int handleShowHardDiskInfo(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);
 int parseDiskType(const char *psz, MediumType_T *pDiskType);
+int parseBool(const char *psz, bool *pb);
 
 /* VBoxManageStorageController.cpp */
 int handleStorageAttach(HandlerArg *a);

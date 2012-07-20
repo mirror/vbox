@@ -1264,7 +1264,9 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint(void *pvCallback
 {
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
-    server->mConsole->getDisplay()->SetVideoModeHint(cWidth, cHeight, cBitsPerPixel, uScreenId);
+    server->mConsole->getDisplay()->SetVideoModeHint(uScreenId, TRUE /*=enabled*/,
+                                                     FALSE /*=changeOrigin*/, 0/*=OriginX*/, 0/*=OriginY*/,
+                                                     cWidth, cHeight, cBitsPerPixel);
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
