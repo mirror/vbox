@@ -1837,8 +1837,8 @@ VBOX_PATH_WIX       ?= $(PATH_DEVTOOLS)/win.x86/wix/v3.5.2519.0
 ifdef VBOX_USE_VCC100
 VBOX_PATH_MSITRAN   ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiTran.Exe
 VBOX_PATH_MSIDB     ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiDb.Exe
-VBOX_PATH_WISUBSTG  ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Samples/SysMgmt/Msi/Scripts/WiSubStg.vbs
-VBOX_PATH_WISUMINFO ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Samples/SysMgmt/Msi/Scripts/WiSumInf.vbs
+VBOX_PATH_WISUBSTG  ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSubStg.vbs
+VBOX_PATH_WISUMINFO ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSumInf.vbs
 else
 VBOX_PATH_MSITRAN   ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Bin/MsiTran.Exe
 VBOX_PATH_MSIDB     ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Bin/MsiDb.Exe
