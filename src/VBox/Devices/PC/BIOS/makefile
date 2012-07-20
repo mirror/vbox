@@ -24,7 +24,7 @@ AFLAGS = -q -0 -wx
 INCLS  = -I$(Q)../../../../../include$(Q)
 
 .c.obj : .autodepend
-	wcc -fo=.obj $(CFLAGS) $(DEFS) $<
+	wcc -fo=.obj $(CFLAGS) $(DEFS) $(INCLS) $<
 
 .asm.obj : .autodepend
 	wasm -fo=.obj $(AFLAGS) $(DEFS) $<
