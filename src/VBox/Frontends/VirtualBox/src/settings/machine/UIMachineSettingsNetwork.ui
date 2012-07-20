@@ -189,7 +189,7 @@
       <item row="5" column="0">
        <widget class="QLabel" name="m_pMACLabel">
         <property name="text">
-         <string>&amp;Mac Address:</string>
+         <string>&amp;MAC Address:</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
