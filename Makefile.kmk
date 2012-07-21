@@ -137,7 +137,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Resources=>Versions/4/Resources/
  endif
 else
- ifdef VBOX_WITH_QT4_SUN
+ if defined(VBOX_WITH_QT4_SUN) || defined(VBOX_WITH_QT4_PAYLOAD)
   ifeq ($(KBUILD_TARGET),win)
    INSTALLS += qt4-bin
    qt4-bin_MODE = 755
