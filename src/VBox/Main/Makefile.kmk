@@ -794,11 +794,11 @@ $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 
 
 VBOX_MAIN_IDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
-	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/Midl.Exe\
-	$(PATH_SDK_$(VBOX_WINPSDK))/Bin/Midl.Exe\
-	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
-	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
-	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
+	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_SDK_$(VBOX_WINPSDK))/[Bb][Ii][Nn]/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_SDK_WINPSDK_BIN)/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_SDK_WINPSDK)/[Bb][Ii][Nn]/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_DEVTOOLS)/win.x86/bin/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
 	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 IDL_DEFS = /nologo
 
