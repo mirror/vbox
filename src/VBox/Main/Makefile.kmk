@@ -37,7 +37,7 @@ ifdef VBOX_ONLY_SDK
  # I'm Evil! Dr. Evil.
  VBoxCOM_0_OUTDIR = $(PATH_TARGET)/VBoxCOM
  BLDDIRS += $(VBoxCOM_0_OUTDIR) $(PATH_STAGE_BIN)/components
- include $(KBUILD_PATH)/tools/VCC70.kmk
+ include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk # For the idl /cpp statement.
  include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk
 endif # !VBOX_ONLY_SDK
 
@@ -820,7 +820,7 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_MAIN_IDL) $(IDL_DEFS) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
-		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		/cpp_cmd "$(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC)))" \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
