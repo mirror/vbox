@@ -236,12 +236,6 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb
  VBoxNetFltNobj_CLEAN      = $(VBoxNetFltNobj_DEPS)
 
- VBOXNETFLT_NOBJ_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
- 	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/Midl.Exe\
- 	$(PATH_SDK_$(VBOX_WINPSDK))/Bin/Midl.Exe\
- 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
- 	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
-
 $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 + $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_p.c \
 + $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.h \
@@ -249,7 +243,7 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 + $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb: \
 		$(PATH_SUB_CURRENT)/win/nobj/VBoxNetFltNobjT.idl \
 		| $$(dir $$@)
-	$(VBOXNETFLT_NOBJ_IDL) /nologo \
+	$(VBOX_WIN_MIDL) /nologo \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_$(VBOX_WINDDK)_INCS))) \

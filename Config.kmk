@@ -1812,6 +1812,15 @@ if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), linux.x86 solaris.x86 win.x86)
  PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
 endif
 
+# The Microsoft IDL compiler (the SDK build needs this on non-Windows).
+VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
+	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_SDK_$(VBOX_WINPSDK))/[Bb][Ii][Nn]/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_SDK_WINPSDK_BIN)/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_SDK_WINPSDK)/[Bb][Ii][Nn]/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	$(PATH_DEVTOOLS)/win.x86/bin/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee]\
+	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
+
 # XPCOM setup for all but win32.
 ifneq ($(KBUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
