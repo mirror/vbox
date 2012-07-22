@@ -44,7 +44,7 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxOGLcrutil_INSTTYPE.win = none
  VBoxOGLcrutil_DEBUG_INSTTYPE.win = both
 endif
-VBoxOGLcrutil_SDKS.win      = DXSDK
+VBoxOGLcrutil_SDKS.win      = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLcrutil_INCS += \
@@ -82,8 +82,8 @@ VBoxOGLcrutil_SOURCES.win.x86 = \
 	util/util.def \
 	util/util.rc
 VBoxOGLcrutil_LIBS.win = \
-	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
-	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
 VBoxOGLcrutil_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
@@ -114,8 +114,8 @@ VBoxOGLcrutil-x86_BLD_TRG_ARCH = x86
 VBoxOGLcrutil-x86_LIBS = $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
 	$(VBOX_LIB_VBGL_R3_SHARED_X86)
 VBoxOGLcrutil-x86_LIBS.win = \
-	$(PATH_SDK_DXSDK_LIB.x86)/ddraw.lib \
-	$(PATH_SDK_DXSDK_LIB.x86)/dxguid.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/ddraw.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/dxguid.lib
 ifdef VBOX_WITH_CRHGSMI
 # VBOX_WITH_CRHGSMI define is inherited from VBoxOGLcrutil
 VBoxOGLcrutil-x86_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
@@ -141,13 +141,9 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
 endif
 VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib
-## @todo kBuild bug, possibly same as ticket #51: PATH_SDK_DXSDK_LIB is expanded too early.
-# Update. bug 51 was fixed.
-# Still fails as PATH_SDK_DXSDK_LIB is empty.
-## @todo kBuild: recheck this (note to self).
 VBoxOGLhostcrutil_LIBS.win =  \
-    $(PATH_SDK_DXSDK_LIB)/ddraw.lib \
-    $(PATH_SDK_DXSDK_LIB)/dxguid.lib
+    $(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
+    $(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
 VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRHGSMI
