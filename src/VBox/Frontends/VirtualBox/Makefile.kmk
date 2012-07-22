@@ -75,7 +75,7 @@ VirtualBox_NAME = VirtualBox
 ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
  VirtualBox_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
-VirtualBox_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) DXSDK
+VirtualBox_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd os2) # X11 + os2 ## @todo solaris
  VirtualBox_SDKS += LIBSDL
 endif
@@ -218,8 +218,8 @@ endif
 
 VirtualBox_LIBS.win       = \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Htmlhelp.Lib \
-	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
-	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  VirtualBox_LIBS         += $(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
