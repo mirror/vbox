@@ -1384,82 +1384,6 @@ end sub
 
 
 ''
-' Checks for a recent DirectX SDK.
-sub CheckForDirectXSDK(strOptDXSDK)
-   dim strPathDXSDK, str, arrSubKeys, arrSubKeys2, strKey, strKey2
-   PrintHdr "Direct X SDK"
-
-   '
-   ' Find the DX SDK.
-   '
-   strPathDXSDK = ""
-   ' The specified path.
-   if (strPathDXSDK = "") And (strOptDXSDK <> "") then
-      if CheckForDirectXSDKSub(strOptDXSDK) then strPathDXSDK = strOptDXSDK
-   end if
-
-   ' The tools location (first).
-   if (strPathDXSDK = "") And (g_blnInternalFirst = True) then
-      str = g_strPathDev & "/win.x86/dxsdk/200610"
-      if CheckForDirectXSDKSub(str) then strPathDXSDK = str
-   end if
-
-   ' Check the installer registry (sucks a bit).
-   arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData")
-   for Each strSubKey In arrSubKeys
-      strKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\" & strSubKey & "\Products"
-      arrSubKeys2 = RegEnumSubKeys("HKLM", strKey)
-      for Each strSubKey2 In arrSubKeys2
-         strKey2 = "HKLM\" & strKey & "\" & strSubKey2 & "\InstallProperties"
-         str = RegGetString(strKey2 & "\DisplayName")
-         if InStr(1, str, "Microsoft DirectX SDK") > 0 then
-            str = RegGetString(strKey2 & "\InstallLocation")
-            if (str <> "") And (strPathDXSDK = "") then
-               if CheckForDirectXSDKSub(str) then
-                  strPathDXSDK = str
-                  Exit For
-               end if
-            end if
-         end if
-      Next
-   Next
-
-   ' The tools location (post).
-   if (strPathDXSDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/dxsdk/200610"
-      if CheckForDirectXSDKSub(str) then strPathDXSDK = str
-   end if
-
-   ' Give up.
-   if strPathDXSDK = "" then
-      MsgError "Cannot find a suitable Direct X SDK. Check configure.log and the build requirements."
-      exit sub
-   end if
-
-   '
-   ' Emit the config.
-   '
-   strPathDXSDK = UnixSlashes(PathAbs(strPathDXSDK))
-   CfgPrint "PATH_SDK_DXSDK        := " & strPathDXSDK
-   CfgPrint "PATH_SDK_DXSDKX86     := $(PATH_SDK_DXSDK)"
-   CfgPrint "PATH_SDK_DXSDKAMD64   := $(PATH_SDK_DXSDK)"
-
-   PrintResult "Direct X SDK", strPathDXSDK
-end sub
-
-'' Quick check if the DXSDK is in the specified directory or not.
-function CheckForDirectXSDKSub(strPathDXSDK)
-   CheckForDirectXSDKSub = False
-   LogPrint "trying: strPathDXSDK=" & strPathDXSDK
-   if LogFileExists(strPathDXSDK, "Lib/x86/dxguid.lib") _
-      then
-      '' @todo figure out a way we can verify the version/build!
-      CheckForDirectXSDKSub = True
-   end if
-end function
-
-
-''
 ' Checks for a MingW32 suitable for building the recompiler.
 '
 ' strOptW32API is currently ignored.
@@ -2156,7 +2080,7 @@ Sub Main
          case "--with-ddk"
             strOptDDK = strPath
          case "--with-dxsdk"
-            strOptDXSDK = strPath
+            MsgWarning "Ignornig --with-dxsdk (the DirectX SDK is no longer required)."
          case "--with-kbuild"
             strOptkBuild = strPath
          case "--with-libsdl"
@@ -2243,7 +2167,6 @@ Sub Main
    CheckForVisualCPP strOptVC, strOptVCCommon, blnOptVCExpressEdition
    CheckForPlatformSDK strOptSDK
    CheckForMidl
-   CheckForDirectXSDK strOptDXSDK
    CheckForMingW strOptMingw, strOptW32API
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
    EnvPrint "set PATH=%PATH%;" & g_strPath& "/tools/win." & g_strTargetArch & "/bin;" '' @todo look for yasm
