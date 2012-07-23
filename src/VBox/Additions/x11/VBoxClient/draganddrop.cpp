@@ -594,7 +594,7 @@ int DragInstance::init(uint32_t u32ScreenId)
         Atom ver = VBOX_XDND_VERSION;
         XChangeProperty(m_pDisplay, m_proxyWin, xAtom(XA_XdndAware), XA_ATOM, 32, PropModeReplace,
                         reinterpret_cast<unsigned char*>(&ver), 1);
-    }while(0);
+    } while(0);
 
     m_state = Initialized;
 
@@ -1136,7 +1136,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                 break;
             }
         }
-    }while(tries--);
+    } while(tries--);
     if (clme)
     {
         /* Make some paranoid checks. */
@@ -1664,8 +1664,8 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     }
                 }
             }
-        }while(!ASMAtomicReadBool(&m_fSrvStopping));
-    }while(0);
+        } while(!ASMAtomicReadBool(&m_fSrvStopping));
+    } while(0);
 
     LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
@@ -1698,7 +1698,7 @@ int DragAndDropService::x11DragAndDropInit()
         rc = RTThreadCreate(&m_hX11Thread, x11EventThread, this,
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                             "X11-NOTIFY");
-    }while(0);
+    } while(0);
 
     /* Cleanup on failure */
     if (RT_FAILURE(rc))
@@ -1712,17 +1712,21 @@ int DragAndDropService::x11DragAndDropTerm()
     /* Mark that we are stopping. */
     ASMAtomicWriteBool(&m_fSrvStopping, true);
 
-    /* Send a x11 client messages to the x11 event loop. */
-    XClientMessageEvent m;
-    RT_ZERO(m);
-    m.type         = ClientMessage;
-    m.display      = m_pDisplay;
-    m.window       = None;
-    m.message_type = xAtom(XA_dndstop);
-    m.format       = 32;
-    int xrc = XSendEvent(m_pDisplay, None, True, NoEventMask, reinterpret_cast<XEvent*>(&m));
-    if (RT_UNLIKELY(xrc == 0))
-        DO(("DnD_TERM: error sending xevent\n"));
+    asm volatile ("int3");
+    if (m_pDisplay)
+    {
+        /* Send a x11 client messages to the x11 event loop. */
+        XClientMessageEvent m;
+        RT_ZERO(m);
+        m.type         = ClientMessage;
+        m.display      = m_pDisplay;
+        m.window       = None;
+        m.message_type = xAtom(XA_dndstop);
+        m.format       = 32;
+        int xrc = XSendEvent(m_pDisplay, None, True, NoEventMask, reinterpret_cast<XEvent*>(&m));
+        if (RT_UNLIKELY(xrc == 0))
+                DO(("DnD_TERM: error sending xevent\n"));
+    }
     /* Wait for our event threads to stop. */
 //    if (m_hX11Thread)
 //        RTThreadWait(m_hX11Thread, RT_INDEFINITE_WAIT, 0);
@@ -1760,7 +1764,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
             if (RT_FAILURE(rc))
                 return rc;
         }
-    }while(!ASMAtomicReadBool(&pSrv->m_fSrvStopping));
+    } while(!ASMAtomicReadBool(&pSrv->m_fSrvStopping));
 
     return VINF_SUCCESS;
 }
