@@ -47,6 +47,7 @@ MOD_OBJS   = \
 	r0drv/linux/semevent-r0drv-linux.o \
 	r0drv/linux/semeventmulti-r0drv-linux.o \
 	r0drv/linux/semfastmutex-r0drv-linux.o \
+	r0drv/linux/semmutex-r0drv-linux.o \
 	r0drv/linux/spinlock-r0drv-linux.o \
 	r0drv/linux/thread-r0drv-linux.o \
 	r0drv/linux/thread2-r0drv-linux.o \
