@@ -5954,15 +5954,23 @@ PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
     rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
-    if (cb == 1)
-        rc = ataIOPortWriteU8(pCtl, Port, u32);
-    else if (Port == pCtl->IOPortBase1)
+    if (Port == pCtl->IOPortBase1)
     {
+        /* Writes to the data port may be 16-bit or 32-bit. */
         Assert(cb == 2 || cb == 4);
         rc = ataDataWrite(pCtl, Port, cb, (const uint8_t *)&u32);
     }
     else
-        AssertMsgFailed(("ataIOPortWrite1: unsupported write to port %x val=%x size=%d\n", Port, u32, cb));
+    {
+        /* Writes to the other command block ports should be 8-bit only. If they
+         * are not, the high bits are simply discarded. Undocumented, but observed
+         * on a real PIIX4 system.
+         */
+        if (cb > 1)
+            Log(("ataIOPortWrite1: suspect write to port %x val=%x size=%d\n", Port, u32, cb));
+
+        rc = ataIOPortWriteU8(pCtl, Port, u32);
+    }
     PDMCritSectLeave(&pCtl->lock);
     return rc;
 }
@@ -5984,12 +5992,9 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
-    if (cb == 1)
+    if (Port == pCtl->IOPortBase1)
     {
-        rc = ataIOPortReadU8(pCtl, Port, pu32);
-    }
-    else if (Port == pCtl->IOPortBase1)
-    {
+        /* Reads from the data register may be 16-bit or 32-bit. */
         Assert(cb == 2 || cb == 4);
         rc = ataDataRead(pCtl, Port, cb, (uint8_t *)pu32);
         if (cb == 2)
@@ -5997,8 +6002,22 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     }
     else
     {
-        AssertMsgFailed(("ataIOPortRead1: unsupported read from port %x size=%d\n", Port, cb));
-        rc = VERR_IOM_IOPORT_UNUSED;
+        /* Reads from the other command block registers should be 8-bit only.
+         * If they are not, the low byte is propagated to the high bits. 
+         * Undocumented, but observed on a real PIIX4 system.
+         */
+        rc = ataIOPortReadU8(pCtl, Port, pu32);
+        if (cb > 1)
+        {
+            uint32_t    pad;
+
+            /* Replicate the 8-bit result into the upper three bytes. */
+            pad = *pu32 & 0xff;
+            pad = pad | (pad << 8);
+            pad = pad | (pad << 16);
+            *pu32 = pad;
+            Log(("ataIOPortRead1: suspect read from port %x size=%d\n", Port, cb));
+        }
     }
     PDMCritSectLeave(&pCtl->lock);
     return rc;
