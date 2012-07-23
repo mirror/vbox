@@ -176,6 +176,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/semevent-r0drv-freebsd.c=>r0drv/freebsd/semevent-r0drv-freebsd.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/semeventmulti-r0drv-freebsd.c=>r0drv/freebsd/semeventmulti-r0drv-freebsd.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/semfastmutex-r0drv-freebsd.c=>r0drv/freebsd/semfastmutex-r0drv-freebsd.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/semmutex-r0drv-freebsd.c=>r0drv/freebsd/semmutex-r0drv-freebsd.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/spinlock-r0drv-freebsd.c=>r0drv/freebsd/spinlock-r0drv-freebsd.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/the-freebsd-kernel.h=>r0drv/freebsd/the-freebsd-kernel.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/thread-r0drv-freebsd.c=>r0drv/freebsd/thread-r0drv-freebsd.c \
