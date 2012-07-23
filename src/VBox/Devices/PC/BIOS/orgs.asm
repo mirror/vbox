@@ -109,7 +109,6 @@ extrn		_int16_function:near
 extrn		_int17_function:near
 extrn		_int19_function:near
 extrn		_int1a_function:near
-extrn		_int1a_function_pci:near
 extrn		_pci16_function:near
 extrn		_int70_function:near
 extrn		_int74_function:near
@@ -1645,23 +1644,6 @@ int1a_handler:
 		cmp	ah, 0B1h
 		jne	int1a_normal
 
-if 0
-		call	pcibios_real
-		jc	pcibios_error
-
-		jmp	iret_modify_cf	; don't trash caller's flags!
-
-pcibios_error:
-;		mov	bl, ah
-;		mov	ah, 0B1h
-		pusha
-;		mov	ax, ss	; set readable descriptor to DS for calling
-;		mov	ds, ax	; PCI BIOS from 16-bit protected mode
-		; TODO: C environment?!
-		call	_int1a_function_pci
-		popa
-		iret
-else
 		push	es
 		push	ds
 		C_SETUP
@@ -1673,7 +1655,6 @@ else
 		pop	ds
 		pop	es
 		iret
-endif
 
 int1a_normal:
 		push	es

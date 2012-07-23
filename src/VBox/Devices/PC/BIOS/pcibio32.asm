@@ -115,9 +115,11 @@ else
 extrn	_pci32_function:near
 
 		pushfd
+		push	es
 		pushad
 		call	_pci32_function
 		popad
+		pop	es
 		popfd
 		retf
 endif

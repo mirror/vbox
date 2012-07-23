@@ -96,6 +96,7 @@ enum pci_error {
 /* The stack layout is different in 32-bit mode. */
 typedef struct {
     pushad_regs_t   gr;
+    uint32_t        es;
     uint32_t        flags;
 } pci_regs_t;
 
@@ -156,6 +157,16 @@ void outpd(uint16_t port, uint32_t val);
     parm [dx] [cx ax] modify nomemory;
 
 #endif
+
+/* PCI IRQ routing expansion buffer descriptor. */
+typedef struct {
+    uint16_t        buf_size;
+    uint8_t __far   *buf_ptr;
+} pci_route_buf;
+
+/* Defined in assembler module .*/
+extern char     pci_routing_table[];
+extern uint16_t pci_routing_table_size;
 
 /* Write the CONFIG_ADDRESS register to prepare for data access. Requires
  * the register offset to be DWORD aligned (low two bits clear). Warning:
@@ -292,7 +303,8 @@ uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_cla
 
 void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
 {
-    uint16_t    device;
+    pci_route_buf __far     *route_buf;
+    uint16_t                device;
 
     BX_DEBUG_PCI("PCI: AX=%04X BX=%04X CX=%04X\n", AX, BX, CX);
 
@@ -364,6 +376,15 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
                 outpd(PCI_CFG_DATA, ECX);
                 break;
             }
+        }
+        break;
+    case GET_IRQ_ROUTING:
+        route_buf = ES :> (void *)DI;
+        if (pci_routing_table_size > route_buf->buf_size) {
+            SET_AH(BUFFER_TOO_SMALL);
+            SET_CF();
+        } else {
+            rep_movsb(route_buf->buf_ptr, pci_routing_table, pci_routing_table_size);
         }
         break;
     default:
