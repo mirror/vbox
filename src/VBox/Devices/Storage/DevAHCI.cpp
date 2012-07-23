@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -6722,7 +6722,7 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pSSM  The handle to the saved state.
  */
-int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
+static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
 {
     int             rc;
     uint32_t        u32Version;
@@ -6734,7 +6734,7 @@ int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
     LogFlow(("LoadOldSavedStates u32Version = %d\n", u32Version));
 
-    if (u32Version != ATA_CTL_SAVED_STATE_VERSION
+    if (   u32Version != ATA_CTL_SAVED_STATE_VERSION
         && u32Version != ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
         && u32Version != ATA_CTL_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
     {
@@ -6749,13 +6749,9 @@ int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
         SSMR3Skip(pSSM, 88 + 5 * sizeof(bool) );
 
         if (u32Version > ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
-        {
             SSMR3Skip(pSSM, 64);
-        }
         else
-        {
             SSMR3Skip(pSSM, 2);
-        }
         /** @todo triple-check this hack after passthrough is working */
         SSMR3Skip(pSSM, 1);
 
@@ -6799,6 +6795,13 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     if (   uVersion > AHCI_SAVED_STATE_VERSION
         || uVersion < AHCI_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    /* Deal with the priod after removing the saved IDE bits where the saved
+       state version remained unchanged. */
+    if (   uVersion == AHCI_SAVED_STATE_VERSION_IDE_EMULATION
+        && SSMR3HandleRevision(pSSM) >= 79045
+        && SSMR3HandleRevision(pSSM) <  79201)
+        uVersion++;
 
     /* Verify config. */
     if (uVersion > AHCI_SAVED_STATE_VERSION_VBOX_30)
@@ -7547,9 +7550,7 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
         if (   pAhciPort->pDrvBlockAsync
             && !pAhciPort->fATAPI)
-        {
             pAhciPort->fAsyncInterface = true;
-        }
         else
         {
             pAhciPort->fAsyncInterface = false;
