@@ -104,7 +104,7 @@ typedef struct _VBGLDATA
      * @{
      */
 
-    RTSEMFASTMUTEX mutexDriverInit;
+    RTSEMMUTEX mutexDriverInit;
 
     VBGLDRIVER driver;
 
