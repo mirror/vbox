@@ -91,6 +91,9 @@ protected slots:
     /* Slot to perform guest resize: */
     void sltPerformGuestResize(const QSize &aSize = QSize());
 
+    /* Watch dog for desktop resizes: */
+    void sltDesktopResized();
+
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
 
@@ -111,6 +114,7 @@ protected:
     virtual void prepareFrameBuffer();
     virtual void prepareCommon();
     virtual void prepareFilters();
+    virtual void prepareConnections();
     virtual void prepareConsoleConnections();
     virtual void loadMachineViewSettings();
 
@@ -138,11 +142,14 @@ protected:
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
     /** Atomically store the maximum guest resolution which we currently wish
-     * to handle for @a maxGuestSize() to read. */
+     * to handle for @a maxGuestSize() to read.  Should be called if anything
+     * happens (e.g. a screen hotplug) which might cause the value to change.
+     * @sa m_u64MaxGuestSize. */
     void setMaxGuestSize();
     /** Atomically read the maximum guest resolution which we currently wish to
      * handle.  This may safely be called from another thread (called by
-     * UIFramebuffer on EMT). */
+     * UIFramebuffer on EMT).
+     * @sa m_u64MaxGuestSize. */
     QSize maxGuestSize();
     /** Retrieve the last non-fullscreen guest size hint (from extra data).
      */
@@ -224,7 +231,13 @@ protected:
     /** The maximum guest size for fixed size policy. */
     QSize m_fixedMaxGuestSize;
     /** Maximum guest resolution which we wish to handle.  Must be accessed
-     * atomically. */
+     * atomically.
+     * @note The background for this variable is that we need this value to be
+     * available to the EMT thread, but it can only be calculated by the
+     * GUI, and GUI code can only safely be called on the GUI thread due to
+     * (at least) X11 threading issues.  So we calculate the value in advance,
+     * monitor things in case it changes and update it atomically when it does.
+     */
     /** @todo This should be private. */
     volatile uint64_t m_u64MaxGuestSize;
 

@@ -67,6 +67,9 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
     /* Prepare event-filters: */
     prepareFilters();
 
+    /* Prepare connections: */
+    prepareConnections();
+
     /* Prepare console connections: */
     prepareConsoleConnections();
 
