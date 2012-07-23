@@ -1712,7 +1712,6 @@ int DragAndDropService::x11DragAndDropTerm()
     /* Mark that we are stopping. */
     ASMAtomicWriteBool(&m_fSrvStopping, true);
 
-    asm volatile ("int3");
     if (m_pDisplay)
     {
         /* Send a x11 client messages to the x11 event loop. */
