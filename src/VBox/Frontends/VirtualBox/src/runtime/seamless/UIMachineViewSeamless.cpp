@@ -56,32 +56,10 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
 #endif
                     )
 {
-    /* Load machine view settings: */
-    loadMachineViewSettings();
-
-    /* Prepare viewport: */
-    prepareViewport();
-
-    /* Prepare frame buffer: */
-    prepareFrameBuffer();
-
-    /* Prepare common things: */
-    prepareCommon();
-
-    /* Prepare event-filters: */
-    prepareFilters();
-
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Prepare console connections: */
-    prepareConsoleConnections();
-
     /* Prepare seamless view: */
     prepareSeamless();
 
     /* Initialization: */
-    sltMachineStateChanged();
     sltAdditionsStateChanged();
 }
 

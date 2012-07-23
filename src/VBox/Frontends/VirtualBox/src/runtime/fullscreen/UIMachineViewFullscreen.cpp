@@ -52,29 +52,6 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
                     )
     , m_bIsGuestAutoresizeEnabled(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked())
 {
-    /* Load machine view settings: */
-    loadMachineViewSettings();
-
-    /* Prepare viewport: */
-    prepareViewport();
-
-    /* Prepare frame buffer: */
-    prepareFrameBuffer();
-
-    /* Prepare common things: */
-    prepareCommon();
-
-    /* Prepare event-filters: */
-    prepareFilters();
-
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Prepare console connections: */
-    prepareConsoleConnections();
-
-    /* Initialization: */
-    sltMachineStateChanged();
 }
 
 UIMachineViewFullscreen::~UIMachineViewFullscreen()
