@@ -60,6 +60,28 @@ void halt_forever(void);
     "jmp forever"           \
     modify exact [] nomemory aborts;
 
+#ifdef __386__
+
+void rep_movsb(void __far *d, void __far *s, int nbytes);
+#pragma aux rep_movsb =     \
+    "push   ds"             \
+    "mov    ds, dx"         \
+    "rep    movsb"          \
+    "pop    ds"             \
+    parm [es edi] [dx esi] [ecx];
+
+#else
+
+void rep_movsb(void __far *d, void __far *s, int nbytes);
+#pragma aux rep_movsb =     \
+    "push   ds"             \
+    "mov    ds, dx"         \
+    "rep    movsb"          \
+    "pop    ds"             \
+    parm [es di] [dx si] [cx];
+
+#endif
+
 void rep_movsw(void __far *d, void __far *s, int nwords);
 #pragma aux rep_movsw =     \
     "push   ds"             \

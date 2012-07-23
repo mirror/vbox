@@ -39,7 +39,8 @@
 ;;
 
 if BX_PCIBIOS
-public pci_routing_table_structure      ; For disassembly
+public _pci_routing_table
+public _pci_routing_table_size
 
 align 16
 pci_routing_table_structure:
@@ -62,7 +63,8 @@ ifdef VBOX
 else ; !VBOX
   db 7 ;; checksum
 endif ; !VBOX
-pci_routing_table_structure_start:
+_pci_routing_table:
+pci_routing_table:
   ;; first slot entry PCI-to-ISA (embedded)
   db 0 ;; pci bus number
   db 008h ;; pci device number (bit 7-3)
@@ -455,6 +457,8 @@ ifdef VBOX
   db 29 ;; physical slot (0 = embedded)
   db 0 ;; reserved
 endif ; VBOX
-pci_routing_table_structure_end:
+pci_routing_table_end:
+;; Size of the table
+pci_routing_table_size dw	pci_routing_table_end - pci_routing_table
 
 endif   ; BX_PCIBIOS

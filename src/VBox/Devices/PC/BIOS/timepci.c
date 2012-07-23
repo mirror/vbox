@@ -145,40 +145,6 @@ void BIOSCALL int70_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
 // @todo: the coding style WRT register access is totally inconsistent
 // in the following routines
 
-/* The PCI BIOS routine must be callable from protected mode, and
- * therefore must not modify any segment registers(!).
- */
-#if BX_PCIBIOS
-void BIOSCALL int1a_function_pci(i1apci_regs_t r)
-{
-#if 0
-    // real mode PCI BIOS functions now handled in assembler code
-    // this C code handles the error code for information only
-    if (r.gr.u.r8.ah == 0xff) {
-        BX_INFO("PCI BIOS: PCI not present\n");
-    } else if (r.gr.u.r8.ah == 0x81) {
-        BX_INFO("unsupported PCI BIOS function 0x%02x\n", r.gr.u.r8.al);
-    } else if (r.gr.u.r8.ah == 0x83) {
-        BX_INFO("bad PCI vendor ID %04x\n", r.gr.u.r16.dx);
-    } else if (r.gr.u.r8.ah == 0x86) {
-        if (r.gr.u.r8.ah == 0x02) {
-            BX_INFO("PCI device %04x:%04x not found at index %d\n", r.gr.u.r16.dx, r.gr.u.r16.cx, r.gr.u.r16.si);
-        } else {
-            BX_INFO("no PCI device with class code 0x%02x%04x found at index %d\n", r.gr.u.r8.cl, r.gr.u.r16.dx, r.gr.u.r16.si);
-        }
-    }
-#endif
-    //@todo: OS/2 MCP2 apparently calls us in protected mode with a DS which does not
-    // point to the BIOS segment!?!
-    send(BIOS_PRINTF_INFO, '!');
-    send(BIOS_PRINTF_INFO, '\n');
-    if (!GetCF(r.ra.flags)) {
-        SetCF(r.ra.flags);
-    }
-}
-#endif
-
-
 void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_addr_t iret_addr)
 {
     uint8_t     val8;
