@@ -182,6 +182,11 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     machine.SetExtraData(strKey, isFullscreenOrSeamless() ? "true" : "");
 }
 
+void UIMachineView::sltDesktopResized()
+{
+    setMaxGuestSize();
+}
+
 void UIMachineView::sltMachineStateChanged()
 {
     /* Get machine state: */
@@ -491,6 +496,13 @@ void UIMachineView::prepareFilters()
 
     /* We want to be notified on some parent's events: */
     machineWindow()->installEventFilter(this);
+}
+
+void UIMachineView::prepareConnections()
+{
+    /* Desktop resolution change (e.g. monitor hotplug): */
+    connect(QApplication::desktop(), SIGNAL(resized(int)), this,
+            SLOT(sltDesktopResized()));
 }
 
 void UIMachineView::prepareConsoleConnections()

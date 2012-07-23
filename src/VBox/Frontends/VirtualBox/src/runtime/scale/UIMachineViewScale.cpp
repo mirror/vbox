@@ -67,6 +67,9 @@ UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
     /* Prepare event-filters: */
     prepareFilters();
 
+    /* Prepare connections: */
+    prepareConnections();
+
     /* Prepare console connections: */
     prepareConsoleConnections();
 
