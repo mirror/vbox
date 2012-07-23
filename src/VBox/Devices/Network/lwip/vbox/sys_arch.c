@@ -271,6 +271,8 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t mbox, void **msg, u32_t timeout)
     else
         cMillies = timeout;
     rc = LWIPMutexRequest(mbox->mutex, cMillies);
+    if (rc == VERR_TIMEOUT)
+        return SYS_ARCH_TIMEOUT;
     AssertRC(rc);
     while (mbox->head == mbox->tail)
     {
