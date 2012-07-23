@@ -132,6 +132,9 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 //#ifdef VBOX_WITH_SHARED_FOLDERS
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxSharedFolders" SUPLIB_DLL_SUFF },
 //#endif
+//#ifdef VBOX_WITH_DRAG_AND_DROP
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxDragAndDropSvc" SUPLIB_DLL_SUFF },
+//#endif
 //#ifdef VBOX_WITH_GUEST_PROPS
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxGuestPropSvc" SUPLIB_DLL_SUFF },
 //#endif
