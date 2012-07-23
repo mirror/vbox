@@ -1541,6 +1541,20 @@ VBoxManage setextradata "VM name"
       <para>All these parameters can be specified as command line parameters
       to VBoxService as well.</para>
     </sect2>
+
+    <sect2 id="disabletimesync">
+      
+      <title>Disabling the Guest Additions time synchronization</title>
+
+      <para>Once installed and started, the VirtualBox Guest Additions will
+        try to synchronize the guest time with the host time. This can be
+        prevented by forbiding the guest service from reading the host
+        clock:</para>
+
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/Devices/VMMDev/0/Config/GetHostTimeDisabled" 1</screen>
+
+    </sect2>
+
   </sect1>
 
   <sect1 id="vboxbowsolaris11">
