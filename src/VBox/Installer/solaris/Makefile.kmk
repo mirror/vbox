@@ -243,6 +243,7 @@ SOLARIS_STRIP_BINS = \
 	VBoxXPCOMC.so \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),VBoxDragAndDropSvc.so,) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxGuestControlSvc.so,) \
 	$(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \

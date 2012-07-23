@@ -438,6 +438,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_WITH_EXTPACK=$(if $(VBOX_WITH_EXTPACK),yes,no)' \
 		-E 'VBOX_WITH_GUEST_CONTROL=$(if $(VBOX_WITH_GUEST_CONTROL),yes,no)' \
 		-E 'VBOX_WITH_GUEST_PROPS=$(if $(VBOX_WITH_GUEST_PROPS),yes,no)' \
+		-E 'VBOX_WITH_DRAG_AND_DROP=$(if $(VBOX_WITH_DRAG_AND_DROP),yes,no)' \
 		-E 'VBOX_WITH_NETFLT=$(if $(VBOX_WITH_NETFLT),yes,no)' \
 		-E 'VBOX_WITH_PYTHON=$(if $(VBOX_WITH_PYTHON),yes,no)' \
 		-E 'VBOX_WITH_QTGUI=$(if $(VBOX_WITH_QTGUI),yes,no)' \

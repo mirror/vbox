@@ -472,6 +472,9 @@
                               Source="$(env.PATH_OUT)\bin\VBoxSharedFolders.dll" />
                         <File Id="file_VBoxSharedClipboard.dll" Name="VBoxSharedClipboard.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxSharedClipboard.dll" />
+<?if $(env.VBOX_WITH_DRAG_AND_DROP)= "yes" ?>
+                        <File Id="file_VBoxDragAndDropSvc.dll" Name="VBoxDragAndDropSvc.dll"
+                              Source="$(env.PATH_OUT)\bin\VBoxDragAndDropSvc.dll" />
 <?if $(env.VBOX_WITH_GUEST_PROPS) = "yes" ?>
                         <File Id="file_VBoxGuestPropSvc.dll" Name="VBoxGuestPropSvc.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxGuestPropSvc.dll" />
