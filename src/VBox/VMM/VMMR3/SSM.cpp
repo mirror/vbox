@@ -464,8 +464,10 @@ typedef struct SSMHANDLE
     int32_t                 rc;
     /** Number of compressed bytes left in the current data unit (V1). */
     uint64_t                cbUnitLeftV1;
-    /** The current uncompressed offset into the data unit. */
+    /** The current compressed? offset into the data unit. */
     uint64_t                offUnit;
+    /** The current user data offset into the unit (debug purposes). */
+    uint64_t                offUnitUser;
     /** Indicates that this is a live save or restore operation. */
     bool                    fLiveSave;
 
@@ -3067,7 +3069,8 @@ static int ssmR3DataWriteFinish(PSSMHANDLE pSSM)
     int rc = ssmR3DataFlushBuffer(pSSM);
     if (RT_SUCCESS(rc))
     {
-        pSSM->offUnit = UINT64_MAX;
+        pSSM->offUnit     = UINT64_MAX;
+        pSSM->offUnitUser = UINT64_MAX;
         return VINF_SUCCESS;
     }
 
@@ -3087,7 +3090,8 @@ static int ssmR3DataWriteFinish(PSSMHANDLE pSSM)
  */
 static void ssmR3DataWriteBegin(PSSMHANDLE pSSM)
 {
-    pSSM->offUnit = 0;
+    pSSM->offUnit     = 0;
+    pSSM->offUnitUser = 0;
 }
 
 
@@ -3238,6 +3242,8 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
     int rc = ssmR3DataFlushBuffer(pSSM);
     if (RT_SUCCESS(rc))
     {
+        pSSM->offUnitUser += cbBuf;
+
         /*
          * Split it up into compression blocks.
          */
@@ -3346,6 +3352,7 @@ static int ssmR3DataWriteFlushAndBuffer(PSSMHANDLE pSSM, const void *pvBuf, size
     {
         memcpy(&pSSM->u.Write.abDataBuffer[0], pvBuf, cbBuf);
         pSSM->u.Write.offDataBuffer = (uint32_t)cbBuf;
+        pSSM->offUnitUser += cbBuf;
     }
     return rc;
 }
@@ -3375,6 +3382,7 @@ DECLINLINE(int) ssmR3DataWrite(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
 
     memcpy(&pSSM->u.Write.abDataBuffer[off], pvBuf, cbBuf);
     pSSM->u.Write.offDataBuffer = off + (uint32_t)cbBuf;
+    pSSM->offUnitUser += cbBuf;
     return VINF_SUCCESS;
 }
 
@@ -4867,6 +4875,7 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS 
     pSSM->rc                        = VINF_SUCCESS;
     pSSM->cbUnitLeftV1              = 0;
     pSSM->offUnit                   = UINT64_MAX;
+    pSSM->offUnitUser               = UINT64_MAX;
     pSSM->fLiveSave                 = false;
     pSSM->pfnProgress               = pfnProgress;
     pSSM->pvUser                    = pvProgressUser;
@@ -5598,7 +5607,8 @@ static int ssmR3DataReadV1(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     if (RT_SUCCESS(rc))
     {
         Log2(("ssmR3DataRead: pvBuf=%p cbBuf=%#x offUnit=%#llx %.*Rhxs%s\n", pvBuf, cbBuf, pSSM->offUnit, RT_MIN(cbBuf, SSM_LOG_BYTES), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
-        pSSM->offUnit += cbBuf;
+        pSSM->offUnit     += cbBuf;
+        pSSM->offUnitUser += cbBuf;
         return VINF_SUCCESS;
     }
     AssertMsgFailed(("rc=%Rrc cbBuf=%#x\n", rc, cbBuf));
@@ -5618,7 +5628,8 @@ static void ssmR3DataReadBeginV2(PSSMHANDLE pSSM)
     Assert(!pSSM->u.Read.cbDataBuffer || pSSM->u.Read.cbDataBuffer == pSSM->u.Read.offDataBuffer);
     Assert(!pSSM->u.Read.cbRecLeft);
 
-    pSSM->offUnit = 0;
+    pSSM->offUnit     = 0;
+    pSSM->offUnitUser = 0;
     pSSM->u.Read.cbRecLeft      = 0;
     pSSM->u.Read.cbDataBuffer   = 0;
     pSSM->u.Read.offDataBuffer  = 0;
@@ -5647,13 +5658,17 @@ static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
     {
         if (   pSSM->u.Read.cbDataBuffer != pSSM->u.Read.offDataBuffer
             && pSSM->u.Read.cbDataBuffer > 0)
+        {
+            LogRel(("SSM: At least %#x bytes left to read\n", pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer));
             rc = VERR_SSM_LOADED_TOO_LITTLE;
+        }
         else
         {
             rc = ssmR3DataReadRecHdrV2(pSSM);
             if (    RT_SUCCESS(rc)
                 &&  !pSSM->u.Read.fEndOfData)
             {
+                LogRel(("SSM: At least %#x bytes left to read\n", pSSM->u.Read.cbDataBuffer));
                 rc = VERR_SSM_LOADED_TOO_LITTLE;
                 AssertFailed();
             }
@@ -5666,7 +5681,7 @@ static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
 
 
 /**
- * Read reader that keep works the progress indicator and unit offset.
+ * Read raw record bytes, work the progress indicator and unit offset.
  *
  * @returns VBox status code. Does NOT set pSSM->rc.
  * @param   pSSM            The saved state handle.
@@ -6077,6 +6092,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
                 AssertMsgFailedReturn(("%x\n", pSSM->u.Read.u8TypeAndFlags), VERR_SSM_BAD_REC_TYPE);
         }
 
+        pSSM->offUnitUser += cbToRead;
         cbBuf -= cbToRead;
         pvBuf = (uint8_t *)pvBuf + cbToRead;
     } while (cbBuf > 0);
@@ -6114,6 +6130,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbToCopy);
         pvBuf  = (uint8_t *)pvBuf + cbToCopy;
         cbBuf -= cbToCopy;
+        pSSM->offUnitUser += cbToCopy;
         pSSM->u.Read.cbDataBuffer  = 0;
         pSSM->u.Read.offDataBuffer = 0;
     }
@@ -6186,6 +6203,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[0], cbToCopy);
         cbBuf -= cbToCopy;
         pvBuf = (uint8_t *)pvBuf + cbToCopy;
+        pSSM->offUnitUser       += cbToCopy;
         pSSM->u.Read.offDataBuffer = cbToCopy;
     } while (cbBuf > 0);
 
@@ -6227,6 +6245,7 @@ DECLINLINE(int) ssmR3DataRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 
     memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbBuf);
     pSSM->u.Read.offDataBuffer = off + (uint32_t)cbBuf;
+    pSSM->offUnitUser += cbBuf;
     Log4((cbBuf
           ? "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n"
           : "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n",
@@ -7679,6 +7698,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     pSSM->rc                    = VINF_SUCCESS;
     pSSM->cbUnitLeftV1          = 0;
     pSSM->offUnit               = UINT64_MAX;
+    pSSM->offUnitUser           = UINT64_MAX;
     pSSM->fLiveSave             = false;
     pSSM->pfnProgress           = NULL;
     pSSM->pvUser                = NULL;
@@ -7877,7 +7897,8 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                          * Call the execute handler.
                          */
                         pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDRV1, szName[UnitHdr.cchName]);
-                        pSSM->offUnit = 0;
+                        pSSM->offUnit      = 0;
+                        pSSM->offUnitUser  = 0;
                         pSSM->u.Read.uCurUnitVer  = UnitHdr.u32Version;
                         pSSM->u.Read.uCurUnitPass = SSM_PASS_FINAL;
                         pSSM->u.Read.pCurUnit     = pUnit;
@@ -7939,7 +7960,8 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                                 break;
                             }
 
-                            pSSM->offUnit = UINT64_MAX;
+                            pSSM->offUnit     = UINT64_MAX;
+                            pSSM->offUnitUser = UINT64_MAX;
                         }
                         else
                         {
@@ -8172,7 +8194,10 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                 pSSM->rc = rc;
             rc = ssmR3DataReadFinishV2(pSSM);
             if (RT_SUCCESS(rc))
-                pSSM->offUnit = UINT64_MAX;
+            {
+                pSSM->offUnit     = UINT64_MAX;
+                pSSM->offUnitUser = UINT64_MAX;
+            }
             else
             {
                 LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, pass %#x): %Rrc\n",
@@ -8707,7 +8732,8 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
                 {
                     rc = ssmR3StrmSeek(&pSSM->Strm, off + RT_OFFSETOF(SSMFILEUNITHDRV1, szName) + cbUnitNm, RTFILE_SEEK_BEGIN, 0);
                     pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDRV1, szName[cbUnitNm]);
-                    pSSM->offUnit = 0;
+                    pSSM->offUnit      = 0;
+                    pSSM->offUnitUser  = 0;
                     if (piVersion)
                         *piVersion = UnitHdr.u32Version;
                     return VINF_SUCCESS;
@@ -8890,6 +8916,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
     }
     pSSM->cbUnitLeftV1  = 0;
     pSSM->offUnit       = UINT64_MAX;
+    pSSM->offUnitUser   = UINT64_MAX;
 
     /*
      * Call the version specific workers.
