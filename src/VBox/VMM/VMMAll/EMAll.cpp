@@ -779,7 +779,8 @@ VMMDECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     /* Just return zero here; rather tricky to properly emulate this, especially as the specs are a mess. */
     pRegFrame->rax = 0;
     pRegFrame->rdx = 0;
-    /** @todo We should trigger a #GP here if the cpu doesn't support the index in ecx. */
+    /** @todo We should trigger a #GP here if the CPU doesn't support the index in ecx
+     *        but see @bugref{3472}! */
 
     NOREF(pVM);
     return VINF_SUCCESS;
