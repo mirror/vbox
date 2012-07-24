@@ -23,20 +23,21 @@ ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
 endif
 
 #
-# VBoxBios - Template for building the BIOS bits.
+# VBoxBios - Template for building 16-bit BIOS code.
 #
 TEMPLATE_VBoxBios = ROM
-TEMPLATE_VBoxBios_TOOL    = OPENWATCOM-16
-TEMPLATE_VBoxBios_LDTOOL  = OPENWATCOM-WL
-TEMPLATE_VBoxBios_ASTOOL  = OPENWATCOM-16
-TEMPLATE_VBoxBios_BLD_TRG = os-agnostic
+TEMPLATE_VBoxBios_TOOL         = OPENWATCOM-16
+TEMPLATE_VBoxBios_LDTOOL       = OPENWATCOM-WL
+TEMPLATE_VBoxBios_ASTOOL       = OPENWATCOM-16
+TEMPLATE_VBoxBios_BLD_TRG      = os-agnostic
 TEMPLATE_VBoxBios_BLD_TRG_ARCH = x86
-TEMPLATE_VBoxBios_BINSUFF = .rom
-TEMPLATE_VBoxBios_INCS    = .
-TEMPLATE_VBoxBios_ASFLAGS = -q -wx ## @todo add -0?
-TEMPLATE_VBoxBios_CFLAGS  = -q -3 -wx -zl -zu -s -oas -d1+ -ms
-TEMPLATE_VBoxBios_DEPS    = $(VBOX_VERSION_HEADER)
-TEMPLATE_VBoxBios_LDFLAGS = system dos  \
+TEMPLATE_VBoxBios_BINSUFF      = .rom
+TEMPLATE_VBoxBios_INCS         = .
+TEMPLATE_VBoxBios_ASFLAGS      = -q -wx ## @todo add -0?
+TEMPLATE_VBoxBios_CFLAGS       = -q -3 -wx -zl -zu -s -oas -d1+ -ms
+TEMPLATE_VBoxBios_CXXFLAGS     = $(TEMPLATE_VBoxBios_CFLAGS)
+TEMPLATE_VBoxBios_DEPS         = $(VBOX_VERSION_HEADER)
+TEMPLATE_VBoxBios_LDFLAGS      = system dos  \
 	debug all \
 	option quiet, nofarcalls, map, verbose, statics, symfile \
 	disable 1014, 1023, 2120
@@ -45,3 +46,16 @@ TEMPLATE_VBoxBios_POST_CMDS = \
 	$(QUIET)$(MV_EXT) -f $(out) $(out).tmp \
 	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
 	&& $(RM_EXT) -f $(out).tmp
+
+#
+# VBoxBios - Template for building 32-bit BIOS code.
+#
+TEMPLATE_VBoxBios32Lib = ROM
+TEMPLATE_VBoxBios32Lib_EXTENDS    = VBoxBios
+TEMPLATE_VBoxBios32Lib_TOOL       = OPENWATCOM
+TEMPLATE_VBoxBios32Lib_ASTOOL     = OPENWATCOM
+TEMPLATE_VBoxBios32Lib_CFLAGS     = -q -wx -zu -s -oas -d1+ -ms -nt=BIOS32 -nd=BIOS32
+TEMPLATE_VBoxBios32Lib_CXXFLAGS   = $(TEMPLATE_VBoxBios32_CFLAGS)
+TEMPLATE_VBoxBios32Lib_LNK_DEPS   = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBoxBios32Lib_POST_CMDS  = $(NO_SUCH_VARIABLE)
+

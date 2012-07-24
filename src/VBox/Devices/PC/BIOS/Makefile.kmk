@@ -38,7 +38,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	  segment _DATA \
  	 clname CODE \
  	  segment _TEXT   segaddr=0xF000 offset=0x1600 \
- 	  segment BIOS32  segaddr=0xF000 offset=0xDE00 \
+ 	  segment BIOS32  segaddr=0xF000 offset=0xDB00 \
  	  segment BIOSSEG segaddr=0xF000 offset=0xE000
  VBoxPcBios_SOURCES = \
  	bios.c \
@@ -52,17 +52,24 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	serial.c \
  	system.c \
  	timepci.c \
- 	pcibios.c \
  	ps2mouse.c \
  	parallel.c \
  	logo.c \
  	scsi.c \
  	ahci.c \
+ 	pcibios.c \
  	pciutil.c \
  	vds.c \
  	../../BiosCommonCode/support.asm \
  	pcibio32.asm \
+ 	$(VBoxPcBios32_1_TARGET) \
  	orgs.asm
+
+ # For 32-bit C code in PC BIOS.
+ LIBRARIES += VBoxPcBios32Lib
+ VBoxPcBios32_TEMPLATE = VBoxBios32
+ VBoxPcBios32_SOURCES = \
+       pci32.c
 
  #
  # Updates the alternative source file.
