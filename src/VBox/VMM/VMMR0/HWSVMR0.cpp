@@ -1705,7 +1705,7 @@ ResumeExecution:
 
     /*
      * No reason to sync back the CRx and DRx registers as they cannot be changed by the guest
-     * unless in the nested paging case where CR3 & CR3 can be changed by the guest.
+     * unless in the nested paging case where CR3 can be changed by the guest.
      */
     if (   pVM->hwaccm.s.fNestedPaging
         && pCtx->cr3 != pVMCB->guest.u64CR3)
