@@ -58,7 +58,7 @@ uint16_t vesa_get_mode(uint16_t __far *mode);
     "mov    ax, 4F03h"      \
     "int    10h"            \
     "mov    es:[di], bx"    \
-    parm [es di] modify [ax] nomemory;
+    parm [es di] modify [ax bx] nomemory;
 
 
 /**
