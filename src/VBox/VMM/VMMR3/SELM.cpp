@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -79,15 +79,6 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
-
-/**
- * Enable or disable tracking of Guest's GDT/LDT/TSS.
- * @{
- */
-#define SELM_TRACK_GUEST_GDT_CHANGES
-#define SELM_TRACK_GUEST_LDT_CHANGES
-#define SELM_TRACK_GUEST_TSS_CHANGES
-/** @} */
 
 /**
  * Enable or disable tracking of Shadow GDT/LDT/TSS.
@@ -538,7 +529,6 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
      * Uninstall guest GDT/LDT/TSS write access handlers.
      */
     int rc;
-#ifdef SELM_TRACK_GUEST_GDT_CHANGES
     if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
@@ -547,16 +537,12 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
         pVM->selm.s.GuestGdtr.cbGdt = 0;
     }
     pVM->selm.s.fGDTRangeRegistered = false;
-#endif
-#ifdef SELM_TRACK_GUEST_LDT_CHANGES
     if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
         AssertRC(rc);
         pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
     }
-#endif
-#ifdef SELM_TRACK_GUEST_TSS_CHANGES
     if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestTss);
@@ -564,7 +550,6 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
         pVM->selm.s.GCPtrGuestTss = RTRCPTR_MAX;
         pVM->selm.s.GCSelTss      = RTSEL_MAX;
     }
-#endif
 
     /*
      * Re-initialize other members.
@@ -595,7 +580,6 @@ VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
      * Uninstall guest GDT/LDT/TSS write access handlers.
      */
     int rc;
-#ifdef SELM_TRACK_GUEST_GDT_CHANGES
     if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
@@ -604,16 +588,12 @@ VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
         pVM->selm.s.GuestGdtr.cbGdt = 0;
     }
     pVM->selm.s.fGDTRangeRegistered = false;
-#endif
-#ifdef SELM_TRACK_GUEST_LDT_CHANGES
     if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
         AssertRC(rc);
         pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
     }
-#endif
-#ifdef SELM_TRACK_GUEST_TSS_CHANGES
     if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
     {
         rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestTss);
@@ -621,7 +601,6 @@ VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
         pVM->selm.s.GCPtrGuestTss = RTRCPTR_MAX;
         pVM->selm.s.GCSelTss      = RTSEL_MAX;
     }
-#endif
 
     /*
      * Unregister shadow GDT/LDT/TSS write access handlers.
@@ -1039,16 +1018,12 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
         {
             if (pVM->selm.s.GuestGdtr.cbGdt > GDTR.cbGdt)
                 memset(pGDTE, 0, pVM->selm.s.GuestGdtr.cbGdt - GDTR.cbGdt);
-#ifndef SELM_TRACK_GUEST_GDT_CHANGES
-            pVM->selm.s.GuestGdtr.cbGdt = GDTR.cbGdt;
-#endif
         }
 
-#ifdef SELM_TRACK_GUEST_GDT_CHANGES
         /*
          * Check if Guest's GDTR is changed.
          */
-        if (    GDTR.pGdt != pVM->selm.s.GuestGdtr.pGdt
+        if (    GDTR.pGdt  != pVM->selm.s.GuestGdtr.pGdt
             ||  GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
         {
             Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%016RX64 cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
@@ -1071,7 +1046,6 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
             pVM->selm.s.GuestGdtr = GDTR;
             pVM->selm.s.fGDTRangeRegistered = true;
         }
-#endif
     }
 
     /*
@@ -1112,14 +1086,12 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
         {
             /* ldtr = 0 - update hyper LDTR and deregister any active handler. */
             CPUMSetHyperLDTR(pVCpu, 0);
-#ifdef SELM_TRACK_GUEST_LDT_CHANGES
             if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
             {
                 rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
                 AssertRC(rc);
                 pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
             }
-#endif
             STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
             return VINF_SUCCESS;
         }
@@ -1148,14 +1120,12 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
              * the impossible, we simply ignore it.
              */
             CPUMSetHyperLDTR(pVCpu, 0);
-#ifdef SELM_TRACK_GUEST_LDT_CHANGES
             if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
             {
                 rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
                 AssertRC(rc);
                 pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
             }
-#endif
             STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
             return VINF_SUCCESS;
         }
@@ -1170,7 +1140,6 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
             GCPtrLdt = pVM->selm.s.GCPtrGuestLdt;   /* use the old one */
 
 
-#ifdef SELM_TRACK_GUEST_LDT_CHANGES
         /** @todo Handle only present LDT segments. */
     //    if (pDesc->Gen.u1Present)
         {
@@ -1217,9 +1186,6 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
                 pVM->selm.s.cbLdtLimit = cbLdt;
             }
         }
-#else
-        pVM->selm.s.cbLdtLimit = cbLdt;
-#endif
 
         /*
          * Calc Shadow LDT base.
