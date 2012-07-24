@@ -62,7 +62,7 @@ int GuestCtrlEvent::Cancel(void)
         }
     }
 
-    LogFlowThisFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -119,18 +119,18 @@ int GuestCtrlEvent::Wait(ULONG uTimeoutMS)
 ///////////////////////////////////////////////////////////////////////////////
 
 GuestCtrlCallback::GuestCtrlCallback(void)
-    : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
-      uFlags(0),
-      pvData(NULL),
-      cbData(0)
+    : pvData(NULL),
+      cbData(0),
+     mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      uFlags(0)
 {
 }
 
 GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
-    : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
-      uFlags(0),
-      pvData(NULL),
-      cbData(0)
+    : pvData(NULL),
+      cbData(0),
+      mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      uFlags(0)
 {
     int rc = Init(enmType);
     AssertRC(rc);
@@ -233,7 +233,7 @@ void GuestProcessEvent::Destroy(void)
     mWaitFlags = ProcessWaitForFlag_None;
 }
 
-int GuestProcessEvent::Signal(ProcessWaitResult enmResult, int rc /*= VINF_SUCCESS*/)
+int GuestProcessEvent::Signal(ProcessWaitResult_T enmResult, int rc /*= VINF_SUCCESS*/)
 {
     mWaitResult.mRC = rc;
     mWaitResult.mResult = enmResult;

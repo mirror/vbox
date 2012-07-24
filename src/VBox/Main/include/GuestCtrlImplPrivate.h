@@ -172,7 +172,7 @@ public:
 
     GuestProcessWaitResult GetResult(void) { return mWaitResult; }
 
-    int Signal(ProcessWaitResult enmResult, int rc = VINF_SUCCESS);
+    int Signal(ProcessWaitResult_T enmResult, int rc = VINF_SUCCESS);
 
 protected:
 

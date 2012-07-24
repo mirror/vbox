@@ -543,7 +543,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
     int callbackRC = VINF_SUCCESS;
 
     BOOL fSignal = FALSE;
-    ProcessWaitResult enmWaitResult;
+    ProcessWaitResult_T enmWaitResult;
     uint32_t uWaitFlags = mData.mWaitEvent
                         ? mData.mWaitEvent->GetWaitFlags() : 0;
     switch (pData->u32Status)
@@ -761,7 +761,7 @@ int GuestProcess::sendCommand(uint32_t uFunction,
     return rc;
 }
 
-int GuestProcess::signalWaiters(ProcessWaitResult enmWaitResult, int rc /*= VINF_SUCCESS*/)
+int GuestProcess::signalWaiters(ProcessWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS*/)
 {
     LogFlowFunc(("enmWaitResult=%d, rc=%Rrc, mWaitCount=%RU32, mWaitEvent=%p\n",
                  enmWaitResult, rc, mData.mWaitCount, mData.mWaitEvent));
