@@ -43,9 +43,9 @@
  * @retval  retVal       The new framebuffer
  */
 extern "C" DECLEXPORT(HRESULT) VBoxRegisterFFmpegFB(ULONG width,
-                                     ULONG height, ULONG bitrate,
-                                     com::Bstr filename,
-                                     IFramebuffer **retVal)
+                                                    ULONG height, ULONG bitrate,
+                                                    com::Bstr filename,
+                                                    IFramebuffer **retVal)
 {
     Log2(("VBoxRegisterFFmpegFB: called\n"));
     FFmpegFB *pFramebuffer = new FFmpegFB(width, height, bitrate, filename);
@@ -109,21 +109,21 @@ FFmpegFB::FFmpegFB(ULONG width, ULONG height, ULONG bitrate,
     Assert(width % 2 == 0 && height % 2 == 0);
     /* For temporary RGB frame we allocate enough memory to deal with
        RGB16 to RGB32 */
-    mTempRGBBuffer = reinterpret_cast<uint8_t *>(malloc(cPixels * 4));
-    if (mTempRGBBuffer == 0)
+    mTempRGBBuffer = reinterpret_cast<uint8_t *>(RTMemAlloc(cPixels * 4));
+    if (!mTempRGBBuffer)
         goto nomem_temp_rgb_buffer;
-    mYUVBuffer = reinterpret_cast<uint8_t *>(malloc(mYUVFrameSize));
-    if (mYUVBuffer == 0)
+    mYUVBuffer = reinterpret_cast<uint8_t *>(RTMemAlloc(mYUVFrameSize));
+    if (!mYUVBuffer)
         goto nomem_yuv_buffer;
     return;
 
     /* C-based memory allocation and how to deal with it in C++ :) */
 nomem_yuv_buffer:
     Log(("Failed to allocate memory for mYUVBuffer\n"));
-    free(mYUVBuffer);
+    RTMemFree(mYUVBuffer);
 nomem_temp_rgb_buffer:
     Log(("Failed to allocate memory for mTempRGBBuffer\n"));
-    free(mTempRGBBuffer);
+    RTMemFree(mTempRGBBuffer);
     mOutOfMemory = true;
 #else
     LogFlow(("Creating FFmpegFB object %p, width=%lu, height=%lu\n",
@@ -132,16 +132,16 @@ nomem_temp_rgb_buffer:
     /* For temporary RGB frame we allocate enough memory to deal with
        RGB16 to RGB32 */
     mTempRGBBuffer = reinterpret_cast<uint8_t *>(av_malloc(cPixels * 4));
-    if (mTempRGBBuffer == 0)
+    if (!mTempRGBBuffer)
         goto nomem_temp_rgb_buffer;
     mYUVBuffer = reinterpret_cast<uint8_t *>(av_malloc(mYUVFrameSize));
-    if (mYUVBuffer == 0)
+    if (!mYUVBuffer)
         goto nomem_yuv_buffer;
     mFrame = avcodec_alloc_frame();
-    if (mFrame == 0)
+    if (!mFrame)
         goto nomem_mframe;
     mOutBuf = reinterpret_cast<uint8_t *>(av_malloc(mYUVFrameSize * 2));
-    if (mOutBuf == 0)
+    if (!mOutBuf)
         goto nomem_moutbuf;
 
     return;
@@ -188,11 +188,11 @@ FFmpegFB::~FFmpegFB()
     RTCritSectDelete(&mCritSect);
 
     /* We have already freed the stream above */
-    if (mTempRGBBuffer != 0)
-        free(mTempRGBBuffer);
-    if (mYUVBuffer != 0)
-        free(mYUVBuffer);
-    if (mRGBBuffer != 0)
+    if (mTempRGBBuffer)
+        RTMemFree(mTempRGBBuffer);
+    if (mYUVBuffer)
+        RTMemFree(mYUVBuffer);
+    if (mRGBBuffer)
         RTMemFree(mRGBBuffer);
 #else
     if (mpFormatContext != 0)
@@ -231,15 +231,15 @@ FFmpegFB::~FFmpegFB()
     RTCritSectDelete(&mCritSect);
     /* We have already freed the stream above */
     mpStream = 0;
-    if (mTempRGBBuffer != 0)
+    if (mTempRGBBuffer)
         av_free(mTempRGBBuffer);
-    if (mYUVBuffer != 0)
+    if (mYUVBuffer)
         av_free(mYUVBuffer);
-    if (mFrame != 0)
+    if (mFrame)
         av_free(mFrame);
-    if (mOutBuf != 0)
+    if (mOutBuf)
         av_free(mOutBuf);
-    if (mRGBBuffer != 0)
+    if (mRGBBuffer)
         RTMemFree(mRGBBuffer);
 #endif
 }
@@ -1108,7 +1108,7 @@ HRESULT FFmpegFB::do_encoding_and_write()
 
     if (mYUVBuffer != NULL)
     {
-        AssertReturn(VpxRawImage.w*VpxRawImage.h*3/2 <= sizeof(mYUVFrameSize), E_UNEXPECTED);
+// BOGUS! AssertReturn(VpxRawImage.w*VpxRawImage.h*3/2 <= sizeof(mYUVFrameSize), E_UNEXPECTED);
         memcpy(VpxRawImage.planes[0], (uint8_t *)mYUVBuffer, VpxRawImage.w*VpxRawImage.h*3/2);
     }
 
