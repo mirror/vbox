@@ -101,5 +101,20 @@ else
 endif
 
 
+#
+# The VGA BIOS Logo.
+#
+LIBRARIES += VgaDefBiosLogo
+VgaDefBiosLogo_TEMPLATE  = VBOXR3
+VgaDefBiosLogo_INCS      = $(VBOX_PATH_DEVICES_SRC)
+VgaDefBiosLogo_SOURCES   = $(VgaBiosBin_0_OUTDIR)/VgaDefBiosLogo.c
+VgaDefBiosLogo_CLEAN     = $(VgaBiosBin_0_OUTDIR)/VgaDefBiosLogo.c
+
+# Rule for making the bios logo.
+$$(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c: $(VBOX_BRAND_BIOS_LOGO) $(VBOX_BIN2C)
+	$(call MSG_TOOL,bin2c,VgaDefBiosLogo,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) VgaDefBiosLogo $< $@
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
