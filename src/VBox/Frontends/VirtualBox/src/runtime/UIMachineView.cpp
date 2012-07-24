@@ -150,11 +150,26 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
         default:
             break;
     }
+
+    /* Prepare common things: */
+    pMachineView->prepareCommon();
+
+    /* Prepare event-filters: */
+    pMachineView->prepareFilters();
+
+    /* Prepare connections: */
+    pMachineView->prepareConnections();
+
+    /* Prepare console connections: */
+    pMachineView->prepareConsoleConnections();
+
+    /* Initialization: */
     pMachineView->sltMachineStateChanged();
     /** @todo Can we move the call to sltAdditionsStateChanged() from the
      * subclass constructors here too?  It is called for Normal and Seamless,
      * but not for Fullscreen and Scale.  However for Scale it is a no op.,
      * so it would not hurt.  Would it hurt for Fullscreen? */
+
     return pMachineView;
 }
 
@@ -274,18 +289,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 
     /* Prepare frame buffer: */
     prepareFrameBuffer();
-
-    /* Prepare common things: */
-    prepareCommon();
-
-    /* Prepare event-filters: */
-    prepareFilters();
-
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Prepare console connections: */
-    prepareConsoleConnections();
 }
 
 UIMachineView::~UIMachineView()

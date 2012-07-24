@@ -110,13 +110,13 @@ protected:
     virtual ~UIMachineView();
 
     /* Prepare routines: */
-    virtual void prepareViewport();
-    virtual void prepareFrameBuffer();
+    void prepareViewport();
+    void prepareFrameBuffer();
     virtual void prepareCommon();
     virtual void prepareFilters();
     virtual void prepareConnections();
     virtual void prepareConsoleConnections();
-    virtual void loadMachineViewSettings();
+    void loadMachineViewSettings();
 
     /* Cleanup routines: */
     //virtual void saveMachineViewSettings() {}
