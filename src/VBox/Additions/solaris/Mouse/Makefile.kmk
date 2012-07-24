@@ -50,6 +50,11 @@ else
 endif
 
 
+PROGRAMS += vboxmslnk
+vboxmslnk_TEMPLATE    = NewVBoxGuestR3Exe
+vboxmslnk_SOURCES     = vboxmslnk.c
+
+
 if 0 # Broken - unresolved externals: vbglDriver*, RTR0AssertPanicSystem.
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
  PROGRAMS += tstVBoxMouse-solaris
