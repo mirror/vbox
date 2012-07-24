@@ -26,6 +26,7 @@ endif
 # VBoxBios - Template for building 16-bit BIOS code.
 #
 TEMPLATE_VBoxBios = ROM
+TEMPLATE_VBoxBios_INSTTYPE     = none
 TEMPLATE_VBoxBios_TOOL         = OPENWATCOM-16
 TEMPLATE_VBoxBios_LDTOOL       = OPENWATCOM-WL
 TEMPLATE_VBoxBios_ASTOOL       = OPENWATCOM-16
@@ -52,6 +53,7 @@ TEMPLATE_VBoxBios_POST_CMDS = \
 #
 TEMPLATE_VBoxBios32Lib = ROM
 TEMPLATE_VBoxBios32Lib_EXTENDS    = VBoxBios
+TEMPLATE_VBoxBios32Lib_INSTTYPE   = none
 TEMPLATE_VBoxBios32Lib_TOOL       = OPENWATCOM
 TEMPLATE_VBoxBios32Lib_ASTOOL     = OPENWATCOM
 TEMPLATE_VBoxBios32Lib_CFLAGS     = -q -wx -zu -s -oas -d1+ -ms -nt=BIOS32 -nd=BIOS32
