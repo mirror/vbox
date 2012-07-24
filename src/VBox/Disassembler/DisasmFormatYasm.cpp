@@ -1433,8 +1433,35 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
             case OP_INT3:
             case OP_INTO:
             case OP_HLT:
-            /* Many more to can be added... */
+            /** @todo Many more to can be added here. */
                 return true;
+            default:
+                break;
+        }
+    }
+
+    /* FPU and other instructions that ignores operand size override. */
+    if (fPrefixes & DISPREFIX_OPSIZE)
+    {
+        switch (pDis->pCurInstr->uOpcode)
+        {
+            /* FPU: */
+            case OP_FIADD:
+            case OP_FIMUL:
+            case OP_FISUB:
+            case OP_FISUBR:
+            case OP_FIDIV:
+            case OP_FIDIVR:
+            /** @todo there are many more. */
+                return true;
+
+            case OP_MOV:
+                /** @todo could be that we're not disassembling these correctly. */
+                if (pDis->pCurInstr->fParam1 == OP_PARM_Sw)
+                    return true;
+                /** @todo what about the other way? */
+                break;
+
             default:
                 break;
         }
