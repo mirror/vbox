@@ -3140,6 +3140,8 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_SREG_FS             4
 #define X86_SREG_GS             5
 /** @} */
+/** Segment register count. */
+#define X86_SREG_COUNT          6
 
 
 /** @} */
