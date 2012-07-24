@@ -111,7 +111,7 @@ public:
     int currentMessageInfo(uint32_t *puMsg, uint32_t *pcParms);
     int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
-    bool isMessageWaiting() const { return m_pNextPathMsg; }
+    bool isMessageWaiting() const { return !!m_pNextPathMsg; }
 
 protected:
     struct PathEntry
