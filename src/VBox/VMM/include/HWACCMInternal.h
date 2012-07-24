@@ -627,7 +627,7 @@ typedef struct HWACCMCPU
         /** Virtual address of the MSR load area (1 page). */
         R0PTRTYPE(uint8_t *)        pHostMSR;
 
-        /* Number of automatically loaded/restored MSRs. */
+        /* Number of automatically loaded/restored guest MSRs during the world switch. */
         uint32_t                    cCachedMSRs;
         uint32_t                    uAlignement;
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
