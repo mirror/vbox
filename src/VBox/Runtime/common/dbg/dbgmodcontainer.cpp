@@ -479,7 +479,8 @@ static DECLCALLBACK(int) rtDbgModContainer_SegmentAdd(PRTDBGMODINT pMod, RTUINTP
         RTUINTPTR uCurRva     = pThis->paSegs[iSeg].off;
         RTUINTPTR uCurRvaLast = uCurRva + RT_MAX(pThis->paSegs[iSeg].cb, 1) - 1;
         if (   uRva      <= uCurRvaLast
-            && uRvaLast  >= uCurRva)
+            && uRvaLast  >= uCurRva
+            && (cb != 0 || pThis->paSegs[iSeg].cb != 0)) /* HACK ALERT! Allow empty segments to share space (bios/watcom). */
             AssertMsgFailedReturn(("uRva=%RTptr uRvaLast=%RTptr (cb=%RTptr) \"%s\";\n"
                                    "uRva=%RTptr uRvaLast=%RTptr (cb=%RTptr) \"%s\" iSeg=%#x\n",
                                    uRva, uRvaLast, cb, pszName,
@@ -564,10 +565,18 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModContainer_RvaToSegOff(PRTDBGMODINT pMod
         uint32_t iLast  = cSegs - 1;
         for (;;)
         {
-            uint32_t    iSeg   = iFirst + (iFirst - iLast) / 2;
+            uint32_t    iSeg   = iFirst + (iLast - iFirst) / 2;
             RTUINTPTR   offSeg = uRva - paSeg[iSeg].off;
             if (offSeg < paSeg[iSeg].cb)
             {
+#if 0 /* Enable if we change the above test. */
+                if (offSeg == 0 && paSeg[iSeg].cb == 0)
+                    while (   iSeg > 0
+                           && paSeg[iSeg - 1].cb  == 0
+                           && paSeg[iSeg - 1].off == uRva)
+                        iSeg--;
+#endif
+
                 if (poffSeg)
                     *poffSeg = offSeg;
                 return iSeg;
