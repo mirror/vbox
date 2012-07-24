@@ -16,6 +16,7 @@
  */
 
 #include "GuestImpl.h"
+#include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
 
 #include "Global.h"
@@ -764,6 +765,8 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
             break;
     }
 #endif /* VBOX_WITH_GUEST_CONTROL_LEGACY */
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -2723,10 +2726,8 @@ int Guest::sessionClose(ComObjPtr<GuestSession> pSession)
 }
 
 int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, const Utf8Str &strDomain,
-                         const Utf8Str &strSessionName, IGuestSession **aGuestSession)
+                         const Utf8Str &strSessionName, ComObjPtr<GuestSession> &pGuestSession)
 {
-    AssertPtrReturn(aGuestSession, VERR_INVALID_POINTER);
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int rc = VERR_MAX_PROCS_REACHED;
@@ -2755,17 +2756,12 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
         if (RT_FAILURE(rc)) throw rc;
 
         /* Create the session object. */
-        ComObjPtr<GuestSession> pGuestSession;
         HRESULT hr = pGuestSession.createObject();
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
         rc = pGuestSession->init(this, uNewSessionID,
                                  strUser, strPassword, strDomain, strSessionName);
         if (RT_FAILURE(rc)) throw rc;
-
-        /* Return guest session to the caller. */
-        hr = pGuestSession.queryInterfaceTo(aGuestSession);
-        if (FAILED(hr)) throw VERR_COM_OBJECT_NOT_FOUND;
 
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
     }
@@ -2803,12 +2799,36 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int rc = sessionCreate(aUser, aPassword, aDomain, aSessionName, aGuestSession);
+    HRESULT hr = S_OK;
 
-    /** @todo Do setError() here. */
-    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(hr);
+    ComObjPtr<GuestSession> pSession;
+    int rc = sessionCreate(aUser, aPassword, aDomain, aSessionName, pSession);
+    if (RT_SUCCESS(rc))
+    {
+        /* Return guest session to the caller. */
+        HRESULT hr2 = pSession.queryInterfaceTo(aGuestSession);
+        if (FAILED(hr2))
+            rc = VERR_COM_OBJECT_NOT_FOUND;
+    }
 
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_MAX_PROCS_REACHED:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
+                              VERR_MAX_PROCS_REACHED);
+                break;
+
+            /** @todo Add more errors here. */
+
+           default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session, rc=%Rrc"), rc);
+                break;
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

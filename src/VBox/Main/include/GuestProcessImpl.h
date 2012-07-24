@@ -61,31 +61,40 @@ public:
 
     STDMETHOD(Read)(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(Terminate)(void);
-    STDMETHOD(WaitFor)(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitReason_T *aReason);
+    STDMETHOD(WaitFor)(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
     STDMETHOD(Write)(ULONG aHandle, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
     /** @}  */
 
 public:
     /** @name Public internal methods.
      * @{ */
-    int callbackAdd(GuestCtrlCallback *pCallback, ULONG *puContextID);
     int callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     inline bool callbackExists(ULONG uContextID);
+    void close(void);
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
+    int readData(ULONG uHandle, ULONG uSize, ULONG uTimeoutMS, BYTE *pbData, size_t cbData);
+    int startProcess(void);
+    int startProcessAsync(void);
+    int terminateProcess(void);
+    int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWaitResult &guestResult);
+    HRESULT waitResultToErrorEx(const GuestProcessWaitResult &waitResult, bool fLog);
+    int writeData(ULONG uHandle, BYTE const *pbData, size_t cbData, ULONG uTimeoutMS, ULONG *puWritten);
+    /** @}  */
+
+protected:
+    /** @name Protected internal methods.
+     * @{ */
+    inline int callbackAdd(GuestCtrlCallback *pCallback, ULONG *puContextID);
+    inline int callbackRemove(ULONG uContextID);
     int onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDATACLIENTDISCONNECTED pData);
     int onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECINSTATUS pData);
     int onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECSTATUS pData);
     int onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECOUT pData);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
-    int readData(ULONG uHandle, ULONG uSize, ULONG uTimeoutMS, BYTE *pbData, size_t cbData);
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
-    int signalWaiters(int rc, const Utf8Str strMessage = "");
-    int startProcess(int *pRC = NULL, Utf8Str *pstrMessage = NULL);
+    int signalWaiters(ProcessWaitResult enmWaitResult, int rc = VINF_SUCCESS);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
-    int terminateProcess(void);
-    int waitFor(uint32_t fFlags, ULONG uTimeoutMS, ProcessWaitReason_T *penmReason);
-    int writeData(ULONG uHandle, BYTE const *pbData, size_t cbData, ULONG uTimeoutMS, ULONG *puWritten);
     /** @}  */
 
 private:
@@ -109,18 +118,17 @@ private:
         ULONG                    mProcessID;
         /** The current process status. */
         ProcessStatus_T          mStatus;
-        /** Flag indicating whether the process has been started. */
+        /** Flag indicating whether the process has been started
+         *  so that it can't be started a second time. */
         bool                     mStarted;
         /** The next upcoming context ID. */
         ULONG                    mNextContextID;
-        /** Flag indicating someone is waiting for an event. */
-        bool                     mWaiting;
-        /** The waiting mutex. */
-        RTSEMMUTEX               mWaitMutex;
-        /** The waiting flag(s). */
-        uint32_t                 mWaitFlags;
-        /** The waiting event. */
-        RTSEMEVENT               mWaitEvent;
+        /** How many waiters? At the moment there can only
+         *  be one. */
+        uint32_t                 mWaitCount;
+        /** The actual process event for doing the waits.
+         *  At the moment we only support one wait a time. */
+        GuestProcessEvent       *mWaitEvent;
     } mData;
 };
 

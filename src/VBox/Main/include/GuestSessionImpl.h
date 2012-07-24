@@ -125,7 +125,7 @@ public:
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
     int                     processClose(ComObjPtr<GuestProcess> pProcess);
-    int                     processCreateExInteral(const GuestProcessInfo &aProcInfo, IGuestProcess **aProcess);
+    int                     processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             processExists(ULONG uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
     /** @}  */

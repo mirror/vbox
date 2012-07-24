@@ -18,6 +18,7 @@
 #ifndef ____H_GUESTIMPLPRIVATE
 #define ____H_GUESTIMPLPRIVATE
 
+#include <iprt/asm.h>
 #include <iprt/semaphore.h>
 
 #include <VBox/com/com.h>
@@ -66,17 +67,15 @@ typedef std::vector <Utf8Str> ProcessArguments;
 
 
 /**
- * Generic class for a all guest control callbacks.
+ * Generic class for a all guest control callbacks/events.
  */
-class GuestCtrlCallback
+class GuestCtrlEvent
 {
 public:
 
-    GuestCtrlCallback(void);
+    GuestCtrlEvent(void);
 
-    GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType);
-
-    virtual ~GuestCtrlCallback(void);
+    virtual ~GuestCtrlEvent(void);
 
     /** @todo Copy/comparison operator? */
 
@@ -86,43 +85,103 @@ public:
 
     bool Canceled(void);
 
-    int Init(eVBoxGuestCtrlCallbackType enmType);
+    virtual void Destroy(void);
 
-    void Destroy(void);
+    int Init(void);
 
-    int Signal(int rc = VINF_SUCCESS, const Utf8Str &strMsg = "");
-
-    Utf8Str GetMessage(void) { return mMessage; }
+    virtual int Signal(int rc = VINF_SUCCESS);
 
     int GetResultCode(void) { return mRC; }
-
-    eVBoxGuestCtrlCallbackType GetType(void) { return mType; }
 
     int Wait(ULONG uTimeoutMS);
 
 protected:
 
-    /** The callback type. */
-    eVBoxGuestCtrlCallbackType  mType;
-    /** Callback flags. */
-    uint32_t                    uFlags;
     /** Was the callback canceled? */
     bool                        fCanceled;
     /** Did the callback complete? */
     bool                        fCompleted;
+    /** The event semaphore for triggering
+     *  the actual event. */
+    RTSEMEVENT                  hEventSem;
+    /** The waiting mutex. */
+    RTSEMMUTEX                  hEventMutex;
+    /** Overall result code. */
+    int                         mRC;
+};
+
+/*
+ * Class representing a guest control callback.
+ */
+class GuestCtrlCallback : public GuestCtrlEvent
+{
+public:
+    GuestCtrlCallback(void);
+
+    GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType);
+
+    virtual ~GuestCtrlCallback(void);
+
+public:
+
+    void Destroy(void);
+
+    int Init(eVBoxGuestCtrlCallbackType enmType);
+
+    eVBoxGuestCtrlCallbackType GetCallbackType(void) { return mType; }
+
+protected:
+
     /** Pointer to user-supplied data. */
     void                       *pvData;
     /** Size of user-supplied data. */
     size_t                      cbData;
-    /** The event semaphore triggering the*/
-    RTSEMEVENT                  hEventSem;
-    /** Overall result code. */
-    int                         mRC;
-    /** Error / information message to the
-     *  result code. */
-    Utf8Str                     mMessage;
+    /** The callback type. */
+    eVBoxGuestCtrlCallbackType  mType;
+    /** Callback flags. */
+    uint32_t                    uFlags;
 };
 typedef std::map < uint32_t, GuestCtrlCallback* > GuestCtrlCallbacks;
+
+struct GuestProcessWaitResult
+{
+    /** The wait result when returning from the wait call. */
+    ProcessWaitResult_T         mResult;
+    int                         mRC;
+};
+
+/*
+ * Class representing a guest control process event.
+ */
+class GuestProcessEvent : public GuestCtrlEvent
+{
+public:
+    GuestProcessEvent(void);
+
+    GuestProcessEvent(uint32_t uWaitFlags);
+
+    virtual ~GuestProcessEvent(void);
+
+public:
+
+    void Destroy(void);
+
+    int Init(uint32_t uWaitFlags);
+
+    uint32_t GetWaitFlags(void) { return ASMAtomicReadU32(&mWaitFlags); }
+
+    GuestProcessWaitResult GetResult(void) { return mWaitResult; }
+
+    int Signal(ProcessWaitResult enmResult, int rc = VINF_SUCCESS);
+
+protected:
+
+    /** The waiting flag(s). The specifies what to
+     *  wait for. */
+    uint32_t                    mWaitFlags;
+    /** Structure containing the overall result. */
+    GuestProcessWaitResult      mWaitResult;
+};
 
 /**
  * Simple structure mantaining guest credentials.

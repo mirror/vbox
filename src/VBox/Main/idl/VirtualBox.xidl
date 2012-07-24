@@ -8829,14 +8829,17 @@
   </enum>
   
   <enum
-    name="ProcessWaitReason"
-    uuid="3fcbabf5-27e0-407a-9881-421b36c23978"
+    name="ProcessWaitResult"
+    uuid="b03af138-c812-45eb-939d-5d564bd0b89a"
     >
     <desc>
       TODO
     </desc>
 
-    <const name="Status"                 value="0">
+    <const name="None"                   value="0">
+      <desc>TODO</desc>
+    </const>
+    <const name="Status"                 value="1">
       <desc>TODO</desc>
     </const>    
     <const name="Error"                  value="10">
@@ -9910,7 +9913,7 @@
       <param name="timeoutMS" type="unsigned long" dir="in">
         <desc>TODO</desc>
       </param>
-      <param name="reason" type="ProcessWaitReason" dir="return">
+      <param name="reason" type="ProcessWaitResult" dir="return">
         <desc>TODO</desc>
       </param>
     </method>
