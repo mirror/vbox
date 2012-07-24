@@ -122,13 +122,7 @@ typedef struct DRVHOSTPARALLEL
     /** Status read buffer. */
     uint8_t                       u8ReadInStatus;
     /** Parallel port name */
-    /** @todo r=bird: This is an array, they start with 'a'. However, this seems
-     * to be a string, and they are not uint8_t but char and are prefixed with 'sz'
-     * in char array form.
-     *
-     * Also, the use of tabs as indentation in anything but Makefiles is
-     * forbidden.  That is not a guideline, it's the law. :-) (See above line.) */
-    uint8_t                       u8ParportName[6];
+    char                          szParportName[6];
     /** Whether the parallel port is available or not. */
     bool                          fParportAvail;
 #endif /* VBOX_WITH_WIN_PARPORT_SUP */
@@ -422,36 +416,31 @@ static int drvWinHostGetparportAddr(PDRVHOSTPARALLEL pThis)
     DeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
     for (u32Idx = 0; SetupDiEnumDeviceInfo(hDevInfo, u32Idx, &DeviceInfoData); u32Idx++)
     {
-        uint32_t u32DataType; /** @todo r=bird: why do you use uint32_t here when the function wants a DWORD? */
+        DWORD dwDataType;
         uint8_t *pBuf = NULL;
-        uint32_t u32BufSize = 0; /** @todo r=bird: ditto */
+        DWORD dwBufSize = 0;
 
         while (!SetupDiGetDeviceRegistryProperty(hDevInfo, &DeviceInfoData, SPDRP_FRIENDLYNAME,
-                                                 (PDWORD)&u32DataType, (uint8_t *)pBuf,
-                                                 u32BufSize, (PDWORD)&u32BufSize)
+                                                 (PDWORD)&dwDataType, (uint8_t *)pBuf,
+                                                 dwBufSize, (PDWORD)&dwBufSize)
                && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
         {
             if (pBuf)
                  RTMemFree(pBuf);
             /* Max size will never be more than 2048 bytes */
-            pBuf = (uint8_t *)RTMemAlloc(u32BufSize * 2);
+            pBuf = (uint8_t *)RTMemAlloc(dwBufSize * 2);
         }
 
         if (pBuf) /** @todo r=bird: You're not checking errors here. */
         {
-            /** @todo r=bird: The indent of the block is wrong... More importantely, the
-             * scope and purpose of the two variables would be clearer if you moved them
-             * to the RTStrStr calls further down. */
-             char *pCh = NULL;
-             char* pTmpCh = NULL;
              if (RTStrStr((char*)pBuf, "LPT"))
              {
                  u32ParportAddr = drvHostWinFindIORangeResource(DeviceInfoData.DevInst);
                  if (u32ParportAddr)
                  {
                      /* Find parallel port name and update the shared data struncture */
-                     pCh = RTStrStr((char*)pBuf, "(");
-                     pTmpCh = RTStrStr((char *)pBuf, ")");
+                     char *pCh = RTStrStr((char*)pBuf, "(");
+                     char *pTmpCh = RTStrStr((char *)pBuf, ")");
                      /* check for the confirmation for the availability of parallel port */
                      if (!(pCh && pTmpCh))
                      {
@@ -464,29 +453,25 @@ static int drvWinHostGetparportAddr(PDRVHOSTPARALLEL pThis)
                          return VERR_NOT_FOUND;
                      }
                      /* check for the confirmation for the availability of parallel port */
-                     if (RTStrCopyEx((char *)(pThis->u8ParportName), sizeof(pThis->u8ParportName),
+                     if (RTStrCopyEx((char *)(pThis->szParportName), sizeof(pThis->szParportName),
                                       pCh+1, ((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) - 1))
                      {
                          LogFlowFunc(("Parallel Port Not Found.\n"));
                          return VERR_NOT_FOUND;
                      }
-                     *((char *)pThis->u8ParportName + (pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf) + 1 ) = '\0';
+                     *((char *)pThis->szParportName + (pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf) + 1 ) = '\0';
 
                      /* checking again to make sure that we have got a valid name and in valid format too. */
-                     if (RTStrNCmp((char *)pThis->u8ParportName, "LPT", 3)) {
+                     if (RTStrNCmp((char *)pThis->szParportName, "LPT", 3)) {
                          LogFlowFunc(("Parallel Port name \"LPT\" Not Found.\n"));
                          return VERR_NOT_FOUND;
                      }
 
-                     /** @todo r=bird: Multiline expressions starts the next line with the
-                      * operator, (instead of the previous line ending with an operator like you do
-                      * here).
-                      *
-                      * Also, note that the opening curly brackets have it's own line in this
-                      * file, so you do the same as the original author(s) of the file. */
-                     if (!RTStrStr((char *)pThis->u8ParportName, "LPT") ||
-                          !(pThis->u8ParportName[3] >= '0' && pThis->u8ParportName[3] <= '9')) {
-                         RT_BZERO(pThis->u8ParportName, sizeof(pThis->u8ParportName));
+                     if (!RTStrStr((char *)pThis->szParportName, "LPT")
+                            || !(pThis->szParportName[3] >= '0'
+                            && pThis->szParportName[3] <= '9'))
+                     {
+                         RT_BZERO(pThis->szParportName, sizeof(pThis->szParportName));
                          LogFlowFunc(("Printer Port Name Not Found.\n"));
                          return VERR_NOT_FOUND;
                      }
@@ -1009,11 +994,11 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /* If we have the char port availabe use it , else I am not getting exclusive access to parallel port.
        Read and write will be done only if addresses are available
     */
-    if (pThis->u8ParportName)
+    if (pThis->szParportName)
     {
-        LogFlowFunc(("Get the Handle to Printer Port =%s\n", (char *)pThis->u8ParportName));
+        LogFlowFunc(("Get the Handle to Printer Port =%s\n", (char *)pThis->szParportName));
         /** @todo r=klaus convert to IPRT */
-        hPort = CreateFile((char *)pThis->u8ParportName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
+        hPort = CreateFile((char *)pThis->szParportName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
                            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     }
     /** @todo amakkar: handle the case if hPort is NULL */
