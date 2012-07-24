@@ -392,7 +392,8 @@ endif
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
 	  -Vdkms=$(if $(filter _Debian_lenny,$(debrel)),,dkms)
 	dh_md5sums
-	dh_builddeb --destdir $(pkgdir)
+	dh_builddeb --destdir $(pkgdir) -- \
+	  $(if $(filter _Ubuntu_hardy _Ubuntu_lucid,$(debrel)),,-Zxz)
 endif
 
 .PHONY: binary modules binary-arch binary-indep clean checkroot
