@@ -89,6 +89,15 @@ PFNRT g_apfnVBoxGuestIPRTDeps[] =
 {
     /* VirtioNet */
     (PFNRT)RTRandBytes,
+    /* RTSemMutex* */
+    (PFNRT)RTSemMutexCreate,
+    (PFNRT)RTSemMutexDestroy,
+    (PFNRT)RTSemMutexRequest,
+    (PFNRT)RTSemMutexRequestNoResume,
+    (PFNRT)RTSemMutexRequestDebug,
+    (PFNRT)RTSemMutexRequestNoResumeDebug,
+    (PFNRT)RTSemMutexRelease,
+    (PFNRT)RTSemMutexIsOwned,
     NULL
 };
 #endif  /* RT_OS_SOLARIS */
