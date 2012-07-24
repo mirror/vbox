@@ -39,7 +39,7 @@ vboxms_TEMPLATE   = VBOXGUESTR0
 vboxms_DEFS       = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxms_DEPS      += $(VBOX_SVN_REV_KMK)
 vboxms_SOURCES    = \
-	vboxmouse.c
+	vboxms.c
 vboxms_LIBS       = \
 	$(VBOX_LIB_VBGL_R0)
 ifeq ($(KBUILD_HOST),solaris)
@@ -60,7 +60,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  PROGRAMS += tstVBoxMouse-solaris
  tstVBoxMouse-solaris_TEMPLATE = VBOXR3TSTEXE
  tstVBoxMouse-solaris_SOURCES  = \
- 	vboxmouse.c \
+ 	vboxms.c \
  	testcase/tstVBoxMouse-solaris.c
  tstVBoxMouse-solaris_DEFS     = TESTCASE
  tstVBoxMouse-solaris_LIBS     = $(LIB_RUNTIME)
