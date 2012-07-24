@@ -62,7 +62,7 @@ int GuestCtrlEvent::Cancel(void)
         }
     }
 
-    LogFlowThisFuncLeave(rc);
+    LogFlowThisFuncLeaveRC(rc);
     return rc;
 }
 
