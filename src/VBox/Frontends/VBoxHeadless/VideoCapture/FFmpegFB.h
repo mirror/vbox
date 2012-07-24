@@ -102,12 +102,12 @@ public:
 public:
 private:
 #ifdef VBOX_WITH_VPX
-	EbmlGlobal ebml;
-	vpx_codec_ctx_t      mVpxCodec;
+    EbmlGlobal ebml;
+    vpx_codec_ctx_t      mVpxCodec;
     vpx_codec_enc_cfg_t  mVpxConfig;
-	FILE * mOutputFile;
-	unsigned long mDuration;
-	uint32_t  mFrameCount;
+    FILE * mOutputFile;
+    unsigned long mDuration;
+    uint32_t  mFrameCount;
 
 #else
     /** Pointer to ffmpeg's format information context */
@@ -117,7 +117,7 @@ private:
     /** Information for ffmpeg describing the current frame */
     AVFrame *mFrame;
 
-	HRESULT setup_library();
+    HRESULT setup_library();
     HRESULT setup_output_format();
     HRESULT list_formats();
 #endif

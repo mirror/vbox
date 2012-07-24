@@ -170,24 +170,24 @@ FFmpegFB::~FFmpegFB()
 {
     LogFlow(("Destroying FFmpegFB object %p\n", this));
 #ifdef VBOX_WITH_VPX
-	/* Dummy update to make sure we get all the frame (timing). */
+    /* Dummy update to make sure we get all the frame (timing). */
     NotifyUpdate(0, 0, 0, 0);
     /* Write the last pending frame before exiting */
     int rc = do_rgb_to_yuv_conversion();
     if (rc == S_OK)
-		do_encoding_and_write();
+        do_encoding_and_write();
 # if 1
     /* Add another 10 seconds. */
     for (int i = 10*25; i > 0; i--)
-		do_encoding_and_write();
+        do_encoding_and_write();
 # endif
     Ebml_WriteWebMFileFooter(&ebml, 0);
-	if(ebml.stream)
-	    fclose(ebml.stream);
+    if(ebml.stream)
+        fclose(ebml.stream);
     vpx_codec_destroy(&mVpxCodec);
     RTCritSectDelete(&mCritSect);
 
-	/* We have already freed the stream above */
+    /* We have already freed the stream above */
     if (mTempRGBBuffer != 0)
         free(mTempRGBBuffer);
     if (mYUVBuffer != 0)
@@ -264,12 +264,12 @@ HRESULT FFmpegFB::init()
     LogFlow(("Initialising FFmpegFB object %p\n", this));
     if (mOutOfMemory == true)
         return E_OUTOFMEMORY;
-	int rc;
-	int rcOpenFile;
-	int rcOpenCodec;
+    int rc;
+    int rcOpenFile;
+    int rcOpenCodec;
 
 #ifdef VBOX_WITH_VPX
-	mFrameCount = 0;
+    mFrameCount = 0;
     memset(&ebml, 0, sizeof(struct EbmlGlobal));
     ebml.last_pts_ms = -1;
     rc = RTCritSectInit(&mCritSect);
@@ -836,20 +836,20 @@ HRESULT FFmpegFB::list_formats()
 HRESULT FFmpegFB::open_codec()
 {
 #ifdef VBOX_WITH_VPX
-	vpx_codec_err_t      res;
+    vpx_codec_err_t      res;
     /* Populate encoder configuration */
     if ((res = vpx_codec_enc_config_default(interface, &mVpxConfig, 0)))
-	{
-		LogFlow(("Failed to configure codec \n"));
+    {
+        LogFlow(("Failed to configure codec \n"));
         AssertReturn(res == 0, E_UNEXPECTED);
-	}
+    }
 
     mVpxConfig.rc_target_bitrate = 512;
     mVpxConfig.g_w = mFrameWidth;
     mVpxConfig.g_h = mFrameHeight;
     mVpxConfig.g_timebase.den = 30;
     mVpxConfig.g_timebase.num = 1;
-	mVpxConfig.g_threads = 8;
+    mVpxConfig.g_threads = 8;
 
     vpx_rational ebmlFPS = mVpxConfig.g_timebase;
     struct vpx_rational arg_framerate = {30, 1};
@@ -915,13 +915,13 @@ HRESULT FFmpegFB::open_output_file()
 #ifdef VBOX_WITH_VPX
     char szFileName[RTPATH_MAX];
     strcpy(szFileName, com::Utf8Str(mFileName).c_str());
-	ebml.stream = fopen(szFileName, "wb");
-	if (!ebml.stream)
-	{
-		LogFlow(("Failed to open the output File \n"));
+    ebml.stream = fopen(szFileName, "wb");
+    if (!ebml.stream)
+    {
+        LogFlow(("Failed to open the output File \n"));
         return E_FAIL;
-	}
-	return S_OK;
+    }
+    return S_OK;
 #else
     char szFileName[RTPATH_MAX];
     Assert(mpFormatContext);
@@ -1108,17 +1108,17 @@ HRESULT FFmpegFB::do_encoding_and_write()
 
     if (mYUVBuffer != NULL)
     {
-		AssertReturn(VpxRawImage.w*VpxRawImage.h*3/2 <= sizeof(mYUVFrameSize), E_UNEXPECTED);
-		memcpy(VpxRawImage.planes[0], (uint8_t *)mYUVBuffer, VpxRawImage.w*VpxRawImage.h*3/2);
+        AssertReturn(VpxRawImage.w*VpxRawImage.h*3/2 <= sizeof(mYUVFrameSize), E_UNEXPECTED);
+        memcpy(VpxRawImage.planes[0], (uint8_t *)mYUVBuffer, VpxRawImage.w*VpxRawImage.h*3/2);
     }
 
-	if ((res = vpx_codec_encode(&mVpxCodec, &VpxRawImage , mFrameCount,
+    if ((res = vpx_codec_encode(&mVpxCodec, &VpxRawImage , mFrameCount,
                   mDuration, 0, VPX_DL_REALTIME)))
-	{
+    {
         LogFlow(("Failed to encode: %s\n", vpx_codec_err_to_string(res)));
-		AssertReturn(res != 0, E_UNEXPECTED);
+        AssertReturn(res != 0, E_UNEXPECTED);
 
-	}
+    }
     while ((pkt = vpx_codec_get_cx_data(&mVpxCodec, &iter)))
     {
         switch (pkt->kind)
