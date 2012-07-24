@@ -664,6 +664,9 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
  * they require no syscall if the fast mutex is not held (like critical
  * sections).  Unlike critical sections however, they are *not* recursive.
  *
+ * @remarks The fast mutexes has sideeffects on IRQL on Windows hosts.  So use
+ *          with care and test on windows with driver verifier.
+ *
  * @{ */
 
 /**
