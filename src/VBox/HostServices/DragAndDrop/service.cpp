@@ -160,7 +160,6 @@ void DragAndDropService::modeSet(uint32_t u32Mode)
         case VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST:
         case VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST:
         case VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL:
-            LogRel(("drag'n'drop mode = %d\n", u32Mode));
             m_u32Mode = u32Mode;
             break;
 
