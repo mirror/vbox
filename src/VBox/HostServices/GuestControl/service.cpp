@@ -751,7 +751,6 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
  */
 int Service::cancelHostCmd(uint32_t u32ContextID)
 {
-    AssertReturn(u32ContextID, VERR_INVALID_PARAMETER);
     Assert(mpfnHostCallback);
 
     LogFlowFunc(("Cancelling CID=%u ...\n", u32ContextID));

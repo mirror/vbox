@@ -208,7 +208,7 @@ public:
     Console    *getConsole(void) { return mParent; }
     int         sessionClose(ComObjPtr<GuestSession> pSession);
     int         sessionCreate(const Utf8Str &strUser, const Utf8Str &aPassword, const Utf8Str &aDomain,
-                              const Utf8Str &aSessionName, IGuestSession **aGuestSession);
+                              const Utf8Str &aSessionName, ComObjPtr<GuestSession> &pGuestSession);
     inline bool sessionExists(uint32_t uSessionID);
     /** @}  */
 

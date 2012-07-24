@@ -32,25 +32,105 @@
  *   Structures and Typedefs                                                  *
  ******************************************************************************/
 
+GuestCtrlEvent::GuestCtrlEvent(void)
+    : fCanceled(false),
+      fCompleted(false),
+      hEventSem(NIL_RTSEMEVENT),
+      mRC(VINF_SUCCESS)
+{
+}
+
+GuestCtrlEvent::~GuestCtrlEvent(void)
+{
+    Destroy();
+}
+
+int GuestCtrlEvent::Cancel(void)
+{
+    LogFlowThisFuncEnter();
+
+    int rc = VINF_SUCCESS;
+    if (!ASMAtomicReadBool(&fCompleted))
+    {
+        if (!ASMAtomicReadBool(&fCanceled))
+        {
+            ASMAtomicXchgBool(&fCanceled, true);
+
+            LogFlowThisFunc(("Cancelling ...\n"));
+            rc = hEventSem != NIL_RTSEMEVENT
+               ? RTSemEventSignal(hEventSem) : VINF_SUCCESS;
+        }
+    }
+
+    LogFlowThisFuncLeave(rc);
+    return rc;
+}
+
+bool GuestCtrlEvent::Canceled(void)
+{
+    return ASMAtomicReadBool(&fCanceled);
+}
+
+void GuestCtrlEvent::Destroy(void)
+{
+    LogFlowThisFuncEnter();
+
+    int rc = Cancel();
+    AssertRC(rc);
+
+    if (hEventSem != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(hEventSem);
+        hEventSem = NIL_RTSEMEVENT;
+    }
+
+    LogFlowThisFuncLeave();
+}
+
+int GuestCtrlEvent::Init(void)
+{
+    return RTSemEventCreate(&hEventSem);
+}
+
+int GuestCtrlEvent::Signal(int rc /*= VINF_SUCCESS*/)
+{
+    AssertReturn(hEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
+
+    mRC = rc;
+
+    return RTSemEventSignal(hEventSem);
+}
+
+int GuestCtrlEvent::Wait(ULONG uTimeoutMS)
+{
+    LogFlowFuncEnter();
+
+    AssertReturn(hEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
+
+    RTMSINTERVAL msInterval = uTimeoutMS;
+    if (!uTimeoutMS)
+        msInterval = RT_INDEFINITE_WAIT;
+    int rc = RTSemEventWait(hEventSem, msInterval);
+    if (RT_SUCCESS(rc))
+        ASMAtomicWriteBool(&fCompleted, true);
+    return rc;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 GuestCtrlCallback::GuestCtrlCallback(void)
     : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
       uFlags(0),
-      fCanceled(false),
-      fCompleted(false),
       pvData(NULL),
-      cbData(0),
-      hEventSem(NIL_RTSEMEVENT)
+      cbData(0)
 {
 }
 
 GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
     : mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
       uFlags(0),
-      fCanceled(false),
-      fCompleted(false),
       pvData(NULL),
-      cbData(0),
-      hEventSem(NIL_RTSEMEVENT)
+      cbData(0)
 {
     int rc = Init(enmType);
     AssertRC(rc);
@@ -61,27 +141,10 @@ GuestCtrlCallback::~GuestCtrlCallback(void)
     Destroy();
 }
 
-int GuestCtrlCallback::Cancel(void)
-{
-    if (ASMAtomicReadBool(&fCompleted))
-        return VINF_SUCCESS;
-    if (!ASMAtomicReadBool(&fCanceled))
-    {
-        int rc = hEventSem != NIL_RTSEMEVENT
-               ? RTSemEventSignal(hEventSem) : VINF_SUCCESS;
-        if (RT_SUCCESS(rc))
-            ASMAtomicXchgBool(&fCanceled, true);
-    }
-    return VINF_SUCCESS;
-}
-
-bool GuestCtrlCallback::Canceled(void)
-{
-    return ASMAtomicReadBool(&fCanceled);
-}
-
 int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
 {
+    LogFlowFuncEnter();
+
     AssertReturn(enmType > VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN, VERR_INVALID_PARAMETER);
     Assert((pvData == NULL) && !cbData);
 
@@ -122,18 +185,18 @@ int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTSemEventCreate(&hEventSem);
+        rc = GuestCtrlEvent::Init();
         if (RT_SUCCESS(rc))
             mType  = enmType;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 void GuestCtrlCallback::Destroy(void)
 {
-    int rc = Cancel();
-    AssertRC(rc);
+    GuestCtrlEvent::Destroy();
 
     mType = VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN;
     if (pvData)
@@ -142,24 +205,40 @@ void GuestCtrlCallback::Destroy(void)
         pvData = NULL;
     }
     cbData = 0;
-    if (hEventSem != NIL_RTSEMEVENT)
-        RTSemEventDestroy(hEventSem);
 }
 
-int GuestCtrlCallback::Signal(int rc /*= VINF_SUCCESS*/, const Utf8Str &strMsg /*= "" */)
+///////////////////////////////////////////////////////////////////////////////
+
+GuestProcessEvent::GuestProcessEvent(void)
+    : mWaitFlags(0)
 {
-    AssertReturn(hEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
-    return RTSemEventSignal(hEventSem);
 }
 
-int GuestCtrlCallback::Wait(ULONG uTimeoutMS)
+GuestProcessEvent::GuestProcessEvent(uint32_t uWaitFlags)
+    : mWaitFlags(uWaitFlags)
 {
-    AssertReturn(hEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
+    int rc = GuestCtrlEvent::Init();
+    AssertRC(rc);
+}
 
-    RTMSINTERVAL msInterval = uTimeoutMS;
-    if (!uTimeoutMS)
-        msInterval = RT_INDEFINITE_WAIT;
-    return RTSemEventWait(hEventSem, msInterval);
+GuestProcessEvent::~GuestProcessEvent(void)
+{
+    Destroy();
+}
+
+void GuestProcessEvent::Destroy(void)
+{
+    GuestCtrlEvent::Destroy();
+
+    mWaitFlags = ProcessWaitForFlag_None;
+}
+
+int GuestProcessEvent::Signal(ProcessWaitResult enmResult, int rc /*= VINF_SUCCESS*/)
+{
+    mWaitResult.mRC = rc;
+    mWaitResult.mResult = enmResult;
+
+    return GuestCtrlEvent::Signal(rc);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

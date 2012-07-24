@@ -114,6 +114,12 @@ void GuestSession::uninit(void)
     for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
          itProcs != mData.mProcesses.end(); ++itProcs)
     {
+        itProcs->second->close();
+    }
+
+    for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
+         itProcs != mData.mProcesses.end(); ++itProcs)
+    {
         itProcs->second->uninit();
         itProcs->second.setNull();
     }
@@ -420,21 +426,19 @@ int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
     return VERR_NOT_FOUND;
 }
 
-int GuestSession::processCreateExInteral(const GuestProcessInfo &aProcInfo, IGuestProcess **aProcess)
+int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<GuestProcess> &pProcess)
 {
     /* Validate flags. */
-    if (aProcInfo.mFlags)
+    if (procInfo.mFlags)
     {
-        if (   !(aProcInfo.mFlags & ProcessCreateFlag_IgnoreOrphanedProcesses)
-            && !(aProcInfo.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
-            && !(aProcInfo.mFlags & ProcessCreateFlag_Hidden)
-            && !(aProcInfo.mFlags & ProcessCreateFlag_NoProfile))
+        if (   !(procInfo.mFlags & ProcessCreateFlag_IgnoreOrphanedProcesses)
+            && !(procInfo.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
+            && !(procInfo.mFlags & ProcessCreateFlag_Hidden)
+            && !(procInfo.mFlags & ProcessCreateFlag_NoProfile))
         {
             return VERR_INVALID_PARAMETER;
         }
     }
-
-    GuestProcessInfo procInfo = aProcInfo;
 
     /* Adjust timeout. If set to 0, we define
      * an infinite timeout. */
@@ -471,22 +475,18 @@ int GuestSession::processCreateExInteral(const GuestProcessInfo &aProcInfo, IGue
     }
     if (RT_FAILURE(rc)) throw rc;
 
-    ComObjPtr<GuestProcess> pGuestProcess;
     try
     {
-        /* Create the session object. */
-        HRESULT hr = pGuestProcess.createObject();
+        /* Create the process object. */
+        HRESULT hr = pProcess.createObject();
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
-        rc = pGuestProcess->init(mData.mParent->getConsole() /* Console */, this /* Session */,
-                                 uNewProcessID, procInfo);
+        rc = pProcess->init(mData.mParent->getConsole() /* Console */, this /* Session */,
+                             uNewProcessID, procInfo);
         if (RT_FAILURE(rc)) throw rc;
 
-        mData.mProcesses[uNewProcessID] = pGuestProcess;
-
-        /* Return guest session to the caller. */
-        hr = pGuestProcess.queryInterfaceTo(aProcess);
-        if (FAILED(hr)) throw VERR_COM_OBJECT_NOT_FOUND;
+        /* Add the created process to our map. */
+        mData.mProcesses[uNewProcessID] = pProcess;
     }
     catch (int rc2)
     {
@@ -971,9 +971,8 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
     if (aArguments)
     {
         com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
-        procInfo.mArguments.reserve(arguments.size());
         for (size_t i = 0; i < arguments.size(); i++)
-            procInfo.mArguments[i] = Utf8Str(Bstr(arguments[i]));
+            procInfo.mArguments.push_back(Utf8Str(arguments[i]));
     }
 
     int rc = VINF_SUCCESS;
@@ -985,12 +984,15 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
      *   have the chance of overwriting/deleting session entries.
      */
     procInfo.mEnvironment = mData.mEnvironment; /* Apply original session environment. */
-    if (aEnvironment) /* Apply/overwrite environment, if set. */
+
+    if (aEnvironment)
     {
         com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
         for (size_t i = 0; i < environment.size() && RT_SUCCESS(rc); i++)
             rc = mData.mEnvironment.Set(Utf8Str(environment[i]));
     }
+
+    HRESULT hr = S_OK;
 
     if (RT_SUCCESS(rc))
     {
@@ -1006,18 +1008,44 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
         if (aAffinity)
         {
             com::SafeArray<LONG> affinity(ComSafeArrayInArg(aAffinity));
-            procInfo.mAffinity.reserve(affinity.size());
             for (size_t i = 0; i < affinity.size(); i++)
                 procInfo.mAffinity[i] = affinity[i]; /** @todo Really necessary? Later. */
         }
 
         procInfo.mPriority = aPriority;
 
-        rc = processCreateExInteral(procInfo, aProcess);
+        ComObjPtr<GuestProcess> pProcess;
+        rc = processCreateExInteral(procInfo, pProcess);
+        if (RT_SUCCESS(rc))
+        {
+            /* Return guest session to the caller. */
+            HRESULT hr2 = pProcess.queryInterfaceTo(aProcess);
+            if (FAILED(hr2))
+                rc = VERR_COM_OBJECT_NOT_FOUND;
+
+            if (RT_SUCCESS(rc))
+                rc = pProcess->startProcessAsync();
+        }
     }
 
-    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(hr);
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_MAX_PROCS_REACHED:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest processes (%ld) reached"),
+                              VERR_MAX_PROCS_REACHED);
+                break;
+
+            /** @todo Add more errors here. */
+
+           default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest process, rc=%Rrc"), rc);
+                break;
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1050,7 +1078,7 @@ STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **aProcess)
     if (SUCCEEDED(hr))
         hr = hr2;
 
-    LogFlowThisFunc(("aProcess=%p, hr=%Rrc\n", *aProcess, hr));
+    LogFlowThisFunc(("aProcess=%p, hr=%Rhrc\n", *aProcess, hr));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
