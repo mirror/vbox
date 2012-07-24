@@ -807,6 +807,7 @@ static bool disIsCodeAndAdjustSize(uint32_t uFlatAddr, PRTDBGSYMBOL pSym, PBIOSS
                     || !strcmp(pSym->szName, "bios_string")
                     || !strcmp(pSym->szName, "vector_table")
                     || !strcmp(pSym->szName, "pci_routing_table_structure")
+                    || !strcmp(pSym->szName, "_pci_routing_table")
                     )
                     return false;
             }
