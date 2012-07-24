@@ -204,8 +204,8 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->selm.s.StatTSSSync,                    STAMTYPE_PROFILE, "/PROF/SELM/TSSSync",           STAMUNIT_TICKS_PER_CALL, "Profiling of the SELMR3SyncTSS() body.");
     STAM_REG(pVM, &pVM->selm.s.StatUpdateFromCPUM,             STAMTYPE_PROFILE, "/PROF/SELM/UpdateFromCPUM",    STAMUNIT_TICKS_PER_CALL, "Profiling of the SELMR3UpdateFromCPUM() body.");
 
-    STAM_REG(pVM, &pVM->selm.s.StatHyperSelsChanged,           STAMTYPE_COUNTER, "/SELM/HyperSels/Changed",      STAMUNIT_OCCURENCES,     "The number of times we had to relocate our hypervisor selectors.");
-    STAM_REG(pVM, &pVM->selm.s.StatScanForHyperSels,           STAMTYPE_COUNTER, "/SELM/HyperSels/Scan",         STAMUNIT_OCCURENCES,     "The number of times we had find free hypervisor selectors.");
+    STAM_REL_REG(pVM, &pVM->selm.s.StatHyperSelsChanged,       STAMTYPE_COUNTER, "/SELM/HyperSels/Changed",      STAMUNIT_OCCURENCES,     "The number of times we had to relocate our hypervisor selectors.");
+    STAM_REL_REG(pVM, &pVM->selm.s.StatScanForHyperSels,       STAMTYPE_COUNTER, "/SELM/HyperSels/Scan",         STAMUNIT_OCCURENCES,     "The number of times we had find free hypervisor selectors.");
 
     /*
      * Default action when entering raw mode for the first time
@@ -773,6 +773,520 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 }
 
 
+static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * Always assume the best...
+     */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+
+    /* If the GDT was changed, then make sure the LDT is checked too */
+    /** @todo only do this if the actual ldtr selector was changed; this is a bit excessive */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+    /* Same goes for the TSS selector */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+
+    /*
+     * Get the GDTR and check if there is anything to do (there usually is).
+     */
+    VBOXGDTR    GDTR;
+    CPUMGetGuestGDTR(pVCpu, &GDTR);
+    if (GDTR.cbGdt < sizeof(X86DESC))
+    {
+        Log(("No GDT entries...\n"));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Read the Guest GDT.
+     * ASSUMES that the entire GDT is in memory.
+     */
+    RTUINT      cbEffLimit = GDTR.cbGdt;
+    PX86DESC    pGDTE = &pVM->selm.s.paGdtR3[1];
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, pGDTE, GDTR.pGdt + sizeof(X86DESC), cbEffLimit + 1 - sizeof(X86DESC));
+    if (RT_FAILURE(rc))
+    {
+        /*
+         * Read it page by page.
+         *
+         * Keep track of the last valid page and delay memsets and
+         * adjust cbEffLimit to reflect the effective size.  The latter
+         * is something we do in the belief that the guest will probably
+         * never actually commit the last page, thus allowing us to keep
+         * our selectors in the high end of the GDT.
+         */
+        RTUINT  cbLeft         = cbEffLimit + 1 - sizeof(X86DESC);
+        RTGCPTR GCPtrSrc       = (RTGCPTR)GDTR.pGdt + sizeof(X86DESC);
+        uint8_t *pu8Dst        = (uint8_t *)&pVM->selm.s.paGdtR3[1];
+        uint8_t *pu8DstInvalid = pu8Dst;
+
+        while (cbLeft)
+        {
+            RTUINT cb = PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK);
+            cb = RT_MIN(cb, cbLeft);
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, pu8Dst, GCPtrSrc, cb);
+            if (RT_SUCCESS(rc))
+            {
+                if (pu8DstInvalid != pu8Dst)
+                    memset(pu8DstInvalid, 0, pu8Dst - pu8DstInvalid);
+                GCPtrSrc += cb;
+                pu8Dst += cb;
+                pu8DstInvalid = pu8Dst;
+            }
+            else if (   rc == VERR_PAGE_NOT_PRESENT
+                     || rc == VERR_PAGE_TABLE_NOT_PRESENT)
+            {
+                GCPtrSrc += cb;
+                pu8Dst += cb;
+            }
+            else
+            {
+                AssertLogRelMsgFailed(("Couldn't read GDT at %016RX64, rc=%Rrc!\n", GDTR.pGdt, rc));
+                return VERR_SELM_GDT_READ_ERROR;
+            }
+            cbLeft -= cb;
+        }
+
+        /* any invalid pages at the end? */
+        if (pu8DstInvalid != pu8Dst)
+        {
+            cbEffLimit = pu8DstInvalid - (uint8_t *)pVM->selm.s.paGdtR3 - 1;
+            /* If any GDTEs was invalidated, zero them. */
+            if (cbEffLimit < pVM->selm.s.cbEffGuestGdtLimit)
+                memset(pu8DstInvalid + cbEffLimit + 1, 0, pVM->selm.s.cbEffGuestGdtLimit - cbEffLimit);
+        }
+
+        /* keep track of the effective limit. */
+        if (cbEffLimit != pVM->selm.s.cbEffGuestGdtLimit)
+        {
+            Log(("SELMR3UpdateFromCPUM: cbEffGuestGdtLimit=%#x -> %#x (actual %#x)\n",
+                 pVM->selm.s.cbEffGuestGdtLimit, cbEffLimit, GDTR.cbGdt));
+            pVM->selm.s.cbEffGuestGdtLimit = cbEffLimit;
+        }
+    }
+
+    /*
+     * Check if the Guest GDT intrudes on our GDT entries.
+     */
+    /** @todo we should try to minimize relocations by making sure our current selectors can be reused. */
+    RTSEL aHyperSel[SELM_HYPER_SEL_MAX];
+    if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
+    {
+        PX86DESC    pGDTEStart = pVM->selm.s.paGdtR3;
+        PX86DESC    pGDTECur   = (PX86DESC)((char *)pGDTEStart + GDTR.cbGdt + 1 - sizeof(X86DESC));
+        int         iGDT       = 0;
+
+        Log(("Internal SELM GDT conflict: use non-present entries\n"));
+        STAM_REL_COUNTER_INC(&pVM->selm.s.StatScanForHyperSels);
+        while (pGDTECur > pGDTEStart)
+        {
+            /* We can reuse non-present entries */
+            if (!pGDTECur->Gen.u1Present)
+            {
+                aHyperSel[iGDT] = ((uintptr_t)pGDTECur - (uintptr_t)pVM->selm.s.paGdtR3) / sizeof(X86DESC);
+                aHyperSel[iGDT] = aHyperSel[iGDT] << X86_SEL_SHIFT;
+                Log(("SELM: Found unused GDT %04X\n", aHyperSel[iGDT]));
+                iGDT++;
+                if (iGDT >= SELM_HYPER_SEL_MAX)
+                    break;
+            }
+
+            pGDTECur--;
+        }
+        if (iGDT != SELM_HYPER_SEL_MAX)
+        {
+            AssertLogRelMsgFailed(("Internal SELM GDT conflict.\n"));
+            return VERR_SELM_GDT_TOO_FULL;
+        }
+    }
+    else
+    {
+        aHyperSel[SELM_HYPER_SEL_CS]         = SELM_HYPER_DEFAULT_SEL_CS;
+        aHyperSel[SELM_HYPER_SEL_DS]         = SELM_HYPER_DEFAULT_SEL_DS;
+        aHyperSel[SELM_HYPER_SEL_CS64]       = SELM_HYPER_DEFAULT_SEL_CS64;
+        aHyperSel[SELM_HYPER_SEL_TSS]        = SELM_HYPER_DEFAULT_SEL_TSS;
+        aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = SELM_HYPER_DEFAULT_SEL_TSS_TRAP08;
+    }
+
+    /*
+     * Work thru the copied GDT entries adjusting them for correct virtualization.
+     */
+    PX86DESC pGDTEEnd = (PX86DESC)((char *)pGDTE + cbEffLimit + 1 - sizeof(X86DESC));
+    while (pGDTE < pGDTEEnd)
+    {
+        if (pGDTE->Gen.u1Present)
+        {
+            /*
+             * Code and data selectors are generally 1:1, with the
+             * 'little' adjustment we do for DPL 0 selectors.
+             */
+            if (pGDTE->Gen.u1DescType)
+            {
+                /*
+                 * Hack for A-bit against Trap E on read-only GDT.
+                 */
+                /** @todo Fix this by loading ds and cs before turning off WP. */
+                pGDTE->Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+
+                /*
+                 * All DPL 0 code and data segments are squeezed into DPL 1.
+                 *
+                 * We're skipping conforming segments here because those
+                 * cannot give us any trouble.
+                 */
+                if (    pGDTE->Gen.u2Dpl == 0
+                    &&      (pGDTE->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+                        !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
+                    pGDTE->Gen.u2Dpl = 1;
+            }
+            else
+            {
+                /*
+                 * System type selectors are marked not present.
+                 * Recompiler or special handling is required for these.
+                 */
+                /** @todo what about interrupt gates and rawr0? */
+                pGDTE->Gen.u1Present = 0;
+            }
+        }
+
+        /* Next GDT entry. */
+        pGDTE++;
+    }
+
+    /*
+     * Check if our hypervisor selectors were changed.
+     */
+    if (    aHyperSel[SELM_HYPER_SEL_CS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]
+        ||  aHyperSel[SELM_HYPER_SEL_DS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]
+        ||  aHyperSel[SELM_HYPER_SEL_CS64]       != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]
+        ||  aHyperSel[SELM_HYPER_SEL_TSS]        != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]
+        ||  aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
+    {
+        /* Reinitialize our hypervisor GDTs */
+        pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         = aHyperSel[SELM_HYPER_SEL_CS];
+        pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         = aHyperSel[SELM_HYPER_SEL_DS];
+        pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       = aHyperSel[SELM_HYPER_SEL_CS64];
+        pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        = aHyperSel[SELM_HYPER_SEL_TSS];
+        pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
+
+        STAM_REL_COUNTER_INC(&pVM->selm.s.StatHyperSelsChanged);
+
+        /*
+         * Do the relocation callbacks to let everyone update their hyper selector dependencies.
+         * (SELMR3Relocate will call selmR3SetupHyperGDTSelectors() for us.)
+         */
+        VMR3Relocate(pVM, 0);
+    }
+    else if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
+        /* We overwrote all entries above, so we have to save them again. */
+        selmR3SetupHyperGDTSelectors(pVM);
+
+    /*
+     * Adjust the cached GDT limit.
+     * Any GDT entries which have been removed must be cleared.
+     */
+    if (pVM->selm.s.GuestGdtr.cbGdt != GDTR.cbGdt)
+    {
+        if (pVM->selm.s.GuestGdtr.cbGdt > GDTR.cbGdt)
+            memset(pGDTE, 0, pVM->selm.s.GuestGdtr.cbGdt - GDTR.cbGdt);
+    }
+
+    /*
+     * Check if Guest's GDTR is changed.
+     */
+    if (    GDTR.pGdt  != pVM->selm.s.GuestGdtr.pGdt
+        ||  GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
+    {
+        Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%016RX64 cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
+
+        /*
+         * [Re]Register write virtual handler for guest's GDT.
+         */
+        if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
+        {
+            rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
+            AssertRC(rc);
+        }
+
+        rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE,
+                                         GDTR.pGdt, GDTR.pGdt + GDTR.cbGdt /* already inclusive */,
+                                         0, selmR3GuestGDTWriteHandler, "selmRCGuestGDTWriteHandler", 0,
+                                         "Guest GDT write access handler");
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* Update saved Guest GDTR. */
+        pVM->selm.s.GuestGdtr = GDTR;
+        pVM->selm.s.fGDTRangeRegistered = true;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Updates (syncs) the shadow LDT.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The current virtual CPU.
+ */
+static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
+{
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Always assume the best...
+     */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+
+    /*
+     * LDT handling is done similarly to the GDT handling with a shadow
+     * array. However, since the LDT is expected to be swappable (at least
+     * some ancient OSes makes it swappable) it must be floating and
+     * synced on a per-page basis.
+     *
+     * Eventually we will change this to be fully on demand. Meaning that
+     * we will only sync pages containing LDT selectors actually used and
+     * let the #PF handler lazily sync pages as they are used.
+     * (This applies to GDT too, when we start making OS/2 fast.)
+     */
+
+    /*
+     * First, determine the current LDT selector.
+     */
+    RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
+    if ((SelLdt & X86_SEL_MASK) == 0)
+    {
+        /* ldtr = 0 - update hyper LDTR and deregister any active handler. */
+        CPUMSetHyperLDTR(pVCpu, 0);
+        if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
+        {
+            rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
+            AssertRC(rc);
+            pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
+        }
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Get the LDT selector.
+     */
+    PX86DESC    pDesc    = &pVM->selm.s.paGdtR3[SelLdt >> X86_SEL_SHIFT];
+    RTGCPTR     GCPtrLdt = X86DESC_BASE(*pDesc);
+    unsigned    cbLdt    = X86DESC_LIMIT(*pDesc);
+    if (pDesc->Gen.u1Granularity)
+        cbLdt = (cbLdt << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+
+    /*
+     * Validate it.
+     */
+    if (    !cbLdt
+        ||  SelLdt >= pVM->selm.s.GuestGdtr.cbGdt
+        ||  pDesc->Gen.u1DescType
+        ||  pDesc->Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
+    {
+        AssertMsg(!cbLdt, ("Invalid LDT %04x!\n", SelLdt));
+
+        /* cbLdt > 0:
+         * This is quite impossible, so we do as most people do when faced with
+         * the impossible, we simply ignore it.
+         */
+        CPUMSetHyperLDTR(pVCpu, 0);
+        if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
+        {
+            rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
+            AssertRC(rc);
+            pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
+        }
+        return VINF_SUCCESS;
+    }
+    /** @todo check what intel does about odd limits. */
+    AssertMsg(RT_ALIGN(cbLdt + 1, sizeof(X86DESC)) == cbLdt + 1 && cbLdt <= 0xffff, ("cbLdt=%d\n", cbLdt));
+
+    /*
+     * Use the cached guest ldt address if the descriptor has already been modified (see below)
+     * (this is necessary due to redundant LDT updates; see todo above at GDT sync)
+     */
+    if (MMHyperIsInsideArea(pVM, GCPtrLdt))
+        GCPtrLdt = pVM->selm.s.GCPtrGuestLdt;   /* use the old one */
+
+
+    /** @todo Handle only present LDT segments. */
+//    if (pDesc->Gen.u1Present)
+    {
+        /*
+         * Check if Guest's LDT address/limit is changed.
+         */
+        if (    GCPtrLdt != pVM->selm.s.GCPtrGuestLdt
+            ||  cbLdt != pVM->selm.s.cbLdtLimit)
+        {
+            Log(("SELMR3UpdateFromCPUM: Guest LDT changed to from %RGv:%04x to %RGv:%04x. (GDTR=%016RX64:%04x)\n",
+                 pVM->selm.s.GCPtrGuestLdt, pVM->selm.s.cbLdtLimit, GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
+
+            /*
+             * [Re]Register write virtual handler for guest's GDT.
+             * In the event of LDT overlapping something, don't install it just assume it's being updated.
+             */
+            if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
+            {
+                rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
+                AssertRC(rc);
+            }
+#ifdef DEBUG
+            if (pDesc->Gen.u1Present)
+                Log(("LDT selector marked not present!!\n"));
+#endif
+            rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtrLdt, GCPtrLdt + cbLdt /* already inclusive */,
+                                             0, selmR3GuestLDTWriteHandler, "selmRCGuestLDTWriteHandler", 0, "Guest LDT write access handler");
+            if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
+            {
+                /** @todo investigate the various cases where conflicts happen and try avoid them by enh. the instruction emulation. */
+                pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
+                Log(("WARNING: Guest LDT (%RGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%016RX64:%04x)\n",
+                     GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
+            }
+            else if (RT_SUCCESS(rc))
+                pVM->selm.s.GCPtrGuestLdt = GCPtrLdt;
+            else
+            {
+                CPUMSetHyperLDTR(pVCpu, 0);
+                return rc;
+            }
+
+            pVM->selm.s.cbLdtLimit = cbLdt;
+        }
+    }
+
+    /*
+     * Calc Shadow LDT base.
+     */
+    unsigned    off;
+    pVM->selm.s.offLdtHyper = off = (GCPtrLdt & PAGE_OFFSET_MASK);
+    RTGCPTR     GCPtrShadowLDT  = (RTGCPTR)((RTGCUINTPTR)pVM->selm.s.pvLdtRC + off);
+    PX86DESC    pShadowLDT      = (PX86DESC)((uintptr_t)pVM->selm.s.pvLdtR3 + off);
+
+    /*
+     * Enable the LDT selector in the shadow GDT.
+     */
+    pDesc->Gen.u1Present    = 1;
+    pDesc->Gen.u16BaseLow   = RT_LOWORD(GCPtrShadowLDT);
+    pDesc->Gen.u8BaseHigh1  = RT_BYTE3(GCPtrShadowLDT);
+    pDesc->Gen.u8BaseHigh2  = RT_BYTE4(GCPtrShadowLDT);
+    pDesc->Gen.u1Available  = 0;
+    pDesc->Gen.u1Long       = 0;
+    if (cbLdt > 0xffff)
+    {
+        cbLdt = 0xffff;
+        pDesc->Gen.u4LimitHigh  = 0;
+        pDesc->Gen.u16LimitLow  = pDesc->Gen.u1Granularity ? 0xf : 0xffff;
+    }
+
+    /*
+     * Set Hyper LDTR and notify TRPM.
+     */
+    CPUMSetHyperLDTR(pVCpu, SelLdt);
+
+    /*
+     * Loop synchronising the LDT page by page.
+     */
+    /** @todo investigate how intel handle various operations on half present cross page entries. */
+    off = GCPtrLdt & (sizeof(X86DESC) - 1);
+    AssertMsg(!off, ("LDT is not aligned on entry size! GCPtrLdt=%08x\n", GCPtrLdt));
+
+    /* Note: Do not skip the first selector; unlike the GDT, a zero LDT selector is perfectly valid. */
+    unsigned    cbLeft = cbLdt + 1;
+    PX86DESC    pLDTE = pShadowLDT;
+    while (cbLeft)
+    {
+        /*
+         * Read a chunk.
+         */
+        unsigned  cbChunk = PAGE_SIZE - ((RTGCUINTPTR)GCPtrLdt & PAGE_OFFSET_MASK);
+        if (cbChunk > cbLeft)
+            cbChunk = cbLeft;
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pShadowLDT, GCPtrLdt, cbChunk);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Mark page
+             */
+            rc = PGMMapSetPage(pVM, GCPtrShadowLDT & PAGE_BASE_GC_MASK, PAGE_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D);
+            AssertRC(rc);
+
+            /*
+             * Loop thru the available LDT entries.
+             * Figure out where to start and end and the potential cross pageness of
+             * things adds a little complexity. pLDTE is updated there and not in the
+             * 'next' part of the loop. The pLDTEEnd is inclusive.
+             */
+            PX86DESC pLDTEEnd = (PX86DESC)((uintptr_t)pShadowLDT + cbChunk) - 1;
+            if (pLDTE + 1 < pShadowLDT)
+                pLDTE = (PX86DESC)((uintptr_t)pShadowLDT + off);
+            while (pLDTE <= pLDTEEnd)
+            {
+                if (pLDTE->Gen.u1Present)
+                {
+                    /*
+                     * Code and data selectors are generally 1:1, with the
+                     * 'little' adjustment we do for DPL 0 selectors.
+                     */
+                    if (pLDTE->Gen.u1DescType)
+                    {
+                        /*
+                         * Hack for A-bit against Trap E on read-only GDT.
+                         */
+                        /** @todo Fix this by loading ds and cs before turning off WP. */
+                        if (!(pLDTE->Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                            pLDTE->Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+
+                        /*
+                         * All DPL 0 code and data segments are squeezed into DPL 1.
+                         *
+                         * We're skipping conforming segments here because those
+                         * cannot give us any trouble.
+                         */
+                        if (    pLDTE->Gen.u2Dpl == 0
+                            &&      (pLDTE->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+                                !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
+                            pLDTE->Gen.u2Dpl = 1;
+                    }
+                    else
+                    {
+                        /*
+                         * System type selectors are marked not present.
+                         * Recompiler or special handling is required for these.
+                         */
+                        /** @todo what about interrupt gates and rawr0? */
+                        pLDTE->Gen.u1Present = 0;
+                    }
+                }
+
+                /* Next LDT entry. */
+                pLDTE++;
+            }
+        }
+        else
+        {
+            AssertMsg(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc=%Rrc\n", rc));
+            rc = PGMMapSetPage(pVM, GCPtrShadowLDT & PAGE_BASE_GC_MASK, PAGE_SIZE, 0);
+            AssertRC(rc);
+        }
+
+        /*
+         * Advance to the next page.
+         */
+        cbLeft          -= cbChunk;
+        GCPtrShadowLDT  += cbChunk;
+        pShadowLDT       = (PX86DESC)((char *)pShadowLDT + cbChunk);
+        GCPtrLdt        += cbChunk;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Updates the Guest GDT & LDT virtualization based on current CPU state.
  *
@@ -782,14 +1296,11 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  */
 VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 {
-    int    rc    = VINF_SUCCESS;
-
     if (pVM->selm.s.fDisableMonitoring)
     {
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
-
         return VINF_SUCCESS;
     }
 
@@ -798,254 +1309,13 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
     /*
      * GDT sync
      */
+    int rc;
     if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_GDT))
     {
-        /*
-         * Always assume the best
-         */
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
-
-        /* If the GDT was changed, then make sure the LDT is checked too */
-        /** @todo only do this if the actual ldtr selector was changed; this is a bit excessive */
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
-        /* Same goes for the TSS selector */
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
-
-        /*
-         * Get the GDTR and check if there is anything to do (there usually is).
-         */
-        VBOXGDTR    GDTR;
-        CPUMGetGuestGDTR(pVCpu, &GDTR);
-        if (GDTR.cbGdt < sizeof(X86DESC))
-        {
-            Log(("No GDT entries...\n"));
-            STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-            return VINF_SUCCESS;
-        }
-
-        /*
-         * Read the Guest GDT.
-         * ASSUMES that the entire GDT is in memory.
-         */
-        RTUINT      cbEffLimit = GDTR.cbGdt;
-        PX86DESC    pGDTE = &pVM->selm.s.paGdtR3[1];
-        rc = PGMPhysSimpleReadGCPtr(pVCpu, pGDTE, GDTR.pGdt + sizeof(X86DESC), cbEffLimit + 1 - sizeof(X86DESC));
+        rc = selmR3UpdateShadowGdt(pVM, pVCpu);
         if (RT_FAILURE(rc))
-        {
-            /*
-             * Read it page by page.
-             *
-             * Keep track of the last valid page and delay memsets and
-             * adjust cbEffLimit to reflect the effective size. The latter
-             * is something we do in the belief that the guest will probably
-             * never actually commit the last page, thus allowing us to keep
-             * our selectors in the high end of the GDT.
-             */
-            RTUINT  cbLeft = cbEffLimit + 1 - sizeof(X86DESC);
-            RTGCPTR GCPtrSrc = (RTGCPTR)GDTR.pGdt + sizeof(X86DESC);
-            uint8_t *pu8Dst = (uint8_t *)&pVM->selm.s.paGdtR3[1];
-            uint8_t *pu8DstInvalid = pu8Dst;
-
-            while (cbLeft)
-            {
-                RTUINT cb = PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK);
-                cb = RT_MIN(cb, cbLeft);
-                rc = PGMPhysSimpleReadGCPtr(pVCpu, pu8Dst, GCPtrSrc, cb);
-                if (RT_SUCCESS(rc))
-                {
-                    if (pu8DstInvalid != pu8Dst)
-                        memset(pu8DstInvalid, 0, pu8Dst - pu8DstInvalid);
-                    GCPtrSrc += cb;
-                    pu8Dst += cb;
-                    pu8DstInvalid = pu8Dst;
-                }
-                else if (   rc == VERR_PAGE_NOT_PRESENT
-                         || rc == VERR_PAGE_TABLE_NOT_PRESENT)
-                {
-                    GCPtrSrc += cb;
-                    pu8Dst += cb;
-                }
-                else
-                {
-                    AssertReleaseMsgFailed(("Couldn't read GDT at %016RX64, rc=%Rrc!\n", GDTR.pGdt, rc));
-                    STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-                    return VERR_NOT_IMPLEMENTED;
-                }
-                cbLeft -= cb;
-            }
-
-            /* any invalid pages at the end? */
-            if (pu8DstInvalid != pu8Dst)
-            {
-                cbEffLimit = pu8DstInvalid - (uint8_t *)pVM->selm.s.paGdtR3 - 1;
-                /* If any GDTEs was invalidated, zero them. */
-                if (cbEffLimit < pVM->selm.s.cbEffGuestGdtLimit)
-                    memset(pu8DstInvalid + cbEffLimit + 1, 0, pVM->selm.s.cbEffGuestGdtLimit - cbEffLimit);
-            }
-
-            /* keep track of the effective limit. */
-            if (cbEffLimit != pVM->selm.s.cbEffGuestGdtLimit)
-            {
-                Log(("SELMR3UpdateFromCPUM: cbEffGuestGdtLimit=%#x -> %#x (actual %#x)\n",
-                     pVM->selm.s.cbEffGuestGdtLimit, cbEffLimit, GDTR.cbGdt));
-                pVM->selm.s.cbEffGuestGdtLimit = cbEffLimit;
-            }
-        }
-
-        /*
-         * Check if the Guest GDT intrudes on our GDT entries.
-         */
-        /** @todo we should try to minimize relocations by making sure our current selectors can be reused. */
-        RTSEL aHyperSel[SELM_HYPER_SEL_MAX];
-        if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
-        {
-            PX86DESC    pGDTEStart = pVM->selm.s.paGdtR3;
-            PX86DESC    pGDTECur   = (PX86DESC)((char *)pGDTEStart + GDTR.cbGdt + 1 - sizeof(X86DESC));
-            int         iGDT       = 0;
-
-            Log(("Internal SELM GDT conflict: use non-present entries\n"));
-            STAM_COUNTER_INC(&pVM->selm.s.StatScanForHyperSels);
-            while (pGDTECur > pGDTEStart)
-            {
-                /* We can reuse non-present entries */
-                if (!pGDTECur->Gen.u1Present)
-                {
-                    aHyperSel[iGDT] = ((uintptr_t)pGDTECur - (uintptr_t)pVM->selm.s.paGdtR3) / sizeof(X86DESC);
-                    aHyperSel[iGDT] = aHyperSel[iGDT] << X86_SEL_SHIFT;
-                    Log(("SELM: Found unused GDT %04X\n", aHyperSel[iGDT]));
-                    iGDT++;
-                    if (iGDT >= SELM_HYPER_SEL_MAX)
-                        break;
-                }
-
-                pGDTECur--;
-            }
-            if (iGDT != SELM_HYPER_SEL_MAX)
-            {
-                AssertReleaseMsgFailed(("Internal SELM GDT conflict.\n"));
-                STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-                return VERR_NOT_IMPLEMENTED;
-            }
-        }
-        else
-        {
-            aHyperSel[SELM_HYPER_SEL_CS]         = SELM_HYPER_DEFAULT_SEL_CS;
-            aHyperSel[SELM_HYPER_SEL_DS]         = SELM_HYPER_DEFAULT_SEL_DS;
-            aHyperSel[SELM_HYPER_SEL_CS64]       = SELM_HYPER_DEFAULT_SEL_CS64;
-            aHyperSel[SELM_HYPER_SEL_TSS]        = SELM_HYPER_DEFAULT_SEL_TSS;
-            aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = SELM_HYPER_DEFAULT_SEL_TSS_TRAP08;
-        }
-
-        /*
-         * Work thru the copied GDT entries adjusting them for correct virtualization.
-         */
-        PX86DESC pGDTEEnd = (PX86DESC)((char *)pGDTE + cbEffLimit + 1 - sizeof(X86DESC));
-        while (pGDTE < pGDTEEnd)
-        {
-            if (pGDTE->Gen.u1Present)
-            {
-                /*
-                 * Code and data selectors are generally 1:1, with the
-                 * 'little' adjustment we do for DPL 0 selectors.
-                 */
-                if (pGDTE->Gen.u1DescType)
-                {
-                    /*
-                     * Hack for A-bit against Trap E on read-only GDT.
-                     */
-                    /** @todo Fix this by loading ds and cs before turning off WP. */
-                    pGDTE->Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-
-                    /*
-                     * All DPL 0 code and data segments are squeezed into DPL 1.
-                     *
-                     * We're skipping conforming segments here because those
-                     * cannot give us any trouble.
-                     */
-                    if (    pGDTE->Gen.u2Dpl == 0
-                        &&      (pGDTE->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-                            !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
-                        pGDTE->Gen.u2Dpl = 1;
-                }
-                else
-                {
-                    /*
-                     * System type selectors are marked not present.
-                     * Recompiler or special handling is required for these.
-                     */
-                    /** @todo what about interrupt gates and rawr0? */
-                    pGDTE->Gen.u1Present = 0;
-                }
-            }
-
-            /* Next GDT entry. */
-            pGDTE++;
-        }
-
-        /*
-         * Check if our hypervisor selectors were changed.
-         */
-        if (    aHyperSel[SELM_HYPER_SEL_CS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]
-            ||  aHyperSel[SELM_HYPER_SEL_DS]         != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]
-            ||  aHyperSel[SELM_HYPER_SEL_CS64]       != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]
-            ||  aHyperSel[SELM_HYPER_SEL_TSS]        != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]
-            ||  aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] != pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08])
-        {
-            /* Reinitialize our hypervisor GDTs */
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         = aHyperSel[SELM_HYPER_SEL_CS];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         = aHyperSel[SELM_HYPER_SEL_DS];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       = aHyperSel[SELM_HYPER_SEL_CS64];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        = aHyperSel[SELM_HYPER_SEL_TSS];
-            pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
-
-            STAM_COUNTER_INC(&pVM->selm.s.StatHyperSelsChanged);
-
-            /*
-             * Do the relocation callbacks to let everyone update their hyper selector dependencies.
-             * (SELMR3Relocate will call selmR3SetupHyperGDTSelectors() for us.)
-             */
-            VMR3Relocate(pVM, 0);
-        }
-        else if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
-            /* We overwrote all entries above, so we have to save them again. */
-            selmR3SetupHyperGDTSelectors(pVM);
-
-        /*
-         * Adjust the cached GDT limit.
-         * Any GDT entries which have been removed must be cleared.
-         */
-        if (pVM->selm.s.GuestGdtr.cbGdt != GDTR.cbGdt)
-        {
-            if (pVM->selm.s.GuestGdtr.cbGdt > GDTR.cbGdt)
-                memset(pGDTE, 0, pVM->selm.s.GuestGdtr.cbGdt - GDTR.cbGdt);
-        }
-
-        /*
-         * Check if Guest's GDTR is changed.
-         */
-        if (    GDTR.pGdt  != pVM->selm.s.GuestGdtr.pGdt
-            ||  GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
-        {
-            Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%016RX64 cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
-
-            /*
-             * [Re]Register write virtual handler for guest's GDT.
-             */
-            if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
-            {
-                rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
-                AssertRC(rc);
-            }
-
-            rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GDTR.pGdt, GDTR.pGdt + GDTR.cbGdt /* already inclusive */,
-                                             0, selmR3GuestGDTWriteHandler, "selmRCGuestGDTWriteHandler", 0, "Guest GDT write access handler");
-            if (RT_FAILURE(rc))
-                return rc;
-
-            /* Update saved Guest GDTR. */
-            pVM->selm.s.GuestGdtr = GDTR;
-            pVM->selm.s.fGDTRangeRegistered = true;
-        }
+            return rc;                  /* We're toast, so forget the profiling. */
+        AssertRCSuccess(rc);
     }
 
     /*
@@ -1053,7 +1323,10 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
      */
     if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
     {
-        SELMR3SyncTSS(pVM, pVCpu);
+        rc = SELMR3SyncTSS(pVM, pVCpu);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertRCSuccess(rc);
     }
 
     /*
@@ -1061,259 +1334,23 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
      */
     if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_LDT))
     {
-        /*
-         * Always assume the best
-         */
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
-
-        /*
-         * LDT handling is done similarly to the GDT handling with a shadow
-         * array. However, since the LDT is expected to be swappable (at least
-         * some ancient OSes makes it swappable) it must be floating and
-         * synced on a per-page basis.
-         *
-         * Eventually we will change this to be fully on demand. Meaning that
-         * we will only sync pages containing LDT selectors actually used and
-         * let the #PF handler lazily sync pages as they are used.
-         * (This applies to GDT too, when we start making OS/2 fast.)
-         */
-
-        /*
-         * First, determine the current LDT selector.
-         */
-        RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
-        if ((SelLdt & X86_SEL_MASK) == 0)
-        {
-            /* ldtr = 0 - update hyper LDTR and deregister any active handler. */
-            CPUMSetHyperLDTR(pVCpu, 0);
-            if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
-            {
-                rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
-                AssertRC(rc);
-                pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
-            }
-            STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-            return VINF_SUCCESS;
-        }
-
-        /*
-         * Get the LDT selector.
-         */
-        PX86DESC    pDesc = &pVM->selm.s.paGdtR3[SelLdt >> X86_SEL_SHIFT];
-        RTGCPTR     GCPtrLdt = X86DESC_BASE(*pDesc);
-        unsigned    cbLdt = X86DESC_LIMIT(*pDesc);
-        if (pDesc->Gen.u1Granularity)
-            cbLdt = (cbLdt << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-
-        /*
-         * Validate it.
-         */
-        if (    !cbLdt
-            ||  SelLdt >= pVM->selm.s.GuestGdtr.cbGdt
-            ||  pDesc->Gen.u1DescType
-            ||  pDesc->Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
-        {
-            AssertMsg(!cbLdt, ("Invalid LDT %04x!\n", SelLdt));
-
-            /* cbLdt > 0:
-             * This is quite impossible, so we do as most people do when faced with
-             * the impossible, we simply ignore it.
-             */
-            CPUMSetHyperLDTR(pVCpu, 0);
-            if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
-            {
-                rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
-                AssertRC(rc);
-                pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
-            }
-            STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-            return VINF_SUCCESS;
-        }
-        /** @todo check what intel does about odd limits. */
-        AssertMsg(RT_ALIGN(cbLdt + 1, sizeof(X86DESC)) == cbLdt + 1 && cbLdt <= 0xffff, ("cbLdt=%d\n", cbLdt));
-
-        /*
-         * Use the cached guest ldt address if the descriptor has already been modified (see below)
-         * (this is necessary due to redundant LDT updates; see todo above at GDT sync)
-         */
-        if (MMHyperIsInsideArea(pVM, GCPtrLdt))
-            GCPtrLdt = pVM->selm.s.GCPtrGuestLdt;   /* use the old one */
-
-
-        /** @todo Handle only present LDT segments. */
-    //    if (pDesc->Gen.u1Present)
-        {
-            /*
-             * Check if Guest's LDT address/limit is changed.
-             */
-            if (    GCPtrLdt != pVM->selm.s.GCPtrGuestLdt
-                ||  cbLdt != pVM->selm.s.cbLdtLimit)
-            {
-                Log(("SELMR3UpdateFromCPUM: Guest LDT changed to from %RGv:%04x to %RGv:%04x. (GDTR=%016RX64:%04x)\n",
-                     pVM->selm.s.GCPtrGuestLdt, pVM->selm.s.cbLdtLimit, GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
-
-                /*
-                 * [Re]Register write virtual handler for guest's GDT.
-                 * In the event of LDT overlapping something, don't install it just assume it's being updated.
-                 */
-                if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
-                {
-                    rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
-                    AssertRC(rc);
-                }
-#ifdef DEBUG
-                if (pDesc->Gen.u1Present)
-                    Log(("LDT selector marked not present!!\n"));
-#endif
-                rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtrLdt, GCPtrLdt + cbLdt /* already inclusive */,
-                                                 0, selmR3GuestLDTWriteHandler, "selmRCGuestLDTWriteHandler", 0, "Guest LDT write access handler");
-                if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
-                {
-                    /** @todo investigate the various cases where conflicts happen and try avoid them by enh. the instruction emulation. */
-                    pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
-                    Log(("WARNING: Guest LDT (%RGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%016RX64:%04x)\n",
-                         GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
-                }
-                else if (RT_SUCCESS(rc))
-                    pVM->selm.s.GCPtrGuestLdt = GCPtrLdt;
-                else
-                {
-                    CPUMSetHyperLDTR(pVCpu, 0);
-                    STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-                    return rc;
-                }
-
-                pVM->selm.s.cbLdtLimit = cbLdt;
-            }
-        }
-
-        /*
-         * Calc Shadow LDT base.
-         */
-        unsigned    off;
-        pVM->selm.s.offLdtHyper = off = (GCPtrLdt & PAGE_OFFSET_MASK);
-        RTGCPTR     GCPtrShadowLDT  = (RTGCPTR)((RTGCUINTPTR)pVM->selm.s.pvLdtRC + off);
-        PX86DESC    pShadowLDT      = (PX86DESC)((uintptr_t)pVM->selm.s.pvLdtR3 + off);
-
-        /*
-         * Enable the LDT selector in the shadow GDT.
-         */
-        pDesc->Gen.u1Present    = 1;
-        pDesc->Gen.u16BaseLow   = RT_LOWORD(GCPtrShadowLDT);
-        pDesc->Gen.u8BaseHigh1  = RT_BYTE3(GCPtrShadowLDT);
-        pDesc->Gen.u8BaseHigh2  = RT_BYTE4(GCPtrShadowLDT);
-        pDesc->Gen.u1Available  = 0;
-        pDesc->Gen.u1Long       = 0;
-        if (cbLdt > 0xffff)
-        {
-            cbLdt = 0xffff;
-            pDesc->Gen.u4LimitHigh  = 0;
-            pDesc->Gen.u16LimitLow  = pDesc->Gen.u1Granularity ? 0xf : 0xffff;
-        }
-
-        /*
-         * Set Hyper LDTR and notify TRPM.
-         */
-        CPUMSetHyperLDTR(pVCpu, SelLdt);
-
-        /*
-         * Loop synchronising the LDT page by page.
-         */
-        /** @todo investigate how intel handle various operations on half present cross page entries. */
-        off = GCPtrLdt & (sizeof(X86DESC) - 1);
-        AssertMsg(!off, ("LDT is not aligned on entry size! GCPtrLdt=%08x\n", GCPtrLdt));
-
-        /* Note: Do not skip the first selector; unlike the GDT, a zero LDT selector is perfectly valid. */
-        unsigned    cbLeft = cbLdt + 1;
-        PX86DESC   pLDTE = pShadowLDT;
-        while (cbLeft)
-        {
-            /*
-             * Read a chunk.
-             */
-            unsigned  cbChunk = PAGE_SIZE - ((RTGCUINTPTR)GCPtrLdt & PAGE_OFFSET_MASK);
-            if (cbChunk > cbLeft)
-                cbChunk = cbLeft;
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, pShadowLDT, GCPtrLdt, cbChunk);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Mark page
-                 */
-                rc = PGMMapSetPage(pVM, GCPtrShadowLDT & PAGE_BASE_GC_MASK, PAGE_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D);
-                AssertRC(rc);
-
-                /*
-                 * Loop thru the available LDT entries.
-                 * Figure out where to start and end and the potential cross pageness of
-                 * things adds a little complexity. pLDTE is updated there and not in the
-                 * 'next' part of the loop. The pLDTEEnd is inclusive.
-                 */
-                PX86DESC pLDTEEnd = (PX86DESC)((uintptr_t)pShadowLDT + cbChunk) - 1;
-                if (pLDTE + 1 < pShadowLDT)
-                    pLDTE = (PX86DESC)((uintptr_t)pShadowLDT + off);
-                while (pLDTE <= pLDTEEnd)
-                {
-                    if (pLDTE->Gen.u1Present)
-                    {
-                        /*
-                         * Code and data selectors are generally 1:1, with the
-                         * 'little' adjustment we do for DPL 0 selectors.
-                         */
-                        if (pLDTE->Gen.u1DescType)
-                        {
-                            /*
-                             * Hack for A-bit against Trap E on read-only GDT.
-                             */
-                            /** @todo Fix this by loading ds and cs before turning off WP. */
-                            if (!(pLDTE->Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-                                pLDTE->Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-
-                            /*
-                             * All DPL 0 code and data segments are squeezed into DPL 1.
-                             *
-                             * We're skipping conforming segments here because those
-                             * cannot give us any trouble.
-                             */
-                            if (    pLDTE->Gen.u2Dpl == 0
-                                &&      (pLDTE->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-                                    !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
-                                pLDTE->Gen.u2Dpl = 1;
-                        }
-                        else
-                        {
-                            /*
-                             * System type selectors are marked not present.
-                             * Recompiler or special handling is required for these.
-                             */
-                            /** @todo what about interrupt gates and rawr0? */
-                            pLDTE->Gen.u1Present = 0;
-                        }
-                    }
-
-                    /* Next LDT entry. */
-                    pLDTE++;
-                }
-            }
-            else
-            {
-                AssertMsg(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc=%Rrc\n", rc));
-                rc = PGMMapSetPage(pVM, GCPtrShadowLDT & PAGE_BASE_GC_MASK, PAGE_SIZE, 0);
-                AssertRC(rc);
-            }
-
-            /*
-             * Advance to the next page.
-             */
-            cbLeft          -= cbChunk;
-            GCPtrShadowLDT  += cbChunk;
-            pShadowLDT       = (PX86DESC)((char *)pShadowLDT + cbChunk);
-            GCPtrLdt        += cbChunk;
-        }
+        rc = selmR3UpdateShadowLdt(pVM, pVCpu);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertRCSuccess(rc);
     }
 
+#if 0
+    /*
+     * Check for stale selectors and load hidden register bits where they
+     * are missing.
+     */
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+#endif
+    rc = VINF_SUCCESS;
+
     STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

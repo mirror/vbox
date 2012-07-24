@@ -989,6 +989,11 @@
 #define VERR_SELM_INVALID_LDT               (-2505)
 /** The guest LDT selector is out of bounds. */
 #define VERR_SELM_LDT_OUT_OF_BOUNDS         (-2506)
+/** Unknown error while reading the guest GDT during shadow table updating. */
+#define VERR_SELM_GDT_READ_ERROR            (-2507)
+/** The guest GDT so full that we cannot find free space for our own
+ * selectors. */
+#define VERR_SELM_GDT_TOO_FULL              (-2508)
 /** @} */
 
 
