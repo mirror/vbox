@@ -66,8 +66,8 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	orgs.asm
 
  # For 32-bit C code in PC BIOS.
- LIBRARIES += VBoxBios32Lib
- VBoxPcBios32_TEMPLATE = VBoxBios32
+ LIBRARIES += VBoxPcBios32
+ VBoxPcBios32_TEMPLATE = VBoxBios32Lib
  VBoxPcBios32_SOURCES = \
        pci32.c
 
