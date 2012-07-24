@@ -6176,7 +6176,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertReleaseMsg(g_cbVgaBiosBinary <= _64K && g_cbVgaBiosBinary >= 32*_1K, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
     AssertReleaseMsg(RT_ALIGN_Z(g_cbVgaBiosBinary, PAGE_SIZE) == g_cbVgaBiosBinary, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
     /* Note! Because of old saved states we'll always register at least 36KB of ROM. */
-    rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, RT_MIN(cbVgaBiosBinary, 36*_1K), pu8VgaBiosBinary, cbVgaBiosBinary,
+    rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, RT_MAX(cbVgaBiosBinary, 36*_1K), pu8VgaBiosBinary, cbVgaBiosBinary,
                               fFlags, "VGA BIOS");
     if (RT_FAILURE(rc))
         return rc;
