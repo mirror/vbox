@@ -78,8 +78,13 @@ endif # VBOX_WITH_OPEN_WATCOM
 LIBRARIES += VgaBiosBin
 VgaBiosBin_TEMPLATE  = VBOXR3
 VgaBiosBin_DEFS      = IN_VBOXDD2
-VgaBiosBin_SOURCES   = $(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c
-VgaBiosBin_CLEAN     = $(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c
+VgaBiosBin_SOURCES   = \
+	$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c
+VgaBiosBin_DEPS      = \
+	$(VgaBiosBin_0_OUTDIR)/vbetables.h
+VgaBiosBin_CLEAN     = \
+	$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c \
+	$(VgaBiosBin_0_OUTDIR)/vbetables.h
 
 ifdef VBOX_WITH_OPEN_WATCOM
  $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c: $$(VBoxVgaBios_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
@@ -99,6 +104,20 @@ else
 	$(QUIET)$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary $(VgaBiosBin_0_OUTDIR)/VBoxVgaBios.rom $@
 	$(QUIET)$(RM) -f -- $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios.rom
 endif
+
+
+# Rule for making the vbetables.h that DevVGA uses.
+$$(VgaBiosBin_0_OUTDIR)/vbetables.h: $(MAKEFILE_CURRENT) $$(vbetables-gen_1_TARGET) | $$(dir $$@)
+	$(QUIET)$(REDIRECT) -wo $@ -- $(vbetables-gen_1_TARGET)
+
+
+#
+# The VBE tables.
+#
+BLDPROGS += vbetables-gen
+vbetables-gen_TEMPLATE = VBOXBLDPROG
+vbetables-gen_SOURCES  = vbetables-gen.c
+vbetables-gen_CLEAN    = $(vbetables-gen)
 
 
 #
