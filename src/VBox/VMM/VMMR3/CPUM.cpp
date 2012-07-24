@@ -63,12 +63,8 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#if 0 /* later when actual changes have been made */
 /** The current saved state version. */
 #define CPUM_SAVED_STATE_VERSION                14
-#else
-# define CPUM_SAVED_STATE_VERSION               CPUM_SAVED_STATE_VERSION_MEM
-#endif
 /** The current saved state version before using SSMR3PutStruct. */
 #define CPUM_SAVED_STATE_VERSION_MEM            13
 /** The saved state version before introducing the MSR size field. */
@@ -128,6 +124,139 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 *******************************************************************************/
 /** Saved state field descriptors for CPUMCTX. */
 static const SSMFIELD g_aCpumCtxFields[] =
+{
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.FCW),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.FSW),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.FTW),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.FOP),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.FPUIP),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.CS),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.Rsrvd1),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.FPUDP),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.DS),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.Rsrvd2),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.MXCSR),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.MXCSR_MASK),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[0]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[1]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[2]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[3]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[4]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[5]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[6]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[7]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[0]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[1]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[2]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[3]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[4]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[5]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[6]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[7]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[8]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[9]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[10]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[11]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[12]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[13]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[14]),
+    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[15]),
+    SSMFIELD_ENTRY(         CPUMCTX, rdi),
+    SSMFIELD_ENTRY(         CPUMCTX, rsi),
+    SSMFIELD_ENTRY(         CPUMCTX, rbp),
+    SSMFIELD_ENTRY(         CPUMCTX, rax),
+    SSMFIELD_ENTRY(         CPUMCTX, rbx),
+    SSMFIELD_ENTRY(         CPUMCTX, rdx),
+    SSMFIELD_ENTRY(         CPUMCTX, rcx),
+    SSMFIELD_ENTRY(         CPUMCTX, rsp),
+    SSMFIELD_ENTRY(         CPUMCTX, rflags),
+    SSMFIELD_ENTRY(         CPUMCTX, rip),
+    SSMFIELD_ENTRY(         CPUMCTX, r8),
+    SSMFIELD_ENTRY(         CPUMCTX, r9),
+    SSMFIELD_ENTRY(         CPUMCTX, r10),
+    SSMFIELD_ENTRY(         CPUMCTX, r11),
+    SSMFIELD_ENTRY(         CPUMCTX, r12),
+    SSMFIELD_ENTRY(         CPUMCTX, r13),
+    SSMFIELD_ENTRY(         CPUMCTX, r14),
+    SSMFIELD_ENTRY(         CPUMCTX, r15),
+    SSMFIELD_ENTRY(         CPUMCTX, es.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, es.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, es.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, es.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, es.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, es.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, cs.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, ss.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, ds.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, fs.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, gs.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, cr0),
+    SSMFIELD_ENTRY(         CPUMCTX, cr2),
+    SSMFIELD_ENTRY(         CPUMCTX, cr3),
+    SSMFIELD_ENTRY(         CPUMCTX, cr4),
+    SSMFIELD_ENTRY(         CPUMCTX, dr[0]),
+    SSMFIELD_ENTRY(         CPUMCTX, dr[1]),
+    SSMFIELD_ENTRY(         CPUMCTX, dr[2]),
+    SSMFIELD_ENTRY(         CPUMCTX, dr[3]),
+    SSMFIELD_ENTRY(         CPUMCTX, dr[6]),
+    SSMFIELD_ENTRY(         CPUMCTX, dr[7]),
+    SSMFIELD_ENTRY(         CPUMCTX, gdtr.cbGdt),
+    SSMFIELD_ENTRY(         CPUMCTX, gdtr.pGdt),
+    SSMFIELD_ENTRY(         CPUMCTX, idtr.cbIdt),
+    SSMFIELD_ENTRY(         CPUMCTX, idtr.pIdt),
+    SSMFIELD_ENTRY(         CPUMCTX, SysEnter.cs),
+    SSMFIELD_ENTRY(         CPUMCTX, SysEnter.eip),
+    SSMFIELD_ENTRY(         CPUMCTX, SysEnter.esp),
+    SSMFIELD_ENTRY(         CPUMCTX, msrEFER),
+    SSMFIELD_ENTRY(         CPUMCTX, msrSTAR),
+    SSMFIELD_ENTRY(         CPUMCTX, msrPAT),
+    SSMFIELD_ENTRY(         CPUMCTX, msrLSTAR),
+    SSMFIELD_ENTRY(         CPUMCTX, msrCSTAR),
+    SSMFIELD_ENTRY(         CPUMCTX, msrSFMASK),
+    SSMFIELD_ENTRY(         CPUMCTX, msrKERNELGSBASE),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, ldtr.Attr),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.Sel),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.ValidSel),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.fFlags),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.u64Base),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.u32Limit),
+    SSMFIELD_ENTRY(         CPUMCTX, tr.Attr),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for CPUMCTX in V4.1 before the hidden selector
+ * registeres changed. */
+static const SSMFIELD g_aCpumCtxFieldsMem[] =
 {
     SSMFIELD_ENTRY(         CPUMCTX, fpu.FCW),
     SSMFIELD_ENTRY(         CPUMCTX, fpu.FSW),
@@ -2225,32 +2354,20 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-#ifdef CPUM_WITH_CHANGED_CPUMCTX
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED,
-                         g_aCpumCtxFields, NULL);
-#else
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper), SSMSTRUCT_FLAGS_MEM_BAND_AID,
-                         g_aCpumCtxFields, NULL);
-#endif
+        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper), 0, g_aCpumCtxFields, NULL);
     }
 
     SSMR3PutU32(pSSM, pVM->cCpus);
     SSMR3PutU32(pSSM, sizeof(pVM->aCpus[0].cpum.s.GuestMsrs.msr));
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = &pVM->aCpus[iCpu];
 
-#ifdef CPUM_WITH_CHANGED_CPUMCTX
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED,
-                         g_aCpumCtxFields, NULL);
-#else
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest), SSMSTRUCT_FLAGS_MEM_BAND_AID,
-                         g_aCpumCtxFields, NULL);
-#endif
+        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest), 0, g_aCpumCtxFields, NULL);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
-        AssertCompileSizeAlignment(pVM->aCpus[i].cpum.s.GuestMsrs.msr, sizeof(uint64_t));
-        SSMR3PutMem(pSSM, &pVCpu->cpum.s.GuestMsrs, sizeof(pVM->aCpus[i].cpum.s.GuestMsrs.msr));
+        AssertCompileSizeAlignment(pVCpu->cpum.s.GuestMsrs.msr, sizeof(uint64_t));
+        SSMR3PutMem(pSSM, &pVCpu->cpum.s.GuestMsrs, sizeof(pVCpu->cpum.s.GuestMsrs.msr));
     }
 
     cpumR3SaveCpuId(pVM, pSSM);
@@ -2301,23 +2418,19 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         else if (uVersion <= CPUM_SAVED_STATE_VERSION_VER3_0)
             SSMR3HandleSetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
 
-        PCSSMFIELD  paCpumCtxFields = g_aCpumCtxFields;
+        uint32_t const  fLoad = uVersion > CPUM_SAVED_STATE_VERSION_MEM ? 0 : SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
+        PCSSMFIELD      paCpumCtxFields = g_aCpumCtxFields;
         if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
             paCpumCtxFields = g_aCpumCtxFieldsV16;
-        uint32_t    fLoad   = 0;
-        if (uVersion <= CPUM_SAVED_STATE_VERSION_MEM)
-#ifdef CPUM_WITH_CHANGED_CPUMCTX
-            fLoad = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
-#else
-            fLoad = SSMSTRUCT_FLAGS_MEM_BAND_AID;
-#endif
+        else if (uVersion <= CPUM_SAVED_STATE_VERSION_MEM)
+            paCpumCtxFields = g_aCpumCtxFieldsMem;
 
         /*
          * Restore.
          */
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
         {
-            PVMCPU   pVCpu = &pVM->aCpus[i];
+            PVMCPU   pVCpu = &pVM->aCpus[iCpu];
             uint64_t uCR3  = pVCpu->cpum.s.Hyper.cr3;
             uint64_t uRSP  = pVCpu->cpum.s.Hyper.rsp; /* see VMMR3Relocate(). */
             SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper), fLoad, paCpumCtxFields, NULL);
@@ -2347,27 +2460,86 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                                   VERR_SSM_UNEXPECTED_DATA);
         }
 
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
         {
-            SSMR3GetStructEx(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest), fLoad,
+            PVMCPU  pVCpu = &pVM->aCpus[iCpu];
+            SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest), fLoad,
                              paCpumCtxFields, NULL);
-            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
-            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
+            SSMR3GetU32(pSSM, &pVCpu->cpum.s.fUseFlags);
+            SSMR3GetU32(pSSM, &pVCpu->cpum.s.fChanged);
             if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
-                SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], cbMsrs);
+                SSMR3GetMem(pSSM, &pVCpu->cpum.s.GuestMsrs.au64[0], cbMsrs);
             else if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
             {
-                SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], 2 * sizeof(uint64_t)); /* Restore two MSRs. */
+                SSMR3GetMem(pSSM, &pVCpu->cpum.s.GuestMsrs.au64[0], 2 * sizeof(uint64_t)); /* Restore two MSRs. */
                 SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
+            }
+        }
+
+        /* Older states does not have the internal selector register flags
+           and valid selector value.  Supply those. */
+        if (uVersion <= CPUM_SAVED_STATE_VERSION_MEM)
+        {
+            for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+            {
+                PVMCPU      pVCpu  = &pVM->aCpus[iCpu];
+                bool const  fValid = HWACCMIsEnabled(pVM)
+                                  || (   uVersion > CPUM_SAVED_STATE_VERSION_VER3_2
+                                      && !(pVCpu->cpum.s.fChanged & CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID));
+                PCPUMSELREG paSelReg = CPUMCTX_FIRST_SREG(&pVCpu->cpum.s.Guest);
+                if (fValid)
+                {
+                    for (uint32_t iSelReg = 0; iSelReg < X86_SREG_COUNT; iSelReg++)
+                    {
+                        paSelReg[iSelReg].fFlags   = CPUMSELREG_FLAGS_VALID;
+                        paSelReg[iSelReg].ValidSel = paSelReg[iSelReg].Sel;
+                    }
+
+                    pVCpu->cpum.s.Guest.ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
+                    pVCpu->cpum.s.Guest.ldtr.ValidSel = pVCpu->cpum.s.Guest.ldtr.Sel;
+                    pVCpu->cpum.s.Guest.tr.fFlags     = CPUMSELREG_FLAGS_VALID;
+                    pVCpu->cpum.s.Guest.tr.ValidSel   = pVCpu->cpum.s.Guest.tr.Sel;
+                }
+                else
+                {
+                    for (uint32_t iSelReg = 0; iSelReg < X86_SREG_COUNT; iSelReg++)
+                    {
+                        paSelReg[iSelReg].fFlags   = 0;
+                        paSelReg[iSelReg].ValidSel = 0;
+                    }
+
+                    /** @todo fix this. We can get most of the details from SELM after restore is
+                     *        done. */
+                    pVCpu->cpum.s.Guest.ldtr.fFlags   = 0;
+                    pVCpu->cpum.s.Guest.ldtr.ValidSel = 0;
+                    pVCpu->cpum.s.Guest.tr.fFlags     = 0;
+                    pVCpu->cpum.s.Guest.tr.ValidSel   = 0;
+                }
+
             }
         }
 
         /* Older states does not set CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID for
            raw-mode guest, so we have to do it ourselves. */
+/** @todo eliminate CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID. */
         if (   uVersion <= CPUM_SAVED_STATE_VERSION_VER3_2
             && !HWACCMIsEnabled(pVM))
             for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
                 pVM->aCpus[iCpu].cpum.s.fChanged |= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
+
+        /*
+         * A quick sanity check.
+         */
+        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[iCpu];
+            AssertLogRelReturn(!(pVCpu->cpum.s.Guest.es.fFlags & !CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
+            AssertLogRelReturn(!(pVCpu->cpum.s.Guest.cs.fFlags & !CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
+            AssertLogRelReturn(!(pVCpu->cpum.s.Guest.ss.fFlags & !CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
+            AssertLogRelReturn(!(pVCpu->cpum.s.Guest.ds.fFlags & !CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
+            AssertLogRelReturn(!(pVCpu->cpum.s.Guest.fs.fFlags & !CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
+            AssertLogRelReturn(!(pVCpu->cpum.s.Guest.gs.fFlags & !CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
+        }
     }
 
     pVM->cpum.s.fPendingRestore = false;

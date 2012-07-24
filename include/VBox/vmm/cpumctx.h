@@ -76,6 +76,7 @@ typedef struct CPUMSELREG
  * @{ */
 #define CPUMSELREG_FLAGS_VALID      UINT16_C(0x0001)
 #define CPUMSELREG_FLAGS_STALE      UINT16_C(0x0002)
+#define CPUMSELREG_FLAGS_VALID_MASK UINT16_C(0x0003)
 /** @} */
 
 /** Checks if the hidden parts of the selector register are valid. */
@@ -397,7 +398,14 @@ typedef struct CPUMCTX
  */
 # define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->rax)
 
-#endif /* VBOX_FOR_DTRACE_LIB */
+/**
+ * Gets the first selector register of a CPUMCTX.
+ *
+ * Use this with X86_SREG_COUNT to loop thru the selector registers.
+ */
+# define CPUMCTX_FIRST_SREG(a_pCtx) (&(a_pCtx)->es)
+
+#endif /* !VBOX_FOR_DTRACE_LIB */
 
 /**
  * Additional guest MSRs (i.e. not part of the CPU context structure).
