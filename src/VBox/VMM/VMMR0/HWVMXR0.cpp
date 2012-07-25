@@ -1383,6 +1383,8 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
          *        range. */
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_LOAD_COUNT, idxMsr);
         AssertRC(rc);
+
+        pVCpu->hwaccm.s.vmx.cCachedMSRs = idxMsr;
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_HOST_CONTEXT;
@@ -2117,7 +2119,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /*
      * Store all guest MSRs in the VM-entry load area, so they will be loaded
-     * during VM-entry and restored into the VM-exit store area during VM-exit.
+     * during the world switch.
      */
     PVMXMSR pMsr = (PVMXMSR)pVCpu->hwaccm.s.vmx.pGuestMSR;
     unsigned idxMsr = 0;
@@ -2174,7 +2176,11 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pMsr++; idxMsr++;
     }
 
-    pVCpu->hwaccm.s.vmx.cCachedMSRs = idxMsr;
+    /*
+     * The number of host MSRs saved must be identical to the number of guest MSRs loaded.
+     * It's not a VT-x requirement but how it's practically used here.
+     */
+    Assert(pVCpu->hwaccm.s.vmx.cCachedMSRs == idxMsr);
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT, idxMsr);
     AssertRC(rc);
