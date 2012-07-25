@@ -505,6 +505,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--encodedlun <lun>]\n"
                      "                            [--username <username>]\n"
                      "                            [--password <password>]\n"
+                     "                            [--initiator <initiator>]\n"
                      "                            [--intnet]\n"
                      "\n");
 

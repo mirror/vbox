@@ -67,6 +67,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--encodedlun",       'E', RTGETOPT_REQ_STRING },
     { "--username",         'U', RTGETOPT_REQ_STRING },
     { "--password",         'W', RTGETOPT_REQ_STRING },
+    { "--initiator",        'N', RTGETOPT_REQ_STRING },
     { "--intnet",           'I', RTGETOPT_REQ_NOTHING },
 };
 
@@ -99,6 +100,7 @@ int handleStorageAttach(HandlerArg *a)
     Bstr bstrLun;
     Bstr bstrUsername;
     Bstr bstrPassword;
+    Bstr bstrInitiator;
     bool fIntNet = false;
 
     RTGETOPTUNION ValueUnion;
@@ -267,6 +269,10 @@ int handleStorageAttach(HandlerArg *a)
 
             case 'W':   // --password
                 bstrPassword = ValueUnion.psz;
+                break;
+
+            case 'N':   // --initiator
+                bstrInitiator = ValueUnion.psz;
                 break;
 
             case 'M':   // --type
@@ -596,13 +602,11 @@ int handleStorageAttach(HandlerArg *a)
                     Bstr("InitiatorSecret").detachTo(names.appendedRaw());
                     bstrPassword.detachTo(values.appendedRaw());
                 }
-
-                /// @todo add --initiator option - until that happens rely on the
-                // defaults of the iSCSI initiator code. Setting it to a constant
-                // value does more harm than good, as the initiator name is supposed
-                // to identify a particular initiator uniquely.
-        //        Bstr("InitiatorName").detachTo(names.appendedRaw());
-        //        Bstr("iqn.2008-04.com.sun.virtualbox.initiator").detachTo(values.appendedRaw());
+                if (!bstrPassword.isEmpty())
+                {
+                    Bstr("InitiatorName").detachTo(names.appendedRaw());
+                    bstrInitiator.detachTo(values.appendedRaw());
+                }
 
                 /// @todo add --targetName and --targetPassword options
 
