@@ -27,20 +27,20 @@ function vboxStartAllUserVms()
         USERSHELL=`dscl . -read /Users/${user} | grep UserShell | sed 's/UserShell: //g'`
 
         # Check for known home directories and shells for daemons
-        if [[   "${HOMEDIR}" == "/var/empty" || "${HOMEDIR}" == "/dev/null"
+        if [[   "${HOMEDIR}" == "/var/empty" || "${HOMEDIR}" == "/dev/null" || "${HOMEDIR}" == "/var/root"
              || "${USERSHELL}" == "/usr/bin/false" || "${USERSHELL}" == "/dev/null" || "${USERSHELL}" == "/usr/sbin/uucico" ]]
         then
             continue
         fi
 
         # Start the daemon
-        su ${user} -c '/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --start --background --config /etc/vbox/autostart.cfg'
+        su ${user} -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --start --background --config ${1}"
 
     done
 }
 
 case $1 in
-    --start) vboxStartAllUserVms;;
+    --start) vboxStartAllUserVms ${2};;
           *) echo "Unknown option ${1}";;
 esac
 

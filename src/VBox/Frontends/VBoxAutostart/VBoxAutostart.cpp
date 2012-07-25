@@ -104,7 +104,7 @@ static bool          g_fDaemonize = false;
  * Command line arguments.
  */
 static const RTGETOPTDEF g_aOptions[] = {
-#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_DARWIN)
     { "--background",           'b',                                       RTGETOPT_REQ_NOTHING },
 #endif
     /** For displayHelp(). */
@@ -702,7 +702,7 @@ static void displayHelp(const char *pszImage)
                 pcszDescr = "Print this help message and exit.";
                 break;
 
-#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_DARWIN)
             case 'b':
                 pcszDescr = "Run in background (daemon mode).";
                 break;
@@ -806,7 +806,7 @@ int main(int argc, char *argv[])
                 g_fVerbose = true;
                 break;
 
-#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_DARWIN)
             case 'b':
                 g_fDaemonize = true;
                 break;
@@ -852,7 +852,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (fStart == fStop)
+    if (!fStart && !fStop)
+    {
+        displayHelp(argv[0]);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Either --start or --stop must be present");
+    }
+    else if (fStart && fStop)
     {
         displayHelp(argv[0]);
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "--start or --stop are mutually exclusive");
@@ -887,7 +892,7 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, rc);
 
-#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_DARWIN)
     if (g_fDaemonize)
     {
         /* prepare release logging */
