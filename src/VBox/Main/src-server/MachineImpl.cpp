@@ -12211,6 +12211,9 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
         mData->mSession.mRemoteControls.erase(it);
     }
 
+    /* signal the client watcher thread, because the client is going away */
+    mParent->updateClientWatcher();
+
     LogFlowThisFuncLeave();
     return S_OK;
 }

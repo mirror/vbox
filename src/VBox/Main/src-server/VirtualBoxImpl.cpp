@@ -107,6 +107,12 @@ Bstr VirtualBox::sPackageType;
 // static
 Bstr VirtualBox::sAPIVersion;
 
+#ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+/** Table for adaptive timeouts in the client watcher. The counter starts at
+ * the maximum value and decreases to 0. */
+static const RTMSINTERVAL s_updateAdaptTimeouts[] = { 500, 200, 100, 50, 20, 10, 5 };
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // CallbackEvent class
@@ -282,6 +288,9 @@ struct VirtualBox::Data
 
     // the following are data for the client watcher thread
     const UPDATEREQTYPE                 updateReq;
+#ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+    uint8_t                             updateAdaptCtr;
+#endif
     const RTTHREAD                      threadClientWatcher;
     typedef std::list<RTPROCESS> ProcessList;
     ProcessList                         llProcesses;
@@ -515,6 +524,7 @@ HRESULT VirtualBox::init()
         RTSemEventCreate(&unconst(m->updateReq));
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         RTSemEventCreate(&unconst(m->updateReq));
+        ASMAtomicUoWriteU8(&m->updateAdaptCtr, 0);
 #else
 # error "Port me!"
 #endif
@@ -2626,6 +2636,7 @@ void VirtualBox::updateClientWatcher()
 #elif defined(RT_OS_OS2)
     RTSemEventSignal(m->updateReq);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+    ASMAtomicUoWriteU8(&m->updateAdaptCtr, RT_ELEMENTS(s_updateAdaptTimeouts) - 1);
     RTSemEventSignal(m->updateReq);
 #else
 # error "Port me!"
@@ -4809,7 +4820,24 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
             /* release the caller to let uninit() ever proceed */
             autoCaller.release();
 
-            int rc = RTSemEventWait(that->m->updateReq, 500);
+            /* determine wait timeout adaptively: after updating information
+             * relevant to the client watcher, check a few times more
+             * frequently. This ensures good reaction time when the signalling
+             * has to be done a bit before the actual change for technical
+             * reasons, and saves CPU cycles when no activities are expected. */
+            RTMSINTERVAL cMillies;
+            {
+                uint8_t uOld, uNew;
+                do
+                {
+                    uOld = ASMAtomicUoReadU8(&that->m->updateAdaptCtr);
+                    uNew = uOld ? uOld - 1 : uOld;
+                } while (!ASMAtomicCmpXchgU8(&that->m->updateAdaptCtr, uNew, uOld));
+                Assert(uOld <= RT_ELEMENTS(s_updateAdaptTimeouts) - 1);
+                cMillies = s_updateAdaptTimeouts[uOld];
+            }
+
+            int rc = RTSemEventWait(that->m->updateReq, cMillies);
 
             /*
              *  Restore the caller before using VirtualBox. If it fails, this
