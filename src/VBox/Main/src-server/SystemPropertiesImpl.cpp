@@ -1179,7 +1179,7 @@ HRESULT SystemProperties::setAutostartDatabasePath(const Utf8Str &aPath)
     else
     {
         int vrc = autostartDb->setAutostartDbPath(NULL);
-        if (RT_SUCCESS(vrc))
+        if (RT_SUCCESS(vrc) || vrc == VERR_NOT_SUPPORTED)
             m->strAutostartDatabasePath = "";
         else
             rc = setError(E_FAIL,
