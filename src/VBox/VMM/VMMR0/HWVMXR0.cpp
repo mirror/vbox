@@ -3659,175 +3659,158 @@ ResumeExecution:
                     Assert(cbOp == pDis->cbInstr);
                     switch (pDis->pCurInstr->uOpcode)
                     {
-                    case OP_CLI:
-                        pCtx->eflags.Bits.u1IF = 0;
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCli);
-                        break;
-
-                    case OP_STI:
-                        pCtx->eflags.Bits.u1IF = 1;
-                        EMSetInhibitInterruptsPC(pVCpu, pCtx->rip + pDis->cbInstr);
-                        Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-                        rc2 = VMXWriteVMCS(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE,
-                                           VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
-                        AssertRC(rc2);
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitSti);
-                        break;
-
-                    case OP_HLT:
-                        fUpdateRIP = false;
-                        rc = VINF_EM_HALT;
-                        pCtx->rip += pDis->cbInstr;
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
-                        break;
-
-                    case OP_POPF:
-                    {
-                        RTGCPTR   GCPtrStack;
-                        uint32_t  cbParm;
-                        uint32_t  uMask;
-                        X86EFLAGS eflags;
-
-                        if (pDis->fPrefix & DISPREFIX_OPSIZE)
-                        {
-                            cbParm = 4;
-                            uMask  = 0xffffffff;
-                        }
-                        else
-                        {
-                            cbParm = 2;
-                            uMask  = 0xffff;
-                        }
-
-                        rc2 = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, 0, &GCPtrStack);
-                        if (RT_FAILURE(rc2))
-                        {
-                            rc = VERR_EM_INTERPRETER;
+                        case OP_CLI:
+                            pCtx->eflags.Bits.u1IF = 0;
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCli);
                             break;
-                        }
-                        eflags.u = 0;
-                        rc2 = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &eflags.u, cbParm);
-                        if (RT_FAILURE(rc2))
-                        {
-                            rc = VERR_EM_INTERPRETER;
+
+                        case OP_STI:
+                            pCtx->eflags.Bits.u1IF = 1;
+                            EMSetInhibitInterruptsPC(pVCpu, pCtx->rip + pDis->cbInstr);
+                            Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+                            rc2 = VMXWriteVMCS(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE,
+                                               VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+                            AssertRC(rc2);
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitSti);
                             break;
-                        }
-                        LogFlow(("POPF %x -> %RGv mask=%x\n", eflags.u, pCtx->rsp, uMask));
-                        pCtx->eflags.u = (pCtx->eflags.u & ~(X86_EFL_POPF_BITS & uMask)) | (eflags.u & X86_EFL_POPF_BITS & uMask);
-                        /* RF cleared when popped in real mode; see pushf description in AMD manual. */
-                        pCtx->eflags.Bits.u1RF = 0;
-                        pCtx->esp += cbParm;
-                        pCtx->esp &= uMask;
 
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPopf);
-                        break;
-                    }
-
-                    case OP_PUSHF:
-                    {
-                        RTGCPTR   GCPtrStack;
-                        uint32_t  cbParm;
-                        uint32_t  uMask;
-                        X86EFLAGS eflags;
-
-                        if (pDis->fPrefix & DISPREFIX_OPSIZE)
-                        {
-                            cbParm = 4;
-                            uMask  = 0xffffffff;
-                        }
-                        else
-                        {
-                            cbParm = 2;
-                            uMask  = 0xffff;
-                        }
-
-                        rc2 = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), (pCtx->esp - cbParm) & uMask, 0,
-                                           &GCPtrStack);
-                        if (RT_FAILURE(rc2))
-                        {
-                            rc = VERR_EM_INTERPRETER;
+                        case OP_HLT:
+                            fUpdateRIP = false;
+                            rc = VINF_EM_HALT;
+                            pCtx->rip += pDis->cbInstr;
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
                             break;
-                        }
-                        eflags = pCtx->eflags;
-                        /* RF & VM cleared when pushed in real mode; see pushf description in AMD manual. */
-                        eflags.Bits.u1RF = 0;
-                        eflags.Bits.u1VM = 0;
 
-                        rc2 = PGMPhysWrite(pVM, (RTGCPHYS)GCPtrStack, &eflags.u, cbParm);
-                        if (RT_FAILURE(rc2))
+                        case OP_POPF:
                         {
-                            rc = VERR_EM_INTERPRETER;
-                            break;
-                        }
-                        LogFlow(("PUSHF %x -> %RGv\n", eflags.u, GCPtrStack));
-                        pCtx->esp -= cbParm;
-                        pCtx->esp &= uMask;
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPushf);
-                        break;
-                    }
+                            RTGCPTR   GCPtrStack;
+                            uint32_t  cbParm;
+                            uint32_t  uMask;
+                            X86EFLAGS eflags;
 
-                    case OP_IRET:
-                    {
-                        RTGCPTR   GCPtrStack;
-                        uint32_t  uMask = 0xffff;
-                        uint16_t  aIretFrame[3];
+                            if (pDis->fPrefix & DISPREFIX_OPSIZE)
+                            {
+                                cbParm = 4;
+                                uMask  = 0xffffffff;
+                            }
+                            else
+                            {
+                                cbParm = 2;
+                                uMask  = 0xffff;
+                            }
 
-                        if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
-                        {
-                            rc = VERR_EM_INTERPRETER;
+                            rc2 = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, 0, &GCPtrStack);
+                            if (RT_FAILURE(rc2))
+                            {
+                                rc = VERR_EM_INTERPRETER;
+                                break;
+                            }
+                            eflags.u = 0;
+                            rc2 = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &eflags.u, cbParm);
+                            if (RT_FAILURE(rc2))
+                            {
+                                rc = VERR_EM_INTERPRETER;
+                                break;
+                            }
+                            LogFlow(("POPF %x -> %RGv mask=%x\n", eflags.u, pCtx->rsp, uMask));
+                            pCtx->eflags.u = (pCtx->eflags.u & ~(X86_EFL_POPF_BITS & uMask))
+                                            | (eflags.u & X86_EFL_POPF_BITS & uMask);
+                            /* RF cleared when popped in real mode; see pushf description in AMD manual. */
+                            pCtx->eflags.Bits.u1RF = 0;
+                            pCtx->esp += cbParm;
+                            pCtx->esp &= uMask;
+
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPopf);
                             break;
                         }
 
-                        rc2 = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, 0, &GCPtrStack);
-                        if (RT_FAILURE(rc2))
+                        case OP_PUSHF:
                         {
-                            rc = VERR_EM_INTERPRETER;
+                            RTGCPTR   GCPtrStack;
+                            uint32_t  cbParm;
+                            uint32_t  uMask;
+                            X86EFLAGS eflags;
+
+                            if (pDis->fPrefix & DISPREFIX_OPSIZE)
+                            {
+                                cbParm = 4;
+                                uMask  = 0xffffffff;
+                            }
+                            else
+                            {
+                                cbParm = 2;
+                                uMask  = 0xffff;
+                            }
+
+                            rc2 = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), (pCtx->esp - cbParm) & uMask, 0,
+                                               &GCPtrStack);
+                            if (RT_FAILURE(rc2))
+                            {
+                                rc = VERR_EM_INTERPRETER;
+                                break;
+                            }
+                            eflags = pCtx->eflags;
+                            /* RF & VM cleared when pushed in real mode; see pushf description in AMD manual. */
+                            eflags.Bits.u1RF = 0;
+                            eflags.Bits.u1VM = 0;
+
+                            rc2 = PGMPhysWrite(pVM, (RTGCPHYS)GCPtrStack, &eflags.u, cbParm);
+                            if (RT_FAILURE(rc2))
+                            {
+                                rc = VERR_EM_INTERPRETER;
+                                break;
+                            }
+                            LogFlow(("PUSHF %x -> %RGv\n", eflags.u, GCPtrStack));
+                            pCtx->esp -= cbParm;
+                            pCtx->esp &= uMask;
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPushf);
                             break;
                         }
-                        rc2 = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &aIretFrame[0], sizeof(aIretFrame));
-                        if (RT_FAILURE(rc2))
+
+                        case OP_IRET:
                         {
-                            rc = VERR_EM_INTERPRETER;
+                            RTGCPTR   GCPtrStack;
+                            uint32_t  uMask = 0xffff;
+                            uint16_t  aIretFrame[3];
+
+                            if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
+                            {
+                                rc = VERR_EM_INTERPRETER;
+                                break;
+                            }
+
+                            rc2 = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, 0, &GCPtrStack);
+                            if (RT_FAILURE(rc2))
+                            {
+                                rc = VERR_EM_INTERPRETER;
+                                break;
+                            }
+                            rc2 = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &aIretFrame[0], sizeof(aIretFrame));
+                            if (RT_FAILURE(rc2))
+                            {
+                                rc = VERR_EM_INTERPRETER;
+                                break;
+                            }
+                            pCtx->ip            = aIretFrame[0];
+                            pCtx->cs.Sel        = aIretFrame[1];
+                            pCtx->cs.ValidSel   = aIretFrame[1];
+                            pCtx->cs.u64Base    = (uint32_t)pCtx->cs.Sel << 4;
+                            pCtx->eflags.u      =   (pCtx->eflags.u & ~(X86_EFL_POPF_BITS & uMask))
+                                                  | (aIretFrame[2] & X86_EFL_POPF_BITS & uMask);
+                            pCtx->sp           += sizeof(aIretFrame);
+
+                            LogFlow(("iret to %04x:%x\n", pCtx->cs.Sel, pCtx->ip));
+                            fUpdateRIP = false;
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIret);
                             break;
                         }
-                        pCtx->ip            = aIretFrame[0];
-                        pCtx->cs.Sel        = aIretFrame[1];
-                        pCtx->cs.ValidSel   = aIretFrame[1];
-                        pCtx->cs.u64Base    = (uint32_t)pCtx->cs.Sel << 4;
-                        pCtx->eflags.u      =   (pCtx->eflags.u & ~(X86_EFL_POPF_BITS & uMask))
-                                              | (aIretFrame[2] & X86_EFL_POPF_BITS & uMask);
-                        pCtx->sp           += sizeof(aIretFrame);
 
-                        LogFlow(("iret to %04x:%x\n", pCtx->cs.Sel, pCtx->ip));
-                        fUpdateRIP = false;
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIret);
-                        break;
-                    }
-
-                    case OP_INT:
-                    {
-                        uint32_t intInfo2;
-
-                        LogFlow(("Realmode: INT %x\n", pDis->Param1.uValue & 0xff));
-                        intInfo2  = pDis->Param1.uValue & 0xff;
-                        intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-                        intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-
-                        rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, cbOp, 0);
-                        AssertRC(VBOXSTRICTRC_VAL(rc));
-                        fUpdateRIP = false;
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
-                        break;
-                    }
-
-                    case OP_INTO:
-                    {
-                        if (pCtx->eflags.Bits.u1OF)
+                        case OP_INT:
                         {
                             uint32_t intInfo2;
 
-                            LogFlow(("Realmode: INTO\n"));
-                            intInfo2  = X86_XCPT_OF;
+                            LogFlow(("Realmode: INT %x\n", pDis->Param1.uValue & 0xff));
+                            intInfo2  = pDis->Param1.uValue & 0xff;
                             intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
                             intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
@@ -3835,30 +3818,48 @@ ResumeExecution:
                             AssertRC(VBOXSTRICTRC_VAL(rc));
                             fUpdateRIP = false;
                             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
+                            break;
                         }
-                        break;
-                    }
 
-                    case OP_INT3:
-                    {
-                        uint32_t intInfo2;
+                        case OP_INTO:
+                        {
+                            if (pCtx->eflags.Bits.u1OF)
+                            {
+                                uint32_t intInfo2;
 
-                        LogFlow(("Realmode: INT 3\n"));
-                        intInfo2  = 3;
-                        intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-                        intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                                LogFlow(("Realmode: INTO\n"));
+                                intInfo2  = X86_XCPT_OF;
+                                intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+                                intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
-                        rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, cbOp, 0);
-                        AssertRC(VBOXSTRICTRC_VAL(rc));
-                        fUpdateRIP = false;
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
-                        break;
-                    }
+                                rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, cbOp, 0);
+                                AssertRC(VBOXSTRICTRC_VAL(rc));
+                                fUpdateRIP = false;
+                                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
+                            }
+                            break;
+                        }
 
-                    default:
-                        rc = EMInterpretInstructionDisasState(pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR);
-                        fUpdateRIP = false;
-                        break;
+                        case OP_INT3:
+                        {
+                            uint32_t intInfo2;
+
+                            LogFlow(("Realmode: INT 3\n"));
+                            intInfo2  = 3;
+                            intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+                            intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+                            rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, cbOp, 0);
+                            AssertRC(VBOXSTRICTRC_VAL(rc));
+                            fUpdateRIP = false;
+                            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInt);
+                            break;
+                        }
+
+                        default:
+                            rc = EMInterpretInstructionDisasState(pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR);
+                            fUpdateRIP = false;
+                            break;
                     }
 
                     if (rc == VINF_SUCCESS)
@@ -3894,21 +3895,11 @@ ResumeExecution:
             {
                 switch (vector)
                 {
-                    case X86_XCPT_DE:
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDE);
-                        break;
-                    case X86_XCPT_UD:
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestUD);
-                        break;
-                    case X86_XCPT_SS:
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestSS);
-                        break;
-                    case X86_XCPT_NP:
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestNP);
-                        break;
-                    case X86_XCPT_XF:
-                        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestXF);
-                        break;
+                    case X86_XCPT_DE: STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDE); break;
+                    case X86_XCPT_UD: STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestUD); break;
+                    case X86_XCPT_SS: STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestSS); break;
+                    case X86_XCPT_NP: STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestNP); break;
+                    case X86_XCPT_XF: STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestXF); break;
                 }
 
                 Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
@@ -4166,12 +4157,12 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_INVPG:                /* 14 Guest software attempted to execute INVPG. */
+    case VMX_EXIT_INVLPG:               /* 14 Guest software attempted to execute INVLPG. */
     {
         Log2(("VMX: invlpg\n"));
         Assert(!pVM->hwaccm.s.fNestedPaging);
 
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInvpg);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInvlpg);
         rc = EMInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx), exitQualification);
         if (rc == VINF_SUCCESS)
         {
@@ -4734,7 +4725,7 @@ ResumeExecution:
 
     case VMX_EXIT_CPUID:                /* 10 Guest software attempted to execute CPUID. */
     case VMX_EXIT_RDTSC:                /* 16 Guest software attempted to execute RDTSC. */
-    case VMX_EXIT_INVPG:                /* 14 Guest software attempted to execute INVPG. */
+    case VMX_EXIT_INVLPG:               /* 14 Guest software attempted to execute INVLPG. */
     case VMX_EXIT_CRX_MOVE:             /* 28 Control-register accesses. */
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */

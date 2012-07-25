@@ -474,8 +474,8 @@ typedef union
 #define VMX_EXIT_HLT                12
 /** 13 Guest software attempted to execute INVD. */
 #define VMX_EXIT_INVD               13
-/** 14 Guest software attempted to execute INVPG. */
-#define VMX_EXIT_INVPG              14
+/** 14 Guest software attempted to execute INVLPG. */
+#define VMX_EXIT_INVLPG             14
 /** 15 Guest software attempted to execute RDPMC. */
 #define VMX_EXIT_RDPMC              15
 /** 16 Guest software attempted to execute RDTSC. */

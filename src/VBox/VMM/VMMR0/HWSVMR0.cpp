@@ -53,7 +53,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int  hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID);
+static int  hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 static int  hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite);
 
@@ -2248,15 +2248,15 @@ ResumeExecution:
         break;
     }
 
-    case SVM_EXIT_INVLPG:               /* Guest software attempted to execute INVPG. */
+    case SVM_EXIT_INVLPG:               /* Guest software attempted to execute INVLPG. */
     {
         Log2(("SVM: invlpg\n"));
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInvpg);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInvlpg);
 
         Assert(!pVM->hwaccm.s.fNestedPaging);
 
         /* Truly a pita. Why can't SVM give the same information as VT-x? */
-        rc = hmR0SvmInterpretInvpg(pVM, pVCpu, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
+        rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageInvlpg);
@@ -2927,19 +2927,17 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Interprets INVLPG.
+ * Worker for Interprets INVLPG.
  *
  * @return VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCpu            Pointer to the CPU info struct.
  * @param   pRegFrame       Pointer to the register frame.
- * @param   ASID            Tagged TLB id for the guest.
  */
-static int hmR0svmInterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
+static int hmR0svmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame)
 {
     DISQPVPARAMVAL param1;
     RTGCPTR     addr;
-    NOREF(uASID);
 
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->Param1, &param1, DISQPVWHICH_SRC);
     if (RT_FAILURE(rc))
@@ -2980,11 +2978,10 @@ static int hmR0svmInterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE 
  *
  * @param   pVM         Pointer to the VM.
  * @param   pRegFrame   Pointer to the register frame.
- * @param   ASID        Tagged TLB id for the guest.
  *
  * @remarks Updates the EIP if an instruction was executed successfully.
  */
-static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
+static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     /*
      * Only allow 32 & 64 bit code.
@@ -2995,7 +2992,7 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
         int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
         if (RT_SUCCESS(rc) && pDis->pCurInstr->uOpcode == OP_INVLPG)
         {
-            rc = hmR0svmInterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
+            rc = hmR0svmInterpretInvlPgEx(pVCpu, pDis, pRegFrame);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += pDis->cbInstr; /* Move on to the next instruction. */
             return rc;
