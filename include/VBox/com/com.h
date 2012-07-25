@@ -72,12 +72,14 @@ void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName);
  *  If @a aDirLen is smaller than RTPATH_MAX then there is a great chance that
  *  this method will return VERR_BUFFER_OVERFLOW.
  *
- *  @param aDir     Buffer to store the directory string in UTF-8 encoding.
- *  @param aDirLen  Length of the supplied buffer including space for the
- *                  terminating null character, in bytes.
- *  @return         VBox status code.
+ *  @param aDir        Buffer to store the directory string in UTF-8 encoding.
+ *  @param aDirLen     Length of the supplied buffer including space for the
+ *                     terminating null character, in bytes.
+ *  @param fCreateDir  Flag whether to create the returned directory on success if it
+ *                     doesn't exist.
+ *  @return            VBox status code.
  */
-int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen);
+int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir = true);
 
 /**
  *  Creates a release log file, used both in VBoxSVC and in API clients.
