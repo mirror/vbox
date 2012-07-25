@@ -184,6 +184,7 @@ AssertCompileSize(CmdHdr, 32);
 #define AHCI_CMDFIS_BITS                  1 /* Interrupt and Update bit. */
 #define AHCI_CMDFIS_C                     RT_BIT(7) /* Host to device. */
 #define AHCI_CMDFIS_I                     RT_BIT(6) /* Device to Host. */
+#define AHCI_CMDFIS_D                     RT_BIT(5)
 
 #define AHCI_CMDFIS_CMD                   2
 #define AHCI_CMDFIS_FET                   3
@@ -262,6 +263,9 @@ typedef enum AHCITXSTATE
 
 /** Task encountered a buffer overflow. */
 #define AHCI_REQ_OVERFLOW RT_BIT_32(0)
+/** Request is a PIO data command, if this flag is not set it either is
+ * a command which does not transfer data or a DMA command based on the transfer size. */
+#define AHCI_REQ_PIO_DATA RT_BIT_32(1)
 
 /**
  * A task state.
@@ -4865,11 +4869,77 @@ static void ahciDeviceReset(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 }
 
 /**
+ * Create a PIO setup FIS and post it into the memory area of the guest.
+ *
+ * @returns nothing.
+ * @param   pAhciPort          The port of the SATA controller.
+ * @param   pAhciReq           The state of the task.
+ * @param   pCmdFis            Pointer to the command FIS from the guest.
+ * @param   fInterrupt         If an interrupt should be send to the guest.
+ */
+static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmdFis,
+                                bool fInterrupt)
+{
+    uint8_t abPioSetupFis[20];
+    bool fAssertIntr = false;
+    PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
+
+    ahciLog(("%s: building PIO setup Fis\n", __FUNCTION__));
+
+    AssertMsg(   pAhciReq->cbTransfer > 0
+              && pAhciReq->cbTransfer <= 65534,
+              ("Can't send PIO setup FIS for requests with 0 bytes to transfer or greater than 65534\n"));
+
+    if (pAhciPort->regCMD & AHCI_PORT_CMD_FRE)
+    {
+        memset(&abPioSetupFis[0], 0, sizeof(abPioSetupFis));
+        abPioSetupFis[AHCI_CMDFIS_TYPE]  = AHCI_CMDFIS_TYPE_PIOSETUP;
+        abPioSetupFis[AHCI_CMDFIS_BITS]  = (fInterrupt ? AHCI_CMDFIS_I : 0);
+        if (pAhciReq->enmTxDir == AHCITXDIR_READ)
+            abPioSetupFis[AHCI_CMDFIS_BITS] |= AHCI_CMDFIS_D;
+        abPioSetupFis[AHCI_CMDFIS_STS]   = pAhciReq->uATARegStatus;
+        abPioSetupFis[AHCI_CMDFIS_ERR]   = pAhciReq->uATARegError;
+        abPioSetupFis[AHCI_CMDFIS_SECTN] = pCmdFis[AHCI_CMDFIS_SECTN];
+        abPioSetupFis[AHCI_CMDFIS_CYLL]  = pCmdFis[AHCI_CMDFIS_CYLL];
+        abPioSetupFis[AHCI_CMDFIS_CYLH]  = pCmdFis[AHCI_CMDFIS_CYLH];
+        abPioSetupFis[AHCI_CMDFIS_HEAD]  = pCmdFis[AHCI_CMDFIS_HEAD];
+        abPioSetupFis[AHCI_CMDFIS_SECTNEXP] = pCmdFis[AHCI_CMDFIS_SECTNEXP];
+        abPioSetupFis[AHCI_CMDFIS_CYLLEXP]  = pCmdFis[AHCI_CMDFIS_CYLLEXP];
+        abPioSetupFis[AHCI_CMDFIS_CYLHEXP]  = pCmdFis[AHCI_CMDFIS_CYLHEXP];
+        abPioSetupFis[AHCI_CMDFIS_SECTC]    = pCmdFis[AHCI_CMDFIS_SECTC];
+        abPioSetupFis[AHCI_CMDFIS_SECTCEXP] = pCmdFis[AHCI_CMDFIS_SECTCEXP];
+
+        /* Set transfer count. */
+        abPioSetupFis[16] = (pAhciReq->cbTransfer >> 8) & 0xff;
+        abPioSetupFis[17] = pAhciReq->cbTransfer & 0xff;
+
+        /* Update registers. */
+        pAhciPort->regTFD = (pAhciReq->uATARegError << 8) | pAhciReq->uATARegStatus;
+
+        ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_PIOSETUP, abPioSetupFis);
+
+        if (fInterrupt)
+        {
+            ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_PSS);
+            /* Check if we should assert an interrupt */
+            if (pAhciPort->regIE & AHCI_PORT_IE_PSE)
+                fAssertIntr = true;
+        }
+
+        if (fAssertIntr)
+        {
+            int rc = ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VERR_IGNORED);
+            AssertRC(rc);
+        }
+    }
+}
+
+/**
  * Build a D2H FIS and post into the memory area of the guest.
  *
  * @returns Nothing
  * @param   pAhciPort          The port of the SATA controller.
- * @param   pAhciReq The state of the task.
+ * @param   pAhciReq           The state of the task.
  * @param   pCmdFis            Pointer to the command FIS from the guest.
  * @param   fInterrupt         If an interrupt should be send to the guest.
  */
@@ -5642,7 +5712,12 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
                 ahciSendSDBFis(pAhciPort, 0, true);
             }
             else
+            {
+                /* Post a PIO setup FIS first if this is a PIO command which transfers data. */
+                if (pAhciReq->fFlags & AHCI_REQ_PIO_DATA)
+                    ahciSendPioSetupFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, false /* fInterrupt */);
                 ahciSendD2HFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, true);
+            }
         }
     }
     else
@@ -5739,6 +5814,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                 cbCopied = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq,
                                            &u16Temp[0], sizeof(u16Temp));
 
+                pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbCopied;
             }
             else
@@ -5951,6 +6027,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                 cbCopied = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq,
                                            &aBuf[offLogRead], cbLogRead);
 
+                pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbCopied;
             }
 
