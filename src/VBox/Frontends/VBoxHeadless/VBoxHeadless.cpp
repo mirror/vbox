@@ -42,7 +42,7 @@ using namespace com;
 #include <VBox/err.h>
 #include <VBox/VBoxVideo.h>
 
-#ifdef VBOX_WITH_VIDEO_REC 
+#ifdef VBOX_WITH_VIDEO_REC
 #include <cstdlib>
 #include <cerrno>
 #include "VBoxHeadless.h"
@@ -826,7 +826,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
               Utf8Str(id).c_str()));
 
         // open a session
-        CHECK_ERROR_BREAK(m, LockMachine(session, LockType_Write));
+        CHECK_ERROR_BREAK(m, LockMachine(session, LockType_VM));
         fSessionOpened = true;
 
         /* get the console */

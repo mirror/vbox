@@ -644,7 +644,11 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
 
     /* Open a direct session (this call will handle all errors) */
     bool busy = mSessionState != KSessionState_Unlocked;
-    CSession session = vboxGlobal().openSession (mMachineId, busy /* aExisting */);
+    CSession session;
+    if (busy)
+        session = vboxGlobal().openExistingSession(mMachineId);
+    else
+        session = vboxGlobal().openSession(mMachineId);
     if (session.isNull())
         return;
 
@@ -778,8 +782,11 @@ bool VBoxSnapshotsWgt::takeSnapshot()
     AssertReturn(pItem, (bool)0);
 
     /* Open a session to work with corresponding VM: */
-    CSession session = vboxGlobal().openSession(mMachineId,
-                                                mSessionState != KSessionState_Unlocked /* connect to existing */);
+    CSession session;
+    if (mSessionState != KSessionState_Unlocked)
+        session = vboxGlobal().openExistingSession(mMachineId);
+    else
+        session = vboxGlobal().openSession(mMachineId);
     fIsValid = !session.isNull();
 
     if (fIsValid)

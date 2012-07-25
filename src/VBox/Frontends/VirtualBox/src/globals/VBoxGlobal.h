@@ -238,10 +238,10 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    CSession openSession(const QString &aId, bool aExisting = false);
+    CSession openSession(const QString &aId, KLockType aLockType = KLockType_Write);
 
     /** Shortcut to openSession (aId, true). */
-    CSession openExistingSession(const QString &aId) { return openSession (aId, true); }
+    CSession openExistingSession(const QString &aId) { return openSession(aId, KLockType_Shared); }
 
     void startEnumeratingMedia();
 

@@ -111,7 +111,7 @@ void VBoxSnapshotDetailsDlg::putBackToSnapshot()
     AssertReturn (!mSnapshot.isNull(), (void) 0);
 
     /* We need a session when we manipulate the snapshot data of a machine. */
-    CSession session = vboxGlobal().openSession(mSnapshot.GetMachine().GetId(), true);
+    CSession session = vboxGlobal().openExistingSession(mSnapshot.GetMachine().GetId());
     if (session.isNull())
         return;
 
