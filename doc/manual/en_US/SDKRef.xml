@@ -3529,6 +3529,18 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>The <xref linkend="LockType" xreflabel="LockType" />
+          enumeration now has an additional value <computeroutput>VM</computeroutput>
+          which tells <xref linkend="IMachine__lockMachine"
+          xreflabel="IMachine::lockMachine()" /> to create a full-blown
+          object structure for running a VM. This was the previous behavior
+          with <computeroutput>Write</computeroutput>, which now only creates
+          the minimal object structure to save time and resources (at the
+          moment the Console object is still created, but all sub-objects
+          such as Display, Keyboard, Mouse, Guest are not.</para>
+        </listitem>
+
+        <listitem>
           <para>Machines can be put in groups (actually an array of groups).
           The primary group affects the default placement of files belonging
           to a VM. <xref linkend="IVirtualBox__createMachine"

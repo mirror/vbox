@@ -80,7 +80,7 @@ public:
     // IInternalSessionControl methods
     STDMETHOD(GetPID)(ULONG *aPid);
     STDMETHOD(GetRemoteConsole)(IConsole **aConsole);
-    STDMETHOD(AssignMachine)(IMachine *aMachine);
+    STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType);
     STDMETHOD(AssignRemoteMachine)(IMachine *aMachine, IConsole *aConsole);
     STDMETHOD(UpdateMachineState)(MachineState_T aMachineState);
     STDMETHOD(Uninitialize)();

@@ -960,7 +960,7 @@
 
   <enum
     name="LockType"
-    uuid="138b53f8-db4b-47c5-b32b-4ef52f769413"
+    uuid="168a6a8e-12fd-4878-a1f9-38a750a56089"
     >
     <desc>
       Used with <link to="IMachine::lockMachine" />.
@@ -970,6 +970,10 @@
     </const>
     <const name="Shared" value="1">
       <desc>Request only a shared read lock for remote-controlling the machine.</desc>
+    </const>
+    <const name="VM" value="3">
+      <desc>Lock the machine for writing, and create objects necessary for
+        running a VM in this process.</desc>
     </const>
   </enum>
 
@@ -16395,6 +16399,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       </desc>
       <param name="machine" type="IMachine" dir="in"/>
+      <param name="lockType" type="LockType" dir="in"/>
     </method>
 
     <method name="assignRemoteMachine">

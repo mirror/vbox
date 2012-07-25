@@ -433,7 +433,7 @@ void Console::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
+HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, LockType_T aLockType)
 {
     AssertReturn(aMachine && aControl, E_INVALIDARG);
 
@@ -449,116 +449,116 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     unconst(mMachine) = aMachine;
     unconst(mControl) = aControl;
 
-    /* Cache essential properties and objects */
+    /* Cache essential properties and objects, and create child objects */
 
     rc = mMachine->COMGETTER(State)(&mMachineState);
     AssertComRCReturnRC(rc);
 
-    rc = mMachine->COMGETTER(VRDEServer)(unconst(mVRDEServer).asOutParam());
-    AssertComRCReturnRC(rc);
-
-    /* Create associated child COM objects */
+#ifdef VBOX_WITH_EXTPACK
+    unconst(mptrExtPackManager).createObject();
+    rc = mptrExtPackManager->initExtPackManager(NULL, VBOXEXTPACKCTX_VM_PROCESS);
+        AssertComRCReturnRC(rc);
+#endif
 
     // Event source may be needed by other children
     unconst(mEventSource).createObject();
     rc = mEventSource->init(static_cast<IConsole*>(this));
     AssertComRCReturnRC(rc);
 
-    unconst(mGuest).createObject();
-    rc = mGuest->init(this);
-    AssertComRCReturnRC(rc);
-
-    unconst(mKeyboard).createObject();
-    rc = mKeyboard->init(this);
-    AssertComRCReturnRC(rc);
-
-    unconst(mMouse).createObject();
-    rc = mMouse->init(this);
-    AssertComRCReturnRC(rc);
-
-    unconst(mDisplay).createObject();
-    rc = mDisplay->init(this);
-    AssertComRCReturnRC(rc);
-
-    unconst(mVRDEServerInfo).createObject();
-    rc = mVRDEServerInfo->init(this);
-    AssertComRCReturnRC(rc);
-
-#ifdef VBOX_WITH_EXTPACK
-    unconst(mptrExtPackManager).createObject();
-    rc = mptrExtPackManager->initExtPackManager(NULL, VBOXEXTPACKCTX_VM_PROCESS);
-    AssertComRCReturnRC(rc);
-#endif
-
-    /* Grab global and machine shared folder lists */
-
-    rc = fetchSharedFolders(true /* aGlobal */);
-    AssertComRCReturnRC(rc);
-    rc = fetchSharedFolders(false /* aGlobal */);
-    AssertComRCReturnRC(rc);
-
-    /* Create other child objects */
-
-    unconst(mConsoleVRDPServer) = new ConsoleVRDPServer(this);
-    AssertReturn(mConsoleVRDPServer, E_FAIL);
-
     mcAudioRefs = 0;
     mcVRDPClients = 0;
     mu32SingleRDPClientId = 0;
     mcGuestCredentialsProvided = false;
 
-    /* Figure out size of meAttachmentType vector */
-    ComPtr<IVirtualBox> pVirtualBox;
-    rc = aMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-    AssertComRC(rc);
-    ComPtr<ISystemProperties> pSystemProperties;
-    if (pVirtualBox)
-        pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-    ChipsetType_T chipsetType = ChipsetType_PIIX3;
-    aMachine->COMGETTER(ChipsetType)(&chipsetType);
-    ULONG maxNetworkAdapters = 0;
-    if (pSystemProperties)
-        pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
-    meAttachmentType.resize(maxNetworkAdapters);
-    for (ULONG slot = 0; slot < maxNetworkAdapters; ++slot)
-        meAttachmentType[slot] = NetworkAttachmentType_Null;
+    /* Now the VM specific parts */
+    if (aLockType == LockType_VM)
+    {
+        rc = mMachine->COMGETTER(VRDEServer)(unconst(mVRDEServer).asOutParam());
+        AssertComRCReturnRC(rc);
 
+        unconst(mGuest).createObject();
+        rc = mGuest->init(this);
+        AssertComRCReturnRC(rc);
 
-    // VirtualBox 4.0: We no longer initialize the VMMDev instance here,
-    // which starts the HGCM thread. Instead, this is now done in the
-    // power-up thread when a VM is actually being powered up to avoid
-    // having HGCM threads all over the place every time a session is
-    // opened, even if that session will not run a VM.
-    //     unconst(m_pVMMDev) = new VMMDev(this);
-    //     AssertReturn(mVMMDev, E_FAIL);
+        unconst(mKeyboard).createObject();
+        rc = mKeyboard->init(this);
+        AssertComRCReturnRC(rc);
 
-    unconst(mAudioSniffer) = new AudioSniffer(this);
-    AssertReturn(mAudioSniffer, E_FAIL);
+        unconst(mMouse).createObject();
+        rc = mMouse->init(this);
+        AssertComRCReturnRC(rc);
+
+        unconst(mDisplay).createObject();
+        rc = mDisplay->init(this);
+        AssertComRCReturnRC(rc);
+
+        unconst(mVRDEServerInfo).createObject();
+        rc = mVRDEServerInfo->init(this);
+        AssertComRCReturnRC(rc);
+
+        /* Grab global and machine shared folder lists */
+
+        rc = fetchSharedFolders(true /* aGlobal */);
+        AssertComRCReturnRC(rc);
+        rc = fetchSharedFolders(false /* aGlobal */);
+        AssertComRCReturnRC(rc);
+
+        /* Create other child objects */
+
+        unconst(mConsoleVRDPServer) = new ConsoleVRDPServer(this);
+        AssertReturn(mConsoleVRDPServer, E_FAIL);
+
+        /* Figure out size of meAttachmentType vector */
+        ComPtr<IVirtualBox> pVirtualBox;
+        rc = aMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+        AssertComRC(rc);
+        ComPtr<ISystemProperties> pSystemProperties;
+        if (pVirtualBox)
+            pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        ChipsetType_T chipsetType = ChipsetType_PIIX3;
+        aMachine->COMGETTER(ChipsetType)(&chipsetType);
+        ULONG maxNetworkAdapters = 0;
+        if (pSystemProperties)
+            pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
+        meAttachmentType.resize(maxNetworkAdapters);
+        for (ULONG slot = 0; slot < maxNetworkAdapters; ++slot)
+            meAttachmentType[slot] = NetworkAttachmentType_Null;
+
+        // VirtualBox 4.0: We no longer initialize the VMMDev instance here,
+        // which starts the HGCM thread. Instead, this is now done in the
+        // power-up thread when a VM is actually being powered up to avoid
+        // having HGCM threads all over the place every time a session is
+        // opened, even if that session will not run a VM.
+        //     unconst(m_pVMMDev) = new VMMDev(this);
+        //     AssertReturn(mVMMDev, E_FAIL);
+
+        unconst(mAudioSniffer) = new AudioSniffer(this);
+        AssertReturn(mAudioSniffer, E_FAIL);
 #ifdef VBOX_WITH_USB_VIDEO
-    unconst(mUsbWebcamInterface) = new UsbWebcamInterface(this);
-    AssertReturn(mUsbWebcamInterface, E_FAIL);
+        unconst(mUsbWebcamInterface) = new UsbWebcamInterface(this);
+        AssertReturn(mUsbWebcamInterface, E_FAIL);
 #endif
 #ifdef VBOX_WITH_USB_CARDREADER
-    unconst(mUsbCardReader) = new UsbCardReader(this);
-    AssertReturn(mUsbCardReader, E_FAIL);
+        unconst(mUsbCardReader) = new UsbCardReader(this);
+        AssertReturn(mUsbCardReader, E_FAIL);
 #endif
 
-    /* VirtualBox events registration. */
-    {
-        ComPtr<IEventSource> pES;
-        rc = pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
-        AssertComRC(rc);
-        ComObjPtr<VmEventListenerImpl> aVmListener;
-        aVmListener.createObject();
-        aVmListener->init(new VmEventListener(), this);
-        mVmListener = aVmListener;
-        com::SafeArray<VBoxEventType_T> eventTypes;
-        eventTypes.push_back(VBoxEventType_OnNATRedirect);
-        eventTypes.push_back(VBoxEventType_OnHostPciDevicePlug);
-        rc = pES->RegisterListener(aVmListener, ComSafeArrayAsInParam(eventTypes), true);
-        AssertComRC(rc);
+        /* VirtualBox events registration. */
+        {
+            ComPtr<IEventSource> pES;
+            rc = pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
+            AssertComRC(rc);
+            ComObjPtr<VmEventListenerImpl> aVmListener;
+            aVmListener.createObject();
+            aVmListener->init(new VmEventListener(), this);
+            mVmListener = aVmListener;
+            com::SafeArray<VBoxEventType_T> eventTypes;
+            eventTypes.push_back(VBoxEventType_OnNATRedirect);
+            eventTypes.push_back(VBoxEventType_OnHostPciDevicePlug);
+            rc = pES->RegisterListener(aVmListener, ComSafeArrayAsInParam(eventTypes), true);
+            AssertComRC(rc);
+        }
     }
-
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();

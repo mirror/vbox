@@ -468,8 +468,8 @@ bool VBoxGlobal::startMachine(const QString &strMachineId)
     AssertMsg(mValid, ("VBoxGlobal is invalid"));
     AssertMsg(!m_pVirtualMachine, ("Machine already started"));
 
-    /* Create session: */
-    CSession session = vboxGlobal().openSession(strMachineId);
+    /* Create VM session: */
+    CSession session = vboxGlobal().openSession(strMachineId, KLockType_VM);
     if (session.isNull())
         return false;
 
@@ -1812,11 +1812,12 @@ bool VBoxGlobal::showVirtualBoxLicense()
  *  it is no more necessary.
  *
  *  @param aId          Machine ID.
- *  @param aExisting    @c true to open an existing session with the machine
- *                      which is already running, @c false to open a new direct
- *                      session.
+ *  @param aLockType    @c KLockType_Shared to open an existing session with
+ *                      the machine which is already running, @c KLockType_Write
+ *                      to open a new direct session, @c KLockType_VM to open
+ *                      a new session for running a VM in this process.
  */
-CSession VBoxGlobal::openSession(const QString &aId, bool aExisting /* = false */)
+CSession VBoxGlobal::openSession(const QString &aId, KLockType aLockType /* = KLockType_Shared */)
 {
     CSession session;
     session.createInstance(CLSID_Session);
@@ -1829,8 +1830,7 @@ CSession VBoxGlobal::openSession(const QString &aId, bool aExisting /* = false *
     CMachine foundMachine = CVirtualBox(mVBox).FindMachine(aId);
     if (!foundMachine.isNull())
     {
-        foundMachine.LockMachine(session,
-                                 (aExisting) ? KLockType_Shared : KLockType_Write);
+        foundMachine.LockMachine(session, aLockType);
         if (session.GetType() == KSessionType_Shared)
         {
             CMachine machine = session.GetMachine();

@@ -1414,7 +1414,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
 
-    rc = pMachine->LockMachine(pSession, LockType_Write);
+    rc = pMachine->LockMachine(pSession, LockType_VM);
     if (FAILED(rc))
     {
         com::ErrorInfo info;

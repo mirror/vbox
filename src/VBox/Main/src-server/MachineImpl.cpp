@@ -3303,7 +3303,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             alock.release();
 
             LogFlowThisFunc(("Calling AssignMachine()...\n"));
-            rc = pSessionControl->AssignMachine(sessionMachine);
+            rc = pSessionControl->AssignMachine(sessionMachine, lockType);
             LogFlowThisFunc(("AssignMachine() returned %08X\n", rc));
 
             /* The failure may occur w/o any error info (from RPC), so provide one */
@@ -3418,9 +3418,9 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
     if (SUCCEEDED(rc))
     {
         /*
-        *  tell the client watcher thread to update the set of
-        *  machines that have open sessions
-        */
+         *  tell the client watcher thread to update the set of
+         *  machines that have open sessions
+         */
         mParent->updateClientWatcher();
 
         if (oldState != SessionState_Locked)
@@ -7238,7 +7238,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
 
     /* inform the session that it will be a remote one */
     LogFlowThisFunc(("Calling AssignMachine (NULL)...\n"));
-    HRESULT rc = aControl->AssignMachine(NULL);
+    HRESULT rc = aControl->AssignMachine(NULL, LockType_Write);
     LogFlowThisFunc(("AssignMachine (NULL) returned %08X\n", rc));
 
     if (FAILED(rc))
