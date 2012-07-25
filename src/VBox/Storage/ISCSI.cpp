@@ -1565,9 +1565,55 @@ restart:
                         rc = iscsiTransportOpen(pImage);
                         goto restart;
                     case ISCSI_LOGIN_STATUS_CLASS_INITIATOR_ERROR:
+                    {
+                        const char *pszDetail = NULL;
+
+                        switch ((RT_N2H_U32(aResBHS[9]) >> 16) & 0xff)
+                        {
+                            case 0x00:
+                                pszDetail = "Miscelleanous iSCSI intiaitor error";
+                                break;
+                            case 0x01:
+                                pszDetail = "Authentication failure";
+                                break;
+                            case 0x02:
+                                pszDetail = "Authorization failure";
+                                break;
+                            case 0x03:
+                                pszDetail = "Not found";
+                                break;
+                            case 0x04:
+                                pszDetail = "Target removed";
+                                break;
+                            case 0x05:
+                                pszDetail = "Unsupported version";
+                                break;
+                            case 0x06:
+                                pszDetail = "Too many connections";
+                                break;
+                            case 0x07:
+                                pszDetail = "Missing parameter";
+                                break;
+                            case 0x08:
+                                pszDetail = "Can't include in session";
+                                break;
+                            case 0x09:
+                                pszDetail = "Session type not supported";
+                                break;
+                            case 0x0a:
+                                pszDetail = "Session does not exist";
+                                break;
+                            case 0x0b:
+                                pszDetail = "Invalid request type during login";
+                                break;
+                            default:
+                                pszDetail = "Unknown status detail";
+                        }
+                        LogRel(("iSCSI: login to target failed with: %s\n", pszDetail));
                         iscsiTransportClose(pImage);
                         rc = VERR_IO_GEN_FAILURE;
                         goto out;
+                    }
                     case ISCSI_LOGIN_STATUS_CLASS_TARGET_ERROR:
                         iscsiTransportClose(pImage);
                         rc = VINF_EOF;
