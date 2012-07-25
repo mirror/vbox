@@ -63,6 +63,9 @@
 #endif
 
 #if defined(VBOX_WITH_WIN_PARPORT_SUP) && defined(IN_RING3)
+# include <Windows.h>
+# include <setupapi.h>
+# include <cfgmgr32.h>
 # include <iprt/mem.h>
 # include <iprt/string.h>
 #endif
@@ -353,12 +356,12 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
         u32Size = 0;
         if ((cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L)) != CR_SUCCESS
             &&  !(pBuf = (uint8_t *)RTMemAlloc(u32Size + 1))
-            &&   (cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L)) != CR_SUCESS
+            &&   (cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L)) != CR_SUCCESS
             )
         {
             CM_Free_Res_Des_Handle(nextLogConf);
             if (pBuf)
-                RtMemFree(pBuf);
+                RTMemFree(pBuf);
             break;
 
         }
