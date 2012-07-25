@@ -63,9 +63,6 @@
 #endif
 
 #if defined(VBOX_WITH_WIN_PARPORT_SUP) && defined(IN_RING3)
-# include <Windows.h>
-# include <setupapi.h>
-# include <cfgmgr32.h>
 # include <iprt/mem.h>
 # include <iprt/string.h>
 #endif
@@ -354,24 +351,16 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
     for (;;)
     {
         u32Size = 0;
-        cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L);
-        if (cmRet != CR_SUCCESS)
-        {
-            CM_Free_Res_Des_Handle(nextLogConf); /** @todo r=bird: Why are you doing this twice in this code path? */
-            break;
-        }
-        pBuf = (uint8_t *)RTMemAlloc(u32Size + 1);
-        if (!pBuf)
-        {
-            CM_Free_Res_Des_Handle(nextLogConf); /** @todo r=bird: Ditto above. */
-            break;
-        }
-        cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L);
-        if (cmRet != CR_SUCCESS)
+        if ((cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L)) != CR_SUCCESS
+            &&  !(pBuf = (uint8_t *)RTMemAlloc(u32Size + 1))
+            &&   (cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L)) != CR_SUCESS
+            )
         {
             CM_Free_Res_Des_Handle(nextLogConf);
-            RTMemFree(pBuf);
+            if (pBuf)
+                RtMemFree(pBuf);
             break;
+
         }
         LogFlowFunc(("call GetIOResource\n"));
         u32ParportAddr = ((IO_DES *)pBuf)->IOD_Alloc_Base;
@@ -430,59 +419,57 @@ static int drvWinHostGetparportAddr(PDRVHOSTPARALLEL pThis)
             /* Max size will never be more than 2048 bytes */
             pBuf = (uint8_t *)RTMemAlloc(dwBufSize * 2);
         }
+        if(!pBuf)
+            return VERR_NO_MEMORY;
 
-        if (pBuf) /** @todo r=bird: You're not checking errors here. */
+        if (RTStrStr((char*)pBuf, "LPT"))
         {
-             if (RTStrStr((char*)pBuf, "LPT"))
-             {
-                 u32ParportAddr = drvHostWinFindIORangeResource(DeviceInfoData.DevInst);
-                 if (u32ParportAddr)
-                 {
-                     /* Find parallel port name and update the shared data struncture */
-                     char *pCh = RTStrStr((char*)pBuf, "(");
-                     char *pTmpCh = RTStrStr((char *)pBuf, ")");
-                     /* check for the confirmation for the availability of parallel port */
-                     if (!(pCh && pTmpCh))
-                     {
-                         LogFlowFunc(("Parallel port Not Found. \n"));
-                         return VERR_NOT_FOUND;
+            u32ParportAddr = drvHostWinFindIORangeResource(DeviceInfoData.DevInst);
+            if (u32ParportAddr)
+            {
+                /* Find parallel port name and update the shared data struncture */
+                char *pCh = RTStrStr((char*)pBuf, "(");
+                char *pTmpCh = RTStrStr((char *)pBuf, ")");
+                /* check for the confirmation for the availability of parallel port */
+                if (!(pCh && pTmpCh))
+                {
+                    LogFlowFunc(("Parallel port Not Found. \n"));
+                    return VERR_NOT_FOUND;
 
-                     }
-                     if (((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) < 0) {
-                         LogFlowFunc(("Parallel port string not properly formatted.\n"));
-                         return VERR_NOT_FOUND;
-                     }
-                     /* check for the confirmation for the availability of parallel port */
-                     if (RTStrCopyEx((char *)(pThis->szParportName), sizeof(pThis->szParportName),
-                                      pCh+1, ((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) - 1))
-                     {
-                         LogFlowFunc(("Parallel Port Not Found.\n"));
-                         return VERR_NOT_FOUND;
-                     }
-                     *((char *)pThis->szParportName + (pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf) + 1 ) = '\0';
+                }
+                if (((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) < 0) {
+                    LogFlowFunc(("Parallel port string not properly formatted.\n"));
+                    return VERR_NOT_FOUND;
+                }
+                /* check for the confirmation for the availability of parallel port */
+                if (RTStrCopyEx((char *)(pThis->szParportName), sizeof(pThis->szParportName),
+                    pCh+1, ((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) - 1))
+                {
+                    LogFlowFunc(("Parallel Port Not Found.\n"));
+                    return VERR_NOT_FOUND;
+                }
+                *((char *)pThis->szParportName + (pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf) + 1 ) = '\0';
 
-                     /* checking again to make sure that we have got a valid name and in valid format too. */
-                     if (RTStrNCmp((char *)pThis->szParportName, "LPT", 3)) {
-                         LogFlowFunc(("Parallel Port name \"LPT\" Not Found.\n"));
-                         return VERR_NOT_FOUND;
-                     }
-
-                     if (!RTStrStr((char *)pThis->szParportName, "LPT")
-                            || !(pThis->szParportName[3] >= '0'
-                            && pThis->szParportName[3] <= '9'))
-                     {
-                         RT_BZERO(pThis->szParportName, sizeof(pThis->szParportName));
-                         LogFlowFunc(("Printer Port Name Not Found.\n"));
-                         return VERR_NOT_FOUND;
-                     }
-                     pThis->fParportAvail     = true;
-                     pThis->u32LptAddr        = u32ParportAddr;
-                     pThis->u32LptAddrControl = pThis->u32LptAddr + CTRL_REG_OFFSET;
-                     pThis->u32LptAddrStatus  = pThis->u32LptAddr + STATUS_REG_OFFSET;
-                 }
-                 if (pThis->fParportAvail)
-                     break;
-             }
+                /* checking again to make sure that we have got a valid name and in valid format too. */
+                if (RTStrNCmp((char *)pThis->szParportName, "LPT", 3)) {
+                    LogFlowFunc(("Parallel Port name \"LPT\" Not Found.\n"));
+                    return VERR_NOT_FOUND;
+                }
+                if (!RTStrStr((char *)pThis->szParportName, "LPT")
+                    || !(pThis->szParportName[3] >= '0'
+                    && pThis->szParportName[3] <= '9'))
+                {
+                    RT_BZERO(pThis->szParportName, sizeof(pThis->szParportName));
+                    LogFlowFunc(("Printer Port Name Not Found.\n"));
+                    return VERR_NOT_FOUND;
+                }
+                pThis->fParportAvail     = true;
+                pThis->u32LptAddr        = u32ParportAddr;
+                pThis->u32LptAddrControl = pThis->u32LptAddr + CTRL_REG_OFFSET;
+                pThis->u32LptAddrStatus  = pThis->u32LptAddr + STATUS_REG_OFFSET;
+            }
+            if (pThis->fParportAvail)
+                break;
         }
         if (pBuf)
             RTMemFree(pBuf);
