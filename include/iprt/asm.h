@@ -83,7 +83,7 @@
  *
  * @remarks The difference between ordered and unordered atomic operations are that
  *          the former will complete outstanding reads and writes before continuing
- *          while the latter doesn't make any promisses about the order. Ordered
+ *          while the latter doesn't make any promises about the order. Ordered
  *          operations doesn't, it seems, make any 100% promise wrt to whether
  *          the operation will complete before any subsequent memory access.
  *          (please, correct if wrong.)
