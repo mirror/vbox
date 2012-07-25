@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HWACCM - Intel/AMD VM Hardware Support Manager
+ * HWACCM - Intel/AMD VM Hardware Support Manager.
  */
 
 /*
@@ -72,7 +72,7 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON_NIL(),
     EXIT_REASON(VMX_EXIT_HLT                , 12, "Guest software attempted to execute HLT."),
     EXIT_REASON(VMX_EXIT_INVD               , 13, "Guest software attempted to execute INVD."),
-    EXIT_REASON(VMX_EXIT_INVPG              , 14, "Guest software attempted to execute INVPG."),
+    EXIT_REASON(VMX_EXIT_INVLPG             , 14, "Guest software attempted to execute INVLPG."),
     EXIT_REASON(VMX_EXIT_RDPMC              , 15, "Guest software attempted to execute RDPMC."),
     EXIT_REASON(VMX_EXIT_RDTSC              , 16, "Guest software attempted to execute RDTSC."),
     EXIT_REASON(VMX_EXIT_RSM                , 17, "Guest software attempted to execute RSM in SMM."),
@@ -509,7 +509,7 @@ static int hwaccmR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestBP,            "/HWACCM/CPU%d/Exit/Trap/Gst/#BP");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestXF,            "/HWACCM/CPU%d/Exit/Trap/Gst/#XF");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestXcpUnk,        "/HWACCM/CPU%d/Exit/Trap/Gst/Other");
-        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvpg,              "/HWACCM/CPU%d/Exit/Instr/Invlpg");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvlpg,             "/HWACCM/CPU%d/Exit/Instr/Invlpg");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvd,               "/HWACCM/CPU%d/Exit/Instr/Invd");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCpuid,              "/HWACCM/CPU%d/Exit/Instr/Cpuid");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitRdtsc,              "/HWACCM/CPU%d/Exit/Instr/Rdtsc");
