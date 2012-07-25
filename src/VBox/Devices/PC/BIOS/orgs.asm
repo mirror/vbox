@@ -60,7 +60,6 @@ BIOS_REVISION	equ	1
 BIOS_BUILD_DATE	equ	'06/23/99'
 BIOS_COPYRIGHT	equ	'Oracle VM VirtualBox BIOS'
 
-;BX_PCIBIOS		equ	1		; defined in pcicfg.inc
 BX_ROMBIOS32		equ	0
 BX_CALL_INT15_4F	equ	1
 

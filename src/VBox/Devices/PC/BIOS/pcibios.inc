@@ -42,8 +42,6 @@ include	pcicfg.inc
 
 if BX_PCIBIOS
 
-extrn		pcibios_protected:near	; in a 32-bit segment
-
 ifdef DEBUG
 
 ; Publics for easier debugging and disassembly
