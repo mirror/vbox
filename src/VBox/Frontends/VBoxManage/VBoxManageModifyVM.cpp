@@ -412,7 +412,7 @@ int handleModifyVM(HandlerArg *a)
     CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
 
     /* get the mutable session machine */
-    a->session->COMGETTER(Machine)(machine.asOutParam());
+    CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
     machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
 
     RTGetOptInit(&GetOptState, a->argc, a->argv, g_aModifyVMOptions,
