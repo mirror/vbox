@@ -1080,6 +1080,8 @@ static int shaReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
             return rc;
 //        RTPrintf("Gap Read uOffset: %7lu cbRead: %7lu = %7lu\n", uOffset, cbRead, uOffset + cbRead);
     }
+    else if (uOffset < pInt->cbCurAll)
+        AssertMsgFailed(("Jumping backwards is not possible, sequential access is supported only\n"));
 
     size_t cbAllRead = 0;
     for (;;)
