@@ -347,6 +347,8 @@ static DECLCALLBACK(int) rtDvmFmtGptQueryRangeUse(RTDVMFMT hVolMgrFmt,
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
+    NOREF(cbRange);
+
     if (off < 33*pThis->pDisk->cbSector)
         *pfUsed = true;
     else

@@ -217,6 +217,8 @@ static DECLCALLBACK(int) rtDvmFmtMbrQueryRangeUse(RTDVMFMT hVolMgrFmt,
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
+    NOREF(cbRange);
+
     /* MBR uses the first sector only. */
     if (off < 512)
         *pfUsed = true;
