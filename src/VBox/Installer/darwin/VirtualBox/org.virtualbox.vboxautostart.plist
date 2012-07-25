@@ -12,6 +12,7 @@
   <array>
     <string>/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostartDarwin.sh</string>
     <string>--start</string>
+    <string>/etc/vbox/autostart.cfg</string>
   </array>
 </dict>
 </plist>
