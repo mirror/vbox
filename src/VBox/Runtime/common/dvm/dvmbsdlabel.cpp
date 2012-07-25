@@ -348,6 +348,8 @@ static DECLCALLBACK(int) rtDvmFmtBsdLblQueryRangeUse(RTDVMFMT hVolMgrFmt,
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
+    NOREF(cbRange);
+
     if (off <= RTDVM_BSDLBL_LBA2BYTE(1, pThis->pDisk))
         *pfUsed = true;
     else
