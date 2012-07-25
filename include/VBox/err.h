@@ -958,11 +958,11 @@
 /** Bad TRPM_TRAP_IN_OP. */
 #define VERR_TRPM_BAD_TRAP_IN_OP            (-2406)
 /** Internal processing error \#1 in TRPM. */
-#define VERR_TRPM_IPE_1                     (-2507)
+#define VERR_TRPM_IPE_1                     (-2407)
 /** Internal processing error \#2 in TRPM. */
-#define VERR_TRPM_IPE_2                     (-2508)
+#define VERR_TRPM_IPE_2                     (-2408)
 /** Internal processing error \#3 in TRPM. */
-#define VERR_TRPM_IPE_3                     (-2509)
+#define VERR_TRPM_IPE_3                     (-2409)
 /** @} */
 
 
