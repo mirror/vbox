@@ -130,7 +130,7 @@ VgaDefBiosLogo_SOURCES   = $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c
 VgaDefBiosLogo_CLEAN     = $(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c
 
 # Rule for making the bios logo.
-$$(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c: $(VBOX_BRAND_BIOS_LOGO) $(VBOX_BIN2C) $$(dir $$@)
+$$(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c: $(VBOX_BRAND_BIOS_LOGO) $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,VgaDefBiosLogo,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) VgaDefBiosLogo $< $@
 
