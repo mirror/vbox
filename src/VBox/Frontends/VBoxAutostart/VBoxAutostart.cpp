@@ -50,7 +50,7 @@
 #include <iprt/system.h>
 #include <iprt/time.h>
 #include <iprt/ctype.h>
-
+#include <iprt/dir.h>
 
 #include <algorithm>
 #include <list>
@@ -880,6 +880,14 @@ int main(int argc, char *argv[])
 
     if (!fAllowed)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "User is not allowed to autostart VMs");
+
+    /* Don't start if the VirtualBox settings directory does not exist. */
+    char szUserHomeDir[RTPATH_MAX];
+    rc = com::GetVBoxUserHomeDirectory(szUserHomeDir, sizeof(szUserHomeDir), false /* fCreateDir */);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not get base directory: %Rrc", rc);
+    else if (!RTDirExists(szUserHomeDir))
+        return RTEXITCODE_SUCCESS;
 
     /* create release logger, to stdout */
     char szError[RTPATH_MAX + 128];
