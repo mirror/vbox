@@ -855,6 +855,8 @@ VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 }
 
 
+/* VT-x only: */
+
 /**
  * Interpret INVLPG.
  *
@@ -885,8 +887,6 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     return rc;
 }
 
-
-/* VT-x only: */
 
 /**
  * Update CRx.
