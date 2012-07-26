@@ -840,35 +840,35 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         val = pCtx->cr4;
         if (!pVM->hwaccm.s.fNestedPaging)
         {
-            switch(pVCpu->hwaccm.s.enmShadowMode)
+            switch (pVCpu->hwaccm.s.enmShadowMode)
             {
-            case PGMMODE_REAL:
-            case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
-                AssertFailed();
-                return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+                case PGMMODE_REAL:
+                case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
+                    AssertFailed();
+                    return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 
-            case PGMMODE_32_BIT:        /* 32-bit paging. */
-                val &= ~X86_CR4_PAE;
-                break;
+                case PGMMODE_32_BIT:        /* 32-bit paging. */
+                    val &= ~X86_CR4_PAE;
+                    break;
 
-            case PGMMODE_PAE:           /* PAE paging. */
-            case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
-                /** Must use PAE paging as we could use physical memory > 4 GB */
-                val |= X86_CR4_PAE;
-                break;
+                case PGMMODE_PAE:           /* PAE paging. */
+                case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
+                    /** Must use PAE paging as we could use physical memory > 4 GB */
+                    val |= X86_CR4_PAE;
+                    break;
 
-            case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
-            case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
+                case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
+                case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
-                break;
+                    break;
 #else
-                AssertFailed();
-                return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+                    AssertFailed();
+                    return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
 
-            default:                    /* shut up gcc */
-                AssertFailed();
-                return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+                default:                    /* shut up gcc */
+                    AssertFailed();
+                    return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
             }
         }
         pVMCB->guest.u64CR4 = val;
@@ -1380,7 +1380,7 @@ ResumeExecution:
             else
             {
                 /*
-                 * No interrupts are pending, so we don't need to be explicitely notified.
+                 * No interrupts are pending, so we don't need to be explicitly notified.
                  * There are enough world switches for detecting pending interrupts.
                  */
                 pVMCB->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
@@ -1618,7 +1618,6 @@ ResumeExecution:
         Log(("guest.u64BR_TO                    %RX64\n",   pVMCB->guest.u64BR_TO));
         Log(("guest.u64LASTEXCPFROM             %RX64\n",   pVMCB->guest.u64LASTEXCPFROM));
         Log(("guest.u64LASTEXCPTO               %RX64\n",   pVMCB->guest.u64LASTEXCPTO));
-
 #endif
         rc = VERR_SVM_UNABLE_TO_START_VM;
         VMMR0LogFlushEnable(pVCpu);
