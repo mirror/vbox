@@ -207,6 +207,22 @@ void GuestCtrlCallback::Destroy(void)
     cbData = 0;
 }
 
+int GuestCtrlCallback::FillData(const void *pData, size_t cbData)
+{
+    if (!cbData)
+        return VINF_SUCCESS;
+    AssertPtr(pData);
+
+    Assert(pvData == NULL); /* Can't reuse callbacks! */
+    pvData = RTMemAlloc(cbData);
+    if (!pvData)
+        return VERR_NO_MEMORY;
+
+    memcpy(pvData, pData, cbData);
+
+    return VINF_SUCCESS;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 GuestProcessEvent::GuestProcessEvent(void)

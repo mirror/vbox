@@ -2833,3 +2833,8 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+STDMETHODIMP Guest::FindSession(IN_BSTR aSessionName, ComSafeArrayOut(IGuestSession *, aSessions))
+{
+    ReturnComNotImplemented();
+}
+

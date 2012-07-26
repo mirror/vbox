@@ -60,6 +60,7 @@ public:
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMGETTER(Id))(ULONG *aId);
     STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout);
+    STDMETHOD(COMSETTER(Timeout))(ULONG aTimeout);
     STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
     STDMETHOD(COMGETTER(Processes))(ComSafeArrayOut(IGuestProcess *, aProcesses));
     STDMETHOD(COMGETTER(Directories))(ComSafeArrayOut(IGuestDirectory *, aDirectories));
