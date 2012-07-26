@@ -636,6 +636,10 @@ static ULONG WINAPI IWineD3DDeviceImpl_Release(IWineD3DDevice *iface) {
         if (This->hardwareCursor) DestroyCursor(This->hardwareCursor);
         This->haveHardwareCursor = FALSE;
 
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+        shader_chaches_term(This);
+#endif
+
         IWineD3D_Release(This->wined3d);
         This->wined3d = NULL;
         HeapFree(GetProcessHeap(), 0, This);
@@ -1328,6 +1332,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_CreateVertexShader(IWineD3DDevice *ifac
         return hr;
     }
 
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+    object = vertexshader_check_cached(This, object);
+#endif
+
     TRACE("Created vertex shader %p.\n", object);
     *ppVertexShader = (IWineD3DVertexShader *)object;
 
@@ -1387,6 +1395,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_CreatePixelShader(IWineD3DDevice *iface
         HeapFree(GetProcessHeap(), 0, object);
         return hr;
     }
+
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+    object = pixelshader_check_cached(This, object);
+#endif
 
     TRACE("Created pixel shader %p.\n", object);
     *ppPixelShader = (IWineD3DPixelShader *)object;
@@ -7324,6 +7336,10 @@ HRESULT device_init(IWineD3DDeviceImpl *device, IWineD3DImpl *wined3d,
     }
 
     device->blitter = adapter->blitter;
+
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+    shader_chaches_init(device);
+#endif
 
     return WINED3D_OK;
 }

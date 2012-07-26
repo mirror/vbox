@@ -1800,6 +1800,11 @@ struct IWineD3DDeviceImpl
     struct wined3d_context **contexts;
     UINT                    numContexts;
 
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+    VBOXEXT_HASHCACHE vshaderCache;
+    VBOXEXT_HASHCACHE pshaderCache;
+#endif
+
     /* High level patch management */
 #define PATCHMAP_SIZE 43
 #define PATCHMAP_HASHFUNC(x) ((x) % PATCHMAP_SIZE) /* Primitive and simple function */
@@ -2928,6 +2933,11 @@ typedef struct IWineD3DBaseShaderClass
     IWineD3DDevice *device;
     struct list     shader_list_entry;
 
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+    VBOXEXT_HASHCACHE_ENTRY CacheEntry;
+    uint32_t u32CacheDataInited;
+    uint32_t u32Hash;
+#endif
 } IWineD3DBaseShaderClass;
 
 typedef struct IWineD3DBaseShaderImpl {
@@ -3093,6 +3103,13 @@ void pixelshader_update_samplers(struct shader_reg_maps *reg_maps,
         IWineD3DBaseTexture * const *textures) DECLSPEC_HIDDEN;
 void find_ps_compile_args(IWineD3DPixelShaderImpl *shader, IWineD3DStateBlockImpl *stateblock,
         struct ps_compile_args *args) DECLSPEC_HIDDEN;
+
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+IWineD3DVertexShaderImpl * vertexshader_check_cached(IWineD3DDeviceImpl *device, IWineD3DVertexShaderImpl *object) DECLSPEC_HIDDEN;
+IWineD3DPixelShaderImpl * pixelshader_check_cached(IWineD3DDeviceImpl *device, IWineD3DPixelShaderImpl *object) DECLSPEC_HIDDEN;
+void shader_chaches_init(IWineD3DDeviceImpl *device) DECLSPEC_HIDDEN;
+void shader_chaches_term(IWineD3DDeviceImpl *device) DECLSPEC_HIDDEN;
+#endif
 
 /* sRGB correction constants */
 static const float srgb_cmp = 0.0031308f;

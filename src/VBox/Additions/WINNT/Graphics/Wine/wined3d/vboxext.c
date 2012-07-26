@@ -682,3 +682,144 @@ static HRESULT vboxExtWndCleanup()
 
     return S_OK;
 }
+
+
+/* hash map impl */
+static void vboxExtHashInitEntries(PVBOXEXT_HASHMAP pMap)
+{
+    uint32_t i;
+    pMap->cEntries = 0;
+    for (i = 0; i < RT_ELEMENTS(pMap->aBuckets); ++i)
+    {
+        RTListInit(&pMap->aBuckets[i].EntryList);
+    }
+}
+
+void VBoxExtHashInit(PVBOXEXT_HASHMAP pMap, PFNVBOXEXT_HASHMAP_HASH pfnHash, PFNVBOXEXT_HASHMAP_EQUAL pfnEqual)
+{
+    pMap->pfnHash = pfnHash;
+    pMap->pfnEqual = pfnEqual;
+    vboxExtHashInitEntries(pMap);
+}
+
+static DECLINLINE(uint32_t) vboxExtHashIdx(uint32_t u32Hash)
+{
+    return u32Hash % VBOXEXT_HASHMAP_NUM_BUCKETS;
+}
+
+#define VBOXEXT_FOREACH_NODE(_pNode, _pList, _op) do { \
+        PRTLISTNODE _pNode; \
+        PRTLISTNODE __pNext; \
+        for (_pNode = (_pList)->pNext; \
+                _pNode != (_pList); \
+                _pNode = __pNext) \
+        { \
+            __pNext = _pNode->pNext; /* <- the _pNode should not be referenced after the _op */ \
+            _op \
+        } \
+    } while (0)
+
+DECLINLINE(PVBOXEXT_HASHMAP_ENTRY) vboxExtHashSearchEntry(PVBOXEXT_HASHMAP pMap, void *pvKey)
+{
+    uint32_t u32Hash = pMap->pfnHash(pvKey);
+    uint32_t u32HashIdx = vboxExtHashIdx(u32Hash);
+    PVBOXEXT_HASHMAP_BUCKET pBucket = &pMap->aBuckets[u32HashIdx];
+    PVBOXEXT_HASHMAP_ENTRY pEntry;
+    VBOXEXT_FOREACH_NODE(pNode, &pBucket->EntryList,
+        pEntry = RT_FROM_MEMBER(pNode, VBOXEXT_HASHMAP_ENTRY, ListNode);
+        if (pEntry->u32Hash != u32Hash)
+            continue;
+
+        if (!pMap->pfnEqual(pvKey, pEntry->pvKey))
+            continue;
+        return pEntry;
+    );
+    return NULL;
+}
+
+void* VBoxExtHashRemoveEntry(PVBOXEXT_HASHMAP pMap, PVBOXEXT_HASHMAP_ENTRY pEntry)
+{
+    RTListNodeRemove(&pEntry->ListNode);
+    --pMap->cEntries;
+    Assert(pMap->cEntries <= UINT32_MAX/2);
+    return pEntry->pvKey;
+}
+
+static void vboxExtHashPutEntry(PVBOXEXT_HASHMAP pMap, PVBOXEXT_HASHMAP_BUCKET pBucket, PVBOXEXT_HASHMAP_ENTRY pEntry)
+{
+    RTListNodeInsertAfter(&pBucket->EntryList, &pEntry->ListNode);
+    ++pMap->cEntries;
+}
+
+PVBOXEXT_HASHMAP_ENTRY VBoxExtHashRemove(PVBOXEXT_HASHMAP pMap, void *pvKey)
+{
+    PVBOXEXT_HASHMAP_ENTRY pEntry = vboxExtHashSearchEntry(pMap, pvKey);
+    if (!pEntry)
+        return NULL;
+
+    VBoxExtHashRemoveEntry(pMap, pEntry);
+    return pEntry;
+}
+
+PVBOXEXT_HASHMAP_ENTRY VBoxExtHashPut(PVBOXEXT_HASHMAP pMap, void *pvKey, PVBOXEXT_HASHMAP_ENTRY pEntry)
+{
+    PVBOXEXT_HASHMAP_ENTRY pOldEntry = VBoxExtHashRemove(pMap, pvKey);
+    uint32_t u32Hash = pMap->pfnHash(pvKey);
+    uint32_t u32HashIdx = vboxExtHashIdx(u32Hash);
+    pEntry->pvKey = pvKey;
+    pEntry->u32Hash = u32Hash;
+    vboxExtHashPutEntry(pMap, &pMap->aBuckets[u32HashIdx], pEntry);
+    return pOldEntry;
+}
+
+
+PVBOXEXT_HASHMAP_ENTRY VBoxExtHashGet(PVBOXEXT_HASHMAP pMap, void *pvKey)
+{
+    return vboxExtHashSearchEntry(pMap, pvKey);
+}
+
+void VBoxExtHashVisit(PVBOXEXT_HASHMAP pMap, PFNVBOXEXT_HASHMAP_VISITOR pfnVisitor, void *pvVisitor)
+{
+    uint32_t iBucket = 0, iEntry = 0;
+    uint32_t cEntries = pMap->cEntries;
+
+    if (!cEntries)
+        return;
+
+    for (; ; ++iBucket)
+    {
+        PVBOXEXT_HASHMAP_ENTRY pEntry;
+        PVBOXEXT_HASHMAP_BUCKET pBucket = &pMap->aBuckets[iBucket];
+        Assert(iBucket < RT_ELEMENTS(pMap->aBuckets));
+        VBOXEXT_FOREACH_NODE(pNode, &pBucket->EntryList,
+            pEntry = RT_FROM_MEMBER(pNode, VBOXEXT_HASHMAP_ENTRY, ListNode);
+            if (!pfnVisitor(pMap, pEntry->pvKey, pEntry, pvVisitor))
+                return;
+
+            if (++iEntry == cEntries)
+                return;
+        );
+    }
+
+    /* should not be here! */
+    AssertFailed();
+}
+
+void VBoxExtHashCleanup(PVBOXEXT_HASHMAP pMap, PFNVBOXEXT_HASHMAP_VISITOR pfnVisitor, void *pvVisitor)
+{
+    VBoxExtHashVisit(pMap, pfnVisitor, pvVisitor);
+    vboxExtHashInitEntries(pMap);
+}
+
+static DECLCALLBACK(bool) vboxExtCacheCleanupCb(struct VBOXEXT_HASHMAP *pMap, void *pvKey, struct VBOXEXT_HASHMAP_ENTRY *pValue, void *pvVisitor)
+{
+    PVBOXEXT_HASHCACHE pCache = VBOXEXT_HASHCACHE_FROM_MAP(pMap);
+    PVBOXEXT_HASHCACHE_ENTRY pCacheEntry = VBOXEXT_HASHCACHE_ENTRY_FROM_MAP(pValue);
+    pCache->pfnCleanupEntry(pvKey, pCacheEntry);
+    return TRUE;
+}
+
+void VBoxExtCacheCleanup(PVBOXEXT_HASHCACHE pCache)
+{
+    VBoxExtHashCleanup(&pCache->Map, vboxExtCacheCleanupCb, NULL);
+}
