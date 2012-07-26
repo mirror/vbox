@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Guest Additions Driver for Solaris.
+ * VirtualBox Guest Additions Mouse Driver for Solaris.
  */
 
 /*
