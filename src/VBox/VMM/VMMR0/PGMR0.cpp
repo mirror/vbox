@@ -478,7 +478,10 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
 
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
-    /* Note: hack alert for difficult to reproduce problem. */
+    /*
+     * Handle the case where we cannot interpret the instruction because we cannot get the guest physical address
+     * via its page tables, see @bugref{6043}.
+     */
     else if (   rc == VERR_PAGE_NOT_PRESENT                 /* SMP only ; disassembly might fail. */
              || rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
              || rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
