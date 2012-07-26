@@ -2422,8 +2422,6 @@ static IWineD3DBaseShaderImpl* shader_chache_get(PVBOXEXT_HASHCACHE pCache, IWin
     if (!pEntry)
         return pShader;
 
-    Assert(0);
-
     pCachedShader = VBOX_SHADER_FROM_CACHE_ENTRY(pEntry);
     shader_reinit(&pCachedShader->baseShader, (IWineD3DDeviceImpl *)pShader->baseShader.device,
             pShader->baseShader.parent, pShader->baseShader.parent_ops);
