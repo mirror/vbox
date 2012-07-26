@@ -52,6 +52,8 @@ mv -f /etc/devlink.vbox /etc/devlink.tab
 # remove the link
 if test -h "/dev/vboxguest" || test -f "/dev/vboxguest"; then
     rm -f /dev/vboxdrv
+if test -h "/dev/vboxms" || test -f "/dev/vboxms"; then
+    rm -f /dev/vboxms
 fi
 
 # Try and restore xorg.conf!

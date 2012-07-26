@@ -125,6 +125,7 @@ solaris-addcommon_INST = bin/additions/
 solaris-addcommon_MODE = a+r,u+w
 solaris-addcommon_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf=>vboxguest.conf \
+	$(PATH_ROOT)/src/VBox/Additions/solaris/Mouse/vboxms.conf=>vboxms.conf \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop \
 	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
@@ -159,6 +160,7 @@ SOLARIS_ADD_STRIP_BINS = \
 	VBoxControl \
 	vboxfsmount	\
 	vboxfs \
+	vboxmslnk \
 	$(if ($VBOX_WITH_PAM),pam_vbox.so,) \
 	$(if $(VBOX_OSE),,vboxfs_s10)
 
@@ -172,10 +174,12 @@ SOLARIS_ADD_SYSLIBS = \
 	VBoxOGLpackspu.so
 
 SOLARIS_ADD_DRIVERS = \
-	vboxguest
+	vboxguest \
+	vboxms
 
 SOLARIS_ADD_DRIVERS_CONF = \
-	vboxguest.conf
+	vboxguest.conf \
+	vboxms.conf
 
 SOLARIS_ADD_XORG_DRIVERS = \
 	vboxmouse_drv_13.so \
