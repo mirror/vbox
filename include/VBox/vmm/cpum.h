@@ -355,7 +355,7 @@ VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu);
 VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
 VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
 
-/** @name Changed flags
+/** @name Changed flags.
  * These flags are used to keep track of which important register that
  * have been changed since last they were reset. The only one allowed
  * to clear them is REM!
@@ -369,16 +369,15 @@ VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
 #define CPUM_CHANGED_GDTR                       RT_BIT(5)
 #define CPUM_CHANGED_IDTR                       RT_BIT(6)
 #define CPUM_CHANGED_LDTR                       RT_BIT(7)
-#define CPUM_CHANGED_TR                         RT_BIT(8)
+#define CPUM_CHANGED_TR                         RT_BIT(8)  /**@< Currently unused. */
 #define CPUM_CHANGED_SYSENTER_MSR               RT_BIT(9)
-#define CPUM_CHANGED_HIDDEN_SEL_REGS            RT_BIT(10)
+#define CPUM_CHANGED_HIDDEN_SEL_REGS            RT_BIT(10) /**@< Currently unused. */
 #define CPUM_CHANGED_CPUID                      RT_BIT(11)
-/** All except CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID.  */
 #define CPUM_CHANGED_ALL                        (  CPUM_CHANGED_FPU_REM \
                                                  | CPUM_CHANGED_CR0 \
+                                                 | CPUM_CHANGED_CR4 \
                                                  | CPUM_CHANGED_GLOBAL_TLB_FLUSH \
                                                  | CPUM_CHANGED_CR3 \
-                                                 | CPUM_CHANGED_CR4 \
                                                  | CPUM_CHANGED_GDTR \
                                                  | CPUM_CHANGED_IDTR \
                                                  | CPUM_CHANGED_LDTR \
@@ -386,11 +385,6 @@ VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
                                                  | CPUM_CHANGED_SYSENTER_MSR \
                                                  | CPUM_CHANGED_HIDDEN_SEL_REGS \
                                                  | CPUM_CHANGED_CPUID )
-/** This one is used by raw-mode to indicate that the hidden register
- * information is not longer reliable and have to be re-determined.
- *
- * @remarks This must not be part of CPUM_CHANGED_ALL! */
-#define CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID    RT_BIT(12)
 /** @} */
 
 VMMDECL(void)           CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags);
@@ -406,7 +400,6 @@ VMMDECL(void)           CPUMDeactivateGuestDebugState(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsHyperDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateHyperDebugState(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu);
-VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);

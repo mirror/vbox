@@ -591,6 +591,9 @@
 #define VERR_CPUM_RAISE_GP_0                    (-1750)
 /** Incompatible CPUM configuration. */
 #define VERR_CPUM_INCOMPATIBLE_CONFIG           (-1751)
+/** CPUMR3DisasmInstrCPU unexpectedly failed to determin the hidden
+ * parts of the CS register. */
+#define VERR_CPUM_HIDDEN_CS_LOAD_ERROR          (-1752)
 /** @} */
 
 

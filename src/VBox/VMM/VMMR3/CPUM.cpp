@@ -82,7 +82,15 @@
 /** The saved state version of 1.6, used for backwards compatibility. */
 #define CPUM_SAVED_STATE_VERSION_VER1_6         6
 
-#define CPUM_WITH_CHANGED_CPUMCTX
+
+/**
+ * This was used in the saved state up to the early life of version 14.
+ *
+ * It indicates that we may have some out-of-sync hidden segement registers.
+ * It is only relevant for raw-mode.
+ */
+#define CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID    RT_BIT(12)
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -2497,8 +2505,6 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
 
                     pVCpu->cpum.s.Guest.ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
                     pVCpu->cpum.s.Guest.ldtr.ValidSel = pVCpu->cpum.s.Guest.ldtr.Sel;
-                    pVCpu->cpum.s.Guest.tr.fFlags     = CPUMSELREG_FLAGS_VALID;
-                    pVCpu->cpum.s.Guest.tr.ValidSel   = pVCpu->cpum.s.Guest.tr.Sel;
                 }
                 else
                 {
@@ -2508,24 +2514,22 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         paSelReg[iSelReg].ValidSel = 0;
                     }
 
-                    /** @todo fix this. We can get most of the details from SELM after restore is
-                     *        done. */
-                    pVCpu->cpum.s.Guest.ldtr.fFlags   = 0;
-                    pVCpu->cpum.s.Guest.ldtr.ValidSel = 0;
-                    pVCpu->cpum.s.Guest.tr.fFlags     = 0;
-                    pVCpu->cpum.s.Guest.tr.ValidSel   = 0;
+                    /* This might not be 104% correct, but I think it's close
+                       enough for all practical purposes...  (REM always loaded
+                       LDTR registers.) */
+                    pVCpu->cpum.s.Guest.ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
+                    pVCpu->cpum.s.Guest.ldtr.ValidSel = pVCpu->cpum.s.Guest.ldtr.Sel;
                 }
-
+                pVCpu->cpum.s.Guest.tr.fFlags     = CPUMSELREG_FLAGS_VALID;
+                pVCpu->cpum.s.Guest.tr.ValidSel   = pVCpu->cpum.s.Guest.tr.Sel;
             }
         }
 
-        /* Older states does not set CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID for
-           raw-mode guest, so we have to do it ourselves. */
-/** @todo eliminate CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID. */
-        if (   uVersion <= CPUM_SAVED_STATE_VERSION_VER3_2
-            && !HWACCMIsEnabled(pVM))
+        /* Clear CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID. */
+        if (   uVersion >  CPUM_SAVED_STATE_VERSION_VER3_2
+            && uVersion <= CPUM_SAVED_STATE_VERSION_MEM)
             for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-                pVM->aCpus[iCpu].cpum.s.fChanged |= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
+                pVM->aCpus[iCpu].cpum.s.fChanged &= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
 
         /*
          * A quick sanity check.
@@ -3996,43 +4000,21 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     if (    (pCtx->cr0 & X86_CR0_PE)
         &&   pCtx->eflags.Bits.u1VM == 0)
     {
-        if (CPUMAreHiddenSelRegsValid(pVCpu))
+        if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs))
         {
-            State.f64Bits         = enmMode >= PGMMODE_AMD64 && pCtx->cs.Attr.n.u1Long;
-            State.GCPtrSegBase    = pCtx->cs.u64Base;
-            State.GCPtrSegEnd     = pCtx->cs.u32Limit + 1 + (RTGCUINTPTR)pCtx->cs.u64Base;
-            State.cbSegLimit      = pCtx->cs.u32Limit;
-            enmDisCpuMode         = (State.f64Bits)
-                                    ? DISCPUMODE_64BIT
-                                    : pCtx->cs.Attr.n.u1DefBig
-                                    ? DISCPUMODE_32BIT
-                                    : DISCPUMODE_16BIT;
+            CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, &pCtx->cs);
+            if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs))
+                return VERR_CPUM_HIDDEN_CS_LOAD_ERROR;
         }
-        else
-        {
-            DBGFSELINFO SelInfo;
-
-            rc = SELMR3GetShadowSelectorInfo(pVM, pCtx->cs.Sel, &SelInfo);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgFailed(("SELMR3GetShadowSelectorInfo failed for %04X:%RGv rc=%d\n", pCtx->cs.Sel, GCPtrPC, rc));
-                return rc;
-            }
-
-            /*
-             * Validate the selector.
-             */
-            rc = DBGFR3SelInfoValidateCS(&SelInfo, pCtx->ss.Sel);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgFailed(("SELMSelInfoValidateCS failed for %04X:%RGv rc=%d\n", pCtx->cs.Sel, GCPtrPC, rc));
-                return rc;
-            }
-            State.GCPtrSegBase    = SelInfo.GCPtrBase;
-            State.GCPtrSegEnd     = SelInfo.cbLimit + 1 + (RTGCUINTPTR)SelInfo.GCPtrBase;
-            State.cbSegLimit      = SelInfo.cbLimit;
-            enmDisCpuMode         = SelInfo.u.Raw.Gen.u1DefBig ? DISCPUMODE_32BIT : DISCPUMODE_16BIT;
-        }
+        State.f64Bits         = enmMode >= PGMMODE_AMD64 && pCtx->cs.Attr.n.u1Long;
+        State.GCPtrSegBase    = pCtx->cs.u64Base;
+        State.GCPtrSegEnd     = pCtx->cs.u32Limit + 1 + (RTGCUINTPTR)pCtx->cs.u64Base;
+        State.cbSegLimit      = pCtx->cs.u32Limit;
+        enmDisCpuMode         = (State.f64Bits)
+                              ? DISCPUMODE_64BIT
+                              : pCtx->cs.Attr.n.u1DefBig
+                              ? DISCPUMODE_32BIT
+                              : DISCPUMODE_16BIT;
     }
     else
     {
@@ -4206,11 +4188,6 @@ VMMR3DECL(int) CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
     }
 
     /*
-     * Invalidate the hidden registers.
-     */
-    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
-
-    /*
      * Assert sanity.
      */
     AssertMsg((pCtxCore->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
@@ -4329,10 +4306,10 @@ VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)
     *puCpl = CPUMGetGuestCPL(pVCpu);
 
     /*
-     * Get and reset the flags, leaving CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID set.
+     * Get and reset the flags.
      */
     uint32_t fFlags = pVCpu->cpum.s.fChanged;
-    pVCpu->cpum.s.fChanged &= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID; /* leave it set */
+    pVCpu->cpum.s.fChanged = 0;
 
     /** @todo change the switcher to use the fChanged flags. */
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_SINCE_REM)
@@ -4347,7 +4324,7 @@ VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)
 
 
 /**
- * Leaves REM and works the CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID flag.
+ * Leaves REM.
  *
  * @param   pVCpu               Pointer to the VMCPU.
  * @param   fNoOutOfSyncSels    This is @c false if there are out of sync
@@ -4357,11 +4334,6 @@ VMMR3DECL(void) CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels)
 {
     Assert(!pVCpu->cpum.s.fRawEntered);
     Assert(pVCpu->cpum.s.fRemEntered);
-
-    if (fNoOutOfSyncSels)
-        pVCpu->cpum.s.fChanged &= ~CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
-    else
-        pVCpu->cpum.s.fChanged |= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
 
     pVCpu->cpum.s.fRemEntered = false;
 }

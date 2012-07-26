@@ -1199,7 +1199,6 @@ static const REMFNDESC g_aExports[] =
  */
 static REMFNDESC g_aVMMImports[] =
 {
-    { "CPUMAreHiddenSelRegsValid",              VMM_FN(CPUMAreHiddenSelRegsValid),      &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "CPUMR3RemEnter",                         VMM_FN(CPUMR3RemEnter),                 &g_aArgsCPUMR3RemEnter[0],                  RT_ELEMENTS(g_aArgsCPUMR3RemEnter),                    REMFNDESC_FLAGS_RET_INT,    sizeof(uint32_t),   NULL },
     { "CPUMR3RemLeave",                         VMM_FN(CPUMR3RemLeave),                 &g_aArgsCPUMR3RemLeave[0],                  RT_ELEMENTS(g_aArgsCPUMR3RemLeave),                    REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "CPUMSetChangedFlags",                    VMM_FN(CPUMSetChangedFlags),            &g_aArgsCPUMSetChangedFlags[0],             RT_ELEMENTS(g_aArgsCPUMSetChangedFlags),               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
