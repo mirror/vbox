@@ -131,10 +131,7 @@ AddRomMemoryBaseSizeHob (
     MemorySize
     );
 
-  DEBUG (
-      (EFI_D_ERROR, "ROM HOB: at 0x%llx size 0x%llx\n", MemoryBase, MemorySize)
-    );
-
+  DEBUG ((DEBUG_INFO, "ROM HOB: at 0x%llx size 0x%llx\n", MemoryBase, MemorySize));
 }
 
 
@@ -276,6 +273,7 @@ MemMapInitialization (
 
   //
   // Video memory + Legacy BIOS region
+  // This includes ACPI floating pointer region.
   //
   AddIoMemoryRangeHob (0x0A0000, BASE_1MB);
 
@@ -288,8 +286,6 @@ MemMapInitialization (
   AcpiTables = (EFI_PHYSICAL_ADDRESS)*(UINT32*)((UINTN)RsdPtr + 16) & ~0xfff;
   ASSERT(AcpiTables != 0);
 
-  // Floating pointer page
-  AddRomMemoryBaseSizeHob(RsdPtr,      0x1000);
   // ACPI tables 64 K
   AddRomMemoryBaseSizeHob(AcpiTables, 0x10000);
 }
