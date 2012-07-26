@@ -101,7 +101,9 @@ public:
                                ProcessPriority_T aPriority, ComSafeArrayIn(LONG, aAffinity),
                                IGuestProcess **aProcess);
     STDMETHOD(ProcessGet)(ULONG aPID, IGuestProcess **aProcess);
+#if 0
     STDMETHOD(SetTimeout)(ULONG aTimeoutMS);
+#endif
     STDMETHOD(SymlinkCreate)(IN_BSTR aSource, IN_BSTR aTarget, SymlinkType_T aType);
     STDMETHOD(SymlinkExists)(IN_BSTR aSymlink, BOOL *aExists);
     STDMETHOD(SymlinkRead)(IN_BSTR aSymlink, ComSafeArrayIn(SymlinkReadFlag_T, aFlags), BSTR *aTarget);

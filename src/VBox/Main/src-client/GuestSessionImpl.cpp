@@ -1104,6 +1104,7 @@ STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **aProcess)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+#if 0
 STDMETHODIMP GuestSession::SetTimeout(ULONG aTimeoutMS)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -1123,6 +1124,7 @@ STDMETHODIMP GuestSession::SetTimeout(ULONG aTimeoutMS)
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
+#endif
 
 STDMETHODIMP GuestSession::SymlinkCreate(IN_BSTR aSource, IN_BSTR aTarget, SymlinkType_T aType)
 {
