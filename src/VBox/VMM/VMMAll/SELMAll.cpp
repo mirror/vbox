@@ -30,9 +30,17 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>
-#include <VBox/log.h>
 #include <VBox/vmm/vmm.h>
 #include <iprt/x86.h>
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#if defined(LOG_ENABLED) && defined(VBOX_WITH_RAW_MODE_NOT_R0)
+/** Segment register names. */
+static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "FS", "GS" };
+#endif
 
 
 
@@ -64,7 +72,7 @@ VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
 
-    return (RTGCPTR)(((RTGCUINTPTR)Addr + X86DESC_BASE(Desc)) & 0xffffffff);
+    return (RTGCPTR)(((RTGCUINTPTR)Addr + X86DESC_BASE(&Desc)) & 0xffffffff);
 }
 #endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
@@ -104,13 +112,13 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RT
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
     /** @todo when we're in 16 bits mode, we should cut off the address as well?? */
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg))
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pCtxCore->cs))
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs))
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, &pCtxCore->cs);
 #else
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg));
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pCtxCore->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
 #endif
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
@@ -167,7 +175,7 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
         if (ppvGC)
         {
-            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg))
+            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
                 *ppvGC = pSReg->u64Base + uFlat;
             else
                 *ppvGC = ((RTGCUINTPTR)pSReg->Sel << 4) + uFlat;
@@ -177,13 +185,13 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
 
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg))
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pCtxCore->cs))
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs))
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, &pCtxCore->cs);
 #else
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg));
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pCtxCore->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
 #endif
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
@@ -346,12 +354,10 @@ VMMDECL(int) SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPT
     }
 
     /* calc limit. */
-    uint32_t u32Limit = X86DESC_LIMIT(Desc);
-    if (Desc.Gen.u1Granularity)
-        u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+    uint32_t u32Limit = X86DESC_LIMIT_G(&Desc);
 
     /* calc address assuming straight stuff. */
-    RTGCPTR pvFlat = Addr + X86DESC_BASE(Desc);
+    RTGCPTR pvFlat = Addr + X86DESC_BASE(&Desc);
 
     /* Cut the address to 32 bits. */
     Assert(!CPUMIsGuestInLongMode(pVCpu));
@@ -474,6 +480,39 @@ VMMDECL(int) SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPT
 
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
+
+static void selLoadHiddenSelectorRegFromGuestTable(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg,
+                                                   RTGCPTR GCPtrDesc, RTSEL const Sel, uint32_t const iSReg)
+{
+    /*
+     * Try read the entry.
+     */
+    X86DESC GstDesc;
+    int rc = PGMPhysReadGCPtr(pVCpu, &GstDesc, GCPtrDesc, sizeof(GstDesc));
+    if (RT_FAILURE(rc))
+    {
+        Log(("SELMLoadHiddenSelectorReg: Error reading descriptor %s=%#x: %Rrc\n", g_aszSRegNms[iSReg], Sel, rc));
+        STAM_REL_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelReadErrors);
+        return;
+    }
+
+    /*
+     * Validate it and load it.
+     */
+    if (!selmIsGstDescGoodForSReg(pVCpu, pSReg, &GstDesc, iSReg, CPUMGetGuestCPL(pVCpu)))
+    {
+        Log(("SELMLoadHiddenSelectorReg: Guest table entry is no good (%s=%#x): %.8Rhxs\n", g_aszSRegNms[iSReg], Sel, &GstDesc));
+        STAM_REL_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelGstNoGood);
+        return;
+    }
+
+    selmLoadHiddenSRegFromGuestDesc(pVCpu, pSReg, &GstDesc);
+    Log(("SELMLoadHiddenSelectorReg: loaded %s=%#x:{b=%llx, l=%x, a=%x, vs=%x} (gst)\n",
+         g_aszSRegNms[iSReg], Sel, pSReg->u64Base, pSReg->u32Limit, pSReg->Attr.u, pSReg->ValidSel));
+    STAM_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelGst);
+}
+
+
 /**
  * CPUM helper that loads the hidden selector register from the descriptor table
  * when executing with raw-mode.
@@ -499,73 +538,53 @@ VMM_INT_DECL(void) SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUM
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(pVM->cCpus == 1);
 
-    RTSEL const Sel = pSReg->Sel;
 
-/** @todo Consider loading these from the shadow tables when possible? */
     /*
-     * Calculate descriptor table entry address.
+     * Get the shadow descriptor table entry and validate it.
+     * Should something go amiss, try the guest table.
      */
-    RTGCPTR GCPtrDesc;
+    RTSEL const     Sel   = pSReg->Sel;
+    uint32_t const  iSReg = pSReg - CPUMCTX_FIRST_SREG(pCtx); Assert(iSReg < X86_SREG_COUNT);
+    PCX86DESC       pShwDesc;
     if (!(Sel & X86_SEL_LDT))
     {
-        if ((Sel & X86_SEL_MASK) >= pCtx->gdtr.cbGdt)
+        /** @todo this shall not happen, we shall check for these things when executing
+         *        LGDT */
+        AssertReturnVoid((Sel | X86_SEL_RPL | X86_SEL_LDT) <= pCtx->gdtr.cbGdt);
+
+        pShwDesc = &pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT)
+            || !selmIsShwDescGoodForSReg(pSReg, pShwDesc, iSReg, CPUMGetGuestCPL(pVCpu)))
         {
-            AssertFailed(); /** @todo count these. */
+            selLoadHiddenSelectorRegFromGuestTable(pVCpu, pCtx, pSReg, pCtx->gdtr.pGdt + (Sel & X86_SEL_MASK), Sel, iSReg);
             return;
         }
-        GCPtrDesc = pCtx->gdtr.pGdt + (Sel & X86_SEL_MASK);
-        /** @todo Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT]; for cases
-         *        where we don't change it too much. */
     }
     else
     {
-        if ((Sel & X86_SEL_MASK) >= pCtx->ldtr.u32Limit)
-        {
-            AssertFailed(); /** @todo count these. */
-            return;
-        }
-        GCPtrDesc = pCtx->ldtr.u64Base + (Sel & X86_SEL_MASK);
-    }
+        /** @todo this shall not happen, we shall check for these things when executing
+         *        LLDT */
+        AssertReturnVoid((Sel | X86_SEL_RPL | X86_SEL_LDT) <= pCtx->ldtr.u32Limit);
 
-    /*
-     * Try read the entry.
-     */
-    X86DESC Desc;
-    int rc = PGMPhysReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(Desc));
-    if (RT_FAILURE(rc))
-    {
-        //RT_ZERO(Desc);
-        //if (!(Sel & X86_SEL_LDT))
-        //    Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
-        //if (!Desc.Gen.u1Present)
+        pShwDesc = (PCX86DESC)((uintptr_t)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper + (Sel & X86_SEL_MASK));
+        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT)
+            || !selmIsShwDescGoodForSReg(pSReg, pShwDesc, iSReg, CPUMGetGuestCPL(pVCpu)))
         {
-            AssertFailed(); /** @todo count these. */
+            selLoadHiddenSelectorRegFromGuestTable(pVCpu, pCtx, pSReg, pCtx->ldtr.u64Base + (Sel & X86_SEL_MASK), Sel, iSReg);
             return;
         }
     }
 
     /*
-     * Digest it and store the result.
+     * All fine, load it.
      */
-    if (   !Desc.Gen.u1Present
-        || !Desc.Gen.u1DescType)
-    {
-        AssertFailed(); /** @todo count these. */
-        return;
-    }
-
-    uint32_t u32Limit = X86DESC_LIMIT(Desc);
-    if (Desc.Gen.u1Granularity)
-        u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-    pSReg->u32Limit = u32Limit;
-
-    pSReg->u64Base  = X86DESC_BASE(Desc);
-    pSReg->Attr.u   = X86DESC_GET_HID_ATTR(Desc);
-    pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
-    pSReg->ValidSel = Sel;
+    selmLoadHiddenSRegFromShadowDesc(pSReg, pShwDesc);
+    STAM_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelShw);
+    Log(("SELMLoadHiddenSelectorReg: loaded %s=%#x:{b=%llx, l=%x, a=%x, vs=%x} (shw)\n",
+         g_aszSRegNms[iSReg], Sel, pSReg->u64Base, pSReg->u32Limit, pSReg->Attr.u, pSReg->ValidSel));
 }
-#endif /* VBOX_WITH_RAW_MODE */
 
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
 /**
  * Validates and converts a GC selector based code address to a flat
@@ -582,7 +601,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, 
                                                      PRTGCPTR ppvFlat)
 {
     RTGCUINTPTR uFlat = Addr & 0xffff;
-    if (!pSReg || !CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg))
+    if (!pSReg || !CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
         uFlat += (RTGCUINTPTR)SelCS << 4;
     else
         uFlat += pSReg->u64Base;
@@ -645,12 +664,10 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRawMode(PVM pVM, PVMCPU pVCpu, RTSEL
                 /*
                  * Limit check.
                  */
-                uint32_t    u32Limit = X86DESC_LIMIT(Desc);
-                if (Desc.Gen.u1Granularity)
-                    u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+                uint32_t    u32Limit = X86DESC_LIMIT_G(&Desc);
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
-                    *ppvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
+                    *ppvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(&Desc));
                     /* Cut the address to 32 bits. */
                     *ppvFlat &= 0xffffffff;
 
@@ -764,7 +781,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS Efl, RTSEL Sel
     if (!pSRegCS)
         return selmValidateAndConvertCSAddrRawMode(pVCpu->CTX_SUFF(pVM), pVCpu, SelCPL, SelCS, Addr, ppvFlat, NULL);
 
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSRegCS))
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSRegCS))
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSRegCS);
 
     /* Undo ring compression. */
@@ -774,7 +791,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS Efl, RTSEL Sel
     if ((SelCS  & X86_SEL_RPL) == 1 && !HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         SelCS  &= ~X86_SEL_RPL;
 #else
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSRegCS));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSRegCS));
     Assert(pSRegCS->Sel == SelCS);
 #endif
 

@@ -993,6 +993,8 @@
     GEN_CHECK_OFF(SELM, GCSelTss);
     GEN_CHECK_OFF(SELM, fGDTRangeRegistered);
     GEN_CHECK_OFF(SELM, StatUpdateFromCPUM);
+    GEN_CHECK_OFF(SELM, StatStaleToUnstaleSReg);
+    GEN_CHECK_OFF(SELM, StatLoadHidSelGstNoGood);
 
     GEN_CHECK_SIZE(TM);
     GEN_CHECK_OFF(TM, offVM);

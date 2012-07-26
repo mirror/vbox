@@ -253,6 +253,10 @@ static inline void load_seg_cache_raw_dt(SegmentCache *sc, uint32_t e1, uint32_t
     sc->base = get_seg_base(e1, e2);
     sc->limit = get_seg_limit(e1, e2);
     sc->flags = e2;
+#ifdef VBOX
+    sc->newselector = 0;
+    sc->fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
+#endif
 }
 
 /* init the segment cache in vm86 mode. */
@@ -556,6 +560,10 @@ static void switch_tss(int tss_selector,
     env->tr.base = tss_base;
     env->tr.limit = tss_limit;
     env->tr.flags = e2 & ~DESC_TSS_BUSY_MASK;
+#ifdef VBOX
+    env->tr.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
+    env->tr.newselector = 0;
+#endif
 
     if ((type & 8) && (env->cr[0] & CR0_PG_MASK)) {
         cpu_x86_update_cr3(env, new_cr3);
@@ -595,6 +603,10 @@ static void switch_tss(int tss_selector,
     env->ldt.base = 0;
     env->ldt.limit = 0;
     env->ldt.flags = 0;
+#ifdef VBOX
+    env->ldt.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
+    env->ldt.newselector = 0;
+#endif
 
     /* load the LDT */
     if (new_ldt & 4)
@@ -1953,6 +1965,10 @@ void helper_rsm(void)
     env->ldt.base = ldq_phys(sm_state + 0x7e78);
     env->ldt.limit = ldl_phys(sm_state + 0x7e74);
     env->ldt.flags = (lduw_phys(sm_state + 0x7e72) & 0xf0ff) << 8;
+#ifdef VBOX
+    env->ldt.fVBoxFlags = CPUMSELREG_FLAGS_VALID;
+    env->ldt.newselector = 0;
+#endif
 
     env->idt.base = ldq_phys(sm_state + 0x7e88);
     env->idt.limit = ldl_phys(sm_state + 0x7e84);
@@ -1961,6 +1977,10 @@ void helper_rsm(void)
     env->tr.base = ldq_phys(sm_state + 0x7e98);
     env->tr.limit = ldl_phys(sm_state + 0x7e94);
     env->tr.flags = (lduw_phys(sm_state + 0x7e92) & 0xf0ff) << 8;
+#ifdef VBOX
+    env->tr.fVBoxFlags = CPUMSELREG_FLAGS_VALID;
+    env->tr.newselector = 0;
+#endif
 
     EAX = ldq_phys(sm_state + 0x7ff8);
     ECX = ldq_phys(sm_state + 0x7ff0);
@@ -2007,11 +2027,19 @@ void helper_rsm(void)
     env->tr.base = ldl_phys(sm_state + 0x7f64);
     env->tr.limit = ldl_phys(sm_state + 0x7f60);
     env->tr.flags = (ldl_phys(sm_state + 0x7f5c) & 0xf0ff) << 8;
+#ifdef VBOX
+    env->tr.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
+    env->tr.newselector = 0;
+#endif
 
     env->ldt.selector = ldl_phys(sm_state + 0x7fc0) & 0xffff;
     env->ldt.base = ldl_phys(sm_state + 0x7f80);
     env->ldt.limit = ldl_phys(sm_state + 0x7f7c);
     env->ldt.flags = (ldl_phys(sm_state + 0x7f78) & 0xf0ff) << 8;
+#ifdef VBOX
+    env->ldt.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
+    env->ldt.newselector = 0;
+#endif
 
     env->gdt.base = ldl_phys(sm_state + 0x7f74);
     env->gdt.limit = ldl_phys(sm_state + 0x7f70);
@@ -2447,6 +2475,10 @@ void helper_lldt(int selector)
         /* XXX: NULL selector case: invalid LDT */
         env->ldt.base = 0;
         env->ldt.limit = 0;
+#ifdef VBOX
+        env->ldt.fVBoxFlags = CPUMSELREG_FLAGS_VALID;
+        env->ldt.newselector = 0;
+#endif
     } else {
         if (selector & 0x4)
             raise_exception_err(EXCP0D_GPF, selector & 0xfffc);
@@ -2509,6 +2541,10 @@ void helper_ltr(int selector)
         env->tr.base = 0;
         env->tr.limit = 0;
         env->tr.flags = 0;
+#ifdef VBOX
+        env->tr.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
+        env->tr.newselector = 0;
+#endif
     } else {
         if (selector & 0x4)
             raise_exception_err(EXCP0D_GPF, selector & 0xfffc);
@@ -5723,7 +5759,7 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
         env = savedenv;
 
         /* Successful sync. */
-        env1->segs[seg_reg].newselector = 0;
+        Assert(env1->segs[seg_reg].newselector == 0);
     }
     else
     {
@@ -5740,9 +5776,9 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
                 e1 = e2 = 0;
                 load_segment(&e1, &e2, selector);
                 cpu_x86_load_seg_cache(env, R_CS, selector,
-                               get_seg_base(e1, e2),
-                               get_seg_limit(e1, e2),
-                               e2);
+                                       get_seg_base(e1, e2),
+                                       get_seg_limit(e1, e2),
+                                       e2);
             }
             else
                 helper_load_seg(seg_reg, selector);
@@ -5752,7 +5788,7 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
             env = savedenv;
 
             /* Successful sync. */
-            env1->segs[seg_reg].newselector = 0;
+            Assert(env1->segs[seg_reg].newselector == 0);
         }
         else
         {

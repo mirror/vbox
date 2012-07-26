@@ -2384,23 +2384,34 @@ typedef const X86DESC *PCX86DESC;
 /** @def X86DESC_BASE
  * Return the base address of a descriptor.
  */
-#define X86DESC_BASE(desc) /*ASM-NOINC*/ \
-        (  ((uint32_t)((desc).Gen.u8BaseHigh2) << 24) \
-         | (           (desc).Gen.u8BaseHigh1  << 16) \
-         | (           (desc).Gen.u16BaseLow        ) )
+#define X86DESC_BASE(a_pDesc) /*ASM-NOINC*/ \
+        (  ((uint32_t)((a_pDesc)->Gen.u8BaseHigh2) << 24) \
+         | (           (a_pDesc)->Gen.u8BaseHigh1  << 16) \
+         | (           (a_pDesc)->Gen.u16BaseLow        ) )
 
 /** @def X86DESC_LIMIT
  * Return the limit of a descriptor.
  */
-#define X86DESC_LIMIT(desc) /*ASM-NOINC*/ \
-        (  ((uint32_t)((desc).Gen.u4LimitHigh) << 16) \
-         | (           (desc).Gen.u16LimitLow       ) )
+#define X86DESC_LIMIT(a_pDesc) /*ASM-NOINC*/ \
+        (  ((uint32_t)((a_pDesc)->Gen.u4LimitHigh) << 16) \
+         | (           (a_pDesc)->Gen.u16LimitLow       ) )
+
+/** @def X86DESC_LIMIT_G
+ * Return the limit of a descriptor with the granularity bit taken into account.
+ * @returns Selector limit (uint32_t).
+ * @param   a_pDesc     Pointer to the descriptor.
+ */
+#define X86DESC_LIMIT_G(a_pDesc) /*ASM-NOINC*/ \
+        ( (a_pDesc)->Gen.u1Granularity \
+         ? ( ( ((uint32_t)(a_pDesc)->Gen.u4LimitHigh << 16) | (a_pDesc)->Gen.u16LimitLow ) << 12 ) | UINT32_C(0xfff) \
+         :     ((uint32_t)(a_pDesc)->Gen.u4LimitHigh << 16) | (a_pDesc)->Gen.u16LimitLow \
+        )
 
 /** @def X86DESC_GET_HID_ATTR
  * Get the descriptor attributes for the hidden register.
  */
-#define X86DESC_GET_HID_ATTR(desc) /*ASM-NOINC*/ \
-        ( (desc.u >> (16+16+8)) & UINT32_C(0xf0ff) ) /** @todo do we have a define for 0xf0ff? */
+#define X86DESC_GET_HID_ATTR(a_pDesc) /*ASM-NOINC*/ \
+        ( ((a_pDesc)->u >> (16+16+8)) & UINT32_C(0xf0ff) ) /** @todo do we have a define for 0xf0ff? */
 
 #ifndef VBOX_FOR_DTRACE_LIB
 
@@ -2577,11 +2588,11 @@ typedef const X86DESC64 *PCX86DESC64;
 /** @def X86DESC64_BASE
  * Return the base of a 64-bit descriptor.
  */
-#define X86DESC64_BASE(desc) /*ASM-NOINC*/ \
-        (  ((uint64_t)((desc).Gen.u32BaseHigh3) << 32) \
-         | ((uint32_t)((desc).Gen.u8BaseHigh2)  << 24) \
-         | (           (desc).Gen.u8BaseHigh1   << 16) \
-         | (           (desc).Gen.u16BaseLow         ) )
+#define X86DESC64_BASE(a_pDesc) /*ASM-NOINC*/ \
+        (  ((uint64_t)((a_pDesc)->Gen.u32BaseHigh3) << 32) \
+         | ((uint32_t)((a_pDesc)->Gen.u8BaseHigh2)  << 24) \
+         | (           (a_pDesc)->Gen.u8BaseHigh1   << 16) \
+         | (           (a_pDesc)->Gen.u16BaseLow         ) )
 
 
 
@@ -2946,9 +2957,14 @@ AssertCompileSize(X86TSS64, 136);
 #define X86_SEL_SHIFT       3
 
 /**
- * The mask used to mask off the table indicator and CPL of an selector.
+ * The mask used to mask off the table indicator and RPL of an selector.
  */
 #define X86_SEL_MASK        0xfff8U
+
+/**
+ * The mask used to mask off the RPL of an selector.
+ */
+#define X86_SEL_MASK_RPL    0xfffcU
 
 /**
  * The bit indicating that a selector is in the LDT and not in the GDT.

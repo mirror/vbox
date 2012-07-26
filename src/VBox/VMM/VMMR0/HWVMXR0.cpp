@@ -1246,7 +1246,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
-            uint64_t trBase64 = X86DESC64_BASE(*(PX86DESC64)pDesc);
+            uint64_t trBase64 = X86DESC64_BASE((PX86DESC64)pDesc);
             rc = VMXWriteVMCS64(VMX_VMCS_HOST_TR_BASE, trBase64);
             Log2(("VMX_VMCS_HOST_TR_BASE %RX64\n", trBase64));
             AssertRC(rc);
@@ -1255,9 +1255,9 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 #endif
         {
 #if HC_ARCH_BITS == 64
-            trBase = X86DESC64_BASE(*pDesc);
+            trBase = X86DESC64_BASE(pDesc);
 #else
-            trBase = X86DESC_BASE(*pDesc);
+            trBase = X86DESC_BASE(pDesc);
 #endif
             rc = VMXWriteVMCS(VMX_VMCS_HOST_TR_BASE, trBase);
             AssertRC(rc);

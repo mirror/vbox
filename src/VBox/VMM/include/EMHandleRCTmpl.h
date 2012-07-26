@@ -283,6 +283,14 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             LogFlow(("emR3RawHandleRC: %Rrc -> %Rrc\n", rc, VINF_EM_RESCHEDULE_REM));
             rc = VINF_EM_RESCHEDULE_REM;
             break;
+
+        /*
+         * Conflict in GDT, resync and continue.
+         */
+        case VINF_SELM_SYNC_GDT:
+            AssertMsg(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT), ("VINF_SELM_SYNC_GDT without VMCPU_FF_SELM_SYNC_GDT!\n"));
+            rc = VINF_SUCCESS;
+            break;
 #endif
 
         /*

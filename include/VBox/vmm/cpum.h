@@ -190,6 +190,7 @@ VMMDECL(bool)       CPUMIsGuestInProtectedMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInLongMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInPAEMode(PVMCPU pVCpu);
+VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
 
 #ifndef VBOX_WITHOUT_UNNAMED_UNIONS
 
@@ -251,7 +252,7 @@ DECLINLINE(bool)    CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
 {
     if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
         return false;
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pCtx->cs))
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(NULL, &pCtx->cs))
         return CPUMIsGuestIn64BitCodeSlow(pCtx);
     return pCtx->cs.Attr.n.u1Long;
 }

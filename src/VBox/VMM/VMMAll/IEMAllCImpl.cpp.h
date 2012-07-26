@@ -985,9 +985,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     /* Limit check. (Should alternatively check for non-canonical addresses
        here, but that is ruled out by offSeg being 32-bit, right?) */
     uint64_t u64Base;
-    uint32_t cbLimit = X86DESC_LIMIT(Desc.Legacy);
-    if (Desc.Legacy.Gen.u1Granularity)
-        cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+    uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
     if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         u64Base = 0;
     else
@@ -997,7 +995,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
             Log(("jmpf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
             return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
-        u64Base = X86DESC_BASE(Desc.Legacy);
+        u64Base = X86DESC_BASE(&Desc.Legacy);
     }
 
     /*
@@ -1020,7 +1018,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     pCtx->cs.Sel        |= pIemCpu->uCpl; /** @todo is this right for conforming segs? or in general? */
     pCtx->cs.ValidSel    = pCtx->cs.Sel;
     pCtx->cs.fFlags      = CPUMSELREG_FLAGS_VALID;
-    pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(Desc.Legacy);
+    pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->cs.u32Limit    = cbLimit;
     pCtx->cs.u64Base     = u64Base;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
@@ -1179,10 +1177,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
 
     /* Limit / canonical check. */
     uint64_t u64Base;
-    uint32_t cbLimit = X86DESC_LIMIT(Desc.Legacy);
-    if (Desc.Legacy.Gen.u1Granularity)
-        cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-
+    uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
     if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
     {
         if (!IEM_IS_CANONICAL(offSeg))
@@ -1199,7 +1194,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
             Log(("callf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
             return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
-        u64Base = X86DESC_BASE(Desc.Legacy);
+        u64Base = X86DESC_BASE(&Desc.Legacy);
     }
 
     /*
@@ -1244,7 +1239,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     pCtx->cs.Sel        |= pIemCpu->uCpl;
     pCtx->cs.ValidSel    = pCtx->cs.Sel;
     pCtx->cs.fFlags      = CPUMSELREG_FLAGS_VALID;
-    pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(Desc.Legacy);
+    pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->cs.u32Limit    = cbLimit;
     pCtx->cs.u64Base     = u64Base;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
@@ -1484,16 +1479,11 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         }
 
         /* Calc SS limit.*/
-        uint32_t cbLimitSs = X86DESC_LIMIT(DescSs.Legacy);
-        if (DescSs.Legacy.Gen.u1Granularity)
-            cbLimitSs = (cbLimitSs << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-
+        uint32_t cbLimitSs = X86DESC_LIMIT_G(&DescSs.Legacy);
 
         /* Is RIP canonical or within CS.limit? */
         uint64_t u64Base;
-        uint32_t cbLimitCs = X86DESC_LIMIT(DescCs.Legacy);
-        if (DescCs.Legacy.Gen.u1Granularity)
-            cbLimitCs = (cbLimitCs << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+        uint32_t cbLimitCs = X86DESC_LIMIT_G(&DescCs.Legacy);
 
         if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         {
@@ -1512,7 +1502,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
                      uNewCs, uNewRip, uNewOuterSs, uNewOuterRsp, cbLimitCs));
                 return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
             }
-            u64Base = X86DESC_BASE(DescCs.Legacy);
+            u64Base = X86DESC_BASE(&DescCs.Legacy);
         }
 
         /*
@@ -1552,19 +1542,19 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.Sel            = uNewCs;
         pCtx->cs.ValidSel       = uNewCs;
         pCtx->cs.fFlags         = CPUMSELREG_FLAGS_VALID;
-        pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(DescCs.Legacy);
+        pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCs.Legacy);
         pCtx->cs.u32Limit       = cbLimitCs;
         pCtx->cs.u64Base        = u64Base;
         pCtx->rsp               = uNewRsp;
         pCtx->ss.Sel            = uNewOuterSs;
         pCtx->ss.ValidSel       = uNewOuterSs;
         pCtx->ss.fFlags         = CPUMSELREG_FLAGS_VALID;
-        pCtx->ss.Attr.u         = X86DESC_GET_HID_ATTR(DescSs.Legacy);
+        pCtx->ss.Attr.u         = X86DESC_GET_HID_ATTR(&DescSs.Legacy);
         pCtx->ss.u32Limit       = cbLimitSs;
         if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
             pCtx->ss.u64Base    = 0;
         else
-            pCtx->ss.u64Base    = X86DESC_BASE(DescSs.Legacy);
+            pCtx->ss.u64Base    = X86DESC_BASE(&DescSs.Legacy);
 
         pIemCpu->uCpl           = (uNewCs & X86_SEL_RPL);
         iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->ds);
@@ -1587,9 +1577,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     {
         /* Limit / canonical check. */
         uint64_t u64Base;
-        uint32_t cbLimitCs = X86DESC_LIMIT(DescCs.Legacy);
-        if (DescCs.Legacy.Gen.u1Granularity)
-            cbLimitCs = (cbLimitCs << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+        uint32_t cbLimitCs = X86DESC_LIMIT_G(&DescCs.Legacy);
 
         if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         {
@@ -1607,7 +1595,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
                 Log(("retf %04x:%08RX64 -> out of bounds (%#x)\n", uNewCs, uNewRip, cbLimitCs));
                 return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
             }
-            u64Base = X86DESC_BASE(DescCs.Legacy);
+            u64Base = X86DESC_BASE(&DescCs.Legacy);
         }
 
         /*
@@ -1637,7 +1625,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.Sel        = uNewCs;
         pCtx->cs.ValidSel   = uNewCs;
         pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
-        pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(DescCs.Legacy);
+        pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCs.Legacy);
         pCtx->cs.u32Limit   = cbLimitCs;
         pCtx->cs.u64Base    = u64Base;
         /** @todo check if the hidden bits are loaded correctly for 64-bit
@@ -2018,9 +2006,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
                 return iemRaiseSelectorNotPresentBySelector(pIemCpu, uNewCs);
             }
 
-            uint32_t cbLimitCS = X86DESC_LIMIT(DescCS.Legacy);
-            if (DescCS.Legacy.Gen.u1Granularity)
-                cbLimitCS = (cbLimitCS << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+            uint32_t cbLimitCS = X86DESC_LIMIT_G(&DescCS.Legacy);
 
             /*
              * Return to outer level?
@@ -2099,9 +2085,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
                     return iemRaiseStackSelectorNotPresentBySelector(pIemCpu, uNewSS);
                 }
 
-                uint32_t cbLimitSs = X86DESC_LIMIT(DescSS.Legacy);
-                if (DescSS.Legacy.Gen.u1Granularity)
-                    cbLimitSs = (cbLimitSs << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+                uint32_t cbLimitSs = X86DESC_LIMIT_G(&DescSS.Legacy);
 
                 /* Check EIP. */
                 if (uNewEip > cbLimitCS)
@@ -2134,16 +2118,16 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
                 pCtx->cs.Sel        = uNewCs;
                 pCtx->cs.ValidSel   = uNewCs;
                 pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
-                pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(DescCS.Legacy);
+                pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
                 pCtx->cs.u32Limit   = cbLimitCS;
-                pCtx->cs.u64Base    = X86DESC_BASE(DescCS.Legacy);
+                pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
                 pCtx->rsp           = uNewESP;
                 pCtx->ss.Sel        = uNewSS;
                 pCtx->ss.ValidSel   = uNewSS;
                 pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
-                pCtx->ss.Attr.u     = X86DESC_GET_HID_ATTR(DescSS.Legacy);
+                pCtx->ss.Attr.u     = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
                 pCtx->ss.u32Limit   = cbLimitSs;
-                pCtx->ss.u64Base    = X86DESC_BASE(DescSS.Legacy);
+                pCtx->ss.u64Base    = X86DESC_BASE(&DescSS.Legacy);
 
                 uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF
                                      | X86_EFL_TF | X86_EFL_DF | X86_EFL_OF | X86_EFL_NT;
@@ -2192,9 +2176,9 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
                 pCtx->cs.Sel        = uNewCs;
                 pCtx->cs.ValidSel   = uNewCs;
                 pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
-                pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(DescCS.Legacy);
+                pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
                 pCtx->cs.u32Limit   = cbLimitCS;
-                pCtx->cs.u64Base    = X86DESC_BASE(DescCS.Legacy);
+                pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
                 pCtx->rsp           = uNewRsp;
 
                 uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF
@@ -2356,12 +2340,6 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     }
     if (iSegReg == X86_SREG_SS) /* SS gets different treatment */
     {
-        if (   (Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
-            || !(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
-        {
-            Log(("load sreg SS, %#x - code or read only (%#x) -> #GP\n", uSel, Desc.Legacy.Gen.u4Type));
-            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
-        }
         if (    (Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
             || !(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
         {
@@ -2422,16 +2400,13 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     }
 
     /* The base and limit. */
+    uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
     uint64_t u64Base;
-    uint32_t cbLimit = X86DESC_LIMIT(Desc.Legacy);
-    if (Desc.Legacy.Gen.u1Granularity)
-        cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-
     if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
         && iSegReg < X86_SREG_FS)
         u64Base = 0;
     else
-        u64Base = X86DESC_BASE(Desc.Legacy);
+        u64Base = X86DESC_BASE(&Desc.Legacy);
 
     /*
      * Ok, everything checked out fine.  Now set the accessed bit before
@@ -2447,7 +2422,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
 
     /* commit */
     *pSel = uSel;
-    pHid->Attr.u   = X86DESC_GET_HID_ATTR(Desc.Legacy);
+    pHid->Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pHid->u32Limit = cbLimit;
     pHid->u64Base  = u64Base;
 
@@ -2722,7 +2697,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     }
     uint64_t u64Base;
     if (!IEM_IS_LONG_MODE(pIemCpu))
-        u64Base = X86DESC_BASE(Desc.Legacy);
+        u64Base = X86DESC_BASE(&Desc.Legacy);
     else
     {
         if (Desc.Long.Gen.u5Zeros)
@@ -2731,7 +2706,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
             return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK);
         }
 
-        u64Base = X86DESC64_BASE(Desc.Long);
+        u64Base = X86DESC64_BASE(&Desc.Long);
         if (!IEM_IS_CANONICAL(u64Base))
         {
             Log(("lldt %#x - non-canonical base address %#llx -> #GP\n", uNewLdt, u64Base));
@@ -2756,8 +2731,8 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
         pCtx->ldtr.Sel  = uNewLdt & X86_SEL_MASK;
     pCtx->ldtr.ValidSel = uNewLdt & X86_SEL_MASK;
     pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
-    pCtx->ldtr.Attr.u   = X86DESC_GET_HID_ATTR(Desc.Legacy);
-    pCtx->ldtr.u32Limit = X86DESC_LIMIT(Desc.Legacy);
+    pCtx->ldtr.Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
+    pCtx->ldtr.u32Limit = X86DESC_LIMIT_G(&Desc.Legacy);
     pCtx->ldtr.u64Base  = u64Base;
 
     iemRegAddToRip(pIemCpu, cbInstr);
@@ -2821,7 +2796,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     }
     uint64_t u64Base;
     if (!IEM_IS_LONG_MODE(pIemCpu))
-        u64Base = X86DESC_BASE(Desc.Legacy);
+        u64Base = X86DESC_BASE(&Desc.Legacy);
     else
     {
         if (Desc.Long.Gen.u5Zeros)
@@ -2830,7 +2805,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
             return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK);
         }
 
-        u64Base = X86DESC64_BASE(Desc.Long);
+        u64Base = X86DESC64_BASE(&Desc.Long);
         if (!IEM_IS_CANONICAL(u64Base))
         {
             Log(("ltr %#x - non-canonical base address %#llx -> #GP\n", uNewTr, u64Base));
@@ -2877,8 +2852,8 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
         pCtx->tr.Sel  = uNewTr & X86_SEL_MASK;
     pCtx->tr.ValidSel = uNewTr & X86_SEL_MASK;
     pCtx->tr.fFlags   = CPUMSELREG_FLAGS_VALID;
-    pCtx->tr.Attr.u   = X86DESC_GET_HID_ATTR(Desc.Legacy);
-    pCtx->tr.u32Limit = X86DESC_LIMIT(Desc.Legacy);
+    pCtx->tr.Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
+    pCtx->tr.u32Limit = X86DESC_LIMIT_G(&Desc.Legacy);
     pCtx->tr.u64Base  = u64Base;
 
     iemRegAddToRip(pIemCpu, cbInstr);
