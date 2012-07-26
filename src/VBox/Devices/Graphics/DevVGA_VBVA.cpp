@@ -376,6 +376,9 @@ static int vbvaFlushProcess (unsigned uScreenId, PVGASTATE pVGAState, VBVAPARTIA
 
             LOGVBVABUFFER(("cbCmd = %d, x=%d, y=%d, w=%d, h=%d\n",
                            cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
+            LogRel3(("%s: update command cbCmd = %d, x=%d, y=%d, w=%d, h=%d\n",
+                     __PRETTY_FUNCTION__, cbCmd, phdr->x, phdr->y, phdr->w,
+                     phdr->h));
 
             /* Collect all rects into one. */
             if (fDirtyEmpty)
@@ -419,6 +422,10 @@ static int vbvaFlushProcess (unsigned uScreenId, PVGASTATE pVGAState, VBVAPARTIA
     {
         if (dirtyRect.xRight - dirtyRect.xLeft)
         {
+            LogRel3(("%s: sending update screen=%d, x=%d, y=%d, w=%d, h=%d\n",
+                     __PRETTY_FUNCTION__, uScreenId, dirtyRect.xLeft,
+                     dirtyRect.yTop, dirtyRect.xRight - dirtyRect.xLeft,
+                     dirtyRect.yBottom - dirtyRect.yTop));
             pVGAState->pDrv->pfnVBVAUpdateEnd (pVGAState->pDrv, uScreenId, dirtyRect.xLeft, dirtyRect.yTop,
                                                dirtyRect.xRight - dirtyRect.xLeft, dirtyRect.yBottom - dirtyRect.yTop);
         }
