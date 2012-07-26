@@ -85,7 +85,7 @@ typedef struct CPUMSELREG
     (   ((a_pSelReg)->fFlags & CPUMSELREG_FLAGS_VALID) \
      && (   (a_pSelReg)->ValidSel == (a_pSelReg)->Sel \
          || (   (a_pVCpu) /*!= NULL*/ \
-             && (a_pSelReg)->ValidSel == ((a_pSelReg)->Sel & X86_SEL_MASK_RPL) \
+             && (a_pSelReg)->ValidSel == ((a_pSelReg)->Sel & X86_SEL_MASK_OFF_RPL) \
              && ((a_pSelReg)->Sel      & X86_SEL_RPL) == 1 \
              && ((a_pSelReg)->ValidSel & X86_SEL_RPL) == 0 \
              && CPUMIsGuestInRawMode(a_pVCpu) \

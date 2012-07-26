@@ -339,17 +339,17 @@ VMMDECL(int) SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPT
     if (!(Sel & X86_SEL_LDT))
     {
         if (   !(fFlags & SELMTOFLAT_FLAGS_HYPER)
-            && (unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.GuestGdtr.cbGdt)
+            && (Sel | X86_SEL_RPL_LDT) > pVM->selm.s.GuestGdtr.cbGdt)
             return VERR_INVALID_SELECTOR;
         Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
     }
     else
     {
-        if ((unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.cbLdtLimit)
+        if ((Sel | X86_SEL_RPL_LDT) > pVM->selm.s.cbLdtLimit)
             return VERR_INVALID_SELECTOR;
 
         /** @todo handle LDT page(s) not present! */
-        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
+        PX86DESC paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
 
@@ -1031,7 +1031,7 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGC
      */
     CPUMSELREGHID trHid;
     RTSEL tr = CPUMGetGuestTR(pVCpu, &trHid);
-    if (!(tr & X86_SEL_MASK))
+    if (!(tr & X86_SEL_MASK_OFF_RPL))
         return VERR_SELM_NO_TSS;
 
     *pGCPtrTss = trHid.u64Base;

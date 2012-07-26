@@ -817,7 +817,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 IEM_CIMPL_DEF_4(iemCImpl_BranchSysSel, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
     Assert(enmBranch == IEMBRANCH_JUMP || enmBranch == IEMBRANCH_CALL);
-    Assert((uSel & (X86_SEL_MASK | X86_SEL_LDT)));
+    Assert((uSel & X86_SEL_MASK_OFF_RPL));
 
     if (IEM_IS_LONG_MODE(pIemCpu))
         switch (pDesc->Legacy.Gen.u4Type)
@@ -912,7 +912,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     /*
      * Protected mode. Need to parse the specified descriptor...
      */
-    if (!(uSel & (X86_SEL_MASK | X86_SEL_LDT)))
+    if (!(uSel & X86_SEL_MASK_OFF_RPL))
     {
         Log(("jmpf %04x:%08RX64 -> invalid selector, #GP(0)\n", uSel, offSeg));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -1014,7 +1014,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
 
     /* commit */
     pCtx->rip = offSeg;
-    pCtx->cs.Sel         = uSel & (X86_SEL_MASK | X86_SEL_LDT);
+    pCtx->cs.Sel         = uSel & X86_SEL_MASK_OFF_RPL;
     pCtx->cs.Sel        |= pIemCpu->uCpl; /** @todo is this right for conforming segs? or in general? */
     pCtx->cs.ValidSel    = pCtx->cs.Sel;
     pCtx->cs.fFlags      = CPUMSELREG_FLAGS_VALID;
@@ -1095,7 +1095,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     /*
      * Protected mode. Need to parse the specified descriptor...
      */
-    if (!(uSel & (X86_SEL_MASK | X86_SEL_LDT)))
+    if (!(uSel & X86_SEL_MASK_OFF_RPL))
     {
         Log(("callf %04x:%08RX64 -> invalid selector, #GP(0)\n", uSel, offSeg));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -1235,7 +1235,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
 
     /* commit */
     pCtx->rip = offSeg;
-    pCtx->cs.Sel         = uSel & (X86_SEL_MASK | X86_SEL_LDT);
+    pCtx->cs.Sel         = uSel & X86_SEL_MASK_OFF_RPL;
     pCtx->cs.Sel        |= pIemCpu->uCpl;
     pCtx->cs.ValidSel    = pCtx->cs.Sel;
     pCtx->cs.fFlags      = CPUMSELREG_FLAGS_VALID;
@@ -1322,7 +1322,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     /*
      * Protected mode is complicated, of course.
      */
-    if (!(uNewCs & (X86_SEL_MASK | X86_SEL_LDT)))
+    if (!(uNewCs & X86_SEL_MASK_OFF_RPL))
     {
         Log(("retf %04x:%08RX64 -> invalid selector, #GP(0)\n", uNewCs, uNewRip));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -1416,7 +1416,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         /* Check for NULL stack selector (invalid in ring-3 and non-long mode)
            and read the selector. */
         IEMSELDESC DescSs;
-        if (!(uNewOuterSs & (X86_SEL_MASK | X86_SEL_LDT)))
+        if (!(uNewOuterSs & X86_SEL_MASK_OFF_RPL))
         {
             if (   !DescCs.Legacy.Gen.u1Long
                 || (uNewOuterSs & X86_SEL_RPL) == 3)
@@ -1960,7 +1960,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
              * Protected mode.
              */
             /* Read the CS descriptor. */
-            if (!(uNewCs & (X86_SEL_MASK | X86_SEL_LDT)))
+            if (!(uNewCs & X86_SEL_MASK_OFF_RPL))
             {
                 Log(("iret %04x:%08x -> invalid CS selector, #GP(0)\n", uNewCs, uNewEip));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -2036,7 +2036,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
                     return rcStrict;
 
                 /* Read the SS descriptor. */
-                if (!(uNewSS & (X86_SEL_MASK | X86_SEL_LDT)))
+                if (!(uNewSS & X86_SEL_MASK_OFF_RPL))
                 {
                     Log(("iret %04x:%08x/%04x:%08x -> invalid SS selector, #GP(0)\n", uNewCs, uNewEip, uNewSS, uNewESP));
                     return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -2280,7 +2280,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
      * Check if it's a null segment selector value first, that's OK for DS, ES,
      * FS and GS.  If not null, then we have to load and parse the descriptor.
      */
-    if (!(uSel & (X86_SEL_MASK | X86_SEL_LDT)))
+    if (!(uSel & X86_SEL_MASK_OFF_RPL))
     {
         if (iSegReg == X86_SREG_SS)
         {
@@ -2658,7 +2658,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     /*
      * Now, loading a NULL selector is easy.
      */
-    if ((uNewLdt & X86_SEL_MASK) == 0)
+    if (!(uNewLdt & X86_SEL_MASK_OFF_RPL))
     {
         Log(("lldt %04x: Loading NULL selector.\n",  uNewLdt));
         /** @todo check if the actual value is loaded or if it's always 0. */
@@ -2688,12 +2688,12 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     if (Desc.Legacy.Gen.u1DescType)
     {
         Log(("lldt %#x - not system selector (type %x) -> #GP\n", uNewLdt, Desc.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK);
+        return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK_OFF_RPL);
     }
     if (Desc.Legacy.Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
     {
         Log(("lldt %#x - not LDT selector (type %x) -> #GP\n", uNewLdt, Desc.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK);
+        return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK_OFF_RPL);
     }
     uint64_t u64Base;
     if (!IEM_IS_LONG_MODE(pIemCpu))
@@ -2703,14 +2703,14 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
         if (Desc.Long.Gen.u5Zeros)
         {
             Log(("lldt %#x - u5Zeros=%#x -> #GP\n", uNewLdt, Desc.Long.Gen.u5Zeros));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK);
+            return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK_OFF_RPL);
         }
 
         u64Base = X86DESC64_BASE(&Desc.Long);
         if (!IEM_IS_CANONICAL(u64Base))
         {
             Log(("lldt %#x - non-canonical base address %#llx -> #GP\n", uNewLdt, u64Base));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK);
+            return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & X86_SEL_MASK_OFF_RPL);
         }
     }
 
@@ -2726,10 +2726,10 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
      */
 /** @todo check if the actual value is loaded or if the RPL is dropped */
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        CPUMSetGuestLDTR(IEMCPU_TO_VMCPU(pIemCpu), uNewLdt & X86_SEL_MASK);
+        CPUMSetGuestLDTR(IEMCPU_TO_VMCPU(pIemCpu), uNewLdt & X86_SEL_MASK_OFF_RPL);
     else
-        pCtx->ldtr.Sel  = uNewLdt & X86_SEL_MASK;
-    pCtx->ldtr.ValidSel = uNewLdt & X86_SEL_MASK;
+        pCtx->ldtr.Sel  = uNewLdt & X86_SEL_MASK_OFF_RPL;
+    pCtx->ldtr.ValidSel = uNewLdt & X86_SEL_MASK_OFF_RPL;
     pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
     pCtx->ldtr.Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->ldtr.u32Limit = X86DESC_LIMIT_G(&Desc.Legacy);
@@ -2767,7 +2767,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
         Log(("ltr %04x - LDT selector -> #GP\n", uNewTr));
         return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewTr);
     }
-    if ((uNewTr & X86_SEL_MASK) == 0)
+    if (!(uNewTr & X86_SEL_MASK_OFF_RPL))
     {
         Log(("ltr %04x - NULL selector -> #GP(0)\n", uNewTr));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -2785,14 +2785,14 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     if (Desc.Legacy.Gen.u1DescType)
     {
         Log(("ltr %#x - not system selector (type %x) -> #GP\n", uNewTr, Desc.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK);
+        return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK_OFF_RPL);
     }
     if (   Desc.Legacy.Gen.u4Type != X86_SEL_TYPE_SYS_386_TSS_AVAIL /* same as AMD64_SEL_TYPE_SYS_TSS_AVAIL */
         && (   Desc.Legacy.Gen.u4Type != X86_SEL_TYPE_SYS_286_TSS_AVAIL
             || IEM_IS_LONG_MODE(pIemCpu)) )
     {
         Log(("ltr %#x - not an available TSS selector (type %x) -> #GP\n", uNewTr, Desc.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK);
+        return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK_OFF_RPL);
     }
     uint64_t u64Base;
     if (!IEM_IS_LONG_MODE(pIemCpu))
@@ -2802,14 +2802,14 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
         if (Desc.Long.Gen.u5Zeros)
         {
             Log(("ltr %#x - u5Zeros=%#x -> #GP\n", uNewTr, Desc.Long.Gen.u5Zeros));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK);
+            return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK_OFF_RPL);
         }
 
         u64Base = X86DESC64_BASE(&Desc.Long);
         if (!IEM_IS_CANONICAL(u64Base))
         {
             Log(("ltr %#x - non-canonical base address %#llx -> #GP\n", uNewTr, u64Base));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK);
+            return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & X86_SEL_MASK_OFF_RPL);
         }
     }
 
@@ -2847,10 +2847,10 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
      */
 /** @todo check if the actual value is loaded or if the RPL is dropped */
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        CPUMSetGuestTR(IEMCPU_TO_VMCPU(pIemCpu), uNewTr & X86_SEL_MASK);
+        CPUMSetGuestTR(IEMCPU_TO_VMCPU(pIemCpu), uNewTr & X86_SEL_MASK_OFF_RPL);
     else
-        pCtx->tr.Sel  = uNewTr & X86_SEL_MASK;
-    pCtx->tr.ValidSel = uNewTr & X86_SEL_MASK;
+        pCtx->tr.Sel  = uNewTr & X86_SEL_MASK_OFF_RPL;
+    pCtx->tr.ValidSel = uNewTr & X86_SEL_MASK_OFF_RPL;
     pCtx->tr.fFlags   = CPUMSELREG_FLAGS_VALID;
     pCtx->tr.Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->tr.u32Limit = X86DESC_LIMIT_G(&Desc.Legacy);

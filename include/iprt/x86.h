@@ -2954,26 +2954,35 @@ AssertCompileSize(X86TSS64, 136);
 /**
  * The shift used to convert a selector from and to index an index (C).
  */
-#define X86_SEL_SHIFT       3
+#define X86_SEL_SHIFT           3
 
 /**
  * The mask used to mask off the table indicator and RPL of an selector.
  */
-#define X86_SEL_MASK        0xfff8U
+#define X86_SEL_MASK            0xfff8U
 
 /**
  * The mask used to mask off the RPL of an selector.
+ * This is suitable for checking for NULL selectors.
  */
-#define X86_SEL_MASK_RPL    0xfffcU
+#define X86_SEL_MASK_OFF_RPL    0xfffcU
 
 /**
  * The bit indicating that a selector is in the LDT and not in the GDT.
  */
-#define X86_SEL_LDT         0x0004U
+#define X86_SEL_LDT             0x0004U
+
 /**
  * The bit mask for getting the RPL of a selector.
  */
-#define X86_SEL_RPL         0x0003U
+#define X86_SEL_RPL             0x0003U
+
+/**
+ * The mask covering both RPL and LDT.
+ * This is incidentally the same as sizeof(X86DESC) - 1, so good for limit
+ * checks.
+ */
+#define X86_SEL_RPL_LDT         0x0007U
 
 /** @} */
 

@@ -90,6 +90,7 @@ VMMDECL(void)       CPUMGetGuestGDTR(PVMCPU pVCpu, PVBOXGDTR pGDTR);
 VMMDECL(RTGCPTR)    CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit);
 VMMDECL(RTSEL)      CPUMGetGuestTR(PVMCPU pVCpu, PCPUMSELREGHID pHidden);
 VMMDECL(RTSEL)      CPUMGetGuestLDTR(PVMCPU pVCpu);
+VMMDECL(RTSEL)      CPUMGetGuestLdtrEx(PVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *pcbLimit);
 VMMDECL(uint64_t)   CPUMGetGuestCR0(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestCR2(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestCR3(PVMCPU pVCpu);
