@@ -1535,12 +1535,6 @@ static VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RTSEL 
         return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, NewSS);
     }
 
-    if (   (pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
-        || !(pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
-    {
-        Log(("iemMiscValidateNewSSandRsp: %#x - code or read only (%#x) -> #GP\n", NewSS, pDesc->Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, NewSS);
-    }
     if (    (pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
         || !(pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
     {
@@ -1913,9 +1907,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                              || Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_TRAP_GATE
                            ? Idte.Gate.u16OffsetLow
                            : Idte.Gate.u16OffsetLow | ((uint32_t)Idte.Gate.u16OffsetHigh << 16);
-    uint32_t cbLimitCS = X86DESC_LIMIT(DescCS.Legacy);
-    if (DescCS.Legacy.Gen.u1Granularity)
-        cbLimitCS = (cbLimitCS << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+    uint32_t cbLimitCS = X86DESC_LIMIT_G(&DescCS.Legacy);
     if (uNewEip > cbLimitCS)
     {
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
@@ -1950,9 +1942,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
             return rcStrict;
 
         /* Check that there is sufficient space for the stack frame. */
-        uint32_t cbLimitSS = X86DESC_LIMIT(DescSS.Legacy);
-        if (DescSS.Legacy.Gen.u1Granularity)
-            cbLimitSS = (cbLimitSS << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+        uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
         AssertReturn(!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
 
         uint8_t const cbStackFrame = fFlags & IEM_XCPT_FLAGS_ERR ? 24 : 20;
@@ -1971,7 +1961,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         /* Create the stack frame. */
         RTPTRUNION uStackFrame;
         rcStrict = iemMemMap(pIemCpu, &uStackFrame.pv, cbStackFrame, UINT8_MAX,
-                             uNewEsp - cbStackFrame + X86DESC_BASE(DescSS.Legacy), IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS); /* _SYS is a hack ... */
+                             uNewEsp - cbStackFrame + X86DESC_BASE(&DescSS.Legacy), IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS); /* _SYS is a hack ... */
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         void * const pvStackFrame = uStackFrame.pv;
@@ -2015,8 +2005,8 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         pCtx->ss.ValidSel       = NewSS;
         pCtx->ss.fFlags         = CPUMSELREG_FLAGS_VALID;
         pCtx->ss.u32Limit       = cbLimitSS;
-        pCtx->ss.u64Base        = X86DESC_BASE(DescSS.Legacy);
-        pCtx->ss.Attr.u         = X86DESC_GET_HID_ATTR(DescSS.Legacy);
+        pCtx->ss.u64Base        = X86DESC_BASE(&DescSS.Legacy);
+        pCtx->ss.Attr.u         = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
         pCtx->rsp               = uNewEsp - cbStackFrame; /** @todo Is the high word cleared for 16-bit stacks and/or interrupt handlers? */
         pIemCpu->uCpl           = uNewCpl;
     }
@@ -2063,8 +2053,8 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     pCtx->cs.ValidSel       = (NewCS & ~X86_SEL_RPL) | uNewCpl;
     pCtx->cs.fFlags         = CPUMSELREG_FLAGS_VALID;
     pCtx->cs.u32Limit       = cbLimitCS;
-    pCtx->cs.u64Base        = X86DESC_BASE(DescCS.Legacy);
-    pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(DescCS.Legacy);
+    pCtx->cs.u64Base        = X86DESC_BASE(&DescCS.Legacy);
+    pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
 
     pCtx->rip               = uNewEip;
     pCtx->rflags.u         &= ~fEflToClear;
@@ -2681,10 +2671,10 @@ static PCPUMSELREG iemSRegGetHid(PIEMCPU pIemCpu, uint8_t iSegReg)
             AssertFailedReturn(NULL);
     }
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg))
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg))
         CPUMGuestLazyLoadHiddenSelectorReg(IEMCPU_TO_VMCPU(pIemCpu), pSReg);
 #else
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg));
 #endif
     return pSReg;
 }

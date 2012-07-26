@@ -64,6 +64,7 @@
 # include <iprt/asm.h>
 # include <VBox/vmm/vmm.h>
 # include <VBox/vmm/stam.h>
+# include <VBox/vmm/cpumctx.h>
 #endif /* VBOX */
 
 #define R_EAX 0
@@ -531,13 +532,14 @@ typedef float64 CPU86_LDouble;
 
 typedef struct SegmentCache {
     uint32_t selector;
+#ifdef VBOX
+    /** The new selector is saved here when we are unable to sync it before invoking the recompiled code. */
+    uint16_t newselector;
+    uint16_t fVBoxFlags;
+#endif
     target_ulong base;
     uint32_t limit;
     uint32_t flags;
-#ifdef VBOX
-    /** The new selector is saved here when we are unable to sync it before invoking the recompiled code. */
-    uint32_t newselector;
-#endif
 } SegmentCache;
 
 typedef union {
@@ -941,9 +943,14 @@ static inline void cpu_x86_load_seg_cache(CPUX86State *env,
     sc->selector = selector;
     sc->base = base;
     sc->limit = limit;
+#ifndef VBOX
     sc->flags = flags;
-#ifdef VBOX
+#else
+    if (flags & DESC_P_MASK)
+        flags |= DESC_A_MASK;           /* Make sure the A bit is set to avoid trouble. */
+    sc->flags = flags;
     sc->newselector = 0;
+    sc->fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
 #endif
 
     /* update the hidden flags */

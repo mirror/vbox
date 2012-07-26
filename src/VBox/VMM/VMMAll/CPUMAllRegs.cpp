@@ -64,15 +64,15 @@
  * Lazily loads the hidden parts of a selector register when using raw-mode.
  */
 #if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
-# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg, a_fIsCS) \
+# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg) \
     do \
     { \
-        if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pSReg)) \
-            cpumGuestLazyLoadHiddenSelectorReg(a_pVCpu, a_pSReg, a_fIsCS); \
+        if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSReg)) \
+            cpumGuestLazyLoadHiddenSelectorReg(a_pVCpu, a_pSReg); \
     } while (0)
 #else
-# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg, a_fIsCS) \
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pSReg));
+# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg) \
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSReg));
 #endif
 
 
@@ -84,20 +84,21 @@
  *
  * @param   pVCpu       The current Virtual CPU.
  * @param   pSReg       The selector register to lazily load hidden parts of.
- * @param   fIsCS
  */
-static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg, bool fIsCS)
+static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
 {
-    Assert(!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pSReg));
+    Assert(!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
     Assert(!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+    Assert((uintptr_t)(pSReg - &pVCpu->cpum.s.Guest.es) < X86_SREG_COUNT);
 
     if (pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
     {
         /* V8086 mode - Tightly controlled environment, no question about the limit or flags. */
         pSReg->Attr.u               = 0;
+        pSReg->Attr.n.u4Type        = pSReg == &pVCpu->cpum.s.Guest.cs ? X86_SEL_TYPE_ER_ACC : X86_SEL_TYPE_RW_ACC;
         pSReg->Attr.n.u1DescType    = 1; /* code/data segment */
+        pSReg->Attr.n.u2Dpl         = 3;
         pSReg->Attr.n.u1Present     = 1;
-        pSReg->Attr.n.u4Type        = fIsCS ? X86_SEL_TYPE_ER_ACC : X86_SEL_TYPE_RW_ACC;
         pSReg->u32Limit             = 0x0000ffff;
         pSReg->u64Base              = (uint32_t)pSReg->Sel << 4;
         pSReg->ValidSel             = pSReg->Sel;
@@ -139,8 +140,8 @@ static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg, 
  */
 VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu)
 {
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.ss, false);
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.ss);
 }
 
 
@@ -151,7 +152,7 @@ VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu)
  */
 VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
 {
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, pSReg, pSReg == &pVCpu->cpum.s.Guest.cs);
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, pSReg);
 }
 
 #endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
@@ -564,7 +565,10 @@ VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 
 VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 {
-    pVCpu->cpum.s.Guest.ldtr.Sel = ldtr;
+    pVCpu->cpum.s.Guest.ldtr.Sel      = ldtr;
+    /* The caller will set more hidden bits if it has them. */
+    pVCpu->cpum.s.Guest.ldtr.ValidSel = 0;
+    pVCpu->cpum.s.Guest.ldtr.fFlags   = 0;
     pVCpu->cpum.s.fChanged  |= CPUM_CHANGED_LDTR;
     return VINF_SUCCESS;
 }
@@ -2331,7 +2335,7 @@ VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
 {
     if (!CPUMIsGuestInLongMode(pVCpu))
         return false;
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
     return pVCpu->cpum.s.Guest.cs.Attr.n.u1Long;
 }
 
@@ -2348,6 +2352,18 @@ VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx)
     return CPUMIsGuestIn64BitCode(CPUM_GUEST_CTX_TO_VMCPU(pCtx));
 }
 
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+/**
+ *
+ * @returns @c true if we've entered raw-mode and selectors with RPL=1 are
+ *          really RPL=0, @c false if we've not (RPL=1 really is RPL=1).
+ * @param   pVCpu       The current virtual CPU.
+ */
+VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
+{
+    return pVCpu->cpum.s.fRawEntered;
+}
+#endif
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
 /**
@@ -2560,7 +2576,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
     {
         if (!pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
         {
-            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(&pVCpu->cpum.s.Guest.ss))
+            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.s.Guest.ss))
                 uCpl = pVCpu->cpum.s.Guest.ss.Attr.n.u2Dpl;
             else
             {
@@ -2619,7 +2635,7 @@ VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu)
         return 16;
     }
 
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
     if (   pVCpu->cpum.s.Guest.cs.Attr.n.u1Long
         && (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA))
         return 64;
@@ -2642,7 +2658,7 @@ VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu)
         return DISCPUMODE_16BIT;
     }
 
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs, true);
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
     if (   pVCpu->cpum.s.Guest.cs.Attr.n.u1Long
         && (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA))
         return DISCPUMODE_64BIT;

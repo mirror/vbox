@@ -35,18 +35,33 @@
 #include <iprt/asm.h>
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef LOG_ENABLED
+/** Segment register names. */
+static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "FS", "GS" };
+#endif
+
+
 /**
  * Synchronizes one GDT entry (guest -> shadow).
  *
- * @returns VBox status code (appropriate for trap handling and GC return).
+ * @returns VBox strict status code (appropriate for trap handling and GC
+ *          return).
+ * @retval  VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT
+ * @retval  VINF_SELM_SYNC_GDT
+ * @retval  VINF_EM_RESCHEDULE_REM
+ *
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       The current virtual CPU.
  * @param   pRegFrame   Trap register frame.
  * @param   iGDTEntry   The GDT entry to sync.
+ *
+ * @remarks Caller checks that this isn't the LDT entry!
  */
-static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntry)
+static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, unsigned iGDTEntry)
 {
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
-
     Log2(("GDT %04X LDTR=%04X\n", iGDTEntry, CPUMGetGuestLDTR(pVCpu)));
 
     /*
@@ -56,8 +71,8 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     CPUMGetGuestGDTR(pVCpu, &GdtrGuest);
     unsigned offEntry = iGDTEntry * sizeof(X86DESC);
     if (    iGDTEntry >= SELM_GDT_ELEMENTS
-        ||  offEntry > GdtrGuest.cbGdt)
-        return VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
+        ||  offEntry  >  GdtrGuest.cbGdt)
+        return VINF_SUCCESS; /* ignore */
 
     /*
      * Read the guest descriptor.
@@ -65,7 +80,15 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     X86DESC Desc;
     int rc = MMGCRamRead(pVM, &Desc, (uint8_t *)(uintptr_t)GdtrGuest.pGdt + offEntry, sizeof(X86DESC));
     if (RT_FAILURE(rc))
-        return VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
+    {
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, (uintptr_t)GdtrGuest.pGdt + offEntry, sizeof(X86DESC));
+        if (RT_FAILURE(rc))
+        {
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3); /* paranoia */
+            return VINF_EM_RESCHEDULE_REM;
+        }
+    }
 
     /*
      * Check for conflicts.
@@ -84,10 +107,12 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     {
         if (Desc.Gen.u1Present)
         {
-            Log(("selmGCSyncGDTEntry: Sel=%d Desc=%.8Rhxs: detected conflict!!\n", Sel, &Desc));
-            return VINF_SELM_SYNC_GDT;
+            Log(("selmRCSyncGDTEntry: Sel=%d Desc=%.8Rhxs: detected conflict!!\n", Sel, &Desc));
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+            return VINF_SELM_SYNC_GDT;  /** @todo this status code is ignored, unfortunately. */
         }
-        Log(("selmGCSyncGDTEntry: Sel=%d Desc=%.8Rhxs: potential conflict (still not present)!\n", Sel, &Desc));
+        Log(("selmRCSyncGDTEntry: Sel=%d Desc=%.8Rhxs: potential conflict (still not present)!\n", Sel, &Desc));
 
         /* Note: we can't continue below or else we'll change the shadow descriptor!! */
         /* When the guest makes the selector present, then we'll do a GDT sync. */
@@ -95,84 +120,103 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     }
 
     /*
-     * Code and data selectors are generally 1:1, with the
-     * 'little' adjustment we do for DPL 0 selectors.
+     * Convert the guest selector to a shadow selector and update the shadow GDT.
      */
-    PX86DESC   pShadowDescr = &pVM->selm.s.paGdtRC[iGDTEntry];
-    if (Desc.Gen.u1DescType)
-    {
-        /*
-         * Hack for A-bit against Trap E on read-only GDT.
-         */
-        /** @todo Fix this by loading ds and cs before turning off WP. */
-        Desc.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-
-        /*
-         * All DPL 0 code and data segments are squeezed into DPL 1.
-         *
-         * We're skipping conforming segments here because those
-         * cannot give us any trouble.
-         */
-        if (    Desc.Gen.u2Dpl == 0
-            &&      (Desc.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-                !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
-            Desc.Gen.u2Dpl = 1;
-    }
-    else
-    {
-        /*
-         * System type selectors are marked not present.
-         * Recompiler or special handling is required for these.
-         */
-        /** @todo what about interrupt gates and rawr0? */
-        Desc.Gen.u1Present = 0;
-    }
-    //Log(("O: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(*pShadowDescr)), X86DESC_LIMIT(*pShadowDescr), (pShadowDescr->au32[1] >> 8) & 0xFFFF ));
+    selmGuestToShadowDesc(&Desc);
+    PX86DESC pShwDescr = &pVM->selm.s.paGdtRC[iGDTEntry];
+    //Log(("O: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(*pShwDescr)), X86DESC_LIMIT(*pShwDescr), (pShwDescr->au32[1] >> 8) & 0xFFFF ));
     //Log(("N: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(Desc)), X86DESC_LIMIT(Desc), (Desc.au32[1] >> 8) & 0xFFFF ));
-    *pShadowDescr = Desc;
+    *pShwDescr = Desc;
 
     /*
      * Detect and mark stale registers.
      */
-    PCPUMCTX    pCtx      = CPUMQueryGuestCtxPtr(pVCpu);
-    PCPUMSELREG paSRegCtx = &pCtx->es;
-    PCPUMSELREG paSRegFrm = &pRegFrame->es;
-    for (unsigned i = 0; i <= X86_SREG_GS; i++)
-        if (Sel == (paSRegFrm[i].Sel & X86_SEL_MASK))
-        {
-            /** @todo we clear the valid flag here, maybe we shouldn't... but that would
-             *        require implementing handling of stale registers in raw-mode.
-             *        Tricky, at least for SS and CS. */
-            paSRegFrm[i].fFlags = CPUMSELREG_FLAGS_STALE;
-            paSRegCtx[i].fFlags = CPUMSELREG_FLAGS_STALE;
-        }
-
-    /*
-     * Check if we change the LDT selector.
-     */
-    if (Sel == CPUMGetGuestLDTR(pVCpu)) /** @todo this isn't correct in two(+) ways! 1. It shouldn't be done until the LDTR is reloaded. 2. It caused the next instruction to be emulated.  */
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    PCPUMCTX     pCtx     = CPUMQueryGuestCtxPtr(pVCpu); Assert(CPUMCTX2CORE(pCtx) == pRegFrame);
+    PCPUMSELREG  paSReg   = CPUMCTX_FIRST_SREG(pCtx);
+    for (unsigned iSReg = 0; iSReg <= X86_SREG_COUNT; iSReg++)
     {
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
-        return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
+        if (Sel == (paSReg[iSReg].Sel & X86_SEL_MASK_RPL))
+        {
+            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &paSReg[iSReg]))
+            {
+                if (selmIsSRegStale32(&paSReg[iSReg], &Desc, iSReg))
+                {
+                    Log(("GDT write to selector in %s register %04X (now stale)\n", g_aszSRegNms[iSReg], paSReg[iSReg].Sel));
+                    paSReg[iSReg].fFlags |= CPUMSELREG_FLAGS_STALE;
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3); /* paranoia */
+                    rcStrict = VINF_EM_RESCHEDULE_REM;
+                }
+                else if (paSReg[iSReg].fFlags & CPUMSELREG_FLAGS_STALE)
+                {
+                    Log(("GDT write to selector in %s register %04X (no longer stale)\n", g_aszSRegNms[iSReg], paSReg[iSReg].Sel));
+                    paSReg[iSReg].fFlags &= ~CPUMSELREG_FLAGS_STALE;
+                }
+                else
+                    Log(("GDT write to selector in %s register %04X (no important change)\n", g_aszSRegNms[iSReg], paSReg[iSReg].Sel));
+            }
+            else
+                Log(("GDT write to selector in %s register %04X (out of sync)\n", paSReg[iSReg].Sel));
+        }
     }
 
-#ifdef LOG_ENABLED
-    if (Sel == (pRegFrame->cs.Sel & X86_SEL_MASK))
-        Log(("GDT write to selector in CS register %04X\n", pRegFrame->cs.Sel));
-    else if (Sel == (pRegFrame->ds.Sel & X86_SEL_MASK))
-        Log(("GDT write to selector in DS register %04X\n", pRegFrame->ds.Sel));
-    else if (Sel == (pRegFrame->es.Sel & X86_SEL_MASK))
-        Log(("GDT write to selector in ES register %04X\n", pRegFrame->es.Sel));
-    else if (Sel == (pRegFrame->fs.Sel & X86_SEL_MASK))
-        Log(("GDT write to selector in FS register %04X\n", pRegFrame->fs.Sel));
-    else if (Sel == (pRegFrame->gs.Sel & X86_SEL_MASK))
-        Log(("GDT write to selector in GS register %04X\n", pRegFrame->gs.Sel));
-    else if (Sel == (pRegFrame->ss.Sel & X86_SEL_MASK))
-        Log(("GDT write to selector in SS register %04X\n", pRegFrame->ss.Sel));
-#endif
+    /** @todo Detect stale LDTR as well? */
 
-    return VINF_SUCCESS;
+    return rcStrict;
 }
+
+
+/**
+ * Synchronizes any segment registers refering to the given GDT entry.
+ *
+ * This is called before any changes performed and shadowed, so it's possible to
+ * look in both the shadow and guest descriptor table entries for hidden
+ * register content.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       The current virtual CPU.
+ * @param   pRegFrame   Trap register frame.
+ * @param   iGDTEntry   The GDT entry to sync.
+ */
+static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, unsigned iGDTEntry)
+{
+    /*
+     * Validate the offset.
+     */
+    VBOXGDTR GdtrGuest;
+    CPUMGetGuestGDTR(pVCpu, &GdtrGuest);
+    unsigned offEntry = iGDTEntry * sizeof(X86DESC);
+    if (    iGDTEntry >= SELM_GDT_ELEMENTS
+        ||  offEntry  >  GdtrGuest.cbGdt)
+        return;
+
+    /*
+     * Sync outdated segment registers using this entry.
+     */
+    PCX86DESC       pDesc    = &pVM->selm.s.CTX_SUFF(paGdt)[iGDTEntry];
+    uint32_t        uCpl     = CPUMGetGuestCPL(pVCpu);
+    PCPUMCTX        pCtx     = CPUMQueryGuestCtxPtr(pVCpu); Assert(CPUMCTX2CORE(pCtx) == pRegFrame);
+    PCPUMSELREG     paSReg   = CPUMCTX_FIRST_SREG(pCtx);
+    for (unsigned iSReg = 0; iSReg <= X86_SREG_COUNT; iSReg++)
+    {
+        if (iGDTEntry == (paSReg[iSReg].Sel & X86_SEL_MASK_RPL))
+        {
+            if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &paSReg[iSReg]))
+            {
+                if (selmIsShwDescGoodForSReg(&paSReg[iSReg], pDesc, iSReg, uCpl))
+                {
+                    selmLoadHiddenSRegFromShadowDesc(&paSReg[iSReg], pDesc);
+                    Log(("selmRCSyncGDTSegRegs: Updated %s\n", g_aszSRegNms[iSReg]));
+                }
+                else
+                    Log(("selmRCSyncGDTSegRegs: Bad shadow descriptor %#x (for %s): %.8Rhxs \n",
+                         iGDTEntry, g_aszSRegNms[iSReg], pDesc));
+            }
+        }
+    }
+
+}
+
 
 
 /**
@@ -194,57 +238,70 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     NOREF(pvRange);
 
     /*
-     * First check if this is the LDT entry.
-     * LDT updates are problems since an invalid LDT entry will cause trouble during worldswitch.
+     * Check if any selectors might be affected.
      */
-    int rc;
-    if (CPUMGetGuestLDTR(pVCpu) / sizeof(X86DESC) == offRange / sizeof(X86DESC))
+    unsigned const iGDTE1 = offRange >> X86_SEL_SHIFT;
+    selmRCSyncGDTSegRegs(pVM, pVCpu, pRegFrame, iGDTE1);
+    if (((offRange + 8) >> X86_SEL_SHIFT) != iGDTE1)
+        selmRCSyncGDTSegRegs(pVM, pVCpu, pRegFrame, iGDTE1 + 1);
+
+    /*
+     * Attempt to emulate the instruction and sync the affected entries.
+     */
+    uint32_t cb;
+    int rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
+    if (RT_SUCCESS(rc) && cb)
     {
-        Log(("LDTR selector change -> fall back to HC!!\n"));
-        rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
-        /** @todo We're not handling changed to the selectors in LDTR and TR correctly at all.
-         * We should ignore any changes to those and sync them only when they are loaded by the guest! */
-    }
-    else
-    {
-        /*
-         * Attempt to emulate the instruction and sync the affected entries.
-         */
-        /** @todo should check if any affected selectors are loaded. */
-        uint32_t cb;
-        rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
-        if (RT_SUCCESS(rc) && cb)
+        /* Check if the LDT was in any way affected.  Do not sync the
+           shadow GDT if that's the case or we might have trouble in
+           the world switcher (or so they say). */
+        unsigned const iLdt   = CPUMGetGuestLDTR(pVCpu) >> X86_SEL_SHIFT;
+        unsigned const iGDTE2 = (offRange + cb - 1) >> X86_SEL_SHIFT;
+        if (   iGDTE1 == iLdt
+            || iGDTE2 == iLdt)
         {
-            unsigned iGDTE1 = offRange / sizeof(X86DESC);
-            int rc2 = selmGCSyncGDTEntry(pVM, pRegFrame, iGDTE1);
-            if (rc2 == VINF_SUCCESS)
+            Log(("LDTR selector change -> fall back to HC!!\n"));
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+            rc = VINF_SELM_SYNC_GDT;
+            /** @todo Implement correct stale LDT handling.  */
+        }
+        else
+        {
+            /* Sync the shadow GDT and continue provided the update didn't
+               cause any segment registers to go stale in any way. */
+            int rc2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE1);
+            if (rc2 == VINF_SUCCESS || rc2 == VINF_EM_RESCHEDULE_REM)
             {
-                Assert(cb);
-                unsigned iGDTE2 = (offRange + cb - 1) / sizeof(X86DESC);
+                if (rc == VINF_SUCCESS)
+                    rc = rc2;
+
                 if (iGDTE1 != iGDTE2)
-                    rc2 = selmGCSyncGDTEntry(pVM, pRegFrame, iGDTE2);
-                if (rc2 == VINF_SUCCESS)
+                {
+                    rc2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE2);
+                    if (rc == VINF_SUCCESS)
+                        rc = rc2;
+                }
+
+                if (rc2 == VINF_SUCCESS || rc2 == VINF_EM_RESCHEDULE_REM)
                 {
                     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTHandled);
                     return rc;
                 }
             }
+
+            /* sync failed, return to ring-3 and resync the GDT. */
             if (rc == VINF_SUCCESS || RT_FAILURE(rc2))
                 rc = rc2;
         }
-        else
-        {
-            Assert(RT_FAILURE(rc));
-            if (rc == VERR_EM_INTERPRETER)
-                rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
-        }
     }
-    if (    rc != VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT
-        &&  rc != VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT)
+    else
     {
-        /* Not necessary when we need to go back to the host context to sync the LDT or TSS. */
+        Assert(RT_FAILURE(rc));
+        if (rc == VERR_EM_INTERPRETER)
+            rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     }
+
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
     return rc;
 }

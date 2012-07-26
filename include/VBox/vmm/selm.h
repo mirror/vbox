@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,20 +38,20 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-VMMDECL(RTSEL)      SELMGetTrap8Selector(PVM pVM);
-VMMDECL(void)       SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
-VMMDECL(int)        SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp);
-VMMDECL(RTGCPTR)    SELMGetGuestTSS(PVM pVM);
-VMMDECL(RTSEL)      SELMGetHyperCS(PVM pVM);
-VMMDECL(RTSEL)      SELMGetHyperCS64(PVM pVM);
-VMMDECL(RTSEL)      SELMGetHyperDS(PVM pVM);
-VMMDECL(RTSEL)      SELMGetHyperTSS(PVM pVM);
-VMMDECL(RTSEL)      SELMGetHyperTSSTrap08(PVM pVM);
-VMMDECL(RTRCPTR)    SELMGetHyperGDT(PVM pVM);
-VMMDECL(int)        SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
-VMMDECL(RTGCPTR)    SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
-VMMDECL(RTGCPTR)    SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
-VMMDECL(void)       SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
+VMMDECL(RTSEL)          SELMGetTrap8Selector(PVM pVM);
+VMMDECL(void)           SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
+VMMDECL(int)            SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp);
+VMMDECL(RTGCPTR)        SELMGetGuestTSS(PVM pVM);
+VMMDECL(RTSEL)          SELMGetHyperCS(PVM pVM);
+VMMDECL(RTSEL)          SELMGetHyperCS64(PVM pVM);
+VMMDECL(RTSEL)          SELMGetHyperDS(PVM pVM);
+VMMDECL(RTSEL)          SELMGetHyperTSS(PVM pVM);
+VMMDECL(RTSEL)          SELMGetHyperTSSTrap08(PVM pVM);
+VMMDECL(RTRCPTR)        SELMGetHyperGDT(PVM pVM);
+VMMDECL(int)            SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
+VMMDECL(RTGCPTR)        SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
+VMMDECL(RTGCPTR)        SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
+VMMDECL(void)           SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 
 /** Flags for SELMToFlatEx().
  * @{ */
@@ -73,15 +73,15 @@ VMMDECL(void)       SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 #define SELMTOFLAT_FLAGS_HYPER      RT_BIT(10)
 /** @} */
 
-VMMDECL(int)        SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, uint32_t fFlags,
-                                 PRTGCPTR ppvGC);
-VMMDECL(int)        SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, uint32_t fFlags,
-                                      PRTGCPTR ppvGC, uint32_t *pcb);
-VMMDECL(int)        SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREG pSRegCS,
-                                                 RTGCPTR Addr, PRTGCPTR ppvFlat);
-VMMDECL(int)        SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit);
+VMMDECL(int)            SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, uint32_t fFlags,
+                                     PRTGCPTR ppvGC);
+VMMDECL(int)            SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, uint32_t fFlags,
+                                          PRTGCPTR ppvGC, uint32_t *pcb);
+VMMDECL(int)            SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS,
+                                                     PCPUMSELREG pSRegCS, RTGCPTR Addr, PRTGCPTR ppvFlat);
+VMMDECL(int)            SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit);
 #ifdef VBOX_WITH_RAW_MODE
-VMM_INT_DECL(void)  SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg);
+VMM_INT_DECL(void)      SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg);
 #endif
 
 
@@ -90,23 +90,23 @@ VMM_INT_DECL(void)  SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPU
  * @ingroup grp_selm
  * @{
  */
-VMMR3DECL(int)      SELMR3Init(PVM pVM);
-VMMR3DECL(int)      SELMR3InitFinalize(PVM pVM);
-VMMR3DECL(void)     SELMR3Relocate(PVM pVM);
-VMMR3DECL(int)      SELMR3Term(PVM pVM);
-VMMR3DECL(void)     SELMR3Reset(PVM pVM);
-VMMR3DECL(int)      SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)      SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)      SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo);
-VMMR3DECL(int)      SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PDBGFSELINFO pSelInfo);
-VMMR3DECL(void)     SELMR3DisableMonitoring(PVM pVM);
-VMMR3DECL(void)     SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);
-VMMR3DECL(void)     SELMR3DumpHyperGDT(PVM pVM);
-VMMR3DECL(void)     SELMR3DumpHyperLDT(PVM pVM);
-VMMR3DECL(void)     SELMR3DumpGuestGDT(PVM pVM);
-VMMR3DECL(void)     SELMR3DumpGuestLDT(PVM pVM);
-VMMR3DECL(bool)     SELMR3CheckTSS(PVM pVM);
-VMMR3DECL(int)      SELMR3DebugCheck(PVM pVM);
+VMMR3DECL(int)          SELMR3Init(PVM pVM);
+VMMR3DECL(int)          SELMR3InitFinalize(PVM pVM);
+VMMR3DECL(void)         SELMR3Relocate(PVM pVM);
+VMMR3DECL(int)          SELMR3Term(PVM pVM);
+VMMR3DECL(void)         SELMR3Reset(PVM pVM);
+VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)          SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)          SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo);
+VMMR3DECL(int)          SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PDBGFSELINFO pSelInfo);
+VMMR3DECL(void)         SELMR3DisableMonitoring(PVM pVM);
+VMMR3DECL(void)         SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);
+VMMR3DECL(void)         SELMR3DumpHyperGDT(PVM pVM);
+VMMR3DECL(void)         SELMR3DumpHyperLDT(PVM pVM);
+VMMR3DECL(void)         SELMR3DumpGuestGDT(PVM pVM);
+VMMR3DECL(void)         SELMR3DumpGuestLDT(PVM pVM);
+VMMR3DECL(bool)         SELMR3CheckTSS(PVM pVM);
+VMMR3DECL(int)          SELMR3DebugCheck(PVM pVM);
 /** @def SELMR3_DEBUG_CHECK
  * Invokes SELMR3DebugCheck in stricts builds. */
 # ifdef VBOX_STRICT

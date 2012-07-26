@@ -1860,17 +1860,15 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char 
     /*
      * Limit and Base and format the output.
      */
-    uint32_t    u32Limit = X86DESC_LIMIT(*pDesc);
-    if (pDesc->Gen.u1Granularity)
-        u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
+    uint32_t    u32Limit = X86DESC_LIMIT_G(pDesc);
 
 # if HC_ARCH_BITS == 64
-    uint64_t    u32Base =  X86DESC64_BASE(*pDesc);
+    uint64_t    u32Base  = X86DESC64_BASE(pDesc);
 
     Log(("%s %04x - %RX64 %RX64 - base=%RX64 limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au64[0], pDesc->au64[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # else
-    uint32_t    u32Base =  X86DESC_BASE(*pDesc);
+    uint32_t    u32Base  = X86DESC_BASE(pDesc);
 
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au32[0], pDesc->au32[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));

@@ -1312,6 +1312,40 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
     }
 
+    /*
+     * Stale hidden selectors means raw-mode is unsafe (being very careful).
+     */
+    if (pCtx->cs.fFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale CS\n"));
+        return EMSTATE_REM;
+    }
+    if (pCtx->ss.fFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale SS\n"));
+        return EMSTATE_REM;
+    }
+    if (pCtx->ds.fFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale DS\n"));
+        return EMSTATE_REM;
+    }
+    if (pCtx->es.fFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale ES\n"));
+        return EMSTATE_REM;
+    }
+    if (pCtx->fs.fFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale FS\n"));
+        return EMSTATE_REM;
+    }
+    if (pCtx->gs.fFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale GS\n"));
+        return EMSTATE_REM;
+    }
+
     /*Assert(PGMPhysIsA20Enabled(pVCpu));*/
     return EMSTATE_RAW;
 #endif /* !IEM_VERIFICATION_MODE */

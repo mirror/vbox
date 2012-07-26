@@ -495,7 +495,9 @@ typedef struct VMCPU
  * @param   pVM     VM Handle.
  * @param   fFlag   The flag to check.
  */
-#define VM_FF_ISSET(pVM, fFlag)             (((pVM)->fGlobalForcedActions & (fFlag)) == (fFlag))
+#define VM_FF_IS_SET(pVM, fFlag)            (((pVM)->fGlobalForcedActions & (fFlag)) == (fFlag))
+/** @deprecated  */
+#define VM_FF_ISSET(pVM, fFlag)             VM_FF_IS_SET(pVM, fFlag)
 
 /** @def VMCPU_FF_ISSET
  * Checks if a force action flag is set for the given VCPU.
@@ -503,7 +505,9 @@ typedef struct VMCPU
  * @param   pVCpu   VMCPU Handle.
  * @param   fFlag   The flag to check.
  */
-#define VMCPU_FF_ISSET(pVCpu, fFlag)        (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
+#define VMCPU_FF_IS_SET(pVCpu, fFlag)       (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
+/** @deprecated  */
+#define VMCPU_FF_ISSET(pVCpu, fFlag)        VMCPU_FF_IS_SET(pVCpu, fFlag)
 
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending.
@@ -511,7 +515,9 @@ typedef struct VMCPU
  * @param   pVM     VM Handle.
  * @param   fFlags  The flags to check for.
  */
-#define VM_FF_ISPENDING(pVM, fFlags)        ((pVM)->fGlobalForcedActions & (fFlags))
+#define VM_FF_IS_PENDING(pVM, fFlags)       ((pVM)->fGlobalForcedActions & (fFlags))
+/** @deprecated  */
+#define VM_FF_ISPENDING(pVM, fFlags)        VM_FF_IS_PENDING(pVM, fFlags)
 
 /** @def VM_FF_TESTANDCLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
@@ -521,7 +527,9 @@ typedef struct VMCPU
  * @param   pVM     VM Handle.
  * @param   iBit    Bit position to check and clear
  */
-#define VM_FF_TESTANDCLEAR(pVM, iBit)        (ASMAtomicBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit##_BIT))
+#define VM_FF_TEST_AND_CLEAR(pVM, iBit)     (ASMAtomicBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit##_BIT))
+/** @deprecated  */
+#define VM_FF_TESTANDCLEAR(pVM, iBit)       (ASMAtomicBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit##_BIT))
 
 /** @def VMCPU_FF_TESTANDCLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
@@ -531,7 +539,9 @@ typedef struct VMCPU
  * @param   pVCpu   VMCPU Handle.
  * @param   iBit    Bit position to check and clear
  */
-#define VMCPU_FF_TESTANDCLEAR(pVCpu, iBit)    (ASMAtomicBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit##_BIT))
+#define VMCPU_FF_TEST_AND_CLEAR(pVCpu, iBit) (ASMAtomicBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit##_BIT))
+/** @deprecated  */
+#define VMCPU_FF_TESTANDCLEAR(pVCpu, iBit)  (ASMAtomicBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit##_BIT))
 
 /** @def VMCPU_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending for the given VCPU.
@@ -539,7 +549,9 @@ typedef struct VMCPU
  * @param   pVCpu   VMCPU Handle.
  * @param   fFlags  The flags to check for.
  */
-#define VMCPU_FF_ISPENDING(pVCpu, fFlags) ((pVCpu)->fLocalForcedActions & (fFlags))
+#define VMCPU_FF_IS_PENDING(pVCpu, fFlags)  ((pVCpu)->fLocalForcedActions & (fFlags))
+/** @deprecated  */
+#define VMCPU_FF_ISPENDING(pVCpu, fFlags)   VMCPU_FF_IS_PENDING(pVCpu, fFlags)
 
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending while one
@@ -941,7 +953,7 @@ typedef struct VM
 #ifdef ___SELMInternal_h
         struct SELM s;
 #endif
-        uint8_t     padding[576];       /* multiple of 64 */
+        uint8_t     padding[768];       /* multiple of 64 */
     } selm;
 
     /** MM part. */
@@ -1065,7 +1077,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[734];
+    uint8_t         abAlignment2[542];
 
     /* ---- end small stuff ---- */
 

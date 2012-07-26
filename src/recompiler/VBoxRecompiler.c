@@ -137,6 +137,7 @@ static STAMCOUNTER    gStatRefuseCode16;
 static STAMCOUNTER    gStatRefuseWP0;
 static STAMCOUNTER    gStatRefuseRing1or2;
 static STAMCOUNTER    gStatRefuseCanExecute;
+static STAMCOUNTER    gaStatRefuseStale[6];
 static STAMCOUNTER    gStatREMGDTChange;
 static STAMCOUNTER    gStatREMIDTChange;
 static STAMCOUNTER    gStatREMLDTRChange;
@@ -389,6 +390,12 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatRefuseWP0,          STAMTYPE_COUNTER, "/REM/Refuse/WP0",      STAMUNIT_OCCURENCES,     "Raw mode refused because of WP=0");
     STAM_REG(pVM, &gStatRefuseRing1or2,     STAMTYPE_COUNTER, "/REM/Refuse/Ring1or2", STAMUNIT_OCCURENCES,     "Raw mode refused because of ring 1/2 execution");
     STAM_REG(pVM, &gStatRefuseCanExecute,   STAMTYPE_COUNTER, "/REM/Refuse/CanExecuteRaw", STAMUNIT_OCCURENCES,     "Raw mode refused because of cCanExecuteRaw");
+    STAM_REG(pVM, &gaStatRefuseStale[R_ES], STAMTYPE_COUNTER, "/REM/Refuse/StaleES",  STAMUNIT_OCCURENCES,     "Raw mode refused because of stale ES");
+    STAM_REG(pVM, &gaStatRefuseStale[R_CS], STAMTYPE_COUNTER, "/REM/Refuse/StaleCS",  STAMUNIT_OCCURENCES,     "Raw mode refused because of stale CS");
+    STAM_REG(pVM, &gaStatRefuseStale[R_SS], STAMTYPE_COUNTER, "/REM/Refuse/StaleSS",  STAMUNIT_OCCURENCES,     "Raw mode refused because of stale SS");
+    STAM_REG(pVM, &gaStatRefuseStale[R_DS], STAMTYPE_COUNTER, "/REM/Refuse/StaleDS",  STAMUNIT_OCCURENCES,     "Raw mode refused because of stale DS");
+    STAM_REG(pVM, &gaStatRefuseStale[R_FS], STAMTYPE_COUNTER, "/REM/Refuse/StaleFS",  STAMUNIT_OCCURENCES,     "Raw mode refused because of stale FS");
+    STAM_REG(pVM, &gaStatRefuseStale[R_GS], STAMTYPE_COUNTER, "/REM/Refuse/StaleGS",  STAMUNIT_OCCURENCES,     "Raw mode refused because of stale GS");
     STAM_REG(pVM, &gStatFlushTBs,           STAMTYPE_COUNTER, "/REM/FlushTB",         STAMUNIT_OCCURENCES,     "Number of TB flushes");
 
     STAM_REG(pVM, &gStatREMGDTChange,       STAMTYPE_COUNTER, "/REM/Change/GDTBase",   STAMUNIT_OCCURENCES,     "GDT base changes");
@@ -567,6 +574,12 @@ REMR3DECL(int) REMR3Term(PVM pVM)
     STAM_DEREG(pVM, &gStatRefuseWP0);
     STAM_DEREG(pVM, &gStatRefuseRing1or2);
     STAM_DEREG(pVM, &gStatRefuseCanExecute);
+    STAM_DEREG(pVM, &gaStatRefuseStale[0]);
+    STAM_DEREG(pVM, &gaStatRefuseStale[1]);
+    STAM_DEREG(pVM, &gaStatRefuseStale[2]);
+    STAM_DEREG(pVM, &gaStatRefuseStale[3]);
+    STAM_DEREG(pVM, &gaStatRefuseStale[4]);
+    STAM_DEREG(pVM, &gaStatRefuseStale[5]);
     STAM_DEREG(pVM, &gStatFlushTBs);
 
     STAM_DEREG(pVM, &gStatREMGDTChange);
@@ -1663,6 +1676,46 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         return false;
     }
 
+    /*
+     * Stale hidden selectors means raw-mode is unsafe (being very careful).
+     */
+    if (env->segs[R_CS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale CS (%#x)\n", env->segs[R_CS].selector));
+        STAM_COUNTER_INC(&gaStatRefuseStale[R_CS]);
+        return EMSTATE_REM;
+    }
+    if (env->segs[R_SS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale SS (%#x)\n", env->segs[R_SS].selector));
+        STAM_COUNTER_INC(&gaStatRefuseStale[R_SS]);
+        return EMSTATE_REM;
+    }
+    if (env->segs[R_DS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale DS (%#x)\n", env->segs[R_DS].selector));
+        STAM_COUNTER_INC(&gaStatRefuseStale[R_DS]);
+        return EMSTATE_REM;
+    }
+    if (env->segs[R_ES].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale ES (%#x)\n", env->segs[R_ES].selector));
+        STAM_COUNTER_INC(&gaStatRefuseStale[R_ES]);
+        return EMSTATE_REM;
+    }
+    if (env->segs[R_FS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale FS (%#x)\n", env->segs[R_FS].selector));
+        STAM_COUNTER_INC(&gaStatRefuseStale[R_FS]);
+        return EMSTATE_REM;
+    }
+    if (env->segs[R_GS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
+    {
+        Log2(("raw mode refused: stale GS (%#x)\n", env->segs[R_GS].selector));
+        STAM_COUNTER_INC(&gaStatRefuseStale[R_GS]);
+        return EMSTATE_REM;
+    }
+
 /*    Assert(env->pVCpu && PGMPhysIsA20Enabled(env->pVCpu));*/
     *piException = EXCP_EXECUTE_RAW;
     return true;
@@ -2041,7 +2094,6 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 {
     register const CPUMCTX *pCtx;
     register unsigned       fFlags;
-    bool                    fHiddenSelRegsValid;
     unsigned                i;
     TRPMEVENT               enmType;
     uint8_t                 u8TrapNo;
@@ -2053,7 +2105,6 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
     pVM->rem.s.Env.pVCpu = pVCpu;
     pCtx = pVM->rem.s.pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-    fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVCpu); /// @todo move this down and use fFlags.
 
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
@@ -2276,7 +2327,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
         if (fFlags & CPUM_CHANGED_LDTR)
         {
-            if (fHiddenSelRegsValid || (pCtx->ldtr.fFlags & CPUMSELREG_FLAGS_VALID))
+            if (pCtx->ldtr.fFlags & CPUMSELREG_FLAGS_VALID)
             {
                 pVM->rem.s.Env.ldt.selector = pCtx->ldtr.Sel;
                 pVM->rem.s.Env.ldt.base     = pCtx->ldtr.u64Base;
@@ -2306,132 +2357,60 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     /*
      * Sync TR unconditionally to make life simpler.
      */
-    pVM->rem.s.Env.tr.selector = pCtx->tr.Sel;
-    pVM->rem.s.Env.tr.base     = pCtx->tr.u64Base;
-    pVM->rem.s.Env.tr.limit    = pCtx->tr.u32Limit;
-    pVM->rem.s.Env.tr.flags    = (pCtx->tr.Attr.u << 8) & 0xFFFFFF;
+    pVM->rem.s.Env.tr.selector    = pCtx->tr.Sel;
+    pVM->rem.s.Env.tr.newselector = 0;
+    pVM->rem.s.Env.tr.fVBoxFlags  = pCtx->tr.fFlags;
+    pVM->rem.s.Env.tr.base        = pCtx->tr.u64Base;
+    pVM->rem.s.Env.tr.limit       = pCtx->tr.u32Limit;
+    pVM->rem.s.Env.tr.flags       = (pCtx->tr.Attr.u << 8) & 0xFFFFFF;
     /* Note! do_interrupt will fault if the busy flag is still set... */
-    pVM->rem.s.Env.tr.flags   &= ~DESC_TSS_BUSY_MASK;
+    pVM->rem.s.Env.tr.flags      &= ~DESC_TSS_BUSY_MASK;
 
     /*
      * Update selector registers.
+     *
      * This must be done *after* we've synced gdt, ldt and crX registers
      * since we're reading the GDT/LDT om sync_seg. This will happen with
      * saved state which takes a quick dip into rawmode for instance.
+     *
+     * CPL/Stack; Note first check this one as the CPL might have changed.
+     * The wrong CPL can cause QEmu to raise an exception in sync_seg!!
      */
-    /*
-     * Stack; Note first check this one as the CPL might have changed. The
-     * wrong CPL can cause QEmu to raise an exception in sync_seg!!
-     */
+    cpu_x86_set_cpl(&pVM->rem.s.Env, uCpl);
+    /* Note! QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
+#define SYNC_IN_SREG(a_pEnv, a_SReg, a_pRemSReg, a_pVBoxSReg) \
+        do \
+        { \
+            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, a_pVBoxSReg)) \
+            { \
+                cpu_x86_load_seg_cache(a_pEnv, R_##a_SReg, \
+                                       (a_pVBoxSReg)->Sel, \
+                                       (a_pVBoxSReg)->u64Base, \
+                                       (a_pVBoxSReg)->u32Limit, \
+                                       ((a_pVBoxSReg)->Attr.u << 8) & 0xFFFFFF); \
+                (a_pRemSReg)->fVBoxFlags = (a_pVBoxSReg)->fFlags; \
+            } \
+            /* This only-reload-if-changed stuff is the old approach, we should ditch it. */ \
+            else if ((a_pRemSReg)->selector != (a_pVBoxSReg)->Sel) \
+            { \
+                Log2(("REMR3State: " #a_SReg " changed from %04x to %04x!\n", \
+                      (a_pRemSReg)->selector, (a_pVBoxSReg)->Sel)); \
+                sync_seg(a_pEnv, R_##a_SReg, (a_pVBoxSReg)->Sel); \
+                if ((a_pRemSReg)->newselector) \
+                    STAM_COUNTER_INC(&gStatSelOutOfSync[R_##a_SReg]); \
+            } \
+            else \
+                (a_pRemSReg)->newselector = 0; \
+        } while (0)
 
-    if (fHiddenSelRegsValid)
-    {
-        /* The hidden selector registers are valid in the CPU context. */
-        /* Note! QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
-
-        /* Set current CPL */
-        cpu_x86_set_cpl(&pVM->rem.s.Env, uCpl);
-
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_CS, pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, (pCtx->cs.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, (pCtx->ss.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_DS, pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, (pCtx->ds.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_ES, pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, (pCtx->es.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_FS, pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, (pCtx->fs.Attr.u << 8) & 0xFFFFFF);
-        cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_GS, pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, (pCtx->gs.Attr.u << 8) & 0xFFFFFF);
-    }
-    else
-    {
-        /* In 'normal' raw mode we don't have access to the hidden selector registers. */
-        /** @todo use hidden registers when possible and make CPUM/someone do the
-         *        reading of lazily maintained hidden registers. */
-        if (pVM->rem.s.Env.segs[R_SS].selector != pCtx->ss.Sel)
-        {
-            Log2(("REMR3State: SS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_SS].selector, pCtx->ss.Sel));
-
-            cpu_x86_set_cpl(&pVM->rem.s.Env, uCpl);
-            sync_seg(&pVM->rem.s.Env, R_SS, pCtx->ss.Sel);
-#ifdef VBOX_WITH_STATISTICS
-            if (pVM->rem.s.Env.segs[R_SS].newselector)
-            {
-                STAM_COUNTER_INC(&gStatSelOutOfSync[R_SS]);
-            }
-#endif
-        }
-        else
-            pVM->rem.s.Env.segs[R_SS].newselector = 0;
-
-        if (pVM->rem.s.Env.segs[R_ES].selector != pCtx->es.Sel)
-        {
-            Log2(("REMR3State: ES changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_ES].selector, pCtx->es.Sel));
-            sync_seg(&pVM->rem.s.Env, R_ES, pCtx->es.Sel);
-#ifdef VBOX_WITH_STATISTICS
-            if (pVM->rem.s.Env.segs[R_ES].newselector)
-            {
-                STAM_COUNTER_INC(&gStatSelOutOfSync[R_ES]);
-            }
-#endif
-        }
-        else
-            pVM->rem.s.Env.segs[R_ES].newselector = 0;
-
-        if (pVM->rem.s.Env.segs[R_CS].selector != pCtx->cs.Sel)
-        {
-            Log2(("REMR3State: CS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_CS].selector, pCtx->cs.Sel));
-            sync_seg(&pVM->rem.s.Env, R_CS, pCtx->cs.Sel);
-#ifdef VBOX_WITH_STATISTICS
-            if (pVM->rem.s.Env.segs[R_CS].newselector)
-            {
-                STAM_COUNTER_INC(&gStatSelOutOfSync[R_CS]);
-            }
-#endif
-        }
-        else
-            pVM->rem.s.Env.segs[R_CS].newselector = 0;
-
-        if (pVM->rem.s.Env.segs[R_DS].selector != pCtx->ds.Sel)
-        {
-            Log2(("REMR3State: DS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_DS].selector, pCtx->ds.Sel));
-            sync_seg(&pVM->rem.s.Env, R_DS, pCtx->ds.Sel);
-#ifdef VBOX_WITH_STATISTICS
-            if (pVM->rem.s.Env.segs[R_DS].newselector)
-            {
-                STAM_COUNTER_INC(&gStatSelOutOfSync[R_DS]);
-            }
-#endif
-        }
-        else
-            pVM->rem.s.Env.segs[R_DS].newselector = 0;
-
+    SYNC_IN_SREG(&pVM->rem.s.Env, CS, &pVM->rem.s.Env.segs[R_CS], &pCtx->cs);
+    SYNC_IN_SREG(&pVM->rem.s.Env, SS, &pVM->rem.s.Env.segs[R_SS], &pCtx->ss);
+    SYNC_IN_SREG(&pVM->rem.s.Env, DS, &pVM->rem.s.Env.segs[R_DS], &pCtx->ds);
+    SYNC_IN_SREG(&pVM->rem.s.Env, ES, &pVM->rem.s.Env.segs[R_ES], &pCtx->es);
+    SYNC_IN_SREG(&pVM->rem.s.Env, FS, &pVM->rem.s.Env.segs[R_FS], &pCtx->fs);
+    SYNC_IN_SREG(&pVM->rem.s.Env, GS, &pVM->rem.s.Env.segs[R_GS], &pCtx->gs);
     /** @todo need to find a way to communicate potential GDT/LDT changes and thread switches. The selector might
      * be the same but not the base/limit. */
-        if (pVM->rem.s.Env.segs[R_FS].selector != pCtx->fs.Sel)
-        {
-            Log2(("REMR3State: FS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_FS].selector, pCtx->fs.Sel));
-            sync_seg(&pVM->rem.s.Env, R_FS, pCtx->fs.Sel);
-#ifdef VBOX_WITH_STATISTICS
-            if (pVM->rem.s.Env.segs[R_FS].newselector)
-            {
-                STAM_COUNTER_INC(&gStatSelOutOfSync[R_FS]);
-            }
-#endif
-        }
-        else
-            pVM->rem.s.Env.segs[R_FS].newselector = 0;
-
-        if (pVM->rem.s.Env.segs[R_GS].selector != pCtx->gs.Sel)
-        {
-            Log2(("REMR3State: GS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_GS].selector, pCtx->gs.Sel));
-            sync_seg(&pVM->rem.s.Env, R_GS, pCtx->gs.Sel);
-#ifdef VBOX_WITH_STATISTICS
-            if (pVM->rem.s.Env.segs[R_GS].newselector)
-            {
-                STAM_COUNTER_INC(&gStatSelOutOfSync[R_GS]);
-            }
-#endif
-        }
-        else
-            pVM->rem.s.Env.segs[R_GS].newselector = 0;
-    }
 
     /*
      * Check for traps.
@@ -2682,8 +2661,8 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         ||  pCtx->tr.u32Limit != pVM->rem.s.Env.tr.limit
             /* Qemu and AMD/Intel have different ideas about the busy flag ... */
         ||  pCtx->tr.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF
-                                     ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
-                                     : 0)
+                                  ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
+                                  : 0)
         ||  !(pCtx->tr.fFlags & CPUMSELREG_FLAGS_VALID)
        )
     {
@@ -2904,8 +2883,8 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         ||  pCtx->tr.u32Limit != pVM->rem.s.Env.tr.limit
             /* Qemu and AMD/Intel have different ideas about the busy flag ... */
         ||  pCtx->tr.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF
-                                     ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
-                                     : 0)
+                                  ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
+                                  : 0)
         ||  !(pCtx->tr.fFlags & CPUMSELREG_FLAGS_VALID)
        )
     {

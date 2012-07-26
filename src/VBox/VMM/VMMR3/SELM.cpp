@@ -111,6 +111,14 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 //static DECLCALLBACK(void) selmR3InfoTssGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef LOG_ENABLED
+/** Segment register names. */
+static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "FS", "GS" };
+#endif
+
 
 /**
  * Initializes the SELM.
@@ -206,6 +214,34 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
 
     STAM_REL_REG(pVM, &pVM->selm.s.StatHyperSelsChanged,       STAMTYPE_COUNTER, "/SELM/HyperSels/Changed",      STAMUNIT_OCCURENCES,     "The number of times we had to relocate our hypervisor selectors.");
     STAM_REL_REG(pVM, &pVM->selm.s.StatScanForHyperSels,       STAMTYPE_COUNTER, "/SELM/HyperSels/Scan",         STAMUNIT_OCCURENCES,     "The number of times we had find free hypervisor selectors.");
+
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatDetectedStaleSReg[X86_SREG_ES], STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/DetectedStaleES", STAMUNIT_OCCURENCES, "Stale ES was detected in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatDetectedStaleSReg[X86_SREG_CS], STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/DetectedStaleCS", STAMUNIT_OCCURENCES, "Stale CS was detected in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatDetectedStaleSReg[X86_SREG_SS], STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/DetectedStaleSS", STAMUNIT_OCCURENCES, "Stale SS was detected in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatDetectedStaleSReg[X86_SREG_DS], STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/DetectedStaleDS", STAMUNIT_OCCURENCES, "Stale DS was detected in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatDetectedStaleSReg[X86_SREG_FS], STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/DetectedStaleFS", STAMUNIT_OCCURENCES, "Stale FS was detected in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatDetectedStaleSReg[X86_SREG_GS], STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/DetectedStaleGS", STAMUNIT_OCCURENCES, "Stale GS was detected in UpdateFromCPUM.");
+
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatAlreadyStaleSReg[X86_SREG_ES],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/AlreadyStaleES", STAMUNIT_OCCURENCES, "Already stale ES in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatAlreadyStaleSReg[X86_SREG_CS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/AlreadyStaleCS", STAMUNIT_OCCURENCES, "Already stale CS in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatAlreadyStaleSReg[X86_SREG_SS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/AlreadyStaleSS", STAMUNIT_OCCURENCES, "Already stale SS in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatAlreadyStaleSReg[X86_SREG_DS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/AlreadyStaleDS", STAMUNIT_OCCURENCES, "Already stale DS in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatAlreadyStaleSReg[X86_SREG_FS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/AlreadyStaleFS", STAMUNIT_OCCURENCES, "Already stale FS in UpdateFromCPUM.");
+    STAM_REL_REG(pVM, &pVM->selm.s.aStatAlreadyStaleSReg[X86_SREG_GS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/AlreadyStaleGS", STAMUNIT_OCCURENCES, "Already stale GS in UpdateFromCPUM.");
+
+    STAM_REL_REG(pVM, &pVM->selm.s.StatStaleToUnstaleSReg,              STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/StaleToUnstale", STAMUNIT_OCCURENCES, "Transitions from stale to unstale UpdateFromCPUM.");
+
+    STAM_REG(    pVM, &pVM->selm.s.aStatUpdatedSReg[X86_SREG_ES],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/UpdatedES", STAMUNIT_OCCURENCES, "Updated hidden ES values in UpdateFromCPUM.");
+    STAM_REG(    pVM, &pVM->selm.s.aStatUpdatedSReg[X86_SREG_CS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/UpdatedCS", STAMUNIT_OCCURENCES, "Updated hidden CS values in UpdateFromCPUM.");
+    STAM_REG(    pVM, &pVM->selm.s.aStatUpdatedSReg[X86_SREG_SS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/UpdatedSS", STAMUNIT_OCCURENCES, "Updated hidden SS values in UpdateFromCPUM.");
+    STAM_REG(    pVM, &pVM->selm.s.aStatUpdatedSReg[X86_SREG_DS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/UpdatedDS", STAMUNIT_OCCURENCES, "Updated hidden DS values in UpdateFromCPUM.");
+    STAM_REG(    pVM, &pVM->selm.s.aStatUpdatedSReg[X86_SREG_FS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/UpdatedFS", STAMUNIT_OCCURENCES, "Updated hidden FS values in UpdateFromCPUM.");
+    STAM_REG(    pVM, &pVM->selm.s.aStatUpdatedSReg[X86_SREG_GS],  STAMTYPE_COUNTER, "/SELM/UpdateFromCPUM/UpdatedGS", STAMUNIT_OCCURENCES, "Updated hidden GS values in UpdateFromCPUM.");
+
+    STAM_REG(    pVM, &pVM->selm.s.StatLoadHidSelGst,              STAMTYPE_COUNTER, "/SELM/LoadHidSel/LoadedGuest",   STAMUNIT_OCCURENCES, "SELMLoadHiddenSelectorReg: Loaded from guest tables.");
+    STAM_REG(    pVM, &pVM->selm.s.StatLoadHidSelShw,              STAMTYPE_COUNTER, "/SELM/LoadHidSel/LoadedShadow",  STAMUNIT_OCCURENCES, "SELMLoadHiddenSelectorReg: Loaded from shadow tables.");
+    STAM_REL_REG(pVM, &pVM->selm.s.StatLoadHidSelReadErrors,       STAMTYPE_COUNTER, "/SELM/LoadHidSel/GstReadErrors", STAMUNIT_OCCURENCES, "SELMLoadHiddenSelectorReg: Guest table read errors.");
+    STAM_REL_REG(pVM, &pVM->selm.s.StatLoadHidSelGstNoGood,        STAMTYPE_COUNTER, "/SELM/LoadHidSel/NoGoodGuest",   STAMUNIT_OCCURENCES, "SELMLoadHiddenSelectorReg: No good guest table entry.");
 
     /*
      * Default action when entering raw mode for the first time
@@ -773,6 +809,13 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 }
 
 
+/**
+ * Updates (syncs) the shadow GDT.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The current virtual CPU.
+ */
 static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
 {
     /*
@@ -828,7 +871,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
             if (RT_SUCCESS(rc))
             {
                 if (pu8DstInvalid != pu8Dst)
-                    memset(pu8DstInvalid, 0, pu8Dst - pu8DstInvalid);
+                    RT_BZERO(pu8DstInvalid, pu8Dst - pu8DstInvalid);
                 GCPtrSrc += cb;
                 pu8Dst += cb;
                 pu8DstInvalid = pu8Dst;
@@ -853,7 +896,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
             cbEffLimit = pu8DstInvalid - (uint8_t *)pVM->selm.s.paGdtR3 - 1;
             /* If any GDTEs was invalidated, zero them. */
             if (cbEffLimit < pVM->selm.s.cbEffGuestGdtLimit)
-                memset(pu8DstInvalid + cbEffLimit + 1, 0, pVM->selm.s.cbEffGuestGdtLimit - cbEffLimit);
+                RT_BZERO(pu8DstInvalid + cbEffLimit + 1, pVM->selm.s.cbEffGuestGdtLimit - cbEffLimit);
         }
 
         /* keep track of the effective limit. */
@@ -915,40 +958,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
     while (pGDTE < pGDTEEnd)
     {
         if (pGDTE->Gen.u1Present)
-        {
-            /*
-             * Code and data selectors are generally 1:1, with the
-             * 'little' adjustment we do for DPL 0 selectors.
-             */
-            if (pGDTE->Gen.u1DescType)
-            {
-                /*
-                 * Hack for A-bit against Trap E on read-only GDT.
-                 */
-                /** @todo Fix this by loading ds and cs before turning off WP. */
-                pGDTE->Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-
-                /*
-                 * All DPL 0 code and data segments are squeezed into DPL 1.
-                 *
-                 * We're skipping conforming segments here because those
-                 * cannot give us any trouble.
-                 */
-                if (    pGDTE->Gen.u2Dpl == 0
-                    &&      (pGDTE->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-                        !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
-                    pGDTE->Gen.u2Dpl = 1;
-            }
-            else
-            {
-                /*
-                 * System type selectors are marked not present.
-                 * Recompiler or special handling is required for these.
-                 */
-                /** @todo what about interrupt gates and rawr0? */
-                pGDTE->Gen.u1Present = 0;
-            }
-        }
+            selmGuestToShadowDesc(pGDTE);
 
         /* Next GDT entry. */
         pGDTE++;
@@ -989,7 +999,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
     if (pVM->selm.s.GuestGdtr.cbGdt != GDTR.cbGdt)
     {
         if (pVM->selm.s.GuestGdtr.cbGdt > GDTR.cbGdt)
-            memset(pGDTE, 0, pVM->selm.s.GuestGdtr.cbGdt - GDTR.cbGdt);
+            RT_BZERO(pGDTE, pVM->selm.s.GuestGdtr.cbGdt - GDTR.cbGdt);
     }
 
     /*
@@ -1067,6 +1077,7 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
             AssertRC(rc);
             pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
         }
+        pVM->selm.s.cbLdtLimit = 0;
         return VINF_SUCCESS;
     }
 
@@ -1074,10 +1085,8 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
      * Get the LDT selector.
      */
     PX86DESC    pDesc    = &pVM->selm.s.paGdtR3[SelLdt >> X86_SEL_SHIFT];
-    RTGCPTR     GCPtrLdt = X86DESC_BASE(*pDesc);
-    unsigned    cbLdt    = X86DESC_LIMIT(*pDesc);
-    if (pDesc->Gen.u1Granularity)
-        cbLdt = (cbLdt << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+    RTGCPTR     GCPtrLdt = X86DESC_BASE(pDesc);
+    uint32_t    cbLdt    = X86DESC_LIMIT_G(pDesc);
 
     /*
      * Validate it.
@@ -1227,41 +1236,7 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
             while (pLDTE <= pLDTEEnd)
             {
                 if (pLDTE->Gen.u1Present)
-                {
-                    /*
-                     * Code and data selectors are generally 1:1, with the
-                     * 'little' adjustment we do for DPL 0 selectors.
-                     */
-                    if (pLDTE->Gen.u1DescType)
-                    {
-                        /*
-                         * Hack for A-bit against Trap E on read-only GDT.
-                         */
-                        /** @todo Fix this by loading ds and cs before turning off WP. */
-                        if (!(pLDTE->Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-                            pLDTE->Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-
-                        /*
-                         * All DPL 0 code and data segments are squeezed into DPL 1.
-                         *
-                         * We're skipping conforming segments here because those
-                         * cannot give us any trouble.
-                         */
-                        if (    pLDTE->Gen.u2Dpl == 0
-                            &&      (pLDTE->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-                                !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
-                            pLDTE->Gen.u2Dpl = 1;
-                    }
-                    else
-                    {
-                        /*
-                         * System type selectors are marked not present.
-                         * Recompiler or special handling is required for these.
-                         */
-                        /** @todo what about interrupt gates and rawr0? */
-                        pLDTE->Gen.u1Present = 0;
-                    }
-                }
+                    selmGuestToShadowDesc(pLDTE);
 
                 /* Next LDT entry. */
                 pLDTE++;
@@ -1269,6 +1244,7 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
         }
         else
         {
+            RT_BZERO(pShadowLDT, cbChunk);
             AssertMsg(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc=%Rrc\n", rc));
             rc = PGMMapSetPage(pVM, GCPtrShadowLDT & PAGE_BASE_GC_MASK, PAGE_SIZE, 0);
             AssertRC(rc);
@@ -1288,13 +1264,117 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
 
 
 /**
+ * Checks and updates segment selector registers.
+ *
+ * @returns VBox strict status code.
+ * @retval  VINF_EM_RESCHEDULE_REM if a stale register was found.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The current virtual CPU.
+ */
+static VBOXSTRICTRC selmR3UpdateSegmentRegisters(PVM pVM, PVMCPU pVCpu)
+{
+    Assert(CPUMIsGuestInProtectedMode(pVCpu));
+
+    /*
+     * No stale selectors in V8086 mode.
+     */
+    PCPUMCTX        pCtx     = CPUMQueryGuestCtxPtr(pVCpu);
+    if (pCtx->eflags.Bits.u1VM)
+        return VINF_SUCCESS;
+
+    /*
+     * Check for stale selectors and load hidden register bits where they
+     * are missing.
+     */
+    uint32_t        uCpl     = CPUMGetGuestCPL(pVCpu);
+    VBOXSTRICTRC    rcStrict = VINF_SUCCESS;
+    PCPUMSELREG     paSReg   = CPUMCTX_FIRST_SREG(pCtx);
+    for (uint32_t iSReg = 0; iSReg < X86_SREG_COUNT; iSReg++)
+    {
+        RTSEL const Sel = paSReg[iSReg].Sel & (X86_SEL_MASK | X86_SEL_LDT);
+        if (Sel & (X86_SEL_MASK | X86_SEL_LDT))
+        {
+            /* Get the shadow descriptor entry corresponding to this. */
+            static X86DESC const s_NotPresentDesc = { { 0 } };
+            PCX86DESC pDesc;
+            if (!(Sel & X86_SEL_LDT))
+            {
+                if ((Sel | (sizeof(*pDesc) - 1)) <= pCtx->gdtr.cbGdt)
+                    pDesc = &pVM->selm.s.paGdtR3[Sel >> X86_SEL_SHIFT];
+                else
+                    pDesc = &s_NotPresentDesc;
+            }
+            else
+            {
+                if ((Sel | (sizeof(*pDesc) - 1)) <= pVM->selm.s.cbLdtLimit)
+                    pDesc = &((PCX86DESC)((uintptr_t)pVM->selm.s.pvLdtR3 + pVM->selm.s.offLdtHyper))[Sel >> X86_SEL_SHIFT];
+                else
+                    pDesc = &s_NotPresentDesc;
+            }
+
+            /* Check the segment register. */
+            if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &paSReg[iSReg]))
+            {
+                if (!(paSReg[iSReg].fFlags & CPUMSELREG_FLAGS_STALE))
+                {
+                    /* Did it go stale? */
+                    if (selmIsSRegStale32(&paSReg[iSReg], pDesc, iSReg))
+                    {
+                        Log2(("SELM: Detected stale %s=%#x (was valid)\n", g_aszSRegNms[iSReg], Sel));
+                        STAM_REL_COUNTER_INC(&pVM->selm.s.aStatDetectedStaleSReg[iSReg]);
+                        paSReg[iSReg].fFlags |= CPUMSELREG_FLAGS_STALE;
+                        rcStrict = VINF_EM_RESCHEDULE_REM;
+                    }
+                }
+                else
+                {
+                    /* Did it stop being stale? I.e. did the guest change it things
+                       back to the way they were? */
+                    if (!selmIsSRegStale32(&paSReg[iSReg], pDesc, iSReg))
+                    {
+                        STAM_REL_COUNTER_INC(&pVM->selm.s.StatStaleToUnstaleSReg);
+                        paSReg[iSReg].fFlags &= CPUMSELREG_FLAGS_STALE;
+                    }
+                    else
+                    {
+                        Log2(("SELM: Already stale %s=%#x\n", g_aszSRegNms[iSReg], Sel));
+                        STAM_REL_COUNTER_INC(&pVM->selm.s.aStatAlreadyStaleSReg[iSReg]);
+                        rcStrict = VINF_EM_RESCHEDULE_REM;
+                    }
+                }
+            }
+            /* Load the hidden registers if it's a valid descriptor for the
+               current segment register. */
+            else if (selmIsShwDescGoodForSReg(&paSReg[iSReg], pDesc, iSReg, uCpl))
+            {
+                selmLoadHiddenSRegFromShadowDesc(&paSReg[iSReg], pDesc);
+                STAM_COUNTER_INC(&pVM->selm.s.aStatUpdatedSReg[iSReg]);
+            }
+            /* It's stale. */
+            else
+            {
+                Log2(("SELM: Detected stale %s=%#x (wasn't valid)\n", g_aszSRegNms[iSReg], Sel));
+                STAM_REL_COUNTER_INC(&pVM->selm.s.aStatDetectedStaleSReg[iSReg]);
+                paSReg[iSReg].fFlags = CPUMSELREG_FLAGS_STALE;
+                rcStrict = VINF_EM_RESCHEDULE_REM;
+            }
+        }
+        /* else: 0 selector, ignore. */
+    }
+
+    return rcStrict;
+}
+
+
+/**
  * Updates the Guest GDT & LDT virtualization based on current CPU state.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
+VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 {
     if (pVM->selm.s.fDisableMonitoring)
     {
@@ -1340,17 +1420,13 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
         AssertRCSuccess(rc);
     }
 
-#if 0
     /*
-     * Check for stale selectors and load hidden register bits where they
-     * are missing.
+     * Check selector registers.
      */
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-#endif
-    rc = VINF_SUCCESS;
+    VBOXSTRICTRC rcStrict = selmR3UpdateSegmentRegisters(pVM, pVCpu);
 
     STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
-    return rc;
+    return rcStrict;
 }
 
 
@@ -1730,10 +1806,8 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
         Log(("SELMR3DebugCheck: Failed to read LDT descriptor. rc=%d\n", rc));
         return rc;
     }
-    RTGCPTR     GCPtrLDTEGuest = X86DESC_BASE(LDTDesc);
-    unsigned    cbLdt = X86DESC_LIMIT(LDTDesc);
-    if (LDTDesc.Gen.u1Granularity)
-        cbLdt = (cbLdt << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+    RTGCPTR     GCPtrLDTEGuest = X86DESC_BASE(&LDTDesc);
+    uint32_t    cbLdt = X86DESC_LIMIT_G(&LDTDesc);
 
     /*
      * Validate it.
@@ -1977,8 +2051,8 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
     /* LDT descriptor is ok. */
     if (ppvLdt)
     {
-        *ppvLdt = (RTGCPTR)X86DESC_BASE(Desc);
-        *pcbLimit = X86DESC_LIMIT(Desc);
+        *ppvLdt = (RTGCPTR)X86DESC_BASE(&Desc);
+        *pcbLimit = X86DESC_LIMIT_G(&Desc);
     }
     return VINF_SUCCESS;
 }
@@ -2032,14 +2106,12 @@ static int selmR3GetSelectorInfo64(PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInf
             ||  Desc.Gen.u4Type != AMD64_SEL_TYPE_SYS_LDT)
             return VERR_INVALID_SELECTOR;
 
-        uint32_t cbLimit = X86DESC_LIMIT(Desc);
-        if (Desc.Gen.u1Granularity)
-            cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+        uint32_t cbLimit = X86DESC_LIMIT_G(&Desc);
         if ((uint32_t)(Sel & X86_SEL_MASK) + sizeof(X86DESC) - 1 > cbLimit)
             return VERR_INVALID_SELECTOR;
 
         /* calc the descriptor location. */
-        GCPtrDesc = X86DESC64_BASE(Desc);
+        GCPtrDesc = X86DESC64_BASE(&Desc);
         GCPtrDesc += (Sel & X86_SEL_MASK);
     }
 
@@ -2079,10 +2151,8 @@ static int selmR3GetSelectorInfo64(PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInf
         }
         else
         {
-            pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
-            if (Desc.Gen.u1Granularity)
-                pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-            pSelInfo->GCPtrBase = X86DESC_BASE(Desc);
+            pSelInfo->cbLimit   = X86DESC_LIMIT_G(&Desc);
+            pSelInfo->GCPtrBase = X86DESC_BASE(&Desc);
         }
         pSelInfo->SelGate = 0;
     }
@@ -2092,17 +2162,15 @@ static int selmR3GetSelectorInfo64(PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInf
     {
         /* Note. LDT descriptors are weird in long mode, we ignore the footnote
            in the AMD manual here as a simplification. */
-        pSelInfo->GCPtrBase = X86DESC64_BASE(Desc);
-        pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
-        if (Desc.Gen.u1Granularity)
-            pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-        pSelInfo->SelGate = 0;
+        pSelInfo->GCPtrBase = X86DESC64_BASE(&Desc);
+        pSelInfo->cbLimit   = X86DESC_LIMIT_G(&Desc);
+        pSelInfo->SelGate   = 0;
     }
     else if (   Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE
              || Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_TRAP_GATE
              || Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_INT_GATE)
     {
-        pSelInfo->cbLimit   = X86DESC64_BASE(Desc);
+        pSelInfo->cbLimit   = X86DESC64_BASE(&Desc);
         pSelInfo->GCPtrBase = Desc.Gate.u16OffsetLow
                             | ((uint32_t)Desc.Gate.u16OffsetHigh << 16)
                             | ((uint64_t)Desc.Gate.u32OffsetTop << 32);
@@ -2139,11 +2207,9 @@ DECLINLINE(void) selmR3SelInfoFromDesc32(PDBGFSELINFO pSelInfo, PCX86DESC pDesc)
     if (    pDesc->Gen.u1DescType
         ||  !(pDesc->Gen.u4Type & 4))
     {
-        pSelInfo->cbLimit = X86DESC_LIMIT(*pDesc);
-        if (pDesc->Gen.u1Granularity)
-            pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-        pSelInfo->GCPtrBase = X86DESC_BASE(*pDesc);
-        pSelInfo->SelGate = 0;
+        pSelInfo->cbLimit   = X86DESC_LIMIT_G(pDesc);
+        pSelInfo->GCPtrBase = X86DESC_BASE(pDesc);
+        pSelInfo->SelGate   = 0;
     }
     else if (pDesc->Gen.u4Type != X86_SEL_TYPE_SYS_UNDEFINED4)
     {
@@ -2244,14 +2310,12 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
                 ||  Desc.Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
                 return VERR_INVALID_SELECTOR;
 
-            unsigned cbLimit = X86DESC_LIMIT(Desc);
-            if (Desc.Gen.u1Granularity)
-                cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-            if ((unsigned)(Sel & X86_SEL_MASK) + sizeof(X86DESC) - 1 > cbLimit)
+            uint32_t cbLimit = X86DESC_LIMIT_G(&Desc);
+            if ((uint32_t)(Sel & X86_SEL_MASK) + sizeof(X86DESC) - 1 > cbLimit)
                 return VERR_INVALID_SELECTOR;
 
             /* calc the descriptor location. */
-            GCPtrDesc = X86DESC_BASE(Desc);
+            GCPtrDesc = X86DESC_BASE(&Desc);
             GCPtrDesc += (Sel & X86_SEL_MASK);
         }
 
@@ -2465,10 +2529,8 @@ static void selmR3FormatDescriptor(X86DESC Desc, RTSEL Sel, char *pszOutput, siz
     /*
      * Limit and Base and format the output.
      */
-    uint32_t    u32Limit = X86DESC_LIMIT(Desc);
-    if (Desc.Gen.u1Granularity)
-        u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
-    uint32_t    u32Base =  X86DESC_BASE(Desc);
+    uint32_t    u32Limit = X86DESC_LIMIT_G(&Desc);
+    uint32_t    u32Base  = X86DESC_BASE(&Desc);
 
     RTStrPrintf(pszOutput, cchOutput, "%04x - %08x %08x - base=%08x limit=%08x dpl=%d %s",
                 Sel, Desc.au32[0], Desc.au32[1], u32Base, u32Limit, Desc.Gen.u2Dpl, szMsg);
