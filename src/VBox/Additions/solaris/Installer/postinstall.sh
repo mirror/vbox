@@ -145,6 +145,7 @@ fi
 echo "Creating links..."
 if test "$currentzone" = "global"; then
     /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
+    /usr/sbin/installf -c none $PKGINST /dev/vboxms=../devices/pseudo/vboxms@0:vboxmouse s
 fi
 
 # Install Xorg components to the required places
@@ -398,6 +399,8 @@ if test ! -z "$xorgbin"; then
         ln -sf /usr/lib/amd64/VBoxOGL.so /usr/X11/lib/mesa/amd64/libGL.so.1
     fi
 fi
+
+# Move the pointer integration module to kernel/drv & remove the unused module name from pkg and file from disk
 
 # Finalize
 /usr/sbin/removef -f $PKGINST
