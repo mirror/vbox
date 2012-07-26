@@ -1125,8 +1125,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
                                 0, /* Sel */
                                 0, /* GCPtr */
                                 DBGF_DISAS_FLAGS_CURRENT_GUEST
-                                | DBGF_DISAS_FLAGS_DEFAULT_MODE
-                                | DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID,
+                                | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                 szBuf,
                                 sizeof(szBuf),
                                 NULL);
@@ -2329,13 +2328,18 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         {
             if (pCtx->ldtr.fFlags & CPUMSELREG_FLAGS_VALID)
             {
-                pVM->rem.s.Env.ldt.selector = pCtx->ldtr.Sel;
-                pVM->rem.s.Env.ldt.base     = pCtx->ldtr.u64Base;
-                pVM->rem.s.Env.ldt.limit    = pCtx->ldtr.u32Limit;
-                pVM->rem.s.Env.ldt.flags    = (pCtx->ldtr.Attr.u << 8) & 0xFFFFFF;
+                pVM->rem.s.Env.ldt.selector    = pCtx->ldtr.Sel;
+                pVM->rem.s.Env.ldt.newselector = 0;
+                pVM->rem.s.Env.ldt.fVBoxFlags  = pCtx->ldtr.fFlags;
+                pVM->rem.s.Env.ldt.base        = pCtx->ldtr.u64Base;
+                pVM->rem.s.Env.ldt.limit       = pCtx->ldtr.u32Limit;
+                pVM->rem.s.Env.ldt.flags       = (pCtx->ldtr.Attr.u << 8) & 0xFFFFFF;
             }
             else
+            {
+                AssertFailed(); /* Shouldn't happen, see cpumR3LoadExec. */
                 sync_ldtr(&pVM->rem.s.Env, pCtx->ldtr.Sel);
+            }
         }
 
         if (fFlags & CPUM_CHANGED_CPUID)
@@ -3996,8 +4000,7 @@ bool remR3DisasInstr(CPUX86State *env, int f32BitCode, char *pszPrefix)
                                     0, /* Sel */
                                     0, /* GCPtr */
                                     DBGF_DISAS_FLAGS_CURRENT_GUEST
-                                    | DBGF_DISAS_FLAGS_DEFAULT_MODE
-                                    | DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID,
+                                    | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                     szBuf,
                                     sizeof(szBuf),
                                     NULL);

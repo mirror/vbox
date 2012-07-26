@@ -872,9 +872,6 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 #define DBGF_DISAS_FLAGS_NO_BYTES           RT_BIT(4)
 /** No address in the output. */
 #define DBGF_DISAS_FLAGS_NO_ADDRESS         RT_BIT(5)
-/** Set if the hidden selector registers are known to be valid. (REM hack to
- *  avoid assertions.) */
-#define DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID RT_BIT(6)
 /** Disassemble in the default mode of the specific context. */
 #define DBGF_DISAS_FLAGS_DEFAULT_MODE       UINT32_C(0x00000000)
 /** Disassemble in 16-bit mode. */

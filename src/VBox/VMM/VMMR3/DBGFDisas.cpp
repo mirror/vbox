@@ -339,44 +339,60 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
 {
     VMCPU_ASSERT_EMT(pVCpu);
     RTGCPTR GCPtr = *pGCPtr;
+    int     rc;
 
     /*
      * Get the Sel and GCPtr if fFlags requests that.
      */
     PCCPUMCTXCORE  pCtxCore   = NULL;
-    PCPUMSELREGHID pHiddenSel = NULL;
-    int rc;
-    if (fFlags & (DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_CURRENT_HYPER))
+    PCCPUMSELREG   pSRegCS    = NULL;
+    if (fFlags & DBGF_DISAS_FLAGS_CURRENT_GUEST)
     {
-        if (fFlags & DBGF_DISAS_FLAGS_CURRENT_GUEST)
-            pCtxCore = CPUMGetGuestCtxCore(pVCpu);
-        else
-            pCtxCore = CPUMGetHyperCtxCore(pVCpu);
+        pCtxCore   = CPUMGetGuestCtxCore(pVCpu);
         Sel        = pCtxCore->cs.Sel;
-        pHiddenSel = (PCPUMSELREGHID)&pCtxCore->cs;
+        pSRegCS    = &pCtxCore->cs;
         GCPtr      = pCtxCore->rip;
+    }
+    else if (fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
+    {
+        pCtxCore   = CPUMGetHyperCtxCore(pVCpu);
+        Sel        = pCtxCore->cs.Sel;
+        GCPtr      = pCtxCore->rip;
+    }
+    /*
+     * Check if the selector matches the guest CS, use the hidden
+     * registers from that if they are valid. Saves time and effort.
+     */
+    else
+    {
+        pCtxCore = CPUMGetGuestCtxCore(pVCpu);
+        if (pCtxCore->cs.Sel == Sel && Sel != DBGF_SEL_FLAT)
+            pSRegCS = &pCtxCore->cs;
+        else
+            pCtxCore = NULL;
     }
 
     /*
      * Read the selector info - assume no stale selectors and nasty stuff like that.
-     * Since the selector flags in the CPUMCTX structures aren't up to date unless
-     * we recently visited REM, we'll not search for the selector there.
+     *
+     * Note! We CANNOT load invalid hidden selector registers since that would
+     *       mean that log/debug statements or the debug will influence the
+     *       guest state and make things behave differently.
      */
     DBGFSELINFO     SelInfo;
     const PGMMODE   enmMode          = PGMGetGuestMode(pVCpu);
     bool            fRealModeAddress = false;
 
-    if (    pHiddenSel
-        &&  (   (fFlags & DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID)
-             || CPUMAreHiddenSelRegsValid(pVCpu)))
+    if (   pSRegCS
+        && CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSRegCS))
     {
         SelInfo.Sel                     = Sel;
         SelInfo.SelGate                 = 0;
-        SelInfo.GCPtrBase               = pHiddenSel->u64Base;
-        SelInfo.cbLimit                 = pHiddenSel->u32Limit;
+        SelInfo.GCPtrBase               = pSRegCS->u64Base;
+        SelInfo.cbLimit                 = pSRegCS->u32Limit;
         SelInfo.fFlags                  = PGMMODE_IS_LONG_MODE(enmMode)
                                         ? DBGFSELINFO_FLAGS_LONG_MODE
-                                        : enmMode != PGMMODE_REAL && (!pCtxCore || !pCtxCore->eflags.Bits.u1VM)
+                                        : enmMode != PGMMODE_REAL && !pCtxCore->eflags.Bits.u1VM
                                         ? DBGFSELINFO_FLAGS_PROT_MODE
                                         : DBGFSELINFO_FLAGS_REAL_MODE;
 
@@ -384,12 +400,12 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         SelInfo.u.Raw.au32[1]           = 0;
         SelInfo.u.Raw.Gen.u16LimitLow   = 0xffff;
         SelInfo.u.Raw.Gen.u4LimitHigh   = 0xf;
-        SelInfo.u.Raw.Gen.u1Present     = pHiddenSel->Attr.n.u1Present;
-        SelInfo.u.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
-        SelInfo.u.Raw.Gen.u1DefBig      = pHiddenSel->Attr.n.u1DefBig;
-        SelInfo.u.Raw.Gen.u1Long        = pHiddenSel->Attr.n.u1Long;
-        SelInfo.u.Raw.Gen.u1DescType    = pHiddenSel->Attr.n.u1DescType;
-        SelInfo.u.Raw.Gen.u4Type        = pHiddenSel->Attr.n.u4Type;
+        SelInfo.u.Raw.Gen.u1Present     = pSRegCS->Attr.n.u1Present;
+        SelInfo.u.Raw.Gen.u1Granularity = pSRegCS->Attr.n.u1Granularity;;
+        SelInfo.u.Raw.Gen.u1DefBig      = pSRegCS->Attr.n.u1DefBig;
+        SelInfo.u.Raw.Gen.u1Long        = pSRegCS->Attr.n.u1Long;
+        SelInfo.u.Raw.Gen.u1DescType    = pSRegCS->Attr.n.u1DescType;
+        SelInfo.u.Raw.Gen.u4Type        = pSRegCS->Attr.n.u4Type;
         fRealModeAddress                = !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_REAL_MODE);
     }
     else if (Sel == DBGF_SEL_FLAT)
@@ -408,21 +424,20 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         SelInfo.u.Raw.Gen.u16LimitLow   = 0xffff;
         SelInfo.u.Raw.Gen.u4LimitHigh   = 0xf;
 
-        if (   (fFlags & DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID)
-            || CPUMAreHiddenSelRegsValid(pVCpu))
-        {   /* Assume the current CS defines the execution mode. */
-            pCtxCore   = CPUMGetGuestCtxCore(pVCpu);
-            pHiddenSel = (CPUMSELREGHID *)&pCtxCore->cs;
-
-            SelInfo.u.Raw.Gen.u1Present     = pHiddenSel->Attr.n.u1Present;
-            SelInfo.u.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
-            SelInfo.u.Raw.Gen.u1DefBig      = pHiddenSel->Attr.n.u1DefBig;
-            SelInfo.u.Raw.Gen.u1Long        = pHiddenSel->Attr.n.u1Long;
-            SelInfo.u.Raw.Gen.u1DescType    = pHiddenSel->Attr.n.u1DescType;
-            SelInfo.u.Raw.Gen.u4Type        = pHiddenSel->Attr.n.u4Type;
+        pSRegCS = &CPUMGetGuestCtxCore(pVCpu)->cs;
+        if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSRegCS))
+        {
+            /* Assume the current CS defines the execution mode. */
+            SelInfo.u.Raw.Gen.u1Present     = pSRegCS->Attr.n.u1Present;
+            SelInfo.u.Raw.Gen.u1Granularity = pSRegCS->Attr.n.u1Granularity;;
+            SelInfo.u.Raw.Gen.u1DefBig      = pSRegCS->Attr.n.u1DefBig;
+            SelInfo.u.Raw.Gen.u1Long        = pSRegCS->Attr.n.u1Long;
+            SelInfo.u.Raw.Gen.u1DescType    = pSRegCS->Attr.n.u1DescType;
+            SelInfo.u.Raw.Gen.u4Type        = pSRegCS->Attr.n.u4Type;
         }
         else
         {
+            pSRegCS  = NULL;
             SelInfo.u.Raw.Gen.u1Present     = 1;
             SelInfo.u.Raw.Gen.u1Granularity = 1;
             SelInfo.u.Raw.Gen.u1DefBig      = 1;
