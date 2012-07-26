@@ -209,7 +209,6 @@ static int readFile(const char *pcszFile, char **ppszFile, size_t *pcchFile)
 static bool compareSubFile(const char *pcszFilename, const char *pcszSubContent, size_t cchSubContent)
 {
     struct stat     FileStat;             
-    FILE           *pFile;
     if (stat(pcszFilename, &FileStat))
         return false;
     if ((size_t)FileStat.st_size < cchSubContent)
