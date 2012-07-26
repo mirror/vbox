@@ -226,7 +226,7 @@ endif
 
 # auth stuff
 VBOX_LNX_STRIP_BIN += \
-	VBoxAuth.so \
+	$(if $(VBOX_WITH_PAM),VBoxAuth.so,) \
 	VBoxAuthSimple.so
 
 # VRDP
