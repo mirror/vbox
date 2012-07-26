@@ -126,6 +126,8 @@ public:
 
     void Destroy(void);
 
+    int FillData(const void *pData, size_t cbData);
+
     int Init(eVBoxGuestCtrlCallbackType enmType);
 
     eVBoxGuestCtrlCallbackType GetCallbackType(void) { return mType; }

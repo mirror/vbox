@@ -56,12 +56,14 @@ public:
     STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
     STDMETHOD(COMGETTER(ExecutablePath))(BSTR *aExecutablePath);
     STDMETHOD(COMGETTER(ExitCode))(LONG *aExitCode);
+    STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMGETTER(Pid))(ULONG *aPID);
     STDMETHOD(COMGETTER(Status))(ProcessStatus_T *aStatus);
 
     STDMETHOD(Read)(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(Terminate)(void);
-    STDMETHOD(WaitFor)(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
+    STDMETHOD(WaitFor)(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
+    STDMETHOD(WaitForArray)(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
     STDMETHOD(Write)(ULONG aHandle, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
     /** @}  */
 
@@ -78,7 +80,6 @@ public:
     int startProcessAsync(void);
     int terminateProcess(void);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWaitResult &guestResult);
-    HRESULT waitResultToErrorEx(const GuestProcessWaitResult &waitResult, bool fLog);
     int writeData(ULONG uHandle, BYTE const *pbData, size_t cbData, ULONG uTimeoutMS, ULONG *puWritten);
     /** @}  */
 
@@ -87,6 +88,8 @@ protected:
      * @{ */
     inline int callbackAdd(GuestCtrlCallback *pCallback, ULONG *puContextID);
     inline int callbackRemove(ULONG uContextID);
+    inline bool isAlive(void);
+    HRESULT hgcmResultToError(int rc);
     int onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDATACLIENTDISCONNECTED pData);
     int onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECINSTATUS pData);
     int onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECSTATUS pData);
@@ -95,6 +98,7 @@ protected:
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
     int signalWaiters(ProcessWaitResult_T enmWaitResult, int rc = VINF_SUCCESS);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
+    HRESULT waitResultToErrorEx(const GuestProcessWaitResult &waitResult, bool fLog);
     /** @}  */
 
 private:
@@ -108,6 +112,8 @@ private:
         Console                 *mConsole;
         /** All related callbacks to this process. */
         GuestCtrlCallbacks       mCallbacks;
+        /** The process' name. */
+        Utf8Str                  mName;
         /** The process start information. */
         GuestProcessInfo         mProcess;
         /** Exit code if process has been terminated. */
@@ -118,11 +124,10 @@ private:
         ULONG                    mProcessID;
         /** The current process status. */
         ProcessStatus_T          mStatus;
-        /** Flag indicating whether the process has been started
-         *  so that it can't be started a second time. */
-        bool                     mStarted;
         /** The next upcoming context ID. */
         ULONG                    mNextContextID;
+        /** The mutex for protecting the waiter(s). */
+        RTSEMMUTEX               mWaitMutex;
         /** How many waiters? At the moment there can only
          *  be one. */
         uint32_t                 mWaitCount;

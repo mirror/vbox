@@ -8803,7 +8803,7 @@
   
   <enum
     name="ProcessWaitForFlag"
-    uuid="858a99aa-4b3c-4863-9726-87386671f408"
+    uuid="23b550c7-78e1-437e-98f0-65fd9757bcd2"
     >
     <desc>
       TODO
@@ -8811,54 +8811,57 @@
 
     <const name="None"                    value="0">
       <desc>TODO</desc>
-    </const>    
-    <const name="Exit"                    value="1">
+    </const>
+    <const name="Start"                   value="1">
+      <desc>TODO</desc>
+    </const>
+    <const name="Terminate"               value="2">
+      <desc>TODO</desc>
+    </const>        
+    <const name="StdIn"                   value="4">
       <desc>TODO</desc>
     </const>    
-    <const name="StdIn"                   value="2">
+    <const name="StdOut"                  value="8">
       <desc>TODO</desc>
     </const>    
-    <const name="StdOut"                  value="4">
+    <const name="StdErr"                  value="16">
       <desc>TODO</desc>
-    </const>    
-    <const name="StdErr"                  value="8">
-      <desc>TODO</desc>
-    </const>    
-    <const name="Start"                   value="16">
-      <desc>TODO</desc>
-    </const>    
-    <const name="Status"                  value="32">
-      <desc>TODO</desc>
-    </const>    
+    </const>            
   </enum>
   
   <enum
     name="ProcessWaitResult"
-    uuid="b03af138-c812-45eb-939d-5d564bd0b89a"
+    uuid="c593a234-21ee-4a67-85ef-ba0cc9b9b86a"
     >
     <desc>
       TODO
     </desc>
 
-    <const name="None"                   value="0">
+    <const name="None"                    value="0">
       <desc>TODO</desc>
     </const>
-    <const name="Status"                 value="1">
+    <const name="Start"                   value="1">
+      <desc>TODO</desc>
+    </const>
+    <const name="Terminate"               value="2">
+      <desc>TODO</desc>
+    </const>
+    <const name="Status"                  value="3">
       <desc>TODO</desc>
     </const>    
-    <const name="Error"                  value="10">
+    <const name="Error"                   value="4">
       <desc>TODO</desc>
     </const>    
-    <const name="Timeout"                value="50">
+    <const name="Timeout"                 value="5">
       <desc>TODO</desc>
     </const>    
-    <const name="StdIn"                  value="100">
+    <const name="StdIn"                   value="6">
       <desc>TODO</desc>
     </const>    
-    <const name="StdOut"                 value="150">
+    <const name="StdOut"                  value="7">
       <desc>TODO</desc>
     </const>    
-    <const name="StdErr"                 value="200">
+    <const name="StdErr"                  value="8">
       <desc>TODO</desc>
     </const>    
   </enum>
@@ -8943,7 +8946,7 @@
   
   <enum
     name="ProcessCreateFlag"
-    uuid="1497c881-70b4-42dd-8b42-2ad76f004e3f"
+    uuid="91c8aba8-2e62-4fe5-b744-fcbd607971e2"
     >
     <desc>
       Guest process execution flags.
@@ -8964,6 +8967,12 @@
     </const>
     <const name="NoProfile"               value="8">
       <desc>Do not use the user's profile data when exeuting a process. Only available for Windows guests.</desc>
+    </const>
+    <const name="WaitForStdOut"           value="16">
+      <desc>The guest process waits until all data from stdout is read out.</desc>
+    </const>
+    <const name="WaitForStdErr"           value="32">
+      <desc>The guest process waits until all data from stderr is read out.</desc>
     </const>
   </enum>
   
@@ -9180,7 +9189,7 @@
   
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="530aef35-6a48-455c-960c-aac5792abc38"
+    uuid="47a344ec-8495-49ad-bfab-8cd0ff8eb3cf"
     wsmap="managed"
     >
     
@@ -9220,7 +9229,7 @@
       </desc>
     </attribute>
     
-    <attribute name="timeout" type="unsigned long" readonly="yes">
+    <attribute name="timeout" type="unsigned long" readonly="no">
       <desc>
         TODO
         <note>
@@ -9751,19 +9760,6 @@
       </param>
     </method>
     
-    <method name="SetTimeout">
-      <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
-      </desc>
-      <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
-      </param>
-    </method>
-    
     <method name="SymlinkCreate">
       <desc>
         TODO
@@ -9848,7 +9844,7 @@
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="8a308a2f-bea6-4786-80a0-4d07cd4bacaa"
+    uuid="f55af4a1-e280-40ac-83e1-921c0abcaf18"
     wsmap="managed"
     >
     <desc>
@@ -9902,10 +9898,37 @@
         </note>
       </desc>
     </attribute>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
     
     <method name="WaitFor">
       <desc>
         TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="waitFor" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="reason" type="ProcessWaitResult" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="WaitForArray">
+      <desc>
+        Scriptable version of <link to="#waitFor" />.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           TODO
@@ -10387,7 +10410,7 @@
   
   <interface
     name="IGuest" extends="$unknown"
-    uuid="1413d910-e533-47af-a71b-919c106d2472"
+    uuid="9e0b07b1-490f-4413-8955-0a16515aac12"
     wsmap="managed"
     >
     <desc>
@@ -10804,7 +10827,23 @@
           TODO
         </desc>
       </param>
-    </method>    
+    </method>
+    
+    <method name="findSession">
+      <desc>
+        TODO
+      </desc>      
+      <param name="sessionName" type="wstring" dir="in">
+        <desc>
+          TODO
+        </desc>
+      </param>
+      <param name="sessions" type="IGuestSession" safearray="yes" dir="return">
+        <desc>
+          TODO
+        </desc>
+      </param>
+    </method>
     
     <method name="executeProcess">
       <desc>
