@@ -1513,7 +1513,7 @@ static VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RTSEL 
 
     /* Null selectors are not allowed (we're not called for dispatching
        interrupts with SS=0 in long mode). */
-    if (!(NewSS & (X86_SEL_MASK | X86_SEL_LDT)))
+    if (!(NewSS & X86_SEL_MASK_OFF_RPL))
     {
         Log(("iemMiscValidateNewSSandRsp: #x - null selector -> #GP(0)\n", NewSS));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -1862,7 +1862,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
     /* A null CS is bad. */
     RTSEL NewCS = Idte.Gate.u16Sel;
-    if (!(NewCS & (X86_SEL_MASK | X86_SEL_LDT)))
+    if (!(NewCS & X86_SEL_MASK_OFF_RPL))
     {
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x -> #GP\n", u8Vector, NewCS));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -1881,12 +1881,12 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     if (!DescCS.Legacy.Gen.u1DescType)
     {
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - system selector (%#x) -> #GP\n", u8Vector, NewCS, DescCS.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & (X86_SEL_MASK | X86_SEL_LDT));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
     if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE))
     {
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - data selector (%#x) -> #GP\n", u8Vector, NewCS, DescCS.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & (X86_SEL_MASK | X86_SEL_LDT));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
 
     /* Don't allow lowering the privilege level. */
@@ -1898,7 +1898,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     {
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
              u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
-        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & (X86_SEL_MASK | X86_SEL_LDT));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
     /** @todo is the RPL of the interrupt/trap gate descriptor checked? */
 
@@ -1912,7 +1912,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     {
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
              u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
-        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & (X86_SEL_MASK | X86_SEL_LDT));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
 
     /* Make sure the selector is present. */
@@ -5815,7 +5815,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
     if (uSel & X86_SEL_LDT)
     {
         if (   !pCtx->ldtr.Attr.n.u1Present
-            || (uSel | 0x7U) > pCtx->ldtr.u32Limit )
+            || (uSel | X86_SEL_RPL_LDT) > pCtx->ldtr.u32Limit )
         {
             Log(("iemMemFetchSelDesc: LDT selector %#x is out of bounds (%3x) or ldtr is NP (%#x)\n",
                  uSel, pCtx->ldtr.u32Limit, pCtx->ldtr.Sel));
@@ -5828,7 +5828,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
     }
     else
     {
-        if ((uSel | 0x7U) > pCtx->gdtr.cbGdt)
+        if ((uSel | X86_SEL_RPL_LDT) > pCtx->gdtr.cbGdt)
         {
             Log(("iemMemFetchSelDesc: GDT selector %#x is out of bounds (%3x)\n", uSel, pCtx->gdtr.cbGdt));
             /** @todo is this the right exception? */
@@ -5847,8 +5847,8 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
         if (   !IEM_IS_LONG_MODE(pIemCpu)
             || pDesc->Legacy.Gen.u1DescType)
             pDesc->Long.au64[1] = 0;
-        else if ((uint32_t)(uSel & X86_SEL_MASK) + 15 < (uSel & X86_SEL_LDT ? pCtx->ldtr.u32Limit : pCtx->gdtr.cbGdt))
-            rcStrict = iemMemFetchSysU64(pIemCpu, &pDesc->Legacy.u, UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK));
+        else if ((uint32_t)(uSel | X86_SEL_RPL_LDT) + 8 <= (uSel & X86_SEL_LDT ? pCtx->ldtr.u32Limit : pCtx->gdtr.cbGdt))
+            rcStrict = iemMemFetchSysU64(pIemCpu, &pDesc->Long.au64[1], UINT8_MAX, GCPtrBase + (uSel | X86_SEL_RPL_LDT) + 1);
         else
         {
             Log(("iemMemFetchSelDesc: system selector %#x is out of bounds\n", uSel));

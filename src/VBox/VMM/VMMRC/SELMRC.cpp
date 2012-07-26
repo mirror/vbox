@@ -94,11 +94,11 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
      * Check for conflicts.
      */
     RTSEL   Sel = iGDTEntry << X86_SEL_SHIFT;
-    Assert(   !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] & ~X86_SEL_MASK)
-           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] & ~X86_SEL_MASK)
-           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] & ~X86_SEL_MASK)
-           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] & ~X86_SEL_MASK)
-           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] & ~X86_SEL_MASK));
+    Assert(   !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         & ~X86_SEL_MASK_OFF_RPL)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         & ~X86_SEL_MASK_OFF_RPL)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       & ~X86_SEL_MASK_OFF_RPL)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        & ~X86_SEL_MASK_OFF_RPL)
+           && !(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] & ~X86_SEL_MASK_OFF_RPL));
     if (    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]         == Sel
         ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]         == Sel
         ||  pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64]       == Sel
@@ -136,7 +136,7 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
     PCPUMSELREG  paSReg   = CPUMCTX_FIRST_SREG(pCtx);
     for (unsigned iSReg = 0; iSReg <= X86_SREG_COUNT; iSReg++)
     {
-        if (Sel == (paSReg[iSReg].Sel & X86_SEL_MASK_RPL))
+        if (Sel == (paSReg[iSReg].Sel & X86_SEL_MASK_OFF_RPL))
         {
             if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &paSReg[iSReg]))
             {
@@ -199,7 +199,7 @@ static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
     PCPUMSELREG     paSReg   = CPUMCTX_FIRST_SREG(pCtx);
     for (unsigned iSReg = 0; iSReg <= X86_SREG_COUNT; iSReg++)
     {
-        if (iGDTEntry == (paSReg[iSReg].Sel & X86_SEL_MASK_RPL))
+        if (iGDTEntry == (paSReg[iSReg].Sel & X86_SEL_MASK_OFF_RPL))
         {
             if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &paSReg[iSReg]))
             {

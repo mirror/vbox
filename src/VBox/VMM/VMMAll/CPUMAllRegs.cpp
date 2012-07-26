@@ -115,7 +115,7 @@ static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
     else
     {
         /* Protected mode - get it from the selector descriptor tables. */
-        if (!(pSReg->Sel & X86_SEL_MASK))
+        if (!(pSReg->Sel & X86_SEL_MASK_OFF_RPL))
         {
             Assert(!CPUMIsGuestInLongMode(pVCpu));
             pSReg->Sel              = 0;
@@ -1302,6 +1302,14 @@ VMMDECL(RTSEL) CPUMGetGuestSS(PVMCPU pVCpu)
 
 VMMDECL(RTSEL) CPUMGetGuestLDTR(PVMCPU pVCpu)
 {
+    return pVCpu->cpum.s.Guest.ldtr.Sel;
+}
+
+
+VMMDECL(RTSEL) CPUMGetGuestLdtrEx(PVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *pcbLimit)
+{
+    *pGCPtrBase = pVCpu->cpum.s.Guest.ldtr.u64Base;
+    *pcbLimit   = pVCpu->cpum.s.Guest.ldtr.u32Limit;
     return pVCpu->cpum.s.Guest.ldtr.Sel;
 }
 
