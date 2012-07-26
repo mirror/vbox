@@ -20,6 +20,8 @@
 # include <windows.h>
 #endif
 
+#include <iprt/list.h>
+
 HRESULT VBoxExtCheckInit();
 HRESULT VBoxExtCheckTerm();
 #if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
@@ -43,5 +45,109 @@ void VBoxExtReleaseContextAsync(struct wined3d_context *context);
 /* API for creating & destroying windows */
 HRESULT VBoxExtWndDestroy(HWND hWnd, HDC hDC);
 HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd, HDC *phDC);
+
+
+/* hashmap */
+typedef DECLCALLBACK(uint32_t) FNVBOXEXT_HASHMAP_HASH(void *pvKey);
+typedef FNVBOXEXT_HASHMAP_HASH *PFNVBOXEXT_HASHMAP_HASH;
+
+typedef DECLCALLBACK(bool) FNVBOXEXT_HASHMAP_EQUAL(void *pvKey1, void *pvKey2);
+typedef FNVBOXEXT_HASHMAP_EQUAL *PFNVBOXEXT_HASHMAP_EQUAL;
+
+typedef DECLCALLBACK(bool) FNVBOXEXT_HASHMAP_VISITOR(struct VBOXEXT_HASHMAP *pMap, void *pvKey, struct VBOXEXT_HASHMAP_ENTRY *pValue, void *pvVisitor);
+typedef FNVBOXEXT_HASHMAP_VISITOR *PFNVBOXEXT_HASHMAP_VISITOR;
+
+typedef struct VBOXEXT_HASHMAP_ENTRY
+{
+    RTLISTNODE ListNode;
+    void *pvKey;
+    uint32_t u32Hash;
+} VBOXEXT_HASHMAP_ENTRY, *PVBOXEXT_HASHMAP_ENTRY;
+
+typedef struct VBOXEXT_HASHMAP_BUCKET
+{
+    RTLISTNODE EntryList;
+} VBOXEXT_HASHMAP_BUCKET, *PVBOXEXT_HASHMAP_BUCKET;
+
+#define VBOXEXT_HASHMAP_NUM_BUCKETS 29
+
+typedef struct VBOXEXT_HASHMAP
+{
+    PFNVBOXEXT_HASHMAP_HASH pfnHash;
+    PFNVBOXEXT_HASHMAP_EQUAL pfnEqual;
+    uint32_t cEntries;
+    VBOXEXT_HASHMAP_BUCKET aBuckets[VBOXEXT_HASHMAP_NUM_BUCKETS];
+} VBOXEXT_HASHMAP, *PVBOXEXT_HASHMAP;
+
+void VBoxExtHashInit(PVBOXEXT_HASHMAP pMap, PFNVBOXEXT_HASHMAP_HASH pfnHash, PFNVBOXEXT_HASHMAP_EQUAL pfnEqual);
+PVBOXEXT_HASHMAP_ENTRY VBoxExtHashPut(PVBOXEXT_HASHMAP pMap, void *pvKey, PVBOXEXT_HASHMAP_ENTRY pEntry);
+PVBOXEXT_HASHMAP_ENTRY VBoxExtHashGet(PVBOXEXT_HASHMAP pMap, void *pvKey);
+PVBOXEXT_HASHMAP_ENTRY VBoxExtHashRemove(PVBOXEXT_HASHMAP pMap, void *pvKey);
+void* VBoxExtHashRemoveEntry(PVBOXEXT_HASHMAP pMap, PVBOXEXT_HASHMAP_ENTRY pEntry);
+void VBoxExtHashVisit(PVBOXEXT_HASHMAP pMap, PFNVBOXEXT_HASHMAP_VISITOR pfnVisitor, void *pvVisitor);
+void VBoxExtHashCleanup(PVBOXEXT_HASHMAP pMap, PFNVBOXEXT_HASHMAP_VISITOR pfnVisitor, void *pvVisitor);
+
+DECLINLINE(uint32_t) VBoxExtHashSize(PVBOXEXT_HASHMAP pMap)
+{
+    return pMap->cEntries;
+}
+
+DECLINLINE(void*) VBoxExtHashEntryKey(PVBOXEXT_HASHMAP_ENTRY pEntry)
+{
+    return pEntry->pvKey;
+}
+
+typedef DECLCALLBACK(void) FNVBOXEXT_HASHCACHE_CLEANUP_ENTRY(void *pvKey, struct VBOXEXT_HASHCACHE_ENTRY *pEntry);
+typedef FNVBOXEXT_HASHCACHE_CLEANUP_ENTRY *PFNVBOXEXT_HASHCACHE_CLEANUP_ENTRY;
+
+typedef struct VBOXEXT_HASHCACHE_ENTRY
+{
+    VBOXEXT_HASHMAP_ENTRY MapEntry;
+    uint32_t u32Usage;
+} VBOXEXT_HASHCACHE_ENTRY, *PVBOXEXT_HASHCACHE_ENTRY;
+
+typedef struct VBOXEXT_HASHCACHE
+{
+    VBOXEXT_HASHMAP Map;
+    uint32_t cMaxElements;
+    PFNVBOXEXT_HASHCACHE_CLEANUP_ENTRY pfnCleanupEntry;
+} VBOXEXT_HASHCACHE, *PVBOXEXT_HASHCACHE;
+
+#define VBOXEXT_HASHCACHE_FROM_MAP(_pMap) RT_FROM_MEMBER((_pMap), VBOXEXT_HASHCACHE, Map)
+#define VBOXEXT_HASHCACHE_ENTRY_FROM_MAP(_pEntry) RT_FROM_MEMBER((_pEntry), VBOXEXT_HASHCACHE_ENTRY, MapEntry)
+
+DECLINLINE(void) VBoxExtCacheInit(PVBOXEXT_HASHCACHE pCache, uint32_t cMaxElements,
+        PFNVBOXEXT_HASHMAP_HASH pfnHash,
+        PFNVBOXEXT_HASHMAP_EQUAL pfnEqual,
+        PFNVBOXEXT_HASHCACHE_CLEANUP_ENTRY pfnCleanupEntry)
+{
+    VBoxExtHashInit(&pCache->Map, pfnHash, pfnEqual);
+    pCache->cMaxElements = cMaxElements;
+    pCache->pfnCleanupEntry = pfnCleanupEntry;
+}
+
+DECLINLINE(PVBOXEXT_HASHCACHE_ENTRY) VBoxExtCacheGet(PVBOXEXT_HASHCACHE pCache, void *pvKey)
+{
+    PVBOXEXT_HASHMAP_ENTRY pEntry = VBoxExtHashRemove(&pCache->Map, pvKey);
+    return VBOXEXT_HASHCACHE_ENTRY_FROM_MAP(pEntry);
+}
+
+DECLINLINE(void) VBoxExtCachePut(PVBOXEXT_HASHCACHE pCache, void *pvKey, PVBOXEXT_HASHCACHE_ENTRY pEntry)
+{
+    PVBOXEXT_HASHMAP_ENTRY pOldEntry = VBoxExtHashPut(&pCache->Map, pvKey, &pEntry->MapEntry);
+    PVBOXEXT_HASHCACHE_ENTRY pOld;
+    if (!pOldEntry)
+        return;
+    pOld = VBOXEXT_HASHCACHE_ENTRY_FROM_MAP(pOldEntry);
+    if (pOld != pEntry)
+        pCache->pfnCleanupEntry(pvKey, pOld);
+}
+
+void VBoxExtCacheCleanup(PVBOXEXT_HASHCACHE pCache);
+
+DECLINLINE(void) VBoxExtCacheTerm(PVBOXEXT_HASHCACHE pCache)
+{
+    VBoxExtCacheCleanup(pCache);
+}
 
 #endif /* #ifndef ___VBOXEXT_H__*/

@@ -222,7 +222,8 @@ ifdef VBOX_WITH_WDDM
  wined3dwddm_DEFS           = $(subst VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT,,$(wined3d_DEFS)) \
  	VBOX_WITH_WDDM \
 	VBOX_WINE_WITH_SINGLE_CONTEXT \
-	IN_VBOXLIBWINE
+	IN_VBOXLIBWINE \
+	VBOX_WINE_WITH_SHADER_CACHE
  wined3dwddm_INCS           = $(wined3d_INCS) \
  	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
  wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES)) \

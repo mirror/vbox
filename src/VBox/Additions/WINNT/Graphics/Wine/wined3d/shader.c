@@ -1571,6 +1571,10 @@ static ULONG STDMETHODCALLTYPE vertexshader_AddRef(IWineD3DVertexShader *iface)
     return refcount;
 }
 
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+static void shader_chache_put(PVBOXEXT_HASHCACHE pCache, IWineD3DBaseShaderImpl *pShader);
+#endif
+
 static ULONG STDMETHODCALLTYPE vertexshader_Release(IWineD3DVertexShader *iface)
 {
     IWineD3DVertexShaderImpl *shader = (IWineD3DVertexShaderImpl *)iface;
@@ -1580,9 +1584,13 @@ static ULONG STDMETHODCALLTYPE vertexshader_Release(IWineD3DVertexShader *iface)
 
     if (!refcount)
     {
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+        shader_chache_put(&((IWineD3DDeviceImpl*)shader->baseShader.device)->vshaderCache, (IWineD3DBaseShaderImpl*)shader);
+#else
         shader_cleanup((IWineD3DBaseShader *)iface);
         shader->baseShader.parent_ops->wined3d_object_destroyed(shader->baseShader.parent);
         HeapFree(GetProcessHeap(), 0, shader);
+#endif
     }
 
     return refcount;
@@ -1974,9 +1982,13 @@ static ULONG STDMETHODCALLTYPE pixelshader_Release(IWineD3DPixelShader *iface)
 
     if (!refcount)
     {
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+        shader_chache_put(&((IWineD3DDeviceImpl*)shader->baseShader.device)->pshaderCache, (IWineD3DBaseShaderImpl*)shader);
+#else
         shader_cleanup((IWineD3DBaseShader *)iface);
         shader->baseShader.parent_ops->wined3d_object_destroyed(shader->baseShader.parent);
         HeapFree(GetProcessHeap(), 0, shader);
+#endif
     }
 
     return refcount;
@@ -2310,3 +2322,137 @@ void pixelshader_update_samplers(struct shader_reg_maps *reg_maps, IWineD3DBaseT
         }
     }
 }
+
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+
+static void shader_reinit(struct IWineD3DBaseShaderClass *shader, IWineD3DDeviceImpl *device,
+        IUnknown *parent, const struct wined3d_parent_ops *parent_ops)
+{
+    shader->ref = 1;
+    shader->device = (IWineD3DDevice *)device;
+    shader->parent = parent;
+    shader->parent_ops = parent_ops;
+    list_add_head(&device->shaders, &shader->shader_list_entry);
+}
+
+static DECLCALLBACK(uint32_t) shader_cache_hash(void *pvKey)
+{
+    uint32_t u32Hash, i;
+    DWORD *function;
+    IWineD3DBaseShaderImpl *pShader = (IWineD3DBaseShaderImpl *)pvKey;
+    if (pShader->baseShader.u32CacheDataInited)
+        return pShader->baseShader.u32Hash;
+
+    u32Hash = pShader->baseShader.functionLength;
+    function = pShader->baseShader.function;
+    for (i = 0; i < pShader->baseShader.functionLength / 4; ++i)
+    {
+        u32Hash += *function++;
+    }
+
+    for (i = 0; i < pShader->baseShader.functionLength % 4; ++i)
+    {
+        u32Hash += *((uint8_t*)function)++;
+    }
+
+    pShader->baseShader.u32Hash = u32Hash;
+    pShader->baseShader.u32CacheDataInited = TRUE;
+    return pShader->baseShader.u32Hash;
+}
+
+static DECLCALLBACK(bool) shader_cache_equal(void *pvKey1, void *pvKey2)
+{
+    IWineD3DBaseShaderImpl *pShader1 = (IWineD3DBaseShaderImpl *)pvKey1;
+    IWineD3DBaseShaderImpl *pShader2 = (IWineD3DBaseShaderImpl *)pvKey2;
+
+    if (pShader1 == pShader2)
+        return TRUE;
+
+    if (pShader1->baseShader.functionLength != pShader2->baseShader.functionLength)
+        return FALSE;
+
+    if (shader_cache_hash(pvKey1) != shader_cache_hash(pvKey2))
+    {
+#ifdef DEBUG_misha
+        Assert(memcmp(pShader1->baseShader.function, pShader2->baseShader.function, pShader1->baseShader.functionLength));
+#endif
+        return FALSE;
+    }
+
+    return !memcmp(pShader1->baseShader.function, pShader2->baseShader.function, pShader1->baseShader.functionLength);
+}
+
+#define VBOX_SHADER_FROM_CACHE_ENTRY(_pEntry) RT_FROM_MEMBER(RT_FROM_MEMBER((_pEntry), IWineD3DBaseShaderClass, CacheEntry), IWineD3DBaseShaderImpl, baseShader)
+
+static DECLCALLBACK(void) shader_cache_cleanup_entry(void *pvKey, struct VBOXEXT_HASHCACHE_ENTRY *pEntry)
+{
+    IWineD3DBaseShaderImpl *pShader = VBOX_SHADER_FROM_CACHE_ENTRY(pEntry);
+    shader_cleanup((IWineD3DBaseShader *)pShader);
+    if (pShader->baseShader.parent)
+        pShader->baseShader.parent_ops->wined3d_object_destroyed(pShader->baseShader.parent);
+    HeapFree(GetProcessHeap(), 0, pShader);
+}
+
+static void shader_chache_init(PVBOXEXT_HASHCACHE pCache)
+{
+    VBoxExtCacheInit(pCache, 1024, shader_cache_hash, shader_cache_equal, shader_cache_cleanup_entry);
+}
+
+static void shader_chache_term(PVBOXEXT_HASHCACHE pCache)
+{
+    VBoxExtCacheTerm(pCache);
+}
+
+static void shader_chache_put(PVBOXEXT_HASHCACHE pCache, IWineD3DBaseShaderImpl *pShader)
+{
+    if (pShader->baseShader.parent)
+    {
+        pShader->baseShader.parent_ops->wined3d_object_destroyed(pShader->baseShader.parent);
+        pShader->baseShader.parent = NULL;
+    }
+
+    VBoxExtCachePut(pCache, pShader, &pShader->baseShader.CacheEntry);
+}
+
+static IWineD3DBaseShaderImpl* shader_chache_get(PVBOXEXT_HASHCACHE pCache, IWineD3DBaseShaderImpl *pShader)
+{
+    PVBOXEXT_HASHCACHE_ENTRY pEntry = VBoxExtCacheGet(pCache, pShader);
+    IWineD3DBaseShaderImpl *pCachedShader;
+
+    if (!pEntry)
+        return pShader;
+
+    Assert(0);
+
+    pCachedShader = VBOX_SHADER_FROM_CACHE_ENTRY(pEntry);
+    shader_reinit(&pCachedShader->baseShader, (IWineD3DDeviceImpl *)pShader->baseShader.device,
+            pShader->baseShader.parent, pShader->baseShader.parent_ops);
+    pShader->baseShader.parent = NULL;
+    /* we can not do a IWineD3DBaseShader_Release here since this would result in putting a shader to the cache */
+    shader_cleanup((IWineD3DBaseShader *)pShader);
+    HeapFree(GetProcessHeap(), 0, pShader);
+    return pCachedShader;
+}
+
+IWineD3DVertexShaderImpl * vertexshader_check_cached(IWineD3DDeviceImpl *device, IWineD3DVertexShaderImpl *object)
+{
+    return (IWineD3DVertexShaderImpl*)shader_chache_get(&device->vshaderCache, (IWineD3DBaseShaderImpl *)object);
+}
+
+IWineD3DPixelShaderImpl * pixelshader_check_cached(IWineD3DDeviceImpl *device, IWineD3DPixelShaderImpl *object)
+{
+    return (IWineD3DPixelShaderImpl*)shader_chache_get(&device->pshaderCache, (IWineD3DBaseShaderImpl *)object);
+}
+
+void shader_chaches_init(IWineD3DDeviceImpl *device)
+{
+    shader_chache_init(&device->vshaderCache);
+    shader_chache_init(&device->pshaderCache);
+}
+
+void shader_chaches_term(IWineD3DDeviceImpl *device)
+{
+    shader_chache_term(&device->vshaderCache);
+    shader_chache_term(&device->pshaderCache);
+}
+#endif
