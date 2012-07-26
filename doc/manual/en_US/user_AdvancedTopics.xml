@@ -1543,7 +1543,7 @@ VBoxManage setextradata "VM name"
     </sect2>
 
     <sect2 id="disabletimesync">
-      
+
       <title>Disabling the Guest Additions time synchronization</title>
 
       <para>Once installed and started, the VirtualBox Guest Additions will
@@ -1727,7 +1727,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
     <sect2>
       <title>GUI customization</title>
-  
+
       <para>There are several advanced customization settings for locking down
       the VirtualBox manager, that is, removing some features that the user
       should not see.</para>
@@ -1865,11 +1865,11 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         <para>To disable the fullscreen mode as well as the seamless mode, use the following command:
           <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=None,SeamlessMode=None"</screen>
         </para>
-      
+
       </sect2>
       <sect2>
         <title>Action when terminating the VM</title>
-        
+
         <para>You can disallow certain actions when terminating a VM. To disallow specific actions, type:</para>
 
         <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
@@ -2094,15 +2094,15 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     <title>VirtualBox Watchdog</title>
     <para>Starting with VirtualBox 4.2 the memory ballooning service formerly
     known as <computeroutput>VBoxBalloonCtrl</computeroutput> was renamed to
-    VBoxWatchdog, which now incorporates several host services that are meant 
+    VBoxWatchdog, which now incorporates several host services that are meant
     to be run in a server environment.</para>
-    
+
     <para>These services are: <itemizedlist>
         <listitem>
-            <para>Memory ballooning control, which automatically takes care of 
+            <para>Memory ballooning control, which automatically takes care of
             a VM's configured memory balloon (see <xref linkend="guestadd-balloon" />
-            for an introduction to memory ballooning). This especially is useful 
-            for server environments where VMs may dynamically require more or 
+            for an introduction to memory ballooning). This especially is useful
+            for server environments where VMs may dynamically require more or
             less memory during runtime.</para>
 
             <para>The service periodically checks a VM's current memory balloon
@@ -2113,81 +2113,81 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
         <listitem>
             <para>Host isolation detection, which provides a way to detect whether
             the host cannot reach the specific VirtualBox server instance anymore
-            and take appropriate actions, such as shutting down, saving the 
+            and take appropriate actions, such as shutting down, saving the
             current state or even powering down certain VMs.</para>
         </listitem>
     </itemizedlist></para>
-    
+
     <para>
     All configuration values can be either specified via command line or global
     extradata, whereas command line values always have a higher priority when set.
     Some of the configuration values also be be specified on a per-VM basis. So
-    the overall lookup order is: command line, per-VM basis extradata (if available), 
+    the overall lookup order is: command line, per-VM basis extradata (if available),
     global extradata.
     </para>
-    
+
     <sect2 id="vboxwatchdog-ballonctrl">
         <title>Memory ballooning control</title>
         <para>The memory ballooning control inflates and deflates the memory balloon
         of VMs based on the VMs free memory and the desired maximum balloon size.</para>
-        
+
         <para>To set up the memory ballooning control the maximum ballooning size a
-        VM can reach needs to be set. This can be specified via command line with 
-        <screen>--balloon-max &lt;Size in MB&gt;</screen>, on a per-VM basis extradata value with 
+        VM can reach needs to be set. This can be specified via command line with
+        <screen>--balloon-max &lt;Size in MB&gt;</screen>, on a per-VM basis extradata value with
         <screen>VBoxManage setextradata &lt;VM-Name&gt; VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax &lt;Size in MB&gt;</screen>
         or using a global extradata value with
         <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax &lt;Size in MB&gt;</screen>
         <note><para>If no maximum ballooning size is specified by at least one of
             the parameters above, no ballooning will be performed at all.</para></note>
         </para>
-        
-        <para>Setting the ballooning increment in MB can be either done via 
+
+        <para>Setting the ballooning increment in MB can be either done via
         command line with
-        <screen>--balloon-inc &lt;Size in MB&gt;</screen> or using a global 
+        <screen>--balloon-inc &lt;Size in MB&gt;</screen> or using a global
         extradata value with
         <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonIncrementMB &lt;Size in MB&gt;</screen>
         Default ballooning increment is 256 MB if not specified.</para>
-        
+
         <para>Same goes with the ballooning decrement: Via command line with
-        <screen>--balloon-dec &lt;Size in MB&gt;</screen> or using a global 
+        <screen>--balloon-dec &lt;Size in MB&gt;</screen> or using a global
         extradata value with
         <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonDecrementMB &lt;Size in MB&gt;</screen>
         Default ballooning decrement is 128 MB if not specified.</para>
-        
+
         <para>To define the lower limit in MB a balloon can be the command line with
-        <screen>--balloon-lower-limit &lt;Size in MB&gt;</screen> can be used or using a global 
+        <screen>--balloon-lower-limit &lt;Size in MB&gt;</screen> can be used or using a global
         extradata value with
         <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonLowerLimitMB &lt;Size in MB&gt;</screen>
         is available. Default lower limit is 128 if not specified.</para>
     </sect2>
-    
+
     <sect2 id="vboxwatchdog-hostisln">
         <title>Host isolation detection</title>
         <para>To detect whether a host is being isolated, that is, the host cannot
         reach the VirtualBox server instance anymore, the host needs to set an
         alternating value to a global extradata value within a time period. If
         this value is not set within that time period a timeout occurred and the
-        so-called host isolation response will be performed to the VMs handled. 
+        so-called host isolation response will be performed to the VMs handled.
         Which VMs are handled can be controlled by defining VM groups and assigning
         VMs to those groups. By default no groups are set, meaning that all VMs
-        on the server will be handled when no host response is received within 
+        on the server will be handled when no host response is received within
         30 seconds.</para>
-        
+
         <para>To set the groups handled by the host isolation detection via
         command line:
-        <screen>--apimon-groups=&lt;string[,stringN]&gt;</screen> or using a global 
+        <screen>--apimon-groups=&lt;string[,stringN]&gt;</screen> or using a global
         extradata value with
         <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/Groups &lt;string[,stringN]&gt;</screen>
         </para>
-        
+
         <para>To set the host isolation timeout via command line:
-        <screen>--apimon-isln-timeout=&lt;ms&gt;</screen> or using a global 
+        <screen>--apimon-isln-timeout=&lt;ms&gt;</screen> or using a global
         extradata value with
         <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/IsolationTimeoutMS &lt;ms&gt;</screen>
         </para>
-        
+
         <para>To set the actual host isolation response via command line:
-        <screen>--apimon-isln-response=&lt;cmd&gt;</screen> or using a global 
+        <screen>--apimon-isln-response=&lt;cmd&gt;</screen> or using a global
         extradata value with
         <screen>VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/IsolationResponse &lt;cmd&gt;</screen>
         The following response commands are available:
@@ -2218,14 +2218,14 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
         </itemizedlist>
         </para>
     </sect2>
-    
+
     <sect2 id="vboxwatchdog-moreinfo">
         <title>More information</title>
-        <para>For more advanced options and parameters like verbose logging check 
-        the built-in command line help accessible with 
+        <para>For more advanced options and parameters like verbose logging check
+        the built-in command line help accessible with
         <computeroutput>--help</computeroutput>.</para>
-    </sect2>    
-    
+    </sect2>
+
   </sect1>
 
   <sect1 id="otherextpacks">
@@ -2265,5 +2265,71 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
 
     <para>The following command switches back to VRDP (if
     installed):<screen>VBoxManage setproperty vrdeextpack "Oracle VM VirtualBox Extension Pack"</screen></para>
+  </sect1>
+
+  <sect1 id="autostart">
+    <title>Starting virtual machines during system boot</title>
+
+    <para>Starting with VirtualBox 4.2.0 it is possible to start VMs automatically during
+    system boot on Linux and Mac OS X for all users. </para>
+
+    <sect2 id="autostart-linux">
+      <title>Linux: starting the autostart service via <computeroutput>init</computeroutput></title>
+
+      <para>On Linux, the autostart service is activated by setting two variables in
+      <computeroutput>/etc/default/virtualbox</computeroutput>.
+      The first one is <computeroutput>VBOXAUTOSTART_DB</computeroutput> which
+      contains an absolute path to the autostart database directory.
+      The directory should have write access for every user who should be able to
+      start virtual machines automatically. Furthermore the directory should have the
+      sticky bit set.
+      The second variable is <computeroutput>VBOXAUTOSTART_CONFIG</computeroutput>
+      which points the service to the autostart configuration file which is used
+      during boot to determine whether to allow individual users to start a VM
+      automatically and configure startup delays.
+      The config file can be placed in <computeroutput>/etc/vbox</computeroutput>
+      and contains several options. One is <computeroutput>default_policy</computeroutput>
+      which controls whether the autostart service allows or denies to start a VM
+      for users which are not in the exception list.
+      The exception list starts with <computeroutput>exception_list</computeroutput>
+      and contains a comma seperated list with usernames. Furthermore a separate
+      startup delay can be configured for every user to avoid overloading the host.
+      A sample configuration is given below:</para>
+
+      <para><screen>
+# Default policy is to deny starting a VM, the other option is "allow".
+default_policy = deny
+# Users which are allowed are given below.
+# If the default policy is to allow starting a VM is not allowed for the users below.
+exception_list = bob, alice, joe
+
+bob   = 30  # Bobs machines will be started 30 seconds after the autostart service started
+alice = 180 # Alice machines will be started 180 seconds after the autostart service started
+joe   = 240 # Joes machines will be started 240 seconds after the autostart service started
+      </screen></para>
+
+      <para>Every user who wants to enable autostart for individual machines
+      has to set the path to the autostart database directory with
+      <screen>VBoxManage setproperty autostartdbpath &lt;Autostart directory&gt;</screen>
+      </para>
+    </sect2>
+
+    <sect2 id="autostart-osx">
+      <title>Mac OS X: starting the autostart service via launchd</title>
+
+      <para>On Mac OS X, launchd is used to start the VirtualBox autostart service. An
+      example configuration file can be found in
+      <computeroutput>/Applications/VirtualBox.app/Contents/MacOS/org.virtualbox.vboxautostart.plist</computeroutput>.
+      To enable the service copy the file to <computeroutput>/Library/LaunchDaemons</computeroutput> and change the
+      <computeroutput>Disabled</computeroutput> key from
+      <computeroutput>true</computeroutput> to
+      <computeroutput>false</computeroutput>. Furthermore replace the second parameter
+      to an existing configuration file which has the same format as on Linux (see <xref linkend="autostart-linux" />).
+      To manually start the service use the following command:
+      <screen>launchctl load /Library/LaunchDaemons/org.virtualbox.vboxautostart.plist</screen>
+      For additional information on how launchd services could be
+      configured see <literal><ulink
+      url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
+    </sect2>
   </sect1>
 </chapter>
