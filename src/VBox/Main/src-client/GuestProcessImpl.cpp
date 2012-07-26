@@ -1016,7 +1016,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
     LogFlowFunc(("fWaitFlags=%x, uTimeoutMS=%RU32, mStatus=%RU32, mWaitCount=%RU32, mWaitEvent=%p\n",
                  fWaitFlags, uTimeoutMS, mData.mStatus, mData.mWaitCount, mData.mWaitEvent));
 
-    ProcessStatus curStatus = mData.mStatus;
+    ProcessStatus_T curStatus = mData.mStatus;
 
     guestResult.mResult = ProcessWaitResult_None;
     guestResult.mRC = VINF_SUCCESS;
