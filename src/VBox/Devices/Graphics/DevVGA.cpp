@@ -3065,7 +3065,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
             }
     } else if (pThis->gr[5] & 0x10) {
         /* odd/even mode (aka text mode mapping) */
-        VERIFY_VRAM_WRITE_OFF_RETURN(pThis, GCPhysAddr * 2 + cItems * cbItem - 1);
+        VERIFY_VRAM_WRITE_OFF_RETURN(pThis, (GCPhysAddr + cItems * cbItem) * 4 - 1);
         while (cItems-- > 0)
             for (i = 0; i < cbItem; i++)
             {
@@ -3079,7 +3079,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
             }
     } else {
         /* standard VGA latched access */
-        VERIFY_VRAM_WRITE_OFF_RETURN(pThis, GCPhysAddr + cItems * cbItem - 1);
+        VERIFY_VRAM_WRITE_OFF_RETURN(pThis, (GCPhysAddr + cItems * cbItem) * 4 - 1);
 
         switch(pThis->gr[5] & 3) {
         default:
