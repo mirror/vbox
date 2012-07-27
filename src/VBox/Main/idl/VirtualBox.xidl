@@ -3756,7 +3756,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="0e84a036-73bf-49c8-b587-c558d4daa788"
+    uuid="f5b974bd-473b-43b6-b800-1ec40b9a8513"
     wsmap="managed"
     >
     <desc>
@@ -5040,6 +5040,58 @@
         <desc>New value for the bandwidth group or @c null for no group.</desc>
       </param>
     </method>
+
+    <method name="UnmountMedium">
+          <desc>
+            Unmounts any currently mounted medium (<link to="IMedium" />,
+            identified by the given UUID @a id) to the given storage controller
+            (<link to="IStorageController" />, identified by @a name),
+            at the indicated port and device. The device must already exist;
+
+            This method is intended only for managing removable media, where the
+            device is fixed but media is changeable at runtime (such as DVDs
+            and floppies). It cannot be used for fixed media such as hard disks.
+
+            The @a controllerPort and @a device parameters specify the device slot
+            and have have the same meaning as with
+            <link to="IMachine::attachDevice" />.
+
+            The specified device slot must have a medium mounted, which will be
+            unmounted. If there is no mounted medium it will do nothing.
+            See <link to="IMedium"/> for more detailed information about
+            attaching/unmounting media.
+
+            <result name="E_INVALIDARG">
+            SATA device, SATA port, IDE port or IDE slot out of range.
+            </result>
+            <result name="VBOX_E_INVALID_OBJECT_STATE">
+            Attempt to unmount medium that is not removeable - not dvd or floppy.
+            </result>
+            <result name="VBOX_E_INVALID_VM_STATE">
+            Invalid machine state.
+            </result>
+            <result name="VBOX_E_OBJECT_IN_USE">
+            Medium already attached to this or another virtual machine.
+            </result>
+            <result name="VBOX_E_OBJECT_NOT_FOUND">
+            Medium not attached to specified port, device, controller.
+            </result>
+
+            </desc>
+              <param name="name" type="wstring" dir="in">
+              <desc>Name of the storage controller to unmount the medium from.</desc>
+              </param>
+              <param name="controllerPort" type="long" dir="in">
+              <desc>Port to unmount the medium from.</desc>
+              </param>
+              <param name="device" type="long" dir="in">
+              <desc>Device slot in the given port to unmount the medium from.</desc>
+              </param>
+              <param name="force" type="boolean" dir="in">
+              <desc>Allows to force unmount of a medium which is locked by 
+              the device slot in the given port medium is attached to.</desc>
+              </param>
+          </method>
 
     <method name="mountMedium">
       <desc>
