@@ -338,9 +338,9 @@ static DECLCALLBACK(int) drvCardReaderDownConnect(PPDMICARDREADERDOWN pInterface
     return rc;
 }
 
-static DECLCALLBACK(int)drvCardReaderDownDisconnect(PPDMICARDREADERDOWN pInterface,
-                                                    void *pvUser,
-                                                    uint32_t u32Disposition)
+static DECLCALLBACK(int) drvCardReaderDownDisconnect(PPDMICARDREADERDOWN pInterface,
+                                                     void *pvUser,
+                                                     uint32_t u32Disposition)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_PARAMETER);
     LogFlowFunc(("ENTER: pvUser:%p, u32Disposition:%RX32\n",
@@ -389,10 +389,10 @@ static DECLCALLBACK(int) drvCardReaderDownReleaseContext(PPDMICARDREADERDOWN pIn
     return rc;
 }
 
-static DECLCALLBACK(int)drvCardReaderDownStatus(PPDMICARDREADERDOWN pInterface,
-                                                void *pvUser,
-                                                uint32_t cchReaderName,
-                                                uint32_t cbAtrLen)
+static DECLCALLBACK(int) drvCardReaderDownStatus(PPDMICARDREADERDOWN pInterface,
+                                                 void *pvUser,
+                                                 uint32_t cchReaderName,
+                                                 uint32_t cbAtrLen)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_PARAMETER);
     LogFlowFunc(("ENTER: pvUser:%p, cchReaderName:%d, cbAtrLen:%d\n",
@@ -1826,7 +1826,7 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
  * PDM
  */
 
-/* static */ DECLCALLBACK(void *)UsbCardReader::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+/* static */ DECLCALLBACK(void *) UsbCardReader::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     LogFlowFunc(("pInterface:%p, pszIID:%s\n", pInterface, pszIID));
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);

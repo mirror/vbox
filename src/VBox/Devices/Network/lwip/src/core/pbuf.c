@@ -482,7 +482,7 @@ pbuf_header(struct pbuf *p, s16_t header_size_increment)
     if ((u8_t *)p->payload < (u8_t *)p + sizeof(struct pbuf)) {
       LWIP_DEBUGF( PBUF_DEBUG | 2, ("pbuf_header: failed as %p < %p (not enough space for new header size)\n",
         (void *)p->payload,
-        (void *)(p + 1)));\
+        (void *)(p + 1)));
       /* restore old payload pointer */
       p->payload = payload;
       /* bail out unsuccesfully */
