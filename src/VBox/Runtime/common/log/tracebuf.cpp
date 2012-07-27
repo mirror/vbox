@@ -432,7 +432,7 @@ static void rtTraceBufDestroy(RTTRACEBUFINT *pThis)
 }
 
 
-RTDECL(uint32_t)RTTraceBufRetain(RTTRACEBUF hTraceBuf)
+RTDECL(uint32_t) RTTraceBufRetain(RTTRACEBUF hTraceBuf)
 {
     PCRTTRACEBUFINT pThis = hTraceBuf;
     RTTRACEBUF_VALID_RETURN_RC(pThis, UINT32_MAX);
