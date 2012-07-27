@@ -356,8 +356,11 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, ULONG *puCont
 
     if (RT_SUCCESS(rc))
     {
-        /* Add callback with new context ID to our callback map. */
-        mData.mCallbacks[uNewContextID] = pCallback;
+        /* Add callback with new context ID to our callback map.
+         * Note: This is *not* uNewContextID (which also includes
+         *       the session + process ID), just the context count
+         *       will be used here. */
+        mData.mCallbacks[mData.mNextContextID] = pCallback;
         Assert(mData.mCallbacks.size());
 
         /* Report back new context ID. */
@@ -373,13 +376,19 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, ULONG *puCont
 
 int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
 {
-/*    LogFlowFunc(("uPID=%RU32, uContextID=%RU32, uFunction=%RU32, pvData=%p, cbData=%z\n",
-                 mData.mPID, uContextID, uFunction, pvData, cbData));*/
+#ifdef DEBUG
+    LogFlowFunc(("uPID=%RU32, uContextID=%RU32, uFunction=%RU32, pvData=%p, cbData=%RU32\n",
+                 mData.mPID, uContextID, uFunction, pvData, cbData));
+#endif
 
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+#ifdef DEBUG
+    LogFlowFunc(("Callback count=%RU32\n", VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID)));
+#endif
 
     int rc;
     GuestCtrlCallbacks::const_iterator it
@@ -446,19 +455,23 @@ int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, vo
     else
         rc = VERR_NOT_FOUND;
 
-    //LogFlowFuncLeaveRC(rc);
+#ifdef DEBUG
+    LogFlowFuncLeaveRC(rc);
+#endif
     return rc;
 }
 
 inline bool GuestProcess::callbackExists(ULONG uContextID)
 {
-    GuestCtrlCallbacks::const_iterator it = mData.mCallbacks.find(uContextID);
+    GuestCtrlCallbacks::const_iterator it =
+        mData.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
     return (it == mData.mCallbacks.end()) ? false : true;
 }
 
 inline int GuestProcess::callbackRemove(ULONG uContextID)
 {
-    GuestCtrlCallbacks::iterator it = mData.mCallbacks.find(uContextID);
+    GuestCtrlCallbacks::iterator it =
+        mData.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
     if (it == mData.mCallbacks.end())
     {
         delete it->second;
