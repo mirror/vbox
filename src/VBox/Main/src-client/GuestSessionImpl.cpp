@@ -384,12 +384,6 @@ int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, voi
 #ifdef DEBUG
     LogFlowFunc(("uProcessID=%RU32 (%RU32 total)\n",
                  uProcessID, mData.mProcesses.size()));
-    SessionProcesses::const_iterator i = mData.mProcesses.begin();
-    while (i != mData.mProcesses.end())
-    {
-        LogFlowFunc(("\tproc %RU32\n", i->first));
-        i++;
-    }
 #endif
     int rc;
     SessionProcesses::const_iterator itProc
@@ -531,7 +525,7 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<G
     return rc;
 }
 
-inline bool GuestSession::processExists(ULONG uProcessID, ComObjPtr<GuestProcess> *pProcess)
+inline bool GuestSession::processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess)
 {
     SessionProcesses::const_iterator it = mData.mProcesses.find(uProcessID);
     if (it != mData.mProcesses.end())
