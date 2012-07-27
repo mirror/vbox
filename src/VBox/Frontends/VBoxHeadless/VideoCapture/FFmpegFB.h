@@ -30,6 +30,7 @@
 
 #ifdef VBOX_WITH_VPX
 #include "EbmlWriter.h"
+#include "EncodeAndWrite.h"
 #include <stdarg.h>
 #include <string.h>
 #define VPX_CODEC_DISABLE_COMPAT 1
@@ -50,6 +51,9 @@
 # endif /* DEBUG not defined */
 #endif
 
+#ifdef VBOX_WITH_VPX
+PVIDEORECCONTEXT pVideoRecContext;
+#endif
 
 class FFmpegFB : VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
