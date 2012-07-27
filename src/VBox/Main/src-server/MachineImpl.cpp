@@ -4349,6 +4349,19 @@ STDMETHODIMP Machine::SetBandwidthGroupForDevice(IN_BSTR aControllerName, LONG a
     return S_OK;
 }
 
+STDMETHODIMP Machine::UnmountMedium(IN_BSTR aControllerName,
+                                    LONG    aControllerPort,
+                                    LONG    aDevice,
+                                    BOOL    aForce)
+{
+     int rc = S_OK;
+     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d",
+                      aControllerName, aControllerPort, aForce));
+
+     rc = MountMedium(aControllerName, aControllerPort, aDevice, NULL, aForce);
+
+     return rc;
+}
 
 STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                   LONG aControllerPort,

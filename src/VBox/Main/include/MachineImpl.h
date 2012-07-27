@@ -507,6 +507,8 @@ public:
                                           LONG aDevice, IBandwidthGroup *aBandwidthGroup);
     STDMETHOD(MountMedium)(IN_BSTR aControllerName, LONG aControllerPort,
                            LONG aDevice, IMedium *aMedium, BOOL aForce);
+    STDMETHOD(UnmountMedium)(IN_BSTR aControllerName, LONG aControllerPort,
+                             LONG aDevice, BOOL aForce);
     STDMETHOD(GetMedium)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice,
                          IMedium **aMedium);
     STDMETHOD(GetSerialPort)(ULONG slot, ISerialPort **port);
