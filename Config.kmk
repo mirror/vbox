@@ -3476,7 +3476,7 @@ endif
 
 #
 # Template for building performance critical stuff with warnings-as-errors.
-#				       -
+#
 TEMPLATE_VBoxR3DllNoPic                    = VBox ring-3 SO/DLLs without PIC, without warnings.
 TEMPLATE_VBoxR3DllNoPic_EXTENDS            = VBOXR3
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
@@ -3486,9 +3486,9 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllNoPic_LDFLAGS           = $(TEMPLATE_VBOXR3EXE_LDFLAGS)
 else ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(TEMPLATE_VBOXR3_CFLAGS)   $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3DllNoPic_CFLAGS.release    = $(TEMPLATE_VBOXR3_CFLAGS)   $(VBOX_VCC_WERR) -GS-
+ TEMPLATE_VBoxR3DllNoPic_CFLAGS.release    = $(TEMPLATE_VBOXR3_CFLAGS.release) -GS-
  TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(TEMPLATE_VBOXR3_CXXFLAGS) $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.release  = $(TEMPLATE_VBOXR3_CXXFLAGS.release) $(VBOX_VCC_WERR) -GS-
+ TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.release  = $(TEMPLATE_VBOXR3_CXXFLAGS.release) -GS-
  TEMPLATE_VBoxR3DllNoPic_LDFLAGS           = $(TEMPLATE_VBOXR3_LDFLAGS)  $(VBOX_VCC_LD_WERR)
 else
  TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(TEMPLATE_VBOXR3_CFLAGS)   $(VBOX_GCC_WERR)
@@ -3497,7 +3497,7 @@ endif
 
 #
 # Template for building performance critical stuff without warnings-as-errors.
-#				       -
+#
 TEMPLATE_VBoxR3DllWarnNoPic                = VBox ring-3 SO/DLLs without PIC, with warnings.
 TEMPLATE_VBoxR3DllWarnNoPic_EXTENDS        = VBOXR3
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
@@ -3505,6 +3505,9 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllWarnNoPic_CFLAGS        = $(TEMPLATE_VBOXR3EXE_CFLAGS)
  TEMPLATE_VBoxR3DllWarnNoPic_CXXFLAGS      = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
  TEMPLATE_VBoxR3DllWarnNoPic_LDFLAGS       = $(TEMPLATE_VBOXR3EXE_LDFLAGS)
+else ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxR3DllNoPic_CFLAGS.release    = $(TEMPLATE_VBOXR3_CFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.release  = $(TEMPLATE_VBOXR3_CXXFLAGS.release) -GS-
 endif
 
 #
