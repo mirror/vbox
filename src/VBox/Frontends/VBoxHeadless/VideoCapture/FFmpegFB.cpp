@@ -43,9 +43,9 @@
  * @retval  retVal       The new framebuffer
  */
 extern "C" DECLEXPORT(HRESULT) VBoxRegisterFFmpegFB(ULONG width,
-                                                    ULONG height, ULONG bitrate,
-                                                    com::Bstr filename,
-                                                    IFramebuffer **retVal)
+                                     ULONG height, ULONG bitrate,
+                                     com::Bstr filename,
+                                     IFramebuffer **retVal)
 {
     Log2(("VBoxRegisterFFmpegFB: called\n"));
     FFmpegFB *pFramebuffer = new FFmpegFB(width, height, bitrate, filename);
@@ -175,16 +175,13 @@ FFmpegFB::~FFmpegFB()
     /* Write the last pending frame before exiting */
     int rc = do_rgb_to_yuv_conversion();
     if (rc == S_OK)
-        do_encoding_and_write();
+        VideoRecEncodeAndWrite(pVideoRecContext, mFrameWidth, mFrameHeight, mYUVBuffer);
 # if 1
     /* Add another 10 seconds. */
     for (int i = 10*25; i > 0; i--)
-        do_encoding_and_write();
+        VideoRecEncodeAndWrite(pVideoRecContext, mFrameWidth, mFrameHeight, mYUVBuffer);
 # endif
-    Ebml_WriteWebMFileFooter(&ebml, 0);
-    if(ebml.stream)
-        fclose(ebml.stream);
-    vpx_codec_destroy(&mVpxCodec);
+    VideoRecContextClose(pVideoRecContext);
     RTCritSectDelete(&mCritSect);
 
     /* We have already freed the stream above */
@@ -269,15 +266,13 @@ HRESULT FFmpegFB::init()
     int rcOpenCodec;
 
 #ifdef VBOX_WITH_VPX
-    mFrameCount = 0;
-    memset(&ebml, 0, sizeof(struct EbmlGlobal));
-    ebml.last_pts_ms = -1;
+
+    rc = VideoRecContextCreate(&pVideoRecContext);
     rc = RTCritSectInit(&mCritSect);
     AssertReturn(rc == VINF_SUCCESS, E_UNEXPECTED);
-    rcOpenFile = open_output_file();
-    AssertReturn(rcOpenFile == S_OK, rcOpenFile);
-    rcOpenCodec = open_codec();
-    AssertReturn(rcOpenCodec == S_OK, rcOpenCodec);
+
+    if(rc == VINF_SUCCESS)
+        rc = VideoRecContextInit(pVideoRecContext, mFileName, mFrameWidth, mFrameHeight);
 #else
     rc = RTCritSectInit(&mCritSect);
     AssertReturn(rc == VINF_SUCCESS, E_UNEXPECTED);
@@ -524,13 +519,28 @@ STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h)
         rc = do_rgb_to_yuv_conversion();
         if (rc != S_OK)
         {
-            copy_to_intermediate_buffer(x, y, w, h);
+#ifdef VBOX_WITH_VPX
+            VideoRecCopyToIntBuffer(pVideoRecContext, x, y, w, h, mPixelFormat,
+                                    mBitsPerPixel, mBytesPerLine, mFrameWidth,
+                                    mFrameHeight, mGuestHeight, mGuestWidth,
+                                    mBufferAddress, mTempRGBBuffer);
+#else
+           copy_to_intermediate_buffer(x, y, w, h);
+#endif
             return rc;
         }
         rc = do_encoding_and_write();
         if (rc != S_OK)
         {
+#ifdef VBOX_WITH_VPX
+            VideoRecCopyToIntBuffer(pVideoRecContext, x, y, w, h, mPixelFormat,
+                                    mBitsPerPixel, mBytesPerLine, mFrameWidth,
+                                    mFrameHeight, mGuestHeight, mGuestWidth,
+                                    mBufferAddress, mTempRGBBuffer);
+#else
             copy_to_intermediate_buffer(x, y, w, h);
+#endif
+
             return rc;
         }
         mLastTime = mLastTime + 40;
@@ -547,7 +557,14 @@ STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h)
 */          rc = do_encoding_and_write();
             if (rc != S_OK)
             {
+#ifdef VBOX_WITH_VPX
+                VideoRecCopyToIntBuffer(pVideoRecContext, x, y, w, h, mPixelFormat,
+                                        mBitsPerPixel, mBytesPerLine, mFrameWidth,
+                                        mFrameHeight, mGuestHeight, mGuestWidth,
+                                        mBufferAddress, mTempRGBBuffer);
+#else
                 copy_to_intermediate_buffer(x, y, w, h);
+#endif
                 return rc;
             }
             mLastTime = mLastTime + 40;
@@ -555,7 +572,15 @@ STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h)
     }
     /* Finally we copy the updated data to the intermediate buffer,
        ready for the next update. */
+#ifdef VBOX_WITH_VPX
+    VideoRecCopyToIntBuffer(pVideoRecContext, x, y, w, h, mPixelFormat,
+                            mBitsPerPixel, mBytesPerLine, mFrameWidth,
+                            mFrameHeight, mGuestHeight, mGuestWidth,
+                            mBufferAddress, mTempRGBBuffer);
+
+#else
     copy_to_intermediate_buffer(x, y, w, h);
+#endif
     return S_OK;
 }
 
@@ -825,6 +850,7 @@ HRESULT FFmpegFB::list_formats()
 }
 #endif
 
+#ifndef VBOX_WITH_VPX
 /**
  * Open the FFmpeg codec and set it up (width, etc) for our MPEG file.
  *
@@ -835,34 +861,6 @@ HRESULT FFmpegFB::list_formats()
  */
 HRESULT FFmpegFB::open_codec()
 {
-#ifdef VBOX_WITH_VPX
-    vpx_codec_err_t      res;
-    /* Populate encoder configuration */
-    if ((res = vpx_codec_enc_config_default(interface, &mVpxConfig, 0)))
-    {
-        LogFlow(("Failed to configure codec \n"));
-        AssertReturn(res == 0, E_UNEXPECTED);
-    }
-
-    mVpxConfig.rc_target_bitrate = 512;
-    mVpxConfig.g_w = mFrameWidth;
-    mVpxConfig.g_h = mFrameHeight;
-    mVpxConfig.g_timebase.den = 30;
-    mVpxConfig.g_timebase.num = 1;
-    mVpxConfig.g_threads = 8;
-
-    vpx_rational ebmlFPS = mVpxConfig.g_timebase;
-    struct vpx_rational arg_framerate = {30, 1};
-    Ebml_WriteWebMFileHeader(&ebml, &mVpxConfig, &arg_framerate);
-    mDuration = (float)arg_framerate.den / (float)arg_framerate.num * 1000;
-
-    /* Initialize codec */
-    if (vpx_codec_enc_init(&mVpxCodec, interface, &mVpxConfig, 0))
-    {
-        LogFlow(("Failed to initialize encoder"));
-        AssertReturn(res == 0, E_UNEXPECTED);
-    }
-#else
     Assert(mpFormatContext != 0);
     Assert(mpStream != 0);
     AVOutputFormat *pOutFormat = mpFormatContext->oformat;
@@ -897,7 +895,6 @@ HRESULT FFmpegFB::open_codec()
     /* end output example section */
     int rcOpenCodec = avcodec_open(pCodecContext, pCodec);
     AssertReturn(rcOpenCodec >= 0, E_UNEXPECTED);
-#endif
     return S_OK;
 }
 
@@ -912,17 +909,6 @@ HRESULT FFmpegFB::open_codec()
  */
 HRESULT FFmpegFB::open_output_file()
 {
-#ifdef VBOX_WITH_VPX
-    char szFileName[RTPATH_MAX];
-    strcpy(szFileName, com::Utf8Str(mFileName).c_str());
-    ebml.stream = fopen(szFileName, "wb");
-    if (!ebml.stream)
-    {
-        LogFlow(("Failed to open the output File \n"));
-        return E_FAIL;
-    }
-    return S_OK;
-#else
     char szFileName[RTPATH_MAX];
     Assert(mpFormatContext);
     Assert(mpFormatContext->oformat);
@@ -932,10 +918,9 @@ HRESULT FFmpegFB::open_output_file()
     AssertReturn(rcUrlFopen >= 0, E_UNEXPECTED);
     mfUrlOpen = true;
     av_write_header(mpFormatContext);
-#endif
     return S_OK;
 }
-
+#endif
 
 /**
  * Copy an area from the output buffer used by the virtual VGA (may
@@ -969,6 +954,7 @@ void FFmpegFB::copy_to_intermediate_buffer(ULONG x, ULONG y, ULONG w, ULONG h)
     }
     else
         destX = x + xDiff;
+
     if (LONG(h) + yDiff + LONG(y) <= 0)  /* nothing visible */
         return;
     if (LONG(y) < -yDiff)
@@ -1092,45 +1078,7 @@ HRESULT FFmpegFB::do_encoding_and_write()
     mToggle = !mToggle;
 
 #ifdef VBOX_WITH_VPX
-    vpx_image_t          VpxRawImage;
-    vpx_codec_err_t      res;
-    const vpx_codec_cx_pkt_t *pkt;
-    vpx_codec_iter_t iter = NULL;
-
-    if (mFrameWidth < 16 || mFrameWidth%2 || mFrameHeight <16 || mFrameHeight%2)
-        LogFlow(("Invalid resolution: %ldx%ld", mFrameWidth, mFrameHeight));
-
-    if (!vpx_img_alloc(&VpxRawImage, VPX_IMG_FMT_YV12, mFrameWidth, mFrameHeight, 1))
-    {
-        LogFlow(("Faile tod allocate image", mFrameWidth, mFrameHeight));
-        return E_OUTOFMEMORY;
-    }
-
-    if (mYUVBuffer != NULL)
-    {
-// BOGUS! AssertReturn(VpxRawImage.w*VpxRawImage.h*3/2 <= sizeof(mYUVFrameSize), E_UNEXPECTED);
-        memcpy(VpxRawImage.planes[0], (uint8_t *)mYUVBuffer, VpxRawImage.w*VpxRawImage.h*3/2);
-    }
-
-    if ((res = vpx_codec_encode(&mVpxCodec, &VpxRawImage , mFrameCount,
-                  mDuration, 0, VPX_DL_REALTIME)))
-    {
-        LogFlow(("Failed to encode: %s\n", vpx_codec_err_to_string(res)));
-        AssertReturn(res != 0, E_UNEXPECTED);
-
-    }
-    while ((pkt = vpx_codec_get_cx_data(&mVpxCodec, &iter)))
-    {
-        switch (pkt->kind)
-        {
-            case VPX_CODEC_CX_FRAME_PKT:
-                Ebml_WriteWebMBlock(&ebml, &mVpxConfig, pkt);
-                break;
-            default:
-                break;
-        }
-   }
-   mFrameCount++;
+    VideoRecEncodeAndWrite(pVideoRecContext, mFrameWidth, mFrameHeight, mYUVBuffer);
 #else
     AVCodecContext *pContext = mpStream->codec;
     int cSize = avcodec_encode_video(pContext, mOutBuf, mYUVFrameSize * 2,
