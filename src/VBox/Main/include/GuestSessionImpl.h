@@ -116,8 +116,8 @@ private:
     typedef std::vector <ComObjPtr<GuestDirectory> > SessionDirectories;
     typedef std::vector <ComObjPtr<GuestFile> > SessionFiles;
     /** Map of guest processes. The key specifies the internal process number.
-     *  To retrieve the process' guest PID use the Id() method of the IProgress interface. */
-    typedef std::map <ULONG, ComObjPtr<GuestProcess> > SessionProcesses;
+     *  To retrieve the process' guest PID use the Id() method of the IProcess interface. */
+    typedef std::map <uint32_t, ComObjPtr<GuestProcess> > SessionProcesses;
 
 public:
     /** @name Public internal methods.

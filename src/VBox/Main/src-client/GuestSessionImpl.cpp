@@ -378,14 +378,22 @@ int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, voi
 {
     LogFlowFuncEnter();
 
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    uint32_t uProcessID = VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID);
+#ifdef DEBUG
+    LogFlowFunc(("uProcessID=%RU32 (%RU32 total)\n",
+                 uProcessID, mData.mProcesses.size()));
+    SessionProcesses::const_iterator i = mData.mProcesses.begin();
+    while (i != mData.mProcesses.end())
+    {
+        LogFlowFunc(("\tproc %RU32\n", i->first));
+        i++;
+    }
+#endif
     int rc;
     SessionProcesses::const_iterator itProc
-        = mData.mProcesses.find(VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID));
+        = mData.mProcesses.find(uProcessID);
     if (itProc != mData.mProcesses.end())
     {
         ComObjPtr<GuestProcess> pProcess(itProc->second);
@@ -447,6 +455,9 @@ int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
 
 int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<GuestProcess> &pProcess)
 {
+    LogFlowFunc(("mCmd=%s, mFlags=%x, mTimeoutMS=%RU32\n",
+                 procInfo.mCommand.c_str(), procInfo.mFlags, procInfo.mTimeoutMS));
+
     /* Validate flags. */
     if (procInfo.mFlags)
     {
@@ -468,11 +479,11 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<G
 
     /** @tood Implement process priority + affinity. */
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     int rc = VERR_MAX_PROCS_REACHED;
     if (mData.mProcesses.size() >= VBOX_GUESTCTRL_MAX_PROCESSES)
         return rc;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Create a new (host-based) process ID and assign it. */
     ULONG uNewProcessID = 0;
@@ -503,11 +514,14 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<G
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
         rc = pProcess->init(mData.mParent->getConsole() /* Console */, this /* Session */,
-                             uNewProcessID, procInfo);
+                            uNewProcessID, procInfo);
         if (RT_FAILURE(rc)) throw rc;
 
         /* Add the created process to our map. */
         mData.mProcesses[uNewProcessID] = pProcess;
+
+        LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32\n",
+                     mData.mId, uNewProcessID));
     }
     catch (int rc2)
     {
@@ -1010,7 +1024,7 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
     {
         com::SafeArray<IN_BSTR> environment(ComSafeArrayInArg(aEnvironment));
         for (size_t i = 0; i < environment.size() && RT_SUCCESS(rc); i++)
-            rc = mData.mEnvironment.Set(Utf8Str(environment[i]));
+            rc = procInfo.mEnvironment.Set(Utf8Str(environment[i]));
     }
 
     HRESULT hr = S_OK;
@@ -1054,13 +1068,13 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
         switch (rc)
         {
             case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest processes (%ld) reached"),
-                              VERR_MAX_PROCS_REACHED);
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest processes per session (%ld) reached"),
+                              VBOX_GUESTCTRL_MAX_PROCESSES);
                 break;
 
             /** @todo Add more errors here. */
 
-           default:
+            default:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest process, rc=%Rrc"), rc);
                 break;
         }

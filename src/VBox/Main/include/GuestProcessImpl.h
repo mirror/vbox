@@ -89,14 +89,15 @@ protected:
     inline int callbackAdd(GuestCtrlCallback *pCallback, ULONG *puContextID);
     inline int callbackRemove(ULONG uContextID);
     inline bool isAlive(void);
-    HRESULT hgcmResultToError(int rc);
     int onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDATACLIENTDISCONNECTED pData);
     int onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECINSTATUS pData);
     int onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECSTATUS pData);
     int onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECOUT pData);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
-    int signalWaiters(ProcessWaitResult_T enmWaitResult, int rc = VINF_SUCCESS);
+    int setErrorInternal(int rc, const Utf8Str &strMessage);
+    int setErrorExternal(void);
+    int signalWaiters(ProcessWaitResult_T enmWaitResult);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
     HRESULT waitResultToErrorEx(const GuestProcessWaitResult &waitResult, bool fLog);
     /** @}  */
@@ -124,6 +125,11 @@ private:
         ULONG                    mProcessID;
         /** The current process status. */
         ProcessStatus_T          mStatus;
+        /** The overall rc of the process execution. */
+        int                      mRC;
+        /** The overall error message of the
+         *  process execution. */
+        Utf8Str                  mErrorMsg;
         /** The next upcoming context ID. */
         ULONG                    mNextContextID;
         /** The mutex for protecting the waiter(s). */

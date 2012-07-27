@@ -701,7 +701,8 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
     AssertPtr(pHeader);
 
 #ifdef DEBUG
-    LogFlowFunc(("uSession=%RU32, uProcess=%RU32, uCount=%RU32\n",
+    LogFlowFunc(("CID=%RU32, uSession=%RU32, uProcess=%RU32, uCount=%RU32\n",
+                 pHeader->u32ContextID,
                  VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHeader->u32ContextID),
                  VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(pHeader->u32ContextID),
                  VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pHeader->u32ContextID)));
@@ -2685,14 +2686,16 @@ int Guest::dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvDa
 {
     LogFlowFuncEnter();
 
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    uint32_t uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID);
+#ifdef DEBUG
+    LogFlowFunc(("uSessionID=%RU32 (%RU32 total)\n",
+                 uSessionID, mData.mGuestSessions.size()));
+#endif
     int rc;
     GuestSessions::const_iterator itSession
-        = mData.mGuestSessions.find(VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID));
+        = mData.mGuestSessions.find(uSessionID);
     if (itSession != mData.mGuestSessions.end())
     {
         ComObjPtr<GuestSession> pSession(itSession->second);
@@ -2764,6 +2767,9 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
         if (RT_FAILURE(rc)) throw rc;
 
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
+
+        LogFlowFunc(("Added new session with session ID=%RU32\n",
+                     uNewSessionID));
     }
     catch (int rc2)
     {
@@ -2817,7 +2823,7 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
         {
             case VERR_MAX_PROCS_REACHED:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
-                              VERR_MAX_PROCS_REACHED);
+                              VBOX_GUESTCTRL_MAX_SESSIONS);
                 break;
 
             /** @todo Add more errors here. */

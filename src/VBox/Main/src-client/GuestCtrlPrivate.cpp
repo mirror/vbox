@@ -373,8 +373,10 @@ int GuestEnvironment::Set(const Utf8Str &strKey, const Utf8Str &strValue)
     const char *pszString = strKey.c_str();
     while (*pszString != '\0' && RT_SUCCESS(rc))
     {
-         if (!RT_C_IS_ALNUM(*pszString++))
+         if (   !RT_C_IS_ALNUM(*pszString)
+             && !RT_C_IS_GRAPH(*pszString))
              rc = VERR_INVALID_PARAMETER;
+         *pszString++;
     }
 
     if (RT_SUCCESS(rc))
@@ -405,7 +407,11 @@ int GuestEnvironment::Set(const Utf8Str &strPair)
         if (p < listPair.size()) /* Does the list also contain a value? */
             strValue = listPair.at(p++);
 
-       rc = Set(strKey, strValue);
+#ifdef DEBUG
+        LogFlowFunc(("strKey=%s, strValue=%s\n",
+                     strKey.c_str(), strValue.c_str()));
+#endif
+        rc = Set(strKey, strValue);
     }
 
     return rc;
