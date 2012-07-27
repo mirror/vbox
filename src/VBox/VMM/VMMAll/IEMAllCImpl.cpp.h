@@ -123,8 +123,15 @@ static void iemHlpLoadNullDataSelectorProt(PCPUMSELREG pSReg)
  * @param   uCpl                The new CPL.
  * @param   pSReg               Pointer to the segment register.
  */
-static void iemHlpAdjustSelectorForNewCpl(uint8_t uCpl, PCPUMSELREG pSReg)
+static void iemHlpAdjustSelectorForNewCpl(PIEMCPU pIemCpu, uint8_t uCpl, PCPUMSELREG pSReg)
 {
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg))
+        CPUMGuestLazyLoadHiddenSelectorReg(IEMCPU_TO_VMCPU(pIemCpu), pSReg);
+#else
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg));
+#endif
+
     if (   uCpl > pSReg->Attr.n.u2Dpl
         && pSReg->Attr.n.u1DescType /* code or data, not system */
         &&    (pSReg->Attr.n.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
@@ -1557,10 +1564,10 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             pCtx->ss.u64Base    = X86DESC_BASE(&DescSs.Legacy);
 
         pIemCpu->uCpl           = (uNewCs & X86_SEL_RPL);
-        iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->ds);
-        iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->es);
-        iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->fs);
-        iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->gs);
+        iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->ds);
+        iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->es);
+        iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->fs);
+        iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->gs);
 
         /** @todo check if the hidden bits are loaded correctly for 64-bit
          *        mode. */
@@ -1900,6 +1907,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     NOREF(cbInstr);
 
+Log(("iemCImpl_iret_prot: rip=%#llx ds=%#x es=%#x\n", pCtx->rip, pCtx->ds.Sel, pCtx->es.Sel));
+
     /*
      * Nested task return.
      */
@@ -2141,10 +2150,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
                 pCtx->eflags.u     |= fEFlagsMask & uNewFlags;
 
                 pIemCpu->uCpl       = uNewCs & X86_SEL_RPL;
-                iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->ds);
-                iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->es);
-                iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->fs);
-                iemHlpAdjustSelectorForNewCpl(uNewCs & X86_SEL_RPL, &pCtx->gs);
+                iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->ds);
+                iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->es);
+                iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->fs);
+                iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->gs);
 
                 /* Done! */
 
