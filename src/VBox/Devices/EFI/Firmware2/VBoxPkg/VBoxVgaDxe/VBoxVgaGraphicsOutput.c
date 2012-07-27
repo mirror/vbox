@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -263,8 +263,6 @@ Returns:
 
   Private = VBOX_VGA_PRIVATE_DATA_FROM_GRAPHICS_OUTPUT_THIS (This);
 
-  DEBUG((DEBUG_INFO, "%a:%d op:%d src(%d: %d) dst(%d: %d) w:%d h:%d d:%d\n", __FILE__, __LINE__,
-        SourceX, SourceY, DestinationX, DestinationY, Width, Height, Delta));
   if ((BltOperation < 0) || (BltOperation >= EfiGraphicsOutputBltOperationMax)) {
     return EFI_INVALID_PARAMETER;
   }
