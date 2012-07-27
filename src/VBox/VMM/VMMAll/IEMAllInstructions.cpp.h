@@ -624,7 +624,8 @@ FNIEMOP_DEF(iemOp_Grp6)
 FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
 {
     NOREF(pIemCpu); NOREF(bRm);
-    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
 
@@ -664,7 +665,8 @@ FNIEMOP_DEF(iemOp_Grp7_vmxoff)
 FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 {
     NOREF(pIemCpu); NOREF(bRm);
-    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
 
@@ -672,7 +674,8 @@ FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp7_monitor)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
 
@@ -680,7 +683,8 @@ FNIEMOP_DEF(iemOp_Grp7_monitor)
 FNIEMOP_DEF(iemOp_Grp7_mwait)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
 
@@ -861,7 +865,8 @@ FNIEMOP_DEF_1(iemOp_Grp7_invlpg, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp7_swapgs)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
 
@@ -869,7 +874,8 @@ FNIEMOP_DEF(iemOp_Grp7_swapgs)
 FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
 
@@ -972,8 +978,21 @@ FNIEMOP_DEF(iemOp_clts)
 FNIEMOP_STUB(iemOp_sysret);
 /** Opcode 0x0f 0x08. */
 FNIEMOP_STUB(iemOp_invd);
+
+
 /** Opcode 0x0f 0x09. */
-FNIEMOP_STUB(iemOp_wbinvd);
+FNIEMOP_DEF(iemOp_wbinvd)
+{
+    IEMOP_MNEMONIC("wbinvd");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEM_MC_BEGIN(0, 0);
+    IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS; /* ignore for now */
+}
+
+
 /** Opcode 0x0f 0x0b. */
 FNIEMOP_STUB(iemOp_ud2);
 
