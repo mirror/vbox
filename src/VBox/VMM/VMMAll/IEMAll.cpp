@@ -191,6 +191,38 @@ typedef IEMSELDESC *PIEMSELDESC;
 #define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE)
 
 /**
+ * Returns IEM_RETURN_ASPECT_NOT_IMPLEMENTED, and in debug builds logs the
+ * occation.
+ */
+#ifdef LOG_ENABLED
+# define IEM_RETURN_ASPECT_NOT_IMPLEMENTED() \
+    do { \
+        Log(("%s: returning IEM_RETURN_ASPECT_NOT_IMPLEMENTED (line %d)\n", __FUNCTION__, __LINE__)); \
+        return VERR_IEM_ASPECT_NOT_IMPLEMENTED; \
+    } while (0)
+#else
+# define IEM_RETURN_ASPECT_NOT_IMPLEMENTED() \
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED
+#endif
+
+/**
+ * Returns IEM_RETURN_ASPECT_NOT_IMPLEMENTED, and in debug builds logs the
+ * occation using the supplied logger statement.
+ *
+ * @param   a_LoggerArgs    What to log on failure.
+ */
+#ifdef LOG_ENABLED
+# define IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(a_LoggerArgs) \
+    do { \
+        LogFunc(a_LoggerArgs); \
+        return VERR_IEM_ASPECT_NOT_IMPLEMENTED; \
+    } while (0)
+#else
+# define IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(a_LoggerArgs) \
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED
+#endif
+
+/**
  * Call an opcode decoder function.
  *
  * We're using macors for this so that adding and removing parameters can be
@@ -1943,7 +1975,10 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
         /* Check that there is sufficient space for the stack frame. */
         uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
-        AssertReturn(!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+        if (DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN)
+        {
+            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n")); /** @todo Implement expand down segment support. */
+        }
 
         uint8_t const cbStackFrame = fFlags & IEM_XCPT_FLAGS_ERR ? 24 : 20;
         if (   uNewEsp - 1 > cbLimitSS
@@ -2092,8 +2127,8 @@ iemRaiseXcptOrIntInV8086Mode(PIEMCPU     pIemCpu,
                              uint64_t    uCr2)
 {
     NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
-    AssertMsgFailed(("V8086 exception / interrupt dispatching\n"));
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    /** @todo implement me. */
+    IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("V8086 exception / interrupt dispatching\n"));
 }
 
 
@@ -2120,8 +2155,8 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
                             uint64_t    uCr2)
 {
     NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
-    AssertMsgFailed(("long mode exception / interrupt dispatching\n"));
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    /** @todo implement me. */
+    IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("long mode exception / interrupt dispatching\n"));
 }
 
 
@@ -2163,7 +2198,8 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
              u8Vector, pCtx->cs.Sel, pCtx->rip, cbInstr, fFlags, uErr, uCr2, pIemCpu->uCurXcpt, pIemCpu->cXcptRecursions + 1, fPrevXcpt));
 
         /** @todo double and tripple faults. */
-        AssertReturn(pIemCpu->cXcptRecursions < 3, VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+        if (pIemCpu->cXcptRecursions >= 3)
+            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Too many fault nestings.\n"));
 
         /** @todo set X86_TRAP_ERR_EXTERNAL when appropriate.
         if (fPrevXcpt & IEM_XCPT_FLAGS_T_EXT_INT)
@@ -2599,14 +2635,28 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
 #endif
 }
 
+/**
+ * Complains about a stub.
+ *
+ * Providing two versions of this macro, one for daily use and one for use when
+ * working on IEM.
+ */
+#if 0
+# define IEMOP_BITCH_ABOUT_STUB() \
+    do { \
+        RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__); \
+        iemOpStubMsg2(pIemCpu); \
+        RTAssertPanic(); \
+    } while (0)
+#else
+# define IEMOP_BITCH_ABOUT_STUB() Log(("Stub: %s (line %d)\n", __FUNCTION__, __LINE__));
+#endif
 
 /** Stubs an opcode. */
 #define FNIEMOP_STUB(a_Name) \
     FNIEMOP_DEF(a_Name) \
     { \
-        RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__); \
-        iemOpStubMsg2(pIemCpu); \
-        RTAssertPanic(); \
+        IEMOP_BITCH_ABOUT_STUB(); \
         return VERR_IEM_INSTR_NOT_IMPLEMENTED; \
     } \
     typedef int ignore_semicolon
@@ -2615,9 +2665,7 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
 #define FNIEMOP_STUB_1(a_Name, a_Type0, a_Name0) \
     FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
     { \
-        RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__); \
-        iemOpStubMsg2(pIemCpu); \
-        RTAssertPanic(); \
+        IEMOP_BITCH_ABOUT_STUB(); \
         NOREF(a_Name0); \
         return VERR_IEM_INSTR_NOT_IMPLEMENTED; \
     } \
@@ -4309,8 +4357,7 @@ static VBOXSTRICTRC iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_
                 else
                 {
                     /** @todo implement expand down segments. */
-                    AssertFailed(/** @todo implement this */);
-                    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+                    IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n"));
                 }
             }
             else
@@ -7840,6 +7887,18 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu)
                 pIemCpu->cInstructions++;
         }
         EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
+    }
+
+    if (rcStrict != VINF_SUCCESS)
+    {
+        if (rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED)
+            pIemCpu->cRetAspectNotImplemented++;
+        else if (rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+            pIemCpu->cRetInstrNotImplemented++;
+        else if (RT_SUCCESS(rcStrict))
+            pIemCpu->cRetInfStatuses++;
+        else
+            pIemCpu->cRetErrStatuses++;
     }
 
     return rcStrict;
