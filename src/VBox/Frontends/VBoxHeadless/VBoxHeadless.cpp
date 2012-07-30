@@ -470,14 +470,15 @@ static void show_usage()
              "                                         two port numbers to specify a range\n"
              "                                         \"TCP/Address\" - interface IP the VRDE server\n"
              "                                         will bind to\n"
+             "   --settingspw                          Specify the settings password\n"
+             "   --settingspwfile                      Specify a file containing the settings password\n"
 #ifdef VBOX_WITH_VIDEO_REC
              "   -c, -capture, --capture               Record the VM screen output to a file\n"
              "   -w, --width                           Frame width when recording\n"
              "   -h, --height                          Frame height when recording\n"
              "   -r, --bitrate                         Recording bit rate when recording\n"
-             "   -f, --filename                        File name when recording.  The codec\n"
-             "                                         used will be chosen based on the\n"
-             "                                         file extension\n"
+             "   -f, --filename                        File name when recording. The codec used\n"
+             "                                         will be chosen based on the file extension\n"
 #endif
              "\n");
 }
@@ -528,6 +529,69 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
 }
 #endif /* VBOX_WITH_VIDEO_REC defined */
 
+static RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd)
+{
+    size_t cbFile;
+    char szPasswd[512];
+    int vrc = VINF_SUCCESS;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    bool fStdIn = !strcmp(pszFilename, "stdin");
+    PRTSTREAM pStrm;
+    if (!fStdIn)
+        vrc = RTStrmOpen(pszFilename, "r", &pStrm);
+    else
+        pStrm = g_pStdIn;
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTStrmReadEx(pStrm, szPasswd, sizeof(szPasswd)-1, &cbFile);
+        if (RT_SUCCESS(vrc))
+        {
+            if (cbFile >= sizeof(szPasswd)-1)
+            {
+                RTPrintf("Provided password in file '%s' is too long\n", pszFilename);
+                rcExit = RTEXITCODE_FAILURE;
+            }
+            else
+            {
+                unsigned i;
+                for (i = 0; i < cbFile && !RT_C_IS_CNTRL(szPasswd[i]); i++)
+                    ;
+                szPasswd[i] = '\0';
+                *pPasswd = szPasswd;
+            }
+        }
+        else
+        {
+            RTPrintf("Cannot read password from file '%s': %Rrc\n", pszFilename, vrc);
+            rcExit = RTEXITCODE_FAILURE;
+        }
+        if (!fStdIn)
+            RTStrmClose(pStrm);
+    }
+    else
+    {
+        RTPrintf("Cannot open password file '%s' (%Rrc)\n", pszFilename, vrc);
+        rcExit = RTEXITCODE_FAILURE;
+    }
+
+    return rcExit;
+}
+
+static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszFilename)
+{
+    com::Utf8Str passwd;
+    RTEXITCODE rcExit = readPasswordFile(pszFilename, &passwd);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        int rc;
+        CHECK_ERROR(virtualBox, SetSettingsSecret(com::Bstr(passwd).raw()));
+        if (FAILED(rc))
+            rcExit = RTEXITCODE_FAILURE;
+    }
+
+    return rcExit;
+}
+
 #ifdef RT_OS_WINDOWS
 // Required for ATL
 static CComModule _Module;
@@ -576,6 +640,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         OPT_NO_PATM,
         OPT_CSAM,
         OPT_NO_CSAM,
+        OPT_SETTINGSPW,
+        OPT_SETTINGSPW_FILE,
         OPT_COMMENT
     };
 
@@ -609,6 +675,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--csam", OPT_CSAM, 0 },
         { "-nocsam", OPT_NO_CSAM, 0 },
         { "--nocsam", OPT_NO_CSAM, 0 },
+        { "--settingspw", OPT_SETTINGSPW, RTGETOPT_REQ_STRING },
+        { "--settingspwfile", OPT_SETTINGSPW_FILE, RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VIDEO_REC
         { "-capture", 'c', 0 },
         { "--capture", 'c', 0 },
@@ -625,6 +693,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     // parse the command line
     int ch;
+    const char *pcszSettingsPw = NULL;
+    const char *pcszSettingsPwFile = NULL;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
@@ -675,6 +745,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             case OPT_NO_CSAM:
                 fCSAM = false;
+                break;
+            case OPT_SETTINGSPW:
+                pcszSettingsPw = ValueUnion.psz;
+                break;
+            case OPT_SETTINGSPW_FILE:
+                pcszSettingsPwFile = ValueUnion.psz;
                 break;
 #ifdef VBOX_WITH_VIDEO_REC
             case 'c':
@@ -806,6 +882,19 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             RTPrintf("Failed to get session object (rc=%Rhrc)!\n", rc);
             break;
+        }
+
+        if (pcszSettingsPw)
+        {
+            CHECK_ERROR(virtualBox, SetSettingsSecret(Bstr(pcszSettingsPw).raw()));
+            if (FAILED(rc))
+                break;
+        }
+        else if (pcszSettingsPwFile)
+        {
+            int rcExit = settingsPasswordFile(virtualBox, pcszSettingsPwFile);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
         }
 
         ComPtr<IMachine> m;
