@@ -63,7 +63,7 @@
 ******************************************************************************/
 
 /** The module name. */
-#define DEVICE_NAME              "vboxmouse"
+#define DEVICE_NAME              "vboxms"
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC              "VBoxMouseIntegr"
 
