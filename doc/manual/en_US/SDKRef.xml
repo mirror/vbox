@@ -307,7 +307,7 @@
       other words, if the web service is run under the user account of
       <computeroutput>user1</computeroutput>, it will see and manipulate the
       virtual machines and other data represented by the VirtualBox data of
-      that user (e.g., on a Linux machine, under
+      that user (for example, on a Linux machine, under
       <computeroutput>/home/user1/.VirtualBox</computeroutput>; see the
       VirtualBox User Manual for details on where this data is stored).</para>
 
