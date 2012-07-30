@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -357,14 +357,6 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             switch (u32)
             {
                 case EFI_PANIC_CMD_BAD_ORG:
-#if 0
-                    LogRel(("EFI Panic: You have to fix ORG offset in EfiThunk.asm! Must be 0x%x\n",
-                            g_cbEfiThunkBinary));
-                    RTAssertMsg2Weak("Fix ORG offset in EfiThunk.asm: must be 0x%x\n",
-                                     g_cbEfiThunkBinary);
-                    break;
-#endif
-
                 case EFI_PANIC_CMD_THUNK_TRAP:
                     LogRel(("EFI Panic: Unexpected trap!!\n"));
 #ifdef VBOX_STRICT
@@ -576,6 +568,7 @@ efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd
         }
         pFfsFile = (EFI_FFS_FILE_HEADER *)((uintptr_t)pFfsFile + RT_ALIGN(FFS_SIZE(pFfsFile), 8));
     }
+#undef FFS_SIZE
     return NULL;
 }
 
@@ -613,48 +606,6 @@ static int efiParseFirmware(PDEVEFI pThis)
     uint8_t const * const pbFwVolEnd = pThis->pu8EfiRom + pFwVolHdr->FvLength;
     pThis->GCLoadAddress = UINT32_C(0xfffff000) - pThis->cbEfiRom + PAGE_SIZE;
 
-#if 0
-    /*
-     * Ffs files are stored one by one, so to find SECURITY_CORE we've to
-     * search thru every one on the way.
-     */
-    uint32_t                    cbFfsFile = 0;  /* shut up gcc */
-    EFI_FFS_FILE_HEADER const  *pFfsFile  = (EFI_FFS_FILE_HEADER const *)(pThis->pu8EfiRom + pFwVolHdr->HeaderLength);
-    pFfsFile = efiFwVolFindFileByType(pFfsFile, pbFwVolEnd, EFI_FV_FILETYPE_SECURITY_CORE, &cbFfsFile);
-    AssertLogRelMsgReturn(pFfsFile, ("No SECURITY_CORE found in the firmware volume\n"), VERR_FILE_NOT_FOUND);
-
-    RTGCPHYS ImageBase = NIL_RTGCPHYS;
-    uint8_t *pbImage = NULL;
-    pThis->GCEntryPoint0 = efiFindRelativeAddressOfEPAndBaseAddressOfModule(pFfsFile, cbFfsFile, &ImageBase, &pbImage);
-    pThis->GCEntryPoint0 += pbImage - pThis->pu8EfiRom;
-    Assert(pThis->pu8EfiRom <= pbImage);
-    Assert(pbImage < pThis->pu8EfiRom + pThis->cbEfiRom);
-    /*
-     * Calc the firmware load address from the image base and validate it.
-     */
-    pThis->GCLoadAddress = ImageBase - (pbImage - pThis->pu8EfiRom);
-    pThis->GCEntryPoint0 += pThis->GCLoadAddress;
-    AssertLogRelMsgReturn(~(pThis->GCLoadAddress & PAGE_OFFSET_MASK),
-                          ("%RGp\n", pThis->GCLoadAddress),
-                          VERR_INVALID_PARAMETER);
-    AssertLogRelMsgReturn(pThis->GCLoadAddress > UINT32_C(0xf0000000),
-                          ("%RGp\n", pThis->GCLoadAddress),
-                          VERR_OUT_OF_RANGE);
-    AssertLogRelMsgReturn(   pThis->GCLoadAddress + (pThis->cbEfiRom - 1) > UINT32_C(0xf0000000)
-                          && pThis->GCLoadAddress + (pThis->cbEfiRom - 1) < UINT32_C(0xffffe000),
-                          ("%RGp + %RX64\n", pThis->GCLoadAddress, pThis->cbEfiRom),
-                          VERR_OUT_OF_RANGE);
-
-    LogRel(("EFI: Firmware volume loading at %RGp, SEC CORE at %RGp with EP at %RGp\n",
-            pThis->GCLoadAddress, ImageBase, pThis->GCEntryPoint0));
-
-    pFfsFile = efiFwVolFindFileByType(pFfsFile, pbFwVolEnd, EFI_FV_FILETYPE_PEI_CORE, &cbFfsFile);
-    pThis->GCEntryPoint1 = efiFindRelativeAddressOfEPAndBaseAddressOfModule(pFfsFile, cbFfsFile, NULL, &pbImage);
-    pThis->GCEntryPoint1 += pThis->GCLoadAddress;
-    pThis->GCEntryPoint1 += pbImage - pThis->pu8EfiRom;
-    LogRel(("EFI: Firmware volume loading at %RGp, PEI CORE at with EP at %RGp\n",
-            pThis->GCLoadAddress, pThis->GCEntryPoint1));
-#endif
     return VINF_SUCCESS;
 }
 
@@ -738,88 +689,6 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
         return rc;
     return VINF_SUCCESS;
 }
-
-#if 0
-/**
- * Patches and loads the EfiThunk ROM image.
- *
- * The thunk image is where the CPU starts and will switch it into
- * 32-bit protected or long mode and invoke the SEC CORE image in the
- * firmware volume. It also contains some static VM configuration data
- * at the very beginning of the page, see DEVEFIINFO.
- *
- * @returns VBox status code.
- * @param   pThis       The device instance data.
- * @param   pCfg        Configuration node handle for the device.
- */
-static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfg)
-{
-    uint8_t f64BitEntry = 0;
-    int rc;
-
-    rc = CFGMR3QueryU8Def(pCfg, "64BitEntry", &f64BitEntry, 0);
-    if (RT_FAILURE (rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
-                                N_("Configuration error: Failed to read \"64BitEntry\""));
-
-    /*
-     * Make a copy of the page and set the values of the DEVEFIINFO structure
-     * found at the beginning of it.
-     */
-
-    if (f64BitEntry)
-        LogRel(("Using 64-bit EFI firmware\n"));
-
-    /* Duplicate the page so we can change it. */
-    AssertRelease(g_cbEfiThunkBinary == PAGE_SIZE);
-    pThis->pu8EfiThunk = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevIns, PAGE_SIZE);
-    if (pThis->pu8EfiThunk == NULL)
-        return VERR_NO_MEMORY;
-    memcpy(pThis->pu8EfiThunk, &g_abEfiThunkBinary[0], PAGE_SIZE);
-
-    /* Fill in the info. */
-    PDEVEFIINFO pEfiInfo = (PDEVEFIINFO)pThis->pu8EfiThunk;
-    pEfiInfo->pfnFirmwareEP = (uint32_t)pThis->GCEntryPoint0;
-    //AssertRelease(pEfiInfo->pfnFirmwareEP == pThis->GCEntryPoint0);
-    pEfiInfo->HighEPAddress = 0;
-    pEfiInfo->PhysFwVol     = pThis->GCLoadAddress;
-    pEfiInfo->cbFwVol       = (uint32_t)pThis->cbEfiRom;
-    AssertRelease(pEfiInfo->cbFwVol == (uint32_t)pThis->cbEfiRom);
-    pEfiInfo->cbBelow4GB    = pThis->cbBelow4GB;
-    pEfiInfo->cbAbove4GB    = pThis->cbAbove4GB;
-    /* zeroth bit controls use of 64-bit entry point in fw */
-    pEfiInfo->fFlags        = f64BitEntry ? 1 : 0;
-    pEfiInfo->cCpus         = pThis->cCpus;
-    pEfiInfo->pfnPeiEP      = (uint32_t)pThis->GCEntryPoint1;
-    pEfiInfo->u32Reserved2  = 0;
-
-    /* Register the page as a ROM (data will be copied). */
-    rc = PDMDevHlpROMRegister(pThis->pDevIns, UINT32_C(0xfffff000), PAGE_SIZE,
-                              pThis->pu8EfiThunk, PAGE_SIZE,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "EFI Thunk");
-    if (RT_FAILURE(rc))
-        return rc;
-
-#if 1    /** @todo this is probably not necessary. */
-    /*
-     * Map thunk page also at low address, so that real->protected mode jump code can
-     * store GDT/IDT in code segment in low memory and load them during switch to the
-     * protected mode, while being in 16-bits mode.
-     *
-     * @todo: maybe need to unregister later or place somewhere else (although could
-     *        be needed during reset)
-     */
-    rc = PDMDevHlpROMRegister(pThis->pDevIns, 0xff000, PAGE_SIZE,
-                              pThis->pu8EfiThunk, PAGE_SIZE,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "EFI Thunk (2)");
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
-
-    return rc;
-}
-#endif
-
 
 static uint8_t efiGetHalfByte(char ch)
 {
@@ -1041,7 +910,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * CPU frequencies
      */
     // @todo: we need to have VMM API to access TSC increase speed, for now provide reasonable default
-    pThis->u64TscFrequency = RTMpGetMaxFrequency(0) * 1024 * 1024;// TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
+    pThis->u64TscFrequency = RTMpGetMaxFrequency(0) * 1000 * 1000;// TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
     if (pThis->u64TscFrequency == 0)
         pThis->u64TscFrequency = UINT64_C(2500000000);
     /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4 */
@@ -1087,12 +956,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = efiLoadRom(pThis, pCfg);
     if (RT_FAILURE(rc))
         return rc;
-
-#if 0
-    rc = efiLoadThunk(pThis, pCfg);
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
 
     /*
      * Register our communication ports.
