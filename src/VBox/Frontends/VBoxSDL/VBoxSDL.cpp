@@ -62,6 +62,7 @@ using namespace com;
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/ldr.h>
@@ -156,6 +157,9 @@ static Uint32  ResizeTimer(Uint32 interval, void *param);
 static Uint32  QuitTimer(Uint32 interval, void *param);
 static int     WaitSDLEvent(SDL_Event *event);
 static void    SetFullscreen(bool enable);
+static RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd);
+static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszFilename);
+
 #ifdef VBOX_WITH_SDL13
 static VBoxSDLFB * getFbFromWinId(SDL_WindowID id);
 #endif
@@ -616,6 +620,8 @@ static void show_usage()
              "  --termacpi               Send an ACPI power button event when closing the window\n"
              "  --vrdp <ports>           Listen for VRDP connections on one of specified ports (default if not specified)\n"
              "  --discardstate           Discard saved state (if present) and revert to last snapshot (if present)\n"
+             "  --settingspw             Specify the settings password\n"
+             "  --settingspwfile         Specify a file containing the settings password\n"
 #ifdef VBOX_SECURELABEL
              "  --securelabel            Display a secure VM label at the top of the screen\n"
              "  --seclabelfnt            TrueType (.ttf) font file for secure session label\n"
@@ -814,11 +820,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef USE_XPCOM_QUEUE_THREAD
     bool fXPCOMEventThreadSignaled = false;
 #endif
-    char *hdaFile   = NULL;
-    char *cdromFile = NULL;
-    char *fdaFile   = NULL;
+    const char *pcszHdaFile   = NULL;
+    const char *pcszCdromFile = NULL;
+    const char *pcszFdaFile   = NULL;
     const char *pszPortVRDP = NULL;
     bool fDiscardState = false;
+    const char *pcszSettingsPw = NULL;
+    const char *pcszSettingsPwFile = NULL;
 #ifdef VBOX_SECURELABEL
     BOOL fSecureLabel = false;
     uint32_t secureLabelPointSize = 12;
@@ -1117,8 +1125,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
             /* resolve it. */
             if (RTPathExists(argv[curArg]))
-                hdaFile = RTPathRealDup(argv[curArg]);
-            if (!hdaFile)
+                pcszHdaFile = RTPathRealDup(argv[curArg]);
+            if (!pcszHdaFile)
             {
                 RTPrintf("Error: The path to the specified harddisk, '%s', could not be resolved.\n", argv[curArg]);
                 return 1;
@@ -1134,8 +1142,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
             /* resolve it. */
             if (RTPathExists(argv[curArg]))
-                fdaFile = RTPathRealDup(argv[curArg]);
-            if (!fdaFile)
+                pcszFdaFile = RTPathRealDup(argv[curArg]);
+            if (!pcszFdaFile)
             {
                 RTPrintf("Error: The path to the specified floppy disk, '%s', could not be resolved.\n", argv[curArg]);
                 return 1;
@@ -1151,8 +1159,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
             /* resolve it. */
             if (RTPathExists(argv[curArg]))
-                cdromFile = RTPathRealDup(argv[curArg]);
-            if (!cdromFile)
+                pcszCdromFile = RTPathRealDup(argv[curArg]);
+            if (!pcszCdromFile)
             {
                 RTPrintf("Error: The path to the specified cdrom, '%s', could not be resolved.\n", argv[curArg]);
                 return 1;
@@ -1176,6 +1184,24 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  || !strcmp(argv[curArg], "-discardstate"))
         {
             fDiscardState = true;
+        }
+        else if (!strcmp(argv[curArg], "--settingspw"))
+        {
+            if (++curArg >= argc)
+            {
+                RTPrintf("Error: missing password");
+                return 1;
+            }
+            pcszSettingsPw = argv[curArg];
+        }
+        else if (!strcmp(argv[curArg], "--settingspwfile"))
+        {
+            if (++curArg >= argc)
+            {
+                RTPrintf("Error: missing password file\n");
+                return 1;
+            }
+            pcszSettingsPwFile = argv[curArg];
         }
 #ifdef VBOX_SECURELABEL
         else if (   !strcmp(argv[curArg], "--securelabel")
@@ -1374,6 +1400,19 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         goto leave;
     }
 
+    if (pcszSettingsPw)
+    {
+        CHECK_ERROR(pVirtualBox, SetSettingsSecret(Bstr(pcszSettingsPw).raw()));
+        if (FAILED(rc))
+            goto leave;
+    }
+    else if (pcszSettingsPwFile)
+    {
+        int rcExit = settingsPasswordFile(pVirtualBox, pcszSettingsPwFile);
+        if (rcExit != RTEXITCODE_SUCCESS)
+            goto leave;
+    }
+
     /*
      * Do we have a UUID?
      */
@@ -1452,7 +1491,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /*
      * Are we supposed to use a different hard disk file?
      */
-    if (hdaFile)
+    if (pcszHdaFile)
     {
         ComPtr<IMedium> pMedium;
 
@@ -1460,14 +1499,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * Strategy: if any registered hard disk points to the same file,
          * assign it. If not, register a new image and assign it to the VM.
          */
-        Bstr bstrHdaFile(hdaFile);
+        Bstr bstrHdaFile(pcszHdaFile);
         pVirtualBox->OpenMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
                                 AccessMode_ReadWrite, FALSE /* fForceNewUuid */,
                                 pMedium.asOutParam());
         if (!pMedium)
         {
             /* we've not found the image */
-            RTPrintf("Adding hard disk '%s'...\n", hdaFile);
+            RTPrintf("Adding hard disk '%s'...\n", pcszHdaFile);
             pVirtualBox->OpenMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
                                     AccessMode_ReadWrite, FALSE /* fForceNewUuid */,
                                     pMedium.asOutParam());
@@ -1523,19 +1562,19 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /*
      * Mount a floppy if requested.
      */
-    if (fdaFile)
+    if (pcszFdaFile)
     do
     {
         ComPtr<IMedium> pMedium;
 
         /* unmount? */
-        if (!strcmp(fdaFile, "none"))
+        if (!strcmp(pcszFdaFile, "none"))
         {
             /* nothing to do, NULL object will cause unmount */
         }
         else
         {
-            Bstr bstrFdaFile(fdaFile);
+            Bstr bstrFdaFile(pcszFdaFile);
 
             /* Assume it's a host drive name */
             ComPtr<IHost> pHost;
@@ -1553,7 +1592,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
-                    RTPrintf("Adding floppy image '%s'...\n", fdaFile);
+                    RTPrintf("Adding floppy image '%s'...\n", pcszFdaFile);
                     CHECK_ERROR_BREAK(pVirtualBox,
                                       OpenMedium(bstrFdaFile.raw(),
                                                  DeviceType_Floppy,
@@ -1608,19 +1647,19 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /*
      * Mount a CD-ROM if requested.
      */
-    if (cdromFile)
+    if (pcszCdromFile)
     do
     {
         ComPtr<IMedium> pMedium;
 
         /* unmount? */
-        if (!strcmp(cdromFile, "none"))
+        if (!strcmp(pcszCdromFile, "none"))
         {
             /* nothing to do, NULL object will cause unmount */
         }
         else
         {
-            Bstr bstrCdromFile(cdromFile);
+            Bstr bstrCdromFile(pcszCdromFile);
 
             /* Assume it's a host drive name */
             ComPtr<IHost> pHost;
@@ -1637,7 +1676,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
-                    RTPrintf("Adding ISO image '%s'...\n", cdromFile);
+                    RTPrintf("Adding ISO image '%s'...\n", pcszCdromFile);
                     CHECK_ERROR_BREAK(pVirtualBox,
                                       OpenMedium(bstrCdromFile.raw(),
                                                  DeviceType_DVD,
@@ -2920,6 +2959,68 @@ leave:
     return FAILED(rc) ? 1 : 0;
 }
 
+static RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd)
+{
+    size_t cbFile;
+    char szPasswd[512];
+    int vrc = VINF_SUCCESS;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    bool fStdIn = !strcmp(pszFilename, "stdin");
+    PRTSTREAM pStrm;
+    if (!fStdIn)
+        vrc = RTStrmOpen(pszFilename, "r", &pStrm);
+    else
+        pStrm = g_pStdIn;
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTStrmReadEx(pStrm, szPasswd, sizeof(szPasswd)-1, &cbFile);
+        if (RT_SUCCESS(vrc))
+        {
+            if (cbFile >= sizeof(szPasswd)-1)
+            {
+                RTPrintf("Provided password in file '%s' is too long\n", pszFilename);
+                rcExit = RTEXITCODE_FAILURE;
+            }
+            else
+            {
+                unsigned i;
+                for (i = 0; i < cbFile && !RT_C_IS_CNTRL(szPasswd[i]); i++)
+                    ;
+                szPasswd[i] = '\0';
+                *pPasswd = szPasswd;
+            }
+        }
+        else
+        {
+            RTPrintf("Cannot read password from file '%s': %Rrc\n", pszFilename, vrc);
+            rcExit = RTEXITCODE_FAILURE;
+        }
+        if (!fStdIn)
+            RTStrmClose(pStrm);
+    }
+    else
+    {
+        RTPrintf("Cannot open password file '%s' (%Rrc)\n", pszFilename, vrc);
+        rcExit = RTEXITCODE_FAILURE;
+    }
+
+    return rcExit;
+}
+
+static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszFilename)
+{
+    com::Utf8Str passwd;
+    RTEXITCODE rcExit = readPasswordFile(pszFilename, &passwd);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        int rc;
+        CHECK_ERROR(virtualBox, SetSettingsSecret(com::Bstr(passwd).raw()));
+        if (FAILED(rc))
+            rcExit = RTEXITCODE_FAILURE;
+    }
+
+    return rcExit;
+}
 
 #ifndef VBOX_WITH_HARDENING
 /**
