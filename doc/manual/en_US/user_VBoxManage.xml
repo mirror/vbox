@@ -1393,14 +1393,15 @@ Virtual system 0:
 
         <listitem>
           <para><computeroutput>VBoxManage controlvm &lt;vm&gt; teleport
-          --hostname &lt;name&gt; --port &lt;port&gt; [--password
-          &lt;password&gt;]</computeroutput> makes the machine the source of a
-          teleporting operation and initiates a teleport to the given target.
-          See <xref linkend="teleporting" /> for an introduction. If the
-          optional password is specified, it must match the password that was
-          given to the <computeroutput>modifyvm</computeroutput> command for
-          the target machine; see <xref
-          linkend="vboxmanage-modifyvm-teleport" /> for details.</para>
+          --hostname &lt;name&gt; --port &lt;port&gt; [--passwordfile
+          &lt;file&gt; | --password &lt;password&gt;]</computeroutput> makes
+          the machine the source of a teleporting operation and initiates a
+          teleport to the given target. See <xref linkend="teleporting" /> for
+          an introduction. If the optional password is specified, it must match
+          the password that was given to the
+          <computeroutput>modifyvm</computeroutput> command for the target
+          machine; see <xref linkend="vboxmanage-modifyvm-teleport" /> for
+          details.</para>
         </listitem>
       </itemizedlist></para>
 
@@ -2602,12 +2603,12 @@ Value: 2006.01.01</screen>
           running and has the following syntax:</para>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; exec[ute]
-            --image &lt;path to program&gt;
-            --username &lt;name&gt; [--password &lt;password&gt;]
-            [--dos2unix]
+            --image &lt;path to program&gt; --username &lt;name&gt;
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
             [--environment "&lt;NAME&gt;=&lt;VALUE&gt; [&lt;NAME&gt;=&lt;VALUE&gt;]"]
-            [--timeout &lt;msec&gt;] [--unix2dos] [--verbose]
+            [--verbose] [--timeout &lt;msec&gt;]
             [--wait-exit] [--wait-stdout] [--wait-stderr]
+            [--dos2unix] [--unix2dos]
             -- [[&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</screen>
 
           <para>where the parameters mean: <glosslist>
@@ -2635,6 +2636,16 @@ Value: 2006.01.01</screen>
                 <glossdef>
                   <para>Name of the user the process should run under. This
                   user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--passwordfile &lt;file&gt;</glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified to be read from
+                  the given file. If not given, an empty password is
+                  assumed.</para>
                 </glossdef>
               </glossentry>
 
@@ -2757,8 +2768,8 @@ Value: 2006.01.01</screen>
               applications; please see <xref linkend="KnownIssues" /> for more
               information.</para>
             </note> Examples: <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "/bin/ls"
-          --username foo --password bar --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "c:\\windows\\system32\\ipconfig.exe"
-          --username foo --password bar --wait-exit --wait-stdout</screen> Note that
+          --username foo --passwordfile bar.txt --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "c:\\windows\\system32\\ipconfig.exe"
+          --username foo --passwordfile bar.txt --wait-exit --wait-stdout</screen> Note that
           the double backslashes in the second example are only required on
           Unix hosts.</para>
 
@@ -2793,8 +2804,8 @@ Value: 2006.01.01</screen>
           Additions 4.0 and later).</para>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; copyto|cp
-            &lt;source on host&gt; &lt;destination on guest&gt;
-            --username &lt;name&gt; [--password &lt;password&gt;]
+            &lt;guest source&gt; &lt;host dest&gt; --username &lt;name&gt;
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
             [--dryrun] [--follow] [--recursive] [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
@@ -2833,6 +2844,16 @@ Value: 2006.01.01</screen>
                 <glossdef>
                   <para>Name of the user the copy process should run under.
                   This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--passwordfile &lt;file&gt;</glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified to be read from
+                  the given file. If not given, an empty password is
+                  assumed.</para>
                 </glossdef>
               </glossentry>
 
@@ -2893,13 +2914,20 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
+          <para><computeroutput>copyfrom</computeroutput>, which allows copying
+          files from the guest to the host (only with installed Guest
+          Additions 4.0 and later). It has the same parameters as
+          <computeroutput>copyto</computeroutput> above.</para>
+        </listitem>
+
+        <listitem>
           <para><computeroutput>createdirectory</computeroutput>, which allows
           copying files from the host to the guest (only with installed Guest
           Additions 4.0 and later).</para>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; createdir[ectory]|mkdir|md
-            &lt;directory to create on guest&gt;
-            [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
+            &lt;guest directory&gt;... --username &lt;name&gt;
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
             [--parents] [--mode &lt;mode&gt;] [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
@@ -2931,6 +2959,16 @@ Value: 2006.01.01</screen>
                 <glossdef>
                   <para>Name of the user the copy process should run under.
                   This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--passwordfile &lt;file&gt;</glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified to be read from
+                  the given file. If not given, an empty password is
+                  assumed.</para>
                 </glossdef>
               </glossentry>
 
@@ -2984,8 +3022,8 @@ Value: 2006.01.01</screen>
           or file system status on the guest.</para>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; stat
-            &lt;file element(s) to check on guest&gt;
-            [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
+            &lt;file&gt;... --username &lt;name&gt;
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
             [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
@@ -3014,6 +3052,16 @@ Value: 2006.01.01</screen>
                 <glossdef>
                   <para>Name of the user the copy process should run under.
                   This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--passwordfile &lt;file&gt;</glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified to be read from
+                  the given file. If not given, an empty password is
+                  assumed.</para>
                 </glossdef>
               </glossentry>
 

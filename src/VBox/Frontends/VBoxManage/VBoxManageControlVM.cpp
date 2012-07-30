@@ -1151,14 +1151,15 @@ int handleControlVM(HandlerArg *a)
             uint32_t    uMaxDowntime = 250 /*ms*/;
             uint32_t    uPort        = UINT32_MAX;
             uint32_t    cMsTimeout   = 0;
-            Bstr        bstrPassword("");
+            Utf8Str     strPassword;
             static const RTGETOPTDEF s_aTeleportOptions[] =
             {
                 { "--host",              'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
                 { "--hostname",          'h', RTGETOPT_REQ_STRING }, /** @todo remove this */
                 { "--maxdowntime",       'd', RTGETOPT_REQ_UINT32 },
-                { "--port",              'p', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
-                { "--password",          'P', RTGETOPT_REQ_STRING },
+                { "--port",              'P', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
+                { "--passwordfile",      'p', RTGETOPT_REQ_STRING },
+                { "--password",          'W', RTGETOPT_REQ_STRING },
                 { "--timeout",           't', RTGETOPT_REQ_UINT32 },
                 { "--detailed-progress", 'D', RTGETOPT_REQ_NOTHING }
             };
@@ -1174,8 +1175,15 @@ int handleControlVM(HandlerArg *a)
                     case 'h': bstrHostname  = Value.psz; break;
                     case 'd': uMaxDowntime  = Value.u32; break;
                     case 'D': g_fDetailedProgress = true; break;
-                    case 'p': uPort         = Value.u32; break;
-                    case 'P': bstrPassword  = Value.psz; break;
+                    case 'P': uPort         = Value.u32; break;
+                    case 'p':
+                    {
+                        RTEXITCODE rcExit = readPasswordFile(Value.psz, &strPassword);
+                        if (rcExit != RTEXITCODE_SUCCESS)
+                            rc = E_FAIL;
+                        break;
+                    }
+                    case 'W': strPassword   = Value.psz; break;
                     case 't': cMsTimeout    = Value.u32; break;
                     default:
                         errorGetOpt(USAGE_CONTROLVM, ch, &Value);
@@ -1188,7 +1196,7 @@ int handleControlVM(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, Teleport(bstrHostname.raw(), uPort,
-                                                bstrPassword.raw(),
+                                                Bstr(strPassword).raw(),
                                                 uMaxDowntime,
                                                 progress.asOutParam()));
 

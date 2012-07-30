@@ -346,7 +346,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "                            [--autostart-enabled on|off]\n"
                      "                            [--autostart-delay <seconds>]\n"
-                     "                            [--autostop-type disabled|savestate|poweroff|acpishutdown]\n"
+                     "                            [--autostop-type disabled|savestate|poweroff|\n"
+                     "                                             acpishutdown]\n"
                      "\n");
     }
 
@@ -443,7 +444,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                           <domain>\n"
                      "                                           [--allowlocallogon <yes|no>] |\n"
                      "                            teleport --host <name> --port <port>\n"
-                     "                                   [--maxdowntime <msec>] [--password password]\n"
+                     "                                     [--maxdowntime <msec>]\n"
+                     "                                     [--passwordfile <file> |\n"
+                     "                                      --password <password>]\n"
                      "                            plugcpu <id>\n"
                      "                            unplugcpu <id>\n"
                      "                            cpuexecutioncap <1-100>\n"
@@ -528,11 +531,14 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_BANDWIDTHCONTROL)
         RTStrmPrintf(pStrm,
                      "VBoxManage bandwidthctl     <uuid|vmname>\n"
-                     "                            add <name> --type disk|network --limit <megabytes per second>[k|m|g|K|M|G] |\n"
-                     "                            set <name> --limit <megabytes per second>[k|m|g|K|M|G] |\n"
+                     "                            add <name> --type disk|network\n"
+                     "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
+                     "                            set <name>\n"
+                     "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
                      "                            remove <name> |\n"
                      "                            list [--machinereadable]\n"
-                     "                            (limit units: k=kilobit, m=megabit, g=gigabit, K=kilobyte, M=megabyte, G=gigabyte)\n"
+                     "                            (limit units: k=kilobit, m=megabit, g=gigabit,\n"
+                     "                                          K=kilobyte, M=megabyte, G=gigabyte)\n"
                      "\n");
 
     if (u64Cmd & USAGE_SHOWHDINFO)
@@ -679,8 +685,10 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            osinfo |\n"
                      "                            getregisters [--cpu <id>] <reg>|all ... |\n"
                      "                            setregisters [--cpu <id>] <reg>=<value> ... |\n"
-                     "                            show [--human-readable|--sh-export|--sh-eval|--cmd-set] \n"
-                     "                                <logdbg-settings|logrel-settings> [[opt] what ...] |\n"
+                     "                            show [--human-readable|--sh-export|--sh-eval|\n"
+                     "                                  --cmd-set] \n"
+                     "                                <logdbg-settings|logrel-settings>\n"
+                     "                                [[opt] what ...] |\n"
                      "                            statistics [--reset] [--pattern <pattern>]\n"
                      "                            [--descriptions]\n"
                      "\n");
