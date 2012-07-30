@@ -121,8 +121,10 @@ int GuestCtrlEvent::Wait(ULONG uTimeoutMS)
 GuestCtrlCallback::GuestCtrlCallback(void)
     : pvData(NULL),
       cbData(0),
-     mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
-      uFlags(0)
+      mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      uFlags(0),
+      pvPayload(NULL),
+      cbPayload(0)
 {
 }
 
@@ -130,7 +132,9 @@ GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
     : pvData(NULL),
       cbData(0),
       mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
-      uFlags(0)
+      uFlags(0),
+      pvPayload(NULL),
+      cbPayload(0)
 {
     int rc = Init(enmType);
     AssertRC(rc);
@@ -205,20 +209,28 @@ void GuestCtrlCallback::Destroy(void)
         pvData = NULL;
     }
     cbData = 0;
+
+    if (pvPayload)
+    {
+        RTMemFree(pvPayload);
+        pvPayload = NULL;
+    }
+    cbPayload = 0;
 }
 
-int GuestCtrlCallback::FillData(const void *pData, size_t cbData)
+int GuestCtrlCallback::FillData(const void *pvToWrite, size_t cbToWrite)
 {
-    if (!cbData)
+    if (!cbToWrite)
         return VINF_SUCCESS;
-    AssertPtr(pData);
+    AssertPtr(pvToWrite);
 
-    Assert(pvData == NULL); /* Can't reuse callbacks! */
-    pvData = RTMemAlloc(cbData);
-    if (!pvData)
+    Assert(pvPayload == NULL); /* Can't reuse callbacks! */
+    pvPayload = RTMemAlloc(cbToWrite);
+    if (!pvPayload)
         return VERR_NO_MEMORY;
 
-    memcpy(pvData, pData, cbData);
+    memcpy(pvPayload, pvToWrite, cbToWrite);
+    cbPayload = cbToWrite;
 
     return VINF_SUCCESS;
 }

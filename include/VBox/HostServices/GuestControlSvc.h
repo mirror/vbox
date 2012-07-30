@@ -43,7 +43,6 @@ namespace guestControl {
 
 /**
  * Process status when executed in the guest.
- * Note: Has to match Main's ExecuteProcessStatus_*!
  */
 enum eProcessStatus
 {
@@ -249,7 +248,17 @@ enum eHostFn
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
      */
-    HOST_EXEC_GET_OUTPUT = 102
+    HOST_EXEC_GET_OUTPUT = 102,
+
+    /*
+     * Guest control 2.0 commands start in the 2xx number space.
+     */
+
+    /**
+     * Waits for a certain event to happen. This can be an input, output
+     * or status event.
+     */
+    HOST_EXEC_WAIT_FOR = 210
 };
 
 /**
@@ -277,6 +286,8 @@ enum eGuestFn
 
     /*
      * Process execution.
+     * The 1xx commands are legacy guest control commands and
+     * will be replaced by newer commands in the future.
      */
 
     /**
@@ -290,7 +301,19 @@ enum eGuestFn
     /**
      * Guests sends an input status notification to the host.
      */
-    GUEST_EXEC_SEND_INPUT_STATUS = 102
+    GUEST_EXEC_SEND_INPUT_STATUS = 102,
+
+    /*
+     * Guest control 2.0 commands start in the 2xx number space.
+     */
+
+    /**
+     * Guest notifies the host about some I/O event. This can be
+     * a stdout, stderr or a stdin event. The actual event only tells
+     * how many data is available / can be sent without actually
+     * transmitting the data.
+     */
+    GUEST_EXEC_IO_NOTIFY = 210,
 };
 
 /*
@@ -331,7 +354,7 @@ typedef struct VBoxGuestCtrlHGCMMsgExecCmd
     HGCMFunctionParameter context;
     /** The command to execute on the guest. */
     HGCMFunctionParameter cmd;
-    /** Execution flags (see IGuest::ExecuteProcessFlag_*). */
+    /** Execution flags (see IGuest::ProcessCreateFlag_*). */
     HGCMFunctionParameter flags;
     /** Number of arguments. */
     HGCMFunctionParameter num_args;
@@ -350,7 +373,7 @@ typedef struct VBoxGuestCtrlHGCMMsgExecCmd
     /** Timeout (in msec) which either specifies the
      *  overall lifetime of the process or how long it
      *  can take to bring the process up and running -
-     *  (depends on the IGuest::ExecuteProcessFlag_*). */
+     *  (depends on the IGuest::ProcessCreateFlag_*). */
     HGCMFunctionParameter timeout;
 
 } VBoxGuestCtrlHGCMMsgExecCmd;
@@ -432,6 +455,19 @@ typedef struct VBoxGuestCtrlHGCMMsgExecStatusIn
     HGCMFunctionParameter written;
 
 } VBoxGuestCtrlHGCMMsgExecStatusIn;
+
+/**
+ * Reports back the currente I/O status of a guest process.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgExecIONotify
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Data written. */
+    HGCMFunctionParameter written;
+
+} VBoxGuestCtrlHGCMMsgExecIONotify;
 
 #pragma pack ()
 
