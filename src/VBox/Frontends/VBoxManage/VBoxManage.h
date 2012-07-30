@@ -182,10 +182,10 @@ int handleModifyVM(HandlerArg *a);
 int handleDebugVM(HandlerArg *a);
 
 /* VBoxManageGuestProp.cpp */
-extern void usageGuestProperty(PRTSTREAM pStrm);
+extern void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2);
 
 /* VBoxManageGuestCtrl.cpp */
-extern void usageGuestControl(PRTSTREAM pStrm);
+extern void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2);
 
 #ifndef VBOX_ONLY_DOCS
 /* VBoxManageGuestProp.cpp */

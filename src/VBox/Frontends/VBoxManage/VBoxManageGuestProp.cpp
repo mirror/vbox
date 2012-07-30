@@ -52,24 +52,24 @@ using namespace com;
 
 #endif /* !VBOX_ONLY_DOCS */
 
-void usageGuestProperty(PRTSTREAM pStrm)
+void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2)
 {
     RTStrmPrintf(pStrm,
-                 "VBoxManage guestproperty    get <vmname>|<uuid>\n"
+                       "%s guestproperty %s   get <vmname>|<uuid>\n"
                  "                            <property> [--verbose]\n"
-                 "\n");
+                 "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                 "VBoxManage guestproperty    set <vmname>|<uuid>\n"
+                       "%s guestproperty %s   set <vmname>|<uuid>\n"
                  "                            <property> [<value> [--flags <flags>]]\n"
-                 "\n");
+                 "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                 "VBoxManage guestproperty    enumerate <vmname>|<uuid>\n"
+                       "%s guestproperty %s   enumerate <vmname>|<uuid>\n"
                  "                            [--patterns <patterns>]\n"
-                 "\n");
+                 "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                 "VBoxManage guestproperty    wait <vmname>|<uuid> <patterns>\n"
+                       "%s guestproperty %s   wait <vmname>|<uuid> <patterns>\n"
                  "                            [--timeout <msec>] [--fail-on-timeout]\n"
-                 "\n");
+                 "\n", pcszSep1, pcszSep2);
 }
 
 #ifndef VBOX_ONLY_DOCS
