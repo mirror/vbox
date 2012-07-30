@@ -4001,3 +4001,123 @@ VMMDECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
     return enmPgType;
 }
 
+
+
+
+/**
+ * Converts a GC physical address to a HC ring-3 pointer, with some
+ * additional checks.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_PGM_PHYS_TLB_CATCH_WRITE and *ppv set if the page has a write
+ *          access handler of some kind.
+ * @retval  VERR_PGM_PHYS_TLB_CATCH_ALL if the page has a handler catching all
+ *          accesses or is odd in any way.
+ * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   GCPhys      The GC physical address to convert.  Since this is only
+ *                      used for filling the REM TLB, the A20 mask must be
+ *                      applied before calling this API.
+ * @param   fWritable   Whether write access is required.
+ * @param   ppv         Where to store the pointer corresponding to GCPhys on
+ *                      success.
+ * @param   pLock
+ *
+ * @remarks This is more or a less a copy of PGMR3PhysTlbGCPhys2Ptr.
+ */
+VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers,
+                                       void **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    pgmLock(pVM);
+    PGM_A20_ASSERT_MASKED(VMMGetCpu(pVM), GCPhys);
+
+    PPGMRAMRANGE pRam;
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageAndRangeEx(pVM, GCPhys, &pPage, &pRam);
+    if (RT_SUCCESS(rc))
+    {
+        if (PGM_PAGE_IS_BALLOONED(pPage))
+            rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+        else if (   !PGM_PAGE_HAS_ANY_HANDLERS(pPage)
+                 || (fByPassHandlers && !PGM_PAGE_IS_MMIO(pPage)) )
+            rc = VINF_SUCCESS;
+        else
+        {
+            if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
+            {
+                Assert(!fByPassHandlers || PGM_PAGE_IS_MMIO(pPage));
+                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+            }
+            else if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && fWritable)
+            {
+                Assert(!fByPassHandlers);
+                rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            int rc2;
+
+            /* Make sure what we return is writable. */
+            if (fWritable)
+                switch (PGM_PAGE_GET_STATE(pPage))
+                {
+                    case PGM_PAGE_STATE_ALLOCATED:
+                        break;
+                    case PGM_PAGE_STATE_BALLOONED:
+                        AssertFailed();
+                        break;
+                    case PGM_PAGE_STATE_ZERO:
+                    case PGM_PAGE_STATE_SHARED:
+                        if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
+                            break;
+                    case PGM_PAGE_STATE_WRITE_MONITORED:
+                        rc2 = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
+                        AssertLogRelRCReturn(rc2, rc2);
+                        break;
+                }
+
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+            PVMCPU pVCpu = VMMGetCpu(pVM);
+            void *pv;
+            rc = pgmRZDynMapHCPageInlined(pVCpu,
+                                          PGM_PAGE_GET_HCPHYS(pPage),
+                                          &pv
+                                          RTLOG_COMMA_SRC_POS);
+            if (RT_FAILURE(rc))
+                return rc;
+            *ppv = (void *)((uintptr_t)pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
+            pLock->pvPage = pv;
+            pLock->pVCpu  = pVCpu;
+
+#else
+            /* Get a ring-3 mapping of the address. */
+            PPGMPAGER3MAPTLBE pTlbe;
+            rc2 = pgmPhysPageQueryTlbeWithPage(pVM, pPage, GCPhys, &pTlbe);
+            AssertLogRelRCReturn(rc2, rc2);
+
+            /* Lock it and calculate the address. */
+            if (fWritable)
+                pgmPhysPageMapLockForWriting(pVM, pPage, pTlbe, pLock);
+            else
+                pgmPhysPageMapLockForReading(pVM, pPage, pTlbe, pLock);
+            *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
+#endif
+
+
+            Log6(("PGMPhysIemGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage] *ppv=%p\n", GCPhys, rc, pPage, *ppv));
+        }
+        else
+            Log6(("PGMPhysIemGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage]\n", GCPhys, rc, pPage));
+
+        /* else: handler catching all access, no pointer returned. */
+    }
+    else
+        rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
+
+    pgmUnlock(pVM);
+    return rc;
+}
+
