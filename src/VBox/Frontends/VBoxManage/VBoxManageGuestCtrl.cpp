@@ -217,10 +217,10 @@ static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest, const char *psz
 
 #endif /* VBOX_ONLY_DOCS */
 
-void usageGuestControl(PRTSTREAM pStrm)
+void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2)
 {
     RTStrmPrintf(pStrm,
-                 "VBoxManage guestcontrol     <vmname>|<uuid>\n"
+                       "%s guestcontrol %s    <vmname>|<uuid>\n"
                  "                            exec[ute]\n"
                  "                            --image <path to program> --username <name>\n"
                  "                            [--passwordfile <file> | --password <password>]\n"
@@ -254,7 +254,7 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "\n"
                  "                            updateadditions\n"
                  "                            [--source <guest additions .ISO>] [--verbose]\n"
-                 "\n");
+                 "\n", pcszSep1, pcszSep2);
 }
 
 #ifndef VBOX_ONLY_DOCS
