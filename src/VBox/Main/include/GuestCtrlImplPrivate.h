@@ -126,15 +126,19 @@ public:
 
     void Destroy(void);
 
-    int FillData(const void *pData, size_t cbData);
+    int FillData(const void *pvToWrite, size_t cbToWrite);
 
     int Init(eVBoxGuestCtrlCallbackType enmType);
 
     eVBoxGuestCtrlCallbackType GetCallbackType(void) { return mType; }
 
+    const void* GetPayloadRaw(void) const { return pvPayload; }
+
+    size_t GetPayloadSize(void) { return cbPayload; }
+
 protected:
 
-    /** Pointer to user-supplied data. */
+    /** Pointer to actual callback data. */
     void                       *pvData;
     /** Size of user-supplied data. */
     size_t                      cbData;
@@ -142,6 +146,11 @@ protected:
     eVBoxGuestCtrlCallbackType  mType;
     /** Callback flags. */
     uint32_t                    uFlags;
+    /** Payload which will be available on successful
+     *  waiting (optional). */
+    void                       *pvPayload;
+    /** Size of the payload. */
+    size_t                      cbPayload;
 };
 typedef std::map < uint32_t, GuestCtrlCallback* > GuestCtrlCallbacks;
 

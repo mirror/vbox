@@ -30,6 +30,7 @@
 #include <iprt/env.h>
 
 #include <VBox/com/array.h>
+#include <VBox/version.h>
 
 
 // constructor / destructor
@@ -559,6 +560,38 @@ inline int GuestSession::processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pP
     }
 
     return VERR_NOT_FOUND;
+}
+
+/**
+ * Queries/collects information prior to establishing a guest session.
+ * This is necessary to know which guest control protocol version to use,
+ * among other things (later).
+ *
+ * @return  IPRT status code.
+ */
+int GuestSession::queryInfo(void)
+{
+    /*
+     * Try querying the guest control protocol version running on the guest.
+     * This is done using the Guest Additions version
+     */
+    ComObjPtr<Guest> pGuest = mData.mParent;
+    Assert(!pGuest.isNull());
+
+    uint32_t uVerAdditions = pGuest->getAdditionsVersion();
+    mData.mProtocolVersion = (   VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions) >= 4
+                              && VBOX_FULL_VERSION_GET_MINOR(uVerAdditions) >= 2 )
+                           ? 2  /* Guest control 2.0. */
+                           : 1; /* Legacy guest control (VBox < 4.2). */
+    /* Build revision is ignored. */
+
+    /* Tell the user but don't bitch too often. */
+    static short s_gctrlLegacyWarning = 0;
+    if (s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
+        LogRel((tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
+                VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions), mData.mProtocolVersion));
+
+    return VINF_SUCCESS;
 }
 
 // implementation of public methods

@@ -8883,7 +8883,7 @@
   
   <enum
     name="ProcessWaitResult"
-    uuid="c593a234-21ee-4a67-85ef-ba0cc9b9b86a"
+    uuid="24a4d49f-a7c1-44b0-b01f-5686a316466b"
     >
     <desc>
       TODO
@@ -8914,6 +8914,9 @@
       <desc>TODO</desc>
     </const>    
     <const name="StdErr"                  value="8">
+      <desc>TODO</desc>
+    </const>
+    <const name="Any"                     value="9">
       <desc>TODO</desc>
     </const>    
   </enum>

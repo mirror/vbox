@@ -485,7 +485,7 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
                 rc = VBoxServiceControlThreadCloseStdIn(hPollSet, phStdInW);
             }
 
-            /* Reqport back actual data written (if any). */
+            /* Report back actual data written (if any). */
             pRequest->cbData = cbWritten;
             break;
         }

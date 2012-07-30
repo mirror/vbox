@@ -2815,6 +2815,9 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
         HRESULT hr2 = pSession.queryInterfaceTo(aGuestSession);
         if (FAILED(hr2))
             rc = VERR_COM_OBJECT_NOT_FOUND;
+
+        if (RT_SUCCESS(rc))
+            rc = pSession->queryInfo();
     }
 
     if (RT_FAILURE(rc))
