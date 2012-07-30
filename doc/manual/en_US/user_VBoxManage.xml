@@ -149,6 +149,39 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
     reference information on the different commands.</para>
   </sect1>
 
+  <sect1 id="vboxmanage-general">
+    <title>General options</title>
+    <para>
+      <itemizedlist>
+        <listitem>
+          <para><computeroutput>--version</computeroutput>: show the version of
+            this tool and exit.</para>
+        </listitem>
+        <listitem>
+          <para><computeroutput>--nologo</computeroutput>: suppress the output
+            of the logo information (useful for scripts)</para>
+        </listitem>
+        <listitem>
+          <para><computeroutput>--settingspw</computeroutput>: specifiy a settings
+            password</para>
+        </listitem>
+        <listitem>
+          <para><computeroutput>--settingspwfile</computeroutput>: specify a file
+            containing the settings password.</para>
+        </listitem>
+      </itemizedlist>
+      The settings password is used for certain settings which need to be
+      stored encrypted for security reasons. At the moment, the only encrypted
+      setting is the iSCSI initiator secret (see
+      <xref linkend="vboxmanage-storageattach" /> for details). As long as no
+      settings password is specified, this information is stored in
+      <emphasis role="bold">plain text</emphasis>. After using the
+      <computeroutput>--settingspw|--settingspwfile</computeroutput> option
+      once, it must be always used, otherwise the encrypted setting cannot
+      be unencrypted.
+    </para>
+  </sect1>
+
   <sect1 id="vboxmanage-list">
     <title>VBoxManage list</title>
 
@@ -1839,11 +1872,13 @@ Virtual system 0:
           <glossterm>username, password</glossterm>
 
           <glossdef>
-            <para>Username and password for target authentication, if required
-            (optional).<note>
-                <para>Currently, username and password are stored without
+            <para>Username and password (initiator secret) for target
+                authentication, if required (optional).<note>
+                <para>Username and password are stored without
                 encryption (i.e. in clear text) in the XML machine
-                configuration file.</para>
+                configuration file if no settings password is provided.
+                When a settings password was specified the first time,
+                the password is stored encrypted.</para>
               </note></para>
           </glossdef>
         </glossentry>
