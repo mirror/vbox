@@ -545,7 +545,7 @@ VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
     pVCpu->cpum.s.Guest.gdtr.cbGdt = cbLimit;
     pVCpu->cpum.s.Guest.gdtr.pGdt  = GCPtrBase;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GDTR;
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /* formality, consider it void. */
 }
 
 VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
@@ -553,14 +553,14 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
     pVCpu->cpum.s.Guest.idtr.cbIdt = cbLimit;
     pVCpu->cpum.s.Guest.idtr.pIdt  = GCPtrBase;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_IDTR;
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /* formality, consider it void. */
 }
 
 VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
     pVCpu->cpum.s.Guest.tr.Sel  = tr;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_TR;
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /* formality, consider it void. */
 }
 
 VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
@@ -570,7 +570,7 @@ VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
     pVCpu->cpum.s.Guest.ldtr.ValidSel = 0;
     pVCpu->cpum.s.Guest.ldtr.fFlags   = 0;
     pVCpu->cpum.s.fChanged  |= CPUM_CHANGED_LDTR;
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /* formality, consider it void. */
 }
 
 
