@@ -114,7 +114,7 @@ start_module()
     elif test -c "/devices/pci@0,0/pci80ee,cafe@4:$MODNAME"; then
         info "VirtualBox guest kernel module loaded."
     else
-        abort "Aborting due to attach failure."
+        info "VirtualBox guest kernel module failed to attach."
     fi
 }
 
@@ -135,7 +135,7 @@ start_vboxfs()
     else
         /usr/sbin/modload -p fs/$VFSMODNAME || abort "Failed to load VirtualBox FileSystem kernel module."
         if test ! vboxfs_loaded; then
-            abort "Failed to load VirtualBox FileSystem kernel module."
+            info "Failed to load VirtualBox FileSystem kernel module."
         else
             info "VirtualBox FileSystem kernel module loaded."
         fi
@@ -163,7 +163,7 @@ start_vboxms()
     elif test -c "/devices/pseudo/$VMSMODNAME@0:$VMSMODNAME"; then
         info "VirtualBox pointer integration module loaded."
     else
-        abort "Aborting due to attach failure."
+        info "VirtualBox pointer integration module failed to attach."
     fi
 }
 
