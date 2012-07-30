@@ -1719,7 +1719,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
     <para>Core files produced by the VirtualBox CoreDumper are of the form
     <computeroutput>core.vb.&lt;ProcessName&gt;.&lt;ProcessID&gt;</computeroutput>,
-    e.g.<computeroutput>core.vb.VBoxHeadless.11321</computeroutput>.</para>
+    for example <computeroutput>core.vb.VBoxHeadless.11321</computeroutput>.</para>
   </sect1>
 
   <sect1 id="guitweaks">
