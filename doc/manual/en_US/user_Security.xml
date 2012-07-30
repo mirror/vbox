@@ -276,11 +276,13 @@
 
         <listitem>
           <para>When using remote iSCSI storage and the storage server
-          requires authentication, a password can optionally be supplied with
-          the <computeroutput>VBoxManage storageattach</computeroutput>
-          command. Note however that this is stored <emphasis
-          role="bold">unencrypted</emphasis> in the machine configuration and
-          is therefore potentially readable on the host. See <xref
+          requires authentication, an initiator secret can optionally be supplied
+          with the <computeroutput>VBoxManage storageattach</computeroutput>
+          command. As long as no settings password is provided (command line
+          option <screen>--settingspwfile</screen>, this secret is
+          stored <emphasis role="bold">unencrypted</emphasis> in the machine
+          configuration and is therefore potentially readable on the host.
+          See <xref
           linkend="storage-iscsi" /> and <xref
           linkend="vboxmanage-storageattach" />.</para>
         </listitem>
