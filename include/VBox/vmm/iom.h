@@ -47,13 +47,13 @@ RT_C_DECLS_BEGIN
  * Macro for checking if an I/O or MMIO emulation call succeeded.
  *
  * This macro shall only be used with the IOM APIs where it's mentioned
- * in the return value description. And there is must be used to correctly
- * determine if the call succeeded and things like the EIP needs updating.
+ * in the return value description.  And there it must be used to correctly
+ * determine if the call succeeded and things like the RIP needs updating.
  *
  *
  * @returns Success indicator (true/false).
  *
- * @param   rc          The status code. This may be evaluated
+ * @param   rc          The status code.  This may be evaluated
  *                      more than once!
  *
  * @remark  To avoid making assumptions about the layout of the
@@ -61,13 +61,13 @@ RT_C_DECLS_BEGIN
  *          explicitly for each for exach the exceptions.
  *          However, for efficieny we ASSUME that the
  *          VINF_EM_LAST is smaller than most of the relevant
- *          status codes. We also ASSUME that the
+ *          status codes.  We also ASSUME that the
  *          VINF_EM_RESCHEDULE_REM status code is the most
  *          frequent status code we'll enounter in this range.
  *
  * @todo    Will have to add VINF_EM_DBG_HYPER_BREAKPOINT if the
  *          I/O port and MMIO breakpoints should trigger before
- *          the I/O is done. Currently, we don't implement these
+ *          the I/O is done.  Currently, we don't implement these
  *          kind of breakpoints.
  */
 #define IOM_SUCCESS(rc)     (   (rc) == VINF_SUCCESS \
