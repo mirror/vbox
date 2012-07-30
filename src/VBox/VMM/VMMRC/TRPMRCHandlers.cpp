@@ -188,7 +188,9 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
         &&  (   VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_DMA)
              || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_TO_R3 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                           | VMCPU_FF_REQUEST | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                                          | VMCPU_FF_PDM_CRITSECT)
+                                          | VMCPU_FF_PDM_CRITSECT
+                                          | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS
+                                   )
             )
        )
     {
@@ -215,6 +217,9 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
         else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
                  || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             rc = VINF_EM_PENDING_REQUEST;
+        /* Pending GDT/LDT/TSS sync. */
+        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS))
+            rc = VINF_SELM_SYNC_GDT;
         /* Pending interrupt: dispatch it. */
         else if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                  && !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
