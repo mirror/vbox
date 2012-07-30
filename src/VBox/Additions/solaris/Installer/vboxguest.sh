@@ -31,6 +31,7 @@ export LANG
 SILENTUNLOAD=""
 MODNAME="vboxguest"
 VFSMODNAME="vboxfs"
+VMSMODNAME="vboxms"
 MODDIR32="/usr/kernel/drv"
 MODDIR64="/usr/kernel/drv/amd64"
 VFSDIR32="/usr/kernel/fs"
@@ -84,6 +85,12 @@ vboxguest_loaded()
 vboxfs_loaded()
 {
     module_loaded $VFSMODNAME
+    return $?
+}
+
+vboxms_loaded()
+{
+    module_loaded $VMSMODNAME
     return $?
 }
 
@@ -148,6 +155,28 @@ stop_vboxfs()
     fi
 }
 
+start_vboxms()
+{
+    /usr/sbin/add_drv -m'* 0666 root sys' $VMSMODNAME
+    if test ! vboxms_loaded; then
+        abort "Failed to load VirtualBox pointer integration module."
+    elif test -c "/devices/pseudo/$VMSMODNAME@0:$VMSMODNAME"; then
+        info "VirtualBox pointer integration module loaded."
+    else
+        abort "Aborting due to attach failure."
+    fi
+}
+
+stop_vboxms()
+{
+    if vboxms_loaded; then
+        /usr/sbin/rem_drv $VMSMODNAME || abort "Failed to unload VirtualBox pointer integration module."
+        info "VirtualBox pointer integration module unloaded."
+    elif test -z "$SILENTUNLOAD"; then
+        info "VirtualBox pointer integration module not loaded."
+    fi
+}
+
 status_module()
 {
     if vboxguest_loaded; then
@@ -159,6 +188,7 @@ status_module()
 
 stop_all()
 {
+    stop_vboxms
     stop_vboxfs
     stop_module
     return 0
@@ -169,6 +199,7 @@ restart_all()
     stop_all
     start_module
     start_vboxfs
+    start_vboxms
     return 0
 }
 
@@ -188,8 +219,10 @@ restartall)
     ;;
 start)
     start_module
+    start_vboxms
     ;;
 stop)
+    stop_vboxms
     stop_module
     ;;
 status)
@@ -200,6 +233,12 @@ vfsstart)
     ;;
 vfsstop)
     stop_vboxfs
+    ;;
+vmsstart)
+    start_vboxms
+    ;;
+vmsstop)
+    stop_vboxms
     ;;
 *)
     echo "Usage: $0 {start|stop|restart|status}"
