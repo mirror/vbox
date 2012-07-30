@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1123,7 +1123,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                     }
                     if (rcStrict != VINF_SUCCESS)
                     {
-                        /** @todo massage rc */
+                        if (IOM_SUCCESS(rcStrict))
+                            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                         if (uCounterReg == 0)
                             iemRegAddToRip(pIemCpu, cbInstr);
                         iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
@@ -1178,7 +1179,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
             cLeftPage--;
             if (rcStrict != VINF_SUCCESS)
             {
-                /** @todo massage IOM status codes! */
+                if (IOM_SUCCESS(rcStrict))
+                    rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                 if (uCounterReg == 0)
                     iemRegAddToRip(pIemCpu, cbInstr);
                 return rcStrict;
@@ -1227,7 +1229,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
             else
                 pCtx->ADDR_rSI -= OP_SIZE / 8;
             iemRegAddToRip(pIemCpu, cbInstr);
-            /** @todo massage IOM status codes. */
+            if (rcStrict != VINF_SUCCESS)
+                rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
         }
     }
     return rcStrict;
@@ -1323,7 +1326,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                     }
                     if (rcStrict != VINF_SUCCESS)
                     {
-                        /** @todo massage IOM rc */
+                        if (IOM_SUCCESS(rcStrict))
+                            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                         if (uCounterReg == 0)
                             iemRegAddToRip(pIemCpu, cbInstr);
                         iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
@@ -1372,7 +1376,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             }
             if (rcStrict != VINF_SUCCESS)
             {
-                /** @todo massage IOM status codes! */
+                if (IOM_SUCCESS(rcStrict))
+                    rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                 if (uCounterReg == 0)
                     iemRegAddToRip(pIemCpu, cbInstr);
                 return rcStrict;

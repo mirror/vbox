@@ -656,6 +656,46 @@ static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port,
 
 
 /**
+ * Sets the pass up status.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pIemCpu             The per CPU IEM state of the calling thread.
+ * @param   rcPassUp            The pass up status.  Must be informational.
+ *                              VINF_SUCCESS is not allowed.
+ */
+static int iemSetPassUpStatus(PIEMCPU pIemCpu, VBOXSTRICTRC rcPassUp)
+{
+    AssertRC(VBOXSTRICTRC_VAL(rcPassUp)); Assert(rcPassUp != VINF_SUCCESS);
+
+    int32_t const rcOldPassUp = pIemCpu->rcPassUp;
+    if (rcOldPassUp == VINF_SUCCESS)
+        pIemCpu->rcPassUp = VBOXSTRICTRC_VAL(rcPassUp);
+    /* If both are EM scheduling code, use EM priority rules. */
+    else if (   rcOldPassUp >= VINF_EM_FIRST && rcOldPassUp <= VINF_EM_LAST
+             && rcPassUp    >= VINF_EM_FIRST && rcPassUp    <= VINF_EM_LAST)
+    {
+        if (rcPassUp < rcOldPassUp)
+        {
+            Log(("IEM: rcPassUp=%Rrc! rcOldPassUp=%Rrc\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+            pIemCpu->rcPassUp = VBOXSTRICTRC_VAL(rcPassUp);
+        }
+        else
+            Log(("IEM: rcPassUp=%Rrc  rcOldPassUp=%Rrc!\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+    }
+    /* Override EM scheduling with specific status code. */
+    else if (rcOldPassUp >= VINF_EM_FIRST && rcOldPassUp <= VINF_EM_LAST)
+    {
+        Log(("IEM: rcPassUp=%Rrc! rcOldPassUp=%Rrc\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+        pIemCpu->rcPassUp = VBOXSTRICTRC_VAL(rcPassUp);
+    }
+    /* Don't override specific status code, first come first served. */
+    else
+        Log(("IEM: rcPassUp=%Rrc  rcOldPassUp=%Rrc!\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Initializes the decoder state.
  *
  * @param   pIemCpu             The per CPU IEM state.
@@ -687,6 +727,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
     pIemCpu->cbOpcode           = 0;
     pIemCpu->cActiveMappings    = 0;
     pIemCpu->iNextMapping       = 0;
+    pIemCpu->rcPassUp           = VINF_SUCCESS;
 }
 
 
@@ -801,7 +842,8 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
         rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pIemCpu->abOpcode, GCPhys, cbToTryRead);
     if (rc != VINF_SUCCESS)
     {
-        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - read error - rc=%Rrc\n", GCPtrPC, rc));
+        /** @todo status code handling */
+        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - read error - rc=%Rrc (!!)\n", GCPtrPC, rc));
         return rc;
     }
     pIemCpu->cbOpcode = cbToTryRead;
@@ -890,7 +932,8 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), &pIemCpu->abOpcode[pIemCpu->cbOpcode], GCPhys, cbToTryRead);
     if (rc != VINF_SUCCESS)
     {
-        Log(("iemOpcodeFetchMoreBytes: %RGv - read error - rc=%Rrc\n", GCPtrNext, rc));
+        /** @todo status code handling */
+        Log(("iemOpcodeFetchMoreBytes: %RGv - read error - rc=%Rrc (!!)\n", GCPtrNext, rc));
         return rc;
     }
     pIemCpu->cbOpcode += cbToTryRead;
@@ -4485,28 +4528,16 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
         return VERR_PGM_PHYS_TLB_CATCH_ALL;
 #endif
 
-    /*
-     * If we can map the page without trouble, do a block processing
-     * until the end of the current page.
-     */
-    /** @todo need some better API. */
-#ifdef IN_RING3
-    RT_ZERO(*pLock);
-    return PGMR3PhysTlbGCPhys2Ptr(IEMCPU_TO_VM(pIemCpu),
-                                  GCPhysMem,
-                                  RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
-                                  ppvMem);
-#else
-    if (fAccess & IEM_ACCESS_TYPE_WRITE)
-        return PGMPhysGCPhys2CCPtr(IEMCPU_TO_VM(pIemCpu),
-                                   GCPhysMem,
-                                   ppvMem,
-                                   pLock);
-    return PGMPhysGCPhys2CCPtrReadOnly(IEMCPU_TO_VM(pIemCpu),
-                                       GCPhysMem,
-                                       (void const **)ppvMem,
-                                       pLock);
-#endif
+    /** @todo This API may require some improving later.  A private deal with PGM
+     *        regarding locking and unlocking needs to be struct.  A couple of TLBs
+     *        living in PGM, but with publicly accessible inlined access methods
+     *        could perhaps be an even better solution. */
+    return PGMPhysIemGCPhys2Ptr(IEMCPU_TO_VM(pIemCpu),
+                                GCPhysMem,
+                                RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
+                                pIemCpu->fByPassHandlers,
+                                ppvMem,
+                                pLock);
 }
 
 
@@ -4631,6 +4662,14 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
                                               pbBuf + cbFirst,
                                               cbSecond);
         }
+        if (rc != VINF_SUCCESS)
+        {
+            /** @todo status code handling */
+            Log(("iemMemBounceBufferCommitAndUnmap: %s GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
+                 pIemCpu->fByPassHandlers ? "PGMPhysWrite" : "PGMPhysSimpleWriteGCPhys",
+                 pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                 pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, rc));
+        }
     }
     else
         rc = VINF_SUCCESS;
@@ -4715,19 +4754,35 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
         {
             rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbFirstPage);
             if (rc != VINF_SUCCESS)
+            {
+                /** @todo status code handling */
+                Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
                 return rc;
+            }
             rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysSecond, pbBuf + cbFirstPage, cbSecondPage);
             if (rc != VINF_SUCCESS)
+            {
+                /** @todo status code handling */
+                Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rc=%Rrc (!!)\n", GCPhysSecond, rc));
                 return rc;
+            }
         }
         else
         {
             rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf, GCPhysFirst, cbFirstPage);
             if (rc != VINF_SUCCESS)
+            {
+                /** @todo status code handling */
+                Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
                 return rc;
+            }
             rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf + cbFirstPage, GCPhysSecond, cbSecondPage);
             if (rc != VINF_SUCCESS)
+            {
+                /** @todo status code handling */
+                Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysSecond=%RGp rc=%Rrc (!!)\n", GCPhysSecond, rc));
                 return rc;
+            }
         }
 
 #ifdef IEM_VERIFICATION_MODE
@@ -4819,7 +4874,12 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
             else
                 rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf, GCPhysFirst, cbMem);
             if (rc != VINF_SUCCESS)
+            {
+                /** @todo status code handling */
+                Log(("iemMemBounceBufferMapPhys: %s GCPhysFirst=%RGp rc=%Rrc (!!)\n",
+                     pIemCpu->fByPassHandlers ? "PGMPhysRead" : "PGMPhysSimpleReadGCPhys",  GCPhysFirst, rc));
                 return rc;
+            }
         }
 
 #ifdef IEM_VERIFICATION_MODE
@@ -7889,16 +7949,42 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu)
         EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
     }
 
+    /*
+     * Return value fiddling and statistics.
+     */
     if (rcStrict != VINF_SUCCESS)
     {
-        if (rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED)
+        if (RT_SUCCESS(rcStrict))
+        {
+            AssertMsg(rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST, ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            int32_t const rcPassUp = pIemCpu->rcPassUp;
+            if (rcPassUp == VINF_SUCCESS)
+                pIemCpu->cRetInfStatuses++;
+            else if (   rcPassUp < VINF_EM_FIRST
+                     || rcPassUp > VINF_EM_LAST
+                     || rcPassUp < VBOXSTRICTRC_VAL(rcStrict))
+            {
+                Log(("IEM: rcPassUp=%Rrc! rcStrict=%Rrc\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
+                pIemCpu->cRetPassUpStatus++;
+                rcStrict = rcPassUp;
+            }
+            else
+            {
+                Log(("IEM: rcPassUp=%Rrc  rcStrict=%Rrc!\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
+                pIemCpu->cRetInfStatuses++;
+            }
+        }
+        else if (rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED)
             pIemCpu->cRetAspectNotImplemented++;
         else if (rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
             pIemCpu->cRetInstrNotImplemented++;
-        else if (RT_SUCCESS(rcStrict))
-            pIemCpu->cRetInfStatuses++;
         else
             pIemCpu->cRetErrStatuses++;
+    }
+    else if (pIemCpu->rcPassUp != VINF_SUCCESS)
+    {
+        pIemCpu->cRetPassUpStatus++;
+        rcStrict = pIemCpu->rcPassUp;
     }
 
     return rcStrict;

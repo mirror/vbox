@@ -220,6 +220,12 @@ typedef struct IEMCPU
     uint8_t                 uCpl;
     /** The current CPU execution mode (CS). */
     IEMMODE                 enmCpuMode;
+    /** Info status code that needs to be propagated to the IEM caller.
+     * This cannot be passed internally, as it would complicate all success
+     * checks within the interpreter making the code larger and almost impossible
+     * to get right.  Instead, we'll store status codes to pass on here.  Each
+     * source of these codes will perform appropriate sanity checks. */
+    int32_t                 rcPassUp;
 
     /** @name Statistics
      * @{  */
@@ -238,6 +244,8 @@ typedef struct IEMCPU
     uint32_t                cRetInfStatuses;
     /** Counts other error statuses returned. */
     uint32_t                cRetErrStatuses;
+    /** Number of times rcPassUp has been used. */
+    uint32_t                cRetPassUpStatus;
 #ifdef IEM_VERIFICATION_MODE
     /** The Number of I/O port reads that has been performed. */
     uint32_t                cIOReads;

@@ -2636,15 +2636,14 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     if (rcStrict == VINF_SUCCESS)
     {
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-            rcStrict = CPUMSetGuestIDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
+            CPUMSetGuestIDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
         else
         {
             PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
             pCtx->idtr.cbIdt = cbLimit;
             pCtx->idtr.pIdt  = GCPtrBase;
         }
-        if (rcStrict == VINF_SUCCESS)
-            iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRip(pIemCpu, cbInstr);
     }
     return rcStrict;
 }
@@ -3000,10 +2999,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
              * Change CR0.
              */
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-            {
-                rc = CPUMSetGuestCR0(pVCpu, uNewCrX);
-                AssertRCSuccessReturn(rc, RT_FAILURE_NP(rc) ? rc : VERR_INTERNAL_ERROR_3);
-            }
+                CPUMSetGuestCR0(pVCpu, uNewCrX);
             else
                 pCtx->cr0 = uNewCrX;
             Assert(pCtx->cr0 == uNewCrX);
@@ -3040,7 +3036,6 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                     /* ignore informational status codes */
                 }
                 rcStrict = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-                /** @todo Status code management.  */
             }
             else
                 rcStrict = VINF_SUCCESS;
@@ -3106,7 +3101,6 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                     rc = PGMFlushTLB(pVCpu, pCtx->cr3, !(pCtx->cr3 & X86_CR4_PGE));
                     AssertRCReturn(rc, rc);
                     /* ignore informational status codes */
-                    /** @todo status code management */
                 }
             }
             rcStrict = VINF_SUCCESS;
@@ -3119,7 +3113,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
          */
         case 4:
         {
-            uint64_t const uOldCrX = pCtx->cr0;
+            uint64_t const uOldCrX = pCtx->cr4;
 
             /* reserved bits */
             uint32_t fValid = X86_CR4_VME | X86_CR4_PVI
@@ -3167,7 +3161,11 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             {
                 /* SELM - VME may change things wrt to the TSS shadowing. */
                 if ((uNewCrX ^ uOldCrX) & X86_CR4_VME)
+                {
+                    Log(("iemCImpl_load_CrX: VME %d -> %d => Setting VMCPU_FF_SELM_SYNC_TSS\n",
+                         RT_BOOL(uOldCrX & X86_CR4_VME), RT_BOOL(uNewCrX & X86_CR4_VME) ));
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+                }
 
                 /* PGM - flushing and mode. */
                 if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
@@ -3178,7 +3176,6 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                     /* ignore informational status codes */
                 }
                 rcStrict = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-                /** @todo Status code management.  */
             }
             else
                 rcStrict = VINF_SUCCESS;
@@ -3201,11 +3198,14 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
     /*
      * Advance the RIP on success.
      */
-    /** @todo Status code management.  */
-    if (rcStrict == VINF_SUCCESS)
+    if (RT_SUCCESS(rcStrict))
+    {
+        if (rcStrict != VINF_SUCCESS)
+            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
         iemRegAddToRip(pIemCpu, cbInstr);
-    return rcStrict;
+    }
 
+    return rcStrict;
 }
 
 
@@ -3449,9 +3449,12 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, uint8_t, GCPtrPage)
     int rc = PGMInvalidatePage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrPage);
     iemRegAddToRip(pIemCpu, cbInstr);
 
-    if (   rc == VINF_SUCCESS
-        || rc == VINF_PGM_SYNC_CR3)
+    if (rc == VINF_SUCCESS)
         return VINF_SUCCESS;
+    if (rc == VINF_PGM_SYNC_CR3)
+        return iemSetPassUpStatus(pIemCpu, rc);
+
+    AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || RT_FAILURE_NP(rc), ("%Rrc\n", rc));
     Log(("PGMInvalidatePage(%RGv) -> %Rrc\n", rc));
     return rc;
 }
@@ -3562,8 +3565,10 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
         }
         iemRegAddToRip(pIemCpu, cbInstr);
         pIemCpu->cPotentialExits++;
+        if (rcStrict != VINF_SUCCESS)
+            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
     }
-    /** @todo massage rcStrict. */
+
     return rcStrict;
 }
 
@@ -3611,18 +3616,19 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         case 4: u32Value = pCtx->eax; break;
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
-    VBOXSTRICTRC rc;
+    VBOXSTRICTRC rcStrict;
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        rc = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), u16Port, u32Value, cbReg);
+        rcStrict = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), u16Port, u32Value, cbReg);
     else
-        rc = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, cbReg);
-    if (IOM_SUCCESS(rc))
+        rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, cbReg);
+    if (IOM_SUCCESS(rcStrict))
     {
         iemRegAddToRip(pIemCpu, cbInstr);
         pIemCpu->cPotentialExits++;
-        /** @todo massage rc. */
+        if (rcStrict != VINF_SUCCESS)
+            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
     }
-    return rc;
+    return rcStrict;
 }
 
 
