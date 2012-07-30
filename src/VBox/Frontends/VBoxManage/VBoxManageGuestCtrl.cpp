@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -182,39 +182,28 @@ enum GETOPTDEF_EXEC
     GETOPTDEF_EXEC_OUTPUTFORMAT,
     GETOPTDEF_EXEC_DOS2UNIX,
     GETOPTDEF_EXEC_UNIX2DOS,
+    GETOPTDEF_EXEC_PASSWORD,
     GETOPTDEF_EXEC_WAITFOREXIT,
     GETOPTDEF_EXEC_WAITFORSTDOUT,
     GETOPTDEF_EXEC_WAITFORSTDERR
 };
 
-enum GETOPTDEF_COPYFROM
+enum GETOPTDEF_COPY
 {
-    GETOPTDEF_COPYFROM_DRYRUN = 1000,
-    GETOPTDEF_COPYFROM_FOLLOW,
-    GETOPTDEF_COPYFROM_PASSWORD,
-    GETOPTDEF_COPYFROM_TARGETDIR,
-    GETOPTDEF_COPYFROM_USERNAME
-};
-
-enum GETOPTDEF_COPYTO
-{
-    GETOPTDEF_COPYTO_DRYRUN = 1000,
-    GETOPTDEF_COPYTO_FOLLOW,
-    GETOPTDEF_COPYTO_PASSWORD,
-    GETOPTDEF_COPYTO_TARGETDIR,
-    GETOPTDEF_COPYTO_USERNAME
+    GETOPTDEF_COPY_DRYRUN = 1000,
+    GETOPTDEF_COPY_FOLLOW,
+    GETOPTDEF_COPY_PASSWORD,
+    GETOPTDEF_COPY_TARGETDIR
 };
 
 enum GETOPTDEF_MKDIR
 {
-    GETOPTDEF_MKDIR_PASSWORD = 1000,
-    GETOPTDEF_MKDIR_USERNAME
+    GETOPTDEF_MKDIR_PASSWORD = 1000
 };
 
 enum GETOPTDEF_STAT
 {
-    GETOPTDEF_STAT_PASSWORD = 1000,
-    GETOPTDEF_STAT_USERNAME
+    GETOPTDEF_STAT_PASSWORD = 1000
 };
 
 enum OUTPUTTYPE
@@ -233,34 +222,34 @@ void usageGuestControl(PRTSTREAM pStrm)
     RTStrmPrintf(pStrm,
                  "VBoxManage guestcontrol     <vmname>|<uuid>\n"
                  "                            exec[ute]\n"
-                 "                            --image <path to program>\n"
-                 "                            --username <name> --password <password>\n"
-                 "                            [--dos2unix]\n"
+                 "                            --image <path to program> --username <name>\n"
+                 "                            --passwordfile <file> | --password <password>\n"
                  "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
-                 "                            [--timeout <msec>] [--unix2dos] [--verbose]\n"
+                 "                            [--verbose] [--timeout <msec>]\n"
                  "                            [--wait-exit] [--wait-stdout] [--wait-stderr]\n"
+                 "                            [--dos2unix] [--unix2dos]\n"
                  "                            [-- [<argument1>] ... [<argumentN>]]\n"
                  /** @todo Add a "--" parameter (has to be last parameter) to directly execute
                   *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
                  "\n"
                  "                            copyfrom\n"
-                 "                            <source on guest> <destination on host>\n"
-                 "                            --username <name> --password <password>\n"
+                 "                            <guest source> <host dest> --username <name>\n"
+                 "                            --passwordfile <file> | --password <password>\n"
                  "                            [--dryrun] [--follow] [--recursive] [--verbose]\n"
                  "\n"
                  "                            copyto|cp\n"
-                 "                            <source on host> <destination on guest>\n"
-                 "                            --username <name> --password <password>\n"
+                 "                            <host source> <guest dest> --username <name>\n"
+                 "                            --passwordfile <file> | --password <password>\n"
                  "                            [--dryrun] [--follow] [--recursive] [--verbose]\n"
                  "\n"
                  "                            createdir[ectory]|mkdir|md\n"
-                 "                            <director[y|ies] to create on guest>\n"
-                 "                            --username <name> --password <password>\n"
+                 "                            <guest directory>... --username <name>\n"
+                 "                            --passwordfile <file> | --password <password>\n"
                  "                            [--parents] [--mode <mode>] [--verbose]\n"
                  "\n"
                  "                            stat\n"
-                 "                            <file element(s) to check on guest>\n"
-                 "                            --username <name> --password <password>\n"
+                 "                            <file>... --username <name>\n"
+                 "                            --passwordfile <file> | --password <password>\n"
                  "                            [--verbose]\n"
                  "\n"
                  "                            updateadditions\n"
@@ -596,7 +585,7 @@ inline RTMSINTERVAL ctrlExecGetRemainingTime(uint64_t u64StartMs, uint32_t u32Ti
     return u32TimeoutMs - u64ElapsedMs;
 }
 
-/* <Missing docuemntation> */
+/* <Missing documentation> */
 static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
@@ -615,7 +604,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         { "--ignore-operhaned-processes",   GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES,   RTGETOPT_REQ_NOTHING },
         { "--image",                        'i',                                      RTGETOPT_REQ_STRING  },
         { "--no-profile",                   GETOPTDEF_EXEC_NO_PROFILE,                RTGETOPT_REQ_NOTHING },
-        { "--password",                     'p',                                      RTGETOPT_REQ_STRING  },
+        { "--passwordfile",                 'p',                                      RTGETOPT_REQ_STRING  },
+        { "--password",                     GETOPTDEF_EXEC_PASSWORD,                  RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
         { "--unix2dos",                     GETOPTDEF_EXEC_UNIX2DOS,                  RTGETOPT_REQ_NOTHING },
         { "--username",                     'u',                                      RTGETOPT_REQ_STRING  },
@@ -684,9 +674,17 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 
             /** @todo Add a hidden flag. */
 
-            case 'p': /* Password */
+            case GETOPTDEF_EXEC_PASSWORD: /* Password */
                 Utf8Password = ValueUnion.psz;
                 break;
+
+            case 'p': /* Password file */
+            {
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &Utf8Password);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
 
             case 't': /* Timeout */
                 cMsTimeout = ValueUnion.u32;
@@ -760,7 +758,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     uint64_t u64StartMS = RTTimeMilliTS();
 
     /* Execute the process. */
-    int rcProc = RTEXITCODE_FAILURE;
+    int rcExit = RTEXITCODE_FAILURE;
     ComPtr<IProgress> progress;
     ULONG uPID = 0;
     rc = pGuest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
@@ -871,7 +869,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         {
             if (fVerbose)
                 RTPrintf("Process execution canceled!\n");
-            rcProc = EXITCODEEXEC_CANCELED;
+            rcExit = EXITCODEEXEC_CANCELED;
         }
         else if (   fCompleted
                  && SUCCEEDED(rc)) /* The GetProcessOutput rc. */
@@ -889,12 +887,12 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                 {
                     if (fVerbose)
                         RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, retStatus, ctrlExecProcessStatusToText(retStatus), uRetFlags);
-                    rcProc = ctrlExecProcessStatusToExitCode(retStatus, uRetExitCode);
+                    rcExit = ctrlExecProcessStatusToExitCode(retStatus, uRetExitCode);
                 }
                 else
                 {
                     ctrlPrintError(pGuest, COM_IIDOF(IGuest));
-                    rcProc = RTEXITCODE_FAILURE;
+                    rcExit = RTEXITCODE_FAILURE;
                 }
             }
         }
@@ -902,13 +900,13 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         {
             if (fVerbose)
                 RTPrintf("Process execution aborted!\n");
-            rcProc = EXITCODEEXEC_TERM_ABEND;
+            rcExit = EXITCODEEXEC_TERM_ABEND;
         }
     }
 
     if (RT_FAILURE(vrc) || FAILED(rc))
         return RTEXITCODE_FAILURE;
-    return rcProc;
+    return rcExit;
 }
 
 /**
@@ -1798,8 +1796,8 @@ static void ctrlCopyFreeSourceRoot(char *pszSourceRoot)
     RTStrFree(pszSourceRoot);
 }
 
-static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
-                            bool fHostToGuest)
+static int handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
+                          bool fHostToGuest)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
@@ -1819,12 +1817,13 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--dryrun",              GETOPTDEF_COPYTO_DRYRUN,         RTGETOPT_REQ_NOTHING },
-        { "--follow",              GETOPTDEF_COPYTO_FOLLOW,         RTGETOPT_REQ_NOTHING },
-        { "--password",            GETOPTDEF_COPYTO_PASSWORD,       RTGETOPT_REQ_STRING  },
+        { "--dryrun",              GETOPTDEF_COPY_DRYRUN,           RTGETOPT_REQ_NOTHING },
+        { "--follow",              GETOPTDEF_COPY_FOLLOW,           RTGETOPT_REQ_NOTHING },
+        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
+        { "--password",            GETOPTDEF_COPY_PASSWORD,         RTGETOPT_REQ_STRING  },
         { "--recursive",           'R',                             RTGETOPT_REQ_NOTHING },
-        { "--target-directory",    GETOPTDEF_COPYTO_TARGETDIR,      RTGETOPT_REQ_STRING  },
-        { "--username",            GETOPTDEF_COPYTO_USERNAME,       RTGETOPT_REQ_STRING  },
+        { "--target-directory",    GETOPTDEF_COPY_TARGETDIR,        RTGETOPT_REQ_STRING  },
+        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
         { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
     };
 
@@ -1851,27 +1850,35 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
-            case GETOPTDEF_COPYTO_DRYRUN:
+            case GETOPTDEF_COPY_DRYRUN:
                 fDryRun = true;
                 break;
 
-            case GETOPTDEF_COPYTO_FOLLOW:
+            case GETOPTDEF_COPY_FOLLOW:
                 fFlags |= CopyFileFlag_FollowLinks;
                 break;
 
-            case GETOPTDEF_COPYTO_PASSWORD:
+            case GETOPTDEF_COPY_PASSWORD: /* Password */
                 Utf8Password = ValueUnion.psz;
                 break;
+
+            case 'p': /* Password file */
+            {
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &Utf8Password);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
 
             case 'R': /* Recursive processing */
                 fFlags |= CopyFileFlag_Recursive;
                 break;
 
-            case GETOPTDEF_COPYTO_TARGETDIR:
+            case GETOPTDEF_COPY_TARGETDIR:
                 Utf8Dest = ValueUnion.psz;
                 break;
 
-            case GETOPTDEF_COPYTO_USERNAME:
+            case 'u': /* User name */
                 Utf8UserName = ValueUnion.psz;
                 break;
 
@@ -2080,8 +2087,9 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
     {
         { "--mode",                'm',                             RTGETOPT_REQ_UINT32  },
         { "--parents",             'P',                             RTGETOPT_REQ_NOTHING },
+        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
         { "--password",            GETOPTDEF_MKDIR_PASSWORD,        RTGETOPT_REQ_STRING  },
-        { "--username",            GETOPTDEF_MKDIR_USERNAME,        RTGETOPT_REQ_STRING  },
+        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
         { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
     };
 
@@ -2099,9 +2107,7 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
 
     DESTDIRMAP mapDirs;
 
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && rcExit == RTEXITCODE_SUCCESS)
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -2118,7 +2124,15 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
                 Utf8Password = ValueUnion.psz;
                 break;
 
-            case GETOPTDEF_MKDIR_USERNAME: /* User name */
+            case 'p': /* Password file */
+            {
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &Utf8Password);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            case 'u': /* User name */
                 Utf8UserName = ValueUnion.psz;
                 break;
 
@@ -2133,50 +2147,43 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
             }
 
             default:
-                rcExit = RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 
     uint32_t cDirs = mapDirs.size();
-    if (rcExit == RTEXITCODE_SUCCESS && !cDirs)
-        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No directory to create specified!");
+    if (!cDirs)
+        return errorSyntax(USAGE_GUESTCONTROL, "No directory to create specified!");
 
-    if (rcExit == RTEXITCODE_SUCCESS && Utf8UserName.isEmpty())
-        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
+    if (Utf8UserName.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
 
-    if (rcExit == RTEXITCODE_SUCCESS)
+    /*
+     * Create the directories.
+     */
+    HRESULT hrc = S_OK;
+    if (fVerbose && cDirs)
+        RTPrintf("Creating %u directories ...\n", cDirs);
+
+    DESTDIRMAPITER it = mapDirs.begin();
+    while (it != mapDirs.end())
     {
-        /*
-         * Create the directories.
-         */
-        HRESULT hrc = S_OK;
-        if (fVerbose && cDirs)
-            RTPrintf("Creating %u directories ...\n", cDirs);
+        if (fVerbose)
+            RTPrintf("Creating directory \"%s\" ...\n", it->first.c_str());
 
-        DESTDIRMAPITER it = mapDirs.begin();
-        while (it != mapDirs.end())
+        hrc = guest->DirectoryCreate(Bstr(it->first).raw(),
+                                     Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
+                                     fDirMode, fFlags);
+        if (FAILED(hrc))
         {
-            if (fVerbose)
-                RTPrintf("Creating directory \"%s\" ...\n", it->first.c_str());
-
-            hrc = guest->DirectoryCreate(Bstr(it->first).raw(),
-                                         Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
-                                         fDirMode, fFlags);
-            if (FAILED(hrc))
-            {
-                ctrlPrintError(guest, COM_IIDOF(IGuest)); /* Return code ignored, save original rc. */
-                break;
-            }
-
-            it++;
+            ctrlPrintError(guest, COM_IIDOF(IGuest)); /* Return code ignored, save original rc. */
+            break;
         }
 
-        if (FAILED(hrc))
-            rcExit = RTEXITCODE_FAILURE;
+        it++;
     }
 
-    return rcExit;
+    return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
 static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
@@ -2188,9 +2195,10 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
         { "--dereference",         'L',                             RTGETOPT_REQ_NOTHING },
         { "--file-system",         'f',                             RTGETOPT_REQ_NOTHING },
         { "--format",              'c',                             RTGETOPT_REQ_STRING },
+        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
         { "--password",            GETOPTDEF_STAT_PASSWORD,         RTGETOPT_REQ_STRING  },
         { "--terse",               't',                             RTGETOPT_REQ_NOTHING },
-        { "--username",            GETOPTDEF_STAT_USERNAME,         RTGETOPT_REQ_STRING  },
+        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
         { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
     };
 
@@ -2206,9 +2214,7 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
     bool fVerbose = false;
     DESTDIRMAP mapObjs;
 
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && rcExit == RTEXITCODE_SUCCESS)
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -2217,7 +2223,15 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
                 Utf8Password = ValueUnion.psz;
                 break;
 
-            case GETOPTDEF_STAT_USERNAME: /* User name */
+            case 'p': /* Password file */
+            {
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &Utf8Password);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            case 'u': /* User name */
                 Utf8UserName = ValueUnion.psz;
                 break;
 
@@ -2241,60 +2255,53 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
-                break; /* Never reached. */
         }
     }
 
     uint32_t cObjs = mapObjs.size();
-    if (rcExit == RTEXITCODE_SUCCESS && !cObjs)
-        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No element(s) to check specified!");
+    if (!cObjs)
+        return errorSyntax(USAGE_GUESTCONTROL, "No element(s) to check specified!");
 
-    if (rcExit == RTEXITCODE_SUCCESS && Utf8UserName.isEmpty())
-        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
+    if (Utf8UserName.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
 
-    if (rcExit == RTEXITCODE_SUCCESS)
+    /*
+     * Create the directories.
+     */
+    HRESULT hrc = S_OK;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    DESTDIRMAPITER it = mapObjs.begin();
+    while (it != mapObjs.end())
     {
-        /*
-         * Create the directories.
-         */
-        HRESULT hrc = S_OK;
+        if (fVerbose)
+            RTPrintf("Checking for element \"%s\" ...\n", it->first.c_str());
 
-        DESTDIRMAPITER it = mapObjs.begin();
-        while (it != mapObjs.end())
+        BOOL fExists;
+        hrc = guest->FileExists(Bstr(it->first).raw(),
+                                Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
+                                &fExists);
+        if (FAILED(hrc))
         {
-            if (fVerbose)
-                RTPrintf("Checking for element \"%s\" ...\n", it->first.c_str());
+            ctrlPrintError(guest, COM_IIDOF(IGuest)); /* Return code ignored, save original rc. */
+            rcExit = RTEXITCODE_FAILURE;
+        }
+        else
+        {
+            /** @todo: Output vbox_stat's stdout output to get more information about
+             *         what happened. */
 
-            BOOL fExists;
-            hrc = guest->FileExists(Bstr(it->first).raw(),
-                                    Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
-                                    &fExists);
-            if (FAILED(hrc))
+            /* If there's at least one element which does not exist on the guest,
+             * drop out with exitcode 1. */
+            if (!fExists)
             {
-                ctrlPrintError(guest, COM_IIDOF(IGuest)); /* Return code ignored, save original rc. */
-                break;
+                if (fVerbose)
+                    RTPrintf("Cannot stat for element \"%s\": No such file or directory\n",
+                             it->first.c_str());
+                rcExit = RTEXITCODE_FAILURE;
             }
-            else
-            {
-                /** @todo: Output vbox_stat's stdout output to get more information about
-                 *         what happened. */
-
-                /* If there's at least one element which does not exist on the guest,
-                 * drop out with exitcode 1. */
-                if (!fExists)
-                {
-                    if (fVerbose)
-                        RTPrintf("Cannot stat for element \"%s\": No such file or directory\n",
-                                 it->first.c_str());
-                    rcExit = RTEXITCODE_FAILURE;
-                }
-            }
-
-            it++;
         }
 
-        if (FAILED(hrc))
-            rcExit = RTEXITCODE_FAILURE;
+        it++;
     }
 
     return rcExit;
@@ -2442,10 +2449,10 @@ int handleGuestControl(HandlerArg *pArg)
                  || !strcmp(pArg->argv[1], "execute"))
             rcExit = handleCtrlExecProgram(guest, &arg);
         else if (!strcmp(pArg->argv[1], "copyfrom"))
-            rcExit = handleCtrlCopyTo(guest, &arg, false /* Guest to host */);
+            rcExit = handleCtrlCopy(guest, &arg, false /* Guest to host */);
         else if (   !strcmp(pArg->argv[1], "copyto")
                  || !strcmp(pArg->argv[1], "cp"))
-            rcExit = handleCtrlCopyTo(guest, &arg, true /* Host to guest */);
+            rcExit = handleCtrlCopy(guest, &arg, true /* Host to guest */);
         else if (   !strcmp(pArg->argv[1], "createdirectory")
                  || !strcmp(pArg->argv[1], "createdir")
                  || !strcmp(pArg->argv[1], "mkdir")

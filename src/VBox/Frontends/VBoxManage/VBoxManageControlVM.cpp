@@ -952,30 +952,52 @@ int handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "setcredentials"))
         {
             bool fAllowLocalLogon = true;
-            if (a->argc == 7)
+            if (   a->argc == 7
+                || (   a->argc == 8
+                    && (   !strcmp(a->argv[3], "-p")
+                        || !strcmp(a->argv[3], "--passwordfile"))))
             {
-                if (   strcmp(a->argv[5], "--allowlocallogon")
-                    && strcmp(a->argv[5], "-allowlocallogon"))
+                if (   strcmp(a->argv[5 + (a->argc - 7)], "--allowlocallogon")
+                    && strcmp(a->argv[5 + (a->argc - 7)], "-allowlocallogon"))
                 {
                     errorArgument("Invalid parameter '%s'", a->argv[5]);
                     rc = E_FAIL;
                     break;
                 }
-                if (!strcmp(a->argv[6], "no"))
+                if (!strcmp(a->argv[6 + (a->argc - 7)], "no"))
                     fAllowLocalLogon = false;
             }
-            else if (a->argc != 5)
+            else if (   a->argc != 5
+                     && (   a->argc != 6
+                         || (   strcmp(a->argv[3], "-p")
+                             && strcmp(a->argv[3], "--passwordfile"))))
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
             }
+            Utf8Str passwd, domain;
+            if (a->argc == 5 || a->argc == 7)
+            {
+                passwd = a->argv[3];
+                domain = a->argv[4];
+            }
+            else
+            {
+                RTEXITCODE rcExit = readPasswordFile(a->argv[4], &passwd);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                {
+                    rc = E_FAIL;
+                    break;
+                }
+                domain = a->argv[5];
+            }
 
             ComPtr<IGuest> guest;
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
             CHECK_ERROR_BREAK(guest, SetCredentials(Bstr(a->argv[2]).raw(),
-                                                    Bstr(a->argv[3]).raw(),
-                                                    Bstr(a->argv[4]).raw(),
+                                                    Bstr(passwd).raw(),
+                                                    Bstr(domain).raw(),
                                                     fAllowLocalLogon));
         }
 #if 0 /* TODO: review & remove */
