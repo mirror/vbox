@@ -145,7 +145,7 @@ fi
 echo "Creating links..."
 if test "$currentzone" = "global"; then
     /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
-    /usr/sbin/installf -c none $PKGINST /dev/vboxms=../devices/pseudo/vboxms@0:vboxmouse s
+    /usr/sbin/installf -c none $PKGINST /dev/vboxms=../devices/pseudo/vboxms@0:vboxms s
 fi
 
 # Install Xorg components to the required places
