@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -246,16 +246,16 @@ static CComModule _Module;
 
 
 #ifndef VBOX_ONLY_DOCS
-static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszFile)
+RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd)
 {
     size_t cbFile;
     char szPasswd[512];
     int vrc = VINF_SUCCESS;
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    bool fStdIn = !strcmp(pszFile, "stdin");
+    bool fStdIn = !strcmp(pszFilename, "stdin");
     PRTSTREAM pStrm;
     if (!fStdIn)
-        vrc = RTStrmOpen(pszFile, "r", &pStrm);
+        vrc = RTStrmOpen(pszFilename, "r", &pStrm);
     else
         pStrm = g_pStdIn;
     if (RT_SUCCESS(vrc))
@@ -264,24 +264,38 @@ static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const cha
         if (RT_SUCCESS(vrc))
         {
             if (cbFile >= sizeof(szPasswd)-1)
-                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Provided password too long");
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Provided password in file '%s' is too long", pszFilename);
             else
             {
                 unsigned i;
                 for (i = 0; i < cbFile && !RT_C_IS_CNTRL(szPasswd[i]); i++)
                     ;
                 szPasswd[i] = '\0';
-                int rc;
-                CHECK_ERROR(virtualBox, SetSettingsSecret(com::Bstr(szPasswd).raw()));
-                if (FAILED(rc))
-                    rcExit = RTEXITCODE_FAILURE;
+                *pPasswd = szPasswd;
             }
         }
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot read password from file '%s': %Rrc", pszFilename, vrc);
         if (!fStdIn)
             RTStrmClose(pStrm);
     }
     else
-        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot open password file '%s' (%Rrc)", pszFile);
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot open password file '%s' (%Rrc)", pszFilename, vrc);
+
+    return rcExit;
+}
+
+static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszFilename)
+{
+    com::Utf8Str passwd;
+    RTEXITCODE rcExit = readPasswordFile(pszFilename, &passwd);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        int rc;
+        CHECK_ERROR(virtualBox, SetSettingsSecret(com::Bstr(passwd).raw()));
+        if (FAILED(rc))
+            rcExit = RTEXITCODE_FAILURE;
+    }
 
     return rcExit;
 }
