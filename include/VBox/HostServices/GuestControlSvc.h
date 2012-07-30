@@ -313,7 +313,7 @@ enum eGuestFn
      * how many data is available / can be sent without actually
      * transmitting the data.
      */
-    GUEST_EXEC_IO_NOTIFY = 210,
+    GUEST_EXEC_IO_NOTIFY = 210
 };
 
 /*
