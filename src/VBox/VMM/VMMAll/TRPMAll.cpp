@@ -374,26 +374,25 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
         Log(("TRPMForwardTrap: eip=%04X:%08X iGate=%d\n", pRegFrame->cs.Sel, pRegFrame->eip, iGate));
 
     switch (iGate) {
-    case 14:
+    case X86_XCPT_PF:
         if (pRegFrame->eip == pVCpu->trpm.s.uActiveCR2)
         {
-            int rc;
             RTGCPTR pCallerGC;
 #  ifdef IN_RC
-            rc = MMGCRamRead(pVM, &pCallerGC, (void *)pRegFrame->esp, sizeof(pCallerGC));
+            int rc = MMGCRamRead(pVM, &pCallerGC, (void *)pRegFrame->esp, sizeof(pCallerGC));
 #  else
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
+            int rc = PGMPhysSimpleReadGCPtr(pVCpu, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
 #  endif
             if (RT_SUCCESS(rc))
                 Log(("TRPMForwardTrap: caller=%RGv\n", pCallerGC));
         }
         /* no break */
-    case 8:
-    case 10:
-    case 11:
-    case 12:
-    case 13:
-    case 17:
+    case X86_XCPT_DF:
+    case X86_XCPT_TS:
+    case X86_XCPT_NP:
+    case X86_XCPT_SS:
+    case X86_XCPT_GP:
+    case X86_XCPT_AC:
         Assert(enmError == TRPM_TRAP_HAS_ERRORCODE || enmType == TRPM_SOFTWARE_INT);
         break;
 
@@ -673,12 +672,10 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     Log(("PATM Handler %RRv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
 
                     /* Make sure the internal guest context structure is up-to-date. */
-                    CPUMSetGuestCR2(pVCpu, pVCpu->trpm.s.uActiveCR2);
+                    if (iGate == X86_XCPT_PF)
+                        CPUMSetGuestCR2(pVCpu, pVCpu->trpm.s.uActiveCR2);
 
 #ifdef IN_RC
-                    /* Note: shouldn't be necessary */
-                    ASMSetCR2(pVCpu->trpm.s.uActiveCR2);
-
                     /* Turn off interrupts for interrupt gates. */
                     if (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
                         CPUMRawSetEFlags(pVCpu, eflags.u32 & ~X86_EFL_IF);
