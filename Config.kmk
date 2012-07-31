@@ -3383,6 +3383,7 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	-Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
 	-Wl,--rpath-link,$(L4_LIBDIR)
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack $(VBOX_LD_as_needed)
+TEMPLATE_VBOXR3EXE_LDFLAGS.solaris     = -Wl,-z,ignore # same as VBOX_LD_as_needed
 
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
@@ -3914,6 +3915,7 @@ TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt thread
 $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
  endif
+TEMPLATE_VBOXMAINEXE_LDFLAGS.solaris     = -Wl,-z,ignore # Same as VBOX_LD_as_needed.
  ifdef VBOX_WITH_RUNPATH
 TEMPLATE_VBOXMAINEXE_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
  else ifdef VBOX_WITH_RELATIVE_RUNPATH
@@ -4322,6 +4324,7 @@ ifdef VBOX_WITH_QTGUI
 	/usr/local/lib
    endif
    ifeq ($(KBUILD_TARGET),solaris)
+    TEMPLATE_VBOXQT4GUIEXE_LDFLAGS.solaris = -Wl,-z,ignore # Same as VBOX_LD_as_needed.
     TEMPLATE_VBOXQT4GUIEXE_LIBS += \
          rt socket nsl
    endif
