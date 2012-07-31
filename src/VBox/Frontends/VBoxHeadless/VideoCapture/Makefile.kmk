@@ -18,30 +18,31 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-DLLS += VBoxFFmpegFB
-VBoxFFmpegFB_TEMPLATE     = VBOXMAINCLIENTDLL
+DLLS += VBoxVideoRecFB
+VBoxVideoRecFB_TEMPLATE     = VBOXMAINCLIENTDLL
 
 ifdef VBOX_WITH_VPX
-  VBoxFFmpegFB_DEFS      += \
+  VBoxVideoRecFB_DEFS      += \
     VBOX_WITH_VPX  
 endif
 
 ifdef VBOX_WITH_VPX
-  VBoxFFmpegFB_SDKS       = VBOX_FFMPEG VBOX_LIBPNG VBOX_ZLIB VBOX_VPX
+  VBoxVideoRecFB_SDKS       = VBOX_FFMPEG VBOX_LIBPNG VBOX_ZLIB VBOX_VPX
 else
-  VBoxFFmpegFB_SDKS       = VBOX_FFMPEG VBOX_LIBPNG VBOX_ZLIB 
+  VBoxVideoRecFB_SDKS       = VBOX_FFMPEG VBOX_LIBPNG VBOX_ZLIB 
 endif
 
 ifdef VBOX_WITH_VPX
-  VBoxFFmpegFB_SOURCES   +=  \
-    FFmpegFB.cpp \
-	EbmlWriter.cpp
+  VBoxVideoRecFB_SOURCES   +=  \
+    VideoRecFB.cpp \
+    EbmlWriter.cpp \
+    EncodeAndWrite.cpp
 else
-  VBoxFFmpegFB_SOURCES   +=  \
-    FFmpegFB.cpp 
+  VBoxVideoRecFB_SOURCES   +=  \
+    VideoRecFB.cpp 
 endif
 
-VBoxFFmpegFB_CXXFLAGS.linux += -fPIC
+VBoxVideoRecFB_CXXFLAGS.linux += -fPIC
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
