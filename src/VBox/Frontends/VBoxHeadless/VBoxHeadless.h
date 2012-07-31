@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: VRDE (headless Remote Desktop server):
- * Header file with registration call for ffmpeg framebuffer
+ * Header file with registration call for VideoRec framebuffer
  */
 
 /*
@@ -30,7 +30,7 @@
 #include <iprt/critsect.h>
 
 /**
- * Callback function to register an ffmpeg framebuffer.
+ * Callback function to register an VideoRec framebuffer.
  *
  * @returns COM status code.
  * @param   width        Framebuffer width.
@@ -40,10 +40,10 @@
  * @param   filename     Name of mpeg file to be created
  * @retval  retVal       The new framebuffer
  */
-typedef DECLCALLBACK(HRESULT) FNREGISTERFFMPEGFB(ULONG width,
+typedef DECLCALLBACK(HRESULT) FNREGISTERVIDEORECFB(ULONG width,
                                      ULONG height, ULONG bitrate,
                                      com::Bstr filename,
                                      IFramebuffer **retVal);
-typedef FNREGISTERFFMPEGFB *PFNREGISTERFFMPEGFB;
+typedef FNREGISTERVIDEORECFB *PFNREGISTERVIDEORECFB;
 
 #endif // __H_VBOXHEADLESS
