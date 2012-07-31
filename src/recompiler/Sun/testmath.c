@@ -289,8 +289,23 @@ extern int testmath(void)
     set_cw(0x27f);
 
     CHECK(sinl(1.0L),  0.84147098480789650664L);
+#if 0
     lrd = 180.0L;
     CHECK(sinl(lrd), -0.801152635733830477871L);
+#else
+    lrd = 180.0L;
+    lrdExpect = SIN180a;
+    lrdResult = sinl(lrd);
+    if (lrdResult != lrdExpect)
+    {
+        lrdExpect = SIN180b;
+        if (lrdResult != lrdExpect)
+        {
+            bitch("sinl(lrd)",  &lrdResult, &lrdExpect);
+            cErrors++;
+        }
+    }
+#endif
 #if 0
     CHECK(sinl(180.0L), SIN180);
 #else
