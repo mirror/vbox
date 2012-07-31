@@ -24,7 +24,6 @@
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
 #ifdef DEBUG
-# include "Logging.h"
 # include <iprt/file.h>
 #endif /* DEBUG */
 
@@ -73,8 +72,6 @@ bool GuestCtrlEvent::Canceled(void)
 
 void GuestCtrlEvent::Destroy(void)
 {
-    LogFlowThisFuncEnter();
-
     int rc = Cancel();
     AssertRC(rc);
 
@@ -83,8 +80,6 @@ void GuestCtrlEvent::Destroy(void)
         RTSemEventDestroy(hEventSem);
         hEventSem = NIL_RTSEMEVENT;
     }
-
-    LogFlowThisFuncLeave();
 }
 
 int GuestCtrlEvent::Init(void)
@@ -113,6 +108,8 @@ int GuestCtrlEvent::Wait(ULONG uTimeoutMS)
     int rc = RTSemEventWait(hEventSem, msInterval);
     if (RT_SUCCESS(rc))
         ASMAtomicWriteBool(&fCompleted, true);
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

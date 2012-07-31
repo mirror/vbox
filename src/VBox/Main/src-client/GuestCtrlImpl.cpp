@@ -25,7 +25,6 @@
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <VBox/VMMDev.h>
 #ifdef VBOX_WITH_GUEST_CONTROL

@@ -21,10 +21,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "GuestDirectoryImpl.h"
+#include "GuestCtrlImplPrivate.h"
 
 #include "Global.h"
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <VBox/com/array.h>
 
