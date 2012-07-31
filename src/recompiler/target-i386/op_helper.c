@@ -202,6 +202,23 @@ void helper_dump_state()
             (uint32_t)env->regs[R_ESI], (uint32_t)env->regs[R_EDI]));
 }
 
+/**
+ * Updates e2 with the DESC_A_MASK, writes it to the descriptor table, and
+ * returns the updated e2.
+ *
+ * @returns e2 with A set.
+ * @param   e2      The 2nd selector DWORD.
+ */
+static uint32_t set_segment_accessed(int selector, uint32_t e2)
+{
+    SegmentCache *dt = selector & X86_SEL_LDT ? &env->ldt : &env->gdt;
+    target_ulong ptr = dt->base + (selector & X86_SEL_MASK);
+
+    e2 |= DESC_A_MASK;
+    stl_kernel(ptr + 4, e2);
+    return e2;
+}
+
 #endif /* VBOX */
 
 /* return non zero if error */
@@ -3233,6 +3250,10 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
     if (rpl == cpl && (!(env->hflags & HF_CS64_MASK) ||
                        ((env->hflags & HF_CS64_MASK) && !is_iret))) {
         /* return to same privilege level */
+#ifdef VBOX
+        if (!(e2 & DESC_A_MASK))
+            e2 = set_segment_accessed(new_cs, e2);
+#endif
         cpu_x86_load_seg_cache(env, R_CS, new_cs,
                        get_seg_base(e1, e2),
                        get_seg_limit(e1, e2),
@@ -3263,6 +3284,10 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
             /* NULL ss is allowed in long mode if cpl != 3*/
             /* XXX: test CS64 ? */
             if ((env->hflags & HF_LMA_MASK) && rpl != 3) {
+# ifdef VBOX
+                if (!(e2 & DESC_A_MASK))
+                    e2 = set_segment_accessed(new_cs, e2);
+# endif
                 cpu_x86_load_seg_cache(env, R_SS, new_ss,
                                        0, 0xffffffff,
                                        DESC_G_MASK | DESC_B_MASK | DESC_P_MASK |
@@ -3288,6 +3313,12 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
                 raise_exception_err(EXCP0D_GPF, new_ss & 0xfffc);
             if (!(ss_e2 & DESC_P_MASK))
                 raise_exception_err(EXCP0B_NOSEG, new_ss & 0xfffc);
+#ifdef VBOX
+            if (!(e2 & DESC_A_MASK))
+                e2 = set_segment_accessed(new_cs, e2);
+            if (!(ss_e2 & DESC_A_MASK))
+                ss_e2 = set_segment_accessed(new_ss, e2);
+#endif
             cpu_x86_load_seg_cache(env, R_SS, new_ss,
                                    get_seg_base(ss_e1, ss_e2),
                                    get_seg_limit(ss_e1, ss_e2),
