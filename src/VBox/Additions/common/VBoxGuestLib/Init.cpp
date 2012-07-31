@@ -164,7 +164,10 @@ int vbglInitCommon (void)
         ;
     }
     else
+    {
         LogRel(("vbglInitCommon: VbglPhysHeapInit failed. rc=%Rrc\n", rc));
+        g_vbgldata.status = VbglStatusNotInitialized;
+    }
 
     dprintf(("vbglInitCommon: rc = %d\n", rc));
 
@@ -174,6 +177,7 @@ int vbglInitCommon (void)
 DECLVBGL(void) vbglTerminateCommon (void)
 {
     VbglPhysHeapTerminate ();
+    g_vbgldata.status = VbglStatusNotInitialized;
 
     return;
 }
