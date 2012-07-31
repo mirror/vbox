@@ -83,6 +83,7 @@ cd "$VBOX_INSTALLED_DIR"
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxService
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxClient
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxControl
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/vboxmslnk
 
 # prepare file list
 cd "$VBOX_BASEPKG_DIR"
@@ -114,10 +115,15 @@ filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService"'    
 
 # Manifest class action scripts
 filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/vboxservice.xml"'                   '$2 = "manifest";$6 = "sys"'
+filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/vboxmslnk.xml"'                     '$2 = "manifest";$6 = "sys"'
 
 # vboxguest
 filelist_fixup prototype '$3 == "usr/kernel/drv/vboxguest"'                                                  '$6="sys"'
 filelist_fixup prototype '$3 == "usr/kernel/drv/amd64/vboxguest"'                                            '$6="sys"'
+
+# vboxms
+filelist_fixup prototype '$3 == "usr/kernel/drv/vboxms"'                                                     '$6="sys"'
+filelist_fixup prototype '$3 == "usr/kernel/drv/amd64/vboxms"'                                               '$6="sys"'
 
 # Use 'root' as group so as to match attributes with the previous installation and prevent a conflict. Otherwise pkgadd bails out thinking
 # we're violating directory attributes of another (non existing) package
