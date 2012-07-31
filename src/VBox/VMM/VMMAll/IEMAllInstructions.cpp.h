@@ -10251,7 +10251,15 @@ FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
 
 
 /** Opcode 0xc8. */
-FNIEMOP_STUB(iemOp_enter_Iw_Ib);
+FNIEMOP_DEF(iemOp_enter_Iw_Ib)
+{
+    IEMOP_MNEMONIC("enter Iw,Ib");
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    uint16_t cbFrame;        IEM_OPCODE_GET_NEXT_U16(&cbFrame);
+    uint8_t  u8NestingLevel; IEM_OPCODE_GET_NEXT_U8(&u8NestingLevel);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_enter, pIemCpu->enmEffOpSize, cbFrame, u8NestingLevel);
+}
 
 
 /** Opcode 0xc9. */
