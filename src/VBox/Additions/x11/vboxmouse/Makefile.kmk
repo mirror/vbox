@@ -67,9 +67,6 @@ DLLS += vboxmouse_drv_70
 vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X IN_XF86_MODULE DONT_DEFINE_WRAPPERS NO_ANSIC
-ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
- vboxmouse_drv_70_DEFS += _XPG6 __EXTENSIONS__
-endif
 vboxmouse_drv_70_INCS := \
 	$(VBOX_PATH_X11_XORG_7_0) \
 	$(VBOX_PATH_X11_XORG_7_0)/X11 \
@@ -273,7 +270,7 @@ endif # neq ($(KBUILD_TARGET),linux)
 # symbols.  Not very elegant, but it will catch problems early.
 ifdef VBOX_WITH_TESTCASES
 # ifndef VBOX_ONLY_ADDITIONS
-  if1of ($(KBUILD_TARGET),linux solaris)
+  ifeq ($(KBUILD_TARGET),linux)
    ifeq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
     ifndef VBOX_ONLY_SDK
      VBOXMOUSE_SRC_PATH := $(PATH_SUB_CURRENT)
@@ -390,7 +387,7 @@ endif # neq ($(KBUILD_TARGET),linux)
 
     endif # ! VBOX_ONLY_SDK
    endif # eq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
-  endif # 1of ($(KBUILD_TARGET),linux solaris)
+  endif # eq ($(KBUILD_TARGET),linux)
 # endif # ! VBOX_ONLY_ADDITIONS
 endif # VBOX_WITH_TESTCASES
 

@@ -21,7 +21,9 @@ include $(KBUILD_PATH)/subheader.kmk
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
  include $(PATH_SUB_CURRENT)/VBoxClient/Makefile.kmk
  include $(PATH_SUB_CURRENT)/vboxvideo/Makefile.kmk
- include $(PATH_SUB_CURRENT)/vboxmouse/Makefile.kmk
+ ifneq ($(KBUILD_TARGET), solaris)
+  include $(PATH_SUB_CURRENT)/vboxmouse/Makefile.kmk
+ endif
  include $(PATH_SUB_CURRENT)/x11stubs/Makefile.kmk
 endif
 
