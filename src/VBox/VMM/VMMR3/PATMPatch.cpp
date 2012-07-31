@@ -1220,7 +1220,7 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
     }
     else
     {
-        // mov GPR, DRx
+        // mov GPR, CRx
         Assert(pCpu->Param1.fUse & DISUSE_REG_GEN32);
         Assert(pCpu->Param2.fUse & DISUSE_REG_CR);
 
