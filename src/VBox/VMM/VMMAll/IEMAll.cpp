@@ -835,7 +835,8 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
         cbToTryRead = cbLeftOnPage;
     if (cbToTryRead > sizeof(pIemCpu->abOpcode))
         cbToTryRead = sizeof(pIemCpu->abOpcode);
-    /** @todo patch manager */
+    /** @todo PATM: Read original, unpatched bytes? EMAll.cpp doesn't seem to be
+     *        doing that. */
     if (!pIemCpu->fByPassHandlers)
         rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, pIemCpu->abOpcode, cbToTryRead);
     else
@@ -3214,7 +3215,7 @@ DECLINLINE(void) iemRegSubFromRsp(PCPUMCTX pCtx, uint8_t cbToSub)
  * @param   cbToAdd             The number of bytes to add.
  * @param   pCtx                Where to get the current stack mode.
  */
-DECLINLINE(void) iemRegAddToRspEx(PRTUINT64U pTmpRsp, uint8_t cbToAdd, PCCPUMCTX pCtx)
+DECLINLINE(void) iemRegAddToRspEx(PRTUINT64U pTmpRsp, uint16_t cbToAdd, PCCPUMCTX pCtx)
 {
     if (pCtx->ss.Attr.n.u1Long)
         pTmpRsp->u           += cbToAdd;
@@ -3231,8 +3232,10 @@ DECLINLINE(void) iemRegAddToRspEx(PRTUINT64U pTmpRsp, uint8_t cbToAdd, PCCPUMCTX
  * @param   pTmpRsp             The temporary SP/ESP/RSP to update.
  * @param   cbToSub             The number of bytes to subtract.
  * @param   pCtx                Where to get the current stack mode.
+ * @remarks The @a cbToSub argument *MUST* be 16-bit, iemCImpl_enter is
+ *          expecting that.
  */
-DECLINLINE(void) iemRegSubFromRspEx(PRTUINT64U pTmpRsp, uint8_t cbToSub, PCCPUMCTX pCtx)
+DECLINLINE(void) iemRegSubFromRspEx(PRTUINT64U pTmpRsp, uint16_t cbToSub, PCCPUMCTX pCtx)
 {
     if (pCtx->ss.Attr.n.u1Long)
         pTmpRsp->u          -= cbToSub;
@@ -4674,7 +4677,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
     else
         rc = VINF_SUCCESS;
 
-#ifdef IEM_VERIFICATION_MODE
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     /*
      * Record the write(s).
      */
@@ -4785,7 +4788,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
             }
         }
 
-#ifdef IEM_VERIFICATION_MODE
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
         if (   !pIemCpu->fNoRem
             && (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC)) )
         {
@@ -4882,7 +4885,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
             }
         }
 
-#ifdef IEM_VERIFICATION_MODE
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
         if (   !pIemCpu->fNoRem
             && (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC)) )
         {
@@ -5589,7 +5592,6 @@ static VBOXSTRICTRC iemMemStackPushU32Ex(PIEMCPU pIemCpu, uint32_t u32Value, PRT
 }
 
 
-#ifdef SOME_UNUSED_FUNCTION
 /**
  * Pushes a dword onto the stack, using a temporary stack pointer.
  *
@@ -5620,7 +5622,6 @@ static VBOXSTRICTRC iemMemStackPushU64Ex(PIEMCPU pIemCpu, uint64_t u64Value, PRT
 
     return rc;
 }
-#endif
 
 
 /**
@@ -7159,7 +7160,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
             )
 #endif
 #if 1 /* Auto enable DSL - fstp st0 stuff. */
-        &&  pOrgCtx->cs  == 0x23
+        &&  pOrgCtx->cs.Sel  == 0x23
         &&  pOrgCtx->rip == 0x804aff7
 #endif
 #if 0
@@ -7448,7 +7449,7 @@ static void iemVerifyAssertMsg2(PIEMCPU pIemCpu)
                     );
 
     char szInstr1[256];
-    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip - pIemCpu->offOpcode,
+    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCtx->rip - pIemCpu->offOpcode,
                        DBGF_DISAS_FLAGS_DEFAULT_MODE,
                        szInstr1, sizeof(szInstr1), NULL);
     char szInstr2[256];
@@ -7644,15 +7645,11 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 #  define CHECK_SEL(a_Sel) \
         do \
         { \
-            CHECK_FIELD(a_Sel); \
-            if (   pOrgCtx->a_Sel##Hid.Attr.u != pDebugCtx->a_Sel##Hid.Attr.u \
-                && (pOrgCtx->a_Sel##Hid.Attr.u | X86_SEL_TYPE_ACCESSED) != pDebugCtx->a_Sel##Hid.Attr.u) \
-            { \
-                RTAssertMsg2Weak("  %8sHid.Attr differs - iem=%02x - rem=%02x\n", #a_Sel, pDebugCtx->a_Sel##Hid.Attr.u, pOrgCtx->a_Sel##Hid.Attr.u); \
-                cDiffs++; \
-            } \
-            CHECK_FIELD(a_Sel##Hid.u64Base); \
-            CHECK_FIELD(a_Sel##Hid.u32Limit); \
+            CHECK_FIELD(a_Sel.Sel); \
+            CHECK_FIELD(a_Sel.Attr.u); \
+            CHECK_FIELD(a_Sel.u64Base); \
+            CHECK_FIELD(a_Sel.u32Limit); \
+            CHECK_FIELD(a_Sel.fFlags); \
         } while (0)
 
 #if 1 /* The recompiler doesn't update these the intel way. */
@@ -7775,14 +7772,8 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         CHECK_FIELD(gdtr.pGdt);
         CHECK_FIELD(idtr.cbIdt);
         CHECK_FIELD(idtr.pIdt);
-        CHECK_FIELD(ldtr);
-        CHECK_FIELD(ldtrHid.u64Base);
-        CHECK_FIELD(ldtrHid.u32Limit);
-        CHECK_FIELD(ldtrHid.Attr.u);
-        CHECK_FIELD(tr);
-        CHECK_FIELD(trHid.u64Base);
-        CHECK_FIELD(trHid.u32Limit);
-        CHECK_FIELD(trHid.Attr.u);
+        CHECK_SEL(ldtr);
+        CHECK_SEL(tr);
         CHECK_FIELD(SysEnter.cs);
         CHECK_FIELD(SysEnter.eip);
         CHECK_FIELD(SysEnter.esp);

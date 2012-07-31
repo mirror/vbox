@@ -908,11 +908,6 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         pCtx->cs.ValidSel   = uSel;
         pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->cs.u64Base    = (uint32_t)uSel << 4;
-        /** @todo REM reset the accessed bit (see on jmp far16 after disabling
-         *        PE.  Check with VT-x and AMD-V. */
-#ifdef IEM_VERIFICATION_MODE
-        pCtx->cs.Attr.u    &= ~X86_SEL_TYPE_ACCESSED;
-#endif
         return VINF_SUCCESS;
     }
 
@@ -1091,11 +1086,6 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         pCtx->cs.ValidSel   = uSel;
         pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->cs.u64Base    = (uint32_t)uSel << 4;
-        /** @todo Does REM reset the accessed bit here too? (See on jmp far16
-         *        after disabling PE.) Check with VT-x and AMD-V. */
-#ifdef IEM_VERIFICATION_MODE
-        pCtx->cs.Attr.u    &= ~X86_SEL_TYPE_ACCESSED;
-#endif
         return VINF_SUCCESS;
     }
 
@@ -1713,6 +1703,121 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
 
 /**
+ * Implements enter.
+ *
+ * We're doing this in C because the instruction is insane, even for the
+ * u8NestingLevel=0 case dealing with the stack is tedious.
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_enter, IEMMODE, enmEffOpSize, uint16_t, cbFrame, uint8_t, cParameters)
+{
+    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /* Push RBP, saving the old value in TmpRbp. */
+    RTUINT64U       NewRsp; NewRsp.u = pCtx->rsp;
+    RTUINT64U       TmpRbp; TmpRbp.u = pCtx->rbp;
+    RTUINT64U       NewRbp;
+    VBOXSTRICTRC    rcStrict;
+    if (enmEffOpSize == IEMMODE_64BIT)
+    {
+        rcStrict = iemMemStackPushU64Ex(pIemCpu, TmpRbp.u, &NewRsp);
+        NewRbp = NewRsp;
+    }
+    else if (pCtx->ss.Attr.n.u1DefBig)
+    {
+        rcStrict = iemMemStackPushU32Ex(pIemCpu, TmpRbp.DWords.dw0, &NewRsp);
+        NewRbp = NewRsp;
+    }
+    else
+    {
+        rcStrict = iemMemStackPushU16Ex(pIemCpu, TmpRbp.Words.w0, &NewRsp);
+        NewRbp = NewRsp;
+    }
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* Copy the parameters (aka nesting levels by Intel). */
+    cParameters &= 0x1f;
+    if (cParameters > 0)
+    {
+        switch (enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                if (pCtx->ss.Attr.n.u1DefBig)
+                    TmpRbp.DWords.dw0 -= 2;
+                else
+                    TmpRbp.Words.w0   -= 2;
+                do
+                {
+                    uint16_t u16Tmp;
+                    rcStrict = iemMemStackPopU16Ex(pIemCpu, &u16Tmp, &TmpRbp);
+                    if (rcStrict != VINF_SUCCESS)
+                        break;
+                    rcStrict = iemMemStackPushU16Ex(pIemCpu, u16Tmp, &NewRsp);
+                } while (--cParameters > 0 && rcStrict == VINF_SUCCESS);
+                break;
+
+            case IEMMODE_32BIT:
+                if (pCtx->ss.Attr.n.u1DefBig)
+                    TmpRbp.DWords.dw0 -= 4;
+                else
+                    TmpRbp.Words.w0   -= 4;
+                do
+                {
+                    uint32_t u32Tmp;
+                    rcStrict = iemMemStackPopU32Ex(pIemCpu, &u32Tmp, &TmpRbp);
+                    if (rcStrict != VINF_SUCCESS)
+                        break;
+                    rcStrict = iemMemStackPushU32Ex(pIemCpu, u32Tmp, &NewRsp);
+                } while (--cParameters > 0 && rcStrict == VINF_SUCCESS);
+                break;
+
+            case IEMMODE_64BIT:
+                TmpRbp.u -= 8;
+                do
+                {
+                    uint64_t u64Tmp;
+                    rcStrict = iemMemStackPopU64Ex(pIemCpu, &u64Tmp, &TmpRbp);
+                    if (rcStrict != VINF_SUCCESS)
+                        break;
+                    rcStrict = iemMemStackPushU64Ex(pIemCpu, u64Tmp, &NewRsp);
+                } while (--cParameters > 0 && rcStrict == VINF_SUCCESS);
+                break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+        if (rcStrict != VINF_SUCCESS)
+            return VINF_SUCCESS;
+
+        /* Push the new RBP */
+        if (enmEffOpSize == IEMMODE_64BIT)
+            rcStrict = iemMemStackPushU64Ex(pIemCpu, NewRbp.u, &NewRsp);
+        else if (pCtx->ss.Attr.n.u1DefBig)
+            rcStrict = iemMemStackPushU32Ex(pIemCpu, NewRbp.DWords.dw0, &NewRsp);
+        else
+            rcStrict = iemMemStackPushU16Ex(pIemCpu, NewRbp.Words.w0, &NewRsp);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+    }
+
+    /* Recalc RSP. */
+    iemRegSubFromRspEx(&NewRsp, cbFrame, pCtx);
+
+    /** @todo Should probe write access at the new RSP according to AMD. */
+
+    /* Commit it. */
+    pCtx->rbp = NewRbp.u;
+    pCtx->rsp = NewRsp.u;
+    iemRegAddToRip(pIemCpu, cbInstr);
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Implements leave.
  *
  * We're doing this in C because messing with the stack registers is annoying
@@ -1727,15 +1832,15 @@ IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
     /* Calculate the intermediate RSP from RBP and the stack attributes. */
     RTUINT64U       NewRsp;
     if (pCtx->ss.Attr.n.u1Long)
+        NewRsp.u = pCtx->rbp;
+    else if (pCtx->ss.Attr.n.u1DefBig)
+        NewRsp.u = pCtx->ebp;
+    else
     {
         /** @todo Check that LEAVE actually preserve the high EBP bits. */
         NewRsp.u = pCtx->rsp;
         NewRsp.Words.w0 = pCtx->bp;
     }
-    else if (pCtx->ss.Attr.n.u1DefBig)
-        NewRsp.u = pCtx->ebp;
-    else
-        NewRsp.u = pCtx->rbp;
 
     /* Pop RBP according to the operand size. */
     VBOXSTRICTRC    rcStrict;
