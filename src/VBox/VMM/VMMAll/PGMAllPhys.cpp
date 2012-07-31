@@ -4106,7 +4106,6 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable,
             *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
 #endif
 
-
             Log6(("PGMPhysIemGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage] *ppv=%p\n", GCPhys, rc, pPage, *ppv));
         }
         else

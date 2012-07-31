@@ -4535,19 +4535,19 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
      *        regarding locking and unlocking needs to be struct.  A couple of TLBs
      *        living in PGM, but with publicly accessible inlined access methods
      *        could perhaps be an even better solution. */
-    return PGMPhysIemGCPhys2Ptr(IEMCPU_TO_VM(pIemCpu),
-                                GCPhysMem,
-                                RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
-                                pIemCpu->fByPassHandlers,
-                                ppvMem,
-                                pLock);
+    int rc = PGMPhysIemGCPhys2Ptr(IEMCPU_TO_VM(pIemCpu),
+                                  GCPhysMem,
+                                  RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
+                                  pIemCpu->fByPassHandlers,
+                                  ppvMem,
+                                  pLock);
+    /*Log(("PGMPhysIemGCPhys2Ptr %Rrc pLock=%.*Rhxs\n", rc, sizeof(*pLock), pLock));*/
+    return rc;
 }
 
 
 /**
  * Unmap a page previously mapped by iemMemPageMap.
- *
- * This is currently a dummy function.
  *
  * @param   pIemCpu             The IEM per CPU data.
  * @param   GCPhysMem           The physical address.
@@ -4561,9 +4561,7 @@ DECLINLINE(void) iemMemPageUnmap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t f
     NOREF(GCPhysMem);
     NOREF(fAccess);
     NOREF(pvMem);
-#ifndef IN_RING3
     PGMPhysReleasePageMappingLock(IEMCPU_TO_VM(pIemCpu), pLock);
-#endif
 }
 
 
@@ -5025,17 +5023,15 @@ static VBOXSTRICTRC iemMemCommitAndUnmap(PIEMCPU pIemCpu, void *pvMem, uint32_t 
     int iMemMap = iemMapLookup(pIemCpu, pvMem, fAccess);
     AssertReturn(iMemMap >= 0, iMemMap);
 
-    /*
-     * If it's bounce buffered, we need to write back the buffer.
-     */
-    if (   (pIemCpu->aMemMappings[iMemMap].fAccess & (IEM_ACCESS_BOUNCE_BUFFERED | IEM_ACCESS_TYPE_WRITE))
-        == (IEM_ACCESS_BOUNCE_BUFFERED | IEM_ACCESS_TYPE_WRITE))
-        return iemMemBounceBufferCommitAndUnmap(pIemCpu, iMemMap);
-
-#ifndef IN_RING3
-    /* Unlock it. */
-    PGMPhysReleasePageMappingLock(IEMCPU_TO_VM(pIemCpu), &pIemCpu->aMemMappingLocks[iMemMap].Lock);
-#endif
+    /* If it's bounce buffered, we may need to write back the buffer. */
+    if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_BOUNCE_BUFFERED)
+    {
+        if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_TYPE_WRITE)
+            return iemMemBounceBufferCommitAndUnmap(pIemCpu, iMemMap);
+    }
+    /* Otherwise unlock it. */
+    else
+        PGMPhysReleasePageMappingLock(IEMCPU_TO_VM(pIemCpu), &pIemCpu->aMemMappingLocks[iMemMap].Lock);
 
     /* Free the entry. */
     pIemCpu->aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
