@@ -75,6 +75,8 @@ int GuestSession::init(Guest *aGuest, ULONG aSessionID,
     mData.mCredentials.mDomain = aDomain;
     mData.mName = aName;
 
+    mData.mNextProcessID = 0;
+
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
 
@@ -481,13 +483,12 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<G
         return rc;
 
     /* Create a new (host-based) process ID and assign it. */
-    ULONG uNewProcessID = 0;
     ULONG uTries = 0;
 
     for (;;)
     {
         /* Is the context ID already used? */
-        if (!processExists(uNewProcessID, NULL /* pProgress */))
+        if (!processExists(mData.mNextProcessID, NULL /* pProgress */))
         {
             /* Callback with context ID was not found. This means
              * we can use this context ID for our new callback we want
@@ -495,7 +496,9 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<G
             rc = VINF_SUCCESS;
             break;
         }
-        uNewProcessID++;
+        mData.mNextProcessID++;
+        if (mData.mNextProcessID == UINT32_MAX)
+            mData.mNextProcessID = 0;
 
         if (++uTries == UINT32_MAX)
             break; /* Don't try too hard. */
@@ -509,14 +512,14 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<G
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
         rc = pProcess->init(mData.mParent->getConsole() /* Console */, this /* Session */,
-                            uNewProcessID, procInfo);
+                            mData.mNextProcessID, procInfo);
         if (RT_FAILURE(rc)) throw rc;
 
         /* Add the created process to our map. */
-        mData.mProcesses[uNewProcessID] = pProcess;
+        mData.mProcesses[mData.mNextProcessID] = pProcess;
 
         LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32\n",
-                     mData.mId, uNewProcessID));
+                     mData.mId, mData.mNextProcessID));
     }
     catch (int rc2)
     {

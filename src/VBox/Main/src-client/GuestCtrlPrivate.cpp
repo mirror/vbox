@@ -149,7 +149,6 @@ int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
     AssertReturn(enmType > VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN, VERR_INVALID_PARAMETER);
     Assert((pvData == NULL) && !cbData);
 
-    int rc = VINF_SUCCESS;
     switch (enmType)
     {
         case VBOXGUESTCTRLCALLBACKTYPE_EXEC_START:
@@ -184,12 +183,9 @@ int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
             break;
     }
 
+    int rc = GuestCtrlEvent::Init();
     if (RT_SUCCESS(rc))
-    {
-        rc = GuestCtrlEvent::Init();
-        if (RT_SUCCESS(rc))
-            mType  = enmType;
-    }
+        mType  = enmType;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

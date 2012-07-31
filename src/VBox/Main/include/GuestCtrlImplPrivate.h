@@ -36,6 +36,9 @@ using namespace com;
 using namespace guestControl;
 #endif
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
 #define LOG_GROUP LOG_GROUP_GUEST_CONTROL
 #include <VBox/log.h>
 

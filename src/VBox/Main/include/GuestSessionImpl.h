@@ -139,9 +139,9 @@ private:
 
     struct Data
     {
-        /** Guest control protocol version.
-         *  Guest control prior to VBox 4.2 has version 1,
-         *  guest control 2.0 has ...well, 2. */
+        /** Guest control protocol version to be used.
+         *  Guest Additions < VBox 4.2 have version 1,
+         *  any newer version will have version 2. */
         uint32_t             mProtocolVersion;
         /** Flag indicating if this is an internal session
          *  or not. Internal session are not accessible by clients. */
@@ -156,9 +156,16 @@ private:
         ULONG                mId;
         /** The session timeout. Default is 30s. */
         ULONG                mTimeout;
+        /** The next process ID for assignment. */
+        ULONG                mNextProcessID;
+        /** The session's environment block. Can be
+         *  overwritten/extended by ProcessCreate(Ex). */
         GuestEnvironment     mEnvironment;
+        /** Directory objects bound to this session. */
         SessionDirectories   mDirectories;
+        /** File objects bound to this session. */
         SessionFiles         mFiles;
+        /** Process objects bound to this session. */
         SessionProcesses     mProcesses;
     } mData;
 };
