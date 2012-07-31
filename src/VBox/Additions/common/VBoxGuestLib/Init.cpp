@@ -272,11 +272,6 @@ DECLVBGL(int) VbglInit (void)
     return rc;
 }
 
-DECLVBGL(bool) VbglIsReady(void)
-{
-    return(g_vbgldata.status == VbglStatusReady);
-}
-
 DECLVBGL(void) VbglTerminate (void)
 {
 # ifdef VBOX_WITH_HGCM
