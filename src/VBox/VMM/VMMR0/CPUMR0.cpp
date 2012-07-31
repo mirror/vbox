@@ -689,7 +689,10 @@ static DECLCALLBACK(void) cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1,
                 && u32EDX == X86_CPUID_VENDOR_INTEL_EDX)
            ||  (   u32EBX == X86_CPUID_VENDOR_AMD_EBX
                 && u32ECX == X86_CPUID_VENDOR_AMD_ECX
-                && u32EDX == X86_CPUID_VENDOR_AMD_EDX))
+                && u32EDX == X86_CPUID_VENDOR_AMD_EDX)
+           ||  (   u32EBX == X86_CPUID_VENDOR_VIA_EBX
+                && u32ECX == X86_CPUID_VENDOR_VIA_ECX
+                && u32EDX == X86_CPUID_VENDOR_VIA_EDX))
         && u32MaxIdx >= 1)
     {
         ASMCpuId(1, &u32MaxIdx, &u32EBX, &u32ECX, &u32EDX);
