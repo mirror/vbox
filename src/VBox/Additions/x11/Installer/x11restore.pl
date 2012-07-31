@@ -25,7 +25,7 @@ my $CFG;
 my $BAK;
 
 my $config_count = 0;
-my $vboxpresent = "vboxmouse";
+my $vboxpresent = "vboxvideo";
 
 foreach $cfg (@cfg_files)
 {
