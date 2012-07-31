@@ -620,8 +620,8 @@ static void show_usage()
              "  --termacpi               Send an ACPI power button event when closing the window\n"
              "  --vrdp <ports>           Listen for VRDP connections on one of specified ports (default if not specified)\n"
              "  --discardstate           Discard saved state (if present) and revert to last snapshot (if present)\n"
-             "  --settingspw             Specify the settings password\n"
-             "  --settingspwfile         Specify a file containing the settings password\n"
+             "  --settingspw <pw>        Specify the settings password\n"
+             "  --settingspwfile <file>  Specify a file containing the settings password\n"
 #ifdef VBOX_SECURELABEL
              "  --securelabel            Display a secure VM label at the top of the screen\n"
              "  --seclabelfnt            TrueType (.ttf) font file for secure session label\n"
