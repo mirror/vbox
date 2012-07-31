@@ -32,7 +32,6 @@ foreach $cfg (@cfg_files)
     {
         open(TMP, ">$temp") or die "Can't create $TMP: $!\n";
 
-        my $have_mouse = 0;
         my $in_section = 0;
 
         while (defined ($line = <CFG>))
@@ -40,78 +39,27 @@ foreach $cfg (@cfg_files)
             if ($line =~ /^\s*Section\s*"([a-zA-Z]+)"/i)
             {
                 my $section = lc($1);
-                if (($section eq "inputdevice") || ($section eq "device"))
+                if ($section eq "device")
                 {
                     $in_section = 1;
-                }
-                if ($section eq "serverlayout")
-                {
-                    $in_layout = 1;
                 }
             } else {
                 if ($line =~ /^\s*EndSection/i)
                 {
                     $in_section = 0;
-                    $in_layout = 0;
                 }
             }
 
             if ($in_section)
             {
-                if ($line =~ /^\s*driver\s+\"(?:mouse|vboxmouse)\"/i)
-                {
-                    $line = "    Driver      \"vboxmouse\"\n    Option      \"CorePointer\"\n";
-                    $have_mouse = 1
-                }
-
-                # Other drivers sending events interfere badly with pointer integration
-                if ($line =~ /^\s*option\s+\"(?:alwayscore|sendcoreevents|corepointer)\"/i)
-                {
-                    $line = "";
-                }
-
-                # Solaris specific: Use /dev/vboxguest for Xorg 1.5.3+
-                if ($os_type =~ 'SunOS')
-                {
-                    if ($line =~ /^\s*option\s+\"(?:device)\"\s+\"(?:\/dev\/kdmouse)\"/i)
-                    {
-                        $line = "    Option      \"Device\" \"\/dev\/vboxguest\"\n"
-                    }
-
-                    if ($line =~ /^\s*option\s+\"(?:device)\"\s+\"(?:\/dev\/mouse)\"/i)
-                    {
-                        $line = "    Option      \"Device\" \"\/dev\/vboxguest\"\n"
-                    }
-                }
-
                 if ($line =~ /^\s*driver\s+\"(?:fbdev|vga|vesa|vboxvideo|ChangeMe)\"/i)
                 {
                     $line = "    Driver      \"vboxvideo\"\n";
                 }
             }
-            if ($in_layout)
-            {
-                # Other drivers sending events interfere badly with pointer integration
-                if (   $line =~ /^\s*inputdevice.*\"(?:alwayscore|sendcoreevents)\"/i)
-                {
-                    $line = "";
-                }
-            }
             print TMP $line;
         }
 
-        if (!$have_mouse) {
-            print TMP "\n";
-            print TMP "Section \"InputDevice\"\n";
-            print TMP "        Identifier  \"VBoxMouse\"\n";
-            print TMP "        Driver      \"vboxmouse\"\n";
-            if ($os_type eq 'SunOS')
-            {
-                print TMP "        Option      \"Device\"     \"\/dev\/vboxguest\"\n";
-            }
-            print TMP "        Option      \"CorePointer\"\n";
-            print TMP "EndSection\n";
-        }
         close(TMP);
 
         rename $cfg, $cfg.".bak";
