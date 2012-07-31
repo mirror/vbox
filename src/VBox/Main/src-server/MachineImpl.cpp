@@ -1028,7 +1028,10 @@ STDMETHODIMP Machine::COMSETTER(Description)(IN_BSTR aDescription)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
+    // this can be done in principle in any state as it doesn't affect the VM
+    // significantly, but play safe by not messing around while complex
+    // activities are going on
+    HRESULT rc = checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -1086,7 +1089,8 @@ STDMETHODIMP Machine::COMSETTER(Groups)(ComSafeArrayIn(IN_BSTR, aGroups))
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    rc = checkStateDependency(MutableStateDep);
+    // changing machine groups is possible while the VM is offline
+    rc = checkStateDependency(OfflineStateDep);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -4708,7 +4712,7 @@ STDMETHODIMP Machine::SaveSettings()
 
     /* when there was auto-conversion, we want to save the file even if
      * the VM is saved */
-    HRESULT rc = checkStateDependency(MutableStateDep);
+    HRESULT rc = checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     /* the settings file path may never be null */
@@ -7656,6 +7660,10 @@ void Machine::releaseStateDependency()
  *  returned. This is useful in setters which allow changing machine
  *  properties when it is in the saved state.
  *
+ *  When @a aDepType is OfflineStateDep, this method returns S_OK if the
+ *  state is one of the 4 offline states (PoweredOff, Saved, Teleported,
+ *  Aborted).
+ *
  *  @param aDepType     Dependency type to check.
  *
  *  @note Non Machine based classes should use #addStateDependency() and
@@ -7705,6 +7713,22 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
                )
                 return setError(VBOX_E_INVALID_VM_STATE,
                                 tr("The machine is not mutable (state is %s)"),
+                                Global::stringifyMachineState(mData->mMachineState));
+            break;
+        }
+        case OfflineStateDep:
+        {
+            if (   mData->mRegistered
+                && (   !isSessionMachine()
+                    || (   mData->mMachineState != MachineState_PoweredOff
+                        && mData->mMachineState != MachineState_Saved
+                        && mData->mMachineState != MachineState_Aborted
+                        && mData->mMachineState != MachineState_Teleported
+                       )
+                   )
+               )
+                return setError(VBOX_E_INVALID_VM_STATE,
+                                tr("The machine is not offline (state is %s)"),
                                 Global::stringifyMachineState(mData->mMachineState));
             break;
         }
