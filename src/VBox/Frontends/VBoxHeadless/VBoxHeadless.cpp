@@ -485,7 +485,7 @@ static void show_usage()
 
 #ifdef VBOX_WITH_VIDEO_REC
 /**
- * Parse the environment for variables which can influence the FFMPEG settings.
+ * Parse the environment for variables which can influence the VIDEOREC settings.
  * purely for backwards compatibility.
  * @param pulFrameWidth may be updated with a desired frame width
  * @param pulFrameHeight may be updated with a desired frame height
@@ -612,7 +612,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
 #ifdef VBOX_WITH_VIDEO_REC
-    unsigned fFFMPEG = 0;
+    unsigned fVIDEOREC = 0;
     unsigned long ulFrameWidth = 800;
     unsigned long ulFrameHeight = 600;
     unsigned long ulBitRate = 300000;
@@ -754,7 +754,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
 #ifdef VBOX_WITH_VIDEO_REC
             case 'c':
-                fFFMPEG = true;
+                fVIDEOREC = true;
                 break;
             case 'w':
                 ulFrameWidth = ValueUnion.u32;
@@ -930,24 +930,24 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
 #ifdef VBOX_WITH_VIDEO_REC
         IFramebuffer *pFramebuffer = 0;
-        RTLDRMOD hLdrFFmpegFB;
-        PFNREGISTERFFMPEGFB pfnRegisterFFmpegFB;
+        RTLDRMOD hLdrVideoRecFB;
+        PFNREGISTERVIDEORECFB pfnRegisterVideoRecFB;
 
-        if (fFFMPEG)
+        if (fVIDEOREC)
         {
             HRESULT         rcc = S_OK;
             int             rrc = VINF_SUCCESS;
             RTERRINFOSTATIC ErrInfo;
 
-            Log2(("VBoxHeadless: loading VBoxFFmpegFB and libvpx shared library\n"));
+            Log2(("VBoxHeadless: loading VBoxVideoRecFB and libvpx shared library\n"));
             RTErrInfoInitStatic(&ErrInfo);
-            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
+            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxVideoRecFB", &hLdrVideoRecFB, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
 
             if (RT_SUCCESS(rrc))
             {
-                Log2(("VBoxHeadless: looking up symbol VBoxRegisterFFmpegFB\n"));
-                rrc = RTLdrGetSymbol(hLdrFFmpegFB, "VBoxRegisterFFmpegFB",
-                                     reinterpret_cast<void **>(&pfnRegisterFFmpegFB));
+                Log2(("VBoxHeadless: looking up symbol VBoxRegisterVideoRecFB\n"));
+                rrc = RTLdrGetSymbol(hLdrVideoRecFB, "VBoxRegisterVideoRecFB",
+                                     reinterpret_cast<void **>(&pfnRegisterVideoRecFB));
                 if (RT_FAILURE(rrc))
                     LogError("Failed to load the video capture extension, possibly due to a damaged file\n", rrc);
             }
@@ -955,8 +955,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 LogError("Failed to load the video capture extension\n", rrc); /** @todo stupid function, no formatting options. */
             if (RT_SUCCESS(rrc))
             {
-                Log2(("VBoxHeadless: calling pfnRegisterFFmpegFB\n"));
-                rcc = pfnRegisterFFmpegFB(ulFrameWidth, ulFrameHeight, ulBitRate,
+                Log2(("VBoxHeadless: calling pfnRegisterVideoRecFB\n"));
+                rcc = pfnRegisterVideoRecFB(ulFrameWidth, ulFrameHeight, ulBitRate,
                                          pszMPEGFile, &pFramebuffer);
                 if (rcc != S_OK)
                     LogError("Failed to initialise video capturing - make sure that the file format\n"
@@ -983,7 +983,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
 # ifdef VBOX_WITH_VIDEO_REC
-            if (fFFMPEG && uScreenId == 0)
+            if (fVIDEOREC && uScreenId == 0)
             {
                 /* Already registered. */
                 continue;
