@@ -1492,37 +1492,37 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
     pCtx->cs.u32Limit               = 0x0000ffff;
     pCtx->cs.Attr.n.u1DescType      = 1; /* code/data segment */
     pCtx->cs.Attr.n.u1Present       = 1;
-    pCtx->cs.Attr.n.u4Type          = X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
+    pCtx->cs.Attr.n.u4Type          = X86_SEL_TYPE_ER_ACC;
 
     pCtx->ds.fFlags                 = CPUMSELREG_FLAGS_VALID;
     pCtx->ds.u32Limit               = 0x0000ffff;
     pCtx->ds.Attr.n.u1DescType      = 1; /* code/data segment */
     pCtx->ds.Attr.n.u1Present       = 1;
-    pCtx->ds.Attr.n.u4Type          = X86_SEL_TYPE_RW;
+    pCtx->ds.Attr.n.u4Type          = X86_SEL_TYPE_RW_ACC;
 
     pCtx->es.fFlags                 = CPUMSELREG_FLAGS_VALID;
     pCtx->es.u32Limit               = 0x0000ffff;
     pCtx->es.Attr.n.u1DescType      = 1; /* code/data segment */
     pCtx->es.Attr.n.u1Present       = 1;
-    pCtx->es.Attr.n.u4Type          = X86_SEL_TYPE_RW;
+    pCtx->es.Attr.n.u4Type          = X86_SEL_TYPE_RW_ACC;
 
     pCtx->fs.fFlags                 = CPUMSELREG_FLAGS_VALID;
     pCtx->fs.u32Limit               = 0x0000ffff;
     pCtx->fs.Attr.n.u1DescType      = 1; /* code/data segment */
     pCtx->fs.Attr.n.u1Present       = 1;
-    pCtx->fs.Attr.n.u4Type          = X86_SEL_TYPE_RW;
+    pCtx->fs.Attr.n.u4Type          = X86_SEL_TYPE_RW_ACC;
 
     pCtx->gs.fFlags                 = CPUMSELREG_FLAGS_VALID;
     pCtx->gs.u32Limit               = 0x0000ffff;
     pCtx->gs.Attr.n.u1DescType      = 1; /* code/data segment */
     pCtx->gs.Attr.n.u1Present       = 1;
-    pCtx->gs.Attr.n.u4Type          = X86_SEL_TYPE_RW;
+    pCtx->gs.Attr.n.u4Type          = X86_SEL_TYPE_RW_ACC;
 
     pCtx->ss.fFlags                 = CPUMSELREG_FLAGS_VALID;
     pCtx->ss.u32Limit               = 0x0000ffff;
     pCtx->ss.Attr.n.u1Present       = 1;
     pCtx->ss.Attr.n.u1DescType      = 1; /* code/data segment */
-    pCtx->ss.Attr.n.u4Type          = X86_SEL_TYPE_RW;
+    pCtx->ss.Attr.n.u4Type          = X86_SEL_TYPE_RW_ACC;
 
     pCtx->idtr.cbIdt                = 0xffff;
     pCtx->gdtr.cbGdt                = 0xffff;
