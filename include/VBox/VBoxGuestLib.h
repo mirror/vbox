@@ -112,12 +112,6 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemor
  */
 DECLVBGL(int) VbglInit (void);
 
-/**
- * Check whether the main VBoxGuest driver is loaded.  (The load order of guest
- * drivers is not guaranteed on all platforms.)
- */
-DECLVBGL(bool) VbglIsReady(void);
-
 # endif
 
 /**
