@@ -470,8 +470,8 @@ static void show_usage()
              "                                         two port numbers to specify a range\n"
              "                                         \"TCP/Address\" - interface IP the VRDE server\n"
              "                                         will bind to\n"
-             "   --settingspw                          Specify the settings password\n"
-             "   --settingspwfile                      Specify a file containing the settings password\n"
+             "   --settingspw <pw>                     Specify the settings password\n"
+             "   --settingspwfile <file>               Specify a file containing the settings password\n"
 #ifdef VBOX_WITH_VIDEO_REC
              "   -c, -capture, --capture               Record the VM screen output to a file\n"
              "   -w, --width                           Frame width when recording\n"
