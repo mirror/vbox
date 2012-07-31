@@ -47,6 +47,11 @@
 
 #include <VBox/com/array.h>
 
+#ifdef VBOX_WITH_VPX_MAIN
+# include "EncodeAndWrite.h"
+  PVIDEORECCONTEXT pVideoRecContext;
+#endif
+
 /**
  * Display driver instance data.
  *
@@ -3239,6 +3244,15 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             }
         }
     }
+#ifdef VBOX_WITH_VPX_MAIN
+    VideoRecCopyToIntBuffer(pVideoRecContext, pDisplay->xOrigin, pDisplay->yOrigin,
+                            pDisplay->w, pDisplay->h, mPixelFormat,
+                            pDisplay->u16BitsPerPixel, mBytesPerLine, pDisplay->w,
+                            pDisplay->h, pDisplay->h, pDisplay->w,
+                            pu8Framebuffer, mTempRGBBuffer);
+#endif
+
+
 
 #ifdef DEBUG_sunlover
     STAM_PROFILE_STOP(&StatDisplayRefresh, a);
@@ -4216,6 +4230,15 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pData->IConnector.pfnVBVAUpdateEnd      = Display::displayVBVAUpdateEnd;
     pData->IConnector.pfnVBVAResize         = Display::displayVBVAResize;
     pData->IConnector.pfnVBVAMousePointerShape = Display::displayVBVAMousePointerShape;
+#endif
+#ifdef VBOX_WITH_VPX_MAIN
+    rc = VideoRecContextCreate(&pVideoRecContext);
+    rc = RTCritSectInit(&mCritSect);
+    AssertReturn(rc == VINF_SUCCESS, E_UNEXPECTED);
+
+    if(rc == VINF_SUCCESS)
+        rc = VideoRecContextInit(pVideoRecContext, "test.webm", 800, 720);
+
 #endif
 
 
