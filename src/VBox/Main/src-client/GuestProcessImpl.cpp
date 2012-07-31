@@ -317,17 +317,21 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, ULONG *puCont
 
     /* Create a new context ID and assign it. */
     int rc = VERR_NOT_FOUND;
+
+    ULONG uCount = mData.mNextContextID++;
     ULONG uNewContextID = 0;
     ULONG uTries = 0;
     for (;;)
     {
+        if (uCount == VBOX_GUESTCTRL_MAX_CONTEXTS)
+            uCount = 0;
+
         /* Create a new context ID ... */
         uNewContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(uSessionID,
-                                                      mData.mProcessID, mData.mNextContextID);
-        if (mData.mNextContextID == VBOX_GUESTCTRL_MAX_CONTEXTS)
-            mData.mNextContextID = 0;
+                                                      mData.mProcessID, uCount);
+
         /* Is the context ID already used?  Try next ID ... */
-        if (!callbackExists(uNewContextID))
+        if (!callbackExists(uCount))
         {
             /* Callback with context ID was not found. This means
              * we can use this context ID for our new callback we want
@@ -335,8 +339,8 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, ULONG *puCont
             rc = VINF_SUCCESS;
             break;
         }
-        mData.mNextContextID++;
 
+        uCount++;
         if (++uTries == UINT32_MAX)
             break; /* Don't try too hard. */
     }
@@ -347,7 +351,7 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, ULONG *puCont
          * Note: This is *not* uNewContextID (which also includes
          *       the session + process ID), just the context count
          *       will be used here. */
-        mData.mCallbacks[mData.mNextContextID] = pCallback;
+        mData.mCallbacks[uCount] = pCallback;
         Assert(mData.mCallbacks.size());
 
         /* Report back new context ID. */
@@ -355,7 +359,7 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, ULONG *puCont
             *puContextID = uNewContextID;
 
         LogFlowThisFunc(("Added new callback (Session: %RU32, Process: %RU32, Count=%RU32) CID=%RU32\n",
-                     uSessionID, mData.mProcessID, mData.mNextContextID, uNewContextID));
+                     uSessionID, mData.mProcessID, uCount, uNewContextID));
     }
 
     return rc;
@@ -783,7 +787,10 @@ int GuestProcess::onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXE
     if (pCallback)
     {
         if (pData->pvData && pData->cbData)
+        {
             rc = pCallback->FillData(pData->pvData, pData->cbData);
+            Assert(pCallback->GetPayloadSize() == pData->cbData);
+        }
 
         int rc2 = pCallback->Signal();
         if (RT_SUCCESS(rc))
