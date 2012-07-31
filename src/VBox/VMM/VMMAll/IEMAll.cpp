@@ -1083,6 +1083,112 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PIEMCPU pIemCpu, uint16_t *pu16
 
 
 /**
+ * Deals with the problematic cases that iemOpcodeGetNextS8SxU32 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu32                Where to return the opcode dword.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS8SxU32Slow(PIEMCPU pIemCpu, uint32_t *pu32)
+{
+    uint8_t      u8;
+    VBOXSTRICTRC rcStrict = iemOpcodeGetNextU8Slow(pIemCpu, &u8);
+    if (rcStrict == VINF_SUCCESS)
+        *pu32 = (int8_t)u8;
+    return rcStrict;
+}
+
+
+/**
+ * Fetches the next signed byte from the opcode stream, extending it to
+ * unsigned 32-bit.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu32                Where to return the unsigned dword.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PIEMCPU pIemCpu, uint32_t *pu32)
+{
+    uint8_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_UNLIKELY(offOpcode >= pIemCpu->cbOpcode))
+        return iemOpcodeGetNextS8SxU32Slow(pIemCpu, pu32);
+
+    *pu32 = (int8_t)pIemCpu->abOpcode[offOpcode];
+    pIemCpu->offOpcode = offOpcode + 1;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Fetches the next signed byte from the opcode stream and sign-extending it to
+ * a word, returning automatically on failure.
+ *
+ * @param   pu32                Where to return the word.
+ * @remark Implicitly references pIemCpu.
+ */
+#define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU32(pIemCpu, (a_pu32)); \
+        if (rcStrict2 != VINF_SUCCESS) \
+            return rcStrict2; \
+    } while (0)
+
+
+/**
+ * Deals with the problematic cases that iemOpcodeGetNextS8SxU64 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu64                Where to return the opcode qword.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS8SxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    uint8_t      u8;
+    VBOXSTRICTRC rcStrict = iemOpcodeGetNextU8Slow(pIemCpu, &u8);
+    if (rcStrict == VINF_SUCCESS)
+        *pu64 = (int8_t)u8;
+    return rcStrict;
+}
+
+
+/**
+ * Fetches the next signed byte from the opcode stream, extending it to
+ * unsigned 64-bit.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu64                Where to return the unsigned qword.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    uint8_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_UNLIKELY(offOpcode >= pIemCpu->cbOpcode))
+        return iemOpcodeGetNextS8SxU64Slow(pIemCpu, pu64);
+
+    *pu64 = (int8_t)pIemCpu->abOpcode[offOpcode];
+    pIemCpu->offOpcode = offOpcode + 1;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Fetches the next signed byte from the opcode stream and sign-extending it to
+ * a word, returning automatically on failure.
+ *
+ * @param   pu64                Where to return the word.
+ * @remark Implicitly references pIemCpu.
+ */
+#define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU64(pIemCpu, (a_pu64)); \
+        if (rcStrict2 != VINF_SUCCESS) \
+            return rcStrict2; \
+    } while (0)
+
+
+/**
  * Deals with the problematic cases that iemOpcodeGetNextU16 doesn't like.
  *
  * @returns Strict VBox status code.
