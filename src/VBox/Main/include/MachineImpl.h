@@ -94,7 +94,10 @@ public:
 
     enum StateDependency
     {
-        AnyStateDep = 0, MutableStateDep, MutableOrSavedStateDep
+        AnyStateDep = 0,
+        MutableStateDep,
+        MutableOrSavedStateDep,
+        OfflineStateDep
     };
 
     /**
