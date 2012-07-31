@@ -36,6 +36,9 @@ using namespace com;
 using namespace guestControl;
 #endif
 
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
+#include <VBox/log.h>
+
 /** Maximum number of guest sessions a VM can have. */
 #define VBOX_GUESTCTRL_MAX_SESSIONS     255
 /** Maximum of guest processes a guest session can have. */

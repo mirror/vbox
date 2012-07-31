@@ -22,10 +22,10 @@
 *******************************************************************************/
 #include "GuestImpl.h"
 #include "GuestSessionImpl.h"
+#include "GuestCtrlImplPrivate.h"
 
 #include "Global.h"
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/env.h>
 
