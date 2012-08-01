@@ -92,6 +92,7 @@ PROGRAMS += \
 	tstRTPoll \
 	tstRTPrfIO \
 	tstRTProcCreateEx \
+	tstRTProcCreatePrf \
 	tstRTProcQueryUsername \
 	tstPrfRT \
 	tstRand \
@@ -454,6 +455,9 @@ tstRTPrfIO_SOURCES = tstRTPrfIO.cpp
 
 tstRTProcCreateEx_TEMPLATE = VBOXR3TSTEXE
 tstRTProcCreateEx_SOURCES = tstRTProcCreateEx.cpp
+
+tstRTProcCreatePrf_TEMPLATE = VBOXR3TSTEXE
+tstRTProcCreatePrf_SOURCES = tstRTProcCreatePrf.cpp
 
 tstRTProcQueryUsername_TEMPLATE = VBOXR3TSTEXE
 tstRTProcQueryUsername_SOURCES = tstRTProcQueryUsername.cpp
