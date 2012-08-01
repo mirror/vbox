@@ -207,7 +207,7 @@
       have the VRDP server enabled depending on the VM configuration, as the
       other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=config</screen></para>
 
-      <para>If you start the VM with <computeroutput>VBoxManage startvm ...</computerputput>
+      <para>If you start the VM with <computeroutput>VBoxManage startvm ...</computeroutput>
       then the configuration settings of the VM are always used.</para>
     </sect2>
 
