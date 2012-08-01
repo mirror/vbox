@@ -806,6 +806,26 @@ static bool tmR3HasFixedTSC(PVM pVM)
                 ||  (uFamily == 0x06 /*P2/P3*/  && uModel >= 0x0e))
                 return true;
         }
+        else if (CPUMGetHostCpuVendor(pVM) == CPUMCPUVENDOR_VIA)
+        {
+            /*
+             * CentaurHauls - Check the model, family and stepping.
+             *
+             * This only checks for VIA CPU models Nano X2, Nano X3,
+             * Eden X2 and QuadCore.
+             */
+            ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+            unsigned uStepping = (uEAX & 0x0f);
+            unsigned uModel    = (uEAX >> 4) & 0x0f;
+            unsigned uFamily   = (uEAX >> 8) & 0x0f;
+            if (   uFamily   == 0x06
+                && uModel    == 0x0f
+                && uStepping >= 0x0c
+                && uStepping <= 0x0f)
+            {
+                return true;
+            }
+        }
     }
     return false;
 }
