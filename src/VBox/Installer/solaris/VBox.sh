@@ -37,6 +37,9 @@ case "$APP" in
     VBoxBalloonCtrl|vboxballoonctrl)
         exec "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
         ;;
+    VBoxAutostart|vboxautostart)
+        exec "$INSTALL_DIR/VBoxAutostart" "$@"
+        ;;
     vboxwebsrv)
         exec "$INSTALL_DIR/vboxwebsrv" "$@"
         ;;

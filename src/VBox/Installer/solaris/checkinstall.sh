@@ -140,6 +140,14 @@ if test ! -z "$servicefound"; then
     # /usr/sbin/svccfg delete svc:/application/virtualbox/webservice
 fi
 
+# Check if the autostart service is running, if so stop & remove it
+servicefound=`svcs -H "svc:/application/virtualbox/autostart" 2> /dev/null | grep '^online'`
+if test ! -z "$servicefound"; then
+    infoprint "VirtualBox autostart service appears to still be running."
+    infoprint "Halting & removing autostart service..."
+    /usr/sbin/svcadm disable -s svc:/application/virtualbox/autostart
+fi
+
 # Check if VBoxSVC is currently running
 VBOXSVC_PID=`ps -eo pid,fname | grep VBoxSVC | grep -v grep | awk '{ print $1 }'`
 if test ! -z "$VBOXSVC_PID" && test "$VBOXSVC_PID" -ge 0; then
