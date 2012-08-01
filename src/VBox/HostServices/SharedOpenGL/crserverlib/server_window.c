@@ -276,6 +276,7 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
 
     /* Work-around Intel driver bug */
     CRASSERT(!cr_server.curClient
+            || !cr_server.curClient->currentMural
             || cr_server.curClient->currentMural == mural);
     if (cr_server.curClient && cr_server.curClient->currentMural == mural)
     {
