@@ -77,6 +77,9 @@
 extern "C" {
 #endif
 
+/* to shut up gcc warning for struct VBOXUHGSMI * parameters */
+struct VBOXUHGSMI;
+
 #ifndef APIENTRY
 #define APIENTRY
 #endif
