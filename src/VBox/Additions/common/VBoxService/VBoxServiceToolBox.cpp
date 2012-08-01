@@ -106,26 +106,40 @@ typedef struct VBOXSERVICETOOLBOXDIRENTRY
 
 
 /**
+ * Displays a common header for all help text to stdout.
+ */
+static void VBoxServiceToolboxShowUsageHeader(void)
+{
+    RTPrintf(VBOX_PRODUCT " Guest Toolbox Version "
+             VBOX_VERSION_STRING "\n"
+             "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+             "All rights reserved.\n"
+             "\n");
+    RTPrintf("Usage:\n\n");
+}
+
+
+/**
  * Displays a help text to stdout.
  */
 static void VBoxServiceToolboxShowUsage(void)
 {
-    RTPrintf("Toolbox Usage:\n"
-             "cat [FILE] - Concatenate FILE(s), or standard input, to standard output.\n"
+    VBoxServiceToolboxShowUsageHeader();
+    RTPrintf("  VBoxService [--use-toolbox] vbox_<command> <general options> <parameters>\n\n"
+             "General options:\n\n"
+             "  --machinereadable          produce all output in machine-readable form\n"
+             "  -V                         print version number and exit\n"
              "\n"
-             /** @todo Document options! */
-             "ls [OPTION]... FILE... - List information about the FILEs (the current directory by default).\n"
-             "\n"
-             /** @todo Document options! */
-             "rm [OPTION]... FILE... - delete FILEs (the current directory by default).\n"
-             "\n"
-             /** @todo Document options! */
-             "mkdir [OPTION]... DIRECTORY... - Create the DIRECTORY(ies), if they do not already exist.\n"
-             "\n"
-             /** @todo Document options! */
-             "stat [OPTION]... FILE... - Display file or file system status.\n"
-             "\n"
-             /** @todo Document options! */
+             "Commands:\n\n"
+             "  cat <general options>      <file>...\n"
+             "  ls <general options>       [--dereference|-L] [-l] [-R]\n"
+             "                             [--verbose|-v] [<file>...]\n"
+             "  rm <general options>       [-r|-R] <file>...\n"
+             "  mkdir <general options>    [--mode|-m] [--parents|-p]\n"
+             "                             [--verbose|-v] <directory>...\n"
+             "  stat <general options>     [--file-system|-f]\n"
+             "                             [--dereference|-L] [--terse|-t]\n"
+             "                             [--verbose|-v] <file>...\n"
              "\n");
 }
 
@@ -290,6 +304,13 @@ static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
 }
 
 
+/** @todo Document options! */
+static char g_paszCatHelp[] =
+    "  VBoxService [--use-toolbox] vbox_cat <general options> <file>...\n\n"
+    "Concatenate files, or standard input, to standard output.\n"
+    "\n";
+
+
 /**
  * Main function for tool "vbox_cat".
  *
@@ -359,7 +380,8 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                 break;
 
             case 'h':
-                VBoxServiceToolboxShowUsage();
+                VBoxServiceToolboxShowUsageHeader();
+                RTPrintf("%s", g_paszCatHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'o':
@@ -743,6 +765,19 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
 }
 
 
+/** @todo Document options! */
+static char g_paszLsHelp[] =
+    "  VBoxService [--use-toolbox] vbox_ls <general options> [option]...\n"
+    "                                      [<file>...]\n\n"
+    "List information about files (the current directory by default).\n\n"
+    "Options:\n\n"
+    "  [--dereference|-L]\n"
+    "  [-l][-R]\n"
+    "  [--verbose|-v]\n"
+    "  [<file>...]\n"
+    "\n";
+
+
 /**
  * Main function for tool "vbox_ls".
  *
@@ -784,7 +819,8 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
         switch (ch)
         {
             case 'h':
-                VBoxServiceToolboxShowUsage();
+                VBoxServiceToolboxShowUsageHeader();
+                RTPrintf("%s", g_paszLsHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'L': /* Dereference symlinks. */
@@ -902,6 +938,17 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 }
 
 
+static char g_paszRmHelp[] =
+    "  VBoxService [--use-toolbox] vbox_rm <general options> <file>...\n\n"
+    "Delete files and optionally directories if the '-R' or '-r' option is specified.\n"
+    "If a file or directory cannot be deleted, an error message is printed if the\n"
+    "'--machine-readable' option is not specified and the next file will be\n"
+    "processed. The root directory is always ignored.\n\n"
+    "Options:\n\n"
+    "  [-R|-r]                    Recursively delete directories too.\n"
+    "\n";
+
+
 /**
  * Main function for tool "vbox_rm".
  *
@@ -946,7 +993,8 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
         switch (ch)
         {
             case 'h':
-                VBoxServiceToolboxShowUsage();
+                VBoxServiceToolboxShowUsageHeader();
+                RTPrintf("%s", g_paszRmHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'V':
@@ -1041,6 +1089,19 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
 }
 
 
+/** @todo Document options! */
+static char g_paszMkDirHelp[] =
+    "  VBoxService [--use-toolbox] vbox_mkdir <general options> [options]\n"
+    "                                         <directory>...\n\n"
+    "Options:\n\n"
+    "  [--mode=<mode>|-m <mode>]  The file mode to set (chmod) on the created\n"
+    "                             directories.  Default: a=rwx & umask.\n"
+    "  [--parents|-p]             Create parent directories as needed, no\n"
+    "                             error if the directory already exists.\n"
+    "  [--verbose|-v]             Display a message for each created directory.\n"
+    "\n";
+
+
 /**
  * Main function for tool "vbox_mkdir".
  *
@@ -1098,17 +1159,8 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("Usage: %s [options] dir1 [dir2...]\n"
-                         "\n"
-                         "Options:\n"
-                         "    -m,--mode=<mode>  The file mode to set (chmod) on the created\n"
-                         "                      directories.  Default: a=rwx & umask.\n"
-                         "    -p,--parents      Create parent directories as needed, no\n"
-                         "                      error if the directory already exists.\n"
-                         "    -v,--verbose      Display a message for each created directory.\n"
-                         "    -V,--version      Display the version and exit\n"
-                         "    -h,--help         Display this help text and exit.\n"
-                         , argv[0]);
+                VBoxServiceToolboxShowUsageHeader();
+                RTPrintf("%s", g_paszMkDirHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'V':
@@ -1144,6 +1196,18 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
 
     return RTEXITCODE_SUCCESS;
 }
+
+
+/** @todo Document options! */
+static char g_paszStatHelp[] =
+    "  VBoxService [--use-toolbox] vbox_stat <general options> [options] <file>...\n\n"
+    "Display file or file system status.\n\n"
+    "Options:\n\n"
+    "  [--file-system|-f]\n"
+    "  [--dereference|-L]\n"
+    "  [--terse|-t]\n"
+    "  [--verbose|-v]\n"
+    "\n";
 
 
 /**
@@ -1200,7 +1264,8 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 break;
 
             case 'h':
-                VBoxServiceToolboxShowUsage();
+                VBoxServiceToolboxShowUsageHeader();
+                RTPrintf("%s", g_paszStatHelp);
                 return RTEXITCODE_SUCCESS;
 
             case 'V':
@@ -1348,7 +1413,16 @@ bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
         pfnHandler = vboxServiceToolboxLookUpHandler(pszTool);
         if (!pfnHandler)
         {
-           *prcExit = RTMsgErrorExit(RTEXITCODE_SYNTAX, "Toolbox program '%s' does not exist", pszTool);
+           *prcExit = RTEXITCODE_SUCCESS;
+           if (!strcmp(pszTool, "-V"))
+           {
+               VBoxServiceToolboxShowVersion();
+               return true;
+           }
+           if (   (strcmp(pszTool, "help")) && (strcmp(pszTool, "--help"))
+               && (strcmp(pszTool, "-h")))
+               *prcExit = RTEXITCODE_SYNTAX;
+           VBoxServiceToolboxShowUsage();
            return true;
         }
     }
