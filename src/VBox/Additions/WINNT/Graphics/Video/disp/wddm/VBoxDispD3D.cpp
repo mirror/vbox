@@ -6620,13 +6620,11 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
     if (VBOXDISPMODE_IS_3D(pAdapter))
     {
-//    Assert(!pDevice->cScreens);
-        /* destroy the device first, since destroying PVBOXWDDMDISP_SWAPCHAIN would result in a device window termination */
-        if (pDevice->pDevice9If)
-        {
-            pDevice->pDevice9If->Release();
-        }
         vboxWddmSwapchainDestroyAll(pDevice);
+        /* ensure the device is destroyed in any way.
+         * Release may not work in case of some leaking, which will leave the crOgl context refering the destroyed VBOXUHGSMI */
+        if (pDevice->pDevice9If)
+            pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Term((IDirect3DDevice9Ex *)pDevice->pDevice9If);
     }
 
     HRESULT hr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);

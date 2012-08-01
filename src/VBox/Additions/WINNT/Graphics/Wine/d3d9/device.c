@@ -259,6 +259,32 @@ static ULONG WINAPI IDirect3DDevice9Impl_AddRef(LPDIRECT3DDEVICE9EX iface) {
     return ref;
 }
 
+static ULONG IDirect3DDevice9Impl_Term(IDirect3DDevice9Impl *This)
+{
+    ULONG wined3dDevRefs = 0;
+    unsigned i;
+    This->inDestruction = TRUE;
+
+    wined3d_mutex_lock();
+    for(i = 0; i < This->numConvertedDecls; i++) {
+        /* Unless Wine is buggy or the app has a bug the refcount will be 0, because decls hold a reference to the
+         * device
+         */
+        IDirect3DVertexDeclaration9Impl_Destroy(This->convertedDecls[i]);
+    }
+    HeapFree(GetProcessHeap(), 0, This->convertedDecls);
+
+    IWineD3DDevice_Uninit3D(This->WineD3DDevice, D3D9CB_DestroySwapChain);
+#ifndef VBOX_WITH_WDDM
+    IWineD3DDevice_ReleaseFocusWindow(This->WineD3DDevice);
+#endif
+    wined3dDevRefs = IWineD3DDevice_Release(This->WineD3DDevice);
+    wined3d_mutex_unlock();
+
+    HeapFree(GetProcessHeap(), 0, This);
+    return wined3dDevRefs;
+}
+
 static ULONG WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_Release(LPDIRECT3DDEVICE9EX iface) {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
     ULONG ref;
@@ -269,26 +295,7 @@ static ULONG WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_Release(LPDIRECT3DDEV
     TRACE("%p decreasing refcount to %u.\n", iface, ref);
 
     if (ref == 0) {
-      unsigned i;
-      This->inDestruction = TRUE;
-
-      wined3d_mutex_lock();
-      for(i = 0; i < This->numConvertedDecls; i++) {
-          /* Unless Wine is buggy or the app has a bug the refcount will be 0, because decls hold a reference to the
-           * device
-           */
-          IDirect3DVertexDeclaration9Impl_Destroy(This->convertedDecls[i]);
-      }
-      HeapFree(GetProcessHeap(), 0, This->convertedDecls);
-
-      IWineD3DDevice_Uninit3D(This->WineD3DDevice, D3D9CB_DestroySwapChain);
-#ifndef VBOX_WITH_WDDM
-      IWineD3DDevice_ReleaseFocusWindow(This->WineD3DDevice);
-#endif
-      IWineD3DDevice_Release(This->WineD3DDevice);
-      wined3d_mutex_unlock();
-
-      HeapFree(GetProcessHeap(), 0, This);
+        IDirect3DDevice9Impl_Term(This);
     }
     return ref;
 }
@@ -821,6 +828,24 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Update(IDirect3DDevice9Ex *iface, D3DP
 {
     IDirect3DDevice9_AddRef(iface);
     *outIface = iface;
+    return D3D_OK;
+}
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Term(IDirect3DDevice9Ex *iface)
+{
+    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
+    IWineD3DDevice *WineD3DDevice = This->WineD3DDevice;
+    ULONG wined3dRefs;
+    if (This->ref != 1)
+    {
+        ERR("unexpected ref count %d, destroying in anyway", This->ref);
+    }
+    wined3dRefs = IDirect3DDevice9Impl_Term(This);
+    if (wined3dRefs)
+    {
+        ERR("unexpected wined3dRefs %d, destroying in anyway", wined3dRefs);
+        while (IWineD3DDevice_Release(WineD3DDevice)) {}
+    }
     return D3D_OK;
 }
 

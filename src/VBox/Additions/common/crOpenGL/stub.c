@@ -10,32 +10,6 @@
 #include "stub.h"
 #include <iprt/thread.h>
 
-static void crForcedFlush(
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-        GLint con
-#endif
-        )
-{
-#if 0
-    GLint buffer;
-    stub.spu->dispatch_table.GetIntegerv(GL_DRAW_BUFFER, &buffer);
-    stub.spu->dispatch_table.DrawBuffer(GL_FRONT);
-    stub.spu->dispatch_table.Flush();
-    stub.spu->dispatch_table.DrawBuffer(buffer);
-#else
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    if (con)
-    {
-        stub.spu->dispatch_table.VBoxConFlush(con);
-    }
-    else
-#endif
-    {
-        stub.spu->dispatch_table.Flush();
-    }
-#endif
-}
-
 #ifdef GLX
 Display* stubGetWindowDisplay(WindowInfo *pWindow)
 {
@@ -141,64 +115,9 @@ GLint APIENTRY crWindowCreate( const char *dpyName, GLint visBits )
     return stubNewWindow( dpyName, visBits );
 }
 
-static void stubWindowCleanupForContextsCB(unsigned long key, void *data1, void *data2)
-{
-    ContextInfo *context = (ContextInfo *) data1;
-
-    CRASSERT(context);
-
-    if (context->currentDrawable == data2)
-        context->currentDrawable = NULL;
-}
-
 void APIENTRY crWindowDestroy( GLint window )
 {
-    WindowInfo *winInfo = (WindowInfo *)
-        crHashtableSearch(stub.windowTable, (unsigned int) window);
-    if (winInfo && winInfo->type == CHROMIUM && stub.spu)
-    {
-        crHashtableLock(stub.windowTable);
-
-        stub.spu->dispatch_table.VBoxWindowDestroy(
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-                winInfo->spuConnection,
-#else
-                0,
-#endif
-                winInfo->spuWindow );
-
-#ifdef WINDOWS
-        if (winInfo->hVisibleRegion != INVALID_HANDLE_VALUE)
-        {
-            DeleteObject(winInfo->hVisibleRegion);
-        }
-#elif defined(GLX)
-        if (winInfo->pVisibleRegions)
-        {
-            XFree(winInfo->pVisibleRegions);
-        }
-# ifdef CR_NEWWINTRACK
-        if (winInfo->syncDpy)
-        {
-            XCloseDisplay(winInfo->syncDpy);
-        }
-# endif
-#endif
-        crForcedFlush(
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-                winInfo->spuConnection
-#endif
-                );
-
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-        winInfo->spuConnection = 0;
-#endif
-        crHashtableWalk(stub.contextTable, stubWindowCleanupForContextsCB, winInfo);
-
-        crHashtableDelete(stub.windowTable, window, crFree);
-
-        crHashtableUnlock(stub.windowTable);
-    }
+    stubDestroyWindow( 0, window );
 }
 
 void APIENTRY crWindowSize( GLint window, GLint w, GLint h )
@@ -414,7 +333,7 @@ static void stubCBCheckWindowsInfo(unsigned long key, void *data1, void *data2)
 
                 if (stubUpdateWindowGeometry(winInfo, GL_FALSE) || changed)
                 {
-                    crForcedFlush();
+                    stubForcedFlush(0);
                 }
                 break;
             }
@@ -428,7 +347,7 @@ static void stubCBCheckWindowsInfo(unsigned long key, void *data1, void *data2)
             {
                 if (stub.trackWindowVisibleRgn && stubUpdateWindowVisibileRegions(winInfo))
                 {
-                    crForcedFlush();
+                    stubForcedFlush(0);
                 }
                 break;
             }
@@ -438,7 +357,7 @@ static void stubCBCheckWindowsInfo(unsigned long key, void *data1, void *data2)
                 if (stub.trackWindowVisibleRgn && stubUpdateWindowVisibileRegions(winInfo))
                 {
                     crDebug("Visibility info updated due to unknown hooked message (%d)", pMsgInfo->message);
-                    crForcedFlush();
+                    stubForcedFlush(0);
                 }
                 break;
             }

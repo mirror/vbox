@@ -159,19 +159,20 @@ void PACKSPU_APIENTRY packspu_VBoxWindowDestroy( GLint con, GLint window )
 {
     if (CRPACKSPU_IS_WDDM_CRHGSMI())
     {
-        ThreadInfo *thread;
-        CRPackContext * curPacker = crPackGetContext();
-        if (!con)
+        GET_THREAD(thread);
+        if (con)
         {
-            crError("connection expected!!");
+            CRPackContext * curPacker = crPackGetContext();
+            CRASSERT(!thread || !thread->bInjectThread);
+            thread = GET_THREAD_VAL_ID(con);
+            crPackSetContext(thread->packer);
+            crPackWindowDestroy(window);
+            if (curPacker != thread->packer)
+                crPackSetContext(curPacker);
             return;
         }
-        thread = GET_THREAD_VAL_ID(con);
-        crPackSetContext(thread->packer);
-        crPackWindowDestroy(window);
-        if (curPacker != thread->packer)
-            crPackSetContext(curPacker);
-        return;
+        CRASSERT(thread);
+        CRASSERT(thread->bInjectThread);
     }
     crPackWindowDestroy(window);
 }

@@ -79,6 +79,13 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             break;
         }
 
+        pD3D->pfnVBoxWineExD3DDev9Term = (PFNVBOXWINEEXD3DDEV9_TERM)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Term");
+        if (!pD3D->pfnVBoxWineExD3DDev9Term)
+        {
+            WARN(("no VBoxWineExD3DDev9Term"));
+            break;
+        }
+
         pD3D->pfnVBoxWineExD3DRc9SetShRcState = (PFNVBOXWINEEXD3DRC9_SETSHRCSTATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DRc9SetShRcState");
         if (!pD3D->pfnVBoxWineExD3DRc9SetShRcState)
         {
