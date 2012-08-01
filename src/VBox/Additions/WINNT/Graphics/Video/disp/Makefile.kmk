@@ -106,7 +106,8 @@ ifdef VBOX_WITH_CROGL
 endif
 VBoxDispD3D_INCS     = \
 	../../../include \
-	..
+	.. \
+	$(VBOX_PATH_CROGL_INCLUDE)
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
 	wddm/VBoxDispD3DIf.cpp \
@@ -117,18 +118,16 @@ VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispKmt.cpp \
 	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxDispD3D.rc \
-	wddm/VBoxDispD3D.def \
-#ifdef VBOX_WITH_CRHGSMI
-#VBoxDispD3D_SOURCES += \
-#    wddm/VBoxUhgsmiDisp.cpp \
-#    wddm/VBoxUhgsmiKmt.cpp
-#VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
-#endif
+	wddm/VBoxDispD3D.def
+ifdef VBOX_WITH_CRHGSMI
+VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
+endif
 VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	Psapi.lib \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB)
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 
 #
 # 64-bit systems needs a 32-bit version of VBoxDispD3D.
@@ -140,7 +139,8 @@ VBoxDispD3D-x86_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86) \
 	Psapi.lib \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB)
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
 VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
 
 ifdef VBOX_WITH_CRHGSMI
@@ -150,13 +150,16 @@ ifdef VBOX_WITH_CRHGSMI
 LIBRARIES += VBoxCrHgsmi
 VBoxCrHgsmi_TEMPLATE    = VBOXGUESTR3LIB
 VBoxCrHgsmi_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
-VBoxCrHgsmi_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
-VBoxCrHgsmi_INCS        = ../../../include ..
+#use same defines as VBoxDispD3D to ensure structure definitions match
+VBoxCrHgsmi_DEFS        = $(subst VBOXWDDMDISP,IN_VBOXCRHGSMI,$(VBoxDispD3D_DEFS))
+VBoxCrHgsmi_INCS        = ../../../include .. $(VBOX_PATH_CROGL_INCLUDE)
 VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxCrHgsmi.cpp \
 	wddm/VBoxDispKmt.cpp \
 	wddm/VBoxDispDbg.cpp \
-	wddm/VBoxUhgsmiKmt.cpp
+	wddm/VBoxUhgsmiKmt.cpp \
+	wddm/VBoxUhgsmiBase.cpp \
+	wddm/VBoxUhgsmiDisp.cpp
 
 #
 # 64-bit systems needs a 32-bit version of VBoxCrHgsmi.

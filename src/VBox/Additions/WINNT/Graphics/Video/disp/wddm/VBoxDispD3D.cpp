@@ -805,171 +805,9 @@ void vboxDispLockInit()
 }
 
 
-#ifdef VBOX_WITH_CRHGSMI
-/* cr hgsmi */
-static VBOXCRHGSMI_CALLBACKS g_VBoxCrHgsmiCallbacks = {0};
-#define VBOXUHGSMIKMT_PERTHREAD
-#ifdef VBOXUHGSMIKMT_PERTHREAD
-#define VBOXUHGSMIKMT_VAR(_type) __declspec(thread) _type
-#else
-#define VBOXUHGSMIKMT_VAR(_type) _type
-#endif
-static VBOXUHGSMIKMT_VAR(VBOXUHGSMI_PRIVATE_KMT) g_VBoxUhgsmiKmt;
-static VBOXUHGSMIKMT_VAR(uint32_t) g_cVBoxUhgsmiKmtRefs = 0;
-#endif
-
-#ifdef VBOX_WITH_CRHGSMI
-static __declspec(thread) PVBOXUHGSMI_PRIVATE_BASE gt_pHgsmi = NULL;
-
-VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
-{
-#ifdef VBOX_WITH_CRHGSMI
-    vboxDispLock(); /* the lock is needed here only to ensure callbacks are not initialized & used concurrently
-                     * @todo: make a separate call used to init the per-thread info and make the VBoxDispCrHgsmiInit be called only once */
-    g_VBoxCrHgsmiCallbacks = *pCallbacks;
-    PVBOXUHGSMI_PRIVATE_BASE pHgsmi = gt_pHgsmi;
-#ifdef DEBUG_misha
-    Assert(pHgsmi);
-#endif
-    if (pHgsmi)
-    {
-        if (!pHgsmi->hClient)
-        {
-            pHgsmi->hClient = g_VBoxCrHgsmiCallbacks.pfnClientCreate(&pHgsmi->Base);
-            Assert(pHgsmi->hClient);
-        }
-    }
-    vboxDispUnlock();
-#endif
-    return VINF_SUCCESS;
-}
-
-VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiTerm()
-{
-    return VINF_SUCCESS;
-}
-
-VBOXWDDMDISP_DECL(HVBOXCRHGSMI_CLIENT) VBoxDispCrHgsmiQueryClient()
-{
-#ifdef VBOX_WITH_CRHGSMI
-    PVBOXUHGSMI_PRIVATE_BASE pHgsmi = gt_pHgsmi;
-#ifdef DEBUG_misha
-    Assert(pHgsmi);
-#endif
-    if (pHgsmi)
-    {
-        Assert(pHgsmi->hClient);
-        return pHgsmi->hClient;
-    }
-#endif
-    return NULL;
-}
-
-static HRESULT vboxUhgsmiGlobalRetain()
-{
-    HRESULT hr = S_OK;
-    vboxDispLock();
-    if (!g_cVBoxUhgsmiKmtRefs)
-    {
-        hr = vboxUhgsmiKmtCreate(&g_VBoxUhgsmiKmt, TRUE);
-        Assert(hr == S_OK);
-        /* can not do it here because callbacks may not be set yet
-         * @todo: need to call the cr lib from here to get the callbacks
-         * rather than making the cr lib call us */
-//        if (hr == S_OK)
-//        {
-//            g_VBoxUhgsmiKmt.BasePrivate.hClient = g_VBoxCrHgsmiCallbacks.pfnClientCreate(&g_VBoxUhgsmiKmt.BasePrivate.Base);
-//            Assert(g_VBoxUhgsmiKmt.BasePrivate.hClient);
-//        }
-    }
-
-    if (hr == S_OK)
-    {
-        ++g_cVBoxUhgsmiKmtRefs;
-    }
-    vboxDispUnlock();
-
-    return hr;
-}
-
-static HRESULT vboxUhgsmiGlobalRelease()
-{
-    HRESULT hr = S_OK;
-    vboxDispLock();
-    --g_cVBoxUhgsmiKmtRefs;
-    if (!g_cVBoxUhgsmiKmtRefs)
-    {
-        if (g_VBoxUhgsmiKmt.BasePrivate.hClient)
-            g_VBoxCrHgsmiCallbacks.pfnClientDestroy(g_VBoxUhgsmiKmt.BasePrivate.hClient);
-        hr = vboxUhgsmiKmtDestroy(&g_VBoxUhgsmiKmt);
-        Assert(hr == S_OK);
-    }
-    vboxDispUnlock();
-    return hr;
-}
-
-DECLINLINE(void) vboxDispCrHgsmiClientSet(PVBOXUHGSMI_PRIVATE_BASE pHgsmi)
-{
-    gt_pHgsmi = pHgsmi;
-}
-
-DECLINLINE(void) vboxDispCrHgsmiClientClear()
-{
-    gt_pHgsmi = NULL;
-}
-
-HRESULT vboxUhgsmiGlobalSetCurrent()
-{
-    HRESULT hr = vboxUhgsmiGlobalRetain();
-    Assert(hr == S_OK);
-    if (hr == S_OK)
-        vboxDispCrHgsmiClientSet(&g_VBoxUhgsmiKmt.BasePrivate);
-    return hr;
-}
-
-HRESULT vboxUhgsmiGlobalClearCurrent()
-{
-    vboxUhgsmiGlobalRelease();
-    vboxDispCrHgsmiClientClear();
-    return S_OK;
-}
-
-class VBoxDispCrHgsmiScope
-{
-public:
-    VBoxDispCrHgsmiScope(PVBOXUHGSMI_PRIVATE_BASE pHgsmi)
-    {
-        vboxDispCrHgsmiClientSet(pHgsmi);
-    }
-
-    ~VBoxDispCrHgsmiScope()
-    {
-        vboxDispCrHgsmiClientClear();
-    }
-private:
-};
-
-#define VBOXDISPCRHGSMI_SCOPE_SET_DEV(_pDev) VBoxDispCrHgsmiScope __vboxCrHgsmiScope(&(_pDev)->Uhgsmi.BasePrivate)
-#define VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL() VBoxDispCrHgsmiScope __vboxCrHgsmiScope(&g_VBoxUhgsmiKmt.BasePrivate)
-#else
 #define VBOXDISPCRHGSMI_SCOPE_SET_DEV(_pDev) do {} while(0)
 #define VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL() do {} while(0)
 
-VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiInit(void*)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
-
-VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiTerm()
-{
-    return VERR_NOT_IMPLEMENTED;
-}
-
-VBOXWDDMDISP_DECL(void*) VBoxDispCrHgsmiQueryClient()
-{
-    return NULL;
-}
-#endif
 
 typedef struct VBOXWDDMDISP_NSCADD
 {
@@ -2637,17 +2475,18 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
     HWND hOldWnd = pSwapchain->hWnd;
     if (!bReuseSwapchain)
     {
-        D3DPRESENT_PARAMETERS Params;
-        vboxWddmSwapchainFillParams(pSwapchain, &Params);
+        VBOXWINEEX_D3DPRESENT_PARAMETERS Params;
+        vboxWddmSwapchainFillParams(pSwapchain, &Params.Base);
+        Params.pHgsmi = NULL;
 
         if (hr == S_OK)
         {
             DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
 
-            Params.hDeviceWindow = NULL;
+            Params.Base.hDeviceWindow = NULL;
                         /* @todo: it seems there should be a way to detect this correctly since
                          * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
-            Params.Windowed = TRUE;
+            Params.Base.Windowed = TRUE;
             //            params.EnableAutoDepthStencil = FALSE;
             //            params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
             //            params.Flags;
@@ -2655,12 +2494,13 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
             //            params.FullScreen_PresentationInterval;
             if (!pDevice->pDevice9If)
             {
-                hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL, fFlags, &Params, &pDevice9If);
+                Params.pHgsmi = &pDevice->Uhgsmi.BasePrivate.Base;
+                hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL, fFlags, &Params.Base, &pDevice9If);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-                    Assert(Params.hDeviceWindow);
-                    pSwapchain->hWnd = Params.hDeviceWindow;
+                    Assert(Params.Base.hDeviceWindow);
+                    pSwapchain->hWnd = Params.Base.hDeviceWindow;
                     pDevice->pDevice9If = pDevice9If;
                     hr = pDevice9If->GetSwapChain(0, &pNewIf);
                     Assert(hr == S_OK);
@@ -2690,14 +2530,14 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
 
                 /* re-use swapchain window
                  * this will invalidate the previusly used swapchain */
-                Params.hDeviceWindow = pSwapchain->hWnd;
+                Params.Base.hDeviceWindow = pSwapchain->hWnd;
 
-                hr = pDevice->pDevice9If->CreateAdditionalSwapChain(&Params, &pNewIf);
+                hr = pDevice->pDevice9If->CreateAdditionalSwapChain(&Params.Base, &pNewIf);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-                    Assert(Params.hDeviceWindow);
-                    pSwapchain->hWnd = Params.hDeviceWindow;
+                    Assert(Params.Base.hDeviceWindow);
+                    pSwapchain->hWnd = Params.Base.hDeviceWindow;
                     Assert(pNewIf);
                 }
             }
@@ -6789,13 +6629,6 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
         vboxWddmSwapchainDestroyAll(pDevice);
     }
 
-#ifdef VBOX_WITH_CRHGSMI
-    vboxDispLock();
-    if (pDevice->Uhgsmi.BasePrivate.hClient)
-        g_VBoxCrHgsmiCallbacks.pfnClientDestroy(pDevice->Uhgsmi.BasePrivate.hClient);
-    vboxDispUnlock();
-#endif
-
     HRESULT hr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -7442,11 +7275,6 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
             if (!pCreateData->AllocationListSize
                     && !pCreateData->PatchLocationListSize)
             {
-#ifdef VBOX_WITH_CRHGSMI
-                hr = vboxUhgsmiD3DInit(&pDevice->Uhgsmi, pDevice);
-                Assert(hr == S_OK);
-                if (hr == S_OK)
-#endif
                 {
                     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
@@ -7536,10 +7364,6 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
         VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
         pAdapter->pD3D9If->Release();
         VBoxDispD3DClose(&pAdapter->D3D);
-
-#ifdef VBOX_WITH_CRHGSMI
-        vboxUhgsmiGlobalRelease();
-#endif
     }
 
     vboxCapsFree(pAdapter);
@@ -7667,11 +7491,6 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         {
             do
             {
-#ifdef VBOX_WITH_CRHGSMI
-                hr = vboxUhgsmiGlobalRetain();
-                Assert(hr == S_OK);
-                if (hr == S_OK)
-#endif
                 {
                     VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
                     /* try enable the 3D */
@@ -7708,9 +7527,7 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
                     }
                     else
                         vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
-#ifdef VBOX_WITH_CRHGSMI
-                    vboxUhgsmiGlobalRelease();
-#endif
+
                 }
             } while (0);
         }
