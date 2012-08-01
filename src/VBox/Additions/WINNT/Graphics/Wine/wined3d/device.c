@@ -636,10 +636,6 @@ static ULONG WINAPI IWineD3DDeviceImpl_Release(IWineD3DDevice *iface) {
         if (This->hardwareCursor) DestroyCursor(This->hardwareCursor);
         This->haveHardwareCursor = FALSE;
 
-#ifdef VBOX_WINE_WITH_SHADER_CACHE
-        shader_chaches_term(This);
-#endif
-
         IWineD3D_Release(This->wined3d);
         This->wined3d = NULL;
         HeapFree(GetProcessHeap(), 0, This);
@@ -1920,6 +1916,10 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Uninit3D(IWineD3DDevice *iface,
             FIXME("(%p) Something's still holding the Update stateblock\n",This);
         }
     }
+
+#ifdef VBOX_WINE_WITH_SHADER_CACHE
+    shader_chaches_term(This);
+#endif
 
     /* Destroy the shader backend. Note that this has to happen after all shaders are destroyed. */
     This->blitter->free_private(iface);
