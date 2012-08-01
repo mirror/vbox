@@ -185,12 +185,14 @@
           <computeroutput>VBoxHeadless</computeroutput> directly, as
           follows:<screen>VBoxHeadless --startvm &lt;uuid|name&gt;</screen></para>
 
-          <para>This way of starting the VM is preferred because you can see
-          more detailed error messages, especially for early failures before
-          the VM execution is started. If you have trouble with
-          <computeroutput>VBoxManage startvm</computeroutput>, it can help
-          greatly to start <computeroutput>VBoxHeadless</computeroutput>
-          directly to diagnose the problem cause.</para>
+          <para>This way of starting the VM helps troubleshooting problems
+          reported by <computeroutput>VBoxManage startvm ...</computeroutput>
+          because you can see sometimes more detailed error messages,
+          especially for early failures before the VM execution is started.
+          In normal situations <computeroutput>VBoxManage startvm</computeroutput>
+          is preferred since it runs the VM directly as a background process
+          which has to be done explicitly when directly starting
+          <computeroutput>VBoxHeadless</computeroutput>.</para>
         </listitem>
       </itemizedlist>
 
@@ -204,6 +206,9 @@
       this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=off</screen>To
       have the VRDP server enabled depending on the VM configuration, as the
       other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=config</screen></para>
+
+      <para>If you start the VM with <computeroutput>VBoxManage startvm ...</computerputput>
+      then the configuration settings of the VM are always used.</para>
     </sect2>
 
     <sect2>
