@@ -113,6 +113,7 @@ cd "$VBOX_INSTALLED_DIR"
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxManage
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxSDL
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxBalloonCtrl
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxAutostart
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/vboxwebsrv
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/webtest
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxZoneAccess

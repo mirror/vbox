@@ -851,6 +851,7 @@ cleanup_install()
     # stop the services
     stop_service "Web service" "virtualbox/webservice" "svc:/application/virtualbox/webservice:default"
     stop_service "Balloon control service" "virtualbox/balloonctrl" "svc:/application/virtualbox/balloonctrl:default"
+    stop_service "Autostart service" "virtualbox/autostart" "svc:/application/virtualbox/autostart:default"
     stop_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default"
 
     # unplumb all vboxnet instances for non-remote installs
@@ -991,7 +992,8 @@ postinstall()
 
         if     test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-webservice.xml" \
             || test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml" \
-            || test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-balloonctrl.xml"; then
+            || test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-balloonctrl.xml"\
+            || test -f "$PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-autostart.xml"; then
             infoprint "Configuring services..."
             if test "$REMOTEINST" -eq 1; then
                 subprint "Skipped for targetted installs."
