@@ -1143,7 +1143,7 @@ int GuestProcess::startProcessAsync(void)
 
 DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser)
 {
-    LogFlowFuncEnter(("pvUser=%p\n", pvUser));
+    LogFlowFunc(("pvUser=%p\n", pvUser));
 
     std::auto_ptr<GuestProcessStartTask> pTask(static_cast<GuestProcessStartTask*>(pvUser));
     AssertPtr(pTask.get());
