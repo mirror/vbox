@@ -195,6 +195,20 @@ void GuestCtrlCallback::Destroy(void)
 {
     GuestCtrlEvent::Destroy();
 
+    switch (mType)
+    {
+        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
+        {
+            PCALLBACKDATAEXECOUT pThis = (PCALLBACKDATAEXECOUT)pvData;
+            AssertPtr(pThis);
+            if (pThis->pvData)
+                RTMemFree(pThis->pvData);
+        }
+
+        default:
+           break;
+    }
+
     mType = VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN;
     if (pvData)
     {
@@ -211,7 +225,65 @@ void GuestCtrlCallback::Destroy(void)
     cbPayload = 0;
 }
 
-int GuestCtrlCallback::FillData(const void *pvToWrite, size_t cbToWrite)
+int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
+{
+    if (!cbCallback)
+        return VINF_SUCCESS;
+    AssertPtr(pvCallback);
+
+    switch (mType)
+    {
+        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_START:
+        {
+            PCALLBACKDATAEXECSTATUS pThis = (PCALLBACKDATAEXECSTATUS)pvData;
+            PCALLBACKDATAEXECSTATUS pCB   = (PCALLBACKDATAEXECSTATUS)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATAEXECSTATUS));
+
+            pThis->u32Flags  = pCB->u32Flags;
+            pThis->u32PID    = pCB->u32PID;
+            pThis->u32Status = pCB->u32Status;
+            break;
+        }
+
+        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
+        {
+            PCALLBACKDATAEXECOUT pThis = (PCALLBACKDATAEXECOUT)pvData;
+            PCALLBACKDATAEXECOUT pCB   = (PCALLBACKDATAEXECOUT)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATAEXECOUT));
+
+            pThis->cbData   = pCB->cbData;
+            if (pThis->cbData)
+            {
+                pThis->pvData   = RTMemAlloc(pCB->cbData);
+                AssertPtrReturn(pThis->pvData, VERR_NO_MEMORY);
+                memcpy(pThis->pvData, pCB->pvData, pCB->cbData);
+            }
+            pThis->u32Flags = pCB->u32Flags;
+            pThis->u32PID   = pCB->u32PID;
+            break;
+        }
+
+        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS:
+        {
+            PCALLBACKDATAEXECINSTATUS pThis = (PCALLBACKDATAEXECINSTATUS)pvData;
+            PCALLBACKDATAEXECINSTATUS pCB   = (PCALLBACKDATAEXECINSTATUS)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATAEXECINSTATUS));
+
+            pThis->cbProcessed = pCB->cbProcessed;
+            pThis->u32Flags    = pCB->u32Flags;
+            pThis->u32PID      = pCB->u32PID;
+            pThis->u32Status   = pCB->u32Status;
+        }
+
+        default:
+            AssertMsgFailed(("Callback type not handled (%d)\n", mType));
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+int GuestCtrlCallback::SetPayload(const void *pvToWrite, size_t cbToWrite)
 {
     if (!cbToWrite)
         return VINF_SUCCESS;

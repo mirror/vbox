@@ -9899,7 +9899,7 @@
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="f55af4a1-e280-40ac-83e1-921c0abcaf18"
+    uuid="83275f41-01ee-4362-ac44-298191b5186c"
     wsmap="managed"
     >
     <desc>
@@ -10032,6 +10032,38 @@
       </desc>
       <param name="handle" type="unsigned long" dir="in">
         <desc>TODO</desc>
+      </param>
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>
+          <link to="ProcessInputFlag"/> flags.
+        </desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>TODO</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="written" type="unsigned long" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="WriteArray">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          TODO
+        </result>
+      </desc>
+      <param name="handle" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="flags" type="ProcessInputFlag" dir="in" safearray="yes">
+        <desc>
+          <link to="ProcessInputFlag"/> flags.
+        </desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
         <desc>TODO</desc>
