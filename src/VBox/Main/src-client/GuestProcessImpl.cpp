@@ -690,7 +690,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
 
             mData.mStatus = ProcessStatus_Error;
 
-            Utf8Str strError = Utf8StrFmt(tr("Guest process \"%s\" could not be started: ", mData.mProcess.mCommand.c_str()));
+            Utf8Str strError = Utf8StrFmt(tr("Guest process \"%s\" could not be started: "), mData.mProcess.mCommand.c_str());
 
             /* Note: It's not required that the process has been started before. */
             if (mData.mPID)
@@ -699,7 +699,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
             }
             else
             {
-                /** @todo pData->u32Flags; /** @todo int vs. uint32 -- IPRT errors are *negative* !!! */
+                /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
                 switch (pData->u32Flags) /* pData->u32Flags contains the IPRT error code from guest side. */
                 {
                     case VERR_FILE_NOT_FOUND: /* This is the most likely error. */
@@ -1565,10 +1565,8 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, Co
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    if (aSize < 0)
-        return setError(E_INVALIDARG, tr("The size argument (%lld) is negative"), aSize);
     if (aSize == 0)
-        return setError(E_INVALIDARG, tr("The size (%lld) is zero"), aSize);
+        return setError(E_INVALIDARG, tr("The size to read is zero"));
     CheckComArgOutSafeArrayPointerValid(aData);
 
     AutoCaller autoCaller(this);
