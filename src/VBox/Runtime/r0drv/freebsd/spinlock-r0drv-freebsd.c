@@ -149,8 +149,8 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
             }
 
             /* Enable interrupts while we sleep. */
-            critical_exit();
             ASMSetFlags(fIntSaved);
+            critical_exit();
             DELAY(1);
         }
     }
@@ -194,7 +194,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
         uint32_t fIntSaved = pThis->fIntSaved;
         pThis->fIntSaved = 0;
         if (ASMAtomicCmpXchgU32(&pThis->fLocked, 0, 1))
-            ASMSetFlags(pThis->fIntSaved);
+            ASMSetFlags(fIntSaved);
         else
             AssertMsgFailed(("Spinlock %p was not locked!\n", pThis));
     }
