@@ -64,30 +64,31 @@ public:
     STDMETHOD(Terminate)(void);
     STDMETHOD(WaitFor)(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
     STDMETHOD(WaitForArray)(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
-    STDMETHOD(Write)(ULONG aHandle, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
+    STDMETHOD(Write)(ULONG aHandle, ULONG aFlags, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
+    STDMETHOD(WriteArray)(ULONG aHandle, ComSafeArrayIn(ProcessInputFlag_T, aFlags), ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
     /** @}  */
 
 public:
     /** @name Public internal methods.
      * @{ */
     int callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
-    inline bool callbackExists(ULONG uContextID);
+    inline bool callbackExists(uint32_t uContextID);
     void close(void);
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
-    int readData(ULONG uHandle, ULONG uSize, ULONG uTimeoutMS, BYTE *pbData, size_t cbData, size_t *pcbRead);
+    int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead);
     int startProcess(void);
     int startProcessAsync(void);
     int terminateProcess(void);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWaitResult &guestResult);
-    int writeData(ULONG uHandle, BYTE const *pbData, size_t cbData, ULONG uTimeoutMS, ULONG *puWritten);
+    int writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten);
     /** @}  */
 
 protected:
     /** @name Protected internal methods.
      * @{ */
-    inline int callbackAdd(GuestCtrlCallback *pCallback, ULONG *puContextID);
-    inline int callbackRemove(ULONG uContextID);
+    inline int callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID);
+    inline int callbackRemove(uint32_t uContextID);
     inline bool isAlive(void);
     int onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDATACLIENTDISCONNECTED pData);
     int onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECINSTATUS pData);
