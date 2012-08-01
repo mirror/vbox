@@ -1373,7 +1373,6 @@ void (__stdcall *wglFinish)(void) DECLSPEC_HIDDEN;
 void (__stdcall *wglFlush)(void) DECLSPEC_HIDDEN;
 
 /* WGL functions */
-HGLRC (WINAPI *pwglCreateContext)(HDC) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglDeleteContext)(HGLRC) DECLSPEC_HIDDEN;
 HGLRC (WINAPI *pwglGetCurrentContext)(void) DECLSPEC_HIDDEN;
 HDC (WINAPI *pwglGetCurrentDC)(void) DECLSPEC_HIDDEN;
@@ -1381,6 +1380,8 @@ PROC (WINAPI *pwglGetProcAddress)(LPCSTR) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglMakeCurrent)(HDC, HGLRC) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglSwapLayerBuffers)(HDC, UINT) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglShareLists)(HGLRC, HGLRC) DECLSPEC_HIDDEN;
+
+HGLRC (WINAPI *pVBoxCreateContext)(HDC, struct VBOXUHGSMI*) DECLSPEC_HIDDEN;
 
 #define GL_FUNCS_GEN \
     USE_GL_FUNC(glAccum) \
@@ -1720,7 +1721,6 @@ BOOL (WINAPI *pwglShareLists)(HGLRC, HGLRC) DECLSPEC_HIDDEN;
     USE_GL_FUNC(glPointParameterfv) \
 
 #define WGL_FUNCS_GEN \
-    USE_WGL_FUNC(wglCreateContext) \
     USE_WGL_FUNC(wglDeleteContext) \
     USE_WGL_FUNC(wglGetCurrentContext) \
     USE_WGL_FUNC(wglGetCurrentDC) \
@@ -1728,6 +1728,9 @@ BOOL (WINAPI *pwglShareLists)(HGLRC, HGLRC) DECLSPEC_HIDDEN;
     USE_WGL_FUNC(wglMakeCurrent) \
     USE_WGL_FUNC(wglShareLists) \
     USE_WGL_FUNC(wglSwapLayerBuffers)
+
+#define VBOX_FUNCS_GEN \
+    USE_WGL_FUNC(VBoxCreateContext)
 
 /* OpenGL extensions. */
 typedef enum wined3d_gl_extension

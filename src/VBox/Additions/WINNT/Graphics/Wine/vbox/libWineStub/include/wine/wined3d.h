@@ -2261,6 +2261,9 @@ typedef struct _WINED3DPRESENT_PARAMETERS {
     UINT FullScreen_RefreshRateInHz;
     UINT PresentationInterval;
     BOOL AutoRestoreDisplayMode;
+#ifdef VBOX_WITH_WDDM
+    struct VBOXUHGSMI *pHgsmi;
+#endif
 } WINED3DPRESENT_PARAMETERS;
 typedef struct _WINED3DSURFACE_DESC {
     WINED3DFORMAT format;

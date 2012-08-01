@@ -73,9 +73,6 @@ DECLCALLBACK(HRESULT) vboxDispMpEnableEvents()
     g_VBoxDispMp.pEscapeCmd = NULL;
     g_VBoxDispMp.cbEscapeCmd = 0;
     vboxVideoCmIterInit(&g_VBoxDispMp.Iterator, NULL, 0);
-#ifdef VBOX_WITH_CRHGSMI
-    vboxUhgsmiGlobalSetCurrent();
-#endif
     LeaveCriticalSection(&g_VBoxDispMp.CritSect);
     return S_OK;
 }
@@ -89,9 +86,6 @@ DECLCALLBACK(HRESULT) vboxDispMpDisableEvents()
         RTMemFree(g_VBoxDispMp.pEscapeCmd);
         g_VBoxDispMp.pEscapeCmd = NULL;
     }
-#ifdef VBOX_WITH_CRHGSMI
-    vboxUhgsmiGlobalClearCurrent();
-#endif
     LeaveCriticalSection(&g_VBoxDispMp.CritSect);
     return S_OK;
 }

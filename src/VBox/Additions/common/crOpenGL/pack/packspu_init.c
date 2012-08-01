@@ -46,8 +46,16 @@ packSPUInit( int id, SPU *child, SPU *self,
 
     packspuSetVBoxConfiguration( child );
 
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+    pack_spu.bRunningUnderWDDM = !!GetModuleHandle("VBoxDispD3D");
+#endif
+
     /* This connects to the server, sets up the packer, etc. */
-    thread = packspuNewThread( crThreadID() );
+    thread = packspuNewThread(
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+            NULL
+#endif
+             );
 
     if (!thread) {
         return NULL;

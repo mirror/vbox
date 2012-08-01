@@ -23,7 +23,7 @@
 /*@todo Multithreading case. (See feedback_spu.self.RenderMode)*/
 
 GLint FEEDBACKSPU_APIENTRY
-feedbackspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
+feedbackspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint shareCtx )
 {
     GLint ctx, slot;
 
@@ -31,7 +31,7 @@ feedbackspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
     crLockMutex(&feedback_spu.mutex);
 #endif
 
-    ctx = feedback_spu.child.CreateContext(dpyName, visual, shareCtx);
+    ctx = feedback_spu.child.VBoxCreateContext(con, dpyName, visual, shareCtx);
 
     /* find an empty context slot */
     for (slot = 0; slot < feedback_spu.numContexts; slot++) {
@@ -52,6 +52,12 @@ feedbackspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
 #endif
 
     return ctx;
+}
+
+GLint FEEDBACKSPU_APIENTRY
+feedbackspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
+{
+    return feedbackspu_VBoxCreateContext( 0, dpyName, visual, shareCtx );
 }
 
 void FEEDBACKSPU_APIENTRY

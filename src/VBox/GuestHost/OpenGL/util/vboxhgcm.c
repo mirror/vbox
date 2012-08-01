@@ -344,7 +344,7 @@ DECLINLINE(PCRVBOXHGSMI_CLIENT) _crVBoxHGSMIClientGet(CRConnection *conn)
     if (conn->HgsmiClient.pHgsmi)
         return &conn->HgsmiClient;
     {
-        PVBOXUHGSMI pHgsmi = VBoxCrHgsmiCreate();
+        PVBOXUHGSMI pHgsmi = conn->pExternalHgsmi ? conn->pExternalHgsmi : VBoxCrHgsmiCreate();
         if (pHgsmi)
         {
             int rc = _crVBoxHGSMIClientInit(&conn->HgsmiClient, pHgsmi);
@@ -355,7 +355,8 @@ DECLINLINE(PCRVBOXHGSMI_CLIENT) _crVBoxHGSMIClientGet(CRConnection *conn)
             }
             else
                 crWarning("_crVBoxHGSMIClientGet: _crVBoxHGSMIClientInit failed rc %d", rc);
-            VBoxCrHgsmiDestroy(pHgsmi);
+            if (!conn->pExternalHgsmi)
+                VBoxCrHgsmiDestroy(pHgsmi);
         }
         else
         {
@@ -2332,7 +2333,8 @@ static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
         PVBOXUHGSMI pHgsmi;
         _crVBoxHGSMIClientTerm(&conn->HgsmiClient, &pHgsmi);
         CRASSERT(pHgsmi);
-        VBoxCrHgsmiDestroy(pHgsmi);
+        if (!conn->pExternalHgsmi)
+            VBoxCrHgsmiDestroy(pHgsmi);
     }
 #else
 # error "port me!"
@@ -2497,7 +2499,11 @@ void crVBoxHGCMTearDown(void)
 #endif
 }
 
-void crVBoxHGCMConnection(CRConnection *conn)
+void crVBoxHGCMConnection(CRConnection *conn
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        , struct VBOXUHGSMI *pHgsmi
+#endif
+        )
 {
     int i, found = 0;
     int n_bytes;
@@ -2519,6 +2525,7 @@ void crVBoxHGCMConnection(CRConnection *conn)
         conn->Disconnect = crVBoxHGSMIDoDisconnect;
         conn->InstantReclaim = crVBoxHGSMIInstantReclaim;
         conn->HandleNewMessage = crVBoxHGSMIHandleNewMessage;
+        conn->pExternalHgsmi = pHgsmi;
     }
     else
 #endif
@@ -2576,7 +2583,45 @@ void crVBoxHGCMConnection(CRConnection *conn)
 #endif
 }
 
-int crVBoxHGCMRecv(void)
+#if defined(IN_GUEST)
+void _crVBoxHGCMPerformPollHost(CRConnection *conn)
+{
+    if (conn->type == CR_NO_CONNECTION )
+        return;
+
+    if (!conn->pBuffer)
+    {
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        PCRVBOXHGSMI_CLIENT pClient;
+        if (g_crvboxhgcm.bHgsmiOn && !!(pClient = _crVBoxHGSMIClientGet(conn)))
+        {
+            _crVBoxHGSMIPollHost(conn, pClient);
+        }
+        else
+#endif
+        {
+            crVBoxHGCMPollHost(conn);
+        }
+    }
+}
+#endif
+
+void _crVBoxHGCMPerformReceiveMessage(CRConnection *conn)
+{
+    if ( conn->type == CR_NO_CONNECTION )
+        return;
+
+    if (conn->cbBuffer>0)
+    {
+        _crVBoxHGCMReceiveMessage(conn);
+    }
+}
+
+int crVBoxHGCMRecv(
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        CRConnection *conn
+#endif
+        )
 {
     int32_t i;
 
@@ -2587,28 +2632,25 @@ int crVBoxHGCMRecv(void)
 #endif
 
 #ifdef IN_GUEST
+# if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    CRASSERT(!g_crvboxhgcm.bHgsmiOn == !conn);
+    if (conn && g_crvboxhgcm.bHgsmiOn)
+    {
+        _crVBoxHGCMPerformPollHost(conn);
+        _crVBoxHGCMPerformReceiveMessage(conn);
+        VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
+        return 0;
+    }
+# endif
     /* we're on guest side, poll host if it got something for us */
     for (i=0; i<g_crvboxhgcm.num_conns; i++)
     {
         CRConnection *conn = g_crvboxhgcm.conns[i];
 
-        if ( !conn || conn->type == CR_NO_CONNECTION )
+        if ( !conn  )
             continue;
 
-        if (!conn->pBuffer)
-        {
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-            PCRVBOXHGSMI_CLIENT pClient;
-            if (g_crvboxhgcm.bHgsmiOn && !!(pClient = _crVBoxHGSMIClientGet(conn)))
-            {
-                _crVBoxHGSMIPollHost(conn, pClient);
-            }
-            else
-#endif
-            {
-                crVBoxHGCMPollHost(conn);
-            }
-        }
+        _crVBoxHGCMPerformPollHost(conn);
     }
 #endif
 
@@ -2616,13 +2658,10 @@ int crVBoxHGCMRecv(void)
     {
         CRConnection *conn = g_crvboxhgcm.conns[i];
 
-        if ( !conn || conn->type == CR_NO_CONNECTION )
+        if ( !conn )
             continue;
 
-        if (conn->cbBuffer>0)
-        {
-            _crVBoxHGCMReceiveMessage(conn);
-        }
+        _crVBoxHGCMPerformReceiveMessage(conn);
     }
 
 #ifdef CHROMIUM_THREADSAFE

@@ -22,6 +22,7 @@
 
 #include <iprt/list.h>
 
+#include <cr_protocol.h>
 
 typedef struct VBOXDISPCM_SESSION
 {
@@ -113,9 +114,21 @@ HRESULT vboxDispCmTerm()
 
 HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT pContext)
 {
+    BOOL fIsCrContext;
     VBOXWDDM_CREATECONTEXT_INFO Info = {0};
     Info.u32IfVersion = pDevice->u32IfVersion;
-    Info.enmType = VBOXDISPMODE_IS_3D(pDevice->pAdapter) ? VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D : VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D;
+    if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
+    {
+        Info.enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
+        Info.crVersionMajor = CR_PROTOCOL_VERSION_MAJOR;
+        Info.crVersionMinor = CR_PROTOCOL_VERSION_MINOR;
+        fIsCrContext = TRUE;
+    }
+    else
+    {
+        Info.enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D;
+        fIsCrContext = FALSE;
+    }
     Info.hUmEvent = (uint64_t)g_pVBoxCmMgr.Session.hEvent;
     Info.u64UmInfo = (uint64_t)pContext;
 
@@ -150,6 +163,8 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
         pContext->ContextInfo.PrivateDriverDataSize = 0;
         vboxDispCmSessionCtxAdd(&g_pVBoxCmMgr.Session, pContext);
         pContext->pDevice = pDevice;
+        if (fIsCrContext)
+            vboxUhgsmiD3DEscInit(&pDevice->Uhgsmi, pDevice);
     }
     else
     {

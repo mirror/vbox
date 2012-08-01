@@ -122,7 +122,10 @@ stubNewWindow( const char *dpyName, GLint visBits )
     winInfo->height = size[1];
 #ifdef VBOX_WITH_WDDM
     if (stub.bRunningUnderWDDM)
+    {
+        crError("Should not be here: WindowCreate/Destroy & VBoxPackGetInjectID recuire connection id!");
         winInfo->mapped = 0;
+    }
     else
 #endif
     {
@@ -147,7 +150,7 @@ stubNewWindow( const char *dpyName, GLint visBits )
     winInfo->cVisibleRegions = 0;
 #endif
 #ifdef CR_NEWWINTRACK
-    winInfo->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID();
+    winInfo->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID(0);
 #endif
     winInfo->spuWindow = spuWin;
 
@@ -346,6 +349,13 @@ stubDestroyContextLocked( ContextInfo *context )
         CRASSERT(context->spuContext >= 0);
         stub.spu->dispatch_table.DestroyContext( context->spuContext );
         crHashtableWalk(stub.windowTable, stubWindowCheckOwnerCB, context);
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        if (context->spuConnection)
+        {
+            stub.spu->dispatch_table.VBoxConDestroy(context->spuConnection);
+            context->spuConnection = 0;
+        }
+#endif
     }
 
 #ifdef GLX
@@ -378,9 +388,13 @@ static DECLCALLBACK(void) stubContextDtor(void*pvContext)
  */
     ContextInfo *
 stubNewContext( const char *dpyName, GLint visBits, ContextType type,
-    unsigned long shareCtx )
+    unsigned long shareCtx
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        , struct VBOXUHGSMI *pHgsmi
+#endif
+    )
 {
-    GLint spuContext = -1, spuShareCtx = 0;
+    GLint spuContext = -1, spuShareCtx = 0, spuConnection = 0;
     ContextInfo *context;
 
     if (shareCtx > 0) {
@@ -392,15 +406,37 @@ stubNewContext( const char *dpyName, GLint visBits, ContextType type,
     }
 
     if (type == CHROMIUM) {
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        if (pHgsmi)
+        {
+            spuConnection = stub.spu->dispatch_table.VBoxConCreate(pHgsmi);
+            if (!spuConnection)
+            {
+                crWarning("VBoxConCreate failed");
+                return NULL;
+            }
+        }
+#endif
         spuContext
-            = stub.spu->dispatch_table.CreateContext(dpyName, visBits, spuShareCtx);
+            = stub.spu->dispatch_table.VBoxCreateContext(spuConnection, dpyName, visBits, spuShareCtx);
         if (spuContext < 0)
+        {
+            crWarning("VBoxCreateContext failed");
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+            if (spuConnection)
+                stub.spu->dispatch_table.VBoxConDestroy(spuConnection);
+#endif
             return NULL;
+        }
     }
 
     context = crCalloc(sizeof(ContextInfo));
     if (!context) {
         stub.spu->dispatch_table.DestroyContext(spuContext);
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        if (spuConnection)
+            stub.spu->dispatch_table.VBoxConDestroy(spuConnection);
+#endif
         return NULL;
     }
 
@@ -414,6 +450,11 @@ stubNewContext( const char *dpyName, GLint visBits, ContextType type,
     context->currentDrawable = NULL;
     crStrncpy(context->dpyName, dpyName, MAX_DPY_NAME);
     context->dpyName[MAX_DPY_NAME-1] = 0;
+
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    context->spuConnection = spuConnection;
+    context->pHgsmi = pHgsmi;
+#endif
 
 #ifdef CHROMIUM_THREADSAFE
     VBoxTlsRefInit(context, stubContextDtor);
@@ -1018,21 +1059,36 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 #else
             GLint spuShareCtx = 0;
 #endif
-
+            GLint spuConnection = 0;
             CRASSERT(stub.spu);
             CRASSERT(stub.spu->dispatch_table.CreateContext);
             context->type = CHROMIUM;
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+            if (context->pHgsmi)
+            {
+                spuConnection = stub.spu->dispatch_table.VBoxConCreate(context->pHgsmi);
+                if (!spuConnection)
+                {
+                    crWarning("VBoxConCreate failed");
+                    return GL_FALSE;
+                }
+                context->spuConnection = spuConnection;
+            }
+#endif
+
             context->spuContext
-                = stub.spu->dispatch_table.CreateContext( context->dpyName,
-                                                          context->visBits,
-                                                          spuShareCtx );
+                = stub.spu->dispatch_table.VBoxCreateContext(spuConnection, context->dpyName,
+                                                    context->visBits,
+                                                    spuShareCtx);
             if (window->spuWindow == -1)
             {
                 /*crDebug("(1)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
-                window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
+                window->spuWindow = stub.spu->dispatch_table.VBoxWindowCreate(
+                        spuConnection,
+                        window->dpyName, context->visBits );
 #ifdef CR_NEWWINTRACK
-                window->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID();
+                window->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID(spuConnection);
 #endif
             }
         }
@@ -1088,9 +1144,21 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
             if (window->spuWindow == -1)
             {
                 /*crDebug("(2)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
-                window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
+                window->spuWindow = stub.spu->dispatch_table.VBoxWindowCreate(
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                        context->spuConnection,
+#else
+                        0,
+#endif
+                        window->dpyName, context->visBits );
 #ifdef CR_NEWWINTRACK
-                window->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID();
+                window->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID(
+# if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                        context->spuConnection
+# else
+                        0
+# endif
+                        );
 #endif
                 if (context->currentDrawable && context->currentDrawable->type==CHROMIUM 
                     && context->currentDrawable->pOwner==context)
@@ -1127,6 +1195,9 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 
     window->type = context->type;
     window->pOwner = context;
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    window->spuConnection = context->spuConnection;
+#endif
     context->currentDrawable = window;
     stubSetCurrentContext(context);
 

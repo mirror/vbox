@@ -10,7 +10,11 @@
 #include "stub.h"
 #include <iprt/thread.h>
 
-static void crForcedFlush()
+static void crForcedFlush(
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        GLint con
+#endif
+        )
 {
 #if 0
     GLint buffer;
@@ -19,7 +23,16 @@ static void crForcedFlush()
     stub.spu->dispatch_table.Flush();
     stub.spu->dispatch_table.DrawBuffer(buffer);
 #else
-    stub.spu->dispatch_table.Flush();
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    if (con)
+    {
+        stub.spu->dispatch_table.VBoxConFlush(con);
+    }
+    else
+#endif
+    {
+        stub.spu->dispatch_table.Flush();
+    }
 #endif
 }
 
@@ -62,7 +75,11 @@ GLint APIENTRY crCreateContext( const char *dpyName, GLint visBits )
     /* XXX in Chromium 1.5 and earlier, the last parameter was UNDECIDED.
      * That didn't seem right so it was changed to CHROMIUM. (Brian)
      */
-    context = stubNewContext(dpyName, visBits, CHROMIUM, 0);
+    context = stubNewContext(dpyName, visBits, CHROMIUM, 0
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        , NULL
+#endif
+            );
     return context ? (int) context->id : -1;
 }
 
@@ -142,7 +159,13 @@ void APIENTRY crWindowDestroy( GLint window )
     {
         crHashtableLock(stub.windowTable);
 
-        stub.spu->dispatch_table.WindowDestroy( winInfo->spuWindow );
+        stub.spu->dispatch_table.VBoxWindowDestroy(
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                winInfo->spuConnection,
+#else
+                0
+#endif
+                winInfo->spuWindow );
 
 #ifdef WINDOWS
         if (winInfo->hVisibleRegion != INVALID_HANDLE_VALUE)
@@ -161,8 +184,15 @@ void APIENTRY crWindowDestroy( GLint window )
         }
 # endif
 #endif
-        crForcedFlush();
+        crForcedFlush(
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                winInfo->spuConnection
+#endif
+                );
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        winInfo->spuConnection = 0;
+#endif
         crHashtableWalk(stub.contextTable, stubWindowCleanupForContextsCB, winInfo);
 
         crHashtableDelete(stub.windowTable, window, crFree);

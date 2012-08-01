@@ -32,39 +32,60 @@
 #error "VBOX_WITH_CRHGSMI not defined!"
 #endif
 
+#if 0
 typedef DECLCALLBACK(int) FNVBOXCRHGSMI_CTLCON_CALL(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
 typedef FNVBOXCRHGSMI_CTLCON_CALL *PFNVBOXCRHGSMI_CTLCON_CALL;
 
-#define VBoxCrHgsmiPrivateCtlConCall(_pHgsmi, _pCallInfo, _cbCallInfo) (_pHgsmi->pfnCtlConCall((_pHgsmi), (_pCallInfo), (_cbCallInfo)))
+#define vboxCrHgsmiPrivateCtlConCall(_pHgsmi, _pCallInfo, _cbCallInfo) (_pHgsmi->pfnCtlConCall((_pHgsmi), (_pCallInfo), (_cbCallInfo)))
 
 
 typedef DECLCALLBACK(int) FNVBOXCRHGSMI_CTLCON_GETCLIENTID(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, uint32_t *pu32ClientID);
 typedef FNVBOXCRHGSMI_CTLCON_GETCLIENTID *PFNVBOXCRHGSMI_CTLCON_GETCLIENTID;
 
-#define VBoxCrHgsmiPrivateCtlConGetClientID(_pHgsmi, _pu32ClientID) (_pHgsmi->pfnCtlConGetClientID((_pHgsmi), (_pu32ClientID)))
+#define vboxCrHgsmiPrivateCtlConGetClientID(_pHgsmi, _pu32ClientID) (_pHgsmi->pfnCtlConGetClientID((_pHgsmi), (_pu32ClientID)))
+#else
+int vboxCrHgsmiPrivateCtlConCall(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
+int vboxCrHgsmiPrivateCtlConGetClientID(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, uint32_t *pu32ClientID);
+#endif
 
+typedef DECLCALLBACK(int) FNVBOXCRHGSMI_ESCAPE(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, void *pvData, uint32_t cbData, BOOL fHwAccess);
+typedef FNVBOXCRHGSMI_ESCAPE *PFNVBOXCRHGSMI_ESCAPE;
+
+#define vboxCrHgsmiPrivateEscape(_pHgsmi, _pvData, _cbData, _fHwAccess) (_pHgsmi->pfnEscape((_pHgsmi), (_pvData), (_cbData), (_fHwAccess)))
 
 typedef struct VBOXUHGSMI_PRIVATE_BASE
 {
     VBOXUHGSMI Base;
-    PFNVBOXCRHGSMI_CTLCON_CALL pfnCtlConCall;
-    PFNVBOXCRHGSMI_CTLCON_GETCLIENTID pfnCtlConGetClientID;
-#ifdef VBOX_CRHGSMI_WITH_D3DDEV
-    HVBOXCRHGSMI_CLIENT hClient;
-#endif
+    PFNVBOXCRHGSMI_ESCAPE pfnEscape;
 } VBOXUHGSMI_PRIVATE_BASE, *PVBOXUHGSMI_PRIVATE_BASE;
 
 typedef struct VBOXUHGSMI_BUFFER_PRIVATE_BASE
 {
     VBOXUHGSMI_BUFFER Base;
-    HANDLE hSynch;
-    D3DKMT_HANDLE hAllocation;
+    PVBOXUHGSMI_PRIVATE_BASE pHgsmi;
 } VBOXUHGSMI_BUFFER_PRIVATE_BASE, *PVBOXUHGSMI_BUFFER_PRIVATE_BASE;
+
+typedef struct VBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE
+{
+    VBOXUHGSMI_BUFFER_PRIVATE_BASE PrivateBase;
+    VBOXVIDEOCM_UM_ALLOC Alloc;
+    HANDLE hSynch;
+} VBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE, *PVBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE;
+
+typedef struct VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE
+{
+    VBOXUHGSMI_BUFFER_PRIVATE_BASE PrivateBase;
+    D3DKMT_HANDLE hAllocation;
+    UINT aLockPageIndices[1];
+} VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE, *PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE;
 
 #define VBOXUHGSMIBASE_GET_PRIVATE(_p, _t) ((_t*)(((uint8_t*)_p) - RT_OFFSETOF(_t, Base)))
 #define VBOXUHGSMIBASE_GET(_p) VBOXUHGSMIBASE_GET_PRIVATE(_p, VBOXUHGSMI_PRIVATE_BASE)
 #define VBOXUHGSMIBASE_GET_BUFFER(_p) VBOXUHGSMIBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_BASE)
 
+#define VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, _t) ((_t*)(((uint8_t*)_p) - RT_OFFSETOF(_t, PrivateBase.Base)))
+#define VBOXUHGSMIESCBASE_GET_BUFFER(_p) VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE)
+#define VBOXUHGSMDXALLOCBASE_GET_BUFFER(_p) VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE)
 
 DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags,
                                     D3DDDICB_LOCKFLAGS *pfFlags, UINT *pNumPages, UINT* pPages)
@@ -119,29 +140,7 @@ DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock
     return VINF_SUCCESS;
 }
 
-DECLINLINE(int) vboxUhgsmiBaseEventChkCreate(VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, HANDLE *phSynch)
-{
-    *phSynch = NULL;
-
-    if (fUhgsmiType.fCommand)
-    {
-        *phSynch = CreateEvent(
-                  NULL, /* LPSECURITY_ATTRIBUTES lpEventAttributes */
-                  FALSE, /* BOOL bManualReset */
-                  FALSE, /* BOOL bInitialState */
-                  NULL /* LPCTSTR lpName */
-            );
-        Assert(*phSynch);
-        if (!*phSynch)
-        {
-            DWORD winEr = GetLastError();
-            /* todo: translate winer */
-            return VERR_GENERAL_FAILURE;
-        }
-    }
-    return VINF_SUCCESS;
-}
-
+#if 0
 DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers,
         VOID* pCommandBuffer, UINT *pCommandBufferSize,
         D3DDDI_ALLOCATIONLIST *pAllocationList, UINT AllocationListSize,
@@ -194,6 +193,22 @@ DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32
     }
 
     return VINF_SUCCESS;
+}
+#endif
+
+DECLCALLBACK(int) vboxUhgsmiBaseEscBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, void**pvLock);
+DECLCALLBACK(int) vboxUhgsmiBaseEscBufferUnlock(PVBOXUHGSMI_BUFFER pBuf);
+int vboxUhgsmiBaseBufferTerm(PVBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE pBuffer);
+static int vboxUhgsmiBaseEventChkCreate(VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, HANDLE *phSynch);
+int vboxUhgsmiKmtEscBufferInit(PVBOXUHGSMI_PRIVATE_BASE pPrivate, PVBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE pBuffer, uint32_t cbBuf, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, PFNVBOXUHGSMI_BUFFER_DESTROY pfnDestroy);
+DECLCALLBACK(int) vboxUhgsmiBaseEscBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers);
+DECLCALLBACK(int) vboxUhgsmiBaseEscBufferDestroy(PVBOXUHGSMI_BUFFER pBuf);
+DECLCALLBACK(int) vboxUhgsmiBaseEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, PVBOXUHGSMI_BUFFER* ppBuf);
+DECLINLINE(void) vboxUhgsmiBaseInit(PVBOXUHGSMI_PRIVATE_BASE pHgsmi, PFNVBOXCRHGSMI_ESCAPE pfnEscape)
+{
+    pHgsmi->Base.pfnBufferCreate = vboxUhgsmiBaseEscBufferCreate;
+    pHgsmi->Base.pfnBufferSubmit = vboxUhgsmiBaseEscBufferSubmit;
+    pHgsmi->pfnEscape = pfnEscape;
 }
 
 #endif /* #ifndef ___VBoxUhgsmiBase_h__ */

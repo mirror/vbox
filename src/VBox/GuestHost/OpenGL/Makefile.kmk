@@ -92,6 +92,7 @@ VBoxOGLcrutil_DEFS.win    += VBOX_WITH_CRHGSMI
 VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 endif
 ifdef VBOX_WITH_WDDM
+VBoxOGLcrutil_DEFS.win   += VBOX_WITH_WDDM
 VBoxOGLcrutil_DEFS.win    += CR_DEBUG_BACKDOOR_ENABLE
 VBoxOGLcrutil_INCS.win    += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
 VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB)
@@ -251,6 +252,12 @@ VBoxOGLcrpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLcrpacker_DEFS.win    += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLcrpacker_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
@@ -329,7 +336,12 @@ VBoxOGLspuload_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/glloader.c \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
-
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLspuload_DEFS.win    += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLspuload_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
@@ -458,7 +470,12 @@ ifneq ($(KBUILD_TARGET),win)
 state_tracker/state_lists.c_CFLAGS += $(VBOX_GCC_Wno-pointer-sign)
 VBoxOGLcrstate_CFLAGS +=
 endif
-
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLcrstate_DEFS.win    += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLcrstate_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #
@@ -581,6 +598,13 @@ VBoxOGLerrorspu_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c
 VBoxOGLerrorspu_LIBS = \
 	$(VBOX_LIB_OGL_CRUTIL)
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLerrorspu_DEFS.win    += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLerrorspu_DEFS.win   += VBOX_WITH_WDDM
+endif
+
 
 if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
 #

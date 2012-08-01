@@ -229,8 +229,16 @@ void packspuHuge( CROpcode opcode, void *buf )
     crNetSend( thread->netServer.conn, NULL, src, len );
 }
 
-void packspuConnectToServer( CRNetServer *server )
+void packspuConnectToServer( CRNetServer *server
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                , struct VBOXUHGSMI *pHgsmi
+#endif
+        )
 {
     crNetInit( packspuReceiveData, NULL );
-    crNetServerConnect( server );
+    crNetServerConnect( server
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                , pHgsmi
+#endif
+            );
 }

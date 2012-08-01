@@ -18,6 +18,12 @@
 
 #include "VBoxDispD3DCmn.h"
 
+#define VBOXUHGSMID3D_GET_PRIVATE(_p, _t) ((_t*)(((uint8_t*)_p) - RT_OFFSETOF(_t, BasePrivate.Base)))
+#define VBOXUHGSMID3D_GET(_p) VBOXUHGSMID3D_GET_PRIVATE(_p, VBOXUHGSMI_PRIVATE_D3D)
+
+#if 0
+#define VBOXUHGSMID3D_GET_BUFFER(_p) VBOXUHGSMID3D_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_D3D)
+
 #include <iprt/mem.h>
 #include <iprt/err.h>
 
@@ -28,9 +34,7 @@ typedef struct VBOXUHGSMI_BUFFER_PRIVATE_D3D
     UINT aLockPageIndices[1];
 } VBOXUHGSMI_BUFFER_PRIVATE_D3D, *PVBOXUHGSMI_BUFFER_PRIVATE_D3D;
 
-#define VBOXUHGSMID3D_GET_PRIVATE(_p, _t) ((_t*)(((uint8_t*)_p) - RT_OFFSETOF(_t, BasePrivate.Base)))
-#define VBOXUHGSMID3D_GET(_p) VBOXUHGSMID3D_GET_PRIVATE(_p, VBOXUHGSMI_PRIVATE_D3D)
-#define VBOXUHGSMID3D_GET_BUFFER(_p) VBOXUHGSMID3D_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_D3D)
+
 
 DECLCALLBACK(int) vboxUhgsmiD3DBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
 {
@@ -209,8 +213,34 @@ HRESULT vboxUhgsmiD3DInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, PVBOXWDDMDISP_DEVICE p
 {
     pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiD3DBufferCreate;
     pHgsmi->BasePrivate.Base.pfnBufferSubmit = vboxUhgsmiD3DBufferSubmit;
-    pHgsmi->BasePrivate.hClient = NULL;
     pHgsmi->pDevice = pDevice;
     return S_OK;
 }
+#endif
 
+static DECLCALLBACK(int) vboxCrHhgsmiDispEscape(struct VBOXUHGSMI_PRIVATE_BASE *pHgsmi, void *pvData, uint32_t cbData, BOOL fHwAccess)
+{
+    PVBOXUHGSMI_PRIVATE_D3D pPrivate = VBOXUHGSMID3D_GET(pHgsmi);
+    PVBOXWDDMDISP_DEVICE pDevice = pPrivate->pDevice;
+    D3DDDICB_ESCAPE DdiEscape = {0};
+    DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+    DdiEscape.hDevice = pDevice->hDevice;
+    DdiEscape.Flags.HardwareAccess = !!fHwAccess;
+    DdiEscape.pPrivateDriverData = pvData;
+    DdiEscape.PrivateDriverDataSize = cbData;
+    HRESULT hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
+    if (SUCCEEDED(hr))
+    {
+        return VINF_SUCCESS;
+    }
+
+    WARN(("pfnEscapeCb failed, hr 0x%x", hr));
+    return VERR_GENERAL_FAILURE;
+}
+
+
+void vboxUhgsmiD3DEscInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, struct VBOXWDDMDISP_DEVICE *pDevice)
+{
+    vboxUhgsmiBaseInit(&pHgsmi->BasePrivate, vboxCrHhgsmiDispEscape);
+    pHgsmi->pDevice = pDevice;
+}

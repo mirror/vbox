@@ -663,3 +663,30 @@ void crStateVBoxDetachThread()
 void crStateVBoxAttachThread()
 {
 }
+
+GLint crStateVBoxCreateContext( GLint con, const char * dpyName, GLint visual, GLint shareCtx )
+{
+    return 0;
+}
+
+GLint crStateVBoxWindowCreate( GLint con, const char *dpyName, GLint visBits  )
+{
+    return 0;
+}
+
+void crStateVBoxWindowDestroy( GLint con, GLint window )
+{
+}
+
+GLint crStateVBoxConCreate(struct VBOXUHGSMI *pHgsmi)
+{
+    return 0;
+}
+
+void crStateVBoxConDestroy(GLint con)
+{
+}
+
+void crStateVBoxConFlush(GLint con)
+{
+}

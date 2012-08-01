@@ -92,8 +92,7 @@ packspu_CheckFramebufferStatusEXT(GLenum target)
     crPackCheckFramebufferStatusEXT(target, &status, &writeback);
 
 	packspuFlush((void *) thread);
-	while (writeback)
-		crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     crStateSetFramebufferStatus(target, status);
     return status;

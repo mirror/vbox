@@ -28,8 +28,7 @@ static void GetString(GLenum name, GLubyte *pszStr)
         crPackGetString(name, pszStr, &writeback);
     packspuFlush( (void *) thread );
 
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 }
 
 static GLfloat
@@ -65,8 +64,7 @@ GetExtensions(void)
     }
     packspuFlush( (void *) thread );
 
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     CRASSERT(crStrlen((char *)return_value) < 10*1000);
 
