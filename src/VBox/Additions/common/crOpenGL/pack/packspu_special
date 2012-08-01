@@ -106,6 +106,12 @@ VBoxPackGetInjectID
 VBoxPackSetInjectID
 VBoxAttachThread
 VBoxDetachThread
+VBoxCreateContext
+VBoxWindowCreate
+VBoxWindowDestroy
+VBoxConCreate
+VBoxConDestroy
+VBoxConFlush
 ChromiumParameteriCR
 CompressedTexImage1DARB
 CompressedTexImage2DARB

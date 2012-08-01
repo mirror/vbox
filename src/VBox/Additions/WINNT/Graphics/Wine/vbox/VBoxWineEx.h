@@ -83,6 +83,12 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetShRcState(IDirect3DResource9 *iface,
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9Present(IDirect3DSwapChain9 *iface,
                                 IDirect3DSurface9 *surf); /* use the given surface as a frontbuffer content source */
+
+typedef struct VBOXWINEEX_D3DPRESENT_PARAMETERS
+{
+    D3DPRESENT_PARAMETERS Base;
+    struct VBOXUHGSMI *pHgsmi;
+} VBOXWINEEX_D3DPRESENT_PARAMETERS, *PVBOXWINEEX_D3DPRESENT_PARAMETERS;
 #ifdef __cplusplus
 }
 #endif

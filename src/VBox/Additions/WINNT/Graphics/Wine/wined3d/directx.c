@@ -36,6 +36,10 @@
 #include <stdio.h>
 #include "wined3d_private.h"
 
+#ifdef VBOX_WITH_WDDM
+# include <VBox/VBoxCrHgsmi.h>
+#endif
+
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 WINE_DECLARE_DEBUG_CHANNEL(d3d_caps);
 
@@ -253,7 +257,7 @@ static void WineD3D_ReleaseFakeGLContext(struct wined3d_fake_gl_ctx *ctx)
     }
 }
 
-static BOOL WineD3D_CreateFakeGLContext(struct wined3d_fake_gl_ctx *ctx)
+static BOOL WineD3D_CreateFakeGLContext(struct wined3d_fake_gl_ctx *ctx, struct VBOXUHGSMI *pHgsmi)
 {
     PIXELFORMATDESCRIPTOR pfd;
     int iPixelFormat;
@@ -299,7 +303,7 @@ static BOOL WineD3D_CreateFakeGLContext(struct wined3d_fake_gl_ctx *ctx)
     SetPixelFormat(ctx->dc, iPixelFormat, &pfd);
 
     /* Create a GL context. */
-    ctx->gl_ctx = pwglCreateContext(ctx->dc);
+    ctx->gl_ctx = pVBoxCreateContext(ctx->dc, pHgsmi);
     if (!ctx->gl_ctx)
     {
         WARN_(d3d_caps)("Error creating default context for capabilities initialization.\n");
@@ -5308,6 +5312,7 @@ static BOOL InitAdapters(IWineD3DImpl *This)
     static HMODULE mod_gl;
     BOOL ret;
     int ps_selected_mode, vs_selected_mode;
+    struct VBOXUHGSMI *pHgsmi = NULL;
 
     /* No need to hold any lock. The calling library makes sure only one thread calls
      * wined3d simultaneously
@@ -5354,6 +5359,7 @@ static BOOL InitAdapters(IWineD3DImpl *This)
 /* Load WGL core functions from opengl32.dll */
 #define USE_WGL_FUNC(pfn) p##pfn = (void*)GetProcAddress(mod_gl, #pfn);
     WGL_FUNCS_GEN;
+    VBOX_FUNCS_GEN;
 #undef USE_WGL_FUNC
 
     if(!pwglGetProcAddress) {
@@ -5378,6 +5384,15 @@ static BOOL InitAdapters(IWineD3DImpl *This)
 
     glEnableWINE = glEnable;
     glDisableWINE = glDisable;
+
+#ifdef VBOX_WITH_WDDM
+    pHgsmi = VBoxCrHgsmiCreate();
+    if (!pHgsmi)
+    {
+        ERR("VBoxCrHgsmiCreate failed");
+        goto nogl_adapter;
+    }
+#endif
 
     /* For now only one default adapter */
     {
@@ -5405,7 +5420,7 @@ static BOOL InitAdapters(IWineD3DImpl *This)
         TRACE("Allocated LUID %08x:%08x for adapter.\n",
                 adapter->luid.HighPart, adapter->luid.LowPart);
 
-        if (!WineD3D_CreateFakeGLContext(&fake_gl_ctx))
+        if (!WineD3D_CreateFakeGLContext(&fake_gl_ctx, pHgsmi))
         {
             ERR("Failed to get a gl context for default adapter\n");
             goto nogl_adapter;
@@ -5594,6 +5609,11 @@ static BOOL InitAdapters(IWineD3DImpl *This)
     This->adapter_count = 1;
     TRACE("%u adapters successfully initialized\n", This->adapter_count);
 
+#ifdef VBOX_WITH_WDDM
+    VBoxCrHgsmiDestroy(pHgsmi);
+    pHgsmi = NULL;
+#endif
+
     return TRUE;
 
 nogl_adapter:
@@ -5614,6 +5634,14 @@ nogl_adapter:
     }
 #endif
     initPixelFormatsNoGL(&This->adapters[0].gl_info);
+
+#ifdef VBOX_WITH_WDDM
+    if (pHgsmi)
+    {
+        VBoxCrHgsmiDestroy(pHgsmi);
+        pHgsmi = NULL;
+    }
+#endif
 
     This->adapter_count = 1;
     return FALSE;

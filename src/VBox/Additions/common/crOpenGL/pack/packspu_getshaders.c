@@ -45,8 +45,7 @@ void PACKSPU_APIENTRY packspu_GetActiveAttrib(GLuint program, GLuint index, GLsi
     crPackGetActiveAttrib(program, index, bufSize, (GLsizei*)pLocal, NULL, NULL, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (length) *length = pLocal->length;
     *size   = pLocal->size;
@@ -69,8 +68,7 @@ void PACKSPU_APIENTRY packspu_GetActiveUniform(GLuint program, GLuint index, GLs
     crPackGetActiveUniform(program, index, bufSize, (GLsizei*)pLocal, NULL, NULL, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (length) *length = pLocal->length;
     *size   = pLocal->size;
@@ -93,8 +91,7 @@ void PACKSPU_APIENTRY packspu_GetAttachedShaders(GLuint program, GLsizei maxCoun
     crPackGetAttachedShaders(program, maxCount, pLocal, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (count) *count=*pLocal;
     crMemcpy(shaders, &pLocal[1], *pLocal*sizeof(GLuint));
@@ -115,8 +112,7 @@ void PACKSPU_APIENTRY packspu_GetAttachedObjectsARB(GLhandleARB containerObj, GL
     crPackGetAttachedObjectsARB(containerObj, maxCount, pLocal, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (count) *count=*pLocal;
     crMemcpy(obj, &pLocal[1], *pLocal*sizeof(GLhandleARB));
@@ -139,8 +135,7 @@ void PACKSPU_APIENTRY packspu_GetInfoLogARB(GLhandleARB obj, GLsizei maxLength, 
     crPackGetInfoLogARB(obj, maxLength, pLocal, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     CRASSERT((pLocal[0]) <= maxLength);
 
@@ -163,8 +158,7 @@ void PACKSPU_APIENTRY packspu_GetProgramInfoLog(GLuint program, GLsizei bufSize,
     crPackGetProgramInfoLog(program, bufSize, pLocal, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (length) *length=*pLocal;
     crMemcpy(infoLog, &pLocal[1], (bufSize >= pLocal[0]) ? pLocal[0] : bufSize);
@@ -185,8 +179,7 @@ void PACKSPU_APIENTRY packspu_GetShaderInfoLog(GLuint shader, GLsizei bufSize, G
     crPackGetShaderInfoLog(shader, bufSize, pLocal, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (length) *length=*pLocal;
     crMemcpy(infoLog, &pLocal[1], (bufSize >= pLocal[0]) ? pLocal[0] : bufSize);
@@ -207,8 +200,7 @@ void PACKSPU_APIENTRY packspu_GetShaderSource(GLuint shader, GLsizei bufSize, GL
     crPackGetShaderSource(shader, bufSize, pLocal, NULL, &writeback);
 
     packspuFlush((void *) thread);
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
     if (length) *length=*pLocal;
     crMemcpy(source, &pLocal[1], (bufSize >= pLocal[0]) ? pLocal[0] : bufSize);

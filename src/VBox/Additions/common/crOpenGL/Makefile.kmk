@@ -211,6 +211,12 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
   	dl
  endif
 endif
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGL_DEFS.win   += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGL_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 ifdef VBOX_WITH_WDDM
 #
@@ -401,6 +407,12 @@ VBoxOGLarrayspu_LIBS          = \
 	$(VBOX_LIB_OGL_CRUTIL) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLarrayspu_DEFS.win   += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLarrayspu_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 ifdef VBOX_WITH_WDDM
 #
@@ -439,6 +451,12 @@ VBoxOGLpassthroughspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
 VBoxOGLpassthroughspu_LIBS        = \
 	$(VBOX_LIB_OGL_CRUTIL)
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLpassthroughspu_DEFS.win   += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLpassthroughspu_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 ifdef VBOX_WITH_WDDM
 #
@@ -509,6 +527,12 @@ VBoxOGLpackspu_LIBS        = \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLpackspu_DEFS.win   += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLpackspu_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 ifdef VBOX_WITH_WDDM
 #
@@ -580,6 +604,12 @@ VBoxOGLfeedbackspu_LIBS        = \
 	$(VBOX_LIB_OGL_CRUTIL) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLfeedbackspu_DEFS.win   += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_WDDM
+VBoxOGLfeedbackspu_DEFS.win   += VBOX_WITH_WDDM
+endif
 
 ifdef VBOX_WITH_WDDM
 #

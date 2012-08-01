@@ -559,8 +559,7 @@ GLboolean PACKSPU_APIENTRY packspu_IsEnabled(GLenum cap)
 	    GLboolean return_val = (GLboolean) 0;
         crPackIsEnabled(cap, &return_val, &writeback);
 	    packspuFlush( (void *) thread );
-	    while (writeback)
-		  crNetRecv();
+	    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
         CRASSERT(return_val==res);
     }
 #endif

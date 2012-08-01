@@ -206,9 +206,7 @@ typedef struct VBOXWDDMDISP_DEVICE
      * is split into two calls : SetViewport & SetZRange */
     D3DVIEWPORT9 ViewPort;
     VBOXWDDMDISP_CONTEXT DefaultContext;
-#ifdef VBOX_WITH_CRHGSMI
     VBOXUHGSMI_PRIVATE_D3D Uhgsmi;
-#endif
 
     /* no lock is needed for this since we're guaranteed the per-device calls are not reentrant */
     RTLISTANCHOR DirtyAllocList;
@@ -311,11 +309,6 @@ typedef struct VBOXWDDMDISP_OVERLAY
 #define VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc) (((pRc)->cAllocations)/6)
 #define VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, idx) ((D3DCUBEMAP_FACES)(D3DCUBEMAP_FACE_POSITIVE_X+(idx)%VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc)))
 #define VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, idx) ((idx)%VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc))
-
-#ifdef VBOX_WITH_CRHGSMI
-HRESULT vboxUhgsmiGlobalSetCurrent();
-HRESULT vboxUhgsmiGlobalClearCurrent();
-#endif
 
 DECLINLINE(PVBOXWDDMDISP_SWAPCHAIN) vboxWddmSwapchainForAlloc(PVBOXWDDMDISP_ALLOCATION pAlloc)
 {

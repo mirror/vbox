@@ -163,7 +163,11 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
         desiredVisual |= ComputeVisBits( hdc );
 #endif
 
-    context = stubNewContext(dpyName, desiredVisual, UNDECIDED, 0);
+    context = stubNewContext(dpyName, desiredVisual, UNDECIDED, 0
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        , NULL
+#endif
+            );
     if (!context)
         return 0;
 

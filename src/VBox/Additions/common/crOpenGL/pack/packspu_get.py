@@ -131,8 +131,7 @@ for func_name in keys:
                 crState%s(pname, localparams);
                 crPack%s(%s, &writeback);
                 packspuFlush( (void *) thread );
-                while (writeback)
-                    crNetRecv();
+                CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
                 for (i=0; i<__numValues(pname); ++i)
                 {
                     if (localparams[i] != params[i])
@@ -163,8 +162,7 @@ for func_name in keys:
         print '\t\tcrPack%s( %s );' % (func_name, apiutil.MakeCallString( params ) )
         print '\t}'
         print '\tpackspuFlush( (void *) thread );'
-        print '\twhile (writeback)'
-        print '\t\tcrNetRecv();'
+        print '\tCRPACKSPU_WRITEBACK_WAIT(thread, writeback);'
 
 
 

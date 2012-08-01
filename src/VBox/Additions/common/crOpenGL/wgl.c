@@ -294,7 +294,7 @@ BOOL WINAPI wglShareLists_prox( HGLRC hglrc1, HGLRC hglrc2 )
 }
 
 
-HGLRC WINAPI wglCreateContext_prox( HDC hdc )
+HGLRC WINAPI VBoxCreateContext( HDC hdc, struct VBOXUHGSMI *pHgsmi )
 {
     char dpyName[MAX_DPY_NAME];
     ContextInfo *context;
@@ -311,11 +311,22 @@ HGLRC WINAPI wglCreateContext_prox( HDC hdc )
         desiredVisual |= ComputeVisBits( hdc );
 #endif
 
-    context = stubNewContext(dpyName, desiredVisual, UNDECIDED, 0);
+    context = stubNewContext(dpyName, desiredVisual, UNDECIDED, 0
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        , pHgsmi
+#else
+        , NULL
+#endif
+            );
     if (!context)
         return 0;
 
     return (HGLRC) context->id;
+}
+
+HGLRC WINAPI wglCreateContext_prox( HDC hdc )
+{
+    return VBoxCreateContext(hdc, NULL);
 }
 
 BOOL WINAPI

@@ -1014,6 +1014,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
     HMODULE hVBoxD3D = NULL;
     VBOXCR_UPDATEWNDCB RegionsData;
     HRESULT hr;
+    GLint spuConnection = 0;
 # endif
 #endif
 
@@ -1060,11 +1061,20 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
             }
         }
     }
-# endif
-#endif
+# endif /* VBOX_WITH_WDDM */
+#endif /* WINDOWS */
 
     crLockMutex(&stub.mutex);
-    stub.spu->dispatch_table.VBoxPackSetInjectThread();
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+    spuConnection =
+#endif
+            stub.spu->dispatch_table.VBoxPackSetInjectThread(NULL);
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+    if (!spuConnection)
+    {
+        crError("VBoxPackSetInjectThread failed!");
+    }
+#endif
     crUnlockMutex(&stub.mutex);
 
     RTThreadUserSignal(ThreadSelf);
@@ -1141,6 +1151,10 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
     {
         VBoxDispMpTstCallbacks.pfnDisableEvents();
     }
+    if (spuConnection)
+    {
+        stub.spu->dispatch_table.VBoxConDestroy(spuConnection);
+    }
     if (hVBoxD3D)
     {
         FreeLibrary(hVBoxD3D);
@@ -1202,7 +1216,11 @@ stubInitLocked(void)
 
         ns.name = "vboxhgcm://host:0";
         ns.buffer_size = 1024;
-        crNetServerConnect(&ns);
+        crNetServerConnect(&ns
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                , NULL
+#endif
+                );
         if (!ns.conn)
         {
             crWarning("Failed to connect to host. Make sure 3D acceleration is enabled for this VM.");
@@ -1413,7 +1431,11 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         crNetInit(NULL, NULL);
         ns.name = "vboxhgcm://host:0";
         ns.buffer_size = 1024;
-        crNetServerConnect(&ns);
+        crNetServerConnect(&ns
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                , NULL
+#endif
+);
         if (!ns.conn)
         {
             crDebug("Failed to connect to host (is guest 3d acceleration enabled?), aborting ICD load.");

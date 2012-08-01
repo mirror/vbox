@@ -522,7 +522,11 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3D9Impl_CreateDevice(IDirect3D9Ex
         return E_OUTOFMEMORY;
     }
 
-    hr = device_init(object, This->WineD3D, adapter, device_type, focus_window, flags, parameters);
+    hr = device_init(object, This->WineD3D, adapter, device_type, focus_window, flags,
+#ifdef VBOX_WITH_WDDM
+        (VBOXWINEEX_D3DPRESENT_PARAMETERS *)
+#endif
+                    parameters);
     if (FAILED(hr))
     {
         ERR_D3D();

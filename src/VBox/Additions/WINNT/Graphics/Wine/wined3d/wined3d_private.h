@@ -1282,7 +1282,11 @@ void context_attach_depth_stencil_fbo(struct wined3d_context *context,
 void context_attach_surface_fbo(const struct wined3d_context *context,
         GLenum fbo_target, DWORD idx, IWineD3DSurfaceImpl *surface) DECLSPEC_HIDDEN;
 struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3DSurfaceImpl *target,
-        const struct wined3d_format_desc *ds_format_desc) DECLSPEC_HIDDEN;
+        const struct wined3d_format_desc *ds_format_desc
+#ifdef VBOX_WITH_WDDM
+                , struct VBOXUHGSMI *pHgsmi
+#endif
+        ) DECLSPEC_HIDDEN;
 struct IWineD3DDeviceImpl *context_get_device(const struct wined3d_context *context); DECLSPEC_HIDDEN;
 #ifdef VBOX_WITH_WDDM
 struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3DSwapChainImpl *swapchain, IWineD3DSurfaceImpl *target,
@@ -1799,6 +1803,10 @@ struct IWineD3DDeviceImpl
     /* Context management */
     struct wined3d_context **contexts;
     UINT                    numContexts;
+
+#ifdef VBOX_WITH_WDDM
+    struct VBOXUHGSMI *pHgsmi;
+#endif
 
 #ifdef VBOX_WINE_WITH_SHADER_CACHE
     VBOXEXT_HASHCACHE vshaderCache;

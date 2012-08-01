@@ -1531,7 +1531,11 @@ static DECLCALLBACK(void) context_tls_dtor(void* pvCtx)
  *
  *****************************************************************************/
 struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3DSurfaceImpl *target,
-        const struct wined3d_format_desc *ds_format_desc)
+        const struct wined3d_format_desc *ds_format_desc
+#ifdef VBOX_WITH_WDDM
+        , struct VBOXUHGSMI *pHgsmi
+#endif
+        )
 {
     IWineD3DDeviceImpl *device = swapchain->device;
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
@@ -1547,6 +1551,14 @@ struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3
     HDC hdc;
 
     TRACE("swapchain %p, target %p, window %p.\n", swapchain, target, swapchain->win_handle);
+
+#ifdef VBOX_WITH_WDDM
+    if (!pHgsmi)
+    {
+        ERR("HGSMI should be specified!");
+        return NULL;
+    }
+#endif
 
     ret = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*ret));
     if (!ret)
@@ -1643,7 +1655,13 @@ struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3
         goto out;
     }
 
-    ctx = pwglCreateContext(hdc);
+    ctx = pVBoxCreateContext(hdc
+#ifdef VBOX_WITH_WDDM
+            , pHgsmi
+#else
+            , NULL
+#endif
+            );
     if (device->numContexts)
     {
         if (!pwglShareLists(device->contexts[0]->glCtx, ctx))
@@ -1954,7 +1972,11 @@ struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3D
     if (!context)
     {
         Assert(!device->NumberOfSwapChains);
-        context = context_create(swapchain, target, ds_format_desc);
+        context = context_create(swapchain, target, ds_format_desc
+#ifdef VBOX_WITH_WDDM
+                , device->pHgsmi
+#endif
+                );
     }
     else
     {

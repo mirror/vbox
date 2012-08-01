@@ -8500,12 +8500,14 @@ props       get
 chromium    extpack
 
 name        VBoxPackSetInjectThread
-return      void
+return      GLint
+param       pHgsmi      struct VBOXUHGSMI *
 category    VBox
 chromium    nopack
 
 name        VBoxPackGetInjectID
 return      GLuint
+param       con         GLint
 category    VBox
 chromium    nopack
 
@@ -8522,6 +8524,48 @@ chromium    nopack
 
 name        VBoxDetachThread
 return      void
+category    VBox
+chromium    nopack
+
+name        VBoxCreateContext
+return      GLint
+param       con         GLint
+param       dpyName     const char *
+param       visual      GLint
+param       shareCtx    GLint
+category    VBox
+chromium    nopack
+
+name        VBoxWindowCreate
+return      GLint
+param       con         GLint
+param       dpyName     const char *
+param       visBits     GLint
+category    VBox
+chromium    nopack
+
+name        VBoxWindowDestroy
+return      void
+param       con         GLint
+param       window      GLint
+category    VBox
+chromium    nopack
+
+name        VBoxConCreate
+return      GLint
+param       pHgsmi      struct VBOXUHGSMI *
+category    VBox
+chromium    nopack
+
+name        VBoxConDestroy
+return      void
+param       con         GLint
+category    VBox
+chromium    nopack
+
+name        VBoxConFlush
+return      void
+param       con         GLint
 category    VBox
 chromium    nopack
 

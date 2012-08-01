@@ -3152,8 +3152,19 @@ static const IWineD3DDeviceParentVtbl d3d9_wined3d_device_parent_vtbl =
     device_parent_CreateSwapChain,
 };
 
+#ifdef VBOX_WITH_WDDM
+# define PP_BASE(_p) (&(_p)->Base)
+#else
+# define PP_BASE(_p) (_p)
+#endif
 HRESULT device_init(IDirect3DDevice9Impl *device, IWineD3D *wined3d, UINT adapter, D3DDEVTYPE device_type,
-        HWND focus_window, DWORD flags, D3DPRESENT_PARAMETERS *parameters)
+        HWND focus_window, DWORD flags
+#ifdef VBOX_WITH_WDDM
+        , VBOXWINEEX_D3DPRESENT_PARAMETERS *parameters
+#else
+        , D3DPRESENT_PARAMETERS *parameters
+#endif
+        )
 {
     WINED3DPRESENT_PARAMETERS *wined3d_parameters;
     UINT i, count = 1;
@@ -3208,22 +3219,25 @@ HRESULT device_init(IDirect3DDevice9Impl *device, IWineD3D *wined3d, UINT adapte
 
     for (i = 0; i < count; ++i)
     {
-        wined3d_parameters[i].BackBufferWidth = parameters[i].BackBufferWidth;
-        wined3d_parameters[i].BackBufferHeight = parameters[i].BackBufferHeight;
-        wined3d_parameters[i].BackBufferFormat = wined3dformat_from_d3dformat(parameters[i].BackBufferFormat);
-        wined3d_parameters[i].BackBufferCount = parameters[i].BackBufferCount;
-        wined3d_parameters[i].MultiSampleType = parameters[i].MultiSampleType;
-        wined3d_parameters[i].MultiSampleQuality = parameters[i].MultiSampleQuality;
-        wined3d_parameters[i].SwapEffect = parameters[i].SwapEffect;
-        wined3d_parameters[i].hDeviceWindow = parameters[i].hDeviceWindow;
-        wined3d_parameters[i].Windowed = parameters[i].Windowed;
-        wined3d_parameters[i].EnableAutoDepthStencil = parameters[i].EnableAutoDepthStencil;
+        wined3d_parameters[i].BackBufferWidth = PP_BASE(&parameters[i])->BackBufferWidth;
+        wined3d_parameters[i].BackBufferHeight =PP_BASE(&parameters[i])->BackBufferHeight;
+        wined3d_parameters[i].BackBufferFormat = wined3dformat_from_d3dformat(PP_BASE(&parameters[i])->BackBufferFormat);
+        wined3d_parameters[i].BackBufferCount = PP_BASE(&parameters[i])->BackBufferCount;
+        wined3d_parameters[i].MultiSampleType =PP_BASE(&parameters[i])->MultiSampleType;
+        wined3d_parameters[i].MultiSampleQuality =PP_BASE(&parameters[i])->MultiSampleQuality;
+        wined3d_parameters[i].SwapEffect =PP_BASE(&parameters[i])->SwapEffect;
+        wined3d_parameters[i].hDeviceWindow =PP_BASE(&parameters[i])->hDeviceWindow;
+        wined3d_parameters[i].Windowed =PP_BASE(&parameters[i])->Windowed;
+        wined3d_parameters[i].EnableAutoDepthStencil =PP_BASE(&parameters[i])->EnableAutoDepthStencil;
         wined3d_parameters[i].AutoDepthStencilFormat =
-                wined3dformat_from_d3dformat(parameters[i].AutoDepthStencilFormat);
-        wined3d_parameters[i].Flags = parameters[i].Flags;
-        wined3d_parameters[i].FullScreen_RefreshRateInHz = parameters[i].FullScreen_RefreshRateInHz;
-        wined3d_parameters[i].PresentationInterval = parameters[i].PresentationInterval;
+                wined3dformat_from_d3dformat(PP_BASE(&parameters[i])->AutoDepthStencilFormat);
+        wined3d_parameters[i].Flags =PP_BASE(&parameters[i])->Flags;
+        wined3d_parameters[i].FullScreen_RefreshRateInHz =PP_BASE(&parameters[i])->FullScreen_RefreshRateInHz;
+        wined3d_parameters[i].PresentationInterval =PP_BASE(&parameters[i])->PresentationInterval;
         wined3d_parameters[i].AutoRestoreDisplayMode = TRUE;
+#ifdef VBOX_WITH_WDDM
+        wined3d_parameters[i].pHgsmi = parameters[i].pHgsmi;
+#endif
     }
 
     hr = IWineD3DDevice_Init3D(device->WineD3DDevice, wined3d_parameters);
@@ -3243,21 +3257,21 @@ HRESULT device_init(IDirect3DDevice9Impl *device, IWineD3D *wined3d, UINT adapte
 
     for (i = 0; i < count; ++i)
     {
-        parameters[i].BackBufferWidth = wined3d_parameters[i].BackBufferWidth;
-        parameters[i].BackBufferHeight = wined3d_parameters[i].BackBufferHeight;
-        parameters[i].BackBufferFormat = d3dformat_from_wined3dformat(wined3d_parameters[i].BackBufferFormat);
-        parameters[i].BackBufferCount = wined3d_parameters[i].BackBufferCount;
-        parameters[i].MultiSampleType = wined3d_parameters[i].MultiSampleType;
-        parameters[i].MultiSampleQuality = wined3d_parameters[i].MultiSampleQuality;
-        parameters[i].SwapEffect = wined3d_parameters[i].SwapEffect;
-        parameters[i].hDeviceWindow = wined3d_parameters[i].hDeviceWindow;
-        parameters[i].Windowed = wined3d_parameters[i].Windowed;
-        parameters[i].EnableAutoDepthStencil = wined3d_parameters[i].EnableAutoDepthStencil;
-        parameters[i].AutoDepthStencilFormat =
+        PP_BASE(&parameters[i])->BackBufferWidth = wined3d_parameters[i].BackBufferWidth;
+        PP_BASE(&parameters[i])->BackBufferHeight = wined3d_parameters[i].BackBufferHeight;
+        PP_BASE(&parameters[i])->BackBufferFormat = d3dformat_from_wined3dformat(wined3d_parameters[i].BackBufferFormat);
+        PP_BASE(&parameters[i])->BackBufferCount = wined3d_parameters[i].BackBufferCount;
+        PP_BASE(&parameters[i])->MultiSampleType = wined3d_parameters[i].MultiSampleType;
+        PP_BASE(&parameters[i])->MultiSampleQuality = wined3d_parameters[i].MultiSampleQuality;
+        PP_BASE(&parameters[i])->SwapEffect = wined3d_parameters[i].SwapEffect;
+        PP_BASE(&parameters[i])->hDeviceWindow = wined3d_parameters[i].hDeviceWindow;
+        PP_BASE(&parameters[i])->Windowed = wined3d_parameters[i].Windowed;
+        PP_BASE(&parameters[i])->EnableAutoDepthStencil = wined3d_parameters[i].EnableAutoDepthStencil;
+        PP_BASE(&parameters[i])->AutoDepthStencilFormat =
                 d3dformat_from_wined3dformat(wined3d_parameters[i].AutoDepthStencilFormat);
-        parameters[i].Flags = wined3d_parameters[i].Flags;
-        parameters[i].FullScreen_RefreshRateInHz = wined3d_parameters[i].FullScreen_RefreshRateInHz;
-        parameters[i].PresentationInterval = wined3d_parameters[i].PresentationInterval;
+        PP_BASE(&parameters[i])->Flags = wined3d_parameters[i].Flags;
+        PP_BASE(&parameters[i])->FullScreen_RefreshRateInHz = wined3d_parameters[i].FullScreen_RefreshRateInHz;
+        PP_BASE(&parameters[i])->PresentationInterval = wined3d_parameters[i].PresentationInterval;
     }
     HeapFree(GetProcessHeap(), 0, wined3d_parameters);
 

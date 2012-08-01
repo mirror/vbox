@@ -17,6 +17,10 @@
 #include "wine/port.h"
 #include "wined3d_private.h"
 #include "vboxext.h"
+#ifdef VBOX_WITH_WDDM
+#include <VBox/VBoxCrHgsmi.h>
+#include <iprt/err.h>
+#endif
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_vbox);
 
@@ -281,8 +285,23 @@ HRESULT VBoxExtWorkerSubmitProcAsync(PVBOXEXT_WORKER pWorker, PFNVBOXEXTWORKERCB
 static HRESULT vboxExtInit()
 {
     HRESULT hr = S_OK;
+#ifdef VBOX_WITH_WDDM
+    int rc = VBoxCrHgsmiInit();
+    if (!RT_SUCCESS(rc))
+    {
+        ERR("VBoxCrHgsmiInit failed rc %d", rc);
+        return E_FAIL;
+    }
+#endif
     memset(&g_VBoxExtGlobal, 0, sizeof (g_VBoxExtGlobal));
     hr = VBoxExtWorkerCreate(&g_VBoxExtGlobal.Worker);
+    if (SUCCEEDED(hr))
+        return S_OK;
+
+    /* failure branch */
+#ifdef VBOX_WITH_WDDM
+    VBoxCrHgsmiTerm();
+#endif
     return hr;
 }
 
@@ -304,6 +323,11 @@ static HRESULT vboxExtTerm()
         ERR("VBoxExtWorkerDestroy failed, hr %d", hr);
         return hr;
     }
+
+#ifdef VBOX_WITH_WDDM
+    VBoxCrHgsmiTerm();
+#endif
+
     return S_OK;
 }
 

@@ -19,8 +19,7 @@ static void packspu_GetHostBufferSubDataARB( GLenum target, GLintptrARB offset, 
 
     packspuFlush((void *) thread);
 
-    while (writeback)
-        crNetRecv();
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 }
 
 void * PACKSPU_APIENTRY

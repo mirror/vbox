@@ -1604,6 +1604,14 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Init3D(IWineD3DDevice *iface,
     if(This->d3d_initialized) return WINED3DERR_INVALIDCALL;
     if(!This->adapter->opengl) return WINED3DERR_INVALIDCALL;
 
+#ifdef VBOX_WITH_WDDM
+    if (!pPresentationParameters->pHgsmi)
+    {
+        ERR("hgsmi not specified!");
+        return WINED3DERR_INVALIDCALL;
+    }
+    This->pHgsmi = pPresentationParameters->pHgsmi;
+#endif
     TRACE("(%p) : Creating stateblock\n", This);
     /* Creating the startup stateBlock - Note Special Case: 0 => Don't fill in yet! */
     hr = IWineD3DDevice_CreateStateBlock(iface,
@@ -6455,6 +6463,10 @@ static HRESULT create_primary_opengl_context(IWineD3DDevice *iface, IWineD3DSwap
     HRESULT hr;
     IWineD3DSurfaceImpl *target;
 
+#ifdef VBOX_WITH_WDDM
+    ERR("Should not be here!");
+#endif
+
 #ifndef VBOX_WITH_WDDM
     /* Recreate the primary swapchain's context */
     swapchain->context = HeapAlloc(GetProcessHeap(), 0, sizeof(*swapchain->context));
@@ -6466,7 +6478,11 @@ static HRESULT create_primary_opengl_context(IWineD3DDevice *iface, IWineD3DSwap
 #endif
 
     target = (IWineD3DSurfaceImpl *)(swapchain->backBuffer ? swapchain->backBuffer[0] : swapchain->frontBuffer);
-    if (!(context = context_create(swapchain, target, swapchain->ds_format)))
+    if (!(context = context_create(swapchain, target, swapchain->ds_format
+#ifdef VBOX_WITH_WDDM
+                , This->pHgsmi
+#endif
+            )))
     {
         WARN("Failed to create context.\n");
 #ifndef VBOX_WITH_WDDM

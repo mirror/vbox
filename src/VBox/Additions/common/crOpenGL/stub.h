@@ -114,6 +114,11 @@ struct context_info_t
     GLint visBits;
     WindowInfo *currentDrawable;
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    GLint spuConnection;
+    struct VBOXUHGSMI *pHgsmi;
+#endif
+
 #ifdef CHROMIUM_THREADSAFE
     VBOXTLSREFDATA
 #endif
@@ -164,6 +169,9 @@ struct window_info_t
     GLint spuWindow;       /* returned by head SPU's WindowCreate() */
     ContextInfo *pOwner;     /* ctx which created this window */
     GLboolean mapped;
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    GLint spuConnection;
+#endif
 #ifdef WINDOWS
     HDC      drawable;
     HRGN     hVisibleRegion;
@@ -328,7 +336,11 @@ extern void stubCheckXExtensions(WindowInfo *pWindow);
 #endif
 
 
-extern ContextInfo *stubNewContext( const char *dpyName, GLint visBits, ContextType type, unsigned long shareCtx );
+extern ContextInfo *stubNewContext( const char *dpyName, GLint visBits, ContextType type, unsigned long shareCtx
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        , struct VBOXUHGSMI *pHgsmi
+#endif
+        );
 extern void stubDestroyContext( unsigned long contextId );
 extern GLboolean stubMakeCurrent( WindowInfo *window, ContextInfo *context );
 extern GLint stubNewWindow( const char *dpyName, GLint visBits );

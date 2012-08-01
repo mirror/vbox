@@ -1232,7 +1232,15 @@ struct wined3d_context *swapchain_create_context_for_thread(IWineD3DSwapChain *i
 
     TRACE("Creating a new context for swapchain %p, thread %d\n", This, GetCurrentThreadId());
 
-    if (!(ctx = context_create(This, (IWineD3DSurfaceImpl *)This->frontBuffer, This->ds_format)))
+#ifdef VBOX_WITH_WDDM
+     ERR("Should not be here");
+#endif
+
+    if (!(ctx = context_create(This, (IWineD3DSurfaceImpl *)This->frontBuffer, This->ds_format
+#ifdef VBOX_WITH_WDDM
+                , This->device->pHgsmi
+#endif
+            )))
     {
         ERR("Failed to create a new context for the swapchain\n");
         return NULL;
