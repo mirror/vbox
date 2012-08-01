@@ -32,6 +32,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/symlink.h>
 
 #ifndef RT_OS_WINDOWS
 # include <sys/stat.h> /* need umask */
@@ -114,6 +115,9 @@ static void VBoxServiceToolboxShowUsage(void)
              "\n"
              /** @todo Document options! */
              "ls [OPTION]... FILE... - List information about the FILEs (the current directory by default).\n"
+             "\n"
+             /** @todo Document options! */
+             "rm [OPTION]... FILE... - delete FILEs (the current directory by default).\n"
              "\n"
              /** @todo Document options! */
              "mkdir [OPTION]... DIRECTORY... - Create the DIRECTORY(ies), if they do not already exist.\n"
@@ -899,6 +903,145 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 
 
 /**
+ * Main function for tool "vbox_rm".
+ *
+ * @return  RTEXITCODE.
+ * @param   argc                    Number of arguments.
+ * @param   argv                    Pointer to argument array.
+ */
+static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
+{
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--machinereadable", VBOXSERVICETOOLBOXOPT_MACHINE_READABLE,
+          RTGETOPT_REQ_NOTHING },
+        /* Be like POSIX, which has both 'r' and 'R'. */
+        { NULL,                'r',
+          RTGETOPT_REQ_NOTHING },
+        { NULL,                'R',
+          RTGETOPT_REQ_NOTHING },
+    };
+
+    enum
+    {
+        VBOXSERVICETOOLBOXRMFLAG_RECURSIVE = RT_BIT_32(0)
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, argc, argv,
+                          s_aOptions, RT_ELEMENTS(s_aOptions),
+                          1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
+
+    bool     fVerbose     = false;
+    uint32_t fFlags       = 0;
+    uint32_t fOutputFlags = 0;
+
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+              && RT_SUCCESS(rc))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            case 'h':
+                VBoxServiceToolboxShowUsage();
+                return RTEXITCODE_SUCCESS;
+
+            case 'V':
+                VBoxServiceToolboxShowVersion();
+                return RTEXITCODE_SUCCESS;
+
+            case VBOXSERVICETOOLBOXOPT_MACHINE_READABLE:
+                fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
+                break;
+
+            case 'r':
+            case 'R': /* Allow directories too. */
+                fFlags |= VBOXSERVICETOOLBOXRMFLAG_RECURSIVE;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                /* RTGetOpt will sort these to the end of the argv vector so
+                 * that we will deal with them afterwards. */
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (GetState.cNonOptions > argc - 1)
+        GetState.cNonOptions = argc - 1;
+    /* We need at least one file. */
+    if (RT_SUCCESS(rc) && GetState.cNonOptions == 0)
+    {
+        RTMsgError("No files or directories specified.");
+        return RTEXITCODE_FAILURE;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Print magic/version. */
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+        {
+            rc = VBoxServiceToolboxStrmInit();
+            if (RT_FAILURE(rc))
+                RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
+            VBoxServiceToolboxPrintStrmHeader("vbt_rm", 1 /* Stream version */);
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        for (int i = argc - GetState.cNonOptions; i < argc; ++i)
+        {
+            /* I'm sure this isn't the most effective way, but I hope it will
+             * be readable and reliable code. */
+            if (RTDirExists(argv[i]) && !RTSymlinkExists(argv[i]))
+            {
+                if (!(fFlags & VBOXSERVICETOOLBOXRMFLAG_RECURSIVE))
+                {
+                    if (!(  fOutputFlags
+                          & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                       RTMsgError("Cannot remove directory '%s' as the '-R' option was not specified.\n",
+                                  argv[i]);
+                }
+                else
+                {
+                    rc = RTDirRemoveRecursive(argv[i],
+                                              RTDIRRMREC_F_CONTENT_AND_DIR);
+                    if (   RT_FAILURE(rc)
+                        && !(  fOutputFlags
+                             & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                        RTMsgError("The following error occurred while removing directory '%s': %Rrc.\n",
+                                  argv[i], rc);
+                }
+            }
+            else if (RTPathExists(argv[i]) || RTSymlinkExists(argv[i]))
+            {
+                rc = RTFileDelete(argv[i]);
+                if (   RT_FAILURE(rc)
+                    && !(  fOutputFlags
+                         & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                    RTMsgError("The following error occurred while removing file '%s': %Rrc.\n",
+                              argv[i], rc);
+            }
+            else
+            {
+                if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                    RTMsgError("File '%s' does not exist.\n", argv[i]);
+            }
+        }
+
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+            VBoxServiceToolboxPrintStrmTermination();
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
  * Main function for tool "vbox_mkdir".
  *
  * @return  RTEXITCODE.
@@ -1151,6 +1294,7 @@ static PFNHANDLER vboxServiceToolboxLookUpHandler(const char *pszTool)
     {
         { "cat",    VBoxServiceToolboxCat   },
         { "ls",     VBoxServiceToolboxLs    },
+        { "rm",     VBoxServiceToolboxRm    },
         { "mkdir",  VBoxServiceToolboxMkDir },
         { "stat",   VBoxServiceToolboxStat  },
     };
