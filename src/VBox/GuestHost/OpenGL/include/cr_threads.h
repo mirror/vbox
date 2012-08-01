@@ -24,6 +24,8 @@ extern "C" {
 #include <semaphore.h>
 #endif
 
+#include "cr_error.h"
+
 #include <iprt/asm.h>
 /*
  * Handle for Thread-Specific Data
