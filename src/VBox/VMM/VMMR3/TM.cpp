@@ -814,7 +814,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
              * This only checks for VIA CPU models Nano X2, Nano X3,
              * Eden X2 and QuadCore.
              */
-            ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+            ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
             unsigned uStepping = (uEAX & 0x0f);
             unsigned uModel    = (uEAX >> 4) & 0x0f;
             unsigned uFamily   = (uEAX >> 8) & 0x0f;
