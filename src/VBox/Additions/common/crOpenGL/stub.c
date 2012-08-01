@@ -163,7 +163,7 @@ void APIENTRY crWindowDestroy( GLint window )
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 winInfo->spuConnection,
 #else
-                0
+                0,
 #endif
                 winInfo->spuWindow );
 
