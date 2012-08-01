@@ -1115,6 +1115,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     /* Cpuid 2:
      * Intel: Cache and TLB information
      * AMD:   Reserved
+     * VIA:   Reserved
      * Safe to expose; restrict the number of calls to 1 for the portable case.
      */
     if (    pCPUM->u8PortableCpuIdLevel > 0
@@ -1129,6 +1130,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Intel: EAX, EBX - reserved (transmeta uses these)
      *        ECX, EDX - Processor Serial Number if available, otherwise reserved
      * AMD:   Reserved
+     * VIA:   Reserved
      * Safe to expose
      */
     if (!(pCPUM->aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_PSN))
@@ -1142,6 +1144,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Intel: Deterministic Cache Parameters Leaf
      *        Note: Depends on the ECX input! -> Feeling rather lazy now, so we just return 0
      * AMD:   Reserved
+     * VIA:   Reserved
      * Safe to expose, except for EAX:
      *      Bits 25-14: Maximum number of addressable IDs for logical processors sharing this cache (see note)**
      *      Bits 31-26: Maximum number of processor cores in this physical package**
@@ -1150,8 +1153,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[4].ecx = pCPUM->aGuestCpuIdStd[4].edx = 0;
     pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
-    if (    pVM->cCpus > 1
-        &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_INTEL)
+    if (   pVM->cCpus > 1
+        && pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         AssertReturn(pVM->cCpus <= 64, VERR_TOO_MANY_CPUS);
         /* One logical processor with possibly multiple cores. */
@@ -1166,6 +1169,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * AMD:   EDX - reserved
      *        EAX, EBX - Smallest and largest monitor line size
      *        ECX - extensions (ignored for now)
+     * VIA:   Reserved
      * Safe to expose
      */
     if (!(pCPUM->aGuestCpuIdStd[1].ecx & X86_CPUID_FEATURE_ECX_MONITOR))
@@ -1204,12 +1208,15 @@ static int cpumR3CpuIdInit(PVM pVM)
      *        0x800000006 L2 cache information
      * AMD:   0x800000005 L1 cache information
      *        0x800000006 L2/L3 cache information
+     * VIA:   0x800000005 TLB and L1 cache information
+     *        0x800000006 L2 cache information
      */
 
     /* Cpuid 0x800000007:
+     * Intel:             Reserved
      * AMD:               EAX, EBX, ECX - reserved
      *                    EDX: Advanced Power Management Information
-     * Intel:             Reserved
+     * VIA:               Reserved
      */
     if (pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000007))
     {
@@ -1242,10 +1249,12 @@ static int cpumR3CpuIdInit(PVM pVM)
     }
 
     /* Cpuid 0x800000008:
+     * Intel:             EAX: Virtual/Physical address Size
+     *                    EBX, ECX, EDX - reserved
      * AMD:               EBX, EDX - reserved
      *                    EAX: Virtual/Physical/Guest address Size
      *                    ECX: Number of cores + APICIdCoreIdSize
-     * Intel:             EAX: Virtual/Physical address Size
+     * VIA:               EAX: Virtual/Physical address size
      *                    EBX, ECX, EDX - reserved
      */
     if (pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000008))
