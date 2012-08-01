@@ -47,25 +47,18 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
+/** Generic option indices for commands. */
+enum
+{
+    VBOXSERVICETOOLBOXOPT_MACHINE_READABLE = 1000,
+    VBOXSERVICETOOLBOXOPT_VERBOSE
+};
+
 /** Options indices for "vbox_cat". */
 typedef enum VBOXSERVICETOOLBOXCATOPT
 {
     VBOXSERVICETOOLBOXCATOPT_NO_CONTENT_INDEXED = 1000
 } VBOXSERVICETOOLBOXCATOPT;
-
-/** Options indices for "vbox_ls". */
-typedef enum VBOXSERVICETOOLBOXLSOPT
-{
-    VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE = 1000,
-    VBOXSERVICETOOLBOXLSOPT_VERBOSE
-} VBOXSERVICETOOLBOXLSOPT;
-
-/** Options indices for "vbox_stat". */
-typedef enum VBOXSERVICETOOLBOXSTATOPT
-{
-    VBOXSERVICETOOLBOXSTATOPT_MACHINE_READABLE = 1000
-} VBOXSERVICETOOLBOXSTATOPT;
-
 
 /** Flags for "vbox_ls". */
 typedef enum VBOXSERVICETOOLBOXLSFLAG
@@ -757,11 +750,11 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--machinereadable", VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE,      RTGETOPT_REQ_NOTHING },
+        { "--machinereadable", VBOXSERVICETOOLBOXOPT_MACHINE_READABLE,      RTGETOPT_REQ_NOTHING },
         { "--dereference",     'L',                                           RTGETOPT_REQ_NOTHING },
         { NULL,                'l',                                           RTGETOPT_REQ_NOTHING },
         { NULL,                'R',                                           RTGETOPT_REQ_NOTHING },
-        { "--verbose",         VBOXSERVICETOOLBOXLSOPT_VERBOSE,               RTGETOPT_REQ_NOTHING}
+        { "--verbose",         VBOXSERVICETOOLBOXOPT_VERBOSE,               RTGETOPT_REQ_NOTHING}
     };
 
     int ch;
@@ -798,7 +791,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_LONG;
                 break;
 
-            case VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE:
+            case VBOXSERVICETOOLBOXOPT_MACHINE_READABLE:
                 fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
                 break;
 
@@ -806,7 +799,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 fFlags |= VBOXSERVICETOOLBOXLSFLAG_RECURSIVE;
                 break;
 
-            case VBOXSERVICETOOLBOXLSOPT_VERBOSE:
+            case VBOXSERVICETOOLBOXOPT_VERBOSE:
                 fVerbose = true;
                 break;
 
@@ -1023,7 +1016,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     {
         { "--file-system",     'f',                                          RTGETOPT_REQ_NOTHING },
         { "--dereference",     'L',                                          RTGETOPT_REQ_NOTHING },
-        { "--machinereadable", VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE,     RTGETOPT_REQ_NOTHING },
+        { "--machinereadable", VBOXSERVICETOOLBOXOPT_MACHINE_READABLE,     RTGETOPT_REQ_NOTHING },
         { "--terse",           't',                                          RTGETOPT_REQ_NOTHING },
         { "--verbose",         'v',                                          RTGETOPT_REQ_NOTHING }
     };
@@ -1055,7 +1048,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 rc = VERR_INVALID_PARAMETER;
                 break;
 
-            case VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE:
+            case VBOXSERVICETOOLBOXOPT_MACHINE_READABLE:
                 fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
                 break;
 
