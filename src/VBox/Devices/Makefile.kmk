@@ -1122,6 +1122,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   tstIntNetR0_DEFS        = IN_INTNET_R0
   tstIntNetR0_SOURCES     = \
  	Network/testcase/tstIntNetR0.cpp
+ Network/testcase/tstIntNetR0.cpp_CXXFLAGS := $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
  endif
 
 
