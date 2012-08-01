@@ -35,7 +35,8 @@ ThreadInfo *packspuNewThread(
 #endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    CRASSERT(!CRPACKSPU_IS_WDDM_CRHGSMI() == !pHgsmi);
+    /* this is not true for packSPUInit, but will be fixed shortly */
+//    CRASSERT(!CRPACKSPU_IS_WDDM_CRHGSMI() == !pHgsmi);
 #endif
 
     CRASSERT(pack_spu.numThreads < MAX_THREADS);

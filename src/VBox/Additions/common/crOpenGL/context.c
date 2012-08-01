@@ -1350,7 +1350,6 @@ stubDestroyContext( unsigned long contextId )
 
     CRASSERT(context);
 
-    CRASSERT(0);
     stubDestroyContextLocked(context);
 
 #ifdef CHROMIUM_THREADSAFE
