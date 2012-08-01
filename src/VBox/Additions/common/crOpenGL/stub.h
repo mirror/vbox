@@ -169,9 +169,6 @@ struct window_info_t
     GLint spuWindow;       /* returned by head SPU's WindowCreate() */
     ContextInfo *pOwner;     /* ctx which created this window */
     GLboolean mapped;
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    GLint spuConnection;
-#endif
 #ifdef WINDOWS
     HDC      drawable;
     HRGN     hVisibleRegion;
@@ -288,7 +285,12 @@ typedef struct {
  * */
 extern CRtsd g_stubCurrentContextTSD;
 
-# define stubGetCurrentContext() VBoxTlsRefGetCurrent(ContextInfo, &g_stubCurrentContextTSD)
+DECLINLINE(ContextInfo*) stubGetCurrentContext()
+{
+    ContextInfo* ctx;
+    VBoxTlsRefGetCurrentFunctional(ctx, ContextInfo, &g_stubCurrentContextTSD);
+    return ctx;
+}
 # define stubSetCurrentContext(_ctx) VBoxTlsRefSetCurrent(ContextInfo, &g_stubCurrentContextTSD, _ctx)
 #else
 # define stubGetCurrentContext() (stub.currentContext)
@@ -344,14 +346,22 @@ extern ContextInfo *stubNewContext( const char *dpyName, GLint visBits, ContextT
 extern void stubDestroyContext( unsigned long contextId );
 extern GLboolean stubMakeCurrent( WindowInfo *window, ContextInfo *context );
 extern GLint stubNewWindow( const char *dpyName, GLint visBits );
+extern void stubDestroyWindow( GLint con, GLint window );
 extern void stubSwapBuffers(WindowInfo *window, GLint flags);
 extern void stubGetWindowGeometry(WindowInfo *win, int *x, int *y, unsigned int *w, unsigned int *h);
 extern GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate);
 extern GLboolean stubIsWindowVisible(WindowInfo *win);
 extern bool stubInit(void);
 
+extern void stubForcedFlush(GLint con);
 extern void APIENTRY stub_GetChromiumParametervCR( GLenum target, GLuint index, GLenum type, GLsizei count, GLvoid *values );
 
 extern void APIENTRY glBoundsInfoCR(const CRrecti *, const GLbyte *, GLint, GLint);
+
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+# define CR_CTX_CON(_pCtx) ((_pCtx)->spuConnection)
+#else
+# define CR_CTX_CON(_pCtx) (0)
+#endif
 
 #endif /* CR_STUB_H */

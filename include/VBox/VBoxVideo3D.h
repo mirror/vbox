@@ -110,6 +110,16 @@ struct VBOXTLSREFDATA_DUMMY
 
 #define VBoxTlsRefGetCurrent(_t, _Tsd) ((_t*) VBoxTlsRefGetImpl((_Tsd)))
 
+#define VBoxTlsRefGetCurrentFunctional(_val, _t, _Tsd) do { \
+       _t * cur = VBoxTlsRefGetCurrent(_t, _Tsd); \
+       if (!cur || VBoxTlsRefIsFunctional(cur)) { \
+           (_val) = cur; \
+       } else { \
+           VBoxTlsRefSetCurrent(_t, _Tsd, NULL); \
+           (_val) = NULL; \
+       } \
+   } while (0)
+
 #define VBoxTlsRefSetCurrent(_t, _Tsd, _p) do { \
         _t * oldCur = VBoxTlsRefGetCurrent(_t, _Tsd); \
         if (oldCur != (_p)) { \

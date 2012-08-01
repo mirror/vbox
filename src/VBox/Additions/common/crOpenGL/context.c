@@ -87,6 +87,72 @@ stubSetDispatch( SPUDispatchTable *table )
     }
 }
 
+void stubForcedFlush(GLint con)
+{
+#if 0
+    GLint buffer;
+    stub.spu->dispatch_table.GetIntegerv(GL_DRAW_BUFFER, &buffer);
+    stub.spu->dispatch_table.DrawBuffer(GL_FRONT);
+    stub.spu->dispatch_table.Flush();
+    stub.spu->dispatch_table.DrawBuffer(buffer);
+#else
+    if (con)
+    {
+        stub.spu->dispatch_table.VBoxConFlush(con);
+    }
+    else
+    {
+        stub.spu->dispatch_table.Flush();
+    }
+#endif
+}
+
+static void stubWindowCleanupForContextsCB(unsigned long key, void *data1, void *data2)
+{
+    ContextInfo *context = (ContextInfo *) data1;
+
+    CRASSERT(context);
+
+    if (context->currentDrawable == data2)
+        context->currentDrawable = NULL;
+}
+
+void stubDestroyWindow( GLint con, GLint window )
+{
+    WindowInfo *winInfo = (WindowInfo *)
+        crHashtableSearch(stub.windowTable, (unsigned int) window);
+    if (winInfo && winInfo->type == CHROMIUM && stub.spu)
+    {
+        crHashtableLock(stub.windowTable);
+
+        stub.spu->dispatch_table.VBoxWindowDestroy(con, winInfo->spuWindow );
+
+#ifdef WINDOWS
+        if (winInfo->hVisibleRegion != INVALID_HANDLE_VALUE)
+        {
+            DeleteObject(winInfo->hVisibleRegion);
+        }
+#elif defined(GLX)
+        if (winInfo->pVisibleRegions)
+        {
+            XFree(winInfo->pVisibleRegions);
+        }
+# ifdef CR_NEWWINTRACK
+        if (winInfo->syncDpy)
+        {
+            XCloseDisplay(winInfo->syncDpy);
+        }
+# endif
+#endif
+        stubForcedFlush(con);
+
+        crHashtableWalk(stub.contextTable, stubWindowCleanupForContextsCB, winInfo);
+
+        crHashtableDelete(stub.windowTable, window, crFree);
+
+        crHashtableUnlock(stub.windowTable);
+    }
+}
 
 /**
  * Create a new _Chromium_ window, not GLX, WGL or CGL.
@@ -332,6 +398,13 @@ stubGetWindowInfo( Display *dpy, GLXDrawable drawable )
 static void stubWindowCheckOwnerCB(unsigned long key, void *data1, void *data2);
 
 static void
+stubContextFree( ContextInfo *context )
+{
+    crMemZero(context, sizeof(ContextInfo));  /* just to be safe */
+    crFree(context);
+}
+
+static void
 stubDestroyContextLocked( ContextInfo *context )
 {
     unsigned long contextId = context->id;
@@ -366,18 +439,13 @@ stubDestroyContextLocked( ContextInfo *context )
     }
 #endif
 
-    crMemZero(context, sizeof(ContextInfo));  /* just to be safe */
-    crHashtableDelete(stub.contextTable, contextId, crFree);
+    crHashtableDelete(stub.contextTable, contextId, NULL);
 }
 
 #ifdef CHROMIUM_THREADSAFE
 static DECLCALLBACK(void) stubContextDtor(void*pvContext)
 {
-    crHashtableLock(stub.windowTable);
-    crHashtableLock(stub.contextTable);
-    stubDestroyContextLocked((ContextInfo*)pvContext);
-    crHashtableUnlock(stub.contextTable);
-    crHashtableUnlock(stub.windowTable);
+    stubContextFree((ContextInfo*)pvContext);
 }
 #endif
 
@@ -1014,9 +1082,9 @@ static void stubWindowCheckOwnerCB(unsigned long key, void *data1, void *data2)
                because GL context is already released from DC and actual guest window
                could be destroyed.
              */
-            crWindowDestroy((GLint)pWindow->hWnd);
+            stubDestroyWindow(CR_CTX_CON(pCtx), (GLint)pWindow->hWnd);
 #else
-            crWindowDestroy((GLint)pWindow->drawable);
+            stubDestroyWindow(CR_CTX_CON(pCtx), (GLint)pWindow->drawable);
 #endif
     }
 }
@@ -1166,7 +1234,7 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 #ifdef WINDOWS
                         if (context->currentDrawable->hWnd!=WindowFromDC(context->currentDrawable->drawable))
                         {
-                            crWindowDestroy((GLint)context->currentDrawable->hWnd);
+                            stubDestroyWindow(CR_CTX_CON(context), (GLint)context->currentDrawable->hWnd);
                         }
 #else
                         Window root;
@@ -1176,7 +1244,7 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
                         XLOCK(context->currentDrawable->dpy);
                         if (!XGetGeometry(context->currentDrawable->dpy, context->currentDrawable->drawable, &root, &x, &y, &w, &h, &border, &depth))
                         {
-                            crWindowDestroy((GLint)context->currentDrawable->drawable);
+                            stubDestroyWindow(CR_CTX_CON(context), (GLint)context->currentDrawable->drawable);
                         }
                         XUNLOCK(context->currentDrawable->dpy);
 #endif
@@ -1195,9 +1263,6 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 
     window->type = context->type;
     window->pOwner = context;
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    window->spuConnection = context->spuConnection;
-#endif
     context->currentDrawable = window;
     stubSetCurrentContext(context);
 
@@ -1285,18 +1350,21 @@ stubDestroyContext( unsigned long contextId )
 
     CRASSERT(context);
 
+    CRASSERT(0);
+    stubDestroyContextLocked(context);
+
 #ifdef CHROMIUM_THREADSAFE
     if (stubGetCurrentContext() == context) {
         stubSetCurrentContext(NULL);
     }
 
+    VBoxTlsRefMarkDestroy(context);
     VBoxTlsRefRelease(context);
 #else
-    stubDestroyContextLocked(context);
-
     if (stubGetCurrentContext() == context) {
         stubSetCurrentContext(NULL);
     }
+    stubContextFree(context);
 #endif
     crHashtableUnlock(stub.contextTable);
     crHashtableUnlock(stub.windowTable);

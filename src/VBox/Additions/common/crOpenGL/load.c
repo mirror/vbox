@@ -189,9 +189,9 @@ static void stubCheckWindowsCB(unsigned long key, void *data1, void *data2)
     if (!stubSystemWindowExist(pWindow))
     {
 #ifdef WINDOWS
-        crWindowDestroy((GLint)pWindow->hWnd);
+        stubDestroyWindow(CR_CTX_CON(pCtx), (GLint)pWindow->hWnd);
 #else
-        crWindowDestroy((GLint)pWindow->drawable);
+        stubDestroyWindow(CR_CTX_CON(pCtx), (GLint)pWindow->drawable);
 #endif
         return;
     }
@@ -842,7 +842,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
 
     if (!stubSystemWindowExist(pWindow))
     {
-        crWindowDestroy((GLint)pWindow->hWnd);
+        stubDestroyWindow(0, (GLint)pWindow->hWnd);
         return;
     }
 
@@ -990,9 +990,9 @@ static void stubSyncTrCheckWindowsCB(unsigned long key, void *data1, void *data2
     if (!stubSystemWindowExist(pWindow))
     {
 #ifdef WINDOWS
-        crWindowDestroy((GLint)pWindow->hWnd);
+        stubDestroyWindow(0, (GLint)pWindow->hWnd);
 #else
-        crWindowDestroy((GLint)pWindow->drawable);
+        stubDestroyWindow(0, (GLint)pWindow->drawable);
 #endif
         /*No need to flush here as crWindowDestroy does it*/
         return;
