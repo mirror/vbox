@@ -1254,7 +1254,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * AMD:               EBX, EDX - reserved
      *                    EAX: Virtual/Physical/Guest address Size
      *                    ECX: Number of cores + APICIdCoreIdSize
-     * VIA:               EAX: Virtual/Physical address size
+     * VIA:               EAX: Virtual/Physical address Size
      *                    EBX, ECX, EDX - reserved
      */
     if (pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000008))
