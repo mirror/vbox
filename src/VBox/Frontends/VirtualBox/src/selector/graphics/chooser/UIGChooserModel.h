@@ -90,6 +90,7 @@ public:
     UIGChooserItem* root() const;
     void indentRoot(UIGChooserItem *pNewRootItem);
     void unindentRoot();
+    bool isSlidingInProgress() const;
 
     /* API: Current item stuff: */
     void setCurrentItem(int iItemIndex);
