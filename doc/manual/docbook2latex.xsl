@@ -413,7 +413,14 @@
   </xsl:template>
 
   <xsl:template match="tgroup">
-    <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{.9\textwidth}[]{|L|L|L|}&#x0a;\hline&#x0a;</xsl:text>
+    <xsl:choose>
+      <xsl:when test="@style='verywide'">
+        <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{1.1\textwidth}[]{|L|L|L|}&#x0a;\hline&#x0a;</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{.9\textwidth}[]{|L|L|L|}&#x0a;\hline&#x0a;</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
     <xsl:apply-templates />
     <xsl:text>&#x0a;\end{tabulary}&#x0a;\end{center}}&#x0a;</xsl:text>
   </xsl:template>

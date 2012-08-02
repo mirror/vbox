@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * Implementation of INetworkAdaptor in VBoxSVC.
+ * Implementation of INetworkAdapter in VBoxSVC.
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -955,16 +955,16 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile)(IN_BSTR aTraceFile)
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMGETTER(NatDriver)(INATEngine **aNatDriver)
+STDMETHODIMP NetworkAdapter::COMGETTER(NATEngine)(INATEngine **aNATEngine)
 {
-    CheckComArgOutPointerValid(aNatDriver);
+    CheckComArgOutPointerValid(aNATEngine);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mNATEngine.queryInterfaceTo(aNatDriver);
+    mNATEngine.queryInterfaceTo(aNATEngine);
 
     return S_OK;
 }

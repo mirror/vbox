@@ -106,6 +106,13 @@
   process which issues the object instantiation call. <tt>Session</tt> objects
   represent virtual machine sessions which are used to configure virtual
   machines and control their execution.
+
+  The naming of methods and attributes is very clearly defined: they all start
+  with a lowercase letter (except if they start with an acronym), and are using
+  CamelCase style otherwise. This naming only applies to the IDL description,
+  and is modified by the various language bindings (some convert the first
+  character to upper case, some not). See the SDK reference for more details
+  about how to call a method or attribute from a specific programming language.
 </desc>
 
 <if target="midl">
@@ -842,7 +849,7 @@
       <desc>
         In <link to="IMachine::sessionState"/>, this means that the machine
         is currently locked for a session, whose process identifier can
-        then be found in the <link to="IMachine::sessionPid" /> attribute.
+        then be found in the <link to="IMachine::sessionPID" /> attribute.
 
         In <link to="ISession::state"/>, this means that a machine is
         currently locked for this session, and the mutable machine object
@@ -1152,8 +1159,8 @@
   </enum>
 
   <enum
-    name="PointingHidType"
-    uuid="0d3c17a2-821a-4b2e-ae41-890c6c60aa97"
+    name="PointingHIDType"
+    uuid="e44b2f7b-72ba-44fb-9e53-2186014f0d17"
     >
     <desc>
       Type of pointing device used in a virtual machine.
@@ -1177,8 +1184,8 @@
   </enum>
 
   <enum
-    name="KeyboardHidType"
-    uuid="5a5b0996-3a3e-44bb-9019-56979812cbcc"
+    name="KeyboardHIDType"
+    uuid="383e43d7-5c7c-4ec8-9cb8-eda1bccd6699"
     >
     <desc>
       Type of keyboard device used in a virtual machine.
@@ -1309,15 +1316,15 @@
     wsmap="managed"
     >
     <desc>
-      The IDHCPServer interface represents the vbox dhcp server configuration.
+      The IDHCPServer interface represents the vbox DHCP server configuration.
 
-      To enumerate all the dhcp servers on the host, use the
+      To enumerate all the DHCP servers on the host, use the
       <link to="IVirtualBox::DHCPServers"/> attribute.
     </desc>
 
     <attribute name="enabled" type="boolean">
       <desc>
-        specifies if the dhcp server is enabled
+        specifies if the DHCP server is enabled
       </desc>
     </attribute>
 
@@ -1942,7 +1949,7 @@
         storage location, if the format supports it (e.g. for hard disk images),
         or a new UUID will be randomly generated (e.g. for ISO and RAW files).
         If for some reason you need to change the medium's UUID, use
-        <link to="IMedium::setIDs" />.
+        <link to="IMedium::setIds" />.
 
         If a differencing hard disk medium is to be opened by this method, the
         operation will succeed only if its parent medium and all ancestors,
@@ -2167,7 +2174,7 @@
 
     <!--method name="createDHCPServerForInterface">
       <desc>
-        Creates a dhcp server settings to be used for the given interface
+        Creates a DHCP server settings to be used for the given interface
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
@@ -2176,13 +2183,13 @@
         <desc>Network Interface</desc>
       </param>
       <param name="server" type="IDHCPServer" dir="out">
-        <desc>Dhcp server settings</desc>
+        <desc>DHCP server settings</desc>
       </param>
     </method-->
 
     <method name="createDHCPServer">
       <desc>
-        Creates a dhcp server settings to be used for the given internal network name
+        Creates a DHCP server settings to be used for the given internal network name
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
@@ -2191,13 +2198,13 @@
         <desc>server name</desc>
       </param>
       <param name="server" type="IDHCPServer" dir="return">
-        <desc>Dhcp server settings</desc>
+        <desc>DHCP server settings</desc>
       </param>
     </method>
 
     <method name="findDHCPServerByNetworkName">
       <desc>
-        Searches a dhcp server settings to be used for the given internal network name
+        Searches a DHCP server settings to be used for the given internal network name
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
@@ -2207,13 +2214,13 @@
         <desc>server name</desc>
       </param>
       <param name="server" type="IDHCPServer" dir="return">
-        <desc>Dhcp server settings</desc>
+        <desc>DHCP server settings</desc>
       </param>
     </method>
 
     <!--method name="findDHCPServerForInterface">
       <desc>
-        Searches a dhcp server settings to be used for the given interface
+        Searches a DHCP server settings to be used for the given interface
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
@@ -2222,19 +2229,19 @@
         <desc>Network Interface</desc>
       </param>
       <param name="server" type="IDHCPServer" dir="out">
-        <desc>Dhcp server settings</desc>
+        <desc>DHCP server settings</desc>
       </param>
     </method-->
 
     <method name="removeDHCPServer">
       <desc>
-        Removes the dhcp server settings
+        Removes the DHCP server settings
         <result name="E_INVALIDARG">
           Host network interface @a name already exists.
         </result>
       </desc>
       <param name="server" type="IDHCPServer" dir="in">
-        <desc>Dhcp server settings to be removed</desc>
+        <desc>DHCP server settings to be removed</desc>
       </param>
     </method>
 
@@ -3606,7 +3613,7 @@
   </enum>
 
   <interface
-    name="IPciAddress" extends="$unknown"
+    name="IPCIAddress" extends="$unknown"
     uuid="D88B324F-DB19-4D3B-A1A9-BF5B127199A8"
     wsmap="struct"
     >
@@ -3649,7 +3656,7 @@
   </interface>
 
   <interface
-    name="IPciDeviceAttachment" extends="$unknown"
+    name="IPCIDeviceAttachment" extends="$unknown"
     uuid="91f33d6f-e621-4f70-a77e-15f0e3c714d5"
     wsmap="struct"
     >
@@ -3756,7 +3763,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="481ae051-96ed-4ba3-81e6-7b2c186005bc"
+    uuid="22781af3-1c96-4126-9edf-67a020e0e858"
     wsmap="managed"
     >
     <desc>
@@ -3967,7 +3974,7 @@
       </desc>
     </attribute>
 
-      <attribute name="memorySize" type="unsigned long">
+    <attribute name="memorySize" type="unsigned long">
       <desc>System memory size in megabytes.</desc>
     </attribute>
 
@@ -4017,19 +4024,19 @@
         bootstrap in this VM.</desc>
     </attribute>
 
-    <attribute name="pointingHidType" type="PointingHidType">
+    <attribute name="pointingHIDType" type="PointingHIDType">
       <desc>Type of pointing HID (such as mouse or tablet) used in this VM.
         The default is typically "PS2Mouse" but can vary depending on the
         requirements of the guest operating system.</desc>
     </attribute>
 
-    <attribute name="keyboardHidType" type="KeyboardHidType">
+    <attribute name="keyboardHIDType" type="KeyboardHIDType">
       <desc>Type of keyboard HID used in this VM.
         The default is typically "PS2Keyboard" but can vary depending on the
         requirements of the guest operating system.</desc>
     </attribute>
 
-    <attribute name="hpetEnabled" type="boolean">
+    <attribute name="HPETEnabled" type="boolean">
       <desc>This attribute controls if High Precision Event Timer (HPET) is
         enabled in this VM. Use this property if you want to provide guests
         with additional time source, or if guest requires HPET to function correctly.
@@ -4150,7 +4157,7 @@
       </desc>
     </attribute>
 
-    <attribute name="sessionPid" type="unsigned long" readonly="yes">
+    <attribute name="sessionPID" type="unsigned long" readonly="yes">
       <desc>
         Identifier of the session process. This attribute contains the
         platform-dependent identifier of the process whose session was
@@ -4359,23 +4366,23 @@
       </desc>
     </attribute>
 
-    <attribute name="ioCacheEnabled" type="boolean">
+    <attribute name="IOCacheEnabled" type="boolean">
       <desc>
         When set to @a true, the builtin I/O cache of the virtual machine
         will be enabled.
       </desc>
     </attribute>
 
-    <attribute name="ioCacheSize" type="unsigned long">
+    <attribute name="IOCacheSize" type="unsigned long">
       <desc>
         Maximum size of the I/O cache in MB.
       </desc>
     </attribute>
 
-    <attribute name="pciDeviceAssignments" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
+    <attribute name="PCIDeviceAssignments" type="IPCIDeviceAttachment" readonly="yes" safearray="yes">
       <desc>Array of PCI devices assigned to this machine, to get list of all
         PCI devices attached to the machine use
-        <link to="IConsole::attachedPciDevices"/> attribute, as this attribute
+        <link to="IConsole::attachedPCIDevices"/> attribute, as this attribute
         is intended to list only devices additional to what described in
         virtual hardware config. Usually, this list keeps host's physical
         devices assigned to the particular machine.
@@ -5320,15 +5327,15 @@
       <param name="attachment" type="IMediumAttachment" dir="return"/>
     </method>
 
-    <method name="attachHostPciDevice">
+    <method name="attachHostPCIDevice">
       <desc>
         Attaches host PCI device with the given (host) PCI address to the
         PCI bus of the virtual machine. Please note, that this operation
         is two phase, as real attachment will happen when VM will start,
-        and most information will be delivered as IHostPciDevicePlugEvent
+        and most information will be delivered as IHostPCIDevicePlugEvent
         on IVirtualBox event source.
 
-        <see><link to="IHostPciDevicePlugEvent"/></see>
+        <see><link to="IHostPCIDevicePlugEvent"/></see>
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state is not stopped (PCI hotplug not yet implemented).
@@ -5352,14 +5359,14 @@
       </param>
     </method>
 
-    <method name="detachHostPciDevice">
+    <method name="detachHostPCIDevice">
       <desc>
         Detach host PCI device from the virtual machine.
-        Also HostPciDevicePlugEvent on IVirtualBox event source
+        Also HostPCIDevicePlugEvent on IVirtualBox event source
         will be delivered. As currently we don't support hot device
-        unplug, IHostPciDevicePlugEvent event is delivered immediately.
+        unplug, IHostPCIDevicePlugEvent event is delivered immediately.
 
-        <see><link to="IHostPciDevicePlugEvent"/></see>
+        <see><link to="IHostPCIDevicePlugEvent"/></see>
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state is not stopped (PCI hotplug not yet implemented).
@@ -6723,7 +6730,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="1968b7d3-e3bf-4ceb-99e0-cb7c913317bb"
+    uuid="db7ab4ca-2a3f-4183-9243-c1208da92392"
     wsmap="managed"
     >
     <desc>
@@ -6850,7 +6857,7 @@
       </desc>
     </attribute>
 
-    <attribute name="attachedPciDevices" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
+    <attribute name="attachedPCIDevices" type="IPCIDeviceAttachment" readonly="yes" safearray="yes">
       <desc>Array of PCI devices attached to this machine.</desc>
     </attribute>
 
@@ -7616,7 +7623,7 @@
 
   <interface
     name="IHostNetworkInterface" extends="$unknown"
-    uuid="ce6fae58-7642-4102-b5db-c9005c2320a8"
+    uuid="87a4153d-6889-4dd6-9654-2e9ff0ae8dec"
     wsmap="managed"
     >
     <desc>
@@ -7637,7 +7644,7 @@
       <desc>Returns the name of a virtual network the interface gets attached to.</desc>
     </attribute>
 
-    <attribute name="dhcpEnabled" type="boolean" readonly="yes">
+    <attribute name="DHCPEnabled" type="boolean" readonly="yes">
       <desc>Specifies whether the DHCP is enabled for the interface.</desc>
     </attribute>
 
@@ -7677,7 +7684,7 @@
       <desc>specifies the host interface type.</desc>
     </attribute>
 
-    <method name="enableStaticIpConfig">
+    <method name="enableStaticIPConfig">
       <desc>sets and enables the static IP V4 configuration for the given interface.</desc>
       <param name="IPAddress" type="wstring" dir="in">
         <desc>
@@ -7691,7 +7698,7 @@
       </param>
     </method>
 
-    <method name="enableStaticIpConfigV6">
+    <method name="enableStaticIPConfigV6">
       <desc>sets and enables the static IP V6 configuration for the given interface.</desc>
       <param name="IPV6Address" type="wstring" dir="in">
         <desc>
@@ -7705,19 +7712,19 @@
       </param>
     </method>
 
-    <method name="enableDynamicIpConfig">
+    <method name="enableDynamicIPConfig">
       <desc>enables the dynamic IP configuration.</desc>
     </method>
 
-    <method name="dhcpRediscover">
-      <desc>refreshes the IP configuration for dhcp-enabled interface.</desc>
+    <method name="DHCPRediscover">
+      <desc>refreshes the IP configuration for DHCP-enabled interface.</desc>
     </method>
 
   </interface>
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="dab4a2b8-c735-4f08-94fc-9bec84182e2f"
+    uuid="30678943-32df-4830-b413-931b25ac86a0"
     wsmap="managed"
     >
     <desc>
@@ -7910,7 +7917,7 @@
       <desc>Returns the current host time in milliseconds since 1970-01-01 UTC.</desc>
     </attribute>
 
-    <attribute name="Acceleration3DAvailable" type="boolean" readonly="yes">
+    <attribute name="acceleration3DAvailable" type="boolean" readonly="yes">
       <desc>Returns @c true when the host supports 3D hardware acceleration.</desc>
     </attribute>
 
@@ -8559,7 +8566,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="63a03874-e495-41f7-a6dd-48b92fba8355"
+    uuid="6d968f9a-858b-4c50-bf17-241f069e94c2"
     wsmap="struct"
     >
     <desc>
@@ -8617,23 +8624,23 @@
       <desc>Returns recommended network adapter for this OS type.</desc>
     </attribute>
 
-    <attribute name="recommendedPae" type="boolean" readonly="yes">
+    <attribute name="recommendedPAE" type="boolean" readonly="yes">
       <desc>Returns @c true if using PAE is recommended for this OS type.</desc>
     </attribute>
 
-    <attribute name="recommendedDvdStorageController" type="StorageControllerType" readonly="yes">
+    <attribute name="recommendedDVDStorageController" type="StorageControllerType" readonly="yes">
       <desc>Recommended storage controller type for DVD/CD drives.</desc>
     </attribute>
 
-    <attribute name="recommendedDvdStorageBus" type="StorageBus" readonly="yes">
+    <attribute name="recommendedDVDStorageBus" type="StorageBus" readonly="yes">
       <desc>Recommended storage bus type for DVD/CD drives.</desc>
     </attribute>
 
-    <attribute name="recommendedHdStorageController" type="StorageControllerType" readonly="yes">
+    <attribute name="recommendedHDStorageController" type="StorageControllerType" readonly="yes">
       <desc>Recommended storage controller type for HD drives.</desc>
     </attribute>
 
-    <attribute name="recommendedHdStorageBus" type="StorageBus" readonly="yes">
+    <attribute name="recommendedHDStorageBus" type="StorageBus" readonly="yes">
       <desc>Recommended storage bus type for HD drives.</desc>
     </attribute>
 
@@ -8641,19 +8648,19 @@
       <desc>Recommended firmware type.</desc>
     </attribute>
 
-    <attribute name="recommendedUsbHid" type="boolean" readonly="yes">
+    <attribute name="recommendedUSBHID" type="boolean" readonly="yes">
       <desc>Returns @c true if using USB Human Interface Devices, such as keyboard and mouse recommended.</desc>
     </attribute>
 
-    <attribute name="recommendedHpet" type="boolean" readonly="yes">
+    <attribute name="recommendedHPET" type="boolean" readonly="yes">
       <desc>Returns @c true if using HPET is recommended for this OS type.</desc>
     </attribute>
 
-    <attribute name="recommendedUsbTablet" type="boolean" readonly="yes">
+    <attribute name="recommendedUSBTablet" type="boolean" readonly="yes">
       <desc>Returns @c true if using a USB Tablet is recommended.</desc>
     </attribute>
 
-    <attribute name="recommendedRtcUseUtc" type="boolean" readonly="yes">
+    <attribute name="recommendedRTCUseUTC" type="boolean" readonly="yes">
       <desc>Returns @c true if the RTC of this VM should be set to UTC</desc>
     </attribute>
 
@@ -8669,7 +8676,7 @@
       <desc>Returns @c true a floppy drive is recommended for this OS type.</desc>
     </attribute>
 
-    <attribute name="recommendedUsb" type="boolean" readonly="yes">
+    <attribute name="recommendedUSB" type="boolean" readonly="yes">
       <desc>Returns @c true a USB controller is recommended for this OS type.</desc>
     </attribute>
 
@@ -9359,7 +9366,7 @@
   
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="89f39320-d86c-4705-a376-d083f3c5c4e3"
+    uuid="a8bbf136-3f0d-42cd-9fd3-c5816adb10a0"
     wsmap="managed"
     >
     
@@ -9408,7 +9415,7 @@
       </desc>
     </attribute>
     
-    <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
+    <attribute name="environment" type="wstring" safearray="yes">
       <desc>
         TODO
       </desc>
@@ -9432,7 +9439,7 @@
       </desc>
     </attribute>
     
-    <method name="Close">
+    <method name="close">
       <desc>
         TODO
 
@@ -9442,7 +9449,7 @@
       </desc>
     </method>
     
-    <method name="CopyFrom">
+    <method name="copyFrom">
       <desc>
         TODO
 
@@ -9464,7 +9471,7 @@
       </param>
     </method>
     
-    <method name="CopyTo">
+    <method name="copyTo">
       <desc>
         TODO
 
@@ -9508,7 +9515,7 @@
       </param>
     </method>
     
-    <method name="DirectoryCreateTemp">
+    <method name="directoryCreateTemp">
       <desc>
         TODO
 
@@ -9530,7 +9537,7 @@
       </param>
     </method>
     
-    <method name="DirectoryExists">
+    <method name="directoryExists">
       <desc>
         TODO
 
@@ -9546,7 +9553,7 @@
       </param>
     </method>
     
-    <method name="DirectoryOpen">
+    <method name="directoryOpen">
       <desc>
         TODO
 
@@ -9568,7 +9575,7 @@
       </param>
     </method>
     
-    <method name="DirectoryQueryInfo">
+    <method name="directoryQueryInfo">
       <desc>
         TODO
 
@@ -9584,7 +9591,7 @@
       </param>
     </method>
     
-    <method name="DirectoryRemove">
+    <method name="directoryRemove">
       <desc>
         TODO
 
@@ -9597,7 +9604,7 @@
       </param>
     </method>
     
-    <method name="DirectoryRemoveRecursive">
+    <method name="directoryRemoveRecursive">
       <desc>
         TODO
 
@@ -9616,7 +9623,7 @@
       </param>
     </method>
     
-    <method name="DirectoryRename">
+    <method name="directoryRename">
       <desc>
         TODO
 
@@ -9635,7 +9642,7 @@
       </param>
     </method>
     
-    <method name="DirectorySetACL">
+    <method name="directorySetACL">
       <desc>
         TODO
 
@@ -9651,7 +9658,7 @@
       </param>
     </method>
     
-    <method name="EnvironmentClear">
+    <method name="environmentClear">
       <desc>
         TODO
 
@@ -9661,7 +9668,7 @@
       </desc>
     </method>
     
-    <method name="EnvironmentGet">
+    <method name="environmentGet">
       <desc>
         TODO
 
@@ -9677,7 +9684,7 @@
       </param>
     </method>
     
-    <method name="EnvironmentSet">
+    <method name="environmentSet">
       <desc>
         TODO
 
@@ -9693,20 +9700,7 @@
       </param>
     </method>
     
-    <method name="EnvironmentSetArray">
-      <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
-      </desc>
-      <param name="environment" type="wstring" dir="in" safearray="yes">
-        <desc>TODO</desc>
-      </param>
-    </method>
-    
-    <method name="EnvironmentUnset">
+    <method name="environmentUnset">
       <desc>
         TODO
 
@@ -9719,7 +9713,7 @@
       </param>
     </method>
     
-    <method name="FileCreateTemp">
+    <method name="fileCreateTemp">
       <desc>
         TODO
 
@@ -9741,7 +9735,7 @@
       </param>
     </method>
     
-    <method name="FileExists">
+    <method name="fileExists">
       <desc>
         TODO
 
@@ -9757,7 +9751,7 @@
       </param>
     </method>
     
-    <method name="FileOpen">
+    <method name="fileOpen">
       <desc>
         TODO
 
@@ -9785,7 +9779,7 @@
       </param>
     </method>
     
-    <method name="FileQueryInfo">
+    <method name="fileQueryInfo">
       <desc>
         TODO
 
@@ -9801,7 +9795,7 @@
       </param>
     </method>
     
-    <method name="FileQuerySize">
+    <method name="fileQuerySize">
       <desc>
         TODO
 
@@ -9817,7 +9811,7 @@
       </param>
     </method>
     
-    <method name="FileRename">
+    <method name="fileRename">
       <desc>
         TODO
 
@@ -9836,7 +9830,7 @@
       </param>
     </method>
     
-    <method name="FileSetACL">
+    <method name="fileSetACL">
       <desc>
         TODO
 
@@ -9852,7 +9846,7 @@
       </param>
     </method>
     
-    <method name="ProcessCreate">
+    <method name="processCreate">
       <desc>
         TODO
 
@@ -9880,7 +9874,7 @@
       </param>
     </method>
     
-    <method name="ProcessCreateEx">
+    <method name="processCreateEx">
       <desc>
         TODO
 
@@ -9914,7 +9908,7 @@
       </param>
     </method>
     
-    <method name="ProcessGet">
+    <method name="processGet">
       <desc>
         TODO
 
@@ -9930,7 +9924,7 @@
       </param>
     </method>
     
-    <method name="SymlinkCreate">
+    <method name="symlinkCreate">
       <desc>
         TODO
 
@@ -9949,7 +9943,7 @@
       </param>
     </method>
     
-    <method name="SymlinkExists">
+    <method name="symlinkExists">
       <desc>
         TODO
 
@@ -9965,7 +9959,7 @@
       </param>
     </method>
     
-    <method name="SymlinkRead">
+    <method name="symlinkRead">
       <desc>
         TODO
 
@@ -9984,7 +9978,7 @@
       </param>
     </method>
     
-    <method name="SymlinkRemoveDirectory">
+    <method name="symlinkRemoveDirectory">
       <desc>
         TODO
 
@@ -9997,7 +9991,7 @@
       </param>
     </method>
     
-    <method name="SymlinkRemoveFile">
+    <method name="symlinkRemoveFile">
       <desc>
         TODO
 
@@ -10014,13 +10008,13 @@
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="83275f41-01ee-4362-ac44-298191b5186c"
+    uuid="896df50a-c5d1-4892-8bc6-b78d0c1f4e33"
     wsmap="managed"
     >
     <desc>
       TODO
     </desc>
-    <attribute name="pid" type="unsigned long" readonly="yes">
+    <attribute name="PID" type="unsigned long" readonly="yes">
       <desc>
         TODO
         <note>
@@ -10077,7 +10071,7 @@
       </desc>
     </attribute>
     
-    <method name="WaitFor">
+    <method name="waitFor">
       <desc>
         TODO
 
@@ -10096,9 +10090,9 @@
       </param>
     </method>
     
-    <method name="WaitForArray">
+    <method name="waitForArray">
       <desc>
-        Scriptable version of <link to="#WaitFor" />.
+        Scriptable version of <link to="#waitFor" />.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           TODO
@@ -10115,7 +10109,7 @@
       </param>
     </method>
     
-    <method name="Read">
+    <method name="read">
       <desc>
         TODO
 
@@ -10137,7 +10131,7 @@
       </param>
     </method>
     
-    <method name="Write">
+    <method name="write">
       <desc>
         TODO
 
@@ -10191,7 +10185,7 @@
       </param>
     </method>
     
-    <method name="Terminate">
+    <method name="terminate">
       <desc>
         TODO
 
@@ -10214,7 +10208,7 @@
   
   <interface
     name="IDirectory" extends="$unknown"
-    uuid="edb0fb3b-9c74-40a6-9c54-ed7abd9d7533"
+    uuid="e55ab5e5-4feb-452b-86ed-59cff4c581a3"
     wsmap="managed"
     >
     <desc>
@@ -10230,7 +10224,7 @@
       </desc>
     </attribute>
     
-    <method name="Read">
+    <method name="read">
       <desc>
         TODO
 
@@ -10256,7 +10250,7 @@
     
   <interface
     name="IFile" extends="$unknown"
-    uuid="3f067338-2490-47e4-ae81-45a65300f3b1"
+    uuid="2615152d-35c0-4363-8325-ab7e1f2b8b34"
     wsmap="managed"
     >
     <desc>
@@ -10296,7 +10290,7 @@
       </desc>
     </attribute>
     
-    <method name="Close">
+    <method name="close">
       <desc>
         TODO
 
@@ -10306,7 +10300,7 @@
       </desc>
     </method>
     
-    <method name="QueryInfo">
+    <method name="queryInfo">
       <desc>
         TODO
 
@@ -10319,7 +10313,7 @@
       </param>
     </method>  
         
-    <method name="Read">
+    <method name="read">
       <desc>
         TODO
 
@@ -10338,7 +10332,7 @@
       </param>
     </method>
         
-    <method name="ReadAt">
+    <method name="readAt">
       <desc>
         TODO
 
@@ -10360,7 +10354,7 @@
       </param>
     </method>
     
-    <method name="Seek">
+    <method name="seek">
       <desc>
         TODO
 
@@ -10376,7 +10370,7 @@
       </param>
     </method>
     
-    <method name="SetACL">
+    <method name="setACL">
       <desc>
         TODO
 
@@ -10389,7 +10383,7 @@
       </param>
     </method>
     
-    <method name="Write">
+    <method name="write">
       <desc>
         TODO
 
@@ -10405,7 +10399,7 @@
       </param>
     </method>
     
-    <method name="WriteAt">
+    <method name="writeAt">
       <desc>
         TODO
 
@@ -10438,7 +10432,7 @@
   
   <interface
     name="IFsObjInfo" extends="$unknown"
-    uuid="fbcde6d8-69a4-41a3-950f-f98aed6ade52"
+    uuid="4925335b-9aa6-4870-bda3-8edb09fb602c"
     wsmap="managed"
     >
     <desc>
@@ -10501,7 +10495,7 @@
         </note>
       </desc>
     </attribute>
-    <attribute name="gid" type="unsigned long" readonly="yes">
+    <attribute name="GID" type="unsigned long" readonly="yes">
       <desc>
         TODO
         <note>
@@ -10573,7 +10567,7 @@
         </note>
       </desc>
     </attribute>      
-    <attribute name="uid" type="unsigned long" readonly="yes">
+    <attribute name="UID" type="unsigned long" readonly="yes">
       <desc>
         TODO
         <note>
@@ -12845,7 +12839,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <method name="setIDs">
+    <method name="setIds">
       <desc>
         Changes the UUID and parent UUID for a hard disk medium.
       </desc>
@@ -14934,7 +14928,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INetworkAdapter" extends="$unknown"
-    uuid="8b2e705c-0547-4008-b7bc-788757346092"
+    uuid="efa0f965-63c7-4c60-afdf-b1cc9943b9c0"
     wsmap="managed"
     >
     <desc>
@@ -15051,7 +15045,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="natDriver" type="INATEngine" readonly="yes">
+    <attribute name="NATEngine" type="INATEngine" readonly="yes">
       <desc>
         Points to the NAT engine which handles the network address translation
         for this interface. This is active only when the interface actually uses
@@ -15765,7 +15759,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBController" extends="$unknown"
-    uuid="6fdcccc5-abd3-4fec-9387-2ad3914fc4a8"
+    uuid="01e6f13a-0580-452f-a40f-74e32a5e4921"
     wsmap="managed"
     >
     <attribute name="enabled" type="boolean">
@@ -15777,7 +15771,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="enabledEhci" type="boolean">
+    <attribute name="enabledEHCI" type="boolean">
       <desc>
         Flag whether the USB EHCI controller is present in the
         guest system. If disabled, the virtual guest hardware will
@@ -18025,12 +18019,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INATEngine" extends="$unknown"
-    uuid="4b286616-eb03-11de-b0fb-1701eca42246"
+    uuid="26451b99-3b2d-4dcb-8e4b-d63654218175"
     wsmap="managed"
     >
     <desc>Interface for managing a NAT engine which is used with a virtual machine. This
       allows for changing NAT behavior such as port-forwarding rules. This interface is
-      used in the <link to="INetworkAdapter::natDriver" /> attribute.</desc>
+      used in the <link to="INetworkAdapter::NATEngine" /> attribute.</desc>
     <attribute name="network" type="wstring">
       <desc>The network attribute of the NAT engine (the same value is used with built-in
         DHCP server to fill corresponding fields of DHCP leases).</desc>
@@ -18040,15 +18034,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           <note>Changing this does not change binding of port forwarding.</note>
       </desc>
     </attribute>
-    <attribute name="tftpPrefix" type="wstring">
+    <attribute name="TFTPPrefix" type="wstring">
       <desc>TFTP prefix attribute which is used with the built-in DHCP server to fill
         the corresponding fields of DHCP leases.</desc>
     </attribute>
-    <attribute name="tftpBootFile" type="wstring">
+    <attribute name="TFTPBootFile" type="wstring">
       <desc>TFTP boot file attribute which is used with the built-in DHCP server to fill
         the corresponding fields of DHCP leases.</desc>
     </attribute>
-    <attribute name="tftpNextServer" type="wstring">
+    <attribute name="TFTPNextServer" type="wstring">
       <desc>TFTP server attribute which is used with the built-in DHCP server to fill
         the corresponding fields of DHCP leases.
         <note>The preferred form is IPv4 addresses.</note>
@@ -18057,14 +18051,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="aliasMode" type="unsigned long">
       <desc></desc>
     </attribute>
-    <attribute name="dnsPassDomain" type="boolean">
+    <attribute name="DNSPassDomain" type="boolean">
       <desc>Whether the DHCP server should pass the DNS domain used by the host.</desc>
     </attribute>
-    <attribute name="dnsProxy" type="boolean">
+    <attribute name="DNSProxy" type="boolean">
       <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address
         of the DNS proxy and process traffic using DNS servers registered on the host.</desc>
     </attribute>
-    <attribute name="dnsUseHostResolver" type="boolean">
+    <attribute name="DNSUseHostResolver" type="boolean">
       <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address
         of the DNS proxy and process traffic using the host resolver mechanism.</desc>
     </attribute>
@@ -18110,14 +18104,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <param name="proto" type="NATProtocol" dir="in">
           <desc>Protocol handled with the rule.</desc>
         </param>
-        <param name="hostIp" type="wstring" dir="in">
+        <param name="hostIP" type="wstring" dir="in">
           <desc>IP of the host interface to which the rule should apply. An empty ip address is
             acceptable, in which case the NAT engine binds the handling socket to any interface.</desc>
         </param>
         <param name="hostPort" type="unsigned short" dir="in">
           <desc>The port number to listen on.</desc>
         </param>
-        <param name="guestIp" type="wstring" dir="in">
+        <param name="guestIP" type="wstring" dir="in">
           <desc>The IP address of the guest which the NAT engine will forward matching packets
             to. An empty IP address is acceptable, in which case the NAT engine will forward
             packets to the first DHCP lease (x.x.x.15).</desc>
@@ -18608,7 +18602,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="b627520a-6b1a-4a9a-914d-f31434d3d10f"
+    uuid="0d67e79e-b7b1-4919-aab3-b36866075515"
     >
 
     <desc>
@@ -18841,9 +18835,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="INATRedirectEvent">INATRedirectEvent</link>.
       </desc>
     </const>
-    <const name="OnHostPciDevicePlug" value="67">
+    <const name="OnHostPCIDevicePlug" value="67">
       <desc>
-        See <link to="IHostPciDevicePlugEvent">IHostPciDevicePlugEvent</link>.
+        See <link to="IHostPCIDevicePlugEvent">IHostPCIDevicePlugEvent</link>.
       </desc>
     </const>
     <const name="OnVBoxSVCAvailabilityChanged" value="68">
@@ -19655,13 +19649,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ICPUChangedEvent" extends="IEvent"
-    uuid="D0F0BECC-EE17-4D17-A8CC-383B0EB55E9D"
+    uuid="4da2dec7-71b2-4817-9a64-4ed12c17388e"
     wsmap="managed" autogen="VBoxEvent" id="OnCPUChanged"
     >
     <desc>
       Notification when a CPU changes.
     </desc>
-    <attribute name="cpu" type="unsigned long" readonly="yes">
+    <attribute name="CPU" type="unsigned long" readonly="yes">
       <desc>
         The CPU which changed.
       </desc>
@@ -20112,7 +20106,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INATRedirectEvent" extends="IMachineEvent"
-    uuid="57DE97D7-3CBB-42A0-888F-610D5832D16B"
+    uuid="24eef068-c380-4510-bc7c-19314a7352f1"
     wsmap="managed" autogen="VBoxEvent" id="OnNATRedirect"
     >
     <desc>
@@ -20138,7 +20132,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Protocol (TCP or UDP) of the redirect rule.
       </desc>
     </attribute>
-    <attribute name="hostIp"  type="wstring" readonly="yes">
+    <attribute name="hostIP"  type="wstring" readonly="yes">
       <desc>
         Host ip address to bind socket on.
       </desc>
@@ -20148,7 +20142,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Host port to bind socket on.
       </desc>
     </attribute>
-    <attribute name="guestIp"  type="wstring" readonly="yes">
+    <attribute name="guestIP"  type="wstring" readonly="yes">
       <desc>
         Guest ip address to redirect to.
       </desc>
@@ -20161,17 +20155,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="IHostPciDevicePlugEvent" extends="IMachineEvent"
+    name="IHostPCIDevicePlugEvent" extends="IMachineEvent"
     waitable="yes"
-    uuid="9cebfc27-c579-4965-8eb7-d31794cd7dcf"
-    wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlug"
+    uuid="a0bad6df-d612-47d3-89d4-db3992533948"
+    wsmap="managed" autogen="VBoxEvent" id="OnHostPCIDevicePlug"
     >
     <desc>
       Notification when host PCI device is plugged/unplugged. Plugging
       usually takes place on VM startup, unplug - when
-      <link to="IMachine::detachHostPciDevice"/> is called.
+      <link to="IMachine::detachHostPCIDevice"/> is called.
 
-      <see><link to="IMachine::detachHostPciDevice"/></see>
+      <see><link to="IMachine::detachHostPCIDevice"/></see>
 
     </desc>
 
@@ -20188,7 +20182,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="attachment" type="IPciDeviceAttachment" readonly="yes">
+    <attribute name="attachment" type="IPCIDeviceAttachment" readonly="yes">
       <desc>
         Attachment info for this device.
       </desc>

@@ -129,7 +129,7 @@ public:
     STDMETHOD(COMGETTER(VRDEServerInfo))(IVRDEServerInfo **aVRDEServerInfo);
     STDMETHOD(COMGETTER(SharedFolders))(ComSafeArrayOut(ISharedFolder *, aSharedFolders));
     STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
-    STDMETHOD(COMGETTER(AttachedPciDevices))(ComSafeArrayOut(IPciDeviceAttachment *, aAttachments));
+    STDMETHOD(COMGETTER(AttachedPCIDevices))(ComSafeArrayOut(IPCIDeviceAttachment *, aAttachments));
     STDMETHOD(COMGETTER(UseHostClipboard))(BOOL *aUseHostClipboard);
     STDMETHOD(COMSETTER(UseHostClipboard))(BOOL aUseHostClipboard);
 
@@ -574,7 +574,7 @@ private:
                                                    IMediumAttachment *aMediumAtt,
                                                    bool fForce);
 
-    HRESULT attachRawPciDevices(PVM pVM, BusAssignmentManager *BusMgr, PCFGMNODE pDevices);
+    HRESULT attachRawPCIDevices(PVM pVM, BusAssignmentManager *BusMgr, PCFGMNODE pDevices);
     void attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
                             uint64_t uFirst, uint64_t uLast,
                             Console::MediumAttachmentMap *pmapMediumAttachments,

@@ -90,7 +90,7 @@ bool UIWizardNewVM::createVM()
 
     /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2): */
     CUSBController usbController = m_machine.GetUSBController();
-    if (!usbController.isNull() && type.GetRecommendedUsb() && usbController.GetProxyAvailable())
+    if (!usbController.isNull() && type.GetRecommendedUSB() && usbController.GetProxyAvailable())
     {
         usbController.SetEnabled(true);
         /* USB 2.0 is only available if the proper ExtPack is installed.
@@ -100,7 +100,7 @@ bool UIWizardNewVM::createVM()
          * introduced by the new distribution model. */
         CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
         if (manager.IsExtPackUsable(GUI_ExtPackName))
-            usbController.SetEnabledEhci(true);
+            usbController.SetEnabledEHCI(true);
     }
 
     /* Create a floppy controller if recommended: */
@@ -113,25 +113,25 @@ bool UIWizardNewVM::createVM()
     }
 
     /* Create recommended DVD storage controller: */
-    KStorageBus strDvdBus = type.GetRecommendedDvdStorageBus();
-    QString strDvdName = getNextControllerName(strDvdBus);
-    m_machine.AddStorageController(strDvdName, strDvdBus);
+    KStorageBus strDVDBus = type.GetRecommendedDVDStorageBus();
+    QString strDVDName = getNextControllerName(strDVDBus);
+    m_machine.AddStorageController(strDVDName, strDVDBus);
 
     /* Set recommended DVD storage controller type: */
-    CStorageController dvdCtr = m_machine.GetStorageControllerByName(strDvdName);
-    KStorageControllerType dvdStorageControllerType = type.GetRecommendedDvdStorageController();
+    CStorageController dvdCtr = m_machine.GetStorageControllerByName(strDVDName);
+    KStorageControllerType dvdStorageControllerType = type.GetRecommendedDVDStorageController();
     dvdCtr.SetControllerType(dvdStorageControllerType);
 
     /* Create recommended HD storage controller if it's not the same as the DVD controller: */
-    KStorageBus ctrHdBus = type.GetRecommendedHdStorageBus();
-    KStorageControllerType hdStorageControllerType = type.GetRecommendedHdStorageController();
+    KStorageBus ctrHDBus = type.GetRecommendedHDStorageBus();
+    KStorageControllerType hdStorageControllerType = type.GetRecommendedHDStorageController();
     CStorageController hdCtr;
-    QString strHdName;
-    if (ctrHdBus != strDvdBus || hdStorageControllerType != dvdStorageControllerType)
+    QString strHDName;
+    if (ctrHDBus != strDVDBus || hdStorageControllerType != dvdStorageControllerType)
     {
-        strHdName = getNextControllerName(ctrHdBus);
-        m_machine.AddStorageController(strHdName, ctrHdBus);
-        hdCtr = m_machine.GetStorageControllerByName(strHdName);
+        strHDName = getNextControllerName(ctrHDBus);
+        m_machine.AddStorageController(strHDName, ctrHDBus);
+        hdCtr = m_machine.GetStorageControllerByName(strHDName);
         hdCtr.SetControllerType(hdStorageControllerType);
 
         /* Set the port count to 1 if SATA is used. */
@@ -142,37 +142,37 @@ bool UIWizardNewVM::createVM()
     {
         /* The HD controller is the same as DVD: */
         hdCtr = dvdCtr;
-        strHdName = strDvdName;
+        strHDName = strDVDName;
     }
 
     /* Turn on PAE, if recommended: */
-    m_machine.SetCPUProperty(KCPUPropertyType_PAE, type.GetRecommendedPae());
+    m_machine.SetCPUProperty(KCPUPropertyType_PAE, type.GetRecommendedPAE());
 
     /* Set recommended firmware type: */
     KFirmwareType fwType = type.GetRecommendedFirmware();
     m_machine.SetFirmwareType(fwType);
 
     /* Set recommended human interface device types: */
-    if (type.GetRecommendedUsbHid())
+    if (type.GetRecommendedUSBHID())
     {
-        m_machine.SetKeyboardHidType(KKeyboardHidType_USBKeyboard);
-        m_machine.SetPointingHidType(KPointingHidType_USBMouse);
+        m_machine.SetKeyboardHIDType(KKeyboardHIDType_USBKeyboard);
+        m_machine.SetPointingHIDType(KPointingHIDType_USBMouse);
         if (!usbController.isNull())
             usbController.SetEnabled(true);
     }
 
-    if (type.GetRecommendedUsbTablet())
+    if (type.GetRecommendedUSBTablet())
     {
-        m_machine.SetPointingHidType(KPointingHidType_USBTablet);
+        m_machine.SetPointingHIDType(KPointingHIDType_USBTablet);
         if (!usbController.isNull())
             usbController.SetEnabled(true);
     }
 
     /* Set HPET flag: */
-    m_machine.SetHpetEnabled(type.GetRecommendedHpet());
+    m_machine.SetHPETEnabled(type.GetRecommendedHPET());
 
     /* Set UTC flags: */
-    m_machine.SetRTCUseUTC(type.GetRecommendedRtcUseUtc());
+    m_machine.SetRTCUseUTC(type.GetRecommendedRTCUseUTC());
 
     /* Set graphic bits: */
     if (type.GetRecommended2DVideoAcceleration())
@@ -204,16 +204,16 @@ bool UIWizardNewVM::createVM()
             {
                 UIMedium vmedium = vboxGlobal().findMedium(strId);
                 CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
-                machine.AttachDevice(strHdName, 0, 0, KDeviceType_HardDisk, medium);
+                machine.AttachDevice(strHDName, 0, 0, KDeviceType_HardDisk, medium);
                 if (!machine.isOk())
                     msgCenter().cannotAttachDevice(machine, UIMediumType_HardDisk, field("virtualDiskLocation").toString(),
-                                                   StorageSlot(ctrHdBus, 0, 0), this);
+                                                   StorageSlot(ctrHDBus, 0, 0), this);
             }
 
             /* Attach empty CD/DVD ROM Device */
-            machine.AttachDevice(strDvdName, 1, 0, KDeviceType_DVD, CMedium());
+            machine.AttachDevice(strDVDName, 1, 0, KDeviceType_DVD, CMedium());
             if (!machine.isOk())
-                msgCenter().cannotAttachDevice(machine, UIMediumType_DVD, QString(), StorageSlot(strDvdBus, 1, 0), this);
+                msgCenter().cannotAttachDevice(machine, UIMediumType_DVD, QString(), StorageSlot(strDVDBus, 1, 0), this);
 
 
             /* Attach an empty floppy drive if recommended */

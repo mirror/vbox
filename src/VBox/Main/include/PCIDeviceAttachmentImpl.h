@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,23 +23,23 @@
 #include "VirtualBoxBase.h"
 #include <VBox/settings.h>
 
-class ATL_NO_VTABLE PciAddress :
+class ATL_NO_VTABLE PCIAddress :
     public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IPciAddress)
+    VBOX_SCRIPTABLE_IMPL(IPCIAddress)
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PciAddress, IPciAddress)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PCIAddress, IPCIAddress)
 
-    DECLARE_NOT_AGGREGATABLE(PciAddress)
+    DECLARE_NOT_AGGREGATABLE(PCIAddress)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(PciAddress)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IPciAddress)
+    BEGIN_COM_MAP(PCIAddress)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IPCIAddress)
     END_COM_MAP()
 
-    PciAddress() { }
-    ~PciAddress() { }
+    PCIAddress() { }
+    ~PCIAddress() { }
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(LONG aAddess);
@@ -48,7 +48,7 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    // IPciAddress properties
+    // IPCIAddress properties
     STDMETHOD(COMGETTER(Bus))(SHORT *aBus)
     {
         *aBus = mBus;
@@ -85,23 +85,23 @@ private:
     SHORT mBus, mDevice, mFn;
 };
 
-class ATL_NO_VTABLE PciDeviceAttachment :
+class ATL_NO_VTABLE PCIDeviceAttachment :
     public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IPciDeviceAttachment)
+    VBOX_SCRIPTABLE_IMPL(IPCIDeviceAttachment)
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PciDeviceAttachment, IPciDeviceAttachment)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PCIDeviceAttachment, IPCIDeviceAttachment)
 
-    DECLARE_NOT_AGGREGATABLE(PciDeviceAttachment)
+    DECLARE_NOT_AGGREGATABLE(PCIDeviceAttachment)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(PciDeviceAttachment)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IPciDeviceAttachment)
+    BEGIN_COM_MAP(PCIDeviceAttachment)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IPCIDeviceAttachment)
     END_COM_MAP()
 
-    PciDeviceAttachment() { }
-    ~PciDeviceAttachment() { }
+    PCIDeviceAttachment() { }
+    ~PCIDeviceAttachment() { }
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(IMachine *    aParent,
@@ -114,13 +114,13 @@ public:
 
     // settings
     HRESULT loadSettings(IMachine * aParent,
-                         const settings::HostPciDeviceAttachment& aHpda);
-    HRESULT saveSettings(settings::HostPciDeviceAttachment &data);
+                         const settings::HostPCIDeviceAttachment& aHpda);
+    HRESULT saveSettings(settings::HostPCIDeviceAttachment &data);
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    // IPciDeviceAttachment properties
+    // IPCIDeviceAttachment properties
     STDMETHOD(COMGETTER(Name))(BSTR * aName);
     STDMETHOD(COMGETTER(IsPhysicalDevice))(BOOL * aPhysical);
     STDMETHOD(COMGETTER(HostAddress))(LONG  * hostAddress);

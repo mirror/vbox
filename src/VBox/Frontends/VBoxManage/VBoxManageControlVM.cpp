@@ -494,7 +494,7 @@ int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
-            CHECK_ERROR(adapter, COMGETTER(NatDriver)(engine.asOutParam()));
+            CHECK_ERROR(adapter, COMGETTER(NATEngine)(engine.asOutParam()));
             if (!engine)
             {
                 rc = E_FAIL;

@@ -272,7 +272,7 @@ STDMETHODIMP GuestProcess::COMGETTER(Name)(BSTR *aName)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestProcess::COMGETTER(Pid)(ULONG *aPID)
+STDMETHODIMP GuestProcess::COMGETTER(PID)(ULONG *aPID)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

@@ -922,11 +922,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     case NetworkAttachmentType_NAT:
                     {
                         Bstr strNetwork;
-                        ComPtr<INATEngine> driver;
-                        nic->COMGETTER(NatDriver)(driver.asOutParam());
-                        driver->COMGETTER(Network)(strNetwork.asOutParam());
+                        ComPtr<INATEngine> engine;
+                        nic->COMGETTER(NATEngine)(engine.asOutParam());
+                        engine->COMGETTER(Network)(strNetwork.asOutParam());
                         com::SafeArray<BSTR> forwardings;
-                        driver->COMGETTER(Redirects)(ComSafeArrayAsOutParam(forwardings));
+                        engine->COMGETTER(Redirects)(ComSafeArrayAsOutParam(forwardings));
                         strNatForwardings = "";
                         for (size_t i = 0; i < forwardings.size(); ++i)
                         {
@@ -999,7 +999,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         ULONG sockRcv = 0;
                         ULONG tcpSnd = 0;
                         ULONG tcpRcv = 0;
-                        driver->GetNetworkSettings(&mtu, &sockSnd, &sockRcv, &tcpSnd, &tcpRcv);
+                        engine->GetNetworkSettings(&mtu, &sockSnd, &sockRcv, &tcpSnd, &tcpRcv);
 
                         if (details == VMINFO_MACHINEREADABLE)
                         {
@@ -1175,70 +1175,70 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     }
 
     /* Pointing device information */
-    PointingHidType_T aPointingHid;
-    const char *pszHid = "Unknown";
-    const char *pszMrHid = "unknown";
-    machine->COMGETTER(PointingHidType)(&aPointingHid);
-    switch (aPointingHid)
+    PointingHIDType_T aPointingHID;
+    const char *pszHID = "Unknown";
+    const char *pszMrHID = "unknown";
+    machine->COMGETTER(PointingHIDType)(&aPointingHID);
+    switch (aPointingHID)
     {
-        case PointingHidType_None:
-            pszHid = "None";
-            pszMrHid = "none";
+        case PointingHIDType_None:
+            pszHID = "None";
+            pszMrHID = "none";
             break;
-        case PointingHidType_PS2Mouse:
-            pszHid = "PS/2 Mouse";
-            pszMrHid = "ps2mouse";
+        case PointingHIDType_PS2Mouse:
+            pszHID = "PS/2 Mouse";
+            pszMrHID = "ps2mouse";
             break;
-        case PointingHidType_USBMouse:
-            pszHid = "USB Mouse";
-            pszMrHid = "usbmouse";
+        case PointingHIDType_USBMouse:
+            pszHID = "USB Mouse";
+            pszMrHID = "usbmouse";
             break;
-        case PointingHidType_USBTablet:
-            pszHid = "USB Tablet";
-            pszMrHid = "usbtablet";
+        case PointingHIDType_USBTablet:
+            pszHID = "USB Tablet";
+            pszMrHID = "usbtablet";
             break;
-        case PointingHidType_ComboMouse:
-            pszHid = "USB Tablet and PS/2 Mouse";
-            pszMrHid = "combomouse";
+        case PointingHIDType_ComboMouse:
+            pszHID = "USB Tablet and PS/2 Mouse";
+            pszMrHID = "combomouse";
             break;
         default:
             break;
     }
     if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hidpointing=\"%s\"\n", pszMrHid);
+        RTPrintf("hidpointing=\"%s\"\n", pszMrHID);
     else
-        RTPrintf("Pointing Device: %s\n", pszHid);
+        RTPrintf("Pointing Device: %s\n", pszHID);
 
     /* Keyboard device information */
-    KeyboardHidType_T aKeyboardHid;
-    machine->COMGETTER(KeyboardHidType)(&aKeyboardHid);
-    pszHid = "Unknown";
-    pszMrHid = "unknown";
-    switch (aKeyboardHid)
+    KeyboardHIDType_T aKeyboardHID;
+    machine->COMGETTER(KeyboardHIDType)(&aKeyboardHID);
+    pszHID = "Unknown";
+    pszMrHID = "unknown";
+    switch (aKeyboardHID)
     {
-        case KeyboardHidType_None:
-            pszHid = "None";
-            pszMrHid = "none";
+        case KeyboardHIDType_None:
+            pszHID = "None";
+            pszMrHID = "none";
             break;
-        case KeyboardHidType_PS2Keyboard:
-            pszHid = "PS/2 Keyboard";
-            pszMrHid = "ps2kbd";
+        case KeyboardHIDType_PS2Keyboard:
+            pszHID = "PS/2 Keyboard";
+            pszMrHID = "ps2kbd";
             break;
-        case KeyboardHidType_USBKeyboard:
-            pszHid = "USB Keyboard";
-            pszMrHid = "usbkbd";
+        case KeyboardHIDType_USBKeyboard:
+            pszHID = "USB Keyboard";
+            pszMrHID = "usbkbd";
             break;
-        case KeyboardHidType_ComboKeyboard:
-            pszHid = "USB and PS/2 Keyboard";
-            pszMrHid = "combokbd";
+        case KeyboardHIDType_ComboKeyboard:
+            pszHID = "USB and PS/2 Keyboard";
+            pszMrHID = "combokbd";
             break;
         default:
             break;
     }
     if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hidkeyboard=\"%s\"\n", pszMrHid);
+        RTPrintf("hidkeyboard=\"%s\"\n", pszMrHID);
     else
-        RTPrintf("Keyboard Device: %s\n", pszHid);
+        RTPrintf("Keyboard Device: %s\n", pszHID);
 
     ComPtr<ISystemProperties> sysProps;
     virtualBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
@@ -1712,7 +1712,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     if (SUCCEEDED(rc))
     {
         BOOL fEnabled;
-        BOOL fEhciEnabled;
+        BOOL fEHCIEnabled;
         rc = USBCtl->COMGETTER(Enabled)(&fEnabled);
         if (FAILED(rc))
             fEnabled = false;
@@ -1721,13 +1721,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         else
             RTPrintf("USB:             %s\n", fEnabled ? "enabled" : "disabled");
 
-        rc = USBCtl->COMGETTER(EnabledEhci)(&fEhciEnabled);
+        rc = USBCtl->COMGETTER(EnabledEHCI)(&fEHCIEnabled);
         if (FAILED(rc))
-            fEhciEnabled = false;
+            fEHCIEnabled = false;
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("ehci=\"%s\"\n", fEhciEnabled ? "on" : "off");
+            RTPrintf("ehci=\"%s\"\n", fEHCIEnabled ? "on" : "off");
         else
-            RTPrintf("EHCI:            %s\n", fEhciEnabled ? "enabled" : "disabled");
+            RTPrintf("EHCI:            %s\n", fEHCIEnabled ? "enabled" : "disabled");
 
         SafeIfaceArray <IUSBDeviceFilter> Coll;
         rc = USBCtl->COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll));
@@ -1997,8 +1997,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     /* Host PCI passthrough devices */
     {
-         SafeIfaceArray <IPciDeviceAttachment> assignments;
-         rc = machine->COMGETTER(PciDeviceAssignments)(ComSafeArrayAsOutParam(assignments));
+         SafeIfaceArray <IPCIDeviceAttachment> assignments;
+         rc = machine->COMGETTER(PCIDeviceAssignments)(ComSafeArrayAsOutParam(assignments));
          if (SUCCEEDED(rc))
          {
              if (assignments.size() > 0 && (details != VMINFO_MACHINEREADABLE))
@@ -2008,21 +2008,21 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 
              for (size_t index = 0; index < assignments.size(); ++index)
              {
-                 ComPtr<IPciDeviceAttachment> Assignment = assignments[index];
-                 char szHostPciAddress[32], szGuestPciAddress[32];
-                 LONG iHostPciAddress = -1, iGuestPciAddress = -1;
+                 ComPtr<IPCIDeviceAttachment> Assignment = assignments[index];
+                 char szHostPCIAddress[32], szGuestPCIAddress[32];
+                 LONG iHostPCIAddress = -1, iGuestPCIAddress = -1;
                  Bstr DevName;
 
                  Assignment->COMGETTER(Name)(DevName.asOutParam());
-                 Assignment->COMGETTER(HostAddress)(&iHostPciAddress);
-                 Assignment->COMGETTER(GuestAddress)(&iGuestPciAddress);
-                 PciBusAddress().fromLong(iHostPciAddress).format(szHostPciAddress, sizeof(szHostPciAddress));
-                 PciBusAddress().fromLong(iGuestPciAddress).format(szGuestPciAddress, sizeof(szGuestPciAddress));
+                 Assignment->COMGETTER(HostAddress)(&iHostPCIAddress);
+                 Assignment->COMGETTER(GuestAddress)(&iGuestPCIAddress);
+                 PCIBusAddress().fromLong(iHostPCIAddress).format(szHostPCIAddress, sizeof(szHostPCIAddress));
+                 PCIBusAddress().fromLong(iGuestPCIAddress).format(szGuestPCIAddress, sizeof(szGuestPCIAddress));
 
                  if (details == VMINFO_MACHINEREADABLE)
-                     RTPrintf("AttachedHostPci=%s,%s\n", szHostPciAddress, szGuestPciAddress);
+                     RTPrintf("AttachedHostPCI=%s,%s\n", szHostPCIAddress, szGuestPCIAddress);
                  else
-                     RTPrintf("   Host device %ls at %s attached as %s\n", DevName.raw(), szHostPciAddress, szGuestPciAddress);
+                     RTPrintf("   Host device %ls at %s attached as %s\n", DevName.raw(), szHostPCIAddress, szGuestPCIAddress);
              }
 
              if (assignments.size() > 0 && (details != VMINFO_MACHINEREADABLE))

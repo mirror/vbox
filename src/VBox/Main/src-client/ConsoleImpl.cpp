@@ -324,9 +324,9 @@ public:
                 bool fUdp = (proto == NATProtocol_UDP);
                 Bstr hostIp, guestIp;
                 LONG hostPort, guestPort;
-                pNREv->COMGETTER(HostIp)(hostIp.asOutParam());
+                pNREv->COMGETTER(HostIP)(hostIp.asOutParam());
                 pNREv->COMGETTER(HostPort)(&hostPort);
-                pNREv->COMGETTER(GuestIp)(guestIp.asOutParam());
+                pNREv->COMGETTER(GuestIP)(guestIp.asOutParam());
                 pNREv->COMGETTER(GuestPort)(&guestPort);
                 ULONG ulSlot;
                 rc = pNREv->COMGETTER(Slot)(&ulSlot);
@@ -337,7 +337,7 @@ public:
             }
             break;
 
-            case VBoxEventType_OnHostPciDevicePlug:
+            case VBoxEventType_OnHostPCIDevicePlug:
             {
                 // handle if needed
                 break;
@@ -554,7 +554,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
             mVmListener = aVmListener;
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnNATRedirect);
-            eventTypes.push_back(VBoxEventType_OnHostPciDevicePlug);
+            eventTypes.push_back(VBoxEventType_OnHostPCIDevicePlug);
             rc = pES->RegisterListener(aVmListener, ComSafeArrayAsInParam(eventTypes), true);
             AssertComRC(rc);
         }
@@ -1922,7 +1922,7 @@ STDMETHODIMP Console::COMGETTER(EventSource)(IEventSource ** aEventSource)
     return hrc;
 }
 
-STDMETHODIMP Console::COMGETTER(AttachedPciDevices)(ComSafeArrayOut(IPciDeviceAttachment *, aAttachments))
+STDMETHODIMP Console::COMGETTER(AttachedPCIDevices)(ComSafeArrayOut(IPCIDeviceAttachment *, aAttachments))
 {
     CheckComArgOutSafeArrayPointerValid(aAttachments);
 
@@ -1932,10 +1932,10 @@ STDMETHODIMP Console::COMGETTER(AttachedPciDevices)(ComSafeArrayOut(IPciDeviceAt
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mBusMgr)
-        mBusMgr->listAttachedPciDevices(ComSafeArrayOutArg(aAttachments));
+        mBusMgr->listAttachedPCIDevices(ComSafeArrayOutArg(aAttachments));
     else
     {
-        com::SafeIfaceArray<IPciDeviceAttachment> result((size_t)0);
+        com::SafeIfaceArray<IPCIDeviceAttachment> result((size_t)0);
         result.detachTo(ComSafeArrayOutArg(aAttachments));
     }
 
@@ -3774,7 +3774,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
                                              enmBus,
                                              fUseHostIOCache,
                                              false /* fSetupMerge */,
-                                             false /* fBuiltinIoCache */,
+                                             false /* fBuiltinIOCache */,
                                              0 /* uMergeSource */,
                                              0 /* uMergeTarget */,
                                              aMediumAtt,
@@ -4019,7 +4019,7 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
                                              enmBus,
                                              fUseHostIOCache,
                                              false /* fSetupMerge */,
-                                             false /* fBuiltinIoCache */,
+                                             false /* fBuiltinIOCache */,
                                              0 /* uMergeSource */,
                                              0 /* uMergeTarget */,
                                              aMediumAtt,
@@ -4435,7 +4435,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
  * @note Locks this object for writing.
  */
 HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
-                                         NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort)
+                                         NATProtocol_T aProto, IN_BSTR aHostIP, LONG aHostPort, IN_BSTR aGuestIP, LONG aGuestPort)
 {
     LogFlowThisFunc(("\n"));
 
@@ -4506,7 +4506,7 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
 
             bool fUdp = aProto == NATProtocol_UDP;
             vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, !!aNatRuleRemove, fUdp,
-                                                     Utf8Str(aHostIp).c_str(), aHostPort, Utf8Str(aGuestIp).c_str(),
+                                                     Utf8Str(aHostIP).c_str(), aHostPort, Utf8Str(aGuestIP).c_str(),
                                                      aGuestPort);
             if (RT_FAILURE(vrc))
                 rc = E_FAIL;
@@ -5557,8 +5557,8 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
 
     /** @todo AssertComRC -> AssertComRCReturn! Could potentially end up
      *        using uninitialized variables here. */
-    BOOL fBuiltinIoCache;
-    rc = mMachine->COMGETTER(IoCacheEnabled)(&fBuiltinIoCache);
+    BOOL fBuiltinIOCache;
+    rc = mMachine->COMGETTER(IOCacheEnabled)(&fBuiltinIOCache);
     AssertComRC(rc);
     SafeIfaceArray<IStorageController> ctrls;
     rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
@@ -5642,7 +5642,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                           uInstance,
                           enmBus,
                           fUseHostIOCache,
-                          fBuiltinIoCache,
+                          fBuiltinIOCache,
                           true /* fSetupMerge */,
                           aSourceIdx,
                           aTargetIdx,
@@ -5718,7 +5718,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                           uInstance,
                           enmBus,
                           fUseHostIOCache,
-                          fBuiltinIoCache,
+                          fBuiltinIOCache,
                           false /* fSetupMerge */,
                           0 /* uMergeSource */,
                           0 /* uMergeTarget */,
@@ -9095,7 +9095,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
                                                        unsigned uInstance,
                                                        StorageBus_T enmBus,
                                                        bool fUseHostIOCache,
-                                                       bool fBuiltinIoCache,
+                                                       bool fBuiltinIOCache,
                                                        bool fSetupMerge,
                                                        unsigned uMergeSource,
                                                        unsigned uMergeTarget,
@@ -9130,7 +9130,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
                                           uInstance,
                                           enmBus,
                                           fUseHostIOCache,
-                                          fBuiltinIoCache,
+                                          fBuiltinIOCache,
                                           fSetupMerge,
                                           uMergeSource,
                                           uMergeTarget,
@@ -9313,8 +9313,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
                 const char *pcszDevice = Console::convertControllerTypeToDev(enmController);
 
-                BOOL fBuiltinIoCache;
-                rc = that->mMachine->COMGETTER(IoCacheEnabled)(&fBuiltinIoCache);
+                BOOL fBuiltinIOCache;
+                rc = that->mMachine->COMGETTER(IOCacheEnabled)(&fBuiltinIOCache);
                 if (FAILED(rc))
                     throw rc;
 
@@ -9332,7 +9332,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                       lInstance,
                                       enmBus,
                                       fUseHostIOCache,
-                                      fBuiltinIoCache,
+                                      fBuiltinIOCache,
                                       false /* fSetupMerge */,
                                       0 /* uMergeSource */,
                                       0 /* uMergeTarget */,

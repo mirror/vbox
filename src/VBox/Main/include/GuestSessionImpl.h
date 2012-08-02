@@ -62,6 +62,7 @@ public:
     STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout);
     STDMETHOD(COMSETTER(Timeout))(ULONG aTimeout);
     STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
+    STDMETHOD(COMSETTER(Environment))(ComSafeArrayIn(IN_BSTR, aEnvironment));
     STDMETHOD(COMGETTER(Processes))(ComSafeArrayOut(IGuestProcess *, aProcesses));
     STDMETHOD(COMGETTER(Directories))(ComSafeArrayOut(IGuestDirectory *, aDirectories));
     STDMETHOD(COMGETTER(Files))(ComSafeArrayOut(IGuestFile *, aFiles));
@@ -84,7 +85,6 @@ public:
     STDMETHOD(EnvironmentClear)(void);
     STDMETHOD(EnvironmentGet)(IN_BSTR aName, BSTR *aValue);
     STDMETHOD(EnvironmentSet)(IN_BSTR aName, IN_BSTR aValue);
-    STDMETHOD(EnvironmentSetArray)(ComSafeArrayIn(IN_BSTR, aValues));
     STDMETHOD(EnvironmentUnset)(IN_BSTR aName);
     STDMETHOD(FileCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestFile **aFile);
     STDMETHOD(FileExists)(IN_BSTR aPath, BOOL *aExists);

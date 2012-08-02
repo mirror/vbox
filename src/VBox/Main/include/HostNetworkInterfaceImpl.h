@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,45 +37,45 @@ public:
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(HostNetworkInterface, IHostNetworkInterface)
 
-    DECLARE_NOT_AGGREGATABLE (HostNetworkInterface)
+    DECLARE_NOT_AGGREGATABLE(HostNetworkInterface)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP (HostNetworkInterface)
+    BEGIN_COM_MAP(HostNetworkInterface)
         VBOX_DEFAULT_INTERFACE_ENTRIES(IHostNetworkInterface)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (HostNetworkInterface)
+    DECLARE_EMPTY_CTOR_DTOR(HostNetworkInterface)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Bstr interfaceName, Bstr shortName, Guid guid, HostNetworkInterfaceType_T ifType);
+    HRESULT init(Bstr interfaceName, Bstr shortName, Guid guid, HostNetworkInterfaceType_T ifType);
 #ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT init (Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
-    HRESULT updateConfig ();
+    HRESULT init(Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
+    HRESULT updateConfig();
 #endif
 
     // IHostNetworkInterface properties
-    STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
-    STDMETHOD(COMGETTER(Id)) (BSTR *aGuid);
-    STDMETHOD(COMGETTER(DhcpEnabled)) (BOOL *aDhcpEnabled);
-    STDMETHOD(COMGETTER(IPAddress)) (BSTR *aIPAddress);
-    STDMETHOD(COMGETTER(NetworkMask)) (BSTR *aNetworkMask);
-    STDMETHOD(COMGETTER(IPV6Supported)) (BOOL *aIPV6Supported);
-    STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
-    STDMETHOD(COMGETTER(IPV6NetworkMaskPrefixLength)) (ULONG *aIPV6NetworkMaskPrefixLength);
-    STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
-    STDMETHOD(COMGETTER(MediumType)) (HostNetworkInterfaceMediumType_T *aType);
-    STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
-    STDMETHOD(COMGETTER(InterfaceType)) (HostNetworkInterfaceType_T *aType);
-    STDMETHOD(COMGETTER(NetworkName)) (BSTR *aNetworkName);
+    STDMETHOD(COMGETTER(Name))(BSTR *aInterfaceName);
+    STDMETHOD(COMGETTER(Id))(BSTR *aGuid);
+    STDMETHOD(COMGETTER(DHCPEnabled))(BOOL *aDHCPEnabled);
+    STDMETHOD(COMGETTER(IPAddress))(BSTR *aIPAddress);
+    STDMETHOD(COMGETTER(NetworkMask))(BSTR *aNetworkMask);
+    STDMETHOD(COMGETTER(IPV6Supported))(BOOL *aIPV6Supported);
+    STDMETHOD(COMGETTER(IPV6Address))(BSTR *aIPV6Address);
+    STDMETHOD(COMGETTER(IPV6NetworkMaskPrefixLength))(ULONG *aIPV6NetworkMaskPrefixLength);
+    STDMETHOD(COMGETTER(HardwareAddress))(BSTR *aHardwareAddress);
+    STDMETHOD(COMGETTER(MediumType))(HostNetworkInterfaceMediumType_T *aType);
+    STDMETHOD(COMGETTER(Status))(HostNetworkInterfaceStatus_T *aStatus);
+    STDMETHOD(COMGETTER(InterfaceType))(HostNetworkInterfaceType_T *aType);
+    STDMETHOD(COMGETTER(NetworkName))(BSTR *aNetworkName);
 
-    STDMETHOD(EnableStaticIpConfig) (IN_BSTR aIPAddress, IN_BSTR aNetworkMask);
-    STDMETHOD(EnableStaticIpConfigV6) (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
-    STDMETHOD(EnableDynamicIpConfig) ();
-    STDMETHOD(DhcpRediscover) ();
+    STDMETHOD(EnableStaticIPConfig)(IN_BSTR aIPAddress, IN_BSTR aNetworkMask);
+    STDMETHOD(EnableStaticIPConfigV6)(IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
+    STDMETHOD(EnableDynamicIPConfig)();
+    STDMETHOD(DHCPRediscover)();
 
     HRESULT setVirtualBox(VirtualBox *pVBox);
 
@@ -91,8 +91,8 @@ private:
 
     struct Data
     {
-        Data() : IPAddress (0), networkMask (0), dhcpEnabled(FALSE),
-            mediumType (HostNetworkInterfaceMediumType_Unknown),
+        Data() : IPAddress(0), networkMask(0), dhcpEnabled(FALSE),
+            mediumType(HostNetworkInterfaceMediumType_Unknown),
             status(HostNetworkInterfaceStatus_Down){}
 
         ULONG IPAddress;

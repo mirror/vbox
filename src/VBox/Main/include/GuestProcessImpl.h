@@ -57,7 +57,7 @@ public:
     STDMETHOD(COMGETTER(ExecutablePath))(BSTR *aExecutablePath);
     STDMETHOD(COMGETTER(ExitCode))(LONG *aExitCode);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(Pid))(ULONG *aPID);
+    STDMETHOD(COMGETTER(PID))(ULONG *aPID);
     STDMETHOD(COMGETTER(Status))(ProcessStatus_T *aStatus);
 
     STDMETHOD(Read)(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));

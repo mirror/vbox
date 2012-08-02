@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,7 @@ HRESULT HostNetworkInterface::FinalConstruct()
 
 void HostNetworkInterface::FinalRelease()
 {
-    uninit ();
+    uninit();
     BaseFinalRelease();
 }
 
@@ -86,7 +86,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Bstr aShortName, Guid aG
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 
-HRESULT HostNetworkInterface::updateConfig ()
+HRESULT HostNetworkInterface::updateConfig()
 {
     NETIFINFO info;
     int rc = NetIfGetConfig(this, &info);
@@ -122,7 +122,7 @@ Bstr HostNetworkInterface::composeNetworkName(const Utf8Str aShortName)
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, PNETIFINFO pIf)
+HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, PNETIFINFO pIf)
 {
 //    LogFlowThisFunc(("aInterfaceName={%ls}, aGuid={%s}\n",
 //                      aInterfaceName.raw(), aGuid.toString().raw()));
@@ -139,7 +139,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
     unconst(mGuid) = pIf->Uuid;
     if (pIf->szShortName[0])
         unconst(mNetworkName) = composeNetworkName(pIf->szShortName);
-    else 
+    else
         unconst(mNetworkName) = composeNetworkName(aInterfaceName);
     mIfType = ifType;
 
@@ -173,7 +173,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
  * @returns COM status code
  * @param   aInterfaceName address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *aInterfaceName)
+STDMETHODIMP HostNetworkInterface::COMGETTER(Name)(BSTR *aInterfaceName)
 {
     CheckComArgOutPointerValid(aInterfaceName);
 
@@ -191,7 +191,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *aInterfaceName)
  * @returns COM status code
  * @param   aGuid address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (BSTR *aGuid)
+STDMETHODIMP HostNetworkInterface::COMGETTER(Id)(BSTR *aGuid)
 {
     CheckComArgOutPointerValid(aGuid);
 
@@ -203,14 +203,14 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (BSTR *aGuid)
     return S_OK;
 }
 
-STDMETHODIMP HostNetworkInterface::COMGETTER(DhcpEnabled) (BOOL *aDhcpEnabled)
+STDMETHODIMP HostNetworkInterface::COMGETTER(DHCPEnabled)(BOOL *aDHCPEnabled)
 {
-    CheckComArgOutPointerValid(aDhcpEnabled);
+    CheckComArgOutPointerValid(aDHCPEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    *aDhcpEnabled = m.dhcpEnabled;
+    *aDHCPEnabled = m.dhcpEnabled;
 
     return S_OK;
 }
@@ -222,7 +222,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(DhcpEnabled) (BOOL *aDhcpEnabled)
  * @returns COM status code
  * @param   aIPAddress address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress)(BSTR *aIPAddress)
 {
     CheckComArgOutPointerValid(aIPAddress);
 
@@ -251,7 +251,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
  * @returns COM status code
  * @param   aNetworkMask address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
+STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask)(BSTR *aNetworkMask)
 {
     CheckComArgOutPointerValid(aNetworkMask);
 
@@ -274,7 +274,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
     return E_FAIL;
 }
 
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Supported) (BOOL *aIPV6Supported)
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Supported)(BOOL *aIPV6Supported)
 {
     CheckComArgOutPointerValid(aIPV6Supported);
 #if defined(RT_OS_WINDOWS)
@@ -292,7 +292,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Supported) (BOOL *aIPV6Supporte
  * @returns COM status code
  * @param   aIPV6Address address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Address) (BSTR *aIPV6Address)
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Address)(BSTR *aIPV6Address)
 {
     CheckComArgOutPointerValid(aIPV6Address);
 
@@ -310,7 +310,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Address) (BSTR *aIPV6Address)
  * @returns COM status code
  * @param   aIPV6Mask address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMaskPrefixLength) (ULONG *aIPV6NetworkMaskPrefixLength)
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMaskPrefixLength)(ULONG *aIPV6NetworkMaskPrefixLength)
 {
     CheckComArgOutPointerValid(aIPV6NetworkMaskPrefixLength);
 
@@ -328,7 +328,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMaskPrefixLength) (ULONG
  * @returns COM status code
  * @param   aHardwareAddress address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(HardwareAddress) (BSTR *aHardwareAddress)
+STDMETHODIMP HostNetworkInterface::COMGETTER(HardwareAddress)(BSTR *aHardwareAddress)
 {
     CheckComArgOutPointerValid(aHardwareAddress);
 
@@ -346,7 +346,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(HardwareAddress) (BSTR *aHardwareAd
  * @returns COM status code
  * @param   aType address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(MediumType) (HostNetworkInterfaceMediumType_T *aType)
+STDMETHODIMP HostNetworkInterface::COMGETTER(MediumType)(HostNetworkInterfaceMediumType_T *aType)
 {
     CheckComArgOutPointerValid(aType);
 
@@ -364,7 +364,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(MediumType) (HostNetworkInterfaceMe
  * @returns COM status code
  * @param   aStatus address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Status) (HostNetworkInterfaceStatus_T *aStatus)
+STDMETHODIMP HostNetworkInterface::COMGETTER(Status)(HostNetworkInterfaceStatus_T *aStatus)
 {
     CheckComArgOutPointerValid(aStatus);
 
@@ -382,7 +382,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Status) (HostNetworkInterfaceStatus
  * @returns COM status code
  * @param   aType address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfaceType_T *aType)
+STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType)(HostNetworkInterfaceType_T *aType)
 {
     CheckComArgOutPointerValid(aType);
 
@@ -395,7 +395,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
 
 }
 
-STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkName) (BSTR *aNetworkName)
+STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkName)(BSTR *aNetworkName)
 {
     CheckComArgOutPointerValid(aNetworkName);
 
@@ -407,7 +407,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkName) (BSTR *aNetworkName)
     return S_OK;
 }
 
-STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_BSTR aNetMask)
+STDMETHODIMP HostNetworkInterface::EnableStaticIPConfig(IN_BSTR aIPAddress, IN_BSTR aNetMask)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
@@ -451,7 +451,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             {
                 m.realIPAddress   = ip;
                 m.realNetworkMask = mask;
-                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(), 
+                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(),
                                                        Bstr(aIPAddress).raw())))
                     return E_FAIL;
                 if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(),
@@ -471,7 +471,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
 #endif
 }
 
-STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+STDMETHODIMP HostNetworkInterface::EnableStaticIPConfigV6(IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
@@ -512,7 +512,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
 #endif
 }
 
-STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
+STDMETHODIMP HostNetworkInterface::EnableDynamicIPConfig()
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
@@ -530,7 +530,7 @@ STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
 #endif
 }
 
-STDMETHODIMP HostNetworkInterface::DhcpRediscover ()
+STDMETHODIMP HostNetworkInterface::DHCPRediscover()
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;

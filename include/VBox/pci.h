@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1049,7 +1049,7 @@ DECLINLINE(bool) pciDevIsPassthrough(PPCIDEVICE pDev)
  *          if it's contained to ring-3 and that this is a one time exception
  *          which sets no precedent.
  */
-struct PciBusAddress
+struct PCIBusAddress
 {
     /** @todo: think if we'll need domain, which is higher
      *  word of the address. */
@@ -1057,23 +1057,23 @@ struct PciBusAddress
     int  miDevice;
     int  miFn;
 
-    PciBusAddress()
+    PCIBusAddress()
     {
         clear();
     }
 
-    PciBusAddress(int iBus, int iDevice, int iFn)
+    PCIBusAddress(int iBus, int iDevice, int iFn)
     {
         init(iBus, iDevice, iFn);
     }
 
-    PciBusAddress(int32_t iAddr)
+    PCIBusAddress(int32_t iAddr)
     {
         clear();
         fromLong(iAddr);
     }
 
-    PciBusAddress& clear()
+    PCIBusAddress& clear()
     {
         miBus = miDevice = miFn = -1;
         return *this;
@@ -1086,14 +1086,14 @@ struct PciBusAddress
         miFn     = iFn;
     }
 
-    void init(const PciBusAddress &a)
+    void init(const PCIBusAddress &a)
     {
         miBus    = a.miBus;
         miDevice = a.miDevice;
         miFn     = a.miFn;
     }
 
-    bool operator<(const PciBusAddress &a) const
+    bool operator<(const PCIBusAddress &a) const
     {
         if (miBus < a.miBus)
             return true;
@@ -1116,14 +1116,14 @@ struct PciBusAddress
         return false;
     }
 
-    bool operator==(const PciBusAddress &a) const
+    bool operator==(const PCIBusAddress &a) const
     {
         return     (miBus    == a.miBus)
                 && (miDevice == a.miDevice)
                 && (miFn     == a.miFn);
     }
 
-    bool operator!=(const PciBusAddress &a) const
+    bool operator!=(const PCIBusAddress &a) const
     {
         return     (miBus    != a.miBus)
                 || (miDevice != a.miDevice)
@@ -1143,7 +1143,7 @@ struct PciBusAddress
         return (miBus << 8) | (miDevice << 3) | miFn;
     }
 
-    PciBusAddress& fromLong(int32_t value)
+    PCIBusAddress& fromLong(int32_t value)
     {
         miBus = (value >> 8) & 0xff;
         miDevice = (value & 0xff) >> 3;

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -308,7 +308,7 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
             {
                 /* Gather USB values: */
                 usbData.m_fUSBEnabled = controller.GetEnabled();
-                usbData.m_fEHCIEnabled = controller.GetEnabledEhci();
+                usbData.m_fEHCIEnabled = controller.GetEnabledEHCI();
 
                 /* For each USB filter: */
                 const CUSBDeviceFilterVector &filters = controller.GetDeviceFilters();
@@ -505,7 +505,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                     if (isMachineOffline())
                     {
                         controller.SetEnabled(usbData.m_fUSBEnabled);
-                        controller.SetEnabledEhci(usbData.m_fEHCIEnabled);
+                        controller.SetEnabledEHCI(usbData.m_fEHCIEnabled);
                     }
                     /* Store USB filters data: */
                     if (isMachineInValidMode())

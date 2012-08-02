@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,12 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "PciDeviceAttachmentImpl.h"
+#include "PCIDeviceAttachmentImpl.h"
 #include "AutoCaller.h"
 #include "Global.h"
 #include "Logging.h"
 
-struct PciDeviceAttachment::Data
+struct PCIDeviceAttachment::Data
 {
     Data(const Bstr    &aDevName,
          LONG          aHostAddress,
@@ -43,13 +43,13 @@ struct PciDeviceAttachment::Data
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT PciDeviceAttachment::FinalConstruct()
+HRESULT PCIDeviceAttachment::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();
 }
 
-void PciDeviceAttachment::FinalRelease()
+void PCIDeviceAttachment::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
     uninit();
@@ -58,7 +58,7 @@ void PciDeviceAttachment::FinalRelease()
 
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
-HRESULT PciDeviceAttachment::init(IMachine      *aParent,
+HRESULT PCIDeviceAttachment::init(IMachine      *aParent,
                                   const Bstr   &aDevName,
                                   LONG          aHostAddress,
                                   LONG          aGuestAddress,
@@ -70,15 +70,15 @@ HRESULT PciDeviceAttachment::init(IMachine      *aParent,
     return m != NULL ? S_OK : E_FAIL;
 }
 
-HRESULT PciDeviceAttachment::loadSettings(IMachine *aParent,
-                                          const settings::HostPciDeviceAttachment &hpda)
+HRESULT PCIDeviceAttachment::loadSettings(IMachine *aParent,
+                                          const settings::HostPCIDeviceAttachment &hpda)
 {
     Bstr bname(hpda.strDeviceName);
     return init(aParent, bname,  hpda.uHostAddress, hpda.uGuestAddress, TRUE);
 }
 
 
-HRESULT PciDeviceAttachment::saveSettings(settings::HostPciDeviceAttachment &data)
+HRESULT PCIDeviceAttachment::saveSettings(settings::HostPCIDeviceAttachment &data)
 {
     Assert(m);
     data.uHostAddress = m->HostAddress;
@@ -92,7 +92,7 @@ HRESULT PciDeviceAttachment::saveSettings(settings::HostPciDeviceAttachment &dat
  * Uninitializes the instance.
  * Called from FinalRelease().
  */
-void PciDeviceAttachment::uninit()
+void PCIDeviceAttachment::uninit()
 {
     if (m)
     {
@@ -101,36 +101,36 @@ void PciDeviceAttachment::uninit()
     }
 }
 
-// IPciDeviceAttachment properties
+// IPCIDeviceAttachment properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP PciDeviceAttachment::COMGETTER(Name)(BSTR * aName)
+STDMETHODIMP PCIDeviceAttachment::COMGETTER(Name)(BSTR * aName)
 {
     CheckComArgOutPointerValid(aName);
     m->DevName.cloneTo(aName);
     return S_OK;
 }
 
-STDMETHODIMP PciDeviceAttachment::COMGETTER(IsPhysicalDevice)(BOOL * aPhysical)
+STDMETHODIMP PCIDeviceAttachment::COMGETTER(IsPhysicalDevice)(BOOL * aPhysical)
 {
     CheckComArgOutPointerValid(aPhysical);
     *aPhysical = m->fPhysical;
     return S_OK;
 }
 
-STDMETHODIMP PciDeviceAttachment::COMGETTER(HostAddress)(LONG * aHostAddress)
+STDMETHODIMP PCIDeviceAttachment::COMGETTER(HostAddress)(LONG * aHostAddress)
 {
     *aHostAddress = m->HostAddress;
     return S_OK;
 }
 
-STDMETHODIMP PciDeviceAttachment::COMGETTER(GuestAddress)(LONG * aGuestAddress)
+STDMETHODIMP PCIDeviceAttachment::COMGETTER(GuestAddress)(LONG * aGuestAddress)
 {
     *aGuestAddress = m->GuestAddress;
     return S_OK;
 }
 
 #ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO(PciDeviceAttachment)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PciDeviceAttachment, IPciDeviceAttachment)
+NS_DECL_CLASSINFO(PCIDeviceAttachment)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PCIDeviceAttachment, IPCIDeviceAttachment)
 #endif

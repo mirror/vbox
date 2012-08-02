@@ -307,7 +307,7 @@ STDMETHODIMP USBController::COMSETTER(Enabled)(BOOL aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP USBController::COMGETTER(EnabledEhci)(BOOL *aEnabled)
+STDMETHODIMP USBController::COMGETTER(EnabledEHCI)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -321,7 +321,7 @@ STDMETHODIMP USBController::COMGETTER(EnabledEhci)(BOOL *aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP USBController::COMSETTER(EnabledEhci)(BOOL aEnabled)
+STDMETHODIMP USBController::COMSETTER(EnabledEHCI)(BOOL aEnabled)
 {
     LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 

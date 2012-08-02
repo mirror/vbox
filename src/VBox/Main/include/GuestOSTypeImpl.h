@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,19 +62,19 @@ public:
     STDMETHOD(COMGETTER(RecommendedHDD))(LONG64 *aHDDSize);
     STDMETHOD(COMGETTER(AdapterType))(NetworkAdapterType_T *aNetworkAdapterType);
     STDMETHOD(COMGETTER(RecommendedFirmware))(FirmwareType_T *aFirmwareType);
-    STDMETHOD(COMGETTER(RecommendedDvdStorageBus))(StorageBus_T *aStorageBusType);
-    STDMETHOD(COMGETTER(RecommendedDvdStorageController))(StorageControllerType_T *aStorageControllerType);
-    STDMETHOD(COMGETTER(RecommendedHdStorageBus))(StorageBus_T *aStorageBusType);
-    STDMETHOD(COMGETTER(RecommendedHdStorageController))(StorageControllerType_T *aStorageControllerType);
-    STDMETHOD(COMGETTER(RecommendedPae))(BOOL *aRecommendedExtHw);
-    STDMETHOD(COMGETTER(RecommendedUsbHid))(BOOL *aRecommendedUsbHid);
-    STDMETHOD(COMGETTER(RecommendedHpet))(BOOL *aRecommendedHpet);
-    STDMETHOD(COMGETTER(RecommendedUsbTablet))(BOOL *aRecommendedUsbTablet);
-    STDMETHOD(COMGETTER(RecommendedRtcUseUtc))(BOOL *aRecommendedRtcUseUtc);
-    STDMETHOD(COMGETTER(RecommendedChipset)) (ChipsetType_T *aChipsetType);
-    STDMETHOD(COMGETTER(RecommendedAudioController)) (AudioControllerType_T *aAudioController);
-    STDMETHOD(COMGETTER(RecommendedFloppy)) (BOOL *aRecommendedFloppy);
-    STDMETHOD(COMGETTER(RecommendedUsb)) (BOOL *aRecommendedUsb);
+    STDMETHOD(COMGETTER(RecommendedDVDStorageBus))(StorageBus_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedDVDStorageController))(StorageControllerType_T *aStorageControllerType);
+    STDMETHOD(COMGETTER(RecommendedHDStorageBus))(StorageBus_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedHDStorageController))(StorageControllerType_T *aStorageControllerType);
+    STDMETHOD(COMGETTER(RecommendedPAE))(BOOL *aRecommendedExtHw);
+    STDMETHOD(COMGETTER(RecommendedUSBHID))(BOOL *aRecommendedUSBHID);
+    STDMETHOD(COMGETTER(RecommendedHPET))(BOOL *aRecommendedHPET);
+    STDMETHOD(COMGETTER(RecommendedUSBTablet))(BOOL *aRecommendedUSBTablet);
+    STDMETHOD(COMGETTER(RecommendedRTCUseUTC))(BOOL *aRecommendedRTCUseUTC);
+    STDMETHOD(COMGETTER(RecommendedChipset))(ChipsetType_T *aChipsetType);
+    STDMETHOD(COMGETTER(RecommendedAudioController))(AudioControllerType_T *aAudioController);
+    STDMETHOD(COMGETTER(RecommendedFloppy))(BOOL *aRecommendedFloppy);
+    STDMETHOD(COMGETTER(RecommendedUSB))(BOOL *aRecommendedUSB);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
@@ -99,10 +99,10 @@ private:
     const uint32_t mMonitorCount;
     const NetworkAdapterType_T mNetworkAdapterType;
     const uint32_t mNumSerialEnabled;
-    const StorageControllerType_T mDvdStorageControllerType;
-    const StorageBus_T mDvdStorageBusType;
-    const StorageControllerType_T mHdStorageControllerType;
-    const StorageBus_T mHdStorageBusType;
+    const StorageControllerType_T mDVDStorageControllerType;
+    const StorageBus_T mDVDStorageBusType;
+    const StorageControllerType_T mHDStorageControllerType;
+    const StorageBus_T mHDStorageBusType;
     const ChipsetType_T mChipsetType;
     const AudioControllerType_T mAudioControllerType;
 };
