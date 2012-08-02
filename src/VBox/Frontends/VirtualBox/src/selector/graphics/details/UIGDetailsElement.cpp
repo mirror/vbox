@@ -184,7 +184,8 @@ QVariant UIGDetailsElement::data(int iKey) const
             return textFont;
         }
         /* Sizes: */
-        case ElementData_PixmapSize: return m_icon.availableSizes().at(0);
+        case ElementData_PixmapSize:
+            return m_icon.isNull() ? QSize(0, 0) : m_icon.availableSizes().at(0);
         case ElementData_NameSize:
         {
             QFontMetrics fm(data(ElementData_NameFont).value<QFont>());
