@@ -166,7 +166,8 @@ private:
     UIAction *m_pPreferencesDialogAction;
     UIAction *m_pExitAction;
 
-    /* 'Machine' menu action pointers: */
+    /* 'Group' menu action pointers: */
+    QList<UIAction*> m_groupActions;
     QAction *m_pGroupMenuAction;
     QMenu *m_pGroupMenu;
     UIAction *m_pActionGroupNewWizard;
@@ -183,6 +184,7 @@ private:
 //    UIAction *m_pActionGroupSort;
 
     /* 'Machine' menu action pointers: */
+    QList<UIAction*> m_machineActions;
     QAction *m_pMachineMenuAction;
     QMenu *m_pMachineMenu;
     UIAction *m_pActionMachineNewWizard;
