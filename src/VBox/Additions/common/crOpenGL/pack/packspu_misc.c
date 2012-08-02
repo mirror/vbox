@@ -587,17 +587,16 @@ void PACKSPU_APIENTRY packspu_VBoxAttachThread()
 
 void PACKSPU_APIENTRY packspu_VBoxDetachThread()
 {
-    int i;
-    GET_THREAD(thread);
-
-    if (thread)
+    if (CRPACKSPU_IS_WDDM_CRHGSMI())
     {
-        if (CRPACKSPU_IS_WDDM_CRHGSMI())
-        {
-            crPackSetContext(NULL);
-            crSetTSD(&_PackTSD, NULL);
-        }
-        else
+        crPackSetContext(NULL);
+        crSetTSD(&_PackTSD, NULL);
+    }
+    else
+    {
+        int i;
+        GET_THREAD(thread);
+        if (thread)
         {
             crLockMutex(&_PackMutex);
 

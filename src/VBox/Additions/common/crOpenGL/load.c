@@ -1070,7 +1070,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 #endif
             stub.spu->dispatch_table.VBoxPackSetInjectThread(NULL);
 #if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
-    if (!spuConnection)
+    if (stub.bRunningUnderWDDM && !spuConnection)
     {
         crError("VBoxPackSetInjectThread failed!");
     }
