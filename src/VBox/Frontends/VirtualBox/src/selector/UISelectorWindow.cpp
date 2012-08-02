@@ -134,18 +134,32 @@ UISelectorWindow::~UISelectorWindow()
     saveSettings();
 }
 
+void UISelectorWindow::sltStateChanged(QString strId)
+{
+    /* Get current item: */
+    UIVMItem *pItem = currentItem();
+
+    /* Make sure current item present: */
+    if (!pItem)
+        return;
+
+    /* If signal is for the current item: */
+    if (pItem->id() == strId)
+        updateActionsAppearance();
+}
+
 void UISelectorWindow::sltSnapshotChanged(QString strId)
 {
     /* Get current item: */
-    UIVMItem *pCurrentItem = currentItem();
+    UIVMItem *pItem = currentItem();
 
     /* Make sure current item present: */
-    if (!pCurrentItem)
+    if (!pItem)
         return;
 
-    /* If signal is for current item: */
-    if (pCurrentItem->id() == strId)
-        m_pVMDesktop->updateSnapshots(pCurrentItem, pCurrentItem->machine());
+    /* If signal is for the current item: */
+    if (pItem->id() == strId)
+        m_pVMDesktop->updateSnapshots(pItem, pItem->machine());
 }
 
 void UISelectorWindow::sltDetailsViewIndexChanged(int iWidgetIndex)
@@ -733,11 +747,10 @@ void UISelectorWindow::sltMachineCloseMenuAboutToShow()
     m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
 }
 
-void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefreshSnapshots, bool fRefreshDescription)
+void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefreshSnapshots, bool)
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
-    QList<UIVMItem*> items = currentItems();
 
     /* Determine which menu to show: */
     m_pGroupMenuAction->setVisible(m_pChooser->singleGroupSelected());
@@ -757,36 +770,8 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
             pAction->showShortcut();
     }
 
-    /* Enable/disable group actions: */
-    m_pActionGroupRenameDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_RenameDialog, items));
-    m_pActionGroupRemoveDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_RemoveDialog, items));
-    m_pActionGroupStartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Group_StartOrShow, items));
-    m_pActionGroupPauseAndResume->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Group_PauseAndResume, items));
-    m_pActionGroupReset->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Reset, items));
-    m_pActionGroupRefresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Refresh, items));
-    m_pActionGroupLogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
-    m_pActionGroupShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_ShowInFileManager, items));
-    m_pActionGroupCreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_CreateShortcut, items));
-//    m_pActionGroupSort->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Sort, items));
-
-    /* Enable/disable machine actions: */
-    m_pActionMachineSettingsDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SettingsDialog, items));
-    m_pActionMachineCloneWizard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CloneWizard, items));
-    m_pActionMachineAddGroupDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_AddGroupDialog, items));
-    m_pActionMachineRemoveDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_RemoveDialog, items));
-    m_pActionMachineStartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Machine_StartOrShow, items));
-    m_pActionMachineDiscard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Discard, items));
-    m_pActionMachinePauseAndResume->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Machine_PauseAndResume, items));
-    m_pActionMachineReset->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Reset, items));
-    m_pActionMachineRefresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Refresh, items));
-    m_pActionMachineLogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
-    m_pActionMachineShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, items));
-    m_pActionMachineCreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, items));
-//    m_pActionMachineSort->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Sort, items));
-
-    /* Enable/disable machine-close actions: */
-    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
-    m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items));
+    /* Update action appearance: */
+    updateActionsAppearance();
 
     /* If currently selected VM item is accessible: */
     if (pItem && pItem->accessible())
@@ -797,70 +782,15 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
         else
             m_pContainer->setCurrentWidget(m_pDetails);
 
-        KMachineState state = pItem->machineState();
-
-        if (fRefreshDetails || fRefreshDescription)
+        if (fRefreshDetails)
             m_pDetails->setItems(currentItems());
         if (fRefreshSnapshots)
             m_pVMDesktop->updateSnapshots(pItem, pItem->machine());
-
-        /* Update the Start button action appearance: */
-        if (state == KMachineState_PoweredOff ||
-            state == KMachineState_Saved ||
-            state == KMachineState_Teleported ||
-            state == KMachineState_Aborted)
-        {
-            m_pActionGroupStartOrShow->setState(1);
-            m_pActionMachineStartOrShow->setState(1);
-#ifdef QT_MAC_USE_COCOA
-            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
-               the necessary size of the toolbar is increased. Also for some languages
-               the with doesn't match if the text increase. So manually adjust the size
-               after changing the text. */
-            mVMToolBar->updateLayout();
-#endif /* QT_MAC_USE_COCOA */
-        }
-        else
-        {
-            m_pActionGroupStartOrShow->setState(2);
-            m_pActionMachineStartOrShow->setState(2);
-#ifdef QT_MAC_USE_COCOA
-            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
-               the necessary size of the toolbar is increased. Also for some languages
-               the with doesn't match if the text increase. So manually adjust the size
-               after changing the text. */
-            mVMToolBar->updateLayout();
-#endif /* QT_MAC_USE_COCOA */
-        }
-
-        /* Update the Pause/Resume action appearance: */
-        if (state == KMachineState_Paused ||
-            state == KMachineState_TeleportingPausedVM)
-        {
-            m_pActionGroupPauseAndResume->blockSignals(true);
-            m_pActionGroupPauseAndResume->setChecked(true);
-            m_pActionGroupPauseAndResume->blockSignals(false);
-            m_pActionMachinePauseAndResume->blockSignals(true);
-            m_pActionMachinePauseAndResume->setChecked(true);
-            m_pActionMachinePauseAndResume->blockSignals(false);
-        }
-        else
-        {
-            m_pActionGroupPauseAndResume->blockSignals(true);
-            m_pActionGroupPauseAndResume->setChecked(false);
-            m_pActionGroupPauseAndResume->blockSignals(false);
-            m_pActionMachinePauseAndResume->blockSignals(true);
-            m_pActionMachinePauseAndResume->setChecked(false);
-            m_pActionMachinePauseAndResume->blockSignals(false);
-        }
-        m_pActionGroupPauseAndResume->updateAppearance();
-        m_pActionMachinePauseAndResume->updateAppearance();
     }
-
     /* If currently selected VM item is NOT accessible: */
     else
     {
-        /* Show m_pVMDesktop: */
+        /* Make sure valid widget raised: */
         m_pContainer->setCurrentWidget(m_pVMDesktop);
 
         /* Note that the machine becomes inaccessible (or if the last VM gets
@@ -892,10 +822,6 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
 
         /* Empty and disable other tabs: */
         m_pVMDesktop->updateSnapshots(0, CMachine());
-
-        /* Change the Start button text accordingly: */
-        m_pActionGroupStartOrShow->setState(1);
-        m_pActionMachineStartOrShow->setState(1);
     }
 }
 
@@ -1462,6 +1388,8 @@ void UISelectorWindow::prepareConnections()
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 
     /* Global event handlers: */
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltStateChanged(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltStateChanged(QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
 }
 
@@ -1575,6 +1503,109 @@ UIVMItem* UISelectorWindow::currentItem() const
 QList<UIVMItem*> UISelectorWindow::currentItems() const
 {
     return m_pChooser->currentItems();
+}
+
+void UISelectorWindow::updateActionsAppearance()
+{
+    /* Get current item(s): */
+    UIVMItem *pItem = currentItem();
+    QList<UIVMItem*> items = currentItems();
+
+    /* Enable/disable group actions: */
+    m_pActionGroupRenameDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_RenameDialog, items));
+    m_pActionGroupRemoveDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_RemoveDialog, items));
+    m_pActionGroupStartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Group_StartOrShow, items));
+    m_pActionGroupPauseAndResume->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Group_PauseAndResume, items));
+    m_pActionGroupReset->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Reset, items));
+    m_pActionGroupRefresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Refresh, items));
+    m_pActionGroupLogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
+    m_pActionGroupShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_ShowInFileManager, items));
+    m_pActionGroupCreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_CreateShortcut, items));
+//    m_pActionGroupSort->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Sort, items));
+
+    /* Enable/disable machine actions: */
+    m_pActionMachineSettingsDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SettingsDialog, items));
+    m_pActionMachineCloneWizard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CloneWizard, items));
+    m_pActionMachineAddGroupDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_AddGroupDialog, items));
+    m_pActionMachineRemoveDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_RemoveDialog, items));
+    m_pActionMachineStartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Machine_StartOrShow, items));
+    m_pActionMachineDiscard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Discard, items));
+    m_pActionMachinePauseAndResume->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Machine_PauseAndResume, items));
+    m_pActionMachineReset->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Reset, items));
+    m_pActionMachineRefresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Refresh, items));
+    m_pActionMachineLogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
+    m_pActionMachineShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, items));
+    m_pActionMachineCreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, items));
+//    m_pActionMachineSort->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Sort, items));
+
+    /* Enable/disable machine-close actions: */
+    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
+    m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items));
+
+    /* If item present: */
+    if (pItem && pItem->accessible())
+    {
+        /* Get state: */
+        KMachineState state = pItem->machineState();
+
+        /* Update the Start button action appearance: */
+        if (state == KMachineState_PoweredOff ||
+            state == KMachineState_Saved ||
+            state == KMachineState_Teleported ||
+            state == KMachineState_Aborted)
+        {
+            m_pActionGroupStartOrShow->setState(1);
+            m_pActionMachineStartOrShow->setState(1);
+#ifdef QT_MAC_USE_COCOA
+            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
+               the necessary size of the toolbar is increased. Also for some languages
+               the with doesn't match if the text increase. So manually adjust the size
+               after changing the text. */
+            mVMToolBar->updateLayout();
+#endif /* QT_MAC_USE_COCOA */
+        }
+        else
+        {
+            m_pActionGroupStartOrShow->setState(2);
+            m_pActionMachineStartOrShow->setState(2);
+#ifdef QT_MAC_USE_COCOA
+            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
+               the necessary size of the toolbar is increased. Also for some languages
+               the with doesn't match if the text increase. So manually adjust the size
+               after changing the text. */
+            mVMToolBar->updateLayout();
+#endif /* QT_MAC_USE_COCOA */
+        }
+
+        /* Update the Pause/Resume action appearance: */
+        if (state == KMachineState_Paused ||
+            state == KMachineState_TeleportingPausedVM)
+        {
+            m_pActionGroupPauseAndResume->blockSignals(true);
+            m_pActionGroupPauseAndResume->setChecked(true);
+            m_pActionGroupPauseAndResume->blockSignals(false);
+            m_pActionMachinePauseAndResume->blockSignals(true);
+            m_pActionMachinePauseAndResume->setChecked(true);
+            m_pActionMachinePauseAndResume->blockSignals(false);
+        }
+        else
+        {
+            m_pActionGroupPauseAndResume->blockSignals(true);
+            m_pActionGroupPauseAndResume->setChecked(false);
+            m_pActionGroupPauseAndResume->blockSignals(false);
+            m_pActionMachinePauseAndResume->blockSignals(true);
+            m_pActionMachinePauseAndResume->setChecked(false);
+            m_pActionMachinePauseAndResume->blockSignals(false);
+        }
+        m_pActionGroupPauseAndResume->updateAppearance();
+        m_pActionMachinePauseAndResume->updateAppearance();
+    }
+    else
+    {
+        /* Update the Start button action appearance: */
+        m_pActionGroupStartOrShow->setState(1);
+        m_pActionMachineStartOrShow->setState(1);
+    }
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)

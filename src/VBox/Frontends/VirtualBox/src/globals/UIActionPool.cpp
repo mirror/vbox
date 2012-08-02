@@ -130,6 +130,7 @@ UIActionSimple::UIActionSimple(QObject *pParent, const QIcon& icon)
 /* UIActionState stuff: */
 UIActionState::UIActionState(QObject *pParent, const QString &strIcon, const QString &strIconDis)
     : UIAction(pParent, UIActionType_State)
+    , m_iState(0)
 {
     if (!strIcon.isNull())
         setIcon(UIIconPool::iconSet(strIcon, strIconDis));
@@ -140,12 +141,14 @@ UIActionState::UIActionState(QObject *pParent,
                              const QString &strNormalIcon, const QString &strSmallIcon,
                              const QString &strNormalIconDis, const QString &strSmallIconDis)
     : UIAction(pParent, UIActionType_State)
+    , m_iState(0)
 {
     setIcon(UIIconPool::iconSetFull(normalSize, smallSize, strNormalIcon, strSmallIcon, strNormalIconDis, strSmallIconDis));
 }
 
 UIActionState::UIActionState(QObject *pParent, const QIcon& icon)
     : UIAction(pParent, UIActionType_State)
+    , m_iState(0)
 {
     if (!icon.isNull())
         setIcon(icon);
