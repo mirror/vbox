@@ -265,16 +265,6 @@ DECLINLINE(uint64_t) hpetInvalidValue(HpetTimer *pHpetTimer)
     return hpet32bitTimer(pHpetTimer) ? UINT32_MAX : UINT64_MAX;
 }
 
-DECLINLINE(uint32_t) hpetTimeAfter32(uint64_t a, uint64_t b)
-{
-    return ((int32_t)(b) - (int32_t)(a) <= 0);
-}
-
-DECLINLINE(uint32_t) hpetTimeAfter64(uint64_t a, uint64_t b)
-{
-    return ((int64_t)(b) - (int64_t)(a) <= 0);
-}
-
 DECLINLINE(uint64_t) hpetTicksToNs(HpetState *pThis, uint64_t value)
 {
     return ASMMultU64ByU32DivByU32(value,  pThis->u32Period, FS_PER_NS);
@@ -346,22 +336,14 @@ DECLINLINE(uint64_t) hpetComputeDiff(HpetTimer *pHpetTimer,
 
 static void hpetAdjustComparator(HpetTimer *pHpetTimer, uint64_t u64Now)
 {
-  uint64_t u64Period = pHpetTimer->u64Period;
-  if (   (pHpetTimer->u64Config & HPET_TN_PERIODIC)
-      && u64Period != 0)
-  {
-      /* While loop is suboptimal */
-      if (hpet32bitTimer(pHpetTimer))
-      {
-          while (hpetTimeAfter32(u64Now, pHpetTimer->u64Cmp))
-              pHpetTimer->u64Cmp = (uint32_t)(pHpetTimer->u64Cmp + u64Period);
-      }
-      else
-      {
-          while (hpetTimeAfter64(u64Now, pHpetTimer->u64Cmp))
-              pHpetTimer->u64Cmp += u64Period;
-      }
-  }
+    uint64_t    u64Period = pHpetTimer->u64Period;
+
+    if ((pHpetTimer->u64Config & HPET_TN_PERIODIC) && u64Period)
+    {
+          uint64_t  cPeriods = (u64Now - pHpetTimer->u64Cmp) / u64Period;
+
+          pHpetTimer->u64Cmp += (cPeriods + 1) * u64Period;
+    }
 }
 
 
@@ -570,10 +552,7 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
             Log(("write HPET_TN_CMP on %d: %#x\n", iTimerNo, u32NewValue));
 
             if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
-            {
-                u32NewValue &= hpetInvalidValue(pHpetTimer) >> 1; /** @todo check this in the docs and add a not why? */
                 pHpetTimer->u64Period = RT_MAKE_U64(u32NewValue, RT_HI_U32(pHpetTimer->u64Period));
-            }
             pHpetTimer->u64Cmp     = RT_MAKE_U64(u32NewValue, RT_HI_U32(pHpetTimer->u64Cmp));
             pHpetTimer->u64Config &= ~HPET_TN_SETVAL;
             Log2(("after HPET_TN_CMP cmp=%#llx per=%#llx\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period));
