@@ -1676,4 +1676,86 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
     <para>For more options and parameters check the built-in command line help
       accessible with <computeroutput>--help</computeroutput>.</para>
   </sect1>
+
+  <sect1 id="autostart">
+    <title>Starting virtual machines during system boot</title>
+
+    <para>Starting with VirtualBox 4.2.0 it is possible to start VMs automatically during
+    system boot on Linux and Mac OS X for all users. </para>
+
+    <sect2 id="autostart-linux">
+      <title>Linux: starting the autostart service via <computeroutput>init</computeroutput></title>
+
+      <para>On Linux, the autostart service is activated by setting two variables in
+      <computeroutput>/etc/default/virtualbox</computeroutput>.
+      The first one is <computeroutput>VBOXAUTOSTART_DB</computeroutput> which
+      contains an absolute path to the autostart database directory.
+      The directory should have write access for every user who should be able to
+      start virtual machines automatically. Furthermore the directory should have the
+      sticky bit set.
+      The second variable is <computeroutput>VBOXAUTOSTART_CONFIG</computeroutput>
+      which points the service to the autostart configuration file which is used
+      during boot to determine whether to allow individual users to start a VM
+      automatically and configure startup delays.
+      The config file can be placed in <computeroutput>/etc/vbox</computeroutput>
+      and contains several options. One is <computeroutput>default_policy</computeroutput>
+      which controls whether the autostart service allows or denies to start a VM
+      for users which are not in the exception list.
+      The exception list starts with <computeroutput>exception_list</computeroutput>
+      and contains a comma seperated list with usernames. Furthermore a separate
+      startup delay can be configured for every user to avoid overloading the host.
+      A sample configuration is given below:</para>
+
+      <para><screen>
+# Default policy is to deny starting a VM, the other option is "allow".
+default_policy = deny
+# Users which are allowed are given below.
+# If the default policy is to allow starting a VM is not allowed for the users below.
+exception_list = bob, alice, joe
+
+bob   = 30  # Bobs machines will be started 30 seconds after the autostart service started
+alice = 180 # Alice machines will be started 180 seconds after the autostart service started
+joe   = 240 # Joes machines will be started 240 seconds after the autostart service started
+      </screen></para>
+
+      <para>Every user who wants to enable autostart for individual machines
+      has to set the path to the autostart database directory with
+      <screen>VBoxManage setproperty autostartdbpath &lt;Autostart directory&gt;</screen>
+      </para>
+    </sect2>
+
+    <sect2 id="autostart-solaris">
+      <title>Solaris: starting the autostart service via SMF</title>
+
+      <para>On Solaris hosts, the VirtualBox autostart daemon is
+      integrated into the SMF framework. To enable it you have to point the service
+      to an existing configuration file which has the same format as on Linux (see <xref linkend="autostart-linux" />):
+      <screen>svccfg -s svc:/application/virtualbox/autostart:default setprop config/config=/etc/vbox/autostart.cfg</screen>
+      </para>
+
+      <para>When everything is configured correctly you can start the
+      VirtualBox autostart service with the following command:<screen>svcadm enable svc:/application/virtualbox/autostart:default</screen></para>
+
+      <para>For more information about SMF, please refer to the Solaris
+      documentation.</para>
+    </sect2>
+
+    <sect2 id="autostart-osx">
+      <title>Mac OS X: starting the autostart service via launchd</title>
+
+      <para>On Mac OS X, launchd is used to start the VirtualBox autostart service. An
+      example configuration file can be found in
+      <computeroutput>/Applications/VirtualBox.app/Contents/MacOS/org.virtualbox.vboxautostart.plist</computeroutput>.
+      To enable the service copy the file to <computeroutput>/Library/LaunchDaemons</computeroutput> and change the
+      <computeroutput>Disabled</computeroutput> key from
+      <computeroutput>true</computeroutput> to
+      <computeroutput>false</computeroutput>. Furthermore replace the second parameter
+      to an existing configuration file which has the same format as on Linux (see <xref linkend="autostart-linux" />).
+      To manually start the service use the following command:
+      <screen>launchctl load /Library/LaunchDaemons/org.virtualbox.vboxautostart.plist</screen>
+      For additional information on how launchd services could be
+      configured see <literal><ulink
+      url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
+    </sect2>
+  </sect1>
 </chapter>
