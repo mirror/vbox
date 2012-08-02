@@ -181,7 +181,7 @@ VMMDECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                  *  edx = GC address to find
                  *  edi = PATCHJUMPTABLE ptr
                  */
-                AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, pRegFrame->edi), ("edx = %x\n", pRegFrame->edi));
+                AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, pRegFrame->edi), ("edi = %x\n", pRegFrame->edi));
 
                 Log(("PATMRC: lookup %x jump table=%x\n", pRegFrame->edx, pRegFrame->edi));
 
