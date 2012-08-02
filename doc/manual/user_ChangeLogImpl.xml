@@ -97,6 +97,24 @@
        </listitem>
 
        <listitem>
+         <para>Storage: implemented support for discarding unused image blocks
+           through TRIM for SATA and IDE and UNMAP for SCSI when using VDI images</para>
+       </listitem>
+
+       <listitem>
+         <para>Storage: added support for QED images</para>
+       </listitem>
+
+       <listitem>
+         <para>Storage: added support for QCOW (full support for v1 and readonly
+           support for v2 images)</para>
+       </listitem>
+
+       <listitem>
+         <para>Storage: added readonly support for VHDX images</para>
+       </listitem>
+
+       <listitem>
          <para>Main: sanitise the name of VM folders and settings file (bug #10549)</para>
        </listitem>
 
@@ -108,6 +126,12 @@
          <para>Windows hosts: no need to recreate host-only adapters after a
            VirtualBox update</para>
        </listitem>
+
+       <listitem>
+         <para>Added possibility to start VMs during system boot on Linux,
+           OS X and Solaris; see <xref linkend="autostart" /></para>
+       </listitem>
+
 
     </itemizedlist>
   </sect1>
@@ -457,7 +481,7 @@
       <listitem>
         <para>3D Support: Fixed full screen mode issues for ATI graphics (bug #9775),
           Windows Media Player rendering for XPDM-based Direct3D support (bug# 8341).
-          Multiple fixes to XPDM and WDDM - based 3D support for Windows Guests 
+          Multiple fixes to XPDM and WDDM - based 3D support for Windows Guests
           and for 3D support in general</para>
       </listitem>
 
@@ -477,7 +501,7 @@
         <para>Windows Additions: various fixes for Direct3D support (un)installation, added
           detection of missing or wrong Direct3D system files</para>
       </listitem>
-      
+
     </itemizedlist>
   </sect1>
 
