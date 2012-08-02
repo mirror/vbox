@@ -7844,7 +7844,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetCommand     (&pThis->dev, 0x0000);
 #ifdef VBOX_WITH_MSI_DEVICES
     PCIDevSetStatus      (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST);
-    PCIDevSetCapabilityList(&pThis->dev, 0xa0);
+    PCIDevSetCapabilityList(&pThis->dev, 0x80);
 #else
     PCIDevSetCapabilityList(&pThis->dev, 0x70);
 #endif
@@ -7884,7 +7884,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     RT_ZERO(aMsiReg);
     aMsiReg.cMsiVectors = 1;
-    aMsiReg.iMsiCapOffset = 0xa0;
+    aMsiReg.iMsiCapOffset = 0x80;
     aMsiReg.iMsiNextOffset = 0x70;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
     if (RT_FAILURE (rc))
