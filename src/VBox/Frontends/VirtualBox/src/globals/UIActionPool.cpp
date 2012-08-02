@@ -53,6 +53,21 @@ UIAction::UIAction(QObject *pParent, UIActionType type)
     setMenuRole(QAction::NoRole);
 }
 
+void UIAction::showShortcut()
+{
+    if (!m_shortcut.isEmpty())
+        setShortcut(m_shortcut);
+}
+
+void UIAction::hideShortcut()
+{
+    if (!shortcut().isEmpty())
+    {
+        m_shortcut = shortcut();
+        setShortcut(QKeySequence());
+    }
+}
+
 QString UIAction::menuText(const QString &strText)
 {
     return vboxGlobal().isVMConsoleProcess() ? VBoxGlobal::removeAccelMark(strText) : strText;

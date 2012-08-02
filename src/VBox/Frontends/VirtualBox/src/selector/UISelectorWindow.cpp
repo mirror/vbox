@@ -728,6 +728,20 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
     /* Determine which menu to show: */
     m_pGroupMenuAction->setVisible(m_pChooser->singleGroupSelected());
     m_pMachineMenuAction->setVisible(!m_pChooser->singleGroupSelected());
+    if (m_pGroupMenuAction->isVisible())
+    {
+        foreach (UIAction *pAction, m_machineActions)
+            pAction->hideShortcut();
+        foreach (UIAction *pAction, m_groupActions)
+            pAction->showShortcut();
+    }
+    else if (m_pMachineMenuAction->isVisible())
+    {
+        foreach (UIAction *pAction, m_groupActions)
+            pAction->hideShortcut();
+        foreach (UIAction *pAction, m_machineActions)
+            pAction->showShortcut();
+    }
 
     /* Enable/disable group actions: */
     m_pActionGroupRenameDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_RenameDialog, items));
@@ -1166,6 +1180,14 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     pMenu->addSeparator();
 //    m_pActionGroupSort = gActionPool->action(UIActionIndexSelector_Simple_Group_Sort);
 //    pMenu->addAction(m_pActionGroupSort);
+
+    /* Remember action list: */
+    m_groupActions << m_pActionGroupNewWizard << m_pActionGroupAddDialog
+                   << m_pActionGroupRenameDialog << m_pActionGroupRemoveDialog
+                   << m_pActionGroupStartOrShow << m_pActionGroupPauseAndResume
+                   << m_pActionGroupReset << m_pActionGroupRefresh
+                   << m_pActionGroupLogDialog << m_pActionGroupShowInFileManager
+                   << m_pActionGroupCreateShortcut /* << m_pActionGroupSort */;
 }
 
 void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
@@ -1208,6 +1230,15 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addSeparator();
 //    m_pActionMachineSort = gActionPool->action(UIActionIndexSelector_Simple_Machine_Sort);
 //    pMenu->addAction(m_pActionMachineSort);
+
+    /* Remember action list: */
+    m_machineActions << m_pActionMachineNewWizard << m_pActionMachineAddDialog
+                     << m_pActionMachineSettingsDialog << m_pActionMachineCloneWizard
+                     << m_pActionMachineRemoveDialog << m_pActionMachineStartOrShow
+                     << m_pActionMachineDiscard << m_pActionMachinePauseAndResume
+                     << m_pActionMachineReset << m_pActionMachineRefresh
+                     << m_pActionMachineLogDialog << m_pActionMachineShowInFileManager
+                     << m_pActionMachineCreateShortcut /* << m_pActionMachineSort */;
 }
 
 void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)

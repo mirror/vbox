@@ -65,6 +65,9 @@ public:
     virtual void setState(int /* iState */) {}
     virtual void updateAppearance() {}
 
+    void showShortcut();
+    void hideShortcut();
+
 protected:
 
     UIAction(QObject *pParent, UIActionType type);
@@ -74,6 +77,7 @@ protected:
 private:
 
     UIActionType m_type;
+    QKeySequence m_shortcut;
 };
 
 /* Basic QMenu reimplemetation, extending interface: */
