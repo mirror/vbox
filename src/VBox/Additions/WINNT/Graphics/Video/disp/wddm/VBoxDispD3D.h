@@ -75,14 +75,9 @@ typedef struct VBOXWDDMDISP_ADAPTER
     HANDLE hAdapter;
     UINT uIfVersion;
     UINT uRtVersion;
-    VBOXDISPD3D D3D;
-    IDirect3D9Ex * pD3D9If;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
-    uint32_t cFormstOps;
-    FORMATOP *paFormstOps;
-    uint32_t cSurfDescs;
-    DDSURFACEDESC *paSurfDescs;
-    UINT cMaxSimRTs;
+    VBOXWDDMDISP_D3D D3D;
+    VBOXWDDMDISP_FORMATS Formats;
 #ifdef VBOX_WDDMDISP_WITH_PROFILE
     VBoxDispProfileFpsCounter ProfileDdiFps;
     VBoxDispProfileSet ProfileDdiFunc;
@@ -403,7 +398,7 @@ HRESULT vboxWddmLockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc,
         DWORD fLockFlags);
 HRESULT vboxWddmUnlockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc);
 
-#define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
+#define VBOXDISPMODE_IS_3D(_p) (!!((_p)->D3D.pD3D9If))
 #ifdef VBOXDISP_EARLYCREATEDEVICE
 #define VBOXDISP_D3DEV(_p) (_p)->pDevice9If
 #else

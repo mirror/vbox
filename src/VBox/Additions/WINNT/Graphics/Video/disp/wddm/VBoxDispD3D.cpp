@@ -195,591 +195,6 @@ static VBOXSCREENMONRUNNER g_VBoxScreenMonRunner;
 
 //#define VBOXWDDMOVERLAY_TEST
 
-static FORMATOP gVBoxFormatOps3D[] = {
-    {D3DDDIFMT_A8R8G8B8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_UP_TO_ALPHA_RENDERTARGET|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_SRGBWRITE|FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_X8R8G8B8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        FORMATOP_DISPLAYMODE|FORMATOP_3DACCELERATION|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_SRGBWRITE|FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A2R10G10B10,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_X1R5G5B5,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A1R5G5B5,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_UP_TO_ALPHA_RENDERTARGET|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A4R4G4B4,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_UP_TO_ALPHA_RENDERTARGET|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_R5G6B5,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        FORMATOP_DISPLAYMODE|FORMATOP_3DACCELERATION|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_L16,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A8L8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_L8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_D16,   FORMATOP_TEXTURE|FORMATOP_ZSTENCIL|FORMATOP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH, 0, 0, 0},
-    {D3DDDIFMT_D24S8, FORMATOP_TEXTURE|FORMATOP_ZSTENCIL|FORMATOP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH, 0, 0, 0},
-    {D3DDDIFMT_D24X8, FORMATOP_TEXTURE|FORMATOP_ZSTENCIL|FORMATOP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH, 0, 0, 0},
-    {D3DDDIFMT_D16_LOCKABLE, FORMATOP_ZSTENCIL|FORMATOP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH, 0, 0, 0},
-    {D3DDDIFMT_X8D24, FORMATOP_TEXTURE|FORMATOP_ZSTENCIL|FORMATOP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH, 0, 0, 0},
-    {D3DDDIFMT_D32F_LOCKABLE, FORMATOP_TEXTURE|FORMATOP_ZSTENCIL|FORMATOP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH, 0, 0, 0},
-    {D3DDDIFMT_S8D24, FORMATOP_TEXTURE|FORMATOP_ZSTENCIL|FORMATOP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH, 0, 0, 0},
-
-    {D3DDDIFMT_DXT1,
-        FORMATOP_TEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_DXT2,
-        FORMATOP_TEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_DXT3,
-        FORMATOP_TEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_DXT4,
-        FORMATOP_TEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_DXT5,
-        FORMATOP_TEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_X8L8V8U8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        0|
-        FORMATOP_BUMPMAP|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A2W10V10U10,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        0|
-        FORMATOP_BUMPMAP|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_V8U8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        0|
-        FORMATOP_BUMPMAP|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_Q8W8V8U8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        0|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_BUMPMAP|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_CxV8U8, FORMATOP_NOFILTER|FORMATOP_NOALPHABLEND|FORMATOP_NOTEXCOORDWRAPNORMIP, 0, 0, 0},
-
-    {D3DDDIFMT_R16F,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_R32F,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_G16R16F,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_G32R32F,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A16B16G16R16F,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A32B32G32R32F,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_G16R16,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A16B16G16R16,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        0|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_V16U16,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        0|
-        FORMATOP_BUMPMAP|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_P8, FORMATOP_DISPLAYMODE|FORMATOP_3DACCELERATION|FORMATOP_OFFSCREENPLAIN, 0, 0, 0},
-
-    {D3DDDIFMT_UYVY,
-        0|
-        0|
-        0|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_NOFILTER|
-        FORMATOP_NOALPHABLEND|
-        FORMATOP_NOTEXCOORDWRAPNORMIP, 0, 0, 0},
-
-    {D3DDDIFMT_YUY2,
-        0|
-        0|
-        0|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_NOFILTER|
-        FORMATOP_NOALPHABLEND|
-        FORMATOP_NOTEXCOORDWRAPNORMIP, 0, 0, 0},
-
-    {D3DDDIFMT_Q16W16V16U16,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_BUMPMAP|FORMATOP_DMAP|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_X8B8G8R8,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_UP_TO_ALPHA_RENDERTARGET|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|FORMATOP_SRGBREAD|
-        FORMATOP_DMAP|FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_SRGBWRITE|FORMATOP_AUTOGENMIPMAP|FORMATOP_VERTEXTEXTURE|
-        FORMATOP_OVERLAY, 0, 0, 0},
-
-    {D3DDDIFMT_BINARYBUFFER, FORMATOP_OFFSCREENPLAIN, 0, 0, 0},
-
-    {D3DDDIFMT_A4L4,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
-        0|
-        0|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_DMAP|
-        FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-
-    {D3DDDIFMT_A2B10G10R10,
-        FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
-        FORMATOP_SAME_FORMAT_RENDERTARGET|
-        0|
-        FORMATOP_CONVERT_TO_ARGB|FORMATOP_OFFSCREENPLAIN|
-        FORMATOP_DMAP|FORMATOP_MEMBEROFGROUP_ARGB|
-        FORMATOP_AUTOGENMIPMAP|FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-};
-
-static FORMATOP gVBoxFormatOpsBase[] = {
-    {D3DDDIFMT_X8R8G8B8, FORMATOP_DISPLAYMODE, 0, 0, 0},
-
-    {D3DDDIFMT_R8G8B8, FORMATOP_DISPLAYMODE, 0, 0, 0},
-
-    {D3DDDIFMT_R5G6B5, FORMATOP_DISPLAYMODE, 0, 0, 0},
-
-    {D3DDDIFMT_P8, FORMATOP_DISPLAYMODE, 0, 0, 0},
-};
-
-static DDSURFACEDESC gVBoxSurfDescsBase[] = {
-        {
-            sizeof (DDSURFACEDESC), /*    DWORD   dwSize;  */
-            DDSD_CAPS | DDSD_PIXELFORMAT,    /* DWORD dwFlags;    */
-            0,    /* DWORD dwHeight;   */
-            0,    /* DWORD dwWidth;    */
-            {
-                0, /* Union             */
-                   /*   LONG lPitch; */
-                   /*   DWORD dwLinearSize; */
-            },
-            0,  /*    DWORD dwBackBufferCount; */
-            {
-                0, /* Union */
-                   /*  DWORD dwMipMapCount; */
-                   /*    DWORD dwZBufferBitDepth; */
-                   /*   DWORD dwRefreshRate; */
-            },
-            0, /*    DWORD dwAlphaBitDepth; */
-            0, /*   DWORD dwReserved; */
-            NULL, /*   LPVOID lpSurface; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKDestOverlay; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKDestBlt; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKSrcOverlay; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY ddckCKSrcBlt; */
-            {
-                sizeof (DDPIXELFORMAT), /* DWORD dwSize; */
-                DDPF_RGB, /* DWORD dwFlags; */
-                0, /* DWORD dwFourCC; */
-                {
-                    32, /* union */
-                       /* DWORD dwRGBBitCount; */
-                       /* DWORD dwYUVBitCount; */
-                       /* DWORD dwZBufferBitDepth; */
-                       /* DWORD dwAlphaBitDepth; */
-                       /* DWORD dwLuminanceBitCount; */
-                       /* DWORD dwBumpBitCount; */
-                },
-                {
-                    0xff0000, /* union */
-                       /* DWORD dwRBitMask; */
-                       /* DWORD dwYBitMask; */
-                        /* DWORD dwStencilBitDepth; */
-                        /* DWORD dwLuminanceBitMask; */
-                        /* DWORD dwBumpDuBitMask; */
-                },
-                {
-                    0xff00,
-                        /* DWORD dwGBitMask; */
-                        /* DWORD dwUBitMask; */
-                        /* DWORD dwZBitMask; */
-                        /* DWORD dwBumpDvBitMask; */
-                },
-                {
-                    0xff,
-                        /* DWORD dwBBitMask; */
-                        /* DWORD dwVBitMask; */
-                        /* DWORD dwStencilBitMask; */
-                        /* DWORD dwBumpLuminanceBitMask; */
-                },
-                {
-                    0,
-                        /* DWORD dwRGBAlphaBitMask; */
-                        /* DWORD dwYUVAlphaBitMask; */
-                        /* DWORD dwLuminanceAlphaBitMask; */
-                        /* DWORD dwRGBZBitMask; */
-                        /* DWORD dwYUVZBitMask; */
-                },
-            }, /* DDPIXELFORMAT ddpfPixelFormat; */
-            {
-                DDSCAPS_BACKBUFFER
-                | DDSCAPS_COMPLEX
-                | DDSCAPS_FLIP
-                | DDSCAPS_FRONTBUFFER
-                | DDSCAPS_LOCALVIDMEM
-                | DDSCAPS_PRIMARYSURFACE
-                | DDSCAPS_VIDEOMEMORY
-                | DDSCAPS_VISIBLE   /* DWORD dwCaps; */
-            } /* DDSCAPS ddsCaps; */
-        },
-        {
-            sizeof (DDSURFACEDESC), /*    DWORD   dwSize;  */
-            DDSD_CAPS | DDSD_PIXELFORMAT,    /* DWORD dwFlags;    */
-            0,    /* DWORD dwHeight;   */
-            0,    /* DWORD dwWidth;    */
-            {
-                0, /* Union             */
-                   /*   LONG lPitch; */
-                   /*   DWORD dwLinearSize; */
-            },
-            0,  /*    DWORD dwBackBufferCount; */
-            {
-                0, /* Union */
-                   /*  DWORD dwMipMapCount; */
-                   /*    DWORD dwZBufferBitDepth; */
-                   /*   DWORD dwRefreshRate; */
-            },
-            0, /*    DWORD dwAlphaBitDepth; */
-            0, /*   DWORD dwReserved; */
-            NULL, /*   LPVOID lpSurface; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKDestOverlay; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKDestBlt; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKSrcOverlay; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY ddckCKSrcBlt; */
-            {
-                sizeof (DDPIXELFORMAT), /* DWORD dwSize; */
-                DDPF_RGB, /* DWORD dwFlags; */
-                0, /* DWORD dwFourCC; */
-                {
-                    24, /* union */
-                       /* DWORD dwRGBBitCount; */
-                       /* DWORD dwYUVBitCount; */
-                       /* DWORD dwZBufferBitDepth; */
-                       /* DWORD dwAlphaBitDepth; */
-                       /* DWORD dwLuminanceBitCount; */
-                       /* DWORD dwBumpBitCount; */
-                },
-                {
-                    0xff0000, /* union */
-                       /* DWORD dwRBitMask; */
-                       /* DWORD dwYBitMask; */
-                        /* DWORD dwStencilBitDepth; */
-                        /* DWORD dwLuminanceBitMask; */
-                        /* DWORD dwBumpDuBitMask; */
-                },
-                {
-                    0xff00,
-                        /* DWORD dwGBitMask; */
-                        /* DWORD dwUBitMask; */
-                        /* DWORD dwZBitMask; */
-                        /* DWORD dwBumpDvBitMask; */
-                },
-                {
-                    0xff,
-                        /* DWORD dwBBitMask; */
-                        /* DWORD dwVBitMask; */
-                        /* DWORD dwStencilBitMask; */
-                        /* DWORD dwBumpLuminanceBitMask; */
-                },
-                {
-                    0,
-                        /* DWORD dwRGBAlphaBitMask; */
-                        /* DWORD dwYUVAlphaBitMask; */
-                        /* DWORD dwLuminanceAlphaBitMask; */
-                        /* DWORD dwRGBZBitMask; */
-                        /* DWORD dwYUVZBitMask; */
-                },
-            }, /* DDPIXELFORMAT ddpfPixelFormat; */
-            {
-                DDSCAPS_BACKBUFFER
-                | DDSCAPS_COMPLEX
-                | DDSCAPS_FLIP
-                | DDSCAPS_FRONTBUFFER
-                | DDSCAPS_LOCALVIDMEM
-                | DDSCAPS_PRIMARYSURFACE
-                | DDSCAPS_VIDEOMEMORY
-                | DDSCAPS_VISIBLE  /* DWORD dwCaps; */
-            } /* DDSCAPS ddsCaps; */
-        },
-        {
-            sizeof (DDSURFACEDESC), /*    DWORD   dwSize;  */
-            DDSD_CAPS | DDSD_PIXELFORMAT,    /* DWORD dwFlags;    */
-            0,    /* DWORD dwHeight;   */
-            0,    /* DWORD dwWidth;    */
-            {
-                0, /* Union             */
-                   /*   LONG lPitch; */
-                   /*   DWORD dwLinearSize; */
-            },
-            0,  /*    DWORD dwBackBufferCount; */
-            {
-                0, /* Union */
-                   /*  DWORD dwMipMapCount; */
-                   /*    DWORD dwZBufferBitDepth; */
-                   /*   DWORD dwRefreshRate; */
-            },
-            0, /*    DWORD dwAlphaBitDepth; */
-            0, /*   DWORD dwReserved; */
-            NULL, /*   LPVOID lpSurface; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKDestOverlay; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKDestBlt; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY  ddckCKSrcOverlay; */
-            {
-                0, /* DWORD dwColorSpaceLowValue; */
-                0, /* DWORD dwColorSpaceHighValue; */
-            }, /* DDCOLORKEY ddckCKSrcBlt; */
-            {
-                sizeof (DDPIXELFORMAT), /* DWORD dwSize; */
-                DDPF_RGB, /* DWORD dwFlags; */
-                0, /* DWORD dwFourCC; */
-                {
-                    16, /* union */
-                       /* DWORD dwRGBBitCount; */
-                       /* DWORD dwYUVBitCount; */
-                       /* DWORD dwZBufferBitDepth; */
-                       /* DWORD dwAlphaBitDepth; */
-                       /* DWORD dwLuminanceBitCount; */
-                       /* DWORD dwBumpBitCount; */
-                },
-                {
-                    0xf800, /* union */
-                       /* DWORD dwRBitMask; */
-                       /* DWORD dwYBitMask; */
-                        /* DWORD dwStencilBitDepth; */
-                        /* DWORD dwLuminanceBitMask; */
-                        /* DWORD dwBumpDuBitMask; */
-                },
-                {
-                    0x7e0,
-                        /* DWORD dwGBitMask; */
-                        /* DWORD dwUBitMask; */
-                        /* DWORD dwZBitMask; */
-                        /* DWORD dwBumpDvBitMask; */
-                },
-                {
-                    0x1f,
-                        /* DWORD dwBBitMask; */
-                        /* DWORD dwVBitMask; */
-                        /* DWORD dwStencilBitMask; */
-                        /* DWORD dwBumpLuminanceBitMask; */
-                },
-                {
-                    0,
-                        /* DWORD dwRGBAlphaBitMask; */
-                        /* DWORD dwYUVAlphaBitMask; */
-                        /* DWORD dwLuminanceAlphaBitMask; */
-                        /* DWORD dwRGBZBitMask; */
-                        /* DWORD dwYUVZBitMask; */
-                },
-            }, /* DDPIXELFORMAT ddpfPixelFormat; */
-            {
-                DDSCAPS_BACKBUFFER
-                | DDSCAPS_COMPLEX
-                | DDSCAPS_FLIP
-                | DDSCAPS_FRONTBUFFER
-                | DDSCAPS_LOCALVIDMEM
-                | DDSCAPS_PRIMARYSURFACE
-                | DDSCAPS_VIDEOMEMORY
-                | DDSCAPS_VISIBLE /* DWORD dwCaps; */
-            } /* DDSCAPS ddsCaps; */
-        },
-};
-
 static D3DDDIQUERYTYPE gVBoxQueryTypes[] = {
         D3DDDIQUERYTYPE_EVENT,
 //        D3DDDIQUERYTYPE_OCCLUSION
@@ -1026,198 +441,7 @@ static bool vboxVhwaHasCKeying(PVBOXWDDMDISP_ADAPTER pAdapter)
     return false;
 }
 
-static void vboxVhwaPopulateOverlayFourccSurfDesc(DDSURFACEDESC *pDesc, uint32_t fourcc)
-{
-    memset(pDesc, 0, sizeof (DDSURFACEDESC));
-
-    pDesc->dwSize = sizeof (DDSURFACEDESC);
-    pDesc->dwFlags = DDSD_CAPS | DDSD_PIXELFORMAT;
-    pDesc->ddpfPixelFormat.dwSize = sizeof (DDPIXELFORMAT);
-    pDesc->ddpfPixelFormat.dwFlags = DDPF_FOURCC;
-    pDesc->ddpfPixelFormat.dwFourCC = fourcc;
-    pDesc->ddsCaps.dwCaps = DDSCAPS_BACKBUFFER
-            | DDSCAPS_COMPLEX
-            | DDSCAPS_FLIP
-            | DDSCAPS_FRONTBUFFER
-            | DDSCAPS_LOCALVIDMEM
-            | DDSCAPS_OVERLAY
-            | DDSCAPS_VIDEOMEMORY
-            | DDSCAPS_VISIBLE;
-}
-
 #endif
-
-static bool vboxPixFormatMatch(DDPIXELFORMAT *pFormat1, DDPIXELFORMAT *pFormat2)
-{
-    return !memcmp(pFormat1, pFormat2, sizeof (DDPIXELFORMAT));
-}
-
-int vboxSurfDescMerge(DDSURFACEDESC *paDescs, uint32_t *pcDescs, uint32_t cMaxDescs, DDSURFACEDESC *pDesc)
-{
-    uint32_t cDescs = *pcDescs;
-
-    Assert(cMaxDescs >= cDescs);
-    Assert(pDesc->dwFlags == (DDSD_CAPS | DDSD_PIXELFORMAT));
-    if (pDesc->dwFlags != (DDSD_CAPS | DDSD_PIXELFORMAT))
-        return VERR_INVALID_PARAMETER;
-
-    for (uint32_t i = 0; i < cDescs; ++i)
-    {
-        DDSURFACEDESC *pCur = &paDescs[i];
-        if (vboxPixFormatMatch(&pCur->ddpfPixelFormat, &pDesc->ddpfPixelFormat))
-        {
-            if (pDesc->dwFlags & DDSD_CAPS)
-            {
-                pCur->dwFlags |= DDSD_CAPS;
-                pCur->ddsCaps.dwCaps |= pDesc->ddsCaps.dwCaps;
-            }
-            return VINF_SUCCESS;
-        }
-    }
-
-    if (cMaxDescs > cDescs)
-    {
-        paDescs[cDescs] = *pDesc;
-        ++cDescs;
-        *pcDescs = cDescs;
-        return VINF_SUCCESS;
-    }
-    return VERR_BUFFER_OVERFLOW;
-}
-
-int vboxFormatOpsMerge(FORMATOP *paOps, uint32_t *pcOps, uint32_t cMaxOps, FORMATOP *pOp)
-{
-    uint32_t cOps = *pcOps;
-
-    Assert(cMaxOps >= cOps);
-
-    for (uint32_t i = 0; i < cOps; ++i)
-    {
-        FORMATOP *pCur = &paOps[i];
-        if (pCur->Format == pOp->Format)
-        {
-            pCur->Operations |= pOp->Operations;
-            Assert(pCur->FlipMsTypes == pOp->FlipMsTypes);
-            Assert(pCur->BltMsTypes == pOp->BltMsTypes);
-            Assert(pCur->PrivateFormatBitCount == pOp->PrivateFormatBitCount);
-            return VINF_SUCCESS;
-        }
-    }
-
-    if (cMaxOps > cOps)
-    {
-        paOps[cOps] = *pOp;
-        ++cOps;
-        *pcOps = cOps;
-        return VINF_SUCCESS;
-    }
-    return VERR_BUFFER_OVERFLOW;
-}
-
-int vboxCapsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
-{
-    pAdapter->cFormstOps = 0;
-    pAdapter->paFormstOps = NULL;
-    pAdapter->cSurfDescs = 0;
-    pAdapter->paSurfDescs = NULL;
-
-    if (VBOXDISPMODE_IS_3D(pAdapter))
-    {
-        pAdapter->paFormstOps = (FORMATOP*)RTMemAllocZ(sizeof (gVBoxFormatOps3D));
-        Assert(pAdapter->paFormstOps);
-        if (pAdapter->paFormstOps)
-        {
-            memcpy (pAdapter->paFormstOps , gVBoxFormatOps3D, sizeof (gVBoxFormatOps3D));
-            pAdapter->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
-        }
-        else
-            return VERR_OUT_OF_RESOURCES;
-    }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    else
-    {
-        /* just calc the max number of formats */
-        uint32_t cFormats = RT_ELEMENTS(gVBoxFormatOpsBase);
-        uint32_t cSurfDescs = RT_ELEMENTS(gVBoxSurfDescsBase);
-        uint32_t cOverlayFormats = 0;
-        for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-        {
-            VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
-            if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
-            {
-                cOverlayFormats += pVhwa->Settings.cFormats;
-            }
-        }
-
-        cFormats += cOverlayFormats;
-        cSurfDescs += cOverlayFormats;
-
-        uint32_t cbFormatOps = cFormats * sizeof (FORMATOP);
-        cbFormatOps = (cbFormatOps + 7) & ~3;
-        /* ensure the surf descs are 8 byte aligned */
-        uint32_t offSurfDescs = (cbFormatOps + 7) & ~3;
-        uint32_t cbSurfDescs = cSurfDescs * sizeof (DDSURFACEDESC);
-        uint32_t cbBuf = offSurfDescs + cbSurfDescs;
-        uint8_t* pvBuf = (uint8_t*)RTMemAllocZ(cbBuf);
-        Assert(pvBuf);
-        if (pvBuf)
-        {
-            pAdapter->paFormstOps = (FORMATOP*)pvBuf;
-            memcpy (pAdapter->paFormstOps , gVBoxFormatOpsBase, sizeof (gVBoxFormatOpsBase));
-            pAdapter->cFormstOps = RT_ELEMENTS(gVBoxFormatOpsBase);
-
-            FORMATOP fo = {D3DDDIFMT_UNKNOWN, 0, 0, 0, 0};
-            for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-            {
-                VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
-                if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
-                {
-                    for (uint32_t j = 0; j < pVhwa->Settings.cFormats; ++j)
-                    {
-                        fo.Format = pVhwa->Settings.aFormats[j];
-                        fo.Operations = FORMATOP_OVERLAY;
-                        int rc = vboxFormatOpsMerge(pAdapter->paFormstOps, &pAdapter->cFormstOps, cFormats, &fo);
-                        AssertRC(rc);
-                    }
-                }
-            }
-
-            pAdapter->paSurfDescs = (DDSURFACEDESC*)(pvBuf + offSurfDescs);
-            memcpy (pAdapter->paSurfDescs , gVBoxSurfDescsBase, sizeof (gVBoxSurfDescsBase));
-            pAdapter->cSurfDescs = RT_ELEMENTS(gVBoxSurfDescsBase);
-
-            DDSURFACEDESC sd;
-            for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-            {
-                VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
-                if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
-                {
-                    for (uint32_t j = 0; j < pVhwa->Settings.cFormats; ++j)
-                    {
-                        uint32_t fourcc = vboxWddmFormatToFourcc(pVhwa->Settings.aFormats[j]);
-                        if (fourcc)
-                        {
-                            vboxVhwaPopulateOverlayFourccSurfDesc(&sd, fourcc);
-                            int rc = vboxSurfDescMerge(pAdapter->paSurfDescs, &pAdapter->cSurfDescs, cSurfDescs, &sd);
-                            AssertRC(rc);
-                        }
-                    }
-                }
-            }
-        }
-        else
-            return VERR_OUT_OF_RESOURCES;
-    }
-#endif
-
-    return VINF_SUCCESS;
-}
-
-void vboxCapsFree(PVBOXWDDMDISP_ADAPTER pAdapter)
-{
-    if (pAdapter->paFormstOps)
-        RTMemFree(pAdapter->paFormstOps);
-}
 
 static void vboxResourceFree(PVBOXWDDMDISP_RESOURCE pRc)
 {
@@ -2495,7 +1719,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
             if (!pDevice->pDevice9If)
             {
                 Params.pHgsmi = &pDevice->Uhgsmi.BasePrivate.Base;
-                hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL, fFlags, &Params.Base, &pDevice9If);
+                hr = pAdapter->D3D.pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL, fFlags, &Params.Base, &pDevice9If);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
@@ -2789,7 +2013,7 @@ static HRESULT vboxWddmSwapchainPresentPerform(PVBOXWDDMDISP_DEVICE pDevice, PVB
         Assert(hr == S_OK);
         if (FAILED(hr))
             return hr;
-        hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DSwapchain9Present(pSwapchain->pSwapChainIf, pSurf);
+        hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DSwapchain9Present(pSwapchain->pSwapChainIf, pSurf);
         Assert(hr == S_OK);
         pSurf->Release();
         if (FAILED(hr))
@@ -2815,7 +2039,7 @@ static HRESULT vboxWddmSwapchainPresent(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
     {
         VBOXVDBG_ASSERT_IS_DWM(FALSE);
 
-        HRESULT hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pDevice->pDevice9If);
+        HRESULT hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pDevice->pDevice9If);
         Assert(hr == S_OK);
 
         vboxWddmDalNotifyChange(pDevice);
@@ -3026,6 +2250,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                         Assert(hr == S_OK);
                         if (hr == S_OK)
                         {
+                            VBoxDispD3DGlobalInit();
                             vboxVDbgPrint(("VBoxDispD3D: DLL loaded OK\n"));
                             return TRUE;
                         }
@@ -3055,6 +2280,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                 {
 //                    VbglR3Term();
                     /// @todo RTR3Term();
+                    VBoxDispD3DGlobalTerm();
                     return TRUE;
                 }
             }
@@ -3066,20 +2292,6 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
             return TRUE;
     }
     return FALSE;
-}
-
-static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_ADAPTER pAdapter, D3DCAPS9 *pCaps)
-{
-    HRESULT hr = pAdapter->pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
-    if (FAILED(hr))
-    {
-        WARN(("GetDeviceCaps failed hr(0x%x)",hr));
-        return hr;
-    }
-
-    vboxDispDumpD3DCAPS9(pCaps);
-
-    return S_OK;
 }
 
 static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GETCAPS* pData)
@@ -3178,11 +2390,11 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             break;
         }
         case D3DDDICAPS_GETFORMATCOUNT:
-            *((uint32_t*)pData->pData) = pAdapter->cFormstOps;
+            *((uint32_t*)pData->pData) = pAdapter->Formats.cFormstOps;
             break;
         case D3DDDICAPS_GETFORMATDATA:
-            Assert(pData->DataSize == pAdapter->cFormstOps * sizeof (FORMATOP));
-            memcpy(pData->pData, pAdapter->paFormstOps, pAdapter->cFormstOps * sizeof (FORMATOP));
+            Assert(pData->DataSize == pAdapter->Formats.cFormstOps * sizeof (FORMATOP));
+            memcpy(pData->pData, pAdapter->Formats.paFormstOps, pAdapter->Formats.cFormstOps * sizeof (FORMATOP));
             break;
         case D3DDDICAPS_GETD3DQUERYCOUNT:
 #if 1
@@ -3289,21 +2501,14 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETD3D9CAPS:
         {
             Assert(pData->DataSize == sizeof (D3DCAPS9));
-//            Assert(0);
             if (pData->DataSize >= sizeof (D3DCAPS9))
             {
                 Assert(VBOXDISPMODE_IS_3D(pAdapter));
                 if (VBOXDISPMODE_IS_3D(pAdapter))
                 {
-                    D3DCAPS9* pCaps = (D3DCAPS9*)pData->pData;
-                    hr = vboxWddmGetD3D9Caps(pAdapter, pCaps);
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                        break;
-
-                    vboxVDbgPrintR((__FUNCTION__": GetDeviceCaps Failed hr(%d)\n", hr));
-                    /* let's fall back to the 3D disabled case */
+                    memcpy(pData->pData, &pAdapter->D3D.Caps, sizeof (D3DCAPS9));
                     hr = S_OK;
+                    break;
                 }
 
                 memset(pData->pData, 0, sizeof (D3DCAPS9));
@@ -3320,20 +2525,10 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 Assert(VBOXDISPMODE_IS_3D(pAdapter));
                 if (VBOXDISPMODE_IS_3D(pAdapter))
                 {
-                    D3DCAPS9 Caps9;
-                    hr = vboxWddmGetD3D9Caps(pAdapter, &Caps9);
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                    {
-                        memcpy(pData->pData, &Caps9, RT_OFFSETOF(D3DCAPS9, DevCaps2));
-                        break;
-                    }
-
-                    vboxVDbgPrintR((__FUNCTION__": GetDeviceCaps Failed hr(%d)\n", hr));
-                    /* let's fall back to the 3D disabled case */
+                    memcpy(pData->pData, &pAdapter->D3D.Caps, RT_OFFSETOF(D3DCAPS9, DevCaps2));
                     hr = S_OK;
+                    break;
                 }
-
             }
             else
                 hr = E_INVALIDARG;
@@ -5254,7 +4449,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 }
                 if (hr == S_OK)
                 {
-                    hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice9If,
+                    hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice9If,
                                                 pAllocation->D3DWidth,
                                                 pSurf->Height,
                                                 pResource->SurfCount,
@@ -5324,7 +4519,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                     if (hr == S_OK)
                     {
-                        hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9CreateCubeTexture((IDirect3DDevice9Ex *)pDevice9If,
+                        hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateCubeTexture((IDirect3DDevice9Ex *)pDevice9If,
                                                 pAllocation->SurfDesc.width,
                                                 VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc),
                                                 vboxDDI2D3DUsage(pResource->Flags),
@@ -5801,7 +4996,7 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
 
-        hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pDevice->pDevice9If);
+        hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pDevice->pDevice9If);
         Assert(hr == S_OK);
 
         vboxWddmDalNotifyChange(pDevice);
@@ -6624,7 +5819,7 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
         /* ensure the device is destroyed in any way.
          * Release may not work in case of some leaking, which will leave the crOgl context refering the destroyed VBOXUHGSMI */
         if (pDevice->pDevice9If)
-            pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Term((IDirect3DDevice9Ex *)pDevice->pDevice9If);
+            pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Term((IDirect3DDevice9Ex *)pDevice->pDevice9If);
     }
 
     HRESULT hr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);
@@ -6995,7 +6190,7 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
                     if (!pRc->RcDesc.fFlags.CubeMap)
                     {
                         IDirect3DTexture9 *pD3DIfTex;
-                        hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice9If,
+                        hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice9If,
                                                     pAllocation->SurfDesc.width,
                                                     pAllocation->SurfDesc.height,
                                                     pRc->cAllocations,
@@ -7031,7 +6226,7 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
                             Assert(0);
                             hr = E_INVALIDARG;
                         }
-                        hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9CreateCubeTexture((IDirect3DDevice9Ex *)pDevice9If,
+                        hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateCubeTexture((IDirect3DDevice9Ex *)pDevice9If,
                                                     pAllocation->SurfDesc.width,
                                                     VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc),
                                                     vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
@@ -7128,10 +6323,10 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
 //    Assert(0);
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
 
-    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_DEVICE, apRTs[pAdapter->cMaxSimRTs]));
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_DEVICE, apRTs[pAdapter->D3D.cMaxSimRTs]));
     if (pDevice)
     {
-        pDevice->cRTs = pAdapter->cMaxSimRTs;
+        pDevice->cRTs = pAdapter->D3D.cMaxSimRTs;
         pDevice->hDevice = pCreateData->hDevice;
         pDevice->pAdapter = pAdapter;
         pDevice->u32IfVersion = pCreateData->Interface;
@@ -7360,11 +6555,14 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
     if (VBOXDISPMODE_IS_3D(pAdapter))
     {
         VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
-        pAdapter->pD3D9If->Release();
-        VBoxDispD3DClose(&pAdapter->D3D);
+        VBoxDispD3DGlobalClose(&pAdapter->D3D, &pAdapter->Formats);
     }
-
-    vboxCapsFree(pAdapter);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    else
+    {
+        VBoxDispD3DGlobal2DFormatsTerm(pAdapter);
+    }
+#endif
 
     VBOXDISPPROFILE_DDI_TERM(pAdapter);
 
@@ -7492,39 +6690,14 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
                 {
                     VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
                     /* try enable the 3D */
-#if 1
-                    hr = VBoxDispD3DOpen(&pAdapter->D3D);
-                    Assert(hr == S_OK);
-#else
-                    hr = E_FAIL;
-#endif
+                    hr = VBoxDispD3DGlobalOpen(&pAdapter->D3D, &pAdapter->Formats);
                     if (hr == S_OK)
                     {
-//                        Assert(0);
-                        hr = pAdapter->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pAdapter->pD3D9If);
-                        Assert(hr == S_OK);
-                        if (hr == S_OK)
-                        {
-                            D3DCAPS9 Caps;
-                            memset(&Caps, 0, sizeof (Caps));
-                            hr = vboxWddmGetD3D9Caps(pAdapter, &Caps);
-                            Assert(hr == S_OK);
-                            if (hr == S_OK)
-                            {
-                                pAdapter->cMaxSimRTs = Caps.NumSimultaneousRTs;
-                                Assert(pAdapter->cMaxSimRTs);
-                                Assert(pAdapter->cMaxSimRTs < UINT32_MAX/2);
-                                vboxVDbgPrint((__FUNCTION__": SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
-                                break;
-                            }
-                            pAdapter->pD3D9If->Release();
-                        }
-                        else
-                            vboxVDbgPrintR((__FUNCTION__": pfnDirect3DCreate9Ex failed, hr (%d)\n", hr));
-                        VBoxDispD3DClose(&pAdapter->D3D);
+                        LOG(("SUCCESS 3D Enabled, pAdapter (0x%p)", pAdapter));
+                        break;
                     }
                     else
-                        vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
+                        WARN(("VBoxDispD3DOpen failed, hr (%d)", hr));
 
                 }
             } while (0);
@@ -7536,14 +6709,26 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
             {
                 pAdapter->aHeads[i].Vhwa.Settings = Query.aInfos[i];
             }
+            hr = VBoxDispD3DGlobal2DFormatsInit(pAdapter);
+            if (!SUCCEEDED(hr))
+            {
+                WARN(("VBoxDispD3DGlobal2DFormatsInit failed hr 0x%x", hr));
+            }
         }
 #endif
 
-        vboxCapsInit(pAdapter);
-        hr = S_OK;
-//        RTMemFree(pAdapter);
+        if (SUCCEEDED(hr))
+        {
+            VBOXDISPPROFILE_DDI_INIT_ADP(pAdapter);
+            hr = S_OK;
+            break;
+        }
+        else
+        {
+            WARN(("OpenAdapter failed hr 0x%x", hr));
+        }
 
-        VBOXDISPPROFILE_DDI_INIT_ADP(pAdapter);
+        RTMemFree(pAdapter);
     }
     else
     {
