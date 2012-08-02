@@ -406,8 +406,8 @@ int handleStorageAttach(HandlerArg *a)
                      * Try to attach an empty DVD drive as a hotplug operation.
                      * Main will complain if the controller doesn't support hotplugging.
                      */
-                    CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(), port, device,
-                                                      devTypeRequested, NULL));
+                    CHECK_ERROR(machine, AttachDeviceWithoutMedium(Bstr(pszCtl).raw(), port, device,
+                                                                   devTypeRequested));
                     deviceType = DeviceType_DVD; /* To avoid the error message below. */
                 }
 
@@ -444,8 +444,8 @@ int handleStorageAttach(HandlerArg *a)
 
                 /* attach a empty floppy/dvd drive after removing previous attachment */
                 machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
-                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(), port, device,
-                                                  deviceType, NULL));
+                CHECK_ERROR(machine, AttachDeviceWithoutMedium(Bstr(pszCtl).raw(), port, device,
+                                                            deviceType));
             }
         } // end if (!RTStrICmp(pszMedium, "emptydrive"))
         else
@@ -689,20 +689,18 @@ int handleStorageAttach(HandlerArg *a)
                                 if (deviceType != devTypeRequested)
                                 {
                                     machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
-                                    rc = machine->AttachDevice(Bstr(pszCtl).raw(),
-                                                               port,
-                                                               device,
-                                                               devTypeRequested,    // DeviceType_DVD or DeviceType_Floppy
-                                                               NULL);
+                                    rc = machine->AttachDeviceWithoutMedium(Bstr(pszCtl).raw(),
+                                                                            port,
+                                                                            device,
+                                                                            devTypeRequested);    // DeviceType_DVD or DeviceType_Floppy
                                 }
                             }
                             else
                             {
-                                rc = machine->AttachDevice(Bstr(pszCtl).raw(),
-                                                           port,
-                                                           device,
-                                                           devTypeRequested,    // DeviceType_DVD or DeviceType_Floppy
-                                                           NULL);
+                                rc = machine->AttachDeviceWithoutMedium(Bstr(pszCtl).raw(),
+                                                                        port,
+                                                                        device,
+                                                                        devTypeRequested);    // DeviceType_DVD or DeviceType_Floppy
                             }
                         }
 
@@ -845,8 +843,8 @@ int handleStorageAttach(HandlerArg *a)
             if (!RTStrICmp(pszBandwidthGroup, "none"))
             {
                 /* Just remove the bandwidth gorup. */
-                CHECK_ERROR(machine, SetBandwidthGroupForDevice(Bstr(pszCtl).raw(),
-                                                                port, device, NULL));
+                CHECK_ERROR(machine, SetNoBandwidthGroupForDevice(Bstr(pszCtl).raw(),
+                                                                  port, device));
             }
             else
             {

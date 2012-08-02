@@ -1205,7 +1205,7 @@
 
   <interface
     name="IVirtualBoxErrorInfo" extends="$errorinfo"
-    uuid="e053d3c0-f493-491b-a735-3a9f0b1feed4"
+    uuid="f91e6e91-49e1-4fd2-b21e-269003350d06"
     supportsErrorInfo="no"
     wsmap="managed"
     >
@@ -3756,7 +3756,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="f5b974bd-473b-43b6-b800-1ec40b9a8513"
+    uuid="481ae051-96ed-4ba3-81e6-7b2c186005bc"
     wsmap="managed"
     >
     <desc>
@@ -4811,6 +4811,91 @@
       </param>
     </method>
 
+  <method name="attachDeviceWithoutMedium">
+      <desc>
+      Attaches a device and optionally mounts a medium to the given storage
+      controller (<link to="IStorageController" />, identified by @a name),
+      at the indicated port and device.
+
+      This method is intended for managing storage devices in general while a
+      machine is powered off. It can be used to attach and detach fixed
+      and removable media. The following kind of media can be attached
+      to a machine:
+      <ul>
+      <li>
+      For fixed and removable media, you can pass in a medium that was
+      previously opened using <link to="IVirtualBox::openMedium" />.
+      </li>
+
+      <li>Only for storage devices supporting removable media (such as
+      DVDs and floppies) with an empty drive or one of the medium objects listed
+      in the <link to="IHost::DVDDrives" /> and <link to="IHost::floppyDrives"/>
+      arrays to indicate a host drive.
+      For removable devices, you can also use <link to="IMachine::mountMedium"/>
+      to change the media while the machine is running.
+      </li>
+      </ul>
+
+      In a VM's default configuration of virtual machines, the secondary
+      master of the IDE controller is used for a CD/DVD drive.
+      <link to="IMediumAttachment"/> will appear in the machine's list of medium
+      attachments (see <link to="IMachine::mediumAttachments"/>).
+
+      See <link to="IMedium"/> and <link to="IMediumAttachment"/> for more
+      information about attaching media.
+
+      The specified device slot must not have a device attached to it,
+      or this method will fail.
+      <note>
+      You cannot attach a device to a newly created machine until
+      this machine's settings are saved to disk using
+      <link to="#saveSettings"/>.
+      </note>
+      <note>
+      If the medium is being attached indirectly, a new differencing medium
+      will implicitly be created for it and attached instead. If the
+      changes made to the machine settings (including this indirect
+      attachment) are later cancelled using <link to="#discardSettings"/>,
+      this implicitly created differencing medium will implicitly
+      be deleted.
+      </note>
+
+      <result name="E_INVALIDARG">
+        SATA device, SATA port, IDE port or IDE slot out of range, or
+            file or UUID not found.
+      </result>
+      <result name="VBOX_E_INVALID_OBJECT_STATE">
+        Machine must be registered before media can be attached.
+      </result>
+      <result name="VBOX_E_INVALID_VM_STATE">
+      Invalid machine state.
+      </result>
+      <result name="VBOX_E_OBJECT_IN_USE">
+      A medium is already attached to this or another virtual machine.
+      </result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+      <desc>Name of the storage controller to attach the device to.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+      <desc>Port to attach the device to. For an IDE controller, 0 specifies
+      the primary controller and 1 specifies the secondary controller.
+      For a SCSI controller, this must range from 0 to 15; for a SATA controller,
+      from 0 to 29; for an SAS controller, from 0 to 7.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+      <desc>Device slot in the given port to attach the device to. This is only
+      relevant for IDE controllers, for which 0 specifies the master device and
+      1 specifies the slave device. For all other controller types, this must
+      be 0.</desc>
+      </param>
+      <param name="type" type="DeviceType" dir="in">
+      <desc>Device type of the attached device. For media opened by
+      <link to="IVirtualBox::openMedium" />, this must match the device type
+      specified there.</desc>
+      </param>
+    </method>
+
     <method name="detachDevice">
       <desc>
         Detaches the device attached to a device slot of the specified bus.
@@ -5041,7 +5126,37 @@
       </param>
     </method>
 
-    <method name="UnmountMedium">
+    <method name="setNoBandwidthGroupForDevice">
+      <desc>
+      Sets no bandwidth group for an existing storage device.
+      The device must already exist; see <link to="IMachine::attachDevice"/>
+      for how to attach a new device.
+      The @a controllerPort and @a device parameters specify the device slot and
+      have have the same meaning as with <link to="IMachine::attachDevice" />.
+      <result name="E_INVALIDARG">
+      SATA device, SATA port, IDE port or IDE slot out of range.
+      </result>
+      <result name="VBOX_E_INVALID_OBJECT_STATE">
+      Attempt to modify an unregistered virtual machine.
+      </result>
+      <result name="VBOX_E_INVALID_VM_STATE">
+      Invalid machine state.
+      </result>
+
+       </desc>
+      <param name="name" type="wstring" dir="in">
+      <desc>Name of the storage controller.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+      <desc>Storage controller port.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+      <desc>Device slot in the given port.</desc>
+      </param>
+    </method>
+
+
+    <method name="unmountMedium">
           <desc>
             Unmounts any currently mounted medium (<link to="IMedium" />,
             identified by the given UUID @a id) to the given storage controller
@@ -12251,7 +12366,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="53f9cc0c-e0fd-40a5-a404-a7a5272082cd"
+    uuid="29989373-b111-4654-8493-2e1176cba890"
     wsmap="managed"
     >
     <desc>
@@ -13388,6 +13503,52 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
+    </method>
+
+    <method name="cloneToBase">
+    <desc>
+    Starts creating a clone of this medium in the format and at the
+    location defined by the @a target argument.
+
+    The target medium must be either in <link to="MediumState_NotCreated"/>
+    state (i.e. must not have an existing storage unit) or in
+    <link to="MediumState_Created"/> state (i.e. created and not locked, and
+    big enough to hold the data or else the copy will be partial). Upon
+    successful completion, the cloned medium will contain exactly the
+    same sector data as the medium being cloned, except that in the
+    first case a new UUID for the clone will be randomly generated, and in
+    the second case the UUID will remain unchanged.
+
+    The @a parent argument defines which medium will be the parent
+    of the clone. In this case the clone will be a base image, i.e. 
+    completely independent. It is possible to specify an arbitrary 
+    medium for this parameter, including the parent of the
+    medium which is being cloned. Even cloning to a child of the source
+    medium is possible. Note that when cloning to an existing image, the
+    @a parent argument is ignored.
+
+    After the returned progress object reports that the operation is
+    successfully complete, the target medium gets remembered by this
+    VirtualBox installation and may be attached to virtual machines.
+
+    <note>
+    This medium will be placed to <link to="MediumState_LockedRead"/>
+    state for the duration of this operation.
+    </note>
+    <result name="E_NOTIMPL">
+    The specified cloning variant is not supported at the moment.
+    </result>
+    </desc>
+    <param name="target" type="IMedium" dir="in">
+    <desc>Target medium.</desc>
+    </param>
+    <param name="variant" type="unsigned long" dir="in">
+    <desc>Exact image variant which should be created (as a combination of
+    <link to="MediumVariant" /> flags).</desc>
+    </param>
+    <param name="progress" type="IProgress" dir="return">
+    <desc>Progress object to track the operation completion.</desc>
+    </param>
     </method>
 
     <!-- other methods -->
