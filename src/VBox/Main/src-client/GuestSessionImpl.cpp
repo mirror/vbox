@@ -595,6 +595,11 @@ const GuestEnvironment& GuestSession::getEnvironment(void)
     return mData.mEnvironment;
 }
 
+Utf8Str GuestSession::getName(void)
+{
+    return mData.mName;
+}
+
 int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

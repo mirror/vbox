@@ -130,6 +130,7 @@ public:
     int                     fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize);
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
+    Utf8Str                 getName(void);
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     processClose(ComObjPtr<GuestProcess> pProcess);
     int                     processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
