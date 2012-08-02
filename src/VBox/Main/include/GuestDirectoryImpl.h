@@ -21,6 +21,8 @@
 
 #include "VirtualBoxBase.h"
 
+class GuestSession;
+
 /**
  * TODO
  */
@@ -40,7 +42,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestDirectory)
 
-    HRESULT init(void);
+    int     init(GuestSession *aSession, const Utf8Str &strPath);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -50,7 +52,7 @@ public:
      * @{ */
     STDMETHOD(COMGETTER(DirectoryName))(BSTR *aName);
 
-    STDMETHOD(Read)(IGuestFsObjInfo **aInfo);
+    STDMETHOD(Read)(IFsObjInfo **aInfo);
     /** @}  */
 
 public:
@@ -62,6 +64,7 @@ private:
 
     struct Data
     {
+        GuestSession           *mParent;
         Utf8Str                 mName;
         ComPtr<IGuestFsObjInfo> mFsObjInfo;
     } mData;

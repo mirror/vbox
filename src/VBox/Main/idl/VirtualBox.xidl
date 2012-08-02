@@ -9244,7 +9244,7 @@
   
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="47a344ec-8495-49ad-bfab-8cd0ff8eb3cf"
+    uuid="89f39320-d86c-4705-a376-d083f3c5c4e3"
     wsmap="managed"
     >
     
@@ -9371,7 +9371,7 @@
       </param>
     </method>
     
-    <method name="DirectoryCreate">
+    <method name="directoryCreate">
       <desc>
         TODO
 
@@ -9385,7 +9385,7 @@
       <param name="mode" type="unsigned long" dir="in">
         <desc>TODO</desc>
       </param>
-      <param name="flags" type="unsigned long" dir="in">
+      <param name="flags" type="DirectoryCreateFlag" dir="in" safearray="yes">
         <desc>TODO</desc>
       </param>
       <param name="directory" type="IGuestDirectory" dir="return">

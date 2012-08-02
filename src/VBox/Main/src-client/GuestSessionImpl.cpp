@@ -377,6 +377,86 @@ int GuestSession::directoryClose(ComObjPtr<GuestDirectory> pDirectory)
     return VERR_NOT_FOUND;
 }
 
+int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory)
+{
+    LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n",
+                     strPath.c_str(), uMode, uFlags));
+
+    GuestProcessInfo procInfo;
+    procInfo.mName    = Utf8StrFmt(tr("Creating directory \"%s\"", strPath.c_str()));
+    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
+
+    int rc = VINF_SUCCESS;
+
+    /* Construct arguments. */
+    if (uFlags & DirectoryCreateFlag_Parents)
+        procInfo.mArguments.push_back(Utf8Str("--parents")); /* We also want to create the parent directories. */
+    if (uMode)
+    {
+        procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
+
+        char szMode[16];
+        if (RTStrPrintf(szMode, sizeof(szMode), "%o", uMode))
+        {
+            procInfo.mArguments.push_back(Utf8Str(szMode));
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+    }
+    procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
+
+    ComObjPtr<GuestProcess> pProcess;
+    rc = processCreateExInteral(procInfo, pProcess);
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessWaitResult waitRes;
+        rc = pProcess->waitFor(ProcessWaitForFlag_Terminate, 30 * 1000 /* Timeout */, waitRes);
+        if (RT_SUCCESS(rc))
+        {
+            ProcessStatus_T procStatus;
+            HRESULT hr = pProcess->COMGETTER(Status)(&procStatus);
+            ComAssertComRC(hr);
+            if (procStatus == ProcessStatus_TerminatedNormally)
+            {
+                LONG lExitCode;
+                pProcess->COMGETTER(ExitCode)(&lExitCode);
+                if (lExitCode != 0)
+                    return VERR_CANT_CREATE;
+            }
+            else
+                rc = VERR_BROKEN_PIPE; /** @todo Find a better rc. */
+        }
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    try
+    {
+        /* Create the directory object. */
+        HRESULT hr = pDirectory.createObject();
+        if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
+
+        /* Note: There will be a race between creating and getting/initing the directory
+                 object here. */
+        rc = pDirectory->init(this /* Parent */, strPath);
+        if (RT_FAILURE(rc)) throw rc;
+
+        /* Add the created directory to our vector. */
+        mData.mDirectories.push_back(pDirectory);
+
+        LogFlowFunc(("Added new directory (Session: %RU32) with process ID=%RU32\n",
+                     mData.mId, mData.mNextProcessID));
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
 {
     LogFlowFuncEnter();
@@ -503,7 +583,7 @@ int GuestSession::processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<G
         if (++uTries == UINT32_MAX)
             break; /* Don't try too hard. */
     }
-    if (RT_FAILURE(rc)) throw rc;
+    if (RT_FAILURE(rc)) return rc;
 
     try
     {
@@ -642,17 +722,73 @@ STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode, ULONG aFlags, IGuestDirectory **aProgress)
+STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
+                                           ComSafeArrayIn(DirectoryCreateFlag_T, aFlags), IGuestDirectory **aDirectory)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No directory to create specified"));
+    /* aDirectory is optional. */
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    uint32_t fFlags = DirectoryCreateFlag_None;
+    if (aFlags)
+    {
+        com::SafeArray<DirectoryCreateFlag_T> flags(ComSafeArrayInArg(aFlags));
+        for (size_t i = 0; i < flags.size(); i++)
+            fFlags |= flags[i];
+
+        if (!(fFlags & DirectoryCreateFlag_Parents))
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
+    }
+
+    HRESULT hr = S_OK;
+
+    ComObjPtr <GuestDirectory> pDirectory;
+    int rc = directoryCreateInternal(Utf8Str(aPath), (uint32_t)aMode, (uint32_t)aFlags, pDirectory);
+    if (RT_SUCCESS(rc))
+    {
+        if (aDirectory)
+        {
+            /* Return directory object to the caller. */
+            hr = pDirectory.queryInterfaceTo(aDirectory);
+        }
+        else
+        {
+            rc = directoryClose(pDirectory);
+            if (RT_FAILURE(rc))
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Unable to close directory object, rc=%Rrc"), rc);
+        }
+    }
+    else
+    {
+        switch (rc)
+        {
+            case VERR_INVALID_PARAMETER:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
+               break;
+
+            case VERR_BROKEN_PIPE:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
+               break;
+
+            case VERR_CANT_CREATE:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Could not create directory"));
+               break;
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
+               break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

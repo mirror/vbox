@@ -267,6 +267,9 @@ protected:
  */
 struct GuestProcessInfo
 {
+    /** The process' friendly name. */
+    Utf8Str                     mName;
+    /** The actual command to execute. */
     Utf8Str                     mCommand;
     ProcessArguments            mArguments;
     GuestEnvironment            mEnvironment;
@@ -274,6 +277,7 @@ struct GuestProcessInfo
     ULONG                       mTimeoutMS;
     ProcessPriority_T           mPriority;
     ProcessAffinity             mAffinity;
+
 };
 
 /**
