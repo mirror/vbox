@@ -80,6 +80,14 @@ extern "C" {
 /* to shut up gcc warning for struct VBOXUHGSMI * parameters */
 struct VBOXUHGSMI;
 
+#if defined(IN_GUEST) && (WINDOWS) && defined(VBOX_WITH_WDDM)
+# ifdef VBOX_WDDM_WOW64
+#  define VBOX_MODNAME_DISPD3D "VBoxDispD3D-x86"
+# else
+#  define VBOX_MODNAME_DISPD3D "VBoxDispD3D"
+# endif
+#endif
+
 #ifndef APIENTRY
 #define APIENTRY
 #endif

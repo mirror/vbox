@@ -1024,10 +1024,10 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 #ifdef WINDOWS
     PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 # ifdef VBOX_WITH_WDDM
-    hVBoxD3D = GetModuleHandle("VBoxDispD3D");
+    hVBoxD3D = GetModuleHandle(VBOX_MODNAME_DISPD3D);
     if (hVBoxD3D)
     {
-        hVBoxD3D = LoadLibrary("VBoxDispD3D");
+        hVBoxD3D = LoadLibrary(VBOX_MODNAME_DISPD3D);
     }
 
     if (hVBoxD3D)
@@ -1050,7 +1050,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
                 }
                 else
                 {
-                    crDebug("running with VBoxDispD3D");
+                    crDebug("running with " VBOX_MODNAME_DISPD3D);
                     stub.trackWindowVisibleRgn = 0;
                     stub.bRunningUnderWDDM = true;
                 }
