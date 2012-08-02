@@ -62,7 +62,8 @@ public:
 
 private slots:
 
-    /* Handler: Snapshot-view stuff: */
+    /* Handlers: Global-event stuff: */
+    void sltStateChanged(QString strId);
     void sltSnapshotChanged(QString strId);
 
     /* Handler: Details-view stuff: */
@@ -134,6 +135,9 @@ private:
     /* Helpers: Current item stuff: */
     UIVMItem* currentItem() const;
     QList<UIVMItem*> currentItems() const;
+
+    /* Helper: Action update stuff: */
+    void updateActionsAppearance();
 
     /* Helpers: Action stuff: */
     static bool isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items);
