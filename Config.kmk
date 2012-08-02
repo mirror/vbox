@@ -838,11 +838,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_VBOXBFE=
-
- # Temporary while Lion is being worked on by apple and others (mac ports).
- if "$(VBOX_DARWIN_HOST_VERSION_MAJOR)" == "7" # Lion
-  VBOX_WITH_DOCS=
- endif
 endif
 
 ifeq ($(KBUILD_TARGET),freebsd)
