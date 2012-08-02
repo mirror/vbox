@@ -60,6 +60,8 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
         << KVBoxEventType_OnMachineDataChanged
         << KVBoxEventType_OnMachineRegistered
         << KVBoxEventType_OnSessionStateChanged
+        << KVBoxEventType_OnSnapshotTaken
+        << KVBoxEventType_OnSnapshotDeleted
         << KVBoxEventType_OnSnapshotChanged;
 
     vbox.GetEventSource().RegisterListener(m_mainEventListener, events, TRUE);
