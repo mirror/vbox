@@ -119,6 +119,8 @@ namespace UIDefs
     extern const char* GUI_DetailsPageBoxes;
     extern const char* GUI_SelectorVMPositions;
     extern const char* GUI_LastVMSelected;
+    extern const char* GUI_LastItemSelected;
+    extern const char* GUI_GroupDefinitions;
 
     /* Machine-window declarations: */
     extern const char* GUI_Input_MachineShortcuts;
@@ -227,6 +229,26 @@ struct StorageSlot
     KStorageBus bus; LONG port; LONG device;
 };
 Q_DECLARE_METATYPE(StorageSlot);
+
+/* Details element type: */
+enum DetailsElementType
+{
+    DetailsElementType_General,
+    DetailsElementType_System,
+    DetailsElementType_Preview,
+    DetailsElementType_Display,
+    DetailsElementType_Storage,
+    DetailsElementType_Audio,
+    DetailsElementType_Network,
+    DetailsElementType_Serial,
+#ifdef VBOX_WITH_PARALLEL_PORTS
+    DetailsElementType_Parallel,
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+    DetailsElementType_USB,
+    DetailsElementType_SF,
+    DetailsElementType_Description
+};
+Q_DECLARE_METATYPE(DetailsElementType);
 
 #endif // __UIDefs_h__
 

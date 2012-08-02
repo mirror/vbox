@@ -31,6 +31,7 @@
 /* Determines if <Object of type X> can be converted to object of other type.
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<StorageSlot>() { return true; }
+template<> bool canConvert<DetailsElementType>() { return true; }
 
 /* QString <= StorageSlot: */
 template<> QString toString(const StorageSlot &storageSlot)
@@ -258,5 +259,113 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
         }
     }
     return result;
+}
+
+/* QString <= DetailsElementType: */
+template<> QString toString(const DetailsElementType &detailsElementType)
+{
+    QString strResult;
+    switch (detailsElementType)
+    {
+        case DetailsElementType_General:     strResult = QApplication::translate("VBoxGlobal", "General", "DetailsElementType"); break;
+        case DetailsElementType_Preview:     strResult = QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType"); break;
+        case DetailsElementType_System:      strResult = QApplication::translate("VBoxGlobal", "System", "DetailsElementType"); break;
+        case DetailsElementType_Display:     strResult = QApplication::translate("VBoxGlobal", "Display", "DetailsElementType"); break;
+        case DetailsElementType_Storage:     strResult = QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType"); break;
+        case DetailsElementType_Audio:       strResult = QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType"); break;
+        case DetailsElementType_Network:     strResult = QApplication::translate("VBoxGlobal", "Network", "DetailsElementType"); break;
+        case DetailsElementType_Serial:      strResult = QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType"); break;
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        case DetailsElementType_Parallel:    strResult = QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"); break;
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        case DetailsElementType_USB:         strResult = QApplication::translate("VBoxGlobal", "USB", "DetailsElementType"); break;
+        case DetailsElementType_SF:          strResult = QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); break;
+        case DetailsElementType_Description: strResult = QApplication::translate("VBoxGlobal", "Description", "DetailsElementType"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element type=%d", detailsElementType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* DetailsElementType <= QString: */
+template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType)
+{
+    QHash<QString, DetailsElementType> list;
+    list.insert(QApplication::translate("VBoxGlobal", "General", "DetailsElementType"),        DetailsElementType_General);
+    list.insert(QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType"),        DetailsElementType_Preview);
+    list.insert(QApplication::translate("VBoxGlobal", "System", "DetailsElementType"),         DetailsElementType_System);
+    list.insert(QApplication::translate("VBoxGlobal", "Display", "DetailsElementType"),        DetailsElementType_Display);
+    list.insert(QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType"),        DetailsElementType_Storage);
+    list.insert(QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType"),          DetailsElementType_Audio);
+    list.insert(QApplication::translate("VBoxGlobal", "Network", "DetailsElementType"),        DetailsElementType_Network);
+    list.insert(QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType"),   DetailsElementType_Serial);
+#ifdef VBOX_WITH_PARALLEL_PORTS
+    list.insert(QApplication::translate("VBoxGlobal", "Parallel ports", "DetailsElementType"), DetailsElementType_Parallel);
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+    list.insert(QApplication::translate("VBoxGlobal", "USB", "DetailsElementType"),            DetailsElementType_USB);
+    list.insert(QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"), DetailsElementType_SF);
+    list.insert(QApplication::translate("VBoxGlobal", "Description", "DetailsElementType"),    DetailsElementType_Description);
+    if (!list.contains(strDetailsElementType))
+    {
+        AssertMsgFailed(("No value for '%s'", strDetailsElementType.toAscii().constData()));
+    }
+    return list.value(strDetailsElementType);
+}
+
+/* QString <= DetailsElementType: */
+template<> QString toInternalString(const DetailsElementType &detailsElementType)
+{
+    QString strResult;
+    switch (detailsElementType)
+    {
+        case DetailsElementType_General:     strResult = "general"; break;
+        case DetailsElementType_Preview:     strResult = "preview"; break;
+        case DetailsElementType_System:      strResult = "system"; break;
+        case DetailsElementType_Display:     strResult = "display"; break;
+        case DetailsElementType_Storage:     strResult = "storage"; break;
+        case DetailsElementType_Audio:       strResult = "audio"; break;
+        case DetailsElementType_Network:     strResult = "network"; break;
+        case DetailsElementType_Serial:      strResult = "serialPorts"; break;
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        case DetailsElementType_Parallel:    strResult = "parallelPorts"; break;
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        case DetailsElementType_USB:         strResult = "usb"; break;
+        case DetailsElementType_SF:          strResult = "sharedFolders"; break;
+        case DetailsElementType_Description: strResult = "description"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element type=%d", detailsElementType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* DetailsElementType <= QString: */
+template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType)
+{
+    QHash<QString, DetailsElementType> list;
+    list.insert("general",       DetailsElementType_General);
+    list.insert("preview",       DetailsElementType_Preview);
+    list.insert("system",        DetailsElementType_System);
+    list.insert("display",       DetailsElementType_Display);
+    list.insert("storage",       DetailsElementType_Storage);
+    list.insert("audio",         DetailsElementType_Audio);
+    list.insert("network",       DetailsElementType_Network);
+    list.insert("serialPorts",   DetailsElementType_Serial);
+#ifdef VBOX_WITH_PARALLEL_PORTS
+    list.insert("parallelPorts", DetailsElementType_Parallel);
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+    list.insert("usb",           DetailsElementType_USB);
+    list.insert("sharedFolders", DetailsElementType_SF);
+    list.insert("description",   DetailsElementType_Description);
+    if (!list.contains(strDetailsElementType))
+    {
+        AssertMsgFailed(("No value for '%s'", strDetailsElementType.toAscii().constData()));
+    }
+    return list.value(strDetailsElementType);
 }
 

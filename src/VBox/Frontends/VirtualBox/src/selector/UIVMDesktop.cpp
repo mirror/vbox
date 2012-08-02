@@ -1995,24 +1995,26 @@ UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *
     }
 
     /* Add the pages */
-    QStackedLayout *pStack = new QStackedLayout(pMainLayout);
+    m_pStackedLayout = new QStackedLayout(pMainLayout);
 
     m_pDetails = new UIDetailsPagePrivate(this, pRefreshAction);
     connect(m_pDetails, SIGNAL(linkClicked(const QString&)),
             this, SIGNAL(linkClicked(const QString&)));
-    pStack->addWidget(m_pDetails);
+    m_pStackedLayout->addWidget(m_pDetails);
     m_pSnapshotsPage = new VBoxSnapshotsWgt(this);
     m_pSnapshotsPage->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
-    pStack->addWidget(m_pSnapshotsPage);
+    m_pStackedLayout->addWidget(m_pSnapshotsPage);
 //    m_pDescription = new UIDescriptionPagePrivate(this);
 //    connect(m_pDescription, SIGNAL(linkClicked(const QString&)),
 //            this, SIGNAL(linkClicked(const QString&)));
 //    m_pDescription->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
-//    pStack->addWidget(m_pDescription);
+//    m_pStackedLayout->addWidget(m_pDescription);
 
     /* Connect the header buttons with the stack layout. */
     connect(m_pHeaderBtn, SIGNAL(clicked(int)),
-            pStack, SLOT(setCurrentIndex(int)));
+            m_pStackedLayout, SLOT(setCurrentIndex(int)));
+    connect(m_pStackedLayout, SIGNAL(currentChanged(int)),
+            this, SIGNAL(sigCurrentChanged(int)));
 
     retranslateUi();
 }
@@ -2061,6 +2063,11 @@ void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine& machine)
         m_pHeaderBtn->animateClick(Dtls);
         m_pHeaderBtn->setEnabled(Snap, false);
     }
+}
+
+int UIVMDesktop::widgetIndex() const
+{
+    return m_pStackedLayout->currentIndex();
 }
 
 //void UIVMDesktop::updateDescription(UIVMItem *pVMItem, const CMachine& machine)

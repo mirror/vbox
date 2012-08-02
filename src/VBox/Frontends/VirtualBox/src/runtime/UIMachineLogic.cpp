@@ -1108,7 +1108,7 @@ void UIMachineLogic::sltOpenSharedFoldersDialog()
         msgCenter().remindAboutGuestAdditionsAreNotActive(activeMachineWindow());
 
     /* Open VM settings : Shared folders page: */
-    sltOpenVMSettingsDialog("#sfolders");
+    sltOpenVMSettingsDialog("#sharedFolders");
 }
 
 void UIMachineLogic::sltPrepareStorageMenu()

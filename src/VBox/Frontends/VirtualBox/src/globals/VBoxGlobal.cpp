@@ -1108,7 +1108,7 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
  *       problem though and needs to be addressed using exceptions (see also the
  *       @todo in UIMedium::details()).
  */
-QString VBoxGlobal::details (const CMedium &aMedium, bool aPredictDiff)
+QString VBoxGlobal::details (const CMedium &aMedium, bool aPredictDiff, bool fUseHtml /* = true */)
 {
     CMedium cmedium (aMedium);
     UIMedium medium;
@@ -1122,7 +1122,8 @@ QString VBoxGlobal::details (const CMedium &aMedium, bool aPredictDiff)
             return QString();
     }
 
-    return medium.detailsHTML (true /* aNoDiffs */, aPredictDiff);
+    return fUseHtml ? medium.detailsHTML (true /* aNoDiffs */, aPredictDiff) :
+                      medium.details(true /* aNoDiffs */, aPredictDiff);
 }
 
 /**

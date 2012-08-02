@@ -65,6 +65,21 @@ public:
         Assert(0); return T();
     }
 
+    /* QString <= template class: */
+    template<class T> QString toInternalString(const T &data) const
+    {
+        if (canConvert<T>())
+            return ::toInternalString(data);
+        Assert(0); return QString();
+    }
+    /* Template class <= QString: */
+    template<class T> T fromInternalString(const QString &strData) const
+    {
+        if (canConvert<T>())
+            return ::fromInternalString<T>(strData);
+        Assert(0); return T();
+    }
+
 private:
 
     /* Constructor: */

@@ -17,43 +17,50 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
-#include "QISplitter.h"
-
-/* Global includes */
+/* Qt includes: */
 #include <QApplication>
 #include <QEvent>
 #include <QPainter>
 #include <QPaintEvent>
 
-/* A simple shaded line. */
+/* GUI includes: */
+#include "QISplitter.h"
+
+/* A simple shaded line: */
 class QIShadeSplitterHandle: public QSplitterHandle
 {
     Q_OBJECT;
 
 public:
 
-    QIShadeSplitterHandle(Qt::Orientation aOrientation, QISplitter *aParent)
-      :QSplitterHandle(aOrientation, aParent)
+    QIShadeSplitterHandle(Qt::Orientation orientation, QISplitter *pParent)
+        : QSplitterHandle(orientation, pParent)
     {}
 
 protected:
 
-    void paintEvent(QPaintEvent *aEvent)
+    void paintEvent(QPaintEvent *pEvent)
     {
         QPainter painter(this);
         QLinearGradient gradient;
+        QColor color = palette().color(QPalette::Window);
+        QGradientStop point1(0, color);
+        QGradientStop point2(0.5, color.darker(115));
+        QGradientStop point3(1, color);
+        QGradientStops stops;
+        stops << point1 << point2 << point3;
+        gradient.setStops(stops);
         if (orientation() == Qt::Horizontal)
         {
-            gradient.setStart(rect().left(), rect().height() / 2);
-            gradient.setFinalStop(rect().right(), rect().height() / 2);
+            gradient.setStart(rect().left(), 0);
+            gradient.setFinalStop(rect().right(), 0);
         }
         else
         {
-            gradient.setStart(rect().width() / 2, rect().top());
-            gradient.setFinalStop(rect().width() / 2, rect().bottom());
+            gradient.setStart(0, rect().top());
+            gradient.setFinalStop(0, rect().bottom());
         }
-        painter.fillRect(aEvent->rect(), QBrush (gradient));
+        painter.fillRect(pEvent->rect(), gradient);
     }
 };
 
@@ -65,8 +72,8 @@ class QIDarwinSplitterHandle: public QSplitterHandle
 
 public:
 
-    QIDarwinSplitterHandle(Qt::Orientation aOrientation, QISplitter *aParent)
-      :QSplitterHandle(aOrientation, aParent)
+    QIDarwinSplitterHandle(Qt::Orientation orientation, QISplitter *pParent)
+        : QSplitterHandle(orientation, pParent)
     {}
 
     QSize sizeHint() const
@@ -80,7 +87,7 @@ public:
 
 protected:
 
-    void paintEvent(QPaintEvent * /* aEvent */)
+    void paintEvent(QPaintEvent*)
     {
         QPainter painter(this);
 
