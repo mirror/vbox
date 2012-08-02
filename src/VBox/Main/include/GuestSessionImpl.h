@@ -126,6 +126,8 @@ public:
     int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory);
     int                     dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     int                     fileClose(ComObjPtr<GuestFile> pFile);
+    int                     fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData);
+    int                     fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize);
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
