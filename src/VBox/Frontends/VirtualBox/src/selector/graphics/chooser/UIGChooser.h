@@ -39,8 +39,11 @@ class UIGChooser : public QWidget
 
 signals:
 
-    /* Notifiers: Selection change: */
+    /* Notifier: Selection change: */
     void sigSelectionChanged();
+
+    /* Notifier: Sliding start: */
+    void sigSlidingStarted();
 
 public:
 

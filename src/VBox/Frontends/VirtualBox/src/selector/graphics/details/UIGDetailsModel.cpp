@@ -157,6 +157,11 @@ void UIGDetailsModel::sltElementTypeToggled()
     m_pRoot->rebuildItems();
 }
 
+void UIGDetailsModel::sltHandleSlidingStarted()
+{
+    m_pRoot->setItems(QList<UIVMItem*>());
+}
+
 QVariant UIGDetailsModel::data(int iKey) const
 {
     switch (iKey)

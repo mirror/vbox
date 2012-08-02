@@ -1425,6 +1425,7 @@ void UISelectorWindow::prepareConnections()
 
     /* Graphics VM chooser connections: */
     connect(m_pChooser, SIGNAL(sigSelectionChanged()), this, SLOT(sltCurrentVMItemChanged()), Qt::QueuedConnection);
+    connect(m_pChooser, SIGNAL(sigSlidingStarted()), m_pDetails, SIGNAL(sigSlidingStarted()));
 
     /* Tool-bar connections: */
 #ifndef Q_WS_MAC

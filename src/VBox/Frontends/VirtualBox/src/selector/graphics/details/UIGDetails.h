@@ -38,6 +38,9 @@ signals:
     /* Link-click stuff: */
     void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
 
+    /* Notifier: Sliding started: */
+    void sigSlidingStarted();
+
 public:
 
     /* Constructor: */
