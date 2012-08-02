@@ -115,6 +115,7 @@ OTHER_CLEAN += \
 	$(IPRT_OUT_DIR)/errmsgdata.h \
 	$(IPRT_OUT_DIR)/errmsgcomdata.h \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h \
+	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts \
 	$(IPRT_OUT_DIR)/Doxyfile.iprt \
 	$(IPRT_OUT_DIR)/Doxyfile.iprt.dep \
 	$(IPRT_OUT_DIR)/docs.iprt
@@ -2124,12 +2125,13 @@ $(IPRT_OUT_DIR)/errmsgcomdata.h: \
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
-$(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
+$(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts +| $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/VBox/errmsgvboxcom.xsl \
 		$(VBOX_XIDL_FILE_SRC) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(filter %.xidl,$^)
+	$(QUIET)$(VBOX_XSLTPROC) -o $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts $< $(filter %.xidl,$^)
+	$(QUIET)$(CP) --changed -fv $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 
 
 if "$(KBUILD_TARGET)" == "freebsd"
