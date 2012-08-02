@@ -745,7 +745,7 @@ int GuestSession::queryInfo(void)
 
     uint32_t uVerAdditions = pGuest->getAdditionsVersion();
     mData.mProtocolVersion = (   VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions) >= 4
-                              && VBOX_FULL_VERSION_GET_MINOR(uVerAdditions) >= 2 )
+                              && VBOX_FULL_VERSION_GET_MINOR(uVerAdditions) >= 2)
                            ? 2  /* Guest control 2.0. */
                            : 1; /* Legacy guest control (VBox < 4.2). */
     /* Build revision is ignored. */
@@ -895,10 +895,34 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No directory to check existence for specified"));
+    CheckComArgOutPointerValid(aExists);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = S_OK;
+
+    GuestFsObjData objData;
+    int rc = fileQueryInfoInternal(Utf8Str(aPath), objData);
+    if (RT_SUCCESS(rc))
+    {
+        *aExists = objData.mType == FsObjType_Directory;
+    }
+    else
+    {
+        switch (rc)
+        {
+            /** @todo Add more errors here! */
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence failed: %Rrc"), rc);
+               break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -1121,10 +1145,34 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No file to check existence for specified"));
+    CheckComArgOutPointerValid(aExists);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = S_OK;
+
+    GuestFsObjData objData;
+    int rc = fileQueryInfoInternal(Utf8Str(aPath), objData);
+    if (RT_SUCCESS(rc))
+    {
+        *aExists = objData.mType == FsObjType_File;
+    }
+    else
+    {
+        switch (rc)
+        {
+            /** @todo Add more errors here! */
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file existence failed: %Rrc"), rc);
+               break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
