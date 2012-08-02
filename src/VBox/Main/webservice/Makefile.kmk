@@ -162,7 +162,9 @@ PATH_TARGET_WEBTEST           := $(VBOXWEB_OUT_DIR)/webtest
 
 # the original XIDL file (has to include documentation as we need it):
 VBOXWEB_IDL_SRC_ORIG          := $(VBOX_XIDL_FILE_SRC)
-# platform-specific XIDL file generated from $(VBOXWEB_IDL_SRC):
+# the original XIDL file without documentation
+VBOXWEB_IDL_SRC_STRIPPED      := $(VBOX_XIDL_FILE)
+# platform-specific XIDL file generated from $(VBOXWEB_IDL_SRC_STRIPPED):
 VBOXWEB_IDL_SRC               := $(VBOXWEB_OUT_DIR)/VirtualBox.xidl
 
 VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
@@ -551,7 +553,7 @@ OTHER_CLEAN += \
 	$(VBOXWEB_IDL_SRC)
 
 # generate platform-specific XIDL file from original XIDL file
-$(VBOXWEB_IDL_SRC): $(VBOXWEB_IDL_SRC_ORIG) $(VBOX_PATH_WEBSERVICE)/platform-xidl.xsl | $$(dir $$@)
+$(VBOXWEB_IDL_SRC): $(VBOXWEB_IDL_SRC_STRIPPED) $(VBOX_PATH_WEBSERVICE)/platform-xidl.xsl | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using platform-xidl.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/platform-xidl.xsl $<
