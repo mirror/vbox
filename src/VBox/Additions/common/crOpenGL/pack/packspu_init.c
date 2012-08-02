@@ -47,7 +47,7 @@ packSPUInit( int id, SPU *child, SPU *self,
     packspuSetVBoxConfiguration( child );
 
 #if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
-    pack_spu.bRunningUnderWDDM = !!GetModuleHandle("VBoxDispD3D");
+    pack_spu.bRunningUnderWDDM = !!GetModuleHandle(VBOX_MODNAME_DISPD3D);
 #endif
 
     if (!CRPACKSPU_IS_WDDM_CRHGSMI())
