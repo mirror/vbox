@@ -1578,11 +1578,10 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexSelector_Simple_Machine_SettingsDialog:
         {
             /* Check that there is only one item, its accessible
-             * and machine is not in 'stuck' or 'saved' state. */
+             * and machine is not in 'stuck' state. */
             return items.size() == 1 &&
                    pItem->accessible() &&
-                   pItem->machineState() != KMachineState_Stuck &&
-                   pItem->machineState() != KMachineState_Saved;
+                   pItem->machineState() != KMachineState_Stuck;
         }
         case UIActionIndexSelector_Simple_Machine_CloneWizard:
         {

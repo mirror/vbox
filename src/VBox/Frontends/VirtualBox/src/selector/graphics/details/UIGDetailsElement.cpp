@@ -614,8 +614,7 @@ void UIGDetailsElement::updateHoverAccessibility()
 {
     /* Check if name-hovering should be available: */
     m_fNameHoveringAccessible = machine().isNull() || !machine().GetAccessible() ? false :
-                                machine().GetState() != KMachineState_Stuck &&
-                                machine().GetState() != KMachineState_Saved;
+                                machine().GetState() != KMachineState_Stuck;
 }
 
 void UIGDetailsElement::updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent)
