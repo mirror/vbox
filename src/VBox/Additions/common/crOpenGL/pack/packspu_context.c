@@ -35,8 +35,7 @@ ThreadInfo *packspuNewThread(
 #endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    /* this is not true for packSPUInit, but will be fixed shortly */
-//    CRASSERT(!CRPACKSPU_IS_WDDM_CRHGSMI() == !pHgsmi);
+    CRASSERT(!CRPACKSPU_IS_WDDM_CRHGSMI() == !pHgsmi);
 #endif
 
     CRASSERT(pack_spu.numThreads < MAX_THREADS);
@@ -74,7 +73,7 @@ ThreadInfo *packspuNewThread(
     }
     else {
         /* a new pthread */
-        crNetNewClient(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn, &(thread->netServer)
+        crNetNewClient(&(thread->netServer)
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 , pHgsmi
 #endif

@@ -26,7 +26,7 @@ DECLEXPORT(void) crNetServerConnect( CRNetServer *ns
                 , struct VBOXUHGSMI *pHgsmi
 #endif
                 );
-DECLEXPORT(void) crNetNewClient( CRConnection *conn, CRNetServer *ns
+DECLEXPORT(void) crNetNewClient( CRNetServer *ns
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 , struct VBOXUHGSMI *pHgsmi
 #endif

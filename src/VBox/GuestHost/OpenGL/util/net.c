@@ -304,7 +304,7 @@ CRConnection * crNetConnectToServer( const char *server, unsigned short default_
  * Send a message to the receiver that another connection is needed.
  * We send a CR_MESSAGE_NEWCLIENT packet, then call crNetServerConnect.
  */
-void crNetNewClient( CRConnection *conn, CRNetServer *ns
+void crNetNewClient( CRNetServer *ns
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 , struct VBOXUHGSMI *pHgsmi
 #endif
