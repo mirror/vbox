@@ -1024,9 +1024,9 @@ int handleModifyVM(HandlerArg *a)
                 {
                     /* enable the controller */
                     if (!floppyAttachment)
-                        CHECK_ERROR(machine, AttachDevice(Bstr("Floppy Controller").raw(),
-                                                          0, 0,
-                                                          DeviceType_Floppy, NULL));
+                        CHECK_ERROR(machine, AttachDeviceWithoutMedium(Bstr("Floppy Controller").raw(),
+                                                                            0, 0,
+                                                                            DeviceType_Floppy));
 
                     /* unmount? */
                     if (    !strcmp(ValueUnion.psz, "none")

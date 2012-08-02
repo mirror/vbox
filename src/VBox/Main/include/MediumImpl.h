@@ -153,6 +153,8 @@ public:
     STDMETHOD(MergeTo)(IMedium *aTarget, IProgress **aProgress);
     STDMETHOD(CloneTo)(IMedium *aTarget, ULONG aVariant,
                         IMedium *aParent, IProgress **aProgress);
+    STDMETHOD(CloneToBase)(IMedium *aTarget, ULONG aVariant,
+                           IProgress **aProgress);
     STDMETHOD(Compact)(IProgress **aProgress);
     STDMETHOD(Resize)(LONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(Reset)(IProgress **aProgress);
@@ -182,7 +184,7 @@ public:
     bool isInRegistry(const Guid& id);
     bool getFirstRegistryMachineId(Guid &uuid) const;
     void markRegistriesModified();
-    
+
     HRESULT setPropertyDirect(const Utf8Str &aName, const Utf8Str &aValue);
 
     HRESULT addBackReference(const Guid &aMachineId,

@@ -2644,6 +2644,17 @@ STDMETHODIMP Medium::MergeTo(IMedium *aTarget, IProgress **aProgress)
     return rc;
 }
 
+STDMETHODIMP Medium::CloneToBase(IMedium   *aTarget,
+                                 ULONG     aVariant,
+                                 IProgress **aProgress)
+{
+     int rc = S_OK;
+     CheckComArgNotNull(aTarget);
+     CheckComArgOutPointerValid(aProgress);
+     rc =  CloneTo(aTarget, aVariant, NULL, aProgress);
+     return rc;
+}
+
 STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
                              ULONG aVariant,
                              IMedium *aParent,
