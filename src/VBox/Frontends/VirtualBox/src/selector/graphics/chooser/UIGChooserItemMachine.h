@@ -79,8 +79,11 @@ private:
         /* Sizes: */
         MachineItemData_PixmapSize,
         MachineItemData_StatePixmapSize,
+        MachineItemData_MinimumNameSize,
         MachineItemData_NameSize,
+        MachineItemData_MinimumSnapshotNameSize,
         MachineItemData_SnapshotNameSize,
+        MachineItemData_FirstRowMaximumWidth,
         MachineItemData_StateTextSize,
         MachineItemData_ToolBarSize
     };

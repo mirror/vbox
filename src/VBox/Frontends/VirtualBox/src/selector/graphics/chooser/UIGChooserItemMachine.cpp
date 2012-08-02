@@ -147,21 +147,81 @@ QVariant UIGChooserItemMachine::data(int iKey) const
             return machineStateFont;
         }
         /* Texts: */
-        case MachineItemData_Name: return name();
-        case MachineItemData_SnapshotName: return snapshotName();
+        case MachineItemData_Name:
+        {
+            /* Prepare variables: */
+            int iMaximumWidth = data(MachineItemData_FirstRowMaximumWidth).toInt();
+            /* Calculate name width part: */
+            QFont nameFont = data(MachineItemData_NameFont).value<QFont>();
+            QFont snapshotNameFont = data(MachineItemData_SnapshotNameFont).value<QFont>();
+            QFontMetrics nameMetrics(nameFont);
+            QFontMetrics snapshotNameMetrics(snapshotNameFont);
+            qreal dNameWidth = nameMetrics.width(name());
+            qreal dSnapshotNameWidth = snapshotNameMetrics.width(snapshotName());
+            qreal dNameRatio = dNameWidth / (dNameWidth + dSnapshotNameWidth);
+            int iNamePart = iMaximumWidth * dNameRatio;
+            /* Compress name to part width: */
+            QString strCompressedName = compressText(nameFont, name(), iNamePart);
+            return strCompressedName;
+        }
+        case MachineItemData_SnapshotName:
+        {
+            /* Prepare variables: */
+            int iMaximumWidth = data(MachineItemData_FirstRowMaximumWidth).toInt();
+            /* Calculate name width part: */
+            QFont nameFont = data(MachineItemData_NameFont).value<QFont>();
+            QFont snapshotNameFont = data(MachineItemData_SnapshotNameFont).value<QFont>();
+            QFontMetrics nameMetrics(nameFont);
+            QFontMetrics snapshotNameMetrics(snapshotNameFont);
+            qreal dNameWidth = nameMetrics.width(name());
+            qreal dSnapshotNameWidth = snapshotNameMetrics.width(snapshotName());
+            qreal dSnapshotNameRatio = dSnapshotNameWidth / (dNameWidth + dSnapshotNameWidth);
+            int iSnapshotNamePart = iMaximumWidth * dSnapshotNameRatio;
+            /* Compress name to part width: */
+            QString strCompressedName = compressText(snapshotNameFont, snapshotName(), iSnapshotNamePart);
+            return strCompressedName;
+        }
         case MachineItemData_StateText: return gpConverter->toString(machineState());
         /* Sizes: */
         case MachineItemData_PixmapSize: return osIcon().availableSizes().at(0);
         case MachineItemData_StatePixmapSize: return machineStateIcon().availableSizes().at(0);
+        case MachineItemData_MinimumNameSize:
+        {
+            QFont font = data(MachineItemData_NameFont).value<QFont>();
+            QFontMetrics fm(font);
+            int iMaximumTextWidth = textWidth(font, 15);
+            QString strCompressedName = compressText(font, name(), iMaximumTextWidth);
+            return QSize(fm.width(strCompressedName), fm.height());
+        }
         case MachineItemData_NameSize:
         {
             QFontMetrics fm(data(MachineItemData_NameFont).value<QFont>());
             return QSize(fm.width(data(MachineItemData_Name).toString()), fm.height());
         }
+        case MachineItemData_MinimumSnapshotNameSize:
+        {
+            QFont font = data(MachineItemData_SnapshotNameFont).value<QFont>();
+            QFontMetrics fm(font);
+            int iMaximumTextWidth = textWidth(font, 15);
+            QString strCompressedName = compressText(font, snapshotName(), iMaximumTextWidth);
+            return QSize(fm.width(strCompressedName), fm.height());
+        }
         case MachineItemData_SnapshotNameSize:
         {
             QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>());
             return QSize(fm.width(QString("(%1)").arg(data(MachineItemData_SnapshotName).toString())), fm.height());
+        }
+        case MachineItemData_FirstRowMaximumWidth:
+        {
+            /* Prepare variables: */
+            int iMargin = data(MachineItemData_Margin).toInt();
+            int iPixmapWidth = data(MachineItemData_PixmapSize).toSize().width();
+            int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+            int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
+            int iMaximumWidth = (int)geometry().width() - iMargin -
+                                                          iPixmapWidth - iMachineItemMajorSpacing -
+                                                          iToolBarWidth - iMachineItemMajorSpacing;
+            return iMaximumWidth;
         }
         case MachineItemData_StateTextSize:
         {
@@ -243,12 +303,12 @@ int UIGChooserItemMachine::minimumWidthHint() const
     int iMachineItemMargin = data(MachineItemData_Margin).toInt();
     int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
-    QSize machinePixmapSize = data(MachineItemData_PixmapSize).toSize();
-    QSize machineNameSize = data(MachineItemData_NameSize).toSize();
-    QSize snapshotNameSize = data(MachineItemData_SnapshotNameSize).toSize();
-    QSize machineStatePixmapSize = data(MachineItemData_StatePixmapSize).toSize();
-    QSize machineStateTextSize = data(MachineItemData_StateTextSize).toSize();
-    QSize toolBarSize = data(MachineItemData_ToolBarSize).toSize();
+    int iMachinePixmapWidth = data(MachineItemData_PixmapSize).toSize().width();
+    int iMinimumMachineNameWidth = data(MachineItemData_MinimumNameSize).toSize().width();
+    int iMinimumSnapshotNameWidth = data(MachineItemData_MinimumSnapshotNameSize).toSize().width();
+    int iMachineStatePixmapWidth = data(MachineItemData_StatePixmapSize).toSize().width();
+    int iMachineStateTextWidth = data(MachineItemData_StateTextSize).toSize().width();
+    int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
@@ -257,18 +317,18 @@ int UIGChooserItemMachine::minimumWidthHint() const
      * tool-bar contains right one: */
     iProposedWidth += iMachineItemMargin;
     /* And machine item content to take into account: */
-    int iFirstLineWidth = machineNameSize.width() +
+    int iFirstLineWidth = iMinimumMachineNameWidth +
                           iMachineItemMinorSpacing +
-                          snapshotNameSize.width();
-    int iSecondLineWidth = machineStatePixmapSize.width() +
+                          iMinimumSnapshotNameWidth;
+    int iSecondLineWidth = iMachineStatePixmapWidth +
                            iMachineItemMinorSpacing +
-                           machineStateTextSize.width();
+                           iMachineStateTextWidth;
     int iSecondColumnWidth = qMax(iFirstLineWidth, iSecondLineWidth);
-    int iMachineItemWidth = machinePixmapSize.width() +
+    int iMachineItemWidth = iMachinePixmapWidth +
                             iMachineItemMajorSpacing +
                             iSecondColumnWidth +
                             iMachineItemMajorSpacing +
-                            toolBarSize.width() + 1;
+                            iToolBarWidth + 1;
     iProposedWidth += iMachineItemWidth;
 
     /* Return result: */
@@ -280,12 +340,12 @@ int UIGChooserItemMachine::minimumHeightHint() const
     /* First of all, we have to prepare few variables: */
     int iMachineItemMargin = data(MachineItemData_Margin).toInt();
     int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
-    QSize machinePixmapSize = data(MachineItemData_PixmapSize).toSize();
-    QSize machineNameSize = data(MachineItemData_NameSize).toSize();
-    QSize snapshotNameSize = data(MachineItemData_SnapshotNameSize).toSize();
-    QSize machineStatePixmapSize = data(MachineItemData_StatePixmapSize).toSize();
-    QSize machineStateTextSize = data(MachineItemData_StateTextSize).toSize();
-    QSize toolBarSize = data(MachineItemData_ToolBarSize).toSize();
+    int iMachinePixmapHeight = data(MachineItemData_PixmapSize).toSize().height();
+    int iMachineNameHeight = data(MachineItemData_NameSize).toSize().height();
+    int iSnapshotNameHeight = data(MachineItemData_SnapshotNameSize).toSize().height();
+    int iMachineStatePixmapHeight = data(MachineItemData_StatePixmapSize).toSize().height();
+    int iMachineStateTextHeight = data(MachineItemData_StateTextSize).toSize().height();
+    int iToolBarHeight = data(MachineItemData_ToolBarSize).toSize().height();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
@@ -293,14 +353,14 @@ int UIGChooserItemMachine::minimumHeightHint() const
     /* Simple machine item have 2 margins - top and bottom: */
     iProposedHeight += 2 * iMachineItemMargin;
     /* And machine item content to take into account: */
-    int iFirstLineHeight = qMax(machineNameSize.height(), snapshotNameSize.height());
-    int iSecondLineHeight = qMax(machineStatePixmapSize.height(), machineStateTextSize.height());
+    int iFirstLineHeight = qMax(iMachineNameHeight, iSnapshotNameHeight);
+    int iSecondLineHeight = qMax(iMachineStatePixmapHeight, iMachineStateTextHeight);
     int iSecondColumnHeight = iFirstLineHeight +
                               iMachineItemTextSpacing +
                               iSecondLineHeight;
     QList<int> heights;
-    heights << machinePixmapSize.height() << iSecondColumnHeight
-            << (toolBarSize.height() - 2 * iMachineItemMargin + 2);
+    heights << iMachinePixmapHeight << iSecondColumnHeight
+            << (iToolBarHeight - 2 * iMachineItemMargin + 2);
     int iMaxHeight = 0;
     foreach (int iHeight, heights)
         iMaxHeight = qMax(iMaxHeight, iHeight);
