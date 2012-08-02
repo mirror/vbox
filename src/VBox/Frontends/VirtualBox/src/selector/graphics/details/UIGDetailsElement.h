@@ -1,0 +1,192 @@
+/** @file
+ *
+ * VBox frontends: Qt GUI ("VirtualBox"):
+ * UIGDetailsElement class declaration
+ */
+
+/*
+ * Copyright (C) 2012 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+#ifndef __UIGDetailsElement_h__
+#define __UIGDetailsElement_h__
+
+/* Qt includes: */
+#include <QIcon>
+
+/* GUI includes: */
+#include "UIGDetailsItem.h"
+#include "UIDefs.h"
+
+/* Forward declarations: */
+class UIGDetailsSet;
+class CMachine;
+class UIGraphicsRotatorButton;
+
+/* Typedefs: */
+typedef QPair<QString, QString> UITextTableLine;
+typedef QList<UITextTableLine> UITextTable;
+Q_DECLARE_METATYPE(UITextTable);
+
+/* Details element
+ * for graphics details model/view architecture: */
+class UIGDetailsElement : public UIGDetailsItem
+{
+    Q_OBJECT;
+    Q_PROPERTY(int additionalHeight READ additionalHeight WRITE setAdditionalHeight);
+
+signals:
+
+    /* Notifier: Toggle stuff: */
+    void sigToggleElement(DetailsElementType type, bool fToggled);
+
+    /* Notifier: Link-click stuff: */
+    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+
+public:
+
+    /* Graphics-item type: */
+    enum { Type = UIGDetailsItemType_Element };
+    int type() const { return Type; }
+
+    /* Constructor/destructor: */
+    UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType type, bool fOpened);
+    ~UIGDetailsElement();
+
+    /* API: Element type: */
+    DetailsElementType elementType() const;
+
+    /* API: Open/close stuff: */
+    bool closed() const;
+    bool opened() const;
+    void close();
+    void open();
+
+    /* API: Layout stuff: */
+    virtual int minimumWidthHint() const;
+    virtual int minimumHeightHint() const;
+
+public slots:
+
+    /* API: Update stuff: */
+    virtual void sltUpdateAppearance() = 0;
+
+protected:
+
+    /* Data enumerator: */
+    enum ElementData
+    {
+        /* Layout hints: */
+        ElementData_Margin,
+        ElementData_Spacing,
+        /* Pixmaps: */
+        ElementData_Pixmap,
+        ElementData_ButtonPixmap,
+        /* Fonts: */
+        ElementData_NameFont,
+        ElementData_TextFont,
+        /* Sizes: */
+        ElementData_PixmapSize,
+        ElementData_NameSize,
+        ElementData_ButtonSize,
+        ElementData_HeaderSize,
+        ElementData_TextSize
+    };
+
+    /* Data provider: */
+    QVariant data(int iKey) const;
+
+    /* API: Icon stuff: */
+    void setIcon(const QIcon &icon);
+
+    /* API: Name stuff: */
+    void setName(const QString &strName);
+
+    /* API: Text stuff: */
+    void setText(const UITextTable &text);
+
+    /* API: Machine stuff: */
+    const CMachine& machine();
+
+    /* Helpers: Layout stuff: */
+    void updateSizeHint();
+    void updateLayout();
+
+    /* Helpers: Animation stuff: */
+    void setAdditionalHeight(int iAdditionalHeight);
+    int additionalHeight() const;
+    UIGraphicsRotatorButton* button() const;
+
+private slots:
+
+    /* Handlers: Collapse/expand stuff: */
+    void sltElementToggleStart();
+    void sltElementToggleFinish(bool fToggled);
+
+    /* Handlers: Global event stuff: */
+    void sltMachineStateChange(QString strId);
+    void sltShouldWeUpdateAppearance(QString strId);
+
+private:
+
+    /* API: Children stuff: */
+    void addItem(UIGDetailsItem *pItem);
+    void removeItem(UIGDetailsItem *pItem);
+    QList<UIGDetailsItem*> items(UIGDetailsItemType type) const;
+    bool hasItems(UIGDetailsItemType type) const;
+    void clearItems(UIGDetailsItemType type);
+
+    /* Helpers: Prepare stuff: */
+    void prepareElement();
+    void prepareButton();
+
+    /* Helpers: Layout stuff: */
+    virtual int minimumHeightHint(bool fClosed) const;
+    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
+
+    /* Helpers: Paint stuff: */
+    void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
+    void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
+    void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
+    static void paintBackground(QPainter *pPainter, const QRect &rect, int iRadius, int iHeaderHeight);
+
+    /* Handlers: Mouse stuff: */
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
+    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent);
+
+    /* Helpers: Mouse stuff: */
+    void updateButtonVisibility();
+    void updateHoverAccessibility();
+    void updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent);
+
+    /* Helper: Animation stuff: */
+    void updateAnimationParameters();
+
+    /* Variables: */
+    UIGDetailsSet *m_pSet;
+    DetailsElementType m_type;
+    QIcon m_icon;
+    QString m_strName;
+    QIcon m_buttonIcon;
+    bool m_fClosed;
+    UIGraphicsRotatorButton *m_pButton;
+    UITextTable m_text;
+    int m_iAdditionalHeight;
+    int m_iCornerRadius;
+    bool m_fHovered;
+    bool m_fNameHoveringAccessible;
+    bool m_fNameHovered;
+};
+
+#endif /* __UIGDetailsElement_h__ */
+
