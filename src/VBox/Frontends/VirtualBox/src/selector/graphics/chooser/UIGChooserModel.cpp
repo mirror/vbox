@@ -171,6 +171,11 @@ void UIGChooserModel::unindentRoot()
     slideRoot(false);
 }
 
+bool UIGChooserModel::isSlidingInProgress() const
+{
+    return m_fSliding;
+}
+
 void UIGChooserModel::setCurrentItem(int iItemIndex)
 {
     /* Make sure passed index feats the bounds: */
