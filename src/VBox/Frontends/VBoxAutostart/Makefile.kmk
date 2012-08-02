@@ -21,6 +21,9 @@ include $(KBUILD_PATH)/subheader.kmk
 PROGRAMS += VBoxAutostart
  VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE
  VBoxAutostart_SOURCES    = \
-	VBoxAutostart.cpp
+	VBoxAutostart.cpp \
+	VBoxAutostartCfg.cpp \
+	VBoxAutostartStart.cpp \
+	VBoxAutostartStop.cpp
 
 include $(FILE_KBUILD_SUB_FOOTER)
