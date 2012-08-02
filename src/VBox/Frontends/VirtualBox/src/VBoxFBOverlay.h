@@ -1576,7 +1576,7 @@ public:
             double fps = mFPSCounter.fps();
             if(!(mFPSCounter.frames() % 31))
             {
-                RTPrintf("fps: %f\n", fps);
+                LogRel(("fps: %f\n", fps));
             }
             mbNewFrame = false;
         }
