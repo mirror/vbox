@@ -2843,6 +2843,41 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
 
 STDMETHODIMP Guest::FindSession(IN_BSTR aSessionName, ComSafeArrayOut(IGuestSession *, aSessions))
 {
+#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+
+    CheckComArgOutSafeArrayPointerValid(aSessions);
+
+    LogFlowFuncEnter();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Utf8Str strName(aSessionName);
+    std::list < ComObjPtr<GuestSession> > listSessions;
+
+    GuestSessions::const_iterator itSessions = mData.mGuestSessions.begin();
+    while (itSessions != mData.mGuestSessions.end())
+    {
+        if (strName.equals(itSessions->second->getName()))
+            listSessions.push_back(itSessions->second);
+        itSessions++;
+    }
+
+    LogFlowFunc(("Sessions with \"%ls\" = %RU32\n",
+                 aSessionName, listSessions.size()));
+
+    if (listSessions.size())
+    {
+        SafeIfaceArray<IGuestSession> sessionIfacs(listSessions);
+        sessionIfacs.detachTo(ComSafeArrayOutArg(aSessions));
+
+        return S_OK;
+    }
+
+    return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND,
+                         tr("Could not find sessions with name '%ls'"),
+                         aSessionName);
+#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
