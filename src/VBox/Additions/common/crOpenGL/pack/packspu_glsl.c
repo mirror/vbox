@@ -28,7 +28,7 @@ GLuint PACKSPU_APIENTRY packspu_CreateProgram(void)
     GET_THREAD(thread);
     int writeback = 1;
     GLuint return_val = (GLuint) 0;
-    if (!(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
+    if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
     {
         crError("packspu_CreateProgram doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!");
     }
@@ -57,7 +57,7 @@ static GLint packspu_GetUniformLocationUncached(GLuint program, const char * nam
     GET_THREAD(thread);
     int writeback = 1;
     GLint return_val = (GLint) 0;
-    if (!(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
+    if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
     {
         crError("packspu_GetUniformLocation doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!");
     }

@@ -50,18 +50,21 @@ packSPUInit( int id, SPU *child, SPU *self,
     pack_spu.bRunningUnderWDDM = !!GetModuleHandle("VBoxDispD3D");
 #endif
 
-    /* This connects to the server, sets up the packer, etc. */
-    thread = packspuNewThread(
+    if (!CRPACKSPU_IS_WDDM_CRHGSMI())
+    {
+        /* This connects to the server, sets up the packer, etc. */
+        thread = packspuNewThread(
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
             NULL
 #endif
-             );
+                 );
 
-    if (!thread) {
-        return NULL;
+        if (!thread) {
+            return NULL;
+        }
+        CRASSERT( thread == &(pack_spu.thread[0]) );
+        pack_spu.idxThreadInUse = 0;
     }
-    CRASSERT( thread == &(pack_spu.thread[0]) );
-    pack_spu.idxThreadInUse = 0;
 
     packspuCreateFunctions();
     crStateInit();

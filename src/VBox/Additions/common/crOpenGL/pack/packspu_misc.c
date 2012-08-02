@@ -75,7 +75,7 @@ void PACKSPU_APIENTRY packspu_DrawBuffer(GLenum mode)
 void PACKSPU_APIENTRY packspu_Finish( void )
 {
     GET_THREAD(thread);
-    GLint writeback = pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network;
+    GLint writeback = CRPACKSPU_IS_WDDM_CRHGSMI() ? 1 : pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network;
 
     if (pack_spu.swap)
     {
@@ -181,7 +181,7 @@ GLint PACKSPU_APIENTRY packspu_VBoxWindowCreate( GLint con, const char *dpyName,
 {
     GET_THREAD(thread);
     static int num_calls = 0;
-    int writeback = pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network;
+    int writeback = CRPACKSPU_IS_WDDM_CRHGSMI() ? 1 : pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network;
     GLint return_val = (GLint) 0;
     ThreadInfo *curThread = thread;
     GLint retVal;
@@ -263,7 +263,7 @@ packspu_AreTexturesResident( GLsizei n, const GLuint * textures,
     GLboolean return_val = GL_TRUE;
     GLsizei i;
 
-    if (!(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
+    if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
     {
         crError( "packspu_AreTexturesResident doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
@@ -303,7 +303,7 @@ packspu_AreProgramsResidentNV( GLsizei n, const GLuint * ids,
     GLboolean return_val = GL_TRUE;
     GLsizei i;
 
-    if (!(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
+    if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
     {
         crError( "packspu_AreProgramsResidentNV doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
@@ -466,8 +466,8 @@ GLint PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(struct VBOXUHGSMI *pHgsmi
     CRASSERT(!thread);
     crLockMutex(&_PackMutex);
     {
-        CRASSERT((pack_spu.numThreads>0) && (pack_spu.numThreads<MAX_THREADS));
-
+        CRASSERT(CRPACKSPU_IS_WDDM_CRHGSMI() || (pack_spu.numThreads>0));
+        CRASSERT(pack_spu.numThreads<MAX_THREADS);
         for (i=0; i<MAX_THREADS; ++i)
         {
             if (!pack_spu.thread[i].inUse)
@@ -489,7 +489,7 @@ GLint PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(struct VBOXUHGSMI *pHgsmi
         thread->netServer.name = crStrdup(pack_spu.name);
         thread->netServer.buffer_size = 64 * 1024;
 
-        crNetNewClient(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn, &(thread->netServer)
+        crNetNewClient(&(thread->netServer)
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 , pHgsmi
 #endif
