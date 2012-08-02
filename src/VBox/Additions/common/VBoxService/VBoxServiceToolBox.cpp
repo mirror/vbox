@@ -950,6 +950,29 @@ static char g_paszRmHelp[] =
 
 
 /**
+ * Report the result of a vbox_rm operation - either errors to stderr (not
+ * machine-readable) or everything to stdout as <name>\0<rc>\0 (machine-
+ * readable format).  The message may optionally contain a '%s' for the file
+ * name and an %Rrc for the result code in that order.  In future a "verbose"
+ * flag may be added, without which nothing will be output in non-machine-
+ * readable mode.  Sets prc if rc is a non-success code.
+ */
+static void toolboxRmReport(const char *pcszMessage, const char *pcszFile,
+                            int rc, uint32_t fOutputFlags, int *prc)
+{
+    if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+    {
+        if (RT_FAILURE(rc))
+            RTMsgError(pcszMessage, pcszFile, rc);
+    }
+    else
+        RTPrintf("fname=%s%crc=%d%c", pcszFile, 0, rc, 0);
+    if (prc && RT_FAILURE(rc))
+        *prc = rc;
+}
+
+
+/**
  * Main function for tool "vbox_rm".
  *
  * @return  RTEXITCODE.
@@ -974,17 +997,18 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
         VBOXSERVICETOOLBOXRMFLAG_RECURSIVE = RT_BIT_32(0)
     };
 
-    int ch;
+    int ch, rc, rc2;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv,
-                          s_aOptions, RT_ELEMENTS(s_aOptions),
-                          1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    rc = RTGetOptInit(&GetState, argc, argv, s_aOptions,
+                      RT_ELEMENTS(s_aOptions), 1 /*iFirst*/,
+                      RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
     bool     fVerbose     = false;
     uint32_t fFlags       = 0;
     uint32_t fOutputFlags = 0;
+    int cNonOptions       = 0;
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
               && RT_SUCCESS(rc))
@@ -1013,16 +1037,15 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
             case VINF_GETOPT_NOT_OPTION:
                 /* RTGetOpt will sort these to the end of the argv vector so
                  * that we will deal with them afterwards. */
+                ++cNonOptions;
                 break;
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
-    if (GetState.cNonOptions > argc - 1)
-        GetState.cNonOptions = argc - 1;
     /* We need at least one file. */
-    if (RT_SUCCESS(rc) && GetState.cNonOptions == 0)
+    if (RT_SUCCESS(rc) && cNonOptions == 0)
     {
         RTMsgError("No files or directories specified.");
         return RTEXITCODE_FAILURE;
@@ -1042,50 +1065,39 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
 
     if (RT_SUCCESS(rc))
     {
-        for (int i = argc - GetState.cNonOptions; i < argc; ++i)
+        for (int i = argc - cNonOptions; i < argc; ++i)
         {
             /* I'm sure this isn't the most effective way, but I hope it will
              * be readable and reliable code. */
             if (RTDirExists(argv[i]) && !RTSymlinkExists(argv[i]))
             {
                 if (!(fFlags & VBOXSERVICETOOLBOXRMFLAG_RECURSIVE))
-                {
-                    if (!(  fOutputFlags
-                          & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                       RTMsgError("Cannot remove directory '%s' as the '-R' option was not specified.\n",
-                                  argv[i]);
-                }
+                    toolboxRmReport("Cannot remove directory '%s' as the '-R' option was not specified.\n",
+                                    argv[i], VERR_INVALID_PARAMETER,
+                                    fOutputFlags, &rc);
                 else
                 {
-                    rc = RTDirRemoveRecursive(argv[i],
-                                              RTDIRRMREC_F_CONTENT_AND_DIR);
-                    if (   RT_FAILURE(rc)
-                        && !(  fOutputFlags
-                             & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                        RTMsgError("The following error occurred while removing directory '%s': %Rrc.\n",
-                                  argv[i], rc);
+                    rc2 = RTDirRemoveRecursive(argv[i],
+                                               RTDIRRMREC_F_CONTENT_AND_DIR);
+                    toolboxRmReport("The following error occurred while removing directory '%s': %Rrc.\n",
+                                    argv[i], rc2, fOutputFlags, &rc);
                 }
             }
             else if (RTPathExists(argv[i]) || RTSymlinkExists(argv[i]))
             {
-                rc = RTFileDelete(argv[i]);
-                if (   RT_FAILURE(rc)
-                    && !(  fOutputFlags
-                         & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                    RTMsgError("The following error occurred while removing file '%s': %Rrc.\n",
-                              argv[i], rc);
+                rc2 = RTFileDelete(argv[i]);
+                toolboxRmReport("The following error occurred while removing file '%s': %Rrc.\n",
+                                argv[i], rc2, fOutputFlags, &rc);
             }
             else
-            {
-                if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                    RTMsgError("File '%s' does not exist.\n", argv[i]);
-            }
+                toolboxRmReport("File '%s' does not exist.\n", argv[i],
+                                VERR_FILE_NOT_FOUND, fOutputFlags, &rc);
         }
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
             VBoxServiceToolboxPrintStrmTermination();
     }
-    return RTEXITCODE_SUCCESS;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
