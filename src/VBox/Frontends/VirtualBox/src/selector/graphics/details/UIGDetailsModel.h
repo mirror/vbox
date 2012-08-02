@@ -81,6 +81,9 @@ private slots:
     /* Handler: Context-menu stuff: */
     void sltElementTypeToggled();
 
+    /* Handler: Sliding started in chooser: */
+    void sltHandleSlidingStarted();
+
 private:
 
     /* Data enumerator: */

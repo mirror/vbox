@@ -72,6 +72,9 @@ signals:
     void sigClearStatusMessage();
     void sigShowStatusMessage(const QString &strStatusMessage);
 
+    /* Notifier: Sliding start: */
+    void sigSlidingStarted();
+
 public:
 
     /* Constructor/destructor: */

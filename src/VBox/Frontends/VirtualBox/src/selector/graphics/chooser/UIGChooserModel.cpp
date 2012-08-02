@@ -117,6 +117,7 @@ void UIGChooserModel::indentRoot(UIGChooserItem *pNewRootItem)
 
     /* We are sliding: */
     m_fSliding = true;
+    emit sigSlidingStarted();
 
     /* Hiding root: */
     root()->hide();
@@ -148,6 +149,7 @@ void UIGChooserModel::unindentRoot()
 
     /* We are sliding: */
     m_fSliding = true;
+    emit sigSlidingStarted();
 
     /* Hiding root: */
     root()->hide();

@@ -66,6 +66,8 @@ void UIGDetails::prepareConnections()
             m_pDetailsView, SLOT(sltHandleRootItemResized(const QSizeF&, int)));
     connect(m_pDetailsModel, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
+    connect(this, SIGNAL(sigSlidingStarted()),
+            m_pDetailsModel, SLOT(sltHandleSlidingStarted()));
 
     /* Selector-view connections: */
     connect(m_pDetailsView, SIGNAL(sigResized()), m_pDetailsModel, SLOT(sltHandleViewResized()));
