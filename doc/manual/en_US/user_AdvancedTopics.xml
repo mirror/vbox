@@ -2314,6 +2314,22 @@ joe   = 240 # Joes machines will be started 240 seconds after the autostart serv
       </para>
     </sect2>
 
+    <sect2 id="autostart-solaris">
+      <title>Solaris: starting the autostart service via SMF</title>
+
+      <para>On Solaris hosts, the VirtualBox autostart daemon is
+      integrated into the SMF framework. To enable it you have to point the service
+      to an existing configuration file which has the same format as on Linux (see <xref linkend="autostart-linux" />):
+      <screen>svccfg -s svc:/application/virtualbox/autostart:default setprop config/config=/etc/vbox/autostart.cfg</screen>
+      </para>
+
+      <para>When everything is configured correctly you can start the
+      VirtualBox autostart service with the following command:<screen>svcadm enable svc:/application/virtualbox/autostart:default</screen></para>
+
+      <para>For more information about SMF, please refer to the Solaris
+      documentation.</para>
+    </sect2>
+
     <sect2 id="autostart-osx">
       <title>Mac OS X: starting the autostart service via launchd</title>
 
