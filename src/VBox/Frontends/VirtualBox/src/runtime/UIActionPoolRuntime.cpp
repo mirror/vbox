@@ -22,14 +22,14 @@
 #include "UIMachineShortcuts.h"
 #include "VBoxGlobal.h"
 
-class MenuMachineAction : public UIMenuAction
+class MenuMachineAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuMachineAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -42,14 +42,14 @@ protected:
     }
 };
 
-class ShowSettingsDialogAction : public UISimpleAction
+class ShowSettingsDialogAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     ShowSettingsDialogAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/settings_16px.png", ":/settings_dis_16px.png")
+        : UIActionSimple(pParent, ":/settings_16px.png", ":/settings_dis_16px.png")
     {
         retranslateUi();
     }
@@ -63,14 +63,14 @@ protected:
     }
 };
 
-class PerformTakeSnapshotAction : public UISimpleAction
+class PerformTakeSnapshotAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformTakeSnapshotAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/take_snapshot_16px.png", ":/take_snapshot_dis_16px.png")
+        : UIActionSimple(pParent, ":/take_snapshot_16px.png", ":/take_snapshot_dis_16px.png")
     {
         retranslateUi();
     }
@@ -84,14 +84,14 @@ protected:
     }
 };
 
-class PerformTakeScreenshotAction : public UISimpleAction
+class PerformTakeScreenshotAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformTakeScreenshotAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/take_screenshot_16px.png", ":/take_screenshot_disabled_16px.png")
+        : UIActionSimple(pParent, ":/take_screenshot_16px.png", ":/take_screenshot_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -105,14 +105,14 @@ protected:
     }
 };
 
-class ShowInformationDialogAction : public UISimpleAction
+class ShowInformationDialogAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     ShowInformationDialogAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png")
+        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -126,14 +126,14 @@ protected:
     }
 };
 
-class MenuMouseIntegrationAction : public UIMenuAction
+class MenuMouseIntegrationAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuMouseIntegrationAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -143,14 +143,14 @@ protected:
     void retranslateUi() {}
 };
 
-class ToggleMouseIntegrationAction : public UIToggleAction
+class ToggleMouseIntegrationAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleMouseIntegrationAction(QObject *pParent)
-        : UIToggleAction(pParent,
+        : UIActionToggle(pParent,
                          ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
                          ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png")
     {
@@ -166,14 +166,14 @@ protected:
     }
 };
 
-class PerformTypeCADAction : public UISimpleAction
+class PerformTypeCADAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformTypeCADAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png")
+        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -188,14 +188,14 @@ protected:
 };
 
 #ifdef Q_WS_X11
-class PerformTypeCABSAction : public UISimpleAction
+class PerformTypeCABSAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformTypeCABSAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png")
+        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -210,14 +210,14 @@ protected:
 };
 #endif /* Q_WS_X11 */
 
-class TogglePauseAction : public UIToggleAction
+class TogglePauseAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     TogglePauseAction(QObject *pParent)
-        : UIToggleAction(pParent, ":/pause_16px.png", ":/pause_disabled_16px.png")
+        : UIActionToggle(pParent, ":/pause_16px.png", ":/pause_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -231,14 +231,14 @@ protected:
     }
 };
 
-class PerformResetAction : public UISimpleAction
+class PerformResetAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformResetAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/reset_16px.png", ":/reset_disabled_16px.png")
+        : UIActionSimple(pParent, ":/reset_16px.png", ":/reset_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -252,14 +252,14 @@ protected:
     }
 };
 
-class PerformShutdownAction : public UISimpleAction
+class PerformShutdownAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformShutdownAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/acpi_16px.png", ":/acpi_disabled_16px.png")
+        : UIActionSimple(pParent, ":/acpi_16px.png", ":/acpi_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -273,14 +273,14 @@ protected:
     }
 };
 
-class PerformCloseAction : public UISimpleAction
+class PerformCloseAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformCloseAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/exit_16px.png")
+        : UIActionSimple(pParent, ":/exit_16px.png")
     {
         setMenuRole(QAction::QuitRole);
         retranslateUi();
@@ -295,14 +295,14 @@ protected:
     }
 };
 
-class MenuViewAction : public UIMenuAction
+class MenuViewAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuViewAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -315,14 +315,14 @@ protected:
     }
 };
 
-class ToggleFullscreenModeAction : public UIToggleAction
+class ToggleFullscreenModeAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleFullscreenModeAction(QObject *pParent)
-        : UIToggleAction(pParent,
+        : UIActionToggle(pParent,
                          ":/fullscreen_on_16px.png", ":/fullscreen_16px.png",
                          ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png")
     {
@@ -338,14 +338,14 @@ protected:
     }
 };
 
-class ToggleSeamlessModeAction : public UIToggleAction
+class ToggleSeamlessModeAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleSeamlessModeAction(QObject *pParent)
-        : UIToggleAction(pParent,
+        : UIActionToggle(pParent,
                          ":/seamless_on_16px.png", ":/seamless_16px.png",
                          ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png")
     {
@@ -361,14 +361,14 @@ protected:
     }
 };
 
-class ToggleScaleModeAction : public UIToggleAction
+class ToggleScaleModeAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleScaleModeAction(QObject *pParent)
-        : UIToggleAction(pParent,
+        : UIActionToggle(pParent,
                          ":/scale_on_16px.png", ":/scale_16px.png",
                          ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png")
     {
@@ -384,14 +384,14 @@ protected:
     }
 };
 
-class ToggleGuestAutoresizeAction : public UIToggleAction
+class ToggleGuestAutoresizeAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleGuestAutoresizeAction(QObject *pParent)
-        : UIToggleAction(pParent,
+        : UIActionToggle(pParent,
                          ":/auto_resize_on_on_16px.png", ":/auto_resize_on_16px.png",
                          ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png")
     {
@@ -407,14 +407,14 @@ protected:
     }
 };
 
-class PerformWindowAdjustAction : public UISimpleAction
+class PerformWindowAdjustAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformWindowAdjustAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png")
+        : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -428,14 +428,14 @@ protected:
     }
 };
 
-class MenuDevicesAction : public UIMenuAction
+class MenuDevicesAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuDevicesAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -448,16 +448,16 @@ protected:
     }
 };
 
-class MenuOpticalDevicesAction : public UIMenuAction
+class MenuOpticalDevicesAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuOpticalDevicesAction(QObject *pParent)
-        : UIMenuAction(pParent, ":/cd_16px.png", ":/cd_disabled_16px.png")
+        : UIActionMenu(pParent, ":/cd_16px.png", ":/cd_disabled_16px.png")
     {
-        qobject_cast<UIMenuInterface*>(menu())->setShowToolTips(true);
+        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
         retranslateUi();
     }
 
@@ -469,16 +469,16 @@ protected:
     }
 };
 
-class MenuFloppyDevicesAction : public UIMenuAction
+class MenuFloppyDevicesAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuFloppyDevicesAction(QObject *pParent)
-        : UIMenuAction(pParent, ":/fd_16px.png", ":/fd_disabled_16px.png")
+        : UIActionMenu(pParent, ":/fd_16px.png", ":/fd_disabled_16px.png")
     {
-        qobject_cast<UIMenuInterface*>(menu())->setShowToolTips(true);
+        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
         retranslateUi();
     }
 
@@ -490,16 +490,16 @@ protected:
     }
 };
 
-class MenuUSBDevicesAction : public UIMenuAction
+class MenuUSBDevicesAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuUSBDevicesAction(QObject *pParent)
-        : UIMenuAction(pParent, ":/usb_16px.png", ":/usb_disabled_16px.png")
+        : UIActionMenu(pParent, ":/usb_16px.png", ":/usb_disabled_16px.png")
     {
-        qobject_cast<UIMenuInterface*>(menu())->setShowToolTips(true);
+        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
         retranslateUi();
     }
 
@@ -511,14 +511,14 @@ protected:
     }
 };
 
-class MenuNetworkAdaptersAction : public UIMenuAction
+class MenuNetworkAdaptersAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuNetworkAdaptersAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -528,14 +528,14 @@ protected:
     void retranslateUi() {}
 };
 
-class ShowNetworkAdaptersDialogAction : public UISimpleAction
+class ShowNetworkAdaptersDialogAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     ShowNetworkAdaptersDialogAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
+        : UIActionSimple(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -549,14 +549,14 @@ protected:
     }
 };
 
-class MenuSharedFoldersAction : public UIMenuAction
+class MenuSharedFoldersAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuSharedFoldersAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -566,14 +566,14 @@ protected:
     void retranslateUi() {}
 };
 
-class ShowSharedFoldersDialogAction : public UISimpleAction
+class ShowSharedFoldersDialogAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     ShowSharedFoldersDialogAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png")
+        : UIActionSimple(pParent, ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -587,14 +587,14 @@ protected:
     }
 };
 
-class ToggleVRDEServerAction : public UIToggleAction
+class ToggleVRDEServerAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleVRDEServerAction(QObject *pParent)
-        : UIToggleAction(pParent,
+        : UIActionToggle(pParent,
                          ":/vrdp_on_16px.png", ":/vrdp_16px.png",
                          ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png")
     {
@@ -610,14 +610,14 @@ protected:
     }
 };
 
-class PerformInstallGuestToolsAction : public UISimpleAction
+class PerformInstallGuestToolsAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     PerformInstallGuestToolsAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png")
+        : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -632,14 +632,14 @@ protected:
 };
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-class MenuDebugAction : public UIMenuAction
+class MenuDebugAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     MenuDebugAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -652,14 +652,14 @@ protected:
     }
 };
 
-class ShowStatisticsAction : public UISimpleAction
+class ShowStatisticsAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     ShowStatisticsAction(QObject *pParent)
-        : UISimpleAction(pParent)
+        : UIActionSimple(pParent)
     {
         retranslateUi();
     }
@@ -672,14 +672,14 @@ protected:
     }
 };
 
-class ShowCommandLineAction : public UISimpleAction
+class ShowCommandLineAction : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     ShowCommandLineAction(QObject *pParent)
-        : UISimpleAction(pParent)
+        : UIActionSimple(pParent)
     {
         retranslateUi();
     }
@@ -692,14 +692,14 @@ protected:
     }
 };
 
-class ToggleLoggingAction : public UIToggleAction
+class ToggleLoggingAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleLoggingAction(QObject *pParent)
-        : UIToggleAction(pParent)
+        : UIActionToggle(pParent)
     {
         retranslateUi();
     }
@@ -714,14 +714,14 @@ protected:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef RT_OS_DARWIN
-class DockMenuAction : public UIMenuAction
+class DockMenuAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     DockMenuAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -731,14 +731,14 @@ protected:
     void retranslateUi() {}
 };
 
-class DockSettingsMenuAction : public UIMenuAction
+class DockSettingsMenuAction : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     DockSettingsMenuAction(QObject *pParent)
-        : UIMenuAction(pParent)
+        : UIActionMenu(pParent)
     {
         retranslateUi();
     }
@@ -751,14 +751,14 @@ protected:
     }
 };
 
-class ToggleDockPreviewMonitorAction : public UIToggleAction
+class ToggleDockPreviewMonitorAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleDockPreviewMonitorAction(QObject *pParent)
-        : UIToggleAction(pParent)
+        : UIActionToggle(pParent)
     {
         retranslateUi();
     }
@@ -771,14 +771,14 @@ protected:
     }
 };
 
-class ToggleDockDisableMonitorAction : public UIToggleAction
+class ToggleDockDisableMonitorAction : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     ToggleDockDisableMonitorAction(QObject *pParent)
-        : UIToggleAction(pParent)
+        : UIActionToggle(pParent)
     {
         retranslateUi();
     }

@@ -38,13 +38,13 @@
 
 /* Helper QMenu reimplementation which allows
  * to highlight first menu item for popped up menu: */
-class UIMenu : public QMenu
+class QIMenu : public QMenu
 {
     Q_OBJECT;
 
 public:
 
-    UIMenu() : QMenu(0) {}
+    QIMenu() : QMenu(0) {}
 
 private slots:
 
@@ -107,7 +107,7 @@ UIMachineMenuBar::UIMachineMenuBar()
 QMenu* UIMachineMenuBar::createMenu(UIMainMenuType fOptions /* = UIMainMenuType_All */)
 {
     /* Create empty menu: */
-    QMenu *pMenu = new UIMenu;
+    QMenu *pMenu = new QIMenu;
 
     /* Fill menu with prepared items: */
     foreach (QMenu *pSubMenu, prepareSubMenus(fOptions))
@@ -268,8 +268,8 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
         return;
 
     /* Help submenu: */
-    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Help));
-    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Web));
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Contents));
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_WebSite));
     pMenu->addSeparator();
     pMenu->addAction(gActionPool->action(UIActionIndex_Simple_ResetWarnings));
     pMenu->addSeparator();
@@ -299,9 +299,9 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
     }
 #endif
 
-    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Help), SIGNAL(triggered()),
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
                         &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Web), SIGNAL(triggered()),
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
                         &msgCenter(), SLOT(sltShowHelpWebDialog()));
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
                         &msgCenter(), SLOT(sltResetSuppressedMessages()));

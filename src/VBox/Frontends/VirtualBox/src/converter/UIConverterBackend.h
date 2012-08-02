@@ -46,8 +46,16 @@ template<class X> QString toString(const X & /* xobject */) { Assert(0); return 
  * This function returns default constructed object for any object type until re-determined for specific one. */
 template<class X> X fromString(const QString & /* strData */) { Assert(0); return X(); }
 
+/* Converts passed 'Object of type X' to non-translated QString.
+ * This function returns null QString for any object type until re-determined for specific one. */
+template<class X> QString toInternalString(const X & /* xobject */) { Assert(0); return QString(); }
+/* Converts passed non-translated QString to 'Object of type X'.
+ * This function returns default constructed object for any object type until re-determined for specific one. */
+template<class X> X fromInternalString(const QString & /* strData */) { Assert(0); return X(); }
+
 /* Declare global canConvert specializations: */
 template<> bool canConvert<StorageSlot>();
+template<> bool canConvert<DetailsElementType>();
 
 /* Declare COM canConvert specializations: */
 template<> bool canConvert<KMachineState>();
@@ -74,6 +82,10 @@ template<> bool canConvert<KNATProtocol>();
 /* Declare global conversion specializations: */
 template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
+template<> QString toString(const DetailsElementType &detailsElementType);
+template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType);
+template<> QString toInternalString(const DetailsElementType &detailsElementType);
+template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType);
 
 /* Declare COM conversion specializations: */
 template<> QColor toColor(const KMachineState &state);

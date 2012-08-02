@@ -33,10 +33,16 @@ class UITexturedSegmentedButton;
 class UIVMItem;
 class VBoxSnapshotsWgt;
 class UIToolBar;
+class QStackedLayout;
 
 class UIVMDesktop: public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
+
+signals:
+
+    void linkClicked(const QString &strURL);
+    void sigCurrentChanged(int iWidgetIndex);
 
 public:
 
@@ -50,9 +56,7 @@ public:
 //    void updateDescription(UIVMItem *pVMItem, const CMachine& machine);
 //    void updateDescriptionState();
 
-signals:
-
-    void linkClicked(const QString &strURL);
+    int widgetIndex() const;
 
 protected:
 
@@ -61,6 +65,7 @@ protected:
 private:
 
     /* Private member vars */
+    QStackedLayout *m_pStackedLayout;
     UITexturedSegmentedButton *m_pHeaderBtn;
     UIDetailsPagePrivate *m_pDetails;
     VBoxSnapshotsWgt *m_pSnapshotsPage;

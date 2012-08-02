@@ -254,6 +254,7 @@ public:
     int cannotEnterFullscreenMode();
     int cannotEnterSeamlessMode();
 
+    int confirmMachineItemRemoval(const QStringList &names);
     int confirmMachineDeletion(const QList<CMachine> &machines);
     bool confirmDiscardSavedState(const CMachine &machine);
 

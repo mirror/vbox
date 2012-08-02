@@ -223,7 +223,7 @@ public:
 
     /* details generators */
 
-    QString details (const CMedium &aHD, bool aPredictDiff);
+    QString details (const CMedium &aHD, bool aPredictDiff, bool fUseHtml = true);
 
     QString details (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDevice &aDevice) const;

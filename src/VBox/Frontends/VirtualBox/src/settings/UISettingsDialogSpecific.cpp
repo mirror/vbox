@@ -676,7 +676,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                     pSettingsPage = new UIMachineSettingsSF;
                     addItem(":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png",
                             ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
-                            iPageIndex, "#sfolders", pSettingsPage);
+                            iPageIndex, "#sharedFolders", pSettingsPage);
                     break;
                 }
                 default:
