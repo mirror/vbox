@@ -62,6 +62,9 @@ public:
 
 private slots:
 
+    /* Handler: Snapshot-view stuff: */
+    void sltSnapshotChanged(QString strId);
+
     /* Handler: Details-view stuff: */
     void sltDetailsViewIndexChanged(int iWidgetIndex);
 

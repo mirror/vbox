@@ -134,6 +134,20 @@ UISelectorWindow::~UISelectorWindow()
     saveSettings();
 }
 
+void UISelectorWindow::sltSnapshotChanged(QString strId)
+{
+    /* Get current item: */
+    UIVMItem *pCurrentItem = currentItem();
+
+    /* Make sure current item present: */
+    if (!pCurrentItem)
+        return;
+
+    /* If signal is for current item: */
+    if (pCurrentItem->id() == strId)
+        m_pVMDesktop->updateSnapshots(pCurrentItem, pCurrentItem->machine());
+}
+
 void UISelectorWindow::sltDetailsViewIndexChanged(int iWidgetIndex)
 {
     if (iWidgetIndex)
@@ -783,16 +797,12 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
         else
             m_pContainer->setCurrentWidget(m_pDetails);
 
-        CMachine m = pItem->machine();
-        QList<CMachine> machines;
-        for (int i = 0; i < items.size(); ++i)
-            machines << items[i]->machine();
         KMachineState state = pItem->machineState();
 
         if (fRefreshDetails || fRefreshDescription)
             m_pDetails->setItems(currentItems());
         if (fRefreshSnapshots)
-            m_pVMDesktop->updateSnapshots(pItem, m);
+            m_pVMDesktop->updateSnapshots(pItem, pItem->machine());
 
         /* Update the Start button action appearance: */
         if (state == KMachineState_PoweredOff ||
@@ -1450,6 +1460,9 @@ void UISelectorWindow::prepareConnections()
     connect(gEDataEvents, SIGNAL(sigTrayIconChange(bool)), this, SLOT(sltTrayIconChanged(bool)));
     connect(&vboxGlobal(), SIGNAL(sigTrayIconShow(bool)), this, SLOT(sltTrayIconShow(bool)));
 #endif /* VBOX_GUI_WITH_SYSTRAY */
+
+    /* Global event handlers: */
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
 }
 
 void UISelectorWindow::loadSettings()
