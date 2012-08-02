@@ -572,9 +572,9 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
             if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
             {
                 u32NewValue &= hpetInvalidValue(pHpetTimer) >> 1; /** @todo check this in the docs and add a not why? */
-                pHpetTimer->u64Period = RT_MAKE_U64(u32NewValue, pHpetTimer->u64Period);
+                pHpetTimer->u64Period = RT_MAKE_U64(u32NewValue, RT_HI_U32(pHpetTimer->u64Period));
             }
-            pHpetTimer->u64Cmp     = RT_MAKE_U64(u32NewValue, pHpetTimer->u64Cmp);
+            pHpetTimer->u64Cmp     = RT_MAKE_U64(u32NewValue, RT_HI_U32(pHpetTimer->u64Cmp));
             pHpetTimer->u64Config &= ~HPET_TN_SETVAL;
             Log2(("after HPET_TN_CMP cmp=%#llx per=%#llx\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period));
 
@@ -591,8 +591,8 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
             if (!hpet32bitTimer(pHpetTimer))
             {
                 if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
-                    pHpetTimer->u64Period = RT_MAKE_U64(pHpetTimer->u64Period, u32NewValue);
-                pHpetTimer->u64Cmp = RT_MAKE_U64(pHpetTimer->u64Cmp, u32NewValue);
+                    pHpetTimer->u64Period = RT_MAKE_U64(RT_LO_U32(pHpetTimer->u64Period), u32NewValue);
+                pHpetTimer->u64Cmp = RT_MAKE_U64(RT_LO_U32(pHpetTimer->u64Cmp), u32NewValue);
 
                 Log2(("after HPET_TN_CMP+4 cmp=%llx per=%llx tmr=%d\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period, iTimerNo));
 
@@ -828,7 +828,7 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
         case HPET_COUNTER:
         {
             DEVHPET_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
-            pThis->u64HpetCounter = RT_MAKE_U64(u32NewValue, pThis->u64HpetCounter);
+            pThis->u64HpetCounter = RT_MAKE_U64(u32NewValue, RT_HI_U32(pThis->u64HpetCounter));
             Log(("write HPET_COUNTER: %#x -> %llx\n", u32NewValue, pThis->u64HpetCounter));
             DEVHPET_UNLOCK(pThis);
             break;
@@ -837,7 +837,7 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
         case HPET_COUNTER + 4:
         {
             DEVHPET_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
-            pThis->u64HpetCounter = RT_MAKE_U64(pThis->u64HpetCounter, u32NewValue);
+            pThis->u64HpetCounter = RT_MAKE_U64(RT_LO_U32(pThis->u64HpetCounter), u32NewValue);
             Log(("write HPET_COUNTER + 4: %#x -> %llx\n", u32NewValue, pThis->u64HpetCounter));
             DEVHPET_UNLOCK(pThis);
             break;
