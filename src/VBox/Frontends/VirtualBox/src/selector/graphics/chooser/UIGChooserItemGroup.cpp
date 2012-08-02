@@ -270,11 +270,41 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             return infoFont;
         }
         /* Texts: */
-        case GroupItemData_Name: return m_strName;
+        case GroupItemData_Name:
+        {
+            /* Prepare variables: */
+            int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+            int iButtonWidth = data(GroupItemData_ButtonSize).toSize().width();
+            int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
+            int iGroupPixmapWidth = data(GroupItemData_GroupPixmapSize).toSize().width();
+            int iMachinePixmapWidth = data(GroupItemData_MachinePixmapSize).toSize().width();
+            int iGroupCountTextWidth = data(GroupItemData_GroupCountTextSize).toSize().width();
+            int iMachineCountTextWidth = data(GroupItemData_MachineCountTextSize).toSize().width();
+            int iMaximumWidth = (int)geometry().width() - iHorizontalMargin -
+                                                          iButtonWidth - iMinorSpacing -
+                                                          iHorizontalMargin -
+                                                          iGroupPixmapWidth - iMinorSpacing -
+                                                          iMachinePixmapWidth - iMinorSpacing -
+                                                          iGroupCountTextWidth - iMinorSpacing -
+                                                          iMachineCountTextWidth;
+            QString strCompressedName = compressText(data(GroupItemData_NameFont).value<QFont>(),
+                                                     m_strName, iMaximumWidth);
+            return strCompressedName;
+        }
         case GroupItemData_GroupCountText: return QString::number(m_groupItems.size());
         case GroupItemData_MachineCountText: return QString::number(m_machineItems.size());
         /* Sizes: */
         case GroupItemData_ButtonSize: return m_pButton ? m_pButton->minimumSizeHint() : QSizeF(0, 0);
+        case GroupItemData_MinimumNameSize:
+        {
+            if (isRoot())
+                return QSizeF(0, 0);
+            QFont font = data(GroupItemData_NameFont).value<QFont>();
+            QFontMetrics fm(font);
+            int iMaximumTextWidth = textWidth(font, 20);
+            QString strCompressedName = compressText(font, m_strName, iMaximumTextWidth);
+            return QSize(fm.width(strCompressedName), fm.height());
+        }
         case GroupItemData_NameSize:
         {
             if (isRoot())
@@ -312,7 +342,7 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
             int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
             QSize buttonSize = data(GroupItemData_ButtonSize).toSize();
-            QSize nameSize = data(GroupItemData_NameSize).toSize();
+            QSize minimumNameSize = data(GroupItemData_MinimumNameSize).toSize();
             QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
             QSize machinePixmapSize = data(GroupItemData_MachinePixmapSize).toSize();
             QSize groupCountTextSize = data(GroupItemData_GroupCountTextSize).toSize();
@@ -327,8 +357,8 @@ QVariant UIGChooserItemGroup::data(int iKey) const
                                         1 /* frame width from Qt sources */ +
                                         2 /* internal QLineEdit margin from Qt sources */ +
                                         1 /* internal QLineEdit align shifting from Qt sources */ +
-                                        /* Name width: */
-                                        nameSize.width() +
+                                        /* Minimum name width: */
+                                        minimumNameSize.width() +
                                         /* Spacing between name and info: */
                                         iMajorSpacing +
                                         /* Group stuff width: */
@@ -341,7 +371,7 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             /* Search for maximum height: */
             QList<int> heights;
             heights << buttonSize.height()
-                    << nameSize.height()
+                    << minimumNameSize.height()
                     << groupPixmapSize.height() << machinePixmapSize.height()
                     << groupCountTextSize.height() << machineCountTextSize.height();
             int iGroupItemHeaderHeight = 0;
@@ -1057,7 +1087,6 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
     {
         /* Prepare variables: */
         QRect fullRect = pOption->rect;
-        int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
         QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
         QSize machinePixmapSize = data(GroupItemData_MachinePixmapSize).toSize();
         QSize groupCountTextSize = data(GroupItemData_GroupCountTextSize).toSize();

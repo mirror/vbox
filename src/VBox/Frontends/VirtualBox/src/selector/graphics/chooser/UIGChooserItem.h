@@ -137,6 +137,10 @@ protected:
     int gradient() const { return m_iGradient; }
     void setGradient(int iGradient) { m_iGradient = iGradient; update(); }
 
+    /* Helpers: Text compression stuff: */
+    static int textWidth(const QFont &font, int iCount);
+    static QString compressText(const QFont &font, QString strText, int iWidth);
+
 private:
 
     /* Variables: */

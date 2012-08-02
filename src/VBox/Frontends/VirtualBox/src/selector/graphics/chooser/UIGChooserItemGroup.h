@@ -95,6 +95,7 @@ private:
         GroupItemData_MachineCountText,
         /* Sizes: */
         GroupItemData_ButtonSize,
+        GroupItemData_MinimumNameSize,
         GroupItemData_NameSize,
         GroupItemData_NameEditorSize,
         GroupItemData_GroupPixmapSize,
