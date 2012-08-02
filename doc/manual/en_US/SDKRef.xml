@@ -3557,6 +3557,196 @@ AuthResult AUTHCALL AuthEntry(
           it provides a subset of the functionality of <xref linkend="IVirtualBox__openMedium"
           xreflabel="IVirtualBox::openMedium()" />.</para>
         </listitem>
+
+        <listitem>
+          <para>The use of acronyms in API enumeration, interface, attribute
+          and method names has been made much more consistent, previously they
+          sometimes were lowercase and sometimes mixed case. They are now
+          consistently all caps:<table>
+          <title>Renamed identifiers in VirtualBox 4.2</title>
+
+          <tgroup cols="2" style="verywide">
+            <tbody>
+              <row>
+                <entry><emphasis role="bold">Old name</emphasis></entry>
+
+                <entry><emphasis role="bold">New name</emphasis></entry>
+              </row>
+              <row>
+                <entry>PointingHidType</entry>
+                <entry><xref linkend="PointingHIDType" xreflabel="PointingHIDType"/></entry>
+              </row>
+              <row>
+                <entry>KeyboardHidType</entry>
+                <entry><xref linkend="KeyboardHIDType" xreflabel="KeyboardHIDType"/></entry>
+              </row>
+              <row>
+                <entry>IPciAddress</entry>
+                <entry><xref linkend="IPCIAddress" xreflabel="IPCIAddress"/></entry>
+              </row>
+              <row>
+                <entry>IPciDeviceAttachment</entry>
+                <entry><xref linkend="IPCIDeviceAttachment" xreflabel="IPCIDeviceAttachment"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::pointingHidType</entry>
+                <entry><xref linkend="IMachine__pointingHIDType" xreflabel="IMachine::pointingHIDType"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::keyboardHidType</entry>
+                <entry><xref linkend="IMachine__keyboardHIDType" xreflabel="IMachine::keyboardHIDType"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::hpetEnabled</entry>
+                <entry><xref linkend="IMachine__HPETEnabled" xreflabel="IMachine::HPETEnabled"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::sessionPid</entry>
+                <entry><xref linkend="IMachine__sessionPID" xreflabel="IMachine::sessionPID"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::ioCacheEnabled</entry>
+                <entry><xref linkend="IMachine__IOCacheEnabled" xreflabel="IMachine::IOCacheEnabled"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::ioCacheSize</entry>
+                <entry><xref linkend="IMachine__IOCacheSize" xreflabel="IMachine::IOCacheSize"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::pciDeviceAssignments</entry>
+                <entry><xref linkend="IMachine__PCIDeviceAssignments" xreflabel="IMachine::PCIDeviceAssignments"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::attachHostPciDevice()</entry>
+                <entry><xref linkend="IMachine__attachHostPCIDevice" xreflabel="IMachine::attachHostPCIDevice"/></entry>
+              </row>
+              <row>
+                <entry>IMachine::detachHostPciDevice()</entry>
+                <entry><xref linkend="IMachine__detachHostPCIDevice" xreflabel="IMachine::detachHostPCIDevice()"/></entry>
+              </row>
+              <row>
+                <entry>IConsole::attachedPciDevices</entry>
+                <entry><xref linkend="IConsole__attachedPCIDevices" xreflabel="IConsole::attachedPCIDevices"/></entry>
+              </row>
+              <row>
+                <entry>IHostNetworkInterface::dhcpEnabled</entry>
+                <entry><xref linkend="IHostNetworkInterface__DHCPEnabled" xreflabel="IHostNetworkInterface::DHCPEnabled"/></entry>
+              </row>
+              <row>
+                <entry>IHostNetworkInterface::enableStaticIpConfig()</entry>
+                <entry><xref linkend="IHostNetworkInterface__enableStaticIPConfig" xreflabel="IHostNetworkInterface::enableStaticIPConfig()"/></entry>
+              </row>
+              <row>
+                <entry>IHostNetworkInterface::enableStaticIpConfigV6()</entry>
+                <entry><xref linkend="IHostNetworkInterface__enableStaticIPConfigV6" xreflabel="IHostNetworkInterface::enableStaticIPConfigV6()"/></entry>
+              </row>
+              <row>
+                <entry>IHostNetworkInterface::enableDynamicIpConfig()</entry>
+                <entry><xref linkend="IHostNetworkInterface__enableDynamicIPConfig" xreflabel="IHostNetworkInterface::enableDynamicIPConfig()"/></entry>
+              </row>
+              <row>
+                <entry>IHostNetworkInterface::dhcpRediscover()</entry>
+                <entry><xref linkend="IHostNetworkInterface__DHCPRediscover" xreflabel="IHostNetworkInterface::DHCPRediscover()"/></entry>
+              </row>
+              <row>
+                <entry>IHost::Acceleration3DAvailable</entry>
+                <entry><xref linkend="IHost__acceleration3DAvailable" xreflabel="IHost::acceleration3DAvailable"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedPae</entry>
+                <entry><xref linkend="IGuestOSType__recommendedPAE" xreflabel="IGuestOSType::recommendedPAE"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedDvdStorageController</entry>
+                <entry><xref linkend="IGuestOSType__recommendedDVDStorageController" xreflabel="IGuestOSType::recommendedDVDStorageController"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedDvdStorageBus</entry>
+                <entry><xref linkend="IGuestOSType__recommendedDVDStorageBus" xreflabel="IGuestOSType::recommendedDVDStorageBus"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedHdStorageController</entry>
+                <entry><xref linkend="IGuestOSType__recommendedHDStorageController" xreflabel="IGuestOSType::recommendedHDStorageController"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedHdStorageBus</entry>
+                <entry><xref linkend="IGuestOSType__recommendedHDStorageBus" xreflabel="IGuestOSType::recommendedHDStorageBus"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedUsbHid</entry>
+                <entry><xref linkend="IGuestOSType__recommendedUSBHID" xreflabel="IGuestOSType::recommendedUSBHID"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedHpet</entry>
+                <entry><xref linkend="IGuestOSType__recommendedHPET" xreflabel="IGuestOSType::recommendedHPET"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedUsbTablet</entry>
+                <entry><xref linkend="IGuestOSType__recommendedUSBTablet" xreflabel="IGuestOSType::recommendedUSBTablet"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedRtcUseUtc</entry>
+                <entry><xref linkend="IGuestOSType__recommendedRTCUseUTC" xreflabel="IGuestOSType::recommendedRTCUseUTC"/></entry>
+              </row>
+              <row>
+                <entry>IGuestOSType::recommendedUsb</entry>
+                <entry><xref linkend="IGuestOSType__recommendedUSB" xreflabel="IGuestOSType::recommendedUSB"/></entry>
+              </row>
+              <row>
+                <entry>INetworkAdapter::natDriver</entry>
+                <entry><xref linkend="INetworkAdapter__NATEngine" xreflabel="INetworkAdapter::NATEngine"/></entry>
+              </row>
+              <row>
+                <entry>IUSBController::enabledEhci</entry>
+                <entry><xref linkend="IUSBController__enabledEHCI" xreflabel="IUSBController::enabledEHCI"/></entry>
+              </row>
+              <row>
+                <entry>INATEngine::tftpPrefix</entry>
+                <entry><xref linkend="INATEngine__TFTPPrefix" xreflabel="INATEngine::TFTPPrefix"/></entry>
+              </row>
+              <row>
+                <entry>INATEngine::tftpBootFile</entry>
+                <entry><xref linkend="INATEngine__TFTPBootFile" xreflabel="INATEngine::TFTPBootFile"/></entry>
+              </row>
+              <row>
+                <entry>INATEngine::tftpNextServer</entry>
+                <entry><xref linkend="INATEngine__TFTPNextServer" xreflabel="INATEngine::TFTPNextServer"/></entry>
+              </row>
+              <row>
+                <entry>INATEngine::dnsPassDomain</entry>
+                <entry><xref linkend="INATEngine__DNSPassDomain" xreflabel="INATEngine::DNSPassDomain"/></entry>
+              </row>
+              <row>
+                <entry>INATEngine::dnsProxy</entry>
+                <entry><xref linkend="INATEngine__DNSProxy" xreflabel="INATEngine::DNSProxy"/></entry>
+              </row>
+              <row>
+                <entry>INATEngine::dnsUseHostResolver</entry>
+                <entry><xref linkend="INATEngine__DNSUseHostResolver" xreflabel="INATEngine::DNSUseHostResolver"/></entry>
+              </row>
+              <row>
+                <entry>VBoxEventType::OnHostPciDevicePlug</entry>
+                <entry><xref linkend="VBoxEventType__OnHostPCIDevicePlug" xreflabel="VBoxEventType::OnHostPCIDevicePlug"/></entry>
+              </row>
+              <row>
+                <entry>ICPUChangedEvent::cpu</entry>
+                <entry><xref linkend="ICPUChangedEvent__CPU" xreflabel="ICPUChangedEvent::CPU"/></entry>
+              </row>
+              <row>
+                <entry>INATRedirectEvent::hostIp</entry>
+                <entry><xref linkend="INATRedirectEvent__hostIP" xreflabel="INATRedirectEvent::hostIP"/></entry>
+              </row>
+              <row>
+                <entry>INATRedirectEvent::guestIp</entry>
+                <entry><xref linkend="INATRedirectEvent__guestIP" xreflabel="INATRedirectEvent::guestIP"/></entry>
+              </row>
+              <row>
+                <entry>IHostPciDevicePlugEvent</entry>
+                <entry><xref linkend="IHostPCIDevicePlugEvent" xreflabel="IHostPCIDevicePlugEvent"/></entry>
+              </row>
+            </tbody>
+          </tgroup></table></para>
+        </listitem>
       </itemizedlist>
     </sect1>
 
@@ -3767,8 +3957,7 @@ AuthResult AUTHCALL AuthEntry(
                 <para>The rare use case of changing the UUID and parent UUID
                 of a medium previously handled by
                 <computeroutput>openHardDisk()</computeroutput> is now in a
-                separate <xref linkend="IMedium__setIDs"
-                xreflabel="IMedium::setIDs" /> method.</para>
+                separate IMedium::setIDs method.</para>
               </listitem>
 
               <listitem>

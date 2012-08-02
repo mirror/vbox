@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,11 +24,11 @@
 class Console;
 struct DRVMAINPCIRAWDEV;
 
-class PciRawDev
+class PCIRawDev
 {
   public:
-    PciRawDev(Console *console);
-    virtual ~PciRawDev();
+    PCIRawDev(Console *console);
+    virtual ~PCIRawDev();
 
     static const PDMDRVREG DrvReg;
     struct DRVMAINPCIRAWDEV *mpDrv;
@@ -44,7 +44,7 @@ class PciRawDev
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(void)   drvReset(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(int)    drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
-                                                           uint32_t uHostPciAddress, uint32_t uGuestPciAddress,
+                                                           uint32_t uHostPCIAddress, uint32_t uGuestPCIAddress,
                                                            int rc);
 
 

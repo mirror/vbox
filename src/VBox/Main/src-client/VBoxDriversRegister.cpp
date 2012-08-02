@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,7 @@
 #endif
 #include "ConsoleImpl.h"
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-# include "PciRawDevImpl.h"
+# include "PCIRawDevImpl.h"
 #endif
 
 #include "Logging.h"
@@ -89,7 +89,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-    rc = pCallbacks->pfnRegister(pCallbacks, &PciRawDev::DrvReg);
+    rc = pCallbacks->pfnRegister(pCallbacks, &PCIRawDev::DrvReg);
     if (RT_FAILURE(rc))
         return rc;
 #endif

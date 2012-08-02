@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_NATDRIVER
-#define ____H_NATDRIVER
+#ifndef ____H_NATENGINE
+#define ____H_NATENGINE
 
 
 #include "VirtualBoxBase.h"
@@ -42,9 +42,9 @@ class ATL_NO_VTABLE NATEngine :
                  mSockSnd(0),
                  mTcpRcv(0),
                  mTcpSnd(0),
-                 mDnsPassDomain(TRUE),
-                 mDnsProxy(FALSE),
-                 mDnsUseHostResolver(FALSE),
+                 mDNSPassDomain(TRUE),
+                 mDNSProxy(FALSE),
+                 mDNSUseHostResolver(FALSE),
                  mAliasMode(0)
         {}
 
@@ -56,13 +56,13 @@ class ATL_NO_VTABLE NATEngine :
         uint32_t mTcpRcv;
         uint32_t mTcpSnd;
         /* TFTP service */
-        Utf8Str  mTftpPrefix;
-        Utf8Str  mTftpBootFile;
-        Utf8Str  mTftpNextServer;
+        Utf8Str  mTFTPPrefix;
+        Utf8Str  mTFTPBootFile;
+        Utf8Str  mTFTPNextServer;
         /* DNS service */
-        BOOL     mDnsPassDomain;
-        BOOL     mDnsProxy;
-        BOOL     mDnsUseHostResolver;
+        BOOL     mDNSPassDomain;
+        BOOL     mDNSProxy;
+        BOOL     mDNSUseHostResolver;
         /* Alias service */
         ULONG    mAliasMode;
     };
@@ -73,10 +73,10 @@ class ATL_NO_VTABLE NATEngine :
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(NATEngine)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (INATEngine)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(INATEngine)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (NATEngine)
+    DECLARE_EMPTY_CTOR_DTOR(NATEngine)
 
     HRESULT FinalConstruct();
     HRESULT init(Machine *aParent, INetworkAdapter *aAdapter);
@@ -92,32 +92,32 @@ class ATL_NO_VTABLE NATEngine :
     HRESULT loadSettings(const settings::NAT &data);
     HRESULT saveSettings(settings::NAT &data);
 
-    STDMETHOD(COMSETTER(Network)) (IN_BSTR aNetwork);
-    STDMETHOD(COMGETTER(Network)) (BSTR *aNetwork);
-    STDMETHOD(COMSETTER(HostIP)) (IN_BSTR aBindIP);
-    STDMETHOD(COMGETTER(HostIP)) (BSTR *aBindIP);
+    STDMETHOD(COMSETTER(Network))(IN_BSTR aNetwork);
+    STDMETHOD(COMGETTER(Network))(BSTR *aNetwork);
+    STDMETHOD(COMSETTER(HostIP))(IN_BSTR aBindIP);
+    STDMETHOD(COMGETTER(HostIP))(BSTR *aBindIP);
     /* TFTP attributes */
-    STDMETHOD(COMSETTER(TftpPrefix)) (IN_BSTR aTftpPrefix);
-    STDMETHOD(COMGETTER(TftpPrefix)) (BSTR *aTftpPrefix);
-    STDMETHOD(COMSETTER(TftpBootFile)) (IN_BSTR aTftpBootFile);
-    STDMETHOD(COMGETTER(TftpBootFile)) (BSTR *aTftpBootFile);
-    STDMETHOD(COMSETTER(TftpNextServer)) (IN_BSTR aTftpNextServer);
-    STDMETHOD(COMGETTER(TftpNextServer)) (BSTR *aTftpNextServer);
+    STDMETHOD(COMSETTER(TFTPPrefix))(IN_BSTR aTFTPPrefix);
+    STDMETHOD(COMGETTER(TFTPPrefix))(BSTR *aTFTPPrefix);
+    STDMETHOD(COMSETTER(TFTPBootFile))(IN_BSTR aTFTPBootFile);
+    STDMETHOD(COMGETTER(TFTPBootFile))(BSTR *aTFTPBootFile);
+    STDMETHOD(COMSETTER(TFTPNextServer))(IN_BSTR aTFTPNextServer);
+    STDMETHOD(COMGETTER(TFTPNextServer))(BSTR *aTFTPNextServer);
     /* Alias attributes */
-    STDMETHOD(COMSETTER(AliasMode)) (ULONG aAliasLog);
-    STDMETHOD(COMGETTER(AliasMode)) (ULONG *aAliasLog);
+    STDMETHOD(COMSETTER(AliasMode))(ULONG aAliasLog);
+    STDMETHOD(COMGETTER(AliasMode))(ULONG *aAliasLog);
     /* DNS attributes */
-    STDMETHOD(COMSETTER(DnsPassDomain)) (BOOL aDnsPassDomain);
-    STDMETHOD(COMGETTER(DnsPassDomain)) (BOOL *aDnsPassDomain);
-    STDMETHOD(COMSETTER(DnsProxy)) (BOOL aDnsProxy);
-    STDMETHOD(COMGETTER(DnsProxy)) (BOOL *aDnsProxy);
-    STDMETHOD(COMGETTER(DnsUseHostResolver)) (BOOL *aDnsUseHostResolver);
-    STDMETHOD(COMSETTER(DnsUseHostResolver)) (BOOL aDnsUseHostResolver);
+    STDMETHOD(COMSETTER(DNSPassDomain))(BOOL aDNSPassDomain);
+    STDMETHOD(COMGETTER(DNSPassDomain))(BOOL *aDNSPassDomain);
+    STDMETHOD(COMSETTER(DNSProxy))(BOOL aDNSProxy);
+    STDMETHOD(COMGETTER(DNSProxy))(BOOL *aDNSProxy);
+    STDMETHOD(COMGETTER(DNSUseHostResolver))(BOOL *aDNSUseHostResolver);
+    STDMETHOD(COMSETTER(DNSUseHostResolver))(BOOL aDNSUseHostResolver);
 
     STDMETHOD(SetNetworkSettings)(ULONG aMtu, ULONG aSockSnd, ULONG aSockRcv, ULONG aTcpWndSnd, ULONG aTcpWndRcv);
     STDMETHOD(GetNetworkSettings)(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULONG *aTcpWndSnd, ULONG *aTcpWndRcv);
 
-    STDMETHOD(COMGETTER(Redirects)) (ComSafeArrayOut (BSTR, aNatRules));
+    STDMETHOD(COMGETTER(Redirects))(ComSafeArrayOut(BSTR, aNatRules));
     STDMETHOD(AddRedirect)(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USHORT aHostPort, IN_BSTR aGuestIP, USHORT aGuestPort);
     STDMETHOD(RemoveRedirect)(IN_BSTR aName);
 

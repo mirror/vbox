@@ -48,8 +48,8 @@ bool UIWizardFirstRun::insertMedium()
     /* Determine machine 'OS type': */
     const CGuestOSType &osType = vbox.GetGuestOSType(m_machine.GetOSTypeId());
     /* Determine recommended controller's 'bus' & 'type': */
-    KStorageBus dvdCtrBus = osType.GetRecommendedDvdStorageBus();
-    KStorageControllerType dvdCtrType = osType.GetRecommendedDvdStorageController();
+    KStorageBus dvdCtrBus = osType.GetRecommendedDVDStorageBus();
+    KStorageControllerType dvdCtrType = osType.GetRecommendedDVDStorageController();
     /* Declare null 'dvd' attachment: */
     CMediumAttachment cda;
     /* Enumerate attachments vector: */
@@ -131,8 +131,8 @@ bool UIWizardFirstRun::isBootHardDiskAttached(const CMachine &machine)
     /* Determine machine 'OS type': */
     const CGuestOSType &osType = vbox.GetGuestOSType(machine.GetOSTypeId());
     /* Determine recommended controller's 'bus' & 'type': */
-    KStorageBus hdCtrBus = osType.GetRecommendedHdStorageBus();
-    KStorageControllerType hdCtrType = osType.GetRecommendedHdStorageController();
+    KStorageBus hdCtrBus = osType.GetRecommendedHDStorageBus();
+    KStorageControllerType hdCtrType = osType.GetRecommendedHDStorageController();
     /* Enumerate attachments vector: */
     const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
     for (int i = 0; i < attachments.size(); ++i)

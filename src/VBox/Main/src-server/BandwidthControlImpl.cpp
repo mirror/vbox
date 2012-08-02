@@ -528,7 +528,7 @@ STDMETHODIMP BandwidthControl::GetAllBandwidthGroups(ComSafeArrayOut(IBandwidthG
     return S_OK;
 }
 
-HRESULT BandwidthControl::loadSettings(const settings::IoSettings &data)
+HRESULT BandwidthControl::loadSettings(const settings::IOSettings &data)
 {
     HRESULT rc = S_OK;
 
@@ -547,7 +547,7 @@ HRESULT BandwidthControl::loadSettings(const settings::IoSettings &data)
     return rc;
 }
 
-HRESULT BandwidthControl::saveSettings(settings::IoSettings &data)
+HRESULT BandwidthControl::saveSettings(settings::IOSettings &data)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

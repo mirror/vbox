@@ -393,9 +393,9 @@ struct USBController
            u32SockSnd(0),
            u32TcpRcv(0),
            u32TcpSnd(0),
-           fDnsPassDomain(true), /* historically this value is true */
-           fDnsProxy(false),
-           fDnsUseHostResolver(false),
+           fDNSPassDomain(true), /* historically this value is true */
+           fDNSProxy(false),
+           fDNSUseHostResolver(false),
            fAliasLog(false),
            fAliasProxyOnly(false),
            fAliasUseSamePorts(false)
@@ -410,12 +410,12 @@ struct USBController
              && u32SockSnd          == n.u32SockSnd
              && u32TcpSnd           == n.u32TcpSnd
              && u32TcpRcv           == n.u32TcpRcv
-             && strTftpPrefix       == n.strTftpPrefix
-             && strTftpBootFile     == n.strTftpBootFile
-             && strTftpNextServer   == n.strTftpNextServer
-             && fDnsPassDomain      == n.fDnsPassDomain
-             && fDnsProxy           == n.fDnsProxy
-             && fDnsUseHostResolver == n.fDnsUseHostResolver
+             && strTFTPPrefix       == n.strTFTPPrefix
+             && strTFTPBootFile     == n.strTFTPBootFile
+             && strTFTPNextServer   == n.strTFTPNextServer
+             && fDNSPassDomain      == n.fDNSPassDomain
+             && fDNSProxy           == n.fDNSProxy
+             && fDNSUseHostResolver == n.fDNSUseHostResolver
              && fAliasLog           == n.fAliasLog
              && fAliasProxyOnly     == n.fAliasProxyOnly
              && fAliasUseSamePorts  == n.fAliasUseSamePorts
@@ -429,12 +429,12 @@ struct USBController
      uint32_t                u32SockSnd;
      uint32_t                u32TcpRcv;
      uint32_t                u32TcpSnd;
-     com::Utf8Str            strTftpPrefix;
-     com::Utf8Str            strTftpBootFile;
-     com::Utf8Str            strTftpNextServer;
-     bool                    fDnsPassDomain;
-     bool                    fDnsProxy;
-     bool                    fDnsUseHostResolver;
+     com::Utf8Str            strTFTPPrefix;
+     com::Utf8Str            strTFTPBootFile;
+     com::Utf8Str            strTFTPNextServer;
+     bool                    fDNSPassDomain;
+     bool                    fDNSProxy;
+     bool                    fDNSUseHostResolver;
      bool                    fAliasLog;
      bool                    fAliasProxyOnly;
      bool                    fAliasUseSamePorts;
@@ -693,19 +693,19 @@ typedef std::list<BandwidthGroup> BandwidthGroupList;
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct IoSettings
+struct IOSettings
 {
-    IoSettings();
+    IOSettings();
 
-    bool operator==(const IoSettings &i) const
+    bool operator==(const IOSettings &i) const
     {
-        return (   (fIoCacheEnabled   == i.fIoCacheEnabled)
-                && (ulIoCacheSize     == i.ulIoCacheSize)
+        return (   (fIOCacheEnabled   == i.fIOCacheEnabled)
+                && (ulIOCacheSize     == i.ulIOCacheSize)
                 && (llBandwidthGroups == i.llBandwidthGroups));
     }
 
-    bool               fIoCacheEnabled;
-    uint32_t           ulIoCacheSize;
+    bool               fIOCacheEnabled;
+    uint32_t           ulIOCacheSize;
     BandwidthGroupList llBandwidthGroups;
 };
 
@@ -714,14 +714,14 @@ struct IoSettings
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct HostPciDeviceAttachment
+struct HostPCIDeviceAttachment
 {
-    HostPciDeviceAttachment()
+    HostPCIDeviceAttachment()
         : uHostAddress(0),
           uGuestAddress(0)
     {}
 
-    bool operator==(const HostPciDeviceAttachment &a) const
+    bool operator==(const HostPCIDeviceAttachment &a) const
     {
         return (   (uHostAddress   == a.uHostAddress)
                 && (uGuestAddress  == a.uGuestAddress)
@@ -733,7 +733,7 @@ struct HostPciDeviceAttachment
     uint32_t        uHostAddress;
     uint32_t        uGuestAddress;
 };
-typedef std::list<HostPciDeviceAttachment> HostPciDeviceAttachmentList;
+typedef std::list<HostPCIDeviceAttachment> HostPCIDeviceAttachmentList;
 
 /**
  * Representation of Machine hardware; this is used in the MachineConfigFile.hardwareMachine
@@ -763,7 +763,7 @@ struct Hardware
     uint32_t            cCPUs;
     bool                fCpuHotPlug;            // requires settings version 1.10 (VirtualBox 3.2)
     CpuList             llCpus;                 // requires settings version 1.10 (VirtualBox 3.2)
-    bool                fHpetEnabled;           // requires settings version 1.10 (VirtualBox 3.2)
+    bool                fHPETEnabled;           // requires settings version 1.10 (VirtualBox 3.2)
     uint32_t            ulCpuExecutionCap;      // requires settings version 1.11 (VirtualBox 3.3)
 
     CpuIdLeafsList      llCpuIdLeafs;
@@ -778,8 +778,8 @@ struct Hardware
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
     FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
 
-    PointingHidType_T   pointingHidType;        // requires settings version 1.10 (VirtualBox 3.2)
-    KeyboardHidType_T   keyboardHidType;        // requires settings version 1.10 (VirtualBox 3.2)
+    PointingHIDType_T   pointingHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
+    KeyboardHIDType_T   keyboardHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
 
     ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
 
@@ -806,8 +806,8 @@ struct Hardware
     GuestPropertiesList llGuestProperties;
     com::Utf8Str        strNotificationPatterns;
 
-    IoSettings          ioSettings;             // requires settings version 1.10 (VirtualBox 3.2)
-    HostPciDeviceAttachmentList pciAttachments; // requires settings version 1.12 (VirtualBox 4.1)
+    IOSettings          ioSettings;             // requires settings version 1.10 (VirtualBox 3.2)
+    HostPCIDeviceAttachmentList pciAttachments; // requires settings version 1.12 (VirtualBox 4.1)
 };
 
 /**

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -123,7 +123,7 @@ public:
     STDMETHOD(COMSETTER(PromiscModePolicy))(NetworkAdapterPromiscModePolicy_T aPromiscModePolicy);
     STDMETHOD(COMGETTER(TraceFile))(BSTR *aTraceFile);
     STDMETHOD(COMSETTER(TraceFile))(IN_BSTR aTraceFile);
-    STDMETHOD(COMGETTER(NatDriver))(INATEngine **aNatDriver);
+    STDMETHOD(COMGETTER(NATEngine))(INATEngine **aNATEngine);
     STDMETHOD(COMGETTER(BootPriority))(ULONG *aBootPriority);
     STDMETHOD(COMSETTER(BootPriority))(ULONG aBootPriority);
     STDMETHOD(COMGETTER(BandwidthGroup))(IBandwidthGroup **aBwGroup);

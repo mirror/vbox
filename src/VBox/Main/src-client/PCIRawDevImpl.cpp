@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #include "Logging.h"
-#include "PciRawDevImpl.h"
-#include "PciDeviceAttachmentImpl.h"
+#include "PCIRawDevImpl.h"
+#include "PCIDeviceAttachmentImpl.h"
 #include "ConsoleImpl.h"
 #include "MachineImpl.h"
 
@@ -29,7 +29,7 @@
 typedef struct DRVMAINPCIRAWDEV
 {
     /** Pointer to the real PCI raw object. */
-    PciRawDev                   *pPciRawDev;
+    PCIRawDev                   *pPCIRawDev;
     /** Pointer to the driver instance structure. */
     PPDMDRVINS                  pDrvIns;
     /** Our PCI device connector interface. */
@@ -40,20 +40,20 @@ typedef struct DRVMAINPCIRAWDEV
 //
 // constructor / destructor
 //
-PciRawDev::PciRawDev(Console *console)
+PCIRawDev::PCIRawDev(Console *console)
   : mpDrv(NULL),
     mParent(console)
 {
 }
 
-PciRawDev::~PciRawDev()
+PCIRawDev::~PCIRawDev()
 {
 }
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *) PciRawDev::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+DECLCALLBACK(void *) PCIRawDev::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS         pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINPCIRAWDEV  pThis   = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
@@ -68,12 +68,12 @@ DECLCALLBACK(void *) PciRawDev::drvQueryInterface(PPDMIBASE pInterface, const ch
 /**
  * @interface_method_impl{PDMIPCIRAWUP,pfnPciDeviceConstructComplete}
  */
-DECLCALLBACK(int) PciRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
-                                                        uint32_t uHostPciAddress, uint32_t uGuestPciAddress,
+DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
+                                                        uint32_t uHostPCIAddress, uint32_t uGuestPCIAddress,
                                                         int rc)
 {
     PDRVMAINPCIRAWDEV pThis = RT_FROM_CPP_MEMBER(pInterface, DRVMAINPCIRAWDEV, IConnector);
-    Console *pConsole = pThis->pPciRawDev->getParent();
+    Console *pConsole = pThis->pPCIRawDev->getParent();
     const ComPtr<IMachine>& machine = pConsole->machine();
     ComPtr<IVirtualBox> vbox;
 
@@ -88,16 +88,16 @@ DECLCALLBACK(int) PciRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
     hrc = machine->COMGETTER(Id)(bstrId.asOutParam());
     Assert(SUCCEEDED(hrc));
 
-    ComObjPtr<PciDeviceAttachment> pda;
+    ComObjPtr<PCIDeviceAttachment> pda;
     BstrFmt bstrName(pcszName);
     pda.createObject();
-    pda->init(machine, bstrName, uHostPciAddress, uGuestPciAddress, TRUE);
+    pda->init(machine, bstrName, uHostPCIAddress, uGuestPCIAddress, TRUE);
 
     Bstr msg("");
     if (RT_FAILURE(rc))
         msg = BstrFmt("runtime error %Rrc", rc);
 
-    fireHostPciDevicePlugEvent(es, bstrId.raw(), true /* plugged */, RT_SUCCESS(rc) /* success */, pda, msg.raw());
+    fireHostPCIDevicePlugEvent(es, bstrId.raw(), true /* plugged */, RT_SUCCESS(rc) /* success */, pda, msg.raw());
 
     return VINF_SUCCESS;
 }
@@ -109,13 +109,13 @@ DECLCALLBACK(int) PciRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
-DECLCALLBACK(void) PciRawDev::drvDestruct(PPDMDRVINS pDrvIns)
+DECLCALLBACK(void) PCIRawDev::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    if (pData->pPciRawDev)
-        pData->pPciRawDev->mpDrv = NULL;
+    if (pData->pPCIRawDev)
+        pData->pPCIRawDev->mpDrv = NULL;
 }
 
 
@@ -125,7 +125,7 @@ DECLCALLBACK(void) PciRawDev::drvDestruct(PPDMDRVINS pDrvIns)
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
-DECLCALLBACK(void) PciRawDev::drvReset(PPDMDRVINS pDrvIns)
+DECLCALLBACK(void) PCIRawDev::drvReset(PPDMDRVINS pDrvIns)
 {
 }
 
@@ -135,7 +135,7 @@ DECLCALLBACK(void) PciRawDev::drvReset(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-DECLCALLBACK(int) PciRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+DECLCALLBACK(int) PCIRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
@@ -153,12 +153,12 @@ DECLCALLBACK(int) PciRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * IBase.
      */
-    pDrvIns->IBase.pfnQueryInterface = PciRawDev::drvQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface = PCIRawDev::drvQueryInterface;
 
     /*
      * IConnector.
      */
-    pData->IConnector.pfnDeviceConstructComplete = PciRawDev::drvDeviceConstructComplete;
+    pData->IConnector.pfnDeviceConstructComplete = PCIRawDev::drvDeviceConstructComplete;
 
     /*
      * Get the object pointer and update the mpDrv member.
@@ -171,8 +171,8 @@ DECLCALLBACK(int) PciRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
         return rc;
     }
 
-    pData->pPciRawDev = (PciRawDev*)pv;
-    pData->pPciRawDev->mpDrv = pData;
+    pData->pPCIRawDev = (PCIRawDev *)pv;
+    pData->pPCIRawDev->mpDrv = pData;
 
     return VINF_SUCCESS;
 }
@@ -180,7 +180,7 @@ DECLCALLBACK(int) PciRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
 /**
  * Main raw PCI driver registration record.
  */
-const PDMDRVREG PciRawDev::DrvReg =
+const PDMDRVREG PCIRawDev::DrvReg =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
@@ -201,9 +201,9 @@ const PDMDRVREG PciRawDev::DrvReg =
     /* cbInstance */
     sizeof(DRVMAINPCIRAWDEV),
     /* pfnConstruct */
-    PciRawDev::drvConstruct,
+    PCIRawDev::drvConstruct,
     /* pfnDestruct */
-    PciRawDev::drvDestruct,
+    PCIRawDev::drvDestruct,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
@@ -211,7 +211,7 @@ const PDMDRVREG PciRawDev::DrvReg =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    PciRawDev::drvReset,
+    PCIRawDev::drvReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */

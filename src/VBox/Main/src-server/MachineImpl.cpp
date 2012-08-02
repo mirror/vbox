@@ -130,7 +130,7 @@ Machine::Data::Data()
     mCurrentStateModified      = TRUE;
     mGuestPropertiesModified   = FALSE;
 
-    mSession.mPid              = NIL_RTPROCESS;
+    mSession.mPID              = NIL_RTPROCESS;
     mSession.mState            = SessionState_Unlocked;
 }
 
@@ -186,7 +186,7 @@ Machine::HWData::HWData()
     mPAEEnabled = false;
 #endif
     mSyntheticCpu = false;
-    mHpetEnabled = false;
+    mHPETEnabled = false;
 
     /* default boot order: floppy - DVD - HDD */
     mBootOrder[0] = DeviceType_Floppy;
@@ -200,16 +200,16 @@ Machine::HWData::HWData()
     mGuestPropertyNotificationPatterns = "";
 
     mFirmwareType = FirmwareType_BIOS;
-    mKeyboardHidType = KeyboardHidType_PS2Keyboard;
-    mPointingHidType = PointingHidType_PS2Mouse;
+    mKeyboardHIDType = KeyboardHIDType_PS2Keyboard;
+    mPointingHIDType = PointingHIDType_PS2Mouse;
     mChipsetType = ChipsetType_PIIX3;
     mEmulatedUSBCardReaderEnabled = FALSE;
 
     for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
         mCPUAttached[i] = false;
 
-    mIoCacheEnabled = true;
-    mIoCacheSize    = 5; /* 5MB */
+    mIOCacheEnabled = true;
+    mIOCacheSize    = 5; /* 5MB */
 
     /* Maximum CPU execution cap by default. */
     mCpuExecutionCap = 100;
@@ -1175,21 +1175,21 @@ STDMETHODIMP Machine::COMSETTER(FirmwareType)(FirmwareType_T aFirmwareType)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(KeyboardHidType)(KeyboardHidType_T *aKeyboardHidType)
+STDMETHODIMP Machine::COMGETTER(KeyboardHIDType)(KeyboardHIDType_T *aKeyboardHIDType)
 {
-    CheckComArgOutPointerValid(aKeyboardHidType);
+    CheckComArgOutPointerValid(aKeyboardHIDType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aKeyboardHidType = mHWData->mKeyboardHidType;
+    *aKeyboardHIDType = mHWData->mKeyboardHIDType;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(KeyboardHidType)(KeyboardHidType_T  aKeyboardHidType)
+STDMETHODIMP Machine::COMSETTER(KeyboardHIDType)(KeyboardHIDType_T  aKeyboardHIDType)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1200,26 +1200,26 @@ STDMETHODIMP Machine::COMSETTER(KeyboardHidType)(KeyboardHidType_T  aKeyboardHid
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mKeyboardHidType = aKeyboardHidType;
+    mHWData->mKeyboardHIDType = aKeyboardHIDType;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(PointingHidType)(PointingHidType_T *aPointingHidType)
+STDMETHODIMP Machine::COMGETTER(PointingHIDType)(PointingHIDType_T *aPointingHIDType)
 {
-    CheckComArgOutPointerValid(aPointingHidType);
+    CheckComArgOutPointerValid(aPointingHIDType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aPointingHidType = mHWData->mPointingHidType;
+    *aPointingHIDType = mHWData->mPointingHIDType;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(PointingHidType)(PointingHidType_T  aPointingHidType)
+STDMETHODIMP Machine::COMSETTER(PointingHIDType)(PointingHIDType_T  aPointingHIDType)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1230,7 +1230,7 @@ STDMETHODIMP Machine::COMSETTER(PointingHidType)(PointingHidType_T  aPointingHid
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mPointingHidType = aPointingHidType;
+    mHWData->mPointingHIDType = aPointingHIDType;
 
     return S_OK;
 }
@@ -1625,7 +1625,7 @@ STDMETHODIMP Machine::COMSETTER(EmulatedUSBWebcameraEnabled)(BOOL enabled)
     return E_NOTIMPL;
 }
 
-STDMETHODIMP Machine::COMGETTER(HpetEnabled)(BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(HPETEnabled)(BOOL *enabled)
 {
     CheckComArgOutPointerValid(enabled);
 
@@ -1633,12 +1633,12 @@ STDMETHODIMP Machine::COMGETTER(HpetEnabled)(BOOL *enabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mHpetEnabled;
+    *enabled = mHWData->mHPETEnabled;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(HpetEnabled)(BOOL enabled)
+STDMETHODIMP Machine::COMSETTER(HPETEnabled)(BOOL enabled)
 {
     HRESULT rc = S_OK;
 
@@ -1652,7 +1652,7 @@ STDMETHODIMP Machine::COMSETTER(HpetEnabled)(BOOL enabled)
     setModified(IsModified_MachineData);
     mHWData.backup();
 
-    mHWData->mHpetEnabled = enabled;
+    mHWData->mHPETEnabled = enabled;
 
     return rc;
 }
@@ -2438,16 +2438,16 @@ STDMETHODIMP Machine::COMGETTER(SessionType)(BSTR *aSessionType)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(SessionPid)(ULONG *aSessionPid)
+STDMETHODIMP Machine::COMGETTER(SessionPID)(ULONG *aSessionPID)
 {
-    CheckComArgOutPointerValid(aSessionPid);
+    CheckComArgOutPointerValid(aSessionPID);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aSessionPid = mData->mSession.mPid;
+    *aSessionPID = mData->mSession.mPID;
 
     return S_OK;
 }
@@ -3062,7 +3062,7 @@ STDMETHODIMP Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(IoCacheEnabled)(BOOL *aEnabled)
+STDMETHODIMP Machine::COMGETTER(IOCacheEnabled)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -3071,12 +3071,12 @@ STDMETHODIMP Machine::COMGETTER(IoCacheEnabled)(BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aEnabled = mHWData->mIoCacheEnabled;
+    *aEnabled = mHWData->mIOCacheEnabled;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(IoCacheEnabled)(BOOL aEnabled)
+STDMETHODIMP Machine::COMSETTER(IOCacheEnabled)(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3088,26 +3088,26 @@ STDMETHODIMP Machine::COMSETTER(IoCacheEnabled)(BOOL aEnabled)
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mIoCacheEnabled = aEnabled;
+    mHWData->mIOCacheEnabled = aEnabled;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(IoCacheSize)(ULONG *aIoCacheSize)
+STDMETHODIMP Machine::COMGETTER(IOCacheSize)(ULONG *aIOCacheSize)
 {
-    CheckComArgOutPointerValid(aIoCacheSize);
+    CheckComArgOutPointerValid(aIOCacheSize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aIoCacheSize = mHWData->mIoCacheSize;
+    *aIOCacheSize = mHWData->mIOCacheSize;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(IoCacheSize)(ULONG  aIoCacheSize)
+STDMETHODIMP Machine::COMSETTER(IOCacheSize)(ULONG  aIOCacheSize)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3119,7 +3119,7 @@ STDMETHODIMP Machine::COMSETTER(IoCacheSize)(ULONG  aIoCacheSize)
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mIoCacheSize = aIoCacheSize;
+    mHWData->mIOCacheSize = aIOCacheSize;
 
     return S_OK;
 }
@@ -3262,14 +3262,14 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             // then the calling process must be the one that got started by
             // LaunchVMProcess()
 
-            LogFlowThisFunc(("mSession.mPid=%d(0x%x)\n", mData->mSession.mPid, mData->mSession.mPid));
+            LogFlowThisFunc(("mSession.mPID=%d(0x%x)\n", mData->mSession.mPID, mData->mSession.mPID));
             LogFlowThisFunc(("session.pid=%d(0x%x)\n", pid, pid));
 
-            if (mData->mSession.mPid != pid)
+            if (mData->mSession.mPID != pid)
                 return setError(E_ACCESSDENIED,
                                 tr("An unexpected process (PID=0x%08X) has tried to lock the "
                                    "machine '%s', while only the process started by LaunchVMProcess (PID=0x%08X) is allowed"),
-                                pid, mUserData->s.strName.c_str(), mData->mSession.mPid);
+                                pid, mUserData->s.strName.c_str(), mData->mSession.mPID);
         }
 
         // create the mutable SessionMachine from the current machine
@@ -3367,7 +3367,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             /** @todo Consider checking mData->mSession.mProgress for cancellation
              *        around here.  */
 
-            /* We don't reset mSession.mPid here because it is necessary for
+            /* We don't reset mSession.mPID here because it is necessary for
              * SessionMachine::uninit() to reap the child process later. */
 
             if (FAILED(rc))
@@ -3391,7 +3391,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         {
             /* memorize PID of the directly opened session */
             if (SUCCEEDED(rc))
-                mData->mSession.mPid = pid;
+                mData->mSession.mPID = pid;
         }
 
         if (SUCCEEDED(rc))
@@ -3534,8 +3534,8 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
                             mUserData->s.strName.c_str());
 
         /* forcibly terminate the VM process */
-        if (mData->mSession.mPid != NIL_RTPROCESS)
-            RTProcTerminate(mData->mSession.mPid);
+        if (mData->mSession.mPID != NIL_RTPROCESS)
+            RTProcTerminate(mData->mSession.mPID);
 
         /* signal the client watcher thread, as most likely the client has
          * been terminated */
@@ -6442,7 +6442,7 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeA
  * Currently this method doesn't attach device to the running VM,
  * just makes sure it's plugged on next VM start.
  */
-STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, BOOL /*tryToUnbind*/)
+STDMETHODIMP Machine::AttachHostPCIDevice(LONG hostAddress, LONG desiredGuestAddress, BOOL /*tryToUnbind*/)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -6464,12 +6464,12 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
         }
 
         // check if device with this host PCI address already attached
-        for (HWData::PciDeviceAssignmentList::iterator it =  mHWData->mPciDeviceAssignments.begin();
-             it !=  mHWData->mPciDeviceAssignments.end();
+        for (HWData::PCIDeviceAssignmentList::iterator it =  mHWData->mPCIDeviceAssignments.begin();
+             it !=  mHWData->mPCIDeviceAssignments.end();
              ++it)
         {
             LONG iHostAddress = -1;
-            ComPtr<PciDeviceAttachment> pAttach;
+            ComPtr<PCIDeviceAttachment> pAttach;
             pAttach = *it;
             pAttach->COMGETTER(HostAddress)(&iHostAddress);
             if (iHostAddress == hostAddress)
@@ -6477,7 +6477,7 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
                                 tr("Device with host PCI address already attached to this VM"));
         }
 
-        ComObjPtr<PciDeviceAttachment> pda;
+        ComObjPtr<PCIDeviceAttachment> pda;
         char name[32];
 
         RTStrPrintf(name, sizeof(name), "host%02x:%02x.%x", (hostAddress>>8) & 0xff, (hostAddress & 0xf8) >> 3, hostAddress & 7);
@@ -6486,7 +6486,7 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
         pda->init(this, bname,  hostAddress, desiredGuestAddress, TRUE);
         setModified(IsModified_MachineData);
         mHWData.backup();
-        mHWData->mPciDeviceAssignments.push_back(pda);
+        mHWData->mPCIDeviceAssignments.push_back(pda);
     }
 
     return S_OK;
@@ -6496,12 +6496,12 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
  * Currently this method doesn't detach device from the running VM,
  * just makes sure it's not plugged on next VM start.
  */
-STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
+STDMETHODIMP Machine::DetachHostPCIDevice(LONG hostAddress)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ComObjPtr<PciDeviceAttachment> pAttach;
+    ComObjPtr<PCIDeviceAttachment> pAttach;
     bool fRemoved = false;
     HRESULT rc;
 
@@ -6512,8 +6512,8 @@ STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
         rc = checkStateDependency(MutableStateDep);
         if (FAILED(rc)) return rc;
 
-        for (HWData::PciDeviceAssignmentList::iterator it =  mHWData->mPciDeviceAssignments.begin();
-             it !=  mHWData->mPciDeviceAssignments.end();
+        for (HWData::PCIDeviceAssignmentList::iterator it =  mHWData->mPCIDeviceAssignments.begin();
+             it !=  mHWData->mPCIDeviceAssignments.end();
              ++it)
         {
             LONG iHostAddress = -1;
@@ -6523,7 +6523,7 @@ STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
             {
                 setModified(IsModified_MachineData);
                 mHWData.backup();
-                mHWData->mPciDeviceAssignments.remove(pAttach);
+                mHWData->mPCIDeviceAssignments.remove(pAttach);
                 fRemoved = true;
                 break;
             }
@@ -6541,7 +6541,7 @@ STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
         Bstr mid;
         rc = this->COMGETTER(Id)(mid.asOutParam());
         Assert(SUCCEEDED(rc));
-        fireHostPciDevicePlugEvent(es, mid.raw(), false /* unplugged */, true /* success */, pAttach, NULL);
+        fireHostPCIDevicePlugEvent(es, mid.raw(), false /* unplugged */, true /* success */, pAttach, NULL);
     }
 
     return fRemoved ? S_OK : setError(VBOX_E_OBJECT_NOT_FOUND,
@@ -6550,7 +6550,7 @@ STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
                                       );
 }
 
-STDMETHODIMP Machine::COMGETTER(PciDeviceAssignments)(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments))
+STDMETHODIMP Machine::COMGETTER(PCIDeviceAssignments)(ComSafeArrayOut(IPCIDeviceAttachment *, aAssignments))
 {
     CheckComArgOutSafeArrayPointerValid(aAssignments);
 
@@ -6559,7 +6559,7 @@ STDMETHODIMP Machine::COMGETTER(PciDeviceAssignments)(ComSafeArrayOut(IPciDevice
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IPciDeviceAttachment> assignments(mHWData->mPciDeviceAssignments);
+    SafeIfaceArray<IPCIDeviceAttachment> assignments(mHWData->mPCIDeviceAssignments);
     assignments.detachTo(ComSafeArrayOutArg(aAssignments));
 
     return S_OK;
@@ -7297,10 +7297,10 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     }
 
     /* attach launch data to the machine */
-    Assert(mData->mSession.mPid == NIL_RTPROCESS);
+    Assert(mData->mSession.mPID == NIL_RTPROCESS);
     mData->mSession.mRemoteControls.push_back(aControl);
     mData->mSession.mProgress = aProgress;
-    mData->mSession.mPid = pid;
+    mData->mSession.mPID = pid;
     mData->mSession.mState = SessionState_Spawning;
     mData->mSession.mType = strType;
 
@@ -7399,8 +7399,8 @@ bool Machine::isSessionSpawning()
         /* Additional session data */
         if (aPID != NULL)
         {
-            AssertReturn(mData->mSession.mPid != NIL_RTPROCESS, false);
-            *aPID = mData->mSession.mPid;
+            AssertReturn(mData->mSession.mPID != NIL_RTPROCESS, false);
+            *aPID = mData->mSession.mPID;
         }
 #endif
         return true;
@@ -7455,11 +7455,11 @@ bool Machine::checkForSpawnFailure()
 #else
 
     /* PID not yet initialized, skip check. */
-    if (mData->mSession.mPid == NIL_RTPROCESS)
+    if (mData->mSession.mPID == NIL_RTPROCESS)
         return false;
 
     RTPROCSTATUS status;
-    int vrc = ::RTProcWait(mData->mSession.mPid, RTPROCWAIT_FLAGS_NOBLOCK,
+    int vrc = ::RTProcWait(mData->mSession.mPID, RTPROCWAIT_FLAGS_NOBLOCK,
                            &status);
 
     if (vrc != VERR_PROCESS_RUNNING)
@@ -7507,8 +7507,8 @@ bool Machine::checkForSpawnFailure()
             mData->mSession.mProgress.setNull();
         }
 
-        mParent->addProcessToReap(mData->mSession.mPid);
-        mData->mSession.mPid = NIL_RTPROCESS;
+        mParent->addProcessToReap(mData->mSession.mPID);
+        mData->mSession.mPID = NIL_RTPROCESS;
 
         mParent->onSessionStateChange(mData->mUuid, SessionState_Unlocked);
         return true;
@@ -8419,11 +8419,11 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
         mHWData->mFirmwareType = data.firmwareType;
-        mHWData->mPointingHidType = data.pointingHidType;
-        mHWData->mKeyboardHidType = data.keyboardHidType;
+        mHWData->mPointingHIDType = data.pointingHIDType;
+        mHWData->mKeyboardHIDType = data.keyboardHIDType;
         mHWData->mChipsetType = data.chipsetType;
         mHWData->mEmulatedUSBCardReaderEnabled = data.fEmulatedUSBCardReader;
-        mHWData->mHpetEnabled = data.fHpetEnabled;
+        mHWData->mHPETEnabled = data.fHPETEnabled;
 
         /* VRDEServer */
         rc = mVRDEServer->loadSettings(data.vrdeSettings);
@@ -8533,20 +8533,20 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mMemoryBalloonSize = data.ulMemoryBalloonSize;
 
         // IO settings
-        mHWData->mIoCacheEnabled = data.ioSettings.fIoCacheEnabled;
-        mHWData->mIoCacheSize = data.ioSettings.ulIoCacheSize;
+        mHWData->mIOCacheEnabled = data.ioSettings.fIOCacheEnabled;
+        mHWData->mIOCacheSize = data.ioSettings.ulIOCacheSize;
 
         // Host PCI devices
-        for (settings::HostPciDeviceAttachmentList::const_iterator it = data.pciAttachments.begin();
+        for (settings::HostPCIDeviceAttachmentList::const_iterator it = data.pciAttachments.begin();
              it != data.pciAttachments.end();
              ++it)
         {
-            const settings::HostPciDeviceAttachment &hpda = *it;
-            ComObjPtr<PciDeviceAttachment> pda;
+            const settings::HostPCIDeviceAttachment &hpda = *it;
+            ComObjPtr<PCIDeviceAttachment> pda;
 
             pda.createObject();
             pda->loadSettings(this, hpda);
-            mHWData->mPciDeviceAssignments.push_back(pda);
+            mHWData->mPCIDeviceAssignments.push_back(pda);
         }
 
         /*
@@ -9593,8 +9593,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.firmwareType = mHWData->mFirmwareType;
 
         // HID
-        data.pointingHidType = mHWData->mPointingHidType;
-        data.keyboardHidType = mHWData->mKeyboardHidType;
+        data.pointingHIDType = mHWData->mPointingHIDType;
+        data.keyboardHIDType = mHWData->mKeyboardHIDType;
 
         // chipset
         data.chipsetType = mHWData->mChipsetType;
@@ -9602,7 +9602,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.fEmulatedUSBCardReader = !!mHWData->mEmulatedUSBCardReaderEnabled;
 
         // HPET
-        data.fHpetEnabled = !!mHWData->mHpetEnabled;
+        data.fHPETEnabled = !!mHWData->mHPETEnabled;
 
         // boot order
         data.mapBootOrder.clear();
@@ -9709,20 +9709,20 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.ulMemoryBalloonSize = mHWData->mMemoryBalloonSize;
 
         // IO settings
-        data.ioSettings.fIoCacheEnabled = !!mHWData->mIoCacheEnabled;
-        data.ioSettings.ulIoCacheSize = mHWData->mIoCacheSize;
+        data.ioSettings.fIOCacheEnabled = !!mHWData->mIOCacheEnabled;
+        data.ioSettings.ulIOCacheSize = mHWData->mIOCacheSize;
 
         /* BandwidthControl (required) */
         rc = mBandwidthControl->saveSettings(data.ioSettings);
         if (FAILED(rc)) throw rc;
 
         /* Host PCI devices */
-        for (HWData::PciDeviceAssignmentList::const_iterator it = mHWData->mPciDeviceAssignments.begin();
-             it != mHWData->mPciDeviceAssignments.end();
+        for (HWData::PCIDeviceAssignmentList::const_iterator it = mHWData->mPCIDeviceAssignments.begin();
+             it != mHWData->mPCIDeviceAssignments.end();
              ++it)
         {
-            ComObjPtr<PciDeviceAttachment> pda = *it;
-            settings::HostPciDeviceAttachment hpda;
+            ComObjPtr<PCIDeviceAttachment> pda = *it;
+            settings::HostPCIDeviceAttachment hpda;
 
             rc = pda->saveSettings(hpda);
             if (FAILED(rc)) throw rc;
@@ -11708,11 +11708,11 @@ void SessionMachine::uninit(Uninit::Reason aReason)
          * Machine::LaunchVMProcess(), therefore it is our child.  We
          * need to queue the PID to reap the process (and avoid zombies on
          * Linux). */
-        Assert(mData->mSession.mPid != NIL_RTPROCESS);
-        mParent->addProcessToReap(mData->mSession.mPid);
+        Assert(mData->mSession.mPID != NIL_RTPROCESS);
+        mParent->addProcessToReap(mData->mSession.mPID);
     }
 
-    mData->mSession.mPid = NIL_RTPROCESS;
+    mData->mSession.mPID = NIL_RTPROCESS;
 
     if (aReason == Uninit::Unexpected)
     {
@@ -11958,7 +11958,7 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
          * now to offer the performance metrics for a running machine
          * object. Doing it earlier wouldn't be safe. */
         registerMetrics(mParent->performanceCollector(), mPeer,
-                        mData->mSession.mPid);
+                        mData->mSession.mPID);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
     }
 

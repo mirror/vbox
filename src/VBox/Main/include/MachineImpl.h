@@ -23,7 +23,7 @@
 #include "ProgressImpl.h"
 #include "VRDEServerImpl.h"
 #include "MediumAttachmentImpl.h"
-#include "PciDeviceAttachmentImpl.h"
+#include "PCIDeviceAttachmentImpl.h"
 #include "MediumLock.h"
 #include "NetworkAdapterImpl.h"
 #include "AudioAdapterImpl.h"
@@ -138,7 +138,7 @@ public:
              * to finalize the launchVMProcess() request (i.e., PID of the
              * process created by launchVMProcess())
              */
-            RTPROCESS mPid;
+            RTPROCESS mPID;
 
             /** Current session state */
             SessionState_T mState;
@@ -271,7 +271,7 @@ public:
         BOOL                 mCPUHotPlugEnabled;
         ULONG                mCpuExecutionCap;
         BOOL                 mAccelerate3DEnabled;
-        BOOL                 mHpetEnabled;
+        BOOL                 mHPETEnabled;
 
         BOOL                 mCPUAttached[SchemaDefs::MaxCPUCount];
 
@@ -291,16 +291,16 @@ public:
         Utf8Str              mGuestPropertyNotificationPatterns;
 
         FirmwareType_T       mFirmwareType;
-        KeyboardHidType_T    mKeyboardHidType;
-        PointingHidType_T    mPointingHidType;
+        KeyboardHIDType_T    mKeyboardHIDType;
+        PointingHIDType_T    mPointingHIDType;
         ChipsetType_T        mChipsetType;
         BOOL                 mEmulatedUSBCardReaderEnabled;
 
-        BOOL                 mIoCacheEnabled;
-        ULONG                mIoCacheSize;
+        BOOL                 mIOCacheEnabled;
+        ULONG                mIOCacheSize;
 
-        typedef std::list<ComObjPtr<PciDeviceAttachment> > PciDeviceAssignmentList;
-        PciDeviceAssignmentList mPciDeviceAssignments;
+        typedef std::list<ComObjPtr<PCIDeviceAttachment> > PCIDeviceAssignmentList;
+        PCIDeviceAssignmentList mPCIDeviceAssignments;
 
         settings::Debugging  mDebugging;
         settings::Autostart  mAutostart;
@@ -405,8 +405,8 @@ public:
     STDMETHOD(COMSETTER(EmulatedUSBCardReaderEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(EmulatedUSBWebcameraEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(EmulatedUSBWebcameraEnabled))(BOOL enabled);
-    STDMETHOD(COMGETTER(HpetEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(HpetEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(HPETEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(HPETEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize))(ULONG memoryBalloonSize);
     STDMETHOD(COMGETTER(PageFusionEnabled))(BOOL *enabled);
@@ -430,7 +430,7 @@ public:
     STDMETHOD(COMGETTER(SettingsModified))(BOOL *aModified);
     STDMETHOD(COMGETTER(SessionState))(SessionState_T *aSessionState);
     STDMETHOD(COMGETTER(SessionType))(BSTR *aSessionType);
-    STDMETHOD(COMGETTER(SessionPid))(ULONG *aSessionPid);
+    STDMETHOD(COMGETTER(SessionPID))(ULONG *aSessionPID);
     STDMETHOD(COMGETTER(State))(MachineState_T *machineState);
     STDMETHOD(COMGETTER(LastStateChange))(LONG64 *aLastStateChange);
     STDMETHOD(COMGETTER(StateFilePath))(BSTR *aStateFilePath);
@@ -466,19 +466,19 @@ public:
     STDMETHOD(COMSETTER(FaultToleranceSyncInterval))(ULONG aInterval);
     STDMETHOD(COMGETTER(RTCUseUTC))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(RTCUseUTC))(BOOL aEnabled);
-    STDMETHOD(COMGETTER(FirmwareType)) (FirmwareType_T *aFirmware);
-    STDMETHOD(COMSETTER(FirmwareType)) (FirmwareType_T  aFirmware);
-    STDMETHOD(COMGETTER(KeyboardHidType)) (KeyboardHidType_T *aKeyboardHidType);
-    STDMETHOD(COMSETTER(KeyboardHidType)) (KeyboardHidType_T  aKeyboardHidType);
-    STDMETHOD(COMGETTER(PointingHidType)) (PointingHidType_T *aPointingHidType);
-    STDMETHOD(COMSETTER(PointingHidType)) (PointingHidType_T  aPointingHidType);
-    STDMETHOD(COMGETTER(ChipsetType)) (ChipsetType_T *aChipsetType);
-    STDMETHOD(COMSETTER(ChipsetType)) (ChipsetType_T  aChipsetType);
-    STDMETHOD(COMGETTER(IoCacheEnabled)) (BOOL *aEnabled);
-    STDMETHOD(COMSETTER(IoCacheEnabled)) (BOOL  aEnabled);
-    STDMETHOD(COMGETTER(IoCacheSize)) (ULONG *aIoCacheSize);
-    STDMETHOD(COMSETTER(IoCacheSize)) (ULONG  aIoCacheSize);
-    STDMETHOD(COMGETTER(PciDeviceAssignments))(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments));
+    STDMETHOD(COMGETTER(FirmwareType))(FirmwareType_T *aFirmware);
+    STDMETHOD(COMSETTER(FirmwareType))(FirmwareType_T  aFirmware);
+    STDMETHOD(COMGETTER(KeyboardHIDType))(KeyboardHIDType_T *aKeyboardHIDType);
+    STDMETHOD(COMSETTER(KeyboardHIDType))(KeyboardHIDType_T  aKeyboardHIDType);
+    STDMETHOD(COMGETTER(PointingHIDType))(PointingHIDType_T *aPointingHIDType);
+    STDMETHOD(COMSETTER(PointingHIDType))(PointingHIDType_T  aPointingHIDType);
+    STDMETHOD(COMGETTER(ChipsetType))(ChipsetType_T *aChipsetType);
+    STDMETHOD(COMSETTER(ChipsetType))(ChipsetType_T  aChipsetType);
+    STDMETHOD(COMGETTER(IOCacheEnabled))(BOOL *aEnabled);
+    STDMETHOD(COMSETTER(IOCacheEnabled))(BOOL  aEnabled);
+    STDMETHOD(COMGETTER(IOCacheSize))(ULONG *aIOCacheSize);
+    STDMETHOD(COMSETTER(IOCacheSize))(ULONG  aIOCacheSize);
+    STDMETHOD(COMGETTER(PCIDeviceAssignments))(ComSafeArrayOut(IPCIDeviceAttachment *, aAssignments));
     STDMETHOD(COMGETTER(BandwidthControl))(IBandwidthControl **aBandwidthControl);
     STDMETHOD(COMGETTER(TracingEnabled))(BOOL *pfEnabled);
     STDMETHOD(COMSETTER(TracingEnabled))(BOOL fEnabled);
@@ -567,8 +567,8 @@ public:
     STDMETHOD(GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached));
     STDMETHOD(QueryLogFilename(ULONG aIdx, BSTR *aName));
     STDMETHOD(ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeArrayOut(BYTE, aData)));
-    STDMETHOD(AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, BOOL tryToUnbind));
-    STDMETHOD(DetachHostPciDevice(LONG hostAddress));
+    STDMETHOD(AttachHostPCIDevice(LONG hostAddress, LONG desiredGuestAddress, BOOL tryToUnbind));
+    STDMETHOD(DetachHostPCIDevice(LONG hostAddress));
     STDMETHOD(CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayIn(CloneOptions_T, options), IProgress **pProgress));
     // public methods only for internal purposes
 

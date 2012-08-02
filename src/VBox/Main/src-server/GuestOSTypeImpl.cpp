@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,10 +30,10 @@ GuestOSType::GuestOSType()
     , mHDDSize(0), mMonitorCount(0)
     , mNetworkAdapterType(NetworkAdapterType_Am79C973)
     , mNumSerialEnabled(0)
-    , mDvdStorageControllerType(StorageControllerType_PIIX3)
-    , mDvdStorageBusType(StorageBus_IDE)
-    , mHdStorageControllerType(StorageControllerType_PIIX3)
-    , mHdStorageBusType(StorageBus_IDE)
+    , mDVDStorageControllerType(StorageControllerType_PIIX3)
+    , mDVDStorageBusType(StorageBus_IDE)
+    , mHDStorageControllerType(StorageControllerType_PIIX3)
+    , mHDStorageBusType(StorageBus_IDE)
     , mChipsetType(ChipsetType_PIIX3)
     , mAudioControllerType(AudioControllerType_AC97)
 {
@@ -78,10 +78,10 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)/*const char *aFamilyId, 
                           uint32_t aRAMSize, uint32_t aVRAMSize, uint64_t aHDDSize,
                           NetworkAdapterType_T aNetworkAdapterType,
                           uint32_t aNumSerialEnabled,
-                          StorageControllerType_T aDvdStorageControllerType,
-                          StorageBus_T aDvdStorageBusType,
-                          StorageControllerType_T aHdStorageControllerType,
-                          StorageBus_T aHdStorageBusType,
+                          StorageControllerType_T aDVDStorageControllerType,
+                          StorageBus_T aDVDStorageBusType,
+                          StorageControllerType_T aHDStorageControllerType,
+                          StorageBus_T aHDStorageBusType,
                           ChipsetType_T aChipsetType
                           AudioControllerType_T aAudioControllerType*/
 {
@@ -118,10 +118,10 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)/*const char *aFamilyId, 
     unconst(mHDDSize)                   = ostype.recommendedHDD;
     unconst(mNetworkAdapterType)        = ostype.networkAdapterType;
     unconst(mNumSerialEnabled)          = ostype.numSerialEnabled;
-    unconst(mDvdStorageControllerType)  = ostype.dvdStorageControllerType;
-    unconst(mDvdStorageBusType)         = ostype.dvdStorageBusType;
-    unconst(mHdStorageControllerType)   = ostype.hdStorageControllerType;
-    unconst(mHdStorageBusType)          = ostype.hdStorageBusType;
+    unconst(mDVDStorageControllerType)  = ostype.dvdStorageControllerType;
+    unconst(mDVDStorageBusType)         = ostype.dvdStorageBusType;
+    unconst(mHDStorageControllerType)   = ostype.hdStorageControllerType;
+    unconst(mHDStorageBusType)          = ostype.hdStorageBusType;
     unconst(mChipsetType)               = ostype.chipsetType;
     unconst(mAudioControllerType)       = ostype.audioControllerType;
 
@@ -315,15 +315,15 @@ STDMETHODIMP GuestOSType::COMGETTER(AdapterType)(NetworkAdapterType_T *aNetworkA
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedPae)(BOOL *aRecommendedPae)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedPAE)(BOOL *aRecommendedPAE)
 {
-    CheckComArgOutPointerValid(aRecommendedPae);
+    CheckComArgOutPointerValid(aRecommendedPAE);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* recommended PAE is constant during life time, no need to lock */
-    *aRecommendedPae = !!(mOSHint & VBOXOSHINT_PAE);
+    *aRecommendedPAE = !!(mOSHint & VBOXOSHINT_PAE);
 
     return S_OK;
 }
@@ -344,7 +344,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedFirmware)(FirmwareType_T *aFirmwa
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedDvdStorageController)(StorageControllerType_T * aStorageControllerType)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedDVDStorageController)(StorageControllerType_T * aStorageControllerType)
 {
     CheckComArgOutPointerValid(aStorageControllerType);
 
@@ -352,12 +352,12 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedDvdStorageController)(StorageCont
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* storage controller type is constant during life time, no need to lock */
-    *aStorageControllerType = mDvdStorageControllerType;
+    *aStorageControllerType = mDVDStorageControllerType;
 
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedDvdStorageBus)(StorageBus_T * aStorageBusType)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedDVDStorageBus)(StorageBus_T * aStorageBusType)
 {
     CheckComArgOutPointerValid(aStorageBusType);
 
@@ -365,12 +365,12 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedDvdStorageBus)(StorageBus_T * aSt
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* storage controller type is constant during life time, no need to lock */
-    *aStorageBusType = mDvdStorageBusType;
+    *aStorageBusType = mDVDStorageBusType;
 
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedHdStorageController)(StorageControllerType_T * aStorageControllerType)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDStorageController)(StorageControllerType_T * aStorageControllerType)
 {
     CheckComArgOutPointerValid(aStorageControllerType);
 
@@ -378,12 +378,12 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedHdStorageController)(StorageContr
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* storage controller type is constant during life time, no need to lock */
-    *aStorageControllerType = mHdStorageControllerType;
+    *aStorageControllerType = mHDStorageControllerType;
 
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedHdStorageBus)(StorageBus_T * aStorageBusType)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDStorageBus)(StorageBus_T * aStorageBusType)
 {
     CheckComArgOutPointerValid(aStorageBusType);
 
@@ -391,59 +391,59 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedHdStorageBus)(StorageBus_T * aSto
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* storage controller type is constant during life time, no need to lock */
-    *aStorageBusType = mHdStorageBusType;
+    *aStorageBusType = mHDStorageBusType;
 
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedUsbHid)(BOOL *aRecommendedUsbHid)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedUSBHID)(BOOL *aRecommendedUSBHID)
 {
-    CheckComArgOutPointerValid(aRecommendedUsbHid);
+    CheckComArgOutPointerValid(aRecommendedUSBHID);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* HID type is constant during life time, no need to lock */
-    *aRecommendedUsbHid = !!(mOSHint & VBOXOSHINT_USBHID);
+    *aRecommendedUSBHID = !!(mOSHint & VBOXOSHINT_USBHID);
 
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedHpet)(BOOL *aRecommendedHpet)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedHPET)(BOOL *aRecommendedHPET)
 {
-    CheckComArgOutPointerValid(aRecommendedHpet);
+    CheckComArgOutPointerValid(aRecommendedHPET);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* HPET recommendation is constant during life time, no need to lock */
-    *aRecommendedHpet = !!(mOSHint & VBOXOSHINT_HPET);
+    *aRecommendedHPET = !!(mOSHint & VBOXOSHINT_HPET);
 
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedUsbTablet)(BOOL *aRecommendedUsbTablet)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedUSBTablet)(BOOL *aRecommendedUSBTablet)
 {
-    CheckComArgOutPointerValid(aRecommendedUsbTablet);
+    CheckComArgOutPointerValid(aRecommendedUSBTablet);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* HID type is constant during life time, no need to lock */
-    *aRecommendedUsbTablet = !!(mOSHint & VBOXOSHINT_USBTABLET);
+    *aRecommendedUSBTablet = !!(mOSHint & VBOXOSHINT_USBTABLET);
 
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedRtcUseUtc)(BOOL *aRecommendedRtcUseUtc)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedRTCUseUTC)(BOOL *aRecommendedRTCUseUTC)
 {
-    CheckComArgOutPointerValid(aRecommendedRtcUseUtc);
+    CheckComArgOutPointerValid(aRecommendedRTCUseUTC);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Value is constant during life time, no need to lock */
-    *aRecommendedRtcUseUtc = !!(mOSHint & VBOXOSHINT_RTCUTC);
+    *aRecommendedRTCUseUTC = !!(mOSHint & VBOXOSHINT_RTCUTC);
 
     return S_OK;
 }
@@ -486,15 +486,15 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedFloppy)(BOOL *aRecommendedFloppy)
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedUsb)(BOOL *aRecommendedUsb)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedUSB)(BOOL *aRecommendedUSB)
 {
-    CheckComArgOutPointerValid(aRecommendedUsb);
+    CheckComArgOutPointerValid(aRecommendedUSB);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Value is constant during life time, no need to lock */
-    *aRecommendedUsb = !(mOSHint & VBOXOSHINT_NOUSB);
+    *aRecommendedUSB = !(mOSHint & VBOXOSHINT_NOUSB);
 
     return S_OK;
 }

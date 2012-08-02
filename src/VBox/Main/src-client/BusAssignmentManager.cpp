@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,7 @@
 #include <VBox/com/array.h>
 
 
-#include "PciDeviceAttachmentImpl.h"
+#include "PCIDeviceAttachmentImpl.h"
 
 #include <map>
 #include <vector>
@@ -216,42 +216,42 @@ static const DeviceAliasRule aDeviceAliases[] =
 
 struct BusAssignmentManager::State
 {
-    struct PciDeviceRecord
+    struct PCIDeviceRecord
     {
         char          szDevName[32];
-        PciBusAddress HostAddress;
+        PCIBusAddress HostAddress;
 
-        PciDeviceRecord(const char* pszName, PciBusAddress aHostAddress)
+        PCIDeviceRecord(const char* pszName, PCIBusAddress aHostAddress)
         {
             RTStrCopy(this->szDevName, sizeof(szDevName), pszName);
             this->HostAddress = aHostAddress;
         }
 
-        PciDeviceRecord(const char* pszName)
+        PCIDeviceRecord(const char* pszName)
         {
             RTStrCopy(this->szDevName, sizeof(szDevName), pszName);
         }
 
-        bool operator<(const PciDeviceRecord &a) const
+        bool operator<(const PCIDeviceRecord &a) const
         {
             return RTStrNCmp(szDevName, a.szDevName, sizeof(szDevName)) < 0;
         }
 
-        bool operator==(const PciDeviceRecord &a) const
+        bool operator==(const PCIDeviceRecord &a) const
         {
             return RTStrNCmp(szDevName, a.szDevName, sizeof(szDevName)) == 0;
         }
     };
 
-    typedef std::map <PciBusAddress,PciDeviceRecord > PciMap;
-    typedef std::vector<PciBusAddress>                PciAddrList;
-    typedef std::vector<const DeviceAssignmentRule*>  PciRulesList;
-    typedef std::map <PciDeviceRecord,PciAddrList >   ReversePciMap;
+    typedef std::map <PCIBusAddress,PCIDeviceRecord > PCIMap;
+    typedef std::vector<PCIBusAddress>                PCIAddrList;
+    typedef std::vector<const DeviceAssignmentRule*>  PCIRulesList;
+    typedef std::map <PCIDeviceRecord,PCIAddrList >   ReversePCIMap;
 
     volatile int32_t cRefCnt;
     ChipsetType_T    mChipsetType;
-    PciMap           mPciMap;
-    ReversePciMap    mReversePciMap;
+    PCIMap           mPCIMap;
+    ReversePCIMap    mReversePCIMap;
 
     State()
         : cRefCnt(1), mChipsetType(ChipsetType_Null)
@@ -261,14 +261,14 @@ struct BusAssignmentManager::State
 
     HRESULT init(ChipsetType_T chipsetType);
 
-    HRESULT record(const char* pszName, PciBusAddress& GuestAddress, PciBusAddress HostAddress);
-    HRESULT autoAssign(const char* pszName, PciBusAddress& Address);
-    bool    checkAvailable(PciBusAddress& Address);
-    bool    findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address);
+    HRESULT record(const char* pszName, PCIBusAddress& GuestAddress, PCIBusAddress HostAddress);
+    HRESULT autoAssign(const char* pszName, PCIBusAddress& Address);
+    bool    checkAvailable(PCIBusAddress& Address);
+    bool    findPCIAddress(const char* pszDevName, int iInstance, PCIBusAddress& Address);
 
     const char* findAlias(const char* pszName);
-    void addMatchingRules(const char* pszName, PciRulesList& aList);
-    void listAttachedPciDevices(ComSafeArrayOut(IPciDeviceAttachment*, aAttached));
+    void addMatchingRules(const char* pszName, PCIRulesList& aList);
+    void listAttachedPCIDevices(ComSafeArrayOut(IPCIDeviceAttachment*, aAttached));
 };
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
@@ -277,18 +277,18 @@ HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
     return S_OK;
 }
 
-HRESULT BusAssignmentManager::State::record(const char* pszName, PciBusAddress& Address, PciBusAddress HostAddress)
+HRESULT BusAssignmentManager::State::record(const char* pszName, PCIBusAddress& Address, PCIBusAddress HostAddress)
 {
-    PciDeviceRecord devRec(pszName, HostAddress);
+    PCIDeviceRecord devRec(pszName, HostAddress);
 
     /* Remember address -> device mapping */
-    mPciMap.insert(PciMap::value_type(Address, devRec));
+    mPCIMap.insert(PCIMap::value_type(Address, devRec));
 
-    ReversePciMap::iterator it = mReversePciMap.find(devRec);
-    if (it == mReversePciMap.end())
+    ReversePCIMap::iterator it = mReversePCIMap.find(devRec);
+    if (it == mReversePCIMap.end())
     {
-        mReversePciMap.insert(ReversePciMap::value_type(devRec, PciAddrList()));
-        it = mReversePciMap.find(devRec);
+        mReversePCIMap.insert(ReversePCIMap::value_type(devRec, PCIAddrList()));
+        it = mReversePCIMap.find(devRec);
     }
 
     /* Remember device name -> addresses mapping */
@@ -297,12 +297,12 @@ HRESULT BusAssignmentManager::State::record(const char* pszName, PciBusAddress& 
     return S_OK;
 }
 
-bool    BusAssignmentManager::State::findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address)
+bool    BusAssignmentManager::State::findPCIAddress(const char* pszDevName, int iInstance, PCIBusAddress& Address)
 {
-    PciDeviceRecord devRec(pszDevName);
+    PCIDeviceRecord devRec(pszDevName);
 
-    ReversePciMap::iterator it = mReversePciMap.find(devRec);
-    if (it == mReversePciMap.end())
+    ReversePCIMap::iterator it = mReversePCIMap.find(devRec);
+    if (it == mReversePCIMap.end())
         return false;
 
     if (iInstance >= (int)it->second.size())
@@ -312,7 +312,7 @@ bool    BusAssignmentManager::State::findPciAddress(const char* pszDevName, int 
     return true;
 }
 
-void BusAssignmentManager::State::addMatchingRules(const char* pszName, PciRulesList& aList)
+void BusAssignmentManager::State::addMatchingRules(const char* pszName, PCIRulesList& aList)
 {
     size_t iRuleset, iRule;
     const DeviceAssignmentRule* aArrays[2] = {aGenericRules, NULL};
@@ -358,9 +358,9 @@ static bool  RuleComparator(const DeviceAssignmentRule* r1, const DeviceAssignme
     return (r1->iPriority > r2->iPriority);
 }
 
-HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PciBusAddress& Address)
+HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PCIBusAddress& Address)
 {
-    PciRulesList matchingRules;
+    PCIRulesList matchingRules;
 
     addMatchingRules(pszName,  matchingRules);
     const char* pszAlias = findAlias(pszName);
@@ -387,21 +387,21 @@ HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PciBusAddre
     return E_INVALIDARG;
 }
 
-bool BusAssignmentManager::State::checkAvailable(PciBusAddress& Address)
+bool BusAssignmentManager::State::checkAvailable(PCIBusAddress& Address)
 {
-    PciMap::const_iterator it = mPciMap.find(Address);
+    PCIMap::const_iterator it = mPCIMap.find(Address);
 
-    return (it == mPciMap.end());
+    return (it == mPCIMap.end());
 }
 
 
-void BusAssignmentManager::State::listAttachedPciDevices(ComSafeArrayOut(IPciDeviceAttachment*, aAttached))
+void BusAssignmentManager::State::listAttachedPCIDevices(ComSafeArrayOut(IPCIDeviceAttachment*, aAttached))
 {
-    com::SafeIfaceArray<IPciDeviceAttachment> result(mPciMap.size());
+    com::SafeIfaceArray<IPCIDeviceAttachment> result(mPCIMap.size());
 
     size_t iIndex = 0;
-    ComObjPtr<PciDeviceAttachment> dev;
-    for (PciMap::const_iterator it = mPciMap.begin(); it !=  mPciMap.end(); ++it)
+    ComObjPtr<PCIDeviceAttachment> dev;
+    for (PCIMap::const_iterator it = mPCIMap.begin(); it !=  mPCIMap.end(); ++it)
     {
         dev.createObject();
         com::Bstr devname(it->second.szDevName);
@@ -457,10 +457,10 @@ DECLINLINE(HRESULT) InsertConfigInteger(PCFGMNODE pCfg,  const char* pszName, ui
     return S_OK;
 }
 
-HRESULT BusAssignmentManager::assignPciDeviceImpl(const char* pszDevName,
+HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char* pszDevName,
                                                   PCFGMNODE pCfg,
-                                                  PciBusAddress& GuestAddress,
-                                                  PciBusAddress HostAddress,
+                                                  PCIBusAddress& GuestAddress,
+                                                  PCIBusAddress HostAddress,
                                                   bool fGuestAddressRequired)
 {
     HRESULT rc = S_OK;
@@ -503,12 +503,12 @@ HRESULT BusAssignmentManager::assignPciDeviceImpl(const char* pszDevName,
 }
 
 
-bool BusAssignmentManager::findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address)
+bool BusAssignmentManager::findPCIAddress(const char* pszDevName, int iInstance, PCIBusAddress& Address)
 {
-    return pState->findPciAddress(pszDevName, iInstance, Address);
+    return pState->findPCIAddress(pszDevName, iInstance, Address);
 }
 
-void BusAssignmentManager::listAttachedPciDevices(ComSafeArrayOut(IPciDeviceAttachment*, aAttached))
+void BusAssignmentManager::listAttachedPCIDevices(ComSafeArrayOut(IPCIDeviceAttachment*, aAttached))
 {
-    pState->listAttachedPciDevices(ComSafeArrayOutArg(aAttached));
+    pState->listAttachedPCIDevices(ComSafeArrayOutArg(aAttached));
 }

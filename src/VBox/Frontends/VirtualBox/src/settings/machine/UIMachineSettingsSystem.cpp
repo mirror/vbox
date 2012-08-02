@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -237,7 +237,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     systemData.m_fIoApicEnabled = m_machine.GetBIOSSettings().GetIOAPICEnabled();
     systemData.m_fEFIEnabled = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
     systemData.m_fUTCEnabled = m_machine.GetRTCUseUTC();
-    systemData.m_fUseAbsHID = m_machine.GetPointingHidType() == KPointingHidType_USBTablet;
+    systemData.m_fUseAbsHID = m_machine.GetPointingHIDType() == KPointingHIDType_USBTablet;
     systemData.m_fPAEEnabled = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
     systemData.m_fHwVirtExEnabled = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
     systemData.m_fNestedPagingEnabled = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
@@ -362,7 +362,7 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
             m_machine.GetBIOSSettings().SetIOAPICEnabled(systemData.m_fIoApicEnabled);
             m_machine.SetFirmwareType(systemData.m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
             m_machine.SetRTCUseUTC(systemData.m_fUTCEnabled);
-            m_machine.SetPointingHidType(systemData.m_fUseAbsHID ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse);
+            m_machine.SetPointingHIDType(systemData.m_fUseAbsHID ? KPointingHIDType_USBTablet : KPointingHIDType_PS2Mouse);
             /* Processor tab: */
             m_machine.SetCPUCount(systemData.m_cCPUCount);
             m_machine.SetCPUProperty(KCPUPropertyType_PAE, systemData.m_fPAEEnabled);

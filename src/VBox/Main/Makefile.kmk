@@ -289,7 +289,7 @@ VBoxSVC_SOURCES = \
 	src-all/Global.cpp \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
-	src-all/PciDeviceAttachmentImpl.cpp \
+	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
 	src-all/SharedFolderImpl.cpp \
 	src-all/VirtualBoxBase.cpp \
@@ -594,7 +594,7 @@ VBoxC_SOURCES = \
 	src-all/Global.cpp \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
-	src-all/PciDeviceAttachmentImpl.cpp \
+	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
 	src-all/SharedFolderImpl.cpp \
 	src-all/VirtualBoxBase.cpp \
@@ -605,7 +605,7 @@ VBoxC_SOURCES = \
 	src-client/AdditionsFacilityImpl.cpp \
 	src-client/AudioSnifferInterface.cpp \
 	src-client/BusAssignmentManager.cpp \
-	$(if $(VBOX_WITH_PCI_PASSTHROUGH),src-client/PciRawDevImpl.cpp,) \
+	$(if $(VBOX_WITH_PCI_PASSTHROUGH),src-client/PCIRawDevImpl.cpp,) \
 	src-client/ConsoleImpl.cpp \
 	src-client/ConsoleImpl2.cpp \
 	src-client/ConsoleImplTeleporter.cpp \

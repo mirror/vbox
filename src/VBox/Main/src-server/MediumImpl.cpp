@@ -1946,7 +1946,7 @@ STDMETHODIMP Medium::COMGETTER(MachineIds)(ComSafeArrayOut(BSTR,aMachineIds))
     return S_OK;
 }
 
-STDMETHODIMP Medium::SetIDs(BOOL aSetImageId,
+STDMETHODIMP Medium::SetIds(BOOL aSetImageId,
                             IN_BSTR aImageId,
                             BOOL aSetParentId,
                             IN_BSTR aParentId)

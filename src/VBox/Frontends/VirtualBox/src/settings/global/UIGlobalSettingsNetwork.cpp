@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -322,7 +322,7 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
             /* Host-only interface configuring: */
             if (data.m_interface.m_fDhcpClientEnabled)
             {
-                iface.EnableDynamicIpConfig();
+                iface.EnableDynamicIPConfig();
             }
             else
             {
@@ -332,13 +332,13 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
                 AssertMsg(data.m_interface.m_strInterfaceMask.isEmpty() ||
                           QHostAddress(data.m_interface.m_strInterfaceMask).protocol() == QAbstractSocket::IPv4Protocol,
                           ("Interface IPv4 network mask must be empty or IPv4-valid!\n"));
-                iface.EnableStaticIpConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
+                iface.EnableStaticIPConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
                 if (iface.GetIPV6Supported())
                 {
                     AssertMsg(data.m_interface.m_strInterfaceAddress6.isEmpty() ||
                               QHostAddress(data.m_interface.m_strInterfaceAddress6).protocol() == QAbstractSocket::IPv6Protocol,
                               ("Interface IPv6 address must be empty or IPv6-valid!\n"));
-                    iface.EnableStaticIpConfigV6(data.m_interface.m_strInterfaceAddress6, data.m_interface.m_strInterfaceMaskLength6.toULong());
+                    iface.EnableStaticIPConfigV6(data.m_interface.m_strInterfaceAddress6, data.m_interface.m_strInterfaceMaskLength6.toULong());
                 }
             }
 
@@ -553,7 +553,7 @@ void UIGlobalSettingsNetwork::appendCacheItem(const CHostNetworkInterface &iface
 
     /* Host-only interface settings */
     data.m_interface.m_strName = iface.GetName();
-    data.m_interface.m_fDhcpClientEnabled = iface.GetDhcpEnabled();
+    data.m_interface.m_fDhcpClientEnabled = iface.GetDHCPEnabled();
     data.m_interface.m_strInterfaceAddress = iface.GetIPAddress();
     data.m_interface.m_strInterfaceMask = iface.GetNetworkMask();
     data.m_interface.m_fIpv6Supported = iface.GetIPV6Supported();

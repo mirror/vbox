@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -789,7 +789,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             adapterData.m_fCableConnected = adapter.GetCableConnected();
 
             /* Gather redirect options: */
-            QVector<QString> redirects = adapter.GetNatDriver().GetRedirects();
+            QVector<QString> redirects = adapter.GetNATEngine().GetRedirects();
             for (int i = 0; i < redirects.size(); ++i)
             {
                 QStringList redirectData = redirects[i].split(',');
@@ -921,14 +921,14 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
                         /* Cable connected flag: */
                         adapter.SetCableConnected(adapterData.m_fCableConnected);
                         /* Redirect options: */
-                        QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
+                        QVector<QString> oldRedirects = adapter.GetNATEngine().GetRedirects();
                         for (int i = 0; i < oldRedirects.size(); ++i)
-                            adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
+                            adapter.GetNATEngine().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
                         UIPortForwardingDataList newRedirects = adapterData.m_redirects;
                         for (int i = 0; i < newRedirects.size(); ++i)
                         {
                             UIPortForwardingData newRedirect = newRedirects[i];
-                            adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
+                            adapter.GetNATEngine().AddRedirect(newRedirect.name, newRedirect.protocol,
                                                                newRedirect.hostIp, newRedirect.hostPort.value(),
                                                                newRedirect.guestIp, newRedirect.guestPort.value());
                         }
