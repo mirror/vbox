@@ -51,6 +51,7 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Menu_Machine,
     UIActionIndexSelector_Simple_Machine_NewWizard,
     UIActionIndexSelector_Simple_Machine_AddDialog,
+    UIActionIndexSelector_Simple_Machine_AddGroupDialog,
     UIActionIndexSelector_Simple_Machine_SettingsDialog,
     UIActionIndexSelector_Simple_Machine_CloneWizard,
     UIActionIndexSelector_Simple_Machine_RemoveDialog,
