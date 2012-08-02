@@ -907,7 +907,7 @@ static DECLCALLBACK(int) disReadOpcodeBytes(PDISCPUSTATE pDis, uint8_t offInstr,
             cbToRead = g_cbImg - offBios;
     }
     memcpy(&pDis->abInstr[offInstr], &g_pbImg[offBios], cbToRead);
-    pDis->cbCachedInstr = offInstr + cbToRead;
+    pDis->cbCachedInstr = (uint8_t)(offInstr + cbToRead);
     return VINF_SUCCESS;
 }
 
@@ -1093,7 +1093,7 @@ static RTEXITCODE DisassembleBiosImage(void)
 
     /* Final gap. */
     if (uFlatAddr < g_uBiosFlatBase + g_cbImg)
-        fRc = disCopySegmentGap(uFlatAddr, g_uBiosFlatBase + g_cbImg - uFlatAddr);
+        fRc = disCopySegmentGap(uFlatAddr, (uint32_t)(g_uBiosFlatBase + g_cbImg - uFlatAddr));
     else if (uFlatAddr > g_uBiosFlatBase + g_cbImg)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Last segment spills beyond 1MB; uFlatAddr=%#x\n", uFlatAddr);
 

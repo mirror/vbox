@@ -154,9 +154,9 @@ typedef struct VBCPPMACROEXP
     /** Array of argument values.  Used when expanding function style macros.  */
     char          **papszArgs;
     /** The number of argument values current in papszArgs. */
-    size_t          cArgs;
+    uint32_t        cArgs;
     /** The number of argument values papszArgs can currently hold  */
-    size_t          cArgsAlloced;
+    uint32_t        cArgsAlloced;
 } VBCPPMACROEXP;
 /** Pointer to macro expansion data. */
 typedef VBCPPMACROEXP *PVBCPPMACROEXP;
