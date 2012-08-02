@@ -20,6 +20,7 @@
 #define ____H_GUESTFSOBJINFOIMPL
 
 #include "VirtualBoxBase.h"
+#include "GuestCtrlImplPrivate.h"
 
 /**
  * TODO
@@ -77,29 +78,7 @@ public:
 
 private:
 
-    struct Data
-    {
-        LONG64               mAccessTime;
-        LONG64               mAllocatedSize;
-        LONG64               mBirthTime;
-        LONG64               mChangeTime;
-        ULONG                mDeviceNumber;
-        Utf8Str              mFileAttrs;
-        ULONG                mGenerationID;
-        ULONG                mGID;
-        Utf8Str              mGroupName;
-        ULONG                mNumHardLinks;
-        LONG64               mModificationTime;
-        Utf8Str              mName;
-        LONG64               mNodeID;
-        ULONG                mNodeIDDevice;
-        LONG64               mObjectSize;
-        FsObjType            mType;
-        ULONG                mUID;
-        ULONG                mUserFlags;
-        Utf8Str              mUserName;
-        Utf8Str              mACL;
-    } mData;
+    GuestFsObjData mData;
 };
 
 #endif /* !____H_GUESTFSOBJINFOIMPL */

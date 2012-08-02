@@ -71,6 +71,8 @@ typedef std::vector <LONG> ProcessAffinity;
 /** Vector holding process startup arguments. */
 typedef std::vector <Utf8Str> ProcessArguments;
 
+class GuestProcessStreamBlock;
+
 
 /**
  * Generic class for a all guest control callbacks/events.
@@ -115,6 +117,7 @@ protected:
     /** Overall result code. */
     int                         mRC;
 };
+
 
 /*
  * Class representing a guest control callback.
@@ -173,6 +176,7 @@ struct GuestProcessWaitResult
     int                         mRC;
 };
 
+
 /*
  * Class representing a guest control process event.
  */
@@ -206,6 +210,7 @@ protected:
     GuestProcessWaitResult      mWaitResult;
 };
 
+
 /**
  * Simple structure mantaining guest credentials.
  */
@@ -215,6 +220,7 @@ struct GuestCredentials
     Utf8Str                     mPassword;
     Utf8Str                     mDomain;
 };
+
 
 typedef std::vector <Utf8Str> GuestEnvironmentArray;
 class GuestEnvironment
@@ -262,6 +268,39 @@ protected:
 
 
 /**
+ * Structure representing information of a
+ * file system object.
+ */
+struct GuestFsObjData
+{
+    /** Helper function to extract the data from
+     *  a guest stream block. */
+    int From(const GuestProcessStreamBlock &strmBlk);
+
+    int64_t              mAccessTime;
+    int64_t              mAllocatedSize;
+    int64_t              mBirthTime;
+    int64_t              mChangeTime;
+    uint32_t             mDeviceNumber;
+    Utf8Str              mFileAttrs;
+    uint32_t             mGenerationID;
+    uint32_t             mGID;
+    Utf8Str              mGroupName;
+    uint32_t             mNumHardLinks;
+    int64_t              mModificationTime;
+    Utf8Str              mName;
+    int64_t              mNodeID;
+    uint32_t             mNodeIDDevice;
+    int64_t              mObjectSize;
+    FsObjType_T          mType;
+    uint32_t             mUID;
+    uint32_t             mUserFlags;
+    Utf8Str              mUserName;
+    Utf8Str              mACL;
+};
+
+
+/**
  * Structure for keeping all the relevant process
  * starting parameters around.
  */
@@ -279,6 +318,7 @@ struct GuestProcessInfo
     ProcessAffinity             mAffinity;
 
 };
+
 
 /**
  * Class representing the "value" side of a "key=value" pair.
@@ -312,11 +352,9 @@ class GuestProcessStreamBlock
 {
 public:
 
-    GuestProcessStreamBlock();
+    GuestProcessStreamBlock(void);
 
-    //GuestProcessStreamBlock(GuestProcessStreamBlock &);
-
-    virtual ~GuestProcessStreamBlock();
+    virtual ~GuestProcessStreamBlock(void);
 
 public:
 
@@ -326,17 +364,17 @@ public:
     void Dump();
 #endif
 
-    int GetInt64Ex(const char *pszKey, int64_t *piVal);
+    int GetInt64Ex(const char *pszKey, int64_t *piVal) const;
 
-    int64_t GetInt64(const char *pszKey);
+    int64_t GetInt64(const char *pszKey) const;
 
-    size_t GetCount();
+    size_t GetCount(void) const;
 
-    const char* GetString(const char *pszKey);
+    const char* GetString(const char *pszKey) const;
 
-    int GetUInt32Ex(const char *pszKey, uint32_t *puVal);
+    int GetUInt32Ex(const char *pszKey, uint32_t *puVal) const;
 
-    uint32_t GetUInt32(const char *pszKey);
+    uint32_t GetUInt32(const char *pszKey) const;
 
     int SetValue(const char *pszKey, const char *pszValue);
 

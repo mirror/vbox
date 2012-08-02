@@ -585,6 +585,34 @@ int GuestEnvironment::appendToEnvBlock(const char *pszEnv, void **ppvList, size_
     return rc;
 }
 
+int GuestFsObjData::From(const GuestProcessStreamBlock &strmBlk)
+{
+    int rc = VINF_SUCCESS;
+
+    try
+    {
+        Utf8Str strType(strmBlk.GetString("ftype"));
+        if (strType.equalsIgnoreCase("-"))
+            mType = FsObjType_File;
+        else if (strType.equalsIgnoreCase("d"))
+            mType = FsObjType_Directory;
+        /** @todo Add more types! */
+        else
+            mType = FsObjType_Undefined;
+
+        rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
+        if (RT_FAILURE(rc)) throw rc;
+
+        /** @todo Add complete GuestFsObjData info! */
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    return rc;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /** @todo *NOT* thread safe yet! */
@@ -620,13 +648,13 @@ GuestProcessStreamBlock::~GuestProcessStreamBlock()
  *
  * @return  IPRT status code.
  */
-void GuestProcessStreamBlock::Clear()
+void GuestProcessStreamBlock::Clear(void)
 {
     m_mapPairs.clear();
 }
 
 #ifdef DEBUG
-void GuestProcessStreamBlock::Dump()
+void GuestProcessStreamBlock::Dump(void)
 {
     LogFlowFunc(("Dumping contents of stream block=0x%p (%ld items):\n",
                  this, m_mapPairs.size()));
@@ -646,7 +674,7 @@ void GuestProcessStreamBlock::Dump()
  * @param  pszKey               Name of key to get the value for.
  * @param  piVal                Pointer to value to return.
  */
-int GuestProcessStreamBlock::GetInt64Ex(const char *pszKey, int64_t *piVal)
+int GuestProcessStreamBlock::GetInt64Ex(const char *pszKey, int64_t *piVal) const
 {
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
     AssertPtrReturn(piVal, VERR_INVALID_POINTER);
@@ -665,7 +693,7 @@ int GuestProcessStreamBlock::GetInt64Ex(const char *pszKey, int64_t *piVal)
  * @return  int64_t             Value to return, 0 if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
  */
-int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey)
+int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey) const
 {
     int64_t iVal;
     if (RT_SUCCESS(GetInt64Ex(pszKey, &iVal)))
@@ -678,7 +706,7 @@ int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey)
  *
  * @return  uint32_t            Current number of stream pairs.
  */
-size_t GuestProcessStreamBlock::GetCount()
+size_t GuestProcessStreamBlock::GetCount(void) const
 {
     return m_mapPairs.size();
 }
@@ -689,7 +717,7 @@ size_t GuestProcessStreamBlock::GetCount()
  * @return  uint32_t            Pointer to string to return, NULL if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
  */
-const char* GuestProcessStreamBlock::GetString(const char *pszKey)
+const char* GuestProcessStreamBlock::GetString(const char *pszKey) const
 {
     AssertPtrReturn(pszKey, NULL);
 
@@ -713,7 +741,7 @@ const char* GuestProcessStreamBlock::GetString(const char *pszKey)
  * @param  pszKey               Name of key to get the value for.
  * @param  puVal                Pointer to value to return.
  */
-int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal)
+int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal) const
 {
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
     AssertPtrReturn(puVal, VERR_INVALID_POINTER);
@@ -732,7 +760,7 @@ int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal)
  * @return  uint32_t            Value to return, 0 if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
  */
-uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey)
+uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey) const
 {
     uint32_t uVal;
     if (RT_SUCCESS(GetUInt32Ex(pszKey, &uVal)))

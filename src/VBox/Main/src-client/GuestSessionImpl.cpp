@@ -503,6 +503,88 @@ int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
     return VERR_NOT_FOUND;
 }
 
+/* Note: Will work on directories and others, too. */
+int GuestSession::fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData)
+{
+    LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
+
+    GuestProcessInfo procInfo;
+    procInfo.mName    = Utf8StrFmt(tr("Querying info for \"%s\"", strPath.c_str()));
+    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_STAT);
+    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
+
+    /* Construct arguments. */
+    procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+    procInfo.mArguments.push_back(strPath);
+
+    GuestProcessStream streamOut;
+
+    ComObjPtr<GuestProcess> pProcess;
+    int rc = processCreateExInteral(procInfo, pProcess);
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessWaitResult waitRes;
+        BYTE byBuf[_64K];
+        size_t cbRead;
+
+        for (;;)
+        {
+            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
+                                   30 * 1000 /* Timeout */, waitRes);
+            if (   RT_FAILURE(rc)
+                || waitRes.mResult != ProcessWaitResult_StdOut)
+            {
+                break;
+            }
+
+            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                    &cbRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            rc = streamOut.AddData(byBuf, cbRead);
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
+                         rc, cbRead, streamOut.GetSize()));
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessStreamBlock streamBlock;
+        rc = streamOut.ParseBlock(streamBlock);
+        if (RT_SUCCESS(rc))
+        {
+            rc = objData.From(streamBlock);
+        }
+        else
+            AssertMsgFailed(("Parsing stream block failed: %Rrc\n", rc));
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestSession::fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize)
+{
+    AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
+
+    GuestFsObjData objData;
+    int rc = fileQueryInfoInternal(strPath, objData);
+    if (RT_SUCCESS(rc))
+    {
+        if (objData.mType == FsObjType_File)
+            *pllSize = objData.mObjectSize;
+        else
+            rc = VERR_NOT_A_FILE;
+    }
+
+    return rc;
+}
+
 const GuestCredentials& GuestSession::getCredentials(void)
 {
     return mData.mCredentials;
@@ -1081,10 +1163,34 @@ STDMETHODIMP GuestSession::FileQuerySize(IN_BSTR aPath, LONG64 *aSize)
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No file to query size for specified"));
+    CheckComArgOutPointerValid(aSize);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = S_OK;
+
+    int64_t llSize;
+    int rc = fileQuerySizeInternal(Utf8Str(aPath), &llSize);
+    if (RT_SUCCESS(rc))
+    {
+        *aSize = llSize;
+    }
+    else
+    {
+        switch (rc)
+        {
+            /** @todo Add more errors here! */
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file size failed: %Rrc"), rc);
+               break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
