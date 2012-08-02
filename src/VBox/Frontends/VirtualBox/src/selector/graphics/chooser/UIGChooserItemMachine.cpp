@@ -151,34 +151,20 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         {
             /* Prepare variables: */
             int iMaximumWidth = data(MachineItemData_FirstRowMaximumWidth).toInt();
-            /* Calculate name width part: */
-            QFont nameFont = data(MachineItemData_NameFont).value<QFont>();
-            QFont snapshotNameFont = data(MachineItemData_SnapshotNameFont).value<QFont>();
-            QFontMetrics nameMetrics(nameFont);
-            QFontMetrics snapshotNameMetrics(snapshotNameFont);
-            qreal dNameWidth = nameMetrics.width(name());
-            qreal dSnapshotNameWidth = snapshotNameMetrics.width(snapshotName());
-            qreal dNameRatio = dNameWidth / (dNameWidth + dSnapshotNameWidth);
-            int iNamePart = iMaximumWidth * dNameRatio;
+            int iMinimumSnapshotNameWidth = data(MachineItemData_MinimumSnapshotNameSize).toSize().width();
             /* Compress name to part width: */
-            QString strCompressedName = compressText(nameFont, name(), iNamePart);
+            QString strCompressedName = compressText(data(MachineItemData_NameFont).value<QFont>(),
+                                                     name(), iMaximumWidth - iMinimumSnapshotNameWidth);
             return strCompressedName;
         }
         case MachineItemData_SnapshotName:
         {
             /* Prepare variables: */
             int iMaximumWidth = data(MachineItemData_FirstRowMaximumWidth).toInt();
-            /* Calculate name width part: */
-            QFont nameFont = data(MachineItemData_NameFont).value<QFont>();
-            QFont snapshotNameFont = data(MachineItemData_SnapshotNameFont).value<QFont>();
-            QFontMetrics nameMetrics(nameFont);
-            QFontMetrics snapshotNameMetrics(snapshotNameFont);
-            qreal dNameWidth = nameMetrics.width(name());
-            qreal dSnapshotNameWidth = snapshotNameMetrics.width(snapshotName());
-            qreal dSnapshotNameRatio = dSnapshotNameWidth / (dNameWidth + dSnapshotNameWidth);
-            int iSnapshotNamePart = iMaximumWidth * dSnapshotNameRatio;
+            int iNameWidth = data(MachineItemData_NameSize).toSize().width();
             /* Compress name to part width: */
-            QString strCompressedName = compressText(snapshotNameFont, snapshotName(), iSnapshotNamePart);
+            QString strCompressedName = compressText(data(MachineItemData_SnapshotNameFont).value<QFont>(),
+                                                     snapshotName(), iMaximumWidth - iNameWidth);
             return strCompressedName;
         }
         case MachineItemData_StateText: return gpConverter->toString(machineState());
@@ -202,7 +188,7 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         {
             QFont font = data(MachineItemData_SnapshotNameFont).value<QFont>();
             QFontMetrics fm(font);
-            int iMaximumTextWidth = textWidth(font, 15);
+            int iMaximumTextWidth = textWidth(font, 10);
             QString strCompressedName = compressText(font, snapshotName(), iMaximumTextWidth);
             return QSize(fm.width(strCompressedName), fm.height());
         }
