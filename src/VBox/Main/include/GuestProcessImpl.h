@@ -115,8 +115,6 @@ private:
         Console                 *mConsole;
         /** All related callbacks to this process. */
         GuestCtrlCallbacks       mCallbacks;
-        /** The process' name. */
-        Utf8Str                  mName;
         /** The process start information. */
         GuestProcessInfo         mProcess;
         /** Exit code if process has been terminated. */

@@ -72,7 +72,7 @@ public:
     STDMETHOD(Close)(void);
     STDMETHOD(CopyFrom)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress);
     STDMETHOD(CopyTo)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress);
-    STDMETHOD(DirectoryCreate)(IN_BSTR aPath, ULONG aMode, ULONG aFlags, IGuestDirectory **aDirectory);
+    STDMETHOD(DirectoryCreate)(IN_BSTR aPath, ULONG aMode, ComSafeArrayIn(DirectoryCreateFlag_T, aFlags), IGuestDirectory **aDirectory);
     STDMETHOD(DirectoryCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestDirectory **aDirectory);
     STDMETHOD(DirectoryExists)(IN_BSTR aPath, BOOL *aExists);
     STDMETHOD(DirectoryOpen)(IN_BSTR aPath, IN_BSTR aFilter, IN_BSTR aFlags, IGuestDirectory **aDirectory);
@@ -123,6 +123,7 @@ public:
     /** @name Public internal methods.
      * @{ */
     int                     directoryClose(ComObjPtr<GuestDirectory> pDirectory);
+    int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory);
     int                     dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     int                     fileClose(ComObjPtr<GuestFile> pFile);
     const GuestCredentials &getCredentials(void);

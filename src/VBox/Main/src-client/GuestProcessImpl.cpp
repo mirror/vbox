@@ -265,7 +265,7 @@ STDMETHODIMP GuestProcess::COMGETTER(Name)(BSTR *aName)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mName.cloneTo(aName);
+    mData.mProcess.mName.cloneTo(aName);
 
     LogFlowFuncLeaveRC(S_OK);
     return S_OK;
