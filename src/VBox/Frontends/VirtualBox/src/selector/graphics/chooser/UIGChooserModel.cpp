@@ -658,6 +658,46 @@ void UIGChooserModel::sltRemoveCurrentlySelectedMachine()
     }
 }
 
+void UIGChooserModel::sltAddGroupBasedOnChosenItems()
+{
+    /* Create new group in the current root: */
+    UIGChooserItemGroup *pNewGroupItem = new UIGChooserItemGroup(root(), uniqueGroupName(root()));
+    /* Enumerate all the currently chosen items: */
+    QStringList busyGroupNames;
+    QStringList busyMachineNames;
+    foreach (UIGChooserItem *pItem, selectionList())
+    {
+        /* For each of known types: */
+        switch (pItem->type())
+        {
+            case UIGChooserItemType_Group:
+            {
+                /* Avoid name collisions: */
+                if (busyGroupNames.contains(pItem->name()))
+                    break;
+                /* Copy group item: */
+                new UIGChooserItemGroup(pNewGroupItem, pItem->toGroupItem());
+                busyGroupNames << pItem->name();
+                break;
+            }
+            case UIGChooserItemType_Machine:
+            {
+                /* Avoid name collisions: */
+                if (busyMachineNames.contains(pItem->name()))
+                    break;
+                /* Copy machine item: */
+                new UIGChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
+                busyMachineNames << pItem->name();
+                break;
+            }
+        }
+    }
+    /* Update model: */
+    updateNavigation();
+    updateLayout();
+    setCurrentItem(pNewGroupItem);
+}
+
 void UIGChooserModel::sltStartEditingSelectedGroup()
 {
     /* Only for single selected group: */
@@ -773,6 +813,7 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuMachine = new QMenu;
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_SettingsDialog));
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_CloneWizard));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroupDialog));
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_RemoveDialog));
     m_pContextMenuMachine->addSeparator();
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_State_Machine_StartOrShow));
@@ -797,6 +838,8 @@ void UIGChooserModel::prepareContextMenu()
             this, SLOT(sltStartEditingSelectedGroup()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_RemoveDialog), SIGNAL(triggered()),
             this, SLOT(sltRemoveCurrentlySelectedGroup()));
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroupDialog), SIGNAL(triggered()),
+            this, SLOT(sltAddGroupBasedOnChosenItems()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_RemoveDialog), SIGNAL(triggered()),
             this, SLOT(sltRemoveCurrentlySelectedMachine()));
 }

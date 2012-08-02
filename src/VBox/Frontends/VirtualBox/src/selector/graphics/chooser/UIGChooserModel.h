@@ -155,6 +155,9 @@ private slots:
     void sltRemoveCurrentlySelectedGroup();
     void sltRemoveCurrentlySelectedMachine();
 
+    /* Handler: Group add stuff: */
+    void sltAddGroupBasedOnChosenItems();
+
     /* Handler: Group name editing stuff: */
     void sltStartEditingSelectedGroup();
 

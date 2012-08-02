@@ -138,6 +138,7 @@ private:
     static bool isItemsInaccessible(const QList<UIVMItem*> &items);
     static bool isItemsHasUnlockedSession(const QList<UIVMItem*> &items);
     static bool isItemsSupportsShortcuts(const QList<UIVMItem*> &items);
+    static bool isItemsPoweredOff(const QList<UIVMItem*> &items);
 
     /* Central splitter window: */
     QISplitter *m_pSplitter;
@@ -191,6 +192,7 @@ private:
     UIAction *m_pActionMachineAddDialog;
     UIAction *m_pActionMachineSettingsDialog;
     UIAction *m_pActionMachineCloneWizard;
+    UIAction *m_pActionMachineAddGroupDialog;
     UIAction *m_pActionMachineRemoveDialog;
     UIAction *m_pActionMachineStartOrShow;
     UIAction *m_pActionMachineDiscard;

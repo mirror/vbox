@@ -758,6 +758,7 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
     /* Enable/disable machine actions: */
     m_pActionMachineSettingsDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SettingsDialog, items));
     m_pActionMachineCloneWizard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CloneWizard, items));
+    m_pActionMachineAddGroupDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_AddGroupDialog, items));
     m_pActionMachineRemoveDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_RemoveDialog, items));
     m_pActionMachineStartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Machine_StartOrShow, items));
     m_pActionMachineDiscard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Discard, items));
@@ -1205,6 +1206,8 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addAction(m_pActionMachineSettingsDialog);
     m_pActionMachineCloneWizard = gActionPool->action(UIActionIndexSelector_Simple_Machine_CloneWizard);
     pMenu->addAction(m_pActionMachineCloneWizard);
+    m_pActionMachineAddGroupDialog = gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroupDialog);
+    pMenu->addAction(m_pActionMachineAddGroupDialog);
     m_pActionMachineRemoveDialog = gActionPool->action(UIActionIndexSelector_Simple_Machine_RemoveDialog);
     pMenu->addAction(m_pActionMachineRemoveDialog);
     pMenu->addSeparator();
@@ -1234,6 +1237,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     /* Remember action list: */
     m_machineActions << m_pActionMachineNewWizard << m_pActionMachineAddDialog
                      << m_pActionMachineSettingsDialog << m_pActionMachineCloneWizard
+                     << m_pActionMachineAddGroupDialog
                      << m_pActionMachineRemoveDialog << m_pActionMachineStartOrShow
                      << m_pActionMachineDiscard << m_pActionMachinePauseAndResume
                      << m_pActionMachineReset << m_pActionMachineRefresh
@@ -1588,6 +1592,14 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
                    pItem->accessible() &&
                    pItem->sessionState() == KSessionState_Unlocked;
         }
+        case UIActionIndexSelector_Simple_Machine_AddGroupDialog:
+        {
+            /* Check that there is more than one item,
+             * all items are accessible and in 'powered off' states: */
+            return items.size() > 1 &&
+                   isItemsAccessible(items) &&
+                   isItemsPoweredOff(items);
+        }
         case UIActionIndexSelector_Simple_Group_RenameDialog:
         case UIActionIndexSelector_Simple_Group_RemoveDialog:
         {
@@ -1764,6 +1776,18 @@ bool UISelectorWindow::isItemsSupportsShortcuts(const QList<UIVMItem*> &items)
 #endif /* Q_WS_MAC */
 
     /* True by default: */
+    return true;
+}
+
+/* static */
+bool UISelectorWindow::isItemsPoweredOff(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (!(pItem->machineState() == KMachineState_PoweredOff ||
+              pItem->machineState() == KMachineState_Saved ||
+              pItem->machineState() == KMachineState_Teleported ||
+              pItem->machineState() == KMachineState_Aborted))
+        return false;
     return true;
 }
 
