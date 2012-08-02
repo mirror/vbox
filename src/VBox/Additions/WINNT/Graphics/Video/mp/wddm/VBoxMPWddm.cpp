@@ -4732,7 +4732,13 @@ DxgkDdiSetVidPnSourceAddress(
                     ||
 # endif
                     pDevExt->fRenderToShadowDisabled
-                    || (pAllocation && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+                    /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
+                     * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
+                    || (pAllocation
+                            && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+                            && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
+                                    || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
+                            )
                     )
 #endif
             )
@@ -4789,7 +4795,13 @@ DxgkDdiSetVidPnSourceVisibility(
                         ||
 # endif
                         pDevExt->fRenderToShadowDisabled
-                        || (pAllocation && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+                        /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
+                         * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
+                        || (pAllocation
+                                && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+                                && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
+                                        || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
+                                )
                         )
 #endif
                 )
