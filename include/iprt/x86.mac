@@ -625,10 +625,12 @@
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
-%define X86_SEL_SHIFT       3
-%define X86_SEL_MASK        0xfff8
-%define X86_SEL_LDT         0x0004
-%define X86_SEL_RPL         0x0003
+%define X86_SEL_SHIFT           3
+%define X86_SEL_MASK            0xfff8
+%define X86_SEL_MASK_OFF_RPL    0xfffc
+%define X86_SEL_LDT             0x0004
+%define X86_SEL_RPL             0x0003
+%define X86_SEL_RPL_LDT         0x0007
 %define X86_TRAP_ERR_EXTERNAL       1
 %define X86_TRAP_ERR_IDT            2
 %define X86_TRAP_ERR_TI             4
