@@ -2313,6 +2313,23 @@ typedef X86DESCGENERIC *PX86DESCGENERIC;
 /** Pointer to a const generic descriptor entry. */
 typedef const X86DESCGENERIC *PCX86DESCGENERIC;
 
+/** @name Bit offsets of X86DESCGENERIC members.
+ * @{*/
+#define X86DESCGENERIC_BIT_OFF_LIMIT_LOW        (0)   /**< Bit offset of X86DESCGENERIC::u16LimitLow. */
+#define X86DESCGENERIC_BIT_OFF_BASE_LOW         (16)  /**< Bit offset of X86DESCGENERIC::u16BaseLow. */
+#define X86DESCGENERIC_BIT_OFF_BASE_HIGH1       (32)  /**< Bit offset of X86DESCGENERIC::u8BaseHigh1. */
+#define X86DESCGENERIC_BIT_OFF_TYPE             (40)  /**< Bit offset of X86DESCGENERIC::u4Type. */
+#define X86DESCGENERIC_BIT_OFF_DESC_TYPE        (44)  /**< Bit offset of X86DESCGENERIC::u1DescType. */
+#define X86DESCGENERIC_BIT_OFF_DPL              (45)  /**< Bit offset of X86DESCGENERIC::u2Dpl. */
+#define X86DESCGENERIC_BIT_OFF_PRESENT          (47)  /**< Bit offset of X86DESCGENERIC::uu1Present. */
+#define X86DESCGENERIC_BIT_OFF_LIMIT_HIGH       (48)  /**< Bit offset of X86DESCGENERIC::u4LimitHigh. */
+#define X86DESCGENERIC_BIT_OFF_AVAILABLE        (52)  /**< Bit offset of X86DESCGENERIC::u1Available. */
+#define X86DESCGENERIC_BIT_OFF_LONG             (53)  /**< Bit offset of X86DESCGENERIC::u1Long. */
+#define X86DESCGENERIC_BIT_OFF_DEF_BIG          (54)  /**< Bit offset of X86DESCGENERIC::u1DefBig. */
+#define X86DESCGENERIC_BIT_OFF_GRANULARITY      (55)  /**< Bit offset of X86DESCGENERIC::u1Granularity. */
+#define X86DESCGENERIC_BIT_OFF_BASE_HIGH2       (56)  /**< Bit offset of X86DESCGENERIC::u8BaseHigh2. */
+/** @}  */
+
 /**
  * Call-, Interrupt-, Trap- or Task-gate descriptor (legacy).
  */
@@ -2639,6 +2656,8 @@ typedef PCX86DESC   PCX86DESCHC;
 #define X86_SEL_TYPE_WRITE                  2
 /** Read bit (for code selectors only). */
 #define X86_SEL_TYPE_READ                   2
+/** The bit number of the code segment read bit (relative to u4Type). */
+#define X86_SEL_TYPE_READ_BIT               1
 
 /** Read only selector type. */
 #define X86_SEL_TYPE_RO                     0
