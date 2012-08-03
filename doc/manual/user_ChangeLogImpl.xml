@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
-    <title>Version 4.2.0 (2011-xx-xx)</title>
+    <title>Version 4.2.0 (2012-xx-xx)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -169,6 +169,172 @@
        </listitem>
 
     </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 4.1.18 (2012-06-06)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: fixed <emphasis>VERR_REM_VIRTUAL_CPU_ERROR</emphasis>
+          under rare conditions after the guest has been reset (bug #5164
+        and others)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed host freezes with 64-bit guests on 32-bit Linux
+          hosts (bug #10528)</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: added a workaround for rdesktop clients not properly
+          updating the screen size when minimized</para>
+      </listitem>
+
+      <listitem>
+        <para>AHCI: fixed a rare bug which can cause a guest memory corruption
+          after the guest storage controler has been reset</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: another attempt to fix crashes under rare conditions
+          (Windows hosts only; bug #10513)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: addressed issues running Leopard / Snow Leopard
+          (bug #10631)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / Bridged Networking: fixed the problem with device driver
+          unloading on kernels 3.2.18 and newer due to an invalid reference counter
+          (bug #10624)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: Linux 3.5-rc1 fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: the guest content was sometimes not properly
+          updated (bug #9887)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: installer fix for X.org Server 1.11 and 1.12</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 4.1.16 (2012-05-22)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: fixed a Guru Meditation <emphasis>VERR_ACCESS_DENIED</emphasis>
+          with certain guests (bugs #7589, #8247)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed a Guru Meditation <emphasis>VERR_PAGE_TABLE_NOT_PRESENT</emphasis>
+          with Ubuntu 32-bit guests with nested paging enabled on AMD CPUs (bug #10183)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: preserve segment limits and attributes when switching to unreal mode
+          required for some legacy guests to work properly (VT-x without unrestricted guest
+          execution only; bug #9941)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed a VM hang after a resume from pause / savestate with SMP
+          guests in rare cases</para>
+      </listitem>
+
+      <listitem>
+        <para>3D Support: several fixes for the Windows WDDM video driver crash</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: fixed a crash on attempt to process ICMP datagram under some
+          circumstances (bug #10527)</para>
+      </listitem>
+
+      <listitem>
+        <para>Host-only Networking: lifted the maximal number of interfaces to
+          128 on Linux and Mac OS X hosts (there is no such limitation for
+          Solaris and Windows hosts)</para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: fixed wrong SEC/PEI Core entry point calculation (bug #10531)</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: fixed a display update problem (bug #10503)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: set the proper VM state if savestate failed for some
+          reason (bug #6189)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: more useful error message if a medium is inaccessible</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed <emphasis>controlvm savestate</emphasis> if the VM is already
+          paused</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: addressed issues running on Mountain Lion Preview 3
+          (bug #10267)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: Linux 3.4 compile fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed wrong help path in some rpm-based packages
+          (bug #10418)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: fixed handling of custom environment variables
+          during <computeroutput>VBoxManage guestcontrol execute</computeroutput>
+          (bug #10581)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed guest driver crash of VBoxSF in certain
+          cases (4.1.10 regression, bug #10408)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: don't load the WDDM driver if 3D support is not available
+          for Windows 8 guests to keep the guest maintainable in that case (still better
+          to miss some features than providing a blank screen)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: added support for X.org Server 1.11 and 1.12</para>
+      </listitem>
+
+    </itemizedlist>
+
   </sect1>
 
   <sect1>
@@ -514,7 +680,7 @@
       </listitem>
 
       <listitem>
-        <para>3D Support: Fixed full screen mode issues for ATI graphics (bug #9775),
+        <para>3D Support: fixed full screen mode issues for ATI graphics (bug #9775),
           Windows Media Player rendering for XPDM-based Direct3D support (bug# 8341).
           Multiple fixes to XPDM and WDDM - based 3D support for Windows Guests
           and for 3D support in general</para>
@@ -750,7 +916,7 @@
       </listitem>
 
       <listitem>
-        <para>Guest control: Miscellaneous small bugfixes</para>
+        <para>Guest control: miscellaneous small bugfixes</para>
       </listitem>
 
       <listitem>
