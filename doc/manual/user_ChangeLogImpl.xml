@@ -9,8 +9,11 @@
     <itemizedlist>
 
       <listitem>
-        <para>Support for up to 36 network cards, in combination with an
-          ICH9 chipset configuration (bug #8805)</para>
+        <para>Improved Windows 8 support, in particular many 3D-related fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: VM groups</para>
       </listitem>
 
       <listitem>
@@ -18,13 +21,29 @@
       </listitem>
 
       <listitem>
-        <para>GUI: network operations manager</para>
+        <para>GUI: allow to alter a couple of settings during runtime</para>
+      </listitem>
+
+      <listitem>
+        <para>Support for up to 36 network cards, in combination with an
+          ICH9 chipset configuration (bug #8805)</para>
       </listitem>
 
       <listitem>
         <para>Resource control: added support for limiting network IO
           bandwidth; see <xref linkend="network_bandwidth_limit" /></para>
       </listitem>
+
+       <listitem>
+         <para>Added possibility to start VMs during system boot on Linux,
+           OS X and Solaris; see <xref linkend="autostart" /></para>
+       </listitem>
+
+       <listitem>
+         <para>Added experimental support for Drag'n'drop from the host to
+           Linux guests. Support for more guests and for guest-to-host is
+           planned.</para>
+       </listitem>
 
     </itemizedlist>
 
@@ -38,8 +57,8 @@
       </listitem>
 
       <listitem>
-        <para>VMM: added support for FlushByASID features of AMD CPUs (Bulldozer
-          and newer)</para>
+        <para>VMM: added support for <emphasis>FlushByASID</emphasis> features of
+          AMD CPUs (Bulldozer and newer)</para>
       </listitem>
 
       <listitem>
@@ -53,7 +72,11 @@
       </listitem>
 
       <listitem>
-        <para>E1000: 802.1q VLAN support</para>
+        <para>VMM: support recent VIA CPUs (bug #10005)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: network operations manager</para>
       </listitem>
 
       <listitem>
@@ -78,6 +101,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: show the full medium part on hovering the list of recently
+          used ISO images</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: do not create additional folders when a new machine has a
            separator character in its name (bug 6541#)</para>
        </listitem>
@@ -90,6 +118,18 @@
       <listitem>
         <para>Snapshots: fixed a crash when restoring an old
           snapshot when powering off a VM (bug #10491)</para>
+      </listitem>
+
+      <listitem>
+        <para>Settings: sanitise the name of VM folders and settings file (bug #10549)</para>
+      </listitem>
+
+      <listitem>
+        <para>Settings: allow to store the iSCSI initiator secret encrypted</para>
+      </listitem>
+
+      <listitem>
+        <para>E1000: 802.1q VLAN support</para>
       </listitem>
 
        <listitem>
@@ -115,10 +155,6 @@
        </listitem>
 
        <listitem>
-         <para>Main: sanitise the name of VM folders and settings file (bug #10549)</para>
-       </listitem>
-
-       <listitem>
          <para>Solaris additions: added support for X.org Server 1.11 and 1.12</para>
        </listitem>
 
@@ -128,10 +164,9 @@
        </listitem>
 
        <listitem>
-         <para>Added possibility to start VMs during system boot on Linux,
-           OS X and Solaris; see <xref linkend="autostart" /></para>
+         <para>Windows hosts: updated toolchain; make the source code compatible
+           to VC 2010 and enable some security-related compiler options</para>
        </listitem>
-
 
     </itemizedlist>
   </sect1>
