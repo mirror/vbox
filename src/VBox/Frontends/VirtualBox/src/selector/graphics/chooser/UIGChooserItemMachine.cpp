@@ -52,8 +52,8 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     , m_pCloseButton(0)
     , m_iCornerRadius(6)
 {
-    /* Prepare: */
-    prepare();
+//    /* Prepare: */
+//    prepare();
 
     /* Add item to the parent: */
     AssertMsg(parentItem(), ("No parent set for machine item!"));
@@ -73,8 +73,8 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     , m_pCloseButton(0)
     , m_iCornerRadius(6)
 {
-    /* Prepare: */
-    prepare();
+//    /* Prepare: */
+//    prepare();
 
     /* Add item to the parent: */
     AssertMsg(parentItem(), ("No parent set for machine item!"));
@@ -203,10 +203,16 @@ QVariant UIGChooserItemMachine::data(int iKey) const
             int iMargin = data(MachineItemData_Margin).toInt();
             int iPixmapWidth = data(MachineItemData_PixmapSize).toSize().width();
             int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+            int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
             int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
             int iMaximumWidth = (int)geometry().width() - iMargin -
-                                                          iPixmapWidth - iMachineItemMajorSpacing -
-                                                          iToolBarWidth - iMachineItemMajorSpacing;
+                                                          iPixmapWidth -
+                                                          iMachineItemMajorSpacing -
+                                                          iMachineItemMinorSpacing -
+                                                          iMachineItemMajorSpacing -
+                                                          iMargin;
+            if (m_pToolBar)
+                iMaximumWidth -= iToolBarWidth;
             return iMaximumWidth;
         }
         case MachineItemData_StateTextSize:
@@ -214,7 +220,10 @@ QVariant UIGChooserItemMachine::data(int iKey) const
             QFontMetrics fm(data(MachineItemData_StateTextFont).value<QFont>());
             return QSize(fm.width(data(MachineItemData_StateText).toString()), fm.height());
         }
-        case MachineItemData_ToolBarSize: return m_pToolBar->minimumSizeHint().toSize();
+        case MachineItemData_ToolBarSize:
+        {
+            return m_pToolBar ? m_pToolBar->minimumSizeHint().toSize() : QSize(0, 0);
+        }
         /* Default: */
         default: break;
     }
@@ -265,27 +274,30 @@ void UIGChooserItemMachine::updateSizeHint()
 
 void UIGChooserItemMachine::updateLayout()
 {
-    /* Prepare variables: */
-    QSize size = geometry().size().toSize();
+    if (m_pToolBar)
+    {
+        /* Prepare variables: */
+        QSize size = geometry().size().toSize();
 
-    /* Prepare variables: */
-    int iMachineItemWidth = size.width();
-    int iMachineItemHeight = size.height();
-    int iToolBarHeight = data(MachineItemData_ToolBarSize).toSize().height();
+        /* Prepare variables: */
+        int iMachineItemWidth = size.width();
+        int iMachineItemHeight = size.height();
+        int iToolBarHeight = data(MachineItemData_ToolBarSize).toSize().height();
 
-    /* Configure tool-bar: */
-    QSize toolBarSize = m_pToolBar->minimumSizeHint().toSize();
-    int iToolBarX = iMachineItemWidth - 1 - toolBarSize.width();
-    int iToolBarY = (iMachineItemHeight - iToolBarHeight) / 2;
-    m_pToolBar->setPos(iToolBarX, iToolBarY);
-    m_pToolBar->resize(toolBarSize);
-    m_pToolBar->updateLayout();
+        /* Configure tool-bar: */
+        QSize toolBarSize = m_pToolBar->minimumSizeHint().toSize();
+        int iToolBarX = iMachineItemWidth - 1 - toolBarSize.width();
+        int iToolBarY = (iMachineItemHeight - iToolBarHeight) / 2;
+        m_pToolBar->setPos(iToolBarX, iToolBarY);
+        m_pToolBar->resize(toolBarSize);
+        m_pToolBar->updateLayout();
 
-    /* Configure buttons: */
-    m_pStartButton->updateAnimation();
-    m_pSettingsButton->updateAnimation();
-    m_pCloseButton->updateAnimation();
-    m_pPauseButton->updateAnimation();
+        /* Configure buttons: */
+        m_pStartButton->updateAnimation();
+        m_pSettingsButton->updateAnimation();
+        m_pCloseButton->updateAnimation();
+        m_pPauseButton->updateAnimation();
+    }
 }
 
 int UIGChooserItemMachine::minimumWidthHint() const
@@ -670,16 +682,19 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
                   data(MachineItemData_StateText).toString());
     }
 
-    /* Show/hide start-button: */
-    if (isHovered())
+    if (m_pToolBar)
     {
-        if (!m_pToolBar->isVisible())
-            m_pToolBar->show();
-    }
-    else
-    {
-        if (m_pToolBar->isVisible())
-            m_pToolBar->hide();
+        /* Show/hide tool-bar: */
+        if (isHovered())
+        {
+            if (!m_pToolBar->isVisible())
+                m_pToolBar->show();
+        }
+        else
+        {
+            if (m_pToolBar->isVisible())
+                m_pToolBar->hide();
+        }
     }
 }
 
