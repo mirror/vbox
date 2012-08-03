@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HPET virtual device - high precision event timer emulation
+ * HPET virtual device - High Precision Event Timer emulation
  */
 
 /*
@@ -59,7 +59,7 @@
 #define HPET_CLK_PERIOD_ICH9        UINT32_C(69841279)
 
 /*
- * Femptosecods in nanosecond
+ * Femtosecods in a nanosecond
  */
 #define FS_PER_NS                   1000000
 
@@ -244,7 +244,7 @@ typedef struct HpetState
     /** Global device lock. */
     PDMCRITSECT          csLock;
 
-    /** If we emulate ICH9 HPET (different frequency & timer count). */
+    /** Whether we emulate ICH9 HPET (different frequency & timer count). */
     bool                 fIch9;
     uint8_t              padding0[7];
 } HpetState;
@@ -418,7 +418,7 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
  * @param   iTimerReg           The index of the timer register to read.
  * @param   pu32Value           Where to return the register value.
  *
- * @remarks ASSUMES the caller does holds the HPET lock.
+ * @remarks ASSUMES the caller holds the HPET lock.
  */
 static int hpetTimerRegRead32(HpetState const *pThis, uint32_t iTimerNo, uint32_t iTimerReg, uint32_t *pu32Value)
 {
@@ -1011,7 +1011,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 static uint32_t hpetTimerCbGetIrq(struct HpetTimer const *pHpetTimer)
 {
     /*
-     * Per spec, in legacy mode HPET timers wired as:
+     * Per spec, in legacy mode the HPET timers are wired as follows:
      *   timer 0: IRQ0 for PIC and IRQ2 for APIC
      *   timer 1: IRQ8 for both PIC and APIC
      *
