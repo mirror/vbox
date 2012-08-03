@@ -139,11 +139,22 @@ static void vmmdevTestingCmdExec_ValueReg(PPDMDEVINS pDevIns, VMMDevState *pThis
         int rc2 = DBGFR3RegNmQueryU64(pVM, idCpu, pszRegNm, &u64Value);
         if (RT_SUCCESS(rc2))
         {
-            const char *pszWarn = rc2 == VINF_DBGF_TRUNCATED_REGISTER ? "truncated" : "";
-            VMMDEV_TESTING_OUTPUT(("testing: VALUE '%s'%*s: %'9llu (%#llx) [0] {reg=%s}\n",
-                                   pszValueNm,
-                                   (ssize_t)cchValueNm - 12 > 48 ? 0 : 48 - ((ssize_t)cchValueNm - 12), "",
-                                   u64Value, u64Value, pszRegNm, pszWarn));
+            const char *pszWarn = rc2 == VINF_DBGF_TRUNCATED_REGISTER ? " truncated" : "";
+#if 1 /*!RTTestValue format*/
+            char szFormat[128], szValue[128];
+            RTStrPrintf(szFormat, sizeof(szFormat), "%%VR{%s}", pszRegNm);
+            int rc2 = DBGFR3RegPrintf(pVM, idCpu, szValue, sizeof(szValue), szFormat);
+            if (RT_SUCCESS(rc2))
+                VMMDEV_TESTING_OUTPUT(("testing: VALUE '%s'%*s: %16s {reg=%s}%s\n",
+                                       pszValueNm,
+                                       (ssize_t)cchValueNm - 12 > 48 ? 0 : 48 - ((ssize_t)cchValueNm - 12), "",
+                                       szValue, pszRegNm));
+            else
+#endif
+                VMMDEV_TESTING_OUTPUT(("testing: VALUE '%s'%*s: %'9llu (%#llx) [0] {reg=%s}%s\n",
+                                       pszValueNm,
+                                       (ssize_t)cchValueNm - 12 > 48 ? 0 : 48 - ((ssize_t)cchValueNm - 12), "",
+                                       u64Value, u64Value, pszRegNm, pszWarn));
         }
         else
             VMMDEV_TESTING_OUTPUT(("testing: error querying register '%s' for value '%s': %Rrc\n",
