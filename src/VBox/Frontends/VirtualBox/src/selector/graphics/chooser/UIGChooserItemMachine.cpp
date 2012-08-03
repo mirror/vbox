@@ -236,6 +236,11 @@ void UIGChooserItemMachine::removeItem(UIGChooserItem*)
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
 }
 
+void UIGChooserItemMachine::setItems(const QList<UIGChooserItem*>&, UIGChooserItemType)
+{
+    AssertMsgFailed(("Machine graphics item do NOT support children!"));
+}
+
 QList<UIGChooserItem*> UIGChooserItemMachine::items(UIGChooserItemType) const
 {
     AssertMsgFailed(("Machine graphics item do NOT support children!"));

@@ -474,6 +474,17 @@ void UIGChooserItemGroup::removeItem(UIGChooserItem *pItem)
     }
 }
 
+void UIGChooserItemGroup::setItems(const QList<UIGChooserItem*> &items, UIGChooserItemType type)
+{
+    /* Check item type: */
+    switch (type)
+    {
+        case UIGChooserItemType_Group: m_groupItems = items; break;
+        case UIGChooserItemType_Machine: m_machineItems = items; break;
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+}
+
 QList<UIGChooserItem*> UIGChooserItemGroup::items(UIGChooserItemType type /* = UIGChooserItemType_Any */) const
 {
     switch (type)
@@ -512,12 +523,14 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
         }
         case UIGChooserItemType_Group:
         {
-            while (!m_groupItems.isEmpty()) { delete m_groupItems.last(); }
+            while (!m_groupItems.isEmpty()) { delete m_groupItems.takeLast(); }
+            AssertMsg(m_groupItems.isEmpty(), ("Group items cleanup failed!"));
             break;
         }
         case UIGChooserItemType_Machine:
         {
-            while (!m_machineItems.isEmpty()) { delete m_machineItems.last(); }
+            while (!m_machineItems.isEmpty()) { delete m_machineItems.takeLast(); }
+            AssertMsg(m_machineItems.isEmpty(), ("Machine items cleanup failed!"));
             break;
         }
     }

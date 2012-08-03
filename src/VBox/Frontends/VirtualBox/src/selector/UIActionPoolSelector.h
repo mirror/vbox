@@ -62,7 +62,9 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_Machine_Refresh,
     UIActionIndexSelector_Simple_Machine_ShowInFileManager,
     UIActionIndexSelector_Simple_Machine_CreateShortcut,
-    UIActionIndexSelector_Simple_Machine_Sort,
+
+    /* Common menu action: */
+    UIActionIndexSelector_Simple_Common_SortParent,
 
     /* 'Machine/Close' menu actions: */
     UIActionIndexSelector_Menu_Machine_Close,
