@@ -26,6 +26,7 @@
 
 #include "Global.h"
 #include "AutoCaller.h"
+#include "ProgressImpl.h"
 
 #include <iprt/env.h>
 
@@ -50,6 +51,151 @@ void GuestSession::FinalRelease(void)
     uninit();
     BaseFinalRelease();
     LogFlowThisFuncLeave();
+}
+
+// session task classes
+/////////////////////////////////////////////////////////////////////////////
+
+GuestSessionTask::GuestSessionTask(GuestSession *pSession, Progress *pProgress)
+{
+    mSession = pSession;
+    mProgress = pProgress;
+}
+
+GuestSessionTask::~GuestSessionTask(void)
+{
+}
+
+int GuestSessionTask::setProgress(unsigned uPercent)
+{
+    BOOL fCanceled;
+    mProgress->COMGETTER(Canceled)(&fCanceled);
+    if (fCanceled)
+        return VERR_CANCELLED;
+    mProgress->SetCurrentOperationProgress(uPercent);
+
+    return VINF_SUCCESS;
+}
+
+int GuestSessionTask::setProgressSuccess(void)
+{
+    BOOL fCanceled;
+    BOOL fCompleted;
+    if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
+        && !fCanceled
+        && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
+        && !fCompleted)
+    {
+        HRESULT hr = mProgress->notifyComplete(S_OK);
+        ComAssertComRC(hr);
+    }
+
+    return VINF_SUCCESS;
+}
+
+int GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
+{
+    BOOL fCanceled;
+    BOOL fCompleted;
+    if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
+        && !fCanceled
+        && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
+        && !fCompleted)
+    {
+        HRESULT hr = mProgress->notifyComplete(hr,
+                                               COM_IIDOF(IGuestSession),
+                                               GuestSession::getStaticComponentName(),
+                                               strMsg.c_str());
+        if (FAILED(hr))
+            return VERR_COM_UNEXPECTED;
+    }
+    return VINF_SUCCESS;
+}
+
+SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession, Progress *pProgress,
+                                     const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags)
+                                     : GuestSessionTask(pSession, pProgress)
+{
+    mSource = strSource;
+    mDest   = mDest;
+    mFlags  = uFlags;
+}
+
+SessionTaskCopyTo::~SessionTaskCopyTo(void)
+{
+
+}
+
+int SessionTaskCopyTo::Run(void)
+{
+    return 0;
+}
+
+int SessionTaskCopyTo::RunAsync(const Utf8Str &strDesc)
+{
+    LogFlowThisFunc(("strDesc=%s, strSource=%s, strDest=%s, uFlags=%x\n",
+                     strDesc.c_str(), mSource.c_str(), mDest.c_str(), mFlags));
+
+    mDesc = strDesc;
+
+    int rc = RTThreadCreate(NULL, SessionTaskCopyTo::taskThread, this,
+                            0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                            "gctlCpyTo");
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/* static */
+int SessionTaskCopyTo::taskThread(RTTHREAD Thread, void *pvUser)
+{
+    std::auto_ptr<SessionTaskCopyTo> task(static_cast<SessionTaskCopyTo*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+
+    LogFlowFunc(("pTask=%p\n", task.get()));
+    return task->Run();
+}
+
+SessionTaskCopyFrom::SessionTaskCopyFrom(GuestSession *pSession, Progress *pProgress,
+                                         const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags)
+                                         : GuestSessionTask(pSession, pProgress)
+{
+    mSource = strSource;
+    mDest   = mDest;
+    mFlags  = uFlags;
+}
+
+SessionTaskCopyFrom::~SessionTaskCopyFrom(void)
+{
+
+}
+
+int SessionTaskCopyFrom::Run(void)
+{
+    return 0;
+}
+
+int SessionTaskCopyFrom::RunAsync(const Utf8Str &strDesc)
+{
+    LogFlowThisFunc(("strDesc=%s, strSource=%s, strDest=%s, uFlags=%x\n",
+                     strDesc.c_str(), mSource.c_str(), mDest.c_str(), mFlags));
+
+    mDesc = strDesc;
+
+    int rc = RTThreadCreate(NULL, SessionTaskCopyFrom::taskThread, this,
+                            0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                            "gctlCpyFrom");
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/* static */
+int SessionTaskCopyFrom::taskThread(RTTHREAD Thread, void *pvUser)
+{
+    std::auto_ptr<SessionTaskCopyFrom> task(static_cast<SessionTaskCopyFrom*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+
+    LogFlowFunc(("pTask=%p\n", task.get()));
+    return task->Run();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -760,6 +906,44 @@ inline int GuestSession::processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pP
     return VERR_NOT_FOUND;
 }
 
+int GuestSession::startTaskAsync(const Utf8Str &strTaskDesc,
+                                 GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress)
+{
+    LogFlowThisFunc(("strTaskDesc=%s, pTask=%p\n", strTaskDesc.c_str(), pTask));
+
+    AssertPtrReturn(pTask, VERR_INVALID_POINTER);
+
+    int rc;
+
+    try
+    {
+        /* Create the progress object. */
+        HRESULT hr = pProgress.createObject();
+        if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
+
+        hr = pProgress->init(static_cast<IGuestSession*>(this),
+                             Bstr(strTaskDesc).raw(),
+                             TRUE /* aCancelable */);
+        if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
+
+        /* Initialize our worker task. */
+        std::auto_ptr<GuestSessionTask> task(pTask);
+
+        rc = task->RunAsync(strTaskDesc);
+        if (FAILED(rc)) throw rc;
+
+        /* Don't destruct on success. */
+        task.release();
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 /**
  * Queries/collects information prior to establishing a guest session.
  * This is necessary to know which guest control protocol version to use,
@@ -769,6 +953,10 @@ inline int GuestSession::processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pP
  */
 int GuestSession::queryInfo(void)
 {
+#if 1
+    /* Since the new functions were not implemented yet, force Main to use protocol ver 1. */
+    mData.mProtocolVersion = 1;
+#else
     /*
      * Try querying the guest control protocol version running on the guest.
      * This is done using the Guest Additions version
@@ -778,7 +966,7 @@ int GuestSession::queryInfo(void)
 
     uint32_t uVerAdditions = pGuest->getAdditionsVersion();
     mData.mProtocolVersion = (   VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions) >= 4
-                              && VBOX_FULL_VERSION_GET_MINOR(uVerAdditions) >= 2)
+                              && VBOX_FULL_VERSION_GET_MINOR(uVerAdditions) >= 2) /** @todo What's about v5.0 ? */
                            ? 2  /* Guest control 2.0. */
                            : 1; /* Legacy guest control (VBox < 4.2). */
     /* Build revision is ignored. */
@@ -788,7 +976,7 @@ int GuestSession::queryInfo(void)
     if (s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
         LogRel((tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
                 VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions), mData.mProtocolVersion));
-
+#endif
     return VINF_SUCCESS;
 }
 
@@ -809,31 +997,99 @@ STDMETHODIMP GuestSession::Close(void)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::CopyFrom(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress)
+STDMETHODIMP GuestSession::CopyFrom(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(CopyFileFlag_T, aFlags), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    CheckComArgStrNotEmptyOrNull(aSource);
+    CheckComArgStrNotEmptyOrNull(aDest);
+    CheckComArgOutPointerValid(aProgress);
+
     LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY((aSource) == NULL || *(aSource) == '\0'))
+        return setError(E_INVALIDARG, tr("No source specified"));
+    if (RT_UNLIKELY((aDest) == NULL || *(aDest) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination specified"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    uint32_t fFlags = CopyFileFlag_None;
+    if (aFlags)
+    {
+        com::SafeArray<CopyFileFlag_T> flags(ComSafeArrayInArg(aFlags));
+        for (size_t i = 0; i < flags.size(); i++)
+            fFlags |= flags[i];
+    }
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hr = S_OK;
+
+    ComObjPtr<Progress> pProgress;
+    SessionTaskCopyFrom *pTask = new SessionTaskCopyFrom(this, pProgress,
+                                                         Utf8Str(aSource), Utf8Str(aDest), fFlags);
+    AssertPtrReturn(pTask, VERR_NO_MEMORY);
+    int rc = startTaskAsync(Utf8StrFmt(tr("Copying \"%ls\" from guest to \"%ls\" on the host"), aSource, aDest),
+                            pTask, pProgress);
+    if (RT_SUCCESS(rc))
+    {
+        /* Return progress to the caller. */
+        hr = pProgress.queryInterfaceTo(aProgress);
+    }
+
+    /** @todo rc -> hr error lookup. */
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress)
+STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(CopyFileFlag_T, aFlags), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    CheckComArgStrNotEmptyOrNull(aSource);
+    CheckComArgStrNotEmptyOrNull(aDest);
+    CheckComArgOutPointerValid(aProgress);
+
     LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY((aSource) == NULL || *(aSource) == '\0'))
+        return setError(E_INVALIDARG, tr("No source specified"));
+    if (RT_UNLIKELY((aDest) == NULL || *(aDest) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination specified"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    uint32_t fFlags = CopyFileFlag_None;
+    if (aFlags)
+    {
+        com::SafeArray<CopyFileFlag_T> flags(ComSafeArrayInArg(aFlags));
+        for (size_t i = 0; i < flags.size(); i++)
+            fFlags |= flags[i];
+    }
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hr = S_OK;
+
+    ComObjPtr<Progress> pProgress;
+    SessionTaskCopyTo *pTask = new SessionTaskCopyTo(this, pProgress,
+                                                     Utf8Str(aSource), Utf8Str(aDest), fFlags);
+    AssertPtrReturn(pTask, VERR_NO_MEMORY);
+    int rc = startTaskAsync(Utf8StrFmt(tr("Copying \"%ls\" from host to \"%ls\" on the guest"), aSource, aDest),
+                            pTask, pProgress);
+    if (RT_SUCCESS(rc))
+    {
+        /* Return progress to the caller. */
+        hr = pProgress.queryInterfaceTo(aProgress);
+    }
+
+    /** @todo rc -> hr error lookup. */
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -1301,7 +1557,6 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 
     HRESULT hr = ProcessCreateEx(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
                                  ComSafeArrayInArg(aFlags), aTimeoutMS, ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
-    LogFlowFuncLeaveRC(hr);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1442,28 +1697,6 @@ STDMETHODIMP GuestSession::ProcessGet(ULONG aPID, IGuestProcess **aProcess)
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
-
-#if 0
-STDMETHODIMP GuestSession::SetTimeout(ULONG aTimeoutMS)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    if (aTimeoutMS < 1000)
-        return setError(E_INVALIDARG, tr("Invalid timeout value specified"));
-
-    mData.mTimeout = aTimeoutMS;
-
-    LogFlowThisFunc(("aTimeoutMS=%RU32\n", mData.mTimeout));
-    return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-#endif
 
 STDMETHODIMP GuestSession::SymlinkCreate(IN_BSTR aSource, IN_BSTR aTarget, SymlinkType_T aType)
 {
