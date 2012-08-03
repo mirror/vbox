@@ -4594,7 +4594,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 
                     if ((u64ResetTimeStop - pCtl->u64ResetTime) >= 10)
                     {
-                        LogRel(("PIIX3 ATA: Async I/O thread probably stuck in operation, interrupting\n"));
+                        LogRel(("PIIX3 ATA LUN#%d: Async I/O thread probably stuck in operation, interrupting\n", s->iLUN));
                         pCtl->u64ResetTime = u64ResetTimeStop;
                         RTThreadPoke(pCtl->AsyncIOThread);
                     }
@@ -6003,7 +6003,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     else
     {
         /* Reads from the other command block registers should be 8-bit only.
-         * If they are not, the low byte is propagated to the high bits. 
+         * If they are not, the low byte is propagated to the high bits.
          * Undocumented, but observed on a real PIIX4 system.
          */
         rc = ataIOPortReadU8(pCtl, Port, pu32);
