@@ -548,6 +548,19 @@
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
+%define X86DESCGENERIC_BIT_OFF_LIMIT_LOW        (0)
+%define X86DESCGENERIC_BIT_OFF_BASE_LOW         (16)
+%define X86DESCGENERIC_BIT_OFF_BASE_HIGH1       (32)
+%define X86DESCGENERIC_BIT_OFF_TYPE             (40)
+%define X86DESCGENERIC_BIT_OFF_DESC_TYPE        (44)
+%define X86DESCGENERIC_BIT_OFF_DPL              (45)
+%define X86DESCGENERIC_BIT_OFF_PRESENT          (47)
+%define X86DESCGENERIC_BIT_OFF_LIMIT_HIGH       (48)
+%define X86DESCGENERIC_BIT_OFF_AVAILABLE        (52)
+%define X86DESCGENERIC_BIT_OFF_LONG             (53)
+%define X86DESCGENERIC_BIT_OFF_DEF_BIG          (54)
+%define X86DESCGENERIC_BIT_OFF_GRANULARITY      (55)
+%define X86DESCGENERIC_BIT_OFF_BASE_HIGH2       (56)
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
@@ -575,6 +588,7 @@
 %define X86_SEL_TYPE_CONF                   4
 %define X86_SEL_TYPE_WRITE                  2
 %define X86_SEL_TYPE_READ                   2
+%define X86_SEL_TYPE_READ_BIT               1
 %define X86_SEL_TYPE_RO                     0
 %define X86_SEL_TYPE_RO_ACC                (0 | X86_SEL_TYPE_ACCESSED)
 %define X86_SEL_TYPE_RW                     2
