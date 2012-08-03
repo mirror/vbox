@@ -28,6 +28,8 @@
 #include "AutoCaller.h"
 #include "ProgressImpl.h"
 
+#include <memory> /* For auto_ptr. */
+
 #include <iprt/env.h>
 
 #include <VBox/com/array.h>
@@ -87,7 +89,8 @@ int GuestSessionTask::setProgressSuccess(void)
         && !fCompleted)
     {
         HRESULT hr = mProgress->notifyComplete(S_OK);
-        ComAssertComRC(hr);
+        if (FAILED(hr))
+            return VERR_COM_UNEXPECTED; /** @todo Find a better rc. */
     }
 
     return VINF_SUCCESS;
@@ -102,11 +105,11 @@ int GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
         && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
         && !fCompleted)
     {
-        HRESULT hr = mProgress->notifyComplete(hr,
+        HRESULT hr2 = mProgress->notifyComplete(hr,
                                                COM_IIDOF(IGuestSession),
                                                GuestSession::getStaticComponentName(),
                                                strMsg.c_str());
-        if (FAILED(hr))
+        if (FAILED(hr2))
             return VERR_COM_UNEXPECTED;
     }
     return VINF_SUCCESS;
