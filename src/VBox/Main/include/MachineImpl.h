@@ -672,12 +672,11 @@ public:
     };
 
     /**
-     * Checks if this machine is accessible, without attempting to load the
-     * config file.
+     * Returns various information about this machine.
      *
-     * @note This method doesn't check this object's readiness. Intended to be
-     * used by ready Machine children (whose readiness is bound to the parent's
-     * one) or after doing addCaller() manually.
+     * @note This method doesn't lock this object or check its readiness.
+     * Intended to be used only after doing addCaller() manually and locking it
+     * for reading.
      */
     ChipsetType_T getChipsetType() const { return mHWData->mChipsetType; }
 
@@ -687,6 +686,8 @@ public:
     bool isStateModificationAllowed() const { return mData->m_fAllowStateModification; }
     void allowStateModification()           { mData->m_fAllowStateModification = true; }
     void disallowStateModification()        { mData->m_fAllowStateModification = false; }
+
+    const StringsList &getGroups() const { return mUserData->s.llGroups; }
 
     // callback handlers
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }

@@ -984,13 +984,11 @@ VirtualBox::COMGETTER(MachineGroups)(ComSafeArrayOut(BSTR, aMachineGroups))
 
         if (pMachine->isAccessible())
         {
-            SafeArray<BSTR> thisGroups;
-            HRESULT rc = pMachine->COMGETTER(Groups)(ComSafeArrayAsOutParam(thisGroups));
-            if (FAILED(rc))
-                continue;
-
-            for (size_t i = 0; i < thisGroups.size(); i++)
-                allGroups.push_back(thisGroups[i]);
+            const StringsList &thisGroups = pMachine->getGroups();
+            for (StringsList::const_iterator it2 = thisGroups.begin();
+                 it2 != thisGroups.end();
+                 ++it2)
+                allGroups.push_back(*it2);
         }
     }
 
@@ -1721,6 +1719,76 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aNameOrId, IMachine **aMachine)
     LogFlowThisFuncLeave();
 
     return rc;
+}
+
+STDMETHODIMP VirtualBox::GetMachinesByGroups(ComSafeArrayIn(IN_BSTR, aGroups), ComSafeArrayOut(IMachine *, aMachines))
+{
+    CheckComArgSafeArrayNotNull(aGroups);
+    CheckComArgOutSafeArrayPointerValid(aMachines);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    StringsList llGroups;
+    HRESULT rc = convertMachineGroups(ComSafeArrayInArg(aGroups), &llGroups);
+    if (FAILED(rc))
+        return rc;
+    /* we want to rely on sorted groups during compare, to save time */
+    llGroups.sort();
+
+    /* get copy of all machine references, to avoid holding the list lock */
+    MachinesOList::MyList allMachines;
+    {
+        AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+        allMachines = m->allMachines.getList();
+    }
+
+    com::SafeIfaceArray<IMachine> saMachines;
+    for (MachinesOList::MyList::const_iterator it = allMachines.begin();
+         it != allMachines.end();
+         ++it)
+    {
+        const ComObjPtr<Machine> &pMachine = *it;
+        AutoCaller autoMachineCaller(pMachine);
+        if (FAILED(autoMachineCaller.rc()))
+            continue;
+        AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
+
+        if (pMachine->isAccessible())
+        {
+            const StringsList &thisGroups = pMachine->getGroups();
+            for (StringsList::const_iterator it2 = thisGroups.begin();
+                 it2 != thisGroups.end();
+                 ++it2)
+            {
+                const Utf8Str &group = *it2;
+                bool fAppended = false;
+                for (StringsList::const_iterator it3 = llGroups.begin();
+                     it3 != llGroups.end();
+                     ++it3)
+                {
+                    int order = it3->compare(group);
+                    if (order == 0)
+                    {
+                        saMachines.push_back(pMachine);
+                        fAppended = true;
+                        break;
+                    }
+                    else if (order > 0)
+                        break;
+                    else
+                        continue;
+                }
+                /* avoid duplicates and save time */
+                if (fAppended)
+                    break;
+            }
+        }
+    }
+
+    saMachines.detachTo(ComSafeArrayOutArg(aMachines));
+
+    return S_OK;
 }
 
 STDMETHODIMP VirtualBox::GetMachineStates(ComSafeArrayIn(IMachine *, aMachines), ComSafeArrayOut(MachineState_T, aStates))

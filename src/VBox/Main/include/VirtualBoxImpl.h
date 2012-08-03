@@ -136,6 +136,7 @@ public:
     STDMETHOD(OpenMachine)(IN_BSTR aSettingsFile, IMachine **aMachine);
     STDMETHOD(RegisterMachine)(IMachine *aMachine);
     STDMETHOD(FindMachine)(IN_BSTR aNameOrId, IMachine **aMachine);
+    STDMETHOD(GetMachinesByGroups)(ComSafeArrayIn(IN_BSTR, aGroups), ComSafeArrayOut(IMachine *, aMachines));
     STDMETHOD(GetMachineStates)(ComSafeArrayIn(IMachine *, aMachines), ComSafeArrayOut(MachineState_T, aStates));
     STDMETHOD(CreateAppliance)(IAppliance **anAppliance);
 
