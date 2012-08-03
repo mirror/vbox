@@ -78,6 +78,9 @@
 #define VMMDEV_TESTING_CMD_VALUE        UINT32_C(0xcab1e005)
 /** Report a failure, sending reason (zero terminated string). (RTTestSkipped) */
 #define VMMDEV_TESTING_CMD_SKIPPED      UINT32_C(0xcab1e006)
+/** Report a value found in a VMM register, sending a string on the form
+ * "value-name:register-name". */
+#define VMMDEV_TESTING_CMD_VALUE_REG    UINT32_C(0xcab1e007)
 /** @} */
 
 /** @name Value units
