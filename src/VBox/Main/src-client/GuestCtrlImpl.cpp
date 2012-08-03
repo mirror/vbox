@@ -2859,7 +2859,7 @@ STDMETHODIMP Guest::FindSession(IN_BSTR aSessionName, ComSafeArrayOut(IGuestSess
     GuestSessions::const_iterator itSessions = mData.mGuestSessions.begin();
     while (itSessions != mData.mGuestSessions.end())
     {
-        if (strName.equals(itSessions->second->getName()))
+        if (strName.contains(itSessions->second->getName())) /** @todo Use a (simple) pattern match (IPRT?). */
             listSessions.push_back(itSessions->second);
         itSessions++;
     }

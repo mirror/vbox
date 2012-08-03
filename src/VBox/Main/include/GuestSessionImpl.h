@@ -30,7 +30,85 @@
 class Guest;
 
 /**
- * TODO
+ * Abstract base class for a lenghtly per-session operation which
+ * runs in a Main worker thread.
+ */
+class GuestSessionTask
+{
+public:
+
+    GuestSessionTask(GuestSession *pSession, Progress *pProgress);
+
+    virtual ~GuestSessionTask(void);
+
+public:
+
+    virtual int Run(void) = 0;
+    virtual int RunAsync(const Utf8Str &strDesc) = 0;
+
+    int setProgress(unsigned uPercent);
+    int setProgressSuccess(void);
+    int setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
+
+protected:
+
+    Utf8Str                 mDesc;
+    ComObjPtr<GuestSession> mSession;
+    ComObjPtr<Progress>     mProgress;
+};
+
+/**
+ * Task for copying files from host to the guest.
+ */
+class SessionTaskCopyTo : public GuestSessionTask
+{
+public:
+
+    SessionTaskCopyTo(GuestSession *pSession, Progress *pProgress,
+                      const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
+
+    virtual ~SessionTaskCopyTo(void);
+
+public:
+
+    int Run(void);
+    int RunAsync(const Utf8Str &strDesc);
+    static int taskThread(RTTHREAD Thread, void *pvUser);
+
+protected:
+
+    Utf8Str  mSource;
+    Utf8Str  mDest;
+    uint32_t mFlags;
+};
+
+/**
+ * Task for copying files from guest to the host.
+ */
+class SessionTaskCopyFrom : public GuestSessionTask
+{
+public:
+
+    SessionTaskCopyFrom(GuestSession *pSession, Progress *pProgress,
+                        const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
+
+    virtual ~SessionTaskCopyFrom(void);
+
+public:
+
+    int Run(void);
+    int RunAsync(const Utf8Str &strDesc);
+    static int taskThread(RTTHREAD Thread, void *pvUser);
+
+protected:
+
+    Utf8Str  mSource;
+    Utf8Str  mDest;
+    uint32_t mFlags;
+};
+
+/**
+ * Guest session implementation.
  */
 class ATL_NO_VTABLE GuestSession :
     public VirtualBoxBase,
@@ -71,8 +149,8 @@ public:
     /** @name IGuestSession methods.
      * @{ */
     STDMETHOD(Close)(void);
-    STDMETHOD(CopyFrom)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress);
-    STDMETHOD(CopyTo)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(ULONG, aFlags), IProgress **aProgress);
+    STDMETHOD(CopyFrom)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(CopyFileFlag_T, aFlags), IProgress **aProgress);
+    STDMETHOD(CopyTo)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(CopyFileFlag_T, aFlags), IProgress **aProgress);
     STDMETHOD(DirectoryCreate)(IN_BSTR aPath, ULONG aMode, ComSafeArrayIn(DirectoryCreateFlag_T, aFlags), IGuestDirectory **aDirectory);
     STDMETHOD(DirectoryCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestDirectory **aDirectory);
     STDMETHOD(DirectoryExists)(IN_BSTR aPath, BOOL *aExists);
@@ -136,6 +214,7 @@ public:
     int                     processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
+    int                     startTaskAsync(const Utf8Str &strTaskDesc, GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress);
     int                     queryInfo(void);
     /** @}  */
 
