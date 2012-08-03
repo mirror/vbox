@@ -182,7 +182,7 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         case MachineItemData_NameSize:
         {
             QFontMetrics fm(data(MachineItemData_NameFont).value<QFont>());
-            return QSize(fm.width(data(MachineItemData_Name).toString()), fm.height());
+            return QSize(fm.width(data(MachineItemData_Name).toString()) + 1, fm.height());
         }
         case MachineItemData_MinimumSnapshotNameSize:
         {
@@ -195,7 +195,7 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         case MachineItemData_SnapshotNameSize:
         {
             QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>());
-            return QSize(fm.width(QString("(%1)").arg(data(MachineItemData_SnapshotName).toString())), fm.height());
+            return QSize(fm.width(QString("(%1)").arg(data(MachineItemData_SnapshotName).toString())) + 1, fm.height());
         }
         case MachineItemData_FirstRowMaximumWidth:
         {
@@ -218,7 +218,7 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         case MachineItemData_StateTextSize:
         {
             QFontMetrics fm(data(MachineItemData_StateTextFont).value<QFont>());
-            return QSize(fm.width(data(MachineItemData_StateText).toString()), fm.height());
+            return QSize(fm.width(data(MachineItemData_StateText).toString()) + 1, fm.height());
         }
         case MachineItemData_ToolBarSize:
         {
