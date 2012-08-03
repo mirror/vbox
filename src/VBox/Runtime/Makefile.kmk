@@ -1025,7 +1025,7 @@ RuntimeR3L4_SOURCES = \
 # Note! This is a bit of hacky since kBuild doesn't support building libraries
 #       for build programs.
 #
-RuntimeBldProg_TEMPLATE         := VBOXBLDPROG
+RuntimeBldProg_TEMPLATE         := VBoxAdvBldProg
 RuntimeBldProg_EXTENDS          := RuntimeR3
 RuntimeBldProg_BLD_TRG          := $(KBUILD_HOST)
 RuntimeBldProg_BLD_TRG_ARCH     := $(KBUILD_HOST_ARCH)
@@ -1037,7 +1037,7 @@ RuntimeBldProg_BLD_TRG_CPU      := $(KBUILD_HOST_CPU)
 # (The KBUILD_HOST inheritance here is for l4 cross building the linux
 # additions, while .x86 is for cross building x86 while targeting amd64.)
 #
-RuntimeGuestR3_TEMPLATE                 := VBOXGUESTR3LIB
+RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 ## @todo change this to EXTEND the RuntimeR3 target.
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP, $(RuntimeR3_DEFS))
@@ -1073,14 +1073,14 @@ RuntimeGuestR3_SOURCES.win.x86               += \
 #
 # RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.
 #
-RuntimeGuestR3-x86_EXTENDS           	:= RuntimeGuestR3
+RuntimeGuestR3-x86_EXTENDS              := RuntimeGuestR3
 RuntimeGuestR3-x86_BLD_TRG_ARCH         := x86
 
 
 #
 # RuntimeGuestR3Shared - Guest Additions Runtime (static/dll).
 #
-RuntimeGuestR3Shared_TEMPLATE           := VBOXGUESTR3DLL
+RuntimeGuestR3Shared_TEMPLATE           := VBoxGuestR3Dll
 RuntimeGuestR3Shared_EXTENDS            := RuntimeGuestR3
 RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
 
@@ -1088,8 +1088,8 @@ RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
 #
 # RuntimeGuestR3Shared-x86 - Same as RuntimeGuestR3Shared, except that it's targeting x86.
 #
-RuntimeGuestR3Shared-x86_EXTENDS           	:= RuntimeGuestR3Shared
-RuntimeGuestR3Shared-x86_BLD_TRG_ARCH         := x86
+RuntimeGuestR3Shared-x86_EXTENDS        := RuntimeGuestR3Shared
+RuntimeGuestR3Shared-x86_BLD_TRG_ARCH   := x86
 
 
 #
@@ -1097,7 +1097,7 @@ RuntimeGuestR3Shared-x86_BLD_TRG_ARCH         := x86
 #                      initialization and can be linked into an .so. Intended
 #                      for X11 drivers, GRADD and similar.
 #
-RuntimeGuestR3Mini_TEMPLATE                 := VBOXGUESTR3DLL
+RuntimeGuestR3Mini_TEMPLATE                 := VBoxGuestR3Dll
 ## @todo change this to EXTEND the RuntimeGuestR3 target.
 RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
 RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
