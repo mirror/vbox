@@ -85,6 +85,7 @@ public:
     /* API: Children stuff: */
     virtual void addItem(UIGChooserItem *pItem, int iPosition) = 0;
     virtual void removeItem(UIGChooserItem *pItem) = 0;
+    virtual void setItems(const QList<UIGChooserItem*> &items, UIGChooserItemType type) = 0;
     virtual QList<UIGChooserItem*> items(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual bool hasItems(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual void clearItems(UIGChooserItemType type = UIGChooserItemType_Any) = 0;

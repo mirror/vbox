@@ -97,6 +97,7 @@ private:
     /* Helpers: Children stuff: */
     void addItem(UIGChooserItem *pItem, int iPosition);
     void removeItem(UIGChooserItem *pItem);
+    void setItems(const QList<UIGChooserItem*> &items, UIGChooserItemType type);
     QList<UIGChooserItem*> items(UIGChooserItemType type) const;
     bool hasItems(UIGChooserItemType type) const;
     void clearItems(UIGChooserItemType type);

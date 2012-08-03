@@ -189,7 +189,8 @@ private:
     UIAction *m_pActionGroupLogDialog;
     UIAction *m_pActionGroupShowInFileManager;
     UIAction *m_pActionGroupCreateShortcut;
-//    UIAction *m_pActionGroupSort;
+    UIAction *m_pActionGroupSortParent;
+    UIAction *m_pActionGroupSort;
 
     /* 'Machine' menu action pointers: */
     QList<UIAction*> m_machineActions;
@@ -209,7 +210,7 @@ private:
     UIAction *m_pActionMachineLogDialog;
     UIAction *m_pActionMachineShowInFileManager;
     UIAction *m_pActionMachineCreateShortcut;
-//    UIAction *m_pActionMachineSort;
+    UIAction *m_pActionMachineSortParent;
 
     /* 'Machine / Close' menu action pointers: */
     UIAction *m_pMachineCloseMenuAction;

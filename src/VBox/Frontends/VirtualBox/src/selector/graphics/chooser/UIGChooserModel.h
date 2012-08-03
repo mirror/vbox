@@ -176,6 +176,10 @@ private slots:
     void sltRightRootSlidingProgress();
     void sltSlidingComplete();
 
+    /* Handlers: Sorting stuff: */
+    void sltSortParentGroup();
+    void sltSortGroup();
+
 private:
 
     /* Data enumerator: */
@@ -256,6 +260,9 @@ private:
     /* Helpers: Remove stuff: */
     void removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems);
     void unregisterMachines(const QStringList &names);
+
+    /* Helper: Sorting stuff: */
+    void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
 
     /* Variables: */
     QGraphicsScene *m_pScene;

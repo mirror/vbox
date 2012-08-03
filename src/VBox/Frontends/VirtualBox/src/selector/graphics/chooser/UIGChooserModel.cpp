@@ -768,6 +768,18 @@ void UIGChooserModel::sltSlidingComplete()
     }
 }
 
+void UIGChooserModel::sltSortParentGroup()
+{
+    if (!selectionList().isEmpty())
+        sortItems(selectionList().first()->parentItem());
+}
+
+void UIGChooserModel::sltSortGroup()
+{
+    if (singleGroupSelected())
+        sortItems(selectionList().first());
+}
+
 QVariant UIGChooserModel::data(int iKey) const
 {
     switch (iKey)
@@ -813,8 +825,9 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuGroup->addSeparator();
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_ShowInFileManager));
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_CreateShortcut));
-//    m_pContextMenuGroup->addSeparator();
-//    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Sort));
+    m_pContextMenuGroup->addSeparator();
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Sort));
 
     /* Context menu for machine(s): */
     m_pContextMenuMachine = new QMenu;
@@ -834,8 +847,8 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuMachine->addSeparator();
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_ShowInFileManager));
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_CreateShortcut));
-//    m_pContextMenuMachine->addSeparator();
-//    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_Sort));
+    m_pContextMenuMachine->addSeparator();
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent));
 
     connect(m_pContextMenuRoot, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
     connect(m_pContextMenuGroup, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
@@ -849,6 +862,10 @@ void UIGChooserModel::prepareContextMenu()
             this, SLOT(sltAddGroupBasedOnChosenItems()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_RemoveDialog), SIGNAL(triggered()),
             this, SLOT(sltRemoveCurrentlySelectedMachine()));
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent), SIGNAL(triggered()),
+            this, SLOT(sltSortParentGroup()));
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Sort), SIGNAL(triggered()),
+            this, SLOT(sltSortGroup()));
 }
 
 void UIGChooserModel::prepareHandlers()
@@ -1603,5 +1620,28 @@ void UIGChooserModel::unregisterMachines(const QStringList &names)
             }
         }
     }
+}
+
+void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = false */)
+{
+    /* Sort group items: */
+    QMap<QString, UIGChooserItem*> sorter;
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
+    {
+        sorter.insert(pItem->name().toLower(), pItem);
+        if (fRecursively)
+            sortItems(pItem, fRecursively);
+    }
+    pParent->setItems(sorter.values(), UIGChooserItemType_Group);
+
+    /* Sort machine items: */
+    sorter.clear();
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
+        sorter.insert(pItem->name().toLower(), pItem);
+    pParent->setItems(sorter.values(), UIGChooserItemType_Machine);
+
+    /* Update model: */
+    updateNavigation();
+    updateLayout();
 }
 

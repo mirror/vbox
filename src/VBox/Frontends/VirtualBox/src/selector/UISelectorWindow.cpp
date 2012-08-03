@@ -1115,8 +1115,10 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     m_pActionGroupCreateShortcut = gActionPool->action(UIActionIndexSelector_Simple_Group_CreateShortcut);
     pMenu->addAction(m_pActionGroupCreateShortcut);
     pMenu->addSeparator();
-//    m_pActionGroupSort = gActionPool->action(UIActionIndexSelector_Simple_Group_Sort);
-//    pMenu->addAction(m_pActionGroupSort);
+    m_pActionGroupSortParent = gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent);
+    pMenu->addAction(m_pActionGroupSortParent);
+    m_pActionGroupSort = gActionPool->action(UIActionIndexSelector_Simple_Group_Sort);
+    pMenu->addAction(m_pActionGroupSort);
 
     /* Remember action list: */
     m_groupActions << m_pActionGroupNewWizard << m_pActionGroupAddDialog
@@ -1124,7 +1126,7 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
                    << m_pActionGroupStartOrShow << m_pActionGroupPauseAndResume
                    << m_pActionGroupReset << m_pActionGroupRefresh
                    << m_pActionGroupLogDialog << m_pActionGroupShowInFileManager
-                   << m_pActionGroupCreateShortcut /* << m_pActionGroupSort */;
+                   << m_pActionGroupCreateShortcut << m_pActionGroupSort;
 }
 
 void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
@@ -1167,8 +1169,8 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     m_pActionMachineCreateShortcut = gActionPool->action(UIActionIndexSelector_Simple_Machine_CreateShortcut);
     pMenu->addAction(m_pActionMachineCreateShortcut);
     pMenu->addSeparator();
-//    m_pActionMachineSort = gActionPool->action(UIActionIndexSelector_Simple_Machine_Sort);
-//    pMenu->addAction(m_pActionMachineSort);
+    m_pActionMachineSortParent = gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent);
+    pMenu->addAction(m_pActionMachineSortParent);
 
     /* Remember action list: */
     m_machineActions << m_pActionMachineNewWizard << m_pActionMachineAddDialog
@@ -1178,7 +1180,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
                      << m_pActionMachineDiscard << m_pActionMachinePauseAndResume
                      << m_pActionMachineReset << m_pActionMachineRefresh
                      << m_pActionMachineLogDialog << m_pActionMachineShowInFileManager
-                     << m_pActionMachineCreateShortcut /* << m_pActionMachineSort */;
+                     << m_pActionMachineCreateShortcut;
 }
 
 void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
@@ -1521,7 +1523,8 @@ void UISelectorWindow::updateActionsAppearance()
     m_pActionGroupLogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
     m_pActionGroupShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_ShowInFileManager, items));
     m_pActionGroupCreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_CreateShortcut, items));
-//    m_pActionGroupSort->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Sort, items));
+    m_pActionGroupSortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_SortParent, items));
+    m_pActionGroupSort->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Sort, items));
 
     /* Enable/disable machine actions: */
     m_pActionMachineSettingsDialog->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SettingsDialog, items));
@@ -1536,7 +1539,7 @@ void UISelectorWindow::updateActionsAppearance()
     m_pActionMachineLogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
     m_pActionMachineShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, items));
     m_pActionMachineCreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, items));
-//    m_pActionMachineSort->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Sort, items));
+    m_pActionMachineSortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_SortParent, items));
 
     /* Enable/disable machine-close actions: */
     m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
@@ -1757,12 +1760,12 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndex_Simple_LogDialog:
         case UIActionIndexSelector_Simple_Group_ShowInFileManager:
         case UIActionIndexSelector_Simple_Machine_ShowInFileManager:
-//        case UIActionIndexSelector_Simple_Group_Sort:
-//        case UIActionIndexSelector_Simple_Machine_Sort:
-//        {
-//            /* Make sure all items are accessible: */
-//            return isItemsAccessible(items);
-//        }
+        case UIActionIndexSelector_Simple_Common_SortParent:
+        case UIActionIndexSelector_Simple_Group_Sort:
+        {
+            /* Make sure all items are accessible: */
+            return items.size() > 0 && isItemsAccessible(items);
+        }
         case UIActionIndexSelector_Simple_Group_CreateShortcut:
         case UIActionIndexSelector_Simple_Machine_CreateShortcut:
         {

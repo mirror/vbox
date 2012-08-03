@@ -431,11 +431,11 @@ protected:
     void retranslateUi()
     {
 #if defined(Q_WS_MAC)
-        setText(QApplication::translate("UIActionPool", "Create Alias on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Creates an Alias file to the VirtualBox Machine Definition file on your Desktop."));
+        setText(QApplication::translate("UIActionPool", "Create alias on desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Creates an alias file to the VirtualBox Machine Definition file on your desktop."));
 #else
-        setText(QApplication::translate("UIActionPool", "Create Shortcut on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
+        setText(QApplication::translate("UIActionPool", "Create shortcut on desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Creates an shortcut file to the VirtualBox Machine Definition file on your desktop."));
 #endif
         setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
     }
@@ -457,9 +457,9 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Sort List"));
-        setStatusTip(QApplication::translate("UIActionPool", "Sort the VM list alphabetically (Shift for descending order)"));
-        setShortcut(gSS->keySequence(UISelectorShortcuts::ResortVMList));
+        setText(QApplication::translate("UIActionPool", "Sort group"));
+        setStatusTip(QApplication::translate("UIActionPool", "Sort the items of the selected group alphabetically"));
+        setShortcut(gSS->keySequence(UISelectorShortcuts::SortGroup));
     }
 };
 
@@ -822,13 +822,13 @@ protected:
     }
 };
 
-class UIActionSimpleMachineSort : public UIActionSimple
+class UIActionSimpleCommonSortParent : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleMachineSort(QObject *pParent)
+    UIActionSimpleCommonSortParent(QObject *pParent)
         : UIActionSimple(pParent/*, ":/settings_16px.png", ":/settings_dis_16px.png"*/)
     {
         retranslateUi();
@@ -838,9 +838,9 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Sort List"));
-        setStatusTip(QApplication::translate("UIActionPool", "Sort the VM list alphabetically (Shift for descending order)"));
-        setShortcut(gSS->keySequence(UISelectorShortcuts::ResortVMList));
+        setText(QApplication::translate("UIActionPool", "Sort parent group"));
+        setStatusTip(QApplication::translate("UIActionPool", "Sort the parent group of the first selected item alphabetically"));
+        setShortcut(gSS->keySequence(UISelectorShortcuts::SortParentGroup));
     }
 };
 
@@ -976,7 +976,9 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Simple_Machine_Refresh] = new UIActionSimpleMachineRefresh(this);
     m_pool[UIActionIndexSelector_Simple_Machine_ShowInFileManager] = new UIActionSimpleMachineShowInFileManager(this);
     m_pool[UIActionIndexSelector_Simple_Machine_CreateShortcut] = new UIActionSimpleMachineCreateShortcut(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Sort] = new UIActionSimpleMachineSort(this);
+
+    /* Common actions: */
+    m_pool[UIActionIndexSelector_Simple_Common_SortParent] = new UIActionSimpleCommonSortParent(this);
 
     /* 'Machine/Close' actions: */
     m_pool[UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown] = new UIActionSimpleACPIShutdown(this);
