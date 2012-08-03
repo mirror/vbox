@@ -1169,8 +1169,8 @@ int UIGChooserModel::positionFromDefinitions(UIGChooserItem *pParentItem, UIGCho
             strDefinitionTemplateFull = QString("^g(\\S)*=%1$").arg(strName);
             break;
         case UIGChooserItemType_Machine:
-            strDefinitionTemplateShort = QString("m=");
-            strDefinitionTemplateFull = QString("m=%1").arg(strName);
+            strDefinitionTemplateShort = QString("^m=");
+            strDefinitionTemplateFull = QString("^m=%1$").arg(strName);
             break;
         default: return -1;
     }
