@@ -3101,7 +3101,8 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 (void)RTFsQueryType(utfSnap.c_str(), &enmFsTypeSnap);
                 if (!mfSnapshotFolderDiskTypeShown)
                 {
-                    LogRel(("File system of '%s' (snapshots) is %s\n", utfSnap.c_str(), RTFsTypeName(enmFsTypeSnap)));
+                    LogRel(("File system of '%s' (snapshots) is %s\n",
+                            utfSnap.c_str(), RTFsTypeName(enmFsTypeSnap)));
                     mfSnapshotFolderDiskTypeShown = true;
                 }
                 LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
@@ -3246,6 +3247,30 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                     }
                 }
 #endif
+            }
+        }
+        
+        if (   pMedium
+            && (   lType == DeviceType_DVD
+                || lType == DeviceType_Floppy))
+        {
+            /*
+             * Informative logging.
+             */
+            ComPtr<IMediumFormat> pMediumFormat;
+            hrc = pMedium->COMGETTER(MediumFormat)(pMediumFormat.asOutParam());             H();
+            ULONG uCaps;
+            hrc = pMediumFormat->COMGETTER(Capabilities)(&uCaps);                           H();
+            if (uCaps & MediumFormatCapabilities_File)
+            {
+                Bstr strFile;
+                hrc = pMedium->COMGETTER(Location)(strFile.asOutParam());                   H();
+                Utf8Str utfFile = Utf8Str(strFile);
+                RTFSTYPE enmFsTypeFile = RTFSTYPE_UNKNOWN;
+                (void)RTFsQueryType(utfFile.c_str(), &enmFsTypeFile);
+                LogRel(("File system of '%s' (%s) is %s\n",
+                       utfFile.c_str(), lType == DeviceType_DVD ? "DVD" : "Floppy",
+                       RTFsTypeName(enmFsTypeFile)));
             }
         }
 
