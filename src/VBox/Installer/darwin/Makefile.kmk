@@ -658,6 +658,8 @@ VBOX_DI_VBAPP_MISC_FILES = \
 	Resources/VirtualBoxVM.app/Contents/PkgInfo \
 	Resources/vmstarter.app/Contents/Info.plist \
 	Resources/vmstarter.app/Contents/PkgInfo \
+	Info.plist \
+	PkgInfo \
 	Resources/virtualbox.icns \
 	Resources/virtualbox.png \
 	Resources/virtualbox-vbox.icns \
@@ -668,8 +670,6 @@ VBOX_DI_VBAPP_MISC_FILES = \
 	Resources/virtualbox-vmdk.icns \
 	Resources/virtualbox-vhd.icns \
 	Resources/virtualbox-hdd.icns \
-	Info.plist \
-	PkgInfo \
 	MacOS/components/VBoxXPCOMBase.xpt \
 	MacOS/components/VirtualBox_XPCOM.xpt
 ifdef VBOX_WITH_DOCS_PACKING
@@ -696,9 +696,9 @@ endif
 
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
-	Resources/VirtualBoxVM.app/Contents/Resources/virtualbox.icns=>../../../virtualbox.icns \
+	Resources/VirtualBoxVM.app/Contents/Resources=>../../../Resources/ \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
-	Resources/vmstarter.app/Contents/Resources/virtualbox.icns=>../../../virtualbox.icns \
+	Resources/vmstarter.app/Contents/Resources=>../../../Resources/ \
 	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod))
 ifdef VBOX_WITH_COCOA_QT
 VBOX_DI_VBAPP_SYMLINKS += \
@@ -784,10 +784,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents \
-		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/Resources \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/vmstarter.app \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/vmstarter.app/Contents \
-		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/vmstarter.app/Contents/Resources \
 		$(if-expr defined(VBOX_WITH_PYTHON), \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/sdk \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/sdk/installer \
@@ -808,8 +806,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		)
 	@# Create the .lproj language directories
 	$(MKDIR) -p -m 0755 \
-		$(addprefix $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/,$(VBOX_INSTALL_LANG_LPROJ)) \
-		$(addprefix $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/Resources/,$(VBOX_INSTALL_LANG_LPROJ))
+		$(addprefix $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/,$(VBOX_INSTALL_LANG_LPROJ))
 	@# Install all supported language files
 	$(foreach f, $(VBOX_INSTALL_LANG_FILES) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/nls/$(f)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/nls/$(f)$(NLTAB))
@@ -837,8 +834,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(foreach f,$(VBOX_DI_VBAPP_MISC_FILES.amd64) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(f)           $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(f)$(NLTAB) )
 endif
-	$(INSTALL) -m 644 $(VBOX_BRAND_LICENSE_TXT)                                             $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/LICENSE
-	$(INSTALL) -m 644 $(VBOX_BRAND_LICENSE_TXT)                                             $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/Resources/LICENSE
+	$(INSTALL) -m 644 $(VBOX_BRAND_LICENSE_TXT)			                                $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/LICENSE
 ifdef VBOX_WITH_DOCS_PACKING
 	$(foreach f,$(VBOX_ADD_MANUALS) \
 		,$(INSTALL) -m 0644 $(f) $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(NLTAB))
