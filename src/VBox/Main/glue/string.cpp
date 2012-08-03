@@ -240,4 +240,45 @@ HRESULT Utf8Str::copyFromEx(CBSTR a_pbstr)
     return S_OK;
 }
 
+
+/**
+ * A variant of Utf8Str::copyFromN that does not throw any exceptions but
+ * returns E_OUTOFMEMORY instead.
+ *
+ * @param   a_pcszSrc   The source string.
+ * @param   a_cchSrc    The source string.
+ * @returns S_OK or E_OUTOFMEMORY.
+ *
+ * @remarks This calls cleanup() first, so the caller doesn't have to. (Saves
+ *          code space.)
+ */
+HRESULT Utf8Str::copyFromExNComRC(const char *a_pcszSrc, size_t a_cchSrc)
+{
+    cleanup();
+    if (a_cchSrc)
+    {
+        m_psz = RTStrAlloc(a_cchSrc + 1);
+        if (RT_LIKELY(m_psz))
+        {
+            m_cch = a_cchSrc;
+            m_cbAllocated = a_cchSrc + 1;
+            memcpy(m_psz, a_pcszSrc, a_cchSrc);
+            m_psz[a_cchSrc] = '\0';
+        }
+        else
+        {
+            m_cch = 0;
+            m_cbAllocated = 0;
+            return E_OUTOFMEMORY;
+        }
+    }
+    else
+    {
+        m_cch = 0;
+        m_cbAllocated = 0;
+        m_psz = NULL;
+    }
+    return S_OK;
+}
+
 } /* namespace com */
