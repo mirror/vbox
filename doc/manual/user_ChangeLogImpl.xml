@@ -13,7 +13,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: VM groups</para>
+        <para>GUI: VM groups (bug #288)</para>
       </listitem>
 
       <listitem>
@@ -36,13 +36,13 @@
 
        <listitem>
          <para>Added possibility to start VMs during system boot on Linux,
-           OS X and Solaris; see <xref linkend="autostart" /></para>
+           OS X and Solaris; see <xref linkend="autostart" /> (bug #950)</para>
        </listitem>
 
        <listitem>
          <para>Added experimental support for Drag'n'drop from the host to
            Linux guests. Support for more guests and for guest-to-host is
-           planned.</para>
+           planned. (bug #81)</para>
        </listitem>
 
     </itemizedlist>
@@ -80,7 +80,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: allow taking screenshots of the current VM window content</para>
+        <para>GUI: allow taking screenshots of the current VM window content (bug #5561)</para>
       </listitem>
 
       <listitem>
@@ -129,7 +129,7 @@
       </listitem>
 
       <listitem>
-        <para>E1000: 802.1q VLAN support</para>
+        <para>E1000: 802.1q VLAN support (bug #10429)</para>
       </listitem>
 
        <listitem>
