@@ -31,6 +31,7 @@
 #include <memory> /* For auto_ptr. */
 
 #include <iprt/env.h>
+#include <iprt/file.h> /* For CopyTo/From. */
 
 #include <VBox/com/array.h>
 #include <VBox/version.h>
@@ -131,7 +132,210 @@ SessionTaskCopyTo::~SessionTaskCopyTo(void)
 
 int SessionTaskCopyTo::Run(void)
 {
-    return 0;
+    LogFlowThisFuncEnter();
+
+    ComObjPtr<GuestSession> pSession = mSession;
+    Assert(!pSession.isNull());
+
+    AutoCaller autoCaller(pSession);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    int rc;
+
+    /** @todo Make use of exception (+ finally block) here! */
+
+    try
+    {
+        /* Does our source file exist? */
+        if (!RTFileExists(mSource.c_str()))
+        {
+            rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                     Utf8StrFmt(GuestSession::tr("Source file \"%s\" does not exist or is not a file"),
+                                     mSource.c_str()));
+        }
+        else
+        {
+            RTFILE fileSource;
+            rc = RTFileOpen(&fileSource, mSource.c_str(),
+                            RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+            if (RT_FAILURE(rc))
+            {
+                rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                         Utf8StrFmt(GuestSession::tr("Could not open source file \"%s\" for reading (%Rrc)"),
+                                         mSource.c_str(), rc));
+            }
+            else
+            {
+                uint64_t cbFileSize;
+                rc = RTFileGetSize(fileSource, &cbFileSize);
+                if (RT_FAILURE(rc))
+                {
+                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                        Utf8StrFmt(GuestSession::tr("Could not query file size of \"%s\" (%Rrc)"),
+                                        mSource.c_str(), rc));
+                }
+                else
+                {
+                    GuestProcessInfo procInfo;
+                    procInfo.mName    = Utf8StrFmt(GuestSession::tr("Copying file \"%s\" to the guest to \"%s\" (%RU64 bytes)"),
+                                                                    mSource.c_str(), mDest.c_str(), cbFileSize);
+                    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_CAT);
+                    procInfo.mFlags   = ProcessCreateFlag_None;
+
+                    /* Set arguments.*/
+                    procInfo.mArguments.push_back(Utf8StrFmt("--output=%s", mDest.c_str())); /** @todo Do we need path conversion? */
+
+                    /* Startup process. */
+                    ComObjPtr<GuestProcess> pProcess;
+                    int rc = pSession->processCreateExInteral(procInfo, pProcess);
+                    if (RT_SUCCESS(rc))
+                    {
+                        GuestProcessWaitResult waitRes;
+                        BYTE byBuf[_64K];
+
+                        BOOL fCanceled = FALSE;
+                        uint64_t cbWrittenTotal = 0;
+                        uint64_t cbToRead = cbFileSize;
+
+                        for (;;)
+                        {
+                            rc = pProcess->waitFor(ProcessWaitForFlag_StdIn,
+                                                   30 * 1000 /* Timeout */, waitRes);
+                            if (   RT_FAILURE(rc)
+                                || waitRes.mResult != ProcessWaitResult_StdIn)
+                            {
+                                break;
+                            }
+
+                            size_t cbRead = 0;
+                            if (cbFileSize) /* If we have nothing to write, take a shortcut. */
+                            {
+                                /** @todo Not very efficient, but works for now. */
+                                rc = RTFileSeek(fileSource, cbWrittenTotal,
+                                                RTFILE_SEEK_BEGIN, NULL /* poffActual */);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = RTFileRead(fileSource, (uint8_t*)byBuf,
+                                                    RT_MIN(cbToRead, sizeof(byBuf)), &cbRead);
+                                    /*
+                                     * Some other error occured? There might be a chance that RTFileRead
+                                     * could not resolve/map the native error code to an IPRT code, so just
+                                     * print a generic error.
+                                     */
+                                    if (RT_FAILURE(rc))
+                                    {
+                                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                            Utf8StrFmt(GuestSession::tr("Could not read from file \"%s\" (%Rrc)"),
+                                                            mSource.c_str(), rc));
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                        Utf8StrFmt(GuestSession::tr("Seeking file \"%s\" offset %RU64 failed: %Rrc"),
+                                                        mSource.c_str(), cbWrittenTotal, rc));
+                                    break;
+                                }
+                            }
+
+                            uint32_t fFlags = ProcessInputFlag_None;
+
+                            /* Did we reach the end of the content we want to transfer (last chunk)? */
+                            if (   (cbRead < sizeof(byBuf))
+                                /* Did we reach the last block which is exactly _64K? */
+                                || (cbToRead - cbRead == 0)
+                                /* ... or does the user want to cancel? */
+                                || (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
+                                    && fCanceled)
+                               )
+                            {
+                                fFlags |= ProcessInputFlag_EndOfFile;
+                            }
+
+                            uint32_t cbWritten;
+                            rc = pProcess->writeData(0 /* StdIn */, fFlags,
+                                                     byBuf, sizeof(byBuf),
+                                                     30 * 1000 /* Timeout */, &cbWritten);
+                            if (RT_FAILURE(rc))
+                            {
+                                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                    Utf8StrFmt(GuestSession::tr("Writing to file \"%s\" (offset %RU64) failed: %Rrc"),
+                                                    mSource.c_str(), cbWrittenTotal, rc));
+                                break;
+                            }
+
+                            /* Safety first. */
+                            Assert(cbRead <= cbToRead);
+                            Assert(cbToRead >= cbRead);
+
+                            /* Only subtract bytes reported written by the guest. */
+                            cbToRead -= cbWritten;
+
+                            /* Update total bytes written to the guest. */
+                            cbWrittenTotal += cbWritten;
+                            Assert(cbWrittenTotal <= cbFileSize);
+
+                            /* Did the user cancel the operation above? */
+                            if (fCanceled)
+                                break;
+
+                            /* Update the progress. */
+                            HRESULT hr = mProgress->SetCurrentOperationProgress((ULONG)(cbWrittenTotal * 100 / cbFileSize));
+                            if (FAILED(hr))
+                            {
+                                rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                         Utf8StrFmt(GuestSession::tr("Error updating the progress of copying files \"%s\" to \"%s\""),
+                                                         mSource.c_str(), mDest.c_str()));
+                                break;
+                            }
+
+                            /* End of file reached? */
+                            if (cbToRead == 0)
+                                break;
+                        } /* for */
+
+                        if (   !fCanceled
+                            || RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Even if we succeeded until here make sure to check whether we really transfered
+                             * everything.
+                             */
+                            if (   cbFileSize > 0
+                                && cbWrittenTotal == 0)
+                            {
+                                /* If nothing was transfered but the file size was > 0 then "vbox_cat" wasn't able to write
+                                 * to the destination -> access denied. */
+                                rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                         Utf8StrFmt(GuestSession::tr("Access denied when copying file \"%s\" to \"%s\""),
+                                                         mSource.c_str(), mDest.c_str()));
+                            }
+                            else if (cbWrittenTotal < cbFileSize)
+                            {
+                                /* If we did not copy all let the user know. */
+                                rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                         Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed (%RU64/%RU64 bytes transfered)"),
+                                                         mSource.c_str(), cbWrittenTotal, cbFileSize));
+                            }
+                            else /* Yay, all went fine! */
+                                rc = setProgressSuccess();
+                        }
+                    } /* processCreateExInteral */
+                } /* RTFileGetSize */
+
+                RTFileClose(fileSource);
+
+            } /* RTFileOpen */
+        } /* RTFileExists */
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int SessionTaskCopyTo::RunAsync(const Utf8Str &strDesc)
