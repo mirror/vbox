@@ -1165,8 +1165,8 @@ int UIGChooserModel::positionFromDefinitions(UIGChooserItem *pParentItem, UIGCho
     switch (type)
     {
         case UIGChooserItemType_Group:
-            strDefinitionTemplateShort = QString("g(\\S)*=");
-            strDefinitionTemplateFull = QString("g(\\S)*=%1").arg(strName);
+            strDefinitionTemplateShort = QString("^g(\\S)*=");
+            strDefinitionTemplateFull = QString("^g(\\S)*=%1$").arg(strName);
             break;
         case UIGChooserItemType_Machine:
             strDefinitionTemplateShort = QString("m=");
