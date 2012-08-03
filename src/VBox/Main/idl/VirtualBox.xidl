@@ -1423,7 +1423,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="53789455-fad2-425a-94c8-eb6dc4ceaa05"
+    uuid="3b90eded-f061-432f-9e0f-4b53cc7b6fa0"
     wsmap="managed"
     >
     <desc>
@@ -1836,6 +1836,20 @@
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Machine object, if found.</desc>
+      </param>
+    </method>
+
+    <method name="getMachinesByGroups">
+      <desc>
+        Gets all machine references which are in one of the specified groups.
+      </desc>
+      <param name="groups" type="wstring" dir="in" safearray="yes">
+        <desc>What groups to match. The usual group list rules apply, i.e.
+        passing an empty list will match VMs in the toplevel group, likewise
+        the empty string.</desc>
+      </param>
+      <param name="machines" type="IMachine" dir="return" safearray="yes">
+        <desc>All machines which matched.</desc>
       </param>
     </method>
 
