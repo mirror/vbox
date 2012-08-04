@@ -110,7 +110,7 @@ public:
 protected:
 
     /* Hover-enter event: */
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *pEvent);
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
     /* Hover-leave event: */
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
     /* Mouse-press event: */
@@ -135,6 +135,7 @@ protected:
 
     /* Hover stuff: */
     bool isHovered() const { return m_fHovered; }
+    void setHovered(bool fHovered) { m_fHovered = fHovered; }
     int gradient() const { return m_iGradient; }
     void setGradient(int iGradient) { m_iGradient = iGradient; update(); }
 
