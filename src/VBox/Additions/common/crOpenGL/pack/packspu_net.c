@@ -229,7 +229,7 @@ void packspuHuge( CROpcode opcode, void *buf )
     crNetSend( thread->netServer.conn, NULL, src, len );
 }
 
-void packspuConnectToServer( CRNetServer *server
+static void packspuFirstConnectToServer( CRNetServer *server
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 , struct VBOXUHGSMI *pHgsmi
 #endif
@@ -241,4 +241,32 @@ void packspuConnectToServer( CRNetServer *server
                 , pHgsmi
 #endif
             );
+}
+
+void packspuConnectToServer( CRNetServer *server
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                , struct VBOXUHGSMI *pHgsmi
+#endif
+        )
+{
+    if (pack_spu.numThreads == 0) {
+        packspuFirstConnectToServer( server
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                , pHgsmi
+#endif
+                );
+        if (!server->conn) {
+            crError("packspuConnectToServer: no connection on first create!");
+            return;
+        }
+        pack_spu.swap = server->conn->swap;
+    }
+    else {
+        /* a new pthread */
+        crNetNewClient(server
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+                , pHgsmi
+#endif
+        );
+    }
 }

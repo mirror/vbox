@@ -489,7 +489,7 @@ GLint PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(struct VBOXUHGSMI *pHgsmi
         thread->netServer.name = crStrdup(pack_spu.name);
         thread->netServer.buffer_size = 64 * 1024;
 
-        crNetNewClient(&(thread->netServer)
+        packspuConnectToServer(&(thread->netServer)
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 , pHgsmi
 #endif
