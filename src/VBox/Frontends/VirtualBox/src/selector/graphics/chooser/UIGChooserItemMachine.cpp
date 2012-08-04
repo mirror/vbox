@@ -32,6 +32,7 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIActionPoolSelector.h"
+#include "UIImageTools.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -50,7 +51,7 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     , m_pStartButton(0)
     , m_pPauseButton(0)
     , m_pCloseButton(0)
-    , m_iCornerRadius(6)
+    , m_iCornerRadius(0)
 {
 //    /* Prepare: */
 //    prepare();
@@ -71,7 +72,7 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     , m_pStartButton(0)
     , m_pPauseButton(0)
     , m_pCloseButton(0)
-    , m_iCornerRadius(6)
+    , m_iCornerRadius(0)
 {
 //    /* Prepare: */
 //    prepare();
@@ -118,7 +119,8 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         case MachineItemData_Margin: return 5;
         case MachineItemData_MajorSpacing: return 10;
         case MachineItemData_MinorSpacing: return 4;
-        case MachineItemData_TextSpacing: return 2;
+        case MachineItemData_TextSpacing: return 0;
+
         /* Pixmaps: */
         case MachineItemData_Pixmap: return osIcon();
         case MachineItemData_StatePixmap: return machineStateIcon();
@@ -126,77 +128,81 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         case MachineItemData_StartButtonPixmap: return UIIconPool::iconSet(":/start_16px.png");
         case MachineItemData_PauseButtonPixmap: return UIIconPool::iconSet(":/pause_16px.png");
         case MachineItemData_CloseButtonPixmap: return UIIconPool::iconSet(":/exit_16px.png");
+
         /* Fonts: */
         case MachineItemData_NameFont:
         {
             QFont machineNameFont = qApp->font();
-            machineNameFont.setPointSize(machineNameFont.pointSize() + 1);
             machineNameFont.setWeight(QFont::Bold);
             return machineNameFont;
         }
         case MachineItemData_SnapshotNameFont:
         {
             QFont snapshotStateFont = qApp->font();
-            snapshotStateFont.setPointSize(snapshotStateFont.pointSize() + 1);
             return snapshotStateFont;
         }
         case MachineItemData_StateTextFont:
         {
             QFont machineStateFont = qApp->font();
-            machineStateFont.setPointSize(machineStateFont.pointSize() + 1);
             return machineStateFont;
         }
+
         /* Texts: */
         case MachineItemData_Name:
         {
-            /* Prepare variables: */
-            int iMaximumWidth = data(MachineItemData_FirstRowMaximumWidth).toInt();
-            int iMinimumSnapshotNameWidth = data(MachineItemData_MinimumSnapshotNameSize).toSize().width();
-            /* Compress name to part width: */
-            QString strCompressedName = compressText(data(MachineItemData_NameFont).value<QFont>(),
-                                                     name(), iMaximumWidth - iMinimumSnapshotNameWidth);
-            return strCompressedName;
+            return compressText(data(MachineItemData_NameFont).value<QFont>(), name(),
+                                data(MachineItemData_MaximumNameWidth).toInt());
         }
         case MachineItemData_SnapshotName:
         {
-            /* Prepare variables: */
-            int iMaximumWidth = data(MachineItemData_FirstRowMaximumWidth).toInt();
-            int iNameWidth = data(MachineItemData_NameSize).toSize().width();
-            /* Compress name to part width: */
-            QString strCompressedName = compressText(data(MachineItemData_SnapshotNameFont).value<QFont>(),
-                                                     snapshotName(), iMaximumWidth - iNameWidth);
-            return strCompressedName;
+            int iBracketWidth = QFontMetrics(data(MachineItemData_SnapshotNameFont).value<QFont>()).width("()");
+            QString strCompressedName = compressText(data(MachineItemData_SnapshotNameFont).value<QFont>(), snapshotName(),
+                                                     data(MachineItemData_MaximumSnapshotNameWidth).toInt() - iBracketWidth);
+            return QString("(%1)").arg(strCompressedName);
         }
         case MachineItemData_StateText: return gpConverter->toString(machineState());
+
         /* Sizes: */
         case MachineItemData_PixmapSize: return osIcon().availableSizes().at(0);
         case MachineItemData_StatePixmapSize: return machineStateIcon().availableSizes().at(0);
-        case MachineItemData_MinimumNameSize:
-        {
-            QFont font = data(MachineItemData_NameFont).value<QFont>();
-            QFontMetrics fm(font);
-            int iMaximumTextWidth = textWidth(font, 15);
-            QString strCompressedName = compressText(font, name(), iMaximumTextWidth);
-            return QSize(fm.width(strCompressedName), fm.height());
-        }
+
         case MachineItemData_NameSize:
         {
             QFontMetrics fm(data(MachineItemData_NameFont).value<QFont>());
             return QSize(fm.width(data(MachineItemData_Name).toString()) + 1, fm.height());
         }
-        case MachineItemData_MinimumSnapshotNameSize:
+        case MachineItemData_MinimumNameWidth:
         {
-            QFont font = data(MachineItemData_SnapshotNameFont).value<QFont>();
-            QFontMetrics fm(font);
-            int iMaximumTextWidth = textWidth(font, 10);
-            QString strCompressedName = compressText(font, snapshotName(), iMaximumTextWidth);
-            return QSize(fm.width(strCompressedName), fm.height());
+            QFont font = data(MachineItemData_NameFont).value<QFont>();
+            return QFontMetrics(font).width(compressText(font, name(), textWidth(font, 15)));
         }
+        case MachineItemData_MaximumNameWidth:
+        {
+            return data(MachineItemData_FirstRowMaximumWidth).toInt() -
+                   data(MachineItemData_MinimumSnapshotNameWidth).toInt();
+        }
+
         case MachineItemData_SnapshotNameSize:
         {
             QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>());
-            return QSize(fm.width(QString("(%1)").arg(data(MachineItemData_SnapshotName).toString())) + 1, fm.height());
+            return QSize(fm.width(data(MachineItemData_SnapshotName).toString()) + 1, fm.height());
         }
+        case MachineItemData_MinimumSnapshotNameWidth:
+        {
+            if (snapshotName().isEmpty())
+                return 0;
+            QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>());
+            int iBracketWidth = fm.width("()");
+            int iActualTextWidth = fm.width(snapshotName());
+            int iMinimumTextWidth = fm.width("...");
+            return iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
+        }
+        case MachineItemData_MaximumSnapshotNameWidth:
+        {
+            return data(MachineItemData_FirstRowMaximumWidth).toInt() -
+                   data(MachineItemData_NameSize).toSize().width();
+        }
+
         case MachineItemData_FirstRowMaximumWidth:
         {
             /* Prepare variables: */
@@ -205,14 +211,13 @@ QVariant UIGChooserItemMachine::data(int iKey) const
             int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
             int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
             int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
-            int iMaximumWidth = (int)geometry().width() - iMargin -
+            int iMaximumWidth = (int)geometry().width() - 2 * iMargin -
                                                           iPixmapWidth -
-                                                          iMachineItemMajorSpacing -
-                                                          iMachineItemMinorSpacing -
-                                                          iMachineItemMajorSpacing -
-                                                          iMargin;
+                                                          iMachineItemMajorSpacing;
+            if (!snapshotName().isEmpty())
+                iMaximumWidth -= iMachineItemMinorSpacing;
             if (m_pToolBar)
-                iMaximumWidth -= iToolBarWidth;
+                iMaximumWidth -= (iToolBarWidth + iMachineItemMajorSpacing);
             return iMaximumWidth;
         }
         case MachineItemData_StateTextSize:
@@ -307,8 +312,8 @@ int UIGChooserItemMachine::minimumWidthHint() const
     int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     int iMachinePixmapWidth = data(MachineItemData_PixmapSize).toSize().width();
-    int iMinimumMachineNameWidth = data(MachineItemData_MinimumNameSize).toSize().width();
-    int iMinimumSnapshotNameWidth = data(MachineItemData_MinimumSnapshotNameSize).toSize().width();
+    int iMinimumNameWidth = data(MachineItemData_MinimumNameWidth).toInt();
+    int iMinimumSnapshotNameWidth = data(MachineItemData_MinimumSnapshotNameWidth).toInt();
     int iMachineStatePixmapWidth = data(MachineItemData_StatePixmapSize).toSize().width();
     int iMachineStateTextWidth = data(MachineItemData_StateTextSize).toSize().width();
     int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
@@ -316,22 +321,21 @@ int UIGChooserItemMachine::minimumWidthHint() const
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
-    /* We are taking into account only left margin,
-     * tool-bar contains right one: */
-    iProposedWidth += iMachineItemMargin;
+    /* Two margins: */
+    iProposedWidth += 2 * iMachineItemMargin;
     /* And machine item content to take into account: */
-    int iFirstLineWidth = iMinimumMachineNameWidth +
-                          iMachineItemMinorSpacing +
-                          iMinimumSnapshotNameWidth;
-    int iSecondLineWidth = iMachineStatePixmapWidth +
+    int iTopLineWidth = iMinimumNameWidth +
+                        iMachineItemMinorSpacing +
+                        iMinimumSnapshotNameWidth;
+    int iBottomLineWidth = iMachineStatePixmapWidth +
                            iMachineItemMinorSpacing +
                            iMachineStateTextWidth;
-    int iSecondColumnWidth = qMax(iFirstLineWidth, iSecondLineWidth);
+    int iRightColumnWidth = qMax(iTopLineWidth, iBottomLineWidth);
     int iMachineItemWidth = iMachinePixmapWidth +
                             iMachineItemMajorSpacing +
-                            iSecondColumnWidth +
-                            iMachineItemMajorSpacing +
-                            iToolBarWidth + 1;
+                            iRightColumnWidth;
+    if (m_pToolBar)
+        iMachineItemWidth += (iMachineItemMajorSpacing + iToolBarWidth);
     iProposedWidth += iMachineItemWidth;
 
     /* Return result: */
@@ -353,17 +357,16 @@ int UIGChooserItemMachine::minimumHeightHint() const
     /* Calculating proposed height: */
     int iProposedHeight = 0;
 
-    /* Simple machine item have 2 margins - top and bottom: */
+    /* Two margins: */
     iProposedHeight += 2 * iMachineItemMargin;
     /* And machine item content to take into account: */
-    int iFirstLineHeight = qMax(iMachineNameHeight, iSnapshotNameHeight);
-    int iSecondLineHeight = qMax(iMachineStatePixmapHeight, iMachineStateTextHeight);
-    int iSecondColumnHeight = iFirstLineHeight +
+    int iTopLineHeight = qMax(iMachineNameHeight, iSnapshotNameHeight);
+    int iBottomLineHeight = qMax(iMachineStatePixmapHeight, iMachineStateTextHeight);
+    int iRightColumnHeight = iTopLineHeight +
                               iMachineItemTextSpacing +
-                              iSecondLineHeight;
+                              iBottomLineHeight;
     QList<int> heights;
-    heights << iMachinePixmapHeight << iSecondColumnHeight
-            << (iToolBarHeight - 2 * iMachineItemMargin + 2);
+    heights << iMachinePixmapHeight << iRightColumnHeight << iToolBarHeight;
     int iMaxHeight = 0;
     foreach (int iHeight, heights)
         iMaxHeight = qMax(iMaxHeight, iHeight);
@@ -505,7 +508,7 @@ void UIGChooserItemMachine::paintDecorations(QPainter *pPainter, const QStyleOpt
     paintBackground(pPainter, fullRect);
 
     /* Paint frame: */
-    paintFrameRect(pPainter, fullRect, model()->selectionList().contains(this), m_iCornerRadius);
+    paintFrameRectangle(pPainter, fullRect);
 }
 
 void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect)
@@ -513,51 +516,78 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     /* Save painter: */
     pPainter->save();
 
-    /* Fill rectangle with white color: */
-    pPainter->fillRect(rect, Qt::white);
-
     /* Prepare color: */
     QPalette pal = palette();
-    QColor base = pal.color(QPalette::Active, model()->selectionList().contains(this) ?
-                            QPalette::Highlight : QPalette::Window);
 
-    /* Make even less rectangle: */
-    QRect backGroundRect = rect;
-    backGroundRect.setTopLeft(backGroundRect.topLeft() + QPoint(2, 2));
-    backGroundRect.setBottomRight(backGroundRect.bottomRight() - QPoint(2, 2));
-    /* Add even more clipping: */
-    QPainterPath roundedPath;
-    roundedPath.addRoundedRect(backGroundRect, m_iCornerRadius, m_iCornerRadius);
-    pPainter->setClipPath(roundedPath);
+    /* Selection background: */
+    if (model()->selectionList().contains(this))
+    {
+        /* Highlight color: */
+        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
 
-    /* Calculate top rectangle: */
-    QRect tRect = backGroundRect;
-    tRect.setBottom(tRect.top() + tRect.height() / 3);
-    /* Calculate bottom rectangle: */
-    QRect bRect = backGroundRect;
-    bRect.setTop(bRect.bottom() - bRect.height() / 3);
-    /* Calculate middle rectangle: */
-    QRect midRect = QRect(tRect.bottomLeft(), bRect.topRight());
+        /* Calculate top rectangle: */
+        QRect tRect = rect;
+        tRect.setBottom(tRect.top() + tRect.height() / 3);
+        /* Calculate bottom rectangle: */
+        QRect bRect = rect;
+        bRect.setTop(bRect.bottom() - bRect.height() / 3);
+        /* Calculate middle rectangle: */
+        QRect midRect = QRect(tRect.bottomLeft(), bRect.topRight());
 
-    /* Prepare top gradient: */
-    QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-    tGradient.setColorAt(0, base.darker(gradient()));
-    tGradient.setColorAt(1, base.darker(104));
-    /* Prepare bottom gradient: */
-    QLinearGradient bGradient(bRect.topLeft(), bRect.bottomLeft());
-    bGradient.setColorAt(0, base.darker(gradient()));
-    bGradient.setColorAt(1, base.darker(104));
+        /* Prepare top gradient: */
+        QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
+        tGradient.setColorAt(0, highlight.darker(103));
+        tGradient.setColorAt(1, highlight.darker(110));
+        /* Prepare bottom gradient: */
+        QLinearGradient bGradient(bRect.topLeft(), bRect.bottomLeft());
+        bGradient.setColorAt(0, highlight.darker(103));
+        bGradient.setColorAt(1, highlight.darker(110));
 
-    /* Paint all the stuff: */
-    pPainter->fillRect(midRect, base.darker(gradient()));
-    pPainter->fillRect(tRect, tGradient);
-    pPainter->fillRect(bRect, bGradient);
+        /* Paint all the stuff: */
+        pPainter->fillRect(midRect, highlight.darker(103));
+        pPainter->fillRect(tRect, tGradient);
+        pPainter->fillRect(bRect, bGradient);
+    }
+
+    /* Hovering background: */
+    if (isHovered())
+    {
+        /* Choose color: */
+        QColor baseLight = pal.color(QPalette::Active, model()->selectionList().contains(this) ||
+                                                       model()->selectionList().contains(parentItem()) ?
+                                                       QPalette::Highlight : QPalette::Window);
+        QColor blurBase = pal.color(QPalette::Active, model()->selectionList().contains(this) ||
+                                                      model()->selectionList().contains(parentItem()) ?
+                                                      QPalette::Highlight : QPalette::Window);
+        if (!parentItem()->isRoot())
+            blurBase = blurBase.darker(110);
+        blurBase.setAlpha(0);
+
+        /* Draw background for blur: */
+        QImage background(rect.size(), QImage::Format_ARGB32);
+        background.fill(blurBase.rgba());
+
+        /* Add blur itself: */
+        QPainter blurPainter(&background);
+        blurPainter.setBrush(baseLight.darker(gradient()));
+        blurPainter.setPen(Qt::NoPen);
+        blurPainter.drawRoundedRect(rect.adjusted(5, 5, -5, -5), 5, 5);
+        blurPainter.end();
+        QImage bluredBackground(rect.size(), QImage::Format_ARGB32);
+        blurImage(background, bluredBackground, 5);
+
+        /* Paint highlight bar: */
+        pPainter->drawImage(QPoint(0, 0), bluredBackground);
+    }
 
     /* Paint drag token UP? */
     if (dragTokenPlace() != DragToken_Off)
     {
+        /* Window color: */
+        QColor base = pal.color(QPalette::Active, model()->selectionList().contains(this) ?
+                                QPalette::Highlight : QPalette::Window);
         QLinearGradient dragTokenGradient;
-        QRect dragTokenRect = backGroundRect;
+        QRect dragTokenRect = rect;
         if (dragTokenPlace() == DragToken_Up)
         {
             dragTokenRect.setHeight(5);
@@ -579,109 +609,148 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     pPainter->restore();
 }
 
+void UIGChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
+{
+    /* Only chosen item should have a frame: */
+    if (!model()->selectionList().contains(this))
+        return;
+
+    /* Simple white frame: */
+    pPainter->save();
+    pPainter->setPen(Qt::white);
+    pPainter->drawRect(rect);
+    pPainter->restore();
+}
+
 void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
 {
-    /* Initialize some necessary variables: */
+    /* Prepare variables: */
     QRect fullRect = pOption->rect;
-    int iMachineItemMargin = data(MachineItemData_Margin).toInt();
+    int iFullHeight = fullRect.height();
+    int iMargin = data(MachineItemData_Margin).toInt();
     int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
     QSize machinePixmapSize = data(MachineItemData_PixmapSize).toSize();
     QSize machineNameSize = data(MachineItemData_NameSize).toSize();
-    QString strSnapshotName = data(MachineItemData_SnapshotName).toString();
     QSize snapshotNameSize = data(MachineItemData_SnapshotNameSize).toSize();
     QSize machineStatePixmapSize = data(MachineItemData_StatePixmapSize).toSize();
     QSize machineStateTextSize = data(MachineItemData_StateTextSize).toSize();
 
-    /* Paint pixmap: */
-    {
-        /* Calculate attributes: */
-        int iMachinePixmapHeight = machinePixmapSize.height();
-        int iFirstLineHeight = qMax(machineNameSize.height(), snapshotNameSize.height());
-        int iSecondLineHeight = qMax(machineStatePixmapSize.height(), machineStateTextSize.height());
-        int iRightSizeHeight = iFirstLineHeight + iMachineItemTextSpacing + iSecondLineHeight;
-        int iMinimumHeight = qMin(iMachinePixmapHeight, iRightSizeHeight);
-        int iMaximumHeight = qMax(iMachinePixmapHeight, iRightSizeHeight);
-        int iDelta = iMaximumHeight - iMinimumHeight;
-        int iHalfDelta = iDelta / 2;
-        int iMachinePixmapX = iMachineItemMargin;
-        int iMachinePixmapY = iMachinePixmapHeight >= iRightSizeHeight ?
-                              iMachineItemMargin : iMachineItemMargin + iHalfDelta;
+    /* Calculate indents: */
+    int iLeftColumnIndent = iMargin;
 
+    /* Paint left column: */
+    {
+        /* Prepare variables: */
+        int iMachinePixmapX = iLeftColumnIndent;
+        int iMachinePixmapY = (iFullHeight - machinePixmapSize.height()) / 2;
+        /* Paint pixmap: */
         paintPixmap(/* Painter: */
                     pPainter,
                     /* Rectangle to paint in: */
-                    QRect(fullRect.topLeft() +
-                          QPoint(iMachinePixmapX, iMachinePixmapY),
-                          machinePixmapSize),
+                    QRect(QPoint(iMachinePixmapX, iMachinePixmapY), machinePixmapSize),
                     /* Pixmap to paint: */
                     data(MachineItemData_Pixmap).value<QIcon>().pixmap(machinePixmapSize));
     }
 
-    /* Paint name: */
+    /* Calculate indents: */
+    int iRightColumnIndent = iLeftColumnIndent +
+                             machinePixmapSize.width() +
+                             iMachineItemMajorSpacing;
+
+    /* Paint right column: */
     {
-        paintText(/* Painter: */
-                  pPainter,
-                  /* Rectangle to paint in: */
-                  QRect(fullRect.topLeft() +
-                        QPoint(iMachineItemMargin, iMachineItemMargin) +
-                        QPoint(machinePixmapSize.width() + iMachineItemMajorSpacing, 0),
-                        machineNameSize),
-                  /* Font to paint text: */
-                  data(MachineItemData_NameFont).value<QFont>(),
-                  /* Text to paint: */
-                  data(MachineItemData_Name).toString());
+        /* Calculate indents: */
+        int iTopLineHeight = qMax(machineNameSize.height(), snapshotNameSize.height());
+        int iBottomLineHeight = qMax(machineStatePixmapSize.height(), machineStateTextSize.height());
+        int iRightColumnHeight = iTopLineHeight + iMachineItemTextSpacing + iBottomLineHeight;
+        int iTopLineIndent = (iFullHeight - iRightColumnHeight) / 2;
+
+        /* Paint top line: */
+        {
+            /* Paint left element: */
+            {
+                /* Prepare variables: */
+                int iNameX = iRightColumnIndent;
+                int iNameY = iTopLineIndent;
+                /* Paint name: */
+                paintText(/* Painter: */
+                          pPainter,
+                          /* Rectangle to paint in: */
+                          QRect(QPoint(iNameX, iNameY), machineNameSize),
+                          /* Font to paint text: */
+                          data(MachineItemData_NameFont).value<QFont>(),
+                          /* Text to paint: */
+                          data(MachineItemData_Name).toString());
+            }
+
+            /* Calculate indents: */
+            int iSnapshotNameIndent = iRightColumnIndent +
+                                      machineNameSize.width() +
+                                      iMachineItemMinorSpacing;
+
+            /* Paint right element: */
+            if (!snapshotName().isEmpty())
+            {
+                /* Prepare variables: */
+                int iSnapshotNameX = iSnapshotNameIndent;
+                int iSnapshotNameY = iTopLineIndent;
+                /* Paint snapshot name: */
+                paintText(/* Painter: */
+                          pPainter,
+                          /* Rectangle to paint in: */
+                          QRect(QPoint(iSnapshotNameX, iSnapshotNameY), snapshotNameSize),
+                          /* Font to paint text: */
+                          data(MachineItemData_SnapshotNameFont).value<QFont>(),
+                          /* Text to paint: */
+                          data(MachineItemData_SnapshotName).toString());
+            }
+        }
+
+        /* Calculate indents: */
+        int iBottomLineIndent = iTopLineIndent + iTopLineHeight;
+
+        /* Paint bottom line: */
+        {
+            /* Paint left element: */
+            {
+                /* Prepare variables: */
+                int iMachineStatePixmapX = iRightColumnIndent;
+                int iMachineStatePixmapY = iBottomLineIndent;
+                /* Paint state pixmap: */
+                paintPixmap(/* Painter: */
+                            pPainter,
+                            /* Rectangle to paint in: */
+                            QRect(QPoint(iMachineStatePixmapX, iMachineStatePixmapY), machineStatePixmapSize),
+                            /* Pixmap to paint: */
+                            data(MachineItemData_StatePixmap).value<QIcon>().pixmap(machineStatePixmapSize));
+            }
+
+            /* Calculate indents: */
+            int iMachineStateTextIndent = iRightColumnIndent +
+                                          machineStatePixmapSize.width() +
+                                          iMachineItemMinorSpacing;
+
+            /* Paint right element: */
+            {
+                /* Prepare variables: */
+                int iMachineStateTextX = iMachineStateTextIndent;
+                int iMachineStateTextY = iBottomLineIndent;
+                /* Paint state text: */
+                paintText(/* Painter: */
+                          pPainter,
+                          /* Rectangle to paint in: */
+                          QRect(QPoint(iMachineStateTextX, iMachineStateTextY), machineStateTextSize),
+                          /* Font to paint text: */
+                          data(MachineItemData_StateTextFont).value<QFont>(),
+                          /* Text to paint: */
+                          data(MachineItemData_StateText).toString());
+            }
+        }
     }
 
-    /* Paint snapshot name (if necessary): */
-    if (!strSnapshotName.isEmpty())
-    {
-        paintText(/* Painter: */
-                  pPainter,
-                  /* Rectangle to paint in: */
-                  QRect(fullRect.topLeft() +
-                        QPoint(iMachineItemMargin, iMachineItemMargin) +
-                        QPoint(machinePixmapSize.width() + iMachineItemMajorSpacing, 0) +
-                        QPoint(machineNameSize.width() + iMachineItemMinorSpacing, 0),
-                        snapshotNameSize),
-                  /* Font to paint text: */
-                  data(MachineItemData_SnapshotNameFont).value<QFont>(),
-                  /* Text to paint: */
-                  QString("(%1)").arg(strSnapshotName));
-    }
-
-    /* Paint state pixmap: */
-    {
-        paintPixmap(/* Painter: */
-                    pPainter,
-                    /* Rectangle to paint in: */
-                    QRect(fullRect.topLeft() +
-                          QPoint(iMachineItemMargin, iMachineItemMargin) +
-                          QPoint(machinePixmapSize.width() + iMachineItemMajorSpacing, 0) +
-                          QPoint(0, machineNameSize.height() + iMachineItemTextSpacing),
-                          machineStatePixmapSize),
-                    /* Pixmap to paint: */
-                    data(MachineItemData_StatePixmap).value<QIcon>().pixmap(machineStatePixmapSize));
-    }
-
-    /* Paint state text: */
-    {
-        paintText(/* Painter: */
-                  pPainter,
-                  /* Rectangle to paint in: */
-                  QRect(fullRect.topLeft() +
-                        QPoint(iMachineItemMargin, iMachineItemMargin) +
-                        QPoint(machinePixmapSize.width() + iMachineItemMajorSpacing, 0) +
-                        QPoint(0, machineNameSize.height() + iMachineItemTextSpacing) +
-                        QPoint(machineStatePixmapSize.width() + iMachineItemMinorSpacing, 0),
-                        machineStateTextSize),
-                  /* Font to paint text: */
-                  data(MachineItemData_StateTextFont).value<QFont>(),
-                  /* Text to paint: */
-                  data(MachineItemData_StateText).toString());
-    }
-
+    /* Tool-bar: */
     if (m_pToolBar)
     {
         /* Show/hide tool-bar: */

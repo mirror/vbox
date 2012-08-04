@@ -138,6 +138,9 @@ private:
     void resetDragToken();
     QMimeData* createMimeData();
 
+    /* Event handlers: */
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
+
     /* Helpers: Paint stuff: */
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, bool fClosedGroup);

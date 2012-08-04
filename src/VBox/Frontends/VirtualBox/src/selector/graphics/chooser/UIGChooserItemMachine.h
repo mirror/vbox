@@ -79,10 +79,12 @@ private:
         /* Sizes: */
         MachineItemData_PixmapSize,
         MachineItemData_StatePixmapSize,
-        MachineItemData_MinimumNameSize,
         MachineItemData_NameSize,
-        MachineItemData_MinimumSnapshotNameSize,
+        MachineItemData_MinimumNameWidth,
+        MachineItemData_MaximumNameWidth,
         MachineItemData_SnapshotNameSize,
+        MachineItemData_MinimumSnapshotNameWidth,
+        MachineItemData_MaximumSnapshotNameWidth,
         MachineItemData_FirstRowMaximumWidth,
         MachineItemData_StateTextSize,
         MachineItemData_ToolBarSize
@@ -120,6 +122,7 @@ private:
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
     void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
     void paintBackground(QPainter *pPainter, const QRect &rect);
+    void paintFrameRectangle(QPainter *pPainter, const QRect &rect);
     void paintMachineInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
 
     /* Helpers: Prepare stuff: */

@@ -40,7 +40,7 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     , m_fClosed(!fOpened)
     , m_pButton(0)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(6)
+    , m_iCornerRadius(10)
     , m_fHovered(false)
     , m_fNameHoveringAccessible(false)
     , m_fNameHovered(false)
@@ -543,7 +543,7 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect, i
 
     /* Prepare top gradient: */
     QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-    tGradient.setColorAt(0, windowColor.darker(115));
+    tGradient.setColorAt(0, windowColor.darker(110));
     tGradient.setColorAt(1, windowColor.darker(103));
 
     /* Paint all the stuff: */

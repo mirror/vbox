@@ -42,7 +42,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
     , m_pNameEditorWidget(0)
     , m_pNameEditor(0)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(6)
+    , m_iCornerRadius(10)
 {
     /* Add item to the scene: */
     if (pScene)
@@ -58,7 +58,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
     , m_pNameEditorWidget(0)
     , m_pNameEditor(0)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(6)
+    , m_iCornerRadius(10)
 {
     /* Add item to the scene: */
     if (pScene)
@@ -79,7 +79,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     , m_pNameEditorWidget(0)
     , m_pNameEditor(0)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(6)
+    , m_iCornerRadius(10)
 {
     /* Prepare: */
     prepare();
@@ -100,7 +100,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     , m_pNameEditorWidget(0)
     , m_pNameEditor(0)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(6)
+    , m_iCornerRadius(10)
 {
     /* Prepare: */
     prepare();
@@ -921,6 +921,21 @@ QMimeData* UIGChooserItemGroup::createMimeData()
     return new UIGChooserItemMimeData(this);
 }
 
+void UIGChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Prepare variables: */
+    QPoint pos = pEvent->pos().toPoint();
+    int iMargin = data(GroupItemData_VerticalMargin).toInt();
+    int iHeaderHeight = data(GroupItemData_FullHeaderSize).toSize().height();
+    int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
+    /* Check if group should be highlighted: */
+    if ((pos.y() < iFullHeaderHeight) && !isHovered())
+    {
+        setHovered(true);
+        emit sigHoverEnter();
+    }
+}
+
 void UIGChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)
 {
     paint(pPainter, pOption, closed());
@@ -1014,32 +1029,22 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         roundedPath.addRoundedRect(backGroundRect, m_iCornerRadius, m_iCornerRadius);
         pPainter->setClipPath(roundedPath);
 
-        /* Calculate bottom rectangle: */
-        QRect bRect = backGroundRect;
-        bRect.setTop(bRect.bottom() - iFullHeaderHeight);
-        /* Prepare bottom gradient: */
-        QLinearGradient bGradient(bRect.topLeft(), bRect.bottomLeft());
-        bGradient.setColorAt(0, base.darker(gradient()));
-        bGradient.setColorAt(1, base.darker(104));
-        /* Fill bottom rectangle: */
-        pPainter->fillRect(bRect, bGradient);
-
         /* Calculate top rectangle: */
         QRect tRect = backGroundRect;
         tRect.setBottom(tRect.top() + iFullHeaderHeight);
         /* Prepare top gradient: */
         QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-        tGradient.setColorAt(0, base.darker(gradient()));
-        tGradient.setColorAt(1, base.darker(104));
+        tGradient.setColorAt(0, base.darker(110));
+        tGradient.setColorAt(1, base.darker(gradient()));
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
 
-        if (bRect.top() > tRect.bottom())
+        if (backGroundRect.height() > tRect.height())
         {
             /* Calculate middle rectangle: */
-            QRect midRect = QRect(tRect.bottomLeft(), bRect.topRight());
+            QRect midRect = QRect(tRect.bottomLeft(), backGroundRect.bottomRight());
             /* Paint all the stuff: */
-            pPainter->fillRect(midRect, base.darker(gradient()));
+            pPainter->fillRect(midRect, base.darker(110));
         }
 
         /* Paint drag token UP? */
