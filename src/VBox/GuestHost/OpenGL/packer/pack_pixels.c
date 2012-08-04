@@ -68,7 +68,7 @@ void PACK_APIENTRY crPackReadPixels(GLint x, GLint y, GLsizei width,
     GLint stride = 0;
     GLint bytes_per_row;
     int bytes_per_pixel;
-    (void)writeback;
+    *writeback = 0;
 
     bytes_per_pixel = crPixelSize(format, type);
     if (bytes_per_pixel <= 0) {
