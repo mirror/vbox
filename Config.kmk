@@ -2305,7 +2305,7 @@ endif # !VBOX_NOINC_GCC_CONFIG_KMK
 #      macro usage in the logger.
 #
 ifdef VBOX_WITH_WARNINGS_AS_ERRORS
- if $(VBOX_GCC_VERSION_CXX) < 40000
+ if $(VBOX_GCC_VERSION_CXX) >= 40000
   VBOX_GCC_WERR ?= -Werror
  endif
  VBOX_VCC_WERR ?= -WX
