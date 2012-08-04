@@ -60,27 +60,12 @@ ThreadInfo *packspuNewThread(
     /* connect to the server */
     thread->netServer.name = crStrdup( pack_spu.name );
     thread->netServer.buffer_size = pack_spu.buffer_size;
-    if (pack_spu.numThreads == 0) {
-        packspuConnectToServer( &(thread->netServer)
+    packspuConnectToServer( &(thread->netServer)
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-                , pHgsmi
+            , pHgsmi
 #endif
-                );
-        if (!thread->netServer.conn) {
-            return NULL;
-        }
-        pack_spu.swap = thread->netServer.conn->swap;
-    }
-    else {
-        /* a new pthread */
-        crNetNewClient(&(thread->netServer)
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-                , pHgsmi
-#endif
-        );
-        CRASSERT(thread->netServer.conn);
-    }
-
+            );
+    CRASSERT(thread->netServer.conn);
     /* packer setup */
     CRASSERT(thread->packer == NULL);
     thread->packer = crPackNewContext( pack_spu.swap );
