@@ -55,7 +55,7 @@ void cpu_gen_init(void)
 {
     tcg_context_init(&tcg_ctx);
     tcg_set_frame(&tcg_ctx, TCG_AREG0, offsetof(CPUState, temp_buf),
-                  CPU_TEMP_BUF_NLONGS * sizeof(long));
+                  sizeof(((CPUState *)0)->temp_buf));
 }
 
 /* return non zero if the very first instruction is invalid so that
@@ -131,12 +131,12 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
 /* The cpu state corresponding to 'searched_pc' is restored.
  */
 int cpu_restore_state(TranslationBlock *tb,
-                      CPUState *env, unsigned long searched_pc,
+                      CPUState *env, uintptr_t searched_pc,
                       void *puc)
 {
     TCGContext *s = &tcg_ctx;
     int j;
-    unsigned long tc_ptr;
+    uintptr_t tc_ptr;
 #ifdef CONFIG_PROFILER
     int64_t ti;
 #endif
@@ -156,7 +156,7 @@ int cpu_restore_state(TranslationBlock *tb,
     }
 
     /* find opc index corresponding to search_pc */
-    tc_ptr = (unsigned long)tb->tc_ptr;
+    tc_ptr = (uintptr_t)tb->tc_ptr;
     if (searched_pc < tc_ptr)
         return -1;
 

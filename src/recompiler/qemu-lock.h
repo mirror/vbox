@@ -100,7 +100,7 @@ static inline int testandset (int *p)
 #elif defined(__x86_64__)
 static inline int testandset (int *p)
 {
-    long int readval = 0;
+    long int64_t readval = 0;
 
     __asm__ __volatile__ ("lock; cmpxchgl %2, %0"
                           : "+m" (*p), "+a" (readval)

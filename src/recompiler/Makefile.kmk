@@ -63,6 +63,7 @@ endif # win
 VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H NEED_CPU_H
 #VBoxRemPrimary_DEFS           += REM_PHYS_ADDR_IN_TLB
 #VBoxRemPrimary_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL CONFIG_DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
+#VBoxRemPrimary_DEFS           += DEBUG_DISAS DEBUG_PCALL CONFIG_DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 ifdef IEM_VERIFICATION_MODE
  VBoxRemPrimary_DEFS          += IEM_VERIFICATION_MODE
 endif
@@ -109,7 +110,11 @@ VBoxRemPrimary_SOURCES.debug  += \
 	Sun/testmath.c
 VBoxRemPrimary_SOURCES.win.x86 = $(VBoxREMImp_0_OUTDIR)/VBoxREMWin.def
 ifdef VBOX_USE_MINGWW64
-VBoxRemPrimary_SOURCES.win.amd64 = $(VBoxREMImp_0_OUTDIR)/VBoxREMWin.def
+ if 0 # exporting all helps when windbg pops up on crashes
+  VBoxRemPrimary_SOURCES.win.amd64 = $(VBoxREMImp_0_OUTDIR)/VBoxREMWin.def
+ else
+  VBoxRemPrimary_LDFLAGS.win.amd64 = --export-all
+ endif
 endif
 
 ifndef VBOX_USE_MINGWW64

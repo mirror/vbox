@@ -281,7 +281,7 @@ struct TCGContext {
 
     /* goto_tb support */
     uint8_t *code_buf;
-    unsigned long *tb_next;
+    uintptr_t *tb_next;
     uint16_t *tb_next_offset;
     uint16_t *tb_jmp_offset; /* != NULL if USE_DIRECT_JUMP */
 
@@ -341,7 +341,7 @@ static inline void *tcg_malloc(int size)
 {
     TCGContext *s = &tcg_ctx;
     uint8_t *ptr, *ptr_end;
-    size = (size + sizeof(long) - 1) & ~(sizeof(long) - 1);
+    size = (size + sizeof(void *) - 1) & ~(sizeof(void *) - 1);
     ptr = s->pool_cur;
     ptr_end = ptr + size;
     if (unlikely(ptr_end > s->pool_end)) {
@@ -357,7 +357,7 @@ void tcg_prologue_init(TCGContext *s);
 void tcg_func_start(TCGContext *s);
 
 int tcg_gen_code(TCGContext *s, uint8_t *gen_code_buf);
-int tcg_gen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, long offset);
+int tcg_gen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, intptr_t offset);
 
 void tcg_set_frame(TCGContext *s, int reg,
                    tcg_target_long start, tcg_target_long size);
@@ -501,12 +501,12 @@ extern uint8_t *code_gen_prologue;
 #endif
 #if defined(_ARCH_PPC) && !defined(_ARCH_PPC64)
 #define tcg_qemu_tb_exec(tb_ptr) \
-    ((long REGPARM __attribute__ ((longcall)) (*)(void *))code_gen_prologue)(tb_ptr)
+    ((intptr_t REGPARM __attribute__ ((longcall)) (*)(void *))code_gen_prologue)(tb_ptr)
 #else
-# if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM)
+# if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM) && !defined(__MINGW64__)
 #  define tcg_qemu_tb_exec(tb_ptr, ret)        \
     __asm__ __volatile__("call *%%ecx" : "=a"(ret) : "a"(tb_ptr), "c" (&code_gen_prologue[0]) : "memory", "%edx", "cc")
-# else  /* !VBOX || !GCC_WITH_BUGGY_REG_PARAM */
-#define tcg_qemu_tb_exec(tb_ptr) ((long REGPARM (*)(void *))code_gen_prologue)(tb_ptr)
-# endif /* !VBOX || !GCC_WITH_BUGGY_REG_PARAM */
+# else
+#define tcg_qemu_tb_exec(tb_ptr) ((intptr_t REGPARM (*)(void *))code_gen_prologue)(tb_ptr)
+# endif
 #endif
