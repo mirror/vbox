@@ -450,23 +450,65 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     fFlags |= RTSTR_F_PRECISION;
                 }
 
-                /* argsize */
+                /*
+                 * Argument size.
+                 */
                 chArgSize = *pszFormat;
-                if (chArgSize != 'l' && chArgSize != 'L' && chArgSize != 'h' && chArgSize != 'j' && chArgSize != 'z' && chArgSize != 't')
-                    chArgSize = 0;
-                else
+                switch (chArgSize)
                 {
-                    pszFormat++;
-                    if (*pszFormat == 'l' && chArgSize == 'l')
-                    {
+                    default:
+                        chArgSize = 0;
+                        break;
+
+                    case 'z':
+                    case 'L':
+                    case 'j':
+                    case 't':
+                        pszFormat++;
+                        break;
+
+                    case 'l':
+                        pszFormat++;
+                        if (*pszFormat == 'l')
+                        {
+                            chArgSize = 'L';
+                            pszFormat++;
+                        }
+                        break;
+
+                    case 'h':
+                        pszFormat++;
+                        if (*pszFormat == 'h')
+                        {
+                            chArgSize = 'H';
+                            pszFormat++;
+                        }
+                        break;
+
+                    case 'I': /* Used by Win32/64 compilers. */
+                        if (   pszFormat[1] == '6'
+                            && pszFormat[2] == '4')
+                        {
+                            pszFormat += 3;
+                            chArgSize = 'L';
+                        }
+                        else if (   pszFormat[1] == '3'
+                                 && pszFormat[2] == '2')
+                        {
+                            pszFormat += 3;
+                            chArgSize = 0;
+                        }
+                        else
+                        {
+                            pszFormat += 1;
+                            chArgSize = 'j';
+                        }
+                        break;
+
+                    case 'q': /* Used on BSD platforms. */
+                        pszFormat++;
                         chArgSize = 'L';
-                        pszFormat++;
-                    }
-                    else if (*pszFormat == 'h' && chArgSize == 'h')
-                    {
-                        chArgSize = 'H';
-                        pszFormat++;
-                    }
+                        break;
                 }
 
                 /*
