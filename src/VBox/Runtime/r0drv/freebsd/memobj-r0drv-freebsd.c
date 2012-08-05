@@ -206,7 +206,7 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
         VM_OBJECT_UNLOCK(pObject);
         if (pPages)
             break;
-        vm_contig_grow_cache(cTries, 0, VmPhysAddrHigh);
+        vm_pageout_grow_cache(cTries, 0, VmPhysAddrHigh);
         cTries++;
     }
 
