@@ -89,7 +89,6 @@ private:
     UIGDetailsElement* element(DetailsElementType elementType) const;
 
     /* Helpers: Layout stuff: */
-    void updateSizeHint();
     void updateLayout();
     int minimumWidthHint() const;
     int minimumHeightHint() const;
