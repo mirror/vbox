@@ -27,22 +27,21 @@
 /* COM includes: */
 #include "CUSBController.h"
 
-UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent, UIVMItem *pItem,
-                             const QStringList &settings, bool fFullSet)
+UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     : UIGDetailsItem(pParent)
-    , m_machine(pItem->machine())
     , m_iStep(-1)
     , m_iLastStep(-1)
-    , m_settings(settings)
 {
     /* Setup size-policy: */
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
-    /* Create elements step-by-step: */
-    prepareElements(fFullSet);
-
     /* Add item to the parent: */
     parentItem()->addItem(this);
+
+    /* Prepare connections: */
+    connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigElementPrepared(QString)), this, SLOT(sltNextStep(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigSetPrepared()), this, SLOT(sltSetPrepared()), Qt::QueuedConnection);
 }
 
 UIGDetailsSet::~UIGDetailsSet()
@@ -54,20 +53,46 @@ UIGDetailsSet::~UIGDetailsSet()
     parentItem()->removeItem(this);
 }
 
+void UIGDetailsSet::configure(UIVMItem *pItem, const QStringList &settings, bool fFullSet)
+{
+    /* Assign settings: */
+    m_machine = pItem->machine();
+    m_settings = settings;
+
+    /* Create elements step-by-step: */
+    prepareElements(fFullSet);
+}
+
 const CMachine& UIGDetailsSet::machine() const
 {
     return m_machine;
 }
 
-void UIGDetailsSet::sltElementPrepared()
+void UIGDetailsSet::sltFirstStep(QString strSetId)
 {
+    /* Was that a requested set? */
+    if (strSetId != m_strSetId)
+        return;
+
+    /* Prepare first element: */
+    m_iStep = DetailsElementType_General;
+    prepareElement(strSetId);
+}
+
+void UIGDetailsSet::sltNextStep(QString strSetId)
+{
+    /* Was that a requested set? */
+    if (strSetId != m_strSetId)
+        return;
+
     /* Prepare next element: */
     ++m_iStep;
-    prepareElement();
+    prepareElement(strSetId);
 }
 
 void UIGDetailsSet::sltSetPrepared()
 {
+    /* Reset step index: */
     m_iStep = -1;
     /* Notify parent group: */
     emit sigSetCreationDone();
@@ -91,8 +116,19 @@ void UIGDetailsSet::addItem(UIGDetailsItem *pItem)
 {
     switch (pItem->type())
     {
-        case UIGDetailsItemType_Element: m_elements.append(pItem); break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
+        case UIGDetailsItemType_Element:
+        {
+            UIGDetailsElement *pElement = pItem->toElement();
+            DetailsElementType type = pElement->elementType();
+            AssertMsg(!m_elements.contains(type), ("Element already added!"));
+            m_elements.insert(type, pItem);
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid item type!"));
+            break;
+        }
     }
 }
 
@@ -100,8 +136,19 @@ void UIGDetailsSet::removeItem(UIGDetailsItem *pItem)
 {
     switch (pItem->type())
     {
-        case UIGDetailsItemType_Element: m_elements.removeAt(m_elements.indexOf(pItem)); break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
+        case UIGDetailsItemType_Element:
+        {
+            UIGDetailsElement *pElement = pItem->toElement();
+            DetailsElementType type = pElement->elementType();
+            AssertMsg(m_elements.contains(type), ("Element do not present (type = %d)!", (int)type));
+            m_elements.remove(type);
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid item type!"));
+            break;
+        }
     }
 }
 
@@ -110,7 +157,7 @@ QList<UIGDetailsItem*> UIGDetailsSet::items(UIGDetailsItemType type /* = UIGDeta
     switch (type)
     {
         case UIGDetailsItemType_Any: return items(UIGDetailsItemType_Element);
-        case UIGDetailsItemType_Element: return m_elements;
+        case UIGDetailsItemType_Element: return m_elements.values();
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
     return QList<UIGDetailsItem*>();
@@ -131,18 +178,31 @@ void UIGDetailsSet::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType_E
 {
     switch (type)
     {
-        case UIGDetailsItemType_Any: clearItems(UIGDetailsItemType_Element); break;
-        case UIGDetailsItemType_Element: while (!m_elements.isEmpty()) { delete m_elements.last(); } break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
+        case UIGDetailsItemType_Any:
+        {
+            clearItems(UIGDetailsItemType_Element);
+            break;
+        }
+        case UIGDetailsItemType_Element:
+        {
+            foreach (int iKey, m_elements.keys())
+                delete m_elements[iKey];
+            AssertMsg(m_elements.isEmpty(), ("Set items cleanup failed!"));
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid item type!"));
+            break;
+        }
     }
 }
 
 UIGDetailsElement* UIGDetailsSet::element(DetailsElementType elementType) const
 {
-    foreach (UIGDetailsItem *pItem, items())
-        if (UIGDetailsElement *pElementItem = pItem->toElement())
-            if (pElementItem->elementType() == elementType)
-                return pElementItem;
+    UIGDetailsItem *pItem = m_elements.value(elementType, 0);
+    if (pItem)
+        return pItem->toElement();
     return 0;
 }
 
@@ -168,6 +228,8 @@ void UIGDetailsSet::updateLayout()
     {
         /* Get particular element: */
         UIGDetailsElement *pElement = pItem->toElement();
+        if (!pElement->isVisible())
+            continue;
 
         /* For each particular element: */
         switch (pElement->elementType())
@@ -232,6 +294,8 @@ int UIGDetailsSet::minimumWidthHint() const
     {
         /* Get particular element: */
         UIGDetailsElement *pElement = pItem->toElement();
+        if (!pElement->isVisible())
+            continue;
 
         /* For each particular element: */
         switch (pElement->elementType())
@@ -285,6 +349,8 @@ int UIGDetailsSet::minimumHeightHint() const
     {
         /* Get particular element: */
         UIGDetailsElement *pElement = pItem->toElement();
+        if (!pElement->isVisible())
+            continue;
 
         /* For each particular element: */
         switch (pElement->elementType())
@@ -339,13 +405,13 @@ QSizeF UIGDetailsSet::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* =
 
 void UIGDetailsSet::prepareElements(bool fFullSet)
 {
-    /* Prepare steps: */
-    m_iStep = DetailsElementType_General;
+    /* Which will be the last step? */
     m_iLastStep = fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
-
-    /* Prepare connections: */
-    connect(this, SIGNAL(sigElementPrepared()), this, SLOT(sltElementPrepared()), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigSetPrepared()), this, SLOT(sltSetPrepared()), Qt::QueuedConnection);
+    /* Cleanup superfluous elements: */
+    if (!fFullSet)
+        for (int i = DetailsElementType_Display; i <= DetailsElementType_Description; ++i)
+            if (m_elements.contains(i))
+                delete m_elements[i];
 
     /* Per-set configuration: */
     {
@@ -360,11 +426,12 @@ void UIGDetailsSet::prepareElements(bool fFullSet)
         }
     }
 
-    /* Prepare first step: */
-    prepareElement();
+    /* Prepare first element: */
+    m_strSetId = QUuid::createUuid().toString();
+    emit sigStartFirstStep(m_strSetId);
 }
 
-void UIGDetailsSet::prepareElement()
+void UIGDetailsSet::prepareElement(QString strSetId)
 {
     /* Step number feats the bounds: */
     if (m_iStep <= m_iLastStep)
@@ -373,108 +440,26 @@ void UIGDetailsSet::prepareElement()
         DetailsElementType elementType = (DetailsElementType)m_iStep;
         QString strElementTypeOpened = gpConverter->toInternalString(elementType);
         QString strElementTypeClosed = strElementTypeOpened + "Closed";
-
         /* Should be element visible? */
         bool fVisible = m_settings.contains(strElementTypeOpened) || m_settings.contains(strElementTypeClosed);
-        if (!fVisible)
-        {
-            /* Skip that element: */
-            emit sigElementPrepared();
-            return;
-        }
-
         /* Should be element opened? */
         bool fOpen = fVisible && m_settings.contains(strElementTypeOpened);
 
-        /* Create element: */
-        UIGDetailsElement *pElement = 0;
-        switch (m_iStep)
-        {
-            case DetailsElementType_General:
-            {
-                /* Create 'general' element: */
-                pElement = new UIGDetailsElementGeneral(this, fOpen);
-                break;
-            }
-            case DetailsElementType_System:
-            {
-                /* Create 'system' element: */
-                pElement = new UIGDetailsElementSystem(this, fOpen);
-                break;
-            }
-            case DetailsElementType_Preview:
-            {
-                /* Create 'preview' element: */
-                pElement = new UIGDetailsElementPreview(this, fOpen);
-                break;
-            }
-            case DetailsElementType_Display:
-            {
-                /* Create 'display' element: */
-                pElement = new UIGDetailsElementDisplay(this, fOpen);
-                break;
-            }
-            case DetailsElementType_Storage:
-            {
-                /* Create 'storage' element: */
-                pElement = new UIGDetailsElementStorage(this, fOpen);
-                break;
-            }
-            case DetailsElementType_Audio:
-            {
-                /* Create 'audio' element: */
-                pElement = new UIGDetailsElementAudio(this, fOpen);
-                break;
-            }
-            case DetailsElementType_Network:
-            {
-                /* Create 'network' element: */
-                pElement = new UIGDetailsElementNetwork(this, fOpen);
-                break;
-            }
-            case DetailsElementType_Serial:
-            {
-                /* Create 'serial' element: */
-                pElement = new UIGDetailsElementSerial(this, fOpen);
-                break;
-            }
-#ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
-            {
-                /* Create 'parallel' element: */
-                pElement = new UIGDetailsElementParallel(this, fOpen);
-                break;
-            }
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-            case DetailsElementType_USB:
-            {
-                /* Create 'usb' element: */
-                pElement = new UIGDetailsElementUSB(this, fOpen);
-                break;
-            }
-            case DetailsElementType_SF:
-            {
-                /* Create 'sf' element: */
-                pElement = new UIGDetailsElementSF(this, fOpen);
-                break;
-            }
-            case DetailsElementType_Description:
-            {
-                /* Create 'description' element: */
-                pElement = new UIGDetailsElementDescription(this, fOpen);
-                break;
-            }
-            default:
-            {
-                AssertMsgFailed(("Incorrect step type!"));
-                break;
-            }
-        }
+        /* Check if element is present already: */
+        UIGDetailsElement *pElement = element(elementType);
+        /* Create if necessary: */
+        if (!pElement)
+            pElement = createElement(elementType, fOpen);
         /* Prepare element: */
+        if (fVisible && !pElement->isVisible())
+            pElement->show();
+        else if (!fVisible && pElement->isVisible())
+            pElement->hide();
         pElement->sltUpdateAppearance();
+        /* Update layout: */
         model()->updateLayout();
         /* Mark element prepared: */
-        emit sigElementPrepared();
+        emit sigElementPrepared(strSetId);
     }
     /* Step number out of bounds: */
     else
@@ -482,5 +467,88 @@ void UIGDetailsSet::prepareElement()
         /* Mark whole set prepared: */
         emit sigSetPrepared();
     }
+}
+
+UIGDetailsElement* UIGDetailsSet::createElement(DetailsElementType elementType, bool fOpen)
+{
+    UIGDetailsElement *pElement = 0;
+    switch (elementType)
+    {
+        case DetailsElementType_General:
+        {
+            /* Create 'general' element: */
+            pElement = new UIGDetailsElementGeneral(this, fOpen);
+            break;
+        }
+        case DetailsElementType_System:
+        {
+            /* Create 'system' element: */
+            pElement = new UIGDetailsElementSystem(this, fOpen);
+            break;
+        }
+        case DetailsElementType_Preview:
+        {
+            /* Create 'preview' element: */
+            pElement = new UIGDetailsElementPreview(this, fOpen);
+            break;
+        }
+        case DetailsElementType_Display:
+        {
+            /* Create 'display' element: */
+            pElement = new UIGDetailsElementDisplay(this, fOpen);
+            break;
+        }
+        case DetailsElementType_Storage:
+        {
+            /* Create 'storage' element: */
+            pElement = new UIGDetailsElementStorage(this, fOpen);
+            break;
+        }
+        case DetailsElementType_Audio:
+        {
+            /* Create 'audio' element: */
+            pElement = new UIGDetailsElementAudio(this, fOpen);
+            break;
+        }
+        case DetailsElementType_Network:
+        {
+            /* Create 'network' element: */
+            pElement = new UIGDetailsElementNetwork(this, fOpen);
+            break;
+        }
+        case DetailsElementType_Serial:
+        {
+            /* Create 'serial' element: */
+            pElement = new UIGDetailsElementSerial(this, fOpen);
+            break;
+        }
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        case DetailsElementType_Parallel:
+        {
+            /* Create 'parallel' element: */
+            pElement = new UIGDetailsElementParallel(this, fOpen);
+            break;
+        }
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        case DetailsElementType_USB:
+        {
+            /* Create 'usb' element: */
+            pElement = new UIGDetailsElementUSB(this, fOpen);
+            break;
+        }
+        case DetailsElementType_SF:
+        {
+            /* Create 'sf' element: */
+            pElement = new UIGDetailsElementSF(this, fOpen);
+            break;
+        }
+        case DetailsElementType_Description:
+        {
+            /* Create 'description' element: */
+            pElement = new UIGDetailsElementDescription(this, fOpen);
+            break;
+        }
+    }
+    return pElement;
 }
 
