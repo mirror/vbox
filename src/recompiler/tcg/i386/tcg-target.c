@@ -778,6 +778,9 @@ static void tcg_out_addi(TCGContext *s, int reg, tcg_target_long val)
     }
 }
 
+#if defined(VBOX) && defined(RT_OS_DARWIN) && ARCH_BITS == 32
+# define VBOX_16_BYTE_STACK_ALIGN
+#endif
 #ifdef VBOX_16_BYTE_STACK_ALIGN
 static void tcg_out_subi(TCGContext *s, int reg, tcg_target_long val)
 {
@@ -1542,9 +1545,6 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     }
 
 # if !defined(VBOX) || !defined(REM_PHYS_ADDR_IN_TLB)
-#  if defined(VBOX) && defined(RT_OS_DARWIN) && ARCH_BITS == 32
-#   define VBOX_16_BYTE_STACK_ALIGN
-#  endif
 
     /* XXX: move that code at the end of the TB */
     if (TCG_TARGET_REG_BITS == 64) {
