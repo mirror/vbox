@@ -1271,12 +1271,12 @@ endif
 #
 ifndef VBOX_GCC_TOOL
  ifeq ($(KBUILD_TARGET),win)
-#  ifeq ($(KBUILD_TARGET_ARCH),x86)
+  ifeq ($(KBUILD_TARGET_ARCH),x86)
    VBOX_GCC_TOOL := MINGW32
    TOOL_MINGW32_CFLAGS := $(UNDEFINED) # override -g
-#  else
-#   VBOX_GCC_TOOL := MINGW64
-#  endif
+  else
+   VBOX_GCC_TOOL := MINGWW64
+  endif
  else ifeq ($(KBUILD_TARGET),os2)
   VBOX_GCC_TOOL := GXX3OMF
  else ifeq ($(KBUILD_TARGET),darwin)
@@ -3743,7 +3743,7 @@ TEMPLATE_VBOXNOCRTGCC_CXXFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS
 TEMPLATE_VBOXNOCRTGCC_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_VBOXNOCRTGCC_INCS              = $(PATH_ROOT)/include/iprt/nocrt
 
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),$(if-expr !defined(VBOX_WITH_NEW_WIN_TOOLCHAIN),win.amd64,))
+ifeq (disabled-by-mingw-w64 $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
  # cross compile to 64-bit ELF (linux).
  TEMPLATE_VBOXNOCRTGCC_TOOL             = XGCCAMD64LINUX
  TEMPLATE_VBOXNOCRTGCC_ASTOOL           = YASM
@@ -3751,7 +3751,7 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),$(if-expr !defined(VBOX_WITH_NEW_WI
  TEMPLATE_VBOXNOCRTGCC_LIBS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701-r2/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
  TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -nostdlib
 
-else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
+else if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
  # Use the default GCC (MinGW) with the Microsoft linker.
  # (Drop all '-g' options as we're unable to strip the debug info.)
  TEMPLATE_VBOXNOCRTGCC_TOOL             = $(VBOX_GCC_TOOL)
@@ -3761,6 +3761,7 @@ else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
  TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -Incremental:NO -MapInfo:Exports -NoD
  TEMPLATE_VBOXNOCRTGCC_LIBS             = $(VBOX_GCC_LIBGCC)
  TEMPLATE_VBOXNOCRTGCC_CFLAGS          := $(filter-out -g,$(TEMPLATE_VBOXNOCRTGCC_CFLAGS)) -s
+ TEMPLATE_VBOXNOCRTGCC_CXXFLAGS        := $(filter-out -g,$(TEMPLATE_VBOXNOCRTGCC_CXXFLAGS)) -s
 
 else
  # Use the default GCC.
