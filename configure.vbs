@@ -1384,72 +1384,74 @@ end sub
 
 
 ''
-' Checks for a MingW32 suitable for building the recompiler.
+' Checks for a MinGW32 suitable for building the recompiler.
 '
 ' strOptW32API is currently ignored.
 '
-sub CheckForMingW(strOptMingw, strOptW32API)
-   dim strPathMingW, strPathW32API, str
-   PrintHdr "MinGW GCC v3.3.x + Binutils + Runtime + W32API"
+sub CheckForMinGW32(strOptMinGW32, strOptW32API)
+   dim strPathMingW32, strPathW32API, str
+   PrintHdr "MinGW32 GCC v3.3.x + Binutils + Runtime + W32API"
 
    '
    ' Find the MinGW and W32API tools.
    '
-   strPathMingW = ""
+   strPathMingW32 = ""
    strPathW32API = ""
 
    ' The specified path.
-   if (strPathMingW = "") And (strOptMingW <> "") then
-      if CheckForMingWSub(strOptMingW, strOptW32API) then
-         strPathMingW = strOptMingW
+   if (strPathMingW32 = "") And (strOptMinGW32 <> "") then
+      if CheckForMinGW32Sub(strOptMinGW32, strOptW32API) then
+         strPathMingW32 = strOptMinGW32
          strPathW32API = strOptW32API
       end if
    end if
 
    ' The tools location (first).
-   if (strPathMingW = "") And (g_blnInternalFirst = True) then
+   if (strPathMingW32 = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/mingw32/v3.3.3"
       str2 = g_strPathDev & "/win.x86/w32api/v2.5"
-      if CheckForMingWSub(str, str2) then
-         strPathMingW = str
+      if CheckForMinGW32Sub(str, str2) then
+         strPathMingW32 = str
          strPathW32API = str2
       end if
    end if
 
    ' See if there is any gcc around.
-   if strPathMingW = "" then
+   if strPathMingW32 = "" then
       str = Which("mingw32-gcc.exe")
       if (str <> "") then
          str = PathParent(PathStripFilename(str))
-         if CheckForMingWSub(str, str) then strPathMingW = str
+         if CheckForMinGW32Sub(str, str) then strPathMingW32 = str
       end if
    end if
 
-   if strPathMingW = "" then
+   if strPathMingW32 = "" then
       str = Which("gcc.exe")
       if (str <> "") then
          str = PathParent(PathStripFilename(str))
-         if CheckForMingWSub(str, str) then strPathMingW = str
+         if CheckForMinGW32Sub(str, str) then strPathMingW32 = str
       end if
    end if
 
    ' The tools location (post).
-   if (strPathMingW = "") And (g_blnInternalFirst = False) then
+   if (strPathMingW32 = "") And (g_blnInternalFirst = False) then
       str = g_strPathDev & "/win.x86/mingw32/v3.3.3"
       str2 = g_strPathDev & "/win.x86/w32api/v2.5"
-      if CheckForMingWSub(str, str2) then
-         strPathMingW = str
+      if CheckForMinGW32Sub(str, str2) then
+         strPathMingW32 = str
          strPathW32API = str2
       end if
    end if
 
    ' Success?
-   if strPathMingW = "" then
-      if strOptMingw = "" then
-         MsgError "Can't locate a suitable MinGW installation. Try specify the path with " _
-            & "the --with-MinGW=<path> argument. If still no luck, consult the configure.log and the build requirements."
+   if strPathMingW32 = "" then
+      if g_strTargetArch = "amd64" then
+         MsgWarning "Can't locate a suitable MinGW32 installation, ignoring since we're targetting AMD64 and won't need it."
+      elseif strOptMinGW32 = "" then
+         MsgError "Can't locate a suitable MinGW32 installation. Try specify the path with " _
+            & "the --with-MinGW32=<path> argument. If still no luck, consult the configure.log and the build requirements."
       else
-         MsgError "Can't locate a suitable MinGW installation. Please consult the configure.log and the build requirements."
+         MsgError "Can't locate a suitable MinGW32 installation. Please consult the configure.log and the build requirements."
       end if
       exit sub
    end if
@@ -1457,10 +1459,10 @@ sub CheckForMingW(strOptMingw, strOptW32API)
    '
    ' Emit the config.
    '
-   strPathMingW = UnixSlashes(PathAbs(strPathMingW))
-   CfgPrint "PATH_TOOL_MINGW32     := " & strPathMingW
-   PrintResult "MinGW (GCC v" & g_strSubOutput & ")", strPathMingW
-   if (strPathMingW = strPathW32API) Or strPathW32API = "" then
+   strPathMingW32 = UnixSlashes(PathAbs(strPathMingW32))
+   CfgPrint "PATH_TOOL_MINGW32     := " & strPathMingW32
+   PrintResult "MinGW32 (GCC v" & g_strSubOutput & ")", strPathMingW32
+   if (strPathMingW32 = strPathW32API) Or strPathW32API = "" then
       CfgPrint "PATH_SDK_W32API       := $(PATH_TOOL_MINGW32)"
    else
       CfgPrint "PATH_SDK_W32API       := " & strPathW32API
@@ -1470,26 +1472,26 @@ end sub
 
 ''
 ' Checks if the specified path points to an usable MinGW or not.
-function CheckForMingWSub(strPathMingW, strPathW32API)
+function CheckForMinGW32Sub(strPathMingW32, strPathW32API)
    g_strSubOutput = ""
-   if strPathW32API = "" then strPathW32API = strPathMingW
-   LogPrint "trying: strPathMingW="  &strPathMingW & " strPathW32API=" & strPathW32API
+   if strPathW32API = "" then strPathW32API = strPathMingW32
+   LogPrint "trying: strPathMingW32="  &strPathMingW32 & " strPathW32API=" & strPathW32API
 
-   if   LogFileExists(strPathMingW, "bin/mingw32-gcc.exe") _
-    And LogFileExists(strPathMingW, "bin/ld.exe") _
-    And LogFileExists(strPathMingW, "bin/objdump.exe") _
-    And LogFileExists(strPathMingW, "bin/dllwrap.exe") _
-    And LogFileExists(strPathMingW, "bin/as.exe") _
-    And LogFileExists(strPathMingW, "include/string.h") _
-    And LogFileExists(strPathMingW, "include/_mingw.h") _
-    And LogFileExists(strPathMingW, "lib/dllcrt1.o") _
-    And LogFileExists(strPathMingW, "lib/dllcrt2.o") _
-    And LogFileExists(strPathMingW, "lib/libmsvcrt.a") _
+   if   LogFileExists(strPathMingW32, "bin/mingw32-gcc.exe") _
+    And LogFileExists(strPathMingW32, "bin/ld.exe") _
+    And LogFileExists(strPathMingW32, "bin/objdump.exe") _
+    And LogFileExists(strPathMingW32, "bin/dllwrap.exe") _
+    And LogFileExists(strPathMingW32, "bin/as.exe") _
+    And LogFileExists(strPathMingW32, "include/string.h") _
+    And LogFileExists(strPathMingW32, "include/_mingw.h") _
+    And LogFileExists(strPathMingW32, "lib/dllcrt1.o") _
+    And LogFileExists(strPathMingW32, "lib/dllcrt2.o") _
+    And LogFileExists(strPathMingW32, "lib/libmsvcrt.a") _
     _
     And LogFileExists(strPathW32API, "lib/libkernel32.a") _
     And LogFileExists(strPathW32API, "include/windows.h") _
       then
-      if Shell(DosSlashes(strPathMingW & "/bin/gcc.exe") & " --version", True) = 0 then
+      if Shell(DosSlashes(strPathMingW32 & "/bin/gcc.exe") & " --version", True) = 0 then
          dim offVer, iMajor, iMinor, iPatch, strVer
 
          ' extract the version.
@@ -1510,10 +1512,137 @@ function CheckForMingWSub(strPathMingW, strPathW32API)
          end if
          if strVer <> "" then
             if (iMajor = 3) And (iMinor = 3) then
-               CheckForMingWSub = True
+               CheckForMinGW32Sub = True
                g_strSubOutput = strVer
             else
-               LogPrint "MinGW version '" & iMajor & "." & iMinor & "." & iPatch & "' is not supported (or configure.vbs failed to parse it correctly)."
+               LogPrint "MinGW32 version '" & iMajor & "." & iMinor & "." & iPatch & "' is not supported (or configure.vbs failed to parse it correctly)."
+            end if
+         else
+            LogPrint "Couldn't locate the GCC version in the output!"
+         end if
+
+      else
+         LogPrint "Failed to run gcc.exe!"
+      end if
+   end if
+end function
+
+
+''
+' Checks for a MinGW-w64 suitable for building the recompiler.
+'
+sub CheckForMinGWw64(strOptMinGWw64)
+   dim strPathMingWw64, str
+   PrintHdr "MinGW-w64 GCC (unprefixed)"
+
+   '
+   ' Find the MinGW-w64 tools.
+   '
+   strPathMingWw64 = ""
+
+   ' The specified path.
+   if (strPathMingWw64 = "") And (strOptMinGWw64 <> "") then
+      if CheckForMinGWw64Sub(strOptMinGWw64) then
+         strPathMingWw64 = strOptMinGWw64
+      end if
+   end if
+
+   ' The tools location (first).
+   if (strPathMinGWw64 = "") And (g_blnInternalFirst = True) then
+      str = g_strPathDev & "/win.amd64/mingw-w64/r1"
+      if CheckForMinGWw64Sub(str) then
+         strPathMinGWw64 = str
+      end if
+   end if
+
+   ' See if there is any gcc around.
+   if strPathMinGWw64 = "" then
+      str = Which("x86_64-w64-mingw32-gcc.exe")
+      if (str <> "") then
+         str = PathParent(PathStripFilename(str))
+         if CheckForMinGWw64Sub(str) then strPathMinGWw64 = str
+      end if
+   end if
+
+   if strPathMinGWw64 = "" then
+      str = Which("gcc.exe")
+      if (str <> "") then
+         str = PathParent(PathStripFilename(str))
+         if CheckForMinGWw64Sub(str) then strPathMinGWw64 = str
+      end if
+   end if
+
+   ' The tools location (post).
+   if (strPathMinGWw64 = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.amd64/mingw-w64/r1"
+      if CheckForMinGWw64Sub(str) then
+         strPathMinGWw64 = str
+      end if
+   end if
+
+   ' Success?
+   if strPathMinGWw64 = "" then
+      if g_strTargetArch = "x86" then
+         MsgWarning "Can't locate a suitable MinGW-w64 installation, ignoring since we're targetting x86 and won't need it."
+      elseif strOptMinGWw64 = "" then
+         MsgError "Can't locate a suitable MinGW-w64 installation. Try specify the path with " _
+            & "the --with-MinGW-w64=<path> argument. If still no luck, consult the configure.log and the build requirements."
+      else
+         MsgError "Can't locate a suitable MinGW-w64 installation. Please consult the configure.log and the build requirements."
+      end if
+      exit sub
+   end if
+
+   '
+   ' Emit the config.
+   '
+   strPathMinGWw64 = UnixSlashes(PathAbs(strPathMinGWw64))
+   CfgPrint "PATH_TOOL_MINGWW64    := " & strPathMinGWw64
+   PrintResult "MinGW-w64 (GCC v" & g_strSubOutput & ")", strPathMinGWw64
+end sub
+
+''
+' Checks if the specified path points to an usable MinGW-w64 or not.
+function CheckForMinGWw64Sub(strPathMinGWw64)
+   g_strSubOutput = ""
+   LogPrint "trying: strPathMinGWw64="  &strPathMinGWw64
+
+   if   LogFileExists(strPathMinGWw64, "bin/gcc.exe") _
+    And LogFileExists(strPathMinGWw64, "bin/ld.exe") _
+    And LogFileExists(strPathMinGWw64, "bin/objdump.exe") _
+    And LogFileExists(strPathMinGWw64, "bin/dllwrap.exe") _
+    And LogFileExists(strPathMinGWw64, "bin/dlltool.exe") _
+    And LogFileExists(strPathMinGWw64, "bin/as.exe") _
+    And LogFileExists(strPathMinGWw64, "include/bfd.h") _
+    And LogFileExists(strPathMinGWw64, "lib64/libgcc_s.a") _
+    And LogFileExists(strPathMinGWw64, "x86_64-w64-mingw32/lib/dllcrt1.o") _
+    And LogFileExists(strPathMinGWw64, "x86_64-w64-mingw32/lib/dllcrt2.o") _
+    And LogFileExists(strPathMinGWw64, "x86_64-w64-mingw32/lib/libmsvcrt.a") _
+    And LogFileExists(strPathMinGWw64, "x86_64-w64-mingw32/lib/libmsvcr100.a") _
+    And LogFileExists(strPathMinGWw64, "x86_64-w64-mingw32/include/_mingw.h") _
+    And LogFileExists(strPathMinGWw64, "x86_64-w64-mingw32/include/stdint.h") _
+    And LogFileExists(strPathMinGWw64, "x86_64-w64-mingw32/include/windows.h") _
+      then
+      if Shell(DosSlashes(strPathMinGWw64 & "/bin/gcc.exe") & " -dumpversion", True) = 0 then
+         dim offVer, iMajor, iMinor, iPatch, strVer
+
+         ' extract the version.
+         strVer = Trim(Replace(Replace(g_strShellOutput, vbCr, ""), vbLf, ""))
+         if   (Mid(strVer, 2, 1) = ".") _
+          And (Mid(strVer, 4, 1) = ".") then
+            iMajor = Int(Left(strVer, 1)) ' Is Int() the right thing here? I want atoi()!!!
+            iMinor = Int(Mid(strVer, 3, 1))
+            iPatch = Int(Mid(strVer, 5))
+         else
+            LogPrint "Malformed version: '" & strVer & "'"
+            strVer = ""
+         end if
+         if strVer <> "" then
+            if (iMajor = 4) And (iMinor >= 4) then
+               CheckForMinGWw64Sub = True
+               g_strSubOutput = strVer
+            else
+               LogPrint "MinGW-w64 version '" & iMajor & "." & iMinor & "." & iPatch & "' is not supported (or configure.vbs failed to parse it correctly)."
             end if
          else
             LogPrint "Couldn't locate the GCC version in the output!"
@@ -2011,7 +2140,8 @@ sub usage
    Print "  --with-DXSDK=PATH     "
    Print "  --with-kBuild=PATH    "
    Print "  --with-libSDL=PATH    "
-   Print "  --with-MinGW=PATH     "
+   Print "  --with-MinGW32=PATH   "
+   Print "  --with-MinGW-w64=PATH "
    Print "  --with-Qt4=PATH       "
    Print "  --with-SDK=PATH       "
    Print "  --with-VC=PATH        "
@@ -2046,7 +2176,8 @@ Sub Main
    strOptDXDDK = ""
    strOptkBuild = ""
    strOptlibSDL = ""
-   strOptMingW = ""
+   strOptMinGW32 = ""
+   strOptMinGWw64 = ""
    strOptQt4 = ""
    strOptSDK = ""
    strOptVC = ""
@@ -2085,8 +2216,10 @@ Sub Main
             strOptkBuild = strPath
          case "--with-libsdl"
             strOptlibSDL = strPath
-         case "--with-mingw"
-            strOptMingW = strPath
+         case "--with-mingw32"
+            strOptMinGW32 = strPath
+         case "--with-mingw-w64"
+            strOptMinGWw64 = strPath
          case "--with-qt4"
             strOptQt4 = strPath
          case "--with-sdk"
@@ -2167,7 +2300,8 @@ Sub Main
    CheckForVisualCPP strOptVC, strOptVCCommon, blnOptVCExpressEdition
    CheckForPlatformSDK strOptSDK
    CheckForMidl
-   CheckForMingW strOptMingw, strOptW32API
+   CheckForMinGW32 strOptMinGW32, strOptW32API
+   CheckForMinGWw64 strOptMinGWw64
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
    EnvPrint "set PATH=%PATH%;" & g_strPath& "/tools/win." & g_strTargetArch & "/bin;" '' @todo look for yasm
    CheckForlibSDL strOptlibSDL
