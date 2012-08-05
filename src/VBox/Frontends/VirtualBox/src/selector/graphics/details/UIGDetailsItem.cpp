@@ -141,14 +141,14 @@ void UIGDetailsItem::paintText(QPainter *pPainter, const QRect &rect, const QFon
     pPainter->restore();
 }
 
-UIPrepareStep::UIPrepareStep(QObject *pParent)
+UIPrepareStep::UIPrepareStep(QObject *pParent, const QString &strStepId /* = QString() */)
     : QObject(pParent)
+    , m_strStepId(strStepId)
 {
-    connect(this, SIGNAL(sigStepDone()), pParent, SLOT(sltStepDone()), Qt::QueuedConnection);
 }
 
 void UIPrepareStep::sltStepDone()
 {
-    emit sigStepDone();
+    emit sigStepDone(m_strStepId);
 }
 

@@ -78,6 +78,7 @@ void UIGDetailsElementInterface::sltUpdateAppearanceFinished(const UITextTable &
     setText(text);
     cleanupThread();
     model()->updateLayout();
+    update();
 }
 
 void UIGDetailsElementInterface::cleanupThread()
@@ -158,11 +159,11 @@ UIGDetailsElementPreview::UIGDetailsElementPreview(UIGDetailsSet *pParent, bool 
     m_pPreview = new UIGMachinePreview(this);
     pLayout->addItem(m_pPreview);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    m_pPreview->setMachine(machine());
 }
 
 void UIGDetailsElementPreview::sltUpdateAppearance()
 {
+    m_pPreview->setMachine(machine());
 }
 
 int UIGDetailsElementPreview::minimumWidthHint() const

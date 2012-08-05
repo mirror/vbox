@@ -101,18 +101,23 @@ class UIPrepareStep : public QObject
 
 signals:
 
-    /* Notifiers: Prepare stuff: */
-    void sigStepDone();
+    /* Notifier: Prepare stuff: */
+    void sigStepDone(QString strStepId);
 
 public:
 
     /* Constructor: */
-    UIPrepareStep(QObject *pParent);
+    UIPrepareStep(QObject *pParent, const QString &strStepId = QString());
 
 private slots:
 
     /* Handlers: Prepare stuff: */
     void sltStepDone();
+
+private:
+
+    /* Variables: */
+    QString m_strStepId;
 };
 
 #endif /* __UIGDetailsItem_h__ */

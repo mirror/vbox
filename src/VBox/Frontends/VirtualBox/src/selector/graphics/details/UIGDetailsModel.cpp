@@ -154,12 +154,12 @@ void UIGDetailsModel::sltElementTypeToggled()
         detailsSettings.append(strElementTypeClosed);
     }
     vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, detailsSettings);
-    m_pRoot->rebuildItems();
+    m_pRoot->updateItems();
 }
 
 void UIGDetailsModel::sltHandleSlidingStarted()
 {
-    m_pRoot->setItems(QList<UIVMItem*>());
+    m_pRoot->stopPopulatingItems();
 }
 
 QVariant UIGDetailsModel::data(int iKey) const

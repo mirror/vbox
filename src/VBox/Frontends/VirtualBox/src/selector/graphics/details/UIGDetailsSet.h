@@ -39,7 +39,8 @@ class UIGDetailsSet : public UIGDetailsItem
 signals:
 
     /* Notifiers: Prepare stuff: */
-    void sigElementPrepared();
+    void sigStartFirstStep(QString strSetId);
+    void sigElementPrepared(QString strSetId);
     void sigSetPrepared();
     void sigSetCreationDone();
 
@@ -50,9 +51,11 @@ public:
     int type() const { return Type; }
 
     /* Constructor/destructor: */
-    UIGDetailsSet(UIGDetailsItem *pParent, UIVMItem *pItem,
-                  const QStringList &settings, bool fFullSet);
+    UIGDetailsSet(UIGDetailsItem *pParent);
     ~UIGDetailsSet();
+
+    /* API: Configure stuff: */
+    void configure(UIVMItem *pItem, const QStringList &settings, bool fFullSet);
 
     /* API: Machine stuff: */
     const CMachine& machine() const;
@@ -60,7 +63,8 @@ public:
 private slots:
 
     /* Handlers: Prepare stuff: */
-    void sltElementPrepared();
+    void sltFirstStep(QString strSetId);
+    void sltNextStep(QString strSetId);
     void sltSetPrepared();
 
 private:
@@ -93,15 +97,17 @@ private:
 
     /* Helpers: Prepare stuff: */
     void prepareElements(bool fFullSet);
-    void prepareElement();
+    void prepareElement(QString strSetId);
+    UIGDetailsElement* createElement(DetailsElementType elementType, bool fOpen);
 
     /* Main variables: */
     CMachine m_machine;
-    QList<UIGDetailsItem*> m_elements;
+    QMap<int, UIGDetailsItem*> m_elements;
 
     /* Prepare variables: */
     int m_iStep;
     int m_iLastStep;
+    QString m_strSetId;
     QStringList m_settings;
 };
 

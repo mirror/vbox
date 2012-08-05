@@ -55,9 +55,14 @@ void UIGDetailsGroup::setItems(const QList<UIVMItem*> &items)
     prepareSets(items);
 }
 
-void UIGDetailsGroup::rebuildItems()
+void UIGDetailsGroup::updateItems()
 {
-    recreateSets();
+    updateSets();
+}
+
+void UIGDetailsGroup::stopPopulatingItems()
+{
+    m_strGroupId = QUuid::createUuid().toString();
 }
 
 void UIGDetailsGroup::addItem(UIGDetailsItem *pItem)
@@ -141,25 +146,34 @@ void UIGDetailsGroup::updateLayout()
         pItem->updateLayout();
 }
 
-void UIGDetailsGroup::sltFirstStep(QString strId)
-{
-    /* Prepare first set: */
-    if (strId == m_strCurrentId)
-    {
-        m_iStep = 0;
-        prepareSet();
-    }
-}
-
-void UIGDetailsGroup::sltStepDone()
+void UIGDetailsGroup::sltFirstStep(QString strGroupId)
 {
     /* Clear step: */
     delete m_pStep;
     m_pStep = 0;
 
+    /* Was that a requested group? */
+    if (strGroupId != m_strGroupId)
+        return;
+
+    /* Prepare first set: */
+    m_iStep = 0;
+    prepareSet(strGroupId);
+}
+
+void UIGDetailsGroup::sltNextDone(QString strGroupId)
+{
+    /* Clear step: */
+    delete m_pStep;
+    m_pStep = 0;
+
+    /* Was that a requested group? */
+    if (strGroupId != m_strGroupId)
+        return;
+
     /* Prepare next set: */
     ++m_iStep;
-    prepareSet();
+    prepareSet(strGroupId);
 }
 
 void UIGDetailsGroup::loadSettings()
@@ -204,54 +218,49 @@ void UIGDetailsGroup::prepareLayout()
 
 void UIGDetailsGroup::prepareSets(const QList<UIVMItem*> &items)
 {
-    /* Clear sets first: */
-    clearItems();
-    /* Clear step: */
-    if (m_pStep)
-    {
-        delete m_pStep;
-        m_pStep = 0;
-    }
-
-    /* Load settings: */
-    loadSettings();
+    /* Remove superflous sets: */
+    while (m_sets.size() > items.size())
+        delete m_sets.last();
 
     /* Remember new items: */
     m_items = items;
 
-    /* Prepare first set: */
-    m_strCurrentId = QUuid::createUuid().toString();
-    emit sigStartFirstStep(m_strCurrentId);
+    /* Update sets: */
+    updateSets();
 }
 
-void UIGDetailsGroup::recreateSets()
+void UIGDetailsGroup::updateSets()
 {
-    /* Clear sets first: */
-    clearItems();
-    /* Clear step: */
-    if (m_pStep)
-    {
-        delete m_pStep;
-        m_pStep = 0;
-    }
-
     /* Load settings: */
     loadSettings();
 
+    /* Clear step: */
+    delete m_pStep;
+    m_pStep = 0;
+
     /* Prepare first set: */
-    m_strCurrentId = QUuid::createUuid().toString();
-    emit sigStartFirstStep(m_strCurrentId);
+    m_strGroupId = QUuid::createUuid().toString();
+    emit sigStartFirstStep(m_strGroupId);
 }
 
-void UIGDetailsGroup::prepareSet()
+void UIGDetailsGroup::prepareSet(QString strGroupId)
 {
     /* Step number feats the bounds: */
     if (m_iStep >= 0 && m_iStep < m_items.size())
     {
-        /* Create prepare step & set: */
-        m_pStep = new UIPrepareStep(this);
-        UIGDetailsSet *pSet = new UIGDetailsSet(this, m_items[m_iStep], m_settings, m_items.size() == 1);
+        /* Should we create set? */
+        UIGDetailsSet *pSet = 0;
+        if (m_iStep > m_sets.size() - 1)
+            pSet = new UIGDetailsSet(this);
+        else
+            pSet = m_sets.at(m_iStep)->toSet();
+        /* Create prepare step: */
+        m_pStep = new UIPrepareStep(this, strGroupId);
         connect(pSet, SIGNAL(sigSetCreationDone()), m_pStep, SLOT(sltStepDone()), Qt::QueuedConnection);
+        connect(m_pStep, SIGNAL(sigStepDone(const QString&)), this, SLOT(sltNextDone(const QString&)), Qt::QueuedConnection);
+        /* Configure set: */
+        pSet->configure(m_items[m_iStep], m_settings, m_items.size() == 1);
+        /* Update model: */
         model()->updateLayout();
     }
 }
