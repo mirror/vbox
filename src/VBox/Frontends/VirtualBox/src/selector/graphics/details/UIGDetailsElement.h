@@ -30,6 +30,7 @@
 class UIGDetailsSet;
 class CMachine;
 class UIGraphicsRotatorButton;
+class QTextLayout;
 
 /* Typedefs: */
 typedef QPair<QString, QString> UITextTableLine;
@@ -98,7 +99,9 @@ protected:
         ElementData_NameSize,
         ElementData_ButtonSize,
         ElementData_HeaderSize,
-        ElementData_TextSize
+        ElementData_TextWidth,
+        ElementData_TextHeight,
+        ElementData_MinimumTextColumnWidth
     };
 
     /* Data provider: */
@@ -117,7 +120,6 @@ protected:
     const CMachine& machine();
 
     /* Helpers: Layout stuff: */
-    void updateSizeHint();
     void updateLayout();
 
     /* Helpers: Animation stuff: */
@@ -168,6 +170,9 @@ private:
     void updateButtonVisibility();
     void updateHoverAccessibility();
     void updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent);
+
+    /* Helper: Layout stuff: */
+    static QTextLayout* prepareTextLayout(const QFont &font, const QString &strText, int iWidth, int &iHeight);
 
     /* Helper: Animation stuff: */
     void updateAnimationParameters();

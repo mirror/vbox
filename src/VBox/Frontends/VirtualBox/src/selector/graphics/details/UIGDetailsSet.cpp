@@ -206,17 +206,14 @@ UIGDetailsElement* UIGDetailsSet::element(DetailsElementType elementType) const
     return 0;
 }
 
-void UIGDetailsSet::updateSizeHint()
+void UIGDetailsSet::updateLayout()
 {
     /* Update size-hints for all the items: */
     foreach (UIGDetailsItem *pItem, items())
         pItem->updateSizeHint();
     /* Update size-hint for this item: */
-    updateGeometry();
-}
+    updateSizeHint();
 
-void UIGDetailsSet::updateLayout()
-{
     /* Prepare variables: */
     int iMargin = data(SetData_Margin).toInt();
     int iSpacing = data(SetData_Spacing).toInt();
@@ -241,8 +238,14 @@ void UIGDetailsSet::updateLayout()
                 int iPreviewWidth = pPreviewElement ? pPreviewElement->minimumWidthHint() : 0;
                 int iWidth = iPreviewWidth == 0 ? iMaximumWidth - 2 * iMargin :
                                                   iMaximumWidth - 2 * iMargin - iSpacing - iPreviewWidth;
-                int iHeight = pElement->minimumHeightHint();
                 pElement->setPos(iMargin, iVerticalIndent);
+                /* Resize to required width: */
+                int iHeight = pElement->minimumHeightHint();
+                pElement->resize(iWidth, iHeight);
+                /* Update minimum height hint: */
+                pItem->updateSizeHint();
+                /* Resize to required height: */
+                iHeight = pElement->minimumHeightHint();
                 pElement->resize(iWidth, iHeight);
                 pItem->updateLayout();
                 iVerticalIndent += (iHeight + iSpacing);
@@ -271,11 +274,17 @@ void UIGDetailsSet::updateLayout()
             case DetailsElementType_Description:
             {
                 int iWidth = iMaximumWidth - 2 * iMargin;
-                int iHeight = pElement->minimumHeightHint();
                 pElement->setPos(iMargin, iVerticalIndent);
+                /* Resize to required width: */
+                int iHeight = pElement->minimumHeightHint();
                 pElement->resize(iWidth, iHeight);
-                iVerticalIndent += (iHeight + iSpacing);
+                /* Update minimum height hint: */
+                pItem->updateSizeHint();
+                /* Resize to required height: */
+                iHeight = pElement->minimumHeightHint();
+                pElement->resize(iWidth, iHeight);
                 pItem->updateLayout();
+                iVerticalIndent += (iHeight + iSpacing);
                 break;
             }
         }

@@ -60,7 +60,6 @@ public:
     void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Set);
 
     /* API: Layout stuff: */
-    void updateSizeHint();
     void updateLayout();
 
 private slots:

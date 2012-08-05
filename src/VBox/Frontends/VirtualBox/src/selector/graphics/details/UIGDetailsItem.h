@@ -70,7 +70,7 @@ public:
     virtual void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Any) = 0;
 
     /* API: Layout stuff: */
-    virtual void updateSizeHint() = 0;
+    void updateSizeHint();
     virtual void updateLayout() = 0;
 
 protected:

@@ -80,6 +80,11 @@ UIGDetailsItem* UIGDetailsItem::parentItem() const
     return m_pParent;
 }
 
+void UIGDetailsItem::updateSizeHint()
+{
+    updateGeometry();
+}
+
 #if 0
 void UIGDetailsItem::hoverEnterEvent(QGraphicsSceneHoverEvent*)
 {

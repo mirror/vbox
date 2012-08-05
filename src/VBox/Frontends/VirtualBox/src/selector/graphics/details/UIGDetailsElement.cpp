@@ -93,10 +93,10 @@ void UIGDetailsElement::open()
 
 int UIGDetailsElement::minimumWidthHint() const
 {
-    /* First of all, we have to prepare few variables: */
+    /* Prepare variables: */
     int iMargin = data(ElementData_Margin).toInt();
     int iHeaderWidth = data(ElementData_HeaderSize).toSize().width();
-    int iTextWidth = data(ElementData_TextSize).toSize().width();
+    int iTextWidth = data(ElementData_TextWidth).toInt();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
@@ -209,21 +209,101 @@ QVariant UIGDetailsElement::data(int iKey) const
             /* Return value: */
             return QSize(iHeaderWidth, iHeaderHeight);
         }
-        case ElementData_TextSize:
+        case ElementData_TextWidth:
         {
+            /* Prepare variables: */
             int iSpacing = data(ElementData_Spacing).toInt();
+            int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
             QFontMetrics fm(data(ElementData_TextFont).value<QFont>());
-            int iLongestFirst = 0;
-            int iLongestSecond = 0;
-            foreach (const UITextTableLine &line, m_text)
+
+            /* Search for the maximum line widths: */
+            int iMaximumFirstLineWidth = 0;
+            int iMaximumSecondLineWidth = 0;
+            foreach (const UITextTableLine line, m_text)
             {
-                iLongestFirst = qMax(iLongestFirst, fm.width(line.first));
-                iLongestSecond = qMax(iLongestSecond, fm.width(line.second));
+                bool fKeyValueRow = !line.second.isEmpty();
+                QString strFirstLine = fKeyValueRow ? line.first + ":" : line.first;
+                QString strSecondLine = line.second;
+                iMaximumFirstLineWidth = qMax(iMaximumFirstLineWidth, fm.width(strFirstLine));
+                iMaximumSecondLineWidth = qMax(iMaximumSecondLineWidth, fm.width(strSecondLine));
             }
-            int iLongestLine = iLongestFirst + iSpacing + iLongestSecond;
-            int iSummaryHeight = fm.height() * m_text.size();
-            return QSize(iLongestLine, iSummaryHeight);
+
+            /* Calculate minimum text width: */
+            int iMinimumFirstLineWidth = qMin(iMaximumFirstLineWidth, iMinimumTextColumnWidth);
+            int iMinimumSecondLineWidth = qMin(iMaximumSecondLineWidth, iMinimumTextColumnWidth);
+            int iMinimumTextWidth = iMinimumFirstLineWidth + iSpacing + iMinimumSecondLineWidth;
+
+            /* Return result: */
+            return iMinimumTextWidth;
         }
+        case ElementData_TextHeight:
+        {
+            /* Prepare variables: */
+            int iMargin = data(ElementData_Margin).toInt();
+            int iSpacing = data(ElementData_Spacing).toInt();
+            int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
+            int iMaximumTextWidth = (int)geometry().width() - 3 * iMargin - iSpacing;
+            QFont textFont = data(ElementData_TextFont).value<QFont>();
+            QFontMetrics fm(textFont);
+
+            /* Search for maximum line widths: */
+            int iMaximumFirstLineWidth = 0;
+            int iMaximumSecondLineWidth = 0;
+            foreach (const UITextTableLine line, m_text)
+            {
+                bool fKeyValueRow = !line.second.isEmpty();
+                QString strFirstLine = fKeyValueRow ? line.first + ":" : line.first;
+                QString strSecondLine = line.second;
+                iMaximumFirstLineWidth = qMax(iMaximumFirstLineWidth, fm.width(strFirstLine));
+                iMaximumSecondLineWidth = qMax(iMaximumSecondLineWidth, fm.width(strSecondLine));
+            }
+
+            /* Calculate column widths: */
+            int iFirstColumnWidth = iMaximumTextWidth / 2;
+            int iSecondColumnWidth = iMaximumTextWidth / 2;
+            if (iMaximumFirstLineWidth < iMinimumTextColumnWidth)
+            {
+                iFirstColumnWidth = iMaximumFirstLineWidth;
+                iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
+            }
+            else if (iMaximumSecondLineWidth < iMinimumTextColumnWidth)
+            {
+                iSecondColumnWidth = iMaximumSecondLineWidth;
+                iFirstColumnWidth = iMaximumTextWidth - iSecondColumnWidth;
+            }
+
+            /* For each the line: */
+            int iSummaryTextHeight = 0;
+            foreach (const UITextTableLine line, m_text)
+            {
+                /* First layout: */
+                int iFirstColumnHeight = 0;
+                if (!line.first.isEmpty())
+                {
+                    bool fKeyValueRow = !line.second.isEmpty();
+                    QTextLayout *pTextLayout = prepareTextLayout(textFont,
+                                                                 fKeyValueRow ? line.first + ":" : line.first,
+                                                                 iFirstColumnWidth, iFirstColumnHeight);
+                    delete pTextLayout;
+                }
+
+                /* Second layout: */
+                int iSecondColumnHeight = 0;
+                if (!line.second.isEmpty())
+                {
+                    QTextLayout *pTextLayout = prepareTextLayout(textFont, line.second,
+                                                                 iSecondColumnWidth, iSecondColumnHeight);
+                    delete pTextLayout;
+                }
+
+                /* Append summary text height: */
+                iSummaryTextHeight += qMax(iFirstColumnHeight, iSecondColumnHeight);
+            }
+
+            /* Return result: */
+            return iSummaryTextHeight;
+        }
+        case ElementData_MinimumTextColumnWidth: return 100;
         /* Default: */
         default: break;
     }
@@ -300,13 +380,11 @@ void UIGDetailsElement::prepareButton()
     connect(m_pButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltElementToggleFinish(bool)));
 }
 
-void UIGDetailsElement::updateSizeHint()
-{
-    updateGeometry();
-}
-
 void UIGDetailsElement::updateLayout()
 {
+    /* Update size-hint: */
+    updateSizeHint();
+
     /* Prepare variables: */
     QSize size = geometry().size().toSize();
     int iMargin = data(ElementData_Margin).toInt();
@@ -340,10 +418,10 @@ UIGraphicsRotatorButton* UIGDetailsElement::button() const
 
 int UIGDetailsElement::minimumHeightHint(bool fClosed) const
 {
-    /* First of all, we have to prepare few variables: */
+    /* Prepare variables: */
     int iMargin = data(ElementData_Margin).toInt();
     int iHeaderHeight = data(ElementData_HeaderSize).toSize().height();
-    int iTextHeight = data(ElementData_TextSize).toSize().height();
+    int iTextHeight = data(ElementData_TextHeight).toInt();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
@@ -471,43 +549,69 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
     /* Paint text: */
     if (!m_fClosed && !m_text.isEmpty())
     {
+        /* Prepare variables: */
+        int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
+        int iMaximumTextWidth = geometry().width() - 3 * iMargin - iSpacing;
+        QFont textFont = data(ElementData_TextFont).value<QFont>();
+        QFontMetrics fm(textFont);
+
+        /* Search for maximum line widths: */
+        int iMaximumFirstLineWidth = 0;
+        int iMaximumSecondLineWidth = 0;
+        foreach (const UITextTableLine line, m_text)
+        {
+            bool fKeyValueRow = !line.second.isEmpty();
+            QString strFirstLine = fKeyValueRow ? line.first + ":" : line.first;
+            QString strSecondLine = line.second;
+            iMaximumFirstLineWidth = qMax(iMaximumFirstLineWidth, fm.width(strFirstLine));
+            iMaximumSecondLineWidth = qMax(iMaximumSecondLineWidth, fm.width(strSecondLine));
+        }
+
+        /* Calculate column widths: */
+        int iFirstColumnWidth = iMaximumTextWidth / 2;
+        int iSecondColumnWidth = iMaximumTextWidth / 2;
+        if (iMaximumFirstLineWidth < iMinimumTextColumnWidth)
+        {
+            iFirstColumnWidth = iMaximumFirstLineWidth;
+            iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
+        }
+        else if (iMaximumSecondLineWidth < iMinimumTextColumnWidth)
+        {
+            iSecondColumnWidth = iMaximumSecondLineWidth;
+            iFirstColumnWidth = iMaximumTextWidth - iSecondColumnWidth;
+        }
+
         /* Where to paint? */
         int iMachineTextX = iMachinePixmapX;
         int iMachineTextY = iMachinePixmapY + iHeaderHeight + iMargin;
 
-        /* Font metrics: */
-        QFontMetrics fm(data(ElementData_TextFont).value<QFont>());
-
-        /* For each the line, get longest 'first': */
-        int iLongestFirst = 0;
-        foreach (const UITextTableLine line, m_text)
-            iLongestFirst = qMax(iLongestFirst, fm.width(line.first));
-
         /* For each the line: */
         foreach (const UITextTableLine line, m_text)
         {
-            /* Do we have a key-value pair? */
-            bool fKeyValueRow = !line.second.isEmpty();
-
             /* First layout: */
-            QTextLayout keyLayout(fKeyValueRow ? line.first + ":" : line.first);
-            keyLayout.beginLayout();
-            keyLayout.createLine();
-            keyLayout.endLayout();
-            keyLayout.draw(pPainter, QPointF(iMachineTextX, iMachineTextY));
-
-            /* Second layout: */
-            if (!line.second.isEmpty())
+            int iFirstColumnHeight = 0;
+            if (!line.first.isEmpty())
             {
-                QTextLayout valueLayout(line.second);
-                valueLayout.beginLayout();
-                valueLayout.createLine();
-                valueLayout.endLayout();
-                valueLayout.draw(pPainter, QPointF(iMachineTextX + iLongestFirst + iSpacing, iMachineTextY));
+                bool fKeyValueRow = !line.second.isEmpty();
+                QTextLayout *pTextLayout = prepareTextLayout(textFont,
+                                                             fKeyValueRow ? line.first + ":" : line.first,
+                                                             iFirstColumnWidth, iFirstColumnHeight);
+                pTextLayout->draw(pPainter, QPointF(iMachineTextX, iMachineTextY));
+                delete pTextLayout;
             }
 
-            /* Append the Y: */
-            iMachineTextY += fm.height();
+            /* Second layout: */
+            int iSecondColumnHeight = 0;
+            if (!line.second.isEmpty())
+            {
+                QTextLayout *pTextLayout = prepareTextLayout(textFont, line.second,
+                                                             iSecondColumnWidth, iSecondColumnHeight);
+                pTextLayout->draw(pPainter, QPointF(iMachineTextX + iMaximumFirstLineWidth + iSpacing, iMachineTextY));
+                delete pTextLayout;
+            }
+
+            /* Indent Y: */
+            iMachineTextY += qMax(iFirstColumnHeight, iSecondColumnHeight);
         }
     }
 }
@@ -646,6 +750,40 @@ void UIGDetailsElement::updateNameHoverRepresentation(QGraphicsSceneHoverEvent *
             unsetCursor();
         update();
     }
+}
+
+/* static  */
+QTextLayout* UIGDetailsElement::prepareTextLayout(const QFont &font, const QString &strText, int iWidth, int &iHeight)
+{
+    /* Prepare variables: */
+    QFontMetrics fm(font);
+    int iLeading = fm.leading();
+
+    /* Create layout; */
+    QTextLayout *pTextLayout = new QTextLayout(strText, font);
+
+    /* Configure layout: */
+    QTextOption textOption;
+    textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    pTextLayout->setTextOption(textOption);
+
+    /* Build layout: */
+    pTextLayout->beginLayout();
+    while (1)
+    {
+        QTextLine line = pTextLayout->createLine();
+        if (!line.isValid())
+            break;
+
+        line.setLineWidth(iWidth);
+        iHeight += iLeading;
+        line.setPosition(QPointF(0, iHeight));
+        iHeight += line.height();
+    }
+    pTextLayout->endLayout();
+
+    /* Return layout: */
+    return pTextLayout;
 }
 
 void UIGDetailsElement::updateAnimationParameters()
