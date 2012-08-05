@@ -100,13 +100,13 @@ extern uint16_t gen_opc_icount[OPC_BUF_SIZE];
 void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb);
 void gen_intermediate_code_pc(CPUState *env, struct TranslationBlock *tb);
 void gen_pc_load(CPUState *env, struct TranslationBlock *tb,
-                 unsigned long searched_pc, int pc_pos, void *puc);
+                 uintptr_t searched_pc, int pc_pos, void *puc);
 
 void cpu_gen_init(void);
 int cpu_gen_code(CPUState *env, struct TranslationBlock *tb,
                  int *gen_code_size_ptr);
 int cpu_restore_state(struct TranslationBlock *tb,
-                      CPUState *env, unsigned long searched_pc,
+                      CPUState *env, uintptr_t searched_pc,
                       void *puc);
 void cpu_resume_from_signal(CPUState *env1, void *puc);
 void cpu_io_recompile(CPUState *env, void *retaddr);
@@ -115,7 +115,7 @@ TranslationBlock *tb_gen_code(CPUState *env,
                               int cflags);
 void cpu_exec_init(CPUState *env);
 void QEMU_NORETURN cpu_loop_exit(void);
-int page_unprotect(target_ulong address, unsigned long pc, void *puc);
+int page_unprotect(target_ulong address, uintptr_t pc, void *puc);
 void tb_invalidate_phys_page_range(tb_page_addr_t start, tb_page_addr_t end,
                                    int is_cpu_write_access);
 void tb_invalidate_page_range(target_ulong start, target_ulong end);
@@ -178,7 +178,7 @@ struct TranslationBlock {
 #ifdef USE_DIRECT_JUMP
     uint16_t tb_jmp_offset[2]; /* offset of jump instruction */
 #else
-    unsigned long tb_next[2]; /* address of jump generated code */
+    uintptr_t tb_next[2]; /* address of jump generated code */
 #endif
     /* list of TBs jumping to this one. This is a circular list using
        the two least significant bits of the pointers to tell what is
@@ -221,17 +221,17 @@ extern TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];
 #if defined(USE_DIRECT_JUMP)
 
 #if defined(_ARCH_PPC)
-extern void ppc_tb_set_jmp_target(unsigned long jmp_addr, unsigned long addr);
+extern void ppc_tb_set_jmp_target(uintptr_t jmp_addr, uintptr_t addr);
 #define tb_set_jmp_target1 ppc_tb_set_jmp_target
 #elif defined(__i386__) || defined(__x86_64__)
-static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr)
+static inline void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
 {
     /* patch the branch destination */
     *(uint32_t *)jmp_addr = addr - (jmp_addr + 4);
     /* no need to flush icache explicitly */
 }
 #elif defined(__arm__)
-static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr)
+static inline void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
 {
 #if QEMU_GNUC_PREREQ(4, 1)
     void __clear_cache(char *beg, char *end);
@@ -259,19 +259,19 @@ static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr
 #endif
 
 static inline void tb_set_jmp_target(TranslationBlock *tb,
-                                     int n, unsigned long addr)
+                                     int n, uintptr_t addr)
 {
-    unsigned long offset;
+    uintptr_t offset;
 
     offset = tb->tb_jmp_offset[n];
-    tb_set_jmp_target1((unsigned long)(tb->tc_ptr + offset), addr);
+    tb_set_jmp_target1((uintptr_t)(tb->tc_ptr + offset), addr);
 }
 
 #else
 
 /* set the jump target */
 static inline void tb_set_jmp_target(TranslationBlock *tb,
-                                     int n, unsigned long addr)
+                                     int n, uintptr_t addr)
 {
     tb->tb_next[n] = addr;
 }
@@ -284,15 +284,15 @@ static inline void tb_add_jump(TranslationBlock *tb, int n,
     /* NOTE: this test is only needed for thread safety */
     if (!tb->jmp_next[n]) {
         /* patch the native jump address */
-        tb_set_jmp_target(tb, n, (unsigned long)tb_next->tc_ptr);
+        tb_set_jmp_target(tb, n, (uintptr_t)tb_next->tc_ptr);
 
         /* add in TB jmp circular list */
         tb->jmp_next[n] = tb_next->jmp_first;
-        tb_next->jmp_first = (TranslationBlock *)((long)(tb) | (n));
+        tb_next->jmp_first = (TranslationBlock *)((intptr_t)(tb) | (n));
     }
 }
 
-TranslationBlock *tb_find_pc(unsigned long pc_ptr);
+TranslationBlock *tb_find_pc(uintptr_t pc_ptr);
 
 #include "qemu-lock.h"
 
@@ -377,7 +377,7 @@ static inline tb_page_addr_t get_page_addr_code(CPUState *env1, target_ulong add
     Assert(env1->phys_addends[mmu_idx][page_index] != -1);
     return addr + env1->phys_addends[mmu_idx][page_index];
 # else
-    p = (void *)(unsigned long)addr
+    p = (void *)(uintptr_t)addr
         + env1->tlb_table[mmu_idx][page_index].addend;
     return qemu_ram_addr_from_host(p);
 # endif

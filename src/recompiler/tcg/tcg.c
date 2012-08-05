@@ -117,7 +117,7 @@ static inline void tcg_out32(TCGContext *s, uint32_t v)
 /* label relocation processing */
 
 static void tcg_out_reloc(TCGContext *s, uint8_t *code_ptr, int type,
-                          int label_index, long addend)
+                          int label_index, tcg_target_long addend)
 {
     TCGLabel *l;
     TCGRelocation *r;
@@ -264,8 +264,8 @@ void tcg_prologue_init(TCGContext *s)
     s->code_buf = code_gen_prologue;
     s->code_ptr = s->code_buf;
     tcg_target_qemu_prologue(s);
-    flush_icache_range((unsigned long)s->code_buf,
-                       (unsigned long)s->code_ptr);
+    flush_icache_range((uintptr_t)s->code_buf,
+                       (uintptr_t)s->code_ptr);
 }
 
 void tcg_set_frame(TCGContext *s, int reg,
@@ -2003,7 +2003,7 @@ static void dump_op_count(void)
 
 
 static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
-                                      long search_pc)
+                                      intptr_t search_pc)
 {
     TCGOpcode opc;
     int op_index;
@@ -2095,7 +2095,7 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
             break;
         case INDEX_op_set_label:
             tcg_reg_alloc_bb_end(s, s->reserved_regs);
-            tcg_out_label(s, args[0], (long)s->code_ptr);
+            tcg_out_label(s, args[0], (intptr_t)s->code_ptr);
             break;
         case INDEX_op_call:
             dead_iargs = s->op_dead_iargs[op_index];
@@ -2144,8 +2144,8 @@ int tcg_gen_code(TCGContext *s, uint8_t *gen_code_buf)
     tcg_gen_code_common(s, gen_code_buf, -1);
 
     /* flush instruction cache */
-    flush_icache_range((unsigned long)gen_code_buf,
-                       (unsigned long)s->code_ptr);
+    flush_icache_range((uintptr_t)gen_code_buf,
+                       (uintptr_t)s->code_ptr);
     return s->code_ptr -  gen_code_buf;
 }
 
@@ -2153,7 +2153,7 @@ int tcg_gen_code(TCGContext *s, uint8_t *gen_code_buf)
    offset bytes from the start of the TB.  The contents of gen_code_buf must
    not be changed, though writing the same values is ok.
    Return -1 if not found. */
-int tcg_gen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, long offset)
+int tcg_gen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, intptr_t offset)
 {
     return tcg_gen_code_common(s, gen_code_buf, offset);
 }

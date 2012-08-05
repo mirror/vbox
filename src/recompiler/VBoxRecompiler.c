@@ -55,7 +55,7 @@
 #include <iprt/string.h>
 
 /* Don't wanna include everything. */
-extern void cpu_exec_init_all(unsigned long tb_size);
+extern void cpu_exec_init_all(uintptr_t tb_size);
 extern void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 extern void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 extern void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
@@ -65,7 +65,7 @@ extern void sync_seg(CPUX86State *env1, int seg_reg, int selector);
 extern void sync_ldtr(CPUX86State *env1, int selector);
 
 #ifdef VBOX_STRICT
-unsigned long get_phys_page_offset(target_ulong addr);
+ram_addr_t get_phys_page_offset(target_ulong addr);
 #endif
 
 
@@ -265,8 +265,10 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     AssertReleaseMsg(sizeof(pVM->rem.padding) >= sizeof(pVM->rem.s), ("%#x >= %#x; sizeof(Env)=%#x\n", sizeof(pVM->rem.padding), sizeof(pVM->rem.s), sizeof(pVM->rem.s.Env)));
     AssertReleaseMsg(sizeof(pVM->rem.s.Env) <= REM_ENV_SIZE, ("%#x == %#x\n", sizeof(pVM->rem.s.Env), REM_ENV_SIZE));
     AssertReleaseMsg(!(RT_OFFSETOF(VM, rem) & 31), ("off=%#x\n", RT_OFFSETOF(VM, rem)));
+#if 0 /* just an annoyance at the moment. */
 #if defined(DEBUG) && !defined(RT_OS_SOLARIS) && !defined(RT_OS_FREEBSD) /// @todo fix the solaris and freebsd math stuff.
     Assert(!testmath());
+#endif
 #endif
 
     /*
@@ -3445,7 +3447,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
 REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef VBOX_STRICT
-    unsigned long off;
+    ram_addr_t off;
     REMR3ReplayHandlerNotifications(pVM);
 
     off = get_phys_page_offset(GCPhys);

@@ -72,7 +72,11 @@ enum {
 /* used for function call generation */
 #define TCG_REG_CALL_STACK TCG_REG_ESP
 #define TCG_TARGET_STACK_ALIGN 16
+#if defined(VBOX) && defined(__MINGW64__)
+# define TCG_TARGET_CALL_STACK_OFFSET 32 /* 4 qword argument/register spill zone */
+#else
 #define TCG_TARGET_CALL_STACK_OFFSET 0
+#endif
 
 /* optional instructions */
 #define TCG_TARGET_HAS_div2_i32
@@ -125,6 +129,6 @@ enum {
 # endif /* VBOX */
 #endif
 
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
 }

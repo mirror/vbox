@@ -51,11 +51,11 @@ int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 
 #if 0
 #if defined(__s390__)
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
 }
 #elif defined(__ia64__)
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
     while (start < stop) {
 	asm volatile ("fc %0" :: "r"(start));
@@ -67,9 +67,9 @@ static inline void flush_icache_range(unsigned long start, unsigned long stop)
 
 #define MIN_CACHE_LINE_SIZE 8 /* conservative value */
 
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
-    unsigned long p;
+    uintptr_t p;
 
     start &= ~(MIN_CACHE_LINE_SIZE - 1);
     stop = (stop + MIN_CACHE_LINE_SIZE - 1) & ~(MIN_CACHE_LINE_SIZE - 1);
@@ -85,14 +85,14 @@ static inline void flush_icache_range(unsigned long start, unsigned long stop)
     asm volatile ("isync" : : : "memory");
 }
 #elif defined(__alpha__)
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
     asm ("imb");
 }
 #elif defined(__sparc__)
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
-	unsigned long p;
+	uintptr_t p;
 
 	p = start & ~(8UL - 1UL);
 	stop = (stop + (8UL - 1UL)) & ~(8UL - 1UL);
@@ -101,24 +101,24 @@ static inline void flush_icache_range(unsigned long start, unsigned long stop)
 		__asm__ __volatile__("flush\t%0" : : "r" (p));
 }
 #elif defined(__arm__)
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
-    register unsigned long _beg __asm ("a1") = start;
-    register unsigned long _end __asm ("a2") = stop;
-    register unsigned long _flg __asm ("a3") = 0;
+    register uintptr_t _beg __asm ("a1") = start;
+    register uintptr_t _end __asm ("a2") = stop;
+    register uintptr_t _flg __asm ("a3") = 0;
     __asm __volatile__ ("swi 0x9f0002" : : "r" (_beg), "r" (_end), "r" (_flg));
 }
 #elif defined(__mc68000)
 
 # include <asm/cachectl.h>
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
     cacheflush(start,FLUSH_SCOPE_LINE,FLUSH_CACHE_BOTH,stop-start+16);
 }
 #elif defined(__mips__)
 
 #include <sys/cachectl.h>
-static inline void flush_icache_range(unsigned long start, unsigned long stop)
+static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
     _flush_cache ((void *)start, stop - start, BCACHE);
 }
@@ -156,7 +156,7 @@ static inline void ia64_patch (uint64_t insn_addr, uint64_t mask, uint64_t val)
 {
     uint64_t m0, m1, v0, v1, b0, b1, *b = (uint64_t *) (insn_addr & -16);
 #   define insn_mask ((1UL << 41) - 1)
-    unsigned long shift;
+    uintptr_t shift;
 
     b0 = b[0]; b1 = b[1];
     shift = 5 + 41 * (insn_addr % 16); /* 5 template, 3 x 41-bit insns */
@@ -301,7 +301,7 @@ static inline void ia64_apply_fixes (uint8_t **gen_code_pp,
 				     uint64_t gp,
 				     struct ia64_fixup *plt_fixes,
 				     int num_plts,
-				     unsigned long *plt_target,
+				     uintptr_t *plt_target,
 				     unsigned int *plt_offset)
 {
     static const uint8_t plt_bundle[] = {
@@ -394,7 +394,7 @@ static inline void hppa_process_stubs(struct hppa_branch_stub *stub,
     if (!stub) return;
 
     for (; stub != NULL; stub = stub->next) {
-        unsigned long l = (unsigned long)p;
+        uintptr_t l = (uintptr_t)p;
         /* stub:
          * ldil L'target, %r1
          * be,n R'target(%sr4,%r1)
