@@ -2780,6 +2780,8 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
                 break;
             }
             uNewSessionID++;
+            if (uNewSessionID >= VBOX_GUESTCTRL_MAX_SESSIONS)
+                uNewSessionID = 0;
 
             if (++uTries == UINT32_MAX)
                 break; /* Don't try too hard. */
@@ -2796,8 +2798,8 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
 
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
 
-        LogFlowFunc(("Added new session with session ID=%RU32\n",
-                     uNewSessionID));
+        LogFlowFunc(("Added new session with session ID=%RU32 (now %ld sessios total)\n",
+                     uNewSessionID, mData.mGuestSessions.size()));
     }
     catch (int rc2)
     {

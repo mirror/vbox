@@ -141,8 +141,6 @@ GuestCtrlCallback::~GuestCtrlCallback(void)
 
 int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
 {
-    LogFlowFuncEnter();
-
     AssertReturn(enmType > VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN, VERR_INVALID_PARAMETER);
     Assert((pvData == NULL) && !cbData);
 
@@ -168,9 +166,9 @@ int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
 
         case VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS:
         {
-            PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
-            AssertPtrReturn(pData, VERR_NO_MEMORY);
-            RT_BZERO(pData, sizeof(CALLBACKDATAEXECINSTATUS));
+            pvData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
+            AssertPtrReturn(pvData, VERR_NO_MEMORY);
+            RT_BZERO(pvData, sizeof(CALLBACKDATAEXECINSTATUS));
             cbData = sizeof(CALLBACKDATAEXECINSTATUS);
             break;
         }
@@ -184,7 +182,6 @@ int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
     if (RT_SUCCESS(rc))
         mType  = enmType;
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -270,6 +267,7 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
             pThis->u32Flags    = pCB->u32Flags;
             pThis->u32PID      = pCB->u32PID;
             pThis->u32Status   = pCB->u32Status;
+            break;
         }
 
         default:

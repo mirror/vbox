@@ -76,6 +76,7 @@ public:
     void close(void);
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
+    ULONG getProcessID(void) { return mData.mProcessID; }
     int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead);
     int startProcess(void);
     int startProcessAsync(void);
