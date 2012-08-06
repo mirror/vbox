@@ -623,16 +623,23 @@ FNIEMOP_DEF(iemOp_Grp6)
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
 {
-    NOREF(pIemCpu); NOREF(bRm);
-    IEMOP_BITCH_ABOUT_STUB();
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    IEMOP_HLP_64BIT_OP_SIZE();
+    IEM_MC_BEGIN(3, 1);
+    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
+    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/pIemCpu->enmEffOpSize, 2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_CALL_CIMPL_3(iemCImpl_sgdt, iEffSeg, GCPtrEffSrc, enmEffOpSizeArg);
+    IEM_MC_END();
+    return VINF_SUCCESS;
 }
 
 
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF(iemOp_Grp7_vmcall)
 {
-    AssertFailed();
+    IEMOP_BITCH_ABOUT_STUB();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -640,7 +647,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmcall)
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF(iemOp_Grp7_vmlaunch)
 {
-    AssertFailed();
+    IEMOP_BITCH_ABOUT_STUB();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -648,7 +655,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmlaunch)
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF(iemOp_Grp7_vmresume)
 {
-    AssertFailed();
+    IEMOP_BITCH_ABOUT_STUB();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -656,7 +663,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmresume)
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF(iemOp_Grp7_vmxoff)
 {
-    AssertFailed();
+    IEMOP_BITCH_ABOUT_STUB();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -664,9 +671,16 @@ FNIEMOP_DEF(iemOp_Grp7_vmxoff)
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 {
-    NOREF(pIemCpu); NOREF(bRm);
-    IEMOP_BITCH_ABOUT_STUB();
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    IEMOP_HLP_64BIT_OP_SIZE();
+    IEM_MC_BEGIN(3, 1);
+    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
+    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/pIemCpu->enmEffOpSize, 2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_CALL_CIMPL_3(iemCImpl_sidt, iEffSeg, GCPtrEffSrc, enmEffOpSizeArg);
+    IEM_MC_END();
+    return VINF_SUCCESS;
 }
 
 
@@ -693,13 +707,11 @@ FNIEMOP_DEF_1(iemOp_Grp7_lgdt, uint8_t, bRm)
 {
     IEMOP_HLP_NO_LOCK_PREFIX();
 
-    IEMMODE enmEffOpSize = pIemCpu->enmCpuMode == IEMMODE_64BIT
-                         ? IEMMODE_64BIT
-                         : pIemCpu->enmEffOpSize;
+    IEMOP_HLP_64BIT_OP_SIZE();
     IEM_MC_BEGIN(3, 1);
-    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,     0);
-    IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                        1);
-    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/enmEffOpSize,  2);
+    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
+    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSizeArg,/*=*/pIemCpu->enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
     IEM_MC_CALL_CIMPL_3(iemCImpl_lgdt, iEffSeg, GCPtrEffSrc, enmEffOpSizeArg);
     IEM_MC_END();
