@@ -287,11 +287,21 @@ typedef IEMSELDESC *PIEMSELDESC;
 #define IEM_IS_AMD_CPUID_FEATURES_ANY_PRESENT(a_fEdx, a_fEcx)   iemRegIsAmdCpuIdFeaturePresent(pIemCpu, (a_fEdx), (a_fEcx))
 
 /**
- * Checks if a intel CPUID feature is present.
+ * Checks if an Intel CPUID feature is present.
  */
 #define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(a_fEdx)  \
     (   ((a_fEdx) & (X86_CPUID_FEATURE_EDX_TSC | 0)) \
      || iemRegIsIntelCpuIdFeaturePresent(pIemCpu, (a_fEdx), 0) )
+
+/**
+ * Evaluates to true if we're presenting an Intel CPU to the guest.
+ */
+#define IEM_IS_GUEST_CPU_INTEL(a_pIemCpu)  (true) /** @todo determin this once and store it the CPU structure */
+
+/**
+ * Evaluates to true if we're presenting an AMD CPU to the guest.
+ */
+#define IEM_IS_GUEST_CPU_AMD(a_pIemCpu)    (false) /** @todo determin this once and store it the CPU structure */
 
 /**
  * Check if the address is canonical.
@@ -5445,6 +5455,58 @@ static VBOXSTRICTRC iemMemStoreDataU64(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR
 
 
 /**
+ * Stores a descriptor register (sgdt, sidt).
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   cbLimit             The limit.
+ * @param   GCPTrBase           The base address.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   enmOpSize           The effective operand size.
+ */
+static VBOXSTRICTRC iemMemStoreDataXdtr(PIEMCPU pIemCpu, uint16_t cbLimit, RTGCPTR GCPtrBase,
+                                        uint8_t iSegReg, RTGCPTR GCPtrMem, IEMMODE enmOpSize)
+{
+    uint8_t *pu8Src;
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu,
+                                      (void **)&pu8Src,
+                                      enmOpSize == IEMMODE_64BIT
+                                      ? 2 + 8
+                                      : enmOpSize == IEMMODE_32BIT
+                                      ? 2 + 4
+                                      : 2 + 3,
+                                      iSegReg,
+                                      GCPtrMem,
+                                      IEM_ACCESS_DATA_W);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        pu8Src[0] = RT_BYTE1(cbLimit);
+        pu8Src[1] = RT_BYTE2(cbLimit);
+        pu8Src[2] = RT_BYTE1(GCPtrBase);
+        pu8Src[3] = RT_BYTE2(GCPtrBase);
+        pu8Src[4] = RT_BYTE3(GCPtrBase);
+        if (enmOpSize == IEMMODE_16BIT)
+            pu8Src[5] = 0; /* Note! the 286 stored 0xff here. */
+        else
+        {
+            pu8Src[5] = RT_BYTE4(GCPtrBase);
+            if (enmOpSize == IEMMODE_64BIT)
+            {
+                pu8Src[6] = RT_BYTE5(GCPtrBase);
+                pu8Src[7] = RT_BYTE6(GCPtrBase);
+                pu8Src[8] = RT_BYTE7(GCPtrBase);
+                pu8Src[9] = RT_BYTE8(GCPtrBase);
+            }
+        }
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pu8Src, IEM_ACCESS_DATA_W);
+    }
+    return rcStrict;
+}
+
+
+/**
  * Pushes a word onto the stack.
  *
  * @returns Strict VBox status code.
@@ -6894,6 +6956,14 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     { \
         if (pIemCpu->enmCpuMode == IEMMODE_64BIT) \
             iemRecalEffOpSize64Default(pIemCpu); \
+    } while (0)
+
+/** The instruction has 64-bit operand size if 64-bit mode. */
+#define IEMOP_HLP_64BIT_OP_SIZE() \
+    do \
+    { \
+        if (pIemCpu->enmCpuMode == IEMMODE_64BIT) \
+            pIemCpu->enmEffOpSize = pIemCpu->enmDefOpSize = IEMMODE_64BIT; \
     } while (0)
 
 /**

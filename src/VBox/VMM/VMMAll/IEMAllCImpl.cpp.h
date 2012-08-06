@@ -2720,6 +2720,28 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
 
 
 /**
+ * Implements sgdt.
+ *
+ * @param   iEffSeg         The segment where to store the gdtr content.
+ * @param   GCPtrEffDst     The address where to store the gdtr content.
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, enmEffOpSize)
+{
+    /*
+     * Join paths with sgdt.
+     * Note! No CPL or V8086 checks here, it's a really sad story, as Intel if
+     *       you really must know.
+     */
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->gdtr.cbGdt, pCtx->gdtr.pGdt, iEffSeg, GCPtrEffDst, enmEffOpSize);
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRip(pIemCpu, cbInstr);
+    return rcStrict;
+}
+
+
+/**
  * Implements lidt.
  *
  * @param   iEffSeg         The segment of the new ldtr contents
@@ -2750,6 +2772,28 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         }
         iemRegAddToRip(pIemCpu, cbInstr);
     }
+    return rcStrict;
+}
+
+
+/**
+ * Implements sidt.
+ *
+ * @param   iEffSeg         The segment where to store the idtr content.
+ * @param   GCPtrEffDst     The address where to store the idtr content.
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, enmEffOpSize)
+{
+    /*
+     * Join paths with sgdt.
+     * Note! No CPL or V8086 checks here, it's a really sad story, as Intel if
+     *       you really must know.
+     */
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->idtr.cbIdt, pCtx->idtr.pIdt, iEffSeg, GCPtrEffDst, enmEffOpSize);
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRip(pIemCpu, cbInstr);
     return rcStrict;
 }
 
@@ -2788,16 +2832,19 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     if (!(uNewLdt & X86_SEL_MASK_OFF_RPL))
     {
         Log(("lldt %04x: Loading NULL selector.\n",  uNewLdt));
-        /** @todo check if the actual value is loaded or if it's always 0. */
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-            CPUMSetGuestLDTR(IEMCPU_TO_VMCPU(pIemCpu), 0);
+            CPUMSetGuestLDTR(IEMCPU_TO_VMCPU(pIemCpu), uNewLdt);
         else
-            pCtx->ldtr.Sel = 0;
-        pCtx->ldtr.ValidSel = 0;
+            pCtx->ldtr.Sel = uNewLdt;
+        pCtx->ldtr.ValidSel = uNewLdt;
         pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
-        pCtx->ldtr.Attr.u   = 0;
-        pCtx->ldtr.u64Base  = 0;
-        pCtx->ldtr.u32Limit = 0;
+        if (IEM_IS_GUEST_CPU_AMD(pIemCpu) && !IEM_VERIFICATION_ENABLED(pIemCpu))
+            pCtx->ldtr.Attr.u   = 0;
+        else
+        {
+            pCtx->ldtr.u64Base  = 0;
+            pCtx->ldtr.u32Limit = 0;
+        }
 
         iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
