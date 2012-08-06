@@ -29,7 +29,6 @@
 #include "UIGraphicsToolBar.h"
 #include "UIGraphicsZoomButton.h"
 #include "VBoxGlobal.h"
-#include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIActionPoolSelector.h"
 #include "UIImageTools.h"
@@ -160,7 +159,7 @@ QVariant UIGChooserItemMachine::data(int iKey) const
                                                      data(MachineItemData_MaximumSnapshotNameWidth).toInt() - iBracketWidth);
             return QString("(%1)").arg(strCompressedName);
         }
-        case MachineItemData_StateText: return gpConverter->toString(machineState());
+        case MachineItemData_StateText: return machineStateName();
 
         /* Sizes: */
         case MachineItemData_PixmapSize: return osIcon().availableSizes().at(0);
@@ -408,6 +407,9 @@ bool UIGChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, D
     /* If drag token is shown, its up to parent to decide: */
     if (where != DragToken_Off)
         return parentItem()->isDropAllowed(pEvent);
+    /* Else we should make sure machine is accessible: */
+    if (!accessible())
+        return false;
     /* Else we should try to cast mime to known classes: */
     if (pMimeData->hasFormat(UIGChooserItemMachine::className()))
     {
@@ -485,6 +487,15 @@ void UIGChooserItemMachine::resetDragToken()
 QMimeData* UIGChooserItemMachine::createMimeData()
 {
     return new UIGChooserItemMimeData(this);
+}
+
+void UIGChooserItemMachine::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIGChooserItem::mousePressEvent(pEvent);
+    /* No drag for inaccessible: */
+    if (!accessible())
+        pEvent->ignore();
 }
 
 void UIGChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget * /* pWidget = 0 */)

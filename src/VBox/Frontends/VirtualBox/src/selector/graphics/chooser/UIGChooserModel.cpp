@@ -1052,16 +1052,26 @@ void UIGChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeI
 {
     /* Which groups passed machine attached to? */
     QVector<QString> groups = machine.GetGroups();
-    foreach (QString strGroup, groups)
+    /* Is that machine accessible? */
+    if (machine.GetAccessible())
     {
-        /* Remove last '/' if any: */
-        if (strGroup.right(1) == "/")
-            strGroup.truncate(strGroup.size() - 1);
-        /* Create machine item with found group item as parent: */
-        createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
+        foreach (QString strGroup, groups)
+        {
+            /* Remove last '/' if any: */
+            if (strGroup.right(1) == "/")
+                strGroup.truncate(strGroup.size() - 1);
+            /* Create machine item with found group item as parent: */
+            createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
+        }
+        /* Update group definitions: */
+        m_groups[machine.GetId()] = UIStringSet::fromList(groups.toList());
     }
-    /* Update group definitions: */
-    m_groups[machine.GetId()] = UIStringSet::fromList(groups.toList());
+    /* Inaccessible machine: */
+    else
+    {
+        /* Create machine item with main-root group item as parent: */
+        createMachineItem(machine, mainRoot());
+    }
 }
 
 UIGChooserItem* UIGChooserModel::getGroupItem(const QString &strName, UIGChooserItem *pParentItem, bool fAllGroupsOpened)
@@ -1294,12 +1304,13 @@ void UIGChooserModel::saveGroupsOrder(UIGChooserItem *pParentItem)
 }
 
 void UIGChooserModel::gatherGroupTree(QMap<QString, QStringList> &groups,
-                                              UIGChooserItem *pParentGroup)
+                                      UIGChooserItem *pParentGroup)
 {
     /* Iterate over all the machine items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Machine))
         if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
-            groups[pMachineItem->id()] << fullName(pParentGroup);
+            if (pMachineItem->accessible())
+                groups[pMachineItem->id()] << fullName(pParentGroup);
     /* Iterate over all the group items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Group))
         gatherGroupTree(groups, pItem);
