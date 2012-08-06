@@ -546,6 +546,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_sldt, uint8_t, bRm)
                 IEM_MC_LOCAL(uint16_t, u16Ldtr);
                 IEM_MC_FETCH_LDTR_U16(u16Ldtr);
                 IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u16Ldtr);
+                IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
 
@@ -554,6 +555,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_sldt, uint8_t, bRm)
                 IEM_MC_LOCAL(uint32_t, u32Ldtr);
                 IEM_MC_FETCH_LDTR_U32(u32Ldtr);
                 IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u32Ldtr);
+                IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
 
@@ -562,6 +564,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_sldt, uint8_t, bRm)
                 IEM_MC_LOCAL(uint64_t, u64Ldtr);
                 IEM_MC_FETCH_LDTR_U64(u64Ldtr);
                 IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u64Ldtr);
+                IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
 
@@ -577,6 +580,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_sldt, uint8_t, bRm)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_FETCH_LDTR_U16(u16Ldtr);
         IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Ldtr);
+        IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -599,6 +603,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_str, uint8_t, bRm)
                 IEM_MC_LOCAL(uint16_t, u16Tr);
                 IEM_MC_FETCH_TR_U16(u16Tr);
                 IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u16Tr);
+                IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
 
@@ -607,6 +612,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_str, uint8_t, bRm)
                 IEM_MC_LOCAL(uint32_t, u32Tr);
                 IEM_MC_FETCH_TR_U32(u32Tr);
                 IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u32Tr);
+                IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
 
@@ -615,6 +621,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_str, uint8_t, bRm)
                 IEM_MC_LOCAL(uint64_t, u64Tr);
                 IEM_MC_FETCH_TR_U64(u64Tr);
                 IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u64Tr);
+                IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
 
@@ -630,6 +637,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_str, uint8_t, bRm)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_FETCH_TR_U16(u16Tr);
         IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Tr);
+        IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
