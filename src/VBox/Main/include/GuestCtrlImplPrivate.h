@@ -304,8 +304,13 @@ struct GuestFsObjData
  * Structure for keeping all the relevant process
  * starting parameters around.
  */
-struct GuestProcessInfo
+struct GuestProcessStartupInfo
 {
+    GuestProcessStartupInfo(void)
+        : mFlags(ProcessCreateFlag_None),
+          mPriority(ProcessPriority_Default),
+          mTimeoutMS(30 * 1000 /* 30s timeout by default */) { }
+
     /** The process' friendly name. */
     Utf8Str                     mName;
     /** The actual command to execute. */
@@ -316,7 +321,6 @@ struct GuestProcessInfo
     ULONG                       mTimeoutMS;
     ProcessPriority_T           mPriority;
     ProcessAffinity             mAffinity;
-
 };
 
 

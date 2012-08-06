@@ -23,6 +23,9 @@
 
 #include "GuestFsObjInfoImpl.h"
 
+class GuestSession;
+class GuestProcess;
+
 /**
  * TODO
  */
@@ -42,21 +45,23 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestFile)
 
-    HRESULT init(void);
+    int     init(GuestSession *pSession, const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition, uint32_t uCreationMode, int64_t iOffset);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
     /** @}  */
 
-    /** @name IDirectory interface.
+    /** @name IFile interface.
      * @{ */
+    STDMETHOD(COMGETTER(CreationMode))(ULONG *aCreationMode);
+    STDMETHOD(COMGETTER(Disposition))(ULONG *aDisposition);
     STDMETHOD(COMGETTER(FileName))(BSTR *aFileName);
     STDMETHOD(COMGETTER(InitialSize))(LONG64 *aInitialSize);
     STDMETHOD(COMGETTER(Offset))(LONG64 *aOffset);
     STDMETHOD(COMGETTER(OpenMode))(ULONG *aOpenMode);
 
     STDMETHOD(Close)(void);
-    STDMETHOD(QueryInfo)(IGuestFsObjInfo **aInfo);
+    STDMETHOD(QueryInfo)(IFsObjInfo **aInfo);
     STDMETHOD(Read)(ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(ReadAt)(LONG64 aOffset, ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(Seek)(LONG64 aOffset, FileSeekType_T aType);
@@ -65,14 +70,27 @@ public:
     STDMETHOD(WriteAt)(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG *aWritten);
     /** @}  */
 
+public:
+    /** @name Public internal methods.
+     * @{ */
+    static uint32_t getDispositionFromString(const Utf8Str &strDisposition);
+    static uint32_t getOpenModeFromString(const Utf8Str &strOpenMode);
+    /** @}  */
+
 private:
 
     struct Data
     {
-        Utf8Str              mFileName;
-        LONG64               mInitialSize;
-        ULONG                mOpenMode;
-        LONG64               mOffset;
+        /** The associate session this file belongs to. */
+        ComObjPtr<GuestSession> mSession;
+        /** The process object this file is bound to. */
+        ComObjPtr<GuestProcess> mProcess;
+        uint32_t                mCreationMode;
+        uint32_t                mDisposition;
+        Utf8Str                 mFileName;
+        int64_t                 mInitialSize;
+        uint32_t                mOpenMode;
+        int64_t                 mOffset;
     } mData;
 };
 

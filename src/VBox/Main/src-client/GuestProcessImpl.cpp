@@ -103,7 +103,7 @@ void GuestProcess::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcessID, const GuestProcessInfo &aProcInfo)
+int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcessID, const GuestProcessStartupInfo &aProcInfo)
 {
     LogFlowThisFunc(("aConsole=%p, aSession=%p, aProcessID=%RU32\n",
                      aConsole, aSession, aProcessID));
@@ -177,7 +177,6 @@ STDMETHODIMP GuestProcess::COMGETTER(Arguments)(ComSafeArrayOut(BSTR, aArguments
 
     collection.detachTo(ComSafeArrayOutArg(aArguments));
 
-    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -204,7 +203,6 @@ STDMETHODIMP GuestProcess::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
     }
     arguments.detachTo(ComSafeArrayOutArg(aEnvironment));
 
-    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -225,7 +223,6 @@ STDMETHODIMP GuestProcess::COMGETTER(ExecutablePath)(BSTR *aExecutablePath)
 
     mData.mProcess.mCommand.cloneTo(aExecutablePath);
 
-    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -246,7 +243,6 @@ STDMETHODIMP GuestProcess::COMGETTER(ExitCode)(LONG *aExitCode)
 
     *aExitCode = mData.mExitCode;
 
-    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -267,7 +263,6 @@ STDMETHODIMP GuestProcess::COMGETTER(Name)(BSTR *aName)
 
     mData.mProcess.mName.cloneTo(aName);
 
-    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -288,7 +283,6 @@ STDMETHODIMP GuestProcess::COMGETTER(PID)(ULONG *aPID)
 
     *aPID = mData.mPID;
 
-    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -307,7 +301,6 @@ STDMETHODIMP GuestProcess::COMGETTER(Status)(ProcessStatus_T *aStatus)
 
     *aStatus = mData.mStatus;
 
-    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

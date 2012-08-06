@@ -21,6 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "GuestFileImpl.h"
+#include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
 
 #include "Global.h"
@@ -51,16 +52,28 @@ void GuestFile::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT GuestFile::init(void)
+int GuestFile::init(GuestSession *pSession, const Utf8Str &strPath,
+                    const Utf8Str &strOpenMode, const Utf8Str &strDisposition, uint32_t uCreationMode,
+                    int64_t iOffset)
 {
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
+    mData.mSession = pSession;
+    mData.mCreationMode = uCreationMode;
+    mData.mDisposition = getDispositionFromString(strDisposition);
+    mData.mFileName = strPath;
+    mData.mInitialSize = 0;
+    mData.mOpenMode = getOpenModeFromString(strOpenMode);
+    mData.mOffset = iOffset;
+
+    /** @todo Validate parameters! */
+
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
 
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -75,10 +88,48 @@ void GuestFile::uninit(void)
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    mData.mSession->fileClose(this);
 }
 
 // implementation of public getters/setters for attributes
 /////////////////////////////////////////////////////////////////////////////
+
+STDMETHODIMP GuestFile::COMGETTER(CreationMode)(ULONG *aCreationMode)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    CheckComArgOutPointerValid(aCreationMode);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aCreationMode = mData.mCreationMode;
+
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    CheckComArgOutPointerValid(aDisposition);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aDisposition = mData.mDisposition;
+
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
 
 STDMETHODIMP GuestFile::COMGETTER(FileName)(BSTR *aFileName)
 {
@@ -88,7 +139,13 @@ STDMETHODIMP GuestFile::COMGETTER(FileName)(BSTR *aFileName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aFileName);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData.mFileName.cloneTo(aFileName);
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -100,7 +157,13 @@ STDMETHODIMP GuestFile::COMGETTER(InitialSize)(LONG64 *aInitialSize)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aInitialSize);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aInitialSize = mData.mInitialSize;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -112,7 +175,13 @@ STDMETHODIMP GuestFile::COMGETTER(Offset)(LONG64 *aOffset)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aOffset);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aOffset = mData.mOffset;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -124,8 +193,29 @@ STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aOpenMode);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aOpenMode = mData.mOpenMode;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+// private methods
+/////////////////////////////////////////////////////////////////////////////
+
+/* static */
+uint32_t GuestFile::getDispositionFromString(const Utf8Str &strDisposition)
+{
+    return 0; /** @todo Implement me! */
+}
+
+/* static */
+uint32_t GuestFile::getOpenModeFromString(const Utf8Str &strOpenMode)
+{
+    return 0; /** @todo Implement me! */
 }
 
 // implementation of public methods
@@ -143,7 +233,7 @@ STDMETHODIMP GuestFile::Close(void)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::QueryInfo(IGuestFsObjInfo **aInfo)
+STDMETHODIMP GuestFile::QueryInfo(IFsObjInfo **aInfo)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
