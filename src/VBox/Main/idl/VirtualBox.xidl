@@ -9380,7 +9380,7 @@
   
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="a8bbf136-3f0d-42cd-9fd3-c5816adb10a0"
+    uuid="9233c0b5-8f0d-48b2-9b90-b730880f1e35"
     wsmap="managed"
     >
     
@@ -9762,6 +9762,19 @@
       </param>
       <param name="exists" type="boolean" dir="return">
         <desc>TODO</desc>
+      </param>
+    </method>
+    
+    <method name="fileRemove">
+      <desc>
+        Remove a single file on the guest.
+
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>Path to the file to remove.</desc>
+      </param>
+      <param name="returnCode" type="long" dir="return">
+        <desc>The IPRT status code returned by the operation.</desc>
       </param>
     </method>
     
