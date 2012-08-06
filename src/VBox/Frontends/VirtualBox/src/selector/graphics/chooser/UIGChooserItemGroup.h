@@ -57,8 +57,8 @@ public:
     QString name() const;
     bool closed() const;
     bool opened() const;
-    void close();
-    void open();
+    void close(bool fAnimated = true);
+    void open(bool fAnimated = true);
 
     /* API: Children stuff: */
     bool contains(const QString &strId, bool fRecursively = false) const;
