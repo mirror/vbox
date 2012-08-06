@@ -235,7 +235,7 @@ void UIGDetailsSet::updateLayout()
             case DetailsElementType_System:
             {
                 UIGDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
-                int iPreviewWidth = pPreviewElement ? pPreviewElement->minimumWidthHint() : 0;
+                int iPreviewWidth = pPreviewElement && pPreviewElement->isVisible() ? pPreviewElement->minimumWidthHint() : 0;
                 int iWidth = iPreviewWidth == 0 ? iMaximumWidth - 2 * iMargin :
                                                   iMaximumWidth - 2 * iMargin - iSpacing - iPreviewWidth;
                 pElement->setPos(iMargin, iVerticalIndent);
@@ -452,7 +452,7 @@ void UIGDetailsSet::prepareElement(QString strSetId)
         /* Should be element visible? */
         bool fVisible = m_settings.contains(strElementTypeOpened) || m_settings.contains(strElementTypeClosed);
         /* Should be element opened? */
-        bool fOpen = fVisible && m_settings.contains(strElementTypeOpened);
+        bool fOpen = m_settings.contains(strElementTypeOpened);
 
         /* Check if element is present already: */
         UIGDetailsElement *pElement = element(elementType);
