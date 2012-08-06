@@ -15,6 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* This implementation is based on the (generic) Intel IA-PC HPET specification
+ * and the Intel ICH9 datasheet.
+ */
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -44,7 +48,7 @@
 #define HPET_BASE                   0xfed00000
 
 /** The number of timers for PIIX4 / PIIX3. */
-#define HPET_NUM_TIMERS_PIIX        3
+#define HPET_NUM_TIMERS_PIIX        3   /* Minimal implementation. */
 /** The number of timers for ICH9. */
 #define HPET_NUM_TIMERS_ICH9        4
 
@@ -70,10 +74,8 @@
 #define HPET_TIMER_TYPE_EDGE        0
 
 /* Delivery mode */
-/* Via APIC */
-#define HPET_TIMER_DELIVERY_APIC    0
-/* Via FSB */
-#define HPET_TIMER_DELIVERY_FSB     1
+#define HPET_TIMER_DELIVERY_APIC    0   /* Delivery through APIC. */
+#define HPET_TIMER_DELIVERY_FSB     1   /* Delivery through FSB. */
 
 #define HPET_TIMER_CAP_FSB_INT_DEL (1 << 15)
 #define HPET_TIMER_CAP_PER_INT     (1 << 4)
@@ -81,32 +83,36 @@
 #define HPET_CFG_ENABLE          0x001 /* ENABLE_CNF */
 #define HPET_CFG_LEGACY          0x002 /* LEG_RT_CNF */
 
-#define HPET_ID                  0x000
-#define HPET_PERIOD              0x004
-#define HPET_CFG                 0x010
-#define HPET_STATUS              0x020
-#define HPET_COUNTER             0x0f0
-#define HPET_TN_CFG              0x000
-#define HPET_TN_CMP              0x008
-#define HPET_TN_ROUTE            0x010
+/* Register offsets in HPET space. */
+#define HPET_ID                  0x000  /* Device ID. */
+#define HPET_PERIOD              0x004  /* Clock period in femtoseconds. */
+#define HPET_CFG                 0x010  /* Configuration register. */
+#define HPET_STATUS              0x020  /* Status register. */
+#define HPET_COUNTER             0x0f0  /* Main HPET counter. */
+
+/* Timer N offsets (within each timer's space). */
+#define HPET_TN_CFG              0x000  /* Timer N configuration. */
+#define HPET_TN_CMP              0x008  /* Timer N comparator. */
+#define HPET_TN_ROUTE            0x010  /* Timer N interrupt route. */
+
 #define HPET_CFG_WRITE_MASK      0x3
 
-#define HPET_TN_INT_TYPE                      RT_BIT_64(1)
-#define HPET_TN_ENABLE                        RT_BIT_64(2)
-#define HPET_TN_PERIODIC                      RT_BIT_64(3)
-#define HPET_TN_PERIODIC_CAP                  RT_BIT_64(4)
-#define HPET_TN_SIZE_CAP                      RT_BIT_64(5)
-#define HPET_TN_SETVAL                        RT_BIT_64(6)
-#define HPET_TN_32BIT                         RT_BIT_64(8)
-#define HPET_TN_INT_ROUTE_MASK                UINT64_C(0x3e00)
-#define HPET_TN_CFG_WRITE_MASK                UINT64_C(0x3e46)
-#define HPET_TN_INT_ROUTE_SHIFT               9
-#define HPET_TN_INT_ROUTE_CAP_SHIFT           32
+#define HPET_TN_INT_TYPE                RT_BIT_64(1)
+#define HPET_TN_ENABLE                  RT_BIT_64(2)
+#define HPET_TN_PERIODIC                RT_BIT_64(3)
+#define HPET_TN_PERIODIC_CAP            RT_BIT_64(4)
+#define HPET_TN_SIZE_CAP                RT_BIT_64(5)
+#define HPET_TN_SETVAL                  RT_BIT_64(6)
+#define HPET_TN_32BIT                   RT_BIT_64(8)
+#define HPET_TN_INT_ROUTE_MASK          UINT64_C(0x3e00)
+#define HPET_TN_CFG_WRITE_MASK          UINT64_C(0x3e46)
+#define HPET_TN_INT_ROUTE_SHIFT         9
+#define HPET_TN_INT_ROUTE_CAP_SHIFT     32
+
 #define HPET_TN_CFG_BITS_READONLY_OR_RESERVED 0xffff80b1U
 
-/** Extract the timer count from the capabilities.
- * @todo Check if the mask is correct.  */
-#define HPET_CAP_GET_TIMERS(a_u32)          ( ((a_u32) >> 8) & 0xf )
+/** Extract the timer count from the capabilities. */
+#define HPET_CAP_GET_TIMERS(a_u32)      ( ((a_u32) >> 8) & 0x1f )
 
 /** The version of the saved state. */
 #define HPET_SAVED_STATE_VERSION       2
@@ -424,9 +430,9 @@ static int hpetTimerRegRead32(HpetState const *pThis, uint32_t iTimerNo, uint32_
 {
     Assert(PDMCritSectIsOwner(&pThis->csLock));
 
-    if (   iTimerNo >= RT_ELEMENTS(pThis->aTimers) /* parfait */
-        || iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities))
-    {
+    if (   iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities)  /* The second check is only to satisfy Parfait; */
+        || iTimerNo >= RT_ELEMENTS(pThis->aTimers) )                /* in practice, the number of configured timers */
+    {                                                               /* will always be <= aTimers elements. */
         static unsigned s_cOccurences = 0;
         if (s_cOccurences++ < 10)
             LogRel(("HPET: using timer above configured range: %d\n", iTimerNo));
@@ -493,8 +499,8 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 {
     Assert(!PDMCritSectIsOwner(&pThis->csLock) || TMTimerIsLockOwner(pThis->aTimers[0].CTX_SUFF(pTimer)));
 
-    if (   iTimerNo >= RT_ELEMENTS(pThis->aTimers) /* parfait */
-        || iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities))
+    if (   iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities)
+        || iTimerNo >= RT_ELEMENTS(pThis->aTimers) )    /* Parfait - see above. */
     {
         static unsigned s_cOccurences = 0;
         if (s_cOccurences++ < 10)
@@ -1070,18 +1076,20 @@ static DECLCALLBACK(void) hpetTimerCb(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     uint64_t   u64CurTick = hpetGetTicks(pThis);
     uint64_t   u64Diff;
 
-    if ((pHpetTimer->u64Config & HPET_TN_PERIODIC) && (u64Period != 0))
+    if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
     {
-        hpetAdjustComparator(pHpetTimer, u64CurTick);
-
-        u64Diff = hpetComputeDiff(pHpetTimer, u64CurTick);
-
-        Log4(("HPET: periodical: next in %llu\n", hpetTicksToNs(pThis, u64Diff)));
-        TMTimerSetNano(pTimer, hpetTicksToNs(pThis, u64Diff));
+        if (u64Period) {
+            hpetAdjustComparator(pHpetTimer, u64CurTick);
+    
+            u64Diff = hpetComputeDiff(pHpetTimer, u64CurTick);
+    
+            Log4(("HPET: periodic: next in %llu\n", hpetTicksToNs(pThis, u64Diff)));
+            TMTimerSetNano(pTimer, hpetTicksToNs(pThis, u64Diff));
+        }
     }
-    else if (    hpet32bitTimer(pHpetTimer)
-             && !(pHpetTimer->u64Config & HPET_TN_PERIODIC))
+    else if (hpet32bitTimer(pHpetTimer))
     {
+        /* For 32-bit non-periodic timers, generate wrap-around interrupts. */
         if (pHpetTimer->u8Wrap)
         {
             u64Diff = hpetComputeDiff(pHpetTimer, u64CurTick);
