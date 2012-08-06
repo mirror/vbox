@@ -118,6 +118,9 @@ private:
     void resetDragToken();
     QMimeData* createMimeData();
 
+    /* Handler: Mouse stuff: */
+    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
+
     /* Helpers: Paint stuff: */
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
     void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
