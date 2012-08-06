@@ -135,6 +135,7 @@ static void VBoxServiceToolboxShowUsage(void)
              "  ls <general options>       [--dereference|-L] [-l] [-R]\n"
              "                             [--verbose|-v] [<file>...]\n"
              "  rm <general options>       [-r|-R] <file>...\n"
+             "  mktemp <general options>   <template>\n"
              "  mkdir <general options>    [--mode|-m] [--parents|-p]\n"
              "                             [--verbose|-v] <directory>...\n"
              "  stat <general options>     [--file-system|-f]\n"
@@ -1101,6 +1102,133 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
 }
 
 
+static char g_paszMkTempHelp[] =
+    "  VBoxService [--use-toolbox] vbox_mktemp <general options> <template>\n\n"
+    "Create a temporary directory based on the template supplied. The last string\n"
+    "of consecutive 'X' characters in the template will be replaced to form a unique\n"
+    "name for the directory.\n"
+    "\n";
+
+
+/**
+ * Report the result of a vbox_mktemp operation - either errors to stderr (not
+ * machine-readable) or everything to stdout as <name>\0<rc>\0 (machine-
+ * readable format).  The message may optionally contain a '%s' for the file
+ * name and an %Rrc for the result code in that order.  In future a "verbose"
+ * flag may be added, without which nothing will be output in non-machine-
+ * readable mode.  Sets prc if rc is a non-success code.
+ */
+static void toolboxMkTempReport(const char *pcszMessage, const char *pcszFile,
+                                int rc, uint32_t fOutputFlags, int *prc)
+{
+    if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+    {
+        if (RT_FAILURE(rc))
+            RTMsgError(pcszMessage, pcszFile, rc);
+    }
+    else
+        RTPrintf("name=%s%crc=%d%c", pcszFile, 0, rc, 0);
+    if (prc && RT_FAILURE(rc))
+        *prc = rc;
+}
+
+
+/**
+ * Main function for tool "vbox_mktemp".
+ *
+ * @return  RTEXITCODE.
+ * @param   argc                    Number of arguments.
+ * @param   argv                    Pointer to argument array.
+ */
+static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
+{
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--machinereadable", VBOXSERVICETOOLBOXOPT_MACHINE_READABLE,
+          RTGETOPT_REQ_NOTHING },
+    };
+
+    int ch, rc, rc2;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    rc = RTGetOptInit(&GetState, argc, argv, s_aOptions,
+                      RT_ELEMENTS(s_aOptions), 1 /*iFirst*/,
+                      RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
+
+    bool     fVerbose     = false;
+    uint32_t fFlags       = 0;
+    uint32_t fOutputFlags = 0;
+    int cNonOptions       = 0;
+
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+              && RT_SUCCESS(rc))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            case 'h':
+                VBoxServiceToolboxShowUsageHeader();
+                RTPrintf("%s", g_paszMkTempHelp);
+                return RTEXITCODE_SUCCESS;
+
+            case 'V':
+                VBoxServiceToolboxShowVersion();
+                return RTEXITCODE_SUCCESS;
+
+            case VBOXSERVICETOOLBOXOPT_MACHINE_READABLE:
+                fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                /* RTGetOpt will sort these to the end of the argv vector so
+                 * that we will deal with them afterwards. */
+                ++cNonOptions;
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /* Print magic/version. */
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+        {
+            rc = VBoxServiceToolboxStrmInit();
+            if (RT_FAILURE(rc))
+                RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
+            VBoxServiceToolboxPrintStrmHeader("vbt_mktemp", 1 /* Stream version */);
+        }
+    }
+
+    /* We need exactly one template, containing at least one 'X'. */
+    if (RT_SUCCESS(rc) && cNonOptions != 1)
+    {
+        toolboxMkTempReport("Please specify exactly one template.\n",
+                            "", VERR_INVALID_PARAMETER, fOutputFlags, &rc);
+        return RTEXITCODE_FAILURE;
+    }
+    if (RT_SUCCESS(rc) && !strchr(argv[argc - 1], 'X'))  /* IPRT asserts this. */
+    {
+        toolboxMkTempReport("Template '%s' should contain at least one 'X' character.\n",
+                            argv[argc - 1], VERR_INVALID_PARAMETER,
+                            fOutputFlags, &rc);
+        return RTEXITCODE_FAILURE;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTDirCreateTemp(argv[argc - 1]);
+        toolboxMkTempReport("The following error occurred while creating a temporary directory with template '%s': %Rrc.\n",
+                            argv[argc - 1], rc, fOutputFlags, NULL);
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+            VBoxServiceToolboxPrintStrmTermination();
+    }
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
 /** @todo Document options! */
 static char g_paszMkDirHelp[] =
     "  VBoxService [--use-toolbox] vbox_mkdir <general options> [options]\n"
@@ -1369,11 +1497,12 @@ static PFNHANDLER vboxServiceToolboxLookUpHandler(const char *pszTool)
     }
     const s_aTools[] =
     {
-        { "cat",    VBoxServiceToolboxCat   },
-        { "ls",     VBoxServiceToolboxLs    },
-        { "rm",     VBoxServiceToolboxRm    },
-        { "mkdir",  VBoxServiceToolboxMkDir },
-        { "stat",   VBoxServiceToolboxStat  },
+        { "cat",    VBoxServiceToolboxCat    },
+        { "ls",     VBoxServiceToolboxLs     },
+        { "rm",     VBoxServiceToolboxRm     },
+        { "mktemp", VBoxServiceToolboxMkTemp },
+        { "mkdir",  VBoxServiceToolboxMkDir  },
+        { "stat",   VBoxServiceToolboxStat   },
     };
 
     /* Skip optional 'vbox_' prefix. */
