@@ -654,6 +654,19 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     ADDR_TYPE       uDstAddrReg = pCtx->ADDR_rDI;
 
     /*
+     * If we're reading back what we write, we have to let the verfication code
+     * to prevent a false positive.
+     * Note! This doesn't take aliasing or wrapping into account - lazy bird.
+     */
+    if (   IEM_VERIFICATION_ENABLED(pIemCpu)
+        && (cbIncr > 0
+            ?    uSrcAddrReg <= uDstAddrReg
+              && uSrcAddrReg + cbIncr * uCounterReg > uDstAddrReg
+            :    uDstAddrReg <= uSrcAddrReg
+              && uDstAddrReg + cbIncr * uCounterReg > uSrcAddrReg))
+        pIemCpu->fOverlappingMovs = true;
+
+    /*
      * The loop.
      */
     do
@@ -708,8 +721,17 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 rcStrict = iemMemPageMap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, (void **)&puSrcMem, &PgLockSrcMem);
                 if (rcStrict == VINF_SUCCESS)
                 {
-                    /* Perform the operation. */
-                    memcpy(puDstMem, puSrcMem, cLeftPage * (OP_SIZE / 8));
+                    Assert(   (GCPhysSrcMem         >> PAGE_SHIFT) != (GCPhysDstMem         >> PAGE_SHIFT)
+                           || ((uintptr_t)puSrcMem  >> PAGE_SHIFT) == ((uintptr_t)puDstMem  >> PAGE_SHIFT));
+
+                    /* Perform the operation exactly (don't use memcpy to avoid
+                       having to consider how its implementation would affect
+                       any overlapping source and destination area). */
+                    OP_TYPE const  *puSrcCur = puSrcMem;
+                    OP_TYPE        *puDstCur = puDstMem;
+                    uint32_t        cTodo    = cLeftPage;
+                    while (cTodo-- > 0)
+                        *puDstCur++ = *puSrcCur++;
 
                     /* Update the registers. */
                     pCtx->ADDR_rSI = uSrcAddrReg += cLeftPage * cbIncr;

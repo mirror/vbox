@@ -103,13 +103,14 @@ static void iemHlpUpdateArithEFlagsU8(PIEMCPU pIemCpu, uint8_t u8Result, uint32_
  * visible parts, in protected mode.
  *
  * @param   pSReg               Pointer to the segment register.
+ * @param   uRpl                The RPL.
  */
-static void iemHlpLoadNullDataSelectorProt(PCPUMSELREG pSReg)
+static void iemHlpLoadNullDataSelectorProt(PCPUMSELREG pSReg, RTSEL uRpl)
 {
     /** @todo Testcase: write a testcase checking what happends when loading a NULL
      *        data selector in protected mode. */
-    pSReg->Sel      = 0;
-    pSReg->ValidSel = 0;
+    pSReg->Sel      = uRpl;
+    pSReg->ValidSel = uRpl;
     pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
     pSReg->u64Base  = 0;
     pSReg->u32Limit = 0;
@@ -136,7 +137,7 @@ static void iemHlpAdjustSelectorForNewCpl(PIEMCPU pIemCpu, uint8_t uCpl, PCPUMSE
         && pSReg->Attr.n.u1DescType /* code or data, not system */
         &&    (pSReg->Attr.n.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
            !=                         (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF)) /* not conforming code */
-        iemHlpLoadNullDataSelectorProt(pSReg);
+        iemHlpLoadNullDataSelectorProt(pSReg, 0);
 }
 
 /** @} */
@@ -1732,7 +1733,8 @@ IEM_CIMPL_DEF_3(iemCImpl_enter, IEMMODE, enmEffOpSize, uint16_t, cbFrame, uint8_
     else
     {
         rcStrict = iemMemStackPushU16Ex(pIemCpu, TmpRbp.Words.w0, &NewRsp);
-        NewRbp = NewRsp;
+        NewRbp = TmpRbp;
+        NewRbp.Words.w0 = NewRsp.Words.w0;
     }
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
@@ -2386,6 +2388,8 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     {
         *pSel           = uSel;
         pHid->u64Base   = (uint32_t)uSel << 4;
+        pHid->ValidSel  = uSel;
+        pHid->fFlags    = CPUMSELREG_FLAGS_VALID;
 #if 0 /* AMD Volume 2, chapter 4.1 - "real mode segmentation" - states that limit and attributes are untouched. */
         /** @todo Does the CPU actually load limits and attributes in the
          *        real/V8086 mode segment load case?  It doesn't for CS in far
@@ -2398,6 +2402,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
                                 ? X86_SEL_TYPE_RW
                                 : X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
 #endif
+        CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
         iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
@@ -2425,6 +2430,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
                selector value into the register and leave the hidden bits
                as is. */
             *pSel = uSel;
+            pHid->ValidSel = uSel;
             iemRegAddToRip(pIemCpu, cbInstr);
             return VINF_SUCCESS;
         }
@@ -2443,13 +2449,14 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
             pHid->Attr.n.u2Dpl     = 3;
             pHid->u32Limit         = 0;
             pHid->u64Base          = 0;
+            pHid->ValidSel         = uSel;
+            pHid->fFlags           = CPUMSELREG_FLAGS_VALID;
         }
         else
-        {
-            pHid->Attr.u   = 0;
-            pHid->u32Limit = 0;
-            pHid->u64Base  = 0;
-        }
+            iemHlpLoadNullDataSelectorProt(pHid, uSel);
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pHid));
+        CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
+
         iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
@@ -2553,10 +2560,14 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     pHid->Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pHid->u32Limit = cbLimit;
     pHid->u64Base  = u64Base;
+    pHid->ValidSel = uSel;
+    pHid->fFlags   = CPUMSELREG_FLAGS_VALID;
 
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pHid));
 
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -2729,8 +2740,8 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
 IEM_CIMPL_DEF_3(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, enmEffOpSize)
 {
     /*
-     * Join paths with sgdt.
-     * Note! No CPL or V8086 checks here, it's a really sad story, as Intel if
+     * Join paths with sidt.
+     * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -2787,7 +2798,7 @@ IEM_CIMPL_DEF_3(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, 
 {
     /*
      * Join paths with sgdt.
-     * Note! No CPL or V8086 checks here, it's a really sad story, as Intel if
+     * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);

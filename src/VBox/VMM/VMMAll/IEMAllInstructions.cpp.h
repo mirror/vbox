@@ -531,19 +531,120 @@ FNIEMOP_DEF(iemOp_Invalid)
  */
 
 /** Opcode 0x0f 0x00 /0. */
-FNIEMOP_STUB_1(iemOp_Grp6_sldt, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp6_sldt, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("sldt Rv/Mw");
+    IEMOP_HLP_NO_REAL_OR_V86_MODE();
+
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint16_t, u16Ldtr);
+                IEM_MC_FETCH_LDTR_U16(u16Ldtr);
+                IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u16Ldtr);
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint32_t, u32Ldtr);
+                IEM_MC_FETCH_LDTR_U32(u32Ldtr);
+                IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u32Ldtr);
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint64_t, u64Ldtr);
+                IEM_MC_FETCH_LDTR_U64(u64Ldtr);
+                IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u64Ldtr);
+                IEM_MC_END();
+                break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint16_t, u16Ldtr);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_FETCH_LDTR_U16(u16Ldtr);
+        IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Ldtr);
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0x0f 0x00 /1. */
-FNIEMOP_STUB_1(iemOp_Grp6_str, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp6_str, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("str Rv/Mw");
+    IEMOP_HLP_NO_REAL_OR_V86_MODE();
+
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint16_t, u16Tr);
+                IEM_MC_FETCH_TR_U16(u16Tr);
+                IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u16Tr);
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint32_t, u32Tr);
+                IEM_MC_FETCH_TR_U32(u32Tr);
+                IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u32Tr);
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint64_t, u64Tr);
+                IEM_MC_FETCH_TR_U64(u64Tr);
+                IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u64Tr);
+                IEM_MC_END();
+                break;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint16_t, u16Tr);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_FETCH_TR_U16(u16Tr);
+        IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Tr);
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0x0f 0x00 /2. */
 FNIEMOP_DEF_1(iemOp_Grp6_lldt, uint8_t, bRm)
 {
-    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_MNEMONIC("lldt Ew");
+    IEMOP_HLP_NO_REAL_OR_V86_MODE();
+
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(1, 0);
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_FETCH_GREG_U16(u16Sel, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
@@ -557,6 +658,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_lldt, uint8_t, bRm)
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
         IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_CIMPL_1(iemCImpl_lldt, u16Sel);
         IEM_MC_END();
@@ -568,9 +670,12 @@ FNIEMOP_DEF_1(iemOp_Grp6_lldt, uint8_t, bRm)
 /** Opcode 0x0f 0x00 /3. */
 FNIEMOP_DEF_1(iemOp_Grp6_ltr, uint8_t, bRm)
 {
-    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_MNEMONIC("ltr Ew");
+    IEMOP_HLP_NO_REAL_OR_V86_MODE();
+
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(1, 0);
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_FETCH_GREG_U16(u16Sel, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
@@ -584,6 +689,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_ltr, uint8_t, bRm)
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
         IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_CIMPL_1(iemCImpl_ltr, u16Sel);
         IEM_MC_END();
@@ -623,6 +729,7 @@ FNIEMOP_DEF(iemOp_Grp6)
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
 {
+    IEMOP_MNEMONIC("sgdt Ms");
     IEMOP_HLP_64BIT_OP_SIZE();
     IEM_MC_BEGIN(3, 1);
     IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);
@@ -671,6 +778,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmxoff)
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 {
+    IEMOP_MNEMONIC("sidt Ms");
     IEMOP_HLP_64BIT_OP_SIZE();
     IEM_MC_BEGIN(3, 1);
     IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/pIemCpu->iEffSeg,             0);

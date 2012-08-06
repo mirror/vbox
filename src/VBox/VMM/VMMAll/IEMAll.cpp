@@ -712,12 +712,24 @@ static int iemSetPassUpStatus(PIEMCPU pIemCpu, VBOXSTRICTRC rcPassUp)
  */
 DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
 {
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
+    PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+
+#if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE) || !defined(VBOX_WITH_RAW_MODE_NOT_R0))
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ss));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->es));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ds));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->fs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->gs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ldtr));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->tr));
+#endif
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    CPUMGuestLazyLoadHiddenCsAndSs(IEMCPU_TO_VMCPU(pIemCpu));
+    CPUMGuestLazyLoadHiddenCsAndSs(pVCpu);
 #endif
-    pIemCpu->uCpl               = CPUMGetGuestCPL(IEMCPU_TO_VMCPU(pIemCpu));
+    pIemCpu->uCpl               = CPUMGetGuestCPL(pVCpu);
     IEMMODE enmMode = CPUMIsGuestIn64BitCodeEx(pCtx)
                     ? IEMMODE_64BIT
                     : pCtx->cs.Attr.n.u1DefBig /** @todo check if this is correct... */
@@ -6301,6 +6313,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_CR0_U16(a_u16Dst)                  (a_u16Dst) = (uint16_t)(pIemCpu)->CTX_SUFF(pCtx)->cr0
 #define IEM_MC_FETCH_CR0_U32(a_u32Dst)                  (a_u32Dst) = (uint32_t)(pIemCpu)->CTX_SUFF(pCtx)->cr0
 #define IEM_MC_FETCH_CR0_U64(a_u64Dst)                  (a_u64Dst) = (pIemCpu)->CTX_SUFF(pCtx)->cr0
+#define IEM_MC_FETCH_LDTR_U16(a_u16Dst)                 (a_u16Dst) = (pIemCpu)->CTX_SUFF(pCtx)->ldtr.Sel
+#define IEM_MC_FETCH_LDTR_U32(a_u32Dst)                 (a_u32Dst) = (pIemCpu)->CTX_SUFF(pCtx)->ldtr.Sel
+#define IEM_MC_FETCH_LDTR_U64(a_u64Dst)                 (a_u64Dst) = (pIemCpu)->CTX_SUFF(pCtx)->ldtr.Sel
+#define IEM_MC_FETCH_TR_U16(a_u16Dst)                   (a_u16Dst) = (pIemCpu)->CTX_SUFF(pCtx)->tr.Sel
+#define IEM_MC_FETCH_TR_U32(a_u32Dst)                   (a_u32Dst) = (pIemCpu)->CTX_SUFF(pCtx)->tr.Sel
+#define IEM_MC_FETCH_TR_U64(a_u64Dst)                   (a_u64Dst) = (pIemCpu)->CTX_SUFF(pCtx)->tr.Sel
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 #define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 #define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = pIemCpu->CTX_SUFF(pCtx)->fpu.FSW
@@ -6931,6 +6949,14 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  * @{
  */
 
+/** The instruction raises an \#UD in real and V8086 mode. */
+#define IEMOP_HLP_NO_REAL_OR_V86_MODE() \
+    do \
+    { \
+        if (IEM_IS_REAL_OR_V86_MODE(pIemCpu)) \
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+    } while (0)
+
 /** The instruction allows no lock prefixing (in this encoding), throw #UD if
  * lock prefixed.
  * @deprecated  IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX */
@@ -7310,37 +7336,36 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
      */
     pIemCpu->fNoRem  = !LogIs6Enabled(); /* logging triggers the no-rem/rem verification stuff */
     if (    pIemCpu->fNoRem
+        && (   0
 #if 0 /* auto enable on first paged protected mode interrupt */
-        && pOrgCtx->eflags.Bits.u1IF
-        && (pOrgCtx->cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG)
-        && TRPMHasTrap(pVCpu)
-        && EMGetInhibitInterruptsPC(pVCpu) != pOrgCtx->rip)
+            || (   pOrgCtx->eflags.Bits.u1IF
+                && (pOrgCtx->cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG)
+                && TRPMHasTrap(pVCpu)
+                && EMGetInhibitInterruptsPC(pVCpu) != pOrgCtx->rip) )
 #endif
 #if 0
-        &&  pOrgCtx->cs  == 0x10
-        &&  (   pOrgCtx->rip == 0x90119e3e
-             || pOrgCtx->rip == 0x901d9810
-            )
+            || (   pOrgCtx->cs  == 0x10
+                && (   pOrgCtx->rip == 0x90119e3e
+                    || pOrgCtx->rip == 0x901d9810)
 #endif
 #if 0 /* Auto enable DSL - FPU stuff. */
-        &&  pOrgCtx->cs  == 0x10
-        &&  (//   pOrgCtx->rip == 0xc02ec07f
-             //|| pOrgCtx->rip == 0xc02ec082
-             //|| pOrgCtx->rip == 0xc02ec0c9
-                0
-             || pOrgCtx->rip == 0x0c010e7c4   /* fxsave */
-            )
+            || (   pOrgCtx->cs  == 0x10
+                && (//   pOrgCtx->rip == 0xc02ec07f
+                    //|| pOrgCtx->rip == 0xc02ec082
+                    //|| pOrgCtx->rip == 0xc02ec0c9
+                       0
+                    || pOrgCtx->rip == 0x0c010e7c4   /* fxsave */ ) )
 #endif
-#if 1 /* Auto enable DSL - fstp st0 stuff. */
-        &&  pOrgCtx->cs.Sel  == 0x23
-        &&  pOrgCtx->rip == 0x804aff7
+#if 0 /* Auto enable DSL - fstp st0 stuff. */
+            || (pOrgCtx->cs.Sel  == 0x23  pOrgCtx->rip == 0x804aff7)
 #endif
 #if 0
-       && pOrgCtx->rip == 0x9022bb3a
+            || pOrgCtx->rip == 0x9022bb3a
 #endif
 #if 0
-       && 0
+            || (pOrgCtx->cs.Sel == 0x58 && pOrgCtx->rip == 0x3be) /* NT4SP1 sidt/sgdt in early loader code */
 #endif
+           )
        )
     {
         RTLogGroupSettings(NULL, "iem.eo.l6.l2");
@@ -7381,6 +7406,8 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
      */
     pIemCpu->cIOReads    = 0;
     pIemCpu->cIOWrites   = 0;
+    pIemCpu->fIgnoreRaxRdx = false;
+    pIemCpu->fOverlappingMovs = false;
     pIemCpu->fUndefinedEFlags = 0;
 
     if (IEM_VERIFICATION_ENABLED(pIemCpu))
@@ -7973,7 +8000,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
      * If the register state compared fine, check the verification event
      * records.
      */
-    if (cDiffs == 0)
+    if (cDiffs == 0 && !pIemCpu->fOverlappingMovs)
     {
         /*
          * Compare verficiation event records.
@@ -8150,6 +8177,14 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu)
         rcStrict = pIemCpu->rcPassUp;
     }
 
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->ss));
+#if defined(IEM_VERIFICATION_MODE)
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->es));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->ds));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->fs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->gs));
+#endif
     return rcStrict;
 }
 
