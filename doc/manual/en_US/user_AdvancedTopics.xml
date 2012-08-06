@@ -2271,7 +2271,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     <title>Starting virtual machines during system boot</title>
 
     <para>Starting with VirtualBox 4.2.0 it is possible to start VMs automatically during
-    system boot on Linux and Mac OS X for all users. </para>
+    system boot on Linux, Solaris and Mac OS X for all users. </para>
 
     <sect2 id="autostart-linux">
       <title>Linux: starting the autostart service via <computeroutput>init</computeroutput></title>
