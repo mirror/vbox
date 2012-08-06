@@ -37,23 +37,25 @@ class GuestSessionTask
 {
 public:
 
-    GuestSessionTask(GuestSession *pSession, Progress *pProgress);
+    GuestSessionTask(GuestSession *pSession);
 
     virtual ~GuestSessionTask(void);
 
 public:
 
     virtual int Run(void) = 0;
-    virtual int RunAsync(const Utf8Str &strDesc) = 0;
+    virtual int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress) = 0;
 
-    int setProgress(unsigned uPercent);
+    int setProgress(ULONG uPercent);
     int setProgressSuccess(void);
     int setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
 
 protected:
 
     Utf8Str                 mDesc;
-    ComObjPtr<GuestSession> mSession;
+    GuestSession           *mSession;
+    /** Progress object for getting updated when running
+     *  asynchronously. Optional. */
     ComObjPtr<Progress>     mProgress;
 };
 
@@ -64,7 +66,7 @@ class SessionTaskCopyTo : public GuestSessionTask
 {
 public:
 
-    SessionTaskCopyTo(GuestSession *pSession, Progress *pProgress,
+    SessionTaskCopyTo(GuestSession *pSession,
                       const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
 
     virtual ~SessionTaskCopyTo(void);
@@ -72,14 +74,14 @@ public:
 public:
 
     int Run(void);
-    int RunAsync(const Utf8Str &strDesc);
+    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
     static int taskThread(RTTHREAD Thread, void *pvUser);
 
 protected:
 
     Utf8Str  mSource;
     Utf8Str  mDest;
-    uint32_t mFlags;
+    uint32_t mCopyFileFlags;
 };
 
 /**
@@ -89,7 +91,7 @@ class SessionTaskCopyFrom : public GuestSessionTask
 {
 public:
 
-    SessionTaskCopyFrom(GuestSession *pSession, Progress *pProgress,
+    SessionTaskCopyFrom(GuestSession *pSession,
                         const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
 
     virtual ~SessionTaskCopyFrom(void);
@@ -97,7 +99,7 @@ public:
 public:
 
     int Run(void);
-    int RunAsync(const Utf8Str &strDesc);
+    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
     static int taskThread(RTTHREAD Thread, void *pvUser);
 
 protected:
@@ -242,8 +244,6 @@ private:
         ULONG                mId;
         /** The session timeout. Default is 30s. */
         ULONG                mTimeout;
-        /** The next process ID for assignment. */
-        ULONG                mNextProcessID;
         /** The session's environment block. Can be
          *  overwritten/extended by ProcessCreate(Ex). */
         GuestEnvironment     mEnvironment;

@@ -140,12 +140,34 @@ void GuestProcess::uninit(void)
         return;
 
 #ifndef VBOX_WITH_GUEST_CONTROL
-    close();
+    /*
+     * Cancel all callbacks + waiters.
+     * Note: Deleting them is the job of the caller!
+     */
+    for (GuestCtrlCallbacks::iterator itCallbacks = mData.mCallbacks.begin();
+         itCallbacks != mData.mCallbacks.end(); ++itCallbacks)
+    {
+        GuestCtrlCallback *pCallback = itCallbacks->second;
+        AssertPtr(pCallback);
+        int rc2 = pCallback->Cancel();
+        AssertRC(rc2);
+    }
+    mData.mCallbacks.clear();
 
+    if (mData.mWaitEvent)
+    {
+        int rc2 = mData.mWaitEvent->Cancel();
+        AssertRC(rc2);
+    }
+
+    mData.mStatus = ProcessStatus_Down; /** @todo Correct? */
+
+    /* Remove the reference from the session's process list. */
+    AssertPtr(mData.mParent);
     mData.mParent->processClose(this);
+#endif
 
     LogFlowThisFuncLeave();
-#endif
 }
 
 // implementation of public getters/setters for attributes
@@ -482,33 +504,13 @@ inline bool GuestProcess::isAlive(void)
             || mData.mStatus == ProcessStatus_Terminating);
 }
 
+/* Do not hold any locks here because the lock validator will be unhappy
+ * when being in uninit(). */
 void GuestProcess::close(void)
 {
     LogFlowThisFuncEnter();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /*
-     * Cancel all callbacks + waiters.
-     * Note: Deleting them is the job of the caller!
-     */
-    for (GuestCtrlCallbacks::iterator itCallbacks = mData.mCallbacks.begin();
-         itCallbacks != mData.mCallbacks.end(); ++itCallbacks)
-    {
-        GuestCtrlCallback *pCallback = itCallbacks->second;
-        AssertPtr(pCallback);
-        int rc2 = pCallback->Cancel();
-        AssertRC(rc2);
-    }
-    mData.mCallbacks.clear();
-
-    if (mData.mWaitEvent)
-    {
-        int rc2 = mData.mWaitEvent->Cancel();
-        AssertRC(rc2);
-    }
-
-    mData.mStatus = ProcessStatus_Down; /** @todo Correct? */
+    uninit();
 
     LogFlowThisFuncLeave();
 }
@@ -560,22 +562,29 @@ int GuestProcess::onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDA
     AssertPtrReturn(pData, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RU32, cbProcessed=%RU32, pCallback=%p, pData=%p\n",
-                 mData.mPID, pData->u32Status, pData->u32Flags, pData->cbProcessed, pCallback, pData));
+                     mData.mPID, pData->u32Status, pData->u32Flags, pData->cbProcessed, pCallback, pData));
 
     int rc = VINF_SUCCESS;
 
-    /** @todo Fill data into callback. */
-
-    /* First, signal callback in every case. */
+    /* First, signal callback in every case (if available). */
     if (pCallback)
-        pCallback->Signal();
+    {
+        rc = pCallback->SetData(pData, sizeof(CALLBACKDATAEXECINSTATUS));
+
+        int rc2 = pCallback->Signal();
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     /* Then do the WaitFor signalling stuff. */
     uint32_t uWaitFlags = mData.mWaitEvent
                         ? mData.mWaitEvent->GetWaitFlags() : 0;
     if (uWaitFlags & ProcessWaitForFlag_StdIn)
-        rc = signalWaiters(ProcessWaitResult_StdIn);
-    AssertRC(rc);
+    {
+        int rc2 = signalWaiters(ProcessWaitResult_StdIn);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -622,7 +631,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
         case PROC_STS_TEN:
         {
             fSignal = TRUE; /* Signal in any case. */
-            waitRes = ProcessWaitResult_Status;
+            waitRes = ProcessWaitResult_Terminate;
 
             mData.mStatus = ProcessStatus_TerminatedNormally;
             mData.mExitCode = pData->u32Flags; /* Contains the exit code. */
@@ -632,7 +641,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
         case PROC_STS_TES:
         {
             fSignal = TRUE; /* Signal in any case. */
-            waitRes = ProcessWaitResult_Status;
+            waitRes = ProcessWaitResult_Terminate;
 
             mData.mStatus = ProcessStatus_TerminatedSignal;
             mData.mExitCode = pData->u32Flags; /* Contains the signal. */
@@ -642,7 +651,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
         case PROC_STS_TEA:
         {
             fSignal = TRUE; /* Signal in any case. */
-            waitRes = ProcessWaitResult_Status;
+            waitRes = ProcessWaitResult_Terminate;
 
             mData.mStatus = ProcessStatus_TerminatedAbnormally;
             break;
@@ -1177,11 +1186,9 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
     LogFlowThisFunc(("fWaitFlags=%x, uTimeoutMS=%RU32, mStatus=%RU32, mWaitCount=%RU32, mWaitEvent=%p\n",
                      fWaitFlags, uTimeoutMS, mData.mStatus, mData.mWaitCount, mData.mWaitEvent));
 
-    ProcessStatus_T curStatus;
-    {
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        curStatus = mData.mStatus;
-    }
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ProcessStatus_T curStatus = mData.mStatus;
 
     /* Did some error occur before? Then skip waiting and return. */
     if (curStatus == ProcessStatus_Error)
@@ -1279,8 +1286,6 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
     /* No waiting needed? Return immediately. */
     if (waitRes.mResult != ProcessWaitResult_None)
         return VINF_SUCCESS;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData.mWaitCount > 0)
         return VERR_ALREADY_EXISTS;
@@ -1449,11 +1454,9 @@ HRESULT GuestProcess::waitResultToErrorEx(const GuestProcessWaitResult &waitResu
 int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
                             void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten)
 {
-    LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, pvData=%p, cbData=%RU32, uTimeoutMS=%RU32, puWritten=%p\n",
-                     mData.mPID, uHandle, pvData, cbData, uTimeoutMS, puWritten));
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-    /* Rest is optional. */
+    LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, uFlags=%RU32, pvData=%p, cbData=%RU32, uTimeoutMS=%RU32, puWritten=%p\n",
+                     mData.mPID, uHandle, uFlags, pvData, cbData, uTimeoutMS, puWritten));
+    /* All is optional. There can be 0 byte writes. */
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
