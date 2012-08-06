@@ -154,16 +154,16 @@ bool UIGChooserItemGroup::opened() const
     return !m_fClosed || isRoot();
 }
 
-void UIGChooserItemGroup::close()
+void UIGChooserItemGroup::close(bool fAnimated /* = true */)
 {
     AssertMsg(parentItem(), ("Can't close root-item!"));
-    m_pButton->setToggled(false);
+    m_pButton->setToggled(false ,fAnimated);
 }
 
-void UIGChooserItemGroup::open()
+void UIGChooserItemGroup::open(bool fAnimated /* = true */)
 {
     AssertMsg(parentItem(), ("Can't open root-item!"));
-    m_pButton->setToggled(true);
+    m_pButton->setToggled(true, fAnimated);
 }
 
 bool UIGChooserItemGroup::contains(const QString &strId, bool fRecursively /* = false */) const

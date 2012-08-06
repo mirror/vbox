@@ -1095,8 +1095,16 @@ UIGChooserItem* UIGChooserModel::getGroupItem(const QString &strName, UIGChooser
         AssertMsg(!strFirstSuffix.isEmpty(), ("Invalid group name!"));
         /* Trying to get group item among our children: */
         foreach (UIGChooserItem *pGroupItem, pParentItem->items(UIGChooserItemType_Group))
+        {
             if (pGroupItem->name() == strSecondSubName)
-                return getGroupItem(strFirstSuffix, pGroupItem, fAllGroupsOpened);
+            {
+                UIGChooserItem *pFoundItem = getGroupItem(strFirstSuffix, pGroupItem, fAllGroupsOpened);
+                if (UIGChooserItemGroup *pFoundGroupItem = pFoundItem->toGroupItem())
+                    if (fAllGroupsOpened && pFoundGroupItem->closed())
+                        pFoundGroupItem->open(false);
+                return pFoundItem;
+            }
+        }
     }
 
     /* Found nothing? Creating: */
