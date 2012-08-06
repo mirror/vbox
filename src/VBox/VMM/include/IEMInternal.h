@@ -257,7 +257,10 @@ typedef struct IEMCPU
     /** Indicates that RAX and RDX differences should be ignored since RDTSC
      *  and RDTSCP are timing sensitive.  */
     bool                    fIgnoreRaxRdx;
-    bool                    afAlignment2[2];
+    /** Indicates that a MOVS instruction with overlapping source and destination
+     *  was executed, causing the memory write records to be incorrrect. */
+    bool                    fOverlappingMovs;
+    bool                    afAlignment2[1];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;
