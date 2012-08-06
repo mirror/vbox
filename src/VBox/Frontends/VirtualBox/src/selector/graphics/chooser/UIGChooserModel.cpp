@@ -437,6 +437,8 @@ void UIGChooserModel::updateLayout()
     root()->resize(iViewportWidth, iViewportHeight);
     /* Relayout root item: */
     root()->updateLayout();
+    /* Make sure root is shown: */
+    root()->show();
     /* Notify listener about root-item relayouted: */
     emit sigRootItemResized(root()->geometry().size(), root()->minimumWidthHint());
 }
