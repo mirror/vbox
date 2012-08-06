@@ -2261,10 +2261,10 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     int         rc;
 
     /* First sync back EIP, ESP, and EFLAGS. */
-    rc = VMXReadCachedVMCS(VMX_VMCS64_GUEST_RIP,              &val);
+    rc = VMXReadCachedVMCS(VMX_VMCS64_GUEST_RIP,            &val);
     AssertRC(rc);
     pCtx->rip               = val;
-    rc = VMXReadCachedVMCS(VMX_VMCS64_GUEST_RSP,              &val);
+    rc = VMXReadCachedVMCS(VMX_VMCS64_GUEST_RSP,            &val);
     AssertRC(rc);
     pCtx->rsp               = val;
     rc = VMXReadCachedVMCS(VMX_VMCS_GUEST_RFLAGS,           &val);
@@ -2330,7 +2330,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMX_READ_SELREG(GS, gs);
 
     /* System MSRs */
-    VMXReadCachedVMCS(VMX_VMCS32_GUEST_SYSENTER_CS,    &val);
+    VMXReadCachedVMCS(VMX_VMCS32_GUEST_SYSENTER_CS,      &val);
     pCtx->SysEnter.cs       = val;
     VMXReadCachedVMCS(VMX_VMCS64_GUEST_SYSENTER_EIP,     &val);
     pCtx->SysEnter.eip      = val;
@@ -2340,12 +2340,12 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Misc. registers; must sync everything otherwise we can get out of sync when jumping to ring 3. */
     VMX_READ_SELREG(LDTR, ldtr);
 
-    VMXReadCachedVMCS(VMX_VMCS32_GUEST_GDTR_LIMIT,     &val);
+    VMXReadCachedVMCS(VMX_VMCS32_GUEST_GDTR_LIMIT,       &val);
     pCtx->gdtr.cbGdt        = val;
     VMXReadCachedVMCS(VMX_VMCS64_GUEST_GDTR_BASE,        &val);
     pCtx->gdtr.pGdt         = val;
 
-    VMXReadCachedVMCS(VMX_VMCS32_GUEST_IDTR_LIMIT,     &val);
+    VMXReadCachedVMCS(VMX_VMCS32_GUEST_IDTR_LIMIT,       &val);
     pCtx->idtr.cbIdt        = val;
     VMXReadCachedVMCS(VMX_VMCS64_GUEST_IDTR_BASE,        &val);
     pCtx->idtr.pIdt         = val;
@@ -2389,7 +2389,6 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             case MSR_K8_SF_MASK:
                 pCtx->msrSFMASK = pMsr->u64Value;
                 break;
-
             /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
 #if 0
             case MSR_K8_KERNEL_GS_BASE:
@@ -2399,7 +2398,6 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             case MSR_K8_TSC_AUX:
                 CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);
                 break;
-
             case MSR_K6_EFER:
                 /* EFER can't be changed without causing a VM-exit. */
                 /* Assert(pCtx->msrEFER == pMsr->u64Value); */
@@ -4989,37 +4987,24 @@ static void hmR0VmxFlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
  */
 static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr)
 {
-#if HC_ARCH_BITS == 32
-    /*
-     * If we get a flush in 64-bit guest mode, then force a full TLB flush. invvpid probably takes only 32-bit addresses.
-     */
-    if (   CPUMIsGuestInLongMode(pVCpu)
-        && !VMX_IS_64BIT_HOST_MODE())
+    uint64_t descriptor[2];
+
+    Assert(pVM->hwaccm.s.vmx.fVPID);
+    if (enmFlush == VMX_FLUSH_VPID_ALL_CONTEXTS)
     {
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+        descriptor[0] = 0;
+        descriptor[1] = 0;
     }
     else
-#endif
     {
-        uint64_t descriptor[2];
-
-        Assert(pVM->hwaccm.s.vmx.fVPID);
-        if (enmFlush == VMX_FLUSH_VPID_ALL_CONTEXTS)
-        {
-            descriptor[0] = 0;
-            descriptor[1] = 0;
-        }
-        else
-        {
-            AssertPtr(pVCpu);
-            Assert(pVCpu->hwaccm.s.uCurrentASID != 0);
-            descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
-            descriptor[1] = GCPtr;
-        }
-        int rc = VMXR0InvVPID(enmFlush, &descriptor[0]); NOREF(rc);
-        AssertMsg(rc == VINF_SUCCESS,
-                  ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hwaccm.s.uCurrentASID : 0, GCPtr, rc));
+        AssertPtr(pVCpu);
+        Assert(pVCpu->hwaccm.s.uCurrentASID != 0);
+        descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
+        descriptor[1] = GCPtr;
     }
+    int rc = VMXR0InvVPID(enmFlush, &descriptor[0]); NOREF(rc);
+    AssertMsg(rc == VINF_SUCCESS,
+              ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hwaccm.s.uCurrentASID : 0, GCPtr, rc));
 }
 
 
