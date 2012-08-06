@@ -98,7 +98,6 @@ private slots:
     void sltShowLogDialog();
     void sltShowMachineInFileManager();
     void sltPerformCreateShortcutAction();
-    void sltMachineMenuAboutToShow();
     void sltMachineCloseMenuAboutToShow();
 
     /* VM list slots: */

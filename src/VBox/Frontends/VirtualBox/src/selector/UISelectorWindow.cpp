@@ -721,14 +721,6 @@ void UISelectorWindow::sltPerformCreateShortcutAction()
     }
 }
 
-void UISelectorWindow::sltMachineMenuAboutToShow()
-{
-    /* Get selected items: */
-    QList<UIVMItem*> items = currentItems();
-    /* Enable/disable 'Machine/Close' menu according logic: */
-    m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items));
-}
-
 void UISelectorWindow::sltMachineCloseMenuAboutToShow()
 {
     /* Get current item: */
@@ -1307,7 +1299,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pExitAction, SIGNAL(triggered()), this, SLOT(sltPerformExit()));
 
     /* 'Group' menu connections: */
-    connect(m_pGroupMenu, SIGNAL(aboutToShow()), this, SLOT(sltMachineMenuAboutToShow()));
     connect(m_pActionGroupAddDialog, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
     connect(m_pActionGroupStartOrShow, SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowAction()));
     connect(m_pActionGroupPauseAndResume, SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseResumeAction(bool)));
@@ -1318,7 +1309,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pActionGroupCreateShortcut, SIGNAL(triggered()), this, SLOT(sltPerformCreateShortcutAction()));
 
     /* 'Machine' menu connections: */
-    connect(m_pMachineMenu, SIGNAL(aboutToShow()), this, SLOT(sltMachineMenuAboutToShow()));
     connect(m_pActionMachineAddDialog, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
     connect(m_pActionMachineSettingsDialog, SIGNAL(triggered()), this, SLOT(sltShowMachineSettingsDialog()));
     connect(m_pActionMachineCloneWizard, SIGNAL(triggered()), this, SLOT(sltShowCloneMachineWizard()));
@@ -1533,6 +1523,7 @@ void UISelectorWindow::updateActionsAppearance()
     m_pActionMachineSortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_SortParent, items));
 
     /* Enable/disable machine-close actions: */
+    m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items));
     m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
     m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items));
 

@@ -37,7 +37,7 @@ public:
         AddVMGroupShortcut,
         SettingsVMShortcut,
         CloneVMShortcut,
-        RemoveVMGroupShortcut,
+        BreakVMGroupShortcut,
         RemoveVMShortcut,
         RenameVMGroupShortcut,
         StartVMShortcut,
