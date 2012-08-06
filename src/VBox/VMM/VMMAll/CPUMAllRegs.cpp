@@ -1009,8 +1009,23 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             /* no break */
 #endif
 
+        /*
+         * Intel specifics MSRs:
+         */
+        case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
+        case MSR_IA32_BIOS_UPDT_TRIG:       /* fam/mod >= 6_01 */
+            *puValue = 0;
+            if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_INTEL)
+            {
+                Log(("MSR %#x is Intel, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
+                rc = VERR_CPUM_RAISE_GP_0;
+            }
+            break;
+
         default:
-            /* In X2APIC specification this range is reserved for APIC control. */
+            /*
+             * Hand the X2APIC range to PDM and the APIC.
+             */
             if (    idMsr >= MSR_IA32_APIC_START
                 &&  idMsr <  MSR_IA32_APIC_END)
             {
@@ -1146,6 +1161,9 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_F8000 = uValue;
             break;
 
+        /*
+         * AMD64 MSRs.
+         */
         case MSR_K6_EFER:
         {
             PVM             pVM          = pVCpu->CTX_SUFF(pVM);
@@ -1227,8 +1245,23 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             pVCpu->cpum.s.GuestMsrs.msr.TscAux  = uValue;
             break;
 
+        /*
+         * Intel specifics MSRs:
+         */
+        case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
+        case MSR_IA32_BIOS_UPDT_TRIG:       /* fam/mod >= 6_01 */
+            if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_INTEL)
+            {
+                Log(("MSR %#x is Intel, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+            /* ignored */
+            break;
+
         default:
-            /* In X2APIC specification this range is reserved for APIC control. */
+            /*
+             * Hand the X2APIC range to PDM and the APIC.
+             */
             if (    idMsr >= MSR_IA32_APIC_START
                 &&  idMsr <  MSR_IA32_APIC_END)
             {
