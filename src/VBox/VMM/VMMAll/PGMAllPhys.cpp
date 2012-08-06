@@ -4008,9 +4008,9 @@ VMMDECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
  * Converts a GC physical address to a HC ring-3 pointer, with some
  * additional checks.
  *
- * @returns VBox status code.
+ * @returns VBox status code (no informational statuses).
  * @retval  VINF_SUCCESS on success.
- * @retval  VINF_PGM_PHYS_TLB_CATCH_WRITE and *ppv set if the page has a write
+ * @retval  VERR_PGM_PHYS_TLB_CATCH_WRITE and *ppv set if the page has a write
  *          access handler of some kind.
  * @retval  VERR_PGM_PHYS_TLB_CATCH_ALL if the page has a handler catching all
  *          accesses or is odd in any way.
@@ -4039,7 +4039,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable,
     if (RT_SUCCESS(rc))
     {
         if (PGM_PAGE_IS_BALLOONED(pPage))
-            rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            rc = VERR_PGM_PHYS_TLB_CATCH_WRITE;
         else if (   !PGM_PAGE_HAS_ANY_HANDLERS(pPage)
                  || (fByPassHandlers && !PGM_PAGE_IS_MMIO(pPage)) )
             rc = VINF_SUCCESS;
@@ -4053,7 +4053,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable,
             else if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && fWritable)
             {
                 Assert(!fByPassHandlers);
-                rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+                rc = VERR_PGM_PHYS_TLB_CATCH_WRITE;
             }
         }
         if (RT_SUCCESS(rc))
@@ -4068,11 +4068,8 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable,
                         break;
                     case PGM_PAGE_STATE_BALLOONED:
                         AssertFailed();
-                        break;
                     case PGM_PAGE_STATE_ZERO:
                     case PGM_PAGE_STATE_SHARED:
-                        if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
-                            break;
                     case PGM_PAGE_STATE_WRITE_MONITORED:
                         rc2 = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
                         AssertLogRelRCReturn(rc2, rc2);

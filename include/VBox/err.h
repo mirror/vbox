@@ -478,6 +478,8 @@
 #define VERR_PGM_PHYS_TLB_CATCH_ALL             (-1634)
 /** Catch write access and route it thru PGM. */
 #define VINF_PGM_PHYS_TLB_CATCH_WRITE           1635
+/** Catch write access and route it thru PGM. */
+#define VERR_PGM_PHYS_TLB_CATCH_WRITE           (-1635)
 /** No CR3 root shadow page table.. */
 #define VERR_PGM_NO_CR3_SHADOW_ROOT             (-1636)
 /** Trying to free a page with an invalid Page ID. */

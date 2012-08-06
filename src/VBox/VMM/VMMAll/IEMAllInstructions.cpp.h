@@ -4808,8 +4808,52 @@ FNIEMOP_STUB(iemOp_pextrw_Gd_Nq_Ib__pextrw_Gd_Udq_Ib);
 /** Opcode 0x0f 0xc6. */
 FNIEMOP_STUB(iemOp_shufps_Vps_Wps_Ib__shufdp_Vpd_Wpd_Ib);
 
+
 /** Opcode 0x0f 0xc7 !11/1. */
-FNIEMOP_STUB_1(iemOp_Grp9_cmpxchg8b_Mq, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8b_Mq, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("cmpxchg8b Mq");
+
+    IEM_MC_BEGIN(4, 3);
+    IEM_MC_ARG(uint64_t *, pu64MemDst,     0);
+    IEM_MC_ARG(PRTUINT64U, pu64EaxEdx,     1);
+    IEM_MC_ARG(PRTUINT64U, pu64EbxEcx,     2);
+    IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 3);
+    IEM_MC_LOCAL(RTUINT64U, u64EaxEdx);
+    IEM_MC_LOCAL(RTUINT64U, u64EbxEcx);
+    IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+    IEMOP_HLP_DONE_DECODING();
+    IEM_MC_MEM_MAP(pu64MemDst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0 /*arg*/);
+
+    IEM_MC_FETCH_GREG_U32(u64EaxEdx.s.Lo, X86_GREG_xAX);
+    IEM_MC_FETCH_GREG_U32(u64EaxEdx.s.Hi, X86_GREG_xDX);
+    IEM_MC_REF_LOCAL(pu64EaxEdx, u64EaxEdx);
+
+    IEM_MC_FETCH_GREG_U32(u64EbxEcx.s.Lo, X86_GREG_xBX);
+    IEM_MC_FETCH_GREG_U32(u64EbxEcx.s.Hi, X86_GREG_xCX);
+    IEM_MC_REF_LOCAL(pu64EbxEcx, u64EbxEcx);
+
+    IEM_MC_FETCH_EFLAGS(EFlags);
+    if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
+        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg8b, pu64MemDst, pu64EaxEdx, pu64EbxEcx, pEFlags);
+    else
+        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg8b_locked, pu64MemDst, pu64EaxEdx, pu64EbxEcx, pEFlags);
+
+    IEM_MC_MEM_COMMIT_AND_UNMAP(pu64MemDst, IEM_ACCESS_DATA_RW);
+    IEM_MC_COMMIT_EFLAGS(EFlags);
+    IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
+        /** @todo Testcase: Check effect of cmpxchg8b on bits 63:32 in rax and rdx. */
+        IEM_MC_STORE_GREG_U32(X86_GREG_xAX, u64EaxEdx.s.Lo);
+        IEM_MC_STORE_GREG_U32(X86_GREG_xDX, u64EaxEdx.s.Hi);
+    IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode REX.W 0x0f 0xc7 !11/1. */
 FNIEMOP_UD_STUB_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm);
@@ -9790,26 +9834,26 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
             case IEMMODE_16BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m16);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m32);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m64);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_ax_m16);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_ax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_ax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m16);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m32);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m64);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_eax_m16);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_eax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_eax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m32);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m64);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_rax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
