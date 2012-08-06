@@ -852,6 +852,11 @@ static int cpumR3CpuIdInit(PVM pVM)
              &pCPUM->GuestCpuIdDef.eax, &pCPUM->GuestCpuIdDef.ebx,
              &pCPUM->GuestCpuIdDef.ecx, &pCPUM->GuestCpuIdDef.edx);
 
+    /** @cfgm{/CPUM/CMPXCHG16B, boolean, false}
+     * Expose CMPXCHG16B to the guest if supported by the host.
+     */
+    bool fCmpXchg16b;
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "CMPXCHG16B", &fCmpXchg16b, false); AssertRCReturn(rc, rc);
 
     /* Cpuid 1 & 0x80000001:
      * Only report features we can support.
@@ -900,7 +905,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                   //| X86_CPUID_FEATURE_ECX_TM2   - no thermal monitor 2.
                                     | X86_CPUID_FEATURE_ECX_SSSE3
                                   //| X86_CPUID_FEATURE_ECX_CNTXID - no L1 context id (MSR++).
-                                  //| X86_CPUID_FEATURE_ECX_CX16  - no cmpxchg16b
+                                    | (fCmpXchg16b ? X86_CPUID_FEATURE_ECX_CX16 : 0)
                                   /* ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
                                   //| X86_CPUID_FEATURE_ECX_TPRUPDATE
                                   /* ECX Bit 21 - x2APIC support - not yet. */
@@ -913,6 +918,7 @@ static int cpumR3CpuIdInit(PVM pVM)
         PORTABLE_CLEAR_BITS_WHEN(1, Std[1].eax, ProcessorType, (UINT32_C(3) << 12), (UINT32_C(2) << 12));
         PORTABLE_DISABLE_FEATURE_BIT(1, Std[1].ecx, SSSE3, X86_CPUID_FEATURE_ECX_SSSE3);
         PORTABLE_DISABLE_FEATURE_BIT(1, Std[1].ecx, SSE3,  X86_CPUID_FEATURE_ECX_SSE3);
+        PORTABLE_DISABLE_FEATURE_BIT(1, Std[1].ecx, CX16,  X86_CPUID_FEATURE_ECX_CX16);
         PORTABLE_DISABLE_FEATURE_BIT(2, Std[1].edx, SSE2,  X86_CPUID_FEATURE_EDX_SSE2);
         PORTABLE_DISABLE_FEATURE_BIT(3, Std[1].edx, SSE,   X86_CPUID_FEATURE_EDX_SSE);
         PORTABLE_DISABLE_FEATURE_BIT(3, Std[1].edx, CLFSH, X86_CPUID_FEATURE_EDX_CLFSH);
