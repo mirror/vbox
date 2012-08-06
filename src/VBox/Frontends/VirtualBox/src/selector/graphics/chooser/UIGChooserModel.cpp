@@ -36,6 +36,8 @@
 #include "UIActionPoolSelector.h"
 #include "UIGChooserHandlerMouse.h"
 #include "UIGChooserHandlerKeyboard.h"
+#include "UIWizardNewVM.h"
+#include "UISelectorWindow.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -50,7 +52,6 @@ UIGChooserModel::UIGChooserModel(QObject *pParent)
     , m_pAfterSlidingFocus(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
-    , m_pContextMenuRoot(0)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
 {
@@ -715,6 +716,25 @@ void UIGChooserModel::sltStartEditingSelectedGroup()
     selectionList().first()->startEditing();
 }
 
+void UIGChooserModel::sltCreateNewMachine()
+{
+    UIGChooserItem *pGroup = 0;
+    if (singleGroupSelected())
+        pGroup = selectionList().first();
+    else if (!selectionList().isEmpty())
+        pGroup = selectionList().first()->parentItem();
+    if (pGroup)
+    {
+        UIWizardNewVM wizard(&vboxGlobal().selectorWnd(), fullName(pGroup));
+        wizard.exec();
+    }
+    else
+    {
+        UIWizardNewVM wizard(&vboxGlobal().selectorWnd());
+        wizard.exec();
+    }
+}
+
 void UIGChooserModel::sltActionHovered(QAction *pAction)
 {
     emit sigShowStatusMessage(pAction->statusTip());
@@ -803,11 +823,6 @@ void UIGChooserModel::prepareRoot()
 
 void UIGChooserModel::prepareContextMenu()
 {
-    /* Context menu for empty group: */
-    m_pContextMenuRoot = new QMenu;
-    m_pContextMenuRoot->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_NewWizard));
-    m_pContextMenuRoot->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_AddDialog));
-
     /* Context menu for group: */
     m_pContextMenuGroup = new QMenu;
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_NewWizard));
@@ -850,10 +865,13 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuMachine->addSeparator();
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent));
 
-    connect(m_pContextMenuRoot, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
     connect(m_pContextMenuGroup, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
     connect(m_pContextMenuMachine, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
 
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_NewWizard), SIGNAL(triggered()),
+            this, SLOT(sltCreateNewMachine()));
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_NewWizard), SIGNAL(triggered()),
+            this, SLOT(sltCreateNewMachine()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_RenameDialog), SIGNAL(triggered()),
             this, SLOT(sltStartEditingSelectedGroup()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_RemoveDialog), SIGNAL(triggered()),
@@ -906,8 +924,6 @@ void UIGChooserModel::cleanupHandlers()
 
 void UIGChooserModel::cleanupContextMenu()
 {
-    delete m_pContextMenuRoot;
-    m_pContextMenuRoot = 0;
     delete m_pContextMenuGroup;
     m_pContextMenuGroup = 0;
     delete m_pContextMenuMachine;
@@ -1412,13 +1428,7 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                             popupContextMenu(UIGraphicsSelectorContextMenuType_Group, pEvent->screenPos());
                             return true;
                         }
-                        /* Is this root-group item? */
-                        else if (!pGroupItem->parentItem())
-                        {
-                            /* Root context menu in that cases: */
-                            popupContextMenu(UIGraphicsSelectorContextMenuType_Root, pEvent->screenPos());
-                            return true;
-                        }
+                        return false;
                     }
                     case UIGChooserItemType_Machine:
                     {
@@ -1430,8 +1440,6 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                         break;
                 }
             }
-            /* Root context menu for all the other cases: */
-            popupContextMenu(UIGraphicsSelectorContextMenuType_Root, pEvent->screenPos());
             return true;
         }
         case QGraphicsSceneContextMenuEvent::Keyboard:
@@ -1462,8 +1470,6 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                         break;
                 }
             }
-            /* Root context menu for all the other cases: */
-            popupContextMenu(UIGraphicsSelectorContextMenuType_Root, pEvent->screenPos());
             return true;
         }
         default:
@@ -1478,12 +1484,6 @@ void UIGChooserModel::popupContextMenu(UIGraphicsSelectorContextMenuType type, Q
     /* Which type of context-menu requested? */
     switch (type)
     {
-        /* For empty group? */
-        case UIGraphicsSelectorContextMenuType_Root:
-        {
-            m_pContextMenuRoot->exec(point);
-            break;
-        }
         /* For group? */
         case UIGraphicsSelectorContextMenuType_Group:
         {

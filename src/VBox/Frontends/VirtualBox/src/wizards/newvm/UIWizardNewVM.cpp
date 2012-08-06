@@ -32,8 +32,9 @@
 #include "CExtPackManager.h"
 #include "CStorageController.h"
 
-UIWizardNewVM::UIWizardNewVM(QWidget *pParent)
+UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QString() */)
     : UIWizard(pParent, UIWizardType_NewVM)
+    , m_strGroup(strGroup)
     , m_iIDECount(0)
     , m_iSATACount(0)
     , m_iSCSICount(0)
@@ -61,7 +62,10 @@ bool UIWizardNewVM::createVM()
     /* Create virtual machine: */
     if (m_machine.isNull())
     {
-        m_machine = vbox.CreateMachine(QString(), field("name").toString(), QVector<QString>() /**< @todo group support */, strTypeId, QString(), false);
+        QVector<QString> groups;
+        if (!m_strGroup.isEmpty())
+            groups << m_strGroup;
+        m_machine = vbox.CreateMachine(QString(), field("name").toString(), groups, strTypeId, QString(), false);
         if (!vbox.isOk())
         {
             msgCenter().cannotCreateMachine(vbox, this);
@@ -272,14 +276,14 @@ void UIWizardNewVM::prepare()
     {
         case UIWizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewVMPageBasic1);
+            setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
             setPage(Page2, new UIWizardNewVMPageBasic2);
             setPage(Page3, new UIWizardNewVMPageBasic3);
             break;
         }
         case UIWizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardNewVMPageExpert);
+            setPage(PageExpert, new UIWizardNewVMPageExpert(m_strGroup));
             break;
         }
         default:

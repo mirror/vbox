@@ -43,7 +43,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
 public:
 
     /* Constructor: */
-    UIWizardNewVMPageExpert();
+    UIWizardNewVMPageExpert(const QString &strGroup);
 
 protected:
 

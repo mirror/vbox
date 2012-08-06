@@ -48,7 +48,7 @@ public:
     };
 
     /* Constructor: */
-    UIWizardNewVM(QWidget *pParent);
+    UIWizardNewVM(QWidget *pParent, const QString &strGroup = QString());
 
 protected:
 
@@ -72,6 +72,7 @@ private:
 
     /* Variables: */
     CMachine m_machine;
+    QString m_strGroup;
     int m_iIDECount;
     int m_iSATACount;
     int m_iSCSICount;
