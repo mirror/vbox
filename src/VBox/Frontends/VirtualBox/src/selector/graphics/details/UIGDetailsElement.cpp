@@ -241,7 +241,6 @@ QVariant UIGDetailsElement::data(int iKey) const
             /* Prepare variables: */
             int iMargin = data(ElementData_Margin).toInt();
             int iSpacing = data(ElementData_Spacing).toInt();
-            int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
             int iMaximumTextWidth = (int)geometry().width() - 3 * iMargin - iSpacing;
             QFont textFont = data(ElementData_TextFont).value<QFont>();
             QFontMetrics fm(textFont);
@@ -261,17 +260,18 @@ QVariant UIGDetailsElement::data(int iKey) const
             iMaximumSecondLineWidth += 1;
 
             /* Calculate column widths: */
-            int iFirstColumnWidth = iMaximumTextWidth / 2;
-            int iSecondColumnWidth = iMaximumTextWidth / 2;
-            if (iMaximumFirstLineWidth < iMinimumTextColumnWidth)
+            int iFirstColumnWidth = 0;
+            int iSecondColumnWidth = 0;
+            if (iMaximumFirstLineWidth + iMaximumSecondLineWidth <= iMaximumTextWidth)
             {
                 iFirstColumnWidth = iMaximumFirstLineWidth;
                 iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
             }
-            else if (iMaximumSecondLineWidth < iMinimumTextColumnWidth)
+            else
             {
-                iSecondColumnWidth = iMaximumSecondLineWidth;
-                iFirstColumnWidth = iMaximumTextWidth - iSecondColumnWidth;
+                qreal dFirstRatio = (qreal)iMaximumFirstLineWidth / (iMaximumFirstLineWidth + iMaximumSecondLineWidth);
+                iFirstColumnWidth = iMaximumTextWidth * dFirstRatio;
+                iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
             }
 
             /* For each the line: */
@@ -305,7 +305,7 @@ QVariant UIGDetailsElement::data(int iKey) const
             /* Return result: */
             return iSummaryTextHeight;
         }
-        case ElementData_MinimumTextColumnWidth: return 100;
+        case ElementData_MinimumTextColumnWidth: return 150;
         /* Default: */
         default: break;
     }
@@ -552,7 +552,6 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
     if (!m_fClosed && !m_text.isEmpty())
     {
         /* Prepare variables: */
-        int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
         int iMaximumTextWidth = geometry().width() - 3 * iMargin - iSpacing;
         QFont textFont = data(ElementData_TextFont).value<QFont>();
         QFontMetrics fm(textFont);
@@ -572,17 +571,18 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
         iMaximumSecondLineWidth += 1;
 
         /* Calculate column widths: */
-        int iFirstColumnWidth = iMaximumTextWidth / 2;
-        int iSecondColumnWidth = iMaximumTextWidth / 2;
-        if (iMaximumFirstLineWidth < iMinimumTextColumnWidth)
+        int iFirstColumnWidth = 0;
+        int iSecondColumnWidth = 0;
+        if (iMaximumFirstLineWidth + iMaximumSecondLineWidth <= iMaximumTextWidth)
         {
             iFirstColumnWidth = iMaximumFirstLineWidth;
             iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
         }
-        else if (iMaximumSecondLineWidth < iMinimumTextColumnWidth)
+        else
         {
-            iSecondColumnWidth = iMaximumSecondLineWidth;
-            iFirstColumnWidth = iMaximumTextWidth - iSecondColumnWidth;
+            qreal dFirstRatio = (qreal)iMaximumFirstLineWidth / (iMaximumFirstLineWidth + iMaximumSecondLineWidth);
+            iFirstColumnWidth = iMaximumTextWidth * dFirstRatio;
+            iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
         }
 
         /* Where to paint? */
@@ -610,7 +610,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
             {
                 QTextLayout *pTextLayout = prepareTextLayout(textFont, line.second,
                                                              iSecondColumnWidth, iSecondColumnHeight);
-                pTextLayout->draw(pPainter, QPointF(iMachineTextX + iMaximumFirstLineWidth + iSpacing, iMachineTextY));
+                pTextLayout->draw(pPainter, QPointF(iMachineTextX + iFirstColumnWidth + iSpacing, iMachineTextY));
                 delete pTextLayout;
             }
 
