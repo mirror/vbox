@@ -81,6 +81,8 @@ public:
     virtual QString name() const = 0;
     void setRoot(bool fRoot);
     bool isRoot() const;
+    bool isHovered() const { return m_fHovered; }
+    void setHovered(bool fHovered) { m_fHovered = fHovered; }
 
     /* API: Children stuff: */
     virtual void addItem(UIGChooserItem *pItem, int iPosition) = 0;
@@ -134,8 +136,6 @@ protected:
     virtual QMimeData* createMimeData() = 0;
 
     /* Hover stuff: */
-    bool isHovered() const { return m_fHovered; }
-    void setHovered(bool fHovered) { m_fHovered = fHovered; }
     int gradient() const { return m_iGradient; }
     void setGradient(int iGradient) { m_iGradient = iGradient; update(); }
 
