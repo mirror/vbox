@@ -25,6 +25,8 @@
 #include <QGraphicsSceneContextMenuEvent>
 #include <QPropertyAnimation>
 #include <QParallelAnimationGroup>
+#include <QScrollBar>
+#include <QTimer>
 
 /* GUI includes: */
 #include "UIGChooserModel.h"
@@ -52,6 +54,8 @@ UIGChooserModel::UIGChooserModel(QObject *pParent)
     , m_pAfterSlidingFocus(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
+    , m_iScrollingTokenSize(30)
+    , m_fIsScrollingInProgress(false)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
 {
@@ -559,6 +563,43 @@ void UIGChooserModel::sltCurrentDragObjectDestroyed()
     root()->resetDragToken();
 }
 
+void UIGChooserModel::sltStartScrolling()
+{
+    /* Should we scroll? */
+    if (!m_fIsScrollingInProgress)
+        return;
+
+    /* Reset scrolling progress: */
+    m_fIsScrollingInProgress = false;
+
+    /* Get view/scrollbar: */
+    QGraphicsView *pView = scene()->views()[0];
+    QScrollBar *pVerticalScrollBar = pView->verticalScrollBar();
+
+    /* Request still valid? */
+    QPoint mousePos = pView->mapFromGlobal(QCursor::pos());
+    if (mousePos.y() < m_iScrollingTokenSize)
+    {
+        if (pVerticalScrollBar->value() > pVerticalScrollBar->minimum())
+        {
+            /* Backward scrolling: */
+            pVerticalScrollBar->setValue(pVerticalScrollBar->value() - 5);
+            m_fIsScrollingInProgress = true;
+            QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
+        }
+    }
+    else if (mousePos.y() > pView->height() - m_iScrollingTokenSize)
+    {
+        if (pVerticalScrollBar->value() < pVerticalScrollBar->maximum())
+        {
+            /* Forward scrolling: */
+            pVerticalScrollBar->setValue(pVerticalScrollBar->value() + 5);
+            m_fIsScrollingInProgress = true;
+            QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
+        }
+    }
+}
+
 void UIGChooserModel::sltRemoveCurrentlySelectedGroup()
 {
     /* Make sure focus item is of group type! */
@@ -972,6 +1013,9 @@ bool UIGChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
         /* Context menu: */
         case QEvent::GraphicsSceneContextMenu:
             return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
+        /* Improvised scroll event: */
+        case QEvent::GraphicsSceneDragMove:
+            return processDragMoveEvent(static_cast<QGraphicsSceneDragDropEvent*>(pEvent));
     }
 
     /* Call to base-class: */
@@ -1524,6 +1568,30 @@ void UIGChooserModel::popupContextMenu(UIGraphicsSelectorContextMenuType type, Q
     }
     /* Clear status-bar: */
     emit sigClearStatusMessage();
+}
+
+bool UIGChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
+{
+    /* Do we scrolling already? */
+    if (m_fIsScrollingInProgress)
+        return false;
+
+    /* Get view: */
+    QGraphicsView *pView = scene()->views()[0];
+
+    /* Check scroll area: */
+    QPoint eventPoint = pView->mapFromGlobal(pEvent->screenPos());
+    if ((eventPoint.y() < m_iScrollingTokenSize) ||
+        (eventPoint.y() > pView->height() - m_iScrollingTokenSize))
+    {
+        /* Set scrolling in progress: */
+        m_fIsScrollingInProgress = true;
+        /* Start scrolling: */
+        QTimer::singleShot(200, this, SLOT(sltStartScrolling()));
+    }
+
+    /* Pass event: */
+    return false;
 }
 
 void UIGChooserModel::slideRoot(bool fForward)

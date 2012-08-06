@@ -153,6 +153,7 @@ private slots:
 
     /* Handler: Drag object destruction: */
     void sltCurrentDragObjectDestroyed();
+    void sltStartScrolling();
 
     /* Handlers: Remove currently selected items: */
     void sltRemoveCurrentlySelectedGroup();
@@ -253,6 +254,9 @@ private:
     bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
     void popupContextMenu(UIGraphicsSelectorContextMenuType type, QPoint point);
 
+    /* Handlers: Scroll event: */
+    bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
+
     /* Helper: Root item stuff: */
     void slideRoot(bool fForward);
 
@@ -281,6 +285,8 @@ private:
     UIGChooserHandlerMouse *m_pMouseHandler;
     UIGChooserHandlerKeyboard *m_pKeyboardHandler;
     QPointer<QDrag> m_pCurrentDragObject;
+    int m_iScrollingTokenSize;
+    bool m_fIsScrollingInProgress;
     QPointer<UIGChooserItem> m_pFocusItem;
     QMenu *m_pContextMenuGroup;
     QMenu *m_pContextMenuMachine;
