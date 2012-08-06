@@ -7384,6 +7384,9 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #if 1 /* NT4SP1 - xadd early boot. */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8019cf0f)
 #endif
+#if 1 /* NT4SP1 - wrmsr (intel MSR). */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8011a6d4)
+#endif
            )
        )
     {

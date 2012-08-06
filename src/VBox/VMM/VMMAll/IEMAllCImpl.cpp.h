@@ -3693,6 +3693,40 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
 
 
 /**
+ * Implements WRMSR.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Check preconditions.
+     */
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_MSR))
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    if (pIemCpu->uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    /*
+     * Do the job.
+     */
+    RTUINT64U uValue;
+    uValue.au32[0] = pCtx->eax;
+    uValue.au32[1] = pCtx->edx;
+
+    int rc = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Implements 'IN eAX, port'.
  *
  * @param   u16Port     The source port.
