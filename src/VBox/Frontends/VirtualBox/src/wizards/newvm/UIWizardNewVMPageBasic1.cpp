@@ -139,7 +139,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot", Qt::CaseInsensitive), "Other" },
 };
 
-UIWizardNewVMPage1::UIWizardNewVMPage1()
+UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
+    : m_strGroup(strGroup)
 {
 }
 
@@ -182,7 +183,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Get default machines directory: */
     QString strDefaultMachinesFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
     /* Compose machine filename: */
-    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(), QString::null /**< @todo group support */, strDefaultMachinesFolder);
+    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(), m_strGroup, strDefaultMachinesFolder);
     /* Compose machine folder/basename: */
     QFileInfo fileInfo(strMachineFilename);
     QString strMachineFolder = fileInfo.absolutePath();
@@ -223,7 +224,8 @@ bool UIWizardNewVMPage1::cleanupMachineFolder()
     return fMachineFolderRemoved;
 }
 
-UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1()
+UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
+    : UIWizardNewVMPage1(strGroup)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);

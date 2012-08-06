@@ -37,7 +37,6 @@
 #include "UIDownloaderUserManual.h"
 #include "UIDownloaderExtensionPack.h"
 #include "UIIconPool.h"
-#include "UIWizardNewVM.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardImportApp.h"
@@ -318,12 +317,6 @@ void UISelectorWindow::sltShowPreferencesDialog()
 void UISelectorWindow::sltPerformExit()
 {
     close();
-}
-
-void UISelectorWindow::sltShowCreateMachineWizard()
-{
-    UIWizardNewVM wizard(this);
-    wizard.exec();
 }
 
 void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = QString() */)
@@ -1315,7 +1308,6 @@ void UISelectorWindow::prepareConnections()
 
     /* 'Group' menu connections: */
     connect(m_pGroupMenu, SIGNAL(aboutToShow()), this, SLOT(sltMachineMenuAboutToShow()));
-    connect(m_pActionGroupNewWizard, SIGNAL(triggered()), this, SLOT(sltShowCreateMachineWizard()));
     connect(m_pActionGroupAddDialog, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
     connect(m_pActionGroupStartOrShow, SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowAction()));
     connect(m_pActionGroupPauseAndResume, SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseResumeAction(bool)));
@@ -1327,7 +1319,6 @@ void UISelectorWindow::prepareConnections()
 
     /* 'Machine' menu connections: */
     connect(m_pMachineMenu, SIGNAL(aboutToShow()), this, SLOT(sltMachineMenuAboutToShow()));
-    connect(m_pActionMachineNewWizard, SIGNAL(triggered()), this, SLOT(sltShowCreateMachineWizard()));
     connect(m_pActionMachineAddDialog, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
     connect(m_pActionMachineSettingsDialog, SIGNAL(triggered()), this, SLOT(sltShowMachineSettingsDialog()));
     connect(m_pActionMachineCloneWizard, SIGNAL(triggered()), this, SLOT(sltShowCloneMachineWizard()));

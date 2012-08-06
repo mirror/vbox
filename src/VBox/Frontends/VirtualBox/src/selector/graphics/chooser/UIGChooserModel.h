@@ -50,7 +50,6 @@ typedef QSet<QString> UIStringSet;
 /* Context-menu type: */
 enum UIGraphicsSelectorContextMenuType
 {
-    UIGraphicsSelectorContextMenuType_Root,
     UIGraphicsSelectorContextMenuType_Group,
     UIGraphicsSelectorContextMenuType_Machine
 };
@@ -164,6 +163,9 @@ private slots:
 
     /* Handler: Group name editing stuff: */
     void sltStartEditingSelectedGroup();
+
+    /* Handler: Create new machine stuff: */
+    void sltCreateNewMachine();
 
     /* Handler: Context menu hovering: */
     void sltActionHovered(QAction *pAction);
@@ -280,7 +282,6 @@ private:
     UIGChooserHandlerKeyboard *m_pKeyboardHandler;
     QPointer<QDrag> m_pCurrentDragObject;
     QPointer<UIGChooserItem> m_pFocusItem;
-    QMenu *m_pContextMenuRoot;
     QMenu *m_pContextMenuGroup;
     QMenu *m_pContextMenuMachine;
 };

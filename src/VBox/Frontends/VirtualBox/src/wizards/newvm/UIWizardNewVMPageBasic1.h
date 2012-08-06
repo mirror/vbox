@@ -32,7 +32,7 @@ class UIWizardNewVMPage1 : public UIWizardPageBase
 protected:
 
     /* Constructor: */
-    UIWizardNewVMPage1();
+    UIWizardNewVMPage1(const QString &strGroup);
 
     /* Handlers: */
     void onNameChanged(const QString &strNewName);
@@ -57,6 +57,9 @@ protected:
 
     /* Widgets: */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
+
+    /* Variables: */
+    QString m_strGroup;
 };
 
 /* 1st page of the New Virtual Machine wizard (basic extension): */
@@ -69,7 +72,7 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 public:
 
     /* Constructor: */
-    UIWizardNewVMPageBasic1();
+    UIWizardNewVMPageBasic1(const QString &strGroup);
 
 protected:
 

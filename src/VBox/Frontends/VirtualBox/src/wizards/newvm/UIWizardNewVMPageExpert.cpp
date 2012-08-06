@@ -37,7 +37,8 @@
 #include "QILineEdit.h"
 #include "QIToolButton.h"
 
-UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
+UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
+    : UIWizardNewVMPage1(strGroup)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
