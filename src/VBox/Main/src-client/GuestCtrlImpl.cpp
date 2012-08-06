@@ -706,7 +706,36 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
                  VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(pHeader->u32ContextID),
                  VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pHeader->u32ContextID)));
 #endif
-    int rc = pGuest->dispatchToSession(pHeader->u32ContextID, u32Function, pvParms, cbParms);
+
+    bool fDispatch = true;
+#ifdef DEBUG
+    /*
+     * Pre-check: If we got a status message with an error and VERR_TOO_MUCH_DATA
+     *            it means that that guest could not handle the entire message
+     *            because of its exceeding size. This should not happen on daily
+     *            use but testcases might try this. It then makes no sense to dispatch
+     *            this further because we don't have a valid context ID.
+     */
+    if (u32Function == GUEST_EXEC_SEND_STATUS)
+    {
+        PCALLBACKDATAEXECSTATUS pCallbackData = reinterpret_cast<PCALLBACKDATAEXECSTATUS>(pvParms);
+        AssertPtr(pCallbackData);
+        AssertReturn(sizeof(CALLBACKDATAEXECSTATUS) == cbParms, VERR_INVALID_PARAMETER);
+        AssertReturn(CALLBACKDATAMAGIC_EXEC_STATUS == pCallbackData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+        if (   pCallbackData->u32Status == PROC_STS_ERROR
+            && pCallbackData->u32Flags  == VERR_TOO_MUCH_DATA)
+        {
+            LogFlowFunc(("Requested command with too much data, skipping dispatching ...\n"));
+
+            Assert(pCallbackData->u32PID == 0);
+            fDispatch = false;
+        }
+    }
+#endif
+    int rc = VINF_SUCCESS;
+    if (fDispatch)
+        rc = pGuest->dispatchToSession(pHeader->u32ContextID, u32Function, pvParms, cbParms);
 
 #ifdef VBOX_WITH_GUEST_CONTROL_LEGACY
     if (RT_SUCCESS(rc))

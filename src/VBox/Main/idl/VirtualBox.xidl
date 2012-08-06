@@ -10264,13 +10264,28 @@
     
   <interface
     name="IFile" extends="$unknown"
-    uuid="2615152d-35c0-4363-8325-ab7e1f2b8b34"
+    uuid="b3484293-b98b-4952-ae23-f18eca6a5ff9"
     wsmap="managed"
     >
     <desc>
       TODO
     </desc>
-    
+    <attribute name="creationMode" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    <attribute name="disposition" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
     <attribute name="fileName" type="wstring" readonly="yes">
       <desc>
         TODO

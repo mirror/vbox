@@ -204,6 +204,8 @@ public:
     int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory);
     int                     dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     int                     fileClose(ComObjPtr<GuestFile> pFile);
+    int                     fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition,
+                                             uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile);
     int                     fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData);
     int                     fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize);
     const GuestCredentials &getCredentials(void);
@@ -211,7 +213,7 @@ public:
     Utf8Str                 getName(void);
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     processClose(ComObjPtr<GuestProcess> pProcess);
-    int                     processCreateExInteral(GuestProcessInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
+    int                     processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
     int                     startTaskAsync(const Utf8Str &strTaskDesc, GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress);

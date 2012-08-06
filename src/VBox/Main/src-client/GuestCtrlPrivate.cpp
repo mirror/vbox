@@ -46,8 +46,6 @@ GuestCtrlEvent::~GuestCtrlEvent(void)
 
 int GuestCtrlEvent::Cancel(void)
 {
-    LogFlowThisFuncEnter();
-
     int rc = VINF_SUCCESS;
     if (!ASMAtomicReadBool(&fCompleted))
     {
@@ -55,13 +53,12 @@ int GuestCtrlEvent::Cancel(void)
         {
             ASMAtomicXchgBool(&fCanceled, true);
 
-            LogFlowThisFunc(("Cancelling ...\n"));
+            LogFlowThisFunc(("Cancelling event ...\n"));
             rc = hEventSem != NIL_RTSEMEVENT
                ? RTSemEventSignal(hEventSem) : VINF_SUCCESS;
         }
     }
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
