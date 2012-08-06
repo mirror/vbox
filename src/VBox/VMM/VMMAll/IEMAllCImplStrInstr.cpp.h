@@ -450,7 +450,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
                 pCtx->ADDR_rCX = uCounterReg -= i;
                 pCtx->ADDR_rDI = uAddrReg    += i * cbIncr;
                 pCtx->eflags.u = uEFlags;
-                Assert(!(uEFlags & X86_EFL_ZF) == (i < cLeftPage));
+                Assert(!(uEFlags & X86_EFL_ZF) == fQuit);
                 iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
                 if (fQuit)
                     break;
@@ -575,7 +575,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
                 pCtx->ADDR_rCX = uCounterReg -= i;
                 pCtx->ADDR_rDI = uAddrReg    += i * cbIncr;
                 pCtx->eflags.u = uEFlags;
-                Assert((!(uEFlags & X86_EFL_ZF) != (i < cLeftPage)) || (i == cLeftPage));
+                Assert(!!(uEFlags & X86_EFL_ZF) == fQuit);
                 iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
                 if (fQuit)
                     break;
@@ -603,7 +603,6 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
             RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
-
             pCtx->ADDR_rDI = uAddrReg += cbIncr;
             pCtx->ADDR_rCX = --uCounterReg;
             pCtx->eflags.u = uEFlags;

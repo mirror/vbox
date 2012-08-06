@@ -4670,6 +4670,7 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
                                   ppvMem,
                                   pLock);
     /*Log(("PGMPhysIemGCPhys2Ptr %Rrc pLock=%.*Rhxs\n", rc, sizeof(*pLock), pLock));*/
+    AssertMsg(rc == VINF_SUCCESS || RT_FAILURE_NP(rc), ("%Rrc\n", rc));
     return rc;
 }
 
@@ -4977,7 +4978,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
     /*
      * Filter out conditions we can handle and the ones which shouldn't happen.
      */
-    if (   rcMap != VINF_PGM_PHYS_TLB_CATCH_WRITE
+    if (   rcMap != VERR_PGM_PHYS_TLB_CATCH_WRITE
         && rcMap != VERR_PGM_PHYS_TLB_CATCH_ALL
         && rcMap != VERR_PGM_PHYS_TLB_UNASSIGNED)
     {
@@ -7332,6 +7333,12 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     PCPUMCTX pOrgCtx = pIemCpu->CTX_SUFF(pCtx);
 
     /*
+     * Always note down the address of the current instruction.
+     */
+    pIemCpu->uOldCs  = pOrgCtx->cs.Sel;
+    pIemCpu->uOldRip = pOrgCtx->rip;
+
+    /*
      * Enable verification and/or logging.
      */
     pIemCpu->fNoRem  = !LogIs6Enabled(); /* logging triggers the no-rem/rem verification stuff */
@@ -7364,6 +7371,18 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #endif
 #if 0
             || (pOrgCtx->cs.Sel == 0x58 && pOrgCtx->rip == 0x3be) /* NT4SP1 sidt/sgdt in early loader code */
+#endif
+#if 0
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013ec28) /* NT4SP1 first str (early boot) */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x80119e3f) /* NT4SP1 second str (early boot) */
+#endif
+#if 0 /* NT4SP1 - later on the blue screen, things goes wrong... */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8010a5df)
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013a7c4)
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013a7d2)
+#endif
+#if 1 /* NT4SP1 - xadd early boot. */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8019cf0f)
 #endif
            )
        )
@@ -7648,7 +7667,7 @@ static void iemVerifyAssertMsg2(PIEMCPU pIemCpu)
                     );
 
     char szInstr1[256];
-    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCtx->rip - pIemCpu->offOpcode,
+    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pIemCpu->uOldCs, pIemCpu->uOldRip,
                        DBGF_DISAS_FLAGS_DEFAULT_MODE,
                        szInstr1, sizeof(szInstr1), NULL);
     char szInstr2[256];

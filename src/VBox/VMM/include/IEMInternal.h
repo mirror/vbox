@@ -260,10 +260,14 @@ typedef struct IEMCPU
     /** Indicates that a MOVS instruction with overlapping source and destination
      *  was executed, causing the memory write records to be incorrrect. */
     bool                    fOverlappingMovs;
-    bool                    afAlignment2[1];
+    bool                    afAlignment2[1+4];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;
+    /** The CS of the instruction being interpreted. */
+    RTSEL                   uOldCs;
+    /** The RIP of the instruction being interpreted. */
+    uint64_t                uOldRip;
     /** The physical address corresponding to abOpcodes[0]. */
     RTGCPHYS                GCPhysOpcodes;
 #endif
@@ -615,6 +619,18 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u16_locked,(uint16_t *pu16Dst, uint16_t *p
 IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u32_locked,(uint32_t *pu32Dst, uint32_t *pu32Reg, uint32_t *pEFlags));
 IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64_locked,(uint64_t *pu64Dst, uint64_t *pu64Reg, uint32_t *pEFlags));
 /** @}  */
+
+/** @name Compare and exchange.
+ * @{ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg8b,(uint64_t *pu64Dst, PRTUINT64U pu64EaxEdx, PRTUINT64U pu64EbxEcx,
+                                            uint32_t *pEFlags));
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg8b_locked,(uint64_t *pu64Dst, PRTUINT64U pu64EaxEdx, PRTUINT64U pu64EbxEcx,
+                                                   uint32_t *pEFlags));
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U *pu128Dst, PRTUINT128U pu64RaxRdx, PRTUINT128U pu64RbxRcx,
+                                             uint32_t *pEFlags));
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_locked,(PRTUINT128U *pu128Dst, PRTUINT128U pu64RaxRdx, PRTUINT128U pu64RbxRcx,
+                                                    uint32_t *pEFlags));
+/** @} */
 
 /** @name Double precision shifts
  * @{ */
