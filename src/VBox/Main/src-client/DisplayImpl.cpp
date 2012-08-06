@@ -3245,11 +3245,87 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         }
     }
 #ifdef VBOX_WITH_VPX_MAIN
-    VideoRecCopyToIntBuffer(pVideoRecContext, pDisplay->xOrigin, pDisplay->yOrigin,
-                            pDisplay->w, pDisplay->h, mPixelFormat,
-                            pDisplay->u16BitsPerPixel, mBytesPerLine, pDisplay->w,
-                            pDisplay->h, pDisplay->h, pDisplay->w,
-                            pu8Framebuffer, mTempRGBBuffer);
+    ULONG u32PixelFormat;
+    uint8_t *u8TmpBuf;
+    uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
+    DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
+    int rc;
+
+
+    if (!pFBInfo->pFramebuffer.isNull() && !(pFBInfo->fDisabled)
+         && pFBInfo->u32ResizeStatus==ResizeStatus_Void)
+    {
+        ULONG ulPixelFormat = 0;
+        pFBInfo->pFramebuffer->COMGETTER(PixelFormat)(&ulPixelFormat);
+
+        ULONG ulBitsPerPixel;
+        pFBInfo->pFramebuffer->COMGETTER(BitsPerPixel)(&ulBitsPerPixel);
+
+        ULONG ulFrameHeight = 0;
+        pFBInfo->pFramebuffer->COMGETTER(Height)(&ulFrameHeight);
+
+        ULONG ulFrameWidth = 0;
+        pFBInfo->pFramebuffer->COMGETTER(Width)(&ulFrameWidth);
+
+        BYTE *address = NULL;
+        HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
+
+
+        switch (ulBitsPerPixel)
+        {
+            case 32:
+            case 24:
+            case 16:
+                u32PixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+            break;
+            default:
+                u32PixelFormat = FramebufferPixelFormat_Opaque;
+            break;
+        }
+
+        if(ulPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
+        {
+            switch (ulBitsPerPixel)
+            {
+                case 32:
+                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB32;
+                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB32\n"));
+                    break;
+                case 24:
+                    u32VideoRecImgFormat  = VPX_IMG_FMT_RGB24;
+                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB24\n"));
+                    break;
+                case 16:
+                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB565;
+                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB565\n"));
+                    break;
+                default:
+                    Log2(("No Proper Format detected\n"));
+
+            }
+        }
+
+        LogFlow(("cp to IntBuf orgx=%d orgy=%d cx=%d cy=%d bpp=%d\n",
+                   pFBInfo->xOrigin, pFBInfo->yOrigin,  pDrv->IConnector.cx, pDrv->IConnector.cy,
+                   pDrv->IConnector.cBits));
+
+
+        if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE && address != NULL)
+        {
+            VideoRecCopyToIntBuffer(pVideoRecContext, pFBInfo->xOrigin, pFBInfo->yOrigin,
+                              u32PixelFormat, ulBitsPerPixel, pDrv->IConnector.cbScanline,
+                              ulFrameWidth, ulFrameHeight,address);
+
+
+            LogFlow(("RGB:YUV\n"));
+            VideoRecDoRGBToYUV(ulFrameWidth, ulFrameHeight, u32VideoRecImgFormat,
+                            pVideoRecContext->pu8TempYUVBuffer,
+                            pVideoRecContext->pu8TempRGBBuffer);
+            LogFlow(("Encode\n"));
+            VideoRecEncodeAndWrite(pVideoRecContext, ulFrameWidth,
+                                    ulFrameHeight, pVideoRecContext->pu8TempYUVBuffer);
+        }
+    }
 #endif
 
 
@@ -4232,12 +4308,13 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pData->IConnector.pfnVBVAMousePointerShape = Display::displayVBVAMousePointerShape;
 #endif
 #ifdef VBOX_WITH_VPX_MAIN
-    rc = VideoRecContextCreate(&pVideoRecContext);
-    rc = RTCritSectInit(&mCritSect);
-    AssertReturn(rc == VINF_SUCCESS, E_UNEXPECTED);
+    LogFlow(("Init And Create\n"));
+    int res = VideoRecContextCreate(&pVideoRecContext);
+    res = RTCritSectInit(&pVideoRecContext->CritSect);
+    AssertReturn(res == VINF_SUCCESS, E_UNEXPECTED);
 
-    if(rc == VINF_SUCCESS)
-        rc = VideoRecContextInit(pVideoRecContext, "test.webm", 800, 720);
+    if(res == VINF_SUCCESS)
+        res = VideoRecContextInit(pVideoRecContext, "test.webm", 800, 720);
 
 #endif
 
