@@ -1927,6 +1927,91 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath, LONG *aReturnCode)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No file to remove specified"));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    GuestProcessStartupInfo procInfo;
+    GuestProcessStream      streamOut;
+    int rc = VINF_SUCCESS;
+
+    try  /* Can this be done without exceptions? */
+    {
+        Utf8Str strPath(aPath);
+        procInfo.mName    = Utf8StrFmt(tr("Removing file \"%s\"",
+                                       strPath.c_str()));
+        procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_RM);
+        /* Construct arguments. */
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        procInfo.mArguments.push_back(Bstr(aPath)); /* The directory we want to create. */
+    }
+    catch (...)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    ComObjPtr<GuestProcess> pProcess;
+    rc = processCreateExInteral(procInfo, pProcess);
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessWaitResult waitRes;
+        BYTE byBuf[_64K];
+        size_t cbRead;
+
+        for (;;)
+        {
+            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
+                                   30 * 1000 /* Timeout */, waitRes);
+            if (   RT_FAILURE(rc)
+                || waitRes.mResult != ProcessWaitResult_StdOut)
+            {
+                break;
+            }
+
+            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                    &cbRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            rc = streamOut.AddData(byBuf, cbRead);
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
+                         rc, cbRead, streamOut.GetSize()));
+    } 
+
+    if (RT_FAILURE(rc))
+        return setError(E_FAIL, tr("Error while deleting file: %Rrc"), rc);
+    if (!streamOut.GetSize())
+        return setError(E_FAIL, tr("No return code after deleting file"));
+    GuestProcessStreamBlock streamBlock;
+    rc = streamOut.ParseBlock(streamBlock);
+    if (RT_SUCCESS(rc))
+    {
+        streamBlock.GetString("fname");
+        int64_t i64rc;
+        if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
+            return setError(E_FAIL, tr("No return code after deleting file"));
+        *aReturnCode = (LONG)i64rc;
+    }
+    else
+        return setError(E_FAIL, tr("Error while getting return code from deleting file: %Rrc"), rc);
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aDisposition, ULONG aCreationMode, LONG64 aOffset, IGuestFile **aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
