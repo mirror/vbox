@@ -229,9 +229,8 @@ QVariant UIGDetailsElement::data(int iKey) const
             }
 
             /* Calculate minimum text width: */
-            int iMinimumFirstLineWidth = qMin(iMaximumFirstLineWidth, iMinimumTextColumnWidth);
             int iMinimumSecondLineWidth = qMin(iMaximumSecondLineWidth, iMinimumTextColumnWidth);
-            int iMinimumTextWidth = iMinimumFirstLineWidth + iSpacing + iMinimumSecondLineWidth;
+            int iMinimumTextWidth = iMaximumFirstLineWidth + iSpacing + iMinimumSecondLineWidth;
 
             /* Return result: */
             return iMinimumTextWidth;
@@ -260,19 +259,8 @@ QVariant UIGDetailsElement::data(int iKey) const
             iMaximumSecondLineWidth += 1;
 
             /* Calculate column widths: */
-            int iFirstColumnWidth = 0;
-            int iSecondColumnWidth = 0;
-            if (iMaximumFirstLineWidth + iMaximumSecondLineWidth <= iMaximumTextWidth)
-            {
-                iFirstColumnWidth = iMaximumFirstLineWidth;
-                iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
-            }
-            else
-            {
-                qreal dFirstRatio = (qreal)iMaximumFirstLineWidth / (iMaximumFirstLineWidth + iMaximumSecondLineWidth);
-                iFirstColumnWidth = iMaximumTextWidth * dFirstRatio;
-                iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
-            }
+            int iFirstColumnWidth = iMaximumFirstLineWidth;
+            int iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
 
             /* For each the line: */
             int iSummaryTextHeight = 0;
@@ -305,7 +293,7 @@ QVariant UIGDetailsElement::data(int iKey) const
             /* Return result: */
             return iSummaryTextHeight;
         }
-        case ElementData_MinimumTextColumnWidth: return 150;
+        case ElementData_MinimumTextColumnWidth: return 100;
         /* Default: */
         default: break;
     }
@@ -571,19 +559,8 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
         iMaximumSecondLineWidth += 1;
 
         /* Calculate column widths: */
-        int iFirstColumnWidth = 0;
-        int iSecondColumnWidth = 0;
-        if (iMaximumFirstLineWidth + iMaximumSecondLineWidth <= iMaximumTextWidth)
-        {
-            iFirstColumnWidth = iMaximumFirstLineWidth;
-            iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
-        }
-        else
-        {
-            qreal dFirstRatio = (qreal)iMaximumFirstLineWidth / (iMaximumFirstLineWidth + iMaximumSecondLineWidth);
-            iFirstColumnWidth = iMaximumTextWidth * dFirstRatio;
-            iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
-        }
+        int iFirstColumnWidth = iMaximumFirstLineWidth;
+        int iSecondColumnWidth = iMaximumTextWidth - iFirstColumnWidth;
 
         /* Where to paint? */
         int iMachineTextX = iMachinePixmapX;
