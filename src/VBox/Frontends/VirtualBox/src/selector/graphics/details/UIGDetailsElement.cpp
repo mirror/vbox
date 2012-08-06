@@ -257,6 +257,8 @@ QVariant UIGDetailsElement::data(int iKey) const
                 iMaximumFirstLineWidth = qMax(iMaximumFirstLineWidth, fm.width(strFirstLine));
                 iMaximumSecondLineWidth = qMax(iMaximumSecondLineWidth, fm.width(strSecondLine));
             }
+            iMaximumFirstLineWidth += 1;
+            iMaximumSecondLineWidth += 1;
 
             /* Calculate column widths: */
             int iFirstColumnWidth = iMaximumTextWidth / 2;
@@ -566,6 +568,8 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
             iMaximumFirstLineWidth = qMax(iMaximumFirstLineWidth, fm.width(strFirstLine));
             iMaximumSecondLineWidth = qMax(iMaximumSecondLineWidth, fm.width(strSecondLine));
         }
+        iMaximumFirstLineWidth += 1;
+        iMaximumSecondLineWidth += 1;
 
         /* Calculate column widths: */
         int iFirstColumnWidth = iMaximumTextWidth / 2;
