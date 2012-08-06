@@ -2563,13 +2563,23 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->pgm.s.fA20Enabled = true;
-        pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!pVCpu->pgm.s.fA20Enabled << 20);
         pVCpu->pgm.s.fGst32BitPageSizeExtension = false;
         PGMNotifyNxeChanged(pVCpu, false);
 
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
+
+        if (!pVCpu->pgm.s.fA20Enabled)
+        {
+            pVCpu->pgm.s.fA20Enabled = true;
+            pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!pVCpu->pgm.s.fA20Enabled << 20);
+#ifdef PGM_WITH_A20
+            pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+            pgmR3RefreshShadowModeAfterA20Change(pVCpu);
+            HWACCMFlushTLB(pVCpu);
+#endif
+        }
     }
 
     /*
