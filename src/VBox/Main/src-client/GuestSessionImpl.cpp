@@ -82,7 +82,8 @@ int GuestSessionTask::setProgress(ULONG uPercent)
         && !fCompleted)
         return VINF_SUCCESS;
     HRESULT hr = mProgress->SetCurrentOperationProgress(uPercent);
-    ComAssertComRC(hr);
+    if (FAILED(hr))
+        return VERR_COM_UNEXPECTED;
 
     return VINF_SUCCESS;
 }
@@ -204,7 +205,7 @@ int SessionTaskCopyTo::Run(void)
 
                     /* Startup process. */
                     ComObjPtr<GuestProcess> pProcess;
-                    int rc = pSession->processCreateExInteral(procInfo, pProcess);
+                    rc = pSession->processCreateExInteral(procInfo, pProcess);
                     if (RT_SUCCESS(rc))
                         rc = pProcess->startProcess();
                     if (RT_FAILURE(rc))
@@ -498,7 +499,7 @@ int SessionTaskCopyFrom::Run(void)
 
                 /* Startup process. */
                 ComObjPtr<GuestProcess> pProcess;
-                int rc = pSession->processCreateExInteral(procInfo, pProcess);
+                rc = pSession->processCreateExInteral(procInfo, pProcess);
                 if (RT_SUCCESS(rc))
                     rc = pProcess->startProcess();
                 if (RT_FAILURE(rc))
