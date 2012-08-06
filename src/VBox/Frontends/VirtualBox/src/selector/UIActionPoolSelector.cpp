@@ -264,9 +264,9 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "&Remove group..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Remove the selected virtual machine group"));
-        setShortcut(gSS->keySequence(UISelectorShortcuts::RemoveVMShortcut));
+        setText(QApplication::translate("UIActionPool", "&Break group..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Break the selected virtual machine group"));
+        setShortcut(gSS->keySequence(UISelectorShortcuts::BreakVMGroupShortcut));
     }
 };
 
