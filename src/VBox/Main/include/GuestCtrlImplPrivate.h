@@ -304,8 +304,10 @@ struct GuestFsObjData
  * Structure for keeping all the relevant process
  * starting parameters around.
  */
-struct GuestProcessStartupInfo
+class GuestProcessStartupInfo
 {
+public:
+
     GuestProcessStartupInfo(void)
         : mFlags(ProcessCreateFlag_None),
           mPriority(ProcessPriority_Default),
@@ -331,12 +333,12 @@ class GuestProcessStreamValue
 {
 public:
 
-    GuestProcessStreamValue() { }
+    GuestProcessStreamValue(void) { }
     GuestProcessStreamValue(const char *pszValue)
         : mValue(pszValue) {}
 
     GuestProcessStreamValue(const GuestProcessStreamValue& aThat)
-           : mValue(aThat.mValue) {}
+           : mValue(aThat.mValue) { }
 
     Utf8Str mValue;
 };
