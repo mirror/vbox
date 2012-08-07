@@ -268,7 +268,7 @@ int _init(void)
         LogRel((DEVICE_NAME ": failed to disable autounloading!\n"));
     rc = mod_install(&g_vbmsSolModLinkage);
 
-    LogRel((DEVICE_NAME ": initialisation returning %d.\n", rc));
+    LogRelFlow((DEVICE_NAME ": initialisation returning %d.\n", rc));
     return rc;
 }
 
