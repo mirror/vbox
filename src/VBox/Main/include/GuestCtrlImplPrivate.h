@@ -310,8 +310,8 @@ public:
 
     GuestProcessStartupInfo(void)
         : mFlags(ProcessCreateFlag_None),
-          mPriority(ProcessPriority_Default),
-          mTimeoutMS(30 * 1000 /* 30s timeout by default */) { }
+          mTimeoutMS(30 * 1000 /* 30s timeout by default */),
+          mPriority(ProcessPriority_Default) { }
 
     /** The process' friendly name. */
     Utf8Str                     mName;
