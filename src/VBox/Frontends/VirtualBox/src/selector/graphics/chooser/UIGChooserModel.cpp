@@ -712,7 +712,7 @@ void UIGChooserModel::sltRemoveCurrentlySelectedMachine()
 void UIGChooserModel::sltAddGroupBasedOnChosenItems()
 {
     /* Create new group in the current root: */
-    UIGChooserItemGroup *pNewGroupItem = new UIGChooserItemGroup(root(), uniqueGroupName(root()));
+    UIGChooserItemGroup *pNewGroupItem = new UIGChooserItemGroup(root(), uniqueGroupName(root()), true);
     /* Enumerate all the currently chosen items: */
     QStringList busyGroupNames;
     QStringList busyMachineNames;
