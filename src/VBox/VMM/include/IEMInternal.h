@@ -260,7 +260,10 @@ typedef struct IEMCPU
     /** Indicates that a MOVS instruction with overlapping source and destination
      *  was executed, causing the memory write records to be incorrrect. */
     bool                    fOverlappingMovs;
-    bool                    afAlignment2[1+4];
+    /** This is used to communicate a CPL changed caused by IEMInjectTrap that
+     * CPUM doesn't yet reflect. */
+    uint8_t                 uInjectCpl;
+    bool                    afAlignment2[4];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;

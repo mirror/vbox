@@ -61,8 +61,7 @@
  * The IEM code uses the \"IEM\" log group for the main logging. The different
  * logging levels/flags are generally used for the following purposes:
  *      - Level 1 (Log) : Errors, exceptions, interrupts and such major events.
- *      - Flow (LogFlow): Additional exception details, basic enter/exit IEM
- *                        state info.
+ *      - Flow (LogFlow): Basic enter/exit IEM state info.
  *      - Level 2 (Log2): ?
  *      - Level 3 (Log3): More detailed enter/exit IEM state info.
  *      - Level 4 (Log4): Decoding mnemonics w/ EIP.
@@ -730,6 +729,10 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
     CPUMGuestLazyLoadHiddenCsAndSs(pVCpu);
 #endif
     pIemCpu->uCpl               = CPUMGetGuestCPL(pVCpu);
+#ifdef IEM_VERIFICATION_MODE
+    if (pIemCpu->uInjectCpl != UINT8_MAX)
+        pIemCpu->uCpl           = pIemCpu->uInjectCpl;
+#endif
     IEMMODE enmMode = CPUMIsGuestIn64BitCodeEx(pCtx)
                     ? IEMMODE_64BIT
                     : pCtx->cs.Attr.n.u1DefBig /** @todo check if this is correct... */
@@ -1997,9 +2000,9 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                                               pCtx->idtr.pIdt + UINT32_C(8) * u8Vector);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
         return rcStrict;
-    LogFlow(("iemRaiseXcptOrIntInProtMode: vec=%#x P=%u DPL=%u DT=%u:%u A=%u %04x:%04x%04x\n",
-             u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
-             Idte.Gate.u4ParmCount, Idte.Gate.u16Sel, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
+    Log(("iemRaiseXcptOrIntInProtMode: vec=%#x P=%u DPL=%u DT=%u:%u A=%u %04x:%04x%04x\n",
+         u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
+         Idte.Gate.u4ParmCount, Idte.Gate.u16Sel, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
 
     /*
      * Check the descriptor type, DPL and such.
@@ -2446,8 +2449,8 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
     pIemCpu->cXcptRecursions--;
     pIemCpu->uCurXcpt = uPrevXcpt;
     pIemCpu->fCurXcpt = fPrevXcpt;
-    LogFlow(("iemRaiseXcptOrInt: returns %Rrc (vec=%#x); cs:rip=%04x:%RGv ss:rsp=%04x:%RGv\n",
-             VBOXSTRICTRC_VAL(rcStrict), u8Vector, pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->esp));
+    Log(("iemRaiseXcptOrInt: returns %Rrc (vec=%#x); cs:rip=%04x:%RGv ss:rsp=%04x:%RGv cpl=%u\n",
+         VBOXSTRICTRC_VAL(rcStrict), u8Vector, pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->esp, pIemCpu->uCpl));
     return rcStrict;
 }
 
@@ -7387,8 +7390,11 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #if 0 /* NT4SP1 - wrmsr (intel MSR). */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8011a6d4)
 #endif
-#if 1 /* NT4SP1 - cmpxchg (AMD). */
+#if 0 /* NT4SP1 - cmpxchg (AMD). */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x801684c1)
+#endif
+#if 0 /* NT4SP1 - fnstsw + 2 (AMD). */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x801c6b88+2)
 #endif
            )
        )
@@ -7412,6 +7418,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     /*
      * See if there is an interrupt pending in TRPM and inject it if we can.
      */
+    pIemCpu->uInjectCpl = UINT8_MAX;
     if (   pOrgCtx->eflags.Bits.u1IF
         && TRPMHasTrap(pVCpu)
         && EMGetInhibitInterruptsPC(pVCpu) != pOrgCtx->rip)
@@ -7424,6 +7431,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
         IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2);
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
+        pIemCpu->uInjectCpl = pIemCpu->uCpl;
     }
 
     /*
@@ -7837,7 +7845,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
     unsigned cDiffs = 0;
     if (memcmp(pOrgCtx, pDebugCtx, sizeof(*pDebugCtx)))
     {
-        Log(("REM and IEM ends up with different registers!\n"));
+        //Log(("REM and IEM ends up with different registers!\n"));
 
 #  define CHECK_FIELD(a_Field) \
         do \
@@ -8346,19 +8354,19 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
     switch (enmType)
     {
         case TRPM_HARDWARE_INT:
-            LogFlow(("IEMInjectTrap: %#4x ext\n", u8TrapNo));
+            Log(("IEMInjectTrap: %#4x ext\n", u8TrapNo));
             fFlags = IEM_XCPT_FLAGS_T_EXT_INT;
             uErrCode = uCr2 = 0;
             break;
 
         case TRPM_SOFTWARE_INT:
-            LogFlow(("IEMInjectTrap: %#4x soft\n", u8TrapNo));
+            Log(("IEMInjectTrap: %#4x soft\n", u8TrapNo));
             fFlags = IEM_XCPT_FLAGS_T_SOFT_INT;
             uErrCode = uCr2 = 0;
             break;
 
         case TRPM_TRAP:
-            LogFlow(("IEMInjectTrap: %#4x trap err=%#x cr2=%#RGv\n", u8TrapNo, uErrCode, uCr2));
+            Log(("IEMInjectTrap: %#4x trap err=%#x cr2=%#RGv\n", u8TrapNo, uErrCode, uCr2));
             fFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
             if (u8TrapNo == X86_XCPT_PF)
                 fFlags |= IEM_XCPT_FLAGS_CR2;
