@@ -800,6 +800,104 @@ ENDPROC iemAImpl_cmpxchg8b_locked
 
 
 
+;
+; CMPXCHG.
+;
+; WARNING! This code make ASSUMPTIONS about which registers T1 and T0 are mapped to!
+;
+; C-proto:
+; IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg,(uintX_t *puXDst, uintX_t puEax, uintX_t uReg, uint32_t *pEFlags));
+;
+BEGINCODE
+%macro IEMIMPL_CMPXCHG 2
+BEGINPROC_FASTCALL iemAImpl_cmpxchg_u8 %+ %2, 16
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        mov     al, [A1]
+        %1 cmpxchg [A0], A2_8
+        mov     [A1], al
+        IEM_SAVE_FLAGS       A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0+T1 (eax, r11/edi)
+        EPILOGUE_4_ARGS 0
+ENDPROC iemAImpl_cmpxchg_u8 %+ %2
+
+BEGINPROC_FASTCALL iemAImpl_cmpxchg_u16 %+ %2, 16
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        mov     ax, [A1]
+        %1 cmpxchg [A0], A2_16
+        mov     [A1], ax
+        IEM_SAVE_FLAGS       A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0+T1 (eax, r11/edi)
+        EPILOGUE_4_ARGS 0
+ENDPROC iemAImpl_cmpxchg_u16 %+ %2
+
+BEGINPROC_FASTCALL iemAImpl_cmpxchg_u32 %+ %2, 16
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        mov     eax, [A1]
+        %1 cmpxchg [A0], A2_32
+        mov     [A1], eax
+        IEM_SAVE_FLAGS       A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0+T1 (eax, r11/edi)
+        EPILOGUE_4_ARGS 0
+ENDPROC iemAImpl_cmpxchg_u32 %+ %2
+
+BEGINPROC_FASTCALL iemAImpl_cmpxchg_u64 %+ %2, 16
+%ifdef RT_ARCH_AMD64
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        mov     ax, [A1]
+        %1 cmpxchg [A0], A2
+        mov     [A1], ax
+        IEM_SAVE_FLAGS       A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0+T1 (eax, r11/edi)
+        EPILOGUE_4_ARGS 0
+%else
+        ;
+        ; Must use cmpxchg8b here. See also iemAImpl_cmpxchg8b.
+        ;
+        push    esi
+        push    edi
+        push    ebx
+        push    ebp
+
+        mov     edi, ecx                ; pu64Dst
+        mov     esi, edx                ; pu64Rax
+        mov     ecx, [esp + 16 + 4 + 0] ; pu64Reg - Note! Pointer on 32-bit hosts!
+        mov     ebp, [esp + 16 + 4 + 4] ; pEFlags
+
+        mov     ebx, [ecx]
+        mov     ecx, [ecx + 4]
+        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0  ; clobbers T0 (eax)
+        mov     eax, [esi]
+        mov     edx, [esi + 4]
+
+        lock cmpxchg8b [edi]
+
+        ; cmpxchg8b doesn't set CF, PF, AF, SF and OF, so we have to do that.
+        jz      .cmpxchg8b_not_equal
+        cmp     eax, eax                ; just set the other flags.
+.store:
+        mov     [esi], eax
+        mov     [esi + 4], edx
+        IEM_SAVE_FLAGS       ebp, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0+T1 (eax, edi)
+
+        pop     ebp
+        pop     ebx
+        pop     edi
+        pop     esi
+        ret     8
+
+.cmpxchg8b_not_equal:
+        cmp     [esi + 4], edx          ;; @todo FIXME - verify 64-bit compare implementation
+        jne     .store
+        cmp     [esi], eax
+        jmp     .store
+
+%endif
+ENDPROC iemAImpl_cmpxchg_u64 %+ %2
+%endmacro ; IEMIMPL_CMPXCHG
+
+IEMIMPL_CMPXCHG , ,
+IEMIMPL_CMPXCHG lock, _locked
+
 ;;
 ; Macro for implementing a unary operator.
 ;

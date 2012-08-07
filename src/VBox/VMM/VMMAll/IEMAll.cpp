@@ -7381,11 +7381,14 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013a7c4)
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013a7d2)
 #endif
-#if 1 /* NT4SP1 - xadd early boot. */
+#if 0 /* NT4SP1 - xadd early boot. */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8019cf0f)
 #endif
-#if 1 /* NT4SP1 - wrmsr (intel MSR). */
+#if 0 /* NT4SP1 - wrmsr (intel MSR). */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8011a6d4)
+#endif
+#if 1 /* NT4SP1 - cmpxchg (AMD). */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x801684c1)
 #endif
            )
        )
@@ -8008,8 +8011,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 
         if (cDiffs != 0)
         {
-            if (LogIs3Enabled())
-                DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
+            DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
             RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__);
             iemVerifyAssertMsg2(pIemCpu);
             RTAssertPanic();
@@ -8098,14 +8100,6 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             iemVerifyAssertRecord(pIemCpu, pIemRec, "Extra Other record!");
     }
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
-
-#if 0
-    /*
-     * HACK ALERT! You don't normally want to verify a whole boot sequence.
-     */
-    if (pIemCpu->cInstructions == 1)
-        RTLogFlags(NULL, "disabled");
-#endif
 }
 
 #else  /* !IEM_VERIFICATION_MODE || !IN_RING3 */
