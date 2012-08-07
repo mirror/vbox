@@ -141,6 +141,14 @@ EOF
         /etc/init.d/vboxballoonctrl-service start || exit $?
     fi
   fi
+  if [ -x "/etc/init.d/vboxautostart-service" ]; then
+    update-rc.d vboxautostart-service defaults >/dev/null
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        invoke-rc.d vboxautostart-service start || exit $?
+    else
+        /etc/init.d/vboxautostart-service start || exit $?
+    fi
+  fi
   if [ -x "/etc/init.d/vboxweb-service" ]; then
     update-rc.d vboxweb-service defaults >/dev/null
     if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then

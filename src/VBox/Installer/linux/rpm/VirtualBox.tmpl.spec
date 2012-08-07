@@ -165,9 +165,11 @@ install -D -m 755 vboxdrv.init $RPM_BUILD_ROOT%{_initrddir}/vboxdrv
 ln -sf ../etc/init.d/vboxdrv $RPM_BUILD_ROOT/sbin/rcvboxdrv
 %endif
 install -D -m 755 vboxballoonctrl-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxballoonctrl-service
+install -D -m 755 vboxautostart-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxautostart-service
 install -D -m 755 vboxweb-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxweb-service
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
 ln -sf ../etc/init.d/vboxballoonctrl-service $RPM_BUILD_ROOT/sbin/rcvboxballoonctrl-service
+ln -sf ../etc/init.d/vboxautostart-service $RPM_BUILD_ROOT/sbin/rcvboxautostart-service
 ln -sf ../etc/init.d/vboxweb-service $RPM_BUILD_ROOT/sbin/rcvboxweb-service
 %endif
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBox
@@ -200,6 +202,10 @@ if [ -n "$VBOXSVC_PID" ]; then
   if [ -f /etc/init.d/vboxballoonctrl-service ]; then
     # try graceful termination; terminate the balloon control service first
     /etc/init.d/vboxballoonctrl-service stop 2>/dev/null || true
+  fi
+  if [ -f /etc/init.d/vboxautostart-service ]; then
+    # try graceful termination; terminate the autostart service first
+    /etc/init.d/vboxautostart-service stop 2>/dev/null || true
   fi
   if [ -f /etc/init.d/vboxweb-service ]; then
     # try graceful termination; terminate the webservice first
@@ -275,15 +281,17 @@ install_device_node_setup root 0600 /usr/share/virtualbox "${usb_group}"
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
 /sbin/chkconfig --add vboxdrv
 /sbin/chkconfig --add vboxballoonctrl-service
+/sbin/chkconfig --add vboxautostart-service
 /sbin/chkconfig --add vboxweb-service
 %endif
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%{fillup_and_insserv -f -y -Y vboxdrv vboxballoonctrl-service vboxweb-service}
+%{fillup_and_insserv -f -y -Y vboxdrv vboxballoonctrl-service vboxautostart-service vboxweb-service}
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
 /sbin/ldconfig
 %_post_service vboxdrv
 %_post_service vboxballoonctrl-service
+%_post_service vboxautostart-service
 %_post_service vboxweb-service
 %update_menus
 %endif
@@ -329,6 +337,7 @@ else
   /etc/init.d/vboxdrv start > /dev/null
 fi
 /etc/init.d/vboxballoonctrl-service start > /dev/null
+/etc/init.d/vboxautostart-service start > /dev/null
 /etc/init.d/vboxweb-service start > /dev/null
 
 
@@ -338,16 +347,20 @@ fi
 # $1>=2: upgrade
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
 %stop_on_removal vboxballoonctrl-service
+%stop_on_removal vboxautostart-service
 %stop_on_removal vboxweb-service
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
 %_preun_service vboxballoonctrl-service
+%_preun_service vboxautostart-service
 %_preun_service vboxweb-service
 %endif
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
 if [ "$1" = 0 ]; then
   /sbin/service vboxballoonctrl-service stop > /dev/null
   /sbin/chkconfig --del vboxballoonctrl-service
+  /sbin/service vboxautostart-service stop > /dev/null
+  /sbin/chkconfig --del vboxautostart-service
   /sbin/service vboxweb-service stop > /dev/null
   /sbin/chkconfig --del vboxweb-service
 fi
@@ -393,11 +406,12 @@ fi
 if [ "$1" -ge 1 ]; then
   /sbin/service vboxdrv restart > /dev/null 2>&1
   /sbin/service vboxballoonctrl-service restart > /dev/null 2>&1
+  /sbin/service vboxautostart-service restart > /dev/null 2>&1
   /sbin/service vboxweb-service restart > /dev/null 2>&1
 fi
 %endif
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%restart_on_update vboxdrv vboxballoonctrl-service vboxweb-service
+%restart_on_update vboxdrv vboxballoonctrl-service vboxautostart-service vboxweb-service
 %insserv_cleanup
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
@@ -423,11 +437,12 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{!?is_ose: VirtualBox*.chm}
 %{_initrddir}/vboxdrv
 %{_initrddir}/vboxballoonctrl-service
+%{_initrddir}/vboxautostart-service
 %{_initrddir}/vboxweb-service
 %{?rpm_suse: %{py_sitedir}/*}
 %{!?rpm_suse: %{python_sitelib}/*}
 %{?rpm_suse: /sbin/rcvboxdrv}
-%{?rpm_suse: /sbin/rcvboxballoonctrl-service}
+%{?rpm_suse: /sbin/rcvboxautostart-service}
 %{?rpm_suse: /sbin/rcvboxweb-service}
 /lib/modules
 /etc/vbox
