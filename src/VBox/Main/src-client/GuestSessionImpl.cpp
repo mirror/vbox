@@ -1701,10 +1701,81 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aTemplate) == NULL || *(aTemplate) == '\0'))
+        return setError(E_INVALIDARG, tr("No file to remove specified"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    GuestProcessStartupInfo procInfo;
+    GuestProcessStream      streamOut;
+    int rc = VINF_SUCCESS;
+
+    try  /* Can this be done without exceptions? */
+    {
+        Utf8Str strTemplate(aTemplate);
+        procInfo.mName    = Utf8StrFmt(tr("Creating temporary directory from template \"%s\"",
+                                       strTemplate.c_str()));
+        procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
+        /* Construct arguments. */
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        procInfo.mArguments.push_back(Bstr(aTemplate)); /* The template we want to use. */
+    }
+    catch (...)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    ComObjPtr<GuestProcess> pProcess;
+    rc = processCreateExInteral(procInfo, pProcess);
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessWaitResult waitRes;
+        BYTE byBuf[_64K];
+        size_t cbRead;
+
+        for (;;)
+        {
+            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
+                                   30 * 1000 /* Timeout */, waitRes);
+            if (   RT_FAILURE(rc)
+                || waitRes.mResult != ProcessWaitResult_StdOut)
+            {
+                break;
+            }
+
+            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                    &cbRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            rc = streamOut.AddData(byBuf, cbRead);
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
+                         rc, cbRead, streamOut.GetSize()));
+    } 
+
+    if (RT_FAILURE(rc))
+        return setError(E_FAIL, tr("Error while creating temporary directory: %Rrc"), rc);
+    if (!streamOut.GetSize())
+        return setError(E_FAIL, tr("No return code after creating temporary directory"));
+    GuestProcessStreamBlock streamBlock;
+    rc = streamOut.ParseBlock(streamBlock);
+    if (RT_SUCCESS(rc))
+    {
+        streamBlock.GetString("name");
+        int64_t i64rc;
+        if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
+            return setError(E_FAIL, tr("No return code after creating temporary directory"));
+        // *aReturnCode = (LONG)i64rc;
+    }
+    else
+        return setError(E_FAIL, tr("Error while getting return code from creating temporary directory: %Rrc"), rc);
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -1968,7 +2039,7 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath, LONG *aReturnCode)
+STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2045,7 +2116,6 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath, LONG *aReturnCode)
         int64_t i64rc;
         if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
             return setError(E_FAIL, tr("No return code after deleting file"));
-        *aReturnCode = (LONG)i64rc;
     }
     else
         return setError(E_FAIL, tr("Error while getting return code from deleting file: %Rrc"), rc);
@@ -2153,20 +2223,6 @@ STDMETHODIMP GuestSession::FileQuerySize(IN_BSTR aPath, LONG64 *aSize)
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

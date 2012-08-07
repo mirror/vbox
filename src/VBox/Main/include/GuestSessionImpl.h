@@ -168,11 +168,10 @@ public:
     STDMETHOD(EnvironmentUnset)(IN_BSTR aName);
     STDMETHOD(FileCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestFile **aFile);
     STDMETHOD(FileExists)(IN_BSTR aPath, BOOL *aExists);
-    STDMETHOD(FileRemove)(IN_BSTR aPath, LONG *aResultCode);
+    STDMETHOD(FileRemove)(IN_BSTR aPath);
     STDMETHOD(FileOpen)(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aDisposition, ULONG aCreationMode, LONG64 aOffset, IGuestFile **aFile);
     STDMETHOD(FileQueryInfo)(IN_BSTR aPath, IGuestFsObjInfo **aInfo);
     STDMETHOD(FileQuerySize)(IN_BSTR aPath, LONG64 *aSize);
-    STDMETHOD(FileRemove)(IN_BSTR aPath);
     STDMETHOD(FileRename)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(PathRenameFlag_T, aFlags));
     STDMETHOD(FileSetACL)(IN_BSTR aPath, IN_BSTR aACL);
     STDMETHOD(ProcessCreate)(IN_BSTR aCommand, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
