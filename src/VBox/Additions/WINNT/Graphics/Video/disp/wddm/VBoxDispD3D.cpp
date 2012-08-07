@@ -1962,7 +1962,7 @@ static HRESULT vboxWddmSwapchainRtSurfGet(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
                 hr = vboxWddmSwapchainBbUpdate(pDevice, pSwapchain, pAlloc);
                 if (FAILED(hr))
                 {
-                    WARN(("vboxWddmSwapchainBbUpdate failed, hr(0x%)",hr));
+                    WARN(("vboxWddmSwapchainBbUpdate failed, hr(0x%x)",hr));
                     return hr;
                 }
             }
@@ -1973,7 +1973,7 @@ static HRESULT vboxWddmSwapchainRtSurfGet(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
         hr = vboxWddmSwapchainChkCreateIf(pDevice, pSwapchain);
         if (FAILED(hr))
         {
-            WARN(("vboxWddmSwapchainChkCreateIf failed, hr(0x%)",hr));
+            WARN(("vboxWddmSwapchainChkCreateIf failed, hr(0x%x)",hr));
             return hr;
         }
     }
@@ -2189,7 +2189,7 @@ static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, P
         hr = vboxWddmSwapchainRtSurfGet(pDevice, pSwapchain, iRt, pAlloc, bOnSwapchainSynch, &pD3D9Surf);
         if (FAILED(hr))
         {
-            WARN(("vboxWddmSwapchainRtSurfGet failed, hr(0x%)",hr));
+            WARN(("vboxWddmSwapchainRtSurfGet failed, hr(0x%x)",hr));
             return hr;
         }
     }
@@ -2198,7 +2198,7 @@ static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, P
         hr = vboxWddmSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pD3D9Surf);
         if (FAILED(hr))
         {
-            WARN(("vboxWddmSurfGet failed, hr(0x%)",hr));
+            WARN(("vboxWddmSurfGet failed, hr(0x%x)",hr));
             return hr;
         }
     }
