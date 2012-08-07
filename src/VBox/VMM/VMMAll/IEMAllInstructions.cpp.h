@@ -11722,7 +11722,7 @@ FNIEMOP_DEF_1(iemOp_fldcw, uint8_t, bRm)
 /** Opcode 0xd9 !11/6 */
 FNIEMOP_DEF_1(iemOp_fnstenv, uint8_t, bRm)
 {
-    IEMOP_MNEMONIC("fstenv m14/28byte");
+    IEMOP_MNEMONIC("fstenv m14/m28byte");
     IEM_MC_BEGIN(3, 0);
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
     IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
@@ -11746,7 +11746,7 @@ FNIEMOP_DEF_1(iemOp_fnstcw, uint8_t, bRm)
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
-    IEM_MC_FETCH_FSW(u16Fcw);
+    IEM_MC_FETCH_FCW(u16Fcw);
     IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Fcw);
     IEM_MC_ADVANCE_RIP(); /* C0-C3 are documented as undefined, we leave them unmodified. */
     IEM_MC_END();
@@ -13544,11 +13544,38 @@ FNIEMOP_DEF_1(iemOp_fstp_m64r,   uint8_t, bRm)
 
 
 /** Opcode 0xdd !11/0. */
-FNIEMOP_STUB_1(iemOp_frstor,      uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_frstor,      uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fxrstor m94/108byte");
+    IEM_MC_BEGIN(3, 0);
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_CALL_CIMPL_3(iemCImpl_frstor, enmEffOpSize, iEffSeg, GCPtrEffSrc);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xdd !11/0. */
-FNIEMOP_STUB_1(iemOp_fnsave,      uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fnsave,      uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fnsave m94/108byte");
+    IEM_MC_BEGIN(3, 0);
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_CALL_CIMPL_3(iemCImpl_fnsave, enmEffOpSize, iEffSeg, GCPtrEffDst);
+    IEM_MC_END();
+    return VINF_SUCCESS;
 
+}
 
 /** Opcode 0xdd !11/0. */
 FNIEMOP_DEF_1(iemOp_fnstsw,      uint8_t, bRm)

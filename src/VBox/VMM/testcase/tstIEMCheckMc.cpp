@@ -364,6 +364,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   do { (a_EFlags) = 0; CHK_TYPE(uint32_t, a_EFlags); } while (0)
 #define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                do { (a_EFlags) = 0; CHK_TYPE(uint8_t,  a_EFlags); } while (0)
 #define IEM_MC_FETCH_FSW(a_u16Fsw)                      do { (a_u16Fsw) = 0; CHK_TYPE(uint16_t, a_u16Fsw); } while (0)
+#define IEM_MC_FETCH_FCW(a_u16Fcw)                      do { (a_u16Fcw) = 0; CHK_TYPE(uint16_t, a_u16Fcw); } while (0)
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        do { CHK_TYPE(uint8_t, a_u8Value); } while (0)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      do { CHK_TYPE(uint16_t, a_u16Value); } while (0)
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      do {  } while (0)

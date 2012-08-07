@@ -5095,7 +5095,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     /*
      * Check the input and figure out which mapping entry to use.
      */
-    Assert(cbMem <= 32 || cbMem == 512);
+    Assert(cbMem <= 32 || cbMem == 512 || cbMem == 108 || cbMem == 94);
     Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
 
     unsigned iMemMap = pIemCpu->iNextMapping;
@@ -7395,6 +7395,17 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #endif
 #if 0 /* NT4SP1 - fnstsw + 2 (AMD). */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x801c6b88+2)
+#endif
+#if 0 /* NT4SP1 - iret to v8086 -- too generic a place? (N/A with GAs installed) */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013bd5d)
+
+#endif
+#if 1 /* NT4SP1 - iret to v8086 (executing edlin) */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013b609)
+
+#endif
+#if 0 /* NT4SP1 - frstor [ecx] */
+            || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013d11f)
 #endif
            )
        )
