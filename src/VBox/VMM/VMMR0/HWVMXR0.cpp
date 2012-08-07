@@ -417,15 +417,26 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* Determine optimal flush type for EPT. */
     if (pVM->hwaccm.s.fNestedPaging)
     {
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_SINGLE_CONTEXT)
-            pVM->hwaccm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_SINGLE_CONTEXT;
-        else if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_ALL_CONTEXTS)
-            pVM->hwaccm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_ALL_CONTEXTS;
+        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT)
+        {
+            if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_SINGLE_CONTEXT)
+                pVM->hwaccm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_SINGLE_CONTEXT;
+            else if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_ALL_CONTEXTS)
+                pVM->hwaccm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_ALL_CONTEXTS;
+            else
+            {
+                /*
+                 * Should never really happen. EPT is supported but no suitable flush types supported.
+                 * We cannot ignore EPT at this point as we've already setup Unrestricted Guest execution.
+                 */
+                pVM->hwaccm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_NOT_SUPPORTED;
+                return VERR_VMX_GENERIC;
+            }
+        }
         else
         {
             /*
-             * Should never really happen. EPT is supported but no suitable flush types supported.
-             * We cannot ignore EPT at this point as we've already setup Unrestricted Guest execution.
+             * Should never really happen. EPT is supported but INVEPT instruction is not supported.
              */
             pVM->hwaccm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_NOT_SUPPORTED;
             return VERR_VMX_GENERIC;
@@ -435,20 +446,33 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* Determine optimal flush type for VPID. */
     if (pVM->hwaccm.s.vmx.fVPID)
     {
-        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT)
-            pVM->hwaccm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_SINGLE_CONTEXT;
-        else if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL_CONTEXTS)
-            pVM->hwaccm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_ALL_CONTEXTS;
+        if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID)
+        {
+            if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT)
+                pVM->hwaccm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_SINGLE_CONTEXT;
+            else if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL_CONTEXTS)
+                pVM->hwaccm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_ALL_CONTEXTS;
+            else
+            {
+                /*
+                 * Neither SINGLE nor ALL context flush types for VPID supported by the CPU.
+                 * We do not handle other flush type combinations, ignore VPID capabilities.
+                 */
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV_ADDR)
+                    Log(("VMXR0SetupVM: Only VMX_FLUSH_VPID_INDIV_ADDR supported. Ignoring VPID.\n"));
+                if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT_RETAIN_GLOBALS)
+                    Log(("VMXR0SetupVM: Only VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
+                pVM->hwaccm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_NOT_SUPPORTED;
+                pVM->hwaccm.s.vmx.fVPID = false;
+            }
+        }
         else
         {
             /*
-             * Neither SINGLE nor ALL context flush types for VPID supported by the CPU.
-             * We do not handle other flush type combinations, ignore VPID capabilities.
+             * Should not really happen. EPT is supported but INVEPT is not supported.
+             * Ignore VPID capabilities as our code relies on using INVEPT for selective flushing.
              */
-            if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV_ADDR)
-                Log(("VMXR0SetupVM: Only VMX_FLUSH_VPID_INDIV_ADDR supported. Ignoring VPID.\n"));
-            if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT_RETAIN_GLOBALS)
-                Log(("VMXR0SetupVM: Only VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
+            Log(("VMXR0SetupVM: VPID supported without INVEPT support. Ignoring VPID.\n"));
             pVM->hwaccm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_NOT_SUPPORTED;
             pVM->hwaccm.s.vmx.fVPID = false;
         }
@@ -4999,6 +5023,7 @@ static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
     {
         AssertPtr(pVCpu);
         Assert(pVCpu->hwaccm.s.uCurrentASID != 0);
+        Assert(pVCpu->hwaccm.s.uCurrentASID <= UINT16_MAX);
         descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
         descriptor[1] = GCPtr;
     }
