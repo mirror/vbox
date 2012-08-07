@@ -187,7 +187,7 @@ clean:
 	rm -f debian/changelog
 	rm -f debian/preinst debian/postinst debian/prerm
 	rm -f debian/$(package).init debian/vboxdrv.init
-	rm -f debian/vboxballoonctrl-service.init debian/vboxweb-service.init
+	rm -f debian/vboxballoonctrl-service.init debian/vboxautostart-service.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -f debian/virtualbox-*.substvars debian/virtualbox*.debhelper
@@ -336,6 +336,12 @@ endif
 	    -e 's|%PACKAGE%|virtualbox|g' \
 	    $(vboxroot)/src/VBox/Installer/linux/vboxballoonctrl-service.sh.in > debian/vboxballoonctrl-service.init
 	dh_installinit --name=vboxballoonctrl-service --noscripts
+	sed \
+	    -e 's|%NOLSB%||g' \
+	    -e 's|%DEBIAN%|yes|g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
+	    $(vboxroot)/src/VBox/Installer/linux/vboxautostart-service.sh.in > debian/vboxautostart-service.init
+	dh_installinit --name=vboxautostart-service --noscripts
 	sed \
 	    -e 's|%NOLSB%||g' \
 	    -e 's|%DEBIAN%|yes|g' \

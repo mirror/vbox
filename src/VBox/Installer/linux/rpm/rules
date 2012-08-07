@@ -236,6 +236,11 @@ binary: rpm/build-stamp
 	    -e 's|%NOLSB%|yes|g' \
 	    -e 's|%DEBIAN%||g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
+	    vboxautostart-service.sh.in > $(archdir)/vboxautostart-service.init
+	sed \
+	    -e 's|%NOLSB%|yes|g' \
+	    -e 's|%DEBIAN%||g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
 	    vboxweb-service.sh.in > $(archdir)/vboxweb-service.init
 	cp debian/VBox.sh $(archdir)
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
