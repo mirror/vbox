@@ -244,7 +244,7 @@ const char *g_pcszIUnknown = "IUnknown";
     <xsl:call-template name="emitNewline" />
     <xsl:value-of select="concat('// COM interface ', $structname, ', which has wsmap=&quot;struct&quot;, to SOAP structures')" />
     <xsl:call-template name="emitNewline" />
-    <xsl:value-of select="concat('vbox__', $structname, '* ', $G_funcPrefixOutputEnumConverter, $structname, '(')" />
+    <xsl:value-of select="concat('vbox__', $structname, '* ', $G_funcPrefixOutputStructConverter, $structname, '(')" />
     <xsl:call-template name="emitNewline" />
     <xsl:value-of select="'    struct soap *soap,'" />
     <xsl:call-template name="emitNewline" />
@@ -264,6 +264,12 @@ const char *g_pcszIUnknown = "IUnknown";
 
     <xsl:value-of select="concat('        resp = soap_new_vbox__', $structname, '(soap, -1);')" />
     <xsl:call-template name="emitNewline" />
+    <xsl:text>        if (!in)&#10;</xsl:text>
+    <xsl:text>        {&#10;</xsl:text>
+    <xsl:text>            // @todo ambiguous. Problem is the MOR for the object converted to struct&#10;</xsl:text>
+    <xsl:text>            RaiseSoapInvalidObjectFault(soap, "");&#10;</xsl:text>
+    <xsl:text>            break;&#10;</xsl:text>
+    <xsl:text>        }&#10;</xsl:text>
     <xsl:call-template name="emitNewline" />
 
     <xsl:for-each select="//interface[@name=$structname]/attribute">
@@ -629,9 +635,9 @@ const char *g_pcszIUnknown = "IUnknown";
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:text>    break</xsl:text>
         </xsl:when>
-        <xsl:when test="(//interface[@name=$type]) or (//collection[@name=$type])">
+        <xsl:when test="//interface[@name=$type]">
           <!-- the type is one of our own interfaces: then it must have a wsmap attr -->
-          <xsl:variable name="thatif" select="(//interface[@name=$type]) | (//collection[@name=$type])" />
+          <xsl:variable name="thatif" select="//interface[@name=$type]" />
           <xsl:variable name="wsmap" select="$thatif/@wsmap" />
           <xsl:variable name="thatifname" select="$thatif/@name" />
           <xsl:choose>
@@ -907,7 +913,7 @@ const char *g_pcszIUnknown = "IUnknown";
           <!-- prevent infinite recursion -->
           <!-- <xsl:call-template name="fatalError"><xsl:with-param name="msg" select="concat('emitOutputArgBackConverter2: attempted infinite recursion for type &quot;', $type, '&quot; in arg &quot;', $name, '&quot; of method &quot;', $ifname, '::', $method)" /></xsl:call-template> -->
           <xsl:if test="not($callerprefix)">
-            <xsl:value-of select="concat('/* convert COM interface to struct */ ', $G_funcPrefixOutputEnumConverter, $type, '(soap, idThis, rc, ', $varname, ')')" />
+            <xsl:value-of select="concat('/* convert COM interface to struct */ ', $G_funcPrefixOutputStructConverter, $type, '(soap, idThis, rc, ', $varname, ')')" />
           </xsl:if>
         </xsl:when>
         <xsl:otherwise>
@@ -916,49 +922,6 @@ const char *g_pcszIUnknown = "IUnknown";
           </xsl:call-template>
         </xsl:otherwise>
       </xsl:choose>
-    </xsl:when>
-    <xsl:when test="//collection[@name=$type]">
-      <!-- the type is a collection of our own types: then build an array from it -->
-      <xsl:variable name="collectiontype" select="//collection[@name=$type]/@type" />
-      <xsl:variable name="targetwsmap" select="//interface[@name=$collectiontype]/@wsmap" />
-      <xsl:value-of select="concat('soap_new_vbox__ArrayOf', $collectiontype, '(soap, -1);')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:variable name="enumerator" select="concat('comcall_', $callerprefix, $name, '_enum')" />
-      <xsl:value-of select="concat('ComPtr&lt;', $collectiontype, 'Enumerator&gt; ', $enumerator, ';')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('CHECK_ERROR_BREAK( comcall_', $callerprefix, $name, ', Enumerate(', $enumerator, '.asOutParam()) );')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('BOOL comcall_', $callerprefix, $name, '_hasmore = FALSE;')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="'do {'" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('    CHECK_ERROR_BREAK( ', $enumerator, ', HasMore(&amp;comcall_', $callerprefix, $name, '_hasmore) );')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('    if (!comcall_', $callerprefix, $name, '_hasmore) break;')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('    ComPtr&lt;', $collectiontype, '&gt; arrayitem;')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('    CHECK_ERROR_BREAK( ', $enumerator, ', GetNext(arrayitem.asOutParam()) );')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('    // collection of &quot;', $collectiontype, '&quot;, target interface wsmap: &quot;', $targetwsmap, '&quot;')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('    ', $G_responseElementVarName, '-&gt;', $G_result)" />
-      <xsl:value-of select="'->array.push_back('" />
-      <xsl:choose>
-        <xsl:when test="($targetwsmap='managed')">
-          <xsl:value-of select="concat('createOrFindRefFromComPtr(idThis, g_pcsz', $collectiontype, ', arrayitem));')" />
-        </xsl:when>
-        <xsl:when test="$targetwsmap='struct'">
-          <xsl:value-of select="concat($G_funcPrefixOutputEnumConverter, $collectiontype, '(soap, idThis, rc, arrayitem));')" />
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:call-template name="fatalError">
-            <xsl:with-param name="msg" select="concat('emitOutputArgBackConverter2: Type &quot;', $collectiontype, '&quot; of collection &quot;', $type, '&quot;, used in method &quot;', $method, '&quot;, has unsupported wsmap &quot;', $targetwsmap, '&quot;.')" />
-          </xsl:call-template>
-        </xsl:otherwise>
-      </xsl:choose>
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="'} while (1)'" />
     </xsl:when>
     <xsl:otherwise>
       <xsl:call-template name="fatalError">
