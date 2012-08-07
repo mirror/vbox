@@ -130,6 +130,8 @@ public:
     bool isCsamDisabled() const { return mDisableCsam; }
     bool isSupervisorCodeExecedRecompiled() const { return mRecompileSupervisor; }
     bool isUserCodeExecedRecompiled()       const { return mRecompileUser; }
+    bool isDefaultWarpPct() const { return mWarpPct == 100; }
+    uint32_t getWarpPct()       const { return mWarpPct; }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     bool isDebuggerEnabled(CMachine &aMachine);
@@ -487,6 +489,8 @@ private:
     bool mRecompileSupervisor;
     /** The --recompile-user option. */
     bool mRecompileUser;
+    /** The --warp-factor option value. */
+    uint32_t mWarpPct;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Whether the debugger should be accessible or not.

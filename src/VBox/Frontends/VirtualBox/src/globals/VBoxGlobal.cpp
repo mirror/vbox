@@ -304,6 +304,7 @@ VBoxGlobal::VBoxGlobal()
     , mDisableCsam(false)
     , mRecompileSupervisor(false)
     , mRecompileUser(false)
+    , mWarpPct(100)
     , mVerString("1.0")
     , m3DAvailable(false)
     , mSettingsPwSet(false)
@@ -4459,6 +4460,11 @@ void VBoxGlobal::init()
             mRecompileUser = true;
         else if (!::strcmp(arg, "--recompile-all"))
             mDisablePatm = mDisableCsam = mRecompileSupervisor = mRecompileUser = true;
+        else if (!::strcmp(arg, "--warp-pct"))
+        {
+            if (++i < argc)
+                mWarpPct = RTStrToUInt32(qApp->argv() [i]);
+        }
 #ifdef VBOX_WITH_DEBUGGER_GUI
         else if (!::strcmp (arg, "-dbg") || !::strcmp (arg, "--dbg"))
             setDebuggerVar(&mDbgEnabled, true);

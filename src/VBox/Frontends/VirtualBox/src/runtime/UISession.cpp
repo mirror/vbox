@@ -171,6 +171,8 @@ void UISession::powerUp()
             debugger.SetRecompileSupervisor(true);
         if (vboxGlobal().isUserCodeExecedRecompiled())
             debugger.SetRecompileUser(true);
+        if (!vboxGlobal().isDefaultWarpPct())
+            debugger.SetVirtualTimeRate(vboxGlobal().getWarpPct());
     }
 
     /* Power UP machine: */
