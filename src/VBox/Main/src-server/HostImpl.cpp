@@ -339,6 +339,23 @@ HRESULT Host::init(VirtualBox *aParent)
                     m->fNestedPagingSupported = true;
             }
         }
+        else
+        if (    u32VendorEBX == X86_CPUID_VENDOR_VIA_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_VIA_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_VIA_EDX
+           )
+        {
+            /* VIA. */
+            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+            {
+                int rc = SUPR3QueryVTxSupported();
+                if (RT_SUCCESS(rc))
+                    m->fVTSupported = true;
+            }
+        }
     }
 
 #if 0 /* needs testing */
