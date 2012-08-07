@@ -3680,12 +3680,13 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     int rc = CPUMQueryGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, &uValue.u);
     if (rc != VINF_SUCCESS)
     {
+        Log(("IEM: rdmsr(%#x) -> GP(0)\n", pCtx->ecx));
         AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
 
-    pCtx->rax = uValue.au32[0];
-    pCtx->rdx = uValue.au32[1];
+    pCtx->rax = uValue.s.Lo;
+    pCtx->rdx = uValue.s.Hi;
 
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
@@ -3711,12 +3712,13 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
      * Do the job.
      */
     RTUINT64U uValue;
-    uValue.au32[0] = pCtx->eax;
-    uValue.au32[1] = pCtx->edx;
+    uValue.s.Lo = pCtx->eax;
+    uValue.s.Hi = pCtx->edx;
 
     int rc = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
     if (rc != VINF_SUCCESS)
     {
+        Log(("IEM: wrmsr(%#x,%#x`%08x) -> GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
         AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
