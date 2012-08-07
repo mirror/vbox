@@ -959,11 +959,16 @@ static char g_paszRmHelp[] =
  * readable mode.  Sets prc if rc is a non-success code.
  */
 static void toolboxRmReport(const char *pcszMessage, const char *pcszFile,
-                            int rc, uint32_t fOutputFlags, int *prc)
+                            bool fActive, int rc, uint32_t fOutputFlags,
+                            int *prc)
 {
+    if (!fActive)
+        return;
     if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
     {
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            RTPrintf(pcszMessage, pcszFile, rc);
+        else
             RTMsgError(pcszMessage, pcszFile, rc);
     }
     else
@@ -1045,13 +1050,6 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
-    /* We need at least one file. */
-    if (RT_SUCCESS(rc) && cNonOptions == 0)
-    {
-        RTMsgError("No files or directories specified.");
-        return RTEXITCODE_FAILURE;
-    }
-
     if (RT_SUCCESS(rc))
     {
         /* Print magic/version. */
@@ -1064,6 +1062,13 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
         }
     }
 
+    /* We need at least one file. */
+    if (RT_SUCCESS(rc) && cNonOptions == 0)
+    {
+        toolboxRmReport("No files or directories specified.\n", NULL, true, 0,
+                        fOutputFlags, NULL);
+        return RTEXITCODE_FAILURE;
+    }
     if (RT_SUCCESS(rc))
     {
         for (int i = argc - cNonOptions; i < argc; ++i)
@@ -1074,25 +1079,31 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
             {
                 if (!(fFlags & VBOXSERVICETOOLBOXRMFLAG_RECURSIVE))
                     toolboxRmReport("Cannot remove directory '%s' as the '-R' option was not specified.\n",
-                                    argv[i], VERR_INVALID_PARAMETER,
+                                    argv[i], true, VERR_INVALID_PARAMETER,
                                     fOutputFlags, &rc);
                 else
                 {
                     rc2 = RTDirRemoveRecursive(argv[i],
                                                RTDIRRMREC_F_CONTENT_AND_DIR);
+                    toolboxRmReport("", argv[i], RT_SUCCESS(rc2), rc2,
+                                    fOutputFlags, NULL);
                     toolboxRmReport("The following error occurred while removing directory '%s': %Rrc.\n",
-                                    argv[i], rc2, fOutputFlags, &rc);
+                                    argv[i], RT_FAILURE(rc2), rc2,
+                                    fOutputFlags, &rc);
                 }
             }
             else if (RTPathExists(argv[i]) || RTSymlinkExists(argv[i]))
             {
                 rc2 = RTFileDelete(argv[i]);
+                toolboxRmReport("", argv[i], RT_SUCCESS(rc2), rc2,
+                                fOutputFlags, NULL);
                 toolboxRmReport("The following error occurred while removing file '%s': %Rrc.\n",
-                                argv[i], rc2, fOutputFlags, &rc);
+                                argv[i], RT_FAILURE(rc2), rc2, fOutputFlags,
+                                &rc);
             }
             else
                 toolboxRmReport("File '%s' does not exist.\n", argv[i],
-                                VERR_FILE_NOT_FOUND, fOutputFlags, &rc);
+                                true, VERR_FILE_NOT_FOUND, fOutputFlags, &rc);
         }
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
@@ -1119,13 +1130,16 @@ static char g_paszMkTempHelp[] =
  * readable mode.  Sets prc if rc is a non-success code.
  */
 static void toolboxMkTempReport(const char *pcszMessage, const char *pcszFile,
-                                int rc, uint32_t fOutputFlags, int *prc)
+                                bool fActive, int rc, uint32_t fOutputFlags,
+                                int *prc)
 {
+    if (!fActive)
+        return;
     if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-    {
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            RTPrintf(pcszMessage, pcszFile, rc);
+        else
             RTMsgError(pcszMessage, pcszFile, rc);
-    }
     else
         RTPrintf("name=%s%crc=%d%c", pcszFile, 0, rc, 0);
     if (prc && RT_FAILURE(rc))
@@ -1160,6 +1174,7 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
     uint32_t fFlags       = 0;
     uint32_t fOutputFlags = 0;
     int cNonOptions       = 0;
+    char *pszName;
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
               && RT_SUCCESS(rc))
@@ -1205,26 +1220,26 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
     /* We need exactly one template, containing at least one 'X'. */
     if (RT_SUCCESS(rc) && cNonOptions != 1)
     {
-        toolboxMkTempReport("Please specify exactly one template.\n",
-                            "", VERR_INVALID_PARAMETER, fOutputFlags, &rc);
+        toolboxMkTempReport("Please specify exactly one template.\n", "",
+                            true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
-    if (RT_SUCCESS(rc) && !strchr(argv[argc - 1], 'X'))  /* IPRT asserts this. */
+    pszName = argv[argc - 1];
+    if (RT_SUCCESS(rc) && !strchr(pszName, 'X'))  /* IPRT asserts this. */
     {
         toolboxMkTempReport("Template '%s' should contain at least one 'X' character.\n",
-                            argv[argc - 1], VERR_INVALID_PARAMETER,
+                            pszName, true, VERR_INVALID_PARAMETER,
                             fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTDirCreateTemp(argv[argc - 1]);
+        rc = RTDirCreateTemp(pszName);
+        toolboxMkTempReport("Created temporary directory '%s'.\n",
+                            pszName, RT_SUCCESS(rc), rc, fOutputFlags, NULL);
         toolboxMkTempReport("The following error occurred while creating a temporary directory with template '%s': %Rrc.\n",
-                            argv[argc - 1], rc, fOutputFlags, NULL);
-        if (   RT_SUCCESS(rc)
-            && !(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-            RTPrintf("Created temporary directory '%s'.\n", argv[argc - 1]);
+                            pszName, RT_FAILURE(rc), rc, fOutputFlags, NULL);
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
             VBoxServiceToolboxPrintStrmTermination();
     }
