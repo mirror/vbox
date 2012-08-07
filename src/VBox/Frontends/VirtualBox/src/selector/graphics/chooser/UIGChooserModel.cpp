@@ -1497,7 +1497,6 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                             popupContextMenu(UIGraphicsSelectorContextMenuType_Group, pEvent->screenPos());
                             return true;
                         }
-                        return false;
                     }
                     case UIGChooserItemType_Machine:
                     {
