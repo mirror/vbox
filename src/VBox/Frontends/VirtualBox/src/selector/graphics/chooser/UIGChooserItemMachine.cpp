@@ -448,7 +448,8 @@ void UIGChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIG
 
                 /* Group passed item with current item into the new group: */
                 UIGChooserItemGroup *pNewGroupItem = new UIGChooserItemGroup(parentItem(),
-                                                                             model()->uniqueGroupName(parentItem()));
+                                                                             model()->uniqueGroupName(parentItem()),
+                                                                             true);
                 new UIGChooserItemMachine(pNewGroupItem, this);
                 new UIGChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
 
