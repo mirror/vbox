@@ -1222,6 +1222,9 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
         rc = RTDirCreateTemp(argv[argc - 1]);
         toolboxMkTempReport("The following error occurred while creating a temporary directory with template '%s': %Rrc.\n",
                             argv[argc - 1], rc, fOutputFlags, NULL);
+        if (   RT_SUCCESS(rc)
+            && !(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTPrintf("Created temporary directory '%s'.\n", argv[argc - 1]);
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
             VBoxServiceToolboxPrintStrmTermination();
     }
