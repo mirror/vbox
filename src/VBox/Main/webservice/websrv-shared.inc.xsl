@@ -150,11 +150,15 @@
 <xsl:variable name="G_nameObjectRefEncoded"
               select='"_USCOREthis"' />
 
-<!-- type to represent enums with in C++ COM callers -->
+<!-- type to represent enums within C++ COM callers -->
 <xsl:variable name="G_funcPrefixInputEnumConverter"
               select='"EnumSoap2Com_"' />
 <xsl:variable name="G_funcPrefixOutputEnumConverter"
               select='"EnumCom2Soap_"' />
+
+<!-- type to represent structs within C++ COM callers -->
+<xsl:variable name="G_funcPrefixOutputStructConverter"
+              select='"StructCom2Soap_"' />
 
 <xsl:variable name="G_aSharedTypes">
   <type idlname="octet"              xmlname="unsignedByte"  cname="unsigned char"    gluename="BYTE"    javaname="byte" />
