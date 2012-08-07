@@ -111,6 +111,7 @@ enum eProcessStatus
 #define VBOXSERVICE_TOOL_LS         "vbox_ls"
 #define VBOXSERVICE_TOOL_RM         "vbox_rm"
 #define VBOXSERVICE_TOOL_MKDIR      "vbox_mkdir"
+#define VBOXSERVICE_TOOL_MKTEMP     "vbox_mktemp"
 #define VBOXSERVICE_TOOL_STAT       "vbox_stat"
 /** @} */
 
