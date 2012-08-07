@@ -3255,20 +3255,30 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     if (!pFBInfo->pFramebuffer.isNull() && !(pFBInfo->fDisabled)
          && pFBInfo->u32ResizeStatus==ResizeStatus_Void)
     {
+        HRESULT rc;
         ULONG ulPixelFormat = 0;
-        pFBInfo->pFramebuffer->COMGETTER(PixelFormat)(&ulPixelFormat);
+        rc = pFBInfo->pFramebuffer->COMGETTER(PixelFormat)(&ulPixelFormat);
+        AssertComRC (rc);
 
         ULONG ulBitsPerPixel;
-        pFBInfo->pFramebuffer->COMGETTER(BitsPerPixel)(&ulBitsPerPixel);
+        rc = pFBInfo->pFramebuffer->COMGETTER(BitsPerPixel)(&ulBitsPerPixel);
+        AssertComRC (rc);
 
-        ULONG ulFrameHeight = 0;
-        pFBInfo->pFramebuffer->COMGETTER(Height)(&ulFrameHeight);
+        ULONG ulGuestHeight = 0;
+        rc = pFBInfo->pFramebuffer->COMGETTER(Height)(&ulGuestHeight);
+        AssertComRC (rc);
 
-        ULONG ulFrameWidth = 0;
-        pFBInfo->pFramebuffer->COMGETTER(Width)(&ulFrameWidth);
+        ULONG ulGuestWidth = 0;
+        rc = pFBInfo->pFramebuffer->COMGETTER(Width)(&ulGuestWidth);
+        AssertComRC (rc);
 
         BYTE *address = NULL;
-        HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
+        rc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
+        AssertComRC (rc);
+
+        ULONG ulBytesPerLine = 0;
+        rc = pFBInfo->pFramebuffer->COMGETTER(BytesPerLine) (&ulBytesPerLine);
+        AssertComRC (rc);
 
 
         switch (ulBitsPerPixel)
@@ -3305,25 +3315,17 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             }
         }
 
-        LogFlow(("cp to IntBuf orgx=%d orgy=%d cx=%d cy=%d bpp=%d\n",
-                   pFBInfo->xOrigin, pFBInfo->yOrigin,  pDrv->IConnector.cx, pDrv->IConnector.cy,
-                   pDrv->IConnector.cBits));
-
-
         if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE && address != NULL)
         {
             VideoRecCopyToIntBuffer(pVideoRecContext, pFBInfo->xOrigin, pFBInfo->yOrigin,
-                              u32PixelFormat, ulBitsPerPixel, pDrv->IConnector.cbScanline,
-                              ulFrameWidth, ulFrameHeight,address);
+                              u32PixelFormat, ulBitsPerPixel, ulBytesPerLine,
+                              ulGuestWidth, ulGuestHeight, address);
 
 
             LogFlow(("RGB:YUV\n"));
-            VideoRecDoRGBToYUV(ulFrameWidth, ulFrameHeight, u32VideoRecImgFormat,
-                            pVideoRecContext->pu8TempYUVBuffer,
-                            pVideoRecContext->pu8TempRGBBuffer);
+            VideoRecDoRGBToYUV(pVideoRecContext, u32VideoRecImgFormat);
             LogFlow(("Encode\n"));
-            VideoRecEncodeAndWrite(pVideoRecContext, ulFrameWidth,
-                                    ulFrameHeight, pVideoRecContext->pu8TempYUVBuffer);
+            VideoRecEncodeAndWrite(pVideoRecContext, ulGuestWidth, ulGuestHeight);
         }
     }
 #endif
@@ -4314,7 +4316,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     AssertReturn(res == VINF_SUCCESS, E_UNEXPECTED);
 
     if(res == VINF_SUCCESS)
-        res = VideoRecContextInit(pVideoRecContext, "test.webm", 800, 720);
+        res = VideoRecContextInit(pVideoRecContext, "test.webm", 640, 480);
 
 #endif
 
