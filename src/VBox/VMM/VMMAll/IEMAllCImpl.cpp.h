@@ -4064,8 +4064,10 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
         pCtx->fpu.FTW   = 0x00;         /* 0 - empty. */
         pCtx->fpu.FPUDP = 0;
         pCtx->fpu.DS    = 0; //??
+        pCtx->fpu.Rsrvd2= 0;
         pCtx->fpu.FPUIP = 0;
         pCtx->fpu.CS    = 0; //??
+        pCtx->fpu.Rsrvd1= 0;
         pCtx->fpu.FOP   = 0;
     }
     else
@@ -4372,14 +4374,18 @@ static void iemCImplCommonFpuRestoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, R
             pCtx->fpu.FPUDP = uPtr.pu16[5] | ((uint32_t)(uPtr.pu16[6] & UINT16_C(0xf000)) << 4);
             pCtx->fpu.FOP   = uPtr.pu16[4] & UINT16_C(0x07ff);
             pCtx->fpu.CS    = 0;
+            pCtx->fpu.Rsrvd1= 0;
             pCtx->fpu.DS    = 0;
+            pCtx->fpu.Rsrvd2= 0;
         }
         else
         {
             pCtx->fpu.FPUIP = uPtr.pu16[3];
             pCtx->fpu.CS    = uPtr.pu16[4];
+            pCtx->fpu.Rsrvd1= 0;
             pCtx->fpu.FPUDP = uPtr.pu16[5];
             pCtx->fpu.DS    = uPtr.pu16[6];
+            pCtx->fpu.Rsrvd2= 0;
             /** @todo Testcase: Is FOP cleared when doing 16-bit protected mode fldenv? */
         }
     }
@@ -4394,15 +4400,19 @@ static void iemCImplCommonFpuRestoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, R
             pCtx->fpu.FOP   = uPtr.pu32[4] & UINT16_C(0x07ff);
             pCtx->fpu.FPUDP = uPtr.pu16[5*2] | ((uPtr.pu32[6] & UINT32_C(0x0ffff000)) << 4);
             pCtx->fpu.CS    = 0;
+            pCtx->fpu.Rsrvd1= 0;
             pCtx->fpu.DS    = 0;
+            pCtx->fpu.Rsrvd2= 0;
         }
         else
         {
             pCtx->fpu.FPUIP = uPtr.pu32[3];
             pCtx->fpu.CS    = uPtr.pu16[4*2];
+            pCtx->fpu.Rsrvd1= 0;
             pCtx->fpu.FOP   = uPtr.pu16[4*2+1];
             pCtx->fpu.FPUDP = uPtr.pu32[5];
             pCtx->fpu.DS    = uPtr.pu16[6*2];
+            pCtx->fpu.Rsrvd2= 0;
         }
     }
 
@@ -4444,6 +4454,56 @@ IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCP
 
 
 /**
+ * Implements 'FNSAVE'.
+ *
+ * @param   GCPtrEffDst     The address of the image.
+ * @param   enmEffOpSize    The operand size.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
+{
+    PCPUMCTX     pCtx = pIemCpu->CTX_SUFF(pCtx);
+    RTPTRUNION   uPtr;
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, &uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 94 : 108,
+                                      iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemCImplCommonFpuStoreEnv(pIemCpu, enmEffOpSize, uPtr, pCtx);
+    PRTFLOAT80U paRegs = (PRTFLOAT80U)(uPtr.pu8 + (enmEffOpSize == IEMMODE_16BIT ? 14 : 28));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pCtx->fpu.aRegs); i++)
+    {
+        paRegs[i].au32[0] = pCtx->fpu.aRegs[i].au32[0];
+        paRegs[i].au32[1] = pCtx->fpu.aRegs[i].au32[1];
+        paRegs[i].au16[4] = pCtx->fpu.aRegs[i].au16[4];
+    }
+
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, uPtr.pv, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Re-initialize the FPU.
+     */
+    pCtx->fpu.FCW   = 0x37f;
+    pCtx->fpu.FSW   = 0;
+    pCtx->fpu.FTW   = 0xffff;       /* 11 - empty */
+    pCtx->fpu.FPUDP = 0;
+    pCtx->fpu.DS    = 0;
+    pCtx->fpu.Rsrvd2= 0;
+    pCtx->fpu.FPUIP = 0;
+    pCtx->fpu.CS    = 0;
+    pCtx->fpu.Rsrvd1= 0;
+    pCtx->fpu.FOP   = 0;
+
+
+    /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Implements 'FLDENV'.
  *
  * @param   enmEffOpSize    The operand size (only REX.W really matters).
@@ -4460,6 +4520,40 @@ IEM_CIMPL_DEF_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
         return rcStrict;
 
     iemCImplCommonFpuRestoreEnv(pIemCpu, enmEffOpSize, uPtr, pCtx);
+
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uPtr.pv, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'FRSTOR'.
+ *
+ * @param   GCPtrEffSrc     The address of the image.
+ * @param   enmEffOpSize    The operand size.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    PCPUMCTX     pCtx = pIemCpu->CTX_SUFF(pCtx);
+    RTCPTRUNION  uPtr;
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, (void **)&uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 94 : 108,
+                                      iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemCImplCommonFpuRestoreEnv(pIemCpu, enmEffOpSize, uPtr, pCtx);
+    PCRTFLOAT80U paRegs = (PCRTFLOAT80U)(uPtr.pu8 + (enmEffOpSize == IEMMODE_16BIT ? 14 : 28));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pCtx->fpu.aRegs); i++)
+    {
+        pCtx->fpu.aRegs[i].au32[0] = paRegs[i].au32[0];
+        pCtx->fpu.aRegs[i].au32[1] = paRegs[i].au32[1];
+        pCtx->fpu.aRegs[i].au32[2] = paRegs[i].au16[4];
+        pCtx->fpu.aRegs[i].au32[3] = 0;
+    }
 
     rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uPtr.pv, IEM_ACCESS_DATA_R);
     if (rcStrict != VINF_SUCCESS)
