@@ -2016,6 +2016,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, IEMMODE, enmEffOpSize, uint32_t, uNewEip, uint16_t, uNewCs,
                 uint32_t, uNewFlags, uint64_t, uNewRsp)
 {
+    /** @todo NT4SP1 0008:8013bd5d cf   iret */
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 }
 
