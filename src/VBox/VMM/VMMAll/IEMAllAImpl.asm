@@ -775,15 +775,15 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b, 16
 
         mov     ebx, [ecx]
         mov     ecx, [ecx + 4]
-        IEM_MAYBE_LOAD_FLAGS rbp, (X86_EFL_ZF), 0  ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF), 0  ; clobbers T0 (eax)
         mov     eax, [esi]
         mov     edx, [esi + 4]
 
         lock cmpxchg8b [edi]
 
-        mov     [rsi], eax
-        mov     [rsi + 4], edx
-        IEM_SAVE_FLAGS       rbp, (X86_EFL_ZF), 0 ; clobbers T0+T1 (eax, edi)
+        mov     [esi], eax
+        mov     [esi + 4], edx
+        IEM_SAVE_FLAGS       ebp, (X86_EFL_ZF), 0 ; clobbers T0+T1 (eax, edi)
 
         pop     ebp
         pop     ebx
