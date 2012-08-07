@@ -60,25 +60,49 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (model()->isSlidingInProgress())
                 return false;
 
-            /* Determine focus item position: */
-            int iPosition = model()->navigationList().indexOf(model()->focusItem());
-            /* Determine 'previous' item: */
-            UIGChooserItem *pPreviousItem = iPosition > 0 ?
-                                             model()->navigationList().at(iPosition - 1) : 0;
-            if (pPreviousItem)
-            {
-                /* Make sure 'previous' item is visible: */
-                pPreviousItem->makeSureItsVisible();
-                /* Move focus to 'previous' item: */
-                model()->setFocusItem(pPreviousItem);
-                /* Was 'shift' modifier pressed? */
+            /* Was control modifier pressed? */
 #ifdef Q_WS_MAC
-                if (pEvent->modifiers() & Qt::ShiftModifier &&
-                    pEvent->modifiers() & Qt::KeypadModifier)
+            if (pEvent->modifiers() & Qt::ControlModifier &&
+                pEvent->modifiers() & Qt::KeypadModifier)
 #else /* Q_WS_MAC */
-                if (pEvent->modifiers() == Qt::ShiftModifier)
+            if (pEvent->modifiers() == Qt::ControlModifier)
 #endif /* !Q_WS_MAC */
+            {
+                /* Get focus and his parent: */
+                UIGChooserItem *pFocusItem = model()->focusItem();
+                UIGChooserItem *pParentItem = pFocusItem->parentItem();
+                UIGChooserItemType type = (UIGChooserItemType)pFocusItem->type();
+                QList<UIGChooserItem*> items = pParentItem->items(type);
+                int iFocusPosition = items.indexOf(pFocusItem);
+                if (iFocusPosition > 0)
                 {
+                    items.move(iFocusPosition, iFocusPosition - 1);
+                    pParentItem->setItems(items, type);
+                    model()->updateNavigation();
+                    model()->updateLayout();
+                }
+                /* Filter-out this event: */
+                return true;
+            }
+            /* Was shift modifier pressed? */
+#ifdef Q_WS_MAC
+            else if (pEvent->modifiers() & Qt::ShiftModifier &&
+                     pEvent->modifiers() & Qt::KeypadModifier)
+#else /* Q_WS_MAC */
+            else if (pEvent->modifiers() == Qt::ShiftModifier)
+#endif /* !Q_WS_MAC */
+            {
+                /* Determine focus item position: */
+                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine 'previous' item: */
+                UIGChooserItem *pPreviousItem = iPosition > 0 ?
+                                                model()->navigationList().at(iPosition - 1) : 0;
+                if (pPreviousItem)
+                {
+                    /* Make sure 'previous' item is visible: */
+                    pPreviousItem->makeSureItsVisible();
+                    /* Move focus to 'previous' item: */
+                    model()->setFocusItem(pPreviousItem);
                     /* Calculate positions: */
                     UIGChooserItem *pFirstItem = model()->selectionList().first();
                     int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
@@ -92,22 +116,38 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     else
                         for (int i = iFirstPosition; i >= iPreviousPosition; --i)
                             model()->addToSelectionList(model()->navigationList().at(i));
+                    /* Notify selection changed: */
+                    model()->notifySelectionChanged();
+                    /* Filter-out this event: */
+                    return true;
                 }
-                /* There is no modifiers pressed? */
+            }
+            /* There is no modifiers pressed? */
 #ifdef Q_WS_MAC
-                else if (pEvent->modifiers() == Qt::KeypadModifier)
+            else if (pEvent->modifiers() == Qt::KeypadModifier)
 #else /* Q_WS_MAC */
-                else if (pEvent->modifiers() == Qt::NoModifier)
+            else if (pEvent->modifiers() == Qt::NoModifier)
 #endif /* !Q_WS_MAC */
+            {
+                /* Determine focus item position: */
+                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine 'previous' item: */
+                UIGChooserItem *pPreviousItem = iPosition > 0 ?
+                                                 model()->navigationList().at(iPosition - 1) : 0;
+                if (pPreviousItem)
                 {
+                    /* Make sure 'previous' item is visible: */
+                    pPreviousItem->makeSureItsVisible();
+                    /* Move focus to 'previous' item: */
+                    model()->setFocusItem(pPreviousItem);
                     /* Move selection to 'previous' item: */
                     model()->clearSelectionList();
                     model()->addToSelectionList(pPreviousItem);
+                    /* Notify selection changed: */
+                    model()->notifySelectionChanged();
+                    /* Filter-out this event: */
+                    return true;
                 }
-                /* Notify selection changed: */
-                model()->notifySelectionChanged();
-                /* Filter-out this event: */
-                return true;
             }
             /* Pass this event: */
             return false;
@@ -119,25 +159,49 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (model()->isSlidingInProgress())
                 return false;
 
-            /* Determine focus item position: */
-            int iPosition = model()->navigationList().indexOf(model()->focusItem());
-            /* Determine 'next' item: */
-            UIGChooserItem *pNextItem = iPosition < model()->navigationList().size() - 1 ?
-                                          model()->navigationList().at(iPosition + 1) : 0;
-            if (pNextItem)
-            {
-                /* Make sure 'next' item is visible: */
-                pNextItem->makeSureItsVisible();
-                /* Move focus to 'next' item: */
-                model()->setFocusItem(pNextItem);
-                /* Was shift modifier pressed? */
+            /* Was control modifier pressed? */
 #ifdef Q_WS_MAC
-                if (pEvent->modifiers() & Qt::ShiftModifier &&
-                    pEvent->modifiers() & Qt::KeypadModifier)
+            if (pEvent->modifiers() & Qt::ControlModifier &&
+                pEvent->modifiers() & Qt::KeypadModifier)
 #else /* Q_WS_MAC */
-                if (pEvent->modifiers() == Qt::ShiftModifier)
+            if (pEvent->modifiers() == Qt::ControlModifier)
 #endif /* !Q_WS_MAC */
+            {
+                /* Get focus and his parent: */
+                UIGChooserItem *pFocusItem = model()->focusItem();
+                UIGChooserItem *pParentItem = pFocusItem->parentItem();
+                UIGChooserItemType type = (UIGChooserItemType)pFocusItem->type();
+                QList<UIGChooserItem*> items = pParentItem->items(type);
+                int iFocusPosition = items.indexOf(pFocusItem);
+                if (iFocusPosition < items.size() - 1)
                 {
+                    items.move(iFocusPosition, iFocusPosition + 1);
+                    pParentItem->setItems(items, type);
+                    model()->updateNavigation();
+                    model()->updateLayout();
+                }
+                /* Filter-out this event: */
+                return true;
+            }
+            /* Was shift modifier pressed? */
+#ifdef Q_WS_MAC
+            else if (pEvent->modifiers() & Qt::ShiftModifier &&
+                     pEvent->modifiers() & Qt::KeypadModifier)
+#else /* Q_WS_MAC */
+            else if (pEvent->modifiers() == Qt::ShiftModifier)
+#endif /* !Q_WS_MAC */
+            {
+                /* Determine focus item position: */
+                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine 'next' item: */
+                UIGChooserItem *pNextItem = iPosition < model()->navigationList().size() - 1 ?
+                                            model()->navigationList().at(iPosition + 1) : 0;
+                if (pNextItem)
+                {
+                    /* Make sure 'next' item is visible: */
+                    pNextItem->makeSureItsVisible();
+                    /* Move focus to 'next' item: */
+                    model()->setFocusItem(pNextItem);
                     /* Calculate positions: */
                     UIGChooserItem *pFirstItem = model()->selectionList().first();
                     int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
@@ -151,22 +215,38 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     else
                         for (int i = iFirstPosition; i >= iNextPosition; --i)
                             model()->addToSelectionList(model()->navigationList().at(i));
+                    /* Notify selection changed: */
+                    model()->notifySelectionChanged();
+                    /* Filter-out this event: */
+                    return true;
                 }
-                /* There is no modifiers pressed? */
+            }
+            /* There is no modifiers pressed? */
 #ifdef Q_WS_MAC
-                else if (pEvent->modifiers() == Qt::KeypadModifier)
+            else if (pEvent->modifiers() == Qt::KeypadModifier)
 #else /* Q_WS_MAC */
-                else if (pEvent->modifiers() == Qt::NoModifier)
+            else if (pEvent->modifiers() == Qt::NoModifier)
 #endif /* !Q_WS_MAC */
+            {
+                /* Determine focus item position: */
+                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine 'next' item: */
+                UIGChooserItem *pNextItem = iPosition < model()->navigationList().size() - 1 ?
+                                            model()->navigationList().at(iPosition + 1) : 0;
+                if (pNextItem)
                 {
+                    /* Make sure 'next' item is visible: */
+                    pNextItem->makeSureItsVisible();
+                    /* Move focus to 'next' item: */
+                    model()->setFocusItem(pNextItem);
                     /* Move selection to 'next' item: */
                     model()->clearSelectionList();
                     model()->addToSelectionList(pNextItem);
+                    /* Notify selection changed: */
+                    model()->notifySelectionChanged();
+                    /* Filter-out this event: */
+                    return true;
                 }
-                /* Notify selection changed: */
-                model()->notifySelectionChanged();
-                /* Filter-out this event: */
-                return true;
             }
             /* Pass this event: */
             return false;
