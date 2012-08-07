@@ -9773,9 +9773,6 @@
       <param name="path" type="wstring" dir="in">
         <desc>Path to the file to remove.</desc>
       </param>
-      <param name="returnCode" type="long" dir="return">
-        <desc>The IPRT status code returned by the operation.</desc>
-      </param>
     </method>
     
     <method name="fileOpen">
