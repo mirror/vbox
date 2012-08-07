@@ -45,7 +45,14 @@
  */
 
 /** Base address for MMIO. */
+/* On ICH9, it is 0xFED0x000 where 'x' is 0-3, default 0. We do not support
+ * relocation as the platform firmware is responsible for configuring the
+ * HPET base address and the OS isn't expected to move it.
+ * WARNING: This has to match the ACPI tables! */
 #define HPET_BASE                   0xfed00000
+
+/* HPET reserves a 1K range. */
+#define HPET_BAR_SIZE               0x1000
 
 /** The number of timers for PIIX4 / PIIX3. */
 #define HPET_NUM_TIMERS_PIIX        3   /* Minimal implementation. */
@@ -514,10 +521,9 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
         case HPET_TN_CFG:
         {
             DEVHPET_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
-            Log(("write HPET_TN_CFG: %d: %x\n", iTimerNo, u32NewValue));
-            uint64_t const iOldValue = (uint32_t)pHpetTimer->u64Config;
+            uint64_t    u64Mask = HPET_TN_CFG_WRITE_MASK;
 
-            uint64_t u64Mask = HPET_TN_CFG_WRITE_MASK;
+            Log(("write HPET_TN_CFG: %d: %x\n", iTimerNo, u32NewValue));
             if (pHpetTimer->u64Config & HPET_TN_PERIODIC_CAP)
                 u64Mask |= HPET_TN_PERIODIC;
 
@@ -541,12 +547,12 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
             }
 
             /* We only care about lower 32-bits so far */
-            pHpetTimer->u64Config = hpetUpdateMasked(u32NewValue, iOldValue, u64Mask);
+            pHpetTimer->u64Config = hpetUpdateMasked(u32NewValue, pHpetTimer->u64Config, u64Mask);
             DEVHPET_UNLOCK(pThis);
             break;
         }
 
-        case HPET_TN_CFG + 4: /* Interrupt capabilities */
+        case HPET_TN_CFG + 4: /* Interrupt capabilities - read only. */
         {
             Log(("write HPET_TN_CFG + 4, useless\n"));
             break;
@@ -1431,14 +1437,14 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Register the MMIO range, PDM API requests page aligned
      * addresses and sizes.
      */
-    rc = PDMDevHlpMMIORegister(pDevIns, HPET_BASE, 0x1000, pThis,
+    rc = PDMDevHlpMMIORegister(pDevIns, HPET_BASE, HPET_BAR_SIZE, pThis,
                                IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                hpetMMIOWrite, hpetMMIORead, "HPET Memory");
     AssertRCReturn(rc, rc);
 
     if (fRCEnabled)
     {
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, HPET_BASE, 0x1000, NIL_RTRCPTR /*pvUser*/, "hpetMMIOWrite", "hpetMMIORead");
+        rc = PDMDevHlpMMIORegisterRC(pDevIns, HPET_BASE, HPET_BAR_SIZE, NIL_RTRCPTR /*pvUser*/, "hpetMMIOWrite", "hpetMMIORead");
         AssertRCReturn(rc, rc);
 
         pThis->pHpetHlpRC = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
@@ -1447,7 +1453,7 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     if (fR0Enabled)
     {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, HPET_BASE, 0x1000, NIL_RTR0PTR /*pvUser*/,
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, HPET_BASE, HPET_BAR_SIZE, NIL_RTR0PTR /*pvUser*/,
                                      "hpetMMIOWrite", "hpetMMIORead");
         AssertRCReturn(rc, rc);
 
