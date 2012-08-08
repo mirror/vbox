@@ -22,6 +22,9 @@
 #include <QStyleOptionGraphicsItem>
 #include <QTextLayout>
 #include <QGraphicsSceneMouseEvent>
+#include <QStateMachine>
+#include <QPropertyAnimation>
+#include <QSignalTransition>
 
 /* GUI includes: */
 #include "UIGDetailsElement.h"
@@ -44,6 +47,13 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     , m_fHovered(false)
     , m_fNameHoveringAccessible(false)
     , m_fNameHovered(false)
+    , m_pHighlightMachine(0)
+    , m_pForwardAnimation(0)
+    , m_pBackwardAnimation(0)
+    , m_iAnimationDuration(400)
+    , m_iDefaultDarkness(103)
+    , m_iHighlightDarkness(90)
+    , m_iGradient(m_iDefaultDarkness)
 {
     /* Prepare element: */
     prepareElement();
@@ -349,6 +359,36 @@ void UIGDetailsElement::clearItems(UIGDetailsItemType)
 
 void UIGDetailsElement::prepareElement()
 {
+    /* Create highlight machine: */
+    m_pHighlightMachine = new QStateMachine(this);
+    /* Create 'default' state: */
+    QState *pStateDefault = new QState(m_pHighlightMachine);
+    /* Create 'highlighted' state: */
+    QState *pStateHighlighted = new QState(m_pHighlightMachine);
+
+    /* Forward animation: */
+    m_pForwardAnimation = new QPropertyAnimation(this, "gradient", this);
+    m_pForwardAnimation->setDuration(m_iAnimationDuration);
+    m_pForwardAnimation->setStartValue(m_iDefaultDarkness);
+    m_pForwardAnimation->setEndValue(m_iHighlightDarkness);
+
+    /* Backward animation: */
+    m_pBackwardAnimation = new QPropertyAnimation(this, "gradient", this);
+    m_pBackwardAnimation->setDuration(m_iAnimationDuration);
+    m_pBackwardAnimation->setStartValue(m_iHighlightDarkness);
+    m_pBackwardAnimation->setEndValue(m_iDefaultDarkness);
+
+    /* Add state transitions: */
+    QSignalTransition *pDefaultToHighlighted = pStateDefault->addTransition(this, SIGNAL(sigHoverEnter()), pStateHighlighted);
+    pDefaultToHighlighted->addAnimation(m_pForwardAnimation);
+    QSignalTransition *pHighlightedToDefault = pStateHighlighted->addTransition(this, SIGNAL(sigHoverLeave()), pStateDefault);
+    pHighlightedToDefault->addAnimation(m_pBackwardAnimation);
+
+    /* Initial state is 'default': */
+    m_pHighlightMachine->setInitialState(pStateDefault);
+    /* Start state-machine: */
+    m_pHighlightMachine->start();
+
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
     connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltShouldWeUpdateAppearance(QString)));
     connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltShouldWeUpdateAppearance(QString)));
@@ -479,7 +519,9 @@ void UIGDetailsElement::paintDecorations(QPainter *pPainter, const QStyleOptionG
                     m_iCornerRadius,
                     /* Header height: */
                     2 * data(ElementData_Margin).toInt() +
-                    data(ElementData_HeaderSize).toSize().height());
+                    data(ElementData_HeaderSize).toSize().height(),
+                    /* Gradient color: */
+                    gradient());
 }
 
 void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem*)
@@ -586,7 +628,8 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
 }
 
 /* static */
-void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect, int iRadius, int iHeaderHeight)
+void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect,
+                                        int iRadius, int iHeaderHeight, int iGradient)
 {
     /* Save painter: */
     pPainter->save();
@@ -621,7 +664,7 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect, i
     /* Prepare top gradient: */
     QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
     tGradient.setColorAt(0, windowColor.darker(110));
-    tGradient.setColorAt(1, windowColor.darker(103));
+    tGradient.setColorAt(1, windowColor.darker(iGradient));
 
     /* Paint all the stuff: */
     pPainter->fillRect(tRect, tGradient);
@@ -641,7 +684,7 @@ void UIGDetailsElement::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
     if (!m_fHovered)
     {
         m_fHovered = true;
-        update();
+        emit sigHoverEnter();
     }
 
     /* Update name-hover state: */
@@ -654,7 +697,7 @@ void UIGDetailsElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
     if (m_fHovered)
     {
         m_fHovered = false;
-        update();
+        emit sigHoverLeave();
     }
 
     /* Update name-hover state: */

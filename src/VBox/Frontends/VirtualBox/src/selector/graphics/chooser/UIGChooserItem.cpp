@@ -42,7 +42,7 @@ UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent)
     , m_pHighlightMachine(0)
     , m_pForwardAnimation(0)
     , m_pBackwardAnimation(0)
-    , m_iAnimationDuration(300)
+    , m_iAnimationDuration(400)
     , m_iDefaultDarkness(103)
     , m_iHighlightDarkness(90)
     , m_iGradient(m_iDefaultDarkness)
@@ -185,7 +185,7 @@ DragToken UIGChooserItem::dragTokenPlace() const
 
 void UIGChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent*)
 {
-    if (m_fHovered != true)
+    if (!m_fHovered)
     {
         m_fHovered = true;
         emit sigHoverEnter();
@@ -194,7 +194,7 @@ void UIGChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent*)
 
 void UIGChooserItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*)
 {
-    if (m_fHovered != false)
+    if (m_fHovered)
     {
         m_fHovered = false;
         emit sigHoverLeave();

@@ -31,6 +31,8 @@ class UIGDetailsSet;
 class CMachine;
 class UIGraphicsRotatorButton;
 class QTextLayout;
+class QStateMachine;
+class QPropertyAnimation;
 
 /* Typedefs: */
 typedef QPair<QString, QString> UITextTableLine;
@@ -42,9 +44,14 @@ Q_DECLARE_METATYPE(UITextTable);
 class UIGDetailsElement : public UIGDetailsItem
 {
     Q_OBJECT;
+    Q_PROPERTY(int gradient READ gradient WRITE setGradient);
     Q_PROPERTY(int additionalHeight READ additionalHeight WRITE setAdditionalHeight);
 
 signals:
+
+    /* Notifiers: Hover stuff: */
+    void sigHoverEnter();
+    void sigHoverLeave();
 
     /* Notifier: Toggle stuff: */
     void sigToggleElement(DetailsElementType type, bool fToggled);
@@ -122,6 +129,10 @@ protected:
     /* Helpers: Layout stuff: */
     void updateLayout();
 
+    /* Helpers: Hover stuff: */
+    int gradient() const { return m_iGradient; }
+    void setGradient(int iGradient) { m_iGradient = iGradient; update(); }
+
     /* Helpers: Animation stuff: */
     void setAdditionalHeight(int iAdditionalHeight);
     int additionalHeight() const;
@@ -158,7 +169,8 @@ private:
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
     void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
     void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-    static void paintBackground(QPainter *pPainter, const QRect &rect, int iRadius, int iHeaderHeight);
+    static void paintBackground(QPainter *pPainter, const QRect &rect,
+                                int iRadius, int iHeaderHeight, int iGradient);
 
     /* Handlers: Mouse stuff: */
     void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
@@ -188,9 +200,18 @@ private:
     UITextTable m_text;
     int m_iAdditionalHeight;
     int m_iCornerRadius;
+
+    /* Variables: Hover stuff: */
     bool m_fHovered;
     bool m_fNameHoveringAccessible;
     bool m_fNameHovered;
+    QStateMachine *m_pHighlightMachine;
+    QPropertyAnimation *m_pForwardAnimation;
+    QPropertyAnimation *m_pBackwardAnimation;
+    int m_iAnimationDuration;
+    int m_iDefaultDarkness;
+    int m_iHighlightDarkness;
+    int m_iGradient;
 };
 
 #endif /* __UIGDetailsElement_h__ */
