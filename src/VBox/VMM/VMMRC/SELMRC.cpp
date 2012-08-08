@@ -483,7 +483,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     }
     else
     {
-        Assert(RT_FAILURE(rc));
+        AssertMsg(RT_FAILURE(rc), ("cb=%u rc=%#x\n", cb, rc));
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
         STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSUnhandled);
         if (rc == VERR_EM_INTERPRETER)
