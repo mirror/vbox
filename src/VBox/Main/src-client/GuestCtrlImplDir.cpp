@@ -592,7 +592,7 @@ STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
                 else
                 {
 #ifdef DEBUG
-                    streamBlock.Dump();
+                    streamBlock.DumpToLog();
 #endif
                     hr = VBOX_E_FILE_ERROR;
                 }

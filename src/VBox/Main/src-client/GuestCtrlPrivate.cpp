@@ -580,12 +580,21 @@ int GuestEnvironment::appendToEnvBlock(const char *pszEnv, void **ppvList, size_
     return rc;
 }
 
-int GuestFsObjData::From(const GuestProcessStreamBlock &strmBlk)
+int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk)
 {
+    LogFlowFuncEnter(("\n"));
+
     int rc = VINF_SUCCESS;
 
     try
     {
+#ifdef DEBUG
+        strmBlk.DumpToLog();
+#endif
+        /* Object name. */
+        mName = strmBlk.GetString("name");
+        if (mName.isEmpty()) throw VERR_NOT_FOUND;
+        /* Type. */
         Utf8Str strType(strmBlk.GetString("ftype"));
         if (strType.equalsIgnoreCase("-"))
             mType = FsObjType_File;
@@ -594,17 +603,57 @@ int GuestFsObjData::From(const GuestProcessStreamBlock &strmBlk)
         /** @todo Add more types! */
         else
             mType = FsObjType_Undefined;
-
+        /* Object size. */
         rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
         if (RT_FAILURE(rc)) throw rc;
-
-        /** @todo Add complete GuestFsObjData info! */
+        /** @todo Add complete ls info! */
     }
     catch (int rc2)
     {
         rc = rc2;
     }
 
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
+{
+    LogFlowFuncEnter(("\n"));
+
+    int rc = VINF_SUCCESS;
+
+    try
+    {
+#ifdef DEBUG
+        strmBlk.DumpToLog();
+#endif
+        /* Node ID. */
+        rc = strmBlk.GetInt64Ex("node_id", &mNodeID);
+        if (RT_FAILURE(rc)) throw rc;
+        /* Object name. */
+        mName = strmBlk.GetString("name");
+        if (mName.isEmpty()) throw VERR_NOT_FOUND;
+        /* Type. */
+        Utf8Str strType(strmBlk.GetString("ftype"));
+        if (strType.equalsIgnoreCase("-"))
+            mType = FsObjType_File;
+        else if (strType.equalsIgnoreCase("d"))
+            mType = FsObjType_Directory;
+        /** @todo Add more types! */
+        else
+            mType = FsObjType_Undefined;
+        /* Object size. */
+        rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
+        if (RT_FAILURE(rc)) throw rc;
+        /** @todo Add complete stat info! */
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -649,7 +698,7 @@ void GuestProcessStreamBlock::Clear(void)
 }
 
 #ifdef DEBUG
-void GuestProcessStreamBlock::Dump(void)
+void GuestProcessStreamBlock::DumpToLog(void) const
 {
     LogFlowFunc(("Dumping contents of stream block=0x%p (%ld items):\n",
                  this, m_mapPairs.size()));

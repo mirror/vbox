@@ -497,11 +497,39 @@ inline int GuestProcess::callbackRemove(uint32_t uContextID)
     return VERR_NOT_FOUND;
 }
 
-inline bool GuestProcess::isAlive(void)
+/**
+ * Checks if the current assigned PID matches another PID (from a callback).
+ *
+ * In protocol v1 we don't have the possibility to terminate/kill
+ * processes so it can happen that a formerly start process A
+ * (which has the context ID 0 (session=0, process=0, count=0) will
+ * send a delayed message to the host if this process has already
+ * been discarded there and the same context ID was reused by
+ * a process B. Process B in turn then has a different guest PID.
+ *
+ * @return  IPRT status code.
+ * @param   uPID                    PID to check.
+ */
+inline int GuestProcess::checkPID(uint32_t uPID)
 {
-    return (   mData.mStatus == ProcessStatus_Started
-            || mData.mStatus == ProcessStatus_Paused
-            || mData.mStatus == ProcessStatus_Terminating);
+    /* Was there a PID assigned yet? */
+    if (mData.mPID)
+    {
+        /*
+
+         */
+        if (mData.mParent->getProtocolVersion() < 2)
+        {
+            /* Simply ignore the stale requests. */
+            return (mData.mPID == uPID)
+                   ? VINF_SUCCESS : VERR_NOT_FOUND;
+        }
+        /* This should never happen! */
+        AssertReleaseMsg(mData.mPID == uPID, ("Unterminated guest process (PID %RU32) sent data to a newly started process (PID %RU32)\n",
+                                              uPID, mData.mPID));
+    }
+
+    return VINF_SUCCESS;
 }
 
 /* Do not hold any locks here because the lock validator will be unhappy
@@ -513,6 +541,13 @@ void GuestProcess::close(void)
     uninit();
 
     LogFlowThisFuncLeave();
+}
+
+inline bool GuestProcess::isAlive(void)
+{
+    return (   mData.mStatus == ProcessStatus_Started
+            || mData.mStatus == ProcessStatus_Paused
+            || mData.mStatus == ProcessStatus_Terminating);
 }
 
 bool GuestProcess::isReady(void)
@@ -564,7 +599,9 @@ int GuestProcess::onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDA
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RU32, cbProcessed=%RU32, pCallback=%p, pData=%p\n",
                      mData.mPID, pData->u32Status, pData->u32Flags, pData->cbProcessed, pCallback, pData));
 
-    int rc = VINF_SUCCESS;
+    int rc = checkPID(pData->u32PID);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* First, signal callback in every case (if available). */
     if (pCallback)
@@ -606,11 +643,9 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RU32, pCallback=%p, pData=%p\n",
                      pData->u32PID, pData->u32Status, pData->u32Flags, pCallback, pData));
 
-    int rc = VINF_SUCCESS;
-
-    /* Get data from the callback payload. */
-    if (mData.mPID)
-        Assert(mData.mPID == pData->u32PID);
+    int rc = checkPID(pData->u32PID);
+    if (RT_FAILURE(rc))
+        return rc;
 
     BOOL fSignal = FALSE;
     ProcessWaitResult_T waitRes;
@@ -790,8 +825,9 @@ int GuestProcess::onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXE
     LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, uFlags=%RU32, pvData=%p, cbData=%RU32, pCallback=%p, pData=%p\n",
                      mData.mPID, pData->u32HandleId, pData->u32Flags, pData->pvData, pData->cbData, pCallback, pData));
 
-    /* Copy data into callback (if any). */
-    int rc = VINF_SUCCESS;
+    int rc = checkPID(pData->u32PID);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* First, signal callback in every case (if available). */
     if (pCallback)
@@ -1228,11 +1264,13 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
             case ProcessStatus_TerminatedAbnormally:
             case ProcessStatus_Down:
                 waitRes.mResult = ProcessWaitResult_Terminate;
+                waitRes.mRC = mData.mRC;
                 break;
 
             case ProcessStatus_TimedOutKilled:
             case ProcessStatus_TimedOutAbnormally:
                 waitRes.mResult = ProcessWaitResult_Timeout;
+                waitRes.mRC = mData.mRC;
                 break;
 
             case ProcessStatus_Error:
@@ -1267,6 +1305,12 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
 
             case ProcessStatus_Error:
                 waitRes.mResult = ProcessWaitResult_Error;
+                waitRes.mRC = mData.mRC;
+                break;
+
+            case ProcessStatus_TimedOutKilled:
+            case ProcessStatus_TimedOutAbnormally:
+                waitRes.mResult = ProcessWaitResult_Timeout;
                 waitRes.mRC = mData.mRC;
                 break;
 
@@ -1309,6 +1353,34 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
     mData.mWaitEvent = NULL;
 
     mData.mWaitCount--;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestProcess::waitForStart(uint32_t uTimeoutMS)
+{
+    LogFlowThisFunc(("uTimeoutMS=%RU32\n", uTimeoutMS));
+
+    int rc = VINF_SUCCESS;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (mData.mStatus != ProcessStatus_Started)
+    {
+        alock.release();
+
+        GuestProcessWaitResult waitRes;
+        int rc = waitFor(ProcessWaitForFlag_Start, uTimeoutMS, waitRes);
+        if (   RT_FAILURE(rc)
+            || (    waitRes.mResult == ProcessWaitResult_Start
+                &&  waitRes.mResult == ProcessWaitResult_Any
+               )
+           )
+        {
+            if (RT_SUCCESS(rc))
+                rc = waitRes.mRC;
+        }
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
