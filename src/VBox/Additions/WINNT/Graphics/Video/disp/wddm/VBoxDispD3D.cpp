@@ -4565,7 +4565,16 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             }
 #endif
 
-            if (RTListIsEmpty(&pDevice->SwapchainList))
+#if 0 /* <- always create an offscreen render target here since wined3dwddm makes host
+       * to postpone any host window sizing until it becomes visible (which is done to prevent flikering on *nix hosts)
+       * and thus back/front-buffer data is invalid until then
+       * and in case the 3d app is running under Aero enabled, the window will never become visible and thus never resized
+       * to the requested values */
+            if (!pResource->Flags.SharedResource /* <- the Shared must NOT be a swapchain (on-screen) render target
+                                                  * since it will be non-upside-down,
+                                                  * while the app opening the resource would use it as an off-screen,
+                                                  * i.e. upside-down */
+                    && RTListIsEmpty(&pDevice->SwapchainList))
             {
                 bCreateSwapchain = true;
                 Assert(bIssueCreateResource);
@@ -4576,14 +4585,17 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 }
             }
             else
+#endif
             {
+                /* make sure the device is created */
+                IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
                 for (UINT i = 0; i < pResource->SurfCount; ++i)
                 {
                     PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
                     HANDLE hSharedHandle = NULL;
 
                     IDirect3DSurface9* pD3D9Surf;
-                    hr = pDevice->pDevice9If->CreateRenderTarget(pAllocation->SurfDesc.width,
+                    hr = pDevice9If->CreateRenderTarget(pAllocation->SurfDesc.width,
                             pAllocation->SurfDesc.height,
                             vboxDDI2D3DFormat(pResource->Format),
                             vboxDDI2D3DMultiSampleType(pResource->MultisampleType),

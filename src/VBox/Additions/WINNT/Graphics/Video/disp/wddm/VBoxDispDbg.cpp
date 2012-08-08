@@ -115,7 +115,7 @@ DWORD g_VBoxVDbgFLogRel = 1;
 DWORD g_VBoxVDbgFLog = 1;
 DWORD g_VBoxVDbgFLogFlow = 0;
 
-DWORD g_VBoxVDbgCfgMaxDirectRts = 0;
+DWORD g_VBoxVDbgCfgMaxDirectRts = 3;
 DWORD g_VBoxVDbgCfgForceDummyDevCreate = 0;
 
 PVBOXWDDMDISP_DEVICE g_VBoxVDbgInternalDevice = NULL;
