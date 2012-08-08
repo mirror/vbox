@@ -678,10 +678,9 @@ typedef ListenerImpl<VirtualBoxClientEventListener> VirtualBoxClientEventListene
 VBOX_LISTENER_DECLARE(VirtualBoxClientEventListenerImpl)
 
 /**
- * Implementation for WEBLOG macro defined in vboxweb.h; this prints a message
- * to the console and optionally to the file that may have been given to the
- * vboxwebsrv command line.
+ * Prints a message to the webservice log file.
  * @param pszFormat
+ * @todo eliminate, has no significant additional value over direct calls to LogRel.
  */
 void WebLog(const char *pszFormat, ...)
 {
@@ -1467,9 +1466,9 @@ void RaiseSoapRuntimeFault2(struct soap *soap,
 
     WEBDEBUG(("   error, raising SOAP exception\n"));
 
-    RTStrmPrintf(g_pStdErr, "API return code:            0x%08X (%Rhrc)\n", apirc, apirc);
-    RTStrmPrintf(g_pStdErr, "COM error info result code: 0x%lX\n", info.getResultCode());
-    RTStrmPrintf(g_pStdErr, "COM error info text:        %ls\n", info.getText().raw());
+    WebLog("API return code:            0x%08X (%Rhrc)\n", apirc, apirc);
+    WebLog("COM error info result code: 0x%lX\n", info.getResultCode();
+    WebLog("COM error info text:        %ls\n", info.getText().raw());
 
     // allocated our own soap fault struct
     _vbox__RuntimeFault *ex = soap_new__vbox__RuntimeFault(soap, 1);
