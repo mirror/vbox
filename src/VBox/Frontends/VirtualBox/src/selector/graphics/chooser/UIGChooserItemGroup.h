@@ -24,6 +24,7 @@
 
 /* Forward declarations: */
 class QGraphicsScene;
+class UIGraphicsButton;
 class UIGraphicsRotatorButton;
 class QLineEdit;
 class QGraphicsProxyWidget;
@@ -46,7 +47,8 @@ public:
 
     /* Constructor/destructor: */
     UIGChooserItemGroup(QGraphicsScene *pScene);
-    UIGChooserItemGroup(QGraphicsScene *pScene, UIGChooserItemGroup *pCopyFrom);
+    UIGChooserItemGroup(QGraphicsScene *pScene, UIGChooserItemGroup *pCopyFrom,
+                        bool fMainRoot);
     UIGChooserItemGroup(UIGChooserItem *pParent, const QString &strName,
                         bool fOpened  = false , int iPosition  = -1 );
     UIGChooserItemGroup(UIGChooserItem *pParent, UIGChooserItemGroup *pCopyFrom,
@@ -72,6 +74,10 @@ private slots:
     void sltGroupToggleStart();
     void sltGroupToggleFinish(bool fToggled);
 
+    /* Handler: Indent root stuff: */
+    void sltIndentRoot();
+    void sltUnindentRoot();
+
 private:
 
     /* Data enumerator: */
@@ -83,7 +89,8 @@ private:
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
         /* Pixmaps: */
-        GroupItemData_ButtonPixmap,
+        GroupItemData_ToggleButtonPixmap,
+        GroupItemData_EnterButtonPixmap,
         GroupItemData_GroupPixmap,
         GroupItemData_MachinePixmap,
         /* Fonts: */
@@ -94,7 +101,9 @@ private:
         GroupItemData_GroupCountText,
         GroupItemData_MachineCountText,
         /* Sizes: */
-        GroupItemData_ButtonSize,
+        GroupItemData_ToggleButtonSize,
+        GroupItemData_EnterButtonSize,
+        GroupItemData_ExitButtonSize,
         GroupItemData_MinimumNameSize,
         GroupItemData_NameSize,
         GroupItemData_NameEditorSize,
@@ -112,6 +121,7 @@ private:
     void show();
     void hide();
     void startEditing();
+    bool isMainRoot() const { return m_fMainRoot; }
 
     /* Helpers: Children stuff: */
     void addItem(UIGChooserItem *pItem, int iPosition);
@@ -160,13 +170,16 @@ private:
     /* Variables: */
     QString m_strName;
     bool m_fClosed;
-    UIGraphicsRotatorButton *m_pButton;
+    UIGraphicsRotatorButton *m_pToggleButton;
+    UIGraphicsButton *m_pEnterButton;
+    UIGraphicsButton *m_pExitButton;
     QLineEdit *m_pNameEditorWidget;
     QGraphicsProxyWidget *m_pNameEditor;
     QList<UIGChooserItem*> m_groupItems;
     QList<UIGChooserItem*> m_machineItems;
     int m_iAdditionalHeight;
     int m_iCornerRadius;
+    bool m_fMainRoot;
 };
 
 #endif /* __UIGChooserItemGroup_h__ */

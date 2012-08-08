@@ -65,8 +65,9 @@ protected:
     /* Paint stuff: */
     virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
 
-    /* Mouse-press handler: */
+    /* Mouse handlers: */
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent);
 
     /* Helpers: Update stuff: */
     virtual void refresh();

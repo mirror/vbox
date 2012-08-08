@@ -128,12 +128,13 @@ void UIGChooserModel::indentRoot(UIGChooserItem *pNewRootItem)
     root()->hide();
 
     /* Create left root: */
-    m_pLeftRoot = new UIGChooserItemGroup(scene(), root()->toGroupItem());
+    bool fLeftRootIsMain = root() == mainRoot();
+    m_pLeftRoot = new UIGChooserItemGroup(scene(), root()->toGroupItem(), fLeftRootIsMain);
     m_pLeftRoot->setPos(0, 0);
     m_pLeftRoot->resize(root()->geometry().size());
 
     /* Create right root: */
-    m_pRightRoot = new UIGChooserItemGroup(scene(), pNewRootItem->toGroupItem());
+    m_pRightRoot = new UIGChooserItemGroup(scene(), pNewRootItem->toGroupItem(), false);
     m_pRightRoot->setPos(root()->geometry().width(), 0);
     m_pRightRoot->resize(root()->geometry().size());
 
@@ -161,12 +162,13 @@ void UIGChooserModel::unindentRoot()
     root()->setRoot(false);
 
     /* Create left root: */
-    m_pLeftRoot = new UIGChooserItemGroup(scene(), m_rootStack.at(m_rootStack.size() - 2)->toGroupItem());
+    bool fLeftRootIsMain = m_rootStack.at(m_rootStack.size() - 2) == mainRoot();
+    m_pLeftRoot = new UIGChooserItemGroup(scene(), m_rootStack.at(m_rootStack.size() - 2)->toGroupItem(), fLeftRootIsMain);
     m_pLeftRoot->setPos(- root()->geometry().width(), 0);
     m_pLeftRoot->resize(root()->geometry().size());
 
     /* Create right root: */
-    m_pRightRoot = new UIGChooserItemGroup(scene(), root()->toGroupItem());
+    m_pRightRoot = new UIGChooserItemGroup(scene(), root()->toGroupItem(), false);
     m_pRightRoot->setPos(0, 0);
     m_pRightRoot->resize(root()->geometry().size());
 
@@ -1490,6 +1492,9 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                     {
                         /* Get group item: */
                         UIGChooserItem *pGroupItem = qgraphicsitem_cast<UIGChooserItemGroup*>(pItem);
+                        /* Make sure thats not root: */
+                        if (pGroupItem->isRoot())
+                            return false;
                         /* Is this group item only the one selected? */
                         if (selectionList().contains(pGroupItem) && selectionList().size() == 1)
                         {

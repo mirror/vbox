@@ -121,7 +121,7 @@ QVariant UIGDetailsGroup::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case GroupData_Margin: return 1;
+        case GroupData_Margin: return 2;
         case GroupData_Spacing: return 10;
         /* Default: */
         default: break;
