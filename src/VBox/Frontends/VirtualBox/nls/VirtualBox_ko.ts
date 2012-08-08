@@ -229,7 +229,7 @@
     <name>QIWizardPage</name>
     <message>
         <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt; 단추를 사용하면 마법사의 다음 쪽으로 가며, &lt;b&gt;%2&lt;/b&gt; 단추를 사용하면 마법사의 이전 쪽으로 갑니다. 마법사를 끝내려면 &lt;b&gt;%3&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; 단추를 사용하면 마법사의 다음 쪽으로 가며, &lt;b&gt;%2&lt;/b&gt; 단추를 사용하면 마법사의 이전 쪽으로 갑니다. 마법사를 끝내려면 &lt;b&gt;%3&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -503,171 +503,60 @@
         <translation>세션 정보(&amp;N)...</translation>
     </message>
     <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>파일(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>파일(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>가상 미디어 관리자(&amp;V)...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>가상 미디어 관리자 대화상자를 표시합니다</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>가상 시스템 가져오기(&amp;I)...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>VirtualBox로 가상 시스템 가져오기</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>가상 시스템 내보내기(&amp;E)...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>VirtualBox의 가상 시스템 내보내기</translation>
-    </message>
-    <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>환경 설정(&amp;P)...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>전역 환경 설정 대화 상자를 표시합니다</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>종료(&amp;X)</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>프로그램을 종료합니다</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>새로 만들기(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>새 가상 머신을 만듭니다</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation>추가(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>존재하는 가상 머신 추가</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>복제(&amp;O)...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>선택한 가상 머신을 복제합니다</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>삭제(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>선택한 가상 머신 삭제</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>시작(&amp;T)</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>선택한 가상 머신을 시작합니다</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>보이기(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>선택한 가상 머신의 창으로 전환합니다</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>저장된 상태 삭제(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>가상 머신의 저장된 상태를 삭제합니다</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>새로 고침(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>선택한 가상 머신의 접근성 상태를 새로 고칩니다</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>로그 보기(&amp;L)...</translation>
+        <source>Show &amp;log...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation>선택한 가상 머신의 로그 파일을 표시합니다</translation>
+        <translation type="unfinished">선택한 가상 머신의 로그 파일을 표시합니다</translation>
     </message>
     <message>
-        <source>Show in Finder</source>
-        <translation>파인더에 보이기</translation>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished">내용(&amp;C)...</translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 파인더에 표시합니다.</translation>
+        <source>Show help contents</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show in Explorer</source>
-        <translation>탐색기에 보이기</translation>
+        <source>&amp;VirtualBox web site...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation type="unfinished">웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
     </message>
     <message>
-        <source>Show in File Manager</source>
-        <translation>파일 관리자에 보이기</translation>
+        <source>&amp;Reset all warnings</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 파일 관리자에 표시합니다</translation>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation type="unfinished">모든 경고 메시지를 다시 보이도록 설정합니다</translation>
     </message>
     <message>
-        <source>Create Alias on Desktop</source>
-        <translation>데스크톱에 바로 가기 만들기</translation>
+        <source>&amp;Network Operations Manager...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+        <source>Show Network Operations Manager</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>데스크톱에 바로 가기 만들기</translation>
+        <source>C&amp;heck for updates...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+        <source>Check for a new VirtualBox version</source>
+        <translation type="unfinished">새 VirtualBox 버전을 찾습니다</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation type="unfinished">VirtualBox 정보(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation type="unfinished">제품 정보 대화상자를 표시합니다</translation>
     </message>
     <message>
         <source>Take Sn&amp;apshot...</source>
@@ -686,11 +575,230 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort List</source>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">파일(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">파일(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation type="unfinished">가상 미디어 관리자(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation type="unfinished">가상 미디어 관리자 대화상자를 표시합니다</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="unfinished">가상 시스템 가져오기(&amp;I)...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="unfinished">VirtualBox로 가상 시스템 가져오기</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="unfinished">가상 시스템 내보내기(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="unfinished">VirtualBox의 가상 시스템 내보내기</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation type="unfinished">환경 설정(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation type="unfinished">전역 환경 설정 대화 상자를 표시합니다</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation type="unfinished">종료(&amp;X)</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation type="unfinished">프로그램을 종료합니다</translation>
+    </message>
+    <message>
+        <source>&amp;Group</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort the VM list alphabetically (Shift for descending order)</source>
+        <source>&amp;New machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation type="unfinished">새 가상 머신을 만듭니다</translation>
+    </message>
+    <message>
+        <source>&amp;Add machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished">존재하는 가상 머신 추가</translation>
+    </message>
+    <message>
+        <source>Rena&amp;me group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Break group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Break the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="unfinished">시작(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="unfinished">선택한 가상 머신을 시작합니다</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="unfinished">보이기(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="unfinished">선택한 가상 머신의 창으로 전환합니다</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation type="unfinished">선택한 가상 머신의 접근성 상태를 새로 고칩니다</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished">파인더에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished">VirtualBox 가상 머신 정의 파일을 파인더에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished">탐색기에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished">VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished">파일 관리자에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished">VirtualBox 가상 머신 정의 파일을 파일 관리자에 표시합니다</translation>
+    </message>
+    <message>
+        <source>Create alias on desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create shortcut on desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the items of the selected group alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="unfinished">새로 만들기(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">추가(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a new group based on the items selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished">복제(&amp;O)...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished">선택한 가상 머신을 복제합니다</translation>
+    </message>
+    <message>
+        <source>&amp;Remove...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished">선택한 가상 머신 삭제</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">삭제</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard saved state...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation type="unfinished">가상 머신의 저장된 상태를 삭제합니다</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished">데스크톱에 바로 가기 만들기</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished">데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished">데스크톱에 바로 가기 만들기</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished">데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+    </message>
+    <message>
+        <source>Sort parent group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the parent group of the first selected item alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -850,26 +958,22 @@
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
-        <translation>가상 머신을 복제합니다</translation>
+        <translation type="obsolete">가상 머신을 복제합니다</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation>복제</translation>
-    </message>
-    <message>
-        <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">복제</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage1</name>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 마법사는 가상 머신을 복제하는 과정을 도와 줍니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;이 마법사는 가상 머신을 복제하는 과정을 도와 줍니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신의 이름을 지정하십시오:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;새 가상 머신의 이름을 지정하십시오:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
@@ -877,19 +981,15 @@
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>모든 네트워크 카드의 MAC 주소 초기화(&amp;R)</translation>
+        <translation type="obsolete">모든 네트워크 카드의 MAC 주소 초기화(&amp;R)</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
-        <translation>가상 머신 복제 마법사에 오신 것을 환영합니다</translation>
+        <translation type="obsolete">가상 머신 복제 마법사에 오신 것을 환영합니다</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation>%1 복제</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">%1 복제</translation>
     </message>
 </context>
 <context>
@@ -908,7 +1008,7 @@
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation>복제 설정</translation>
+        <translation type="obsolete">복제 설정</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
@@ -926,56 +1026,40 @@
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
         <translation type="obsolete">&lt;b&gt;모든 상태&lt;/b&gt;를 선택하면 현재 머신 상태와 모든 스냅샷을 복제합니다.</translation>
     </message>
-    <message>
-        <source>Full Clone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished">현재 머신 상태</translation>
+        <translation type="obsolete">현재 머신 상태</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished">현재 머신 및 모든 머신 상태</translation>
+        <translation type="obsolete">현재 머신 및 모든 머신 상태</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished">모든 상태</translation>
+        <translation type="obsolete">모든 상태</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished">복제 설정</translation>
+        <translation type="obsolete">복제 설정</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished">가상 머신의 복제할 부분을 선택하십시오.</translation>
+        <translation type="obsolete">가상 머신의 복제할 부분을 선택하십시오.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished">&lt;b&gt;현재 머신 상태&lt;/b&gt;를 선택하면 가상 머신의 현재 상태만 복제됩니다.</translation>
+        <translation type="obsolete">&lt;b&gt;현재 머신 상태&lt;/b&gt;를 선택하면 가상 머신의 현재 상태만 복제됩니다.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished">&lt;b&gt;현재 머신 및 모든 자식 상태&lt;/b&gt;를 선택하면 현재 가상 머신의 상태와 모든 자식 상태 스냅샷을 복제합니다.</translation>
+        <translation type="obsolete">&lt;b&gt;현재 머신 및 모든 자식 상태&lt;/b&gt;를 선택하면 현재 가상 머신의 상태와 모든 자식 상태 스냅샷을 복제합니다.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished">&lt;b&gt;모든 상태&lt;/b&gt;를 선택하면 현재 머신 상태와 모든 스냅샷을 복제합니다.</translation>
+        <translation type="obsolete">&lt;b&gt;모든 상태&lt;/b&gt;를 선택하면 현재 머신 상태와 모든 스냅샷을 복제합니다.</translation>
     </message>
 </context>
 <context>
@@ -1517,6 +1601,20 @@
     </message>
 </context>
 <context>
+    <name>UIDnDHandler</name>
+    <message>
+        <source>Dropping data ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDnDMimeData</name>
+    <message>
+        <source>Dropping data ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloader</name>
     <message>
         <source>The download process has been cancelled by the user.</source>
@@ -1604,7 +1702,7 @@
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation>가상 시스템 내보내기 마법사</translation>
+        <translation type="obsolete">가상 시스템 내보내기 마법사</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
@@ -1648,7 +1746,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>기본값 복원</translation>
+        <translation type="obsolete">기본값 복원</translation>
     </message>
     <message>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
@@ -1724,18 +1822,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Export</source>
-        <translation>내보내기</translation>
+        <translation type="obsolete">내보내기</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage1</name>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>가상 시스템 내보내기 마법사에 오신 것을 환영합니다!</translation>
+        <translation type="obsolete">가상 시스템 내보내기 마법사에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 마법사를 사용하면 가상 시스템을 내보낼 수 있습니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;가상 시스템에 추가할 가상 머신을 선택하십시오. 하나 이상의 시스템을 선택할 수 있습니다. 내보내기 전에 가상 시스템의 전원을 꺼야 합니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;이 마법사를 사용하면 가상 시스템을 내보낼 수 있습니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;가상 시스템에 추가할 가상 머신을 선택하십시오. 하나 이상의 시스템을 선택할 수 있습니다. 내보내기 전에 가상 시스템의 전원을 꺼야 합니다.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1746,23 +1844,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation>가상 시스템 내보내기 설정</translation>
+        <translation type="obsolete">가상 시스템 내보내기 설정</translation>
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>OVF로 내보낼 장소를 선택하십시오. 로컬 파일로 내보내거나, OVF 파일을 Sun 클라우드 서비스 및 S3 저장소 서버로 바로 업로드할 수 있습니다.</translation>
+        <translation type="obsolete">OVF로 내보낼 장소를 선택하십시오. 로컬 파일로 내보내거나, OVF 파일을 Sun 클라우드 서비스 및 S3 저장소 서버로 바로 업로드할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>로컬 파일시스템(&amp;L)</translation>
+        <translation type="obsolete">로컬 파일시스템(&amp;L)</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation>Sun 클라우드(&amp;C)</translation>
+        <translation type="obsolete">Sun 클라우드(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation>간단한 저장소 시스템(S3)(&amp;S)</translation>
+        <translation type="obsolete">간단한 저장소 시스템(S3)(&amp;S)</translation>
     </message>
 </context>
 <context>
@@ -1785,71 +1883,71 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation>가상 시스템 내보내기 설정</translation>
+        <translation type="obsolete">가상 시스템 내보내기 설정</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation>사용자 이름(&amp;U):</translation>
+        <translation type="obsolete">사용자 이름(&amp;U):</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>암호(&amp;P):</translation>
+        <translation type="obsolete">암호(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation>호스트 이름(&amp;H):</translation>
+        <translation type="obsolete">호스트 이름(&amp;H):</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation>저장소(&amp;B):</translation>
+        <translation type="obsolete">저장소(&amp;B):</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation>파일(&amp;F):</translation>
+        <translation type="obsolete">파일(&amp;F):</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>다른 가상화 제품과의 호환을 위하여 OVF 0.9 형식을 사용합니다.</translation>
+        <translation type="obsolete">다른 가상화 제품과의 호환을 위하여 OVF 0.9 형식을 사용합니다.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation>OVF 0.9로 쓰기(&amp;W)</translation>
+        <translation type="obsolete">OVF 0.9로 쓰기(&amp;W)</translation>
     </message>
     <message>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
-        <translation>가져올 때 자동으로 데이터 무결성을 검사하는 Manifest 파일을 만듭니다.</translation>
+        <translation type="obsolete">가져올 때 자동으로 데이터 무결성을 검사하는 Manifest 파일을 만듭니다.</translation>
     </message>
     <message>
         <source>Write &amp;Manifest file</source>
-        <translation>Manifest 파일 쓰기(&amp;M)</translation>
+        <translation type="obsolete">Manifest 파일 쓰기(&amp;M)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation>가상 시스템</translation>
+        <translation type="obsolete">가상 시스템</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation>내보낼 파일 선택하기</translation>
+        <translation type="obsolete">내보낼 파일 선택하기</translation>
     </message>
     <message>
         <source>Open Virtualization Format Archive (%1)</source>
-        <translation>압축된 열린 가상화 형식 (%1)</translation>
+        <translation type="obsolete">압축된 열린 가상화 형식 (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>열린 가상화 형식 (%1)</translation>
+        <translation type="obsolete">열린 가상화 형식 (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
-        <translation>내보낼 OVF/OVA 파일 이름을 입력하십시오. &lt;i&gt;ova&lt;/i&gt; 확장자를 사용하면 모든 파일은 하나의 압축된 열린 가상화 형식 파일로 만들어집니다. &lt;i&gt;ovf&lt;/i&gt; 확장자를 사용하면 여러 파일이 생성됩니다. 다른 확장자는 사용할 수 없습니다.</translation>
+        <translation type="obsolete">내보낼 OVF/OVA 파일 이름을 입력하십시오. &lt;i&gt;ova&lt;/i&gt; 확장자를 사용하면 모든 파일은 하나의 압축된 열린 가상화 형식 파일로 만들어집니다. &lt;i&gt;ovf&lt;/i&gt; 확장자를 사용하면 여러 파일이 생성됩니다. 다른 확장자는 사용할 수 없습니다.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>사용자 이름, 암호, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
+        <translation type="obsolete">사용자 이름, 암호, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>사용자 이름, 암호, 호스트 이름, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
+        <translation type="obsolete">사용자 이름, 암호, 호스트 이름, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
     </message>
 </context>
 <context>
@@ -1884,7 +1982,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation>가상 시스템 내보내기 설정</translation>
+        <translation type="obsolete">가상 시스템 내보내기 설정</translation>
     </message>
     <message>
         <source>Appliance</source>
@@ -1912,26 +2010,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation>파일 검사 중...</translation>
+        <translation type="obsolete">파일 검사 중...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation>파일 삭제 중...</translation>
+        <translation type="obsolete">파일 삭제 중...</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation>가상 시스템 내보내는 중...</translation>
+        <translation type="obsolete">가상 시스템 내보내는 중...</translation>
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>선택한 가상 머신의 추가 설정값을 변경할 수 있습니다. 대부분 항목은 두 번 누르면 편집할 수 있습니다.</translation>
+        <translation type="obsolete">선택한 가상 머신의 추가 설정값을 변경할 수 있습니다. 대부분 항목은 두 번 누르면 편집할 수 있습니다.</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation>처음 실행 마법사</translation>
+        <translation type="obsolete">처음 실행 마법사</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
@@ -2059,78 +2157,423 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Start</source>
-        <translation>시작</translation>
+        <translation type="obsolete">시작</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage1</name>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>처음 실행 마법사에 오신 것을 환영합니다!</translation>
+        <translation type="obsolete">처음 실행 마법사에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신을 처음으로 시작합니다. 이 마법사는 가상 머신에 운영 체제를 설치하는 과정을 도와 줍니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;새 가상 머신을 처음으로 시작합니다. 이 마법사는 가상 머신에 운영 체제를 설치하는 과정을 도와 줍니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신을 처음으로 시작합니다. 이 마법사는 가상 머신에 선택한 운영체제를 사용하기 위한 작업을 도와 줍니다.&lt;/p&gt;&lt;p&gt;가상 머신에 하드디스크를 연결하지 않았기 때문에 운영 체제를 설치할 수 없습니다. 이 마법사를 원하지 않는다면 VirtualBox 주 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴에서 &lt;b&gt;설정&lt;/b&gt; 항목을 선택하여 가상 머신 설정 창을 연 다음 하드디스크 설정을 바꾸십시오.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;새 가상 머신을 처음으로 시작합니다. 이 마법사는 가상 머신에 선택한 운영체제를 사용하기 위한 작업을 도와 줍니다.&lt;/p&gt;&lt;p&gt;가상 머신에 하드디스크를 연결하지 않았기 때문에 운영 체제를 설치할 수 없습니다. 이 마법사를 원하지 않는다면 VirtualBox 주 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴에서 &lt;b&gt;설정&lt;/b&gt; 항목을 선택하여 가상 머신 설정 창을 연 다음 하드디스크 설정을 바꾸십시오.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;설치할 운영체제가 들어 있는 미디어를 선택하십시오. 설치 프로그램을 시작하려면 부팅 가능한 미디어를 지정해야 합니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;설치할 운영체제가 들어 있는 미디어를 선택하십시오. 설치 프로그램을 시작하려면 부팅 가능한 미디어를 지정해야 합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;사용할 운영체제가 들어 있는 미디어를 선택하십시오. 설치 프로그램을 시작하려면 부팅 가능한 미디어를 지정해야 합니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;사용할 운영체제가 들어 있는 미디어를 선택하십시오. 설치 프로그램을 시작하려면 부팅 가능한 미디어를 지정해야 합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation>미디어 원본</translation>
+        <translation type="obsolete">미디어 원본</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation>설치 미디어 선택</translation>
+        <translation type="obsolete">설치 미디어 선택</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage3</name>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;다음 미디어에서 부팅하도록 선택했습니다:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;다음 미디어에서 부팅하도록 선택했습니다:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;다음 미디어에서 운영체제를 시작하도록 선택했습니다:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;다음 미디어에서 운영체제를 시작하도록 선택했습니다:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;위 사항이 올바르다면 &lt;b&gt;완료&lt;/b&gt; 단추를 누르십시오. 선택한 미디어가 가상 머신에 임시로 마운트되고 가상 머신의 실행이 시작됩니다.&lt;/p&gt;&lt;p&gt;가상 머신을 닫으면 임시로 마운트한 미디어의 마운트가 해제되고, 부팅 장치는 첫 번째 하드디스크로 설정됩니다.&lt;/p&gt;&lt;p&gt;설치 프로그램에 따라서, 설치 프로그램이 가상 머신을 재부팅시킨 후 수동으로 미디어를 꺼내거나 마운트 해제해야 설치 과정으로 들어가지 않을 수도 있습니다. &lt;b&gt;장치&lt;/b&gt; 메뉴의 해당하는 &lt;b&gt;마운트 해제...&lt;/b&gt; 동작을 선택하여 이렇게 할 수 있습니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;위 사항이 올바르다면 &lt;b&gt;완료&lt;/b&gt; 단추를 누르십시오. 선택한 미디어가 가상 머신에 임시로 마운트되고 가상 머신의 실행이 시작됩니다.&lt;/p&gt;&lt;p&gt;가상 머신을 닫으면 임시로 마운트한 미디어의 마운트가 해제되고, 부팅 장치는 첫 번째 하드디스크로 설정됩니다.&lt;/p&gt;&lt;p&gt;설치 프로그램에 따라서, 설치 프로그램이 가상 머신을 재부팅시킨 후 수동으로 미디어를 꺼내거나 마운트 해제해야 설치 과정으로 들어가지 않을 수도 있습니다. &lt;b&gt;장치&lt;/b&gt; 메뉴의 해당하는 &lt;b&gt;마운트 해제...&lt;/b&gt; 동작을 선택하여 이렇게 할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;위 사항이 올바르다면 &lt;b&gt;완료&lt;/b&gt; 단추를 누르십시오. 선택한 미디어가 가상 머신에 마운트되고 가상 머신의 실행이 시작됩니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;위 사항이 올바르다면 &lt;b&gt;완료&lt;/b&gt; 단추를 누르십시오. 선택한 미디어가 가상 머신에 마운트되고 가상 머신의 실행이 시작됩니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>요약</translation>
+        <translation type="obsolete">요약</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation>CD/DVD-ROM 장치</translation>
+        <translation type="obsolete">CD/DVD-ROM 장치</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation>종류</translation>
+        <translation type="obsolete">종류</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation>원본</translation>
+        <translation type="obsolete">원본</translation>
+    </message>
+</context>
+<context>
+    <name>UIGChooserModel</name>
+    <message>
+        <source>New group</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadAudio</name>
+    <message>
+        <source>Host driver</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details</comment>
+        <translation type="unfinished">컨트롤러</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadDescription</name>
+    <message>
+        <source>None</source>
+        <comment>details</comment>
+        <translation type="unfinished">없음</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadDisplay</name>
+    <message>
+        <source>Video Memory</source>
+        <comment>details</comment>
+        <translation type="unfinished">비디오 메모리</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details</comment>
+        <translation type="unfinished">화면</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="unfinished">2D 비디오</translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="unfinished">3D</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details</comment>
+        <translation type="unfinished">가속</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details</comment>
+        <translation type="unfinished">원격 데스크톱 서버 포트</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details</comment>
+        <translation type="unfinished">원격 데스크톱 서버</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadGeneral</name>
+    <message>
+        <source>Name</source>
+        <comment>details</comment>
+        <translation type="unfinished">이름</translation>
+    </message>
+    <message>
+        <source>Operating system</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadNetwork</name>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">브리지 어댑터, %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">내부 네트워크, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">호스트 전용 어댑터, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">일반 드라이버, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">일반 드라이버, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details</comment>
+        <translation type="unfinished">어댑터 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>details</comment>
+        <translation type="unfinished">포트 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSF</name>
+    <message>
+        <source>Shared folders</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details</comment>
+        <translation type="unfinished">없음</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>details</comment>
+        <translation type="unfinished">포트 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadStorage</name>
+    <message>
+        <source>[CD/DVD]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not attached</source>
+        <comment>details</comment>
+        <translation type="unfinished">연결되지 않음</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSystem</name>
+    <message>
+        <source>Base Memory</source>
+        <comment>details</comment>
+        <translation type="unfinished">기본 메모리</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details</comment>
+        <translation type="unfinished">프로세서</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details</comment>
+        <translation type="unfinished">실행 제한</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details</comment>
+        <translation type="unfinished">부팅 순서</translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished">VT-X/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details</comment>
+        <translation type="unfinished">네스티드 페이징</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details</comment>
+        <translation type="unfinished">가속</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadUSB</name>
+    <message>
+        <source>Device filters</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details</comment>
+        <translation type="unfinished">%1 (%2개 활성화됨)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>USB controller inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGMachinePreview</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation type="unfinished">업데이트하지 않음</translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation type="unfinished">0.5초마다</translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation type="unfinished">1초마다</translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation type="unfinished">2초마다</translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation type="unfinished">5초마다</translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation type="unfinished">10초마다</translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation type="unfinished">미리 보지 않음</translation>
     </message>
 </context>
 <context>
@@ -2923,7 +3366,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation>가상 시스템 가져오기 마법사</translation>
+        <translation type="obsolete">가상 시스템 가져오기 마법사</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
@@ -2967,7 +3410,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>기본값 복원</translation>
+        <translation type="obsolete">기본값 복원</translation>
     </message>
     <message>
         <source>&amp;Import &gt;</source>
@@ -2975,37 +3418,37 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Import</source>
-        <translation>가져오기</translation>
+        <translation type="obsolete">가져오기</translation>
     </message>
 </context>
 <context>
     <name>UIImportApplianceWzdPage1</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation>가져올 가상 시스템 선택하기</translation>
+        <translation type="obsolete">가져올 가상 시스템 선택하기</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>열린 가상화 형식 (%1)</translation>
+        <translation type="obsolete">열린 가상화 형식 (%1)</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>가상 시스템 가져오기 마법사에 오신 것을 환영합니다!</translation>
+        <translation type="obsolete">가상 시스템 가져오기 마법사에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 마법사는 가상 시스템을 가져오는 과정을 도와 줍니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox는 열린 가상화 형식(OVF)으로 되어 있는 가상 시스템을 가져올 수 있습니다. 계속 진행하려면 가져올 파일을 아래에서 선택하십시오:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;이 마법사는 가상 시스템을 가져오는 과정을 도와 줍니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox는 열린 가상화 형식(OVF)으로 되어 있는 가상 시스템을 가져올 수 있습니다. 계속 진행하려면 가져올 파일을 아래에서 선택하십시오:&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>아래 목록은 가상 시스템 설명 파일에 나와 있는 가상 머신이며, 이를 VirtualBox로 가져왔을 때의 형태입니다. 보이는 속성을 두 번 누르면 변경할 수도 있으며, 체크 상자를 사용해서 비활성화시킬 수도 있습니다.</translation>
+        <translation type="obsolete">아래 목록은 가상 시스템 설명 파일에 나와 있는 가상 머신이며, 이를 VirtualBox로 가져왔을 때의 형태입니다. 보이는 속성을 두 번 누르면 변경할 수도 있으며, 체크 상자를 사용해서 비활성화시킬 수도 있습니다.</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation>가상 시스템 가져오기 설정</translation>
+        <translation type="obsolete">가상 시스템 가져오기 설정</translation>
     </message>
 </context>
 <context>
@@ -3165,7 +3608,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation> 테스트 빌드 %1r%2 - %3</translation>
+        <translation type="obsolete"> 테스트 빌드 %1r%2 - %3</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
@@ -3394,11 +3837,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation>이름(&amp;N):</translation>
+        <translation type="obsolete">이름(&amp;N):</translation>
     </message>
     <message>
         <source>Displays the name of the virtual machine.</source>
-        <translation>가상 머신의 이름을 표시합니다.</translation>
+        <translation type="obsolete">가상 머신의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
@@ -3604,6 +4047,14 @@ p, li { white-space: pre-wrap; }
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>이 가상 머신에 64비트 게스트 운영체제를 사용하려면 하드웨어 가상화(VT-x/AMD-V)가 필요하므로, 이 기능은 자동으로 활성화됩니다.</translation>
     </message>
+    <message>
+        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetwork</name>
@@ -3717,7 +4168,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Mac Address:</source>
-        <translation>MAC 주소(&amp;M):</translation>
+        <translation type="obsolete">MAC 주소(&amp;M):</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
@@ -3778,6 +4229,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Selects the driver to be used with this network card.</source>
         <translation>이 네트워크 카드에 사용할 드라이버를 선택하십시오.</translation>
+    </message>
+    <message>
+        <source>&amp;MAC Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the MAC address must be 12 hexadecimal digits long.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5074,10 +5537,40 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIMachineWindow</name>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"> 테스트 빌드 %1r%2 - %3</translation>
+    </message>
+</context>
+<context>
     <name>UIMachineWindowNormal</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation>현재 할당된 호스트 키를 표시합니다.&lt;br&gt;이 키를 누르면 키보드와 마우스가 잡힌 상태를 전환합니다. 이 키와 다른 키를 같이 누르면 주 메뉴에 있는 여러 동작들을 빠르게 수행할 수 있습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMediumManager</name>
+    <message>
+        <source>&amp;Hard drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Optical disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="unfinished">선택(&amp;S)</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="unfinished">닫기(&amp;L)</translation>
     </message>
 </context>
 <context>
@@ -5371,7 +5864,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신에 하드디스크를 연결하지 않았습니다. 게스트 운영체제가 설치되어 있는 하드디스크나 또 다른 부팅 가능한 미디어를 연결하지 않는 한 머신은 부팅되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;새 가상 머신에 하드디스크를 연결하지 않았습니다. 게스트 운영체제가 설치되어 있는 하드디스크나 또 다른 부팅 가능한 미디어를 연결하지 않는 한 머신은 부팅되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -5540,51 +6033,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation>내용(&amp;C)...</translation>
+        <translation type="obsolete">내용(&amp;C)...</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation>온라인 도움말의 내용을 표시합니다</translation>
+        <translation type="obsolete">온라인 도움말의 내용을 표시합니다</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>VirtualBox 웹 사이트(&amp;V)...</translation>
+        <translation type="obsolete">VirtualBox 웹 사이트(&amp;V)...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
+        <translation type="obsolete">웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>모든 경고 초기화(&amp;R)</translation>
+        <translation type="obsolete">모든 경고 초기화(&amp;R)</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>모든 경고 메시지를 다시 보이도록 설정합니다</translation>
+        <translation type="obsolete">모든 경고 메시지를 다시 보이도록 설정합니다</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation>VirtualBox 등록(&amp;E)...</translation>
+        <translation type="obsolete">VirtualBox 등록(&amp;E)...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation>VirtualBox 등록 대화 상자를 엽니다</translation>
+        <translation type="obsolete">VirtualBox 등록 대화 상자를 엽니다</translation>
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
-        <translation>업데이트 찾기(&amp;H)...</translation>
+        <translation type="obsolete">업데이트 찾기(&amp;H)...</translation>
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
-        <translation>새 VirtualBox 버전을 찾습니다</translation>
+        <translation type="obsolete">새 VirtualBox 버전을 찾습니다</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation>VirtualBox 정보(&amp;A)...</translation>
+        <translation type="obsolete">VirtualBox 정보(&amp;A)...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation>제품 정보 대화상자를 표시합니다</translation>
+        <translation type="obsolete">제품 정보 대화상자를 표시합니다</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
@@ -6138,8 +6631,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;현재 가상 머신에서 VirtualBox 게스트 확장을 사용할 수 없는 것 같으며, 공유 폴더를 사용하려면 이 기능이 필요합니다. 가상 머신에서 공유 폴더를 사용하려면, 게스트 확장이 설치되어 있지 않으면 우선 설치하시고, 작동하지 않으면 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 다시 설치하십시오. 게스트 확장이 설치되어 있으나 가상 머신이 시작하는 중일 때에는 공유 폴더 기능이 작동하지 않습니다.&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <translation type="obsolete">
             <numerusform>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행 상태가 저장되어 있습니다.&lt;/p&gt;&lt;p&gt;머신을 내보내더라도 저장된 실행 상태는 내보내지 않을 것입니다. 기존 머신의 실행 상태는 변경되지 않습니다.&lt;/p&gt;</numerusform>
         </translation>
     </message>
@@ -6371,11 +6864,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network Operations Manager...</source>
+        <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show Network Operations Manager</source>
+        <source>Ok</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행 상태가 저장되어 있습니다.&lt;/p&gt;&lt;p&gt;머신을 내보내더라도 저장된 실행 상태는 내보내지 않을 것입니다. 기존 머신의 실행 상태는 변경되지 않습니다.&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove following virtual machine items from the machine list:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6391,28 +6900,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <comment>extension pack</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Do you wish to cancel all current network operations?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you wish to cancel all current network operations or leave them running in the background?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Leave in Background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6431,6 +6919,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Power Off</source>
         <comment>machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6461,37 +6961,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
-        <translation>VirtualBox 사용자 설명서 다운로드 취소</translation>
+        <translation type="obsolete">VirtualBox 사용자 설명서 다운로드 취소</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual</source>
-        <translation>VirtualBox 사용자 설명서 다운로드 중</translation>
+        <translation type="obsolete">VirtualBox 사용자 설명서 다운로드 중</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서 다운로드 중...</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서 다운로드 중...</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
+        <translation type="obsolete">VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
-    </message>
-</context>
-<context>
-    <name>UIMiniProgressWidgetExtension</name>
-    <message>
-        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
     </message>
 </context>
 <context>
@@ -6506,23 +6995,34 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINetworkManager</name>
+    <name>UINameAndSystemEditor</name>
     <message>
-        <source>Network Operation</source>
-        <translation type="unfinished"></translation>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">이름(&amp;N):</translation>
     </message>
     <message>
-        <source>Restart network operation</source>
-        <translation type="unfinished"></translation>
+        <source>Displays the name of the virtual machine.</source>
+        <translation type="unfinished">가상 머신의 이름을 표시합니다.</translation>
     </message>
     <message>
-        <source>Cancel network operation</source>
-        <translation type="unfinished"></translation>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">종류(&amp;T):</translation>
     </message>
     <message>
-        <source>Error: %1.</source>
-        <translation type="unfinished"></translation>
+        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <translation type="unfinished">현재 가상 머신에 설치할 운영 체제의 종류를 표시합니다.</translation>
     </message>
+    <message>
+        <source>&amp;Version:</source>
+        <translation type="unfinished">버전(&amp;V):</translation>
+    </message>
+    <message>
+        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <translation type="unfinished">이 가상 머신에 설치할 운영체제(게스트 운영체제라고도 함) 종류를 표시합니다.</translation>
+    </message>
+</context>
+<context>
+    <name>UINetworkManagerDialog</name>
     <message>
         <source>Network Operations Manager</source>
         <translation type="unfinished"></translation>
@@ -6539,12 +7039,48 @@ p, li { white-space: pre-wrap; }
         <source>Cancel all active network operations</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Error: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restart network operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel network operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINetworkManagerIndicator</name>
+    <message>
+        <source>Current network operations:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed</source>
+        <comment>network operation</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(%1 of %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Double-click for more information.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINewHDWizard</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>새 가상 디스크 만들기</translation>
+        <translation type="obsolete">새 가상 디스크 만들기</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
@@ -6556,7 +7092,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Summary</source>
-        <translation>요약</translation>
+        <translation type="obsolete">요약</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
@@ -6568,7 +7104,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>새 하드디스크 이미지 파일을 선택하십시오</translation>
+        <translation type="obsolete">새 하드디스크 이미지 파일을 선택하십시오</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -6590,12 +7126,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation>위치</translation>
+        <translation type="obsolete">위치</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation>크기</translation>
+        <translation type="obsolete">크기</translation>
     </message>
     <message>
         <source>Bytes</source>
@@ -6657,178 +7193,166 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk name</comment>
-        <translation>사본_%1</translation>
+        <translation type="obsolete">사본_%1</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation>만들기</translation>
+        <translation type="obsolete">만들기</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation>가상 디스크 복사</translation>
+        <translation type="obsolete">가상 디스크 복사</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>복사</translation>
+        <translation type="obsolete">복사</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk copying wizard</source>
-        <translation>가상 디스크 복사 마법사에 오신 것을 환영합니다</translation>
+        <translation type="obsolete">가상 디스크 복사 마법사에 오신 것을 환영합니다</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 마법사는 가상 디스크 복사를 도와 줍니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;이 마법사는 가상 디스크 복사를 도와 줍니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
-        <translation>복사할 가상 디스크를 선택하십시오. 목록에서 선택하거나 목록 옆의 폴더 아이콘을 눌러서 복사할 디스크 파일을 지정할 수 있습니다.</translation>
+        <translation type="obsolete">복사할 가상 디스크를 선택하십시오. 목록에서 선택하거나 목록 옆의 폴더 아이콘을 눌러서 복사할 디스크 파일을 지정할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;VDI (VirtualBox Disk Image)</source>
-        <translation>VDI (VirtualBox 디스크 이미지)(&amp;V)</translation>
+        <translation type="obsolete">VDI (VirtualBox 디스크 이미지)(&amp;V)</translation>
     </message>
     <message>
         <source>V&amp;MDK (Virtual Machine Disk)</source>
-        <translation>VMDK (가상 머신 디스크)(&amp;M)</translation>
+        <translation type="obsolete">VMDK (가상 머신 디스크)(&amp;M)</translation>
     </message>
     <message>
         <source>V&amp;HD (Virtual Hard Disk)</source>
-        <translation>VHD (가상 하드 디스크)(&amp;H)</translation>
+        <translation type="obsolete">VHD (가상 하드 디스크)(&amp;H)</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk creation wizard</source>
-        <translation>가상 디스크 생성 마법사에 오신 것을 환영합니다</translation>
+        <translation type="obsolete">가상 디스크 생성 마법사에 오신 것을 환영합니다</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 마법사는 가상 머신에 사용할 새 가상 디스크를 만드는 것을 도와 줍니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;이 마법사는 가상 머신에 사용할 새 가상 디스크를 만드는 것을 도와 줍니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 디스크 파일 형식을 선택하십시오. 다른 가상화 소프트웨어에서 디스크를 사용하지 않으려면 선택을 변경하지 않아도 됩니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;새 가상 디스크 파일 형식을 선택하십시오. 다른 가상화 소프트웨어에서 디스크를 사용하지 않으려면 선택을 변경하지 않아도 됩니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual disk file type</source>
-        <translation>가상 디스크 파일 형식</translation>
+        <translation type="obsolete">가상 디스크 파일 형식</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation>새 가상 디스크 파일 형식을 선택하십시오. 다른 가상화 소프트웨어에서 디스크를 사용하지 않으려면 선택을 변경하지 않아도 됩니다.</translation>
+        <translation type="obsolete">새 가상 디스크 파일 형식을 선택하십시오. 다른 가상화 소프트웨어에서 디스크를 사용하지 않으려면 선택을 변경하지 않아도 됩니다.</translation>
     </message>
     <message>
         <source>Virtual disk storage details</source>
-        <translation>가상 디스크 저장소 설정</translation>
+        <translation type="obsolete">가상 디스크 저장소 설정</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
-        <translation>가상 디스크 파일을 사용할 때 확장할 지, 미리 지정한 크기로 만들지 선택하십시오.</translation>
+        <translation type="obsolete">가상 디스크 파일을 사용할 때 확장할 지, 미리 지정한 크기로 만들지 선택하십시오.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;&lt;b&gt;동적 할당&lt;/b&gt; 가상 디스크는 가상 디스크를 사용할 때 파일 크기가 커지지만, 사용량이 줄어들어도 작아지지는 않습니다.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;&lt;b&gt;동적 할당&lt;/b&gt; 가상 디스크는 가상 디스크를 사용할 때 파일 크기가 커지지만, 사용량이 줄어들어도 작아지지는 않습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;고정 크기&lt;/b&gt; 가상 디스크는 만드는 데 더 오래 걸리지만 사용할 때 더 빠릅니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;&lt;b&gt;고정 크기&lt;/b&gt; 가상 디스크는 만드는 데 더 오래 걸리지만 사용할 때 더 빠릅니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation>&lt;p&gt;가상 디스크를 2GB 파일 여러 개로 &lt;b&gt;분할&lt;/b&gt;할 수도 있습니다. 큰 파일을 처리할 수 없는 시스템이나 이동식 디스크 등에 가상 머신을 저장할 때 유용합니다.</translation>
+        <translation type="obsolete">&lt;p&gt;가상 디스크를 2GB 파일 여러 개로 &lt;b&gt;분할&lt;/b&gt;할 수도 있습니다. 큰 파일을 처리할 수 없는 시스템이나 이동식 디스크 등에 가상 머신을 저장할 때 유용합니다.</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation>동적 할당(&amp;D)</translation>
+        <translation type="obsolete">동적 할당(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation>고정 크기(&amp;F)</translation>
+        <translation type="obsolete">고정 크기(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation>2GB 단위로 분할하기(&amp;S)</translation>
+        <translation type="obsolete">2GB 단위로 분할하기(&amp;S)</translation>
     </message>
     <message>
         <source>Virtual disk file location and size</source>
-        <translation>가상 디스크 파일 위치와 크기</translation>
+        <translation type="obsolete">가상 디스크 파일 위치와 크기</translation>
     </message>
     <message>
         <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
-        <translation>가상 디스크의 크기를 메가바이트 단위로 지정하십시오. 이 크기는 게스트 운영체제에 가상 디스크의 크기로 보여집니다.</translation>
+        <translation type="obsolete">가상 디스크의 크기를 메가바이트 단위로 지정하십시오. 이 크기는 게스트 운영체제에 가상 디스크의 크기로 보여집니다.</translation>
     </message>
     <message>
         <source>Virtual disk file location</source>
-        <translation>가상 디스크 파일 위치</translation>
+        <translation type="obsolete">가상 디스크 파일 위치</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished">&lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 가상 디스크 데이터를 저장할 경로와 파일 이름을 지정하거나 파일 이름을 직접 입력하십시오.</translation>
+        <translation type="obsolete">&lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 가상 디스크 데이터를 저장할 경로와 파일 이름을 지정하거나 파일 이름을 직접 입력하십시오.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 (%2 바이트)&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%1 (%2 바이트)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>You are going to create a new virtual disk with the following parameters:</source>
-        <translation>다음 설정을 사용하여 새 가상 디스크를 만듭니다:</translation>
+        <translation type="obsolete">다음 설정을 사용하여 새 가상 디스크를 만듭니다:</translation>
     </message>
     <message>
         <source>You are going to create a copied virtual disk with the following parameters:</source>
-        <translation>다음 설정을 사용하여 복제된 가상 디스크를 만듭니다:</translation>
+        <translation type="obsolete">다음 설정을 사용하여 복제된 가상 디스크를 만듭니다:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it the new virtual disk file will be created.</source>
-        <translation>위 설정이 올바르다면 &lt;b&gt;%1&lt;/b&gt; 단추를 누르십시오. 이 단추를 누르면 새 가상 디스크가 생성됩니다.</translation>
+        <translation type="obsolete">위 설정이 올바르다면 &lt;b&gt;%1&lt;/b&gt; 단추를 누르십시오. 이 단추를 누르면 새 가상 디스크가 생성됩니다.</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation>%1 바이트</translation>
+        <translation type="obsolete">%1 바이트</translation>
     </message>
     <message>
         <source>File type</source>
         <comment>summary</comment>
-        <translation>파일 형식</translation>
+        <translation type="obsolete">파일 형식</translation>
     </message>
     <message>
         <source>Details</source>
         <comment>summary</comment>
-        <translation>정보</translation>
-    </message>
-    <message>
-        <source>H&amp;DD (Parallels Hard Disk)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Q&amp;ED (QEMU enhanced disk)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">정보</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageFormat</name>
     <message>
         <source>File type</source>
-        <translation>파일 형식</translation>
+        <translation type="obsolete">파일 형식</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageOptions</name>
     <message>
         <source>&amp;Location</source>
-        <translation>위치(&amp;L)</translation>
+        <translation type="obsolete">위치(&amp;L)</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>크기(&amp;S)</translation>
+        <translation type="obsolete">크기(&amp;S)</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageVariant</name>
     <message>
         <source>Storage details</source>
-        <translation>저장소 정보</translation>
+        <translation type="obsolete">저장소 정보</translation>
     </message>
 </context>
 <context>
@@ -6843,11 +7367,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual disk to copy</source>
-        <translation>복사할 가상 디스크</translation>
+        <translation type="obsolete">복사할 가상 디스크</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation>가상 하드디스크 파일 선택...</translation>
+        <translation type="obsolete">가상 하드디스크 파일 선택...</translation>
     </message>
 </context>
 <context>
@@ -6946,7 +7470,7 @@ p, li { white-space: pre-wrap; }
     <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation>새 가상 머신 만들기</translation>
+        <translation type="obsolete">새 가상 머신 만들기</translation>
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
@@ -7071,60 +7595,60 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create</source>
-        <translation>만들기</translation>
+        <translation type="obsolete">만들기</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage1</name>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>새 가상 머신 생성 마법사에 오신 것을 환영합니다!</translation>
+        <translation type="obsolete">새 가상 머신 생성 마법사에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 마법사는 새 VirtualBox 가상 머신을 만드는 과정을 도와 줍니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;이 마법사는 새 VirtualBox 가상 머신을 만드는 과정을 도와 줍니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage2</name>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신의 이름과 가상 머신에 설치할 운영체제의 종류를 선택하십시오.&lt;/p&gt;&lt;p&gt;가상 머신의 이름은 대개의 경우 소프트웨어와 하드웨어 설정을 반영합니다. VirtualBox 내부에서 가상 머신을 식별하는 데에도 사용됩니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;새 가상 머신의 이름과 가상 머신에 설치할 운영체제의 종류를 선택하십시오.&lt;/p&gt;&lt;p&gt;가상 머신의 이름은 대개의 경우 소프트웨어와 하드웨어 설정을 반영합니다. VirtualBox 내부에서 가상 머신을 식별하는 데에도 사용됩니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation>이름(&amp;A)</translation>
+        <translation type="obsolete">이름(&amp;A)</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>운영체제 종류(&amp;T)</translation>
+        <translation type="obsolete">운영체제 종류(&amp;T)</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation>가상 머신 이름과 운영체제 종류</translation>
+        <translation type="obsolete">가상 머신 이름과 운영체제 종류</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신에 할당할 기본 메모리(RAM)의 크기를 메가바이트 단위로 지정하십시오.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;가상 머신에 할당할 기본 메모리(RAM)의 크기를 메가바이트 단위로 지정하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>기본 메모리 크기(&amp;M)</translation>
+        <translation type="obsolete">기본 메모리 크기(&amp;M)</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation>메모리</translation>
+        <translation type="obsolete">메모리</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>권장하는 기본 메모리 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
+        <translation type="obsolete">권장하는 기본 메모리 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
     </message>
     <message>
         <source>MB</source>
@@ -7144,15 +7668,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation>새 가상 디스크 만들기(&amp;C)</translation>
+        <translation type="obsolete">새 가상 디스크 만들기(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation>기존 하드 디스크 사용하기(&amp;U)</translation>
+        <translation type="obsolete">기존 하드 디스크 사용하기(&amp;U)</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation>가상 하드디스크</translation>
+        <translation type="obsolete">가상 하드디스크</translation>
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
@@ -7160,45 +7684,45 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation type="unfinished">부팅 하드디스크(&amp;D)</translation>
+        <translation type="obsolete">부팅 하드디스크(&amp;D)</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;가상 머신을 부팅하기 위한 하드디스크를 선택하십시오. 새로운 하드디스크를 만들 수 있으며, 해당하는 단추를 누르거나 목록에서 존재하는 하드디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드디스크를 연결하십시오.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;가상 머신을 부팅하기 위한 하드디스크를 선택하십시오. 새로운 하드디스크를 만들 수 있으며, 해당하는 단추를 누르거나 목록에서 존재하는 하드디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation>가상 하드디스크 파일 선택...</translation>
+        <translation type="obsolete">가상 하드디스크 파일 선택...</translation>
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">권장하는 부팅 하드디스크 크기는 &lt;b&gt;%1&lt;/b&gt;입니다.</translation>
+        <translation type="obsolete">권장하는 부팅 하드디스크 크기는 &lt;b&gt;%1&lt;/b&gt;입니다.</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage5</name>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;다음 설정을 사용하여 새 가상 디스크 이미지를 만듭니다:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;다음 설정을 사용하여 새 가상 디스크 이미지를 만듭니다:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>요약</translation>
+        <translation type="obsolete">요약</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>summary</comment>
-        <translation>이름</translation>
+        <translation type="obsolete">이름</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation>운영체제 종류</translation>
+        <translation type="obsolete">운영체제 종류</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation>기본 메모리</translation>
+        <translation type="obsolete">기본 메모리</translation>
     </message>
     <message>
         <source>MB</source>
@@ -7208,11 +7732,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">부팅 하드디스크</translation>
+        <translation type="obsolete">부팅 하드디스크</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;위 사항이 올바르면 &lt;b&gt;%1&lt;/b&gt; 단추를 누르십시오. 이 단추를 누르면 새 가상 머신을 만들 것입니다.&lt;/p&gt;&lt;p&gt;나중에 이 설정을 조정하고 싶으면 주 메뉴의 &lt;b&gt;설정&lt;/b&gt; 대화 상자에서 할 수 있습니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;위 사항이 올바르면 &lt;b&gt;%1&lt;/b&gt; 단추를 누르십시오. 이 단추를 누르면 새 가상 머신을 만들 것입니다.&lt;/p&gt;&lt;p&gt;나중에 이 설정을 조정하고 싶으면 주 메뉴의 &lt;b&gt;설정&lt;/b&gt; 대화 상자에서 할 수 있습니다.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -7678,72 +8202,68 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIVMLogViewer</name>
     <message>
-        <source>Log Viewer</source>
-        <translation type="obsolete">로그 뷰어</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation>저장(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&amp;Refresh</source>
-        <translation>새로 고침(&amp;R)</translation>
-    </message>
-    <message>
-        <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - VirtualBox 로그 뷰어</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;로그 파일을 찾을 수 없습니다. &lt;b&gt;새로 고침&lt;/b&gt; 단추를 눌러서 로그 폴더 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 다시 검사하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Save VirtualBox Log As</source>
-        <translation>로그를 다른 이름으로 저장</translation>
+        <source>Close the search panel</source>
+        <translation type="unfinished">검색 패널 닫기</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>찾기(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation>닫기</translation>
-    </message>
-    <message>
-        <source>Close the search panel</source>
-        <translation>검색 패널 닫기</translation>
+        <translation type="unfinished">찾기(&amp;F)</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>찾을 문자열을 입력하십시오</translation>
+        <translation type="unfinished">찾을 문자열을 입력하십시오</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>이전(&amp;P)</translation>
+        <translation type="unfinished">이전(&amp;P)</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>문자열의 이전 일치를 찾습니다</translation>
+        <translation type="unfinished">문자열의 이전 일치를 찾습니다</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>다음(&amp;N)</translation>
+        <translation type="unfinished">다음(&amp;N)</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>문자열의 다음 일치를 찾습니다</translation>
+        <translation type="unfinished">문자열의 다음 일치를 찾습니다</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>대소문자 구분(&amp;A)</translation>
+        <translation type="unfinished">대소문자 구분(&amp;A)</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>선택하면 대소문자를 구분해서 검색합니다</translation>
+        <translation type="unfinished">선택하면 대소문자를 구분해서 검색합니다</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>문자열 찾을 수 없음</translation>
+        <translation type="unfinished">문자열 찾을 수 없음</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;로그 파일을 찾을 수 없습니다. &lt;b&gt;새로 고침&lt;/b&gt; 단추를 눌러서 로그 폴더 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 다시 검사하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">로그를 다른 이름으로 저장</translation>
+    </message>
+    <message>
+        <source>%1 - VirtualBox Log Viewer</source>
+        <translation type="unfinished">%1 - VirtualBox 로그 뷰어</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">새로 고침(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="unfinished">저장(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">닫기</translation>
     </message>
 </context>
 <context>
@@ -7775,6 +8295,582 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No Preview</source>
         <translation>미리 보지 않음</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizard</name>
+    <message>
+        <source>Hide Description</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Description</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardCloneVD</name>
+    <message>
+        <source>Copy Virtual Hard Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">복사</translation>
+    </message>
+    <message>
+        <source>Hard drive to copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the virtual hard drive file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard drive file to copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive file type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage on physical hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically allocated</source>
+        <translation type="unfinished">동적 할당(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed size</source>
+        <translation type="unfinished">고정 크기(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Split into files of less than 2GB</source>
+        <translation type="unfinished">2GB 단위로 분할하기(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Please choose a location for new virtual hard drive file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New hard drive to create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a location for new virtual hard drive file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1_copy</source>
+        <comment>copied virtual hard drive name</comment>
+        <translation type="unfinished">사본_%1</translation>
+    </message>
+    <message>
+        <source>Hard drive to &amp;copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New hard drive to create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive file &amp;type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardCloneVM</name>
+    <message>
+        <source>Linked Base for %1 and %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone Virtual Machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone</source>
+        <translation type="unfinished">복제</translation>
+    </message>
+    <message>
+        <source>%1 Clone</source>
+        <translation type="unfinished">%1 복제</translation>
+    </message>
+    <message>
+        <source>New machine name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished">모든 네트워크 카드의 MAC 주소 초기화(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Clone type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard drive files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard drive files will be tied to the virtual hard drive files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Linked clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snapshots</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;snapshot tree branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Everything</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New machine &amp;name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardExportApp</name>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished">파일 검사 중...</translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished">파일 삭제 중...</translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="unfinished">가상 시스템 내보내는 중...</translation>
+    </message>
+    <message>
+        <source>Export Virtual Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation type="unfinished">기본값 복원</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished">내보내기</translation>
+    </message>
+    <message>
+        <source>Virtual machines to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose where to create the virtual appliance. You can create it on your own computer, on the Sun Cloud service or on an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;This computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished">Sun 클라우드(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished">간단한 저장소 시스템(S3)(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished">가상 시스템</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished">사용자 이름(&amp;U):</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished">암호(&amp;P):</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished">호스트 이름(&amp;H):</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished">저장소(&amp;B):</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished">파일(&amp;F):</translation>
+    </message>
+    <message>
+        <source>Please choose a virtual appliance file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format Archive (%1)</source>
+        <translation type="unfinished">압축된 열린 가상화 형식 (%1)</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished">열린 가상화 형식 (%1)</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished">다른 가상화 제품과의 호환을 위하여 OVF 0.9 형식을 사용합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished">OVF 0.9로 쓰기(&amp;W)</translation>
+    </message>
+    <message>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished">가져올 때 자동으로 데이터 무결성을 검사하는 Manifest 파일을 만듭니다.</translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation type="unfinished">Manifest 파일 쓰기(&amp;M)</translation>
+    </message>
+    <message>
+        <source>This is the descriptive information which will be added to the virtual appliance.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual &amp;machines to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance &amp;settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Destination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished">로컬 파일시스템(&amp;L)</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardExportAppPageBasic3</name>
+    <message>
+        <source>&lt;p&gt;Please choose a filename to export the OVF/OVA to.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ova&lt;/i&gt; extension, then all the files will be combined into one Open Virtualization Format Archive.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately.&lt;/p&gt;&lt;p&gt;Other extensions are not allowed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">사용자 이름, 암호, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">사용자 이름, 암호, 호스트 이름, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardFirstRun</name>
+    <message>
+        <source>Select start-up disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished">시작</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual optical disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardImportApp</name>
+    <message>
+        <source>Import Virtual Applicance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation type="unfinished">기본값 복원</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished">가져오기</translation>
+    </message>
+    <message>
+        <source>Appliance to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="unfinished">가져올 가상 시스템 선택하기</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished">열린 가상화 형식 (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardNewVD</name>
+    <message>
+        <source>Create Virtual Hard Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished">만들기</translation>
+    </message>
+    <message>
+        <source>Hard drive file type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage on physical hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically allocated</source>
+        <translation type="unfinished">동적 할당(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed size</source>
+        <translation type="unfinished">고정 크기(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Split into files of less than 2GB</source>
+        <translation type="unfinished">2GB 단위로 분할하기(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished">&lt;nobr&gt;%1 (%2 바이트)&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>File location and size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a location for new virtual hard drive file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select the size of the virtual hard drive in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard drive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File &amp;location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File &amp;size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive file &amp;type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardNewVM</name>
+    <message>
+        <source>Create Virtual Machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished">만들기</translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation type="unfinished">IDE 컨트롤러</translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation type="unfinished">SATA 컨트롤러</translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation type="unfinished">SCSI 컨트롤러</translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation type="unfinished">플로피 컨트롤러</translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished">SAS 컨트롤러</translation>
+    </message>
+    <message>
+        <source>Name and operating system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a descriptive name for the new virtual machine and select the type of operating system you intend to install on it. The name you choose will be used throughout VirtualBox to identify this machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the amount of memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;&lt;p&gt;The recommended memory size is &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you wish you can add a virtual hard drive to the new machine. You can either create a new hard drive file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard drive is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Do not add virtual hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create virtual hard drive now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use existing virtual hard drive file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard drive file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Memory size</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8832,17 +9928,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Normal</source>
         <comment>DiskType</comment>
-        <translation>일반</translation>
+        <translation type="obsolete">일반</translation>
     </message>
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation>변경 불가능</translation>
+        <translation type="obsolete">변경 불가능</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
-        <translation>스냅샷 미포함</translation>
+        <translation type="obsolete">스냅샷 미포함</translation>
     </message>
     <message>
         <source>Null</source>
@@ -8862,12 +9958,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
-        <translation>무시</translation>
+        <translation type="obsolete">무시</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
-        <translation>고정</translation>
+        <translation type="obsolete">고정</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
@@ -9110,27 +10206,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation>프라이머리</translation>
+        <translation type="obsolete">프라이머리</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation>세컨더리</translation>
+        <translation type="obsolete">세컨더리</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation>마스터</translation>
+        <translation type="obsolete">마스터</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation>슬레이브</translation>
+        <translation type="obsolete">슬레이브</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
-        <translation>포트 %1</translation>
+        <translation type="obsolete">포트 %1</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
@@ -9503,42 +10599,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Device %1</source>
         <comment>StorageBusDevice</comment>
-        <translation>장치 %1</translation>
+        <translation type="obsolete">장치 %1</translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 프라이머리 마스터</translation>
+        <translation type="obsolete">IDE 프라이머리 마스터</translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 프라이머리 슬레이브</translation>
+        <translation type="obsolete">IDE 프라이머리 슬레이브</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 세컨더리 마스터</translation>
+        <translation type="obsolete">IDE 세컨더리 마스터</translation>
     </message>
     <message>
         <source>IDE Secondary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 세컨더리 슬레이브</translation>
+        <translation type="obsolete">IDE 세컨더리 슬레이브</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>SATA 포트 %1</translation>
+        <translation type="obsolete">SATA 포트 %1</translation>
     </message>
     <message>
         <source>SCSI Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>SCSI 포트 %1</translation>
+        <translation type="obsolete">SCSI 포트 %1</translation>
     </message>
     <message>
         <source>Floppy Device %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>플로피 장치 %1</translation>
+        <translation type="obsolete">플로피 장치 %1</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
@@ -9740,7 +10836,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
-        <translation>공유 가능</translation>
+        <translation type="obsolete">공유 가능</translation>
     </message>
     <message>
         <source>Unknown device</source>
@@ -9750,7 +10846,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>SAS 포트 %1</translation>
+        <translation type="obsolete">SAS 포트 %1</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
@@ -9769,31 +10865,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual hard disk file</source>
-        <translation>가상 하드디스크 파일 선택</translation>
+        <translation type="obsolete">가상 하드디스크 파일 선택</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation>하드디스크</translation>
+        <translation type="obsolete">하드디스크</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file</source>
-        <translation>가상 CD/DVD 디스크 파일 선택</translation>
+        <translation type="obsolete">가상 CD/DVD 디스크 파일 선택</translation>
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation>CD/DVD-ROM 디스크</translation>
+        <translation type="obsolete">CD/DVD-ROM 디스크</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
-        <translation>가상 플로피 디스크 파일 선택</translation>
+        <translation type="obsolete">가상 플로피 디스크 파일 선택</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation>플로피 디스크</translation>
+        <translation type="obsolete">플로피 디스크</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation>모든 %1 이미지 (%2)</translation>
+        <translation type="obsolete">모든 %1 이미지 (%2)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -9842,12 +10938,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>UDP</source>
         <comment>NATProtocolType</comment>
-        <translation>UDP</translation>
+        <translation type="obsolete">UDP</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>NATProtocolType</comment>
-        <translation>TCP</translation>
+        <translation type="obsolete">TCP</translation>
     </message>
     <message>
         <source>PIIX3</source>
@@ -9861,38 +10957,38 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>and</source>
-        <translation>그리고</translation>
+        <translation type="obsolete">그리고</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Readonly</source>
         <comment>DiskType</comment>
-        <translation>읽기 전용</translation>
+        <translation type="obsolete">읽기 전용</translation>
     </message>
     <message>
         <source>Multi-attach</source>
         <comment>DiskType</comment>
-        <translation>다중 연결 가능</translation>
+        <translation type="obsolete">다중 연결 가능</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
-        <translation>동적 확장 저장소</translation>
+        <translation type="obsolete">동적 확장 저장소</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation>고정 크기 저장소</translation>
+        <translation type="obsolete">고정 크기 저장소</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
-        <translation>2GB 단위로 나뉘어 있는 동적 할당 저장소</translation>
+        <translation type="obsolete">2GB 단위로 나뉘어 있는 동적 할당 저장소</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
-        <translation>2GB 단위로 나뉘어 있는 고정 크기 저장소</translation>
+        <translation type="obsolete">2GB 단위로 나뉘어 있는 고정 크기 저장소</translation>
     </message>
     <message>
         <source>Execution Cap</source>
@@ -9917,21 +11013,308 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>거부</translation>
+        <translation type="obsolete">거부</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>가상 머신에 허용</translation>
+        <translation type="obsolete">가상 머신에 허용</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>모두 허용</translation>
+        <translation type="obsolete">모두 허용</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <translation>어댑터 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>Host To Guest</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">호스트에서 게스트로</translation>
+    </message>
+    <message>
+        <source>Guest To Host</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">게스트에서 호스트로</translation>
+    </message>
+    <message>
+        <source>Bidirectional</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">양방향</translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">일반</translation>
+    </message>
+    <message>
+        <source>Immutable</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">변경 불가능</translation>
+    </message>
+    <message>
+        <source>Writethrough</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">스냅샷 미포함</translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">공유 가능</translation>
+    </message>
+    <message>
+        <source>Readonly</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">읽기 전용</translation>
+    </message>
+    <message>
+        <source>Multi-attach</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">다중 연결 가능</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">동적 확장 저장소</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">고정 크기 저장소</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">2GB 단위로 나뉘어 있는 동적 할당 저장소</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">2GB 단위로 나뉘어 있는 고정 크기 저장소</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated compressed storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing compressed storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size ESX storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage on raw disk</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">거부</translation>
+    </message>
+    <message>
+        <source>Allow VMs</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">가상 머신에 허용</translation>
+    </message>
+    <message>
+        <source>Allow All</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">모두 허용</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <comment>USBDeviceFilterAction</comment>
+        <translation type="unfinished">무시</translation>
+    </message>
+    <message>
+        <source>Hold</source>
+        <comment>USBDeviceFilterAction</comment>
+        <translation type="unfinished">고정</translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocol</comment>
+        <translation type="unfinished">UDP</translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocol</comment>
+        <translation type="unfinished">TCP</translation>
+    </message>
+    <message>
+        <source>IDE Primary Master</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 프라이머리 마스터</translation>
+    </message>
+    <message>
+        <source>IDE Primary Slave</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 프라이머리 슬레이브</translation>
+    </message>
+    <message>
+        <source>IDE Secondary Master</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 세컨더리 마스터</translation>
+    </message>
+    <message>
+        <source>IDE Secondary Slave</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 세컨더리 슬레이브</translation>
+    </message>
+    <message>
+        <source>SATA Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">SATA 포트 %1</translation>
+    </message>
+    <message>
+        <source>SCSI Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">SCSI 포트 %1</translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">SAS 포트 %1</translation>
+    </message>
+    <message>
+        <source>Floppy Device %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">플로피 장치 %1</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">일반</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">미리 보기</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">시스템</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">디스플레이</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">저장소</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">오디오</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">네트워크</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">설명</translation>
+    </message>
+    <message>
+        <source>Please choose a virtual hard drive file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All virtual hard drive files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a virtual optical disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All virtual optical disk files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a virtual floppy disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All virtual floppy disk files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDI (VirtualBox Disk Image)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMDK (Virtual Machine Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VHD (Virtual Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HDD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a location for new virtual hard drive file</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9976,6 +11359,49 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxLogSearchPanel</name>
+    <message>
+        <source>Close the search panel</source>
+        <translation type="obsolete">검색 패널 닫기</translation>
+    </message>
+    <message>
+        <source>Find </source>
+        <translation type="obsolete">찾기 </translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="obsolete">찾을 문자열을 입력하십시오</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation type="obsolete">이전(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation type="obsolete">문자열의 이전 일치를 찾습니다</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation type="obsolete">다음(&amp;N)</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation type="obsolete">문자열의 다음 일치를 찾습니다</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="obsolete">대소문자 구분(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="obsolete">선택하면 대소문자를 구분해서 검색합니다</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="obsolete">문자열 찾을 수 없음</translation>
+    </message>
+</context>
+<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10014,7 +11440,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation>새 가상 하드디스크 만들기</translation>
+        <translation type="obsolete">새 가상 하드디스크 만들기</translation>
     </message>
     <message>
         <source>Add an existing medium</source>
@@ -10050,7 +11476,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Select</source>
-        <translation>선택(&amp;S)</translation>
+        <translation type="obsolete">선택(&amp;S)</translation>
     </message>
     <message>
         <source>All hard disk images (%1)</source>
@@ -10062,7 +11488,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>하드디스크 이미지 파일 선택</translation>
+        <translation type="obsolete">하드디스크 이미지 파일 선택</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
@@ -10070,7 +11496,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>CD/DVD-ROM 디스크 이미지 파일 선택</translation>
+        <translation type="obsolete">CD/DVD-ROM 디스크 이미지 파일 선택</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -10078,7 +11504,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation>플로피 디스크 이미지 파일 선택</translation>
+        <translation type="obsolete">플로피 디스크 이미지 파일 선택</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
@@ -10095,7 +11521,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard &amp;Disks</source>
-        <translation>하드디스크(&amp;D)</translation>
+        <translation type="obsolete">하드디스크(&amp;D)</translation>
     </message>
     <message>
         <source>Name</source>
@@ -10111,7 +11537,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation>CD/DVD 이미지(&amp;C)</translation>
+        <translation type="obsolete">CD/DVD 이미지(&amp;C)</translation>
     </message>
     <message>
         <source>Size</source>
@@ -10119,7 +11545,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation>플로피 이미지(&amp;F)</translation>
+        <translation type="obsolete">플로피 이미지(&amp;F)</translation>
     </message>
     <message>
         <source>Attached to</source>
@@ -10138,19 +11564,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation>CD/DVD-ROM 디스크</translation>
+        <translation type="obsolete">CD/DVD-ROM 디스크</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation>하드디스크</translation>
+        <translation type="obsolete">하드디스크</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation>플로피 디스크</translation>
+        <translation type="obsolete">플로피 디스크</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation>모든 %1 이미지 (%2)</translation>
+        <translation type="obsolete">모든 %1 이미지 (%2)</translation>
     </message>
     <message>
         <source>Type:</source>
@@ -10190,7 +11616,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation>닫기(&amp;L)</translation>
+        <translation type="obsolete">닫기(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10223,11 +11653,11 @@ p, li { white-space: pre-wrap; }
     <name>VBoxOSTypeSelectorWidget</name>
     <message>
         <source>Operating &amp;System:</source>
-        <translation>운영체제(&amp;S):</translation>
+        <translation type="obsolete">운영체제(&amp;S):</translation>
     </message>
     <message>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation>현재 가상 머신에 설치할 운영 체제의 종류를 표시합니다.</translation>
+        <translation type="obsolete">현재 가상 머신에 설치할 운영 체제의 종류를 표시합니다.</translation>
     </message>
     <message>
         <source>V&amp;ersion:</source>
@@ -10235,11 +11665,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>이 가상 머신에 설치할 운영체제(게스트 운영체제라고도 함) 종류를 표시합니다.</translation>
+        <translation type="obsolete">이 가상 머신에 설치할 운영체제(게스트 운영체제라고도 함) 종류를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Version:</source>
-        <translation>버전(&amp;V):</translation>
+        <translation type="obsolete">버전(&amp;V):</translation>
     </message>
 </context>
 <context>
@@ -10382,6 +11812,31 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">자세한 정보(&amp;D)</translation>
     </message>
     <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation type="obsolete">환경 설정(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation type="obsolete">전역 환경 설정 대화 상자를 표시합니다</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation type="obsolete">종료(&amp;X)</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation type="obsolete">프로그램을 종료합니다</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">새로 만들기(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation type="obsolete">새 가상 머신을 만듭니다</translation>
+    </message>
+    <message>
         <source>&amp;Settings...</source>
         <translation type="obsolete">설정(&amp;S)...</translation>
     </message>
@@ -10400,6 +11855,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>D&amp;iscard</source>
         <translation type="obsolete">삭제(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation type="obsolete">가상 머신의 저장된 상태를 삭제합니다</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation type="obsolete">선택한 가상 머신의 접근성 상태를 새로 고칩니다</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -10422,8 +11885,32 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">설명(&amp;E) *</translation>
     </message>
     <message>
+        <source>S&amp;how</source>
+        <translation type="obsolete">보이기(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="obsolete">선택한 가상 머신의 창으로 전환합니다</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="obsolete">시작(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="obsolete">선택한 가상 머신을 시작합니다</translation>
+    </message>
+    <message>
         <source>&amp;Machine</source>
         <translation type="obsolete">머신(&amp;M)</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation type="obsolete">로그 보기(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation type="obsolete">선택한 가상 머신의 로그 파일을 표시합니다</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -10446,6 +11933,14 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;h3&gt;VirtualBox에 오신 것을 환영합니다!&lt;/h3&gt;&lt;p&gt;이 창의 왼쪽 부분은 컴퓨터에 있는 모든 가상 머신 목록을 표시합니다. 아직 가상 머신을 만들지 않았기 때문에 이 목록은 현재 비어 있습니다.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;새 가상 머신을 만들시려면, 창 위쪽 도구 모음의 &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; 키를 누르면 상황에 맞는 도움말을 볼 수 있으며, 최근 정보와 뉴스를 보려면 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;를 방문하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation type="obsolete">가상 미디어 관리자(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation type="obsolete">가상 미디어 관리자 대화상자를 표시합니다</translation>
+    </message>
+    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation type="obsolete">로그</translation>
@@ -10453,6 +11948,36 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="obsolete">가상 시스템 가져오기(&amp;I)...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="obsolete">VirtualBox로 가상 시스템 가져오기</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="obsolete">가상 시스템 내보내기(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="obsolete">VirtualBox의 가상 시스템 내보내기</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="obsolete">새로 고침(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="obsolete">파일(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="obsolete">파일(&amp;F)</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -10468,12 +11993,84 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">관리자</translation>
     </message>
     <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">추가(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="obsolete">존재하는 가상 머신 추가</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="obsolete">삭제(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="obsolete">선택한 가상 머신 삭제</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="obsolete">파인더에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="obsolete">VirtualBox 가상 머신 정의 파일을 파인더에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="obsolete">데스크톱에 바로 가기 만들기</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="obsolete">데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="obsolete">탐색기에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="obsolete">VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="obsolete">데스크톱에 바로 가기 만들기</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="obsolete">데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="obsolete">파일 관리자에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="obsolete">VirtualBox 가상 머신 정의 파일을 파일 관리자에 표시합니다</translation>
+    </message>
+    <message>
         <source>Show Toolbar</source>
         <translation type="obsolete">도구 모음 보이기</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation type="obsolete">상태 표시줄 보이기</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="obsolete">복제(&amp;O)...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="obsolete">선택한 가상 머신을 복제합니다</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">삭제</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="obsolete">저장된 상태 삭제(&amp;I)</translation>
     </message>
 </context>
 <context>
@@ -10685,11 +12282,11 @@ p, li { white-space: pre-wrap; }
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
-        <translation>사용 안함</translation>
+        <translation type="obsolete">사용 안함</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation>사용함</translation>
+        <translation type="obsolete">사용함</translation>
     </message>
 </context>
 <context>
@@ -10905,6 +12502,49 @@ p, li { white-space: pre-wrap; }
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
         <translation>사용할 수 없음</translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag&apos;n&apos;Drop Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMLogViewer</name>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="obsolete">로그 뷰어</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="obsolete">저장(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="obsolete">새로 고침(&amp;R)</translation>
+    </message>
+    <message>
+        <source>%1 - VirtualBox Log Viewer</source>
+        <translation type="obsolete">%1 - VirtualBox 로그 뷰어</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;로그 파일을 찾을 수 없습니다. &lt;b&gt;새로 고침&lt;/b&gt; 단추를 눌러서 로그 폴더 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 다시 검사하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="obsolete">로그를 다른 이름으로 저장</translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="obsolete">찾기(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="obsolete">닫기</translation>
     </message>
 </context>
 <context>

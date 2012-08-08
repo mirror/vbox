@@ -196,7 +196,7 @@
     <name>QIWizardPage</name>
     <message>
         <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>使用 [&lt;b&gt;%1&lt;/b&gt;] 按鈕移至精靈的下一頁及 [&lt;b&gt;%2&lt;/b&gt;] 按鈕返回上一頁。 如果您要取消這個精靈的執行，您也可以按下 [&lt;b&gt;%3&lt;/b&gt;] 。&lt;/p&gt;</translation>
+        <translation type="obsolete">使用 [&lt;b&gt;%1&lt;/b&gt;] 按鈕移至精靈的下一頁及 [&lt;b&gt;%2&lt;/b&gt;] 按鈕返回上一頁。 如果您要取消這個精靈的執行，您也可以按下 [&lt;b&gt;%3&lt;/b&gt;] 。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -413,171 +413,60 @@
         <translation>工作階段資訊(&amp;N)...</translation>
     </message>
     <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>檔案(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>檔案(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>虛擬媒體管理員(&amp;V)...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>顯示虛擬媒體管理員對話方塊</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>匯入應用裝置(&amp;I)...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>匯入應用裝置到 VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>匯出應用裝置(&amp;E)...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>匯出一個或數個 VirtualBox 虛擬機器為應用裝置</translation>
-    </message>
-    <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>喜好設定(&amp;P)...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>顯示全域設定值對話方塊</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>結束(&amp;X)</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>關閉應用程式</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>新增(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>建立新的虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation>加入(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>加入現有的虛擬機器</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>再製(&amp;O)...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>再製選取的虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>移除(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>移除選取的虛擬機器</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>啟動(&amp;T)</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>啟動選取的虛擬機器</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>顯示(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>切換到選取虛擬機器的視窗</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>捨棄</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>捨棄已儲存的狀態(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>捨棄選取虛擬機器的已儲存狀態</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>重新整理(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>重新整理選取虛擬機器的可存取能力狀態</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>顯示記錄(&amp;L)...</translation>
+        <source>Show &amp;log...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation>顯示選取虛擬機器的記錄檔案</translation>
+        <translation type="unfinished">顯示選取虛擬機器的記錄檔案</translation>
     </message>
     <message>
-        <source>Show in Finder</source>
-        <translation>在尋找中顯示</translation>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished">內容(&amp;C)...</translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>在尋找中顯示 VirtualBox Machine Definition 檔案。</translation>
+        <source>Show help contents</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show in Explorer</source>
-        <translation>在檔案總管中顯示</translation>
+        <source>&amp;VirtualBox web site...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>在檔案總管中顯示 VirtualBox Machine Definition 檔案。</translation>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation type="unfinished">開啟瀏覽器並移至 VirtualBox 產品網站</translation>
     </message>
     <message>
-        <source>Show in File Manager</source>
-        <translation>在檔案管理員中顯示</translation>
+        <source>&amp;Reset all warnings</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>在檔案管理員中顯示 VirtualBox Machine Definition 檔案</translation>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation type="unfinished">返回以顯示所有抑制的警告和訊息</translation>
     </message>
     <message>
-        <source>Create Alias on Desktop</source>
-        <translation>在桌面建立別名</translation>
+        <source>&amp;Network Operations Manager...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>在您的桌面建立別名檔案到 VirtualBox Machine Definition 檔案。</translation>
+        <source>Show Network Operations Manager</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>在桌面建立捷徑</translation>
+        <source>C&amp;heck for updates...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>在您的桌面建立捷徑檔案到 VirtualBox Machine Definition 檔案。</translation>
+        <source>Check for a new VirtualBox version</source>
+        <translation type="unfinished">檢查 VirtualBox 的新版本</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation type="unfinished">關於 VirtualBox (&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation type="unfinished">顯示產品資訊對話方塊</translation>
     </message>
     <message>
         <source>Take Sn&amp;apshot...</source>
@@ -596,11 +485,230 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort List</source>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">檔案(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">檔案(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation type="unfinished">虛擬媒體管理員(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation type="unfinished">顯示虛擬媒體管理員對話方塊</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="unfinished">匯入應用裝置(&amp;I)...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="unfinished">匯入應用裝置到 VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="unfinished">匯出應用裝置(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="unfinished">匯出一個或數個 VirtualBox 虛擬機器為應用裝置</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation type="unfinished">喜好設定(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation type="unfinished">顯示全域設定值對話方塊</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation type="unfinished">結束(&amp;X)</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation type="unfinished">關閉應用程式</translation>
+    </message>
+    <message>
+        <source>&amp;Group</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort the VM list alphabetically (Shift for descending order)</source>
+        <source>&amp;New machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation type="unfinished">建立新的虛擬機器</translation>
+    </message>
+    <message>
+        <source>&amp;Add machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished">加入現有的虛擬機器</translation>
+    </message>
+    <message>
+        <source>Rena&amp;me group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Break group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Break the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="unfinished">啟動(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="unfinished">啟動選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="unfinished">顯示(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="unfinished">切換到選取虛擬機器的視窗</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation type="unfinished">重新整理選取虛擬機器的可存取能力狀態</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished">在尋找中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished">在尋找中顯示 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished">在檔案總管中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished">在檔案總管中顯示 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished">在檔案管理員中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished">在檔案管理員中顯示 VirtualBox Machine Definition 檔案</translation>
+    </message>
+    <message>
+        <source>Create alias on desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create shortcut on desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the items of the selected group alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="unfinished">新增(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">加入(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a new group based on the items selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished">再製(&amp;O)...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished">再製選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>&amp;Remove...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished">移除選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">捨棄</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard saved state...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation type="unfinished">捨棄選取虛擬機器的已儲存狀態</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished">在桌面建立別名</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished">在您的桌面建立別名檔案到 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished">在桌面建立捷徑</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished">在您的桌面建立捷徑檔案到 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Sort parent group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the parent group of the first selected item alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -746,100 +854,100 @@
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
-        <translation>再製虛擬機器</translation>
+        <translation type="obsolete">再製虛擬機器</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation>再製</translation>
+        <translation type="obsolete">再製</translation>
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation>%1 和 %2 連結的基礎</translation>
+        <translation type="obsolete">%1 和 %2 連結的基礎</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage1</name>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;此精靈協助您建立再製的虛擬機器。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;此精靈協助您建立再製的虛擬機器。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;請選擇新虛擬機器的名稱:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;請選擇新虛擬機器的名稱:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>重新初始化所有網路卡的 MAC 位址(&amp;R)</translation>
+        <translation type="obsolete">重新初始化所有網路卡的 MAC 位址(&amp;R)</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
-        <translation>歡迎使用虛擬機器再製精靈</translation>
+        <translation type="obsolete">歡迎使用虛擬機器再製精靈</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation>%1 再製</translation>
+        <translation type="obsolete">%1 再製</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation>勾選時，將指派新的唯一 MAC 位址到所有已組態的網路卡。</translation>
+        <translation type="obsolete">勾選時，將指派新的唯一 MAC 位址到所有已組態的網路卡。</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Cloning Configuration</source>
-        <translation>再製組態</translation>
+        <translation type="obsolete">再製組態</translation>
     </message>
     <message>
         <source>Full Clone</source>
-        <translation>完整複製</translation>
+        <translation type="obsolete">完整複製</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation>連結的再製</translation>
+        <translation type="obsolete">連結的再製</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;請選取再製的類型。&lt;/p&gt;&lt;p&gt;如果您選擇&lt;b&gt;完整再製&lt;/b&gt;，將建立原始 VM 的精確複製 (包含所有虛擬磁碟)。 如果您選取&lt;b&gt;連結的再製&lt;/b&gt;，將建立新的 VM，但虛擬磁碟映像將指到原始 VM 的虛擬磁碟映像。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;請選取再製的類型。&lt;/p&gt;&lt;p&gt;如果您選擇&lt;b&gt;完整再製&lt;/b&gt;，將建立原始 VM 的精確複製 (包含所有虛擬磁碟)。 如果您選取&lt;b&gt;連結的再製&lt;/b&gt;，將建立新的 VM，但虛擬磁碟映像將指到原始 VM 的虛擬磁碟映像。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;請注意，已在來源 VM 中建立新的快照，以防您選取&lt;b&gt;連結的快照&lt;/b&gt;。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;請注意，已在來源 VM 中建立新的快照，以防您選取&lt;b&gt;連結的快照&lt;/b&gt;。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation>目前機器狀態</translation>
+        <translation type="obsolete">目前機器狀態</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation>目前機器和所有子狀態</translation>
+        <translation type="obsolete">目前機器和所有子狀態</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation>所有狀態</translation>
+        <translation type="obsolete">所有狀態</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation>再製組態</translation>
+        <translation type="obsolete">再製組態</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation>請選擇虛擬機器應再製的部分。</translation>
+        <translation type="obsolete">請選擇虛擬機器應再製的部分。</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation>如果您選取[&lt;b&gt;目前機器狀態&lt;/b&gt;]，只再製虛擬機器的目前狀態。</translation>
+        <translation type="obsolete">如果您選取[&lt;b&gt;目前機器狀態&lt;/b&gt;]，只再製虛擬機器的目前狀態。</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation>如果您選取[&lt;b&gt;目前機器和所有子狀態&lt;/b&gt;]，將再製虛擬機器的目前狀態和子快照的任何狀態。</translation>
+        <translation type="obsolete">如果您選取[&lt;b&gt;目前機器和所有子狀態&lt;/b&gt;]，將再製虛擬機器的目前狀態和子快照的任何狀態。</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation>如果您選取[&lt;b&gt;所有狀態&lt;/b&gt;]，將再製目前機器狀態和所有快照。</translation>
+        <translation type="obsolete">如果您選取[&lt;b&gt;所有狀態&lt;/b&gt;]，將再製目前機器狀態和所有快照。</translation>
     </message>
 </context>
 <context>
@@ -1381,6 +1489,20 @@
     </message>
 </context>
 <context>
+    <name>UIDnDHandler</name>
+    <message>
+        <source>Dropping data ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDnDMimeData</name>
+    <message>
+        <source>Dropping data ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloader</name>
     <message>
         <source>Looking for %1...</source>
@@ -1428,225 +1550,570 @@
     <name>UIExportApplianceWzd</name>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation>應用裝置匯出精靈</translation>
+        <translation type="obsolete">應用裝置匯出精靈</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>還原預設值</translation>
+        <translation type="obsolete">還原預設值</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation>匯出</translation>
+        <translation type="obsolete">匯出</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage1</name>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>歡迎使用應用裝置匯出精靈!</translation>
+        <translation type="obsolete">歡迎使用應用裝置匯出精靈!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;這個精靈將引導您完成匯出應用裝置的程序。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;請選取應加入到應用裝置的虛擬機器。 您可以選取一個以上。 請注意，在您可以匯出之前，您必須先關閉這些機器。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;這個精靈將引導您完成匯出應用裝置的程序。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;請選取應加入到應用裝置的虛擬機器。 您可以選取一個以上。 請注意，在您可以匯出之前，您必須先關閉這些機器。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Appliance Export Settings</source>
-        <translation>應用裝置匯出設定值</translation>
+        <translation type="obsolete">應用裝置匯出設定值</translation>
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出、上傳 OVF 到 Sun Cloud 服務或 S3 存放伺服器。</translation>
+        <translation type="obsolete">請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出、上傳 OVF 到 Sun Cloud 服務或 S3 存放伺服器。</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>本機檔案系統(&amp;L) </translation>
+        <translation type="obsolete">本機檔案系統(&amp;L) </translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation>Sun &amp;Cloud</translation>
+        <translation type="obsolete">Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation>簡單存放系統 (S3)(&amp;S)</translation>
+        <translation type="obsolete">簡單存放系統 (S3)(&amp;S)</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Appliance Export Settings</source>
-        <translation>應用裝置匯出設定值</translation>
+        <translation type="obsolete">應用裝置匯出設定值</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation>使用者名稱(&amp;U):</translation>
+        <translation type="obsolete">使用者名稱(&amp;U):</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>密碼(&amp;P):</translation>
+        <translation type="obsolete">密碼(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation>主機名稱(&amp;H):</translation>
+        <translation type="obsolete">主機名稱(&amp;H):</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation>貯體(&amp;B):</translation>
+        <translation type="obsolete">貯體(&amp;B):</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation>檔案(&amp;F):</translation>
+        <translation type="obsolete">檔案(&amp;F):</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>以舊版 OVF 0.9 格式寫入與其它虛擬化產品相容。</translation>
+        <translation type="obsolete">以舊版 OVF 0.9 格式寫入與其它虛擬化產品相容。</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation>寫入舊版 OVF 0.9 (&amp;W)</translation>
+        <translation type="obsolete">寫入舊版 OVF 0.9 (&amp;W)</translation>
     </message>
     <message>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
-        <translation>匯入時建立自動資料完整性檢查的 Manifest 檔案。</translation>
+        <translation type="obsolete">匯入時建立自動資料完整性檢查的 Manifest 檔案。</translation>
     </message>
     <message>
         <source>Write &amp;Manifest file</source>
-        <translation>寫入 Manifest 檔案(&amp;M)</translation>
+        <translation type="obsolete">寫入 Manifest 檔案(&amp;M)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation>應用裝置</translation>
+        <translation type="obsolete">應用裝置</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation>選取要匯出的檔案</translation>
+        <translation type="obsolete">選取要匯出的檔案</translation>
     </message>
     <message>
         <source>Open Virtualization Format Archive (%1)</source>
-        <translation>Open Virtualization Format Archive (%1)</translation>
+        <translation type="obsolete">Open Virtualization Format Archive (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
-        <translation>請選擇要匯出成 OVF/OVA 的檔案名稱。 如果您使用 &lt;i&gt;ova&lt;/i&gt; 檔案名稱附檔名，接著所有的檔案將組合成一個 [Open Virtualization Format Archive]。 如果您使用 &lt;i&gt;ovf&lt;/i&gt; 附檔名，將個別寫入幾個檔案。 不允許其它附檔名。</translation>
+        <translation type="obsolete">請選擇要匯出成 OVF/OVA 的檔案名稱。 如果您使用 &lt;i&gt;ova&lt;/i&gt; 檔案名稱附檔名，接著所有的檔案將組合成一個 [Open Virtualization Format Archive]。 如果您使用 &lt;i&gt;ovf&lt;/i&gt; 附檔名，將個別寫入幾個檔案。 不允許其它附檔名。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>請完成額外欄位，比如使用者名稱、密碼和貯體，並提供 OVF 目標的檔案名稱。</translation>
+        <translation type="obsolete">請完成額外欄位，比如使用者名稱、密碼和貯體，並提供 OVF 目標的檔案名稱。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>請完成額外欄位，比如使用者名稱、密碼、主機名稱和貯體，並提供 OVF 目標的檔案名稱。</translation>
+        <translation type="obsolete">請完成額外欄位，比如使用者名稱、密碼、主機名稱和貯體，並提供 OVF 目標的檔案名稱。</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>Appliance Export Settings</source>
-        <translation>應用裝置匯出設定值</translation>
+        <translation type="obsolete">應用裝置匯出設定值</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation>正在檢查檔案 ...</translation>
+        <translation type="obsolete">正在檢查檔案 ...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation>正在移除檔案 ...</translation>
+        <translation type="obsolete">正在移除檔案 ...</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation>正在匯出應用裝置 ...</translation>
+        <translation type="obsolete">正在匯出應用裝置 ...</translation>
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>在此您可以變更選取虛擬機器的額外組態值。 您可以按兩下項目修改大多數已顯示的內容。</translation>
+        <translation type="obsolete">在此您可以變更選取虛擬機器的額外組態值。 您可以按兩下項目修改大多數已顯示的內容。</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation>首次執行精靈</translation>
+        <translation type="obsolete">首次執行精靈</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation>開始</translation>
+        <translation type="obsolete">開始</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage1</name>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>歡迎使用首次執行精靈!</translation>
+        <translation type="obsolete">歡迎使用首次執行精靈!</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇的作業系統到這部虛擬機器。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇的作業系統到這部虛擬機器。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇的作業系統到這部虛擬機器。&lt;/p&gt;&lt;p&gt;請注意，您現在無法安裝作業系統到這部虛擬機器，因為您沒有附加任何的硬碟。 如果這不是您想要的，您可以取消這個精靈的執行，從 VirtualBox 主視窗的&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;設定值&lt;/b&gt;存取這部機器的設定對話方塊並變更硬碟組態。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇的作業系統到這部虛擬機器。&lt;/p&gt;&lt;p&gt;請注意，您現在無法安裝作業系統到這部虛擬機器，因為您沒有附加任何的硬碟。 如果這不是您想要的，您可以取消這個精靈的執行，從 VirtualBox 主視窗的&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;設定值&lt;/b&gt;存取這部機器的設定對話方塊並變更硬碟組態。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選取包含您想要安裝的作業系統設定程式之媒體。 這個媒體必須可開機，否則將無法啟動設定程式。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選取包含您想要安裝的作業系統設定程式之媒體。 這個媒體必須可開機，否則將無法啟動設定程式。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選取包含您想要工作的作業系統之媒體。 這個媒體必須可開機，否則將無法啟動作業系統。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選取包含您想要工作的作業系統之媒體。 這個媒體必須可開機，否則將無法啟動作業系統。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation>媒體來源</translation>
+        <translation type="obsolete">媒體來源</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation>選取安裝媒體</translation>
+        <translation type="obsolete">選取安裝媒體</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage3</name>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您已選取以下媒體來開機:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您已選取以下媒體來開機:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您已選取以下媒體作為作業系統的開機來源:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您已選取以下媒體作為作業系統的開機來源:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果以上正確，按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下，將在虛擬機器暫時掛載選取的媒體且機器將開始執行。&lt;/p&gt;請注意，當您關閉虛擬機器，指定的媒體將自動卸載，且開機裝置將設定回第一個硬碟。&lt;/p&gt;&lt;p&gt;根據設定程式的類型，在設定程式重新啟動虛擬機器後，您可能需要手動卸載 (退出) 媒體，以防止再次啟動安裝程序。 您可以在&lt;b&gt;裝置&lt;/b&gt;功能表選取相對應的&lt;b&gt;卸載...&lt;/b&gt;動作來進行。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;如果以上正確，按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下，將在虛擬機器暫時掛載選取的媒體且機器將開始執行。&lt;/p&gt;請注意，當您關閉虛擬機器，指定的媒體將自動卸載，且開機裝置將設定回第一個硬碟。&lt;/p&gt;&lt;p&gt;根據設定程式的類型，在設定程式重新啟動虛擬機器後，您可能需要手動卸載 (退出) 媒體，以防止再次啟動安裝程序。 您可以在&lt;b&gt;裝置&lt;/b&gt;功能表選取相對應的&lt;b&gt;卸載...&lt;/b&gt;動作來進行。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果以上正確，按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下，將在虛擬機器掛載選取的媒體且機器將開始執行。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;如果以上正確，按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下，將在虛擬機器掛載選取的媒體且機器將開始執行。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>摘要</translation>
+        <translation type="obsolete">摘要</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation>CD/DVD-ROM 裝置</translation>
+        <translation type="obsolete">CD/DVD-ROM 裝置</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation>類型</translation>
+        <translation type="obsolete">類型</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation>來源</translation>
+        <translation type="obsolete">來源</translation>
+    </message>
+</context>
+<context>
+    <name>UIGChooserModel</name>
+    <message>
+        <source>New group</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadAudio</name>
+    <message>
+        <source>Host driver</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details</comment>
+        <translation type="unfinished">控制器</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadDescription</name>
+    <message>
+        <source>None</source>
+        <comment>details</comment>
+        <translation type="unfinished">無</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadDisplay</name>
+    <message>
+        <source>Video Memory</source>
+        <comment>details</comment>
+        <translation type="unfinished">視訊記憶體</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details</comment>
+        <translation type="unfinished">螢幕</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="unfinished">2D 視訊</translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="unfinished">3D</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details</comment>
+        <translation type="unfinished">加速</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details</comment>
+        <translation type="unfinished">遠端桌面伺服器連接埠</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details</comment>
+        <translation type="unfinished">遠端桌面伺服器</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadGeneral</name>
+    <message>
+        <source>Name</source>
+        <comment>details</comment>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <source>Operating system</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadNetwork</name>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">橋接介面卡，%1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">內部網路，「%1」</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">「僅限主機」介面卡，「%1」</translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">通用驅動程式，「%1」</translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">通用驅動程式，「%1」{&amp;nbsp;%2&amp;nbsp;}</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details</comment>
+        <translation type="unfinished">介面卡 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>details</comment>
+        <translation type="unfinished">連接埠 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSF</name>
+    <message>
+        <source>Shared folders</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details</comment>
+        <translation type="unfinished">無</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>details</comment>
+        <translation type="unfinished">連接埠 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadStorage</name>
+    <message>
+        <source>[CD/DVD]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not attached</source>
+        <comment>details</comment>
+        <translation type="unfinished">未附加</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSystem</name>
+    <message>
+        <source>Base Memory</source>
+        <comment>details</comment>
+        <translation type="unfinished">基本記憶體</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details</comment>
+        <translation type="unfinished">處理器</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details</comment>
+        <translation type="unfinished">執行端點</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details</comment>
+        <translation type="unfinished">開機順序</translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details</comment>
+        <translation type="unfinished">巢式分頁</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details</comment>
+        <translation type="unfinished">加速</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadUSB</name>
+    <message>
+        <source>Device filters</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details</comment>
+        <translation type="unfinished">%1 (%2 個啟用)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>USB controller inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGMachinePreview</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation type="unfinished">更新已停用</translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation type="unfinished">每隔 0.5 秒</translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation type="unfinished">每隔 1 秒</translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation type="unfinished">每隔 2 秒</translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation type="unfinished">每隔 5 秒</translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation type="unfinished">每隔 10 秒</translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation type="unfinished">不預覽</translation>
     </message>
 </context>
 <context>
@@ -2277,45 +2744,45 @@
     <name>UIImportApplianceWzd</name>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation>應用裝置匯入精靈</translation>
+        <translation type="obsolete">應用裝置匯入精靈</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>還原預設值</translation>
+        <translation type="obsolete">還原預設值</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation>匯入</translation>
+        <translation type="obsolete">匯入</translation>
     </message>
 </context>
 <context>
     <name>UIImportApplianceWzdPage1</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation>選取要匯入的應用裝置</translation>
+        <translation type="obsolete">選取要匯入的應用裝置</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>歡迎使用應用裝置匯入精靈!</translation>
+        <translation type="obsolete">歡迎使用應用裝置匯入精靈!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;這個精靈將引導您完成匯入應用裝置。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox 目前支援匯入以 開放虛擬化格式 (OVF) 儲存的應用裝置。 要繼續，選取以下要匯入的檔案:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;這個精靈將引導您完成匯入應用裝置。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox 目前支援匯入以 開放虛擬化格式 (OVF) 儲存的應用裝置。 要繼續，選取以下要匯入的檔案:&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>這些是包含在應用裝置的虛擬機器和匯入 VirtualBox 機器的建議設定值。 您可以在項目按兩下變更許多顯示的內容和使用以下核取方塊停用其它。</translation>
+        <translation type="obsolete">這些是包含在應用裝置的虛擬機器和匯入 VirtualBox 機器的建議設定值。 您可以在項目按兩下變更許多顯示的內容和使用以下核取方塊停用其它。</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation>應用裝置匯入設定值</translation>
+        <translation type="obsolete">應用裝置匯入設定值</translation>
     </message>
 </context>
 <context>
@@ -2458,7 +2925,7 @@
     <name>UIMachineLogic</name>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation> EXPERIMENTAL 組建 %1r%2 - %3</translation>
+        <translation type="obsolete"> EXPERIMENTAL 組建 %1r%2 - %3</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
@@ -2655,11 +3122,11 @@
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation>名稱(&amp;N):</translation>
+        <translation type="obsolete">名稱(&amp;N):</translation>
     </message>
     <message>
         <source>Displays the name of the virtual machine.</source>
-        <translation>顯示虛擬機器的名稱。</translation>
+        <translation type="obsolete">顯示虛擬機器的名稱。</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
@@ -2721,6 +3188,14 @@
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>您已選取這部 VM 的 64 位元客體作業系統類型。 如此的客體需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
     </message>
+    <message>
+        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetwork</name>
@@ -2779,7 +3254,7 @@
     </message>
     <message>
         <source>&amp;Mac Address:</source>
-        <translation>Mac 位址(&amp;M):</translation>
+        <translation type="obsolete">Mac 位址(&amp;M):</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
@@ -2840,6 +3315,18 @@
     <message>
         <source>Selects the driver to be used with this network card.</source>
         <translation>選取此網路卡所用的驅動程式。</translation>
+    </message>
+    <message>
+        <source>&amp;MAC Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the MAC address must be 12 hexadecimal digits long.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3880,10 +4367,40 @@
     </message>
 </context>
 <context>
+    <name>UIMachineWindow</name>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"> EXPERIMENTAL 組建 %1r%2 - %3</translation>
+    </message>
+</context>
+<context>
     <name>UIMachineWindowNormal</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation>顯示目前指派的 Host 鍵。&lt;br&gt;當單獨按下這個按鍵，切換鍵盤和滑鼠的擷取狀態。 它也可以與其它按鍵結合來快速從主功能表執行動作。</translation>
+    </message>
+</context>
+<context>
+    <name>UIMediumManager</name>
+    <message>
+        <source>&amp;Hard drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Optical disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="unfinished">選取(&amp;S)</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="unfinished">關閉(&amp;L)</translation>
     </message>
 </context>
 <context>
@@ -4141,7 +4658,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您未附加硬碟到新的虛擬機器。 除非您稍後使用機器設定對話方塊或首次執行精靈，來附加一顆含有客體作業系統的硬碟，或是某些其它可以開機的媒體，否則機器將無法開機。&lt;/p&gt;&lt;p&gt;您希望繼續嗎? &lt;p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您未附加硬碟到新的虛擬機器。 除非您稍後使用機器設定對話方塊或首次執行精靈，來附加一顆含有客體作業系統的硬碟，或是某些其它可以開機的媒體，否則機器將無法開機。&lt;/p&gt;&lt;p&gt;您希望繼續嗎? &lt;p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -4260,51 +4777,51 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation>內容(&amp;C)...</translation>
+        <translation type="obsolete">內容(&amp;C)...</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation>顯示線上說明內容</translation>
+        <translation type="obsolete">顯示線上說明內容</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>VirtualBox 網站(&amp;V)...</translation>
+        <translation type="obsolete">VirtualBox 網站(&amp;V)...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>開啟瀏覽器並移至 VirtualBox 產品網站</translation>
+        <translation type="obsolete">開啟瀏覽器並移至 VirtualBox 產品網站</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>重設所有警告(&amp;R)</translation>
+        <translation type="obsolete">重設所有警告(&amp;R)</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>返回以顯示所有抑制的警告和訊息</translation>
+        <translation type="obsolete">返回以顯示所有抑制的警告和訊息</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation>註冊 VirtualBox (&amp;E)...</translation>
+        <translation type="obsolete">註冊 VirtualBox (&amp;E)...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation>開啟 VirtualBox 註冊表單</translation>
+        <translation type="obsolete">開啟 VirtualBox 註冊表單</translation>
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
-        <translation>檢查更新(&amp;H)...</translation>
+        <translation type="obsolete">檢查更新(&amp;H)...</translation>
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
-        <translation>檢查 VirtualBox 的新版本</translation>
+        <translation type="obsolete">檢查 VirtualBox 的新版本</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation>關於 VirtualBox (&amp;A)...</translation>
+        <translation type="obsolete">關於 VirtualBox (&amp;A)...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation>顯示產品資訊對話方塊</translation>
+        <translation type="obsolete">顯示產品資訊對話方塊</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
@@ -4702,8 +5219,8 @@
         <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離軟碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
     </message>
     <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <translation type="obsolete">
             <numerusform>&lt;p&gt;虛擬機器 &lt;b&gt;%1&lt;/b&gt; 目前在儲存的狀態。&lt;/p&gt;&lt;p&gt;如果您繼續，匯出機器的執行階段狀態將捨棄。 請注意，現有的機器未變更。&lt;/p&gt;</numerusform>
         </translation>
     </message>
@@ -4923,11 +5440,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network Operations Manager...</source>
+        <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show Network Operations Manager</source>
+        <source>Ok</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform>&lt;p&gt;虛擬機器 &lt;b&gt;%1&lt;/b&gt; 目前在儲存的狀態。&lt;/p&gt;&lt;p&gt;如果您繼續，匯出機器的執行階段狀態將捨棄。 請注意，現有的機器未變更。&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove following virtual machine items from the machine list:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4943,28 +5476,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <comment>extension pack</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Do you wish to cancel all current network operations?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you wish to cancel all current network operations or leave them running in the background?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Leave in Background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4986,6 +5498,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to drop data.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4994,37 +5518,26 @@
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
-        <translation>取消 VirtualBox 使用者手冊下載</translation>
+        <translation type="obsolete">取消 VirtualBox 使用者手冊下載</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual</source>
-        <translation>下載 VirtualBox 使用者手冊</translation>
+        <translation type="obsolete">下載 VirtualBox 使用者手冊</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>正在下載 VirtualBox 使用者手冊 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">正在下載 VirtualBox 使用者手冊 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>取消 VirtualBox Guest Additions CD 映像下載</translation>
+        <translation type="obsolete">取消 VirtualBox Guest Additions CD 映像下載</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>正在下載 VirtualBox Guest Additions CD 映像從 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>UIMiniProgressWidgetExtension</name>
-    <message>
-        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">正在下載 VirtualBox Guest Additions CD 映像從 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -5039,23 +5552,34 @@
     </message>
 </context>
 <context>
-    <name>UINetworkManager</name>
+    <name>UINameAndSystemEditor</name>
     <message>
-        <source>Network Operation</source>
-        <translation type="unfinished"></translation>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名稱(&amp;N):</translation>
     </message>
     <message>
-        <source>Restart network operation</source>
-        <translation type="unfinished"></translation>
+        <source>Displays the name of the virtual machine.</source>
+        <translation type="unfinished">顯示虛擬機器的名稱。</translation>
     </message>
     <message>
-        <source>Cancel network operation</source>
-        <translation type="unfinished"></translation>
+        <source>&amp;Type:</source>
+        <translation type="unfinished">類型(&amp;T):</translation>
     </message>
     <message>
-        <source>Error: %1.</source>
-        <translation type="unfinished"></translation>
+        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <translation type="unfinished">顯示您計畫要安裝於這部虛擬機器的作業系統家族。</translation>
     </message>
+    <message>
+        <source>&amp;Version:</source>
+        <translation type="unfinished">版本(&amp;V):</translation>
+    </message>
+    <message>
+        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <translation type="unfinished">顯示您計畫要安裝於這部虛擬機器的作業系統類型 (稱之為客體作業系統)。</translation>
+    </message>
+</context>
+<context>
+    <name>UINetworkManagerDialog</name>
     <message>
         <source>Network Operations Manager</source>
         <translation type="unfinished"></translation>
@@ -5072,347 +5596,371 @@
         <source>Cancel all active network operations</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Error: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restart network operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel network operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINetworkManagerIndicator</name>
+    <message>
+        <source>Current network operations:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed</source>
+        <comment>network operation</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(%1 of %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Double-click for more information.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINewHDWizard</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>建立新的虛擬磁碟</translation>
+        <translation type="obsolete">建立新的虛擬磁碟</translation>
     </message>
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk name</comment>
-        <translation>%1_複本</translation>
+        <translation type="obsolete">%1_複本</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation>建立</translation>
+        <translation type="obsolete">建立</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation>複製虛擬磁碟</translation>
+        <translation type="obsolete">複製虛擬磁碟</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>複製</translation>
+        <translation type="obsolete">複製</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk copying wizard</source>
-        <translation>歡迎使用虛擬磁碟複製精靈</translation>
+        <translation type="obsolete">歡迎使用虛擬磁碟複製精靈</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;此精靈將協助您複製虛擬磁碟。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;此精靈將協助您複製虛擬磁碟。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
-        <translation>請選取您希望複製的虛擬磁碟如果尚未選取。 您可以從清單選擇或使用清單旁資料夾圖示選取虛擬磁碟檔案。</translation>
+        <translation type="obsolete">請選取您希望複製的虛擬磁碟如果尚未選取。 您可以從清單選擇或使用清單旁資料夾圖示選取虛擬磁碟檔案。</translation>
     </message>
     <message>
         <source>&amp;VDI (VirtualBox Disk Image)</source>
-        <translation>VDI (VirtualBox 磁碟映像)(&amp;V)</translation>
+        <translation type="obsolete">VDI (VirtualBox 磁碟映像)(&amp;V)</translation>
     </message>
     <message>
         <source>V&amp;MDK (Virtual Machine Disk)</source>
-        <translation>VMDK (虛擬機器磁碟)(&amp;M)</translation>
+        <translation type="obsolete">VMDK (虛擬機器磁碟)(&amp;M)</translation>
     </message>
     <message>
         <source>V&amp;HD (Virtual Hard Disk)</source>
-        <translation>VHD (虛擬硬碟)(&amp;H)</translation>
+        <translation type="obsolete">VHD (虛擬硬碟)(&amp;H)</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk creation wizard</source>
-        <translation>歡迎使用虛擬磁碟建立精靈</translation>
+        <translation type="obsolete">歡迎使用虛擬磁碟建立精靈</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;此精靈將協助您建立虛擬機器的新虛擬磁碟。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;此精靈將協助您建立虛擬機器的新虛擬磁碟。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;請選擇您希望新虛擬磁碟所使用的檔案類型。 如果您不需要與其它虛擬化軟體使用，您可以保持此設定不變更。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;請選擇您希望新虛擬磁碟所使用的檔案類型。 如果您不需要與其它虛擬化軟體使用，您可以保持此設定不變更。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual disk file type</source>
-        <translation>虛擬磁碟檔案類型</translation>
+        <translation type="obsolete">虛擬磁碟檔案類型</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation>請選擇您希望新虛擬磁碟所使用的檔案類型。 如果您不需要與其它虛擬化軟體使用，您可以保持此設定不變。</translation>
+        <translation type="obsolete">請選擇您希望新虛擬磁碟所使用的檔案類型。 如果您不需要與其它虛擬化軟體使用，您可以保持此設定不變。</translation>
     </message>
     <message>
         <source>Virtual disk storage details</source>
-        <translation>虛擬磁碟存放裝置詳細資料</translation>
+        <translation type="obsolete">虛擬磁碟存放裝置詳細資料</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
-        <translation>請選擇新的虛擬磁碟檔案應配置所使用的或應建立完全配置。</translation>
+        <translation type="obsolete">請選擇新的虛擬磁碟檔案應配置所使用的或應建立完全配置。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;&lt;b&gt;動態配置&lt;/b&gt;虛擬磁碟檔案只使用您實體硬碟的空間作為填滿，但有可用空間時不會再次自動收縮。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;&lt;b&gt;動態配置&lt;/b&gt;虛擬磁碟檔案只使用您實體硬碟的空間作為填滿，但有可用空間時不會再次自動收縮。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;固定大小&lt;/b&gt;虛擬磁碟檔案在某些系統會花較長的時間建立，但通常用起來比較快。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;&lt;b&gt;固定大小&lt;/b&gt;虛擬磁碟檔案在某些系統會花較長的時間建立，但通常用起來比較快。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation>&lt;p&gt;您也可以選擇&lt;b&gt;分割&lt;/b&gt;虛擬磁碟成每個最大 2GB 的數個檔案。 這主要是用於如果您想存放虛擬機器在卸除式 USB 裝置或舊系統，某些無法處理非常大的檔案時。</translation>
+        <translation type="obsolete">&lt;p&gt;您也可以選擇&lt;b&gt;分割&lt;/b&gt;虛擬磁碟成每個最大 2GB 的數個檔案。 這主要是用於如果您想存放虛擬機器在卸除式 USB 裝置或舊系統，某些無法處理非常大的檔案時。</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation>動態配置(&amp;D)</translation>
+        <translation type="obsolete">動態配置(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation>固定大小(&amp;F)</translation>
+        <translation type="obsolete">固定大小(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation>分割成小於 2GB 的檔案(&amp;S)</translation>
+        <translation type="obsolete">分割成小於 2GB 的檔案(&amp;S)</translation>
     </message>
     <message>
         <source>Virtual disk file location and size</source>
-        <translation>虛擬磁碟檔案位置和大小</translation>
+        <translation type="obsolete">虛擬磁碟檔案位置和大小</translation>
     </message>
     <message>
         <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
-        <translation>選取虛擬磁碟的大小，單位 MB。 將報告此大小到客體作業系統為此虛擬磁碟的最大容量。</translation>
+        <translation type="obsolete">選取虛擬磁碟的大小，單位 MB。 將報告此大小到客體作業系統為此虛擬磁碟的最大容量。</translation>
     </message>
     <message>
         <source>Virtual disk file location</source>
-        <translation>虛擬磁碟檔案位置</translation>
+        <translation type="obsolete">虛擬磁碟檔案位置</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation>請在以下方塊輸入新虛擬磁碟的名稱或按一下資料夾圖示選取不同的資料夾以在該位置建立檔案。</translation>
+        <translation type="obsolete">請在以下方塊輸入新虛擬磁碟的名稱或按一下資料夾圖示選取不同的資料夾以在該位置建立檔案。</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>選取新硬碟映像檔的檔案</translation>
+        <translation type="obsolete">選取新硬碟映像檔的檔案</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>摘要</translation>
+        <translation type="obsolete">摘要</translation>
     </message>
     <message>
         <source>You are going to create a new virtual disk with the following parameters:</source>
-        <translation>您即將使用以下參數建立新的虛擬磁碟:</translation>
+        <translation type="obsolete">您即將使用以下參數建立新的虛擬磁碟:</translation>
     </message>
     <message>
         <source>You are going to create a copied virtual disk with the following parameters:</source>
-        <translation>您即將使用以下參數建立虛擬磁碟的副本:</translation>
+        <translation type="obsolete">您即將使用以下參數建立虛擬磁碟的副本:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it the new virtual disk file will be created.</source>
-        <translation>如果以上設定正確，按下 [&lt;b&gt;%1&lt;/b&gt;] 按鈕。 一旦您按下將建立新的虛擬磁碟檔案。</translation>
+        <translation type="obsolete">如果以上設定正確，按下 [&lt;b&gt;%1&lt;/b&gt;] 按鈕。 一旦您按下將建立新的虛擬磁碟檔案。</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation>%1 B</translation>
+        <translation type="obsolete">%1 B</translation>
     </message>
     <message>
         <source>File type</source>
         <comment>summary</comment>
-        <translation>檔案類型</translation>
+        <translation type="obsolete">檔案類型</translation>
     </message>
     <message>
         <source>Details</source>
         <comment>summary</comment>
-        <translation>詳細資料</translation>
+        <translation type="obsolete">詳細資料</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation>位置</translation>
+        <translation type="obsolete">位置</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation>大小</translation>
-    </message>
-    <message>
-        <source>H&amp;DD (Parallels Hard Disk)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Q&amp;ED (QEMU enhanced disk)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">大小</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageFormat</name>
     <message>
         <source>File type</source>
-        <translation>檔案類型</translation>
+        <translation type="obsolete">檔案類型</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageOptions</name>
     <message>
         <source>&amp;Location</source>
-        <translation>位置(&amp;L)</translation>
+        <translation type="obsolete">位置(&amp;L)</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>大小(&amp;S)</translation>
+        <translation type="obsolete">大小(&amp;S)</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageVariant</name>
     <message>
         <source>Storage details</source>
-        <translation>存放裝置詳細資料</translation>
+        <translation type="obsolete">存放裝置詳細資料</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageWelcome</name>
     <message>
         <source>Virtual disk to copy</source>
-        <translation>要複製的虛擬磁碟</translation>
+        <translation type="obsolete">要複製的虛擬磁碟</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation>選擇虛擬硬碟檔案...</translation>
+        <translation type="obsolete">選擇虛擬硬碟檔案...</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation>新建虛擬機器精靈</translation>
+        <translation type="obsolete">新建虛擬機器精靈</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation>建立</translation>
+        <translation type="obsolete">建立</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage1</name>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>歡迎使用新增虛擬機器精靈!</translation>
+        <translation type="obsolete">歡迎使用新增虛擬機器精靈!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;這個精靈將引導您完成需要的步驟來新建一個 VirtualBox 的虛擬機器。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;這個精靈將引導您完成需要的步驟來新建一個 VirtualBox 的虛擬機器。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage2</name>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;輸入新虛擬機器的名稱並選取您計畫安裝到虛擬機器的客體作業系統之類型。&lt;/p&gt;&lt;p&gt;虛擬機器的名稱通常指示它的軟體和硬體組態。 所有 VirtualBox 元件將使用它來識別您的虛擬機器。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;輸入新虛擬機器的名稱並選取您計畫安裝到虛擬機器的客體作業系統之類型。&lt;/p&gt;&lt;p&gt;虛擬機器的名稱通常指示它的軟體和硬體組態。 所有 VirtualBox 元件將使用它來識別您的虛擬機器。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation>名稱(&amp;A)</translation>
+        <translation type="obsolete">名稱(&amp;A)</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>作業系統類型(&amp;T)</translation>
+        <translation type="obsolete">作業系統類型(&amp;T)</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation>VM 名稱和作業系統類型</translation>
+        <translation type="obsolete">VM 名稱和作業系統類型</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選取要配置到虛擬機器的基本記憶體 (RAM) 總數，以 MB 為單位。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選取要配置到虛擬機器的基本記憶體 (RAM) 總數，以 MB 為單位。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>基本記憶體大小(&amp;M)</translation>
+        <translation type="obsolete">基本記憶體大小(&amp;M)</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation>記憶體</translation>
+        <translation type="obsolete">記憶體</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>建議的基本記憶體大小為 &lt;b&gt;%1&lt;/b&gt; MB。</translation>
+        <translation type="obsolete">建議的基本記憶體大小為 &lt;b&gt;%1&lt;/b&gt; MB。</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation>新建硬碟(&amp;C)</translation>
+        <translation type="obsolete">新建硬碟(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation>使用現有硬碟(&amp;U)</translation>
+        <translation type="obsolete">使用現有硬碟(&amp;U)</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation>虛擬硬碟</translation>
+        <translation type="obsolete">虛擬硬碟</translation>
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation>啟動磁碟(&amp;D)</translation>
+        <translation type="obsolete">啟動磁碟(&amp;D)</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果您希望您可以立即加入啟動磁碟到新的機器。 您可以建立新的虛擬磁碟或從清單或使用資料夾圖示從另一個位置選取一個。&lt;/p&gt;&lt;p&gt;如果您需要更多複雜虛擬磁碟設定，您可以略過此設定，並在機器建立後進行變更機器設定。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;如果您希望您可以立即加入啟動磁碟到新的機器。 您可以建立新的虛擬磁碟或從清單或使用資料夾圖示從另一個位置選取一個。&lt;/p&gt;&lt;p&gt;如果您需要更多複雜虛擬磁碟設定，您可以略過此設定，並在機器建立後進行變更機器設定。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation>選擇虛擬硬碟檔案...</translation>
+        <translation type="obsolete">選擇虛擬硬碟檔案...</translation>
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>啟動磁碟的建議大小為 &lt;b&gt;%1&lt;/b&gt;。</translation>
+        <translation type="obsolete">啟動磁碟的建議大小為 &lt;b&gt;%1&lt;/b&gt;。</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage5</name>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將使用以下參數建立新的虛擬機器:&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您即將使用以下參數建立新的虛擬機器:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>摘要</translation>
+        <translation type="obsolete">摘要</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>summary</comment>
-        <translation>名稱</translation>
+        <translation type="obsolete">名稱</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation>作業系統類型</translation>
+        <translation type="obsolete">作業系統類型</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation>基本記憶體</translation>
+        <translation type="obsolete">基本記憶體</translation>
     </message>
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation>啟動磁碟</translation>
+        <translation type="obsolete">啟動磁碟</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果以上正確，按下 [&lt;b&gt;%1&lt;/b&gt;] 按鈕。 一旦您按下，將建立新的虛擬機器。&lt;/p&gt;&lt;p&gt;請注意，您可以在任何時候透過主視窗的功能表存取 [&lt;b&gt;設定值&lt;/b&gt;] 對話方塊，改變已建立虛擬機器的這些和所有其它設定。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;如果以上正確，按下 [&lt;b&gt;%1&lt;/b&gt;] 按鈕。 一旦您按下，將建立新的虛擬機器。&lt;/p&gt;&lt;p&gt;請注意，您可以在任何時候透過主視窗的功能表存取 [&lt;b&gt;設定值&lt;/b&gt;] 對話方塊，改變已建立虛擬機器的這些和所有其它設定。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5818,72 +6366,68 @@
 <context>
     <name>UIVMLogViewer</name>
     <message>
-        <source>Log Viewer</source>
-        <translation type="obsolete">記錄檢視器</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation>儲存(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&amp;Refresh</source>
-        <translation>重新整理(&amp;R)</translation>
-    </message>
-    <message>
-        <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - VirtualBox 記錄檢視器</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;找不到記錄檔案。按下 [&lt;b&gt;重新整理&lt;/b&gt;] 按鈕以重新掃瞄記錄資料夾 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Save VirtualBox Log As</source>
-        <translation>另存 VirtualBox 記錄</translation>
+        <source>Close the search panel</source>
+        <translation type="unfinished">關閉搜尋面板</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>尋找(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation>關閉</translation>
-    </message>
-    <message>
-        <source>Close the search panel</source>
-        <translation>關閉搜尋面板</translation>
+        <translation type="unfinished">尋找(&amp;F)</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>在此輸入搜尋字串</translation>
+        <translation type="unfinished">在此輸入搜尋字串</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>上一個(&amp;P)</translation>
+        <translation type="unfinished">上一個(&amp;P)</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>搜尋上一個出現的字串</translation>
+        <translation type="unfinished">搜尋上一個出現的字串</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>下一個(&amp;N)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>搜尋下一個出現的字串</translation>
+        <translation type="unfinished">搜尋下一個出現的字串</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>區分大小寫(&amp;A)</translation>
+        <translation type="unfinished">區分大小寫(&amp;A)</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>執行區分大小寫的搜尋 (勾選時)</translation>
+        <translation type="unfinished">執行區分大小寫的搜尋 (勾選時)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>找不到字串</translation>
+        <translation type="unfinished">找不到字串</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;找不到記錄檔案。按下 [&lt;b&gt;重新整理&lt;/b&gt;] 按鈕以重新掃瞄記錄資料夾 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">另存 VirtualBox 記錄</translation>
+    </message>
+    <message>
+        <source>%1 - VirtualBox Log Viewer</source>
+        <translation type="unfinished">%1 - VirtualBox 記錄檢視器</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">重新整理(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="unfinished">儲存(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">關閉</translation>
     </message>
 </context>
 <context>
@@ -5915,6 +6459,582 @@
     <message>
         <source>No Preview</source>
         <translation>不預覽</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizard</name>
+    <message>
+        <source>Hide Description</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Description</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardCloneVD</name>
+    <message>
+        <source>Copy Virtual Hard Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">複製</translation>
+    </message>
+    <message>
+        <source>Hard drive to copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the virtual hard drive file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard drive file to copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive file type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage on physical hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically allocated</source>
+        <translation type="unfinished">動態配置(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed size</source>
+        <translation type="unfinished">固定大小(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Split into files of less than 2GB</source>
+        <translation type="unfinished">分割成小於 2GB 的檔案(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Please choose a location for new virtual hard drive file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New hard drive to create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a location for new virtual hard drive file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1_copy</source>
+        <comment>copied virtual hard drive name</comment>
+        <translation type="unfinished">%1_複本</translation>
+    </message>
+    <message>
+        <source>Hard drive to &amp;copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New hard drive to create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive file &amp;type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardCloneVM</name>
+    <message>
+        <source>Linked Base for %1 and %2</source>
+        <translation type="unfinished">%1 和 %2 連結的基礎</translation>
+    </message>
+    <message>
+        <source>Clone Virtual Machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone</source>
+        <translation type="unfinished">再製</translation>
+    </message>
+    <message>
+        <source>%1 Clone</source>
+        <translation type="unfinished">%1 再製</translation>
+    </message>
+    <message>
+        <source>New machine name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished">勾選時，將指派新的唯一 MAC 位址到所有已組態的網路卡。</translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished">重新初始化所有網路卡的 MAC 位址(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Clone type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard drive files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard drive files will be tied to the virtual hard drive files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Linked clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snapshots</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;snapshot tree branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Everything</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New machine &amp;name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardExportApp</name>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished">正在檢查檔案 ...</translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished">正在移除檔案 ...</translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="unfinished">正在匯出應用裝置 ...</translation>
+    </message>
+    <message>
+        <source>Export Virtual Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation type="unfinished">還原預設值</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished">匯出</translation>
+    </message>
+    <message>
+        <source>Virtual machines to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose where to create the virtual appliance. You can create it on your own computer, on the Sun Cloud service or on an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;This computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished">Sun &amp;Cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished">簡單存放系統 (S3)(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished">應用裝置</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished">使用者名稱(&amp;U):</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished">密碼(&amp;P):</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished">主機名稱(&amp;H):</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished">貯體(&amp;B):</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished">檔案(&amp;F):</translation>
+    </message>
+    <message>
+        <source>Please choose a virtual appliance file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format Archive (%1)</source>
+        <translation type="unfinished">Open Virtualization Format Archive (%1)</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished">以舊版 OVF 0.9 格式寫入與其它虛擬化產品相容。</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished">寫入舊版 OVF 0.9 (&amp;W)</translation>
+    </message>
+    <message>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished">匯入時建立自動資料完整性檢查的 Manifest 檔案。</translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation type="unfinished">寫入 Manifest 檔案(&amp;M)</translation>
+    </message>
+    <message>
+        <source>This is the descriptive information which will be added to the virtual appliance.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual &amp;machines to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance &amp;settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Destination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished">本機檔案系統(&amp;L) </translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardExportAppPageBasic3</name>
+    <message>
+        <source>&lt;p&gt;Please choose a filename to export the OVF/OVA to.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ova&lt;/i&gt; extension, then all the files will be combined into one Open Virtualization Format Archive.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately.&lt;/p&gt;&lt;p&gt;Other extensions are not allowed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">請完成額外欄位，比如使用者名稱、密碼和貯體，並提供 OVF 目標的檔案名稱。</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">請完成額外欄位，比如使用者名稱、密碼、主機名稱和貯體，並提供 OVF 目標的檔案名稱。</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardFirstRun</name>
+    <message>
+        <source>Select start-up disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished">開始</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual optical disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardImportApp</name>
+    <message>
+        <source>Import Virtual Applicance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation type="unfinished">還原預設值</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished">匯入</translation>
+    </message>
+    <message>
+        <source>Appliance to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="unfinished">選取要匯入的應用裝置</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished">這些是包含在應用裝置的虛擬機器和匯入 VirtualBox 機器的建議設定值。 您可以在項目按兩下變更許多顯示的內容和使用以下核取方塊停用其它。</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardNewVD</name>
+    <message>
+        <source>Create Virtual Hard Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished">建立</translation>
+    </message>
+    <message>
+        <source>Hard drive file type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage on physical hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically allocated</source>
+        <translation type="unfinished">動態配置(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed size</source>
+        <translation type="unfinished">固定大小(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Split into files of less than 2GB</source>
+        <translation type="unfinished">分割成小於 2GB 的檔案(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>File location and size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a location for new virtual hard drive file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select the size of the virtual hard drive in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard drive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File &amp;location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File &amp;size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive file &amp;type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardNewVM</name>
+    <message>
+        <source>Create Virtual Machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished">建立</translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation type="unfinished">IDE 控制器</translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation type="unfinished">SATA 控制器</translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation type="unfinished">SCSI 控制器</translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation type="unfinished">軟碟控制器</translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished">SAS 控制器</translation>
+    </message>
+    <message>
+        <source>Name and operating system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a descriptive name for the new virtual machine and select the type of operating system you intend to install on it. The name you choose will be used throughout VirtualBox to identify this machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the amount of memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;&lt;p&gt;The recommended memory size is &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you wish you can add a virtual hard drive to the new machine. You can either create a new hard drive file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard drive is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Do not add virtual hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create virtual hard drive now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use existing virtual hard drive file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard drive file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Memory size</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6194,27 +7314,27 @@
     <message>
         <source>Normal</source>
         <comment>DiskType</comment>
-        <translation>標準</translation>
+        <translation type="obsolete">標準</translation>
     </message>
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation>不可改變</translation>
+        <translation type="obsolete">不可改變</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
-        <translation>直接寫入</translation>
+        <translation type="obsolete">直接寫入</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
-        <translation>忽略</translation>
+        <translation type="obsolete">忽略</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
-        <translation>保留</translation>
+        <translation type="obsolete">保留</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
@@ -6444,27 +7564,27 @@
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation>第一個</translation>
+        <translation type="obsolete">第一個</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation>第二個</translation>
+        <translation type="obsolete">第二個</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation>主</translation>
+        <translation type="obsolete">主</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation>副</translation>
+        <translation type="obsolete">副</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
-        <translation>連接埠 %1</translation>
+        <translation type="obsolete">連接埠 %1</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
@@ -6759,42 +7879,42 @@
     <message>
         <source>Device %1</source>
         <comment>StorageBusDevice</comment>
-        <translation>裝置 %1</translation>
+        <translation type="obsolete">裝置 %1</translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 第一個主</translation>
+        <translation type="obsolete">IDE 第一個主</translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 第一個副</translation>
+        <translation type="obsolete">IDE 第一個副</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 第二個主</translation>
+        <translation type="obsolete">IDE 第二個主</translation>
     </message>
     <message>
         <source>IDE Secondary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE 第二個副</translation>
+        <translation type="obsolete">IDE 第二個副</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>SATA 連接埠 %1</translation>
+        <translation type="obsolete">SATA 連接埠 %1</translation>
     </message>
     <message>
         <source>SCSI Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>SCSI 連接埠 %1</translation>
+        <translation type="obsolete">SCSI 連接埠 %1</translation>
     </message>
     <message>
         <source>Floppy Device %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>軟碟裝置 %1</translation>
+        <translation type="obsolete">軟碟裝置 %1</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
@@ -6981,7 +8101,7 @@
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
-        <translation>可共用</translation>
+        <translation type="obsolete">可共用</translation>
     </message>
     <message>
         <source>Unknown device</source>
@@ -6991,7 +8111,7 @@
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>SAS 連接埠 %1</translation>
+        <translation type="obsolete">SAS 連接埠 %1</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
@@ -7010,31 +8130,31 @@
     </message>
     <message>
         <source>Choose a virtual hard disk file</source>
-        <translation>選擇虛擬硬碟檔案</translation>
+        <translation type="obsolete">選擇虛擬硬碟檔案</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation>硬碟</translation>
+        <translation type="obsolete">硬碟</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file</source>
-        <translation>選擇虛擬 CD/DVD 磁碟檔案</translation>
+        <translation type="obsolete">選擇虛擬 CD/DVD 磁碟檔案</translation>
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation>CD/DVD-ROM 磁碟</translation>
+        <translation type="obsolete">CD/DVD-ROM 磁碟</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
-        <translation>選擇虛擬軟碟檔案</translation>
+        <translation type="obsolete">選擇虛擬軟碟檔案</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation>軟碟</translation>
+        <translation type="obsolete">軟碟</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation>所有 %1 映像 (%2)</translation>
+        <translation type="obsolete">所有 %1 映像 (%2)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -7083,12 +8203,12 @@
     <message>
         <source>UDP</source>
         <comment>NATProtocolType</comment>
-        <translation>UDP</translation>
+        <translation type="obsolete">UDP</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>NATProtocolType</comment>
-        <translation>TCP</translation>
+        <translation type="obsolete">TCP</translation>
     </message>
     <message>
         <source>PIIX3</source>
@@ -7102,38 +8222,38 @@
     </message>
     <message>
         <source>and</source>
-        <translation>和</translation>
+        <translation type="obsolete">和</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Readonly</source>
         <comment>DiskType</comment>
-        <translation>唯讀</translation>
+        <translation type="obsolete">唯讀</translation>
     </message>
     <message>
         <source>Multi-attach</source>
         <comment>DiskType</comment>
-        <translation>多重附加</translation>
+        <translation type="obsolete">多重附加</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
-        <translation>動態配置存放裝置</translation>
+        <translation type="obsolete">動態配置存放裝置</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation>固定大小存放裝置</translation>
+        <translation type="obsolete">固定大小存放裝置</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
-        <translation>動態配置存放裝置分割成小於 2GB 的檔案</translation>
+        <translation type="obsolete">動態配置存放裝置分割成小於 2GB 的檔案</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
-        <translation>固定大小存放裝置分割成小於 2GB 的檔案</translation>
+        <translation type="obsolete">固定大小存放裝置分割成小於 2GB 的檔案</translation>
     </message>
     <message>
         <source>Execution Cap</source>
@@ -7158,21 +8278,308 @@
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>拒絕</translation>
+        <translation type="obsolete">拒絕</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>允許 VM</translation>
+        <translation type="obsolete">允許 VM</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>允許全部</translation>
+        <translation type="obsolete">允許全部</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <translation>介面卡 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Host To Guest</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">主機到客體</translation>
+    </message>
+    <message>
+        <source>Guest To Host</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">客體到主機</translation>
+    </message>
+    <message>
+        <source>Bidirectional</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">雙向</translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">標準</translation>
+    </message>
+    <message>
+        <source>Immutable</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">不可改變</translation>
+    </message>
+    <message>
+        <source>Writethrough</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">直接寫入</translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">可共用</translation>
+    </message>
+    <message>
+        <source>Readonly</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">唯讀</translation>
+    </message>
+    <message>
+        <source>Multi-attach</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">多重附加</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">動態配置存放裝置</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">固定大小存放裝置</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">動態配置存放裝置分割成小於 2GB 的檔案</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">固定大小存放裝置分割成小於 2GB 的檔案</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated compressed storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing compressed storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size ESX storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage on raw disk</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">拒絕</translation>
+    </message>
+    <message>
+        <source>Allow VMs</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">允許 VM</translation>
+    </message>
+    <message>
+        <source>Allow All</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">允許全部</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <comment>USBDeviceFilterAction</comment>
+        <translation type="unfinished">忽略</translation>
+    </message>
+    <message>
+        <source>Hold</source>
+        <comment>USBDeviceFilterAction</comment>
+        <translation type="unfinished">保留</translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocol</comment>
+        <translation type="unfinished">UDP</translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocol</comment>
+        <translation type="unfinished">TCP</translation>
+    </message>
+    <message>
+        <source>IDE Primary Master</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 第一個主</translation>
+    </message>
+    <message>
+        <source>IDE Primary Slave</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 第一個副</translation>
+    </message>
+    <message>
+        <source>IDE Secondary Master</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 第二個主</translation>
+    </message>
+    <message>
+        <source>IDE Secondary Slave</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE 第二個副</translation>
+    </message>
+    <message>
+        <source>SATA Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">SATA 連接埠 %1</translation>
+    </message>
+    <message>
+        <source>SCSI Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">SCSI 連接埠 %1</translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">SAS 連接埠 %1</translation>
+    </message>
+    <message>
+        <source>Floppy Device %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">軟碟裝置 %1</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">一般</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">預覽</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">系統</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">顯示</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">存放裝置</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">音效</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">網路</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">描述</translation>
+    </message>
+    <message>
+        <source>Please choose a virtual hard drive file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All virtual hard drive files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a virtual optical disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All virtual optical disk files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a virtual floppy disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All virtual floppy disk files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDI (VirtualBox Disk Image)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMDK (Virtual Machine Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VHD (Virtual Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HDD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a location for new virtual hard drive file</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7206,6 +8613,49 @@
     </message>
 </context>
 <context>
+    <name>VBoxLogSearchPanel</name>
+    <message>
+        <source>Close the search panel</source>
+        <translation type="obsolete">關閉搜尋面板</translation>
+    </message>
+    <message>
+        <source>Find </source>
+        <translation type="obsolete">尋找 </translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="obsolete">在此輸入搜尋字串</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation type="obsolete">上一個(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation type="obsolete">搜尋上一個出現的字串</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation type="obsolete">下一個(&amp;N)</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation type="obsolete">搜尋下一個出現的字串</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="obsolete">區分大小寫(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="obsolete">執行區分大小寫的搜尋 (勾選時)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="obsolete">找不到字串</translation>
+    </message>
+</context>
+<context>
     <name>VBoxMediaManagerDlg</name>
     <message>
         <source>&amp;Actions</source>
@@ -7233,7 +8683,7 @@
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation>建立新的虛擬硬碟</translation>
+        <translation type="obsolete">建立新的虛擬硬碟</translation>
     </message>
     <message>
         <source>Add an existing medium</source>
@@ -7257,7 +8707,7 @@
     </message>
     <message>
         <source>&amp;Select</source>
-        <translation>選取(&amp;S)</translation>
+        <translation type="obsolete">選取(&amp;S)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -7265,15 +8715,15 @@
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>選取一個硬碟映像檔</translation>
+        <translation type="obsolete">選取一個硬碟映像檔</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>選取一個 CD/DVD-ROM 光碟映像檔</translation>
+        <translation type="obsolete">選取一個 CD/DVD-ROM 光碟映像檔</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation>選取一個軟碟映像檔</translation>
+        <translation type="obsolete">選取一個軟碟映像檔</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
@@ -7290,7 +8740,7 @@
     </message>
     <message>
         <source>Hard &amp;Disks</source>
-        <translation>硬碟(&amp;D)</translation>
+        <translation type="obsolete">硬碟(&amp;D)</translation>
     </message>
     <message>
         <source>Name</source>
@@ -7306,7 +8756,7 @@
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation>CD/DVD 映像(&amp;C)</translation>
+        <translation type="obsolete">CD/DVD 映像(&amp;C)</translation>
     </message>
     <message>
         <source>Size</source>
@@ -7314,23 +8764,23 @@
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation>軟碟映像(&amp;F)</translation>
+        <translation type="obsolete">軟碟映像(&amp;F)</translation>
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation>CD/DVD-ROM 磁碟</translation>
+        <translation type="obsolete">CD/DVD-ROM 磁碟</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation>硬碟</translation>
+        <translation type="obsolete">硬碟</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation>軟碟</translation>
+        <translation type="obsolete">軟碟</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation>所有 %1 映像 (%2)</translation>
+        <translation type="obsolete">所有 %1 映像 (%2)</translation>
     </message>
     <message>
         <source>Type:</source>
@@ -7370,7 +8820,11 @@
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation>關閉(&amp;L)</translation>
+        <translation type="obsolete">關閉(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7396,19 +8850,19 @@
     <name>VBoxOSTypeSelectorWidget</name>
     <message>
         <source>Operating &amp;System:</source>
-        <translation>作業系統(&amp;S):</translation>
+        <translation type="obsolete">作業系統(&amp;S):</translation>
     </message>
     <message>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation>顯示您計畫要安裝於這部虛擬機器的作業系統家族。</translation>
+        <translation type="obsolete">顯示您計畫要安裝於這部虛擬機器的作業系統家族。</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>顯示您計畫要安裝於這部虛擬機器的作業系統類型 (稱之為客體作業系統)。</translation>
+        <translation type="obsolete">顯示您計畫要安裝於這部虛擬機器的作業系統類型 (稱之為客體作業系統)。</translation>
     </message>
     <message>
         <source>&amp;Version:</source>
-        <translation>版本(&amp;V):</translation>
+        <translation type="obsolete">版本(&amp;V):</translation>
     </message>
 </context>
 <context>
@@ -7429,6 +8883,31 @@
 <context>
     <name>VBoxSelectorWnd</name>
     <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation type="obsolete">喜好設定(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation type="obsolete">顯示全域設定值對話方塊</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation type="obsolete">結束(&amp;X)</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation type="obsolete">關閉應用程式</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">新增(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation type="obsolete">建立新的虛擬機器</translation>
+    </message>
+    <message>
         <source>&amp;Settings...</source>
         <translation type="obsolete">設定值(&amp;S)...</translation>
     </message>
@@ -7437,8 +8916,40 @@
         <translation type="obsolete">組態選取的虛擬機器</translation>
     </message>
     <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation type="obsolete">捨棄選取虛擬機器的已儲存狀態</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation type="obsolete">重新整理選取虛擬機器的可存取能力狀態</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="obsolete">顯示(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="obsolete">切換到選取虛擬機器的視窗</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="obsolete">啟動(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="obsolete">啟動選取的虛擬機器</translation>
+    </message>
+    <message>
         <source>&amp;Machine</source>
         <translation type="obsolete">機器(&amp;M)</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation type="obsolete">顯示記錄(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation type="obsolete">顯示選取虛擬機器的記錄檔案</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
@@ -7457,9 +8968,47 @@
         <translation type="obsolete">&lt;h3&gt;歡迎使用 VirtualBox !&lt;/h3&gt;&lt;p&gt;這個視窗的左側部分是在您電腦中的所有虛擬機器清單。 清單現在是空的因為您尚未建立任何虛擬機器。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;為了新建虛擬機器，在視窗上方位置的主工具列按下 [&lt;b&gt;新增&lt;/b&gt;] 按鈕。&lt;/p&gt;&lt;p&gt;您可以按下 [&lt;b&gt;%1&lt;/b&gt;] 按鍵取得即時說明，或訪問 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 取得最新資訊與新聞。&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation type="obsolete">虛擬媒體管理員(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation type="obsolete">顯示虛擬媒體管理員對話方塊</translation>
+    </message>
+    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation type="obsolete">紀錄</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="obsolete">匯入應用裝置(&amp;I)...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="obsolete">匯入應用裝置到 VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="obsolete">匯出應用裝置(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="obsolete">匯出一個或數個 VirtualBox 虛擬機器為應用裝置</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="obsolete">重新整理(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="obsolete">檔案(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="obsolete">檔案(&amp;F)</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -7475,12 +9024,84 @@
         <translation type="obsolete">管理員</translation>
     </message>
     <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">加入(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="obsolete">加入現有的虛擬機器</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="obsolete">移除(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="obsolete">移除選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="obsolete">在尋找中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="obsolete">在尋找中顯示 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="obsolete">在桌面建立別名</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="obsolete">在您的桌面建立別名檔案到 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="obsolete">在檔案總管中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="obsolete">在檔案總管中顯示 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="obsolete">在桌面建立捷徑</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="obsolete">在您的桌面建立捷徑檔案到 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="obsolete">在檔案管理員中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="obsolete">在檔案管理員中顯示 VirtualBox Machine Definition 檔案</translation>
+    </message>
+    <message>
         <source>Show Toolbar</source>
         <translation type="obsolete">顯示工具列</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation type="obsolete">顯示狀態列</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="obsolete">再製(&amp;O)...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="obsolete">再製選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">捨棄</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="obsolete">捨棄已儲存的狀態(&amp;I)</translation>
     </message>
 </context>
 <context>
@@ -7621,11 +9242,11 @@
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
-        <translation>停用</translation>
+        <translation type="obsolete">停用</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation>啟用</translation>
+        <translation type="obsolete">啟用</translation>
     </message>
 </context>
 <context>
@@ -7750,6 +9371,49 @@
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
         <translation>不可用</translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag&apos;n&apos;Drop Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMLogViewer</name>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="obsolete">記錄檢視器</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="obsolete">儲存(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="obsolete">重新整理(&amp;R)</translation>
+    </message>
+    <message>
+        <source>%1 - VirtualBox Log Viewer</source>
+        <translation type="obsolete">%1 - VirtualBox 記錄檢視器</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;找不到記錄檔案。按下 [&lt;b&gt;重新整理&lt;/b&gt;] 按鈕以重新掃瞄記錄資料夾 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="obsolete">另存 VirtualBox 記錄</translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="obsolete">尋找(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="obsolete">關閉</translation>
     </message>
 </context>
 </TS>
