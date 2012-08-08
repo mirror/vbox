@@ -771,6 +771,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
 
             case VINF_EM_DBG_HYPER_ASSERTION:
                 RTPrintf("\nVINF_EM_DBG_HYPER_ASSERTION:\n%s%s\n", VMMR3GetRZAssertMsg1(pVM), VMMR3GetRZAssertMsg2(pVM));
+                RTLogFlush(NULL);
                 rc = DBGFR3EventAssertion(pVM, DBGFEVENT_ASSERTION_HYPER, VMMR3GetRZAssertMsg1(pVM), VMMR3GetRZAssertMsg2(pVM));
                 break;
 
