@@ -115,6 +115,11 @@ void UIGDetailsUpdateThreadGeneral::run()
             /* Operating system type: */
             m_text << UITextTableLine(tr("Operating system", "details"),
                                        vboxGlobal().vmGuestOSTypeDescription(machine().GetOSTypeId()));
+
+            /* Groups: */
+            QStringList groups = machine().GetGroups().toList();
+            if (!groups.contains("/") || groups.size() > 1)
+                m_text << UITextTableLine(tr("Groups", "details"), groups.join(", "));
         }
         else
             m_text << UITextTableLine(tr("Information inaccessible", "details"), QString());
