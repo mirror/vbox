@@ -255,7 +255,7 @@ void UIGMachinePreview::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 
 void UIGMachinePreview::retranslateUi()
 {
-    m_actions.value(UpdateInterval_Disabled)->setText(tr("Update Disabled"));
+    m_actions.value(UpdateInterval_Disabled)->setText(tr("Update disabled"));
     m_actions.value(UpdateInterval_500ms)->setText(tr("Every 0.5 s"));
     m_actions.value(UpdateInterval_1000ms)->setText(tr("Every 1 s"));
     m_actions.value(UpdateInterval_2000ms)->setText(tr("Every 2 s"));
@@ -292,7 +292,7 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
         pPainter->fillRect(m_vRect, Qt::black);
 
         /* Compose name: */
-        QString strName = tr("No Preview");
+        QString strName = tr("No preview");
         if (!m_machine.isNull())
             strName = m_machine.GetAccessible() ? m_machine.GetName() :
                       QApplication::translate("UIVMListView", "Inaccessible");
