@@ -822,7 +822,9 @@ QPixmap UIGChooserItemGroup::toPixmap()
 {
     QSize minimumSize = minimumSizeHint(true).toSize();
     QPixmap pixmap(minimumSize);
+    pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
     QStyleOptionGraphicsItem options;
     options.rect = QRect(QPoint(0, 0), minimumSize);
     paint(&painter, &options, true);
