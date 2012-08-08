@@ -11260,6 +11260,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11291,6 +11292,7 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pf
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(UINT8_MAX);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11322,6 +11324,7 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(UINT8_MAX);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11422,6 +11425,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32r, uint8_t, bRm, PFNIEMAIMPLFPUR32, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11471,6 +11475,7 @@ FNIEMOP_DEF_1(iemOp_fcom_m32r,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11504,6 +11509,7 @@ FNIEMOP_DEF_1(iemOp_fcomp_m32r, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11608,6 +11614,7 @@ FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11643,6 +11650,7 @@ FNIEMOP_DEF_1(iemOp_fst_m32r, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11678,6 +11686,7 @@ FNIEMOP_DEF_1(iemOp_fstp_m32r, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11766,6 +11775,7 @@ FNIEMOP_DEF(iemOp_fnop)
     /** @todo Testcase: looks like FNOP leaves FOP alone but updates FPUIP. Could be
      *        intel optimizations. Investigate. */
     IEM_MC_UPDATE_FPU_OPCODE_IP();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP(); /* C0-C3 are documented as undefined, we leave them unmodified. */
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -11791,6 +11801,7 @@ FNIEMOP_DEF_1(iemOp_fld_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_UNDERFLOW();
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
 
@@ -11820,6 +11831,7 @@ FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_CALL_CIMPL_1(iemCImpl_fxch_underflow, iStReg);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
 
@@ -11846,6 +11858,7 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
         IEM_MC_ELSE()
             IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(0);
         IEM_MC_ENDIF();
+        IEM_MC_USED_FPU();
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -11862,6 +11875,7 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
         IEM_MC_ELSE()
             IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(iDstReg);
         IEM_MC_ENDIF();
+        IEM_MC_USED_FPU();
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -11892,6 +11906,7 @@ FNIEMOP_DEF_1(iemOpHlpFpu_st0, PFNIEMAIMPLFPUR80UNARY, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11937,6 +11952,7 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0, PFNIEMAIMPLFPUR80UNARYFSW, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(UINT8_MAX);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -11981,6 +11997,7 @@ FNIEMOP_DEF_1(iemOpHlpFpuPushConstant, PFNIEMAIMPLFPUR80LDCONST, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW();
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12081,6 +12098,7 @@ FNIEMOP_DEF_1(iemOpHlpFpuReplace_st0_push, PFNIEMAIMPLFPUR80UNARYTWO, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO();
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12121,6 +12139,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(bRm & X86_MODRM_RM_MASK);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12169,6 +12188,8 @@ FNIEMOP_DEF(iemOp_fdecstp)
     IEM_MC_FPU_STACK_DEC_TOP();
     IEM_MC_UPDATE_FSW_CONST(0);
 
+    IEM_MC_USED_FPU();
+    IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
 }
@@ -12191,6 +12212,8 @@ FNIEMOP_DEF(iemOp_fincstp)
     IEM_MC_FPU_STACK_INC_TOP();
     IEM_MC_UPDATE_FSW_CONST(0);
 
+    IEM_MC_USED_FPU();
+    IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
 }
@@ -12360,6 +12383,7 @@ FNIEMOP_DEF_1(iemOp_fcmovb_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12387,6 +12411,7 @@ FNIEMOP_DEF_1(iemOp_fcmove_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12414,6 +12439,7 @@ FNIEMOP_DEF_1(iemOp_fcmovbe_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12441,6 +12467,7 @@ FNIEMOP_DEF_1(iemOp_fcmovu_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12472,6 +12499,7 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0_stN_pop_pop, PFNIEMAIMPLFPUR80FSW, pfnAImpl
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP();
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12516,6 +12544,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32i, uint8_t, bRm, PFNIEMAIMPLFPUI32, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12565,6 +12594,7 @@ FNIEMOP_DEF_1(iemOp_ficom_m32i,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12598,6 +12628,7 @@ FNIEMOP_DEF_1(iemOp_ficomp_m32i, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12703,6 +12734,7 @@ FNIEMOP_DEF_1(iemOp_fild_m32i, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12738,6 +12770,7 @@ FNIEMOP_DEF_1(iemOp_fisttp_m32i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12773,6 +12806,7 @@ FNIEMOP_DEF_1(iemOp_fist_m32i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12808,6 +12842,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m32i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12840,6 +12875,7 @@ FNIEMOP_DEF_1(iemOp_fld_m80r, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12875,6 +12911,7 @@ FNIEMOP_DEF_1(iemOp_fstp_m80r, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12902,6 +12939,7 @@ FNIEMOP_DEF_1(iemOp_fcmovnb_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12929,6 +12967,7 @@ FNIEMOP_DEF_1(iemOp_fcmovne_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12956,6 +12995,7 @@ FNIEMOP_DEF_1(iemOp_fcmovnbe_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -12983,6 +13023,7 @@ FNIEMOP_DEF_1(iemOp_fcmovnnu_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13162,6 +13203,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(bRm & X86_MODRM_RM_MASK);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13245,6 +13287,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_ST0_m64r, uint8_t, bRm, PFNIEMAIMPLFPUR64, pfnImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(0, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13294,6 +13337,7 @@ FNIEMOP_DEF_1(iemOp_fcom_m64r,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13327,6 +13371,7 @@ FNIEMOP_DEF_1(iemOp_fcomp_m64r, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13429,6 +13474,7 @@ FNIEMOP_DEF_1(iemOp_fld_m64r,    uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13464,6 +13510,7 @@ FNIEMOP_DEF_1(iemOp_fisttp_m64i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13499,6 +13546,7 @@ FNIEMOP_DEF_1(iemOp_fst_m64r,    uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13536,6 +13584,7 @@ FNIEMOP_DEF_1(iemOp_fstp_m64r,   uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13618,6 +13667,7 @@ FNIEMOP_DEF_1(iemOp_ffree_stN,   uint8_t, bRm)
     IEM_MC_FPU_STACK_FREE(bRm & X86_MODRM_RM_MASK);
     IEM_MC_UPDATE_FPU_OPCODE_IP();
 
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -13641,6 +13691,7 @@ FNIEMOP_DEF_1(iemOp_fst_stN,     uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(bRm & X86_MODRM_RM_MASK);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -13786,6 +13837,7 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m16i, uint8_t, bRm, PFNIEMAIMPLFPUI16, pfnAImpl)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13835,6 +13887,7 @@ FNIEMOP_DEF_1(iemOp_ficom_m16i,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13868,6 +13921,7 @@ FNIEMOP_DEF_1(iemOp_ficomp_m16i, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13963,6 +14017,7 @@ FNIEMOP_DEF_1(iemOp_ffreep_stN, uint8_t, bRm)
     IEM_MC_FPU_STACK_INC_TOP();
     IEM_MC_UPDATE_FPU_OPCODE_IP();
 
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -14034,6 +14089,7 @@ FNIEMOP_DEF_1(iemOp_fisttp_m16i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14069,6 +14125,7 @@ FNIEMOP_DEF_1(iemOp_fist_m16i,   uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14104,6 +14161,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m16i,  uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14149,6 +14207,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m64i,  uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();

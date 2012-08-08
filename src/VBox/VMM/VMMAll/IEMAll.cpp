@@ -6870,6 +6870,9 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  *  FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff) \
     iemFpuStackPushOverflowWithMemOp(pIemCpu, a_iEffSeg, a_GCPtrEff)
+/** Indicates that we (might) have modified the FPU state. */
+#define IEM_MC_USED_FPU() \
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)               if (!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit))) {
@@ -7400,7 +7403,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013bd5d)
 
 #endif
-#if 1 /* NT4SP1 - iret to v8086 (executing edlin) */
+#if 0 /* NT4SP1 - iret to v8086 (executing edlin) */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013b609)
 
 #endif
@@ -8203,6 +8206,10 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu)
             pIemCpu->cRetAspectNotImplemented++;
         else if (rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
             pIemCpu->cRetInstrNotImplemented++;
+#ifdef IEM_VERIFICATION_MODE
+        else if (rcStrict == VERR_IEM_RESTART_INSTRUCTION)
+            rcStrict = VINF_SUCCESS;
+#endif
         else
             pIemCpu->cRetErrStatuses++;
     }
