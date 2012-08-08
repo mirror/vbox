@@ -75,13 +75,6 @@ public:
 
 protected:
 
-#if 0
-    /* Hover-enter event: */
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *pEvent);
-    /* Hover-leave event: */
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
-#endif
-
     /* Helpers: Paint stuff: */
     static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius);
     static void paintFrameRect(QPainter *pPainter, const QRect &rect, int iRadius);

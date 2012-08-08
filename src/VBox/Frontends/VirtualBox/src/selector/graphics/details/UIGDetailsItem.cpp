@@ -85,16 +85,6 @@ void UIGDetailsItem::updateSizeHint()
     updateGeometry();
 }
 
-#if 0
-void UIGDetailsItem::hoverEnterEvent(QGraphicsSceneHoverEvent*)
-{
-}
-
-void UIGDetailsItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*)
-{
-}
-#endif
-
 /* static */
 void UIGDetailsItem::configurePainterShape(QPainter *pPainter,
                                            const QStyleOptionGraphicsItem *pOption,
