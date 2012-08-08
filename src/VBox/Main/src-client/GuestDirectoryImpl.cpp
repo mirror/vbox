@@ -327,7 +327,7 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
 
                 /* Create the object. */
                 ComObjPtr<GuestFsObjInfo> pFsObjInfo;
-                HRESULT hr = pFsObjInfo.createObject();
+                hr = pFsObjInfo.createObject();
                 if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
                 rc = pFsObjInfo->init(objData);

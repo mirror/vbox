@@ -1370,7 +1370,7 @@ int GuestProcess::waitForStart(uint32_t uTimeoutMS)
         alock.release();
 
         GuestProcessWaitResult waitRes;
-        int rc = waitFor(ProcessWaitForFlag_Start, uTimeoutMS, waitRes);
+        rc = waitFor(ProcessWaitForFlag_Start, uTimeoutMS, waitRes);
         if (   RT_FAILURE(rc)
             || (    waitRes.mResult == ProcessWaitResult_Start
                 &&  waitRes.mResult == ProcessWaitResult_Any
