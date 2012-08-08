@@ -105,7 +105,7 @@ QVariant UIGDetailsSet::data(int iKey) const
     {
         /* Layout hints: */
         case SetData_Margin: return 0;
-        case SetData_Spacing: return 1;
+        case SetData_Spacing: return 3;
         /* Default: */
         default: break;
     }

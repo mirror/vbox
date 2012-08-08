@@ -81,8 +81,8 @@ public:
     virtual QString name() const = 0;
     void setRoot(bool fRoot);
     bool isRoot() const;
-    bool isHovered() const { return m_fHovered; }
-    void setHovered(bool fHovered) { m_fHovered = fHovered; }
+    bool isHovered() const;
+    void setHovered(bool fHovered);
 
     /* API: Children stuff: */
     virtual void addItem(UIGChooserItem *pItem, int iPosition) = 0;

@@ -427,7 +427,7 @@ int UIGDetailsElement::minimumHeightHint(bool fClosed) const
     {
         /* Add text height: */
         if (!m_text.isEmpty())
-            iProposedHeight += iMargin + iTextHeight;
+            iProposedHeight += 2 * iMargin + iTextHeight;
     }
     else
     {
@@ -470,28 +470,16 @@ void UIGDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
 
 void UIGDetailsElement::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
 {
-    /* Prepare variables: */
-    QRect fullRect = pOption->rect;
-
     /* Paint background: */
     paintBackground(/* Painter: */
                     pPainter,
                     /* Rectangle to paint in: */
-                    fullRect,
+                    pOption->rect,
                     /* Rounded corners radius: */
                     m_iCornerRadius,
                     /* Header height: */
-                    data(ElementData_Margin).toInt() +
-                    data(ElementData_HeaderSize).toSize().height() +
-                    1);
-
-    /* Paint frame: */
-    paintFrameRect(/* Painter: */
-                   pPainter,
-                   /* Rectangle to paint in: */
-                   fullRect,
-                   /* Rounded corner radius: */
-                   m_iCornerRadius);
+                    2 * data(ElementData_Margin).toInt() +
+                    data(ElementData_HeaderSize).toSize().height());
 }
 
 void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem*)
@@ -564,7 +552,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
 
         /* Where to paint? */
         int iMachineTextX = iMachinePixmapX;
-        int iMachineTextY = iMachinePixmapY + iHeaderHeight + iMargin;
+        int iMachineTextY = iMachinePixmapY + iHeaderHeight + 2 * iMargin;
 
         /* For each the line: */
         foreach (const UITextTableLine line, m_text)
@@ -603,27 +591,31 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect, i
     /* Save painter: */
     pPainter->save();
 
-    /* Fill rectangle with white color: */
-    QPalette pal = QApplication::palette();
-    pPainter->fillRect(rect, Qt::white);
+    /* Prepare variables: */
+    int iFullHeight = rect.height();
 
     /* Prepare color: */
+    QPalette pal = QApplication::palette();
     QColor windowColor = pal.color(QPalette::Active, QPalette::Window);
 
-    /* Make even less rectangle: */
-    QRect backGroundRect = rect;
-    backGroundRect.setTopLeft(backGroundRect.topLeft() + QPoint(2, 2));
-    backGroundRect.setBottomRight(backGroundRect.bottomRight() - QPoint(2, 2));
-    /* Add even more clipping: */
-    QPainterPath roundedPath;
-    roundedPath.addRoundedRect(backGroundRect, iRadius, iRadius);
-    pPainter->setClipPath(roundedPath);
+    /* Add clipping: */
+    QPainterPath path;
+    path.moveTo(iRadius, 0);
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(-iRadius, 0), 90, 90);
+    path.lineTo(path.currentPosition().x(), iFullHeight - iRadius);
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(0, -iRadius), 180, 90);
+    path.lineTo(rect.width() - iRadius, path.currentPosition().y());
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(-iRadius, -2 * iRadius), 270, 90);
+    path.lineTo(path.currentPosition().x(), iRadius);
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(-2 * iRadius, -iRadius), 0, 90);
+    path.closeSubpath();
+    pPainter->setClipPath(path);
 
     /* Calculate top rectangle: */
-    QRect tRect = backGroundRect;
+    QRect tRect = rect;
     tRect.setBottom(tRect.top() + iHeaderHeight);
     /* Calculate bottom rectangle: */
-    QRect bRect = backGroundRect;
+    QRect bRect = rect;
     bRect.setTop(tRect.bottom());
 
     /* Prepare top gradient: */
@@ -632,8 +624,12 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect, i
     tGradient.setColorAt(1, windowColor.darker(103));
 
     /* Paint all the stuff: */
-    pPainter->fillRect(bRect, windowColor.darker(99));
     pPainter->fillRect(tRect, tGradient);
+    pPainter->fillRect(bRect, windowColor.darker(97));
+
+    /* Stroke path: */
+    pPainter->setClipping(false);
+    pPainter->strokePath(path, windowColor.darker(130));
 
     /* Restore painter: */
     pPainter->restore();

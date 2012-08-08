@@ -19,6 +19,7 @@
 
 /* Qt includes: */
 #include <QPainter>
+#include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
 #include "UIGraphicsButton.h"
@@ -42,7 +43,7 @@ QVariant UIGraphicsButton::data(int iKey) const
 {
     switch (iKey)
     {
-        case GraphicsButton_Margin: return 3;
+        case GraphicsButton_Margin: return 0;
         case GraphicsButton_IconSize: return m_icon.isNull() ? QSize(16, 16) : m_icon.availableSizes().first();
         case GraphicsButton_Icon: return m_icon;
         default: break;
@@ -83,10 +84,16 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
 
 void UIGraphicsButton::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
 {
+    /* Accepting this event allows to get release-event: */
+    pEvent->accept();
+}
+
+void UIGraphicsButton::mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIGraphicsWidget::mouseReleaseEvent(pEvent);
     /* Notify listeners about button click: */
     emit sigButtonClicked();
-    /* Propagate to parent: */
-    QIGraphicsWidget::mousePressEvent(pEvent);
 }
 
 void UIGraphicsButton::refresh()

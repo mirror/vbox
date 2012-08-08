@@ -52,13 +52,11 @@ UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent)
     setAcceptDrops(true);
     setFocusPolicy(Qt::NoFocus);
     setFlag(QGraphicsItem::ItemIsSelectable, false);
+    setAcceptHoverEvents(!isRoot());
 
     /* Non-root item? */
     if (!isRoot())
     {
-        /* Non-root item setup: */
-        setAcceptHoverEvents(true);
-
         /* Create state machine: */
         m_pHighlightMachine = new QStateMachine(this);
         /* Create 'default' state: */
@@ -132,12 +130,25 @@ void UIGChooserItem::hide()
 void UIGChooserItem::setRoot(bool fRoot)
 {
     m_fRoot = fRoot;
-    setAcceptHoverEvents(!m_fRoot);
 }
 
 bool UIGChooserItem::isRoot() const
 {
     return m_fRoot;
+}
+
+bool UIGChooserItem::isHovered() const
+{
+    return m_fHovered;
+}
+
+void UIGChooserItem::setHovered(bool fHovered)
+{
+    m_fHovered = fHovered;
+    if (m_fHovered)
+        emit sigHoverEnter();
+    else
+        emit sigHoverLeave();
 }
 
 void UIGChooserItem::makeSureItsVisible()
@@ -281,7 +292,6 @@ void UIGChooserItem::configurePainterShape(QPainter *pPainter,
         /* Setup clipping: */
         QPainterPath roundedPath;
         roundedPath.addRoundedRect(pOption->rect, iRadius, iRadius);
-        pPainter->setRenderHint(QPainter::Antialiasing);
         pPainter->setClipPath(roundedPath);
     }
 }

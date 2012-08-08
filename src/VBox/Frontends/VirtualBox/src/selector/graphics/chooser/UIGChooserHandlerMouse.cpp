@@ -71,7 +71,7 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                 else if (UIGChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIGChooserItemMachine*>(pItemUnderMouse))
                     pClickedItem = pMachineItem;
                 /* If we had clicked one of the required item types: */
-                if (pClickedItem && pClickedItem->parentItem())
+                if (pClickedItem && !pClickedItem->isRoot())
                 {
                     /* Old selection list: */
                     QList<UIGChooserItem*> oldSelectionList = model()->selectionList();
@@ -131,7 +131,7 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                 if (pClickedItem)
                 {
                     /* For non-root items: */
-                    if (pClickedItem->parentItem())
+                    if (!pClickedItem->isRoot())
                     {
                         /* Is clicked item in selection list: */
                         bool fIsClickedItemInSelectionList = contains(model()->selectionList(), pClickedItem);
@@ -176,6 +176,9 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                     /* If click was at left part: */
                     if (iMouseDoubleClickX < iGroupItemWidth / 2)
                     {
+                        /* Do not allow for unhovered root: */
+                        if (pGroupItem->isRoot() && !pGroupItem->isHovered())
+                            return false;
                         /* Unindent root if possible: */
                         if (model()->root() != model()->mainRoot())
                         {
@@ -185,6 +188,9 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                     }
                     else
                     {
+                        /* Do not allow for root: */
+                        if (pGroupItem->isRoot())
+                            return false;
                         /* Indent root with group item: */
                         pGroupItem->setHovered(false);
                         model()->indentRoot(pGroupItem);
@@ -192,6 +198,13 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                     /* Filter that event out: */
                     return true;
                 }
+                /* Or a machine one? */
+                else if (pItemUnderMouse->type() == UIGChooserItemType_Machine)
+                {
+                    /* Activate machine item: */
+                    model()->activate();
+                }
+#if 0
                 /* Or a machine one? */
                 else if (UIGChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIGChooserItemMachine*>(pItemUnderMouse))
                 {
@@ -216,6 +229,7 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                     /* Filter that event out: */
                     return true;
                 }
+#endif
                 break;
             }
             default:

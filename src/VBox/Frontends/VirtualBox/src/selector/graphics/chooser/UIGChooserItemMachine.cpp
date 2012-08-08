@@ -501,6 +501,9 @@ void UIGChooserItemMachine::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
 
 void UIGChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget * /* pWidget = 0 */)
 {
+    /* Setup: */
+    pPainter->setRenderHint(QPainter::Antialiasing);
+
     /* Configure painter shape: */
     configurePainterShape(pPainter, pOption, m_iCornerRadius);
 
