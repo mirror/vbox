@@ -1467,7 +1467,7 @@ void RaiseSoapRuntimeFault2(struct soap *soap,
     WEBDEBUG(("   error, raising SOAP exception\n"));
 
     WebLog("API return code:            0x%08X (%Rhrc)\n", apirc, apirc);
-    WebLog("COM error info result code: 0x%lX\n", info.getResultCode();
+    WebLog("COM error info result code: 0x%lX\n", info.getResultCode());
     WebLog("COM error info text:        %ls\n", info.getText().raw());
 
     // allocated our own soap fault struct
