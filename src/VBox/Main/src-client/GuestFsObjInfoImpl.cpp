@@ -51,9 +51,20 @@ void GuestFsObjInfo::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT GuestFsObjInfo::init(void)
+int GuestFsObjInfo::init(const GuestFsObjData &objData)
 {
-    return S_OK;
+    LogFlowThisFuncEnter();
+
+    /* Enclose the state transition NotReady->InInit->Ready. */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    mData = objData;
+
+    /* Confirm a successful initialization when it's the case. */
+    autoInitSpan.setSucceeded();
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -81,7 +92,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(AccessTime)(LONG64 *aAccessTime)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aAccessTime);
+
+    *aAccessTime = mData.mAccessTime;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -93,7 +108,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(AllocatedSize)(LONG64 *aAllocatedSize)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aAllocatedSize);
+
+    *aAllocatedSize = mData.mAllocatedSize;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -105,7 +124,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(BirthTime)(LONG64 *aBirthTime)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aBirthTime);
+
+    *aBirthTime = mData.mBirthTime;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -117,7 +140,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(ChangeTime)(LONG64 *aChangeTime)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aChangeTime);
+
+    *aChangeTime = mData.mChangeTime;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -129,11 +156,15 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(DeviceNumber)(ULONG *aDeviceNumber)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aDeviceNumber);
+
+    *aDeviceNumber = mData.mDeviceNumber;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFsObjInfo::COMGETTER(FileAttrs)(BSTR *aFileAttrs)
+STDMETHODIMP GuestFsObjInfo::COMGETTER(FileAttributes)(BSTR *aAttributes)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -141,11 +172,15 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(FileAttrs)(BSTR *aFileAttrs)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aAttributes);
+
+    mData.mFileAttrs.cloneTo(aAttributes);
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFsObjInfo::COMGETTER(GenerationID)(ULONG *aGenerationID)
+STDMETHODIMP GuestFsObjInfo::COMGETTER(GenerationId)(ULONG *aGenerationId)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -153,7 +188,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(GenerationID)(ULONG *aGenerationID)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aGenerationId);
+
+    *aGenerationId = mData.mGenerationID;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -165,7 +204,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(GID)(ULONG *aGID)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aGID);
+
+    *aGID = mData.mGID;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -177,7 +220,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(GroupName)(BSTR *aGroupName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aGroupName);
+
+    mData.mGroupName.cloneTo(aGroupName);
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -189,7 +236,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(HardLinks)(ULONG *aHardLinks)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aHardLinks);
+
+    *aHardLinks = mData.mNumHardLinks;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -201,7 +252,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(ModificationTime)(LONG64 *aModificationTi
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aModificationTime);
+
+    *aModificationTime = mData.mModificationTime;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -213,11 +268,15 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(Name)(BSTR *aName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aName);
+
+    mData.mName.cloneTo(aName);
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFsObjInfo::COMGETTER(NodeID)(LONG64 *aNodeID)
+STDMETHODIMP GuestFsObjInfo::COMGETTER(NodeId)(LONG64 *aNodeId)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -225,11 +284,15 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(NodeID)(LONG64 *aNodeID)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aNodeId);
+
+    *aNodeId = mData.mNodeID;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFsObjInfo::COMGETTER(NodeIDDevice)(ULONG *aNodeIDDevice)
+STDMETHODIMP GuestFsObjInfo::COMGETTER(NodeIdDevice)(ULONG *aNodeIdDevice)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -237,11 +300,15 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(NodeIDDevice)(ULONG *aNodeIDDevice)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aNodeIdDevice);
+
+    *aNodeIdDevice = mData.mNodeIDDevice;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFsObjInfo::COMGETTER(ObjectSize)(ULONG *aObjectSize)
+STDMETHODIMP GuestFsObjInfo::COMGETTER(ObjectSize)(LONG64 *aObjectSize)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -249,7 +316,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(ObjectSize)(ULONG *aObjectSize)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aObjectSize);
+
+    *aObjectSize = mData.mObjectSize;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -261,7 +332,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(Type)(FsObjType_T *aType)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aType);
+
+    *aType = mData.mType;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -273,7 +348,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(UID)(ULONG *aUID)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aUID);
+
+    *aUID = mData.mUID;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -285,7 +364,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(UserFlags)(ULONG *aUserFlags)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aUserFlags);
+
+    *aUserFlags = mData.mUserFlags;
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -297,7 +380,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(UserName)(BSTR *aUserName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aUserName);
+
+    mData.mUserName.cloneTo(aUserName);
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -309,7 +396,11 @@ STDMETHODIMP GuestFsObjInfo::COMGETTER(ACL)(BSTR *aACL)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(aACL);
+
+    mData.mACL.cloneTo(aACL);
+
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

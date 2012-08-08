@@ -20,7 +20,9 @@
 #define ____H_GUESTDIRECTORYIMPL
 
 #include "VirtualBoxBase.h"
+#include "GuestCtrlImplPrivate.h"
 
+class GuestProcess;
 class GuestSession;
 
 /**
@@ -42,7 +44,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestDirectory)
 
-    int     init(GuestSession *aSession, const Utf8Str &strPath);
+    int     init(GuestSession *aSession, const Utf8Str &strPath, const Utf8Str &strFilter = "", uint32_t uFlags = 0);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -51,7 +53,8 @@ public:
     /** @name IDirectory interface.
      * @{ */
     STDMETHOD(COMGETTER(DirectoryName))(BSTR *aName);
-
+    STDMETHOD(COMGETTER(Filter))(BSTR *aFilter);
+    STDMETHOD(Close)(void);
     STDMETHOD(Read)(IFsObjInfo **aInfo);
     /** @}  */
 
@@ -62,11 +65,24 @@ public:
 
 private:
 
+    /** @name Private internal methods.
+     * @{ */
+    int parseData(GuestProcessStreamBlock &streamBlock);
+    /** @}  */
+
     struct Data
     {
-        GuestSession           *mParent;
-        Utf8Str                 mName;
-        ComPtr<IGuestFsObjInfo> mFsObjInfo;
+        GuestSession              *mParent;
+        Utf8Str                    mName;
+        Utf8Str                    mFilter;
+        uint32_t                   mFlags;
+        /** The stdout stream object which contains all
+         *  read out data for parsing. Must be persisent
+         *  between several read() calls. */
+        GuestProcessStream         mStream;
+        /** The guest process which is responsible for
+         *  getting the stdout stream. */
+        ComObjPtr<GuestProcess>    mProcess;
     } mData;
 };
 

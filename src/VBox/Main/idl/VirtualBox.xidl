@@ -9328,13 +9328,16 @@
 
   <enum
     name="DirectoryOpenFlag"
-    uuid="fc8f6203-0072-4f34-bd08-0b35e50bf071"
+    uuid="5138837a-8fd2-4194-a1b0-08f7bc3949d0"
     >
     <desc>
       Directory open flags.
     </desc>
     <const name="None"                    value="0">
       <desc>No flag set.</desc>
+    </const>
+    <const name="NoSymlinks"              value="1">
+      <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
 
@@ -9380,7 +9383,7 @@
   
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="9233c0b5-8f0d-48b2-9b90-b730880f1e35"
+    uuid="45aca317-55d7-4b6c-bbec-d053289118b9"
     wsmap="managed"
     >
     
@@ -9581,7 +9584,7 @@
       <param name="filter" type="wstring" dir="in">
         <desc>TODO</desc>
       </param>
-      <param name="flags" type="wstring" dir="in">
+      <param name="flags" type="DirectoryOpenFlag" dir="in" safearray="yes">
         <desc>TODO</desc>
       </param>
       <param name="directory" type="IGuestDirectory" dir="return">
@@ -10232,7 +10235,7 @@
   
   <interface
     name="IDirectory" extends="$unknown"
-    uuid="e55ab5e5-4feb-452b-86ed-59cff4c581a3"
+    uuid="1b70dd03-26d7-483a-8877-89bbb0f87b70"
     wsmap="managed"
     >
     <desc>
@@ -10248,12 +10251,31 @@
       </desc>
     </attribute>
     
-    <method name="read">
+    <attribute name="filter" type="wstring" readonly="yes">
+      <desc>
+        The open filter.
+        <note>
+          TODO
+        </note>
+      </desc>
+    </attribute>
+    
+    <method name="close">
       <desc>
         TODO
 
         <result name="VBOX_E_NOT_SUPPORTED">
           TODO
+        </result>
+      </desc>
+    </method>
+    
+    <method name="read">
+      <desc>
+        TODO
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          End of directory listing reached.
         </result>
       </desc>
       <param name="objInfo" type="IFsObjInfo" dir="return">
@@ -10471,7 +10493,7 @@
   
   <interface
     name="IFsObjInfo" extends="$unknown"
-    uuid="4925335b-9aa6-4870-bda3-8edb09fb602c"
+    uuid="4047ba30-7006-4966-ae86-94164e5e20eb"
     wsmap="managed"
     >
     <desc>
@@ -10518,7 +10540,7 @@
         </note>
       </desc>
     </attribute>
-    <attribute name="fileAtttributes" type="wstring" readonly="yes">
+    <attribute name="fileAttributes" type="wstring" readonly="yes">
       <desc>
         TODO
         <note>

@@ -73,6 +73,7 @@ public:
      * @{ */
     int callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     inline bool callbackExists(uint32_t uContextID);
+    inline int checkPID(uint32_t uPID);
     void close(void);
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
@@ -82,6 +83,7 @@ public:
     int startProcessAsync(void);
     int terminateProcess(void);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWaitResult &guestResult);
+    int waitForStart(uint32_t uTimeoutMS);
     int writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten);
     /** @}  */
 

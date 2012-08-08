@@ -274,8 +274,9 @@ protected:
 struct GuestFsObjData
 {
     /** Helper function to extract the data from
-     *  a guest stream block. */
-    int From(const GuestProcessStreamBlock &strmBlk);
+     *  a certin VBoxService tool's guest stream block. */
+    int FromLs(const GuestProcessStreamBlock &strmBlk);
+    int FromStat(const GuestProcessStreamBlock &strmBlk);
 
     int64_t              mAccessTime;
     int64_t              mAllocatedSize;
@@ -364,10 +365,10 @@ public:
 
 public:
 
-    void Clear();
+    void Clear(void);
 
 #ifdef DEBUG
-    void Dump();
+    void DumpToLog(void) const;
 #endif
 
     int GetInt64Ex(const char *pszKey, int64_t *piVal) const;
@@ -381,6 +382,8 @@ public:
     int GetUInt32Ex(const char *pszKey, uint32_t *puVal) const;
 
     uint32_t GetUInt32(const char *pszKey) const;
+
+    bool IsEmpty(void) { return m_mapPairs.empty(); }
 
     int SetValue(const char *pszKey, const char *pszValue);
 

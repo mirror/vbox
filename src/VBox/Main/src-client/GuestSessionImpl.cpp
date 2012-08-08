@@ -1091,6 +1091,40 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
     return rc;
 }
 
+int GuestSession::directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter,
+                                        uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory)
+{
+    LogFlowThisFunc(("strPath=%s, strPath=%s, uFlags=%x\n",
+                     strPath.c_str(), strFilter.c_str(), uFlags));
+    int rc;
+
+    try
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        /* Create the directory object. */
+        HRESULT hr = pDirectory.createObject();
+        if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
+
+        rc = pDirectory->init(this /* Parent */,
+                              strPath, strFilter, uFlags);
+        if (RT_FAILURE(rc)) throw rc;
+
+        /* Add the created directory to our vector. */
+        mData.mDirectories.push_back(pDirectory);
+
+        LogFlowFunc(("Added new directory \"%s\" (Session: %RU32)\n",
+                     strPath.c_str(), mData.mId));
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
 {
     LogFlowFuncEnter();
@@ -1197,6 +1231,7 @@ int GuestSession::fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &
         BYTE byBuf[_64K];
         size_t cbRead = 0;
 
+        /** @todo Merge with GuestDirectory::read. */
         for (;;)
         {
             rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
@@ -1233,7 +1268,7 @@ int GuestSession::fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &
         rc = streamOut.ParseBlock(streamBlock);
         if (RT_SUCCESS(rc))
         {
-            rc = objData.From(streamBlock);
+            rc = objData.FromStat(streamBlock);
         }
         else
             AssertMsgFailed(("Parsing stream block failed: %Rrc\n", rc));
@@ -1817,17 +1852,71 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, IN_BSTR aFlags, IGuestDirectory **aDirectory)
+STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, ComSafeArrayIn(DirectoryOpenFlag_T, aFlags), IGuestDirectory **aDirectory)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No directory to open specified"));
+    if (RT_UNLIKELY((aFilter) != NULL && *(aFilter) != '\0'))
+        return setError(E_INVALIDARG, tr("Directory filters not implemented yet"));
+
+    CheckComArgOutPointerValid(aDirectory);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    uint32_t fFlags = DirectoryOpenFlag_None;
+    if (aFlags)
+    {
+        com::SafeArray<DirectoryOpenFlag_T> flags(ComSafeArrayInArg(aFlags));
+        for (size_t i = 0; i < flags.size(); i++)
+            fFlags |= flags[i];
+
+        if (fFlags)
+            return setError(E_INVALIDARG, tr("Open flags (%#x) not implemented yet"), fFlags);
+    }
+
+    HRESULT hr = S_OK;
+
+    ComObjPtr <GuestDirectory> pDirectory;
+    int rc = directoryOpenInternal(Utf8Str(aPath), Utf8Str(aFilter), fFlags, pDirectory);
+    if (RT_SUCCESS(rc))
+    {
+        if (aDirectory)
+        {
+            /* Return directory object to the caller. */
+            hr = pDirectory.queryInterfaceTo(aDirectory);
+        }
+        else
+        {
+            rc = directoryClose(pDirectory);
+            if (RT_FAILURE(rc))
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Unable to close directory object, rc=%Rrc"), rc);
+        }
+    }
+    else
+    {
+        switch (rc)
+        {
+            case VERR_INVALID_PARAMETER:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory failed: Invalid parameters given"));
+               break;
+
+            case VERR_BROKEN_PIPE:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory failed: Unexpectedly aborted"));
+               break;
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory failed: %Rrc"), rc);
+               break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -2102,7 +2191,7 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
 
         LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
                          rc, cbRead, streamOut.GetSize()));
-    } 
+    }
 
     if (RT_FAILURE(rc))
         return setError(E_FAIL, tr("Error while deleting file: %Rrc"), rc);

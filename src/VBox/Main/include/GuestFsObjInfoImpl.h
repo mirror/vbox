@@ -41,7 +41,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestFsObjInfo)
 
-    HRESULT init(void);
+    int     init(const GuestFsObjData &objData);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -54,16 +54,16 @@ public:
     STDMETHOD(COMGETTER(BirthTime))(LONG64 *aBirthTime);
     STDMETHOD(COMGETTER(ChangeTime))(LONG64 *aChangeTime);
     STDMETHOD(COMGETTER(DeviceNumber))(ULONG *aDeviceNumber);
-    STDMETHOD(COMGETTER(FileAttrs))(BSTR *aFileAttrs);
-    STDMETHOD(COMGETTER(GenerationID))(ULONG *aGenerationID);
+    STDMETHOD(COMGETTER(FileAttributes))(BSTR *aFileAttrs);
+    STDMETHOD(COMGETTER(GenerationId))(ULONG *aGenerationId);
     STDMETHOD(COMGETTER(GID))(ULONG *aGID);
     STDMETHOD(COMGETTER(GroupName))(BSTR *aGroupName);
     STDMETHOD(COMGETTER(HardLinks))(ULONG *aHardLinks);
     STDMETHOD(COMGETTER(ModificationTime))(LONG64 *aModificationTime);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(NodeID))(LONG64 *aNodeID);
-    STDMETHOD(COMGETTER(NodeIDDevice))(ULONG *aNodeIDDevice);
-    STDMETHOD(COMGETTER(ObjectSize))(ULONG *aObjectSize);
+    STDMETHOD(COMGETTER(NodeId))(LONG64 *aNodeId);
+    STDMETHOD(COMGETTER(NodeIdDevice))(ULONG *aNodeIdDevice);
+    STDMETHOD(COMGETTER(ObjectSize))(LONG64 *aObjectSize);
     STDMETHOD(COMGETTER(Type))(FsObjType_T *aType);
     STDMETHOD(COMGETTER(UID))(ULONG *aUID);
     STDMETHOD(COMGETTER(UserFlags))(ULONG *aUserFlags);
