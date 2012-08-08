@@ -207,6 +207,7 @@ public:
     int                     directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory);
     int                     dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     int                     fileClose(ComObjPtr<GuestFile> pFile);
+    int                     fileRemoveInternal(Utf8Str strPath, int *prc);
     int                     fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition,
                                              uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile);
     int                     fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData);
