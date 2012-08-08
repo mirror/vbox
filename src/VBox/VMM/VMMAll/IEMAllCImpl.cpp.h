@@ -82,7 +82,7 @@ static bool iemHlpCalcParityFlag(uint8_t u8Result)
 /**
  * Updates the specified flags according to a 8-bit result.
  *
- * @param   pIemCpu             The.
+ * @param   pIemCpu             The IEM state of the calling EMT.
  * @param   u8Result            The result to set the flags according to.
  * @param   fToUpdate           The flags to update.
  * @param   fUndefined          The flags that are specified as undefined.
@@ -138,6 +138,17 @@ static void iemHlpAdjustSelectorForNewCpl(PIEMCPU pIemCpu, uint8_t uCpl, PCPUMSE
         &&    (pSReg->Attr.n.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
            !=                         (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF)) /* not conforming code */
         iemHlpLoadNullDataSelectorProt(pSReg, 0);
+}
+
+
+/**
+ * Indicates that we have modified the FPU state.
+ *
+ * @param   pIemCpu             The IEM state of the calling EMT.
+ */
+DECLINLINE(void) iemHlpUsedFpu(PIEMCPU pIemCpu)
+{
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
 }
 
 /** @} */
@@ -2005,19 +2016,78 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 
 
 /**
+ * Loads a segment register when entering V8086 mode.
+ *
+ * @param   pSReg           The segment register.
+ * @param   uSeg            The segment to load.
+ */
+static void iemCImplCommonV8086LoadSeg(PCPUMSELREG pSReg, uint16_t uSeg)
+{
+    pSReg->Sel        = uSeg;
+    pSReg->ValidSel   = uSeg;
+    pSReg->fFlags     = CPUMSELREG_FLAGS_VALID;
+    pSReg->u64Base    = (uint32_t)uSeg << 4;
+    pSReg->u32Limit   = 0xffff;
+    pSReg->Attr.u     = X86_SEL_TYPE_RW_ACC | RT_BIT(4) /*!sys*/ | RT_BIT(7) /*P*/ | (3 /*DPL*/ << 5); /* VT-x wants 0xf3 */
+    /** @todo Testcase: Check if VT-x really needs this and what it does itself when
+     *        IRET'ing to V8086. */
+}
+
+
+/**
  * Implements iret for protected mode returning to V8086 mode.
  *
- * @param   enmEffOpSize    The effective operand size.
+ * @param   pCtx            Pointer to the CPU context.
  * @param   uNewEip         The new EIP.
  * @param   uNewCs          The new CS.
  * @param   uNewFlags       The new EFLAGS.
  * @param   uNewRsp         The RSP after the initial IRET frame.
  */
-IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, IEMMODE, enmEffOpSize, uint32_t, uNewEip, uint16_t, uNewCs,
+IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uint16_t, uNewCs,
                 uint32_t, uNewFlags, uint64_t, uNewRsp)
 {
-    /** @todo NT4SP1 0008:8013bd5d cf   iret */
-    IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
+#if 1
+    if (!LogIs6Enabled())
+    {
+        RTLogGroupSettings(NULL, "iem.eo.l6.l2");
+        RTLogFlags(NULL, "enabled");
+        return VERR_IEM_RESTART_INSTRUCTION;
+    }
+#endif
+
+    /*
+     * Pop the V8086 specific frame bits off the stack.
+     */
+    VBOXSTRICTRC    rcStrict;
+    RTCPTRUNION     uFrame;
+    rcStrict = iemMemStackPopContinueSpecial(pIemCpu, 24, &uFrame.pv, &uNewRsp);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    uint32_t uNewEsp = uFrame.pu32[0];
+    uint16_t uNewSs  = uFrame.pu32[1];
+    uint16_t uNewEs  = uFrame.pu32[2];
+    uint16_t uNewDs  = uFrame.pu32[3];
+    uint16_t uNewFs  = uFrame.pu32[4];
+    uint16_t uNewGs  = uFrame.pu32[5];
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R); /* don't use iemMemStackPopCommitSpecial here. */
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Commit the operation.
+     */
+    iemCImplCommonV8086LoadSeg(&pCtx->cs, uNewCs);
+    iemCImplCommonV8086LoadSeg(&pCtx->ss, uNewSs);
+    iemCImplCommonV8086LoadSeg(&pCtx->es, uNewEs);
+    iemCImplCommonV8086LoadSeg(&pCtx->ds, uNewDs);
+    iemCImplCommonV8086LoadSeg(&pCtx->fs, uNewFs);
+    iemCImplCommonV8086LoadSeg(&pCtx->gs, uNewGs);
+    pCtx->rip      = uNewEip;
+    pCtx->rsp      = uNewEsp;
+    pCtx->rflags.u = uNewFlags;
+    pIemCpu->uCpl  = 3;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2088,7 +2158,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
      */
     if (   (uNewFlags & X86_EFL_VM)
         && pIemCpu->uCpl == 0)
-        return IEM_CIMPL_CALL_5(iemCImpl_iret_prot_v8086, enmEffOpSize, uNewEip, uNewCs, uNewFlags, uNewRsp);
+    {
+        Assert(enmEffOpSize == IEMMODE_32BIT);
+        return IEM_CIMPL_CALL_5(iemCImpl_iret_prot_v8086, pCtx, uNewEip, uNewCs, uNewFlags, uNewRsp);
+    }
 
     /*
      * Protected mode.
@@ -4083,6 +4156,7 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
         pFpu->FOP       = 0;
     }
 
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -4292,6 +4366,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -4496,7 +4571,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     pCtx->fpu.FOP   = 0;
 
 
-    /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -4525,6 +4600,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -4559,6 +4635,7 @@ IEM_CIMPL_DEF_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -4582,6 +4659,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
     iemFpuRecalcExceptionStatus(pCtx);
 
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -4628,8 +4706,9 @@ IEM_CIMPL_DEF_1(iemCImpl_fxch_underflow, uint8_t, iStReg)
         pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_XCPT_MASK);
         pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
     }
-    iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
 
+    iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -4698,6 +4777,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
     }
 
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
+    iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }

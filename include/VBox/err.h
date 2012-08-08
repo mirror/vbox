@@ -2125,6 +2125,8 @@
 #define VERR_IEM_IPE_2                              (-5393)
 /** Internal processing error \#3 in the IEM code.. */
 #define VERR_IEM_IPE_3                              (-5394)
+/** Restart the current instruction. For testing only. */
+#define VERR_IEM_RESTART_INSTRUCTION                (-5395)
 /** @} */
 
 
