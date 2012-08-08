@@ -1752,6 +1752,8 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
         procInfo.mName    = Utf8StrFmt(tr("Creating temporary directory from template \"%s\"",
                                        strTemplate.c_str()));
         procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
+        procInfo.mFlags   =   ProcessCreateFlag_Hidden
+                            | ProcessCreateFlag_WaitForStdOut;
         /* Construct arguments. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
         procInfo.mArguments.push_back(Bstr(aTemplate)); /* The template we want to use. */
@@ -1774,7 +1776,9 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
             rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
                                    30 * 1000 /* Timeout */, waitRes);
             if (   RT_FAILURE(rc)
-                || waitRes.mResult != ProcessWaitResult_StdOut)
+                || waitRes.mResult == ProcessWaitResult_Terminate
+                || waitRes.mResult == ProcessWaitResult_Error
+                || waitRes.mResult == ProcessWaitResult_Timeout)
             {
                 break;
             }
@@ -1785,17 +1789,21 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
             if (RT_FAILURE(rc))
                 break;
 
-            rc = streamOut.AddData(byBuf, cbRead);
-            if (RT_FAILURE(rc))
-                break;
+            if (cbRead)
+            {
+                rc = streamOut.AddData(byBuf, cbRead);
+                if (RT_FAILURE(rc))
+                    break;
+            }
         }
 
         LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
                          rc, cbRead, streamOut.GetSize()));
     } 
-
+    else
+        return setError(E_FAIL, tr("Error while starting temporary directory creation tool on guest: %Rrc"), rc);
     if (RT_FAILURE(rc))
-        return setError(E_FAIL, tr("Error while creating temporary directory: %Rrc"), rc);
+        return setError(E_FAIL, tr("Error while running temporary directory creation tool: %Rrc"), rc);
     if (!streamOut.GetSize())
         return setError(E_FAIL, tr("No return code after creating temporary directory"));
     GuestProcessStreamBlock streamBlock;
@@ -1806,7 +1814,8 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
         int64_t i64rc;
         if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
             return setError(E_FAIL, tr("No return code after creating temporary directory"));
-        // *aReturnCode = (LONG)i64rc;
+        if (RT_FAILURE((int)i64rc))
+            return setError(VBOX_E_IPRT_ERROR, tr("File deletion failed: %Rrc"), rc);
     }
     else
         return setError(E_FAIL, tr("Error while getting return code from creating temporary directory: %Rrc"), rc);
@@ -2151,6 +2160,8 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
         procInfo.mName    = Utf8StrFmt(tr("Removing file \"%s\"",
                                        strPath.c_str()));
         procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_RM);
+        procInfo.mFlags   =   ProcessCreateFlag_Hidden
+                            | ProcessCreateFlag_WaitForStdOut;
         /* Construct arguments. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
         procInfo.mArguments.push_back(Bstr(aPath)); /* The directory we want to create. */
@@ -2163,6 +2174,8 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
     ComObjPtr<GuestProcess> pProcess;
     rc = processCreateExInteral(procInfo, pProcess);
     if (RT_SUCCESS(rc))
+        rc = pProcess->startProcess();
+    if (RT_SUCCESS(rc))
     {
         GuestProcessWaitResult waitRes;
         BYTE byBuf[_64K];
@@ -2173,7 +2186,9 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
             rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
                                    30 * 1000 /* Timeout */, waitRes);
             if (   RT_FAILURE(rc)
-                || waitRes.mResult != ProcessWaitResult_StdOut)
+                || waitRes.mResult == ProcessWaitResult_Terminate
+                || waitRes.mResult == ProcessWaitResult_Error
+                || waitRes.mResult == ProcessWaitResult_Timeout)
             {
                 break;
             }
@@ -2184,17 +2199,21 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
             if (RT_FAILURE(rc))
                 break;
 
-            rc = streamOut.AddData(byBuf, cbRead);
-            if (RT_FAILURE(rc))
-                break;
+            if (cbRead)
+            {
+                rc = streamOut.AddData(byBuf, cbRead);
+                if (RT_FAILURE(rc))
+                    break;
+            }
         }
 
         LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
                          rc, cbRead, streamOut.GetSize()));
     }
-
+    else
+        return setError(E_FAIL, tr("Error while starting delete tool on guest: %Rrc"), rc);
     if (RT_FAILURE(rc))
-        return setError(E_FAIL, tr("Error while deleting file: %Rrc"), rc);
+        return setError(E_FAIL, tr("Error while running delete tool on guest: %Rrc"), rc);
     if (!streamOut.GetSize())
         return setError(E_FAIL, tr("No return code after deleting file"));
     GuestProcessStreamBlock streamBlock;
@@ -2205,6 +2224,8 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
         int64_t i64rc;
         if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
             return setError(E_FAIL, tr("No return code after deleting file"));
+        if (RT_FAILURE((int)i64rc))
+            return setError(VBOX_E_IPRT_ERROR, tr("File deletion failed: %Rrc"), rc);
     }
     else
         return setError(E_FAIL, tr("Error while getting return code from deleting file: %Rrc"), rc);
