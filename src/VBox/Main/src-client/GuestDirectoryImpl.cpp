@@ -164,6 +164,8 @@ int GuestDirectory::parseData(GuestProcessStreamBlock &streamBlock)
 {
     LogFlowThisFunc(("cbStream=%RU32\n", mData.mStream.GetSize()));
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     int rc;
     do
     {
@@ -208,151 +210,162 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
     ComObjPtr<GuestProcess> pProcess = mData.mProcess;
     Assert(!pProcess.isNull());
 
-    HRESULT hr = S_OK;
-
-    int rc;
     GuestProcessStreamBlock streamBlock;
+    GuestFsObjData objData;
 
-    /** @todo Make use of exceptions! */
-
-    try
+    int rc = parseData(streamBlock);
+    if (   RT_FAILURE(rc)
+        || streamBlock.IsEmpty()) /* More data needed. */
     {
-        GuestFsObjData objData;
+        rc = pProcess->waitForStart(30 * 1000 /* 30s timeout */);
+    }
 
-        AutoWriteLock rlock(this COMMA_LOCKVAL_SRC_POS);
+    if (RT_SUCCESS(rc))
+    {
+        BYTE byBuf[_64K];
+        size_t cbRead = 0;
 
-        rc = parseData(streamBlock);
-        if (   RT_FAILURE(rc)
-            || streamBlock.IsEmpty()) /* More data needed. */
+        /** @todo Merge with GuestSession::queryFileInfoInternal. */
+        for (;RT_SUCCESS(rc);)
         {
-            rlock.release();
-
-            rc = pProcess->waitForStart(30 * 1000 /* Timeout */);
-            if (RT_FAILURE(rc))
-                return setError(VBOX_E_IPRT_ERROR,
-                                tr("Could not start reading directory \"%s\": %Rrc"),
-                                mData.mName.c_str(), rc);
-            BYTE byBuf[_64K];
-            size_t cbRead = 0;
-
-            /** @todo Merge with GuestSession::queryFileInfoInternal. */
-            for (;;)
+            GuestProcessWaitResult waitRes;
+            rc = pProcess->waitFor(  ProcessWaitForFlag_Terminate
+                                   | ProcessWaitForFlag_StdOut,
+                                   30 * 1000 /* Timeout */, waitRes);
+            if (   RT_FAILURE(rc)
+                || waitRes.mResult == ProcessWaitResult_Terminate
+                || waitRes.mResult == ProcessWaitResult_Error
+                || waitRes.mResult == ProcessWaitResult_Timeout)
             {
-                GuestProcessWaitResult waitRes;
-                rc = pProcess->waitFor(  ProcessWaitForFlag_Terminate
-                                       | ProcessWaitForFlag_StdOut,
-                                       30 * 1000 /* Timeout */, waitRes);
-                if (   RT_FAILURE(rc)
-                    || waitRes.mResult == ProcessWaitResult_Terminate
-                    || waitRes.mResult == ProcessWaitResult_Error
-                    || waitRes.mResult == ProcessWaitResult_Timeout)
-                {
-                    break;
-                }
+                rc = waitRes.mRC;
+                break;
+            }
 
-                rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                        30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                        &cbRead);
+            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                    &cbRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            if (cbRead)
+            {
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                rc = mData.mStream.AddData(byBuf, cbRead);
                 if (RT_FAILURE(rc))
                     break;
 
-                if (cbRead)
-                {
-                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                LogFlowThisFunc(("rc=%Rrc, cbRead=%RU64, cbStreamOut=%RU32\n",
+                                 rc, cbRead, mData.mStream.GetSize()));
 
-                    rc = mData.mStream.AddData(byBuf, cbRead);
-                    if (RT_FAILURE(rc))
-                        break;
-
-                    LogFlowThisFunc(("rc=%Rrc, cbRead=%RU64, cbStreamOut=%RU32\n",
-                                     rc, cbRead, mData.mStream.GetSize()));
-
-                    rc = parseData(streamBlock);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* Parsing the current stream block succeeded so
-                         * we don't need more at the moment. */
-                        break;
-                    }
-                }
-            }
-
-            LogFlowThisFunc(("Reading done with rc=%Rrc, cbRead=%RU64, cbStream=%RU32\n",
-                             rc, cbRead, mData.mStream.GetSize()));
-
-            if (RT_SUCCESS(rc))
-            {
                 rc = parseData(streamBlock);
-                if (rc == VERR_NO_DATA) /* Since this is the last parsing call, this is ok. */
-                    rc = VINF_SUCCESS;
-            }
-
-            /*
-             * Note: The guest process can still be around to serve the next
-             *       upcoming stream block next time.
-             */
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Move into common function. */
-                ProcessStatus_T procStatus = ProcessStatus_Undefined;
-                LONG exitCode = 0;
-
-                HRESULT hr = pProcess->COMGETTER(Status(&procStatus));
-                ComAssertComRC(hr);
-                hr = pProcess->COMGETTER(ExitCode(&exitCode));
-                ComAssertComRC(hr);
-
-                if (   (   procStatus != ProcessStatus_Started
-                        && procStatus != ProcessStatus_Paused
-                        && procStatus != ProcessStatus_Terminating
-                       )
-                    && exitCode != 0)
+                if (RT_SUCCESS(rc))
                 {
-                    return setError(VBOX_E_IPRT_ERROR,
-                                    tr("Reading directory \"%s\" failed: Unable to read / access denied"),
-                                    mData.mName.c_str(), exitCode); /**@todo Add stringify methods! */
+                    /* Parsing the current stream block succeeded so
+                     * we don't need more at the moment. */
+                    break;
                 }
             }
         }
+
+        LogFlowThisFunc(("Reading done with rc=%Rrc, cbRead=%RU64, cbStream=%RU32\n",
+                         rc, cbRead, mData.mStream.GetSize()));
 
         if (RT_SUCCESS(rc))
         {
-            if (streamBlock.GetCount()) /* Did we get content? */
+            rc = parseData(streamBlock);
+            if (rc == VERR_NO_DATA) /* Since this is the last parsing call, this is ok. */
+                rc = VINF_SUCCESS;
+        }
+
+        /*
+         * Note: The guest process can still be around to serve the next
+         *       upcoming stream block next time.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Move into common function. */
+            ProcessStatus_T procStatus = ProcessStatus_Undefined;
+            LONG exitCode = 0;
+
+            HRESULT hr2 = pProcess->COMGETTER(Status(&procStatus));
+            ComAssertComRC(hr2);
+            hr2 = pProcess->COMGETTER(ExitCode(&exitCode));
+            ComAssertComRC(hr2);
+
+            if (   (   procStatus != ProcessStatus_Started
+                    && procStatus != ProcessStatus_Paused
+                    && procStatus != ProcessStatus_Terminating
+                   )
+                && exitCode != 0)
             {
-                rc = objData.FromLs(streamBlock);
-                if (RT_FAILURE(rc))
-                    return setError(VBOX_E_IPRT_ERROR,
-                                    tr("Reading directory \"%s\" failed: Path not found"),
-                                    mData.mName.c_str());
-
-                /* Create the object. */
-                ComObjPtr<GuestFsObjInfo> pFsObjInfo;
-                hr = pFsObjInfo.createObject();
-                if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
-
-                rc = pFsObjInfo->init(objData);
-                if (RT_FAILURE(rc)) throw rc;
-
-                /* Return info object to the caller. */
-                hr = pFsObjInfo.queryInterfaceTo(aInfo);
-                if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
-            }
-            else
-            {
-                /* Nothing to read anymore. Tell the caller. */
-                hr = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No more entries for directory \"%s\""),
-                              mData.mName.c_str());
+                rc = VERR_ACCESS_DENIED;
             }
         }
     }
-    catch (int rc2)
+
+    if (RT_SUCCESS(rc))
     {
-        rc = rc2;
+        if (streamBlock.GetCount()) /* Did we get content? */
+        {
+            rc = objData.FromLs(streamBlock);
+            if (RT_FAILURE(rc))
+                rc = VERR_PATH_NOT_FOUND;
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Create the object. */
+                ComObjPtr<GuestFsObjInfo> pFsObjInfo;
+                HRESULT hr2 = pFsObjInfo.createObject();
+                if (FAILED(hr2))
+                    rc = VERR_COM_UNEXPECTED;
+
+                if (RT_SUCCESS(rc))
+                    rc = pFsObjInfo->init(objData);
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* Return info object to the caller. */
+                    hr2 = pFsObjInfo.queryInterfaceTo(aInfo);
+                    if (FAILED(hr2))
+                        rc = VERR_COM_UNEXPECTED;
+                }
+            }
+        }
+        else
+        {
+            /* Nothing to read anymore. Tell the caller. */
+            rc = VERR_NO_MORE_FILES;
+        }
     }
 
+    HRESULT hr = S_OK;
+
     if (RT_FAILURE(rc)) /** @todo Add more errors here. */
-        hr = setError(VBOX_E_IPRT_ERROR, tr("Error while reading directory \"%s\": %Rrc\n"),
-                      mData.mName.c_str(), rc);
+    {
+        switch (rc)
+        {
+            case VERR_ACCESS_DENIED:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: Unable to read / access denied"),
+                              mData.mName.c_str());
+                break;
+
+            case VERR_PATH_NOT_FOUND:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: Path not found"),
+                              mData.mName.c_str());
+                break;
+
+            case VERR_NO_MORE_FILES:
+                hr = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No more entries for directory \"%s\""),
+                              mData.mName.c_str());
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Error while reading directory \"%s\": %Rrc\n"),
+                              mData.mName.c_str(), rc);
+                break;
+        }
+    }
 
     LogFlowFuncLeaveRC(rc);
     return hr;

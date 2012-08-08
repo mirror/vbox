@@ -48,7 +48,7 @@ public:
 
     int setProgress(ULONG uPercent);
     int setProgressSuccess(void);
-    int setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
+    HRESULT setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
 
 protected:
 
@@ -69,6 +69,10 @@ public:
     SessionTaskCopyTo(GuestSession *pSession,
                       const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
 
+    SessionTaskCopyTo(GuestSession *pSession,
+                      PRTFILE pSourceFile, size_t cbSourceOffset, size_t cbSourceSize,
+                      const Utf8Str &strDest, uint32_t uFlags);
+
     virtual ~SessionTaskCopyTo(void);
 
 public:
@@ -80,6 +84,9 @@ public:
 protected:
 
     Utf8Str  mSource;
+    PRTFILE  mSourceFile;
+    size_t   mSourceOffset;
+    size_t   mSourceSize;
     Utf8Str  mDest;
     uint32_t mCopyFileFlags;
 };
@@ -106,6 +113,33 @@ protected:
 
     Utf8Str  mSource;
     Utf8Str  mDest;
+    uint32_t mFlags;
+};
+
+/**
+ * Task for automatically updating the Guest Additions on the guest.
+ */
+class SessionTaskUpdateAdditions : public GuestSessionTask
+{
+public:
+
+    SessionTaskUpdateAdditions(GuestSession *pSession,
+                               const Utf8Str &strSource, uint32_t uFlags);
+
+    virtual ~SessionTaskUpdateAdditions(void);
+
+public:
+
+    int Run(void);
+    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
+    static int taskThread(RTTHREAD Thread, void *pvUser);
+
+protected:
+
+    /** The (optionally) specified Guest Additions .ISO on the host
+     *  which will be used for the updating process. */
+    Utf8Str  mSource;
+    /** Update flags. */
     uint32_t mFlags;
 };
 
@@ -215,6 +249,7 @@ public:
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
     Utf8Str                 getName(void);
+    Guest                  *getParent(void) { return mData.mParent; }
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     processClose(ComObjPtr<GuestProcess> pProcess);
     int                     processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);

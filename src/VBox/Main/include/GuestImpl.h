@@ -131,7 +131,7 @@ public:
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
-    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress);
+    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags), IProgress **aProgress);
     STDMETHOD(CreateSession)(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession);
     STDMETHOD(FindSession)(IN_BSTR aSessionName, ComSafeArrayOut(IGuestSession *, aSessions));
 
@@ -209,8 +209,8 @@ public:
     uint32_t    getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
     Console    *getConsole(void) { return mParent; }
     int         sessionClose(ComObjPtr<GuestSession> pSession);
-    int         sessionCreate(const Utf8Str &strUser, const Utf8Str &aPassword, const Utf8Str &aDomain,
-                              const Utf8Str &aSessionName, ComObjPtr<GuestSession> &pGuestSession);
+    int         sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, const Utf8Str &strDomain,
+                              const Utf8Str &strSessionName, ComObjPtr<GuestSession> &pGuestSession);
     inline bool sessionExists(uint32_t uSessionID);
     /** @}  */
 

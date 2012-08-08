@@ -1658,11 +1658,11 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     if (pContext->fHostToGuest)
     {
 #ifndef VBOX_WITH_GUEST_CONTROL2
+        Assert(!fFlags);
         rc = pContext->pGuest->CopyToGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
                                            Bstr(pContext->strUsername).raw(), Bstr(pContext->strPassword).raw(),
                                            fFlags, pProgress.asOutParam());
 #else
-        Assert(!fFlags);
         SafeArray<CopyFileFlag_T> copyFlags;
         rc = pContext->pGuestSession->CopyTo(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
                                              ComSafeArrayAsInParam(copyFlags),
@@ -1673,11 +1673,11 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     else
     {
 #ifndef VBOX_WITH_GUEST_CONTROL2
+        Assert(!fFlags);
         rc = pContext->pGuest->CopyFromGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
                                              Bstr(pContext->strUsername).raw(), Bstr(pContext->strPassword).raw(),
                                              fFlags, pProgress.asOutParam());
 #else
-        Assert(!fFlags);
         SafeArray<CopyFileFlag_T> copyFlags;
         rc = pContext->pGuestSession->CopyFrom(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
                                                ComSafeArrayAsInParam(copyFlags),
@@ -2808,9 +2808,11 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
 
         HRESULT rc = S_OK;
         ComPtr<IProgress> pProgress;
+
+        SafeArray<AdditionsUpdateFlag_T> updateFlags;
         CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(strSource).raw(),
                                                 /* Wait for whole update process to complete. */
-                                                AdditionsUpdateFlag_None,
+                                                ComSafeArrayAsInParam(updateFlags),
                                                 pProgress.asOutParam()));
         if (FAILED(rc))
             vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));

@@ -2648,7 +2648,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress)
+STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2660,16 +2660,71 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Validate flags. */
+    uint32_t fFlags = AdditionsUpdateFlag_None;
     if (aFlags)
     {
-        if (!(aFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
+        com::SafeArray<CopyFileFlag_T> flags(ComSafeArrayInArg(aFlags));
+        for (size_t i = 0; i < flags.size(); i++)
+            fFlags |= flags[i];
+    }
+
+    if (fFlags)
+    {
+        if (!(fFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
             return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
     }
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
+#if 1
+    /* Create an anonymous session. This is required to run the Guest Additions
+     * update process with administrative rights. */
+    ComObjPtr<GuestSession> pSession;
+    int rc = sessionCreate("" /* User */, "" /* Password */, "" /* Domain */,
+                           "Updating Guest Additions" /* Name */, pSession);
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_MAX_PROCS_REACHED:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
+                              VBOX_GUESTCTRL_MAX_SESSIONS);
+                break;
 
+            /** @todo Add more errors here. */
+
+           default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session: %Rrc"), rc);
+                break;
+        }
+    }
+    else
+    {
+        AssertPtr(!pSession.isNull());
+        rc = pSession->queryInfo();
+        if (RT_FAILURE(rc))
+        {
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Could not query guest session information: %Rrc"), rc);
+        }
+        else
+        {
+            ComObjPtr<Progress> pProgress;
+            SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
+                                                                               Utf8Str(aSource), fFlags);
+            AssertPtrReturn(pTask, VERR_NO_MEMORY);
+            rc = pSession->startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
+            if (RT_SUCCESS(rc))
+            {
+                /* Return progress to the caller. */
+                hr = pProgress.queryInterfaceTo(aProgress);
+            }
+            else
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Starting task for updating Guest Additions on the guest failed: %Rrc"), rc);
+        }
+    }
+#else /* Legacy, can be removed later. */
     ComObjPtr<Progress> progress;
     try
     {
@@ -2708,6 +2763,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
         progress.queryInterfaceTo(aProgress);
     }
     return rc;
+#endif
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
