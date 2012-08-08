@@ -582,7 +582,7 @@ int GuestEnvironment::appendToEnvBlock(const char *pszEnv, void **ppvList, size_
 
 int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk)
 {
-    LogFlowFuncEnter(("\n"));
+    LogFlowFunc(("\n"));
 
     int rc = VINF_SUCCESS;
 
@@ -619,7 +619,7 @@ int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk)
 
 int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
 {
-    LogFlowFuncEnter(("\n"));
+    LogFlowFunc(("\n"));
 
     int rc = VINF_SUCCESS;
 
