@@ -700,7 +700,7 @@ void UIGChooserItemGroup::updateLayout()
     else
     {
         /* Prepare variables: */
-        int iHorizontalIndent = isRoot() ? 1 : iHorizontalMargin;
+        int iHorizontalIndent = isRoot() ? 2 : iHorizontalMargin;
         QRect geo = geometry().toRect();
         int iX = geo.x();
         int iY = geo.y();
@@ -742,7 +742,7 @@ int UIGChooserItemGroup::minimumWidthHint(bool fClosedGroup) const
     if (!fClosedGroup)
     {
         /* Prepare variables: */
-        int iHorizontalIndent = isRoot() ? 1 : iHorizontalMargin;
+        int iHorizontalIndent = isRoot() ? 2 : iHorizontalMargin;
         /* We have to make sure that we had taken into account: */
         foreach (UIGChooserItem *pItem, items())
         {
@@ -1078,10 +1078,10 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
             /* Add clipping: */
             QPainterPath path;
-            path.moveTo(1, 0);
+            path.moveTo(2, 0);
             path.lineTo(path.currentPosition().x(), iFullHeaderHeight - 10);
             path.arcTo(QRectF(path.currentPosition(), QSizeF(20, 20)).translated(0, -10), 180, 90);
-            path.lineTo(rect.width() - 10 - 1, path.currentPosition().y());
+            path.lineTo(rect.width() - 10 - 2, path.currentPosition().y());
             path.arcTo(QRectF(path.currentPosition(), QSizeF(20, 20)).translated(-10, -20), 270, 90);
             path.lineTo(path.currentPosition().x(), 0);
             path.closeSubpath();
