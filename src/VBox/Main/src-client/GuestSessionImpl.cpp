@@ -144,7 +144,7 @@ SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession,
 }
 
 SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession,
-                                     PRTFILE pSourceFile, size_t cbSourceOffset, size_t cbSourceSize,
+                                     PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
                                      const Utf8Str &strDest, uint32_t uFlags)
                                      : GuestSessionTask(pSession)
 {

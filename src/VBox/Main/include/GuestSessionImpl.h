@@ -86,7 +86,7 @@ protected:
     Utf8Str  mSource;
     PRTFILE  mSourceFile;
     size_t   mSourceOffset;
-    size_t   mSourceSize;
+    uint64_t mSourceSize;
     Utf8Str  mDest;
     uint32_t mCopyFileFlags;
 };

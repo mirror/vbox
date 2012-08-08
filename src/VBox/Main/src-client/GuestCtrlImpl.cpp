@@ -2724,6 +2724,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
                               tr("Starting task for updating Guest Additions on the guest failed: %Rrc"), rc);
         }
     }
+    return hr;
 #else /* Legacy, can be removed later. */
     ComObjPtr<Progress> progress;
     try
