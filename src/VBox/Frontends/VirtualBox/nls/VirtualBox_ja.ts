@@ -2533,379 +2533,503 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGChooserModel</name>
     <message>
-        <location filename="../src/selector/graphics/chooser/UIGChooserModel.cpp" line="473"/>
+        <location filename="../src/selector/graphics/chooser/UIGChooserModel.cpp" line="475"/>
         <source>New group</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIGDetailsUpdateThreadAudio</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="483"/>
-        <source>Host driver</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="486"/>
-        <source>Controller</source>
-        <comment>details</comment>
-        <translation type="unfinished">コントローラ</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="489"/>
-        <source>Disabled</source>
-        <comment>details</comment>
-        <translation type="unfinished">無効</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="492"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadDescription</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="876"/>
-        <source>None</source>
-        <comment>details</comment>
-        <translation type="unfinished">なし</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="879"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadDisplay</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="336"/>
-        <source>Video Memory</source>
-        <comment>details</comment>
-        <translation type="unfinished">ビデオメモリ</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="336"/>
-        <source>%1 MB</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="341"/>
-        <source>Screens</source>
-        <comment>details</comment>
-        <translation type="unfinished">スクリーン</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="347"/>
-        <source>2D Video</source>
-        <comment>details report</comment>
-        <translation type="unfinished">2D ビデオ</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="351"/>
-        <source>3D</source>
-        <comment>details report</comment>
-        <translation type="unfinished">3D</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="353"/>
-        <source>Acceleration</source>
-        <comment>details</comment>
-        <translation type="unfinished">アクセラレーション</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="360"/>
-        <source>Remote Desktop Server Port</source>
-        <comment>details</comment>
-        <translation type="unfinished">リモートデスクトップ サーバー ポート</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="362"/>
-        <source>Remote Desktop Server</source>
-        <comment>details</comment>
-        <translation type="unfinished">リモートデスクトップ サーバー</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="362"/>
-        <source>Disabled</source>
-        <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished">無効</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="366"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadGeneral</name>
+    <name>UIGDetails</name>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="113"/>
         <source>Name</source>
-        <comment>details</comment>
+        <comment>details (general)</comment>
         <translation type="unfinished">名前</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="116"/>
         <source>Operating system</source>
-        <comment>details</comment>
+        <comment>details (general)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="120"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="122"/>
+        <source>Groups</source>
+        <comment>details (general)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="125"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="304"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="381"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="455"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="511"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="606"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="684"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="742"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="804"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="852"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="900"/>
         <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadNetwork</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="547"/>
-        <source>Bridged adapter, %1</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished">ブリッジ アダプタ, &apos;%1&apos;</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="553"/>
-        <source>Internal network, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished">内部ネットワーク, &apos;%1&apos;</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="559"/>
-        <source>Host-only adapter, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished">ホストオンリー アダプタ, &apos;%1&apos;</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="567"/>
-        <source>Generic driver, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="568"/>
-        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="578"/>
-        <source>Adapter %1</source>
-        <comment>details</comment>
-        <translation type="unfinished">アダプタ %1</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="583"/>
-        <source>Disabled</source>
-        <comment>details</comment>
-        <translation type="unfinished">無効</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="586"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadParallel</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="714"/>
-        <source>Port %1</source>
-        <comment>details</comment>
-        <translation type="unfinished">ポート %1</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="719"/>
-        <source>Disabled</source>
-        <comment>details</comment>
-        <translation type="unfinished">無効</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="722"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadSF</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="826"/>
-        <source>Shared folders</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="828"/>
-        <source>None</source>
-        <comment>details</comment>
-        <translation type="unfinished">なし</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="831"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadSerial</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="656"/>
-        <source>Port %1</source>
-        <comment>details</comment>
-        <translation type="unfinished">ポート %1</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="661"/>
-        <source>Disabled</source>
-        <comment>details</comment>
-        <translation type="unfinished">無効</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="664"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadStorage</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="422"/>
-        <source>[CD/DVD]</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="436"/>
-        <source>Not attached</source>
-        <comment>details</comment>
-        <translation type="unfinished">未割り当て</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="439"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadSystem</name>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="251"/>
-        <source>Base Memory</source>
-        <comment>details</comment>
-        <translation type="unfinished">メインメモリ</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="251"/>
-        <source>%1 MB</source>
         <comment>details</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="256"/>
-        <source>Processors</source>
-        <comment>details</comment>
-        <translation type="unfinished">プロセッサ</translation>
+        <source>Base memory</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="261"/>
-        <source>Execution Cap</source>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="257"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="347"/>
+        <source>%1 MB</source>
         <comment>details</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="261"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="262"/>
+        <source>Processors</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">プロセッサ</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="268"/>
+        <source>Execution cap</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="269"/>
         <source>%1%</source>
         <comment>details</comment>
         <translation type="unfinished">%1%</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="274"/>
-        <source>Boot Order</source>
-        <comment>details</comment>
-        <translation type="unfinished">起動順序</translation>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="282"/>
+        <source>Boot order</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="283"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="291"/>
         <source>VT-x/AMD-V</source>
-        <comment>details report</comment>
+        <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="286"/>
-        <source>Nested Paging</source>
-        <comment>details</comment>
-        <translation type="unfinished">ネステッドページング</translation>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="294"/>
+        <source>Nested paging</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="290"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="298"/>
         <source>PAE/NX</source>
-        <comment>details report</comment>
+        <comment>details (system)</comment>
         <translation type="unfinished">PAE/NX</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="292"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="300"/>
         <source>Acceleration</source>
-        <comment>details</comment>
+        <comment>details (system)</comment>
         <translation type="unfinished">アクセラレーション</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="295"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="346"/>
+        <source>Video memory</source>
+        <comment>details (display)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="352"/>
+        <source>Screens</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">スクリーン</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="359"/>
+        <source>2D video</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="363"/>
+        <source>3D</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">3D</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="365"/>
+        <source>Acceleration</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">アクセラレーション</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="373"/>
+        <source>Remote desktop server port</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="376"/>
+        <source>Remote desktop server</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="377"/>
+        <source>Disabled</source>
+        <comment>details (display/vrde/VRDE server)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="438"/>
+        <source>[CD/DVD]</source>
+        <comment>details (storage)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="452"/>
+        <source>Not attached</source>
+        <comment>details (storage)</comment>
+        <translation type="unfinished">未割り当て</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="499"/>
+        <source>Host driver</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="503"/>
+        <source>Controller</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished">コントローラ</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="507"/>
+        <source>Disabled</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="567"/>
+        <source>Bridged adapter, %1</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished">ブリッジ アダプタ, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="573"/>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished">内部ネットワーク, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="579"/>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished">ホストオンリー アダプタ, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="587"/>
+        <source>Generic driver, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="588"/>
+        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="598"/>
+        <source>Adapter %1</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished">アダプタ %1</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="603"/>
+        <source>Disabled</source>
+        <comment>details (network/adapter)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="676"/>
+        <source>Port %1</source>
+        <comment>details (serial)</comment>
+        <translation type="unfinished">ポート %1</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="681"/>
+        <source>Disabled</source>
+        <comment>details (serial)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="734"/>
+        <source>Port %1</source>
+        <comment>details (parallel)</comment>
+        <translation type="unfinished">ポート %1</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="739"/>
+        <source>Disabled</source>
+        <comment>details (parallel)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="794"/>
+        <source>Device filters</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="795"/>
+        <source>%1 (%2 active)</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished">%1 (%2 アクティブ)</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="798"/>
+        <source>Disabled</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="801"/>
+        <source>USB controller inaccessible</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="847"/>
+        <source>Shared folders</source>
+        <comment>details (shared folders)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="849"/>
+        <source>None</source>
+        <comment>details (shared folders)</comment>
+        <translation type="unfinished">なし</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="897"/>
+        <source>None</source>
+        <comment>details (description)</comment>
+        <translation type="unfinished">なし</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadAudio</name>
+    <message>
+        <source>Controller</source>
+        <comment>details</comment>
+        <translation type="obsolete">コントローラ</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="obsolete">無効</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadDescription</name>
+    <message>
+        <source>None</source>
+        <comment>details</comment>
+        <translation type="obsolete">なし</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadDisplay</name>
+    <message>
+        <source>Video Memory</source>
+        <comment>details</comment>
+        <translation type="obsolete">ビデオメモリ</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details</comment>
+        <translation type="obsolete">スクリーン</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="obsolete">2D ビデオ</translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="obsolete">3D</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details</comment>
+        <translation type="obsolete">アクセラレーション</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details</comment>
+        <translation type="obsolete">リモートデスクトップ サーバー ポート</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details</comment>
+        <translation type="obsolete">リモートデスクトップ サーバー</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="obsolete">無効</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadGeneral</name>
+    <message>
+        <source>Name</source>
+        <comment>details</comment>
+        <translation type="obsolete">名前</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadNetwork</name>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="obsolete">ブリッジ アダプタ, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="obsolete">内部ネットワーク, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="obsolete">ホストオンリー アダプタ, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details</comment>
+        <translation type="obsolete">アダプタ %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="obsolete">無効</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>details</comment>
+        <translation type="obsolete">ポート %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="obsolete">無効</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSF</name>
+    <message>
+        <source>None</source>
+        <comment>details</comment>
+        <translation type="obsolete">なし</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>details</comment>
+        <translation type="obsolete">ポート %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details</comment>
+        <translation type="obsolete">無効</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadStorage</name>
+    <message>
+        <source>Not attached</source>
+        <comment>details</comment>
+        <translation type="obsolete">未割り当て</translation>
+    </message>
+</context>
+<context>
+    <name>UIGDetailsUpdateThreadSystem</name>
+    <message>
+        <source>Base Memory</source>
+        <comment>details</comment>
+        <translation type="obsolete">メインメモリ</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details</comment>
+        <translation type="obsolete">プロセッサ</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <comment>details</comment>
+        <translation type="obsolete">%1%</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details</comment>
+        <translation type="obsolete">起動順序</translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="obsolete">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details</comment>
+        <translation type="obsolete">ネステッドページング</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="obsolete">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details</comment>
+        <translation type="obsolete">アクセラレーション</translation>
     </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadUSB</name>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="774"/>
-        <source>Device filters</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="774"/>
         <source>%1 (%2 active)</source>
         <comment>details</comment>
-        <translation type="unfinished">%1 (%2 アクティブ)</translation>
+        <translation type="obsolete">%1 (%2 アクティブ)</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="777"/>
         <source>Disabled</source>
         <comment>details</comment>
-        <translation type="unfinished">無効</translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="780"/>
-        <source>USB controller inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="783"/>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">無効</translation>
     </message>
 </context>
 <context>
     <name>UIGMachinePreview</name>
     <message>
-        <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="258"/>
         <source>Update Disabled</source>
-        <translation type="unfinished">更新を無効化</translation>
+        <translation type="obsolete">更新を無効化</translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="258"/>
+        <source>Update disabled</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="259"/>
@@ -2934,8 +3058,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="295"/>
+        <source>No preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>No Preview</source>
-        <translation type="unfinished">プレビューなし</translation>
+        <translation type="obsolete">プレビューなし</translation>
     </message>
 </context>
 <context>
