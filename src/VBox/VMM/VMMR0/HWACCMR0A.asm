@@ -854,7 +854,7 @@ BEGINPROC VMXR0InvVPID
  %ifdef ASM_CALL64_GCC
     and         edi, 0ffffffffh
     xor         rax, rax
-    ;invvpid     rdi, qword [rsi]
+;    invvpid     rdi, qword [rsi]
     DB          0x66, 0x0F, 0x38, 0x81, 0x3E
  %else
     and         ecx, 0ffffffffh
