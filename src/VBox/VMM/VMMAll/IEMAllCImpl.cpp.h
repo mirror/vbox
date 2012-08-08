@@ -2046,7 +2046,7 @@ static void iemCImplCommonV8086LoadSeg(PCPUMSELREG pSReg, uint16_t uSeg)
 IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uint16_t, uNewCs,
                 uint32_t, uNewFlags, uint64_t, uNewRsp)
 {
-#if 1
+#if 0
     if (!LogIs6Enabled())
     {
         RTLogGroupSettings(NULL, "iem.eo.l6.l2");
