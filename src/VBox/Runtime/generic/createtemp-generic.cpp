@@ -38,7 +38,8 @@
 #include <iprt/string.h>
 
 
-RTDECL(int) RTDirCreateTemp(char *pszTemplate)
+static int rtCreateTempValidateTemplate(char *pszTemplate, char **ppszX,
+                                        unsigned *pcXes)
 {
     /*
      * Validate input and count X'es.
@@ -47,6 +48,8 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate)
      * the file name.
      */
     AssertPtr(pszTemplate);
+    AssertPtr(ppszX);
+    AssertPtr(pcXes);
     unsigned    cXes = 0;
     char       *pszX = strchr(pszTemplate, '\0');
     if (   pszX != pszTemplate
@@ -85,21 +88,41 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate)
     if (!cXes)
     {
         AssertFailed();
-        *pszTemplate = '\0';
         return VERR_INVALID_PARAMETER;
     }
+    *ppszX = pszX;
+    *pcXes = cXes;
+    return VINF_SUCCESS;
+}
 
+
+static void rtCreateTempFillTemplate(char *pszX, unsigned cXes)
+{
+    static char const s_sz[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    unsigned j = cXes;
+    while (j-- > 0)
+        pszX[j] = s_sz[RTRandU32Ex(0, RT_ELEMENTS(s_sz) - 2)];
+}
+
+
+RTDECL(int) RTDirCreateTemp(char *pszTemplate)
+{
+    char       *pszX;
+    unsigned    cXes;
+    int rc = rtCreateTempValidateTemplate(pszTemplate, &pszX, &cXes);
+    if (RT_FAILURE(rc))
+    {
+        *pszTemplate = '\0';
+        return rc;
+    }
     /*
      * Try ten thousand times.
      */
     int i = 10000;
     while (i-- > 0)
     {
-        static char const s_sz[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-        unsigned j = cXes;
-        while (j-- > 0)
-            pszX[j] = s_sz[RTRandU32Ex(0, RT_ELEMENTS(s_sz) - 2)];
-        int rc = RTDirCreate(pszTemplate, 0700, 0);
+        rtCreateTempFillTemplate(pszX, cXes);
+        rc = RTDirCreate(pszTemplate, 0700, 0);
         if (RT_SUCCESS(rc))
             return rc;
         if (rc != VERR_ALREADY_EXISTS)
