@@ -1171,6 +1171,91 @@ int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
     return VERR_NOT_FOUND;
 }
 
+/**
+ * Implementation of FileRemove().  Can throw an exception due to the use of
+ * Utf8Str, Utf8StrFmt and std::vector near the beginning (and others?).  The
+ * caller should catch this.  On success, *prc will be set to the return code
+ * of the delete operation to distinguish between API and command failure.
+ */
+int GuestSession::fileRemoveInternal(Utf8Str strPath, int *prc)
+{
+    GuestProcessStartupInfo procInfo;
+    GuestProcessStream      streamOut;
+    int rc = VINF_SUCCESS;
+
+    AssertPtrReturn(prc, VERR_INVALID_POINTER);
+    procInfo.mName    = Utf8StrFmt(tr("Removing file \"%s\"",
+                                   strPath.c_str()));
+    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_RM);
+    procInfo.mFlags   =   ProcessCreateFlag_Hidden
+                        | ProcessCreateFlag_WaitForStdOut;
+    /* Construct arguments. */
+    procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+    procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
+
+    ComObjPtr<GuestProcess> pProcess;
+    rc = processCreateExInteral(procInfo, pProcess);
+    if (RT_SUCCESS(rc))
+        rc = pProcess->startProcess();
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessWaitResult waitRes;
+        BYTE byBuf[_64K];
+        size_t cbRead;
+
+        for (;;)
+        {
+            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
+                                   30 * 1000 /* Timeout */, waitRes);
+            if (   RT_FAILURE(rc)
+                || waitRes.mResult == ProcessWaitResult_Terminate
+                || waitRes.mResult == ProcessWaitResult_Error
+                || waitRes.mResult == ProcessWaitResult_Timeout)
+            {
+                break;
+            }
+
+            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                    &cbRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            if (cbRead)
+            {
+                rc = streamOut.AddData(byBuf, cbRead);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+
+        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
+                         rc, cbRead, streamOut.GetSize()));
+    }
+    else
+        LogThisFunc(("Error starting delete tool on guest: %Rrc\n", rc));
+    if (RT_FAILURE(rc))
+        LogThisFunc(("Error running delete tool on guest: %Rrc\n", rc));
+    else if (!streamOut.GetSize())
+    {
+        LogThisFunc(("No return code after deleting file"));
+        rc = VERR_NO_DATA;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessStreamBlock streamBlock;
+        int64_t i64rc;
+        rc = streamOut.ParseBlock(streamBlock);
+        streamBlock.GetString("fname");
+        rc = streamBlock.GetInt64Ex("rc", &i64rc);
+        if (RT_SUCCESS(rc))
+            *prc = (int)i64rc;
+    }
+    else
+        Log(("Error getting return code from deleting file: %Rrc\n", rc));
+    return rc;
+}
+
 int GuestSession::fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition,
                                    uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile)
 {
@@ -2150,85 +2235,21 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    GuestProcessStartupInfo procInfo;
-    GuestProcessStream      streamOut;
-    int rc = VINF_SUCCESS;
-
     try  /* Can this be done without exceptions? */
     {
-        Utf8Str strPath(aPath);
-        procInfo.mName    = Utf8StrFmt(tr("Removing file \"%s\"",
-                                       strPath.c_str()));
-        procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_RM);
-        procInfo.mFlags   =   ProcessCreateFlag_Hidden
-                            | ProcessCreateFlag_WaitForStdOut;
-        /* Construct arguments. */
-        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-        procInfo.mArguments.push_back(Bstr(aPath)); /* The directory we want to create. */
+        int rc2;
+        int rc = fileRemoveInternal(Utf8Str(aPath), &rc2);
+        if (RT_FAILURE((rc)))
+            return setError(E_FAIL,
+                            tr("Internal error deleting file: %Rrc"), rc);
+        else if (RT_FAILURE((rc2)))
+            return setError(VBOX_E_IPRT_ERROR,
+                            tr("File deletion on guest returned: %Rrc"), rc2);
     }
     catch (...)
     {
         return E_OUTOFMEMORY;
     }
-
-    ComObjPtr<GuestProcess> pProcess;
-    rc = processCreateExInteral(procInfo, pProcess);
-    if (RT_SUCCESS(rc))
-        rc = pProcess->startProcess();
-    if (RT_SUCCESS(rc))
-    {
-        GuestProcessWaitResult waitRes;
-        BYTE byBuf[_64K];
-        size_t cbRead;
-
-        for (;;)
-        {
-            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
-                                   30 * 1000 /* Timeout */, waitRes);
-            if (   RT_FAILURE(rc)
-                || waitRes.mResult == ProcessWaitResult_Terminate
-                || waitRes.mResult == ProcessWaitResult_Error
-                || waitRes.mResult == ProcessWaitResult_Timeout)
-            {
-                break;
-            }
-
-            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                    &cbRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            if (cbRead)
-            {
-                rc = streamOut.AddData(byBuf, cbRead);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        }
-
-        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
-                         rc, cbRead, streamOut.GetSize()));
-    }
-    else
-        return setError(E_FAIL, tr("Error while starting delete tool on guest: %Rrc"), rc);
-    if (RT_FAILURE(rc))
-        return setError(E_FAIL, tr("Error while running delete tool on guest: %Rrc"), rc);
-    if (!streamOut.GetSize())
-        return setError(E_FAIL, tr("No return code after deleting file"));
-    GuestProcessStreamBlock streamBlock;
-    rc = streamOut.ParseBlock(streamBlock);
-    if (RT_SUCCESS(rc))
-    {
-        streamBlock.GetString("fname");
-        int64_t i64rc;
-        if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
-            return setError(E_FAIL, tr("No return code after deleting file"));
-        if (RT_FAILURE((int)i64rc))
-            return setError(VBOX_E_IPRT_ERROR, tr("File deletion failed: %Rrc"), rc);
-    }
-    else
-        return setError(E_FAIL, tr("Error while getting return code from deleting file: %Rrc"), rc);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
