@@ -5022,8 +5022,8 @@ static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
     else
     {
         AssertPtr(pVCpu);
-        Assert(pVCpu->hwaccm.s.uCurrentASID != 0);
-        Assert(pVCpu->hwaccm.s.uCurrentASID <= UINT16_MAX);
+        AssertMsg(pVCpu->hwaccm.s.uCurrentASID != 0, ("VMXR0InvVPID invalid ASID %lu\n", pVCpu->hwaccm.s.uCurrentASID));
+        AssertMsg(pVCpu->hwaccm.s.uCurrentASID <= UINT16_MAX, ("VMXR0InvVPID invalid ASID %lu\n", pVCpu->hwaccm.s.uCurrentASID));
         descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
         descriptor[1] = GCPtr;
     }

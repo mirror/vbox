@@ -1112,8 +1112,8 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
 
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
-                LogRel(("HWACCM: VCPU%d: MSR bitmap physaddr      = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pMSRBitmapPhys));
-                LogRel(("HWACCM: VCPU%d: VMCS physaddr            = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.HCPhysVMCS));
+                LogRel(("HWACCM: VCPU%d: MSR bitmap physaddr    = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pMSRBitmapPhys));
+                LogRel(("HWACCM: VCPU%d: VMCS physaddr          = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.HCPhysVMCS));
             }
 
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
@@ -1222,6 +1222,15 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
                 {
                     LogRel(("HWACCM: Enabled nested paging\n"));
                     LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
+                    if (pVM->hwaccm.s.vmx.enmFlushEPT == VMX_FLUSH_EPT_SINGLE_CONTEXT)
+                        LogRel(("HWACCM: enmFlushEPT                   = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
+                    else if (pVM->hwaccm.s.vmx.enmFlushEPT == VMX_FLUSH_EPT_ALL_CONTEXTS)
+                        LogRel(("HWACCM: enmFlushEPT                   = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
+                    else if (pVM->hwaccm.s.vmx.enmFlushEPT == VMX_FLUSH_EPT_NOT_SUPPORTED)
+                        LogRel(("HWACCM: enmFlushEPT                   = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
+                    else
+                        LogRel(("HWACCM: enmFlushEPT                   = %d\n", pVM->hwaccm.s.vmx.enmFlushEPT));
+
                     if (pVM->hwaccm.s.vmx.fUnrestrictedGuest)
                         LogRel(("HWACCM: Unrestricted guest execution enabled!\n"));
 
@@ -1233,7 +1242,6 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
                         LogRel(("HWACCM: Large page support enabled!\n"));
                     }
 #endif
-                    LogRel(("HWACCM: enmFlushEPT    %d\n", pVM->hwaccm.s.vmx.enmFlushEPT));
                 }
                 else
                     Assert(!pVM->hwaccm.s.vmx.fUnrestrictedGuest);
@@ -1241,7 +1249,16 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
                 if (pVM->hwaccm.s.vmx.fVPID)
                 {
                     LogRel(("HWACCM: Enabled VPID\n"));
-                    LogRel(("HWACCM: enmFlushVPID   %d\n", pVM->hwaccm.s.vmx.enmFlushVPID));
+                    if (pVM->hwaccm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_INDIV_ADDR)
+                        LogRel(("HWACCM: enmFlushVPID                  = VMX_FLUSH_VPID_INDIV_ADDR\n"));
+                    else if (pVM->hwaccm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_SINGLE_CONTEXT)
+                        LogRel(("HWACCM: enmFlushVPID                  = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
+                    else if (pVM->hwaccm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_ALL_CONTEXTS)
+                        LogRel(("HWACCM: enmFlushVPID                  = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
+                    else if (pVM->hwaccm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
+                        LogRel(("HWACCM: enmFlushVPID                  = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
+                    else
+                        LogRel(("HWACCM: enmFlushVPID                  = %d\n", pVM->hwaccm.s.vmx.enmFlushVPID));
                 }
                 else if (pVM->hwaccm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_NOT_SUPPORTED)
                     LogRel(("HWACCM: Ignoring VPID capabilities of CPU.\n"));
