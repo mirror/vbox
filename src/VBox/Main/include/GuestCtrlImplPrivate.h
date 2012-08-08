@@ -171,8 +171,13 @@ typedef std::map < uint32_t, GuestCtrlCallback* > GuestCtrlCallbacks;
 
 struct GuestProcessWaitResult
 {
+    GuestProcessWaitResult(void)
+        : mResult(ProcessWaitResult_None),
+          mRC(VINF_SUCCESS) { }
+
     /** The wait result when returning from the wait call. */
     ProcessWaitResult_T         mResult;
+    /** Optional rc to this result. */
     int                         mRC;
 };
 

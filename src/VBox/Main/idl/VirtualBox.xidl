@@ -10667,7 +10667,7 @@
   
   <interface
     name="IGuest" extends="$unknown"
-    uuid="9e0b07b1-490f-4413-8955-0a16515aac12"
+    uuid="19c32350-0618-4ede-b0c3-2b4311bf0d9b"
     wsmap="managed"
     >
     <desc>
@@ -11589,7 +11589,7 @@
           Path to the Guest Additions .ISO file to use for the upate.
         </desc>
       </param>
-      <param name="flags" type="unsigned long" dir="in">
+      <param name="flags" type="AdditionsUpdateFlag" dir="in" safearray="yes">
         <desc>
           <link to="AdditionsUpdateFlag"/> flags.
         </desc>
