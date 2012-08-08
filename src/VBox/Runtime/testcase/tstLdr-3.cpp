@@ -246,11 +246,7 @@ static int testDisasNear(uint64_t uAddr)
              NearSym.aSyms[1].Value, NearSym.aSyms[1].szName, NearSym.aSyms[1].uSymbol);
     if (NearSym.Addr - NearSym.aSyms[0].Value < 0x10000)
     {
-#ifdef RT_ARCH_X86 /** @todo select according to the module type. */
-        DISCPUMODE enmDisCpuMode = DISCPUMODE_32BIT;
-#else
-        DISCPUMODE enmDisCpuMode = DISCPUMODE_64BIT;
-#endif
+        DISCPUMODE enmDisCpuMode = g_cBits == 32 ? DISCPUMODE_32BIT : DISCPUMODE_64BIT;
         uint8_t *pbCode = (uint8_t *)g_pvBits + (NearSym.aSyms[0].Value - g_uLoadAddr);
         MyDisBlock(enmDisCpuMode, (uintptr_t)pbCode,
                    RT_MAX(NearSym.aSyms[1].Value - NearSym.aSyms[0].Value, 0x20000),
@@ -274,6 +270,23 @@ int main(int argc, char **argv)
     }
 
     /*
+     * Module & code bitness (optional).
+     */
+    g_cBits = ARCH_BITS;
+    if (!strcmp(argv[1], "--32"))
+    {
+        g_cBits = 32;
+        argc--;
+        argv++;
+    }
+    else if (!strcmp(argv[1], "--64"))
+    {
+        g_cBits = 64;
+        argc--;
+        argv++;
+    }
+
+    /*
      * Load the module.
      */
     g_uLoadAddr = (RTUINTPTR)RTStrToUInt64(argv[1]);
@@ -283,7 +296,6 @@ int main(int argc, char **argv)
         RTPrintf("tstLdr-3: Failed to open '%s': %Rra\n", argv[2], rc);
         return 1;
     }
-    g_cBits = ARCH_BITS;
 
     g_pvBits = RTMemAlloc(RTLdrSize(g_hLdrMod));
     rc = RTLdrGetBits(g_hLdrMod, g_pvBits, g_uLoadAddr, testGetImport, &g_uLoadAddr);
