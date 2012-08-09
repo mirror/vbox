@@ -339,7 +339,7 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puC
     ComAssertComRC(hr);
 
     /* Create a new context ID and assign it. */
-    int rc = VERR_NOT_FOUND;
+    int vrc = VERR_NOT_FOUND;
 
     ULONG uCount = mData.mNextContextID++;
     ULONG uNewContextID = 0;
@@ -359,7 +359,7 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puC
             /* Callback with context ID was not found. This means
              * we can use this context ID for our new callback we want
              * to add below. */
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
             break;
         }
 
@@ -368,7 +368,7 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puC
             break; /* Don't try too hard. */
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /* Add callback with new context ID to our callback map.
          * Note: This is *not* uNewContextID (which also includes
@@ -385,7 +385,7 @@ inline int GuestProcess::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puC
                          uSessionID, mData.mProcessID, uCount, uNewContextID));
     }
 
-    return rc;
+    return vrc;
 }
 
 int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
@@ -400,7 +400,7 @@ int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, vo
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc;
+    int vrc;
 
     /* Get the optional callback associated to this context ID.
      * The callback may not be around anymore if just kept locally by the caller when
@@ -426,7 +426,7 @@ int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, vo
             AssertReturn(sizeof(CALLBACKDATACLIENTDISCONNECTED) == cbData, VERR_INVALID_PARAMETER);
             AssertReturn(CALLBACKDATAMAGIC_CLIENT_DISCONNECTED == pCallbackData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
-            rc = onGuestDisconnected(pCallback, pCallbackData); /* Affects all callbacks. */
+            vrc = onGuestDisconnected(pCallback, pCallbackData); /* Affects all callbacks. */
             break;
         }
 
@@ -437,7 +437,7 @@ int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, vo
             AssertReturn(sizeof(CALLBACKDATAEXECSTATUS) == cbData, VERR_INVALID_PARAMETER);
             AssertReturn(CALLBACKDATAMAGIC_EXEC_STATUS == pCallbackData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
-            rc = onProcessStatusChange(pCallback, pCallbackData);
+            vrc = onProcessStatusChange(pCallback, pCallbackData);
             break;
         }
 
@@ -448,7 +448,7 @@ int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, vo
             AssertReturn(sizeof(CALLBACKDATAEXECOUT) == cbData, VERR_INVALID_PARAMETER);
             AssertReturn(CALLBACKDATAMAGIC_EXEC_OUT == pCallbackData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
-            rc = onProcessOutput(pCallback, pCallbackData);
+            vrc = onProcessOutput(pCallback, pCallbackData);
             break;
         }
 
@@ -459,20 +459,20 @@ int GuestProcess::callbackDispatcher(uint32_t uContextID, uint32_t uFunction, vo
             AssertReturn(sizeof(CALLBACKDATAEXECINSTATUS) == cbData, VERR_INVALID_PARAMETER);
             AssertReturn(CALLBACKDATAMAGIC_EXEC_IN_STATUS == pCallbackData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
-            rc = onProcessInputStatus(pCallback, pCallbackData);
+            vrc = onProcessInputStatus(pCallback, pCallbackData);
             break;
         }
 
         default:
             /* Silently ignore not implemented functions. */
-            rc = VERR_NOT_IMPLEMENTED;
+            vrc = VERR_NOT_IMPLEMENTED;
             break;
     }
 
 #ifdef DEBUG
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(vrc);
 #endif
-    return rc;
+    return vrc;
 }
 
 inline bool GuestProcess::callbackExists(uint32_t uContextID)
@@ -584,11 +584,11 @@ int GuestProcess::onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDAT
         waitRes = ProcessWaitResult_Terminate;
 
     /* Signal in any case. */
-    int rc = signalWaiters(waitRes);
-    AssertRC(rc);
+    int vrc = signalWaiters(waitRes);
+    AssertRC(vrc);
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECINSTATUS pData)
@@ -599,18 +599,18 @@ int GuestProcess::onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDA
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RU32, cbProcessed=%RU32, pCallback=%p, pData=%p\n",
                      mData.mPID, pData->u32Status, pData->u32Flags, pData->cbProcessed, pCallback, pData));
 
-    int rc = checkPID(pData->u32PID);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = checkPID(pData->u32PID);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     /* First, signal callback in every case (if available). */
     if (pCallback)
     {
-        rc = pCallback->SetData(pData, sizeof(CALLBACKDATAEXECINSTATUS));
+        vrc = pCallback->SetData(pData, sizeof(CALLBACKDATAEXECINSTATUS));
 
         int rc2 = pCallback->Signal();
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
 
     /* Then do the WaitFor signalling stuff. */
@@ -619,12 +619,12 @@ int GuestProcess::onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDA
     if (uWaitFlags & ProcessWaitForFlag_StdIn)
     {
         int rc2 = signalWaiters(ProcessWaitResult_StdIn);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::onProcessNotifyIO(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECSTATUS pData)
@@ -643,9 +643,9 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RU32, pCallback=%p, pData=%p\n",
                      pData->u32PID, pData->u32Status, pData->u32Flags, pCallback, pData));
 
-    int rc = checkPID(pData->u32PID);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = checkPID(pData->u32PID);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     BOOL fSignal = FALSE;
     ProcessWaitResult_T waitRes;
@@ -732,7 +732,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
             /* Note: It's not required that the process has been started before. */
             if (mData.mPID)
             {
-                strError += Utf8StrFmt(tr("Error rc=%Rrc occured (PID %RU32)"), rc, mData.mPID);
+                strError += Utf8StrFmt(tr("Error vrc=%Rrc occured (PID %RU32)"), vrc, mData.mPID);
             }
             else
             {
@@ -781,8 +781,8 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
                 }
             }
 
-            rc = setErrorInternal(pData->u32Flags, strError);
-            AssertRC(rc);
+            vrc = setErrorInternal(pData->u32Flags, strError);
+            AssertRC(vrc);
             break;
         }
 
@@ -798,23 +798,23 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
         }
     }
 
-    LogFlowThisFunc(("Got rc=%Rrc, waitResult=%d\n", rc, waitRes));
+    LogFlowThisFunc(("Got vrc=%Rrc, waitResult=%d\n", vrc, waitRes));
 
     /*
      * Now do the signalling stuff.
      */
     if (pCallback)
-        rc = pCallback->Signal();
+        vrc = pCallback->Signal();
 
     if (fSignal)
     {
         int rc2 = signalWaiters(waitRes);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECOUT pData)
@@ -825,18 +825,18 @@ int GuestProcess::onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXE
     LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, uFlags=%RU32, pvData=%p, cbData=%RU32, pCallback=%p, pData=%p\n",
                      mData.mPID, pData->u32HandleId, pData->u32Flags, pData->pvData, pData->cbData, pCallback, pData));
 
-    int rc = checkPID(pData->u32PID);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = checkPID(pData->u32PID);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     /* First, signal callback in every case (if available). */
     if (pCallback)
     {
-        rc = pCallback->SetData(pData, sizeof(CALLBACKDATAEXECOUT));
+        vrc = pCallback->SetData(pData, sizeof(CALLBACKDATAEXECOUT));
 
         int rc2 = pCallback->Signal();
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
 
     /* Then do the WaitFor signalling stuff. */
@@ -864,12 +864,12 @@ int GuestProcess::onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXE
     {
         int rc2 = signalWaiters(  pData->u32HandleId == OUTPUT_HANDLE_ID_STDOUT
                                 ? ProcessWaitResult_StdOut : ProcessWaitResult_StdErr);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS,
@@ -893,13 +893,13 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
         return VERR_NO_MEMORY;
 
     /* Create callback and add it to the map. */
-    int rc = pCallbackRead->Init(VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT);
-    if (RT_SUCCESS(rc))
-        rc = callbackAdd(pCallbackRead, &uContextID);
+    int vrc = pCallbackRead->Init(VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT);
+    if (RT_SUCCESS(vrc))
+        vrc = callbackAdd(pCallbackRead, &uContextID);
 
     alock.release(); /* Drop the write lock again. */
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         VBOXHGCMSVCPARM paParms[5];
 
@@ -909,23 +909,23 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
         paParms[i++].setUInt32(uHandle);
         paParms[i++].setUInt32(0 /* Flags, none set yet. */);
 
-        rc = sendCommand(HOST_EXEC_GET_OUTPUT, i, paParms);
+        vrc = sendCommand(HOST_EXEC_GET_OUTPUT, i, paParms);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Let's wait for the process being started.
          * Note: Be sure not keeping a AutoRead/WriteLock here.
          */
         LogFlowThisFunc(("Waiting for callback (%RU32ms) ...\n", uTimeoutMS));
-        rc = pCallbackRead->Wait(uTimeoutMS);
-        if (RT_SUCCESS(rc)) /* Wait was successful, check for supplied information. */
+        vrc = pCallbackRead->Wait(uTimeoutMS);
+        if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
         {
-            rc = pCallbackRead->GetResultCode();
-            LogFlowThisFunc(("Callback returned rc=%Rrc, cbData=%RU32\n", rc, pCallbackRead->GetDataSize()));
+            vrc = pCallbackRead->GetResultCode();
+            LogFlowThisFunc(("Callback returned vrc=%Rrc, cbData=%RU32\n", vrc, pCallbackRead->GetDataSize()));
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 Assert(pCallbackRead->GetDataSize() == sizeof(CALLBACKDATAEXECOUT));
                 PCALLBACKDATAEXECOUT pData = (PCALLBACKDATAEXECOUT)pCallbackRead->GetDataRaw();
@@ -945,18 +945,18 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
             }
         }
         else
-            rc = VERR_TIMEOUT;
+            vrc = VERR_TIMEOUT;
     }
 
     alock.acquire();
 
     AssertPtr(pCallbackRead);
     int rc2 = callbackRemove(uContextID);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    if (RT_SUCCESS(vrc))
+        vrc = rc2;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::sendCommand(uint32_t uFunction,
@@ -972,31 +972,31 @@ int GuestProcess::sendCommand(uint32_t uFunction,
     AssertPtr(pVMMDev);
 
     LogFlowThisFunc(("uFunction=%RU32, uParms=%RU32\n", uFunction, uParms));
-    int rc = pVMMDev->hgcmHostCall("VBoxGuestControlSvc", uFunction, uParms, paParms);
-    if (RT_FAILURE(rc))
+    int vrc = pVMMDev->hgcmHostCall("VBoxGuestControlSvc", uFunction, uParms, paParms);
+    if (RT_FAILURE(vrc))
     {
         int rc2;
-        if (rc == VERR_INVALID_VM_HANDLE)
-            rc2 = setErrorInternal(rc, tr("VMM device is not available (is the VM running?)"));
-        else if (rc == VERR_NOT_FOUND)
-            rc2 = setErrorInternal(rc, tr("The guest execution service is not ready (yet)"));
-        else if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
-            rc2 = setErrorInternal(rc, tr("The guest execution service is not available"));
+        if (vrc == VERR_INVALID_VM_HANDLE)
+            rc2 = setErrorInternal(vrc, tr("VMM device is not available (is the VM running?)"));
+        else if (vrc == VERR_NOT_FOUND)
+            rc2 = setErrorInternal(vrc, tr("The guest execution service is not ready (yet)"));
+        else if (vrc == VERR_HGCM_SERVICE_NOT_FOUND)
+            rc2 = setErrorInternal(vrc, tr("The guest execution service is not available"));
         else
-            rc2 = setErrorInternal(rc, Utf8StrFmt(tr("The HGCM call failed with error %Rrc"), rc));
+            rc2 = setErrorInternal(vrc, Utf8StrFmt(tr("The HGCM call failed with error %Rrc"), vrc));
         AssertRC(rc2);
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 /* Does not do locking; caller is responsible for that! */
-int GuestProcess::setErrorInternal(int rc, const Utf8Str &strMessage)
+int GuestProcess::setErrorInternal(int vrc, const Utf8Str &strMessage)
 {
-    LogFlowThisFunc(("rc=%Rrc, strMsg=%s\n", rc, strMessage.c_str()));
+    LogFlowThisFunc(("vrc=%Rrc, strMsg=%s\n", vrc, strMessage.c_str()));
 
-    Assert(RT_FAILURE(rc));
+    Assert(RT_FAILURE(vrc));
     Assert(!strMessage.isEmpty());
 
 #ifdef DEBUG
@@ -1007,7 +1007,7 @@ int GuestProcess::setErrorInternal(int rc, const Utf8Str &strMessage)
 #endif
 
     mData.mStatus = ProcessStatus_Error;
-    mData.mRC = rc;
+    mData.mRC = vrc;
     mData.mErrorMsg = strMessage;
 
     int rc2 = signalWaiters(ProcessWaitResult_Error);
@@ -1028,11 +1028,11 @@ int GuestProcess::signalWaiters(ProcessWaitResult_T enmWaitResult)
 
     /* Note: No write locking here -- already done in the caller. */
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     if (mData.mWaitEvent)
-        rc = mData.mWaitEvent->Signal(enmWaitResult);
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+        vrc = mData.mWaitEvent->Signal(enmWaitResult);
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::startProcess(void)
@@ -1044,7 +1044,7 @@ int GuestProcess::startProcess(void)
      * has returned and continue operation. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc;
+    int vrc;
     uint32_t uContextID = 0;
     GuestCtrlCallback *pCallbackStart = new GuestCtrlCallback();
     if (!pCallbackStart)
@@ -1053,11 +1053,11 @@ int GuestProcess::startProcess(void)
     mData.mStatus = ProcessStatus_Starting;
 
     /* Create callback and add it to the map. */
-    rc = pCallbackStart->Init(VBOXGUESTCTRLCALLBACKTYPE_EXEC_START);
-    if (RT_SUCCESS(rc))
-        rc = callbackAdd(pCallbackStart, &uContextID);
+    vrc = pCallbackStart->Init(VBOXGUESTCTRLCALLBACKTYPE_EXEC_START);
+    if (RT_SUCCESS(vrc))
+        vrc = callbackAdd(pCallbackStart, &uContextID);
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         GuestSession *pSession = mData.mParent;
         AssertPtr(pSession);
@@ -1071,21 +1071,21 @@ int GuestProcess::startProcess(void)
         {
             char **papszArgv = (char**)RTMemAlloc(sizeof(char*) * (cArgs + 1));
             AssertReturn(papszArgv, VERR_NO_MEMORY);
-            for (size_t i = 0; RT_SUCCESS(rc) && i < cArgs; i++)
-                rc = RTStrDupEx(&papszArgv[i], mData.mProcess.mArguments[i].c_str());
+            for (size_t i = 0; RT_SUCCESS(vrc) && i < cArgs; i++)
+                vrc = RTStrDupEx(&papszArgv[i], mData.mProcess.mArguments[i].c_str());
             papszArgv[cArgs] = NULL;
 
-            if (RT_SUCCESS(rc))
-                rc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+            if (RT_SUCCESS(vrc))
+                vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
         }
         size_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
 
         /* Prepare environment. */
         void *pvEnv = NULL;
         size_t cbEnv = 0;
-        rc = mData.mProcess.mEnvironment.BuildEnvironmentBlock(&pvEnv, &cbEnv, NULL /* cEnv */);
+        vrc = mData.mProcess.mEnvironment.BuildEnvironmentBlock(&pvEnv, &cbEnv, NULL /* cEnv */);
 
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
         {
             /* Prepare HGCM call. */
             VBOXHGCMSVCPARM paParms[15];
@@ -1115,7 +1115,7 @@ int GuestProcess::startProcess(void)
                 paParms[i++].setUInt32(mData.mProcess.mTimeoutMS);
 
             /* Note: Don't hold the write lock in here, because setErrorInternal */
-            rc = sendCommand(HOST_EXEC_CMD, i, paParms);
+            vrc = sendCommand(HOST_EXEC_CMD, i, paParms);
         }
 
         GuestEnvironment::FreeEnvironmentBlock(pvEnv);
@@ -1127,33 +1127,33 @@ int GuestProcess::startProcess(void)
         /* Drop the write lock again before waiting. */
         alock.release();
 
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
         {
             /*
              * Let's wait for the process being started.
              * Note: Be sure not keeping a AutoRead/WriteLock here.
              */
             LogFlowThisFunc(("Waiting for callback (%RU32ms) ...\n", uTimeoutMS));
-            rc = pCallbackStart->Wait(uTimeoutMS);
-            if (RT_SUCCESS(rc)) /* Wait was successful, check for supplied information. */
+            vrc = pCallbackStart->Wait(uTimeoutMS);
+            if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
             {
-                rc = pCallbackStart->GetResultCode();
-                LogFlowThisFunc(("Callback returned rc=%Rrc\n", rc));
+                vrc = pCallbackStart->GetResultCode();
+                LogFlowThisFunc(("Callback returned vrc=%Rrc\n", vrc));
             }
             else
-                rc = VERR_TIMEOUT;
+                vrc = VERR_TIMEOUT;
         }
 
         AutoWriteLock awlock(this COMMA_LOCKVAL_SRC_POS);
 
         AssertPtr(pCallbackStart);
         int rc2 = callbackRemove(uContextID);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::startProcessAsync(void)
@@ -1165,18 +1165,18 @@ int GuestProcess::startProcessAsync(void)
     std::auto_ptr<GuestProcessStartTask> pTask(new GuestProcessStartTask(this));
     AssertReturn(pTask->isOk(), pTask->rc());
 
-    int rc = RTThreadCreate(NULL, GuestProcess::startProcessThread,
+    int vrc = RTThreadCreate(NULL, GuestProcess::startProcessThread,
                             (void *)pTask.get(), 0,
                             RTTHREADTYPE_MAIN_WORKER, 0,
                             "gctlPrcStart");
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /* pTask is now owned by startProcessThread(), so release it. */
         pTask.release();
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser)
@@ -1192,14 +1192,14 @@ DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser
     AutoCaller autoCaller(pProcess);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int rc = pProcess->startProcess();
-    if (RT_FAILURE(rc))
+    int vrc = pProcess->startProcess();
+    if (RT_FAILURE(vrc))
     {
         /** @todo What now? */
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::terminateProcess(void)
@@ -1343,8 +1343,8 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
 
     alock.release(); /* Release lock before waiting. */
 
-    int rc = mData.mWaitEvent->Wait(uTimeoutMS);
-    if (RT_SUCCESS(rc))
+    int vrc = mData.mWaitEvent->Wait(uTimeoutMS);
+    if (RT_SUCCESS(vrc))
         waitRes = mData.mWaitEvent->GetResult();
 
     alock.acquire(); /* Get the lock again. */
@@ -1356,15 +1356,15 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
 
     mData.mWaitCount--;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::waitForStart(uint32_t uTimeoutMS)
 {
     LogFlowThisFunc(("uTimeoutMS=%RU32\n", uTimeoutMS));
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (mData.mStatus != ProcessStatus_Started)
@@ -1372,20 +1372,20 @@ int GuestProcess::waitForStart(uint32_t uTimeoutMS)
         alock.release();
 
         GuestProcessWaitResult waitRes;
-        rc = waitFor(ProcessWaitForFlag_Start, uTimeoutMS, waitRes);
-        if (   RT_FAILURE(rc)
+        vrc = waitFor(ProcessWaitForFlag_Start, uTimeoutMS, waitRes);
+        if (   RT_FAILURE(vrc)
             || (    waitRes.mResult == ProcessWaitResult_Start
                 &&  waitRes.mResult == ProcessWaitResult_Any
                )
            )
         {
-            if (RT_SUCCESS(rc))
-                rc = waitRes.mRC;
+            if (RT_SUCCESS(vrc))
+                vrc = waitRes.mRC;
         }
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
@@ -1406,13 +1406,13 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
         return VERR_NO_MEMORY;
 
     /* Create callback and add it to the map. */
-    int rc = pCallbackWrite->Init(VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS);
-    if (RT_SUCCESS(rc))
-        rc = callbackAdd(pCallbackWrite, &uContextID);
+    int vrc = pCallbackWrite->Init(VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS);
+    if (RT_SUCCESS(vrc))
+        vrc = callbackAdd(pCallbackWrite, &uContextID);
 
     alock.release(); /* Drop the write lock again. */
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         VBOXHGCMSVCPARM paParms[5];
 
@@ -1423,23 +1423,23 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
         paParms[i++].setPointer(pvData, cbData);
         paParms[i++].setUInt32(cbData);
 
-        rc = sendCommand(HOST_EXEC_SET_INPUT, i, paParms);
+        vrc = sendCommand(HOST_EXEC_SET_INPUT, i, paParms);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Let's wait for the process being started.
          * Note: Be sure not keeping a AutoRead/WriteLock here.
          */
         LogFlowThisFunc(("Waiting for callback (%RU32ms) ...\n", uTimeoutMS));
-        rc = pCallbackWrite->Wait(uTimeoutMS);
-        if (RT_SUCCESS(rc)) /* Wait was successful, check for supplied information. */
+        vrc = pCallbackWrite->Wait(uTimeoutMS);
+        if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
         {
-            rc = pCallbackWrite->GetResultCode();
-            LogFlowThisFunc(("Callback returned rc=%Rrc, cbData=%RU32\n", rc, pCallbackWrite->GetDataSize()));
+            vrc = pCallbackWrite->GetResultCode();
+            LogFlowThisFunc(("Callback returned vrc=%Rrc, cbData=%RU32\n", vrc, pCallbackWrite->GetDataSize()));
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 Assert(pCallbackWrite->GetDataSize() == sizeof(CALLBACKDATAEXECINSTATUS));
                 PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)pCallbackWrite->GetDataRaw();
@@ -1453,15 +1453,15 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
                         break;
 
                     case INPUT_STS_ERROR:
-                        rc = pData->u32Flags; /** @todo Fix int vs. uint32_t! */
+                        vrc = pData->u32Flags; /** @todo Fix int vs. uint32_t! */
                         break;
 
                     case INPUT_STS_TERMINATED:
-                        rc = VERR_CANCELLED;
+                        vrc = VERR_CANCELLED;
                         break;
 
                     case INPUT_STS_OVERFLOW:
-                        rc = VERR_BUFFER_OVERFLOW;
+                        vrc = VERR_BUFFER_OVERFLOW;
                         break;
 
                     default:
@@ -1476,18 +1476,18 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
             }
         }
         else
-            rc = VERR_TIMEOUT;
+            vrc = VERR_TIMEOUT;
     }
 
     alock.acquire();
 
     AssertPtr(pCallbackWrite);
     int rc2 = callbackRemove(uContextID);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    if (RT_SUCCESS(vrc))
+        vrc = rc2;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 // implementation of public methods
@@ -1509,8 +1509,8 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, Co
     Assert(data.size() >= aSize);
 
     size_t cbRead;
-    int rc = readData(aHandle, aSize, aTimeoutMS, data.raw(), aSize, &cbRead);
-    if (RT_SUCCESS(rc))
+    int vrc = readData(aHandle, aSize, aTimeoutMS, data.raw(), aSize, &cbRead);
+    if (RT_SUCCESS(vrc))
     {
         if (data.size() != cbRead)
             data.resize(cbRead);
@@ -1518,8 +1518,8 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, Co
     }
 
     /** @todo Do setError() here. */
-    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(rc);
+    HRESULT hr = RT_SUCCESS(vrc) ? S_OK : VBOX_E_IPRT_ERROR;
+    LogFlowFuncLeaveRC(vrc);
 
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -1535,10 +1535,10 @@ STDMETHODIMP GuestProcess::Terminate(void)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int rc = terminateProcess();
+    int vrc = terminateProcess();
     /** @todo Do setError() here. */
-    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(rc);
+    HRESULT hr = RT_SUCCESS(vrc) ? S_OK : VBOX_E_IPRT_ERROR;
+    LogFlowFuncLeaveRC(vrc);
 
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -1562,24 +1562,24 @@ STDMETHODIMP GuestProcess::WaitFor(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWa
     HRESULT hr;
 
     GuestProcessWaitResult waitRes;
-    int rc = waitFor(aWaitFlags, aTimeoutMS, waitRes);
-    if (RT_SUCCESS(rc))
+    int vrc = waitFor(aWaitFlags, aTimeoutMS, waitRes);
+    if (RT_SUCCESS(vrc))
     {
         *aReason = waitRes.mResult;
         hr = setErrorExternal();
     }
     else
     {
-        if (rc == VERR_TIMEOUT)
+        if (vrc == VERR_TIMEOUT)
             hr = setError(VBOX_E_IPRT_ERROR,
                           tr("Process \"%s\" (PID %RU32) did not respond within time (%RU32ms)"),
                           mData.mProcess.mCommand.c_str(), mData.mPID, aTimeoutMS);
         else
             hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Waiting for process \"%s\" (PID %RU32) failed with rc=%Rrc"),
-                          mData.mProcess.mCommand.c_str(), mData.mPID, rc);
+                          tr("Waiting for process \"%s\" (PID %RU32) failed with vrc=%Rrc"),
+                          mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
     }
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(vrc);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1624,10 +1624,10 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
-    int rc = writeData(aHandle, aFlags, data.raw(), data.size(), aTimeoutMS, (uint32_t*)aWritten);
+    int vrc = writeData(aHandle, aFlags, data.raw(), data.size(), aTimeoutMS, (uint32_t*)aWritten);
     /** @todo Do setError() here. */
-    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(rc);
+    HRESULT hr = RT_SUCCESS(vrc) ? S_OK : VBOX_E_IPRT_ERROR;
+    LogFlowFuncLeaveRC(vrc);
 
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
