@@ -143,6 +143,8 @@ SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession,
     mCopyFileFlags = uFlags;
 }
 
+/** @todo Merge this and the above call and let the above call do the open/close file handling so that the
+ *        inner code only has to deal with file handles. No time now ... */
 SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession,
                                      PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
                                      const Utf8Str &strDest, uint32_t uFlags)
@@ -745,7 +747,7 @@ int SessionTaskUpdateAdditions::Run(void)
         if (RT_FAILURE(rc))
         {
             hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                     Utf8StrFmt(GuestSession::tr("Invalid installation medium \"%s\" detected: %Rrc"),
+                                     Utf8StrFmt(GuestSession::tr("Unable to open Guest Additions .ISO file \"%s\": %Rrc"),
                                      mSource.c_str(), rc));
         }
         else
@@ -758,8 +760,8 @@ int SessionTaskUpdateAdditions::Run(void)
                 rc = RTFileSeek(iso.file, cbOffset, RTFILE_SEEK_BEGIN, NULL);
                 if (RT_FAILURE(rc))
                     hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                             Utf8StrFmt(GuestSession::tr("Could not seek to setup file on installation medium \"%s\": %Rrc"),
-                                             mSource.c_str(), rc));
+                                             Utf8StrFmt(GuestSession::tr("Unable to retrievev setup file \"%s\" information on \"%s\": %Rrc"),
+                                             strInstallerImage.c_str(), mSource.c_str(), rc));
             }
             else
             {
@@ -767,14 +769,14 @@ int SessionTaskUpdateAdditions::Run(void)
                 {
                     case VERR_FILE_NOT_FOUND:
                         hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                 Utf8StrFmt(GuestSession::tr("Setup file was not found on installation medium \"%s\""),
-                                                 mSource.c_str()));
+                                                 Utf8StrFmt(GuestSession::tr("Installer \"%s\" was not found on \"%s\""),
+                                                 strInstallerImage.c_str(), mSource.c_str()));
                         break;
 
                     default:
                         hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                 Utf8StrFmt(GuestSession::tr("An unknown error (%Rrc) occured while retrieving information of setup file on installation medium \"%s\""),
-                                                 rc, mSource.c_str()));
+                                                 Utf8StrFmt(GuestSession::tr("Error while retrieving information for installer \"%s\" on \"%s\": %Rrc"),
+                                                 strInstallerImage.c_str(), mSource.c_str(), rc));
                         break;
                 }
             }
@@ -848,8 +850,50 @@ int SessionTaskUpdateAdditions::Run(void)
                  * Installer was transferred successfully, so let's start it
                  * (with system rights).
                  */
-                LogRel(("Starting Guest Additions installer ...\n"));
+                LogRel(("Verifying Guest Additions installer ...\n"));
                 rc = setProgress(60);
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Determine where the installer image ended up and if it has the
+                 * correct size. */
+                GuestFsObjData objData;
+                int64_t cbSizeOnGuest;
+                rc = pSession->fileQuerySizeInternal(strInstallerDest, &cbSizeOnGuest);
+                if (RT_FAILURE(rc))
+                {
+                    /** @todo Windows only! */
+
+                    /* Because older Guest Additions have problems with environment variable
+                     * expansion in parameters we have to check an alternative location on Windows.
+                     * So check for "%TEMP%\VBoxWindowsAdditions.exe" in a screwed up way. */
+                    rc = pSession->fileQuerySizeInternal("C:\\Windows\\system32\\EMPVBoxWindowsAdditions.exe", &cbSizeOnGuest);
+                    if (RT_SUCCESS(rc))
+                        strInstallerDest = "C:\\Windows\\system32\\EMPVBoxWindowsAdditions.exe";
+                }
+
+                if (   RT_SUCCESS(rc)
+                    && cbSize == (uint64_t)cbSizeOnGuest)
+                {
+                    LogRel(("Guest Additions installer successfully verified\n"));
+                    rc = setProgress(65);
+                }
+                else
+                {
+                    if (RT_FAILURE(rc))
+                    {
+                        hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                 Utf8StrFmt(GuestSession::tr("Unable to find Guest Additions installer on guest: %Rrc"), rc));
+                    }
+                    else
+                    {
+                        hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                 Utf8StrFmt(GuestSession::tr("Guest Additions installer was not transfered fully (%RI64/%RU64)"),
+                                                            cbSizeOnGuest, cbSize));
+                        rc = VERR_GENERAL_FAILURE; /* Fudge. */
+                    }
+                }
             }
 
             if (RT_SUCCESS(rc))
@@ -903,7 +947,11 @@ int SessionTaskUpdateAdditions::Run(void)
                             rc = VERR_GENERAL_FAILURE; /* Fudge. */
                         }
                         else /* Yay, success! */
+                        {
+                            /** @todo Add code for verifying the update. */
+                            LogRel(("Updating Guest Additions successful\n"));
                             hr = setProgressSuccess();
+                        }
                     }
                     else
                     {
@@ -911,11 +959,14 @@ int SessionTaskUpdateAdditions::Run(void)
                             hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                      Utf8StrFmt(GuestSession::tr("Error while waiting for Guest Additions update: %Rrc"), rc));
                         else
-                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                     Utf8StrFmt(GuestSession::tr("Error installing Guest Additions update: %Rrc"),
-                                                                waitRes.mRC));
+                        {
+                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, pProcess->errorMsg());
+                            rc = VERR_GENERAL_FAILURE; /* Fudge. */
+                        }
                     }
                 }
+                if (!pProcess.isNull())
+                    pProcess->close();
             }
             RTIsoFsClose(&iso);
         }

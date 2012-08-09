@@ -885,7 +885,7 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData.mStatus != ProcessStatus_Started)
-        return VERR_NOT_AVAILABLE;
+        return VINF_SUCCESS; /* Nothing to read anymore. */
 
     uint32_t uContextID = 0;
     GuestCtrlCallback *pCallbackRead = new GuestCtrlCallback();
@@ -1015,7 +1015,7 @@ int GuestProcess::setErrorInternal(int rc, const Utf8Str &strMessage)
     return rc2;
 }
 
-int GuestProcess::setErrorExternal(void)
+HRESULT GuestProcess::setErrorExternal(void)
 {
     return RT_SUCCESS(mData.mRC)
            ? S_OK : setError(VBOX_E_IPRT_ERROR, "%s", mData.mErrorMsg.c_str());
@@ -1206,6 +1206,8 @@ int GuestProcess::terminateProcess(void)
 {
     LogFlowThisFuncEnter();
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     if (mData.mParent->getProtocolVersion() < 2)
         return VERR_NOT_SUPPORTED;
 
@@ -1386,143 +1388,6 @@ int GuestProcess::waitForStart(uint32_t uTimeoutMS)
     return rc;
 }
 
-HRESULT GuestProcess::waitResultToErrorEx(const GuestProcessWaitResult &waitResult, bool fLog)
-{
-    int rc = waitResult.mRC;
-
-    Utf8Str strMsg;
-    ProcessStatus_T procStatus = mData.mStatus;
-
-    switch (procStatus)
-    {
-        case ProcessStatus_Started:
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" was started (PID %RU32)"),
-                                mData.mProcess.mCommand.c_str(), mData.mPID);
-            break;
-
-        case ProcessStatus_TerminatedNormally:
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" (PID %RU32) terminated normally (exit code: %ld)"),
-                                mData.mProcess.mCommand.c_str(), mData.mPID, mData.mExitCode);
-            break;
-
-        case ProcessStatus_TerminatedSignal:
-        {
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" (PID %RU32) terminated through signal (signal: %ld)"),
-                                mData.mProcess.mCommand.c_str(), mData.mPID, mData.mExitCode);
-            break;
-        }
-
-        case ProcessStatus_TerminatedAbnormally:
-        {
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" (PID %RU32) terminated abnormally (exit code: %ld)"),
-                                mData.mProcess.mCommand.c_str(), mData.mPID, mData.mExitCode);
-            break;
-        }
-
-        case ProcessStatus_TimedOutKilled:
-        {
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" (PID %RU32) timed out and was killed"),
-                                mData.mProcess.mCommand.c_str(), mData.mPID);
-            break;
-        }
-
-        case ProcessStatus_TimedOutAbnormally:
-        {
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" (PID %RU32) timed out and could not be killed\n"),
-                                mData.mProcess.mCommand.c_str(), mData.mPID);
-            break;
-        }
-
-        case ProcessStatus_Down:
-        {
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" (PID %RU32) was killed because guest OS is shutting down\n"),
-                                mData.mProcess.mCommand.c_str(), mData.mPID);
-            break;
-        }
-
-        case ProcessStatus_Error:
-        {
-            strMsg = Utf8StrFmt(tr("Guest process \"%s\" could not be started: ", mData.mProcess.mCommand.c_str()));
-
-            /* Note: It's not required that the process has been started before. */
-            if (mData.mPID)
-            {
-                strMsg += Utf8StrFmt(tr("Error rc=%Rrc occured (PID %RU32)"), rc, mData.mPID);
-            }
-            else
-            {
-                switch (rc) /* rc contains the IPRT error code from guest side. */
-                {
-                    case VERR_FILE_NOT_FOUND: /* This is the most likely error. */
-                        strMsg += Utf8StrFmt(tr("The specified file was not found on guest"));
-                        break;
-
-                    case VERR_PATH_NOT_FOUND:
-                        strMsg += Utf8StrFmt(tr("Could not resolve path to specified file was not found on guest"));
-                        break;
-
-                    case VERR_BAD_EXE_FORMAT:
-                        strMsg += Utf8StrFmt(tr("The specified file is not an executable format on guest"));
-                        break;
-
-                    case VERR_AUTHENTICATION_FAILURE:
-                        strMsg += Utf8StrFmt(tr("The specified user was not able to logon on guest"));
-                        break;
-
-                    case VERR_INVALID_NAME:
-                        strMsg += Utf8StrFmt(tr("The specified file is an invalid name"));
-                        break;
-
-                    case VERR_TIMEOUT:
-                        strMsg += Utf8StrFmt(tr("The guest did not respond within time"));
-                        break;
-
-                    case VERR_CANCELLED:
-                        strMsg += Utf8StrFmt(tr("The execution operation was canceled"));
-                        break;
-
-                    case VERR_PERMISSION_DENIED:
-                        strMsg += Utf8StrFmt(tr("Invalid user/password credentials"));
-                        break;
-
-                    case VERR_MAX_PROCS_REACHED:
-                        strMsg += Utf8StrFmt(tr("Maximum number of parallel guest processes has been reached"));
-                        break;
-
-                    default:
-                        strMsg += Utf8StrFmt(tr("Reported error %Rrc"), rc);
-                        break;
-                }
-            }
-
-            break;
-        }
-
-        case ProcessStatus_Undefined:
-        default:
-
-            /* Silently skip this request. */
-            break;
-    }
-
-    HRESULT hr = S_OK;
-    if (RT_FAILURE(rc))
-    {
-        Assert(!strMsg.isEmpty());
-        hr = setError(VBOX_E_IPRT_ERROR, "%s", strMsg.c_str());
-    }
-
-    if (fLog)
-    {
-        Assert(!strMsg.isEmpty());
-
-        strMsg.append("\n");
-        LogRel(("%s", strMsg.c_str()));
-    }
-
-    return hr;
-}
-
 int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
                             void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten)
 {
@@ -1533,7 +1398,7 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData.mStatus != ProcessStatus_Started)
-        return VERR_NOT_AVAILABLE;
+        return VINF_SUCCESS; /* Not available for writing (anymore). */
 
     uint32_t uContextID = 0;
     GuestCtrlCallback *pCallbackWrite = new GuestCtrlCallback();
@@ -1669,8 +1534,6 @@ STDMETHODIMP GuestProcess::Terminate(void)
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int rc = terminateProcess();
     /** @todo Do setError() here. */
