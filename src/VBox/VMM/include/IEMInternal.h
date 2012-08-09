@@ -204,7 +204,7 @@ typedef struct IEMCPU
     int32_t                 offVM;
 
     /** Whether to bypass access handlers or not. */
-    bool                    fByPassHandlers;
+    bool                    fBypassHandlers;
     /** Explicit alignment padding. */
     bool                    afAlignment0[3];
 

@@ -172,6 +172,12 @@ typedef IEMSELDESC *PIEMSELDESC;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** @def IEM_LOG_MEMORY_ACCESS
+ * Can be used to log memory accesses when debugging problematic guest behavior. */
+#if 0
+# define IEM_LOG_MEMORY_ACCESS
+#endif
+
 /** @name IEM status codes.
  *
  * Not quite sure how this will play out in the end, just aliasing safe status
@@ -708,8 +714,9 @@ static int iemSetPassUpStatus(PIEMCPU pIemCpu, VBOXSTRICTRC rcPassUp)
  * Initializes the decoder state.
  *
  * @param   pIemCpu             The per CPU IEM state.
+ * @param   fBypassHandlers     Whether to bypass access handlers.
  */
-DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
+DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
 {
     PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
     PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
@@ -753,6 +760,8 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
     pIemCpu->cActiveMappings    = 0;
     pIemCpu->iNextMapping       = 0;
     pIemCpu->rcPassUp           = VINF_SUCCESS;
+    pIemCpu->fBypassHandlers    = fBypassHandlers;
+
 }
 
 
@@ -761,13 +770,14 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM state.
+ * @param   fBypassHandlers     Whether to bypass access handlers.
  */
-static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
+static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypassHandlers)
 {
 #ifdef IEM_VERIFICATION_MODE
     uint8_t const cbOldOpcodes = pIemCpu->cbOpcode;
 #endif
-    iemInitDecoder(pIemCpu);
+    iemInitDecoder(pIemCpu, fBypassHandlers);
 
     /*
      * What we're doing here is very similar to iemMemMap/iemMemBounceBufferMap.
@@ -795,27 +805,28 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
         GCPtrPC = pCtx->cs.u64Base + GCPtrPC32;
     }
 
+#if defined(IN_RC) && defined(VBOX_WITH_RAW_MODE)
+    /* Allow interpretation of patch manager code blocks since they can for
+       instance throw #PFs for perfectly good reasons. */
+    if (   (pCtx->cs.Sel & X86_SEL_RPL) == 1
+        && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), GCPtrPC))
+    {
+        uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
+        if (cbToTryRead > cbLeftOnPage)
+            cbToTryRead = cbLeftOnPage;
+        if (cbToTryRead > sizeof(pIemCpu->abOpcode))
+            cbToTryRead = sizeof(pIemCpu->abOpcode);
+        memcpy(pIemCpu->abOpcode, (void const *)(uintptr_t)GCPtrPC, cbToTryRead);
+        pIemCpu->cbOpcode = cbToTryRead;
+        return VINF_SUCCESS;
+    }
+#endif
+
     RTGCPHYS    GCPhys;
     uint64_t    fFlags;
     int rc = PGMGstGetPage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrPC, &fFlags, &GCPhys);
     if (RT_FAILURE(rc))
     {
-#if defined(IN_RC) && defined(VBOX_WITH_RAW_MODE)
-        /* Allow interpretation of patch manager code blocks since they can for
-           instance throw #PFs for perfectly good reasons. */
-        if (   (pCtx->cs.Sel & X86_SEL_RPL) == 1
-            && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), GCPtrPC))
-        {
-            uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
-            if (cbToTryRead > cbLeftOnPage)
-                cbToTryRead = cbLeftOnPage;
-            if (cbToTryRead > sizeof(pIemCpu->abOpcode))
-                cbToTryRead = sizeof(pIemCpu->abOpcode);
-            memcpy(pIemCpu->abOpcode, (void const *)(uintptr_t)GCPtrPC, cbToTryRead);
-            pIemCpu->cbOpcode = cbToTryRead;
-            return VINF_SUCCESS;
-        }
-#endif
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - rc=%Rrc\n", GCPtrPC, rc));
         return iemRaisePageFault(pIemCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, rc);
     }
@@ -862,14 +873,15 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
         cbToTryRead = sizeof(pIemCpu->abOpcode);
     /** @todo PATM: Read original, unpatched bytes? EMAll.cpp doesn't seem to be
      *        doing that. */
-    if (!pIemCpu->fByPassHandlers)
+    if (!pIemCpu->fBypassHandlers)
         rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, pIemCpu->abOpcode, cbToTryRead);
     else
         rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pIemCpu->abOpcode, GCPhys, cbToTryRead);
     if (rc != VINF_SUCCESS)
     {
         /** @todo status code handling */
-        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - read error - rc=%Rrc (!!)\n", GCPtrPC, rc));
+        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rc=%Rrc (!!)\n",
+             GCPtrPC, GCPhys, rc, cbToTryRead));
         return rc;
     }
     pIemCpu->cbOpcode = cbToTryRead;
@@ -952,7 +964,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
     if (cbToTryRead > sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode)
         cbToTryRead = sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode;
     Assert(cbToTryRead >= cbMin - cbLeft);
-    if (!pIemCpu->fByPassHandlers)
+    if (!pIemCpu->fBypassHandlers)
         rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode], cbToTryRead);
     else
         rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), &pIemCpu->abOpcode[pIemCpu->cbOpcode], GCPhys, cbToTryRead);
@@ -1772,6 +1784,45 @@ static VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RTSEL 
 }
 
 
+/**
+ * Gets the correct EFLAGS regardless of whether PATM stores parts of them or
+ * not.
+ *
+ * @param   a_pIemCpu           The IEM per CPU data.
+ * @param   a_pCtx              The CPU context.
+ */
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+# define IEMMISC_GET_EFL(a_pIemCpu, a_pCtx) \
+    ( IEM_VERIFICATION_ENABLED(a_pIemCpu) \
+      ? (a_pCtx)->eflags.u \
+      : CPUMRawGetEFlags(IEMCPU_TO_VMCPU(a_pIemCpu)) )
+#else
+# define IEMMISC_GET_EFL(a_pIemCpu, a_pCtx) \
+    ( (a_pCtx)->eflags.u  )
+#endif
+
+/**
+ * Updates the EFLAGS in the correct manner wrt. PATM.
+ *
+ * @param   a_pIemCpu           The IEM per CPU data.
+ * @param   a_pCtx              The CPU context.
+ */
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+# define IEMMISC_SET_EFL(a_pIemCpu, a_pCtx, a_fEfl) \
+    do { \
+        if (IEM_VERIFICATION_ENABLED(a_pIemCpu)) \
+            (a_pCtx)->eflags.u = (a_fEfl); \
+        else \
+            CPUMRawSetEFlags(IEMCPU_TO_VMCPU(a_pIemCpu), a_fEfl); \
+    } while (0)
+#else
+# define IEMMISC_SET_EFL(a_pIemCpu, a_pCtx, a_fEfl) \
+    do { \
+        (a_pCtx)->eflags.u = (a_fEfl); \
+    } while (0)
+#endif
+
+
 /** @}  */
 
 /** @name  Raising Exceptions.
@@ -1936,7 +1987,8 @@ iemRaiseXcptOrIntInRealMode(PIEMCPU     pIemCpu,
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    pu16Frame[2] = (uint16_t)pCtx->eflags.u;
+    uint32_t fEfl = IEMMISC_GET_EFL(pIemCpu, pCtx);
+    pu16Frame[2] = (uint16_t)fEfl;
     pu16Frame[1] = (uint16_t)pCtx->cs.Sel;
     pu16Frame[0] = pCtx->ip + cbInstr;
     rcStrict = iemMemStackPushCommitSpecial(pIemCpu, pu16Frame, uNewRsp);
@@ -1953,7 +2005,8 @@ iemRaiseXcptOrIntInRealMode(PIEMCPU     pIemCpu,
     pCtx->cs.u64Base       = (uint32_t)Idte.sel << 4;
     /** @todo do we load attribs and limit as well? Should we check against limit like far jump? */
     pCtx->rip              = Idte.off;
-    pCtx->eflags.Bits.u1IF = 0;
+    fEfl &= ~X86_EFL_IF;
+    IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
 
     /** @todo do we actually do this in real mode? */
     if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
@@ -2133,6 +2186,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
      * If the privilege level changes, we need to get a new stack from the TSS.
      * This in turns means validating the new SS and ESP...
      */
+    uint32_t        fEfl    = IEMMISC_GET_EFL(pIemCpu, pCtx);
     uint8_t const   uNewCpl = DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF
                             ? pIemCpu->uCpl : DescCS.Legacy.Gen.u2Dpl;
     if (uNewCpl != pIemCpu->uCpl)
@@ -2181,7 +2235,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
                             ? pCtx->eip + cbInstr : pCtx->eip;
         uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
-        uStackFrame.pu32[2] = pCtx->eflags.u;
+        uStackFrame.pu32[2] = fEfl;
         uStackFrame.pu32[3] = pCtx->esp;
         uStackFrame.pu32[4] = pCtx->ss.Sel;
         rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS);
@@ -2238,7 +2292,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
                             ? pCtx->eip + cbInstr : pCtx->eip;
         uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
-        uStackFrame.pu32[2] = pCtx->eflags.u;
+        uStackFrame.pu32[2] = fEfl;
         rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W); /* don't use the commit here */
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
@@ -2267,7 +2321,8 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
 
     pCtx->rip               = uNewEip;
-    pCtx->rflags.u         &= ~fEflToClear;
+    fEfl &= ~fEflToClear;
+    IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
 
     if (fFlags & IEM_XCPT_FLAGS_CR2)
         pCtx->cr2 = uCr2;
@@ -4427,6 +4482,21 @@ static uint16_t iemFpuCompressFtw(uint16_t u16FullFtw)
 
 
 /**
+ * Updates the IEMCPU::cbWritten counter if applicable.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   fAccess             The access being accounted for.
+ * @param   cbMem               The access size.
+ */
+DECL_FORCE_INLINE(void) iemMemUpdateWrittenCounter(PIEMCPU pIemCpu, uint32_t fAccess, size_t cbMem)
+{
+    if (   (fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_WRITE)) == (IEM_ACCESS_WHAT_STACK | IEM_ACCESS_TYPE_WRITE)
+        || (fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_WRITE)) == (IEM_ACCESS_WHAT_DATA | IEM_ACCESS_TYPE_WRITE) )
+        pIemCpu->cbWritten += (uint32_t)cbMem;
+}
+
+
+/**
  * Checks if the given segment can be written to, raise the appropriate
  * exception if not.
  *
@@ -4661,6 +4731,9 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
     if ((fAccess & IEM_ACCESS_TYPE_WRITE) && !pIemCpu->fNoRem)
         return VERR_PGM_PHYS_TLB_CATCH_ALL;
 #endif
+#ifdef IEM_LOG_MEMORY_ACCESS
+    return VERR_PGM_PHYS_TLB_CATCH_ALL;
+#endif
 
     /** @todo This API may require some improving later.  A private deal with PGM
      *        regarding locking and unlocking needs to be struct.  A couple of TLBs
@@ -4669,7 +4742,7 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
     int rc = PGMPhysIemGCPhys2Ptr(IEMCPU_TO_VM(pIemCpu),
                                   GCPhysMem,
                                   RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
-                                  pIemCpu->fByPassHandlers,
+                                  pIemCpu->fBypassHandlers,
                                   ppvMem,
                                   pLock);
     /*Log(("PGMPhysIemGCPhys2Ptr %Rrc pLock=%.*Rhxs\n", rc, sizeof(*pLock), pLock));*/
@@ -4771,7 +4844,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
         uint16_t const  cbFirst  = pIemCpu->aMemBbMappings[iMemMap].cbFirst;
         uint16_t const  cbSecond = pIemCpu->aMemBbMappings[iMemMap].cbSecond;
         uint8_t const  *pbBuf    = &pIemCpu->aBounceBuffers[iMemMap].ab[0];
-        if (!pIemCpu->fByPassHandlers)
+        if (!pIemCpu->fBypassHandlers)
         {
             rc = PGMPhysWrite(IEMCPU_TO_VM(pIemCpu),
                               pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
@@ -4799,7 +4872,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
         {
             /** @todo status code handling */
             Log(("iemMemBounceBufferCommitAndUnmap: %s GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
-                 pIemCpu->fByPassHandlers ? "PGMPhysWrite" : "PGMPhysSimpleWriteGCPhys",
+                 pIemCpu->fBypassHandlers ? "PGMPhysWrite" : "PGMPhysSimpleWriteGCPhys",
                  pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
                  pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, rc));
         }
@@ -4839,6 +4912,17 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
                 *pIemCpu->ppIemEvtRecNext = pEvtRec;
             }
         }
+    }
+#endif
+#ifdef IEM_LOG_MEMORY_ACCESS
+    if (rc == VINF_SUCCESS)
+    {
+        Log(("IEM Wrote %RGp: %.*Rhxs\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
+             RT_MAX(RT_MIN(pIemCpu->aMemBbMappings[iMemMap].cbFirst, 64), 1), &pIemCpu->aBounceBuffers[iMemMap].ab[0]));
+        if (pIemCpu->aMemBbMappings[iMemMap].cbSecond)
+            Log(("IEM Wrote %RGp: %.*Rhxs [2nd page]\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
+                 RT_MIN(pIemCpu->aMemBbMappings[iMemMap].cbSecond, 64),
+                 &pIemCpu->aBounceBuffers[iMemMap].ab[pIemCpu->aMemBbMappings[iMemMap].cbFirst]));
     }
 #endif
 
@@ -4883,7 +4967,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
     if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC | IEM_ACCESS_PARTIAL_WRITE))
     {
         int rc;
-        if (!pIemCpu->fByPassHandlers)
+        if (!pIemCpu->fBypassHandlers)
         {
             rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbFirstPage);
             if (rc != VINF_SUCCESS)
@@ -4967,6 +5051,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
     pIemCpu->aMemMappings[iMemMap].fAccess          = fAccess | IEM_ACCESS_BOUNCE_BUFFERED;
     pIemCpu->cActiveMappings++;
 
+    iemMemUpdateWrittenCounter(pIemCpu, fAccess, cbMem);
     *ppvMem = pbBuf;
     return VINF_SUCCESS;
 }
@@ -5002,7 +5087,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
         else
         {
             int rc;
-            if (!pIemCpu->fByPassHandlers)
+            if (!pIemCpu->fBypassHandlers)
                 rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbMem);
             else
                 rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf, GCPhysFirst, cbMem);
@@ -5010,7 +5095,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
             {
                 /** @todo status code handling */
                 Log(("iemMemBounceBufferMapPhys: %s GCPhysFirst=%RGp rc=%Rrc (!!)\n",
-                     pIemCpu->fByPassHandlers ? "PGMPhysRead" : "PGMPhysSimpleReadGCPhys",  GCPhysFirst, rc));
+                     pIemCpu->fBypassHandlers ? "PGMPhysRead" : "PGMPhysSimpleReadGCPhys",  GCPhysFirst, rc));
                 return rc;
             }
         }
@@ -5055,6 +5140,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
     pIemCpu->aMemMappings[iMemMap].fAccess          = fAccess | IEM_ACCESS_BOUNCE_BUFFERED;
     pIemCpu->cActiveMappings++;
 
+    iemMemUpdateWrittenCounter(pIemCpu, fAccess, cbMem);
     *ppvMem = pbBuf;
     return VINF_SUCCESS;
 }
@@ -5134,9 +5220,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     pIemCpu->iNextMapping = iMemMap + 1;
     pIemCpu->cActiveMappings++;
 
-    if (   (fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_WRITE)) == (IEM_ACCESS_WHAT_STACK | IEM_ACCESS_TYPE_WRITE)
-        || (fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_WRITE)) == (IEM_ACCESS_WHAT_DATA | IEM_ACCESS_TYPE_WRITE) )
-        pIemCpu->cbWritten += (uint32_t)cbMem;
+    iemMemUpdateWrittenCounter(pIemCpu, fAccess, cbMem);
     *ppvMem = pvMem;
     return VINF_SUCCESS;
 }
@@ -6323,6 +6407,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_TR_U16(a_u16Dst)                   (a_u16Dst) = (pIemCpu)->CTX_SUFF(pCtx)->tr.Sel
 #define IEM_MC_FETCH_TR_U32(a_u32Dst)                   (a_u32Dst) = (pIemCpu)->CTX_SUFF(pCtx)->tr.Sel
 #define IEM_MC_FETCH_TR_U64(a_u64Dst)                   (a_u64Dst) = (pIemCpu)->CTX_SUFF(pCtx)->tr.Sel
+/** @note Not for IOPL or IF testing or modification. */
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 #define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 #define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = pIemCpu->CTX_SUFF(pCtx)->fpu.FSW
@@ -6347,6 +6432,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  *        Use IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF! */
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = (uint32_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = (uint64_t *)iemGRegRef(pIemCpu, (a_iGReg))
+/** @note Not for IOPL or IF testing or modification. */
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 
 #define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *(uint8_t  *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u8Value)
@@ -6422,8 +6508,11 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)         *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) |= (a_u64Value)
 
 
+/** @note Not for IOPL or IF modification. */
 #define IEM_MC_SET_EFL_BIT(a_fBit)                      do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u |= (a_fBit); } while (0)
+/** @note Not for IOPL or IF modification. */
 #define IEM_MC_CLEAR_EFL_BIT(a_fBit)                    do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u &= ~(a_fBit); } while (0)
+/** @note Not for IOPL or IF modification. */
 #define IEM_MC_FLIP_EFL_BIT(a_fBit)                     do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u ^= (a_fBit); } while (0)
 
 #define IEM_MC_CLEAR_FSW_EX()   do { (pIemCpu)->CTX_SUFF(pCtx)->fpu.FSW &= X86_FSW_C_MASK | X86_FSW_TOP_MASK; } while (0)
@@ -6874,20 +6963,28 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_USED_FPU() \
     CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM)
 
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)               if (!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit))) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_ANY_BITS_SET(a_fBits)             if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBits)) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_NO_BITS_SET(a_fBits)              if (!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBits))) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BITS_NE(a_fBit1, a_fBit2)         \
     if (   !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit1)) \
         != !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit2)) ) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BITS_EQ(a_fBit1, a_fBit2)         \
     if (   !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit1)) \
         == !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit2)) ) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(a_fBit, a_fBit1, a_fBit2) \
     if (   (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) \
         ||    !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit1)) \
            != !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit2)) ) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BIT_NOT_SET_AND_BITS_EQ(a_fBit, a_fBit1, a_fBit2) \
     if (   !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) \
         &&    !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit1)) \
@@ -6895,21 +6992,27 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_IF_CX_IS_NZ()                            if (pIemCpu->CTX_SUFF(pCtx)->cx != 0) {
 #define IEM_MC_IF_ECX_IS_NZ()                           if (pIemCpu->CTX_SUFF(pCtx)->ecx != 0) {
 #define IEM_MC_IF_RCX_IS_NZ()                           if (pIemCpu->CTX_SUFF(pCtx)->rcx != 0) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
         if (   pIemCpu->CTX_SUFF(pCtx)->cx != 0 \
             && (pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
         if (   pIemCpu->CTX_SUFF(pCtx)->ecx != 0 \
             && (pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
         if (   pIemCpu->CTX_SUFF(pCtx)->rcx != 0 \
             && (pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
         if (   pIemCpu->CTX_SUFF(pCtx)->cx != 0 \
             && !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
         if (   pIemCpu->CTX_SUFF(pCtx)->ecx != 0 \
             && !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
+/** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
         if (   pIemCpu->CTX_SUFF(pCtx)->rcx != 0 \
             && !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
@@ -8149,8 +8252,10 @@ static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port,
  * @return  Strict VBox status code.
  * @param   pVCpu       The current virtual CPU.
  * @param   pIemCpu     The IEM per CPU data.
+ * @param   fExecuteInhibit     If set, execute the instruction following CLI,
+ *                      POP SS and MOV SS,GR.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu)
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, bool fExecuteInhibit)
 {
     uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
     VBOXSTRICTRC rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
@@ -8162,11 +8267,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu)
 
     /* Execute the next instruction as well if a cli, pop ss or
        mov ss, Gr has just completed successfully. */
-    if (   rcStrict == VINF_SUCCESS
+    if (   fExecuteInhibit
+        && rcStrict == VINF_SUCCESS
         && VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && EMGetInhibitInterruptsPC(pVCpu) == pIemCpu->CTX_SUFF(pCtx)->rip )
     {
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, pIemCpu->fBypassHandlers);
         if (rcStrict == VINF_SUCCESS)
         {
             b; IEM_OPCODE_GET_NEXT_U8(&b);
@@ -8281,9 +8387,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     /*
      * Do the decoding and emulation.
      */
-    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, false);
     if (rcStrict == VINF_SUCCESS)
-        rcStrict = iemExecOneInner(pVCpu, pIemCpu);
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
 
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     /*
@@ -8304,13 +8410,13 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
     AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
 
-    iemInitDecoder(pIemCpu);
+    iemInitDecoder(pIemCpu, false);
     uint32_t const cbOldWritten = pIemCpu->cbWritten;
 
-    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, false);
     if (rcStrict == VINF_SUCCESS)
     {
-        rcStrict = iemExecOneInner(pVCpu, pIemCpu);
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
         if (pcbWritten)
             *pcbWritten = pIemCpu->cbWritten - cbOldWritten;
     }
@@ -8329,17 +8435,61 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
     if (   cbOpcodeBytes
         && pCtx->rip == OpcodeBytesPC)
     {
-        iemInitDecoder(pIemCpu);
+        iemInitDecoder(pIemCpu, false);
         pIemCpu->cbOpcode = (uint8_t)RT_MIN(cbOpcodeBytes, sizeof(pIemCpu->abOpcode));
         memcpy(pIemCpu->abOpcode, pvOpcodeBytes, pIemCpu->cbOpcode);
         rcStrict = VINF_SUCCESS;
     }
     else
-        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, false);
     if (rcStrict == VINF_SUCCESS)
     {
-        rcStrict = iemExecOneInner(pVCpu, pIemCpu);
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
     }
+    return rcStrict;
+}
+
+
+VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t *pcbWritten)
+{
+    PIEMCPU  pIemCpu = &pVCpu->iem.s;
+    PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
+    AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
+
+    iemInitDecoder(pIemCpu, true);
+    uint32_t const cbOldWritten = pIemCpu->cbWritten;
+
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, true);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu, false);
+        if (pcbWritten)
+            *pcbWritten = pIemCpu->cbWritten - cbOldWritten;
+    }
+    return rcStrict;
+}
+
+
+VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
+                                                               const void *pvOpcodeBytes, size_t cbOpcodeBytes)
+{
+    PIEMCPU  pIemCpu = &pVCpu->iem.s;
+    PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
+    AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
+
+    VBOXSTRICTRC rcStrict;
+    if (   cbOpcodeBytes
+        && pCtx->rip == OpcodeBytesPC)
+    {
+        iemInitDecoder(pIemCpu, true);
+        pIemCpu->cbOpcode = (uint8_t)RT_MIN(cbOpcodeBytes, sizeof(pIemCpu->abOpcode));
+        memcpy(pIemCpu->abOpcode, pvOpcodeBytes, pIemCpu->cbOpcode);
+        rcStrict = VINF_SUCCESS;
+    }
+    else
+        rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, true);
+    if (rcStrict == VINF_SUCCESS)
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu, false);
     return rcStrict;
 }
 
@@ -8366,7 +8516,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2)
 {
-    iemInitDecoder(&pVCpu->iem.s);
+    iemInitDecoder(&pVCpu->iem.s, false);
 
     uint32_t fFlags;
     switch (enmType)
