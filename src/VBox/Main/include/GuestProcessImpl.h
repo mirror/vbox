@@ -79,7 +79,7 @@ public:
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
     ULONG getProcessID(void) { return mData.mProcessID; }
-    int rc(void) { mData.mRC; }
+    int rc(void) { return mData.mRC; }
     int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead);
     int startProcess(void);
     int startProcessAsync(void);
