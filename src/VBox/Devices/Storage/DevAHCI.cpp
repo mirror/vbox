@@ -262,10 +262,14 @@ typedef enum AHCITXSTATE
 } AHCITXSTATE, *PAHCITXSTATE;
 
 /** Task encountered a buffer overflow. */
-#define AHCI_REQ_OVERFLOW RT_BIT_32(0)
+#define AHCI_REQ_OVERFLOW   RT_BIT_32(0)
 /** Request is a PIO data command, if this flag is not set it either is
  * a command which does not transfer data or a DMA command based on the transfer size. */
-#define AHCI_REQ_PIO_DATA RT_BIT_32(1)
+#define AHCI_REQ_PIO_DATA   RT_BIT_32(1)
+/** The request has the SACT register set. */
+#define AHCI_REQ_CLEAR_SACT RT_BIT_32(2)
+/** FLag whether the request is queued. */
+#define AHCI_REQ_IS_QUEUED  RT_BIT_32(3)
 
 /**
  * A task state.
@@ -276,8 +280,6 @@ typedef struct AHCIREQ
     volatile AHCITXSTATE       enmTxState;
     /** Tag of the task. */
     uint32_t                   uTag;
-    /** Command is queued. */
-    bool                       fQueued;
     /** The command header for this task. */
     CmdHdr                     cmdHdr;
     /** The command Fis for this task. */
@@ -5699,11 +5701,19 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
 
         if (!fRedo)
         {
-            if (pAhciReq->fQueued)
+
+            /* Post a PIO setup FIS first if this is a PIO command which transfers data. */
+            if (pAhciReq->fFlags & AHCI_REQ_PIO_DATA)
+                ahciSendPioSetupFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, false /* fInterrupt */);
+
+            if (pAhciReq->fFlags & AHCI_REQ_CLEAR_SACT)
             {
                 if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIREQ))
                     ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, RT_BIT_32(pAhciReq->uTag));
+            }
 
+            if (pAhciReq->fFlags & AHCI_REQ_IS_QUEUED)
+            {
                 /*
                  * Always raise an interrupt after task completion; delaying
                  * this (interrupt coalescing) increases latency and has a significant
@@ -5712,12 +5722,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
                 ahciSendSDBFis(pAhciPort, 0, true);
             }
             else
-            {
-                /* Post a PIO setup FIS first if this is a PIO command which transfers data. */
-                if (pAhciReq->fFlags & AHCI_REQ_PIO_DATA)
-                    ahciSendPioSetupFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, false /* fInterrupt */);
                 ahciSendD2HFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, true);
-            }
         }
     }
     else
@@ -5960,6 +5965,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         {
             pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * 512;
             pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * 512;
+            pAhciReq->fFlags |= AHCI_REQ_IS_QUEUED;
             rc = AHCITXDIR_READ;
             break;
         }
@@ -5967,6 +5973,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         {
             pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * 512;
             pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * 512;
+            pAhciReq->fFlags |= AHCI_REQ_IS_QUEUED;
             rc = AHCITXDIR_WRITE;
             break;
         }
@@ -5993,7 +6000,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                         PAHCIREQ pTaskErr = ASMAtomicXchgPtrT(&pAhciPort->pTaskErr, NULL, PAHCIREQ);
                         if (pTaskErr)
                         {
-                            aBuf[0] = pTaskErr->fQueued ? pTaskErr->uTag : (1 << 7);
+                            aBuf[0] = (pTaskErr->fFlags & AHCI_REQ_IS_QUEUED) ? pTaskErr->uTag : (1 << 7);
                             aBuf[2] = pTaskErr->uATARegStatus;
                             aBuf[3] = pTaskErr->uATARegError;
                             aBuf[4] = pTaskErr->cmdFis[AHCI_CMDFIS_SECTN];
@@ -6117,7 +6124,7 @@ static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     }
 
     /* We "received" the FIS. Clear the BSY bit in regTFD. */
-    if ((pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_C) && (pAhciReq->fQueued))
+    if ((pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_C) && (pAhciReq->fFlags & AHCI_REQ_CLEAR_SACT))
     {
         /*
          * We need to send a FIS which clears the busy bit if this is a queued command so that the guest can queue other commands.
@@ -6222,11 +6229,9 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
             /* Mark the task as processed by the HBA if this is a queued task so that it doesn't occur in the CI register anymore. */
             if (pAhciPort->regSACT & (1 << idx))
             {
-                pAhciReq->fQueued = true;
+                pAhciReq->fFlags |= AHCI_REQ_CLEAR_SACT;
                 ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciReq->uTag));
             }
-            else
-                pAhciReq->fQueued = false;
 
             if (!(pAhciReq->cmdFis[AHCI_CMDFIS_BITS] & AHCI_CMDFIS_C))
             {
@@ -6410,11 +6415,9 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             /* Mark the task as processed by the HBA if this is a queued task so that it doesn't occur in the CI register anymore. */
             if (pAhciPort->regSACT & (1 << idx))
             {
-                pAhciReq->fQueued = true;
+                pAhciReq->fFlags |= AHCI_REQ_CLEAR_SACT;
                 ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciReq->uTag));
             }
-            else
-                pAhciReq->fQueued = false;
 
             ahciPortTaskGetCommandFis(pAhciPort, pAhciReq);
 
