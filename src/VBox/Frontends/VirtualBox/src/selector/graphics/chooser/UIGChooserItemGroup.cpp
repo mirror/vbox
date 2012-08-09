@@ -355,7 +355,7 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             if (isMainRoot())
                 return QSizeF(0, 0);
             QFontMetrics fm(data(GroupItemData_NameFont).value<QFont>());
-            return QSize(fm.width(data(GroupItemData_Name).toString()) + 1, fm.height());
+            return QSize(fm.width(data(GroupItemData_Name).toString()) + 2, fm.height());
         }
         case GroupItemData_NameEditorSize:
         {
