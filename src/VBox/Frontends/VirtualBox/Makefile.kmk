@@ -986,10 +986,10 @@ VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Content
 VirtualBoxVM.app_MODE = 644
 VirtualBoxVM.app_SOURCES = \
 	src/platform/darwin/VM-PkgInfo=>PkgInfo \
-	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist
+	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
+       $(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
 VirtualBoxVM.app_SYMLINKS = \
-	MacOS=>../../../MacOS/ \
-	Resources=>../../../Resources/
+	MacOS=>../../../MacOS/
 
 $$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
@@ -1015,10 +1015,10 @@ vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents/
 vmstarter.app_MODE = 644
 vmstarter.app_SOURCES = \
 	src/platform/darwin/vmstarter-PkgInfo=>PkgInfo \
-	$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist=>Info.plist
+	$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist=>Info.plist \
+       $(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
 vmstarter.app_SYMLINKS = \
-    MacOS=>../../../MacOS \
-    Resources=>../../../Resources
+	MacOS=>../../../MacOS \
 
 $$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,vmstarter.app,$<,$@)
