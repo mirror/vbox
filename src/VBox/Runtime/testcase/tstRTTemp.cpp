@@ -62,6 +62,8 @@ static void tstObjectCreateTemp(const char *pszSubTest, const char *pszTemplate,
     {
         int rc;
         char szName[RTPATH_MAX];
+        RTFMODE fModeFinal;
+
         RTTESTI_CHECK_RC(rc = RTPathAppend(strcpy(szName, g_szTempPath), sizeof(szName), pszTemplate), VINF_SUCCESS);
         if (RT_FAILURE(rc))
             break;
@@ -87,7 +89,7 @@ static void tstObjectCreateTemp(const char *pszSubTest, const char *pszTemplate,
         RTTESTI_CHECK_RC_OK(rc = RTPathGetMode(papszNames[i], &fModeFinal));
         if (RT_SUCCESS(rc))
         {
-            RTFMODE fModeFinal &= (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXO);
+            fModeFinal &= (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXO);
             RTTESTI_CHECK_MSG((fModeFinal & ~fMode) == 0,
                               ("%s: szName   %s\nfModeFinal ~= %#o, expected %#o\n",
                                pcszAPI, szName, fModeFinal, (int)fMode));
