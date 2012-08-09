@@ -653,13 +653,7 @@ VBOX_DI_VBAPP_OTHER_BINS = \
 	MacOS/VBoxDDGC.gc \
 	MacOS/VBoxDD2GC.gc
 
-VBOX_DI_VBAPP_MISC_FILES = \
-	Resources/VirtualBoxVM.app/Contents/Info.plist \
-	Resources/VirtualBoxVM.app/Contents/PkgInfo \
-	Resources/vmstarter.app/Contents/Info.plist \
-	Resources/vmstarter.app/Contents/PkgInfo \
-	Info.plist \
-	PkgInfo \
+VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES = \
 	Resources/virtualbox.icns \
 	Resources/virtualbox.png \
 	Resources/virtualbox-vbox.icns \
@@ -669,9 +663,20 @@ VBOX_DI_VBAPP_MISC_FILES = \
 	Resources/virtualbox-vdi.icns \
 	Resources/virtualbox-vmdk.icns \
 	Resources/virtualbox-vhd.icns \
-	Resources/virtualbox-hdd.icns \
+	Resources/virtualbox-hdd.icns
+
+VBOX_DI_VBAPP_MISC_FILES = \
+	Info.plist \
+	PkgInfo \
+       $(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
 	MacOS/components/VBoxXPCOMBase.xpt \
-	MacOS/components/VirtualBox_XPCOM.xpt
+	MacOS/components/VirtualBox_XPCOM.xpt \
+	Resources/VirtualBoxVM.app/Contents/Info.plist \
+	Resources/VirtualBoxVM.app/Contents/PkgInfo \
+       $(addprefix Resources/VirtualBoxVM.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES)) \
+	Resources/vmstarter.app/Contents/Info.plist \
+	Resources/vmstarter.app/Contents/PkgInfo \
+       $(addprefix Resources/vmstarter.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES))
 ifdef VBOX_WITH_DOCS_PACKING
 VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/UserManual.pdf
@@ -696,9 +701,7 @@ endif
 
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
-	Resources/VirtualBoxVM.app/Contents/Resources=>../../../Resources/ \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
-	Resources/vmstarter.app/Contents/Resources=>../../../Resources/ \
 	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod))
 ifdef VBOX_WITH_COCOA_QT
 VBOX_DI_VBAPP_SYMLINKS += \
