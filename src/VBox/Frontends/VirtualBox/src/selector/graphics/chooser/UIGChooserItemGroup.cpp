@@ -36,7 +36,7 @@
 QString UIGChooserItemGroup::className() { return "UIGChooserItemGroup"; }
 
 UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
-    : UIGChooserItem(0)
+    : UIGChooserItem(0, false)
     , m_fClosed(false)
     , m_pToggleButton(0)
     , m_pEnterButton(0)
@@ -58,7 +58,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
 UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
                                          UIGChooserItemGroup *pCopyFrom,
                                          bool fMainRoot)
-    : UIGChooserItem(0)
+    : UIGChooserItem(0, true)
     , m_strName(pCopyFrom->name())
     , m_fClosed(pCopyFrom->closed())
     , m_pToggleButton(0)
@@ -85,7 +85,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
                                          const QString &strName,
                                          bool fOpened /* = false */,
                                          int iPosition /* = -1 */)
-    : UIGChooserItem(pParent)
+    : UIGChooserItem(pParent, pParent->isTemporary())
     , m_strName(strName)
     , m_fClosed(!fOpened)
     , m_pToggleButton(0)
@@ -104,12 +104,14 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     AssertMsg(parentItem(), ("Incorrect parent passed!"));
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
+    connect(this, SIGNAL(sigToggleStarted()), model(), SIGNAL(sigToggleStarted()));
+    connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()));
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
                                          UIGChooserItemGroup *pCopyFrom,
                                          int iPosition /* = -1 */)
-    : UIGChooserItem(pParent)
+    : UIGChooserItem(pParent, pParent->isTemporary())
     , m_strName(pCopyFrom->name())
     , m_fClosed(pCopyFrom->closed())
     , m_pToggleButton(0)
@@ -128,6 +130,8 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     AssertMsg(parentItem(), ("Incorrect parent passed!"));
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
+    connect(this, SIGNAL(sigToggleStarted()), model(), SIGNAL(sigToggleStarted()));
+    connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()));
 
     /* Copy content to 'this': */
     copyContent(pCopyFrom, this);
@@ -229,6 +233,10 @@ void UIGChooserItemGroup::sltGroupToggleStart()
     if (isRoot())
         return;
 
+    /* Toggle started: */
+    if (!isTemporary())
+        emit sigToggleStarted();
+
     /* Setup animation: */
     updateAnimationParameters();
 
@@ -262,6 +270,10 @@ void UIGChooserItemGroup::sltGroupToggleFinish(bool fToggled)
     model()->updateNavigation();
     /* Relayout model: */
     model()->updateLayout();
+
+    /* Toggle finished: */
+    if (!isTemporary())
+        emit sigToggleFinished();
 }
 
 void UIGChooserItemGroup::sltIndentRoot()

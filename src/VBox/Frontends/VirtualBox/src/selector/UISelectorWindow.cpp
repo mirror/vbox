@@ -1350,6 +1350,8 @@ void UISelectorWindow::prepareConnections()
     /* Graphics VM chooser connections: */
     connect(m_pChooser, SIGNAL(sigSelectionChanged()), this, SLOT(sltCurrentVMItemChanged()), Qt::QueuedConnection);
     connect(m_pChooser, SIGNAL(sigSlidingStarted()), m_pDetails, SIGNAL(sigSlidingStarted()));
+    connect(m_pChooser, SIGNAL(sigToggleStarted()), m_pDetails, SIGNAL(sigToggleStarted()));
+    connect(m_pChooser, SIGNAL(sigToggleFinished()), m_pDetails, SIGNAL(sigToggleFinished()));
     connect(m_pChooser, SIGNAL(sigGroupSavingStarted()), this, SLOT(sltGroupSavingUpdate()));
     connect(m_pChooser, SIGNAL(sigGroupSavingFinished()), this, SLOT(sltGroupSavingUpdate()));
 

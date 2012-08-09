@@ -160,6 +160,16 @@ void UIGDetailsModel::sltHandleSlidingStarted()
     m_pRoot->stopPopulatingItems();
 }
 
+void UIGDetailsModel::sltHandleToggleStarted()
+{
+    m_pRoot->stopPopulatingItems();
+}
+
+void UIGDetailsModel::sltHandleToggleFinished()
+{
+    m_pRoot->updateItems();
+}
+
 QVariant UIGDetailsModel::data(int iKey) const
 {
     switch (iKey)

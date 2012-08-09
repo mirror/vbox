@@ -41,6 +41,10 @@ signals:
     /* Notifier: Sliding started: */
     void sigSlidingStarted();
 
+    /* Notifiers: Toggle stuff: */
+    void sigToggleStarted();
+    void sigToggleFinished();
+
 public:
 
     /* Constructor: */

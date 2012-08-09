@@ -43,7 +43,7 @@ QString UIGChooserItemMachine::className() { return "UIGChooserItemMachine"; }
 UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
                                              const CMachine &machine,
                                              int iPosition /* = -1 */)
-    : UIGChooserItem(pParent)
+    : UIGChooserItem(pParent, pParent->isTemporary())
     , UIVMItem(machine)
     , m_pToolBar(0)
     , m_pSettingsButton(0)
@@ -64,7 +64,7 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
 UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
                                              UIGChooserItemMachine *pCopyFrom,
                                              int iPosition /* = -1 */)
-    : UIGChooserItem(pParent)
+    : UIGChooserItem(pParent, pParent->isTemporary())
     , UIVMItem(pCopyFrom->machine())
     , m_pToolBar(0)
     , m_pSettingsButton(0)

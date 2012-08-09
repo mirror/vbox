@@ -340,7 +340,7 @@ void UIGChooserModel::setFocusItem(UIGChooserItem *pItem, bool fWithSelection /*
         /* Update previous focus item (if any): */
         if (pPreviousFocusItem)
         {
-            pPreviousFocusItem->disconnect(this);
+            disconnect(pPreviousFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
             pPreviousFocusItem->update();
         }
         /* Update new focus item (if any): */
