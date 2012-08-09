@@ -34,8 +34,9 @@
 #include "UIGChooserItemGroup.h"
 #include "UIGChooserItemMachine.h"
 
-UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent)
+UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent, bool fTemporary)
     : m_fRoot(!pParent)
+    , m_fTemporary(fTemporary)
     , m_pParent(pParent)
     , m_dragTokenPlace(DragToken_Off)
     , m_fHovered(false)
@@ -181,6 +182,12 @@ void UIGChooserItem::setDragTokenPlace(DragToken where)
 DragToken UIGChooserItem::dragTokenPlace() const
 {
     return m_dragTokenPlace;
+}
+
+
+bool UIGChooserItem::isTemporary() const
+{
+    return m_fTemporary;
 }
 
 void UIGChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent*)

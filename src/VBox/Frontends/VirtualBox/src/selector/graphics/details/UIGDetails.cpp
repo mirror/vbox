@@ -68,6 +68,10 @@ void UIGDetails::prepareConnections()
             this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
     connect(this, SIGNAL(sigSlidingStarted()),
             m_pDetailsModel, SLOT(sltHandleSlidingStarted()));
+    connect(this, SIGNAL(sigToggleStarted()),
+            m_pDetailsModel, SLOT(sltHandleToggleStarted()));
+    connect(this, SIGNAL(sigToggleFinished()),
+            m_pDetailsModel, SLOT(sltHandleToggleFinished()));
 
     /* Selector-view connections: */
     connect(m_pDetailsView, SIGNAL(sigResized()), m_pDetailsModel, SLOT(sltHandleViewResized()));

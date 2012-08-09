@@ -117,6 +117,8 @@ void UIGChooser::prepareConnections()
             m_pChooserView, SLOT(sltHandleRootItemResized(const QSizeF&, int)));
     connect(m_pChooserModel, SIGNAL(sigSelectionChanged()), this, SIGNAL(sigSelectionChanged()));
     connect(m_pChooserModel, SIGNAL(sigSlidingStarted()), this, SIGNAL(sigSlidingStarted()));
+    connect(m_pChooserModel, SIGNAL(sigToggleStarted()), this, SIGNAL(sigToggleStarted()));
+    connect(m_pChooserModel, SIGNAL(sigToggleFinished()), this, SIGNAL(sigToggleFinished()));
     connect(m_pChooserModel, SIGNAL(sigGroupSavingStarted()), this, SIGNAL(sigGroupSavingStarted()));
     connect(m_pChooserModel, SIGNAL(sigGroupSavingFinished()), this, SIGNAL(sigGroupSavingFinished()));
 

@@ -62,7 +62,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIGChooserItem(UIGChooserItem *pParent);
+    UIGChooserItem(UIGChooserItem *pParent, bool fTemporary);
 
     /* API: Cast stuff: */
     UIGChooserItemGroup* toGroupItem();
@@ -109,6 +109,9 @@ public:
     void setDragTokenPlace(DragToken where);
     DragToken dragTokenPlace() const;
 
+    /* API: Toggle stuff: */
+    bool isTemporary() const;
+
 protected:
 
     /* Hover-enter event: */
@@ -147,6 +150,7 @@ private:
 
     /* Variables: */
     bool m_fRoot;
+    bool m_fTemporary;
     UIGChooserItem *m_pParent;
     DragToken m_dragTokenPlace;
 

@@ -84,6 +84,10 @@ private slots:
     /* Handler: Sliding started in chooser: */
     void sltHandleSlidingStarted();
 
+    /* Handlers: Togle stuff in chooser: */
+    void sltHandleToggleStarted();
+    void sltHandleToggleFinished();
+
 private:
 
     /* Data enumerator: */

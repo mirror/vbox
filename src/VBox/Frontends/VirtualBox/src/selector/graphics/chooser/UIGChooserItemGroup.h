@@ -36,6 +36,12 @@ class UIGChooserItemGroup : public UIGChooserItem
     Q_OBJECT;
     Q_PROPERTY(int additionalHeight READ additionalHeight WRITE setAdditionalHeight);
 
+signals:
+
+    /* Notifiers: Toggle stuff: */
+    void sigToggleStarted();
+    void sigToggleFinished();
+
 public:
 
     /* Class-name used for drag&drop mime-data format: */
