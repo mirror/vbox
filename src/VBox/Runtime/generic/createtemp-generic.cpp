@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - RTDirCreateTemp, generic implementation.
+ * IPRT - temporary file and directory creation, generic implementation.
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
@@ -107,7 +108,7 @@ static void rtCreateTempFillTemplate(char *pszX, unsigned cXes)
 
 RTDECL(int) RTDirCreateTemp(char *pszTemplate, RTFMODE fMode)
 {
-    char       *pszX = NULL;  /* Initialise to make gcc happy. */
+    char       *pszX = NULL;
     unsigned    cXes = 0;
     int rc = rtCreateTempValidateTemplate(pszTemplate, &pszX, &cXes);
     if (RT_FAILURE(rc))
@@ -138,3 +139,98 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate, RTFMODE fMode)
 }
 RT_EXPORT_SYMBOL(RTDirCreateTemp);
 
+
+/** @todo Test case for this once it is implemented. */
+RTDECL(int) RTDirCreateTempSecure(char *pszTemplate)
+{
+    size_t cchDir;
+    char chOld;
+    int rc;
+    /* bool fSafe; */
+
+    /* Temporarily convert pszTemplate to a path. */
+    RTPathParse(pszTemplate, &cchDir, NULL, NULL);
+    chOld = pszTemplate[cchDir];
+    pszTemplate[cchDir] = '\0';
+    /** @todo Implement this. */
+    rc = /* RTPathIsSecure(pszTemplate, &fSafe) */ VERR_NOT_SUPPORTED;
+    pszTemplate[cchDir] = chOld;
+    if (RT_SUCCESS(rc) /* && fSafe */)
+        return RTDirCreateTemp(pszTemplate, 0700);
+    else
+    {
+        *pszTemplate = '\0';
+        /** @todo Replace VERR_PERMISSION_DENIED.  VERR_INSECURE? */
+        return RT_FAILURE(rc) ? rc : VERR_PERMISSION_DENIED;
+    }
+}
+RT_EXPORT_SYMBOL(RTDirCreateTempSecure);
+
+
+RTDECL(int) RTFileCreateTemp(char *pszTemplate, RTFMODE fMode)
+{
+    char       *pszX = NULL;
+    unsigned    cXes = 0;
+    RTFILE      hFile;
+    int rc = rtCreateTempValidateTemplate(pszTemplate, &pszX, &cXes);
+    if (RT_FAILURE(rc))
+    {
+        *pszTemplate = '\0';
+        return rc;
+    }
+    /*
+     * Try ten thousand times.
+     */
+    int i = 10000;
+    while (i-- > 0)
+    {
+        uint64_t fOpen =   RTFILE_O_WRITE | RTFILE_O_DENY_ALL
+                         | RTFILE_O_CREATE | RTFILE_O_NOT_CONTENT_INDEXED
+                         | fMode << RTFILE_O_CREATE_MODE_SHIFT;
+        rtCreateTempFillTemplate(pszX, cXes);
+        rc = RTFileOpen(&hFile, pszTemplate, fOpen);
+        if (RT_SUCCESS(rc))
+        {
+            RTFileClose(hFile);
+            return rc;
+        }
+        /** @todo Anything else to consider? */
+        if (rc != VERR_ALREADY_EXISTS)
+        {
+            *pszTemplate = '\0';
+            return rc;
+        }
+    }
+
+    /* we've given up. */
+    *pszTemplate = '\0';
+    return VERR_ALREADY_EXISTS;
+}
+RT_EXPORT_SYMBOL(RTFileCreateTemp);
+
+
+/** @todo Test case for this once it is implemented. */
+RTDECL(int) RTFileCreateTempSecure(char *pszTemplate)
+{
+    size_t cchDir;
+    char chOld;
+    int rc;
+    /* bool fSafe; */
+
+    /* Temporarily convert pszTemplate to a path. */
+    RTPathParse(pszTemplate, &cchDir, NULL, NULL);
+    chOld = pszTemplate[cchDir];
+    pszTemplate[cchDir] = '\0';
+    /** @todo Implement this. */
+    rc = /* RTPathIsSecure(pszTemplate, &fSafe) */ VERR_NOT_SUPPORTED;
+    pszTemplate[cchDir] = chOld;
+    if (RT_SUCCESS(rc) /* && fSafe */)
+        return RTFileCreateTemp(pszTemplate, 0600);
+    else
+    {
+        *pszTemplate = '\0';
+        /** @todo Replace VERR_PERMISSION_DENIED.  VERR_INSECURE? */
+        return RT_FAILURE(rc) ? rc : VERR_PERMISSION_DENIED;
+    }
+}
+RT_EXPORT_SYMBOL(RTFileCreateTempSecure);

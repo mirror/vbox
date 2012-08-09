@@ -47,9 +47,10 @@
 static char g_szTempPath[RTPATH_MAX - 50];
 
 
-static void tstDirCreateTemp(const char *pszSubTest, const char *pszTemplate, unsigned cTimes, bool fSkipXCheck)
+static void tstObjectCreateTemp(const char *pszSubTest, const char *pszTemplate, bool fFile, RTFMODE fMode, unsigned cTimes, bool fSkipXCheck)
 {
     RTTestISub(pszSubTest);
+    const char *pcszAPI = fFile ? "RTFileCreateTemp" : "RTDirCreateTemp";
 
     /* Allocate the result array. */
     char **papszNames = (char **)RTMemTmpAllocZ(cTimes * sizeof(char *));
@@ -61,6 +62,7 @@ static void tstDirCreateTemp(const char *pszSubTest, const char *pszTemplate, un
     {
         int rc;
         char szName[RTPATH_MAX];
+        RTFMODE fModeFinal;
         RTTESTI_CHECK_RC(rc = RTPathAppend(strcpy(szName, g_szTempPath), sizeof(szName), pszTemplate), VINF_SUCCESS);
         if (RT_FAILURE(rc))
             break;
@@ -69,27 +71,68 @@ static void tstDirCreateTemp(const char *pszSubTest, const char *pszTemplate, un
         if (!papszNames[i])
             break;
 
-        rc = RTDirCreateTemp(papszNames[i], 0700);
+        rc =   fFile
+             ? RTFileCreateTemp(papszNames[i], fMode)
+             : RTDirCreateTemp(papszNames[i], fMode);
         if (rc != VINF_SUCCESS)
         {
-            RTTestIFailed("RTDirCreateTemp(%s) call #%u -> %Rrc\n", szName, i, rc);
+            RTTestIFailed("%s(%s, %#o) call #%u -> %Rrc\n", pcszAPI, szName, (int)fMode, i, rc);
             RTStrFree(papszNames[i]);
             papszNames[i] = NULL;
             break;
         }
-        RTTestIPrintf(RTTESTLVL_DEBUG, "%s\n", papszNames[i]);
-        RTTESTI_CHECK_MSG(strlen(szName) == strlen(papszNames[i]), ("szName   %s\nReturned %s\n", szName, papszNames[i]));
+        RTTESTI_CHECK_RC_OK(rc = RTPathGetMode(papszNames[i], &fModeFinal));
+        if (RT_SUCCESS(rc))
+        {
+            fModeFinal &= (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXO);
+            RTTESTI_CHECK_MSG((fModeFinal & ~fMode) == 0,
+                              ("%s: szName   %s\nfModeFinal ~= %#o, expected %#o\n",
+                               pcszAPI, szName, fModeFinal, (int)fMode));
+        }
+        RTTestIPrintf(RTTESTLVL_DEBUG, "%s: %s\n", pcszAPI, papszNames[i]);
+        RTTESTI_CHECK_MSG(strlen(szName) == strlen(papszNames[i]), ("%s: szName   %s\nReturned %s\n", pcszAPI, szName, papszNames[i]));
         if (!fSkipXCheck)
-            RTTESTI_CHECK_MSG(strchr(RTPathFilename(papszNames[i]), 'X') == NULL, ("szName   %s\nReturned %s\n", szName, papszNames[i]));
+            RTTESTI_CHECK_MSG(strchr(RTPathFilename(papszNames[i]), 'X') == NULL, ("%s: szName   %s\nReturned %s\n", pcszAPI, szName, papszNames[i]));
     }
 
     /* cleanup */
     while (i-- > 0)
     {
-        RTTESTI_CHECK_RC(RTDirRemove(papszNames[i]), VINF_SUCCESS);
+        if (fFile)
+            RTTESTI_CHECK_RC(RTFileDelete(papszNames[i]), VINF_SUCCESS);
+        else
+            RTTESTI_CHECK_RC(RTDirRemove(papszNames[i]), VINF_SUCCESS);
         RTStrFree(papszNames[i]);
     }
     RTMemTmpFree(papszNames);
+}
+
+
+static void tstFileCreateTemp(const char *pszSubTest, const char *pszTemplate, RTFMODE fMode, unsigned cTimes, bool fSkipXCheck)
+{
+    tstObjectCreateTemp(pszSubTest, pszTemplate, true /* fFile */, fMode,
+                        cTimes, fSkipXCheck);
+}
+
+
+static void tstDirCreateTemp(const char *pszSubTest, const char *pszTemplate, RTFMODE fMode, unsigned cTimes, bool fSkipXCheck)
+{
+    tstObjectCreateTemp(pszSubTest, pszTemplate, false /* fFile */, fMode,
+                        cTimes, fSkipXCheck);
+}
+
+
+static void tstBothCreateTemp(const char *pszSubTest, const char *pszTemplate, RTFMODE fMode, unsigned cTimes, bool fSkipXCheck)
+{
+    char pszSubTestLong[128];
+    
+    RTStrPrintf(pszSubTestLong, sizeof(pszSubTestLong), "RTFileCreateTemp %s",
+                pszSubTest);
+    tstFileCreateTemp(pszSubTestLong, pszTemplate, fMode, cTimes,
+                      fSkipXCheck);
+    RTStrPrintf(pszSubTestLong, sizeof(pszSubTestLong), "RTDirCreateTemp %s",
+                pszSubTest);
+    tstDirCreateTemp(pszSubTestLong, pszTemplate, fMode, cTimes, fSkipXCheck);
 }
 
 
@@ -109,17 +152,17 @@ int main()
         return RTTestSummaryAndDestroy(hTest);
 
     /*
-     * Create N temporary directories using RTDirCreateTemp.
+     * Create N temporary files and directories using RT(File|Dir)CreateTemp.
      */
-    tstDirCreateTemp("RTDirCreateTemp #1 (standard)",   "rtRTTemp-XXXXXX",              128, false /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #2 (long)",       "rtRTTemp-XXXXXXXXXXXXXXXXX",   128, false /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #3 (short)",      "rtRTTemp-XX",                  128, false /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #4 (very short)", "rtRTTemp-X",                 26+10, false /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #5 (in-name)",    "rtRTTemp-XXXt",                  2, false /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #6 (in-name)",    "XXX-rtRTTemp",                   2, false /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #7 (in-name)",    "rtRTTemp-XXXXXXXXX.tmp",       128, false /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #8 (in-name)",    "rtRTTemp-XXXXXXX-X.tmp",       128, true /*fSkipXCheck*/);
-    tstDirCreateTemp("RTDirCreateTemp #9 (in-name)",    "rtRTTemp-XXXXXX-XX.tmp",       128, true /*fSkipXCheck*/);
+    tstBothCreateTemp("#1 (standard)",   "rtRTTemp-XXXXXX",              0700, 128, false /*fSkipXCheck*/);
+    tstBothCreateTemp("#2 (long)",       "rtRTTemp-XXXXXXXXXXXXXXXXX",   0700, 128, false /*fSkipXCheck*/);
+    tstBothCreateTemp("#3 (short)",      "rtRTTemp-XX",                  0777, 128, false /*fSkipXCheck*/);
+    tstBothCreateTemp("#4 (very short)", "rtRTTemp-X",                 0100, 26+10, false /*fSkipXCheck*/);
+    tstBothCreateTemp("#5 (in-name)",    "rtRTTemp-XXXt",                  0301, 2, false /*fSkipXCheck*/);
+    tstBothCreateTemp("#6 (in-name)",    "XXX-rtRTTemp",                   0355, 2, false /*fSkipXCheck*/);
+    tstBothCreateTemp("#7 (in-name)",    "rtRTTemp-XXXXXXXXX.tmp",       0755, 128, false /*fSkipXCheck*/);
+    tstBothCreateTemp("#8 (in-name)",    "rtRTTemp-XXXXXXX-X.tmp",       0700, 128, true /*fSkipXCheck*/);
+    tstBothCreateTemp("#9 (in-name)",    "rtRTTemp-XXXXXX-XX.tmp",       0700, 128, true /*fSkipXCheck*/);
 
     /*
      * Summary.
