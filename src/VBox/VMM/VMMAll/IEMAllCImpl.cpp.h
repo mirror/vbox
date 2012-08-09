@@ -34,9 +34,11 @@
  */
 DECLINLINE(VBOXSTRICTRC) iemHlpCheckPortIOPermission(PIEMCPU pIemCpu, PCCPUMCTX pCtx, uint16_t u16Port, uint8_t cbOperand)
 {
+    X86EFLAGS Efl;
+    Efl.u = IEMMISC_GET_EFL(pIemCpu, pCtx);
     if (   (pCtx->cr0 & X86_CR0_PE)
-        && (    pIemCpu->uCpl > pCtx->eflags.Bits.u2IOPL
-            ||  pCtx->eflags.Bits.u1VM) )
+        && (    pIemCpu->uCpl > Efl.Bits.u2IOPL
+            ||  Efl.Bits.u1VM) )
     {
         NOREF(u16Port); NOREF(cbOperand); /** @todo I/O port permission bitmap check */
         IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Implement I/O permission bitmap\n"));
@@ -468,7 +470,7 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
      * If we're in V8086 mode some care is required (which is why we're in
      * doing this in a C implementation).
      */
-    uint32_t fEfl = pCtx->eflags.u;
+    uint32_t fEfl = IEMMISC_GET_EFL(pIemCpu, pCtx);
     if (   (fEfl & X86_EFL_VM)
         && X86_EFL_GET_IOPL(fEfl) != 3 )
     {
@@ -516,7 +518,8 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
 IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX        pCtx    = pIemCpu->CTX_SUFF(pCtx);
-    uint32_t const  fEflOld = pCtx->eflags.u;
+    PVMCPU          pVCpu   = IEMCPU_TO_VMCPU(pIemCpu);
+    uint32_t const  fEflOld = IEMMISC_GET_EFL(pIemCpu, pCtx);
     VBOXSTRICTRC    rcStrict;
     uint32_t        fEflNew;
 
@@ -632,7 +635,7 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
      * Commit the flags.
      */
     Assert(fEflNew & RT_BIT_32(1));
-    pCtx->eflags.u = fEflNew;
+    IEMMISC_SET_EFL(pIemCpu, pCtx, fEflNew);
     iemRegAddToRip(pIemCpu, cbInstr);
 
     return VINF_SUCCESS;
@@ -1911,7 +1914,10 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, bool, fIsBpInstr)
  */
 IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 {
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    PCPUMCTX  pCtx  = pIemCpu->CTX_SUFF(pCtx);
+    PVMCPU    pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+    X86EFLAGS Efl;
+    Efl.u = IEMMISC_GET_EFL(pIemCpu, pCtx);
     NOREF(cbInstr);
 
     /*
@@ -1944,7 +1950,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
                    | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT
                    | X86_EFL_RF /*| X86_EFL_VM*/ | X86_EFL_AC /*|X86_EFL_VIF*/ /*|X86_EFL_VIP*/
                    | X86_EFL_ID;
-        uNewFlags |= pCtx->eflags.u & (X86_EFL_VM | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_1);
+        uNewFlags |= Efl.u & (X86_EFL_VM | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_1);
     }
     else
     {
@@ -1956,7 +1962,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
         uNewFlags  = uFrame.pu16[2];
         uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
                    | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT;
-        uNewFlags |= pCtx->eflags.u & (UINT32_C(0xffff0000) | X86_EFL_1);
+        uNewFlags |= Efl.u & (UINT32_C(0xffff0000) | X86_EFL_1);
         /** @todo The intel pseudo code does not indicate what happens to
          *        reserved flags. We just ignore them. */
     }
@@ -1973,24 +1979,24 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     /*
      * V8086 checks and flag adjustments
      */
-    if (pCtx->eflags.Bits.u1VM)
+    if (Efl.Bits.u1VM)
     {
-        if (pCtx->eflags.Bits.u2IOPL == 3)
+        if (Efl.Bits.u2IOPL == 3)
         {
             /* Preserve IOPL and clear RF. */
-            uNewFlags &=                 ~(X86_EFL_IOPL | X86_EFL_RF);
-            uNewFlags |= pCtx->eflags.u & (X86_EFL_IOPL);
+            uNewFlags &=        ~(X86_EFL_IOPL | X86_EFL_RF);
+            uNewFlags |= Efl.u & (X86_EFL_IOPL);
         }
         else if (   enmEffOpSize == IEMMODE_16BIT
                  && (   !(uNewFlags & X86_EFL_IF)
-                     || !pCtx->eflags.Bits.u1VIP )
+                     || !Efl.Bits.u1VIP )
                  && !(uNewFlags & X86_EFL_TF)   )
         {
             /* Move IF to VIF, clear RF and preserve IF and IOPL.*/
             uNewFlags &= ~X86_EFL_VIF;
             uNewFlags |= (uNewFlags & X86_EFL_IF) << (19 - 9);
-            uNewFlags &=                 ~(X86_EFL_IF | X86_EFL_IOPL | X86_EFL_RF);
-            uNewFlags |= pCtx->eflags.u & (X86_EFL_IF | X86_EFL_IOPL);
+            uNewFlags &=        ~(X86_EFL_IF | X86_EFL_IOPL | X86_EFL_RF);
+            uNewFlags |= Efl.u & (X86_EFL_IF | X86_EFL_IOPL);
         }
         else
             return iemRaiseGeneralProtectionFault0(pIemCpu);
@@ -2009,7 +2015,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     pCtx->cs.u64Base    = (uint32_t)uNewCs << 4;
     /** @todo do we load attribs and limit as well? */
     Assert(uNewFlags & X86_EFL_1);
-    pCtx->eflags.u      = uNewFlags;
+    IEMMISC_SET_EFL(pIemCpu, pCtx, uNewFlags);
 
     return VINF_SUCCESS;
 }
@@ -2344,8 +2350,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
             fEFlagsMask |= X86_EFL_IF | X86_EFL_IOPL | X86_EFL_VIF | X86_EFL_VIP; /* VM is 0 */
         else if (pIemCpu->uCpl <= pCtx->eflags.Bits.u2IOPL)
             fEFlagsMask |= X86_EFL_IF;
-        pCtx->eflags.u     &= ~fEFlagsMask;
-        pCtx->eflags.u     |= fEFlagsMask & uNewFlags;
+        uint32_t fEFlagsNew = IEMMISC_GET_EFL(pIemCpu, pCtx);
+        fEFlagsNew         &= ~fEFlagsMask;
+        fEFlagsNew         |= uNewFlags & fEFlagsMask;
+        IEMMISC_SET_EFL(pIemCpu, pCtx, fEFlagsNew);
 
         pIemCpu->uCpl       = uNewCs & X86_SEL_RPL;
         iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCs & X86_SEL_RPL, &pCtx->ds);
@@ -2388,16 +2396,19 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
         pCtx->rsp           = uNewRsp;
 
+        X86EFLAGS NewEfl;
+        NewEfl.u = IEMMISC_GET_EFL(pIemCpu, pCtx);
         uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF
                              | X86_EFL_TF | X86_EFL_DF | X86_EFL_OF | X86_EFL_NT;
         if (enmEffOpSize != IEMMODE_16BIT)
             fEFlagsMask |= X86_EFL_RF | X86_EFL_AC | X86_EFL_ID;
         if (pIemCpu->uCpl == 0)
             fEFlagsMask |= X86_EFL_IF | X86_EFL_IOPL | X86_EFL_VIF | X86_EFL_VIP; /* VM is 0 */
-        else if (pIemCpu->uCpl <= pCtx->eflags.Bits.u2IOPL)
+        else if (pIemCpu->uCpl <= NewEfl.Bits.u2IOPL)
             fEFlagsMask |= X86_EFL_IF;
-        pCtx->eflags.u         &= ~fEFlagsMask;
-        pCtx->eflags.u         |= fEFlagsMask & uNewFlags;
+        NewEfl.u           &= ~fEFlagsMask;
+        NewEfl.u           |= fEFlagsMask & uNewFlags;
+        IEMMISC_SET_EFL(pIemCpu, pCtx, NewEfl.u);
         /* Done! */
     }
     return VINF_SUCCESS;
@@ -3276,6 +3287,14 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             }
             else
                 rcStrict = VINF_SUCCESS;
+
+#ifdef IN_RC
+            /* Return to ring-3 for rescheduling if WP or AM changes. */
+            if (   rcStrict == VINF_SUCCESS
+                && (   (uNewCrX & (X86_CR0_WP | X86_CR0_AM))
+                    != (uOldCrX & (X86_CR0_WP | X86_CR0_AM))) )
+                rcStrict = VINF_EM_RESCHEDULE;
+#endif
             break;
         }
 
@@ -3870,13 +3889,9 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
     /*
      * CPL check
      */
-    if (   (pCtx->cr0 & X86_CR0_PE)
-        && (    pIemCpu->uCpl > pCtx->eflags.Bits.u2IOPL
-            ||  pCtx->eflags.Bits.u1VM) )
-    {
-        /** @todo I/O port permission bitmap check */
-        IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Implement I/O permission bitmap checks.\n"));
-    }
+    VBOXSTRICTRC rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, u16Port, cbReg);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
 
     /*
      * Perform the I/O.
@@ -3889,7 +3904,6 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         case 4: u32Value = pCtx->eax; break;
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
-    VBOXSTRICTRC rcStrict;
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         rcStrict = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), u16Port, u32Value, cbReg);
     else
@@ -3921,34 +3935,40 @@ IEM_CIMPL_DEF_1(iemCImpl_out_DX_eAX, uint8_t, cbReg)
  */
 IEM_CIMPL_DEF_0(iemCImpl_cli)
 {
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-
+    PCPUMCTX        pCtx    = pIemCpu->CTX_SUFF(pCtx);
+    PVMCPU          pVCpu   = IEMCPU_TO_VMCPU(pIemCpu);
+    uint32_t        fEfl    = IEMMISC_GET_EFL(pIemCpu, pCtx);
+    uint32_t const  fEflOld = fEfl;
     if (pCtx->cr0 & X86_CR0_PE)
     {
-        uint8_t const uIopl = pCtx->eflags.Bits.u2IOPL;
-        if (!pCtx->eflags.Bits.u1VM)
+        uint8_t const uIopl = X86_EFL_GET_IOPL(fEfl);
+        if (!(fEfl & X86_EFL_VM))
         {
             if (pIemCpu->uCpl <= uIopl)
-                pCtx->eflags.Bits.u1IF = 0;
+                fEfl &= ~X86_EFL_IF;
             else if (   pIemCpu->uCpl == 3
                      && (pCtx->cr4 & X86_CR4_PVI) )
-                pCtx->eflags.Bits.u1VIF = 0;
+                fEfl &= ~X86_EFL_VIF;
             else
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
         }
         /* V8086 */
         else if (uIopl == 3)
-            pCtx->eflags.Bits.u1IF = 0;
+            fEfl &= ~X86_EFL_IF;
         else if (   uIopl < 3
                  && (pCtx->cr4 & X86_CR4_VME) )
-            pCtx->eflags.Bits.u1VIF = 0;
+            fEfl &= ~X86_EFL_VIF;
         else
             return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
     /* real mode */
     else
-        pCtx->eflags.Bits.u1IF = 0;
+        fEfl &= ~X86_EFL_IF;
+
+    /* Commit. */
+    IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
     iemRegAddToRip(pIemCpu, cbInstr);
+    Log2(("CLI: %#x -> %#x\n", fEflOld, fEfl)); NOREF(fEflOld);
     return VINF_SUCCESS;
 }
 
@@ -3958,39 +3978,45 @@ IEM_CIMPL_DEF_0(iemCImpl_cli)
  */
 IEM_CIMPL_DEF_0(iemCImpl_sti)
 {
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    PCPUMCTX        pCtx    = pIemCpu->CTX_SUFF(pCtx);
+    PVMCPU          pVCpu   = IEMCPU_TO_VMCPU(pIemCpu);
+    uint32_t        fEfl    = IEMMISC_GET_EFL(pIemCpu, pCtx);
+    uint32_t const  fEflOld = fEfl;
 
     if (pCtx->cr0 & X86_CR0_PE)
     {
-        uint8_t const uIopl = pCtx->eflags.Bits.u2IOPL;
-        if (!pCtx->eflags.Bits.u1VM)
+        uint8_t const uIopl = X86_EFL_GET_IOPL(fEfl);
+        if (!(fEfl & X86_EFL_VM))
         {
             if (pIemCpu->uCpl <= uIopl)
-                pCtx->eflags.Bits.u1IF = 1;
+                fEfl |= X86_EFL_IF;
             else if (   pIemCpu->uCpl == 3
                      && (pCtx->cr4 & X86_CR4_PVI)
-                     && !pCtx->eflags.Bits.u1VIP )
-                pCtx->eflags.Bits.u1VIF = 1;
+                     && !(fEfl & X86_EFL_VIP) )
+                fEfl |= X86_EFL_VIF;
             else
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
         }
         /* V8086 */
         else if (uIopl == 3)
-            pCtx->eflags.Bits.u1IF = 1;
+            fEfl |= X86_EFL_IF;
         else if (   uIopl < 3
                  && (pCtx->cr4 & X86_CR4_VME)
-                 && !pCtx->eflags.Bits.u1VIP )
-            pCtx->eflags.Bits.u1VIF = 1;
+                 && !(fEfl & X86_EFL_VIP) )
+            fEfl |= X86_EFL_VIF;
         else
             return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
     /* real mode */
     else
-        pCtx->eflags.Bits.u1IF = 1;
+        fEfl |= X86_EFL_IF;
 
+    /* Commit. */
+    IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
     iemRegAddToRip(pIemCpu, cbInstr);
-    /** @todo don't do this unconditionally... */
-    EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
+    if (!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF))
+        EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
+    Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return VINF_SUCCESS;
 }
 
