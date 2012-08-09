@@ -330,14 +330,63 @@ int main(int argc, char *argv[])
     if (!fQuiet)
         displayHeader();
 
-    bool fAllowed = false;
-    uint32_t uStartupDelay = 0;
-    rc = autostartParseConfig(pszConfigFile, &fAllowed, &uStartupDelay);
+    PCFGAST pCfgAst = NULL;
+    char *pszUser = NULL;
+    PCFGAST pCfgAstUser = NULL;
+    PCFGAST pCfgAstPolicy = NULL;
+    bool fAllow = false;
+
+    rc = autostartParseConfig(pszConfigFile, &pCfgAst);
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    if (!fAllowed)
+    rc = RTProcQueryUsernameA(RTProcSelf(), &pszUser);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to query username of the process");
+
+    pCfgAstUser = autostartConfigAstGetByName(pCfgAst, pszUser);
+    pCfgAstPolicy = autostartConfigAstGetByName(pCfgAst, "default_policy");
+
+    /* Check default policy. */
+    if (pCfgAstPolicy)
+    {
+        if (   pCfgAstPolicy->enmType == CFGASTNODETYPE_KEYVALUE
+            && (   !RTStrCmp(pCfgAstPolicy->u.KeyValue.aszValue, "allow")
+                || !RTStrCmp(pCfgAstPolicy->u.KeyValue.aszValue, "deny")))
+        {
+            if (!RTStrCmp(pCfgAstPolicy->u.KeyValue.aszValue, "allow"))
+                fAllow = true;
+        }
+        else
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "'default_policy' must be either 'allow' or 'deny'");
+    }
+
+    if (   pCfgAstUser
+        && pCfgAstUser->enmType == CFGASTNODETYPE_COMPOUND)
+    {
+        pCfgAstPolicy = autostartConfigAstGetByName(pCfgAstUser, "allow");
+        if (pCfgAstPolicy)
+        {
+            if (   pCfgAstPolicy->enmType == CFGASTNODETYPE_KEYVALUE
+                && (   !RTStrCmp(pCfgAstPolicy->u.KeyValue.aszValue, "true")
+                    || !RTStrCmp(pCfgAstPolicy->u.KeyValue.aszValue, "false")))
+            {
+                if (!RTStrCmp(pCfgAstPolicy->u.KeyValue.aszValue, "true"))
+                    fAllow = true;
+                else
+                    fAllow = false;
+            }
+            else
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "'allow' must be either 'true' or 'false'");
+        }
+    }
+    else if (pCfgAstUser)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid config, user is not a compound node");
+
+    if (!fAllow)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "User is not allowed to autostart VMs");
+
+    RTStrFree(pszUser);
 
     /* Don't start if the VirtualBox settings directory does not exist. */
     char szUserHomeDir[RTPATH_MAX];
@@ -428,13 +477,14 @@ int main(int argc, char *argv[])
 
     RTEXITCODE rcExit;
     if (fStart)
-        rcExit = autostartStartMain(uStartupDelay);
+        rcExit = autostartStartMain(pCfgAstUser);
     else
     {
         Assert(fStop);
-        rcExit = autostartStopMain(uStartupDelay);
+        rcExit = autostartStopMain(pCfgAstUser);
     }
 
+    autostartConfigAstDestroy(pCfgAst);
     EventQueue::getMainEventQueue()->processEventQueue(0);
 
     autostartShutdown();

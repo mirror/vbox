@@ -35,7 +35,7 @@
 
 using namespace com;
 
-DECLHIDDEN(RTEXITCODE) autostartStopMain(uint32_t uStartupDelay)
+DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
 {
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
 
