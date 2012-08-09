@@ -69,16 +69,16 @@ public:
     UIGDetailsElementInterface(UIGDetailsSet *pParent, DetailsElementType elementType, bool fOpened);
     ~UIGDetailsElementInterface();
 
-protected slots:
-
-    /* Handlers: Update stuff: */
-    void sltUpdateAppearance();
-    virtual void sltUpdateAppearanceFinished(const UITextTable &text);
-
 protected:
 
     /* Helpers: Update stuff: */
+    void updateAppearance();
     virtual UIGDetailsUpdateThread* createUpdateThread() = 0;
+
+private slots:
+
+    /* Handler: Update stuff: */
+    virtual void sltUpdateAppearanceFinished(const UITextTable &newText);
 
 private:
 
@@ -133,16 +133,14 @@ public:
     /* Constructor: */
     UIGDetailsElementPreview(UIGDetailsSet *pParent, bool fOpened);
 
-private slots:
-
-    /* Handlers: Update stuff: */
-    void sltUpdateAppearance();
-
 private:
 
     /* Helpers: Size-hint stuff: */
     int minimumWidthHint() const;
     int minimumHeightHint(bool fClosed) const;
+
+    /* Helpers: Update stuff: */
+    void updateAppearance();
 
     /* Helpers: Layout stuff: */
     void updateLayout();

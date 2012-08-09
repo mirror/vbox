@@ -218,7 +218,9 @@ void UIGChooserItemGroup::sltNameEditingFinished()
     if (strNewName.isEmpty() || groupNames.contains(strNewName))
         return;
 
+    /* Set new name / update model: */
     m_strName = strNewName;
+    model()->saveGroupSettings();
 }
 
 void UIGChooserItemGroup::sltGroupToggleStart()
@@ -463,6 +465,10 @@ void UIGChooserItemGroup::startEditing()
 {
     /* Not for root-item: */
     if (isRoot())
+        return;
+
+    /* Not while saving groups: */
+    if (model()->isGroupSavingInProgress())
         return;
 
     /* Unlock name-editor: */
@@ -833,6 +839,9 @@ QPixmap UIGChooserItemGroup::toPixmap()
 
 bool UIGChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken where) const
 {
+    /* No drops while saving groups: */
+    if (model()->isGroupSavingInProgress())
+        return false;
     /* Get mime: */
     const QMimeData *pMimeData = pEvent->mimeData();
     /* If drag token is shown, its up to parent to decide: */
@@ -926,12 +935,13 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
                     delete pItem;
                 }
 
-                /* Update scene: */
+                /* Update model: */
                 pModel->updateGroupTree();
                 pModel->updateNavigation();
                 pModel->updateLayout();
                 pModel->setCurrentItem(pNewGroupItem->parentItem()->toGroupItem()->opened() ?
                                        pNewGroupItem : pNewGroupItem->parentItem());
+                pModel->saveGroupSettings();
                 break;
             }
             default:
@@ -977,12 +987,13 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
                     delete pItem;
                 }
 
-                /* Update scene: */
+                /* Update model: */
                 pModel->updateGroupTree();
                 pModel->updateNavigation();
                 pModel->updateLayout();
                 pModel->setCurrentItem(pNewMachineItem->parentItem()->toGroupItem()->opened() ?
                                        pNewMachineItem : pNewMachineItem->parentItem());
+                pModel->saveGroupSettings();
                 break;
             }
             default:

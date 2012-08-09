@@ -23,6 +23,8 @@
 #include "UIGDetailsElements.h"
 #include "UIVMItem.h"
 #include "UIConverter.h"
+#include "UIVirtualBoxEventHandler.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "CUSBController.h"
@@ -42,6 +44,12 @@ UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(sigElementPrepared(QString)), this, SLOT(sltNextStep(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(sigSetPrepared()), this, SLOT(sltSetPrepared()), Qt::QueuedConnection);
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()), this, SLOT(sltUpdateAppearance()));
+    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltUpdateAppearance()));
 }
 
 UIGDetailsSet::~UIGDetailsSet()
@@ -96,6 +104,39 @@ void UIGDetailsSet::sltSetPrepared()
     m_iStep = -1;
     /* Notify parent group: */
     emit sigSetCreationDone();
+}
+
+void UIGDetailsSet::sltMachineStateChange(QString strId)
+{
+    /* Is this our VM changed? */
+    if (machine().GetId() != strId)
+        return;
+
+    /* Update hover accessibility: */
+    foreach (UIGDetailsItem *pItem, items())
+        pItem->toElement()->updateHoverAccessibility();
+
+    /* Update appearance: */
+    foreach (UIGDetailsItem *pItem, items())
+        pItem->toElement()->updateAppearance();
+}
+
+void UIGDetailsSet::sltMachineAttributesChange(QString strId)
+{
+    /* Is this our VM changed? */
+    if (machine().GetId() != strId)
+        return;
+
+    /* Update appearance: */
+    foreach (UIGDetailsItem *pItem, items())
+        pItem->toElement()->updateAppearance();
+}
+
+void UIGDetailsSet::sltUpdateAppearance()
+{
+    /* Update appearance: */
+    foreach (UIGDetailsItem *pItem, items())
+        pItem->toElement()->updateAppearance();
 }
 
 QVariant UIGDetailsSet::data(int iKey) const
@@ -455,18 +496,23 @@ void UIGDetailsSet::prepareElement(QString strSetId)
         bool fOpen = m_settings.contains(strElementTypeOpened);
 
         /* Check if element is present already: */
+        bool fJustCreated = false;
         UIGDetailsElement *pElement = element(elementType);
         /* Create if necessary: */
         if (!pElement)
+        {
             pElement = createElement(elementType, fOpen);
+            fJustCreated = true;
+        }
         /* Prepare element: */
         if (fVisible && !pElement->isVisible())
             pElement->show();
         else if (!fVisible && pElement->isVisible())
             pElement->hide();
-        pElement->sltUpdateAppearance();
-        /* Update layout: */
-        model()->updateLayout();
+        if (pElement->isVisible())
+            pElement->updateAppearance();
+        if (fJustCreated)
+            model()->updateLayout();
         /* Mark element prepared: */
         emit sigElementPrepared(strSetId);
     }

@@ -62,7 +62,7 @@ UIGDetailsElementInterface::~UIGDetailsElementInterface()
     cleanupThread();
 }
 
-void UIGDetailsElementInterface::sltUpdateAppearance()
+void UIGDetailsElementInterface::updateAppearance()
 {
     if (!m_pThread)
     {
@@ -73,12 +73,15 @@ void UIGDetailsElementInterface::sltUpdateAppearance()
     }
 }
 
-void UIGDetailsElementInterface::sltUpdateAppearanceFinished(const UITextTable &text)
+void UIGDetailsElementInterface::sltUpdateAppearanceFinished(const UITextTable &newText)
 {
-    setText(text);
+    if (text() != newText)
+    {
+        setText(newText);
+        model()->updateLayout();
+        update();
+    }
     cleanupThread();
-    model()->updateLayout();
-    update();
 }
 
 void UIGDetailsElementInterface::cleanupThread()
@@ -166,11 +169,6 @@ UIGDetailsElementPreview::UIGDetailsElementPreview(UIGDetailsSet *pParent, bool 
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
-void UIGDetailsElementPreview::sltUpdateAppearance()
-{
-    m_pPreview->setMachine(machine());
-}
-
 int UIGDetailsElementPreview::minimumWidthHint() const
 {
     /* Prepare variables: */
@@ -220,6 +218,11 @@ int UIGDetailsElementPreview::minimumHeightHint(bool fClosed) const
 
     /* Return result: */
     return iProposedHeight;
+}
+
+void UIGDetailsElementPreview::updateAppearance()
+{
+    m_pPreview->setMachine(machine());
 }
 
 void UIGDetailsElementPreview::updateLayout()

@@ -18,6 +18,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include <QTextLayout>
@@ -31,8 +32,6 @@
 #include "UIGDetailsSet.h"
 #include "UIGDetailsModel.h"
 #include "UIGraphicsRotatorButton.h"
-#include "VBoxGlobal.h"
-#include "UIVirtualBoxEventHandler.h"
 #include "UIIconPool.h"
 #include "UIConverter.h"
 
@@ -126,6 +125,13 @@ int UIGDetailsElement::minimumHeightHint() const
     return minimumHeightHint(m_fClosed);
 }
 
+void UIGDetailsElement::updateHoverAccessibility()
+{
+    /* Check if name-hovering should be available: */
+    m_fNameHoveringAccessible = machine().isNull() || !machine().GetAccessible() ? false :
+                                machine().GetState() != KMachineState_Stuck;
+}
+
 void UIGDetailsElement::sltElementToggleStart()
 {
     /* Setup animation: */
@@ -152,22 +158,6 @@ void UIGDetailsElement::sltElementToggleFinish(bool fToggled)
     /* Relayout model: */
     model()->updateLayout();
     update();
-}
-
-void UIGDetailsElement::sltMachineStateChange(QString strId)
-{
-    /* Is this our VM changed? */
-    if (machine().GetId() == strId)
-        updateHoverAccessibility();
-
-    /* Finally, update appearance: */
-    sltShouldWeUpdateAppearance(strId);
-}
-
-void UIGDetailsElement::sltShouldWeUpdateAppearance(QString strId)
-{
-    if (machine().GetId() == strId)
-        sltUpdateAppearance();
 }
 
 QVariant UIGDetailsElement::data(int iKey) const
@@ -320,6 +310,11 @@ void UIGDetailsElement::setName(const QString &strName)
     m_strName = strName;
 }
 
+UITextTable UIGDetailsElement::text() const
+{
+    return m_text;
+}
+
 void UIGDetailsElement::setText(const UITextTable &text)
 {
     m_text = text;
@@ -389,12 +384,6 @@ void UIGDetailsElement::prepareElement()
     /* Start state-machine: */
     m_pHighlightMachine->start();
 
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltShouldWeUpdateAppearance(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltShouldWeUpdateAppearance(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltShouldWeUpdateAppearance(QString)));
-    connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()), this, SLOT(sltUpdateAppearance()));
-    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltUpdateAppearance()));
     connect(this, SIGNAL(sigToggleElement(DetailsElementType, bool)), model(), SLOT(sltToggleElements(DetailsElementType, bool)));
     connect(this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             model(), SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
@@ -732,13 +721,6 @@ void UIGDetailsElement::updateButtonVisibility()
         m_pButton->show();
     else if (!m_fHovered && m_pButton->isVisible())
         m_pButton->hide();
-}
-
-void UIGDetailsElement::updateHoverAccessibility()
-{
-    /* Check if name-hovering should be available: */
-    m_fNameHoveringAccessible = machine().isNull() || !machine().GetAccessible() ? false :
-                                machine().GetState() != KMachineState_Stuck;
 }
 
 void UIGDetailsElement::updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent)

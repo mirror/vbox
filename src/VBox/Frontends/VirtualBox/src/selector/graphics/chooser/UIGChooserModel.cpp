@@ -45,6 +45,9 @@
 #include "CMachine.h"
 #include "CVirtualBox.h"
 
+/* Type defs: */
+typedef QSet<QString> UIStringSet;
+
 UIGChooserModel::UIGChooserModel(QObject *pParent)
     : QObject(pParent)
     , m_pScene(0)
@@ -87,13 +90,13 @@ UIGChooserModel::~UIGChooserModel()
     cleanupScene();
  }
 
-void UIGChooserModel::load()
+void UIGChooserModel::prepare()
 {
     /* Prepare group-tree: */
     prepareGroupTree();
 }
 
-void UIGChooserModel::save()
+void UIGChooserModel::cleanup()
 {
     /* Cleanup group-tree: */
     cleanupGroupTree();
@@ -495,6 +498,16 @@ QString UIGChooserModel::uniqueGroupName(UIGChooserItem *pRoot)
     return strResult;
 }
 
+void UIGChooserModel::saveGroupSettings()
+{
+    emit sigStartGroupSaving();
+}
+
+bool UIGChooserModel::isGroupSavingInProgress() const
+{
+    return UIGroupsSavingThread::instance();
+}
+
 void UIGChooserModel::sltMachineStateChanged(QString strId, KMachineState)
 {
     /* Update machine items with passed id: */
@@ -649,6 +662,7 @@ void UIGChooserModel::sltRemoveCurrentlySelectedGroup()
         setCurrentItem(0);
     else
         unsetCurrentItem();
+    saveGroupSettings();
 }
 
 void UIGChooserModel::sltRemoveCurrentlySelectedMachine()
@@ -749,6 +763,7 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
     updateNavigation();
     updateLayout();
     setCurrentItem(pNewGroupItem);
+    saveGroupSettings();
 }
 
 void UIGChooserModel::sltStartEditingSelectedGroup()
@@ -845,6 +860,17 @@ void UIGChooserModel::sltSortGroup()
         sortItems(selectionList().first());
 }
 
+void UIGChooserModel::sltGroupSavingStart()
+{
+    saveGroupTree();
+}
+
+void UIGChooserModel::sltGroupSavingComplete()
+{
+    makeSureGroupSavingIsFinished();
+    emit sigGroupSavingFinished();
+}
+
 QVariant UIGChooserModel::data(int iKey) const
 {
     switch (iKey)
@@ -929,6 +955,8 @@ void UIGChooserModel::prepareContextMenu()
             this, SLOT(sltSortParentGroup()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Sort), SIGNAL(triggered()),
             this, SLOT(sltSortGroup()));
+
+    connect(this, SIGNAL(sigStartGroupSaving()), this, SLOT(sltGroupSavingStart()), Qt::QueuedConnection);
 }
 
 void UIGChooserModel::prepareHandlers()
@@ -953,9 +981,7 @@ void UIGChooserModel::prepareGroupTree()
 
 void UIGChooserModel::cleanupGroupTree()
 {
-    /* Save group tree: */
-    saveGroupTree();
-    /* Save order: */
+    makeSureGroupSavingIsFinished();
     saveGroupsOrder();
 }
 
@@ -1112,7 +1138,7 @@ void UIGChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeI
             createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
         }
         /* Update group definitions: */
-        m_groups[machine.GetId()] = UIStringSet::fromList(groups.toList());
+        m_groups[machine.GetId()] = groups.toList();
     }
     /* Inaccessible machine: */
     else
@@ -1294,41 +1320,20 @@ void UIGChooserModel::createMachineItem(const CMachine &machine, UIGChooserItem 
 
 void UIGChooserModel::saveGroupTree()
 {
-    /* Prepare machine map: */
+    /* Make sure there is no group saving activity: */
+    if (UIGroupsSavingThread::instance())
+        return;
+
+    /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    /* Iterate over all the items: */
     gatherGroupTree(groups, mainRoot());
-    /* Saving groups: */
-    foreach (const QString &strId, groups.keys())
-    {
-        /* Get new group list: */
-        const QStringList &newGroupList = groups.value(strId);
-        /* Get old group set: */
-        AssertMsg(m_groups.contains(strId), ("Invalid group set!"));
-        const UIStringSet &oldGroupSet = m_groups.value(strId);
-        /* Get new group set: */
-        const UIStringSet &newGroupSet = UIStringSet::fromList(newGroupList);
-        /* Is group set changed? */
-        if (oldGroupSet != newGroupSet)
-        {
-            /* Open session to save machine settings: */
-            CSession session = vboxGlobal().openSession(strId);
-            if (session.isNull())
-                return;
-            /* Get machine: */
-            CMachine machine = session.GetMachine();
-            /* Save groups: */
-//            printf(" Saving groups for machine {%s}: {%s}\n",
-//                   machine.GetName().toAscii().constData(),
-//                   newGroupList.join(",").toAscii().constData());
-            machine.SetGroups(newGroupList.toVector());
-            machine.SaveSettings();
-            if (!machine.isOk())
-                msgCenter().cannotSaveMachineSettings(machine);
-            /* Close the session: */
-            session.UnlockMachine();
-        }
-    }
+
+    /* Save information in other thread: */
+    UIGroupsSavingThread::prepare();
+    emit sigGroupSavingStarted();
+    UIGroupsSavingThread::instance()->configure(this, m_groups, groups);
+    UIGroupsSavingThread::instance()->start();
+    m_groups = groups;
 }
 
 void UIGChooserModel::saveGroupsOrder()
@@ -1740,5 +1745,110 @@ void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = 
     /* Update model: */
     updateNavigation();
     updateLayout();
+}
+
+void UIGChooserModel::makeSureGroupSavingIsFinished()
+{
+    /* Nothing to do if thread is null: */
+    if (!UIGroupsSavingThread::instance())
+        return;
+
+    /* Cleanup thread otherwise: */
+    UIGroupsSavingThread::cleanup();
+}
+
+/* static */
+UIGroupsSavingThread* UIGroupsSavingThread::m_spInstance = 0;
+
+/* static */
+UIGroupsSavingThread* UIGroupsSavingThread::instance()
+{
+    return m_spInstance;
+}
+
+/* static */
+void UIGroupsSavingThread::prepare()
+{
+    /* Make sure instance not prepared: */
+    if (m_spInstance)
+        return;
+
+    /* Crate instance: */
+    new UIGroupsSavingThread;
+}
+
+/* static */
+void UIGroupsSavingThread::cleanup()
+{
+    /* Make sure instance prepared: */
+    if (!m_spInstance)
+        return;
+
+    /* Crate instance: */
+    delete m_spInstance;
+}
+
+void UIGroupsSavingThread::configure(QObject *pParent,
+                                     const QMap<QString, QStringList> &oldLists,
+                                     const QMap<QString, QStringList> &newLists)
+{
+    m_oldLists = oldLists;
+    m_newLists = newLists;
+    connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupSavingComplete()));
+}
+
+UIGroupsSavingThread::UIGroupsSavingThread()
+{
+    /* Assign instance: */
+    m_spInstance = this;
+}
+
+UIGroupsSavingThread::~UIGroupsSavingThread()
+{
+    /* Wait: */
+    wait();
+
+    /* Erase instance: */
+    m_spInstance = 0;
+}
+
+void UIGroupsSavingThread::run()
+{
+    /* COM prepare: */
+    COMBase::InitializeCOM(false);
+
+    /* For every particular machine ID: */
+    foreach (const QString &strId, m_newLists.keys())
+    {
+        /* Get new group list/set: */
+        const QStringList &newGroupList = m_newLists.value(strId);
+        const UIStringSet &newGroupSet = UIStringSet::fromList(newGroupList);
+        /* Get old group list/set: */
+        const QStringList &oldGroupList = m_oldLists.value(strId);
+        const UIStringSet &oldGroupSet = UIStringSet::fromList(oldGroupList);
+        /* Is group set changed? */
+        if (newGroupSet != oldGroupSet)
+        {
+            /* Open session to save machine settings: */
+            CSession session = vboxGlobal().openSession(strId);
+            AssertMsg(!session.isNull(), ("Can't open session!"));
+            /* Get machine: */
+            CMachine machine = session.GetMachine();
+            AssertMsg(!machine.isNull(), ("Can't get machine!"));
+            /* Save settings: */
+            machine.SetGroups(newGroupList.toVector());
+            machine.SaveSettings();
+            AssertMsg(machine.isOk(), ("Unable to save machine settings!"));
+            //msgCenter().cannotSaveMachineSettings(machine);
+            /* Close the session: */
+            session.UnlockMachine();
+        }
+    }
+
+    /* Notify listeners about completeness: */
+    emit sigComplete();
+
+    /* COM cleanup: */
+    COMBase::CleanupCOM();
 }
 

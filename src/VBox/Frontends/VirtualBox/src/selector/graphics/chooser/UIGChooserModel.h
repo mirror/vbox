@@ -24,7 +24,7 @@
 #include <QPointer>
 #include <QTransform>
 #include <QMap>
-#include <QSet>
+#include <QThread>
 
 /* GUI includes: */
 #include "UIGChooserItem.h"
@@ -43,9 +43,6 @@ class CMachine;
 class UIVMItem;
 class UIGChooserHandlerMouse;
 class UIGChooserHandlerKeyboard;
-
-/* Type defs: */
-typedef QSet<QString> UIStringSet;
 
 /* Context-menu type: */
 enum UIGraphicsSelectorContextMenuType
@@ -74,15 +71,20 @@ signals:
     /* Notifier: Sliding start: */
     void sigSlidingStarted();
 
+    /* Notifiers: Group saving stuff: */
+    void sigStartGroupSaving();
+    void sigGroupSavingStarted();
+    void sigGroupSavingFinished();
+
 public:
 
     /* Constructor/destructor: */
     UIGChooserModel(QObject *pParent);
     ~UIGChooserModel();
 
-    /* API: Load/save stuff: */
-    void load();
-    void save();
+    /* API: Prepare/cleanup stuff: */
+    void prepare();
+    void cleanup();
 
     /* API: Scene getter: */
     QGraphicsScene* scene() const;
@@ -139,6 +141,10 @@ public:
     /* API: Group name stuff: */
     QString uniqueGroupName(UIGChooserItem *pRoot);
 
+    /* API: Group saving stuff: */
+    void saveGroupSettings();
+    bool isGroupSavingInProgress() const;
+
 private slots:
 
     /* Handlers: Global events: */
@@ -182,6 +188,10 @@ private slots:
     /* Handlers: Sorting stuff: */
     void sltSortParentGroup();
     void sltSortGroup();
+
+    /* Handlers: Group saving stuff: */
+    void sltGroupSavingStart();
+    void sltGroupSavingComplete();
 
 private:
 
@@ -270,6 +280,9 @@ private:
     /* Helper: Sorting stuff: */
     void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
 
+    /* Helper: Group saving stuff: */
+    void makeSureGroupSavingIsFinished();
+
     /* Variables: */
     QGraphicsScene *m_pScene;
 
@@ -279,7 +292,7 @@ private:
     UIGChooserItem *m_pRightRoot;
     QPointer<UIGChooserItem> m_pAfterSlidingFocus;
 
-    QMap<QString, UIStringSet> m_groups;
+    QMap<QString, QStringList> m_groups;
     QList<UIGChooserItem*> m_navigationList;
     QList<UIGChooserItem*> m_selectionList;
     UIGChooserHandlerMouse *m_pMouseHandler;
@@ -290,6 +303,43 @@ private:
     QPointer<UIGChooserItem> m_pFocusItem;
     QMenu *m_pContextMenuGroup;
     QMenu *m_pContextMenuMachine;
+};
+
+/* Allows to save group settings asynchronously: */
+class UIGroupsSavingThread : public QThread
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Notifier: Complete stuff: */
+    void sigComplete();
+
+public:
+
+    /* Singleton stuff: */
+    static UIGroupsSavingThread* instance();
+    static void prepare();
+    static void cleanup();
+
+    /* API: Configuring stuff: */
+    void configure(QObject *pParent,
+                   const QMap<QString, QStringList> &oldLists,
+                   const QMap<QString, QStringList> &newLists);
+
+private:
+
+    /* Constructor/destructor: */
+    UIGroupsSavingThread();
+    ~UIGroupsSavingThread();
+
+    /* Worker thread stuff: */
+    void run();
+
+    /* Variables: */
+    static UIGroupsSavingThread *m_spInstance;
+    QMap<QString, QStringList> m_oldLists;
+    QMap<QString, QStringList> m_newLists;
 };
 
 #endif /* __UIGChooserModel_h__ */

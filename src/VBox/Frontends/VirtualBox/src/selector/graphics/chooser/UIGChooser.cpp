@@ -57,8 +57,8 @@ UIGChooser::UIGChooser(QWidget *pParent)
     /* Prepare connections: */
     prepareConnections();
 
-    /* Load model: */
-    m_pChooserModel->load();
+    /* Prepare model: */
+    m_pChooserModel->prepare();
 
     /* Load last selected item: */
     m_pChooserModel->setCurrentItemDefinition(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
@@ -69,8 +69,8 @@ UIGChooser::~UIGChooser()
     /* Save last selected item: */
     vboxGlobal().virtualBox().SetExtraData(GUI_LastItemSelected, m_pChooserModel->currentItemDefinition());
 
-    /* Save model: */
-    m_pChooserModel->save();
+    /* Cleanup model: */
+    m_pChooserModel->cleanup();
 }
 
 void UIGChooser::setCurrentItem(int iCurrentItemIndex)
@@ -105,6 +105,11 @@ void UIGChooser::setStatusBar(QStatusBar *pStatusBar)
     connect(m_pChooserModel, SIGNAL(sigShowStatusMessage(const QString&)), m_pStatusBar, SLOT(showMessage(const QString&)));
 }
 
+bool UIGChooser::isGroupSavingInProgress() const
+{
+    return m_pChooserModel->isGroupSavingInProgress();
+}
+
 void UIGChooser::prepareConnections()
 {
     /* Chooser-model connections: */
@@ -112,6 +117,8 @@ void UIGChooser::prepareConnections()
             m_pChooserView, SLOT(sltHandleRootItemResized(const QSizeF&, int)));
     connect(m_pChooserModel, SIGNAL(sigSelectionChanged()), this, SIGNAL(sigSelectionChanged()));
     connect(m_pChooserModel, SIGNAL(sigSlidingStarted()), this, SIGNAL(sigSlidingStarted()));
+    connect(m_pChooserModel, SIGNAL(sigGroupSavingStarted()), this, SIGNAL(sigGroupSavingStarted()));
+    connect(m_pChooserModel, SIGNAL(sigGroupSavingFinished()), this, SIGNAL(sigGroupSavingFinished()));
 
     /* Chooser-view connections: */
     connect(m_pChooserView, SIGNAL(sigResized()), m_pChooserModel, SLOT(sltHandleViewResized()));

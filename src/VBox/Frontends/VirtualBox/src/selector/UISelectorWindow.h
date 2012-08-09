@@ -104,6 +104,9 @@ private slots:
     void sltCurrentVMItemChanged(bool fRefreshDetails = true, bool fRefreshSnapshots = true, bool fRefreshDescription = true);
     void sltOpenUrls(QList<QUrl> list = QList<QUrl>());
 
+    /* Handlers: Group saving stuff: */
+    void sltGroupSavingUpdate();
+
 private:
 
     /* Translation stuff: */
@@ -138,7 +141,7 @@ private:
     void updateActionsAppearance();
 
     /* Helpers: Action stuff: */
-    static bool isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items);
+    bool isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items);
     static bool isItemsAccessible(const QList<UIVMItem*> &items);
     static bool isItemsInaccessible(const QList<UIVMItem*> &items);
     static bool isItemsHasUnlockedSession(const QList<UIVMItem*> &items);

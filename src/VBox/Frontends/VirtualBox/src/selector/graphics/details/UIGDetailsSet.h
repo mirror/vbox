@@ -67,6 +67,13 @@ private slots:
     void sltNextStep(QString strSetId);
     void sltSetPrepared();
 
+    /* Handlers: Global event stuff: */
+    void sltMachineStateChange(QString strId);
+    void sltMachineAttributesChange(QString strId);
+
+    /* Handler: Update stuff: */
+    void sltUpdateAppearance();
+
 private:
 
     /* Data enumerator: */

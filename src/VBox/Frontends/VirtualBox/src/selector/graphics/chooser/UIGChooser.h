@@ -45,6 +45,10 @@ signals:
     /* Notifier: Sliding start: */
     void sigSlidingStarted();
 
+    /* Notifiers: Group saving stuff: */
+    void sigGroupSavingStarted();
+    void sigGroupSavingFinished();
+
 public:
 
     /* Constructor/destructor: */
@@ -59,6 +63,9 @@ public:
 
     /* API: Status bar stuff: */
     void setStatusBar(QStatusBar *pStatusBar);
+
+    /* API: Group saving stuff: */
+    bool isGroupSavingInProgress() const;
 
 private:
 
