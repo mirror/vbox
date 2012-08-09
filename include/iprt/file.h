@@ -586,6 +586,50 @@ RTDECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRenam
 RTDECL(int) RTFileMove(const char *pszSrc, const char *pszDst, unsigned fMove);
 
 
+/**
+ * Creates a new file with a unique name using the given template.
+ *
+ * One or more trailing X'es in the template will be replaced by random alpha
+ * numeric characters until a RTFileOpen with RTFILE_O_CREATE succeeds or we
+ * run out of patience.
+ * For instance:
+ *          "/tmp/myprog-XXXXXX"
+ *
+ * As an alternative to trailing X'es, it is possible to put 3 or more X'es
+ * somewhere inside the file name. In the following string only the last
+ * bunch of X'es will be modified:
+ *          "/tmp/myprog-XXX-XXX.tmp"
+ *
+ * @returns iprt status code.
+ * @param   pszTemplate     The file name template on input. The actual file
+ *                          name on success. Empty string on failure.
+ * @param   fMode           The mode to create the file with.  Use 0600 unless
+ *                          you have reason not to.
+ */
+RTDECL(int) RTFileCreateTemp(char *pszTemplate, RTFMODE fMode);
+
+/**
+ * Secure version of @a RTFileCreateTemp with a fixed mode of 0600.
+ *
+ * This function behaves in the same way as @a RTFileCreateTemp with two
+ * additional points.  Firstly the mode is fixed to 0600.  Secondly it will
+ * fail if it is not possible to perform the operation securely.  Possible
+ * reasons include that the file could be removed by another unprivileged
+ * user before it is used (e.g. if is created in a non-sticky /tmp directory)
+ * or that the path contains symbolic links which another unprivileged user
+ * could manipulate; however the exact criteria will be specified on a
+ * platform-by-platform basis as platform support is added.
+ * @see RTPathIsSecure for the current list of criteria.
+ * @returns iprt status code.
+ * @returns VERR_NOT_SUPPORTED if the interface can not be supported on the
+ *                             current platform at this time.
+ * @returns VERR_INSECURE      if the file could not be created securely.
+ * @param   pszTemplate        The file name template on input. The actual
+ *                             file name on success. Empty string on failure.
+ */
+RTDECL(int) RTFileCreateTempSecure(char *pszTemplate);
+
+
 /** @page   pg_rt_filelock      RT File locking API description
  *
  * File locking general rules:
