@@ -2299,13 +2299,19 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
       <para><screen>
 # Default policy is to deny starting a VM, the other option is "allow".
 default_policy = deny
-# Users which are allowed are given below.
-# If the default policy is to allow starting a VM is not allowed for the users below.
-exception_list = bob, alice, joe
 
-bob   = 30  # Bobs machines will be started 30 seconds after the autostart service started
-alice = 180 # Alice machines will be started 180 seconds after the autostart service started
-joe   = 240 # Joes machines will be started 240 seconds after the autostart service started
+# Bob is allowed to start virtual machines but starting them
+# will be delayed for 10 seconds
+bob = {
+    allow = true
+    startup_delay = 10
+}
+
+# Alice is not allowed to start virtual machines, useful to exclude certain users
+# if the default policy is set to allow.
+alice = {
+    allow = false
+}
       </screen></para>
 
       <para>Every user who wants to enable autostart for individual machines
