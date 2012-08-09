@@ -4014,7 +4014,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
     /* Commit. */
     IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
     iemRegAddToRip(pIemCpu, cbInstr);
-    if (!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF))
+    if ((!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF)) || IEM_VERIFICATION_ENABLED(pIemCpu))
         EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
     Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return VINF_SUCCESS;
@@ -4457,7 +4457,7 @@ static void iemCImplCommonFpuStoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, RTP
 
 
 /**
- * Commmon routine for fnstenv and fnsave.
+ * Commmon routine for fldenv and frstor
  *
  * @param   uPtr                Where to store the state.
  * @param   pCtx                The CPU context.
@@ -4587,7 +4587,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
      */
     pCtx->fpu.FCW   = 0x37f;
     pCtx->fpu.FSW   = 0;
-    pCtx->fpu.FTW   = 0xffff;       /* 11 - empty */
+    pCtx->fpu.FTW   = 0x00;       /* 0 - empty */
     pCtx->fpu.FPUDP = 0;
     pCtx->fpu.DS    = 0;
     pCtx->fpu.Rsrvd2= 0;
@@ -4595,7 +4595,6 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     pCtx->fpu.CS    = 0;
     pCtx->fpu.Rsrvd1= 0;
     pCtx->fpu.FOP   = 0;
-
 
     iemHlpUsedFpu(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
