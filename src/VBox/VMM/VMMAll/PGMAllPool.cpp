@@ -836,8 +836,18 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
      * Must do this in raw mode (!); XP boot will fail otherwise.
      */
     VBOXSTRICTRC rc2 = EMInterpretInstructionDisasState(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
-    if (RT_SUCCESS(rc2))
-        AssertMsg(rc2 == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc2))); /* ASSUMES no complicated stuff here. */
+    if (rc2 == VINF_SUCCESS)
+    { /* do nothing */ }
+#ifdef VBOX_WITH_IEM
+    else if (rc2 == VINF_EM_RESCHEDULE)
+    {
+        if (rc == VINF_SUCCESS)
+            rc = rc2;
+# ifndef IN_RING3
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+# endif
+    }
+#endif
     else if (rc2 == VERR_EM_INTERPRETER)
     {
 #ifdef IN_RC
@@ -855,8 +865,10 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
             STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,EmulateInstr));
         }
     }
-    else
+    else if (RT_FAILURE_NP(rc2))
         rc = VBOXSTRICTRC_VAL(rc2);
+    else
+        AssertMsgFailed(("%Rrc\n", VBOXSTRICTRC_VAL(rc2))); /* ASSUMES no complicated stuff here. */
 
     LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
     return rc;
