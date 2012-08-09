@@ -69,7 +69,7 @@ static void tstDirCreateTemp(const char *pszSubTest, const char *pszTemplate, un
         if (!papszNames[i])
             break;
 
-        rc = RTDirCreateTemp(papszNames[i]);
+        rc = RTDirCreateTemp(papszNames[i], 0700);
         if (rc != VINF_SUCCESS)
         {
             RTTestIFailed("RTDirCreateTemp(%s) call #%u -> %Rrc\n", szName, i, rc);

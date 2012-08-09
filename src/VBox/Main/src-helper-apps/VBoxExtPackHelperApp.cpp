@@ -1569,7 +1569,7 @@ static RTEXITCODE RelaunchElevated(int argc, char **argv, int iCmd, const char *
     rc = RTPathAppend(szTempDir, sizeof(szTempDir), "VBoxExtPackHelper-XXXXXX");
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAppend failed: %Rrc", rc);
-    rc = RTDirCreateTemp(szTempDir);
+    rc = RTDirCreateTemp(szTempDir, 0700);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirCreateTemp failed: %Rrc", rc);
 

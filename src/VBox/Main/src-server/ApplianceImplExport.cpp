@@ -1954,7 +1954,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
 
         /* We need a temporary directory which we can put the OVF file & all
          * disk images in */
-        vrc = RTDirCreateTemp(pszTmpDir);
+        vrc = RTDirCreateTemp(pszTmpDir, 0700);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
