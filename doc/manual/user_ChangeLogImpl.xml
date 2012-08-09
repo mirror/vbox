@@ -45,6 +45,10 @@
            planned. (bug #81)</para>
        </listitem>
 
+       <listitem>
+         <para>Added support for Host parallel port passthrough on Windows platform</para>
+       </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
