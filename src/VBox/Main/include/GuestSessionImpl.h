@@ -70,7 +70,7 @@ public:
                       const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
 
     SessionTaskCopyTo(GuestSession *pSession,
-                      PRTFILE pSourceFile, size_t cbSourceOffset, size_t cbSourceSize,
+                      PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
                       const Utf8Str &strDest, uint32_t uFlags);
 
     virtual ~SessionTaskCopyTo(void);
