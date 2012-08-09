@@ -628,9 +628,9 @@ int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
 #ifdef DEBUG
         strmBlk.DumpToLog();
 #endif
-        /* Node ID. */
-        rc = strmBlk.GetInt64Ex("node_id", &mNodeID);
-        if (RT_FAILURE(rc)) throw rc;
+        /* Node ID, optional because we don't include this
+         * in older VBoxService (< 4.2) versions. */
+        mNodeID = strmBlk.GetInt64("node_id");
         /* Object name. */
         mName = strmBlk.GetString("name");
         if (mName.isEmpty()) throw VERR_NOT_FOUND;

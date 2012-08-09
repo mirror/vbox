@@ -2674,8 +2674,6 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
             return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
     }
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     HRESULT hr = S_OK;
 #if 1
     /* Create an anonymous session. This is required to run the Guest Additions

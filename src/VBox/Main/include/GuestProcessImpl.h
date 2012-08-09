@@ -75,9 +75,11 @@ public:
     inline bool callbackExists(uint32_t uContextID);
     inline int checkPID(uint32_t uPID);
     void close(void);
+    Utf8Str errorMsg(void) { return mData.mErrorMsg; }
     bool isReady(void);
     ULONG getPID(void) { return mData.mPID; }
     ULONG getProcessID(void) { return mData.mProcessID; }
+    int rc(void) { mData.mRC; }
     int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead);
     int startProcess(void);
     int startProcessAsync(void);
@@ -101,10 +103,9 @@ protected:
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
     int setErrorInternal(int rc, const Utf8Str &strMessage);
-    int setErrorExternal(void);
+    HRESULT setErrorExternal(void);
     int signalWaiters(ProcessWaitResult_T enmWaitResult);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
-    HRESULT waitResultToErrorEx(const GuestProcessWaitResult &waitResult, bool fLog);
     /** @}  */
 
 private:
