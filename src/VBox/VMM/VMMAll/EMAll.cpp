@@ -46,6 +46,10 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
+#ifdef VBOX_WITH_IEM
+# define VBOX_COMPARE_IEM_AND_EM /* debugging... */
+# define VBOX_SAME_AS_EM
+#endif
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -69,11 +73,20 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifndef VBOX_WITH_IEM
+#if !defined(VBOX_WITH_IEM) || defined(VBOX_COMPARE_IEM_AND_EM)
 DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                         RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
 #endif
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef VBOX_COMPARE_IEM_AND_EM
+static CPUMCTX g_IncomingCtx;
+static CPUMCTX g_EmOutgoingCtx;
+static bool g_fIgnoreRaxRdx = false;
+#endif
 
 
 /**
@@ -426,6 +439,190 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
 }
 
 
+#ifdef VBOX_COMPARE_IEM_AND_EM
+static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pIemCtx, VBOXSTRICTRC rcEm, VBOXSTRICTRC rcIem,
+                             uint32_t cbEm, uint32_t cbIem)
+{
+    /* Quick compare. */
+    PCCPUMCTX pEmCtx = &g_EmOutgoingCtx;
+    if (   rcEm == rcIem
+        && cbEm == cbIem
+        && memcmp(pIemCtx, pEmCtx, sizeof(*pIemCtx)) == 0)
+        return;
+
+    /* Report exact differences. */
+    RTLogPrintf("!! EM and IEM differs at %04x:%08RGv !!\n", g_IncomingCtx.cs.Sel, g_IncomingCtx.rip);
+    if (rcEm != rcIem)
+        RTLogPrintf(" * rcIem=%Rrc rcEm=%Rrc\n", VBOXSTRICTRC_VAL(rcIem), VBOXSTRICTRC_VAL(rcEm));
+    else if (cbEm != cbIem)
+        RTLogPrintf(" * cbIem=%#x cbEm=%#x\n", cbIem, cbEm);
+
+    if (rcEm == rcIem)
+    {
+#  define CHECK_FIELD(a_Field) \
+        do \
+        { \
+            if (pEmCtx->a_Field != pIemCtx->a_Field) \
+            { \
+                switch (sizeof(pEmCtx->a_Field)) \
+                { \
+                    case 1: RTLogPrintf("  %8s differs - iem=%02x - em=%02x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    case 2: RTLogPrintf("  %8s differs - iem=%04x - em=%04x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    case 4: RTLogPrintf("  %8s differs - iem=%08x - em=%08x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    case 8: RTLogPrintf("  %8s differs - iem=%016llx - em=%016llx\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    default: RTLogPrintf("  %8s differs\n", #a_Field); break; \
+                } \
+                cDiffs++; \
+            } \
+        } while (0)
+
+#  define CHECK_BIT_FIELD(a_Field) \
+        do \
+        { \
+            if (pEmCtx->a_Field != pIemCtx->a_Field) \
+            { \
+                RTLogPrintf("  %8s differs - iem=%02x - em=%02x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); \
+                cDiffs++; \
+            } \
+        } while (0)
+
+#  define CHECK_SEL(a_Sel) \
+        do \
+        { \
+            CHECK_FIELD(a_Sel.Sel); \
+            CHECK_FIELD(a_Sel.Attr.u); \
+            CHECK_FIELD(a_Sel.u64Base); \
+            CHECK_FIELD(a_Sel.u32Limit); \
+            CHECK_FIELD(a_Sel.fFlags); \
+        } while (0)
+
+        unsigned cDiffs = 0;
+        if (memcmp(&pEmCtx->fpu, &pIemCtx->fpu, sizeof(pIemCtx->fpu)))
+        {
+            RTLogPrintf("  the FPU state differs\n");
+            cDiffs++;
+            CHECK_FIELD(fpu.FCW);
+            CHECK_FIELD(fpu.FSW);
+            CHECK_FIELD(fpu.FTW);
+            CHECK_FIELD(fpu.FOP);
+            CHECK_FIELD(fpu.FPUIP);
+            CHECK_FIELD(fpu.CS);
+            CHECK_FIELD(fpu.Rsrvd1);
+            CHECK_FIELD(fpu.FPUDP);
+            CHECK_FIELD(fpu.DS);
+            CHECK_FIELD(fpu.Rsrvd2);
+            CHECK_FIELD(fpu.MXCSR);
+            CHECK_FIELD(fpu.MXCSR_MASK);
+            CHECK_FIELD(fpu.aRegs[0].au64[0]); CHECK_FIELD(fpu.aRegs[0].au64[1]);
+            CHECK_FIELD(fpu.aRegs[1].au64[0]); CHECK_FIELD(fpu.aRegs[1].au64[1]);
+            CHECK_FIELD(fpu.aRegs[2].au64[0]); CHECK_FIELD(fpu.aRegs[2].au64[1]);
+            CHECK_FIELD(fpu.aRegs[3].au64[0]); CHECK_FIELD(fpu.aRegs[3].au64[1]);
+            CHECK_FIELD(fpu.aRegs[4].au64[0]); CHECK_FIELD(fpu.aRegs[4].au64[1]);
+            CHECK_FIELD(fpu.aRegs[5].au64[0]); CHECK_FIELD(fpu.aRegs[5].au64[1]);
+            CHECK_FIELD(fpu.aRegs[6].au64[0]); CHECK_FIELD(fpu.aRegs[6].au64[1]);
+            CHECK_FIELD(fpu.aRegs[7].au64[0]); CHECK_FIELD(fpu.aRegs[7].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 0].au64[0]);  CHECK_FIELD(fpu.aXMM[ 0].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 1].au64[0]);  CHECK_FIELD(fpu.aXMM[ 1].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 2].au64[0]);  CHECK_FIELD(fpu.aXMM[ 2].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 3].au64[0]);  CHECK_FIELD(fpu.aXMM[ 3].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 4].au64[0]);  CHECK_FIELD(fpu.aXMM[ 4].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 5].au64[0]);  CHECK_FIELD(fpu.aXMM[ 5].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 6].au64[0]);  CHECK_FIELD(fpu.aXMM[ 6].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 7].au64[0]);  CHECK_FIELD(fpu.aXMM[ 7].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 8].au64[0]);  CHECK_FIELD(fpu.aXMM[ 8].au64[1]);
+            CHECK_FIELD(fpu.aXMM[ 9].au64[0]);  CHECK_FIELD(fpu.aXMM[ 9].au64[1]);
+            CHECK_FIELD(fpu.aXMM[10].au64[0]);  CHECK_FIELD(fpu.aXMM[10].au64[1]);
+            CHECK_FIELD(fpu.aXMM[11].au64[0]);  CHECK_FIELD(fpu.aXMM[11].au64[1]);
+            CHECK_FIELD(fpu.aXMM[12].au64[0]);  CHECK_FIELD(fpu.aXMM[12].au64[1]);
+            CHECK_FIELD(fpu.aXMM[13].au64[0]);  CHECK_FIELD(fpu.aXMM[13].au64[1]);
+            CHECK_FIELD(fpu.aXMM[14].au64[0]);  CHECK_FIELD(fpu.aXMM[14].au64[1]);
+            CHECK_FIELD(fpu.aXMM[15].au64[0]);  CHECK_FIELD(fpu.aXMM[15].au64[1]);
+            for (unsigned i = 0; i < RT_ELEMENTS(pEmCtx->fpu.au32RsrvdRest); i++)
+                CHECK_FIELD(fpu.au32RsrvdRest[i]);
+        }
+        CHECK_FIELD(rip);
+        if (pEmCtx->rflags.u != pIemCtx->rflags.u)
+        {
+            RTLogPrintf("  rflags differs - iem=%08llx em=%08llx\n", pIemCtx->rflags.u, pEmCtx->rflags.u);
+            CHECK_BIT_FIELD(rflags.Bits.u1CF);
+            CHECK_BIT_FIELD(rflags.Bits.u1Reserved0);
+            CHECK_BIT_FIELD(rflags.Bits.u1PF);
+            CHECK_BIT_FIELD(rflags.Bits.u1Reserved1);
+            CHECK_BIT_FIELD(rflags.Bits.u1AF);
+            CHECK_BIT_FIELD(rflags.Bits.u1Reserved2);
+            CHECK_BIT_FIELD(rflags.Bits.u1ZF);
+            CHECK_BIT_FIELD(rflags.Bits.u1SF);
+            CHECK_BIT_FIELD(rflags.Bits.u1TF);
+            CHECK_BIT_FIELD(rflags.Bits.u1IF);
+            CHECK_BIT_FIELD(rflags.Bits.u1DF);
+            CHECK_BIT_FIELD(rflags.Bits.u1OF);
+            CHECK_BIT_FIELD(rflags.Bits.u2IOPL);
+            CHECK_BIT_FIELD(rflags.Bits.u1NT);
+            CHECK_BIT_FIELD(rflags.Bits.u1Reserved3);
+            CHECK_BIT_FIELD(rflags.Bits.u1RF);
+            CHECK_BIT_FIELD(rflags.Bits.u1VM);
+            CHECK_BIT_FIELD(rflags.Bits.u1AC);
+            CHECK_BIT_FIELD(rflags.Bits.u1VIF);
+            CHECK_BIT_FIELD(rflags.Bits.u1VIP);
+            CHECK_BIT_FIELD(rflags.Bits.u1ID);
+        }
+
+        if (!g_fIgnoreRaxRdx)
+            CHECK_FIELD(rax);
+        CHECK_FIELD(rcx);
+        if (!g_fIgnoreRaxRdx)
+            CHECK_FIELD(rdx);
+        CHECK_FIELD(rbx);
+        CHECK_FIELD(rsp);
+        CHECK_FIELD(rbp);
+        CHECK_FIELD(rsi);
+        CHECK_FIELD(rdi);
+        CHECK_FIELD(r8);
+        CHECK_FIELD(r9);
+        CHECK_FIELD(r10);
+        CHECK_FIELD(r11);
+        CHECK_FIELD(r12);
+        CHECK_FIELD(r13);
+        CHECK_SEL(cs);
+        CHECK_SEL(ss);
+        CHECK_SEL(ds);
+        CHECK_SEL(es);
+        CHECK_SEL(fs);
+        CHECK_SEL(gs);
+        CHECK_FIELD(cr0);
+        CHECK_FIELD(cr2);
+        CHECK_FIELD(cr3);
+        CHECK_FIELD(cr4);
+        CHECK_FIELD(dr[0]);
+        CHECK_FIELD(dr[1]);
+        CHECK_FIELD(dr[2]);
+        CHECK_FIELD(dr[3]);
+        CHECK_FIELD(dr[6]);
+        CHECK_FIELD(dr[7]);
+        CHECK_FIELD(gdtr.cbGdt);
+        CHECK_FIELD(gdtr.pGdt);
+        CHECK_FIELD(idtr.cbIdt);
+        CHECK_FIELD(idtr.pIdt);
+        CHECK_SEL(ldtr);
+        CHECK_SEL(tr);
+        CHECK_FIELD(SysEnter.cs);
+        CHECK_FIELD(SysEnter.eip);
+        CHECK_FIELD(SysEnter.esp);
+        CHECK_FIELD(msrEFER);
+        CHECK_FIELD(msrSTAR);
+        CHECK_FIELD(msrPAT);
+        CHECK_FIELD(msrLSTAR);
+        CHECK_FIELD(msrCSTAR);
+        CHECK_FIELD(msrSFMASK);
+        CHECK_FIELD(msrKERNELGSBASE);
+
+#  undef CHECK_FIELD
+#  undef CHECK_BIT_FIELD
+    }
+}
+#endif /* VBOX_COMPARE_IEM_AND_EM */
+
+
 /**
  * Interprets the current instruction.
  *
@@ -450,10 +647,57 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
 #ifdef VBOX_WITH_IEM
     NOREF(pvFault);
-    VBOXSTRICTRC rc = IEMExecOneEx(pVCpu, pRegFrame, NULL);
+
+# ifdef VBOX_COMPARE_IEM_AND_EM
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    g_IncomingCtx = *pCtx;
+
+    /* EM */
+    RTGCPTR pbCode;
+    VBOXSTRICTRC rcEm = SELMToFlatEx(pVCpu, DISSELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    if (RT_SUCCESS(rcEm))
+    {
+        uint32_t     cbOp;
+        PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
+        pDis->uCpuMode = CPUMGetGuestDisMode(pVCpu);
+        rcEm = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
+        if (RT_SUCCESS(rcEm))
+        {
+            Assert(cbOp == pDis->cbInstr);
+            uint32_t cbIgnored;
+            rcEm = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbIgnored);
+            if (RT_SUCCESS(rcEm))
+                pRegFrame->rip += cbOp; /* Move on to the next instruction. */
+
+        }
+        rcEm = VERR_EM_INTERPRETER;
+    }
+    else
+        rcEm = VERR_EM_INTERPRETER;
+#  ifdef VBOX_SAME_AS_EM
+    if (rcEm == VERR_EM_INTERPRETER)
+    {
+        Log(("EMInterpretInstruction: returns %Rrc\n", VBOXSTRICTRC_VAL(rcEm)));
+        return rcEm;
+    }
+#  endif
+
+    g_EmOutgoingCtx = *pCtx;
+    *pCtx = g_IncomingCtx;
+
+    /* IEM */
+# endif /* VBOX_COMPARE_IEM_AND_EM */
+    VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, pRegFrame, NULL);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
-        return VERR_EM_INTERPRETER;
+        rc = VERR_EM_INTERPRETER;
+
+# ifdef VBOX_COMPARE_IEM_AND_EM
+    emCompareWithIem(pVCpu, pCtx, rcEm, rc, 0, 0);
+# endif
+    if (rc != VINF_SUCCESS)
+        Log(("EMInterpretInstruction: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
+
     return rc;
 #else
     RTGCPTR pbCode;
@@ -505,10 +749,58 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 #ifdef VBOX_WITH_IEM
     NOREF(pvFault);
-    VBOXSTRICTRC rc = IEMExecOneEx(pVCpu, pRegFrame, pcbWritten);
+
+# ifdef VBOX_COMPARE_IEM_AND_EM
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    g_IncomingCtx = *pCtx;
+
+    /* EM */
+    uint32_t cbEmWritten = 0;
+    RTGCPTR pbCode;
+    VBOXSTRICTRC rcEm = SELMToFlatEx(pVCpu, DISSELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    if (RT_SUCCESS(rcEm))
+    {
+        uint32_t     cbOp;
+        PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
+        pDis->uCpuMode = CPUMGetGuestDisMode(pVCpu);
+        rcEm = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
+        if (RT_SUCCESS(rcEm))
+        {
+            Assert(cbOp == pDis->cbInstr);
+            rcEm = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbEmWritten);
+            if (RT_SUCCESS(rcEm))
+                pRegFrame->rip += cbOp; /* Move on to the next instruction. */
+
+        }
+        else
+            rcEm = VERR_EM_INTERPRETER;
+    }
+    else
+        rcEm = VERR_EM_INTERPRETER;
+#  ifdef VBOX_SAME_AS_EM
+    if (rcEm == VERR_EM_INTERPRETER)
+    {
+        Log(("EMInterpretInstruction: returns %Rrc\n", VBOXSTRICTRC_VAL(rcEm)));
+        return rcEm;
+    }
+#  endif
+
+    g_EmOutgoingCtx = *pCtx;
+    *pCtx = g_IncomingCtx;
+
+    /* IEM */
+# endif /* VBOX_COMPARE_IEM_AND_EM */
+    VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, pRegFrame, pcbWritten);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
-        return VERR_EM_INTERPRETER;
+        rc = VERR_EM_INTERPRETER;
+
+# ifdef VBOX_COMPARE_IEM_AND_EM
+    emCompareWithIem(pVCpu, pCtx, rcEm, rc, cbEmWritten, *pcbWritten);
+# endif
+    if (rc != VINF_SUCCESS)
+        Log(("EMInterpretInstructionEx: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
+
     return rc;
 #else
     RTGCPTR pbCode;
@@ -569,10 +861,40 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTAT
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 #ifdef VBOX_WITH_IEM
     NOREF(pDis); NOREF(pvFault); NOREF(enmCodeType);
-    VBOXSTRICTRC rc = IEMExecOneWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip, pDis->abInstr, pDis->cbCachedInstr);
+
+# ifdef VBOX_COMPARE_IEM_AND_EM
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    g_IncomingCtx = *pCtx;
+
+    /* EM */
+    uint32_t cbIgnored;
+    VBOXSTRICTRC rcEm = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
+    if (RT_SUCCESS(rcEm))
+        pRegFrame->rip += pDis->cbInstr; /* Move on to the next instruction. */
+#  ifdef VBOX_SAME_AS_EM
+    if (rcEm == VERR_EM_INTERPRETER)
+    {
+        Log(("EMInterpretInstruction: returns %Rrc\n", VBOXSTRICTRC_VAL(rcEm)));
+        return rcEm;
+    }
+#  endif
+
+    g_EmOutgoingCtx = *pCtx;
+    *pCtx = g_IncomingCtx;
+
+    /* IEM */
+# endif
+    VBOXSTRICTRC rc = IEMExecOneBypassWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip, pDis->abInstr, pDis->cbCachedInstr);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
-        return VERR_EM_INTERPRETER;
+        rc = VERR_EM_INTERPRETER;
+
+# ifdef VBOX_COMPARE_IEM_AND_EM
+    emCompareWithIem(pVCpu, pCtx, rcEm, rc, 0, 0);
+# endif
+    if (rc != VINF_SUCCESS)
+        Log(("EMInterpretInstructionDisasState: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
+
     return rc;
 #else
     uint32_t cbIgnored;
@@ -714,6 +1036,9 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     /* Same behaviour in 32 & 64 bits mode */
     pRegFrame->rax = (uint32_t)uTicks;
     pRegFrame->rdx = (uTicks >> 32ULL);
+#ifdef VBOX_COMPARE_IEM_AND_EM
+    g_fIgnoreRaxRdx = true;
+#endif
 
     NOREF(pVM);
     return VINF_SUCCESS;
@@ -747,6 +1072,9 @@ VMMDECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Same behaviour in 32 & 64 bits mode */
     pCtx->rax = (uint32_t)uTicks;
     pCtx->rdx = (uTicks >> 32ULL);
+#ifdef VBOX_COMPARE_IEM_AND_EM
+    g_fIgnoreRaxRdx = true;
+#endif
     /* Low dword of the TSC_AUX msr only. */
     CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pCtx->rcx);
     pCtx->rcx &= UINT32_C(0xffffffff);
@@ -920,7 +1248,11 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             return VERR_EM_INTERPRETER;
 #endif
         rc = VINF_SUCCESS;
+#ifndef VBOX_COMPARE_IEM_AND_EM
         CPUMSetGuestCR0(pVCpu, val);
+#else
+        CPUMQueryGuestCtxPtr(pVCpu)->cr0 = val | X86_CR0_ET;
+#endif
         val = CPUMGetGuestCR0(pVCpu);
         if (    (oldval & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
             !=  (val    & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
@@ -1206,7 +1538,7 @@ VMMDECL(int) EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
 }
 
 
-#ifndef VBOX_WITH_IEM
+#if !defined(VBOX_WITH_IEM) || defined(VBOX_COMPARE_IEM_AND_EM)
 
 
 
@@ -1246,7 +1578,11 @@ DECLINLINE(int) emRamWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR
     /* Don't use MMGCRamWrite here as it does not respect zero pages, shared
        pages or write monitored pages. */
     NOREF(pVM);
+#ifndef VBOX_COMPARE_IEM_AND_EM
     return PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, /*fMayTrap*/ false);
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -1700,6 +2036,7 @@ static int emInterpretOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCT
 }
 
 
+#ifndef VBOX_COMPARE_IEM_AND_EM
 /**
  * LOCK XOR/OR/AND Emulation.
  */
@@ -1772,6 +2109,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
     *pcbSize = param2.size;
     return VINF_SUCCESS;
 }
+#endif /* !VBOX_COMPARE_IEM_AND_EM */
 
 
 /**
@@ -1959,6 +2297,7 @@ static int emInterpretBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
 }
 
 
+#ifndef VBOX_COMPARE_IEM_AND_EM
 /**
  * LOCK BTR/C/S Emulation.
  */
@@ -2021,6 +2360,7 @@ static int emInterpretLockBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPU
     *pcbSize = 1;
     return VINF_SUCCESS;
 }
+#endif /* !VBOX_COMPARE_IEM_AND_EM */
 
 
 /**
@@ -2366,10 +2706,23 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
 
     LogFlow(("%s %RGv rax=%RX64 %RX64\n", emGetMnemonic(pDis), GCPtrPar1, pRegFrame->rax, valpar));
 
+#ifndef VBOX_COMPARE_IEM_AND_EM
     if (pDis->fPrefix & DISPREFIX_LOCK)
         eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->Param2.cb);
     else
         eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDis->Param2.cb);
+#else  /* VBOX_COMPARE_IEM_AND_EM */
+    uint64_t u64;
+    switch (pDis->Param2.cb)
+    {
+        case 1: u64 = *(uint8_t  *)pvParam1; break;
+        case 2: u64 = *(uint16_t *)pvParam1; break;
+        case 4: u64 = *(uint32_t *)pvParam1; break;
+        default:
+        case 8: u64 = *(uint64_t *)pvParam1; break;
+    }
+    eflags = EMEmulateCmpXchg(&u64, &pRegFrame->rax, valpar, pDis->Param2.cb);
+#endif /* VBOX_COMPARE_IEM_AND_EM */
 
     LogFlow(("%s %RGv rax=%RX64 %RX64 ZF=%d\n", emGetMnemonic(pDis), GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
 
@@ -2419,10 +2772,15 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
 
     LogFlow(("%s %RGv=%08x eax=%08x\n", emGetMnemonic(pDis), pvParam1, pRegFrame->eax));
 
+#ifndef VBOX_COMPARE_IEM_AND_EM
     if (pDis->fPrefix & DISPREFIX_LOCK)
         eflags = EMEmulateLockCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
     else
         eflags = EMEmulateCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
+#else  /* VBOX_COMPARE_IEM_AND_EM */
+    uint64_t u64 = *(uint64_t *)pvParam1;
+    eflags = EMEmulateCmpXchg8b(&u64, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
+#endif /* VBOX_COMPARE_IEM_AND_EM */
 
     LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pDis), pvParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
 
@@ -2488,10 +2846,23 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 
             LogFlow(("XAdd %RGv=%p reg=%08llx\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2));
 
+#ifndef VBOX_COMPARE_IEM_AND_EM
             if (pDis->fPrefix & DISPREFIX_LOCK)
                 eflags = EMEmulateLockXAdd(pvParam1, pvParamReg2, cbParamReg2);
             else
                 eflags = EMEmulateXAdd(pvParam1, pvParamReg2, cbParamReg2);
+#else  /* VBOX_COMPARE_IEM_AND_EM */
+            uint64_t u64;
+            switch (cbParamReg2)
+            {
+                case 1: u64 = *(uint8_t  *)pvParam1; break;
+                case 2: u64 = *(uint16_t *)pvParam1; break;
+                case 4: u64 = *(uint32_t *)pvParam1; break;
+                default:
+                case 8: u64 = *(uint64_t *)pvParam1; break;
+            }
+            eflags = EMEmulateXAdd(&u64, pvParamReg2, cbParamReg2);
+#endif /* VBOX_COMPARE_IEM_AND_EM */
 
             LogFlow(("XAdd %RGv=%p reg=%08llx ZF=%d\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2, !!(eflags & X86_EFL_ZF) ));
 
@@ -2999,13 +3370,17 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 
     /* Get the current privilege level. */
     if (CPUMGetGuestCPL(pVCpu) != 0)
+    {
+        Log4(("EM: Refuse RDMSR: CPL != 0\n"));
         return VERR_EM_INTERPRETER; /* supervisor only */
+    }
 
     uint64_t uValue;
     int rc = CPUMQueryGuestMsr(pVCpu, pRegFrame->ecx, &uValue);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
         Assert(rc == VERR_CPUM_RAISE_GP_0);
+        Log4(("EM: Refuse RDMSR: rc=%Rrc\n", rc));
         return VERR_EM_INTERPRETER;
     }
     pRegFrame->rax = (uint32_t) uValue;
@@ -3042,12 +3417,16 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 
     /* Check the current privilege level, this instruction is supervisor only. */
     if (CPUMGetGuestCPL(pVCpu) != 0)
+    {
+        Log4(("EM: Refuse WRMSR: CPL != 0\n"));
         return VERR_EM_INTERPRETER; /** @todo raise \#GP(0) */
+    }
 
     int rc = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
     if (rc != VINF_SUCCESS)
     {
         Assert(rc == VERR_CPUM_RAISE_GP_0);
+        Log4(("EM: Refuse WRMSR: rc=%d\n", rc));
         return VERR_EM_INTERPRETER;
     }
     LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx,
@@ -3128,6 +3507,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
     {
         //Log(("EMInterpretInstruction: wrong prefix!!\n"));
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedPrefix));
+        Log4(("EM: Refuse %u on REP/REPNE/LOCK prefix grounds\n", pDis->pCurInstr->uOpcode));
         return VERR_EM_INTERPRETER;
     }
 
@@ -3207,6 +3587,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
                     break;
             }
 # endif /* VBOX_WITH_STATISTICS */
+            Log4(("EM: Refuse %u on grounds of accessing %u bytes\n", pDis->pCurInstr->uOpcode, pDis->Param1.cb));
             return VERR_EM_INTERPRETER;
         }
     }
@@ -3221,7 +3602,8 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
         /*
          * Macros for generating the right case statements.
          */
-# define INTERPRET_CASE_EX_LOCK_PARAM3(opcode, Instr, InstrFn, pfnEmulate, pfnEmulateLock) \
+# ifndef VBOX_COMPARE_IEM_AND_EM
+#  define INTERPRET_CASE_EX_LOCK_PARAM3(opcode, Instr, InstrFn, pfnEmulate, pfnEmulateLock) \
         case opcode:\
             if (pDis->fPrefix & DISPREFIX_LOCK) \
                 rc = emInterpretLock##InstrFn(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize, pfnEmulateLock); \
@@ -3232,6 +3614,17 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
             else \
                 STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
             return rc
+# else  /* VBOX_COMPARE_IEM_AND_EM */
+#  define INTERPRET_CASE_EX_LOCK_PARAM3(opcode, Instr, InstrFn, pfnEmulate, pfnEmulateLock) \
+        case opcode:\
+            rc = emInterpret##InstrFn(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize, pfnEmulate); \
+            if (RT_SUCCESS(rc)) \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
+            else \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
+            return rc
+# endif /* VBOX_COMPARE_IEM_AND_EM*/
+
 #define INTERPRET_CASE_EX_PARAM3(opcode, Instr, InstrFn, pfnEmulate) \
         case opcode:\
             rc = emInterpret##InstrFn(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize, pfnEmulate); \
