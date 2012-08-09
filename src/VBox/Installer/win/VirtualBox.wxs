@@ -104,10 +104,6 @@
 
             <!-- Flag is set if the install will trigger an upgrade of an existing install -->
             <UpgradeVersion Property="PREVIOUSVERSIONSINSTALLED" Minimum="1.0.0.0" Maximum="$(var.Property_Version)" IncludeMaximum="yes" />
-            
-            <!-- Set a flag if we upgrade from versions <= 4.1.4 (later: 4.2.0) that might have removed
-                 (additional) host-only interfaces. -->
-            <UpgradeVersion Property="BUG_HOSTONLYIFSREMOVED" Minimum="1.0.0.0" Maximum="4.1.14.*" IncludeMaximum="yes" />
 
         </Upgrade>
 
@@ -795,8 +791,7 @@
             <LaunchConditions After="AppSearch" />
 
             <!-- First install the new version and then remove the old version. This is more efficient. -->
-            <InstallExecute Before="RemoveExistingProducts" />
-            <RemoveExistingProducts Before="InstallFinalize" />
+            <RemoveExistingProducts Before="InstallValidate" />
 
             <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
             <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
@@ -804,11 +799,11 @@
             <Custom Action="ca_UninstallTAPInstances" Before="InstallFiles" >1</Custom>
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <!-- Create host-only interfaces on first-time install. -->
-            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED OR BUG_HOSTONLYIFSREMOVED)]]></Custom>
-            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3 AND (NOT PREVIOUSVERSIONSINSTALLED OR BUG_HOSTONLYIFSREMOVED)]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>            
             <!-- Don't remove the host-only interfaces on update, only on uninstall. -->
             <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ><![CDATA[(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]></Custom>
-            <!-- First stop the existing host-only interfaces on updat ... -->
+            <!-- First stop the existing host-only interfaces on update ... -->
             <Custom Action="ca_StopHostOnlyInterfaces" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[UPGRADINGPRODUCTCODE]]></Custom>
             <!-- ... then do the actual driver update. -->
             <Custom Action="ca_UpdateHostOnlyInterfacesArgs" Before="ca_UpdateHostOnlyInterfaces" ><![CDATA[Installed AND UPGRADINGPRODUCTCODE]]></Custom>
