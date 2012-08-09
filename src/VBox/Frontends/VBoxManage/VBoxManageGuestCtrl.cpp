@@ -1924,10 +1924,11 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
         return ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
     ComPtr<IGuestDirEntry> dirEntry;
 #else
+    SafeArray<DirectoryOpenFlag_T> dirOpenFlags; /* No flags supported yet. */
     ComPtr<IGuestDirectory> pDirectory;
     HRESULT rc = pContext->pGuestSession->DirectoryOpen(Bstr(szCurDir).raw(), Bstr(pszFilter).raw(),
-                                                 Bstr().raw() /* No flags supported yet. */,
-                                                 pDirectory.asOutParam());
+                                                        ComSafeArrayAsInParam(dirOpenFlags),
+                                                        pDirectory.asOutParam());
     if (FAILED(rc))
         return ctrlPrintError(pContext->pGuestSession, COM_IIDOF(IGuestSession));
     ComPtr<IFsObjInfo> dirEntry;
