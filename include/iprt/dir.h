@@ -90,13 +90,13 @@ RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode);
  * the following string only the last bunch of X'es will be modified:
  *          "/tmp/myprog-XXX-XXX.tmp"
  *
- * The directory is created with mode 0700.
- *
  * @returns iprt status code.
  * @param   pszTemplate     The directory name template on input. The actual
  *                          directory name on success. Empty string on failure.
+ * @param   fMode           The mode to create the directory with.  Use 0700
+ *                          unless you have reason not to.
  */
-RTDECL(int) RTDirCreateTemp(char *pszTemplate);
+RTDECL(int) RTDirCreateTemp(char *pszTemplate, RTFMODE fMode);
 
 /**
  * Creates a new directory with a unique name by appending a number.

@@ -105,7 +105,7 @@ static void rtCreateTempFillTemplate(char *pszX, unsigned cXes)
 }
 
 
-RTDECL(int) RTDirCreateTemp(char *pszTemplate)
+RTDECL(int) RTDirCreateTemp(char *pszTemplate, RTFMODE fMode)
 {
     char       *pszX;
     unsigned    cXes;
@@ -122,7 +122,7 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate)
     while (i-- > 0)
     {
         rtCreateTempFillTemplate(pszX, cXes);
-        rc = RTDirCreate(pszTemplate, 0700, 0);
+        rc = RTDirCreate(pszTemplate, fMode, 0);
         if (RT_SUCCESS(rc))
             return rc;
         if (rc != VERR_ALREADY_EXISTS)
