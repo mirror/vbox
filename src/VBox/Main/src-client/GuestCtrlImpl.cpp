@@ -724,7 +724,7 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
         AssertReturn(CALLBACKDATAMAGIC_EXEC_STATUS == pCallbackData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
         if (   pCallbackData->u32Status == PROC_STS_ERROR
-            && pCallbackData->u32Flags  == VERR_TOO_MUCH_DATA)
+            && ((int)pCallbackData->u32Flags)  == VERR_TOO_MUCH_DATA)
         {
             LogFlowFunc(("Requested command with too much data, skipping dispatching ...\n"));
 
@@ -2701,7 +2701,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
     }
     else
     {
-        AssertPtr(!pSession.isNull());
+        Assert(!pSession.isNull());
         rc = pSession->queryInfo();
         if (RT_FAILURE(rc))
         {
