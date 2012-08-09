@@ -542,6 +542,12 @@ VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
 
 VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
+#ifdef VBOX_WITH_IEM
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+# endif
+#endif
     pVCpu->cpum.s.Guest.gdtr.cbGdt = cbLimit;
     pVCpu->cpum.s.Guest.gdtr.pGdt  = GCPtrBase;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GDTR;
@@ -550,6 +556,12 @@ VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 
 VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
+#ifdef VBOX_WITH_IEM
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+# endif
+#endif
     pVCpu->cpum.s.Guest.idtr.cbIdt = cbLimit;
     pVCpu->cpum.s.Guest.idtr.pIdt  = GCPtrBase;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_IDTR;
@@ -558,6 +570,12 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 
 VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
+#ifdef VBOX_WITH_IEM
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+# endif
+#endif
     pVCpu->cpum.s.Guest.tr.Sel  = tr;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_TR;
     return VINF_SUCCESS; /* formality, consider it void. */
@@ -565,6 +583,14 @@ VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 
 VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 {
+#ifdef VBOX_WITH_IEM
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (   (   ldtr != 0
+            || pVCpu->cpum.s.Guest.ldtr.Sel != 0)
+        && !HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+# endif
+#endif
     pVCpu->cpum.s.Guest.ldtr.Sel      = ldtr;
     /* The caller will set more hidden bits if it has them. */
     pVCpu->cpum.s.Guest.ldtr.ValidSel = 0;
@@ -2418,7 +2444,7 @@ VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
 }
 #endif
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+
 /**
  * Updates the EFLAGS while we're in raw-mode.
  *
@@ -2427,12 +2453,13 @@ VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
  */
 VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl)
 {
-    if (!pVCpu->cpum.s.fRawEntered)
-        pVCpu->cpum.s.Guest.eflags.u32 = fEfl;
-    else
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (pVCpu->cpum.s.fRawEntered)
         PATMRawSetEFlags(pVCpu->CTX_SUFF(pVM), CPUMCTX2CORE(&pVCpu->cpum.s.Guest), fEfl);
+    else
+#endif
+        pVCpu->cpum.s.Guest.eflags.u32 = fEfl;
 }
-#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
 
 /**
@@ -2443,14 +2470,11 @@ VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl)
  */
 VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu)
 {
-#ifdef IN_RING0
-    return pVCpu->cpum.s.Guest.eflags.u32;
-#else
-
-    if (!pVCpu->cpum.s.fRawEntered)
-        return pVCpu->cpum.s.Guest.eflags.u32;
-    return PATMRawGetEFlags(pVCpu->CTX_SUFF(pVM), CPUMCTX2CORE(&pVCpu->cpum.s.Guest));
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (pVCpu->cpum.s.fRawEntered)
+        return PATMRawGetEFlags(pVCpu->CTX_SUFF(pVM), CPUMCTX2CORE(&pVCpu->cpum.s.Guest));
 #endif
+    return pVCpu->cpum.s.Guest.eflags.u32;
 }
 
 
