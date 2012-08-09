@@ -82,10 +82,9 @@ public:
     virtual int minimumWidthHint() const;
     virtual int minimumHeightHint() const;
 
-public slots:
-
     /* API: Update stuff: */
-    virtual void sltUpdateAppearance() = 0;
+    void updateHoverAccessibility();
+    virtual void updateAppearance() = 0;
 
 protected:
 
@@ -121,6 +120,7 @@ protected:
     void setName(const QString &strName);
 
     /* API: Text stuff: */
+    UITextTable text() const;
     void setText(const UITextTable &text);
 
     /* API: Machine stuff: */
@@ -143,10 +143,6 @@ private slots:
     /* Handlers: Collapse/expand stuff: */
     void sltElementToggleStart();
     void sltElementToggleFinish(bool fToggled);
-
-    /* Handlers: Global event stuff: */
-    void sltMachineStateChange(QString strId);
-    void sltShouldWeUpdateAppearance(QString strId);
 
 private:
 
@@ -180,7 +176,6 @@ private:
 
     /* Helpers: Mouse stuff: */
     void updateButtonVisibility();
-    void updateHoverAccessibility();
     void updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent);
 
     /* Helper: Layout stuff: */

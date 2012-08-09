@@ -402,6 +402,9 @@ QPixmap UIGChooserItemMachine::toPixmap()
 
 bool UIGChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken where) const
 {
+    /* No drops while saving groups: */
+    if (model()->isGroupSavingInProgress())
+        return false;
     /* Get mime: */
     const QMimeData *pMimeData = pEvent->mimeData();
     /* If drag token is shown, its up to parent to decide: */
@@ -462,11 +465,12 @@ void UIGChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIG
                 /* Delete this item: */
                 delete this;
 
-                /* Update scene: */
+                /* Update model: */
                 pModel->updateGroupTree();
                 pModel->updateNavigation();
                 pModel->updateLayout();
                 pModel->setCurrentItem(pNewGroupItem);
+                pModel->saveGroupSettings();
                 break;
             }
             default:

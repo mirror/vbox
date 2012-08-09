@@ -860,6 +860,11 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
     }
 }
 
+void UISelectorWindow::sltGroupSavingUpdate()
+{
+    updateActionsAppearance();
+}
+
 void UISelectorWindow::retranslateUi()
 {
     /* Set window title: */
@@ -1345,6 +1350,8 @@ void UISelectorWindow::prepareConnections()
     /* Graphics VM chooser connections: */
     connect(m_pChooser, SIGNAL(sigSelectionChanged()), this, SLOT(sltCurrentVMItemChanged()), Qt::QueuedConnection);
     connect(m_pChooser, SIGNAL(sigSlidingStarted()), m_pDetails, SIGNAL(sigSlidingStarted()));
+    connect(m_pChooser, SIGNAL(sigGroupSavingStarted()), this, SLOT(sltGroupSavingUpdate()));
+    connect(m_pChooser, SIGNAL(sigGroupSavingFinished()), this, SLOT(sltGroupSavingUpdate()));
 
     /* Tool-bar connections: */
 #ifndef Q_WS_MAC
@@ -1607,9 +1614,11 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
     {
         case UIActionIndexSelector_Simple_Machine_SettingsDialog:
         {
-            /* Check that there is only one item, its accessible
+            /* Check that we are not saving groups,
+             * there is only one item, its accessible
              * and machine is not in 'stuck' state. */
-            return items.size() == 1 &&
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   items.size() == 1 &&
                    pItem->accessible() &&
                    pItem->machineState() != KMachineState_Stuck;
         }
@@ -1632,11 +1641,19 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexSelector_Simple_Group_RenameDialog:
         case UIActionIndexSelector_Simple_Group_RemoveDialog:
         {
+            /* Make sure we are not saving groups: */
+            if (m_pChooser->isGroupSavingInProgress())
+                return false;
+
             /* Group can be always removed/renamed: */
             return true;
         }
         case UIActionIndexSelector_Simple_Machine_RemoveDialog:
         {
+            /* Make sure we are not saving groups: */
+            if (m_pChooser->isGroupSavingInProgress())
+                return false;
+
             /* Check that all machines are NOT accessible
              * or session states of all machines are unlocked. */
             return isItemsInaccessible(items) || isItemsHasUnlockedSession(items);
@@ -1646,6 +1663,10 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         {
             /* Make sure all items are accessible: */
             if (!isItemsAccessible(items))
+                return false;
+
+            /* Make sure we are not saving groups: */
+            if (m_pChooser->isGroupSavingInProgress())
                 return false;
 
             /* If machine is in one of 'powered-off' states:*/
