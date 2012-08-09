@@ -22,6 +22,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 
+#include <iprt/message.h>
 #include <iprt/thread.h>
 #include <iprt/stream.h>
 #include <iprt/log.h>
@@ -50,11 +51,23 @@ static DECLCALLBACK(bool) autostartVMCmp(const AUTOSTARTVM &vm1, const AUTOSTART
     return vm1.uStartupDelay <= vm2.uStartupDelay;
 }
 
-DECLHIDDEN(RTEXITCODE) autostartStartMain(uint32_t uStartupDelay)
+DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
 {
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     int vrc = VINF_SUCCESS;
     std::list<AUTOSTARTVM> listVM;
+    uint32_t uStartupDelay = 0;
+
+    pCfgAst = autostartConfigAstGetByName(pCfgAst, "startup_delay");
+    if (pCfgAst)
+    {
+        if (pCfgAst->enmType == CFGASTNODETYPE_KEYVALUE)
+        {
+            vrc = RTStrToUInt32Full(pCfgAst->u.KeyValue.aszValue, 10, &uStartupDelay);
+            if (RT_FAILURE(vrc))
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "'startup_delay' must be an unsigned number");
+        }
+    }
 
     if (uStartupDelay)
     {

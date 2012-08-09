@@ -33,6 +33,62 @@
 *******************************************************************************/
 
 /**
+ * Token type.
+ */
+typedef enum CFGTOKENTYPE
+{
+    /** Invalid token type. */
+    CFGTOKENTYPE_INVALID = 0,
+    /** Identifier. */
+    CFGTOKENTYPE_ID,
+    /** Comma. */
+    CFGTOKENTYPE_COMMA,
+    /** Equal sign. */
+    CFGTOKENTYPE_EQUAL,
+    /** Open curly brackets. */
+    CFGTOKENTYPE_CURLY_OPEN,
+    /** Closing curly brackets. */
+    CFGTOKENTYPE_CURLY_CLOSING,
+    /** End of file. */
+    CFGTOKENTYPE_EOF,
+    /** 32bit hack. */
+    CFGTOKENTYPE_32BIT_HACK = 0x7fffffff
+} CFGTOKENTYPE;
+/** Pointer to a token type. */
+typedef CFGTOKENTYPE *PCFGTOKENTYPE;
+/** Pointer to a const token type. */
+typedef const CFGTOKENTYPE *PCCFGTOKENTYPE;
+
+/**
+ * A token.
+ */
+typedef struct CFGTOKEN
+{
+    /** Type of the token. */
+    CFGTOKENTYPE    enmType;
+    /** Line number of the token. */
+    unsigned        iLine;
+    /** Starting character of the token in the stream. */
+    unsigned        cchStart;
+    /** Type dependen token data. */
+    union
+    {
+        /** Data for the ID type. */
+        struct
+        {
+            /** Size of the id in characters, excluding the \0 terminator. */
+            size_t  cchToken;
+            /** Token data, variable size (given by cchToken member). */
+            char    achToken[1];
+        } Id;
+    } u;
+} CFGTOKEN;
+/** Pointer to a token. */
+typedef CFGTOKEN *PCFGTOKEN;
+/** Pointer to a const token. */
+typedef const CFGTOKEN *PCCFGTOKEN;
+
+/**
  * Tokenizer instance data for the config data.
  */
 typedef struct CFGTOKENIZER
@@ -47,11 +103,30 @@ typedef struct CFGTOKENIZER
     char      *pszLineCurr;
     /** Current line in the config file. */
     unsigned   iLine;
+    /** Current character of the line. */
+    unsigned   cchCurr;
+    /** Flag whether the end of the config stream is reached. */
+    bool       fEof;
+    /** Pointer to the next token in the stream (used to peek). */
+    PCFGTOKEN  pTokenNext;
 } CFGTOKENIZER, *PCFGTOKENIZER;
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+
+/**
+ * Free a config token.
+ *
+ * @returns nothing.
+ * @param   pCfgTokenizer    The config tokenizer.
+ * @param   pToken           The token to free.
+ */
+static void autostartConfigTokenFree(PCFGTOKENIZER pCfgTokenizer, PCFGTOKEN pToken)
+{
+    NOREF(pCfgTokenizer);
+    RTMemFree(pToken);
+}
 
 /**
  * Reads the next line from the config stream.
@@ -62,6 +137,9 @@ typedef struct CFGTOKENIZER
 static int autostartConfigTokenizerReadNextLine(PCFGTOKENIZER pCfgTokenizer)
 {
     int rc = VINF_SUCCESS;
+
+    if (pCfgTokenizer->fEof)
+        return VERR_EOF;
 
     do
     {
@@ -80,55 +158,148 @@ static int autostartConfigTokenizerReadNextLine(PCFGTOKENIZER pCfgTokenizer)
         }
     } while (rc == VERR_BUFFER_OVERFLOW);
 
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_EOF)
     {
         pCfgTokenizer->iLine++;
+        pCfgTokenizer->cchCurr = 1;
         pCfgTokenizer->pszLineCurr = pCfgTokenizer->pszLine;
+        if (rc == VERR_EOF)
+            pCfgTokenizer->fEof = true;
     }
 
     return rc;
 }
 
 /**
- * Creates the config tokenizer from the given filename.
+ * Get the next token from the config stream and create a token structure.
  *
  * @returns VBox status code.
- * @param   pszFilename    Config filename.
- * @param   ppCfgTokenizer Where to store the pointer to the config tokenizer on
- *                         success.
+ * @param   pCfgTokenizer    The config tokenizer data.
+ * @param   pCfgTokenUse     Allocated token structure to use or NULL to allocate
+ *                           a new one. It will bee freed if an error is encountered.
+ * @param   ppCfgToken       Where to store the pointer to the next token on success.
  */
-static int autostartConfigTokenizerCreate(const char *pszFilename, PCFGTOKENIZER *ppCfgTokenizer)
+static int autostartConfigTokenizerCreateToken(PCFGTOKENIZER pCfgTokenizer,
+                                               PCFGTOKEN pCfgTokenUse, PCFGTOKEN *ppCfgToken)
 {
+    const char *pszToken = NULL;
+    size_t cchToken = 1;
+    size_t cchAdvance = 0;
+    CFGTOKENTYPE enmType = CFGTOKENTYPE_INVALID;
     int rc = VINF_SUCCESS;
-    PCFGTOKENIZER pCfgTokenizer = (PCFGTOKENIZER)RTMemAllocZ(sizeof(CFGTOKENIZER));
 
-    if (pCfgTokenizer)
+    for (;;)
     {
-        pCfgTokenizer->iLine = 1;
-        pCfgTokenizer->cbLine = 128;
-        pCfgTokenizer->pszLine = (char *)RTMemAllocZ(pCfgTokenizer->cbLine);
-        if (pCfgTokenizer->pszLine)
+        pszToken = pCfgTokenizer->pszLineCurr;
+
+        /* Skip all spaces. */
+        while (RT_C_IS_BLANK(*pszToken))
         {
-            rc = RTStrmOpen(pszFilename, "r", &pCfgTokenizer->hStrmConfig);
-            if (RT_SUCCESS(rc))
-                rc = autostartConfigTokenizerReadNextLine(pCfgTokenizer);
+            pszToken++;
+            cchAdvance++;
+        }
+
+        /* Check if we have to read a new line. */
+        if (   *pszToken == '\0'
+            || *pszToken == '#')
+        {
+            rc = autostartConfigTokenizerReadNextLine(pCfgTokenizer);
+            if (rc == VERR_EOF)
+            {
+                enmType = CFGTOKENTYPE_EOF;
+                rc = VINF_SUCCESS;
+                break;
+            }
+            else if (RT_FAILURE(rc))
+                break;
+            /* start from the beginning. */
+            cchAdvance = 0;
+        }
+        else if (*pszToken == '=')
+        {
+            enmType = CFGTOKENTYPE_EQUAL;
+            break;
+        }
+        else if (*pszToken == ',')
+        {
+            enmType = CFGTOKENTYPE_COMMA;
+            break;
+        }
+        else if (*pszToken == '{')
+        {
+            enmType = CFGTOKENTYPE_CURLY_OPEN;
+            break;
+        }
+        else if (*pszToken == '}')
+        {
+            enmType = CFGTOKENTYPE_CURLY_CLOSING;
+            break;
         }
         else
-            rc = VERR_NO_MEMORY;
+        {
+            const char *pszTmp = pszToken;
+            cchToken = 0;
+            enmType = CFGTOKENTYPE_ID;
+
+            /* Get the complete token. */
+            while (   RT_C_IS_ALNUM(*pszTmp)
+                   || *pszTmp == '_'
+                   || *pszTmp == '.')
+            {
+                pszTmp++;
+                cchToken++;
+            }
+            break;
+        }
     }
-    else
-        rc = VERR_NO_MEMORY;
+
+    Assert(RT_FAILURE(rc) || enmType != CFGTOKENTYPE_INVALID);
 
     if (RT_SUCCESS(rc))
-        *ppCfgTokenizer = pCfgTokenizer;
-    else if (   RT_FAILURE(rc)
-             && pCfgTokenizer)
     {
-        if (pCfgTokenizer->pszLine)
-            RTMemFree(pCfgTokenizer->pszLine);
-        if (pCfgTokenizer->hStrmConfig)
-            RTStrmClose(pCfgTokenizer->hStrmConfig);
-        RTMemFree(pCfgTokenizer);
+        /* Free the given token if it is an ID or the current one is an ID token. */
+        if (   pCfgTokenUse
+            && (   pCfgTokenUse->enmType == CFGTOKENTYPE_ID
+                || enmType == CFGTOKENTYPE_ID))
+        {
+            autostartConfigTokenFree(pCfgTokenizer, pCfgTokenUse);
+            pCfgTokenUse = NULL;
+        }
+
+        if (!pCfgTokenUse)
+        {
+            size_t cbToken = sizeof(CFGTOKEN);
+            if (enmType == CFGTOKENTYPE_ID)
+                cbToken += (cchToken + 1) * sizeof(char);
+
+            pCfgTokenUse = (PCFGTOKEN)RTMemAllocZ(cbToken);
+            if (!pCfgTokenUse)
+                rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Copy token data. */
+            pCfgTokenUse->enmType  = enmType;
+            pCfgTokenUse->cchStart = pCfgTokenizer->cchCurr;
+            pCfgTokenUse->iLine    = pCfgTokenizer->iLine;
+            if (enmType == CFGTOKENTYPE_ID)
+            {
+                pCfgTokenUse->u.Id.cchToken = cchToken;
+                memcpy(pCfgTokenUse->u.Id.achToken, pszToken, cchToken);
+            }
+        }
+        else if (pCfgTokenUse)
+            autostartConfigTokenFree(pCfgTokenizer, pCfgTokenUse);
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Set new position in config stream. */
+            pCfgTokenizer->pszLineCurr += cchToken + cchAdvance;
+            pCfgTokenizer->cchCurr     += cchToken + cchAdvance;
+            *ppCfgToken                 = pCfgTokenUse;
+        }
     }
 
     return rc;
@@ -146,298 +317,393 @@ static void autostartConfigTokenizerDestroy(PCFGTOKENIZER pCfgTokenizer)
         RTMemFree(pCfgTokenizer->pszLine);
     if (pCfgTokenizer->hStrmConfig)
         RTStrmClose(pCfgTokenizer->hStrmConfig);
+    if (pCfgTokenizer->pTokenNext)
+        RTMemFree(pCfgTokenizer->pTokenNext);
     RTMemFree(pCfgTokenizer);
 }
 
 /**
- * Read the next token from the config file.
+ * Creates the config tokenizer from the given filename.
  *
  * @returns VBox status code.
- * @param   pCfgTokenizer    The config tokenizer data.
- * @param   ppszToken        Where to store the start to the next token on success.
- * @param   pcchToken        Where to store the number of characters of the next token
- *                           excluding the \0 terminator on success.
+ * @param   pszFilename    Config filename.
+ * @param   ppCfgTokenizer Where to store the pointer to the config tokenizer on
+ *                         success.
  */
-static int autostartConfigTokenizerReadNext(PCFGTOKENIZER pCfgTokenizer, const char **ppszToken,
-                                            size_t *pcchToken)
+static int autostartConfigTokenizerCreate(const char *pszFilename, PCFGTOKENIZER *ppCfgTokenizer)
 {
-    if (!pCfgTokenizer->pszLineCurr)
-        return VERR_EOF;
-
     int rc = VINF_SUCCESS;
+    PCFGTOKENIZER pCfgTokenizer = (PCFGTOKENIZER)RTMemAllocZ(sizeof(CFGTOKENIZER));
 
-    for (;;)
+    if (pCfgTokenizer)
     {
-        char *pszTok = pCfgTokenizer->pszLineCurr;
-
-        /* Skip all spaces. */
-        while (RT_C_IS_BLANK(*pszTok))
-            pszTok++;
-
-        /* Check if we have to read a new line. */
-        if (   *pszTok == '\0'
-            || *pszTok == '#')
+        pCfgTokenizer->iLine = 0;
+        pCfgTokenizer->cbLine = 128;
+        pCfgTokenizer->pszLine = (char *)RTMemAllocZ(pCfgTokenizer->cbLine);
+        if (pCfgTokenizer->pszLine)
         {
-            rc = autostartConfigTokenizerReadNextLine(pCfgTokenizer);
-            if (RT_FAILURE(rc))
-                break;
-            /* start from the beginning. */
-        }
-        else if (   *pszTok == '='
-                 || *pszTok == ',')
-        {
-            *ppszToken = pszTok;
-            *pcchToken = 1;
-            pCfgTokenizer->pszLineCurr = pszTok + 1;
-            break;
+            rc = RTStrmOpen(pszFilename, "r", &pCfgTokenizer->hStrmConfig);
+            if (RT_SUCCESS(rc))
+            {
+                rc = autostartConfigTokenizerReadNextLine(pCfgTokenizer);
+                if (RT_SUCCESS(rc))
+                    rc = autostartConfigTokenizerCreateToken(pCfgTokenizer, NULL,
+                                                             &pCfgTokenizer->pTokenNext);
+            }
         }
         else
-        {
-            /* Get the complete token. */
-            size_t cchToken = 1;
-            char *pszTmp = pszTok + 1;
-
-            while (   RT_C_IS_ALNUM(*pszTmp)
-                   || *pszTmp == '_')
-            {
-                pszTmp++;
-                cchToken++;
-            }
-
-            *ppszToken = pszTok;
-            *pcchToken = cchToken;
-            pCfgTokenizer->pszLineCurr = pszTmp;
-            break;
-        }
+            rc = VERR_NO_MEMORY;
     }
+    else
+        rc = VERR_NO_MEMORY;
+
+    if (RT_SUCCESS(rc))
+        *ppCfgTokenizer = pCfgTokenizer;
+    else if (   RT_FAILURE(rc)
+             && pCfgTokenizer)
+        autostartConfigTokenizerDestroy(pCfgTokenizer);
 
     return rc;
 }
 
-static int autostartConfigTokenizerCheckAndConsume(PCFGTOKENIZER pCfgTokenizer, const char *pszTokCheck)
+/**
+ * Return the next token from the config stream.
+ *
+ * @returns VBox status code.
+ * @param   pCfgTokenizer   The config tokenizer.
+ * @param   ppCfgToken      Where to store the next token.
+ */
+static int autostartConfigTokenizerGetNextToken(PCFGTOKENIZER pCfgTokenizer,
+                                                PCFGTOKEN *ppCfgToken)
+{
+    *ppCfgToken = pCfgTokenizer->pTokenNext;
+    return autostartConfigTokenizerCreateToken(pCfgTokenizer, NULL, &pCfgTokenizer->pTokenNext);
+}
+
+static const char *autostartConfigTokenToString(PCFGTOKEN pToken)
+{
+    switch (pToken->enmType)
+    {
+        case CFGTOKENTYPE_COMMA:
+            return ",";
+        case CFGTOKENTYPE_EQUAL:
+            return "=";
+        case CFGTOKENTYPE_CURLY_OPEN:
+            return "{";
+        case CFGTOKENTYPE_CURLY_CLOSING:
+            return "}";
+        case CFGTOKENTYPE_EOF:
+            return "<EOF>";
+        case CFGTOKENTYPE_ID:
+            return pToken->u.Id.achToken;
+        default:
+            AssertFailed();
+            return "<Invalid>";
+    }
+
+    AssertFailed();
+    return NULL;
+}
+
+static size_t autostartConfigTokenGetLength(PCFGTOKEN pToken)
+{
+    switch (pToken->enmType)
+    {
+        case CFGTOKENTYPE_COMMA:
+        case CFGTOKENTYPE_EQUAL:
+        case CFGTOKENTYPE_CURLY_OPEN:
+        case CFGTOKENTYPE_CURLY_CLOSING:
+            return 1;
+        case CFGTOKENTYPE_EOF:
+            return 0;
+        case CFGTOKENTYPE_ID:
+            return strlen(pToken->u.Id.achToken);
+        default:
+            AssertFailed();
+            return 0;
+    }
+
+    AssertFailed();
+    return 0;
+}
+
+static void autostartConfigTokenizerMsgUnexpectedToken(PCFGTOKEN pToken, const char *pszExpected)
+{
+    RTMsgError("Unexpected token '%s' at %d:%d.%d, expected '%s'",
+               autostartConfigTokenToString(pToken),
+               pToken->iLine, pToken->cchStart,
+               pToken->cchStart + autostartConfigTokenGetLength(pToken) - 1, pszExpected);
+}
+
+/**
+ * Verfies a token and consumes it.
+ *
+ * @returns VBox status code.
+ * @param   pCfgTokenizer    The config tokenizer.
+ * @param   pszTokenCheck    The token to check for.
+ */
+static int autostartConfigTokenizerCheckAndConsume(PCFGTOKENIZER pCfgTokenizer, CFGTOKENTYPE enmType)
 {
     int rc = VINF_SUCCESS;
-    const char *pszToken = NULL;
-    size_t cchToken = 0;
+    PCFGTOKEN pCfgToken = NULL;
 
-    rc = autostartConfigTokenizerReadNext(pCfgTokenizer, &pszToken, &cchToken);
+    rc = autostartConfigTokenizerGetNextToken(pCfgTokenizer, &pCfgToken);
     if (RT_SUCCESS(rc))
     {
-        if (RTStrNCmp(pszToken, pszTokCheck, cchToken))
+        if (pCfgToken->enmType != enmType)
         {
-            RTMsgError("Unexpected token at line %d, expected '%s'",
-                       pCfgTokenizer->iLine, pszTokCheck);
+            autostartConfigTokenizerMsgUnexpectedToken(pCfgToken, "@todo");
             rc = VERR_INVALID_PARAMETER;
         }
+
+        autostartConfigTokenFree(pCfgTokenizer, pCfgToken);
     }
+    return rc;
+}
+
+/**
+ * Consumes the next token in the stream.
+ *
+ * @returns VBox status code.
+ * @param   pCfgTokenizer    Tokenizer instance data.
+ */
+static int autostartConfigTokenizerConsume(PCFGTOKENIZER pCfgTokenizer)
+{
+    int rc = VINF_SUCCESS;
+    PCFGTOKEN pCfgToken = NULL;
+
+    rc = autostartConfigTokenizerGetNextToken(pCfgTokenizer, &pCfgToken);
+    if (RT_SUCCESS(rc))
+        autostartConfigTokenFree(pCfgTokenizer, pCfgToken);
+
     return rc;
 }
 
 /**
  * Returns the start of the next token without consuming it.
  *
- * @returns VBox status code.
+ * @returns The next token without consuming it.
  * @param   pCfgTokenizer    Tokenizer instance data.
- * @param   ppszTok          Where to store the start of the next token on success.
  */
-static int autostartConfigTokenizerPeek(PCFGTOKENIZER pCfgTokenizer, const char **ppszTok)
+DECLINLINE(PCFGTOKEN) autostartConfigTokenizerPeek(PCFGTOKENIZER pCfgTokenizer)
+{
+    return pCfgTokenizer->pTokenNext;
+}
+
+/**
+ * Check whether the next token is equal to the given one.
+ *
+ * @returns true if the next token in the stream is equal to the given one
+ *          false otherwise.
+ * @param   pszToken    The token to check for.
+ */
+DECLINLINE(bool) autostartConfigTokenizerPeekIsEqual(PCFGTOKENIZER pCfgTokenizer, CFGTOKENTYPE enmType)
+{
+    PCFGTOKEN pToken = autostartConfigTokenizerPeek(pCfgTokenizer);
+    return pToken->enmType == enmType;
+}
+
+/**
+ * Parse a key value node and returns the AST.
+ *
+ * @returns VBox status code.
+ * @param   pCfgTokenizer    The tokenizer for the config stream.
+ * @param   pszKey           The key for the pair.
+ * @param   ppCfgAst         Where to store the resulting AST on success.
+ */
+static int autostartConfigParseValue(PCFGTOKENIZER pCfgTokenizer, const char *pszKey,
+                                     PCFGAST *ppCfgAst)
 {
     int rc = VINF_SUCCESS;
+    PCFGTOKEN pToken = NULL;
 
-    for (;;)
+    rc = autostartConfigTokenizerGetNextToken(pCfgTokenizer, &pToken);
+    if (   RT_SUCCESS(rc)
+        && pToken->enmType == CFGTOKENTYPE_ID)
     {
-        char *pszTok = pCfgTokenizer->pszLineCurr;
+        PCFGAST pCfgAst = NULL;
 
-        /* Skip all spaces. */
-        while (RT_C_IS_BLANK(*pszTok))
-            pszTok++;
+        pCfgAst = (PCFGAST)RTMemAllocZ(RT_OFFSETOF(CFGAST, u.KeyValue.aszValue[pToken->u.Id.cchToken + 1]));
+        if (!pCfgAst)
+            return VERR_NO_MEMORY;
 
-        /* Check if we have to read a new line. */
-        if (   *pszTok == '\0'
-            || *pszTok == '#')
+        pCfgAst->enmType = CFGASTNODETYPE_KEYVALUE;
+        pCfgAst->pszKey  = RTStrDup(pszKey);
+        if (!pCfgAst->pszKey)
         {
-            rc = autostartConfigTokenizerReadNextLine(pCfgTokenizer);
-            if (RT_FAILURE(rc))
-                break;
-            /* start from the beginning. */
+            RTMemFree(pCfgAst);
+            return VERR_NO_MEMORY;
         }
-        else
-        {
-            *ppszTok = pszTok;
-            break;
-        }
+
+        memcpy(pCfgAst->u.KeyValue.aszValue, pToken->u.Id.achToken, pToken->u.Id.cchToken);
+        pCfgAst->u.KeyValue.cchValue = pToken->u.Id.cchToken;
+        *ppCfgAst = pCfgAst;
+    }
+    else
+    {
+        autostartConfigTokenizerMsgUnexpectedToken(pToken, "non reserved token");
+        rc = VERR_INVALID_PARAMETER;
     }
 
     return rc;
 }
 
 /**
- * Check whether the given token is a reserved token.
+ * Parses a compound node constructing the AST and returning it on success.
  *
- * @returns true if the token is reserved or false otherwise.
- * @param   pszToken    The token to check.
- * @param   cchToken    Size of the token in characters.
+ * @returns VBox status code.
+ * @param   pCfgTokenizer    The tokenizer for the config stream.
+ * @param   pszScopeId       The scope ID of the compound node.
+ * @param   ppCfgAst         Where to store the resulting AST on success.
  */
-static bool autostartConfigTokenizerIsReservedToken(const char *pszToken, size_t cchToken)
-{
-    if (   cchToken == 1
-        && (   *pszToken == ','
-            || *pszToken == '='))
-        return true;
-    else if (   cchToken > 1
-             && (   !RTStrNCmp(pszToken, "default_policy", cchToken)
-                 || !RTStrNCmp(pszToken, "exception_list", cchToken)))
-        return true;
-
-    return false;
-}
-
-DECLHIDDEN(int) autostartParseConfig(const char *pszFilename, bool *pfAllowed, uint32_t *puStartupDelay)
+static int autostartConfigParseCompoundNode(PCFGTOKENIZER pCfgTokenizer, const char *pszScopeId,
+                                            PCFGAST *ppCfgAst)
 {
     int rc = VINF_SUCCESS;
-    char *pszUserProcess = NULL;
-    bool fDefaultAllow = false;
-    bool fInExceptionList = false;
+    unsigned cAstNodesMax = 10;
+    unsigned idxAstNodeCur = 0;
+    PCFGAST pCfgAst = NULL;
 
-    AssertPtrReturn(pfAllowed, VERR_INVALID_POINTER);
-    AssertPtrReturn(puStartupDelay, VERR_INVALID_POINTER);
+    pCfgAst = (PCFGAST)RTMemAllocZ(RT_OFFSETOF(CFGAST, u.Compound.apAstNodes[cAstNodesMax]));
+    if (!pCfgAst)
+        return VERR_NO_MEMORY;
 
-    *pfAllowed = false;
-    *puStartupDelay = 0;
-
-    rc = RTProcQueryUsernameA(RTProcSelf(), &pszUserProcess);
-    if (RT_SUCCESS(rc))
+    pCfgAst->enmType = CFGASTNODETYPE_COMPOUND;
+    pCfgAst->pszKey  = RTStrDup(pszScopeId);
+    if (!pCfgAst->pszKey)
     {
-        PCFGTOKENIZER pCfgTokenizer = NULL;
-
-        rc = autostartConfigTokenizerCreate(pszFilename, &pCfgTokenizer);
-        if (RT_SUCCESS(rc))
-        {
-            do
-            {
-                size_t cchToken = 0;
-                const char *pszToken = NULL;
-
-                rc = autostartConfigTokenizerReadNext(pCfgTokenizer, &pszToken,
-                                                      &cchToken);
-                if (RT_SUCCESS(rc))
-                {
-                    if (!RTStrNCmp(pszToken, "default_policy", strlen("default_policy")))
-                    {
-                        rc = autostartConfigTokenizerCheckAndConsume(pCfgTokenizer, "=");
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = autostartConfigTokenizerReadNext(pCfgTokenizer, &pszToken,
-                                                                  &cchToken);
-                            if (RT_SUCCESS(rc))
-                            {
-                                if (!RTStrNCmp(pszToken, "allow", strlen("allow")))
-                                    fDefaultAllow = true;
-                                else if (!RTStrNCmp(pszToken, "deny", strlen("deny")))
-                                    fDefaultAllow = false;
-                                else
-                                {
-                                    RTMsgError("Unexpected token at line %d, expected either 'allow' or 'deny'",
-                                               pCfgTokenizer->iLine);
-                                    rc = VERR_INVALID_PARAMETER;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    else if (!RTStrNCmp(pszToken, "exception_list", strlen("exception_list")))
-                    {
-                        rc = autostartConfigTokenizerCheckAndConsume(pCfgTokenizer, "=");
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = autostartConfigTokenizerReadNext(pCfgTokenizer, &pszToken,
-                                                                  &cchToken);
-
-                            while (RT_SUCCESS(rc))
-                            {
-                                if (autostartConfigTokenizerIsReservedToken(pszToken, cchToken))
-                                {
-                                    RTMsgError("Unexpected token at line %d, expected a username",
-                                               pCfgTokenizer->iLine);
-                                    rc = VERR_INVALID_PARAMETER;
-                                    break;
-                                }
-                                else if (!RTStrNCmp(pszUserProcess, pszToken, strlen(pszUserProcess)))
-                                    fInExceptionList = true;
-
-                                /* Skip , */
-                                rc = autostartConfigTokenizerPeek(pCfgTokenizer, &pszToken);
-                                if (   RT_SUCCESS(rc)
-                                    && *pszToken == ',')
-                                {
-                                    rc = autostartConfigTokenizerCheckAndConsume(pCfgTokenizer, ",");
-                                    AssertRC(rc);
-                                }
-                                else if (RT_SUCCESS(rc))
-                                    break;
-
-                                rc = autostartConfigTokenizerReadNext(pCfgTokenizer, &pszToken,
-                                                                      &cchToken);
-                            }
-
-                            if (rc == VERR_EOF)
-                                rc = VINF_SUCCESS;
-                        }
-                    }
-                    else if (!autostartConfigTokenizerIsReservedToken(pszToken, cchToken))
-                    {
-                        /* Treat as 'username = <base delay in seconds>. */
-                        rc = autostartConfigTokenizerCheckAndConsume(pCfgTokenizer, "=");
-                        if (RT_SUCCESS(rc))
-                        {
-                            size_t cchDelay = 0;
-                            const char *pszDelay = NULL;
-
-                            rc = autostartConfigTokenizerReadNext(pCfgTokenizer, &pszDelay,
-                                                                  &cchDelay);
-                            if (RT_SUCCESS(rc))
-                            {
-                                uint32_t uDelay = 0;
-
-                                rc = RTStrToUInt32Ex(pszDelay, NULL, 10, &uDelay);
-                                if (rc == VWRN_TRAILING_SPACES)
-                                    rc = VINF_SUCCESS;
-
-                                if (   RT_SUCCESS(rc)
-                                    && !RTStrNCmp(pszUserProcess, pszToken, strlen(pszUserProcess)))
-                                        *puStartupDelay = uDelay;
-
-                                if (RT_FAILURE(rc))
-                                    RTMsgError("Unexpected token at line %d, expected a number",
-                                               pCfgTokenizer->iLine);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        RTMsgError("Unexpected token at line %d, expected a username",
-                                   pCfgTokenizer->iLine);
-                        rc = VERR_INVALID_PARAMETER;
-                    }
-                }
-                else if (rc == VERR_EOF)
-                {
-                    rc = VINF_SUCCESS;
-                    break;
-                }
-            } while (RT_SUCCESS(rc));
-
-            if (   RT_SUCCESS(rc)
-                && (   (fDefaultAllow && !fInExceptionList)
-                    || (!fDefaultAllow && fInExceptionList)))
-                *pfAllowed= true;
-
-            autostartConfigTokenizerDestroy(pCfgTokenizer);
-        }
-
-        RTStrFree(pszUserProcess);
+        RTMemFree(pCfgAst);
+        return VERR_NO_MEMORY;
     }
 
+    do
+    {
+        PCFGTOKEN pToken = NULL;
+        PCFGAST pAstNode = NULL;
+
+        if (   autostartConfigTokenizerPeekIsEqual(pCfgTokenizer, CFGTOKENTYPE_CURLY_CLOSING)
+            || autostartConfigTokenizerPeekIsEqual(pCfgTokenizer, CFGTOKENTYPE_EOF))
+            break;
+
+        rc = autostartConfigTokenizerGetNextToken(pCfgTokenizer, &pToken);
+        if (   RT_SUCCESS(rc)
+            && pToken->enmType == CFGTOKENTYPE_ID)
+        {
+            /* Next must be a = token in all cases at this place. */
+            rc = autostartConfigTokenizerCheckAndConsume(pCfgTokenizer, CFGTOKENTYPE_EQUAL);
+            if (RT_SUCCESS(rc))
+            {
+                /* Check whether this is a compound node. */
+                if (autostartConfigTokenizerPeekIsEqual(pCfgTokenizer, CFGTOKENTYPE_CURLY_OPEN))
+                {
+                    rc = autostartConfigTokenizerConsume(pCfgTokenizer);
+                    if (RT_SUCCESS(rc))
+                        rc = autostartConfigParseCompoundNode(pCfgTokenizer, pToken->u.Id.achToken,
+                                                              &pAstNode);
+
+                    if (RT_SUCCESS(rc))
+                        rc = autostartConfigTokenizerCheckAndConsume(pCfgTokenizer, CFGTOKENTYPE_CURLY_CLOSING);
+                }
+                else
+                    rc = autostartConfigParseValue(pCfgTokenizer, pToken->u.Id.achToken,
+                                                   &pAstNode);
+            }
+        }
+        else if (RT_SUCCESS(rc))
+        {
+            autostartConfigTokenizerMsgUnexpectedToken(pToken, "non reserved token");
+            rc = VERR_INVALID_PARAMETER;
+        }
+
+        /* Add to the current compound node. */
+        if (RT_SUCCESS(rc))
+        {
+            Assert(idxAstNodeCur < cAstNodesMax);
+            pCfgAst->u.Compound.apAstNodes[idxAstNodeCur] = pAstNode;
+            idxAstNodeCur++;
+            /** @todo: realloc if array is getting to small. */
+        }
+
+        autostartConfigTokenFree(pCfgTokenizer, pToken);
+
+    } while (RT_SUCCESS(rc));
+
+    if (RT_SUCCESS(rc))
+    {
+        pCfgAst->u.Compound.cAstNodes = idxAstNodeCur;
+        *ppCfgAst = pCfgAst;
+    }
+    else
+        autostartConfigAstDestroy(pCfgAst);
+
     return rc;
+}
+
+DECLHIDDEN(int) autostartParseConfig(const char *pszFilename, PCFGAST *ppCfgAst)
+{
+    PCFGTOKENIZER pCfgTokenizer = NULL;
+    int rc = VINF_SUCCESS;
+    PCFGAST pCfgAst = NULL;
+
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppCfgAst, VERR_INVALID_POINTER);
+
+    rc = autostartConfigTokenizerCreate(pszFilename, &pCfgTokenizer);
+    if (RT_SUCCESS(rc))
+    {
+        rc = autostartConfigParseCompoundNode(pCfgTokenizer, "", &pCfgAst);
+        if (RT_SUCCESS(rc))
+            rc = autostartConfigTokenizerCheckAndConsume(pCfgTokenizer, CFGTOKENTYPE_EOF);
+    }
+
+    if (pCfgTokenizer)
+        autostartConfigTokenizerDestroy(pCfgTokenizer);
+
+    if (RT_SUCCESS(rc))
+        *ppCfgAst = pCfgAst;
+
+    return rc;
+}
+
+DECLHIDDEN(void) autostartConfigAstDestroy(PCFGAST pCfgAst)
+{
+    AssertPtrReturnVoid(pCfgAst);
+
+    switch (pCfgAst->enmType)
+    {
+        case CFGASTNODETYPE_KEYVALUE:
+        {
+            RTMemFree(pCfgAst);
+            break;
+        }
+        case CFGASTNODETYPE_COMPOUND:
+        {
+            for (unsigned i = 0; i < pCfgAst->u.Compound.cAstNodes; i++)
+                autostartConfigAstDestroy(pCfgAst->u.Compound.apAstNodes[i]);
+            RTMemFree(pCfgAst);
+            break;
+        }
+        case CFGASTNODETYPE_LIST:
+        default:
+            AssertMsgFailed(("Invalid AST node type %d\n", pCfgAst->enmType));
+    }
+}
+
+DECLHIDDEN(PCFGAST) autostartConfigAstGetByName(PCFGAST pCfgAst, const char *pszName)
+{
+    if (!pCfgAst)
+        return NULL;
+
+    AssertReturn(pCfgAst->enmType == CFGASTNODETYPE_COMPOUND, NULL);
+
+    for (unsigned i = 0; i < pCfgAst->u.Compound.cAstNodes; i++)
+    {
+        PCFGAST pNode = pCfgAst->u.Compound.apAstNodes[i];
+
+        if (!RTStrCmp(pNode->pszKey, pszName))
+            return pNode;
+    }
+
+    return NULL;
 }
 
