@@ -1298,9 +1298,6 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
         {
             case 'p':
                 fMakeParentDirs = true;
-#ifndef RT_OS_WINDOWS
-                umask(0); /* RTDirCreate workaround */
-#endif
                 break;
 
             case 'm':
