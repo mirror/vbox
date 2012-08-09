@@ -107,8 +107,8 @@ static void rtCreateTempFillTemplate(char *pszX, unsigned cXes)
 
 RTDECL(int) RTDirCreateTemp(char *pszTemplate, RTFMODE fMode)
 {
-    char       *pszX;
-    unsigned    cXes;
+    char       *pszX = NULL;  /* Initialise to make gcc happy. */
+    unsigned    cXes = 0;
     int rc = rtCreateTempValidateTemplate(pszTemplate, &pszX, &cXes);
     if (RT_FAILURE(rc))
     {
