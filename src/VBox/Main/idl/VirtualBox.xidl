@@ -9552,23 +9552,46 @@
     
     <method name="directoryCreateTemp">
       <desc>
-        TODO
+        Create a temporary directory on the guest.
 
         <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+          The operation is not possible as requested on this particular
+          guest type.
+        </result>
+        <result name="E_INVALIDARG">
+          Invalid argument.  This includes an incorrectly formatted template,
+          or a non-absolute path.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          The temporary directory could not be created.  Possible reasons
+          include a non-existing path or an insecure path when the secure
+          option was requested.
         </result>
       </desc>
       <param name="templateName" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Template for the name of the directory to create.  This must
+          contain at least one 'X' character.  The first group of consecutive
+          'X' characters in the template will be replaced by a random
+          alphanumeric string to produce a unique name.</desc>
       </param>
       <param name="mode" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>The mode of the directory to create.  Use 0700 unless there are
+          reasons not to.  This parameter is ignored if "secure" is specified.
+          </desc>
       </param>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>The absolute path to create the temporary directory in.</desc>
       </param>
-      <param name="directory" type="IGuestDirectory" dir="return">
-        <desc>TODO</desc>
+      <param name="secure" type="boolean" dir="in">
+        <desc>Whether to fail if the directory can not be securely created.
+          Currently this means that another unprivileged user cannot
+          manipulate the path specified or remove the temporary directory
+          after it has been created.  Also causes the mode specified to be
+          ignored.  May not be supported on all guest types.</desc>
+      </param>
+      <param name="directory" type="wstring" dir="return">
+        <desc>On success this will contain the name of the directory created
+          with full path.</desc>
       </param>
     </method>
     
@@ -9750,23 +9773,48 @@
     
     <method name="fileCreateTemp">
       <desc>
-        TODO
+        Create a temporary file on the guest.
 
         <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+          The operation is not possible as requested on this particular
+          guest type.
+        </result>
+        <result name="E_INVALIDARG">
+          Invalid argument.  This includes an incorrectly formatted template,
+          or a non-absolute path.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          The temporary file could not be created.  Possible reasons include
+          a non-existing path or an insecure path when the secure
+          option was requested.
         </result>
       </desc>
       <param name="templateName" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Template for the name of the file to create.  This must contain
+          at least one 'X' character.  The first group of consecutive 'X'
+          characters in the template will be replaced by a random
+          alphanumeric string to produce a unique name.
+         </desc>
       </param>
       <param name="mode" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>The mode of the file to create.  Use 0700 unless there are
+          reasons not to.  This parameter is ignored if "secure" is specified.
+         </desc>
       </param>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>The absolute path to create the temporary file in.</desc>
+      </param>
+      <param name="secure" type="boolean" dir="in">
+        <desc>Whether to fail if the file can not be securely created.
+          Currently this means that another unprivileged user cannot
+          manipulate the path specified or remove the temporary file after
+          it has been created.  Also causes the mode specified to be ignored.
+          May not be supported on all guest types.</desc>
       </param>
       <param name="file" type="IGuestFile" dir="return">
-        <desc>Optional.</desc>
+        <desc>On success this will contain an open file object for the new
+          temporary file.
+        </desc>
       </param>
     </method>
     
