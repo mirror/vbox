@@ -9092,7 +9092,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             configDir.stripFilename();
             newConfigDir = configDir;
             if (   configDir.length() >= groupPlusName.length()
-                && configDir.substr(configDir.length() - groupPlusName.length(), groupPlusName.length()).equals(groupPlusName.c_str()))
+                && !RTPathCompare(configDir.substr(configDir.length() - groupPlusName.length(), groupPlusName.length()).c_str(), groupPlusName.c_str()))
             {
                 newConfigDir = newConfigDir.substr(0, configDir.length() - groupPlusName.length());
                 Utf8Str newConfigBaseDir(newConfigDir);
