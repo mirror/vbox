@@ -125,22 +125,22 @@ static void VBoxServiceToolboxShowUsageHeader(void)
 static void VBoxServiceToolboxShowUsage(void)
 {
     VBoxServiceToolboxShowUsageHeader();
-    RTPrintf("  VBoxService [--use-toolbox] vbox_<command> <general options> <parameters>\n\n"
+    RTPrintf("  VBoxService [--use-toolbox] vbox_<command> [<general options>] <parameters>\n\n"
              "General options:\n\n"
              "  --machinereadable          produce all output in machine-readable form\n"
              "  -V                         print version number and exit\n"
              "\n"
              "Commands:\n\n"
-             "  cat <general options>      <file>...\n"
-             "  ls <general options>       [--dereference|-L] [-l] [-R]\n"
+             "  cat    [<general options>] <file>...\n"
+             "  ls     [<general options>] [--dereference|-L] [-l] [-R]\n"
              "                             [--verbose|-v] [<file>...]\n"
-             "  rm <general options>       [-r|-R] <file>...\n"
-             "  mktemp <general options>   [--directory|-d] [--mode|-m <mode>]\n"
+             "  rm     [<general options>] [-r|-R] <file>...\n"
+             "  mktemp [<general options>] [--directory|-d] [--mode|-m <mode>]\n"
              "                             [--secure|-s] [--tmpdir|-t <path>]\n"
              "                             <template>\n"
-             "  mkdir <general options>    [--mode|-m <mode>] [--parents|-p]\n"
+             "  mkdir  [<general options>] [--mode|-m <mode>] [--parents|-p]\n"
              "                             [--verbose|-v] <directory>...\n"
-             "  stat <general options>     [--file-system|-f]\n"
+             "  stat   [<general options>] [--file-system|-f]\n"
              "                             [--dereference|-L] [--terse|-t]\n"
              "                             [--verbose|-v] <file>...\n"
              "\n");
@@ -323,7 +323,7 @@ static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
 
 /** @todo Document options! */
 static char g_paszCatHelp[] =
-    "  VBoxService [--use-toolbox] vbox_cat <general options> <file>...\n\n"
+    "  VBoxService [--use-toolbox] vbox_cat [<general options>] <file>...\n\n"
     "Concatenate files, or standard input, to standard output.\n"
     "\n";
 
@@ -786,7 +786,7 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
 
 /** @todo Document options! */
 static char g_paszLsHelp[] =
-    "  VBoxService [--use-toolbox] vbox_ls <general options> [option]...\n"
+    "  VBoxService [--use-toolbox] vbox_ls [<general options>] [option]...\n"
     "                                      [<file>...]\n\n"
     "List information about files (the current directory by default).\n\n"
     "Options:\n\n"
@@ -958,7 +958,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 
 
 static char g_paszRmHelp[] =
-    "  VBoxService [--use-toolbox] vbox_rm <general options> <file>...\n\n"
+    "  VBoxService [--use-toolbox] vbox_rm [<general options>] [<options>] <file>...\n\n"
     "Delete files and optionally directories if the '-R' or '-r' option is specified.\n"
     "If a file or directory cannot be deleted, an error message is printed if the\n"
     "'--machine-readable' option is not specified and the next file will be\n"
@@ -1132,7 +1132,8 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
 
 
 static char g_paszMkTempHelp[] =
-    "  VBoxService [--use-toolbox] vbox_mktemp <general options> <template>\n\n"
+    "  VBoxService [--use-toolbox] vbox_mktemp [<general options>] [<options>]\n"
+    "                                          <template>\n\n"
     "Create a temporary directory based on the template supplied. The first string\n"
     "of consecutive 'X' characters in the template will be replaced to form a unique\n"
     "name for the directory.  The template may not contain a path.  The default\n"
@@ -1374,7 +1375,7 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
 
 /** @todo Document options! */
 static char g_paszMkDirHelp[] =
-    "  VBoxService [--use-toolbox] vbox_mkdir <general options> [options]\n"
+    "  VBoxService [--use-toolbox] vbox_mkdir [<general options>] [<options>]\n"
     "                                         <directory>...\n\n"
     "Options:\n\n"
     "  [--mode|-m <mode>]         The file mode to set (chmod) on the created\n"
@@ -1478,7 +1479,8 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
 
 /** @todo Document options! */
 static char g_paszStatHelp[] =
-    "  VBoxService [--use-toolbox] vbox_stat <general options> [options] <file>...\n\n"
+    "  VBoxService [--use-toolbox] vbox_stat [<general options>] [<options>]\n"
+    "                                        <file>...\n\n"
     "Display file or file system status.\n\n"
     "Options:\n\n"
     "  [--file-system|-f]\n"
