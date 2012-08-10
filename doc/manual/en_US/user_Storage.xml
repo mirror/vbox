@@ -469,7 +469,7 @@
         the same, i.e. their state is <emphasis>not</emphasis> saved when a
         snapshot is taken, and not restored when a snapshot is restored. The
         difference only shows if you attach such disks to several VMs.
-        Shareable VMs may be attached to several VMs which may run
+        Shareable disks may be attached to several VMs which may run
         concurrently. This makes them suitable for use by cluster filesystems
         between VMs and similar applications which are explicitly prepared to
         access a disk concurrently. Only fixed size images can be used in this
