@@ -898,6 +898,7 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuGroup = new QMenu;
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_NewWizard));
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_AddDialog));
+    m_pContextMenuGroup->addSeparator();
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_RenameDialog));
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_RemoveDialog));
     m_pContextMenuGroup->addSeparator();
@@ -919,8 +920,8 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuMachine = new QMenu;
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_SettingsDialog));
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_CloneWizard));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroupDialog));
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_RemoveDialog));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroupDialog));
     m_pContextMenuMachine->addSeparator();
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_State_Machine_StartOrShow));
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Toggle_Machine_PauseAndResume));
