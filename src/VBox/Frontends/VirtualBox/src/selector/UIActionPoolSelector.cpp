@@ -629,13 +629,13 @@ protected:
 };
 
 
-class UIActionMenuMachineClose : public UIActionMenu
+class UIActionMenuClose : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    UIActionMenuMachineClose(QObject *pParent)
+    UIActionMenuClose(QObject *pParent)
         : UIActionMenu(pParent, ":/exit_16px.png")
     {
         retranslateUi();
@@ -758,12 +758,18 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Simple_Group_Rename] = new UIActionSimpleGroupRename(this);
     m_pool[UIActionIndexSelector_Simple_Group_Remove] = new UIActionSimpleGroupRemove(this);
     m_pool[UIActionIndexSelector_Simple_Group_Sort] = new UIActionSimpleGroupSort(this);
+    m_pool[UIActionIndexSelector_Simple_Group_Close_Save] = new UIActionSimpleSave(this);
+    m_pool[UIActionIndexSelector_Simple_Group_Close_ACPIShutdown] = new UIActionSimpleACPIShutdown(this);
+    m_pool[UIActionIndexSelector_Simple_Group_Close_PowerOff] = new UIActionSimplePowerOff(this);
 
     /* 'Machine' actions: */
     m_pool[UIActionIndexSelector_Simple_Machine_Settings] = new UIActionSimpleMachineSettings(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Clone] = new UIActionSimpleMachineClone(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Remove] = new UIActionSimpleMachineRemove(this);
     m_pool[UIActionIndexSelector_Simple_Machine_AddGroup] = new UIActionSimpleMachineAddGroup(this);
+    m_pool[UIActionIndexSelector_Simple_Machine_Close_Save] = new UIActionSimpleSave(this);
+    m_pool[UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown] = new UIActionSimpleACPIShutdown(this);
+    m_pool[UIActionIndexSelector_Simple_Machine_Close_PowerOff] = new UIActionSimplePowerOff(this);
 
     /* Common actions: */
     m_pool[UIActionIndexSelector_Simple_Common_New] = new UIActionSimpleCommonNew(this);
@@ -776,11 +782,6 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Simple_Common_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
     m_pool[UIActionIndexSelector_Simple_Common_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
     m_pool[UIActionIndexSelector_Simple_Common_SortParent] = new UIActionSimpleCommonSortParent(this);
-
-    /* 'Machine/Close' actions: */
-    m_pool[UIActionIndexSelector_Simple_Machine_Close_Save] = new UIActionSimpleSave(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown] = new UIActionSimpleACPIShutdown(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Close_PowerOff] = new UIActionSimplePowerOff(this);
 }
 
 void UIActionPoolSelector::createMenus()
@@ -793,12 +794,11 @@ void UIActionPoolSelector::createMenus()
 
     /* 'Group' menu: */
     m_pool[UIActionIndexSelector_Menu_Group] = new UIActionMenuGroup(this);
+    m_pool[UIActionIndexSelector_Menu_Group_Close] = new UIActionMenuClose(this);
 
     /* 'Machine' menu: */
     m_pool[UIActionIndexSelector_Menu_Machine] = new UIActionMenuMachine(this);
-
-    /* 'Machine/Close' menu: */
-    m_pool[UIActionIndexSelector_Menu_Machine_Close] = new UIActionMenuMachineClose(this);
+    m_pool[UIActionIndexSelector_Menu_Machine_Close] = new UIActionMenuClose(this);
 }
 
 #include "UIActionPoolSelector.moc"
