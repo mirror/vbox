@@ -71,7 +71,7 @@
 #define FSW_FSTYPE_TABLE_NAME(t) FSW_CONCAT3(fsw_,t,_table)
 
 /** Indicates that the block cache entry is empty. */
-#define FSW_INVALID_BNO (~0UL)
+#define FSW_INVALID_BNO (~0U)
 
 
 //

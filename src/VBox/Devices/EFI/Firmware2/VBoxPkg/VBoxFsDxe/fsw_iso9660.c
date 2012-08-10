@@ -87,7 +87,6 @@ static fsw_status_t fsw_iso9660_readlink(struct fsw_iso9660_volume *vol, struct 
 static fsw_status_t rr_find_sp(struct iso9660_dirrec *dirrec, struct fsw_rock_ridge_susp_sp **psp);
 static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_dirrec *dirrec, int off, struct fsw_string *str);
 static fsw_status_t rr_read_ce(struct fsw_iso9660_volume *vol, union fsw_rock_ridge_susp_ce *ce, fsw_u8 *begin);
-static void dump_dirrec(struct iso9660_dirrec *dirrec);
 //
 // Dispatch Table
 //
@@ -225,27 +224,10 @@ done:
 static fsw_status_t rr_read_ce(struct fsw_iso9660_volume *vol, union fsw_rock_ridge_susp_ce *ce, fsw_u8 *begin)
 {
     int rc;
-    int i;
-    fsw_u8 *r = begin + ISOINT(ce->X.offset);
-    int len = ISOINT(ce->X.len);
     rc = vol->g.host_table->read_block(&vol->g, ISOINT(ce->X.block_loc), begin);
     if (rc != FSW_SUCCESS)
         return rc;
-    for (i = 0; i < len; ++i)
-    {
-        DEBUG((DEBUG_INFO, "%d: (%d:%x)%c ", i, r[i], r[i], r[i]));
-    }
     return FSW_SUCCESS;
-}
-static void dump_dirrec(struct iso9660_dirrec *dirrec)
-{
-    int i;
-    fsw_u8 *r = (fsw_u8 *)dirrec + dirrec->file_identifier_length;
-    int len = dirrec->dirrec_length;
-    for (i = dirrec->file_identifier_length; i < len; ++i)
-    {
-        DEBUG((DEBUG_INFO, "%d: (%d:%x)%c ", i, r[i], r[i], r[i]));
-    }
 }
 /**
  * Mount an ISO9660 volume. Reads the superblock and constructs the
@@ -623,7 +605,6 @@ static fsw_status_t fsw_iso9660_read_dirrec(struct fsw_iso9660_volume *vol, stru
     if (buffer_size < remaining_size)
         return FSW_VOLUME_CORRUPTED;
 
-     dump_dirrec(dirrec);
      if (vol->fRockRidge)
      {
          sp_off = sizeof(*dirrec) + dirrec->file_identifier_length;
