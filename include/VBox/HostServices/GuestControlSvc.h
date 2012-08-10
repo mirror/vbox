@@ -76,7 +76,7 @@ enum eProcessStatus
 
 /**
  * Execution flags.
- * Note: Has to match Main's CreateProcessFlag_* flags!
+ * Note: Has to match Main's ProcessCreateFlag_* flags!
  */
 #define EXECUTEPROCESSFLAG_NONE             0x0
 #define EXECUTEPROCESSFLAG_WAIT_START       RT_BIT(0)
@@ -85,6 +85,7 @@ enum eProcessStatus
 #define EXECUTEPROCESSFLAG_NO_PROFILE       RT_BIT(3)
 #define EXECUTEPROCESSFLAG_WAIT_STDOUT      RT_BIT(4)
 #define EXECUTEPROCESSFLAG_WAIT_STDERR      RT_BIT(5)
+#define EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS RT_BIT(6)
 
 /**
  * Pipe handle IDs used internally for referencing to
