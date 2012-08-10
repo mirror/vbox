@@ -68,7 +68,6 @@
     </script>
     <background file="background.tif" alignment="topleft" scaling="none"/>
     <welcome file="Welcome.rtf" mime-type="text/rtf" uti="public.rtf"/>
-    <!-- <conclusion file="Conclusion.rtf" mime-type="text/rtf" uti="public.rtf"/> -- the default conclusion looks better -->
     <choices-outline>
         <line choice="choiceVBoxKEXTs"></line>
         <line choice="choiceVBoxStartup"></line>
