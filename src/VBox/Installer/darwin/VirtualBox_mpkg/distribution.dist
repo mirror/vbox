@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 #
-# Copyright (C) 2008-2010 Oracle Corporation
+# Copyright (C) 2008-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -14,9 +14,9 @@
 -->
 <installer-gui-script minSpecVersion="1.0">
     <title>VirtualBox_title</title>
-    <options customize="allow" allow-external-scripts="yes" rootVolumeOnly="true"/>
+    <options customize="allow" allow-external-scripts="yes" rootVolumeOnly="true" hostArchitectures="i386"/>
     <installation-check script="checkPrerequisite()"></installation-check>
-    <domains enable_anywhere="true"/>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
     <script>
     /* js:pkmk:start */
     function checkPrerequisite()
@@ -67,24 +67,24 @@
     /* js:pkmk:end */
     </script>
     <background file="background.tif" alignment="topleft" scaling="none"/>
-    <welcome file="Welcome.html"/>
-    <conclusion file="Conclusion.html"/>
+    <welcome file="Welcome.rtf" mime-type="text/rtf" uti="public.rtf"/>
+    <!-- <conclusion file="Conclusion.rtf" mime-type="text/rtf" uti="public.rtf"/> -- the default conclusion looks better -->
     <choices-outline>
         <line choice="choiceVBoxKEXTs"></line>
         <line choice="choiceVBoxStartup"></line>
         <line choice="choiceVBox"></line>
         <line choice="choiceVBoxCLI"></line>
     </choices-outline>
-    <choice id="choiceVBoxKEXTs" title="choiceVBoxKEXTs_title" description="choiceVBoxKEXTs_msg" start_selected="true" start_enabled="false" start_visible="true">
+    <choice id="choiceVBoxKEXTs"   title="choiceVBoxKEXTs_title"   description="choiceVBoxKEXTs_msg"   start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.vboxkexts"></pkg-ref>
     </choice>
     <choice id="choiceVBoxStartup" title="choiceVBoxStartup_title" description="choiceVBoxStartup_msg" start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.vboxstartupitems"></pkg-ref>
     </choice>
-    <choice id="choiceVBox" title="choiceVBox_title" description="choiceVBox_msg" start_selected="true" start_enabled="false" start_visible="true">
+    <choice id="choiceVBox"        title="choiceVBox_title"        description="choiceVBox_msg"        start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.virtualbox"></pkg-ref>
     </choice>
-    <choice id="choiceVBoxCLI" title="choiceVBoxCLI_title" description="choiceVBoxCLI_msg" start_selected="true" start_enabled="true" start_visible="true">
+    <choice id="choiceVBoxCLI"     title="choiceVBoxCLI_title"     description="choiceVBoxCLI_msg"     start_selected="true" start_enabled="true" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.virtualboxcli"></pkg-ref>
     </choice>
     <pkg-ref id="org.virtualbox.pkg.vboxkexts" auth="Root">file:./Contents/Packages/VBoxKEXTs.pkg</pkg-ref>
@@ -92,3 +92,4 @@
     <pkg-ref id="org.virtualbox.pkg.virtualbox" auth="Root">file:./Contents/Packages/VirtualBox.pkg</pkg-ref>
     <pkg-ref id="org.virtualbox.pkg.virtualboxcli" auth="Root">file:./Contents/Packages/VirtualBoxCLI.pkg</pkg-ref>
 </installer-gui-script>
+
