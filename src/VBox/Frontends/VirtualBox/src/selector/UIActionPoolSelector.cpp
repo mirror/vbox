@@ -812,11 +812,11 @@ protected:
     void retranslateUi()
     {
 #if defined(Q_WS_MAC)
-        setText(QApplication::translate("UIActionPool", "Create Alias on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Creates an Alias file to the VirtualBox Machine Definition file on your Desktop."));
+        setText(QApplication::translate("UIActionPool", "Create alias on desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Creates an alias file to the VirtualBox Machine Definition file on your desktop."));
 #else
-        setText(QApplication::translate("UIActionPool", "Create Shortcut on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
+        setText(QApplication::translate("UIActionPool", "Create shortcut on desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Creates an shortcut file to the VirtualBox Machine Definition file on your desktop."));
 #endif
         setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
     }
@@ -904,7 +904,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
+        setText(QApplication::translate("UIActionPool", "ACPI sh&utdown"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Power Button press event to the virtual machine"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::ACPIShutdownVMShortcut));
     }
@@ -926,7 +926,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Po&wer Off"));
+        setText(QApplication::translate("UIActionPool", "Po&wer off"));
         setStatusTip(QApplication::translate("UIActionPool", "Power off the virtual machine"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::PowerOffVMShortcut));
     }
