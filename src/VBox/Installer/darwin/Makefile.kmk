@@ -71,7 +71,7 @@ ifndef VBOX_PKGBUILD
 endif
 
 # The location of the productbuild program.
-ifndef VBOX_PKGBUILD
+ifndef VBOX_PRODUCTBUILD
  VBOX_PRODUCTBUILD := productbuild
 endif
 
@@ -208,7 +208,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 	    $$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
 		            $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_HTML) \
+			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF) \
 			$(VBOX_BRAND_$(f)_REGISTRATIONPANE_INFOPLIST_STRINGS) \
 			$(VBOX_BRAND_$(f)_REGISTRATIONPANE_LOCALIZABLE_STRINGS)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
@@ -226,6 +226,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj
 	@# Do keyword replacement in the package info and description files.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
@@ -246,6 +247,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.desc/Description.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Description.plist
+endif # !VBOX_USE_PACKAGEMAKER
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
@@ -254,11 +256,10 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
 		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj/Welcome.html \
-		$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Welcome.html
+		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj/Welcome.rtf \
+		$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Welcome.rtf
 	@# Copy the resources.
-#	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/ReadMe.html                      $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj/ReadMe.html
-	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Conclusion.html                  $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj/Conclusion.html
+	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Conclusion.rtf                   $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj/Conclusion.rtf
 	$(SED) \
 		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
 		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
@@ -275,9 +276,9 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 			-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 			-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 			-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-			--output $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Welcome.html \
-			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_HTML)$(NLTAB) \
-		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_VIRTUALBOX_CONCLUSION_HTML)                $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Conclusion.html$(NLTAB) \
+			--output $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Welcome.rtf \
+			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)$(NLTAB) \
+		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_VIRTUALBOX_CONCLUSION_RTF)                $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Conclusion.rtf$(NLTAB) \
 		$(SED) \
 			-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
 			-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
@@ -286,6 +287,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_LOCALIZABLE_STRINGS)$(NLTAB) \
 	)
 	@# Build the package.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(VBOX_PACKAGEMAKER) -build -v \
 		-p $@ \
 		-r $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res \
@@ -318,13 +320,22 @@ endif
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_REGISTRATIONPANE_LOCALIZABLE_STRINGS)                $@/Contents/Plugins/RegistrationPane.bundle/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Localizable.strings$(NLTAB) \
 	)
 endif
+else  # !VBOX_USE_PACKAGEMAKER
+	$(VBOX_PRODUCTBUILD) \
+		--distribution $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist \
+		--package-path $(VBOX_PATH_PACK_TMP)/Packages \
+		--resources $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res \
+		--identifier org.virtualbox.mpkg.virtualbox \
+		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+		$@ 
+endif # !VBOX_USE_PACKAGEMAKER
 	@# Cleanup.
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.root \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.desc \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res
 
-
+VirtualBox.mpkg: $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg
 
 #
 # The VirtualBox Kernel extensions.
