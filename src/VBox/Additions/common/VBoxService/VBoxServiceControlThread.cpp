@@ -1337,6 +1337,7 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
                     uProcFlags |= RTPROC_FLAGS_HIDDEN;
                 if (fFlags & EXECUTEPROCESSFLAG_NO_PROFILE)
                     uProcFlags |= RTPROC_FLAGS_NO_PROFILE;
+                /** @todo Implement EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS. */
             }
 
             /* If no user name specified run with current credentials (e.g.

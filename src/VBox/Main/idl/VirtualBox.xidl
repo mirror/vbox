@@ -9137,7 +9137,7 @@
   
   <enum
     name="ProcessCreateFlag"
-    uuid="91c8aba8-2e62-4fe5-b744-fcbd607971e2"
+    uuid="35192799-bfde-405d-9bea-c735ab9998e4"
     >
     <desc>
       Guest process execution flags.
@@ -9164,6 +9164,9 @@
     </const>
     <const name="WaitForStdErr"           value="32">
       <desc>The guest process waits until all data from stderr is read out.</desc>
+    </const>
+    <const name="ExpandArguments"         value="64">
+      <desc>Expands environment variables in process arguments.</desc>
     </const>
   </enum>
   
