@@ -1212,7 +1212,7 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
     int      cNonOptions  = 0;
     RTFMODE  fMode        = 0700;
     bool     fModeSet     = false;
-    char    *pszName;
+    char    *pszTemplate, *pszFilename;
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
               && RT_SUCCESS(rc))
@@ -1285,20 +1285,22 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
                             true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_SYNTAX;
     }
-    pszName = argv[argc - 1];
-    /* For now require an absolute path - perhaps later if we support a
-     * current directory concept we can change this. */
-    if (!RTPathStartsWithRoot(pszName))
+    pszTemplate = argv[argc - 1];
+    pszFilename = RTPathFilename(pszTemplate);
+    if (   RT_SUCCESS(rc)
+        && (!pszFilename || !strchr(pszFilename, 'X')))  /* IPRT asserts this. */
     {
-        toolboxMkTempReport("Template '%s' should contain an absolute path.\n",
-                            pszName, true, VERR_INVALID_PARAMETER,
+        toolboxMkTempReport("Template '%s' should contain a file name with at least one 'X' character.\n",
+                            pszTemplate, true, VERR_INVALID_PARAMETER,
                             fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
-    if (RT_SUCCESS(rc) && !strchr(pszName, 'X'))  /* IPRT asserts this. */
+    /* For now require an absolute path - perhaps later if we support a
+     * current directory concept we can change this. */
+    if (!RTPathStartsWithRoot(pszTemplate))
     {
-        toolboxMkTempReport("Template '%s' should contain at least one 'X' character.\n",
-                            pszName, true, VERR_INVALID_PARAMETER,
+        toolboxMkTempReport("Template '%s' should contain an absolute path.\n",
+                            pszTemplate, true, VERR_INVALID_PARAMETER,
                             fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
@@ -1308,24 +1310,28 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
         if (fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_DIRECTORY)
         {
             rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
-                 ? RTDirCreateTempSecure(pszName)
-                 : RTDirCreateTemp(pszName, fMode);
+                 ? RTDirCreateTempSecure(pszTemplate)
+                 : RTDirCreateTemp(pszTemplate, fMode);
             toolboxMkTempReport("Created temporary directory '%s'.\n",
-                                pszName, RT_SUCCESS(rc), rc, fOutputFlags, NULL);
+                                pszTemplate, RT_SUCCESS(rc), rc,
+                                fOutputFlags, NULL);
             /* RTDirCreateTemp[Secure] sets the template to "" on failure. */
             toolboxMkTempReport("The following error occurred while creating the temporary directory%s: %Rrc.\n",
-                                pszName, RT_FAILURE(rc), rc, fOutputFlags, NULL);
+                                pszTemplate, RT_FAILURE(rc), rc,
+                                fOutputFlags, NULL);
         }
         else
         {
             rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
-                 ? RTFileCreateTempSecure(pszName)
-                 : RTFileCreateTemp(pszName, fMode);
+                 ? RTFileCreateTempSecure(pszTemplate)
+                 : RTFileCreateTemp(pszTemplate, fMode);
             toolboxMkTempReport("Created temporary file '%s'.\n",
-                                pszName, RT_SUCCESS(rc), rc, fOutputFlags, NULL);
+                                pszTemplate, RT_SUCCESS(rc), rc,
+                                fOutputFlags, NULL);
             /* RTFileCreateTemp[Secure] sets the template to "" on failure. */
             toolboxMkTempReport("The following error occurred while creating the temporary file%s: %Rrc.\n",
-                                pszName, RT_FAILURE(rc), rc, fOutputFlags, NULL);
+                                pszTemplate, RT_FAILURE(rc), rc,
+                                fOutputFlags, NULL);
         }
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
             VBoxServiceToolboxPrintStrmTermination();
