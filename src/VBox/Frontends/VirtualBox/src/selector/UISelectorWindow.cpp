@@ -775,13 +775,21 @@ void UISelectorWindow::sltPerformCreateShortcutAction()
     }
 }
 
+void UISelectorWindow::sltGroupCloseMenuAboutToShow()
+{
+    /* Get selected items: */
+    QList<UIVMItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    m_pGroupACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Close_ACPIShutdown, items));
+}
 void UISelectorWindow::sltMachineCloseMenuAboutToShow()
 {
     /* Get selected items: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
-    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
+    m_pMachineACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
 }
 
 void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefreshSnapshots, bool)
@@ -1070,7 +1078,12 @@ void UISelectorWindow::prepareMenuBar()
     prepareMenuFile(m_pFileMenu);
     menuBar()->addMenu(m_pFileMenu);
 
-    /* Prepare 'Close' menu: */
+    /* Prepare 'Group' / 'Close' menu: */
+    m_pGroupCloseMenuAction = gActionPool->action(UIActionIndexSelector_Menu_Group_Close);
+    m_pGroupCloseMenu = m_pGroupCloseMenuAction->menu();
+    prepareMenuGroupClose(m_pGroupCloseMenu);
+
+    /* Prepare 'Machine' / 'Close' menu: */
     m_pMachineCloseMenuAction = gActionPool->action(UIActionIndexSelector_Menu_Machine_Close);
     m_pMachineCloseMenu = m_pMachineCloseMenuAction->menu();
     prepareMenuMachineClose(m_pMachineCloseMenu);
@@ -1174,7 +1187,7 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     pMenu->addAction(m_pAction_Common_StartOrShow);
     pMenu->addAction(m_pAction_Common_PauseAndResume);
     pMenu->addAction(m_pAction_Common_Reset);
-    pMenu->addMenu(m_pMachineCloseMenu);
+    pMenu->addMenu(m_pGroupCloseMenu);
     pMenu->addSeparator();
     pMenu->addAction(m_pAction_Common_Discard);
     pMenu->addAction(m_pAction_Common_LogDialog);
@@ -1227,19 +1240,34 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
                      << m_pAction_Machine_AddGroup;
 }
 
+void UISelectorWindow::prepareMenuGroupClose(QMenu *pMenu)
+{
+    /* Do not touch if filled already: */
+    if (!pMenu->isEmpty())
+        return;
+
+    /* Populate 'Group' / 'Close' menu: */
+    m_pGroupSaveAction = gActionPool->action(UIActionIndexSelector_Simple_Group_Close_Save);
+    pMenu->addAction(m_pGroupSaveAction);
+    m_pGroupACPIShutdownAction = gActionPool->action(UIActionIndexSelector_Simple_Group_Close_ACPIShutdown);
+    pMenu->addAction(m_pGroupACPIShutdownAction);
+    m_pGroupPowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Group_Close_PowerOff);
+    pMenu->addAction(m_pGroupPowerOffAction);
+}
+
 void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
 {
     /* Do not touch if filled already: */
     if (!pMenu->isEmpty())
         return;
 
-    /* Populate Machine/Close-menu: */
-    m_pSaveAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_Save);
-    pMenu->addAction(m_pSaveAction);
-    m_pACPIShutdownAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown);
-    pMenu->addAction(m_pACPIShutdownAction);
-    m_pPowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff);
-    pMenu->addAction(m_pPowerOffAction);
+    /* Populate 'Machine' / 'Close' menu: */
+    m_pMachineSaveAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_Save);
+    pMenu->addAction(m_pMachineSaveAction);
+    m_pMachineACPIShutdownAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown);
+    pMenu->addAction(m_pMachineACPIShutdownAction);
+    m_pMachinePowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff);
+    pMenu->addAction(m_pMachinePowerOffAction);
 }
 
 void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
@@ -1374,11 +1402,17 @@ void UISelectorWindow::prepareConnections()
     connect(m_pAction_Machine_Settings, SIGNAL(triggered()), this, SLOT(sltShowMachineSettingsDialog()));
     connect(m_pAction_Machine_Clone, SIGNAL(triggered()), this, SLOT(sltShowCloneMachineWizard()));
 
+    /* 'Group/Close' menu connections: */
+    connect(m_pGroupCloseMenu, SIGNAL(aboutToShow()), this, SLOT(sltGroupCloseMenuAboutToShow()));
+    connect(m_pGroupSaveAction, SIGNAL(triggered()), this, SLOT(sltPerformSaveAction()));
+    connect(m_pGroupACPIShutdownAction, SIGNAL(triggered()), this, SLOT(sltPerformACPIShutdownAction()));
+    connect(m_pGroupPowerOffAction, SIGNAL(triggered()), this, SLOT(sltPerformPowerOffAction()));
+
     /* 'Machine/Close' menu connections: */
     connect(m_pMachineCloseMenu, SIGNAL(aboutToShow()), this, SLOT(sltMachineCloseMenuAboutToShow()));
-    connect(m_pSaveAction, SIGNAL(triggered()), this, SLOT(sltPerformSaveAction()));
-    connect(m_pACPIShutdownAction, SIGNAL(triggered()), this, SLOT(sltPerformACPIShutdownAction()));
-    connect(m_pPowerOffAction, SIGNAL(triggered()), this, SLOT(sltPerformPowerOffAction()));
+    connect(m_pMachineSaveAction, SIGNAL(triggered()), this, SLOT(sltPerformSaveAction()));
+    connect(m_pMachineACPIShutdownAction, SIGNAL(triggered()), this, SLOT(sltPerformACPIShutdownAction()));
+    connect(m_pMachinePowerOffAction, SIGNAL(triggered()), this, SLOT(sltPerformPowerOffAction()));
 
     /* 'Help' menu connections: */
     connect(m_pHelpAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
@@ -1574,11 +1608,17 @@ void UISelectorWindow::updateActionsAppearance()
     m_pAction_Common_CreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_CreateShortcut, items));
     m_pAction_Common_SortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_SortParent, items));
 
+    /* Enable/disable group-close actions: */
+    m_pGroupCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Group_Close, items));
+    m_pGroupSaveAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Close_Save, items));
+    m_pGroupACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Close_ACPIShutdown, items));
+    m_pGroupPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Close_PowerOff, items));
+
     /* Enable/disable machine-close actions: */
     m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items));
-    m_pSaveAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_Save, items));
-    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
-    m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items));
+    m_pMachineSaveAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_Save, items));
+    m_pMachineACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
+    m_pMachinePowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items));
 
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
@@ -1687,19 +1727,23 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         {
             return isAtLeastOneItemSupportsShortcuts(items);
         }
+        case UIActionIndexSelector_Menu_Group_Close:
         case UIActionIndexSelector_Menu_Machine_Close:
         {
             return isAtLeastOneItemStarted(items);
         }
+        case UIActionIndexSelector_Simple_Group_Close_Save:
         case UIActionIndexSelector_Simple_Machine_Close_Save:
         {
             return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items);
         }
+        case UIActionIndexSelector_Simple_Group_Close_ACPIShutdown:
         case UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown:
         {
             return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items) &&
                    isAtLeastOneItemAbleToShutdown(items);
         }
+        case UIActionIndexSelector_Simple_Group_Close_PowerOff:
         case UIActionIndexSelector_Simple_Machine_Close_PowerOff:
         {
             return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items);

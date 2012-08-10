@@ -38,6 +38,10 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_Group_Rename,
     UIActionIndexSelector_Simple_Group_Remove,
     UIActionIndexSelector_Simple_Group_Sort,
+    UIActionIndexSelector_Menu_Group_Close,
+    UIActionIndexSelector_Simple_Group_Close_Save,
+    UIActionIndexSelector_Simple_Group_Close_ACPIShutdown,
+    UIActionIndexSelector_Simple_Group_Close_PowerOff,
 
     /* 'Machine' menu actions: */
     UIActionIndexSelector_Menu_Machine,
@@ -45,6 +49,10 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_Machine_Clone,
     UIActionIndexSelector_Simple_Machine_Remove,
     UIActionIndexSelector_Simple_Machine_AddGroup,
+    UIActionIndexSelector_Menu_Machine_Close,
+    UIActionIndexSelector_Simple_Machine_Close_Save,
+    UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown,
+    UIActionIndexSelector_Simple_Machine_Close_PowerOff,
 
     /* Common 'Group' / 'Machine' menu actions: */
     UIActionIndexSelector_Simple_Common_New,
@@ -57,12 +65,6 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_Common_ShowInFileManager,
     UIActionIndexSelector_Simple_Common_CreateShortcut,
     UIActionIndexSelector_Simple_Common_SortParent,
-
-    /* 'Machine/Close' menu actions: */
-    UIActionIndexSelector_Menu_Machine_Close,
-    UIActionIndexSelector_Simple_Machine_Close_Save,
-    UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown,
-    UIActionIndexSelector_Simple_Machine_Close_PowerOff,
 
     /* Maximum index: */
     UIActionIndexSelector_Max

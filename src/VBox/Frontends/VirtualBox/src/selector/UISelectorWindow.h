@@ -99,6 +99,7 @@ private slots:
     void sltShowLogDialog();
     void sltShowMachineInFileManager();
     void sltPerformCreateShortcutAction();
+    void sltGroupCloseMenuAboutToShow();
     void sltMachineCloseMenuAboutToShow();
 
     /* VM list slots: */
@@ -129,6 +130,7 @@ private:
     void prepareMachineActions();
     void prepareMenuGroup(QMenu *pMenu);
     void prepareMenuMachine(QMenu *pMenu);
+    void prepareMenuGroupClose(QMenu *pMenu);
     void prepareMenuMachineClose(QMenu *pMenu);
     void prepareMenuHelp(QMenu *pMenu);
     void prepareStatusBar();
@@ -211,6 +213,12 @@ private:
     UIAction *m_pAction_Group_Rename;
     UIAction *m_pAction_Group_Remove;
     UIAction *m_pAction_Group_Sort;
+    /* 'Group / Close' menu action pointers: */
+    UIAction *m_pGroupCloseMenuAction;
+    QMenu *m_pGroupCloseMenu;
+    UIAction *m_pGroupSaveAction;
+    UIAction *m_pGroupACPIShutdownAction;
+    UIAction *m_pGroupPowerOffAction;
 
     /* 'Machine' menu action pointers: */
     QList<UIAction*> m_machineActions;
@@ -220,13 +228,12 @@ private:
     UIAction *m_pAction_Machine_Clone;
     UIAction *m_pAction_Machine_Remove;
     UIAction *m_pAction_Machine_AddGroup;
-
     /* 'Machine / Close' menu action pointers: */
     UIAction *m_pMachineCloseMenuAction;
     QMenu *m_pMachineCloseMenu;
-    UIAction *m_pSaveAction;
-    UIAction *m_pACPIShutdownAction;
-    UIAction *m_pPowerOffAction;
+    UIAction *m_pMachineSaveAction;
+    UIAction *m_pMachineACPIShutdownAction;
+    UIAction *m_pMachinePowerOffAction;
 
     /* 'Help' menu action pointers: */
     QMenu *m_pHelpMenu;
