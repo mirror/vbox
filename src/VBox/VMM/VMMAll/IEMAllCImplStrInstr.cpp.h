@@ -653,11 +653,20 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     ADDR_TYPE       uDstAddrReg = pCtx->ADDR_rDI;
 
     /*
+     * Be careful with handle bypassing.
+     */
+    if (pIemCpu->fBypassHandlers)
+    {
+        Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
+        return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    }
+
+    /*
      * If we're reading back what we write, we have to let the verfication code
      * to prevent a false positive.
      * Note! This doesn't take aliasing or wrapping into account - lazy bird.
      */
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     if (   IEM_VERIFICATION_ENABLED(pIemCpu)
         && (cbIncr > 0
             ?    uSrcAddrReg <= uDstAddrReg
@@ -801,6 +810,16 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
     int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
     OP_TYPE const   uValue      = pCtx->OP_rAX;
     ADDR_TYPE       uAddrReg    = pCtx->ADDR_rDI;
+
+    /*
+     * Be careful with handle bypassing.
+     */
+    /** @todo Permit doing a page if correctly aligned. */
+    if (pIemCpu->fBypassHandlers)
+    {
+        Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
+        return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    }
 
     /*
      * The loop.
@@ -1017,6 +1036,15 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
     VBOXSTRICTRC    rcStrict;
 
     /*
+     * Be careful with handle bypassing.
+     */
+    if (pIemCpu->fBypassHandlers)
+    {
+        Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
+        return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    }
+
+    /*
      * ASSUMES the #GP for I/O permission is taken first, then any #GP for
      * segmentation and finally any #PF due to virtual address translation.
      * ASSUMES nothing is read from the I/O port before traps are taken.
@@ -1086,6 +1114,15 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 
     int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
     ADDR_TYPE       uAddrReg    = pCtx->ADDR_rDI;
+
+    /*
+     * Be careful with handle bypassing.
+     */
+    if (pIemCpu->fBypassHandlers)
+    {
+        Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
+        return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    }
 
     /*
      * The loop.
