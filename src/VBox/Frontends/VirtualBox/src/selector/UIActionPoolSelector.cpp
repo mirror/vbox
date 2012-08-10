@@ -194,7 +194,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "&New machine..."));
+        setText(QApplication::translate("UIActionPool", "&New Machine..."));
         setStatusTip(QApplication::translate("UIActionPool", "Create a new virtual machine"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::NewVMShortcut));
         setToolTip(text().remove('&').remove('.') +
@@ -218,7 +218,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "&Add machine..."));
+        setText(QApplication::translate("UIActionPool", "&Add Machine..."));
         setStatusTip(QApplication::translate("UIActionPool", "Add an existing virtual machine"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::AddVMShortcut));
     }
@@ -240,7 +240,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Rena&me group..."));
+        setText(QApplication::translate("UIActionPool", "Rena&me Group..."));
         setStatusTip(QApplication::translate("UIActionPool", "Rename the selected virtual machine group"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::RenameVMGroupShortcut));
     }
@@ -264,7 +264,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "&Break group..."));
+        setText(QApplication::translate("UIActionPool", "&Break Group..."));
         setStatusTip(QApplication::translate("UIActionPool", "Break the selected virtual machine group"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::BreakVMGroupShortcut));
     }
@@ -431,10 +431,10 @@ protected:
     void retranslateUi()
     {
 #if defined(Q_WS_MAC)
-        setText(QApplication::translate("UIActionPool", "Create alias on desktop"));
+        setText(QApplication::translate("UIActionPool", "Create Alias on Desktop"));
         setStatusTip(QApplication::translate("UIActionPool", "Creates an alias file to the VirtualBox Machine Definition file on your desktop."));
 #else
-        setText(QApplication::translate("UIActionPool", "Create shortcut on desktop"));
+        setText(QApplication::translate("UIActionPool", "Create Shortcut on Desktop"));
         setStatusTip(QApplication::translate("UIActionPool", "Creates an shortcut file to the VirtualBox Machine Definition file on your desktop."));
 #endif
         setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
@@ -457,7 +457,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Sort group"));
+        setText(QApplication::translate("UIActionPool", "Sort Group"));
         setStatusTip(QApplication::translate("UIActionPool", "Sort the items of the selected group alphabetically"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::SortGroup));
     }
@@ -546,7 +546,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "&Add group..."));
+        setText(QApplication::translate("UIActionPool", "&Add Group..."));
         setStatusTip(QApplication::translate("UIActionPool", "Add a new group based on the items selected"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::AddVMGroupShortcut));
     }
@@ -812,10 +812,10 @@ protected:
     void retranslateUi()
     {
 #if defined(Q_WS_MAC)
-        setText(QApplication::translate("UIActionPool", "Create alias on desktop"));
+        setText(QApplication::translate("UIActionPool", "Create Alias on Desktop"));
         setStatusTip(QApplication::translate("UIActionPool", "Creates an alias file to the VirtualBox Machine Definition file on your desktop."));
 #else
-        setText(QApplication::translate("UIActionPool", "Create shortcut on desktop"));
+        setText(QApplication::translate("UIActionPool", "Create Shortcut on Desktop"));
         setStatusTip(QApplication::translate("UIActionPool", "Creates an shortcut file to the VirtualBox Machine Definition file on your desktop."));
 #endif
         setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
@@ -838,7 +838,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Sort parent group"));
+        setText(QApplication::translate("UIActionPool", "Sort Parent Group"));
         setStatusTip(QApplication::translate("UIActionPool", "Sort the parent group of the first selected item alphabetically"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::SortParentGroup));
     }
@@ -882,7 +882,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Save state"));
+        setText(QApplication::translate("UIActionPool", "Save State"));
         setStatusTip(QApplication::translate("UIActionPool", "Save the machine state of the selected virtual machine"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::SaveVMShortcut));
     }
@@ -904,7 +904,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "ACPI sh&utdown"));
+        setText(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Power Button press event to the virtual machine"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::ACPIShutdownVMShortcut));
     }
@@ -926,7 +926,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Po&wer off"));
+        setText(QApplication::translate("UIActionPool", "Po&wer Off"));
         setStatusTip(QApplication::translate("UIActionPool", "Power off the virtual machine"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::PowerOffVMShortcut));
     }

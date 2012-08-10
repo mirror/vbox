@@ -116,7 +116,7 @@ void UIGDetailsUpdateThreadGeneral::run()
             m_text << UITextTableLine(QApplication::translate("UIGDetails", "Name", "details (general)"), machine().GetName());
 
             /* Operating system type: */
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Operating system", "details (general)"),
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Operating System", "details (general)"),
                                        vboxGlobal().vmGuestOSTypeDescription(machine().GetOSTypeId()));
 
             /* Groups: */
@@ -125,7 +125,7 @@ void UIGDetailsUpdateThreadGeneral::run()
                 m_text << UITextTableLine(QApplication::translate("UIGDetails", "Groups", "details (general)"), groups.join(", "));
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -256,7 +256,7 @@ void UIGDetailsUpdateThreadSystem::run()
         if (machine().GetAccessible())
         {
             /* Base memory: */
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Base memory", "details (system)"),
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Base Memory", "details (system)"),
                                       QApplication::translate("UIGDetails", "%1 MB", "details").arg(machine().GetMemorySize()));
 
             /* CPU count: */
@@ -268,7 +268,7 @@ void UIGDetailsUpdateThreadSystem::run()
             /* CPU execution cap: */
             int iCPUExecCap = machine().GetCPUExecutionCap();
             if (iCPUExecCap < 100)
-                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Execution cap", "details (system)"),
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Execution Cap", "details (system)"),
                                           QApplication::translate("UIGDetails", "%1%", "details").arg(iCPUExecCap));
 
             /* Boot-order: */
@@ -282,7 +282,7 @@ void UIGDetailsUpdateThreadSystem::run()
             }
             if (bootOrder.isEmpty())
                 bootOrder << gpConverter->toString(KDeviceType_Null);
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Boot order", "details (system)"), bootOrder.join(", "));
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Boot Order", "details (system)"), bootOrder.join(", "));
 
             /* Acceleration: */
             QStringList acceleration;
@@ -294,7 +294,7 @@ void UIGDetailsUpdateThreadSystem::run()
                     acceleration << QApplication::translate("UIGDetails", "VT-x/AMD-V", "details (system)");
                     /* Nested Paging (only when hw virt is enabled): */
                     if (machine().GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                        acceleration << QApplication::translate("UIGDetails", "Nested paging", "details (system)");
+                        acceleration << QApplication::translate("UIGDetails", "Nested Paging", "details (system)");
                 }
             }
             if (machine().GetCPUProperty(KCPUPropertyType_PAE))
@@ -304,7 +304,7 @@ void UIGDetailsUpdateThreadSystem::run()
                                           acceleration.join(", "));
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"),
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"),
                                       QString());
 
         /* Send information into GUI thread: */
@@ -346,7 +346,7 @@ void UIGDetailsUpdateThreadDisplay::run()
         if (machine().GetAccessible())
         {
             /* Video memory: */
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Video memory", "details (display)"),
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Video Memory", "details (display)"),
                                       QApplication::translate("UIGDetails", "%1 MB", "details").arg(machine().GetVRAMSize()));
 
             /* Screen count: */
@@ -359,7 +359,7 @@ void UIGDetailsUpdateThreadDisplay::run()
 #ifdef VBOX_WITH_VIDEOHWACCEL
             /* 2D acceleration: */
             if (machine().GetAccelerate2DVideoEnabled())
-                acceleration << QApplication::translate("UIGDetails", "2D video", "details (display)");
+                acceleration << QApplication::translate("UIGDetails", "2D Video", "details (display)");
 #endif /* VBOX_WITH_VIDEOHWACCEL */
             /* 3D acceleration: */
             if (machine().GetAccelerate3DEnabled())
@@ -373,15 +373,15 @@ void UIGDetailsUpdateThreadDisplay::run()
             if (!srv.isNull())
             {
                 if (srv.GetEnabled())
-                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Remote desktop server port", "details (display/vrde)"),
+                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Remote Desktop Server Port", "details (display/vrde)"),
                                               srv.GetVRDEProperty("TCP/Ports"));
                 else
-                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Remote desktop server", "details (display/vrde)"),
+                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Remote Desktop Server", "details (display/vrde)"),
                                               QApplication::translate("UIGDetails", "Disabled", "details (display/vrde/VRDE server)"));
             }
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -452,10 +452,10 @@ void UIGDetailsUpdateThreadStorage::run()
                     m_text << UITextTableLine(QString("  ") + gpConverter->toString(storageSlots[i]), storageInfo[i]);
             }
             if (!fSomeInfo)
-                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Not attached", "details (storage)"), QString());
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Not Attached", "details (storage)"), QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -499,7 +499,7 @@ void UIGDetailsUpdateThreadAudio::run()
             if (audio.GetEnabled())
             {
                 /* Driver: */
-                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Host driver", "details (audio)"),
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Host Driver", "details (audio)"),
                                           gpConverter->toString(audio.GetAudioDriver()));
 
                 /* Controller: */
@@ -511,7 +511,7 @@ void UIGDetailsUpdateThreadAudio::run()
                                           QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"),
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"),
                                       QString());
 
         /* Send information into GUI thread: */
@@ -567,19 +567,19 @@ void UIGDetailsUpdateThreadNetwork::run()
                     {
                         case KNetworkAttachmentType_Bridged:
                         {
-                            strAttachmentType = strAttachmentType.arg(QApplication::translate("UIGDetails", "Bridged adapter, %1", "details (network)")
+                            strAttachmentType = strAttachmentType.arg(QApplication::translate("UIGDetails", "Bridged Adapter, %1", "details (network)")
                                                                       .arg(adapter.GetBridgedInterface()));
                             break;
                         }
                         case KNetworkAttachmentType_Internal:
                         {
-                            strAttachmentType = strAttachmentType.arg(QApplication::translate("UIGDetails", "Internal network, '%1'", "details (network)")
+                            strAttachmentType = strAttachmentType.arg(QApplication::translate("UIGDetails", "Internal Network, '%1'", "details (network)")
                                                                       .arg(adapter.GetInternalNetwork()));
                             break;
                         }
                         case KNetworkAttachmentType_HostOnly:
                         {
-                            strAttachmentType = strAttachmentType.arg(QApplication::translate("UIGDetails", "Host-only adapter, '%1'", "details (network)")
+                            strAttachmentType = strAttachmentType.arg(QApplication::translate("UIGDetails", "Host-only Adapter, '%1'", "details (network)")
                                                                       .arg(adapter.GetHostOnlyInterface()));
                             break;
                         }
@@ -587,8 +587,8 @@ void UIGDetailsUpdateThreadNetwork::run()
                         {
                             QString strGenericDriverProperties(summarizeGenericProperties(adapter));
                             strAttachmentType = strGenericDriverProperties.isNull() ?
-                                      strAttachmentType.arg(QApplication::translate("UIGDetails", "Generic driver, '%1'", "details (network)").arg(adapter.GetGenericDriver())) :
-                                      strAttachmentType.arg(QApplication::translate("UIGDetails", "Generic driver, '%1' {&nbsp;%2&nbsp;}", "details (network)")
+                                      strAttachmentType.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1'", "details (network)").arg(adapter.GetGenericDriver())) :
+                                      strAttachmentType.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1' {&nbsp;%2&nbsp;}", "details (network)")
                                                             .arg(adapter.GetGenericDriver(), strGenericDriverProperties));
                             break;
                         }
@@ -606,7 +606,7 @@ void UIGDetailsUpdateThreadNetwork::run()
                 m_text << UITextTableLine(QApplication::translate("UIGDetails", "Disabled", "details (network/adapter)"), QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -684,7 +684,7 @@ void UIGDetailsUpdateThreadSerial::run()
                 m_text << UITextTableLine(QApplication::translate("UIGDetails", "Disabled", "details (serial)"), QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -742,7 +742,7 @@ void UIGDetailsUpdateThreadParallel::run()
                 m_text << UITextTableLine(QApplication::translate("UIGDetails", "Disabled", "details (parallel)"), QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -794,17 +794,17 @@ void UIGDetailsUpdateThreadUSB::run()
                     for (int i = 0; i < coll.size(); ++i)
                         if (coll[i].GetActive())
                             ++uActive;
-                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Device filters", "details (usb)"),
+                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Device Filters", "details (usb)"),
                                               QApplication::translate("UIGDetails", "%1 (%2 active)", "details (usb)").arg(coll.size()).arg(uActive));
                 }
                 else
                     m_text << UITextTableLine(QApplication::translate("UIGDetails", "Disabled", "details (usb)"), QString());
             }
             else
-                m_text << UITextTableLine(QApplication::translate("UIGDetails", "USB controller inaccessible", "details (usb)"), QString());
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "USB Controller Inaccessible", "details (usb)"), QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -847,12 +847,12 @@ void UIGDetailsUpdateThreadSF::run()
             /* Iterate over all the shared folders: */
             ulong uCount = machine().GetSharedFolders().size();
             if (uCount > 0)
-                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Shared folders", "details (shared folders)"), QString::number(uCount));
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Shared Folders", "details (shared folders)"), QString::number(uCount));
             else
                 m_text << UITextTableLine(QApplication::translate("UIGDetails", "None", "details (shared folders)"), QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
@@ -900,7 +900,7 @@ void UIGDetailsUpdateThreadDescription::run()
                 m_text << UITextTableLine(QApplication::translate("UIGDetails", "None", "details (description)"), QString());
         }
         else
-            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information inaccessible", "details"), QString());
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
 
         /* Send information into GUI thread: */
         emit sigComplete(m_text);
