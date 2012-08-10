@@ -124,6 +124,9 @@ private:
     void prepareIcon();
     void prepareMenuBar();
     void prepareMenuFile(QMenu *pMenu);
+    void prepareCommonActions();
+    void prepareGroupActions();
+    void prepareMachineActions();
     void prepareMenuGroup(QMenu *pMenu);
     void prepareMenuMachine(QMenu *pMenu);
     void prepareMenuMachineClose(QMenu *pMenu);
@@ -176,43 +179,35 @@ private:
     UIAction *m_pPreferencesDialogAction;
     UIAction *m_pExitAction;
 
+    /* Common Group/Machine actions: */
+    UIAction *m_pAction_Common_New;
+    UIAction *m_pAction_Common_Add;
+    UIAction *m_pAction_Common_StartOrShow;
+    UIAction *m_pAction_Common_PauseAndResume;
+    UIAction *m_pAction_Common_Reset;
+    UIAction *m_pAction_Common_Discard;
+    UIAction *m_pAction_Common_LogDialog;
+    UIAction *m_pAction_Common_Refresh;
+    UIAction *m_pAction_Common_ShowInFileManager;
+    UIAction *m_pAction_Common_CreateShortcut;
+    UIAction *m_pAction_Common_SortParent;
+
     /* 'Group' menu action pointers: */
     QList<UIAction*> m_groupActions;
     QAction *m_pGroupMenuAction;
     QMenu *m_pGroupMenu;
-    UIAction *m_pActionGroupNewWizard;
-    UIAction *m_pActionGroupAddDialog;
-    UIAction *m_pActionGroupRenameDialog;
-    UIAction *m_pActionGroupRemoveDialog;
-    UIAction *m_pActionGroupStartOrShow;
-    UIAction *m_pActionGroupPauseAndResume;
-    UIAction *m_pActionGroupReset;
-    UIAction *m_pActionGroupRefresh;
-    UIAction *m_pActionGroupLogDialog;
-    UIAction *m_pActionGroupShowInFileManager;
-    UIAction *m_pActionGroupCreateShortcut;
-    UIAction *m_pActionGroupSortParent;
-    UIAction *m_pActionGroupSort;
+    UIAction *m_pAction_Group_Rename;
+    UIAction *m_pAction_Group_Remove;
+    UIAction *m_pAction_Group_Sort;
 
     /* 'Machine' menu action pointers: */
     QList<UIAction*> m_machineActions;
     QAction *m_pMachineMenuAction;
     QMenu *m_pMachineMenu;
-    UIAction *m_pActionMachineNewWizard;
-    UIAction *m_pActionMachineAddDialog;
-    UIAction *m_pActionMachineSettingsDialog;
-    UIAction *m_pActionMachineCloneWizard;
-    UIAction *m_pActionMachineAddGroupDialog;
-    UIAction *m_pActionMachineRemoveDialog;
-    UIAction *m_pActionMachineStartOrShow;
-    UIAction *m_pActionMachineDiscard;
-    UIAction *m_pActionMachinePauseAndResume;
-    UIAction *m_pActionMachineReset;
-    UIAction *m_pActionMachineRefresh;
-    UIAction *m_pActionMachineLogDialog;
-    UIAction *m_pActionMachineShowInFileManager;
-    UIAction *m_pActionMachineCreateShortcut;
-    UIAction *m_pActionMachineSortParent;
+    UIAction *m_pAction_Machine_Settings;
+    UIAction *m_pAction_Machine_Clone;
+    UIAction *m_pAction_Machine_Remove;
+    UIAction *m_pAction_Machine_AddGroup;
 
     /* 'Machine / Close' menu action pointers: */
     UIAction *m_pMachineCloseMenuAction;

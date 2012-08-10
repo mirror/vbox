@@ -464,7 +464,7 @@ void UIGChooserModel::setCurrentDragObject(QDrag *pDragObject)
 
 void UIGChooserModel::activate()
 {
-    gActionPool->action(UIActionIndexSelector_State_Machine_StartOrShow)->activate(QAction::Trigger);
+    gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->activate(QAction::Trigger);
 }
 
 QString UIGChooserModel::uniqueGroupName(UIGChooserItem *pRoot)
@@ -896,62 +896,61 @@ void UIGChooserModel::prepareContextMenu()
 {
     /* Context menu for group: */
     m_pContextMenuGroup = new QMenu;
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_NewWizard));
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_AddDialog));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_New));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Add));
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_RenameDialog));
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_RemoveDialog));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Rename));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Remove));
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_State_Group_StartOrShow));
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Toggle_Group_PauseAndResume));
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Reset));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Reset));
     m_pContextMenuGroup->addMenu(gActionPool->action(UIActionIndexSelector_Menu_Machine_Close)->menu());
     m_pContextMenuGroup->addSeparator();
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Discard));
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndex_Simple_LogDialog));
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Refresh));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh));
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_ShowInFileManager));
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_CreateShortcut));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut));
     m_pContextMenuGroup->addSeparator();
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent));
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Sort));
 
     /* Context menu for machine(s): */
     m_pContextMenuMachine = new QMenu;
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_SettingsDialog));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_CloneWizard));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_RemoveDialog));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroupDialog));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_Settings));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_Clone));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup));
     m_pContextMenuMachine->addSeparator();
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_State_Machine_StartOrShow));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Toggle_Machine_PauseAndResume));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_Reset));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Reset));
     m_pContextMenuMachine->addMenu(gActionPool->action(UIActionIndexSelector_Menu_Machine_Close)->menu());
     m_pContextMenuMachine->addSeparator();
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_Discard));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Discard));
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndex_Simple_LogDialog));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_Refresh));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh));
     m_pContextMenuMachine->addSeparator();
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_ShowInFileManager));
-    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Machine_CreateShortcut));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager));
+    m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut));
     m_pContextMenuMachine->addSeparator();
     m_pContextMenuMachine->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent));
 
     connect(m_pContextMenuGroup, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
     connect(m_pContextMenuMachine, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
 
-    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_NewWizard), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Common_New), SIGNAL(triggered()),
             this, SLOT(sltCreateNewMachine()));
-    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_NewWizard), SIGNAL(triggered()),
-            this, SLOT(sltCreateNewMachine()));
-    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_RenameDialog), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Rename), SIGNAL(triggered()),
             this, SLOT(sltStartEditingSelectedGroup()));
-    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_RemoveDialog), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Remove), SIGNAL(triggered()),
             this, SLOT(sltRemoveCurrentlySelectedGroup()));
-    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroupDialog), SIGNAL(triggered()),
-            this, SLOT(sltAddGroupBasedOnChosenItems()));
-    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_RemoveDialog), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove), SIGNAL(triggered()),
             this, SLOT(sltRemoveCurrentlySelectedMachine()));
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup), SIGNAL(triggered()),
+            this, SLOT(sltAddGroupBasedOnChosenItems()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent), SIGNAL(triggered()),
             this, SLOT(sltSortParentGroup()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Sort), SIGNAL(triggered()),
