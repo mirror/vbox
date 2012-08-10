@@ -146,11 +146,23 @@ private:
 
     /* Helpers: Action stuff: */
     bool isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items);
-    static bool isItemsAccessible(const QList<UIVMItem*> &items);
-    static bool isItemsInaccessible(const QList<UIVMItem*> &items);
-    static bool isItemsHasUnlockedSession(const QList<UIVMItem*> &items);
-    static bool isItemsSupportsShortcuts(const QList<UIVMItem*> &items);
     static bool isItemsPoweredOff(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemAbleToShutdown(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemSupportsShortcuts(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemAccessible(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemInaccessible(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemRemovable(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemCanBeStartedOrShowed(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemDiscardable(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemStarted(const QList<UIVMItem*> &items);
+    static bool isAtLeastOneItemRunning(const QList<UIVMItem*> &items);
+    static bool isItemEditable(UIVMItem *pItem);
+    static bool isItemSaved(UIVMItem *pItem);
+    static bool isItemPoweredOff(UIVMItem *pItem);
+    static bool isItemStarted(UIVMItem *pItem);
+    static bool isItemRunning(UIVMItem *pItem);
+    static bool isItemPaused(UIVMItem *pItem);
+    static bool isItemStuck(UIVMItem *pItem);
 
     /* Central splitter window: */
     QISplitter *m_pSplitter;
