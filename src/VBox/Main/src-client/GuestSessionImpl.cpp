@@ -2202,7 +2202,7 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, BOOL aSecure, BSTR *aDirectory)
+STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aPath, BOOL aSecure, BSTR *aDirectory)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2222,6 +2222,7 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
     try  /* Can this be done without exceptions? */
     {
         Utf8Str strTemplate(aTemplate);
+        Utf8Str strPath(aPath);
         procInfo.mName    = Utf8StrFmt(tr("Creating temporary directory from template \"%s\"",
                                        strTemplate.c_str()));
         procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
@@ -2229,7 +2230,12 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
                             | ProcessCreateFlag_WaitForStdOut;
         /* Construct arguments. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-        procInfo.mArguments.push_back(Bstr(aTemplate)); /* The template we want to use. */
+        if (strPath.length())  /* Otherwise use /tmp or equivalent. */
+        {
+            procInfo.mArguments.push_back(Utf8Str("-d"));
+            procInfo.mArguments.push_back(strPath);
+        }
+        procInfo.mArguments.push_back(strTemplate);
     }
     catch (...)
     {
@@ -2283,12 +2289,28 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
     rc = streamOut.ParseBlock(streamBlock);
     if (RT_SUCCESS(rc))
     {
-        streamBlock.GetString("name");
+        const char *pcszName = streamBlock.GetString("name");
+        if (!pcszName)
+            return setError(E_FAIL, tr("No name returned after creating temporary directory"));
         int64_t i64rc;
         if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
             return setError(E_FAIL, tr("No return code after creating temporary directory"));
         if (RT_FAILURE((int)i64rc))
-            return setError(VBOX_E_IPRT_ERROR, tr("File deletion failed: %Rrc"), rc);
+        {
+            HRESULT hrc =   i64rc == VERR_INVALID_PARAMETER ? E_INVALIDARG
+                          : i64rc == VERR_NOT_SUPPORTED ? VBOX_E_NOT_SUPPORTED
+                          : VBOX_E_IPRT_ERROR;
+            return setError(hrc, tr("Temporary directory creation failed: %Rrc"),
+                            (int)i64rc);
+        }
+        try
+        {
+            Bstr(pcszName).cloneTo(aDirectory);
+        }
+        catch (...)
+        {
+            return E_OUTOFMEMORY;
+        }
     }
     else
         return setError(E_FAIL, tr("Error while getting return code from creating temporary directory: %Rrc"), rc);
