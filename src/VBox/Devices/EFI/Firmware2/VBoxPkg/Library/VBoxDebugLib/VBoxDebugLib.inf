@@ -44,6 +44,9 @@
         BaseMemoryLib
         PrintLib
 
+[Protocols]
+    gEfiDevicePathToTextProtocolGuid
+
 [Guids]
         # none
 
