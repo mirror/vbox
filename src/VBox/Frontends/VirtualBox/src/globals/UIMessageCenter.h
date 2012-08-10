@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -307,7 +307,7 @@ public:
                                const CVirtualBoxErrorInfo &error);
 
     void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
-    bool cannotFindGuestAdditions(const QString &strSrc1, const QString &strSrc2);
+    bool cannotFindGuestAdditions();
     void cannotMountGuestAdditions(const QString &strMachineName);
     bool confirmDownloadAdditions(const QString &strUrl, qulonglong uSize);
     bool confirmMountAdditions(const QString &strUrl, const QString &strSrc);

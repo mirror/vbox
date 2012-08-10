@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -950,6 +950,53 @@ STDMETHODIMP SystemProperties::COMSETTER(AutostartDatabasePath)(IN_BSTR aAutosta
     return rc;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(DefaultAdditionsISO)(BSTR *aDefaultAdditionsISO)
+{
+    CheckComArgOutPointerValid(aDefaultAdditionsISO);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->strDefaultAdditionsISO.isEmpty())
+    {
+        /* no guest additions, check if it showed up in the mean time */
+        alock.release();
+        {
+            AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+            ErrorInfoKeeper eik;
+            (void)setDefaultAdditionsISO("");
+        }
+        alock.acquire();
+    }
+    m->strDefaultAdditionsISO.cloneTo(aDefaultAdditionsISO);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(DefaultAdditionsISO)(IN_BSTR aDefaultAdditionsISO)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /** @todo not yet implemented, settings handling is missing */
+    ReturnComNotImplemented();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = setDefaultAdditionsISO(aDefaultAdditionsISO);
+    alock.release();
+
+    if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->saveSettings();
+    }
+
+    return rc;
+}
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -981,6 +1028,13 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
 
     rc = setAutostartDatabasePath(data.strAutostartDatabasePath);
     if (FAILED(rc)) return rc;
+
+    {
+        /* must ignore errors signalled here, because the guest additions
+         * file may not exist, and in this case keep the empty string */
+        ErrorInfoKeeper eik;
+        (void)setDefaultAdditionsISO(data.strDefaultAdditionsISO);
+    }
 
     return S_OK;
 }
@@ -1188,4 +1242,49 @@ HRESULT SystemProperties::setAutostartDatabasePath(const Utf8Str &aPath)
     }
 
     return rc;
+}
+
+HRESULT SystemProperties::setDefaultAdditionsISO(const Utf8Str &aPath)
+{
+    Utf8Str path(aPath);
+    if (path.isEmpty())
+    {
+        char strTemp[RTPATH_MAX];
+        int vrc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
+        AssertRC(vrc);
+        Utf8Str strSrc1 = Utf8Str(strTemp).append("/VBoxGuestAdditions.iso");
+
+        vrc = RTPathExecDir(strTemp, sizeof(strTemp));
+        AssertRC(vrc);
+        Utf8Str strSrc2 = Utf8Str(strTemp).append("/additions/VBoxGuestAdditions.iso");
+
+        vrc = RTPathUserHome(strTemp, sizeof(strTemp));
+        AssertRC(vrc);
+        Utf8Str strSrc3 = Utf8StrFmt("%s/VBoxGuestAdditions_%ls.iso", strTemp, VirtualBox::getVersionNormalized().raw());
+
+        /* Check the standard image locations */
+        if (RTFileExists(strSrc1.c_str()))
+            path = strSrc1;
+        else if (RTFileExists(strSrc2.c_str()))
+            path = strSrc2;
+        else if (RTFileExists(strSrc3.c_str()))
+            path = strSrc3;
+        else
+            return setError(E_FAIL,
+                            tr("Cannot determine default Guest Additions ISO location. Most likely they are not available"));
+    }
+
+    if (!RTPathStartsWithRoot(path.c_str()))
+        return setError(E_INVALIDARG,
+                        tr("Given default machine Guest Additions ISO file '%s' is not fully qualified"),
+                        path.c_str());
+
+    if (!RTFileExists(path.c_str()))
+        return setError(E_INVALIDARG,
+                        tr("Given default machine Guest Additions ISO file '%s' does not exist"),
+                        path.c_str());
+
+    m->strDefaultAdditionsISO = path;
+
+    return S_OK;
 }

@@ -1423,7 +1423,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="3b90eded-f061-432f-9e0f-4b53cc7b6fa0"
+    uuid="5c8814a1-2a35-402d-8680-68e5cb4e72aa"
     wsmap="managed"
     >
     <desc>
@@ -1451,6 +1451,14 @@
         in prerelease builds.  Non-Oracle builds may (/shall) also have a
         publisher tag, at the end.  The publisher tag starts with an underscore
         just like the prerelease build type tag.
+      </desc>
+    </attribute>
+
+    <attribute name="versionNormalized" type="wstring" readonly="yes">
+      <desc>
+        A string representing the version number of the product,
+        without the publisher information (but still with other tags).
+        See <link to="#version" />.
       </desc>
     </attribute>
 
@@ -8192,7 +8200,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="20fc263c-e1e9-4e86-b9b0-835950790d13"
+    uuid="1d7aca29-97f0-4287-9874-a60ec4f80ea6"
     wsmap="managed"
     >
     <desc>
@@ -8446,6 +8454,13 @@
       <desc>
         The path to the autostart database. Depending on the host this might
         be a filesystem path or something else.
+      </desc>
+    </attribute>
+
+    <attribute name="defaultAdditionsISO" type="wstring">
+      <desc>
+        The path to the default Guest Additions ISO image. Can be empty if
+        the location is not known in this installation.
       </desc>
     </attribute>
 

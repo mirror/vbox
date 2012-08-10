@@ -39,9 +39,9 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/settings.h>
+#include <VBox/version.h>
 
 #include <package-generated.h>
-#include <version-generated.h>
 
 #include <algorithm>
 #include <set>
@@ -97,6 +97,9 @@
 
 // static
 Bstr VirtualBox::sVersion;
+
+// static
+Bstr VirtualBox::sVersionNormalized;
 
 // static
 ULONG VirtualBox::sRevision;
@@ -370,6 +373,13 @@ HRESULT VirtualBox::init()
 
     if (sVersion.isEmpty())
         sVersion = RTBldCfgVersion();
+    if (sVersionNormalized.isEmpty())
+    {
+        Utf8Str tmp(RTBldCfgVersion());
+        if (tmp.endsWith(VBOX_BUILD_PUBLISHER))
+            tmp = tmp.substr(0, tmp.length() - strlen(VBOX_BUILD_PUBLISHER));
+        sVersionNormalized = tmp;
+    }
     sRevision = RTBldCfgRevision();
     if (sPackageType.isEmpty())
         sPackageType = VBOX_PACKAGE_STRING;
@@ -856,6 +866,17 @@ STDMETHODIMP VirtualBox::COMGETTER(Version)(BSTR *aVersion)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     sVersion.cloneTo(aVersion);
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBox::COMGETTER(VersionNormalized)(BSTR *aVersionNormalized)
+{
+    CheckComArgNotNull(aVersionNormalized);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    sVersionNormalized.cloneTo(aVersionNormalized);
     return S_OK;
 }
 
@@ -4465,6 +4486,13 @@ void VirtualBox::saveModifiedRegistries()
         rc = saveSettings();
     }
     NOREF(rc); /* XXX */
+}
+
+
+/* static */
+const Bstr &VirtualBox::getVersionNormalized()
+{
+    return sVersionNormalized;
 }
 
 /**

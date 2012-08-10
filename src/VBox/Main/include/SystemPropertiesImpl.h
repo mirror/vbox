@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,7 +45,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SystemProperties)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (ISystemProperties)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(ISystemProperties)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(SystemProperties)
@@ -93,6 +93,8 @@ public:
     STDMETHOD(COMGETTER(DefaultAudioDriver))(AudioDriverType_T *aAudioDriver);
     STDMETHOD(COMGETTER(AutostartDatabasePath))(BSTR *aAutostartDbPath);
     STDMETHOD(COMSETTER(AutostartDatabasePath))(IN_BSTR aAutostartDbPath);
+    STDMETHOD(COMGETTER(DefaultAdditionsISO))(BSTR *aDefaultAdditionsISO);
+    STDMETHOD(COMSETTER(DefaultAdditionsISO))(IN_BSTR aDefaultAdditionsISO);
 
     STDMETHOD(GetMaxNetworkAdapters)(ChipsetType_T aChipset, ULONG *aMaxInstances);
     STDMETHOD(GetMaxNetworkAdaptersOfType)(ChipsetType_T aChipset, NetworkAttachmentType_T aType, ULONG *aMaxInstances);
@@ -126,6 +128,7 @@ private:
     HRESULT setWebServiceAuthLibrary(const Utf8Str &aPath);
     HRESULT setDefaultVRDEExtPack(const Utf8Str &aPath);
     HRESULT setAutostartDatabasePath(const Utf8Str &aPath);
+    HRESULT setDefaultAdditionsISO(const Utf8Str &aPath);
 
     VirtualBox * const  mParent;
 
