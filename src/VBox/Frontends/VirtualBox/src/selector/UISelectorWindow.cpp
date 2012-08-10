@@ -133,7 +133,7 @@ UISelectorWindow::~UISelectorWindow()
     saveSettings();
 }
 
-void UISelectorWindow::sltStateChanged(QString strId)
+void UISelectorWindow::sltStateChanged(QString)
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
@@ -142,9 +142,8 @@ void UISelectorWindow::sltStateChanged(QString strId)
     if (!pItem)
         return;
 
-    /* If signal is for the current item: */
-    if (pItem->id() == strId)
-        updateActionsAppearance();
+    /* Update actions: */
+    updateActionsAppearance();
 }
 
 void UISelectorWindow::sltSnapshotChanged(QString strId)
@@ -427,45 +426,59 @@ void UISelectorWindow::sltPerformStartOrShowAction()
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* For every selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, items)
     {
         /* Check if current item could be started/showed: */
-        if (!isActionEnabled(UIActionIndexSelector_State_Common_StartOrShow, items))
+        if (!isActionEnabled(UIActionIndexSelector_State_Common_StartOrShow, QList<UIVMItem*>() << pItem))
             continue;
 
-        /* Get iterated VM: */
-        CMachine machine = items[i]->machine();
-        /* Launch/show iterated VM: */
+        /* Launch/show current VM: */
+        CMachine machine = pItem->machine();
         vboxGlobal().launchMachine(machine, qApp->keyboardModifiers() == Qt::ShiftModifier);
     }
 }
 
 void UISelectorWindow::sltPerformDiscardAction()
 {
-    /* Get current item: */
-    UIVMItem *pItem = currentItem();
-    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    /* Get selected items: */
+    QList<UIVMItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
-    /* Confirm discarding current VM saved state: */
-    if (!msgCenter().confirmDiscardSavedState(pItem->machine()))
+    /* Prepare the list of the machines to be discarded: */
+    QStringList machineNames;
+    QList<UIVMItem*> itemsToDiscard;
+    foreach (UIVMItem *pItem, items)
+        if (isActionEnabled(UIActionIndexSelector_Simple_Common_Discard, QList<UIVMItem*>() << pItem))
+        {
+            machineNames << pItem->name();
+            itemsToDiscard << pItem;
+        }
+    AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
+
+    /* Confirm discarding saved VM state: */
+    if (!msgCenter().confirmDiscardSavedState(machineNames.join(", ")))
         return;
 
-    /* Open a session to modify VM: */
-    CSession session = vboxGlobal().openSession(pItem->id());
-    if (session.isNull())
+    /* For every confirmed item: */
+    foreach (UIVMItem *pItem, itemsToDiscard)
     {
-        msgCenter().cannotOpenSession(session);
-        return;
+        /* Open a session to modify VM: */
+        CSession session = vboxGlobal().openSession(pItem->id());
+        if (session.isNull())
+        {
+            msgCenter().cannotOpenSession(session);
+            return;
+        }
+
+        /* Get session console: */
+        CConsole console = session.GetConsole();
+        console.DiscardSavedState(true);
+        if (!console.isOk())
+            msgCenter().cannotDiscardSavedState(console);
+
+        /* Unlock machine finally: */
+        session.UnlockMachine();
     }
-
-    /* Get session console: */
-    CConsole console = session.GetConsole();
-    console.DiscardSavedState(true /* delete file */);
-    if (!console.isOk())
-        msgCenter().cannotDiscardSavedState(console);
-
-    /* Unlock machine finally: */
-    session.UnlockMachine();
 }
 
 void UISelectorWindow::sltPerformPauseResumeAction(bool fPause)
@@ -475,25 +488,26 @@ void UISelectorWindow::sltPerformPauseResumeAction(bool fPause)
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* For every selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, items)
     {
-        /* Get iterated item: */
-        UIVMItem *pItem = items[i];
         /* Get item state: */
         KMachineState state = pItem->machineState();
 
         /* Check if current item could be paused/resumed: */
-        if (!isActionEnabled(UIActionIndexSelector_Toggle_Common_PauseAndResume, items))
+        if (!isActionEnabled(UIActionIndexSelector_Toggle_Common_PauseAndResume, QList<UIVMItem*>() << pItem))
             continue;
 
         /* Check if current item already paused: */
         if (fPause &&
-            (state == KMachineState_Paused || state == KMachineState_TeleportingPausedVM))
+            (state == KMachineState_Paused ||
+             state == KMachineState_TeleportingPausedVM))
             continue;
 
         /* Check if current item already resumed: */
         if (!fPause &&
-            (state == KMachineState_Running || state == KMachineState_Teleporting || state == KMachineState_LiveSnapshotting))
+            (state == KMachineState_Running ||
+             state == KMachineState_Teleporting ||
+             state == KMachineState_LiveSnapshotting))
             continue;
 
         /* Open a session to modify VM state: */
@@ -527,24 +541,28 @@ void UISelectorWindow::sltPerformPauseResumeAction(bool fPause)
 
 void UISelectorWindow::sltPerformResetAction()
 {
-    /* Confirm reseting VM: */
-    if (!msgCenter().confirmVMReset(this))
-        return;
-
     /* Get selected items: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
+    /* Prepare the list of the machines to be reseted: */
+    QStringList machineNames;
+    QList<UIVMItem*> itemsToReset;
+    foreach (UIVMItem *pItem, items)
+        if (isActionEnabled(UIActionIndexSelector_Simple_Common_Reset, QList<UIVMItem*>() << pItem))
+        {
+            machineNames << pItem->name();
+            itemsToReset << pItem;
+        }
+    AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
+
+    /* Confirm reseting VM: */
+    if (!msgCenter().confirmVMReset(machineNames.join(", ")))
+        return;
+
     /* For each selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, itemsToReset)
     {
-        /* Get iterated item: */
-        UIVMItem *pItem = items[i];
-
-        /* Check if current item could be reseted: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Common_Reset, items))
-            continue;
-
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
@@ -569,13 +587,13 @@ void UISelectorWindow::sltPerformSaveAction()
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
-    /* Check if all the items could be saved: */
-    if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_Save, items))
-        return;
-
     /* For each selected item: */
     foreach (UIVMItem *pItem, items)
     {
+        /* Check if current item could be saved: */
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_Save, QList<UIVMItem*>() << pItem))
+            continue;
+
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
@@ -592,9 +610,8 @@ void UISelectorWindow::sltPerformSaveAction()
             msgCenter().cannotSaveMachineState(console);
         else
         {
-            /* Get machine: */
-            CMachine machine = session.GetMachine();
             /* Show the "VM saving" progress dialog: */
+            CMachine machine = session.GetMachine();
             msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png", 0, true);
             if (progress.GetResultCode() != 0)
                 msgCenter().cannotSaveMachineState(progress);
@@ -607,24 +624,28 @@ void UISelectorWindow::sltPerformSaveAction()
 
 void UISelectorWindow::sltPerformACPIShutdownAction()
 {
-    /* Confirm ACPI shutdown current VM: */
-    if (!msgCenter().confirmVMACPIShutdown(this))
-        return;
-
     /* Get selected items: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
+    /* Prepare the list of the machines to be shutdowned: */
+    QStringList machineNames;
+    QList<UIVMItem*> itemsToShutdown;
+    foreach (UIVMItem *pItem, items)
+        if (isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, QList<UIVMItem*>() << pItem))
+        {
+            machineNames << pItem->name();
+            itemsToShutdown << pItem;
+        }
+    AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
+
+    /* Confirm ACPI shutdown current VM: */
+    if (!msgCenter().confirmVMACPIShutdown(machineNames.join(", ")))
+        return;
+
     /* For each selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, itemsToShutdown)
     {
-        /* Get iterated item: */
-        UIVMItem *pItem = items[i];
-
-        /* Check if current item could be shutdowned: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items))
-            continue;
-
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
@@ -645,24 +666,28 @@ void UISelectorWindow::sltPerformACPIShutdownAction()
 
 void UISelectorWindow::sltPerformPowerOffAction()
 {
-    /* Confirm Power Off current VM: */
-    if (!msgCenter().confirmVMPowerOff(this))
-        return;
-
     /* Get selected items: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
+    /* Prepare the list of the machines to be powered off: */
+    QStringList machineNames;
+    QList<UIVMItem*> itemsToPowerOff;
+    foreach (UIVMItem *pItem, items)
+        if (isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, QList<UIVMItem*>() << pItem))
+        {
+            machineNames << pItem->name();
+            itemsToPowerOff << pItem;
+        }
+    AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
+
+    /* Confirm Power Off current VM: */
+    if (!msgCenter().confirmVMPowerOff(machineNames.join(", ")))
+        return;
+
     /* For each selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, itemsToPowerOff)
     {
-        /* Get iterated item: */
-        UIVMItem *pItem = items[i];
-
-        /* Check if current item could be powered off: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items))
-            continue;
-
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
@@ -700,13 +725,10 @@ void UISelectorWindow::sltShowLogDialog()
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* For each selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, items)
     {
-        /* Get iterated item: */
-        UIVMItem *pItem = items[i];
-
         /* Check if log could be show for the current item: */
-        if (!isActionEnabled(UIActionIndex_Simple_LogDialog, items))
+        if (!isActionEnabled(UIActionIndex_Simple_LogDialog, QList<UIVMItem*>() << pItem))
             continue;
 
         /* Show VM Log Viewer: */
@@ -721,13 +743,10 @@ void UISelectorWindow::sltShowMachineInFileManager()
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* For each selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, items)
     {
-        /* Get iterated item: */
-        UIVMItem *pItem = items[i];
-
         /* Check if that item could be shown in file-browser: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Common_ShowInFileManager, items))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Common_ShowInFileManager, QList<UIVMItem*>() << pItem))
             continue;
 
         /* Show VM in filebrowser: */
@@ -742,13 +761,10 @@ void UISelectorWindow::sltPerformCreateShortcutAction()
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* For each selected item: */
-    for (int i = 0; i < items.size(); ++i)
+    foreach (UIVMItem *pItem, items)
     {
-        /* Get iterated item: */
-        UIVMItem *pItem = items[i];
-
         /* Check if shortcuts could be created for this item: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Common_CreateShortcut, items))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Common_CreateShortcut, QList<UIVMItem*>() << pItem))
             continue;
 
         /* Create shortcut for this VM: */
@@ -761,11 +777,9 @@ void UISelectorWindow::sltPerformCreateShortcutAction()
 
 void UISelectorWindow::sltMachineCloseMenuAboutToShow()
 {
-    /* Get current item: */
-    UIVMItem *pItem = currentItem();
     /* Get selected items: */
     QList<UIVMItem*> items = currentItems();
-    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
 }
@@ -1538,17 +1552,6 @@ void UISelectorWindow::updateActionsAppearance()
     UIVMItem *pItem = currentItem();
     QList<UIVMItem*> items = currentItems();
 
-    /* Enable/disable common actions: */
-    m_pAction_Common_StartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Common_StartOrShow, items));
-    m_pAction_Common_PauseAndResume->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Common_PauseAndResume, items));
-    m_pAction_Common_Reset->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Reset, items));
-    m_pAction_Common_Discard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Discard, items));
-    m_pAction_Common_LogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
-    m_pAction_Common_Refresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Refresh, items));
-    m_pAction_Common_ShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_ShowInFileManager, items));
-    m_pAction_Common_CreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_CreateShortcut, items));
-    m_pAction_Common_SortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_SortParent, items));
-
     /* Enable/disable group actions: */
     m_pAction_Group_Rename->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Rename, items));
     m_pAction_Group_Remove->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Group_Remove, items));
@@ -1560,66 +1563,47 @@ void UISelectorWindow::updateActionsAppearance()
     m_pAction_Machine_Remove->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Remove, items));
     m_pAction_Machine_AddGroup->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_AddGroup, items));
 
+    /* Enable/disable common actions: */
+    m_pAction_Common_StartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Common_StartOrShow, items));
+    m_pAction_Common_PauseAndResume->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Common_PauseAndResume, items));
+    m_pAction_Common_Reset->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Reset, items));
+    m_pAction_Common_Discard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Discard, items));
+    m_pAction_Common_LogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
+    m_pAction_Common_Refresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Refresh, items));
+    m_pAction_Common_ShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_ShowInFileManager, items));
+    m_pAction_Common_CreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_CreateShortcut, items));
+    m_pAction_Common_SortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_SortParent, items));
+
     /* Enable/disable machine-close actions: */
     m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items));
     m_pSaveAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_Save, items));
     m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
     m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items));
 
-    /* If item present: */
+    /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
-    {
-        /* Get state: */
-        KMachineState state = pItem->machineState();
-
-        /* Update the Start button action appearance: */
-        if (state == KMachineState_PoweredOff ||
-            state == KMachineState_Saved ||
-            state == KMachineState_Teleported ||
-            state == KMachineState_Aborted)
-        {
-            m_pAction_Common_StartOrShow->setState(1);
-#ifdef QT_MAC_USE_COCOA
-            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
-               the necessary size of the toolbar is increased. Also for some languages
-               the with doesn't match if the text increase. So manually adjust the size
-               after changing the text. */
-            mVMToolBar->updateLayout();
-#endif /* QT_MAC_USE_COCOA */
-        }
-        else
-        {
-            m_pAction_Common_StartOrShow->setState(2);
-#ifdef QT_MAC_USE_COCOA
-            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
-               the necessary size of the toolbar is increased. Also for some languages
-               the with doesn't match if the text increase. So manually adjust the size
-               after changing the text. */
-            mVMToolBar->updateLayout();
-#endif /* QT_MAC_USE_COCOA */
-        }
-
-        /* Update the Pause/Resume action appearance: */
-        if (state == KMachineState_Paused ||
-            state == KMachineState_TeleportingPausedVM)
-        {
-            m_pAction_Common_PauseAndResume->blockSignals(true);
-            m_pAction_Common_PauseAndResume->setChecked(true);
-            m_pAction_Common_PauseAndResume->blockSignals(false);
-        }
-        else
-        {
-            m_pAction_Common_PauseAndResume->blockSignals(true);
-            m_pAction_Common_PauseAndResume->setChecked(false);
-            m_pAction_Common_PauseAndResume->blockSignals(false);
-        }
-        m_pAction_Common_PauseAndResume->updateAppearance();
-    }
+        m_pAction_Common_StartOrShow->setState(isItemPoweredOff(pItem) ? 1 : 2);
     else
-    {
-        /* Update the Start button action appearance: */
         m_pAction_Common_StartOrShow->setState(1);
-    }
+
+    /* Pause/Resume action is deremined by 1st started item: */
+    UIVMItem *pFirstStartedAction = 0;
+    foreach (UIVMItem *pSelectedItem, items)
+        if (isItemStarted(pSelectedItem))
+            pFirstStartedAction = pSelectedItem;
+    /* Update the Pause/Resume action appearance: */
+    m_pAction_Common_PauseAndResume->blockSignals(true);
+    m_pAction_Common_PauseAndResume->setChecked(pFirstStartedAction && isItemPaused(pFirstStartedAction));
+    m_pAction_Common_PauseAndResume->updateAppearance();
+    m_pAction_Common_PauseAndResume->blockSignals(false);
+
+#ifdef QT_MAC_USE_COCOA
+    /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
+       the necessary size of the toolbar is increased. Also for some languages
+       the with doesn't match if the text increase. So manually adjust the size
+       after changing the text. */
+    mVMToolBar->updateLayout();
+#endif /* QT_MAC_USE_COCOA */
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)
@@ -1634,167 +1618,91 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
     /* For known action types: */
     switch (iActionIndex)
     {
-        case UIActionIndexSelector_Simple_Machine_Settings:
-        {
-            /* Check that we are not saving groups,
-             * there is only one item, its accessible
-             * and machine is not in 'stuck' state. */
-            return !m_pChooser->isGroupSavingInProgress() &&
-                   items.size() == 1 &&
-                   pItem->accessible() &&
-                   pItem->machineState() != KMachineState_Stuck;
-        }
-        case UIActionIndexSelector_Simple_Machine_Clone:
-        {
-            /* Check that there is only one item, its accessible
-             * and session state is unlocked. */
-            return items.size() == 1 &&
-                   pItem->accessible() &&
-                   pItem->sessionState() == KSessionState_Unlocked;
-        }
         case UIActionIndexSelector_Simple_Group_Rename:
         case UIActionIndexSelector_Simple_Group_Remove:
         {
-            /* Make sure we are not saving groups: */
-            if (m_pChooser->isGroupSavingInProgress())
-                return false;
-
-            /* Group can be always removed/renamed: */
-            return true;
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   isItemsPoweredOff(items);
+        }
+        case UIActionIndexSelector_Simple_Group_Sort:
+        {
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   m_pChooser->singleGroupSelected();
+        }
+        case UIActionIndexSelector_Simple_Machine_Settings:
+        {
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   items.size() == 1 &&
+                   pItem->accessible() &&
+                   !isItemStuck(pItem);
+        }
+        case UIActionIndexSelector_Simple_Machine_Clone:
+        {
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   items.size() == 1 &&
+                   isItemEditable(pItem);
         }
         case UIActionIndexSelector_Simple_Machine_Remove:
         {
-            /* Make sure we are not saving groups: */
-            if (m_pChooser->isGroupSavingInProgress())
-                return false;
-
-            /* Check that all machines are NOT accessible
-             * or session states of all machines are unlocked. */
-            return isItemsInaccessible(items) || isItemsHasUnlockedSession(items);
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   isAtLeastOneItemRemovable(items);
         }
         case UIActionIndexSelector_Simple_Machine_AddGroup:
         {
-            /* Check that there is more than one item,
-             * all items are accessible and in 'powered off' states: */
-            return items.size() > 1 &&
-                   isItemsAccessible(items) &&
-                   isItemsPoweredOff(items);
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   items.size() > 1 && isItemsPoweredOff(items);
         }
         case UIActionIndexSelector_State_Common_StartOrShow:
         {
-            /* Make sure all items are accessible: */
-            if (!isItemsAccessible(items))
-                return false;
-
-            /* Make sure we are not saving groups: */
-            if (m_pChooser->isGroupSavingInProgress())
-                return false;
-
-            /* If machine is in one of 'powered-off' states:*/
-            if (pItem->machineState() == KMachineState_PoweredOff ||
-                pItem->machineState() == KMachineState_Saved ||
-                pItem->machineState() == KMachineState_Teleported ||
-                pItem->machineState() == KMachineState_Aborted)
-            {
-                /* It depends on session state: */
-                return pItem->sessionState() == KSessionState_Unlocked;
-            }
-
-            /* Otherwise we are in running mode and
-             * should allow to switch to VM if its possible: */
-            return pItem->canSwitchTo();
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   isAtLeastOneItemCanBeStartedOrShowed(items);
         }
         case UIActionIndexSelector_Simple_Common_Discard:
         {
-            /* Check that there is only one item, its accessible
-             * and machine is in 'saved' state and session state is unlocked. */
-            return items.size() == 1 &&
-                   pItem->accessible() &&
-                   pItem->machineState() == KMachineState_Saved &&
-                   pItem->sessionState() == KSessionState_Unlocked;
+            return !m_pChooser->isGroupSavingInProgress() &&
+                   isAtLeastOneItemDiscardable(items);
         }
         case UIActionIndexSelector_Toggle_Common_PauseAndResume:
         {
-            /* Make sure all items are accessible: */
-            if (!isItemsAccessible(items))
-                return false;
-
-            /* True if machine is in one of next 'running' or 'paused' states: */
-            return pItem->machineState() == KMachineState_Running ||
-                   pItem->machineState() == KMachineState_Teleporting ||
-                   pItem->machineState() == KMachineState_LiveSnapshotting ||
-                   pItem->machineState() == KMachineState_Paused ||
-                   pItem->machineState() == KMachineState_TeleportingPausedVM;
+            return isAtLeastOneItemStarted(items);
         }
         case UIActionIndexSelector_Simple_Common_Reset:
         {
-            /* Make sure all items are accessible: */
-            if (!isItemsAccessible(items))
-                return false;
-
-            /* True if machine is in one of 'running' states: */
-            return pItem->machineState() == KMachineState_Running ||
-                   pItem->machineState() == KMachineState_Teleporting ||
-                   pItem->machineState() == KMachineState_LiveSnapshotting;
+            return isAtLeastOneItemRunning(items);
+        }
+        case UIActionIndexSelector_Simple_Common_Refresh:
+        {
+            return isAtLeastOneItemInaccessible(items);
+        }
+        case UIActionIndex_Simple_LogDialog:
+        case UIActionIndexSelector_Simple_Common_ShowInFileManager:
+        {
+            return isAtLeastOneItemAccessible(items);
+        }
+        case UIActionIndexSelector_Simple_Common_SortParent:
+        {
+            return !m_pChooser->isGroupSavingInProgress();
+        }
+        case UIActionIndexSelector_Simple_Common_CreateShortcut:
+        {
+            return isAtLeastOneItemSupportsShortcuts(items);
         }
         case UIActionIndexSelector_Menu_Machine_Close:
         {
-            /* Make sure all items are accessible: */
-            if (!isItemsAccessible(items))
-                return false;
-
-            /* True if machine is in one of next 'running' or 'paused' states: */
-            return pItem->machineState() == KMachineState_Running ||
-                   pItem->machineState() == KMachineState_Paused;
+            return isAtLeastOneItemStarted(items);
         }
         case UIActionIndexSelector_Simple_Machine_Close_Save:
         {
-            /* The same as 'Machine/Close' menu is enabled: */
             return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items);
         }
         case UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown:
         {
-            /* Check that 'Machine/Close' menu is enabled: */
-            if (!isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items))
-                return false;
-
-            /* Check if we are entered ACPI mode already.
-             * Only then it make sense to send the ACPI shutdown sequence: */
-            bool fEnteredACPIMode = false;
-            CSession session = vboxGlobal().openExistingSession(pItem->id());
-            if (!session.isNull())
-            {
-                CConsole console = session.GetConsole();
-                if (!console.isNull())
-                    fEnteredACPIMode = console.GetGuestEnteredACPIMode();
-                session.UnlockMachine();
-            }
-            else
-                msgCenter().cannotOpenSession(session);
-            return fEnteredACPIMode;
+            return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items) &&
+                   isAtLeastOneItemAbleToShutdown(items);
         }
         case UIActionIndexSelector_Simple_Machine_Close_PowerOff:
         {
-            /* The same as 'Machine/Close' menu is enabled: */
             return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items);
-        }
-        case UIActionIndexSelector_Simple_Common_Refresh:
-        {
-            /* Make sure all items are NOT accessible: */
-            return isItemsInaccessible(items);
-        }
-        case UIActionIndex_Simple_LogDialog:
-        case UIActionIndexSelector_Simple_Common_ShowInFileManager:
-        case UIActionIndexSelector_Simple_Common_SortParent:
-        case UIActionIndexSelector_Simple_Group_Sort:
-        {
-            /* Make sure all items are accessible: */
-            return items.size() > 0 && isItemsAccessible(items);
-        }
-        case UIActionIndexSelector_Simple_Common_CreateShortcut:
-        {
-            /* Make sure all items supports shortcuts: */
-            return isItemsSupportsShortcuts(items);
         }
         default:
             break;
@@ -1805,60 +1713,184 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
 }
 
 /* static */
-bool UISelectorWindow::isItemsAccessible(const QList<UIVMItem*> &items)
-{
-    foreach (UIVMItem *pItem, items)
-        if (!pItem->accessible())
-            return false;
-    return true;
-}
-
-/* static */
-bool UISelectorWindow::isItemsInaccessible(const QList<UIVMItem*> &items)
-{
-    foreach (UIVMItem *pItem, items)
-        if (pItem->accessible())
-            return false;
-    return true;
-}
-
-/* static */
-bool UISelectorWindow::isItemsHasUnlockedSession(const QList<UIVMItem*> &items)
-{
-    foreach (UIVMItem *pItem, items)
-        if (pItem->sessionState() != KSessionState_Unlocked)
-            return false;
-    return true;
-}
-
-/* static */
-bool UISelectorWindow::isItemsSupportsShortcuts(const QList<UIVMItem*> &items)
-{
-    /* Make sure all items are accessible: */
-    if (!isItemsAccessible(items))
-        return false;
-
-#ifdef Q_WS_MAC
-    /* On Mac OS X this are real alias files, which don't work with the old
-     * legacy xml files. On the other OS's some kind of start up script is used. */
-    foreach (UIVMItem *pItem, items)
-        if (!pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive))
-            return false;
-#endif /* Q_WS_MAC */
-
-    /* True by default: */
-    return true;
-}
-
-/* static */
 bool UISelectorWindow::isItemsPoweredOff(const QList<UIVMItem*> &items)
 {
     foreach (UIVMItem *pItem, items)
-        if (!(pItem->machineState() == KMachineState_PoweredOff ||
-              pItem->machineState() == KMachineState_Saved ||
-              pItem->machineState() == KMachineState_Teleported ||
-              pItem->machineState() == KMachineState_Aborted))
-        return false;
+        if (!isItemPoweredOff(pItem))
+            return false;
     return true;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemAbleToShutdown(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+    {
+        if (!isItemRunning(pItem))
+            continue;
+
+        CSession session = vboxGlobal().openExistingSession(pItem->id());
+        if (session.isNull())
+        {
+            msgCenter().cannotOpenSession(session);
+            return false;
+        }
+        CConsole console = session.GetConsole();
+        if (console.isNull())
+        {
+            session.UnlockMachine();
+            return false;
+        }
+        session.UnlockMachine();
+
+        return console.GetGuestEnteredACPIMode();
+    }
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemSupportsShortcuts(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (pItem->accessible()
+#ifdef Q_WS_MAC
+            /* On Mac OS X this are real alias files, which don't work with the old
+             * legacy xml files. On the other OS's some kind of start up script is used. */
+            && !pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
+#endif /* Q_WS_MAC */
+            )
+            return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemAccessible(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (pItem->accessible())
+            return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemInaccessible(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (!pItem->accessible())
+            return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemRemovable(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (!pItem->accessible() || isItemEditable(pItem))
+            return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemCanBeStartedOrShowed(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+    {
+        if ((isItemPoweredOff(pItem) && isItemEditable(pItem)) ||
+            (isItemStarted(pItem) && pItem->canSwitchTo()))
+            return true;
+    }
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemDiscardable(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (isItemSaved(pItem) && isItemEditable(pItem))
+            return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemStarted(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (isItemStarted(pItem))
+            return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isAtLeastOneItemRunning(const QList<UIVMItem*> &items)
+{
+    foreach (UIVMItem *pItem, items)
+        if (isItemRunning(pItem))
+            return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isItemEditable(UIVMItem *pItem)
+{
+    return pItem->accessible() &&
+           pItem->sessionState() == KSessionState_Unlocked;
+}
+
+/* static */
+bool UISelectorWindow::isItemSaved(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        pItem->machineState() == KMachineState_Saved)
+        return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isItemPoweredOff(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        (pItem->machineState() == KMachineState_PoweredOff ||
+         pItem->machineState() == KMachineState_Saved ||
+         pItem->machineState() == KMachineState_Teleported ||
+         pItem->machineState() == KMachineState_Aborted))
+        return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isItemStarted(UIVMItem *pItem)
+{
+    return isItemRunning(pItem) || isItemPaused(pItem);
+}
+
+/* static */
+bool UISelectorWindow::isItemRunning(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        (pItem->machineState() == KMachineState_Running ||
+         pItem->machineState() == KMachineState_Teleporting ||
+         pItem->machineState() == KMachineState_LiveSnapshotting))
+        return true;
+    return false;
+}
+
+/* static */
+bool UISelectorWindow::isItemPaused(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        (pItem->machineState() == KMachineState_Paused ||
+         pItem->machineState() == KMachineState_TeleportingPausedVM))
+        return true;
+    return false;
+
+}
+
+/* static */
+bool UISelectorWindow::isItemStuck(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        pItem->machineState() == KMachineState_Stuck)
+        return true;
+    return false;
 }
 

@@ -256,7 +256,7 @@ public:
 
     int confirmMachineItemRemoval(const QStringList &names);
     int confirmMachineDeletion(const QList<CMachine> &machines);
-    bool confirmDiscardSavedState(const CMachine &machine);
+    bool confirmDiscardSavedState(const QString &strNames);
 
     void cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType);
 
@@ -351,9 +351,9 @@ public:
     bool remindAboutGuruMeditation(const CConsole &console,
                                    const QString &strLogFolder);
 
-    bool confirmVMReset(QWidget *pParent = 0);
-    bool confirmVMACPIShutdown(QWidget *pParent = 0);
-    bool confirmVMPowerOff(QWidget *pParent = 0);
+    bool confirmVMReset(const QString &strNames);
+    bool confirmVMACPIShutdown(const QString &strNames);
+    bool confirmVMPowerOff(const QString &strNames);
 
     void warnAboutCannotRemoveMachineFolder(QWidget *pParent, const QString &strFolderName);
     void warnAboutCannotRewriteMachineFolder(QWidget *pParent, const QString &strFolderName);
