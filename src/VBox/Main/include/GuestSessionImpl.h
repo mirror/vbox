@@ -27,6 +27,8 @@
 #include "GuestFileImpl.h"
 #include "GuestFsObjInfoImpl.h"
 
+#include <iprt/isofs.h> /* For UpdateAdditions. */
+
 class Guest;
 
 /**
@@ -135,6 +137,11 @@ public:
     static int taskThread(RTTHREAD Thread, void *pvUser);
 
 protected:
+
+    int copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO,
+                        Utf8Str const &strFileSource, const Utf8Str &strFileDest,
+                        bool fOptional, uint32_t *pcbSize);
+    int runFile(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
 
     /** The (optionally) specified Guest Additions .ISO on the host
      *  which will be used for the updating process. */
