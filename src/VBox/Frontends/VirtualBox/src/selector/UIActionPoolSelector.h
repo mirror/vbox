@@ -35,35 +35,27 @@ enum UIActionIndexSelector
 
     /* 'Group' menu actions: */
     UIActionIndexSelector_Menu_Group,
-    UIActionIndexSelector_Simple_Group_NewWizard,
-    UIActionIndexSelector_Simple_Group_AddDialog,
-    UIActionIndexSelector_Simple_Group_RenameDialog,
-    UIActionIndexSelector_Simple_Group_RemoveDialog,
-    UIActionIndexSelector_State_Group_StartOrShow,
-    UIActionIndexSelector_Toggle_Group_PauseAndResume,
-    UIActionIndexSelector_Simple_Group_Reset,
-    UIActionIndexSelector_Simple_Group_Refresh,
-    UIActionIndexSelector_Simple_Group_ShowInFileManager,
-    UIActionIndexSelector_Simple_Group_CreateShortcut,
+    UIActionIndexSelector_Simple_Group_Rename,
+    UIActionIndexSelector_Simple_Group_Remove,
     UIActionIndexSelector_Simple_Group_Sort,
 
     /* 'Machine' menu actions: */
     UIActionIndexSelector_Menu_Machine,
-    UIActionIndexSelector_Simple_Machine_NewWizard,
-    UIActionIndexSelector_Simple_Machine_AddDialog,
-    UIActionIndexSelector_Simple_Machine_AddGroupDialog,
-    UIActionIndexSelector_Simple_Machine_SettingsDialog,
-    UIActionIndexSelector_Simple_Machine_CloneWizard,
-    UIActionIndexSelector_Simple_Machine_RemoveDialog,
-    UIActionIndexSelector_State_Machine_StartOrShow,
-    UIActionIndexSelector_Simple_Machine_Discard,
-    UIActionIndexSelector_Toggle_Machine_PauseAndResume,
-    UIActionIndexSelector_Simple_Machine_Reset,
-    UIActionIndexSelector_Simple_Machine_Refresh,
-    UIActionIndexSelector_Simple_Machine_ShowInFileManager,
-    UIActionIndexSelector_Simple_Machine_CreateShortcut,
+    UIActionIndexSelector_Simple_Machine_Settings,
+    UIActionIndexSelector_Simple_Machine_Clone,
+    UIActionIndexSelector_Simple_Machine_Remove,
+    UIActionIndexSelector_Simple_Machine_AddGroup,
 
-    /* Common menu action: */
+    /* Common 'Group' / 'Machine' menu actions: */
+    UIActionIndexSelector_Simple_Common_New,
+    UIActionIndexSelector_Simple_Common_Add,
+    UIActionIndexSelector_State_Common_StartOrShow,
+    UIActionIndexSelector_Toggle_Common_PauseAndResume,
+    UIActionIndexSelector_Simple_Common_Reset,
+    UIActionIndexSelector_Simple_Common_Discard,
+    UIActionIndexSelector_Simple_Common_Refresh,
+    UIActionIndexSelector_Simple_Common_ShowInFileManager,
+    UIActionIndexSelector_Simple_Common_CreateShortcut,
     UIActionIndexSelector_Simple_Common_SortParent,
 
     /* 'Machine/Close' menu actions: */
