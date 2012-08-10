@@ -533,59 +533,63 @@ int SessionTaskCopyFrom::Run(void)
                 {
                     rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
                                            30 * 1000 /* Timeout */, waitRes);
-                    if (   RT_FAILURE(rc)
-                        && (   waitRes.mResult != ProcessWaitResult_StdOut
-                            || waitRes.mResult != ProcessWaitResult_Any)
-                       )
+                    if (   waitRes.mResult == ProcessWaitResult_StdOut
+                        || waitRes.mResult == ProcessWaitResult_Any)
                     {
-                        break;
-                    }
-
-                    size_t cbRead;
-                    rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                            30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                            &cbRead);
-                    if (RT_FAILURE(rc))
-                    {
-                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Reading from file \"%s\" (offset %RU64) failed: %Rrc"),
-                                            mSource.c_str(), cbWrittenTotal, rc));
-                        break;
-                    }
-
-                    if (cbRead)
-                    {
-                        rc = RTFileWrite(fileDest, byBuf, cbRead, NULL /* No partial writes */);
+                        size_t cbRead;
+                        rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                                30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                                &cbRead);
                         if (RT_FAILURE(rc))
                         {
                             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                Utf8StrFmt(GuestSession::tr("Error writing to file \"%s\" (%RU64 bytes left): %Rrc"),
-                                                mDest.c_str(), cbToRead, rc));
+                                                Utf8StrFmt(GuestSession::tr("Reading from file \"%s\" (offset %RU64) failed: %Rrc"),
+                                                mSource.c_str(), cbWrittenTotal, rc));
                             break;
                         }
 
-                        /* Only subtract bytes reported written by the guest. */
-                        Assert(cbToRead >= cbRead);
-                        cbToRead -= cbRead;
+                        if (cbRead)
+                        {
+                            rc = RTFileWrite(fileDest, byBuf, cbRead, NULL /* No partial writes */);
+                            if (RT_FAILURE(rc))
+                            {
+                                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                    Utf8StrFmt(GuestSession::tr("Error writing to file \"%s\" (%RU64 bytes left): %Rrc"),
+                                                    mDest.c_str(), cbToRead, rc));
+                                break;
+                            }
 
-                        /* Update total bytes written to the guest. */
-                        cbWrittenTotal += cbRead;
-                        Assert(cbWrittenTotal <= (uint64_t)objData.mObjectSize);
+                            /* Only subtract bytes reported written by the guest. */
+                            Assert(cbToRead >= cbRead);
+                            cbToRead -= cbRead;
 
-                        /* Did the user cancel the operation above? */
-                        if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
-                            && fCanceled)
-                            break;
+                            /* Update total bytes written to the guest. */
+                            cbWrittenTotal += cbRead;
+                            Assert(cbWrittenTotal <= (uint64_t)objData.mObjectSize);
 
-                        rc = setProgress((ULONG)(cbWrittenTotal / ((uint64_t)objData.mObjectSize / 100.0)));
-                        if (RT_FAILURE(rc))
-                            break;
+                            /* Did the user cancel the operation above? */
+                            if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
+                                && fCanceled)
+                                break;
 
-                        /* End of file reached? */
-                        if (cbToRead == 0)
-                            break;
+                            rc = setProgress((ULONG)(cbWrittenTotal / ((uint64_t)objData.mObjectSize / 100.0)));
+                            if (RT_FAILURE(rc))
+                                break;
+                        }
+                    }
+                    else if (   RT_FAILURE(rc)
+                             || waitRes.mResult == ProcessWaitResult_Terminate
+                             || waitRes.mResult == ProcessWaitResult_Error
+                             || waitRes.mResult == ProcessWaitResult_Timeout)
+                    {
+                        if (RT_FAILURE(waitRes.mRC))
+                            rc = waitRes.mRC;
+                        break;
                     }
                 } /* for */
+
+                LogFlowThisFunc(("rc=%Rrc, cbWrittenTotal=%RU64, cbSize=%RI64, cbToRead=%RU64\n",
+                                 rc, cbWrittenTotal, objData.mObjectSize, cbToRead));
 
                 if (   !fCanceled
                     || RT_SUCCESS(rc))
@@ -599,16 +603,18 @@ int SessionTaskCopyFrom::Run(void)
                     {
                         /* If nothing was transfered but the file size was > 0 then "vbox_cat" wasn't able to write
                          * to the destination -> access denied. */
-                        rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                 Utf8StrFmt(GuestSession::tr("Access denied when copying file \"%s\" to \"%s\""),
-                                                 mSource.c_str(), mDest.c_str()));
+                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                            Utf8StrFmt(GuestSession::tr("Access denied when copying file \"%s\" to \"%s\""),
+                                            mSource.c_str(), mDest.c_str()));
+                        rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }
                     else if (cbWrittenTotal < (uint64_t)objData.mObjectSize)
                     {
                         /* If we did not copy all let the user know. */
-                        rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                 Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed (%RU64/%RU64 bytes transfered)"),
-                                                 mSource.c_str(), cbWrittenTotal, objData.mObjectSize));
+                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                            Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed (%RU64/%RI64 bytes transfered)"),
+                                            mSource.c_str(), cbWrittenTotal, objData.mObjectSize));
+                        rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }
                     else
                     {
@@ -620,9 +626,10 @@ int SessionTaskCopyFrom::Run(void)
                                 && exitCode != 0)
                            )
                         {
-                            rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                     Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed with status %ld, exit code %d"),
-                                                                mSource.c_str(), procStatus, exitCode)); /**@todo Add stringify methods! */
+                            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                Utf8StrFmt(GuestSession::tr("Copying file \"%s\" failed with status %ld, exit code %d"),
+                                                mSource.c_str(), procStatus, exitCode)); /**@todo Add stringify methods! */
+                            rc = VERR_GENERAL_FAILURE; /* Fudge. */
                         }
                         else /* Yay, success! */
                             rc = setProgressSuccess();
