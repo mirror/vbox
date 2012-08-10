@@ -92,6 +92,7 @@ private slots:
     void sltPerformDiscardAction();
     void sltPerformPauseResumeAction(bool fPause);
     void sltPerformResetAction();
+    void sltPerformSaveAction();
     void sltPerformACPIShutdownAction();
     void sltPerformPowerOffAction();
     void sltPerformRefreshAction();
@@ -216,6 +217,7 @@ private:
     /* 'Machine / Close' menu action pointers: */
     UIAction *m_pMachineCloseMenuAction;
     QMenu *m_pMachineCloseMenu;
+    UIAction *m_pSaveAction;
     UIAction *m_pACPIShutdownAction;
     UIAction *m_pPowerOffAction;
 

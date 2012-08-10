@@ -68,6 +68,7 @@ enum UIActionIndexSelector
 
     /* 'Machine/Close' menu actions: */
     UIActionIndexSelector_Menu_Machine_Close,
+    UIActionIndexSelector_Simple_Machine_Close_Save,
     UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown,
     UIActionIndexSelector_Simple_Machine_Close_PowerOff,
 
