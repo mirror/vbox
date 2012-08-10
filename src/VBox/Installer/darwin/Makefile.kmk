@@ -327,6 +327,7 @@ else  # !VBOX_USE_PACKAGEMAKER
 		--resources $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res \
 		--identifier org.virtualbox.mpkg.virtualbox \
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+               $(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@ 
 endif # !VBOX_USE_PACKAGEMAKER
 	@# Cleanup.
@@ -474,6 +475,7 @@ else
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /Library/Extensions/ \
 		--ownership preserve \
+               $(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 endif
 	@# Cleanup
@@ -575,6 +577,7 @@ else
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /Library/StartupItems/ \
 		--ownership preserve \
+               $(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 endif
 	@# Cleanup
@@ -1081,6 +1084,7 @@ else
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /Applications/ \
 		--ownership preserve \
+               $(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 endif
 	@# Cleanup
@@ -1190,6 +1194,7 @@ else
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /usr/bin \
 		--ownership preserve \
+               $(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 endif
 	@# Cleanup
