@@ -567,6 +567,48 @@ void UISelectorWindow::sltPerformResetAction()
     }
 }
 
+void UISelectorWindow::sltPerformSaveAction()
+{
+    /* Get selected items: */
+    QList<UIVMItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    /* Check if all the items could be saved: */
+    if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_Save, items))
+        return;
+
+    /* For each selected item: */
+    foreach (UIVMItem *pItem, items)
+    {
+        /* Open a session to modify VM state: */
+        CSession session = vboxGlobal().openExistingSession(pItem->id());
+        if (session.isNull())
+        {
+            msgCenter().cannotOpenSession(session);
+            return;
+        }
+
+        /* Get session console: */
+        CConsole console = session.GetConsole();
+        /* Save machine state: */
+        CProgress progress = console.SaveState();
+        if (!console.isOk())
+            msgCenter().cannotSaveMachineState(console);
+        else
+        {
+            /* Get machine: */
+            CMachine machine = session.GetMachine();
+            /* Show the "VM saving" progress dialog: */
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png", 0, true);
+            if (progress.GetResultCode() != 0)
+                msgCenter().cannotSaveMachineState(progress);
+        }
+
+        /* Unlock machine finally: */
+        session.UnlockMachine();
+    }
+}
+
 void UISelectorWindow::sltPerformACPIShutdownAction()
 {
     /* Confirm ACPI shutdown current VM: */
@@ -1180,6 +1222,8 @@ void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
         return;
 
     /* Populate Machine/Close-menu: */
+    m_pSaveAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_Save);
+    pMenu->addAction(m_pSaveAction);
     m_pACPIShutdownAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown);
     pMenu->addAction(m_pACPIShutdownAction);
     m_pPowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff);
@@ -1328,6 +1372,7 @@ void UISelectorWindow::prepareConnections()
 
     /* 'Machine/Close' menu connections: */
     connect(m_pMachineCloseMenu, SIGNAL(aboutToShow()), this, SLOT(sltMachineCloseMenuAboutToShow()));
+    connect(m_pSaveAction, SIGNAL(triggered()), this, SLOT(sltPerformSaveAction()));
     connect(m_pACPIShutdownAction, SIGNAL(triggered()), this, SLOT(sltPerformACPIShutdownAction()));
     connect(m_pPowerOffAction, SIGNAL(triggered()), this, SLOT(sltPerformPowerOffAction()));
 
@@ -1533,6 +1578,7 @@ void UISelectorWindow::updateActionsAppearance()
 
     /* Enable/disable machine-close actions: */
     m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items));
+    m_pSaveAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_Save, items));
     m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, items));
     m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, items));
 
@@ -1729,6 +1775,11 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
             /* True if machine is in one of next 'running' or 'paused' states: */
             return pItem->machineState() == KMachineState_Running ||
                    pItem->machineState() == KMachineState_Paused;
+        }
+        case UIActionIndexSelector_Simple_Machine_Close_Save:
+        {
+            /* The same as 'Machine/Close' menu is enabled: */
+            return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, items);
         }
         case UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown:
         {

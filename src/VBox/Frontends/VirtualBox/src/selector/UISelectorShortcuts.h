@@ -44,6 +44,7 @@ public:
         DiscardVMShortcut,
         PauseVMShortcut,
         ResetVMShortcut,
+        SaveVMShortcut,
         ACPIShutdownVMShortcut,
         PowerOffVMShortcut,
         RefreshVMShortcut,
