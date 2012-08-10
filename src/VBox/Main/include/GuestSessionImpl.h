@@ -195,7 +195,7 @@ public:
     STDMETHOD(CopyFrom)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(CopyFileFlag_T, aFlags), IProgress **aProgress);
     STDMETHOD(CopyTo)(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn(CopyFileFlag_T, aFlags), IProgress **aProgress);
     STDMETHOD(DirectoryCreate)(IN_BSTR aPath, ULONG aMode, ComSafeArrayIn(DirectoryCreateFlag_T, aFlags), IGuestDirectory **aDirectory);
-    STDMETHOD(DirectoryCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestDirectory **aDirectory);
+    STDMETHOD(DirectoryCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, BOOL aSecure, BSTR *aDirectory);
     STDMETHOD(DirectoryExists)(IN_BSTR aPath, BOOL *aExists);
     STDMETHOD(DirectoryOpen)(IN_BSTR aPath, IN_BSTR aFilter, ComSafeArrayIn(DirectoryOpenFlag_T, aFlags), IGuestDirectory **aDirectory);
     STDMETHOD(DirectoryQueryInfo)(IN_BSTR aPath, IGuestFsObjInfo **aInfo);
@@ -207,7 +207,7 @@ public:
     STDMETHOD(EnvironmentGet)(IN_BSTR aName, BSTR *aValue);
     STDMETHOD(EnvironmentSet)(IN_BSTR aName, IN_BSTR aValue);
     STDMETHOD(EnvironmentUnset)(IN_BSTR aName);
-    STDMETHOD(FileCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aName, IGuestFile **aFile);
+    STDMETHOD(FileCreateTemp)(IN_BSTR aTemplate, ULONG aMode, IN_BSTR aPath, BOOL aSecure, IGuestFile **aFile);
     STDMETHOD(FileExists)(IN_BSTR aPath, BOOL *aExists);
     STDMETHOD(FileRemove)(IN_BSTR aPath);
     STDMETHOD(FileOpen)(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aDisposition, ULONG aCreationMode, LONG64 aOffset, IGuestFile **aFile);
