@@ -9,7 +9,9 @@
         <key>IFMajorVersion</key>                       <integer>@VBOX_VERSION_MAJOR@</integer>
         <key>IFMinorVersion</key>                       <integer>@VBOX_VERSION_MINOR@</integer>
         <key>IFPkgFormatVersion</key>                   <real>0.10000000149011612</real>
-        <key>IFPkgFlagComponentDirectory</key>          <string>./Contents/Packages</string>
+        <key>IFPkgFlagComponentDirectory</key>          <string>./Contents/Packages/</string>
+        <key>IFPkgFlagRootVolumeOnly</key>              <true/>
+        <key>IFPkgFlagFollowLinks</key>                 <false/>
         <key>IFPkgFlagPackageList</key>
 	<array>
 		<dict>

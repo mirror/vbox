@@ -65,6 +65,16 @@ ifndef VBOX_PACKAGEMAKER
                                   /Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker)
 endif
 
+# The location of the pkgbuild program.
+ifndef VBOX_PKGBUILD
+ VBOX_PKGBUILD := pkgbuild
+endif
+
+# The location of the productbuild program.
+ifndef VBOX_PKGBUILD
+ VBOX_PRODUCTBUILD := productbuild
+endif
+
 # Where we do the packing (override this in LocalConfig.kmk if building on smbfs).
 ifndef VBOX_PATH_PACK_TMP
  VBOX_PATH_PACK_TMP := $(VBOX_DI_OUT_DIR)
@@ -370,6 +380,7 @@ endif
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/Library
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/Library/Extensions
 	@# Do keyword replacement in the package info and description files.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
@@ -396,9 +407,22 @@ endif
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/English.lproj/ReadMe.html \
 		$(VBOX_PATH_DI_SRC)/VBoxKEXTs/ReadMe.html
+else
+	$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		--output $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc/PkgBuildComponent.plist \
+		$(VBOX_PATH_DI_SRC)/VBoxKEXTs/PkgBuildComponent.plist
+endif
 	@# Copy the resources.
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VBoxKEXTs/InstallationCheck                     $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VBoxKEXTs/postflight                            $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/
+ifdef VBOX_USE_PACKAGEMAKER
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 		$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -421,13 +445,26 @@ endif
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)            $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/InstallationCheck.strings$(NLTAB) \
 	)
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VBoxKEXTs/English.lproj/InstallationCheck.strings $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/English.lproj/
+endif
 	@# Build the package.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(VBOX_PACKAGEMAKER) -build -v \
 		-p $@ \
 		-f $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root \
 		-r $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res \
 		-i $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc/Info.plist \
 		-d $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc/Description.plist
+else
+	$(VBOX_PKGBUILD) \
+		--root   $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/Library/Extensions/ \
+		--component-plist $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc/PkgBuildComponent.plist \
+		--script $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res \
+		--identifier org.virtualbox.pkg.vboxkexts \
+		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+		--install-location /Library/Extensions/ \
+		--ownership preserve \
+		$@
+endif
 	@# Cleanup
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root \
@@ -473,6 +510,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems
 	@# Do keyword replacement in the package info and description files.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
@@ -493,7 +531,9 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc/Description.plist \
 		$(VBOX_PATH_DI_SRC)/VBoxStartupItems/Description.plist
+endif
 	@# Copy the resources.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 		$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -508,13 +548,24 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
 			--output $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Description.plist \
 			$(VBOX_BRAND_$(f)_VBOXSTARTUPITEMS_DESCRIPTION_PLIST)$(NLTAB) \
 	)
+endif
 	@# Build the package.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(VBOX_PACKAGEMAKER) -build -v \
 		-p $@ \
 		-f $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root \
 		-r $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res \
 		-i $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc/Info.plist \
 		-d $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc/Description.plist
+else
+	$(VBOX_PKGBUILD) \
+		--root   $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/ \
+		--identifier org.virtualbox.pkg.vboxstartupitems \
+		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+		--install-location /Library/StartupItems/ \
+		--ownership preserve \
+		$@
+endif
 	@# Cleanup
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root \
@@ -951,6 +1002,7 @@ ifdef VBOX_WITH_HARDENING
  endif
 endif
 	@# Do keyword replacement in the package info and description files.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
@@ -971,7 +1023,20 @@ endif
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/Description.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/Description.plist
+else
+	$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/PkgBuildComponent.plist \
+		$(VBOX_PATH_DI_SRC)/VirtualBox/PkgBuildComponent.plist
+endif
 	@# Copy the resources.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES) \
 		,$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -986,14 +1051,27 @@ endif
 			--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Description.plist \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_DESCRIPTION_PLIST)$(NLTAB) \
 	)
+endif
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/postflight                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
 	@# Build the package.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(VBOX_PACKAGEMAKER) -build -v \
 		-p $@ \
 		-f $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root \
 		-r $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res \
 		-i $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/Info.plist \
 		-d $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/Description.plist
+else
+	$(VBOX_PKGBUILD) \
+       	--root   $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/ \
+		--component-plist $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/PkgBuildComponent.plist \
+		--script $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res \
+		--identifier org.virtualbox.pkg.virtualbox \
+		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+		--install-location /Applications/ \
+		--ownership preserve \
+		$@
+endif
 	@# Cleanup
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root \
@@ -1047,6 +1125,7 @@ endif
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr
 	@# Do keyword replacement in the package info and description files.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
@@ -1067,7 +1146,9 @@ endif
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc/Description.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBoxCLI/Description.plist
+endif
 	@# Copy the resources.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES) \
 		,$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -1082,13 +1163,24 @@ endif
 			--output $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Description.plist \
 			$(VBOX_BRAND_$(f)_VIRTUALBOXCLI_DESCRIPTION_PLIST)$(NLTAB) \
 	)
+endif
 	@# Build the package.
+ifdef VBOX_USE_PACKAGEMAKER
 	$(VBOX_PACKAGEMAKER) -build -v \
 		-p $@ \
 		-f $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root \
 		-r $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res \
 		-i $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc/Info.plist \
 		-d $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc/Description.plist
+else
+	$(VBOX_PKGBUILD) \
+       	--root   $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin \
+		--identifier org.virtualbox.pkg.virtualboxcli \
+		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+		--install-location /usr/bin \
+		--ownership preserve \
+		$@
+endif
 	@# Cleanup
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root \
