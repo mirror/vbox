@@ -44,9 +44,9 @@ static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
 /** The guest control service client ID. */
 static uint32_t             g_uControlSvcClientID = 0;
 /** How many started guest processes are kept into memory for supplying
- *  information to the host. Default is 25 processes. If 0 is specified,
+ *  information to the host. Default is 256 processes. If 0 is specified,
  *  the maximum number of processes is unlimited. */
-static uint32_t             g_uControlProcsMaxKept = 25;
+static uint32_t             g_uControlProcsMaxKept = 256;
 #ifdef DEBUG
 static bool                 g_fControlDumpStdErr  = false;
 static bool                 g_fControlDumpStdOut  = false;
@@ -1037,7 +1037,7 @@ VBOXSERVICE g_Control =
     "                            new control commands. The default is 1000 ms.\n"
     "    --control-procs-max-kept\n"
     "                            Specifies how many started guest processes are\n"
-    "                            kept into memory to work with. Default is 25.\n"
+    "                            kept into memory to work with. Default is 256.\n"
     ,
     /* methods */
     VBoxServiceControlPreInit,
