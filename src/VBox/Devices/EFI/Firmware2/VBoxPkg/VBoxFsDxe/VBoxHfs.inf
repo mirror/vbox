@@ -35,6 +35,7 @@
 
 [Packages]
         MdePkg/MdePkg.dec
+        MdeModulePkg/MdeModulePkg.dec
         IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
         VBoxPkg/VBoxPkg.dec
 
@@ -48,6 +49,7 @@
    UefiDriverEntryPoint
    DebugLib
    PcdLib
+   DevicePathLib
 
 [Guids]
   gEfiFileInfoGuid
@@ -60,13 +62,14 @@
   gEfiSimpleFileSystemProtocolGuid
   gEfiUnicodeCollationProtocolGuid
   gEfiUnicodeCollation2ProtocolGuid
+  gEfiDevicePathToTextProtocolGuid                ## CONSUMED
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLang
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLang
 
 [BuildOptions.common]
-  GCC:*_*_*_CC_FLAGS = -DFSTYPE=hfs
+  GCC:*_*_*_CC_FLAGS = -DFSTYPE=hfs -DEFI_LOG_ENABLED=1
 # -DFSW_DEBUG_LEVEL=3
   INTEL:*_*_*_CC_FLAGS = -DFSTYPE=hfs
   MSFT:*_*_*_CC_FLAGS = -DFSTYPE=hfs
