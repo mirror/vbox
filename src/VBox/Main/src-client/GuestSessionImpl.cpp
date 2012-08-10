@@ -256,9 +256,7 @@ int SessionTaskCopyTo::Run(void)
             rc = pProcess->waitFor(ProcessWaitForFlag_StdIn,
                                    30 * 1000 /* Timeout */, waitRes);
             if (   RT_FAILURE(rc)
-                || waitRes.mResult == ProcessWaitResult_Terminate
-                || waitRes.mResult == ProcessWaitResult_Error
-                || waitRes.mResult == ProcessWaitResult_Timeout)
+                || waitRes.mResult != ProcessWaitForFlag_StdIn)
             {
                 break;
             }
@@ -318,13 +316,13 @@ int SessionTaskCopyTo::Run(void)
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Writing to file \"%s\" (offset %RU64) failed: %Rrc"),
-                                               mSource.c_str(), cbWrittenTotal, rc));
+                                               mDest.c_str(), cbWrittenTotal, rc));
                 break;
             }
-#ifdef DEBUG
+
             LogFlowThisFunc(("cbWritten=%RU32, cbToRead=%RU64, cbWrittenTotal=%RU64, cbFileSize=%RU64\n",
                              cbWritten, cbToRead - cbWritten, cbWrittenTotal + cbWritten, mSourceSize));
-#endif
+
             /* Only subtract bytes reported written by the guest. */
             Assert(cbToRead >= cbWritten);
             cbToRead -= cbWritten;
@@ -487,7 +485,7 @@ int SessionTaskCopyFrom::Run(void)
     else if (objData.mType != FsObjType_File) /* Only single files are supported at the moment. */
     {
         rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                 Utf8StrFmt(GuestSession::tr("Guest file \"%s\" is not a file"), mSource.c_str()));
+                                 Utf8StrFmt(GuestSession::tr("Object \"%s\" on the guest is not a file"), mSource.c_str()));
     }
 
     if (RT_SUCCESS(rc))
@@ -520,7 +518,7 @@ int SessionTaskCopyFrom::Run(void)
             if (RT_FAILURE(rc))
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Unable to start guest process: %Rrc"), rc));
+                                    Utf8StrFmt(GuestSession::tr("Unable to start guest process for copying data from guest to host: %Rrc"), rc));
             }
             else
             {
@@ -536,7 +534,9 @@ int SessionTaskCopyFrom::Run(void)
                     rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
                                            30 * 1000 /* Timeout */, waitRes);
                     if (   RT_FAILURE(rc)
-                        || waitRes.mResult != ProcessWaitResult_StdOut)
+                        && (   waitRes.mResult != ProcessWaitResult_StdOut
+                            || waitRes.mResult != ProcessWaitResult_Any)
+                       )
                     {
                         break;
                     }

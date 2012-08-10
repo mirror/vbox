@@ -2857,7 +2857,7 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
 
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
 
-        LogFlowFunc(("Added new session with session ID=%RU32 (now %ld sessios total)\n",
+        LogFlowFunc(("Added new session with session ID=%RU32 (now %ld sessions total)\n",
                      uNewSessionID, mData.mGuestSessions.size()));
     }
     catch (int rc2)
