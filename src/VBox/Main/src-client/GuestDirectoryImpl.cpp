@@ -237,7 +237,8 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
                 || waitRes.mResult == ProcessWaitResult_Error
                 || waitRes.mResult == ProcessWaitResult_Timeout)
             {
-                rc = waitRes.mRC;
+                if (RT_FAILURE(waitRes.mRC))
+                    rc = waitRes.mRC;
                 break;
             }
 
