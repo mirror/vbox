@@ -128,7 +128,6 @@
 #include <iprt/stream.h>
 
 #include <VBox/vd.h>
-#include <VBox/version.h>
 #include <VBox/sup.h>
 #include <VBox/com/Guid.h>
 #include <VBox/VBoxOGLTest.h>
@@ -405,9 +404,7 @@ QString VBoxGlobal::vboxVersionString() const
 
 QString VBoxGlobal::vboxVersionStringNormalized() const
 {
-    /** @todo IVirtualBox should expose a publisher-free version string! This
-     *        doesn't work in any sane+portable manner.  */
-    return vboxVersionString().remove(VBOX_BUILD_PUBLISHER);
+    return mVBox.GetVersionNormalized();
 }
 
 bool VBoxGlobal::isBeta() const

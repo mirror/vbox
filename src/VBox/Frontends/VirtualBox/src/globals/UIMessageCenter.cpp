@@ -1767,14 +1767,12 @@ void UIMessageCenter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent)
              "remindAboutGuestAdditionsAreNotActive");
 }
 
-bool UIMessageCenter::cannotFindGuestAdditions(const QString &strSrc1, const QString &strSrc2)
+bool UIMessageCenter::cannotFindGuestAdditions()
 {
     return messageYesNo(mainMachineWindowShown(), Question,
                     tr("<p>Could not find the VirtualBox Guest Additions "
-                       "CD image file <nobr><b>%1</b></nobr> or "
-                       "<nobr><b>%2</b>.</nobr></p><p>Do you wish to "
-                       "download this CD image from the Internet?</p>")
-                       .arg(strSrc1).arg(strSrc2));
+                       "CD image file.</nobr></p><p>Do you wish to "
+                       "download this CD image from the Internet?</p>"));
 }
 
 void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName)

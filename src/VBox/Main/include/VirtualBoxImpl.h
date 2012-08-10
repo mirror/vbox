@@ -102,6 +102,7 @@ public:
 
     /* IVirtualBox properties */
     STDMETHOD(COMGETTER(Version))(BSTR *aVersion);
+    STDMETHOD(COMGETTER(VersionNormalized))(BSTR *aVersionNormalized);
     STDMETHOD(COMGETTER(Revision))(ULONG *aRevision);
     STDMETHOD(COMGETTER(PackageType))(BSTR *aPackageType);
     STDMETHOD(COMGETTER(APIVersion))(BSTR *aAPIVersion);
@@ -245,7 +246,7 @@ public:
     HRESULT findGuestOSType(const Bstr &bstrOSType,
                             GuestOSType*& pGuestOSType);
 
-    const Guid& getGlobalRegistryId() const;
+    const Guid &getGlobalRegistryId() const;
 
     const ComObjPtr<Host>& host() const;
     SystemProperties* getSystemProperties() const;
@@ -283,6 +284,8 @@ public:
 
     void markRegistryModified(const Guid &uuid);
     void saveModifiedRegistries();
+
+    static const Bstr &getVersionNormalized();
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
 
@@ -328,6 +331,7 @@ private:
 
     /* static variables (defined in VirtualBoxImpl.cpp) */
     static Bstr sVersion;
+    static Bstr sVersionNormalized;
     static ULONG sRevision;
     static Bstr sPackageType;
     static Bstr sAPIVersion;

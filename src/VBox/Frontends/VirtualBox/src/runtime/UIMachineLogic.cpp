@@ -63,6 +63,7 @@
 #include "CHostUSBDevice.h"
 #include "CUSBDevice.h"
 #include "CVRDEServer.h"
+#include "CSystemProperties.h"
 #ifdef Q_WS_MAC
 # include "CGuest.h"
 #endif /* Q_WS_MAC */
@@ -1582,18 +1583,10 @@ void UIMachineLogic::sltInstallGuestAdditions()
     if (!isMachineWindowsCreated())
         return;
 
-    char strAppPrivPath[RTPATH_MAX];
-    int rc = RTPathAppPrivateNoArch(strAppPrivPath, sizeof(strAppPrivPath));
-    AssertRC (rc);
-
-    QString strSrc1 = QString(strAppPrivPath) + "/VBoxGuestAdditions.iso";
-    QString strSrc2 = qApp->applicationDirPath() + "/additions/VBoxGuestAdditions.iso";
-
-    /* Check the standard image locations */
-    if (QFile::exists(strSrc1))
-        return uisession()->sltInstallGuestAdditionsFrom(strSrc1);
-    else if (QFile::exists(strSrc2))
-        return uisession()->sltInstallGuestAdditionsFrom(strSrc2);
+    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    QString strAdditions = systemProperties.GetDefaultAdditionsISO();
+    if (systemProperties.isOk() && !strAdditions.isEmpty())
+        return uisession()->sltInstallGuestAdditionsFrom(strAdditions);
 
     /* Check for the already registered image */
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1616,7 +1609,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
         gNetworkManager->show();
     }
     /* Else propose to download additions: */
-    else if (msgCenter().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2)))
+    else if (msgCenter().cannotFindGuestAdditions())
     {
         /* Create Additions downloader: */
         UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
