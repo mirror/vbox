@@ -135,8 +135,9 @@ static void VBoxServiceToolboxShowUsage(void)
              "  ls <general options>       [--dereference|-L] [-l] [-R]\n"
              "                             [--verbose|-v] [<file>...]\n"
              "  rm <general options>       [-r|-R] <file>...\n"
-             "  mktemp <general options>   [--directory|-d] [--secure|-s]\n"
-             "                             [--mode|-m <mode>] <template>\n"
+             "  mktemp <general options>   [--directory|-d] [--mode|-m <mode>]\n"
+             "                             [--secure|-s] [--tmpdir|-t <path>]\n"
+             "                             <template>\n"
              "  mkdir <general options>    [--mode|-m <mode>] [--parents|-p]\n"
              "                             [--verbose|-v] <directory>...\n"
              "  stat <general options>     [--file-system|-f]\n"
@@ -1134,12 +1135,14 @@ static char g_paszMkTempHelp[] =
     "  VBoxService [--use-toolbox] vbox_mktemp <general options> <template>\n\n"
     "Create a temporary directory based on the template supplied. The first string\n"
     "of consecutive 'X' characters in the template will be replaced to form a unique\n"
-    "name for the directory.  The template must contain an absolute path.  The\n"
-    "default creation mode is 0600 for files and 0700 for directories.\n"
+    "name for the directory.  The template may not contain a path.  The default\n"
+    "creation mode is 0600 for files and 0700 for directories.  If no path is\n"
+    "specified the default temporary directory will be used.\n"
     "Options:\n\n"
     "  [--directory|-d]           Create a directory instead of a file.\n"
     "  [--mode|-m <mode>]         Create the object with mode <mode>.\n"
     "  [--secure|-s]              Fail if the object cannot be created securely.\n"
+    "  [--tmpdir|-t <path>]       Create the object with the absolute path <path>.\n"
     "\n";
 
 
@@ -1185,6 +1188,7 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
         { "--directory", 'd', RTGETOPT_REQ_NOTHING },
         { "--mode",      'm', RTGETOPT_REQ_STRING },
         { "--secure",    's', RTGETOPT_REQ_NOTHING },
+        { "--tmpdir",    't', RTGETOPT_REQ_STRING },
     };
 
     enum
@@ -1206,13 +1210,15 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
                       RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
-    bool     fVerbose     = false;
-    uint32_t fFlags       = 0;
-    uint32_t fOutputFlags = 0;
-    int      cNonOptions  = 0;
-    RTFMODE  fMode        = 0700;
-    bool     fModeSet     = false;
-    char    *pszTemplate, *pszFilename;
+    bool        fVerbose     = false;
+    uint32_t    fFlags       = 0;
+    uint32_t    fOutputFlags = 0;
+    int         cNonOptions  = 0;
+    RTFMODE     fMode        = 0700;
+    bool        fModeSet     = false;
+    const char *pcszPath     = NULL;
+    const char *pcszTemplate;
+    char        szTemplateWithPath[RTPATH_MAX] = "";
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
               && RT_SUCCESS(rc))
@@ -1250,6 +1256,10 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
                 fFlags |= VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE;
                 break;
 
+            case 't':
+                pcszPath = ValueUnion.psz;
+                break;
+
             case VINF_GETOPT_NOT_OPTION:
                 /* RTGetOpt will sort these to the end of the argv vector so
                  * that we will deal with them afterwards. */
@@ -1260,16 +1270,13 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
-    if (RT_SUCCESS(rc))
+    /* Print magic/version. */
+    if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
     {
-        /* Print magic/version. */
-        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
-        {
-            rc = VBoxServiceToolboxStrmInit();
-            if (RT_FAILURE(rc))
-                RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
-            VBoxServiceToolboxPrintStrmHeader("vbt_mktemp", 1 /* Stream version */);
-        }
+        rc = VBoxServiceToolboxStrmInit();
+        if (RT_FAILURE(rc))
+            RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
+        VBoxServiceToolboxPrintStrmHeader("vbt_mktemp", 1 /* Stream version */);
     }
 
     if (fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE && fModeSet)
@@ -1279,63 +1286,88 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
         return RTEXITCODE_SYNTAX;
     }
     /* We need exactly one template, containing at least one 'X'. */
-    if (RT_SUCCESS(rc) && cNonOptions != 1)
+    if (cNonOptions != 1)
     {
         toolboxMkTempReport("Please specify exactly one template.\n", "",
                             true, VERR_INVALID_PARAMETER, fOutputFlags, &rc);
         return RTEXITCODE_SYNTAX;
     }
-    pszTemplate = argv[argc - 1];
-    pszFilename = RTPathFilename(pszTemplate);
-    if (   RT_SUCCESS(rc)
-        && (!pszFilename || !strchr(pszFilename, 'X')))  /* IPRT asserts this. */
+    pcszTemplate = argv[argc - 1];
+    /* Validate that the template is as IPRT requires (asserted by IPRT). */
+    if (RTPathHasPath(pcszTemplate) || !strchr(pcszTemplate, 'X'))
     {
-        toolboxMkTempReport("Template '%s' should contain a file name with at least one 'X' character.\n",
-                            pszTemplate, true, VERR_INVALID_PARAMETER,
+        toolboxMkTempReport("Template '%s' should contain a file name with no path and at least one 'X' character.\n",
+                            pcszTemplate, true, VERR_INVALID_PARAMETER,
                             fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
-    /* For now require an absolute path - perhaps later if we support a
-     * current directory concept we can change this. */
-    if (!RTPathStartsWithRoot(pszTemplate))
+    if (pcszPath && !RTPathStartsWithRoot(pcszPath))
     {
-        toolboxMkTempReport("Template '%s' should contain an absolute path.\n",
-                            pszTemplate, true, VERR_INVALID_PARAMETER,
+        toolboxMkTempReport("Path '%s' should be absolute.\n",
+                            pcszPath, true, VERR_INVALID_PARAMETER,
+                            fOutputFlags, &rc);
+        return RTEXITCODE_FAILURE;
+    }
+    if (pcszPath)
+    {
+        rc = RTStrCopy(szTemplateWithPath, sizeof(szTemplateWithPath),
+                       pcszPath);
+        if (RT_FAILURE(rc))
+        {
+            toolboxMkTempReport("Path '%s' too long.\n", pcszPath, true,
+                                VERR_INVALID_PARAMETER, fOutputFlags, &rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+    else
+    {
+        rc = RTPathTemp(szTemplateWithPath, sizeof(szTemplateWithPath));
+        if (RT_FAILURE(rc))
+        {
+            toolboxMkTempReport("Failed to get the temporary directory.\n",
+                                "", true, VERR_INVALID_PARAMETER,
+                                fOutputFlags, &rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+    rc = RTPathAppend(szTemplateWithPath, sizeof(szTemplateWithPath),
+                      pcszTemplate);
+    if (RT_FAILURE(rc))
+    {
+        toolboxMkTempReport("Template '%s' too long for path.\n",
+                            pcszTemplate, true, VERR_INVALID_PARAMETER,
                             fOutputFlags, &rc);
         return RTEXITCODE_FAILURE;
     }
 
-    if (RT_SUCCESS(rc))
+    if (fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_DIRECTORY)
     {
-        if (fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_DIRECTORY)
-        {
-            rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
-                 ? RTDirCreateTempSecure(pszTemplate)
-                 : RTDirCreateTemp(pszTemplate, fMode);
-            toolboxMkTempReport("Created temporary directory '%s'.\n",
-                                pszTemplate, RT_SUCCESS(rc), rc,
-                                fOutputFlags, NULL);
-            /* RTDirCreateTemp[Secure] sets the template to "" on failure. */
-            toolboxMkTempReport("The following error occurred while creating the temporary directory%s: %Rrc.\n",
-                                pszTemplate, RT_FAILURE(rc), rc,
-                                fOutputFlags, NULL);
-        }
-        else
-        {
-            rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
-                 ? RTFileCreateTempSecure(pszTemplate)
-                 : RTFileCreateTemp(pszTemplate, fMode);
-            toolboxMkTempReport("Created temporary file '%s'.\n",
-                                pszTemplate, RT_SUCCESS(rc), rc,
-                                fOutputFlags, NULL);
-            /* RTFileCreateTemp[Secure] sets the template to "" on failure. */
-            toolboxMkTempReport("The following error occurred while creating the temporary file%s: %Rrc.\n",
-                                pszTemplate, RT_FAILURE(rc), rc,
-                                fOutputFlags, NULL);
-        }
-        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
-            VBoxServiceToolboxPrintStrmTermination();
+        rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
+             ? RTDirCreateTempSecure(szTemplateWithPath)
+             : RTDirCreateTemp(szTemplateWithPath, fMode);
+        toolboxMkTempReport("Created temporary directory '%s'.\n",
+                            szTemplateWithPath, RT_SUCCESS(rc), rc,
+                            fOutputFlags, NULL);
+        /* RTDirCreateTemp[Secure] sets the template to "" on failure. */
+        toolboxMkTempReport("The following error occurred while creating a temporary directory from template '%s': %Rrc.\n",
+                            pcszTemplate, RT_FAILURE(rc), rc, fOutputFlags,
+                            NULL);
     }
+    else
+    {
+        rc =   fFlags & VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE
+             ? RTFileCreateTempSecure(szTemplateWithPath)
+             : RTFileCreateTemp(szTemplateWithPath, fMode);
+        toolboxMkTempReport("Created temporary file '%s'.\n",
+                            szTemplateWithPath, RT_SUCCESS(rc), rc,
+                            fOutputFlags, NULL);
+        /* RTFileCreateTemp[Secure] sets the template to "" on failure. */
+        toolboxMkTempReport("The following error occurred while creating a temporary file from template '%s': %Rrc.\n",
+                            pcszTemplate, RT_FAILURE(rc), rc, fOutputFlags,
+                            NULL);
+    }
+    if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+        VBoxServiceToolboxPrintStrmTermination();
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
