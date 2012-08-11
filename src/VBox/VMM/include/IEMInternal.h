@@ -479,6 +479,18 @@ typedef IEMCPU *PIEMCPU;
 # define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (false)
 #endif
 
+/**
+ * Tests if full verification mode is enabled.
+ *
+ * This expands to @c false when IEM_VERIFICATION_MODE is not defined and
+ * should therefore cause the compiler to eliminate the verification branch
+ * of an if statement.  */
+#ifdef IEM_VERIFICATION_MODE_FULL
+# define IEM_FULL_VERIFICATION_ENABLED(a_pIemCpu) (!(a_pIemCpu)->fNoRem)
+#else
+# define IEM_FULL_VERIFICATION_ENABLED(a_pIemCpu) (false)
+#endif
+
 /** @def IEM_VERIFICATION_MODE
  * Indicates that one of the verfication modes are enabled.
  */

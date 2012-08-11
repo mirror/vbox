@@ -2795,7 +2795,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+        if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             rcStrict = CPUMSetGuestGDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
         else
         {
@@ -2853,7 +2853,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+        if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             CPUMSetGuestIDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
         else
         {
@@ -2923,7 +2923,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     if (!(uNewLdt & X86_SEL_MASK_OFF_RPL))
     {
         Log(("lldt %04x: Loading NULL selector.\n",  uNewLdt));
-        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+        if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             CPUMSetGuestLDTR(IEMCPU_TO_VMCPU(pIemCpu), uNewLdt);
         else
             pCtx->ldtr.Sel = uNewLdt;
@@ -2990,7 +2990,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
      * It checks out alright, update the registers.
      */
 /** @todo check if the actual value is loaded or if the RPL is dropped */
-    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
         CPUMSetGuestLDTR(IEMCPU_TO_VMCPU(pIemCpu), uNewLdt & X86_SEL_MASK_OFF_RPL);
     else
         pCtx->ldtr.Sel  = uNewLdt & X86_SEL_MASK_OFF_RPL;
@@ -3111,7 +3111,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
      * It checks out alright, update the registers.
      */
 /** @todo check if the actual value is loaded or if the RPL is dropped */
-    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
         CPUMSetGuestTR(IEMCPU_TO_VMCPU(pIemCpu), uNewTr & X86_SEL_MASK_OFF_RPL);
     else
         pCtx->tr.Sel  = uNewTr & X86_SEL_MASK_OFF_RPL;
@@ -3148,7 +3148,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 3: crX = pCtx->cr3; break;
         case 4: crX = pCtx->cr4; break;
         case 8:
-            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
                 IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Implement CR8/TPR read\n")); /** @todo implement CR8 reading and writing. */
             else
                 crX = 0xff;
@@ -3259,7 +3259,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 else
                     NewEFER &= ~MSR_K6_EFER_LME;
 
-                if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+                if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
                     CPUMSetGuestEFER(pVCpu, NewEFER);
                 else
                     pCtx->msrEFER = NewEFER;
@@ -3269,7 +3269,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /*
              * Inform PGM.
              */
-            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             {
                 if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
                     !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
@@ -3336,7 +3336,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
              *        invalid bits. */
 
             /* Make the change. */
-            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             {
                 rc = CPUMSetGuestCR3(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, rc);
@@ -3345,11 +3345,11 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 pCtx->cr3 = uNewCrX;
 
             /* Inform PGM. */
-            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             {
                 if (pCtx->cr0 & X86_CR0_PG)
                 {
-                    rc = PGMFlushTLB(pVCpu, pCtx->cr3, !(pCtx->cr3 & X86_CR4_PGE));
+                    rc = PGMFlushTLB(pVCpu, pCtx->cr3, !(pCtx->cr4 & X86_CR4_PGE));
                     AssertRCReturn(rc, rc);
                     /* ignore informational status codes */
                 }
@@ -3396,7 +3396,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /*
              * Change it.
              */
-            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             {
                 rc = CPUMSetGuestCR4(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, rc);
@@ -3408,7 +3408,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /*
              * Notify SELM and PGM.
              */
-            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
             {
                 /* SELM - VME may change things wrt to the TSS shadowing. */
                 if ((uNewCrX ^ uOldCrX) & X86_CR4_VME)
@@ -3419,8 +3419,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 }
 
                 /* PGM - flushing and mode. */
-                if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
-                    !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
+                if ((uNewCrX ^ uOldCrX) & (X86_CR4_PSE | X86_CR4_PAE | X86_CR4_PGE))
                 {
                     rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
                     AssertRCReturn(rc, rc);
@@ -3437,7 +3436,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
          * CR8 maps to the APIC TPR.
          */
         case 8:
-            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
                 IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Implement CR8/TPR read\n")); /** @todo implement CR8 reading and writing. */
             else
                 rcStrict = VINF_SUCCESS;

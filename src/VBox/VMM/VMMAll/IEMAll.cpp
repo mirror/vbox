@@ -74,6 +74,7 @@
  * Use for pitting IEM against EM or something else in ring-0 or raw-mode
  * context. */
 //#define IEM_VERIFICATION_MODE_MINIMAL
+//#define IEM_LOG_MEMORY_WRITES
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -634,7 +635,7 @@ static const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd =
 };
 
 
-#ifdef IEM_VERIFICATION_MODE_MINIMAL
+#if defined(IEM_VERIFICATION_MODE_MINIMAL) || defined(IEM_LOG_MEMORY_WRITES)
 /** What IEM just wrote. */
 uint8_t g_abIemWrote[256];
 /** How much IEM just wrote. */
@@ -728,7 +729,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
     PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
 
-#if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE_FULL) || defined(VBOX_WITH_RAW_MODE_NOT_R0))
+#if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE_FULL) || !defined(VBOX_WITH_RAW_MODE_NOT_R0))
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ss));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->es));
@@ -4738,6 +4739,10 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
     if ((fAccess & IEM_ACCESS_TYPE_WRITE) && !pIemCpu->fNoRem)
         return VERR_PGM_PHYS_TLB_CATCH_ALL;
 #endif
+#ifdef IEM_LOG_MEMORY_WRITES
+    if (fAccess & IEM_ACCESS_TYPE_WRITE)
+        return VERR_PGM_PHYS_TLB_CATCH_ALL;
+#endif
 #ifdef IEM_VERIFICATION_MODE_MINIMAL
     return VERR_PGM_PHYS_TLB_CATCH_ALL;
 #endif
@@ -4923,7 +4928,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
         }
     }
 #endif
-#ifdef IEM_VERIFICATION_MODE_MINIMAL
+#if defined(IEM_VERIFICATION_MODE_MINIMAL) || defined(IEM_LOG_MEMORY_WRITES)
     if (rc == VINF_SUCCESS)
     {
         Log(("IEM Wrote %RGp: %.*Rhxs\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
