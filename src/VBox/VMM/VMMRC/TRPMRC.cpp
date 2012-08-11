@@ -167,15 +167,19 @@ VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
 VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     PVMCPU pVCpu = VMMGetCpu0(pVM);
-    LogRel(("FATAL ERROR: trpmRCShadowIDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
+    LogRel(("FATAL ERROR: trpmRCShadowIDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%08RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(uErrorCode); NOREF(offRange);
 
     /*
-     * If we ever get here, then the guest has executed an SIDT instruction
-     * that we failed to patch.  In theory this could be very bad, but there
-     * are nasty applications out there that install device drivers that mess
-     * with the guest's IDT.  In those cases, it's quite ok to simply ignore
-     * the writes and pretend success.
+     * If we ever get here, then the guest has *probably* executed an SIDT
+     * instruction that we failed to patch.  In theory this could be very bad,
+     * but there are nasty applications out there that install device drivers
+     * that mess with the guest's IDT.  In those cases, it's quite ok to simply
+     * ignore the writes and pretend success.
+     *
+     * Another posibility is that the guest is touching some page memory and
+     * it having nothing to do with our IDT or anything like that, just a
+     * potential conflict that we didn't discover in time.
      */
     DISSTATE Dis;
     int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, NULL);
