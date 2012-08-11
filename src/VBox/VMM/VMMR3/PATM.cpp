@@ -4048,6 +4048,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     bool disret;
     int rc;
     PVMCPU pVCpu = VMMGetCpu0(pVM);
+    LogFlow(("PATMR3InstallPatch: %08x (%#llx)\n", pInstrGC, flags));
 
     if (    !pVM
         ||  pInstrGC == 0
@@ -4079,6 +4080,30 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     /* We ran out of patch memory; don't bother anymore. */
     if (pVM->patm.s.fOutOfMemory == true)
         return VERR_PATCHING_REFUSED;
+
+#if 0 /* DONT COMMIT ENABLED! */
+    /* Blacklisted NT4SP1 areas - debugging why we sometimes crash early on, */
+    if (  0
+        //|| (pInstrGC - 0x80010000U) < 0x10000U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80010000U) < 0x5000U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80013000U) < 0x2000U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014000U) < 0x1000U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014000U) < 0x800U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014400U) < 0x400U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014400U) < 0x200U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014400U) < 0x100U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014500U) < 0x100U // NT4SP1 HAL - negative
+        //|| (pInstrGC - 0x80014400U) < 0x80U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014400U) < 0x80U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014440U) < 0x40U // NT4SP1 HAL
+        //|| (pInstrGC - 0x80014440U) < 0x20U // NT4SP1 HAL
+        || pInstrGC == 0x80014447       /* KfLowerIrql */
+        || 0)
+    {
+        Log(("PATMR3InstallPatch: %08x is blacklisted\n", pInstrGC));
+        return VERR_PATCHING_REFUSED;
+    }
+#endif
 
     /* Make sure the code selector is wide open; otherwise refuse. */
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
