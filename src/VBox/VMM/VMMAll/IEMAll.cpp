@@ -70,6 +70,11 @@
  *
  */
 
+/** @def IEM_VERIFICATION_MODE_MINIMAL
+ * Use for pitting IEM against EM or something else in ring-0 or raw-mode
+ * context. */
+//#define IEM_VERIFICATION_MODE_MINIMAL
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -85,11 +90,11 @@
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
 # include <VBox/vmm/patm.h>
 #endif
-#ifdef IEM_VERIFICATION_MODE
+#include "IEMInternal.h"
+#ifdef IEM_VERIFICATION_MODE_FULL
 # include <VBox/vmm/rem.h>
 # include <VBox/vmm/mm.h>
 #endif
-#include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -172,12 +177,6 @@ typedef IEMSELDESC *PIEMSELDESC;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** @def IEM_LOG_MEMORY_ACCESS
- * Can be used to log memory accesses when debugging problematic guest behavior. */
-#if 0
-# define IEM_LOG_MEMORY_ACCESS
-#endif
-
 /** @name IEM status codes.
  *
  * Not quite sure how this will play out in the end, just aliasing safe status
@@ -635,6 +634,14 @@ static const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd =
 };
 
 
+#ifdef IEM_VERIFICATION_MODE_MINIMAL
+/** What IEM just wrote. */
+uint8_t g_abIemWrote[256];
+/** How much IEM just wrote. */
+size_t g_cbIemWrote;
+#endif
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -663,7 +670,7 @@ static VBOXSTRICTRC     iemMemStackPushBeginSpecial(PIEMCPU pIemCpu, size_t cbMe
 static VBOXSTRICTRC     iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel);
 static uint16_t         iemSRegFetchU16(PIEMCPU pIemCpu, uint8_t iSegReg);
 
-#ifdef IEM_VERIFICATION_MODE
+#if defined(IEM_VERIFICATION_MODE_FULL) && !defined(IEM_VERIFICATION_MODE_MINIMAL)
 static PIEMVERIFYEVTREC iemVerifyAllocRecord(PIEMCPU pIemCpu);
 #endif
 static VBOXSTRICTRC     iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue);
@@ -721,7 +728,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
     PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
 
-#if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE) || !defined(VBOX_WITH_RAW_MODE_NOT_R0))
+#if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE_FULL) || defined(VBOX_WITH_RAW_MODE_NOT_R0))
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ss));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->es));
@@ -736,7 +743,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     CPUMGuestLazyLoadHiddenCsAndSs(pVCpu);
 #endif
     pIemCpu->uCpl               = CPUMGetGuestCPL(pVCpu);
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     if (pIemCpu->uInjectCpl != UINT8_MAX)
         pIemCpu->uCpl           = pIemCpu->uInjectCpl;
 #endif
@@ -774,7 +781,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
  */
 static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypassHandlers)
 {
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     uint8_t const cbOldOpcodes = pIemCpu->cbOpcode;
 #endif
     iemInitDecoder(pIemCpu, fBypassHandlers);
@@ -845,7 +852,7 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypa
      *        that, so do it when implementing the guest virtual address
      *        TLB... */
 
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     /*
      * Optimistic optimization: Use unconsumed opcode bytes from the previous
      *                          instruction.
@@ -4726,12 +4733,12 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
  */
 static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, void **ppvMem, PPGMPAGEMAPLOCK pLock)
 {
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     /* Force the alternative path so we can ignore writes. */
     if ((fAccess & IEM_ACCESS_TYPE_WRITE) && !pIemCpu->fNoRem)
         return VERR_PGM_PHYS_TLB_CATCH_ALL;
 #endif
-#ifdef IEM_LOG_MEMORY_ACCESS
+#ifdef IEM_VERIFICATION_MODE_MINIMAL
     return VERR_PGM_PHYS_TLB_CATCH_ALL;
 #endif
 
@@ -4838,6 +4845,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
      * Do the writing.
      */
     int rc;
+#ifndef IEM_VERIFICATION_MODE_MINIMAL
     if (   !pIemCpu->aMemBbMappings[iMemMap].fUnassigned
         && !IEM_VERIFICATION_ENABLED(pIemCpu))
     {
@@ -4878,9 +4886,10 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
         }
     }
     else
+#endif
         rc = VINF_SUCCESS;
 
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
     /*
      * Record the write(s).
      */
@@ -4914,7 +4923,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
         }
     }
 #endif
-#ifdef IEM_LOG_MEMORY_ACCESS
+#ifdef IEM_VERIFICATION_MODE_MINIMAL
     if (rc == VINF_SUCCESS)
     {
         Log(("IEM Wrote %RGp: %.*Rhxs\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
@@ -4923,6 +4932,10 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
             Log(("IEM Wrote %RGp: %.*Rhxs [2nd page]\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
                  RT_MIN(pIemCpu->aMemBbMappings[iMemMap].cbSecond, 64),
                  &pIemCpu->aBounceBuffers[iMemMap].ab[pIemCpu->aMemBbMappings[iMemMap].cbFirst]));
+
+        size_t cbWrote = pIemCpu->aMemBbMappings[iMemMap].cbFirst + pIemCpu->aMemBbMappings[iMemMap].cbSecond;
+        g_cbIemWrote = cbWrote;
+        memcpy(g_abIemWrote, &pIemCpu->aBounceBuffers[iMemMap].ab[0], RT_MIN(cbWrote, sizeof(g_abIemWrote)));
     }
 #endif
 
@@ -5004,7 +5017,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
             }
         }
 
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
         if (   !pIemCpu->fNoRem
             && (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC)) )
         {
@@ -5102,7 +5115,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
             }
         }
 
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
         if (   !pIemCpu->fNoRem
             && (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC)) )
         {
@@ -7433,7 +7446,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
 
 
 
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
 
 /**
  * Sets up execution verification mode.
@@ -8242,7 +8255,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
 }
 
-#else  /* !IEM_VERIFICATION_MODE || !IN_RING3 */
+#else  /* !IEM_VERIFICATION_MODE_FULL || !IN_RING3 */
 
 /* stubs */
 static VBOXSTRICTRC     iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue)
@@ -8257,7 +8270,7 @@ static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port,
     return VERR_INTERNAL_ERROR;
 }
 
-#endif /* !IEM_VERIFICATION_MODE || !IN_RING3 */
+#endif /* !IEM_VERIFICATION_MODE_FULL || !IN_RING3 */
 
 
 /**
@@ -8327,7 +8340,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
             pIemCpu->cRetAspectNotImplemented++;
         else if (rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
             pIemCpu->cRetInstrNotImplemented++;
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
         else if (rcStrict == VERR_IEM_RESTART_INSTRUCTION)
             rcStrict = VINF_SUCCESS;
 #endif
@@ -8342,7 +8355,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
 
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->cs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->ss));
-#if defined(IEM_VERIFICATION_MODE)
+#if defined(IEM_VERIFICATION_MODE_FULL)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->es));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->ds));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->fs));
@@ -8362,7 +8375,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 {
     PIEMCPU  pIemCpu = &pVCpu->iem.s;
 
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
     iemExecVerificationModeSetup(pIemCpu);
 #endif
 #ifdef LOG_ENABLED
@@ -8406,7 +8419,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
 
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
     /*
      * Assert some sanity.
      */

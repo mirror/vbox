@@ -32,6 +32,14 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/** @def IEM_VERIFICATION_MODE_FULL
+ * Shorthand for:
+ *    defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL)
+ */
+#if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL) && !defined(IEM_VERIFICATION_MODE_FULL)
+# define IEM_VERIFICATION_MODE_FULL
+#endif
+
 
 /** Finish and move to types.h */
 typedef union
@@ -120,7 +128,7 @@ typedef IEMFPURESULTTWO *PIEMFPURESULTTWO;
 typedef IEMFPURESULTTWO const *PCIEMFPURESULTTWO;
 
 
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
 
 /**
  * Verification event type.
@@ -183,7 +191,7 @@ typedef struct IEMVERIFYEVTREC
 /** Pointer to an IEM event verification records. */
 typedef IEMVERIFYEVTREC *PIEMVERIFYEVTREC;
 
-#endif /* IEM_VERIFICATION_MODE */
+#endif /* IEM_VERIFICATION_MODE_FULL */
 
 
 /**
@@ -246,7 +254,7 @@ typedef struct IEMCPU
     uint32_t                cRetErrStatuses;
     /** Number of times rcPassUp has been used. */
     uint32_t                cRetPassUpStatus;
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     /** The Number of I/O port reads that has been performed. */
     uint32_t                cIOReads;
     /** The Number of I/O port writes that has been performed. */
@@ -368,7 +376,7 @@ typedef struct IEMCPU
         uint8_t             ab[512];
     } aBounceBuffers[3];
 
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     /** The event verification records for what IEM did (LIFO). */
     R3PTRTYPE(PIEMVERIFYEVTREC)     pIemEvtRecHead;
     /** Insertion point for pIemEvtRecHead. */
@@ -463,10 +471,19 @@ typedef IEMCPU *PIEMCPU;
  * This expands to @c false when IEM_VERIFICATION_MODE is not defined and
  * should therefore cause the compiler to eliminate the verification branch
  * of an if statement.  */
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
 # define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (!(a_pIemCpu)->fNoRem)
+#elif defined(IEM_VERIFICATION_MODE_MINIMAL)
+# define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (true)
 #else
 # define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (false)
+#endif
+
+/** @def IEM_VERIFICATION_MODE
+ * Indicates that one of the verfication modes are enabled.
+ */
+#if (defined(IEM_VERIFICATION_MODE_FULL) || defined(IEM_VERIFICATION_MODE_MINIMAL)) && !defined(IEM_VERIFICATION_MODE)
+# define IEM_VERIFICATION_MODE
 #endif
 
 /**
@@ -476,7 +493,7 @@ typedef IEMCPU *PIEMCPU;
  *
  * This is a NOOP if the verifier isn't compiled in.
  */
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
 # define IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fEfl) do { pIemCpu->fUndefinedEFlags |= (a_fEfl); } while (0)
 #else
 # define IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fEfl) do { } while (0)
