@@ -46,9 +46,13 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
+#ifndef IN_RC
+#undef VBOX_WITH_IEM
+#endif
 #ifdef VBOX_WITH_IEM
-# define VBOX_COMPARE_IEM_AND_EM /* debugging... */
-# define VBOX_SAME_AS_EM
+//# define VBOX_COMPARE_IEM_AND_EM /* debugging... */
+//# define VBOX_SAME_AS_EM
+//# define VBOX_COMPARE_IEM_FIRST
 #endif
 
 /*******************************************************************************
@@ -83,9 +87,23 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVMCPU pVCpu, PDISCPUSTA
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef VBOX_COMPARE_IEM_AND_EM
+static const uint32_t g_fInterestingFFs = VMCPU_FF_TO_R3
+    | VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE | VMCPU_FF_INHIBIT_INTERRUPTS
+    | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT
+    | VMCPU_FF_TLB_FLUSH | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL;
+static uint32_t g_fIncomingFFs;
 static CPUMCTX g_IncomingCtx;
-static CPUMCTX g_EmOutgoingCtx;
-static bool g_fIgnoreRaxRdx = false;
+static bool    g_fIgnoreRaxRdx = false;
+
+static uint32_t g_fEmFFs;
+static CPUMCTX g_EmCtx;
+static uint8_t g_abEmWrote[256];
+static size_t  g_cbEmWrote;
+
+static uint32_t g_fIemFFs;
+static CPUMCTX g_IemCtx;
+extern uint8_t g_abIemWrote[256];
+extern size_t  g_cbIemWrote;
 #endif
 
 
@@ -440,25 +458,41 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
 
 
 #ifdef VBOX_COMPARE_IEM_AND_EM
-static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pIemCtx, VBOXSTRICTRC rcEm, VBOXSTRICTRC rcIem,
+static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pEmCtx, PCCPUMCTX pIemCtx,
+                             VBOXSTRICTRC rcEm, VBOXSTRICTRC rcIem,
                              uint32_t cbEm, uint32_t cbIem)
 {
     /* Quick compare. */
-    PCCPUMCTX pEmCtx = &g_EmOutgoingCtx;
     if (   rcEm == rcIem
         && cbEm == cbIem
-        && memcmp(pIemCtx, pEmCtx, sizeof(*pIemCtx)) == 0)
+        && g_cbEmWrote == g_cbIemWrote
+        && memcmp(g_abIemWrote, g_abEmWrote, g_cbIemWrote) == 0
+        && memcmp(pIemCtx, pEmCtx, sizeof(*pIemCtx)) == 0
+        && (g_fEmFFs & g_fInterestingFFs) == (g_fIemFFs & g_fInterestingFFs)
+       )
         return;
 
     /* Report exact differences. */
-    RTLogPrintf("!! EM and IEM differs at %04x:%08RGv !!\n", g_IncomingCtx.cs.Sel, g_IncomingCtx.rip);
+    RTLogPrintf("! EM and IEM differs at %04x:%08RGv !\n", g_IncomingCtx.cs.Sel, g_IncomingCtx.rip);
     if (rcEm != rcIem)
         RTLogPrintf(" * rcIem=%Rrc rcEm=%Rrc\n", VBOXSTRICTRC_VAL(rcIem), VBOXSTRICTRC_VAL(rcEm));
     else if (cbEm != cbIem)
         RTLogPrintf(" * cbIem=%#x cbEm=%#x\n", cbIem, cbEm);
 
-    if (rcEm == rcIem)
+    if (RT_SUCCESS(rcEm) && RT_SUCCESS(rcIem))
     {
+        if (g_cbIemWrote != g_cbEmWrote)
+            RTLogPrintf("!! g_cbIemWrote=%#x g_cbEmWrote=%#x\n", g_cbIemWrote, g_cbEmWrote);
+        else if (memcmp(g_abIemWrote, g_abEmWrote, g_cbIemWrote))
+        {
+            RTLogPrintf("!! IemWrote %.*Rhxs\n", RT_MIN(RT_MAX(1, g_cbIemWrote), 64), g_abIemWrote);
+            RTLogPrintf("!! EemWrote  %.*Rhxs\n", RT_MIN(RT_MAX(1, g_cbIemWrote), 64), g_abIemWrote);
+        }
+
+        if ((g_fEmFFs & g_fInterestingFFs) != (g_fIemFFs & g_fInterestingFFs))
+            RTLogPrintf("!! g_fIemFFs=%#x  g_fEmFFs=%#x (diff=%#x)\n", g_fIemFFs & g_fInterestingFFs,
+                        g_fEmFFs & g_fInterestingFFs, (g_fIemFFs ^ g_fEmFFs) & g_fInterestingFFs);
+
 #  define CHECK_FIELD(a_Field) \
         do \
         { \
@@ -466,11 +500,11 @@ static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pIemCtx, VBOXSTRICTRC rcEm,
             { \
                 switch (sizeof(pEmCtx->a_Field)) \
                 { \
-                    case 1: RTLogPrintf("  %8s differs - iem=%02x - em=%02x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
-                    case 2: RTLogPrintf("  %8s differs - iem=%04x - em=%04x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
-                    case 4: RTLogPrintf("  %8s differs - iem=%08x - em=%08x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
-                    case 8: RTLogPrintf("  %8s differs - iem=%016llx - em=%016llx\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
-                    default: RTLogPrintf("  %8s differs\n", #a_Field); break; \
+                    case 1: RTLogPrintf("!! %8s differs - iem=%02x - em=%02x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    case 2: RTLogPrintf("!! %8s differs - iem=%04x - em=%04x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    case 4: RTLogPrintf("!! %8s differs - iem=%08x - em=%08x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    case 8: RTLogPrintf("!! %8s differs - iem=%016llx - em=%016llx\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); break; \
+                    default: RTLogPrintf("!!  %8s differs\n", #a_Field); break; \
                 } \
                 cDiffs++; \
             } \
@@ -481,7 +515,7 @@ static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pIemCtx, VBOXSTRICTRC rcEm,
         { \
             if (pEmCtx->a_Field != pIemCtx->a_Field) \
             { \
-                RTLogPrintf("  %8s differs - iem=%02x - em=%02x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); \
+                RTLogPrintf("!! %8s differs - iem=%02x - em=%02x\n", #a_Field, pIemCtx->a_Field, pEmCtx->a_Field); \
                 cDiffs++; \
             } \
         } while (0)
@@ -543,7 +577,7 @@ static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pIemCtx, VBOXSTRICTRC rcEm,
         CHECK_FIELD(rip);
         if (pEmCtx->rflags.u != pIemCtx->rflags.u)
         {
-            RTLogPrintf("  rflags differs - iem=%08llx em=%08llx\n", pIemCtx->rflags.u, pEmCtx->rflags.u);
+            RTLogPrintf("!! rflags differs - iem=%08llx em=%08llx\n", pIemCtx->rflags.u, pEmCtx->rflags.u);
             CHECK_BIT_FIELD(rflags.Bits.u1CF);
             CHECK_BIT_FIELD(rflags.Bits.u1Reserved0);
             CHECK_BIT_FIELD(rflags.Bits.u1PF);
@@ -651,6 +685,21 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 # ifdef VBOX_COMPARE_IEM_AND_EM
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     g_IncomingCtx = *pCtx;
+    g_fIncomingFFs = pVCpu->fLocalForcedActions;
+    g_cbEmWrote = g_cbIemWrote = 0;
+
+#  ifdef VBOX_COMPARE_IEM_FIRST
+# error
+    /* IEM */
+    VBOXSTRICTRC rcIem = IEMExecOneBypassEx(pVCpu, pRegFrame, NULL);
+    if (RT_UNLIKELY(   rcIem == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rcIem == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rcIem = VERR_EM_INTERPRETER;
+    g_IemCtx = *pCtx;
+    g_fIemFFs = pVCpu->fLocalForcedActions;
+    pVCpu->fLocalForcedActions = (pVCpu->fLocalForcedActions & ~g_fInterestingFFs) | (g_fIncomingFFs & g_fInterestingFFs);
+    *pCtx = g_IncomingCtx;
+#  endif
 
     /* EM */
     RTGCPTR pbCode;
@@ -681,19 +730,34 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         return rcEm;
     }
 #  endif
+    g_EmCtx = *pCtx;
+    g_fEmFFs = pVCpu->fLocalForcedActions;
+    VBOXSTRICTRC rc = rcEm;
 
-    g_EmOutgoingCtx = *pCtx;
-    *pCtx = g_IncomingCtx;
-
+#  ifdef VBOX_COMPARE_IEM_LAST
+# error
     /* IEM */
-# endif /* VBOX_COMPARE_IEM_AND_EM */
+    pVCpu->fLocalForcedActions = (pVCpu->fLocalForcedActions & ~g_fInterestingFFs) | (g_fIncomingFFs & g_fInterestingFFs);
+    *pCtx = g_IncomingCtx;
+    VBOXSTRICTRC rcIem = IEMExecOneBypassEx(pVCpu, pRegFrame, NULL);
+    if (RT_UNLIKELY(   rcIem == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rcIem == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rcIem = VERR_EM_INTERPRETER;
+    g_IemCtx = *pCtx;
+    g_fIemFFs = pVCpu->fLocalForcedActions;
+    rc = rcIem;
+#  endif
+
+#  if defined(VBOX_COMPARE_IEM_LAST) || defined(VBOX_COMPARE_IEM_FIRST)
+# error
+    emCompareWithIem(pVCpu, &g_EmCtx, &g_IemCtx, rcEm, rcIem, 0, 0);
+#  endif
+
+# else
     VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, pRegFrame, NULL);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
         rc = VERR_EM_INTERPRETER;
-
-# ifdef VBOX_COMPARE_IEM_AND_EM
-    emCompareWithIem(pVCpu, pCtx, rcEm, rc, 0, 0);
 # endif
     if (rc != VINF_SUCCESS)
         Log(("EMInterpretInstruction: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
@@ -753,6 +817,21 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
 # ifdef VBOX_COMPARE_IEM_AND_EM
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     g_IncomingCtx = *pCtx;
+    g_fIncomingFFs = pVCpu->fLocalForcedActions;
+    g_cbEmWrote = g_cbIemWrote = 0;
+
+#  ifdef VBOX_COMPARE_IEM_FIRST
+    /* IEM */
+    uint32_t cbIemWritten = 0;
+    VBOXSTRICTRC rcIem = IEMExecOneBypassEx(pVCpu, pRegFrame, &cbIemWritten);
+    if (RT_UNLIKELY(   rcIem == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rcIem == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rcIem = VERR_EM_INTERPRETER;
+    g_IemCtx = *pCtx;
+    g_fIemFFs = pVCpu->fLocalForcedActions;
+    pVCpu->fLocalForcedActions = (pVCpu->fLocalForcedActions & ~g_fInterestingFFs) | (g_fIncomingFFs & g_fInterestingFFs);
+    *pCtx = g_IncomingCtx;
+#  endif
 
     /* EM */
     uint32_t cbEmWritten = 0;
@@ -784,19 +863,35 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
         return rcEm;
     }
 #  endif
+    g_EmCtx = *pCtx;
+    g_fEmFFs = pVCpu->fLocalForcedActions;
+    *pcbWritten = cbEmWritten;
+    VBOXSTRICTRC rc = rcEm;
 
-    g_EmOutgoingCtx = *pCtx;
-    *pCtx = g_IncomingCtx;
-
+#  ifdef VBOX_COMPARE_IEM_LAST
     /* IEM */
-# endif /* VBOX_COMPARE_IEM_AND_EM */
+    pVCpu->fLocalForcedActions = (pVCpu->fLocalForcedActions & ~g_fInterestingFFs) | (g_fIncomingFFs & g_fInterestingFFs);
+    *pCtx = g_IncomingCtx;
+    uint32_t cbIemWritten = 0;
+    VBOXSTRICTRC rcIem = IEMExecOneBypassEx(pVCpu, pRegFrame, &cbIemWritten);
+    if (RT_UNLIKELY(   rcIem == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rcIem == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rcIem = VERR_EM_INTERPRETER;
+    g_IemCtx = *pCtx;
+    g_fIemFFs = pVCpu->fLocalForcedActions;
+    *pcbWritten = cbIemWritten;
+    rc = rcIem;
+#  endif
+
+#  if defined(VBOX_COMPARE_IEM_LAST) || defined(VBOX_COMPARE_IEM_FIRST)
+    emCompareWithIem(pVCpu, &g_EmCtx, &g_IemCtx, rcEm, rcIem, cbEmWritten, cbIemWritten);
+#  endif
+
+# else
     VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, pRegFrame, pcbWritten);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
         rc = VERR_EM_INTERPRETER;
-
-# ifdef VBOX_COMPARE_IEM_AND_EM
-    emCompareWithIem(pVCpu, pCtx, rcEm, rc, cbEmWritten, *pcbWritten);
 # endif
     if (rc != VINF_SUCCESS)
         Log(("EMInterpretInstructionEx: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
@@ -865,6 +960,19 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTAT
 # ifdef VBOX_COMPARE_IEM_AND_EM
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     g_IncomingCtx = *pCtx;
+    g_fIncomingFFs = pVCpu->fLocalForcedActions;
+    g_cbEmWrote = g_cbIemWrote = 0;
+
+#  ifdef VBOX_COMPARE_IEM_FIRST
+    VBOXSTRICTRC rcIem = IEMExecOneBypassWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip, pDis->abInstr, pDis->cbCachedInstr);
+    if (RT_UNLIKELY(   rcIem == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rcIem == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rcIem = VERR_EM_INTERPRETER;
+    g_IemCtx = *pCtx;
+    g_fIemFFs = pVCpu->fLocalForcedActions;
+    pVCpu->fLocalForcedActions = (pVCpu->fLocalForcedActions & ~g_fInterestingFFs) | (g_fIncomingFFs & g_fInterestingFFs);
+    *pCtx = g_IncomingCtx;
+#  endif
 
     /* EM */
     uint32_t cbIgnored;
@@ -878,20 +986,34 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTAT
         return rcEm;
     }
 #  endif
+    g_EmCtx = *pCtx;
+    g_fEmFFs = pVCpu->fLocalForcedActions;
+    VBOXSTRICTRC rc = rcEm;
 
-    g_EmOutgoingCtx = *pCtx;
-    *pCtx = g_IncomingCtx;
-
+#  ifdef VBOX_COMPARE_IEM_LAST
     /* IEM */
-# endif
+    pVCpu->fLocalForcedActions = (pVCpu->fLocalForcedActions & ~g_fInterestingFFs) | (g_fIncomingFFs & g_fInterestingFFs);
+    *pCtx = g_IncomingCtx;
+    VBOXSTRICTRC rcIem = IEMExecOneBypassWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip, pDis->abInstr, pDis->cbCachedInstr);
+    if (RT_UNLIKELY(   rcIem == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rcIem == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rcIem = VERR_EM_INTERPRETER;
+    g_IemCtx = *pCtx;
+    g_fIemFFs = pVCpu->fLocalForcedActions;
+    rc = rcIem;
+#  endif
+
+#  if defined(VBOX_COMPARE_IEM_LAST) || defined(VBOX_COMPARE_IEM_FIRST)
+    emCompareWithIem(pVCpu, &g_EmCtx, &g_IemCtx, rcEm, rcIem, 0, 0);
+#  endif
+
+# else
     VBOXSTRICTRC rc = IEMExecOneBypassWithPrefetchedByPC(pVCpu, pRegFrame, pRegFrame->rip, pDis->abInstr, pDis->cbCachedInstr);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
         rc = VERR_EM_INTERPRETER;
-
-# ifdef VBOX_COMPARE_IEM_AND_EM
-    emCompareWithIem(pVCpu, pCtx, rcEm, rc, 0, 0);
 # endif
+
     if (rc != VINF_SUCCESS)
         Log(("EMInterpretInstructionDisasState: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
 
@@ -1248,7 +1370,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             return VERR_EM_INTERPRETER;
 #endif
         rc = VINF_SUCCESS;
-#ifndef VBOX_COMPARE_IEM_AND_EM
+#if !defined(VBOX_COMPARE_IEM_AND_EM) || !defined(VBOX_COMPARE_IEM_LAST)
         CPUMSetGuestCR0(pVCpu, val);
 #else
         CPUMQueryGuestCtxPtr(pVCpu)->cr0 = val | X86_CR0_ET;
@@ -1578,11 +1700,17 @@ DECLINLINE(int) emRamWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR
     /* Don't use MMGCRamWrite here as it does not respect zero pages, shared
        pages or write monitored pages. */
     NOREF(pVM);
-#ifndef VBOX_COMPARE_IEM_AND_EM
-    return PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, /*fMayTrap*/ false);
+#if !defined(VBOX_COMPARE_IEM_AND_EM) || !defined(VBOX_COMPARE_IEM_LAST)
+    int rc = PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, /*fMayTrap*/ false);
 #else
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
 #endif
+#ifdef VBOX_COMPARE_IEM_AND_EM
+    Log(("EM Wrote: %RGv %.*Rhxs rc=%Rrc\n", GCPtrDst, RT_MAX(RT_MIN(cb, 64), 1), pvSrc, rc));
+    g_cbEmWrote = cb;
+    memcpy(g_abEmWrote, pvSrc, RT_MIN(cb, sizeof(g_abEmWrote)));
+#endif
+    return rc;
 }
 
 
@@ -2722,6 +2850,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
         case 8: u64 = *(uint64_t *)pvParam1; break;
     }
     eflags = EMEmulateCmpXchg(&u64, &pRegFrame->rax, valpar, pDis->Param2.cb);
+    int rc2 = emRamWrite(pVM, pVCpu, pRegFrame, GCPtrPar1, &u64, pDis->Param2.cb); AssertRCSuccess(rc2);
 #endif /* VBOX_COMPARE_IEM_AND_EM */
 
     LogFlow(("%s %RGv rax=%RX64 %RX64 ZF=%d\n", emGetMnemonic(pDis), GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
@@ -2780,6 +2909,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
 #else  /* VBOX_COMPARE_IEM_AND_EM */
     uint64_t u64 = *(uint64_t *)pvParam1;
     eflags = EMEmulateCmpXchg8b(&u64, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
+    int rc2 = emRamWrite(pVM, pVCpu, pRegFrame, GCPtrPar1, &u64, sizeof(u64)); AssertRCSuccess(rc2);
 #endif /* VBOX_COMPARE_IEM_AND_EM */
 
     LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pDis), pvParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
@@ -2862,6 +2992,7 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
                 case 8: u64 = *(uint64_t *)pvParam1; break;
             }
             eflags = EMEmulateXAdd(&u64, pvParamReg2, cbParamReg2);
+            int rc2 = emRamWrite(pVM, pVCpu, pRegFrame, GCPtrPar1, &u64, pDis->Param2.cb); AssertRCSuccess(rc2);
 #endif /* VBOX_COMPARE_IEM_AND_EM */
 
             LogFlow(("XAdd %RGv=%p reg=%08llx ZF=%d\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2, !!(eflags & X86_EFL_ZF) ));
@@ -3623,7 +3754,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
             else \
                 STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
             return rc
-# endif /* VBOX_COMPARE_IEM_AND_EM*/
+# endif /* VBOX_COMPARE_IEM_AND_EM */
 
 #define INTERPRET_CASE_EX_PARAM3(opcode, Instr, InstrFn, pfnEmulate) \
         case opcode:\

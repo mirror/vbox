@@ -1024,9 +1024,8 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uSel);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-#ifdef IEM_VERIFICATION_MODE /** @todo check what VT-x and AMD-V does. */
+        /** @todo check what VT-x and AMD-V does. */
         Desc.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-#endif
     }
 
     /* commit */
@@ -1220,9 +1219,8 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uSel);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-#ifdef IEM_VERIFICATION_MODE /** @todo check what VT-x and AMD-V does. */
+        /** @todo check what VT-x and AMD-V does. */
         Desc.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-#endif
     }
 
     /* stack */
@@ -1528,9 +1526,8 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewCs);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
-#ifdef IEM_VERIFICATION_MODE /** @todo check what VT-x and AMD-V does. */
+            /** @todo check what VT-x and AMD-V does. */
             DescCs.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-#endif
         }
         /** @todo Testcase: Need to check WHEN exactly the SS accessed bit is set. */
         if (!(DescSs.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
@@ -1538,9 +1535,8 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewOuterSs);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
-#ifdef IEM_VERIFICATION_MODE /** @todo check what VT-x and AMD-V does. */
+            /** @todo check what VT-x and AMD-V does. */
             DescSs.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-#endif
         }
 
         /* commit */
@@ -1621,9 +1617,8 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewCs);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
-#ifdef IEM_VERIFICATION_MODE /** @todo check what VT-x and AMD-V does. */
+            /** @todo check what VT-x and AMD-V does. */
             DescCs.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-#endif
         }
 
         /* commit */
@@ -3742,7 +3737,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
     uint64_t uTicks = TMCpuTickGet(IEMCPU_TO_VMCPU(pIemCpu));
     pCtx->rax = (uint32_t)uTicks;
     pCtx->rdx = uTicks >> 32;
-#ifdef IEM_VERIFICATION_MODE
+#ifdef IEM_VERIFICATION_MODE_FULL
     pIemCpu->fIgnoreRaxRdx = true;
 #endif
 
