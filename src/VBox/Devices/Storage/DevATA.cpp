@@ -3920,7 +3920,7 @@ static DECLCALLBACK(void) ataMountNotify(PPDMIMOUNTNOTIFY pInterface)
 
     /* Report media changed in TEST UNIT and other (probably incorrect) places. */
     if (pIf->cNotifiedMediaChange < 2)
-        pIf->cNotifiedMediaChange = 2;
+        pIf->cNotifiedMediaChange = 1;
     ataMediumInserted(pIf);
     ataMediumTypeSet(pIf, ATA_MEDIA_TYPE_UNKNOWN);
 }
@@ -3941,7 +3941,7 @@ static DECLCALLBACK(void) ataUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
      * So, we'll give it 4 TEST UNIT command to catch up, two which the media is not
      * present and 2 in which it is changed.
      */
-    pIf->cNotifiedMediaChange = 4;
+    pIf->cNotifiedMediaChange = 1;
     ataMediumRemoved(pIf);
     ataMediumTypeSet(pIf, ATA_MEDIA_NO_DISC);
 }
