@@ -496,14 +496,10 @@ void UIGDetailsSet::prepareElement(QString strSetId)
         bool fOpen = m_settings.contains(strElementTypeOpened);
 
         /* Check if element is present already: */
-        bool fJustCreated = false;
         UIGDetailsElement *pElement = element(elementType);
         /* Create if necessary: */
         if (!pElement)
-        {
             pElement = createElement(elementType, fOpen);
-            fJustCreated = true;
-        }
         /* Prepare element: */
         if (fVisible && !pElement->isVisible())
             pElement->show();
@@ -511,8 +507,7 @@ void UIGDetailsSet::prepareElement(QString strSetId)
             pElement->hide();
         if (pElement->isVisible())
             pElement->updateAppearance();
-        if (fJustCreated)
-            model()->updateLayout();
+        model()->updateLayout();
         /* Mark element prepared: */
         emit sigElementPrepared(strSetId);
     }
