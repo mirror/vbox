@@ -32,6 +32,8 @@
 extern IMPNAME(g_CPUM)                 ; VMM GC Builtin import
 extern IMPNAME(g_VM)                   ; VMM GC Builtin import
 extern NAME(cpumRCHandleNPAndGP)       ; CPUMGC.cpp
+extern NAME(CPUMRCAssertPreExecutionSanity)
+
 
 ;
 ; Enables write protection of Hypervisor memory pages.
@@ -162,6 +164,16 @@ ENDPROC CPUMGCCallV86Code
 ;
 align 16
 BEGINPROC_EXPORTED CPUMGCResumeGuest
+%ifdef VBOX_STRICT
+    ; Call CPUM to check sanity.
+    push    edx
+    mov     edx, IMP(g_VM)
+    push    edx
+    call    NAME(CPUMRCAssertPreExecutionSanity)
+    add     esp, 4
+    pop     edx
+%endif
+
     ; Convert to CPUMCPU pointer
     add     edx, [edx + CPUM.offCPUMCPU0]
     ;
@@ -240,6 +252,16 @@ ENDPROC     CPUMGCResumeGuest
 ;
 align 16
 BEGINPROC_EXPORTED CPUMGCResumeGuestV86
+%ifdef VBOX_STRICT
+    ; Call CPUM to check sanity.
+    push    edx
+    mov     edx, IMP(g_VM)
+    push    edx
+    call    NAME(CPUMRCAssertPreExecutionSanity)
+    add     esp, 4
+    pop     edx
+%endif
+
     ; Convert to CPUMCPU pointer
     add     edx, [edx + CPUM.offCPUMCPU0]
     ;
