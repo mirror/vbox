@@ -45,6 +45,9 @@
 
 - PC DOS 6.x/7.x QCONFIG is a rare user of INT 16h fn 0Ah (read keyboard ID).
 
+- Windows 98 is one of the few APM 1.2 users; Windows 95 uses APM 1.1, while
+  newer systems prefer ACPI.
+
 
  Notes on BIOS implementation
  ----------------------------
@@ -71,6 +74,18 @@
   causes the sign to be incorrectly propagated. BCC incorrectly keeps
   the type unsigned.
 
+- The PCI BIOS services are implemented in C, compiled twice as 16-bit and
+  32-bit code. This reduces the development effort and significantly lowers
+  the risk of discrepancies between 16-bit and 32-bit implementation. Care
+  must be taken because the 16-bit implementation can be executed in both
+  real and protected mode.
+
+- APM can be in theory implemented only once for real, 16-bit protected and
+  32-bit protected mode. Unfortunately this is very inconvenient in C since
+  the default stack size changes between 16-bit and 32-bit callers. Therefore
+  real mode APM (which supports most functions) is implemented in C and
+  protected-mode APM is written in assembler for both 16-bit and 32-bit calls,
+  with a small 32->16 thunk.
 
 
  Code size notes (code as of 7/6/2011):

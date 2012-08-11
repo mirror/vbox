@@ -57,11 +57,13 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	logo.c \
  	scsi.c \
  	ahci.c \
+ 	apm.c \
  	pcibios.c \
  	pciutil.c \
  	vds.c \
  	../../BiosCommonCode/support.asm \
  	pcibio32.asm \
+ 	apm_pm.asm \
  	$(VBoxPcBios32_1_TARGET) \
  	orgs.asm
 

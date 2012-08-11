@@ -111,6 +111,7 @@ extrn		_int1a_function:near
 extrn		_pci16_function:near
 extrn		_int70_function:near
 extrn		_int74_function:near
+extrn		_apm_function:near
 extrn		_ata_init:near
 extrn		_ahci_init:near
 extrn		_scsi_init:near
@@ -1518,8 +1519,6 @@ int11_handler:
 ;;		BIOSORG	0F859h - fixed wrt preceding code
 int15_handler:
 		pushf
-		cmp	ah, 53h		; APM function?
-		je	apm_call
 		push	ds
 		push	es
 		C_SETUP
@@ -1528,11 +1527,13 @@ int15_handler:
 		cmp	ah, 0E8h
 		je	int15_handler32
 		pusha
-		cmp	ah, 0C2h
+		cmp	ah, 53h		; APM function?
+		je	apm_call
+		cmp	ah, 0C2h	; PS/2 mouse function?
 		je	int15_handler_mouse
 
 		call	_int15_function
-int15_handler_mouse_ret:
+int15_handler_popa_ret:
 		popa
 int15_handler32_ret:
 		pop	es
@@ -1541,15 +1542,12 @@ int15_handler32_ret:
 		jmp	iret_modify_cf
 
 apm_call:
-; TODO!!
-		popf
-		stc
-		jmp	iret_modify_cf
-;		jmp	apmreal_entry
+		call	_apm_function
+		jmp	int15_handler_popa_ret
 
 int15_handler_mouse:
 		call	_int15_function_mouse
-		jmp	int15_handler_mouse_ret
+		jmp	int15_handler_popa_ret
 
 int15_handler32:
 		;; need to save/restore 32-bit registers
