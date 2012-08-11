@@ -401,6 +401,9 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
         break;
     }
 # endif /* VBOX_STRICT || LOG_ENABLED */
+#ifdef IN_RC
+    AssertReturn(CPUMIsGuestInRawMode(pVCpu), VINF_EM_RESCHEDULE);
+#endif
 
     /* Retrieve the eflags including the virtualized bits. */
     /* Note: hackish as the cpumctxcore structure doesn't contain the right value */
@@ -656,6 +659,13 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
                     /* Mask away dangerous flags for the trap/interrupt handler. */
                     eflags.u32 &= ~(X86_EFL_TF | X86_EFL_VM | X86_EFL_RF | X86_EFL_NT);
+
+                    /* Turn off interrupts for interrupt gates. */
+                    if (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
+                        eflags.Bits.u1IF = 0;
+
+                    CPUMRawSetEFlags(pVCpu, eflags.u32);
+
 #ifdef DEBUG
                     for (int j = idx; j < 0; j++)
                         Log4(("Stack %RRv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
@@ -669,19 +679,18 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                           pRegFrame->fs.Sel, pRegFrame->gs.Sel, eflags.u32));
 #endif
 
-                    Log(("PATM Handler %RRv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
+                    Log(("TRPM: PATM Handler %RRv Adjusted stack %08X new EFLAGS=%08X/%08x idx=%d dpl=%d cpl=%d\n",
+                         pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, CPUMRawGetEFlags(pVCpu), idx, dpl, cpl));
 
                     /* Make sure the internal guest context structure is up-to-date. */
                     if (iGate == X86_XCPT_PF)
                         CPUMSetGuestCR2(pVCpu, pVCpu->trpm.s.uActiveCR2);
 
 #ifdef IN_RC
-                    /* Turn off interrupts for interrupt gates. */
-                    if (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
-                        CPUMRawSetEFlags(pVCpu, eflags.u32 & ~X86_EFL_IF);
-
-                    /* The virtualized bits must be removed again!! */
+                    /* paranoia */
+                    Assert(pRegFrame->eflags.Bits.u1IF == 1);
                     eflags.Bits.u1IF   = 1;
+                    Assert(pRegFrame->eflags.Bits.u2IOPL == 0);
                     eflags.Bits.u2IOPL = 0;
 
                     Assert(eflags.Bits.u1IF);
@@ -696,12 +705,9 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                                                eflags.u32, ss_r0, (RTRCPTR)esp_r0);
                     /* does not return */
 #else
-                    /* Turn off interrupts for interrupt gates. */
-                    if (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
-                        eflags.Bits.u1IF = 0;
 
+                    Assert(!CPUMIsGuestInRawMode(pVCpu));
                     pRegFrame->eflags.u32 = eflags.u32;
-
                     pRegFrame->eip        = pVM->trpm.s.aGuestTrapHandler[iGate];
                     pRegFrame->cs.Sel     = GuestIdte.Gen.u16SegSel;
                     pRegFrame->esp        = esp_r0;
