@@ -52,7 +52,7 @@
 #ifdef VBOX_WITH_IEM
 //# define VBOX_COMPARE_IEM_AND_EM /* debugging... */
 //# define VBOX_SAME_AS_EM
-//# define VBOX_COMPARE_IEM_FIRST
+//# define VBOX_COMPARE_IEM_LAST
 #endif
 
 /*******************************************************************************
@@ -103,7 +103,11 @@ static size_t  g_cbEmWrote;
 static uint32_t g_fIemFFs;
 static CPUMCTX g_IemCtx;
 extern uint8_t g_abIemWrote[256];
+#if defined(VBOX_COMPARE_IEM_FIRST) || defined(VBOX_COMPARE_IEM_LAST)
 extern size_t  g_cbIemWrote;
+#else
+static size_t  g_cbIemWrote;
+#endif
 #endif
 
 
@@ -457,7 +461,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
 }
 
 
-#ifdef VBOX_COMPARE_IEM_AND_EM
+#if defined(VBOX_COMPARE_IEM_FIRST) || defined(VBOX_COMPARE_IEM_LAST)
 static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pEmCtx, PCCPUMCTX pIemCtx,
                              VBOXSTRICTRC rcEm, VBOXSTRICTRC rcIem,
                              uint32_t cbEm, uint32_t cbIem)
@@ -689,7 +693,6 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     g_cbEmWrote = g_cbIemWrote = 0;
 
 #  ifdef VBOX_COMPARE_IEM_FIRST
-# error
     /* IEM */
     VBOXSTRICTRC rcIem = IEMExecOneBypassEx(pVCpu, pRegFrame, NULL);
     if (RT_UNLIKELY(   rcIem == VERR_IEM_ASPECT_NOT_IMPLEMENTED
@@ -735,7 +738,6 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     VBOXSTRICTRC rc = rcEm;
 
 #  ifdef VBOX_COMPARE_IEM_LAST
-# error
     /* IEM */
     pVCpu->fLocalForcedActions = (pVCpu->fLocalForcedActions & ~g_fInterestingFFs) | (g_fIncomingFFs & g_fInterestingFFs);
     *pCtx = g_IncomingCtx;
@@ -749,7 +751,6 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 #  endif
 
 #  if defined(VBOX_COMPARE_IEM_LAST) || defined(VBOX_COMPARE_IEM_FIRST)
-# error
     emCompareWithIem(pVCpu, &g_EmCtx, &g_IemCtx, rcEm, rcIem, 0, 0);
 #  endif
 
