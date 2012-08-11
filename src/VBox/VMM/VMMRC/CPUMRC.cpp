@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/vmm.h>
+#include <VBox/vmm/patm.h>
 #include <VBox/vmm/trpm.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -75,3 +76,32 @@ DECLCALLBACK(int) cpumRCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
     return VERR_TRPM_DONT_PANIC;
 }
 
+
+/**
+ * Called by TRPM and CPUM assembly code to make sure the guest state is
+ * ready for execution.
+ *
+ * @param   pVM                 The VM handle.
+ */
+DECLASM(void) CPUMRCAssertPreExecutionSanity(PVM pVM)
+{
+    /*
+     * Check some important assumptions before resuming guest execution.
+     */
+    PVMCPU         pVCpu     = VMMGetCpu0(pVM);
+    PCCPUMCTX      pCtx      = &pVCpu->cpum.s.Guest;
+    uint8_t  const uRawCpl   = CPUMGetGuestCPL(pVCpu);
+    uint32_t const u32EFlags = CPUMRawGetEFlags(pVCpu);
+    bool     const fPatch    = PATMIsPatchGCAddr(pVM, pCtx->eip);
+    AssertMsg(pCtx->eflags.Bits.u1IF,                ("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
+    AssertMsg(pCtx->eflags.Bits.u2IOPL < RT_MAX(uRawCpl, 1U),
+                                                     ("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
+    if (!(u32EFlags & X86_EFL_VM))
+    {
+        AssertMsg((u32EFlags & X86_EFL_IF) || fPatch,("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
+        AssertMsg((pCtx->cs.Sel & X86_SEL_RPL) > 0,  ("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
+        AssertMsg((pCtx->ss.Sel & X86_SEL_RPL) > 0,  ("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
+    }
+    AssertMsg(CPUMIsGuestInRawMode(pVCpu),           ("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
+Log2(("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
+}
