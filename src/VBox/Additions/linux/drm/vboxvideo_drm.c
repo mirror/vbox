@@ -50,7 +50,7 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 # include <generated/autoconf.h>
 #else
 # ifndef AUTOCONF_INCLUDED
@@ -82,13 +82,13 @@ static struct pci_device_id pciidlist[] = {
 
 int vboxvideo_driver_load(struct drm_device * dev, unsigned long flags)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 28)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     return drm_vblank_init(dev, 1);
 #else
     return 0;
 #endif
 }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) || defined(DRM_RHEL63)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63)
 /* since linux-3.3.0-rc1 drm_driver::fops is pointer */
 static struct file_operations driver_fops =
 {
@@ -106,13 +106,15 @@ static struct drm_driver driver =
 {
     /* .driver_features = DRIVER_USE_MTRR, */
     .load = vboxvideo_driver_load,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0)
     .reclaim_buffers = drm_core_reclaim_buffers,
+#endif
     /* As of Linux 2.6.37, always the internal functions are used. */
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 37) && !defined(DRM_RHEL61)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37) && !defined(DRM_RHEL61)
     .get_map_ofs = drm_core_get_map_ofs,
     .get_reg_ofs = drm_core_get_reg_ofs,
 #endif
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0) && !defined(DRM_RHEL63)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0) && !defined(DRM_RHEL63)
     .fops =
     {
         .owner = THIS_MODULE,
@@ -120,7 +122,7 @@ static struct drm_driver driver =
         .release = drm_release,
         /* This was changed with Linux 2.6.33 but Fedora backported this
          * change to their 2.6.32 kernel. */
-#if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 33)
+#if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
         .unlocked_ioctl = drm_ioctl,
 #else
         .ioctl = drm_ioctl,
@@ -129,10 +131,10 @@ static struct drm_driver driver =
         .poll = drm_poll,
         .fasync = drm_fasync,
     },
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) || defined(DRM_RHEL63) */
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63) */
     .fops = &driver_fops,
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39) && !defined(DRM_RHEL61)
     .pci_driver =
     {
         .name = DRIVER_NAME,
@@ -147,7 +149,7 @@ static struct drm_driver driver =
     .patchlevel = DRIVER_PATCHLEVEL,
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 39) || defined(DRM_RHEL61)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39) || defined(DRM_RHEL61)
 static struct pci_driver pci_driver =
 {
     .name = DRIVER_NAME,
@@ -157,7 +159,7 @@ static struct pci_driver pci_driver =
 
 static int __init vboxvideo_init(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39) && !defined(DRM_RHEL61)
     return drm_init(&driver);
 #else
     return drm_pci_init(&driver, &pci_driver);
@@ -166,7 +168,7 @@ static int __init vboxvideo_init(void)
 
 static void __exit vboxvideo_exit(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39) && !defined(DRM_RHEL61)
     drm_exit(&driver);
 #else
     drm_pci_exit(&driver, &pci_driver);
