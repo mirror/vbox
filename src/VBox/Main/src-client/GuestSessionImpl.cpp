@@ -1500,6 +1500,112 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
     return rc;
 }
 
+int GuestSession::objectCreateTempInternal(Utf8Str strTemplate,
+                                           Utf8Str strPath,
+                                           bool fDirectory,
+                                           Utf8Str &strName, int *prc)
+{
+    GuestProcessStartupInfo procInfo;
+    GuestProcessStream      streamOut;
+    ComObjPtr<GuestProcess> pProcess;
+    int rc = VINF_SUCCESS;
+
+    if (fDirectory)
+        procInfo.mName    = Utf8StrFmt(tr("Creating temporary directory from template \"%s\"",
+                                   strTemplate.c_str()));
+    else
+        procInfo.mName    = Utf8StrFmt(tr("Creating temporary file from template \"%s\"",
+                                   strTemplate.c_str()));
+    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
+    procInfo.mFlags   =   ProcessCreateFlag_Hidden
+                        | ProcessCreateFlag_WaitForStdOut;
+    /* Construct arguments. */
+    procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+    if (fDirectory)
+        procInfo.mArguments.push_back(Utf8Str("-d"));
+    if (strPath.length())  /* Otherwise use /tmp or equivalent. */
+    {
+        procInfo.mArguments.push_back(Utf8Str("-t"));
+        procInfo.mArguments.push_back(strPath);
+    }
+    procInfo.mArguments.push_back(strTemplate);
+
+    rc = processCreateExInteral(procInfo, pProcess);
+    if (RT_SUCCESS(rc))
+    {
+        GuestProcessWaitResult waitRes;
+        BYTE byBuf[_64K];
+        size_t cbRead;
+
+        for (;;)
+        {
+            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
+                                   30 * 1000 /* Timeout */, waitRes);
+            if (   RT_FAILURE(rc)
+                || waitRes.mResult == ProcessWaitResult_Terminate
+                || waitRes.mResult == ProcessWaitResult_Error
+                || waitRes.mResult == ProcessWaitResult_Timeout)
+            {
+                break;
+            }
+
+            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
+                                    &cbRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            if (cbRead)
+            {
+                rc = streamOut.AddData(byBuf, cbRead);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+
+        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
+                         rc, cbRead, streamOut.GetSize()));
+    }
+    else
+        LogThisFunc(("Error while starting temporary object creation tool on guest: %Rrc\n", rc));
+    if (RT_FAILURE(rc))
+        LogThisFunc(("Error while running temporary object creation tool: %Rrc\n", rc));
+    else if (!streamOut.GetSize())
+    {
+        LogThisFunc(("No return code after creating temporary object\n"));
+        rc = VERR_NO_DATA;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        const char *pcszName;
+        int64_t i64rc;
+        GuestProcessStreamBlock streamBlock;
+        rc = streamOut.ParseBlock(streamBlock);
+        if (RT_SUCCESS(rc))
+        {
+            pcszName = streamBlock.GetString("name");
+            if (pcszName)
+                strName = pcszName;
+            else
+            {
+                LogThisFunc(("No name returned after creating temporary object\n"));
+                rc = VERR_NO_DATA;
+            }
+            if (RT_FAILURE(rc = streamBlock.GetInt64Ex("rc", &i64rc)))
+                LogThisFunc(("No return code after creating temporary object\n"));
+        }
+        if (   RT_SUCCESS(rc)
+            && (   i64rc == VERR_INVALID_PARAMETER
+                || i64rc == VERR_NOT_SUPPORTED))
+            rc = (int)i64rc;
+        if (RT_SUCCESS(rc))
+            *prc = (int)i64rc;
+    }
+    else
+        LogThisFunc(("Error while getting return code from creating temporary object: %Rrc\n", rc));
+    return rc;
+}
+
 int GuestSession::directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter,
                                         uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory)
 {
@@ -2215,106 +2321,29 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    GuestProcessStartupInfo procInfo;
-    GuestProcessStream      streamOut;
     int rc = VINF_SUCCESS;
 
     try  /* Can this be done without exceptions? */
     {
-        Utf8Str strTemplate(aTemplate);
-        Utf8Str strPath(aPath);
-        procInfo.mName    = Utf8StrFmt(tr("Creating temporary directory from template \"%s\"",
-                                       strTemplate.c_str()));
-        procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
-        procInfo.mFlags   =   ProcessCreateFlag_Hidden
-                            | ProcessCreateFlag_WaitForStdOut;
-        /* Construct arguments. */
-        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-        if (strPath.length())  /* Otherwise use /tmp or equivalent. */
-        {
-            procInfo.mArguments.push_back(Utf8Str("-d"));
-            procInfo.mArguments.push_back(strPath);
-        }
-        procInfo.mArguments.push_back(strTemplate);
+        Utf8Str strName;
+        if (RT_FAILURE(objectCreateTempInternal(Utf8Str(aTemplate),
+                                                Utf8Str(aPath),
+                                                true, strName, &rc)))
+            return E_FAIL;
+        HRESULT hrc =   rc == VERR_INVALID_PARAMETER ? E_INVALIDARG
+                      : rc == VERR_NOT_SUPPORTED ? VBOX_E_NOT_SUPPORTED
+                      : RT_FAILURE(rc) ? VBOX_E_IPRT_ERROR
+                      : S_OK;
+        if (FAILED(hrc))
+            return setError(hrc, tr("Temporary directory creation failed: %Rrc"),
+                            rc);
+        strName.cloneTo(aDirectory);
+        return S_OK;
     }
     catch (...)
     {
         return E_OUTOFMEMORY;
     }
-
-    ComObjPtr<GuestProcess> pProcess;
-    rc = processCreateExInteral(procInfo, pProcess);
-    if (RT_SUCCESS(rc))
-    {
-        GuestProcessWaitResult waitRes;
-        BYTE byBuf[_64K];
-        size_t cbRead;
-
-        for (;;)
-        {
-            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
-                                   30 * 1000 /* Timeout */, waitRes);
-            if (   RT_FAILURE(rc)
-                || waitRes.mResult == ProcessWaitResult_Terminate
-                || waitRes.mResult == ProcessWaitResult_Error
-                || waitRes.mResult == ProcessWaitResult_Timeout)
-            {
-                break;
-            }
-
-            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                    &cbRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            if (cbRead)
-            {
-                rc = streamOut.AddData(byBuf, cbRead);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        }
-
-        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
-                         rc, cbRead, streamOut.GetSize()));
-    }
-    else
-        return setError(E_FAIL, tr("Error while starting temporary directory creation tool on guest: %Rrc"), rc);
-    if (RT_FAILURE(rc))
-        return setError(E_FAIL, tr("Error while running temporary directory creation tool: %Rrc"), rc);
-    if (!streamOut.GetSize())
-        return setError(E_FAIL, tr("No return code after creating temporary directory"));
-    GuestProcessStreamBlock streamBlock;
-    rc = streamOut.ParseBlock(streamBlock);
-    if (RT_SUCCESS(rc))
-    {
-        const char *pcszName = streamBlock.GetString("name");
-        if (!pcszName)
-            return setError(E_FAIL, tr("No name returned after creating temporary directory"));
-        int64_t i64rc;
-        if (RT_FAILURE(streamBlock.GetInt64Ex("rc", &i64rc)))
-            return setError(E_FAIL, tr("No return code after creating temporary directory"));
-        if (RT_FAILURE((int)i64rc))
-        {
-            HRESULT hrc =   i64rc == VERR_INVALID_PARAMETER ? E_INVALIDARG
-                          : i64rc == VERR_NOT_SUPPORTED ? VBOX_E_NOT_SUPPORTED
-                          : VBOX_E_IPRT_ERROR;
-            return setError(hrc, tr("Temporary directory creation failed: %Rrc"),
-                            (int)i64rc);
-        }
-        try
-        {
-            Bstr(pcszName).cloneTo(aDirectory);
-        }
-        catch (...)
-        {
-            return E_OUTOFMEMORY;
-        }
-    }
-    else
-        return setError(E_FAIL, tr("Error while getting return code from creating temporary directory: %Rrc"), rc);
-    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
