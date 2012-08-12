@@ -43,7 +43,7 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 
 #include <VBox/VBoxVideoGuest.h>
 
