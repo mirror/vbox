@@ -256,7 +256,8 @@ int SessionTaskCopyTo::Run(void)
             rc = pProcess->waitFor(ProcessWaitForFlag_StdIn,
                                    30 * 1000 /* Timeout */, waitRes);
             if (   RT_FAILURE(rc)
-                || waitRes.mResult != ProcessWaitForFlag_StdIn)
+                || (   waitRes.mResult != ProcessWaitResult_StdIn
+                    && waitRes.mResult != ProcessWaitResult_Any))
             {
                 break;
             }
